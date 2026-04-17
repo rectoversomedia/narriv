@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js" 
 }
@@ -12,9 +10,205 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Signal {
+model User {
+  id            String   @id @default(uuid())
+  name          String?
+  email         String   @unique
+  password      String   // the summary.md uses password_hash, but we'll stick to 'password' or use password_hash. Let's use password to be simple.
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  memberships WorkspaceMember[]
+}
+
+model Workspace {
   id        String   @id @default(uuid())
-  content   String
-  sentiment String
+  name      String
+  slug      String   @unique
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members          WorkspaceMember[]
+  sources          Source[]
+  ingestionJobs    IngestionJob[]
+  rawDocuments     RawDocument[]
+  signals          Signal[]
+  alerts           Alert[]
+  narrativeClusters NarrativeCluster[]
+  reports          Report[]
+  actionPlans      ActionPlan[]
+  generatedAssets  GeneratedAsset[]
+}
+
+model WorkspaceMember {
+  id          String @id @default(uuid())
+  userId      String
+  workspaceId String
+  role        String // (admin, analyst, viewer)
+  createdAt   DateTime @default(now())
+
+  user        User      @relation(fields: [userId], references: [id])
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+}
+
+model Source {
+  id            String   @id @default(uuid())
+  workspaceId   String
+  name          String
+  type          String   // (news, web, forum, social, video, podcast)
+  actorId       String?
+  inputConfig   Json?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  workspace     Workspace @relation(fields: [workspaceId], references: [id])
+  ingestionJobs IngestionJob[]
+  rawDocuments  RawDocument[]
+}
+
+model IngestionJob {
+  id            String   @id @default(uuid())
+  workspaceId   String
+  sourceId      String
+  runId         String?
+  status        String
+  startedAt     DateTime @default(now())
+  finishedAt    DateTime?
+  errorMessage  String?
+
+  workspace     Workspace @relation(fields: [workspaceId], references: [id])
+  source        Source    @relation(fields: [sourceId], references: [id])
+}
+
+model RawDocument {
+  id            String   @id @default(uuid())
+  workspaceId   String
+  sourceId      String
+  externalId    String?
+  title         String?
+  content       String
+  url           String?
+  author        String?
+  sourceName    String?
+  sourceType    String?
+  platform      String?
+  publishedAt   DateTime?
+  capturedAt    DateTime @default(now())
+  metadata      Json?
+
+  workspace     Workspace @relation(fields: [workspaceId], references: [id])
+  source        Source    @relation(fields: [sourceId], references: [id])
+  signals       Signal[]
+}
+
+model Signal {
+  id            String   @id @default(uuid())
+  workspaceId   String
+  rawDocumentId String?
+  title         String?
+  content       String
+  sourceName    String?
+  sourceType    String?
+  platform      String?
+  url           String?
+  publishedAt   DateTime?
+  capturedAt    DateTime @default(now())
+  region        String?
+  language      String?
+  dedupeHash    String?
+  
+  // NOTE: Based on old code, the router expected sentiment directly in the Signal model
+  // I will add sentiment to signal as well to prevent breaking old code, or I can rely on SignalAnalysis
+  sentiment     String?
+
+  workspace     Workspace @relation(fields: [workspaceId], references: [id])
+  rawDocument   RawDocument? @relation(fields: [rawDocumentId], references: [id])
+  analyses      SignalAnalysis[]
+}
+
+model SignalAnalysis {
+  id                String   @id @default(uuid())
+  signalId          String
+  sentiment         String?
+  narrativeType     String?
+  stakeholder       String?
+  impact            String?
+  summary           String?
+  recommendedAction String?
+  confidenceScore   Float?
+  createdAt         DateTime @default(now())
+
+  signal            Signal @relation(fields: [signalId], references: [id])
+}
+
+model Alert {
+  id            String   @id @default(uuid())
+  workspaceId   String
+  type          String   // (risk, opportunity, positioning)
+  severity      String   // (low, medium, high, critical)
+  title         String
+  whatHappened  String?
+  whyItMatters  String?
+  whatToDo      String?
+  status        String   // (open, acknowledged, in_progress, resolved)
+  createdAt     DateTime @default(now())
+
+  workspace     Workspace @relation(fields: [workspaceId], references: [id])
+  actionPlans   ActionPlan[]
+}
+
+model NarrativeCluster {
+  id            String   @id @default(uuid())
+  workspaceId   String
+  title         String
+  summary       String?
+  trendDirection String?
+  sentimentBias String?
+  createdAt     DateTime @default(now())
+
+  workspace     Workspace @relation(fields: [workspaceId], references: [id])
+  actionPlans   ActionPlan[]
+}
+
+model Report {
+  id            String   @id @default(uuid())
+  workspaceId   String
+  title         String
+  periodStart   DateTime?
+  periodEnd     DateTime?
+  summary       String?
+  exportUrl     String?
+  createdAt     DateTime @default(now())
+
+  workspace     Workspace @relation(fields: [workspaceId], references: [id])
+}
+
+model ActionPlan {
+  id            String   @id @default(uuid())
+  workspaceId   String
+  alertId       String?
+  clusterId     String?
+  title         String
+  option1       String?
+  option2       String?
+  option3       String?
+  createdAt     DateTime @default(now())
+
+  workspace     Workspace @relation(fields: [workspaceId], references: [id])
+  alert         Alert?    @relation(fields: [alertId], references: [id])
+  cluster       NarrativeCluster? @relation(fields: [clusterId], references: [id])
+  generatedAssets GeneratedAsset[]
+}
+
+model GeneratedAsset {
+  id            String   @id @default(uuid())
+  workspaceId   String
+  actionPlanId  String
+  type          String   // (press_release, influencer_brief, holding_statement, faq, internal_memo, campaign_brief)
+  title         String
+  content       String
+  createdAt     DateTime @default(now())
+
+  workspace     Workspace  @relation(fields: [workspaceId], references: [id])
+  actionPlan    ActionPlan @relation(fields: [actionPlanId], references: [id])
 }
