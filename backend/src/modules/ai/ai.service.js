@@ -62,15 +62,50 @@ function buildSignalUserMessage(title, content) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// INTERNAL HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Makes a single call to the OpenAI chat completions API.
+ *
+ * @param {Array} messages - Array of { role, content } message objects.
+ * @returns {Promise<string>} - The raw string content from the model.
+ */
+async function callOpenAI(messages) {
+    const response = await client.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages,
+        temperature: 0.2,
+        max_tokens: 512,
+        response_format: { type: "json_object" }
+    });
+    return response.choices[0]?.message?.content || "{}";
+}
+
+/**
+ * Attempts to parse a string as JSON.
+ * 
+ * @param {string} raw - The raw string to parse.
+ * @returns {{ ok: boolean, data?: object, error?: string }}
+ */
+function tryParseJSON(raw) {
+    try {
+        return { ok: true, data: JSON.parse(raw) };
+    } catch (err) {
+        return { ok: false, error: err.message };
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // CORE FUNCTIONS
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Analyzes a signal (title + content) using OpenAI.
- * Returns a validated, structured analysis object.
+ * Automatically retries once with a correction prompt if JSON parse fails.
  *
- * @param {string} title - The signal title.
- * @param {string} content - The signal content.
+ * @param {string|null} title - The signal title (optional).
+ * @param {string} content - The signal content body.
  * @returns {Promise<object>} - The validated AI analysis object.
  */
 export const analyzeSignal = async (title, content) => {
@@ -81,27 +116,54 @@ export const analyzeSignal = async (title, content) => {
     const systemPrompt = buildSignalSystemPrompt();
     const userMessage = buildSignalUserMessage(title, content);
 
-    const response = await client.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userMessage }
-        ],
-        temperature: 0.2,         // Low temperature = more deterministic output
-        max_tokens: 512,
-        response_format: { type: "json_object" }
-    });
+    // Build the initial messages array
+    const messages = [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userMessage }
+    ];
 
-    const rawContent = response.choices[0]?.message?.content || "{}";
+    // ── Attempt 1 ──────────────────────────────────────────────────────────
+    console.log(`[AI] analyzeSignal attempt 1 — title: "${title || "(none)}"`);
+    const rawContent = await callOpenAI(messages);
+    const attempt1 = tryParseJSON(rawContent);
 
     let parsed;
-    try {
-        parsed = JSON.parse(rawContent);
-    } catch (err) {
-        throw new Error(`AI returned invalid JSON: ${rawContent.substring(0, 300)}`);
+
+    if (attempt1.ok) {
+        parsed = attempt1.data;
+    } else {
+        // ── Attempt 2 (RETRY) ───────────────────────────────────────────────
+        // Send the bad response back and ask OpenAI to self-correct
+        console.warn(`[AI] Attempt 1 produced invalid JSON — retrying with correction prompt.`);
+        console.warn(`[AI] Parse error: ${attempt1.error}`);
+        console.warn(`[AI] Raw response: ${rawContent.substring(0, 200)}`);
+
+        const correctionMessages = [
+            ...messages,
+            { role: "assistant", content: rawContent },
+            {
+                role: "user",
+                content: `Your previous response was not valid JSON. Parse error: "${attempt1.error}".
+Please return ONLY a valid JSON object with all required fields. No markdown. No explanation.`
+            }
+        ];
+
+        console.log(`[AI] analyzeSignal attempt 2 (retry)...`);
+        const rawRetry = await callOpenAI(correctionMessages);
+        const attempt2 = tryParseJSON(rawRetry);
+
+        if (!attempt2.ok) {
+            throw new Error(
+                `AI returned invalid JSON after retry.\n` +
+                `Attempt 1: ${rawContent.substring(0, 150)}\n` +
+                `Attempt 2: ${rawRetry.substring(0, 150)}`
+            );
+        }
+
+        parsed = attempt2.data;
     }
 
-    // Validate against schema — throws if any field is invalid
+    // Validate the final parsed object against our schema
     return validateAIOutput(parsed);
 };
 
