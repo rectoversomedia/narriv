@@ -2,10 +2,19 @@ import prisma from "../../prisma.js";
 
 export const getSources = async (req, res) => {
     try {
-        // Since we don't have workspaces fully integrated with user sessions yet,
-        // we'll fetch all sources or assume a default workspace.
-        // For MVP, we'll fetch all. In a real app we'd filter by workspaceId.
-        const sources = await prisma.source.findMany();
+        const userId = req.user.id;
+
+        // Find workspaces the user belongs to
+        const memberships = await prisma.workspaceMember.findMany({
+            where: { userId },
+            select: { workspaceId: true }
+        });
+        const workspaceIds = memberships.map(m => m.workspaceId);
+
+        const sources = await prisma.source.findMany({
+            where: { workspaceId: { in: workspaceIds } }
+        });
+
         res.json(sources);
     } catch (error) {
         console.error("Error fetching sources:", error);
@@ -21,16 +30,31 @@ export const createSource = async (req, res) => {
             return res.status(400).json({ error: "Name and type are required" });
         }
 
+        const userId = req.user.id;
+
         // Ideally, workspaceId comes from the active user's workspace
-        // For MVP, if workspaceId is missing, we pick/create a default workspace
         let targetWorkspaceId = workspaceId;
         if (!targetWorkspaceId) {
-            const defaultWorkspace = await prisma.workspace.findFirst();
-            if (defaultWorkspace) {
-                targetWorkspaceId = defaultWorkspace.id;
+            const membership = await prisma.workspaceMember.findFirst({
+                where: { userId }, // user's own workspace
+                include: { workspace: true }
+            });
+            
+            if (membership) {
+                targetWorkspaceId = membership.workspaceId;
             } else {
+                // Auto create workspace for new user
                 const newWorkspace = await prisma.workspace.create({
-                    data: { name: "Default Workspace", slug: "default-workspace-" + Date.now() }
+                    data: {
+                        name: "My Workspace",
+                        slug: "workspace-" + userId + "-" + Date.now(),
+                        members: {
+                            create: {
+                                userId,
+                                role: "admin"
+                            }
+                        }
+                    }
                 });
                 targetWorkspaceId = newWorkspace.id;
             }
