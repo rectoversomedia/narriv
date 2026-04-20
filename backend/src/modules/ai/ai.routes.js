@@ -1,22 +1,23 @@
 import express from "express";
-import { analyzeText } from "./ai.service.js";
+import { analyzeSignal } from "./ai.service.js";
 
 const router = express.Router();
 
 /**
  * POST /ai/analyze
- * Test endpoint for the AI analyzeText function.
- * Body: { text: string, systemPrompt?: string }
+ * Analyzes a signal's title + content using OpenAI.
+ * Body: { title?: string, content: string }
  */
 router.post("/analyze", async (req, res) => {
     try {
-        const { text, systemPrompt } = req.body;
+        const { title, content, text } = req.body;
+        const inputContent = content || text;
 
-        if (!text) {
-            return res.status(400).json({ error: "'text' field is required." });
+        if (!inputContent) {
+            return res.status(400).json({ error: "'content' field is required." });
         }
 
-        const result = await analyzeText(text, systemPrompt);
+        const result = await analyzeSignal(title || null, inputContent);
         res.json({ result });
     } catch (error) {
         console.error("[AI MODULE] Error:", error.message);
