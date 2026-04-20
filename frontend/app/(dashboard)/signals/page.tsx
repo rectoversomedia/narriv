@@ -18,13 +18,18 @@ export default function SignalsPage() {
   const [signals, setSignals] = useState<Signal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const limit = 10;
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     const fetchSignals = async () => {
       try {
         setLoading(true);
         const token = localStorage.getItem("token"); 
-        const res = await fetch("http://localhost:3000/signals", {
+        const res = await fetch(`http://localhost:3000/signals?page=${page}&limit=${limit}`, {
           headers: {
              ...(token ? { Authorization: `Bearer ${token}` } : {})
           }
@@ -34,6 +39,9 @@ export default function SignalsPage() {
         
         const data = await res.json();
         setSignals(data.data || []);
+        if (data.meta) {
+           setTotal(data.meta.total || 0);
+        }
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -42,7 +50,7 @@ export default function SignalsPage() {
     };
 
     fetchSignals();
-  }, []);
+  }, [page]);
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -140,6 +148,29 @@ export default function SignalsPage() {
                 )}
               </tbody>
             </table>
+        </div>
+        
+        {/* Pagination Controls */}
+        <div className="border-t border-zinc-800 px-6 py-4 flex items-center justify-between bg-zinc-950/30">
+            <span className="text-sm text-zinc-400">
+                Showing <span className="text-white font-medium">{signals.length > 0 ? ((page - 1) * limit) + 1 : 0}</span> to <span className="text-white font-medium">{Math.min(page * limit, total)}</span> of <span className="text-white font-medium">{total}</span> signals
+            </span>
+            <div className="flex gap-2">
+                <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1 || loading}
+                    className="px-4 py-2 text-sm font-medium bg-zinc-900 border border-zinc-800 rounded-lg text-white hover:bg-zinc-800 disabled:opacity-50 transition-colors"
+                >
+                    Previous
+                </button>
+                <button
+                    onClick={() => setPage(p => p + 1)}
+                    disabled={page * limit >= total || loading}
+                    className="px-4 py-2 text-sm font-medium bg-zinc-900 border border-zinc-800 rounded-lg text-white hover:bg-zinc-800 disabled:opacity-50 transition-colors"
+                >
+                    Next
+                </button>
+            </div>
         </div>
       </div>
     </div>
