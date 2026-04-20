@@ -53,7 +53,12 @@ function SignalsContent() {
       const res = await fetch(`http://localhost:3000/signals/${id}`, {
         headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
       });
-      if (!res.ok) throw new Error("Failed to load details");
+      
+      if (!res.ok) {
+         const errData = await res.json().catch(() => null);
+         throw new Error(errData?.error || "Failed to load signal details");
+      }
+      
       const data = await res.json();
       setSignalDetail(data);
     } catch (err) {
@@ -117,7 +122,10 @@ function SignalsContent() {
           }
         });
         
-        if (!res.ok) throw new Error("Failed to fetch signals");
+        if (!res.ok) {
+           const errData = await res.json().catch(() => null);
+           throw new Error(errData?.error || `Failed to fetch signals (${res.status})`);
+        }
         
         const data = await res.json();
         setSignals(data.data || []);
