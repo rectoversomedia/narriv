@@ -1,7 +1,9 @@
 import express from "express";
 import prisma from "../../prisma.js";
+import { analyzeSignal } from "../ai/ai.service.js";
 
 const router = express.Router();
+
 
 // GET semua data dengan pagination dan filtering
 router.get("/", async (req, res) => {
@@ -103,12 +105,13 @@ router.post("/", async (req, res) => {
     }
 });
 
-// GET signal by ID
+// GET signal by ID (includes existing analysis if any)
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
         const signal = await prisma.signal.findUnique({
-            where: { id }
+            where: { id },
+            include: { analyses: true }
         });
         
         if (!signal) {
@@ -119,6 +122,68 @@ router.get("/:id", async (req, res) => {
     } catch (error) {
         console.error("Error fetching signal:", error);
         res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// POST /signals/:id/analyze — Run AI analysis and save to SignalAnalysis
+router.post("/:id/analyze", async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // 1. Fetch the signal
+        const signal = await prisma.signal.findUnique({ where: { id } });
+        if (!signal) {
+            return res.status(404).json({ error: "Signal not found" });
+        }
+
+        // 2. Check for existing analysis — prevent duplicate inserts
+        const existing = await prisma.signalAnalysis.findFirst({
+            where: { signalId: id }
+        });
+
+        if (existing) {
+            return res.status(200).json({
+                message: "Analysis already exists for this signal.",
+                analysis: existing,
+                fromCache: true
+            });
+        }
+
+        // 3. Run AI analysis
+        console.log(`[ANALYZE] Running AI on signal: ${id}`);
+        const result = await analyzeSignal(signal.title, signal.content);
+
+        // 4. Save result to SignalAnalysis
+        const analysis = await prisma.signalAnalysis.create({
+            data: {
+                signalId: id,
+                sentiment: result.sentiment,
+                narrativeType: result.narrative_type,
+                stakeholder: result.stakeholder,
+                impact: result.impact,
+                summary: result.summary,
+                recommendedAction: result.recommended_action,
+                confidenceScore: result.confidence_score
+            }
+        });
+
+        // 5. Also update the signal's own sentiment field for quick access
+        await prisma.signal.update({
+            where: { id },
+            data: { sentiment: result.sentiment }
+        });
+
+        console.log(`[ANALYZE] Analysis saved for signal: ${id}`);
+
+        res.status(201).json({
+            message: "Analysis completed and saved.",
+            analysis,
+            fromCache: false
+        });
+
+    } catch (error) {
+        console.error("[ANALYZE] Error:", error.message);
+        res.status(500).json({ error: error.message });
     }
 });
 
