@@ -123,7 +123,7 @@ export const analyzeSignal = async (title, content) => {
     ];
 
     // ── Attempt 1 ──────────────────────────────────────────────────────────
-    console.log(`[AI] analyzeSignal attempt 1 — title: "${title || "(none)}"`);
+    console.log(`[AI] analyzeSignal attempt 1 — title: "${title || "(none)"}"`);
     const rawContent = await callOpenAI(messages);
     const attempt1 = tryParseJSON(rawContent);
 
