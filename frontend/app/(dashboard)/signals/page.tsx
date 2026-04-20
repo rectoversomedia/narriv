@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { Activity, Loader2, Search, Filter } from "lucide-react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 type Signal = {
   id: string;
@@ -14,22 +15,79 @@ type Signal = {
   sentiment: string | null;
 };
 
-export default function SignalsPage() {
+// Extracted inner component so we can wrap it in Suspense for useSearchParams
+function SignalsContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
   const [signals, setSignals] = useState<Signal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Pagination State
-  const [page, setPage] = useState(1);
+  // Filter & Pagination State from URL
+  const pageParam = parseInt(searchParams.get("page") || "1", 10);
+  const keywordParam = searchParams.get("keyword") || "";
+  const platformParam = searchParams.get("platform") || "";
+  const startDateParam = searchParams.get("startDate") || "";
+  const endDateParam = searchParams.get("endDate") || "";
+
+  const [page, setPage] = useState(pageParam);
   const limit = 10;
   const [total, setTotal] = useState(0);
+
+  // Local state for debounced search input
+  const [keyword, setKeyword] = useState(keywordParam);
+
+  const updateQuery = useCallback((params: Record<string, string | null>) => {
+    const current = new URLSearchParams(Array.from(searchParams.entries()));
+    Object.entries(params).forEach(([key, value]) => {
+      if (!value) {
+        current.delete(key);
+      } else {
+        current.set(key, value);
+      }
+    });
+
+    // Reset to page 1 if we are changing filters (and not explicitly changing page)
+    if (!params.page && current.get("page") !== "1") {
+       current.set("page", "1");
+    }
+    
+    const search = current.toString();
+    const query = search ? `?${search}` : "";
+    router.push(`${pathname}${query}`);
+  }, [searchParams, pathname, router]);
+
+  // Debounce Keyword Input
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+        if (keyword !== keywordParam) {
+           updateQuery({ keyword });
+        }
+    }, 500);
+    return () => clearTimeout(timeoutId);
+  }, [keyword, updateQuery, keywordParam]);
+
+  // Sync local state if URL changes externally
+  useEffect(() => {
+     setPage(pageParam);
+     setKeyword(keywordParam);
+  }, [pageParam, keywordParam]);
 
   useEffect(() => {
     const fetchSignals = async () => {
       try {
         setLoading(true);
         const token = localStorage.getItem("token"); 
-        const res = await fetch(`http://localhost:3000/signals?page=${page}&limit=${limit}`, {
+        
+        let url = `http://localhost:3000/signals?page=${page}&limit=${limit}`;
+        if (keywordParam) url += `&keyword=${encodeURIComponent(keywordParam)}`;
+        if (platformParam) url += `&platform=${encodeURIComponent(platformParam)}`;
+        if (startDateParam) url += `&startDate=${encodeURIComponent(startDateParam)}`;
+        if (endDateParam) url += `&endDate=${encodeURIComponent(endDateParam)}`;
+
+        const res = await fetch(url, {
           headers: {
              ...(token ? { Authorization: `Bearer ${token}` } : {})
           }
@@ -50,11 +108,11 @@ export default function SignalsPage() {
     };
 
     fetchSignals();
-  }, [page]);
+  }, [page, limit, keywordParam, platformParam, startDateParam, endDateParam]);
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2 text-white">
             <Activity className="text-red-500" />
@@ -63,20 +121,54 @@ export default function SignalsPage() {
           <p className="text-zinc-400 mt-1">Real-time omnichannel monitoring stream.</p>
         </div>
         
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-           {/* Search Placeholder visually */}
-           <div className="relative flex-1 sm:w-64">
+        <div className="flex flex-col sm:flex-row flex-wrap items-center gap-2 w-full lg:w-auto">
+           {/* Search Input */}
+           <div className="relative flex-1 w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 w-4 h-4" />
               <input 
                  type="text"
+                 value={keyword}
+                 onChange={(e) => setKeyword(e.target.value)}
                  placeholder="Search signals..."
                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:outline-none focus:border-red-500 transition-colors"
                  disabled={loading}
               />
            </div>
-           <button className="bg-zinc-900 border border-zinc-800 text-zinc-300 p-2 rounded-lg hover:bg-zinc-800 transition-colors disabled:opacity-50" disabled={loading}>
-              <Filter className="w-5 h-5" />
-           </button>
+           
+           {/* Platform Dropdown */}
+           <div className="relative w-full sm:w-auto">
+               <select
+                  value={platformParam}
+                  onChange={(e) => updateQuery({ platform: e.target.value })}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-4 pr-8 py-2 text-sm text-white focus:outline-none focus:border-red-500 transition-colors outline-none appearance-none cursor-pointer"
+                  disabled={loading}
+               >
+                  <option value="">All Platforms</option>
+                  <option value="web">Web</option>
+                  <option value="news">News</option>
+                  <option value="social">Social</option>
+                  <option value="forum">Forum</option>
+               </select>
+           </div>
+
+           {/* Date Config */}
+           <div className="flex items-center gap-2 w-full sm:w-auto">
+               <input 
+                  type="date"
+                  value={startDateParam}
+                  onChange={(e) => updateQuery({ startDate: e.target.value })}
+                  className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500 w-full sm:w-auto flex-1"
+                  disabled={loading}
+               />
+               <span className="text-zinc-500">-</span>
+               <input 
+                  type="date"
+                  value={endDateParam}
+                  onChange={(e) => updateQuery({ endDate: e.target.value })}
+                  className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500 w-full sm:w-auto flex-1"
+                  disabled={loading}
+               />
+           </div>
         </div>
       </div>
 
@@ -110,7 +202,6 @@ export default function SignalsPage() {
                      <td colSpan={4} className="px-6 py-16 text-center text-zinc-500">
                         <Activity className="mx-auto w-10 h-10 mb-4 opacity-20" />
                         <p className="text-zinc-400 font-medium">No signals found matching your criteria.</p>
-                        <p className="text-xs mt-1">Try to trigger an ingestion first.</p>
                      </td>
                    </tr>
                 ) : (
@@ -157,14 +248,14 @@ export default function SignalsPage() {
             </span>
             <div className="flex gap-2">
                 <button
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    onClick={() => updateQuery({ page: String(Math.max(1, page - 1)) })}
                     disabled={page === 1 || loading}
                     className="px-4 py-2 text-sm font-medium bg-zinc-900 border border-zinc-800 rounded-lg text-white hover:bg-zinc-800 disabled:opacity-50 transition-colors"
                 >
                     Previous
                 </button>
                 <button
-                    onClick={() => setPage(p => p + 1)}
+                    onClick={() => updateQuery({ page: String(page + 1) })}
                     disabled={page * limit >= total || loading}
                     className="px-4 py-2 text-sm font-medium bg-zinc-900 border border-zinc-800 rounded-lg text-white hover:bg-zinc-800 disabled:opacity-50 transition-colors"
                 >
@@ -175,4 +266,16 @@ export default function SignalsPage() {
       </div>
     </div>
   );
+}
+
+export default function SignalsPage() {
+   return (
+      <Suspense fallback={
+         <div className="p-8 flex items-center justify-center min-h-64">
+             <Loader2 className="animate-spin text-red-500 w-8 h-8" />
+         </div>
+      }>
+         <SignalsContent />
+      </Suspense>
+   );
 }
