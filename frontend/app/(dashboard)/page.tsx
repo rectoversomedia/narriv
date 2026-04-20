@@ -2,7 +2,7 @@ import { Activity, ShieldAlert, Cpu } from "lucide-react";
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-2">
           <Cpu className="text-red-500 w-8 h-8" />
@@ -14,7 +14,6 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-         {/* Placeholder Cards */}
          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-sm">
             <div className="flex justify-between items-center mb-4">
                <h3 className="text-zinc-400 font-medium text-sm">Active Alerts</h3>
@@ -33,7 +32,6 @@ export default function DashboardPage() {
          </div>
       </div>
       
-      {/* Empty State visual */}
       <div className="w-full h-64 mt-8 rounded-xl border border-dashed border-zinc-800 flex items-center justify-center flex-col text-zinc-500">
          <Activity className="w-8 h-8 mb-3 opacity-50" />
          <p>Data visualization modules are preparing...</p>
