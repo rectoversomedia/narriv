@@ -95,4 +95,23 @@ router.post("/", async (req, res) => {
     }
 });
 
+// GET signal by ID
+router.get("/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const signal = await prisma.signal.findUnique({
+            where: { id }
+        });
+        
+        if (!signal) {
+            return res.status(404).json({ error: "Signal not found" });
+        }
+        
+        res.json(signal);
+    } catch (error) {
+        console.error("Error fetching signal:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
 export default router;

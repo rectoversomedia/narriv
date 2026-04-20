@@ -39,6 +39,30 @@ function SignalsContent() {
   // Local state for debounced search input
   const [keyword, setKeyword] = useState(keywordParam);
 
+  // Detail Modal State
+  const [selectedSignalId, setSelectedSignalId] = useState<string | null>(null);
+  const [signalDetail, setSignalDetail] = useState<Signal | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  // Select signal row handler
+  const handleSelectSignal = async (id: string) => {
+    setSelectedSignalId(id);
+    setDetailLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:3000/signals/${id}`, {
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+      });
+      if (!res.ok) throw new Error("Failed to load details");
+      const data = await res.json();
+      setSignalDetail(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
   const updateQuery = useCallback((params: Record<string, string | null>) => {
     const current = new URLSearchParams(Array.from(searchParams.entries()));
     Object.entries(params).forEach(([key, value]) => {
@@ -206,7 +230,11 @@ function SignalsContent() {
                    </tr>
                 ) : (
                     signals.map((signal) => (
-                      <tr key={signal.id} className="hover:bg-zinc-800/40 transition-colors group">
+                      <tr 
+                        key={signal.id} 
+                        onClick={() => handleSelectSignal(signal.id)}
+                        className="hover:bg-zinc-800/40 transition-colors group cursor-pointer"
+                      >
                         <td className="px-6 py-4">
                            <div className="font-medium text-white max-w-xs md:max-w-md truncate">
                              {signal.title || signal.content.substring(0, 60) + "..."}
@@ -264,6 +292,65 @@ function SignalsContent() {
             </div>
         </div>
       </div>
+
+      {/* Detail Modal Overlay */}
+      {selectedSignalId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+           <div className="bg-zinc-950 border border-zinc-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
+               <div className="flex items-center justify-between p-4 px-6 border-b border-zinc-800/60 bg-zinc-900/50">
+                  <h2 className="text-lg font-semibold text-white">Signal Intelligence</h2>
+                  <button onClick={() => { setSelectedSignalId(null); setSignalDetail(null); }} className="text-zinc-500 hover:text-white p-2 text-xl font-light leading-none">×</button>
+               </div>
+               
+               <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
+                  {detailLoading ? (
+                      <div className="flex flex-col items-center justify-center py-24 text-zinc-500">
+                         <Loader2 className="animate-spin w-8 h-8 text-red-500 mb-4" />
+                         <p>Decrypting content...</p>
+                      </div>
+                  ) : signalDetail ? (
+                      <div className="space-y-6">
+                         <div>
+                            <div className="flex items-center gap-2 mb-3">
+                                {signalDetail.platform && (
+                                   <span className="bg-zinc-800 text-zinc-300 px-2 py-1 rounded text-xs font-semibold uppercase tracking-wider">{signalDetail.platform}</span>
+                                )}
+                                <span className="text-zinc-500 text-sm">{signalDetail.sourceName || "Unknown Source"}</span>
+                                <span className="text-zinc-600 text-sm mx-1">•</span>
+                                <span className="text-zinc-500 text-sm">
+                                  {signalDetail.publishedAt 
+                                        ? new Date(signalDetail.publishedAt).toLocaleString() 
+                                        : new Date(signalDetail.capturedAt).toLocaleString()}
+                                </span>
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-4">
+                                {signalDetail.title || "No Title Provided"}
+                            </h3>
+                            <div className="bg-zinc-900/50 p-5 rounded-xl border border-zinc-800/50 max-w-none">
+                                <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap">{signalDetail.content}</p>
+                            </div>
+                         </div>
+                         
+                         {/* Additional Metadata */}
+                         <div className="grid grid-cols-2 gap-4 pt-4 border-t border-zinc-800/50">
+                             <div>
+                               <p className="text-xs text-zinc-500 mb-1">Sentiment Indicator</p>
+                               <span className="text-sm font-medium text-white capitalize">{signalDetail.sentiment || "Neutral"}</span>
+                             </div>
+                             <div>
+                               <p className="text-xs text-zinc-500 mb-1">Signal ID</p>
+                               <span className="text-xs font-mono text-zinc-500">{signalDetail.id}</span>
+                             </div>
+                         </div>
+                      </div>
+                  ) : (
+                      <div className="text-center py-10 text-red-400">Failed to load content.</div>
+                  )}
+               </div>
+           </div>
+        </div>
+      )}
+
     </div>
   );
 }
