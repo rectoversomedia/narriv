@@ -3,25 +3,54 @@ import prisma from "../../prisma.js";
 
 const router = express.Router();
 
-// GET semua data dengan pagination
+// GET semua data dengan pagination dan filtering
 router.get("/", async (req, res) => {
     try {
         const page = parseInt(req.query.page, 10) || 1;
         const limit = parseInt(req.query.limit, 10) || 10;
         
+        const { keyword, platform, startDate, endDate } = req.query;
+        
         const safePage = Math.max(1, page);
         const safeLimit = Math.max(1, limit);
         const skip = (safePage - 1) * safeLimit;
 
+        // Build dynamic where clause
+        const whereClause = {};
+
+        if (keyword) {
+            whereClause.OR = [
+                { title: { contains: keyword, mode: 'insensitive' } },
+                { content: { contains: keyword, mode: 'insensitive' } }
+            ];
+        }
+
+        if (platform) {
+            whereClause.platform = platform;
+        }
+
+        if (startDate || endDate) {
+            whereClause.capturedAt = {};
+            if (startDate) {
+                whereClause.capturedAt.gte = new Date(startDate);
+            }
+            if (endDate) {
+                whereClause.capturedAt.lte = new Date(endDate);
+            }
+        }
+
         const [data, total] = await Promise.all([
             prisma.signal.findMany({
+                where: whereClause,
                 skip,
                 take: safeLimit,
                 orderBy: {
                     capturedAt: 'desc'
                 }
             }),
-            prisma.signal.count()
+            prisma.signal.count({
+                where: whereClause
+            })
         ]);
 
         res.json({
