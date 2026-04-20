@@ -51,14 +51,17 @@ export const runActorAndFetchDataset = async (actorId, inputConfig = {}) => {
 
     // LIVE MODE
     try {
+        console.log(`[APIFY] Calling actor: ${actorId} with input:`, JSON.stringify(inputConfig));
         // Run the Actor and wait for it to finish
         const run = await client.actor(actorId).call(inputConfig);
+        console.log(`[APIFY] Run completed, datasetId: ${run.defaultDatasetId}`);
         
         // Fetch and return actor results from the run's dataset (if any)
         const { items } = await client.dataset(run.defaultDatasetId).listItems();
+        console.log(`[APIFY] Items fetched: ${items.length}`);
         return items;
     } catch (error) {
-        console.error("[APIFY SERVICE] Error in Live Mode:", error);
-        throw new Error("Apify live extraction failed");
+        console.error("[APIFY SERVICE] Error in Live Mode:", error.message || error);
+        throw new Error(`Apify live extraction failed: ${error.message}`);
     }
 };

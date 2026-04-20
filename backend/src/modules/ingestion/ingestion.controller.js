@@ -31,9 +31,21 @@ export const triggerIngestion = async (req, res) => {
                  // Determine Default Actor if none provided (e.g. for Web/News)
                  // In real MVP we might map Type -> Actor. For now fallback to a mock ID
                  const actorTarget = source.actorId || "apify/google-search-scraper";
+                 
+                 // Map config for Apify. Default to searching the source's name if empty
+                 const apifyInput = {
+                     queries: `${source.name} news trending`,
+                     maxPagesPerQuery: 1,
+                     resultsPerPage: 5,
+                     ...(source.inputConfig || {})
+                 };
+
+                 console.log(`[INGESTION] Starting actor: ${actorTarget}`);
+                 console.log(`[INGESTION] Input:`, JSON.stringify(apifyInput));
 
                  // 2. Call Apify Service
-                 const dataset = await runActorAndFetchDataset(actorTarget, source.inputConfig);
+                 const dataset = await runActorAndFetchDataset(actorTarget, apifyInput);
+                 console.log(`[INGESTION] Dataset items received: ${dataset?.length ?? 0}`);
 
                  if (!dataset || dataset.length === 0) {
                      await prisma.ingestionJob.update({
@@ -43,12 +55,39 @@ export const triggerIngestion = async (req, res) => {
                      return;
                  }
 
-                 // 3. Normalization: Save to RawDocuments & Signals
+                 // 3. Normalization: Flatten dataset into individual items
+                 //    google-search-scraper returns { organicResults: [...] } per query
+                 //    We need to flatten into individual results
                  let processedCount = 0;
-
+                 const flatItems = [];
                  for (const item of dataset) {
+                     if (Array.isArray(item.organicResults) && item.organicResults.length > 0) {
+                         // Flatten organic results and attach query context
+                         for (const result of item.organicResults) {
+                             flatItems.push({
+                                 title: result.title,
+                                 url: result.url,
+                                 text: result.description || result.snippet || result.title,
+                                 description: result.description,
+                                 author: null,
+                                 publishedDate: null,
+                                 _searchQuery: item.searchQuery?.query || ""
+                             });
+                         }
+                     } else {
+                         // Fallback: treat item directly (mock mode or other actors)
+                         flatItems.push(item);
+                     }
+                 }
+
+                 console.log(`[INGESTION] Flat items to process: ${flatItems.length}`);
+
+                 for (const item of flatItems) {
                       const content = item.text || item.description || item.snippet || item.title || "";
-                      if (!content) continue;
+                      if (!content) {
+                          console.log(`[INGESTION] Skipping item with no content:`, JSON.stringify(item).substring(0, 100));
+                          continue;
+                      }
 
                       // Use item.id, item.url, or content hash as external ID
                       const externalId = item.id || item.url || ((item.text ? item.text.substring(0,20) : "") + Date.now().toString());
@@ -84,7 +123,7 @@ export const triggerIngestion = async (req, res) => {
                       
                       // Also set dedupeHash for Signal
                       const dedupeHash = Buffer.from(`${source.id}-${externalId}`).toString('base64');
-                      
+                      console.log(`[INGESTION] Saving signal #${processedCount + 1}: ${createdDoc.title}`);
                       await prisma.signal.create({
                           data: {
                               workspaceId: createdDoc.workspaceId,
@@ -93,6 +132,7 @@ export const triggerIngestion = async (req, res) => {
                               content: createdDoc.content,
                               sourceName: createdDoc.sourceName,
                               sourceType: createdDoc.sourceType,
+                              platform: createdDoc.sourceType || source.type || null,
                               url: createdDoc.url,
                               publishedAt: createdDoc.publishedAt,
                               dedupeHash: dedupeHash,

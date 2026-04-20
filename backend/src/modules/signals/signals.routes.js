@@ -32,10 +32,18 @@ router.get("/", async (req, res) => {
         if (startDate || endDate) {
             whereClause.capturedAt = {};
             if (startDate) {
-                whereClause.capturedAt.gte = new Date(startDate);
+                const dateStart = new Date(startDate);
+                if (isNaN(dateStart.getTime())) {
+                    return res.status(400).json({ error: "Invalid startDate format. Use ISO-8601 or YYYY-MM-DD." });
+                }
+                whereClause.capturedAt.gte = dateStart;
             }
             if (endDate) {
-                whereClause.capturedAt.lte = new Date(endDate);
+                const dateEnd = new Date(endDate);
+                if (isNaN(dateEnd.getTime())) {
+                    return res.status(400).json({ error: "Invalid endDate format. Use ISO-8601 or YYYY-MM-DD." });
+                }
+                whereClause.capturedAt.lte = dateEnd;
             }
         }
 
