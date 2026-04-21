@@ -8,6 +8,7 @@ import authRoutes from "./modules/auth/auth.routes.js";
 import sourcesRoutes from "./modules/sources/sources.routes.js";
 import ingestionRoutes from "./modules/ingestion/ingestion.routes.js";
 import aiRoutes from "./modules/ai/ai.routes.js";
+import "./workers/ai-analysis.worker.js";
 
 dotenv.config();
 

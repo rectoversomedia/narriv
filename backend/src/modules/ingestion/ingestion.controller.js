@@ -1,5 +1,6 @@
 import prisma from "../../prisma.js";
 import { runActorAndFetchDataset } from "../apify/apify.service.js";
+import { addAnalysisJob } from "../../lib/queue.js";
 
 export const triggerIngestion = async (req, res) => {
     try {
@@ -124,7 +125,7 @@ export const triggerIngestion = async (req, res) => {
                       // Also set dedupeHash for Signal
                       const dedupeHash = Buffer.from(`${source.id}-${externalId}`).toString('base64');
                       console.log(`[INGESTION] Saving signal #${processedCount + 1}: ${createdDoc.title}`);
-                      await prisma.signal.create({
+                      const createdSignal = await prisma.signal.create({
                           data: {
                               workspaceId: createdDoc.workspaceId,
                               rawDocumentId: createdDoc.id,
@@ -139,6 +140,9 @@ export const triggerIngestion = async (req, res) => {
                               sentiment: "neutral" 
                           }
                       });
+                      
+                      // Queue for AI Analysis
+                      await addAnalysisJob(createdSignal.id);
                       
                       processedCount++;
                  }
