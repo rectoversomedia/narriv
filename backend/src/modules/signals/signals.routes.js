@@ -105,25 +105,36 @@ router.post("/", async (req, res) => {
     }
 });
 
-// GET signal by ID (includes existing analysis if any)
+// GET signal by ID — returns { signal, analysis }
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
+
         const signal = await prisma.signal.findUnique({
             where: { id },
-            include: { analyses: true }
         });
-        
+
         if (!signal) {
             return res.status(404).json({ error: "Signal not found" });
         }
-        
-        res.json(signal);
+
+        // Fetch the most recent analysis for this signal
+        const latestAnalysis = await prisma.signalAnalysis.findFirst({
+            where: { signalId: id },
+            orderBy: { createdAt: "desc" },
+        });
+
+        return res.json({
+            signal,
+            analysis: latestAnalysis ?? { status: "processing" },
+        });
+
     } catch (error) {
         console.error("Error fetching signal:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 });
+
 
 // POST /signals/:id/analyze — Run AI analysis and save to SignalAnalysis
 router.post("/:id/analyze", async (req, res) => {
