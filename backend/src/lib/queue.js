@@ -16,12 +16,24 @@ export const aiAnalysisQueue = new Queue("ai-analysis", {
 
 /**
  * Adds a signal analysis job to the queue.
+ * Uses signalId as the jobId to prevent duplicate jobs —
+ * BullMQ will skip adding a job if one with the same ID already exists.
+ *
  * @param {string} signalId - The ID of the signal to analyze.
  */
 export const addAnalysisJob = async (signalId) => {
     try {
-        await aiAnalysisQueue.add("analyze", { signalId });
-        console.log(`[QUEUE] Analysis job added for signal: ${signalId}`);
+        const job = await aiAnalysisQueue.add(
+            "analyze",
+            { signal_id: signalId },
+            { jobId: `signal:${signalId}` }
+        );
+
+        if (job) {
+            console.log(`[QUEUE] Job enqueued for signal: ${signalId} (jobId: ${job.id})`);
+        } else {
+            console.log(`[QUEUE] Duplicate job skipped for signal: ${signalId}`);
+        }
     } catch (error) {
         console.error(`[QUEUE] Failed to add job for signal ${signalId}:`, error.message);
     }

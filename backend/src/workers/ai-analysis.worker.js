@@ -6,7 +6,7 @@ import { analyzeSignal } from "../modules/ai/ai.service.js";
 const worker = new Worker(
     "ai-analysis",
     async (job) => {
-        const { signalId } = job.data;
+        const { signal_id: signalId } = job.data;
         console.log(`[WORKER] Processing job ${job.id} for signal: ${signalId}`);
 
         // 1. Fetch signal
