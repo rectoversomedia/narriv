@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, Suspense } from "react";
+import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { Activity, Loader2, Search, Brain, Zap, Users, TrendingUp, FileText, Lightbulb } from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
@@ -182,22 +182,52 @@ function SignalsContent() {
   const [selectedSignalId, setSelectedSignalId] = useState<string | null>(null);
   const [signalDetail, setSignalDetail] = useState<SignalDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Stop polling helper
+  const stopPolling = useCallback(() => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  }, []);
+
+  const fetchSignalDetail = useCallback(async (id: string) => {
+    const token = localStorage.getItem("token");
+    const res = await fetch(`http://localhost:3000/signals/${id}`, {
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => null);
+      throw new Error(errData?.error || "Failed to load signal details");
+    }
+    return res.json() as Promise<SignalDetail>;
+  }, []);
 
   const handleSelectSignal = async (id: string) => {
+    stopPolling();
     setSelectedSignalId(id);
     setSignalDetail(null);
     setDetailLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:3000/signals/${id}`, {
-        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => null);
-        throw new Error(errData?.error || "Failed to load signal details");
-      }
-      const data: SignalDetail = await res.json();
+      const data = await fetchSignalDetail(id);
       setSignalDetail(data);
+
+      // Mulai polling jika analisis belum selesai
+      if (!data.analysis.id) {
+        pollingRef.current = setInterval(async () => {
+          try {
+            const updated = await fetchSignalDetail(id);
+            setSignalDetail(updated);
+            // Berhenti polling saat analisis sudah ada
+            if (updated.analysis.id) {
+              stopPolling();
+            }
+          } catch {
+            stopPolling();
+          }
+        }, 4000);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -262,6 +292,7 @@ function SignalsContent() {
   }, [page, limit, keywordParam, platformParam, startDateParam, endDateParam]);
 
   const closeModal = () => {
+    stopPolling();
     setSelectedSignalId(null);
     setSignalDetail(null);
   };

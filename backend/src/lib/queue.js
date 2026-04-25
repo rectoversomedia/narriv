@@ -26,7 +26,7 @@ export const addAnalysisJob = async (signalId) => {
         const job = await aiAnalysisQueue.add(
             "analyze",
             { signal_id: signalId },
-            { jobId: `signal:${signalId}` }
+            { jobId: `signal_${signalId}` }  // NOTE: BullMQ tidak izinkan ':' di job ID
         );
 
         if (job) {
