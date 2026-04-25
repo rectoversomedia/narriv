@@ -34,6 +34,14 @@ export const getSummary = async (req, res) => {
             }
         });
 
+        const trendsRaw = await prisma.$queryRaw`
+            SELECT TO_CHAR("capturedAt", 'YYYY-MM-DD') as date, CAST(COUNT(*) AS INTEGER) as count
+            FROM "Signal"
+            WHERE "capturedAt" IS NOT NULL
+            GROUP BY TO_CHAR("capturedAt", 'YYYY-MM-DD')
+            ORDER BY date ASC
+        `;
+
         const response = {
             kpis: {
                 total_signals: totalSignals,
@@ -42,7 +50,7 @@ export const getSummary = async (req, res) => {
                 negative_percentage: analyzedCount ? Math.round((negative / analyzedCount) * 100) : 0,
                 neutral_percentage: analyzedCount ? Math.round((neutral / analyzedCount) * 100) : 0
             },
-            trends: [],
+            trends: trendsRaw,
             distribution: {
                 positive,
                 negative,
