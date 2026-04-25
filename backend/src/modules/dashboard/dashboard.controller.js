@@ -2,20 +2,29 @@ import prisma from "../../prisma.js";
 
 export const getSummary = async (req, res) => {
     try {
-        // Query signals table and join with signal_analysis
-        const signals = await prisma.signal.findMany({
-            include: {
-                analyses: {
-                    orderBy: {
-                        createdAt: 'desc'
-                    },
-                    take: 1
+        // Run both queries in parallel for faster response (<500ms)
+        const [signals, trendsRaw] = await Promise.all([
+            prisma.signal.findMany({
+                include: {
+                    analyses: {
+                        orderBy: {
+                            createdAt: 'desc'
+                        },
+                        take: 1
+                    }
+                },
+                orderBy: {
+                    capturedAt: 'desc'
                 }
-            },
-            orderBy: {
-                capturedAt: 'desc'
-            }
-        });
+            }),
+            prisma.$queryRaw`
+                SELECT TO_CHAR("capturedAt", 'YYYY-MM-DD') as date, CAST(COUNT(*) AS INTEGER) as count
+                FROM "Signal"
+                WHERE "capturedAt" IS NOT NULL
+                GROUP BY TO_CHAR("capturedAt", 'YYYY-MM-DD')
+                ORDER BY date ASC
+            `
+        ]);
 
         const totalSignals = signals.length;
 
@@ -59,14 +68,6 @@ export const getSummary = async (req, res) => {
             published_at: signal.publishedAt || signal.capturedAt
         }));
 
-        const trendsRaw = await prisma.$queryRaw`
-            SELECT TO_CHAR("capturedAt", 'YYYY-MM-DD') as date, CAST(COUNT(*) AS INTEGER) as count
-            FROM "Signal"
-            WHERE "capturedAt" IS NOT NULL
-            GROUP BY TO_CHAR("capturedAt", 'YYYY-MM-DD')
-            ORDER BY date ASC
-        `;
-
         const response = {
             kpis: {
                 total_signals: totalSignals,
@@ -77,7 +78,7 @@ export const getSummary = async (req, res) => {
                 mixed_percentage: analyzedCount ? Math.round((mixed / analyzedCount) * 100) : 0
             },
             trends: trendsRaw,
-            distribution: {
+            sentiment_distribution: {
                 positive,
                 negative,
                 neutral,
