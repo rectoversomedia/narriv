@@ -11,6 +11,9 @@ export const getSummary = async (req, res) => {
                     },
                     take: 1
                 }
+            },
+            orderBy: {
+                capturedAt: 'desc'
             }
         });
 
@@ -48,6 +51,14 @@ export const getSummary = async (req, res) => {
             count: platformsMap[platform]
         })).sort((a, b) => b.count - a.count);
 
+        const latest_signals = signals.slice(0, 5).map(signal => ({
+            id: signal.id,
+            title: signal.title || "Untitled Signal",
+            platform: signal.platform || "unknown",
+            sentiment: signal.analyses[0]?.sentiment || signal.sentiment || "unanalyzed",
+            published_at: signal.publishedAt || signal.capturedAt
+        }));
+
         const trendsRaw = await prisma.$queryRaw`
             SELECT TO_CHAR("capturedAt", 'YYYY-MM-DD') as date, CAST(COUNT(*) AS INTEGER) as count
             FROM "Signal"
@@ -73,7 +84,7 @@ export const getSummary = async (req, res) => {
                 mixed
             },
             platform_distribution,
-            latest_signals: []
+            latest_signals
         };
         
         res.status(200).json(response);
