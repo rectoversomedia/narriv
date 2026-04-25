@@ -21,6 +21,8 @@ export const getSummary = async (req, res) => {
         let neutral = 0;
         let mixed = 0;
         let analyzedCount = 0;
+        
+        const platformsMap = {};
 
         signals.forEach(signal => {
             // Get sentiment from latest analysis, fallback to signal.sentiment
@@ -34,7 +36,17 @@ export const getSummary = async (req, res) => {
                 else if (s === 'neutral') neutral++;
                 else if (s === 'mixed') mixed++;
             }
+
+            // Platform distribution logic
+            const platform = signal.platform || 'unknown';
+            if (!platformsMap[platform]) platformsMap[platform] = 0;
+            platformsMap[platform]++;
         });
+
+        const platform_distribution = Object.keys(platformsMap).map(platform => ({
+            platform,
+            count: platformsMap[platform]
+        })).sort((a, b) => b.count - a.count);
 
         const trendsRaw = await prisma.$queryRaw`
             SELECT TO_CHAR("capturedAt", 'YYYY-MM-DD') as date, CAST(COUNT(*) AS INTEGER) as count
@@ -60,6 +72,7 @@ export const getSummary = async (req, res) => {
                 neutral,
                 mixed
             },
+            platform_distribution,
             latest_signals: []
         };
         
