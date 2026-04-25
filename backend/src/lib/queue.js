@@ -38,3 +38,35 @@ export const addAnalysisJob = async (signalId) => {
         console.error(`[QUEUE] Failed to add job for signal ${signalId}:`, error.message);
     }
 };
+
+// ── Alert Detection Queue ─────────────────────────────────────────────────────
+
+export const alertDetectionQueue = new Queue("alert-detection", {
+    connection,
+    defaultJobOptions: {
+        removeOnComplete: true,
+        removeOnFail: false,
+    },
+});
+
+/**
+ * Schedules the recurring alert detection job.
+ * By default, this runs every 1 hour.
+ */
+export const scheduleAlertDetection = async () => {
+    try {
+        await alertDetectionQueue.add(
+            "detect-alerts",
+            {}, // no specific payload needed; worker fetches workspaces
+            {
+                repeat: {
+                    pattern: "0 * * * *", // Every hour on the hour
+                },
+                jobId: "recurring-alert-detection"
+            }
+        );
+        console.log("[QUEUE] Scheduled recurring alert detection job (Hourly).");
+    } catch (error) {
+        console.error("[QUEUE] Failed to schedule alert detection:", error.message);
+    }
+};

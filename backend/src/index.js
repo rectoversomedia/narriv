@@ -10,8 +10,13 @@ import ingestionRoutes from "./modules/ingestion/ingestion.routes.js";
 import aiRoutes from "./modules/ai/ai.routes.js";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes.js";
 import "./workers/ai-analysis.worker.js";
+import "./workers/alert.worker.js";
+import { scheduleAlertDetection } from "./lib/queue.js";
 
 dotenv.config();
+
+// Initialize Scheduled Jobs
+scheduleAlertDetection();
 
 const app = express();
 app.use(cors());
