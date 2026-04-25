@@ -53,7 +53,7 @@ export function LatestSignalsTable({ signals }: LatestSignalsTableProps) {
               {signals.map((signal) => (
                 <tr 
                   key={signal.id} 
-                  onClick={() => router.push(`/signals/${signal.id}`)}
+                  onClick={() => router.push('/signals')}
                   className="hover:bg-zinc-800/50 transition-colors cursor-pointer"
                 >
                   <td className="px-4 py-3 font-medium text-zinc-200 max-w-[200px] truncate">
