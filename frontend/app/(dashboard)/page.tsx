@@ -68,11 +68,10 @@ export default function DashboardPage() {
           iconColor="text-blue-500" 
         />
         <KpiCard 
-          title="Analyzed" 
-          value={data.kpis.analyzed_signals} 
-          subtitle="AI processed" 
-          icon={CheckCircle} 
-          iconColor="text-emerald-500" 
+          title="Neutral Sentiment" 
+          value={`${data.kpis.neutral_percentage}%`} 
+          icon={Activity} 
+          iconColor="text-zinc-500" 
         />
         <KpiCard 
           title="Positive Sentiment" 
