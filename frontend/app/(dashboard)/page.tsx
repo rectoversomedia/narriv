@@ -1,40 +1,58 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Activity, Cpu, ThumbsUp, ThumbsDown, CheckCircle, BarChart3 } from "lucide-react";
+import { Activity, Cpu, ThumbsUp, ThumbsDown, CheckCircle, AlertTriangle, RefreshCcw } from "lucide-react";
 import { KpiCard } from "../../components/dashboard/KpiCard";
 import { TrendChart } from "../../components/dashboard/TrendChart";
 import { DistributionChart } from "../../components/dashboard/DistributionChart";
 import { PlatformBarChart } from "../../components/dashboard/PlatformBarChart";
 import { LatestSignalsTable } from "../../components/dashboard/LatestSignalsTable";
+import { DashboardSkeleton } from "../../components/dashboard/DashboardSkeleton";
 
 export default function DashboardPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchSummary = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("http://localhost:3000/api/dashboard/summary");
+      if (!response.ok) {
+        throw new Error(`Failed to load data (Status: ${response.status})`);
+      }
+      const json = await response.json();
+      setData(json);
+    } catch (err: any) {
+      console.error("Failed to fetch dashboard summary", err);
+      setError(err.message || "An unexpected error occurred while loading dashboard data.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchSummary = async () => {
-      try {
-        const response = await fetch("http://localhost:3000/api/dashboard/summary");
-        if (response.ok) {
-          const json = await response.json();
-          setData(json);
-        }
-      } catch (error) {
-        console.error("Failed to fetch dashboard summary", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     fetchSummary();
   }, []);
 
-  if (loading || !data) {
+  if (loading) {
+    return <DashboardSkeleton />;
+  }
+
+  if (error || !data) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center min-h-[50vh] text-zinc-500 space-y-4">
-        <Activity className="w-8 h-8 animate-pulse text-blue-500" />
-        <p>Initializing command center...</p>
+        <AlertTriangle className="w-12 h-12 text-red-500 opacity-80" />
+        <h2 className="text-xl font-semibold text-white">Dashboard Unavailable</h2>
+        <p className="max-w-md text-center">{error || "Could not load data from the server."}</p>
+        <button 
+          onClick={fetchSummary}
+          className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2 transition-colors"
+        >
+          <RefreshCcw className="w-4 h-4" />
+          Retry Connection
+        </button>
       </div>
     );
   }
