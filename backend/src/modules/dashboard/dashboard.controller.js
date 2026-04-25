@@ -19,6 +19,7 @@ export const getSummary = async (req, res) => {
         let positive = 0;
         let negative = 0;
         let neutral = 0;
+        let mixed = 0;
         let analyzedCount = 0;
 
         signals.forEach(signal => {
@@ -31,6 +32,7 @@ export const getSummary = async (req, res) => {
                 if (s === 'positive') positive++;
                 else if (s === 'negative') negative++;
                 else if (s === 'neutral') neutral++;
+                else if (s === 'mixed') mixed++;
             }
         });
 
@@ -48,13 +50,15 @@ export const getSummary = async (req, res) => {
                 analyzed_signals: analyzedCount,
                 positive_percentage: analyzedCount ? Math.round((positive / analyzedCount) * 100) : 0,
                 negative_percentage: analyzedCount ? Math.round((negative / analyzedCount) * 100) : 0,
-                neutral_percentage: analyzedCount ? Math.round((neutral / analyzedCount) * 100) : 0
+                neutral_percentage: analyzedCount ? Math.round((neutral / analyzedCount) * 100) : 0,
+                mixed_percentage: analyzedCount ? Math.round((mixed / analyzedCount) * 100) : 0
             },
             trends: trendsRaw,
             distribution: {
                 positive,
                 negative,
-                neutral
+                neutral,
+                mixed
             },
             latest_signals: []
         };
