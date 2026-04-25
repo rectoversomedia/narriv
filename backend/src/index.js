@@ -8,6 +8,7 @@ import authRoutes from "./modules/auth/auth.routes.js";
 import sourcesRoutes from "./modules/sources/sources.routes.js";
 import ingestionRoutes from "./modules/ingestion/ingestion.routes.js";
 import aiRoutes from "./modules/ai/ai.routes.js";
+import dashboardRoutes from "./modules/dashboard/dashboard.routes.js";
 import "./workers/ai-analysis.worker.js";
 
 dotenv.config();
@@ -27,6 +28,7 @@ app.use("/auth", authRoutes);
 app.use("/sources", sourcesRoutes);
 app.use("/ingestion", ingestionRoutes);
 app.use("/ai", aiRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 app.listen(3000, () => {
     console.log("Server running on http://localhost:3000");
