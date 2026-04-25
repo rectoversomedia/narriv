@@ -5,6 +5,7 @@ import { Activity, Cpu, ThumbsUp, ThumbsDown, CheckCircle, BarChart3 } from "luc
 import { KpiCard } from "../../components/dashboard/KpiCard";
 import { TrendChart } from "../../components/dashboard/TrendChart";
 import { DistributionChart } from "../../components/dashboard/DistributionChart";
+import { PlatformBarChart } from "../../components/dashboard/PlatformBarChart";
 import { LatestSignalsTable } from "../../components/dashboard/LatestSignalsTable";
 
 export default function DashboardPage() {
@@ -100,9 +101,10 @@ export default function DashboardPage() {
             data={sentimentData} 
             colors={["#10b981", "#ef4444", "#3b82f6", "#f59e0b"]}
           />
-          <DistributionChart 
+          <PlatformBarChart 
             title="Platform Distribution" 
             data={data.platform_distribution.map((p: any) => ({ name: p.platform, value: p.count }))} 
+            colors={["#3b82f6", "#8b5cf6", "#f59e0b", "#10b981", "#ef4444"]}
           />
         </div>
         <div className="lg:col-span-2">
