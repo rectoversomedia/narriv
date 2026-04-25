@@ -1,5 +1,8 @@
+"use client";
+
 import React from "react";
 import { Activity } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface Signal {
   id: string;
@@ -14,6 +17,8 @@ interface LatestSignalsTableProps {
 }
 
 export function LatestSignalsTable({ signals }: LatestSignalsTableProps) {
+  const router = useRouter();
+
   const getSentimentColor = (sentiment: string) => {
     switch (sentiment.toLowerCase()) {
       case "positive": return "text-emerald-500 bg-emerald-500/10 border-emerald-500/20";
@@ -46,7 +51,11 @@ export function LatestSignalsTable({ signals }: LatestSignalsTableProps) {
             </thead>
             <tbody className="divide-y divide-zinc-800">
               {signals.map((signal) => (
-                <tr key={signal.id} className="hover:bg-zinc-800/50 transition-colors">
+                <tr 
+                  key={signal.id} 
+                  onClick={() => router.push(`/signals/${signal.id}`)}
+                  className="hover:bg-zinc-800/50 transition-colors cursor-pointer"
+                >
                   <td className="px-4 py-3 font-medium text-zinc-200 max-w-[200px] truncate">
                     {signal.title}
                   </td>
