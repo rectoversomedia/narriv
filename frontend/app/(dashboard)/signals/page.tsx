@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef, Suspense } from "react";
-import { Activity, Loader2, Search, Brain, Zap, Users, TrendingUp, FileText, Lightbulb } from "lucide-react";
+import { Activity, Loader2, Search, Brain, Zap, Users, TrendingUp, FileText, Lightbulb, ExternalLink } from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 type Signal = {
@@ -13,6 +13,7 @@ type Signal = {
   publishedAt: string | null;
   capturedAt: string;
   sentiment: string | null;
+  url: string | null;
 };
 
 type Analysis = {
@@ -516,8 +517,19 @@ function SignalsContent() {
                   </div>
 
                   {/* Signal ID footer */}
-                  <div className="pt-2 border-t border-zinc-800/50">
+                  <div className="pt-2 border-t border-zinc-800/50 flex items-center justify-between">
                     <p className="text-xs text-zinc-600 font-mono">ID: {signalDetail.signal.id}</p>
+                    {signalDetail.signal.url && (
+                      <a
+                        href={signalDetail.signal.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs font-medium text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 px-3 py-1.5 rounded-lg transition-colors"
+                      >
+                        <ExternalLink size={12} />
+                        Read More
+                      </a>
+                    )}
                   </div>
                 </>
               ) : (
