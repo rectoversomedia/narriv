@@ -26,7 +26,6 @@ const alertWorker = new Worker(
                     totalAlertsFound += alerts.length;
                     console.log(`\n[ALERT TRIGGERED] Workspace: ${workspace.name} (${workspace.id})`);
                     
-                    // As per requirement: "Do not save yet (logic only)"
                     alerts.forEach((alert, index) => {
                         console.log(`  --> Alert ${index + 1}: [${alert.severity.toUpperCase()}] ${alert.title}`);
                         console.log(`      Reason: ${alert.whatHappened}`);

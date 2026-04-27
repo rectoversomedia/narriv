@@ -51,7 +51,7 @@ export const alertDetectionQueue = new Queue("alert-detection", {
 
 /**
  * Schedules the recurring alert detection job.
- * By default, this runs every 1 hour.
+ * By default, this runs every 15 minutes.
  */
 export const scheduleAlertDetection = async () => {
     try {
@@ -60,12 +60,12 @@ export const scheduleAlertDetection = async () => {
             {}, // no specific payload needed; worker fetches workspaces
             {
                 repeat: {
-                    pattern: "0 * * * *", // Every hour on the hour
+                    pattern: "*/15 * * * *", // Every 15 minutes
                 },
                 jobId: "recurring-alert-detection"
             }
         );
-        console.log("[QUEUE] Scheduled recurring alert detection job (Hourly).");
+        console.log("[QUEUE] Scheduled recurring alert detection job (Every 15 minutes).");
     } catch (error) {
         console.error("[QUEUE] Failed to schedule alert detection:", error.message);
     }
