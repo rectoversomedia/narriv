@@ -84,4 +84,32 @@ router.get("/:id", async (req, res) => {
     }
 });
 
+// PATCH /api/alerts/:id/status - Update alert status
+router.patch("/:id/status", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        const validStatuses = ["open", "acknowledged", "resolved"];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ 
+                error: `Invalid status. Must be one of: ${validStatuses.join(", ")}` 
+            });
+        }
+
+        const updatedAlert = await prisma.alert.update({
+            where: { id },
+            data: { status },
+        });
+
+        res.json(updatedAlert);
+    } catch (error) {
+        if (error.code === 'P2025') {
+            return res.status(404).json({ error: "Alert not found" });
+        }
+        console.error("Error updating alert status:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
 export default router;
