@@ -44,6 +44,11 @@ export const addAnalysisJob = async (signalId) => {
 export const alertDetectionQueue = new Queue("alert-detection", {
     connection,
     defaultJobOptions: {
+        attempts: 3,
+        backoff: {
+            type: "exponential",
+            delay: 10000,
+        },
         removeOnComplete: true,
         removeOnFail: false,
     },

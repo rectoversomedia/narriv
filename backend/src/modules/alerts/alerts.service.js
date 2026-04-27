@@ -34,6 +34,7 @@ export async function detectAlerts(workspaceId) {
     }
 
     // -- Rule 1: Spike Detection --
+    console.log(`[ALERTS] Checking Rule 1 (Spike) for workspace: ${workspaceId}`);
     // Fetch current 24h volume
     const currentVolume = await prisma.signal.count({
         where: {
@@ -56,10 +57,13 @@ export async function detectAlerts(workspaceId) {
         }
     });
 
+    console.log(`[ALERTS] Volume: Current=${currentVolume}, Previous=${previousVolume}`);
+
     // Only alert if previous volume > 0 and current is > 150% of previous.
     if (previousVolume > 0 && currentVolume > previousVolume * 1.5) {
         const type = "positioning";
         if (!(await hasAlertToday(type))) {
+            console.log(`[ALERTS] Spike detected! Fetching context for AI...`);
             const topSignals = await prisma.signal.findMany({
                 where: { workspaceId, capturedAt: { gte: yesterday, lte: now } },
                 orderBy: { capturedAt: 'desc' },
@@ -89,11 +93,15 @@ export async function detectAlerts(workspaceId) {
                     status: "open",
                 }
             });
+            console.log(`[ALERTS] Created Spike Alert: ${newAlert.id}`);
             alerts.push(newAlert);
+        } else {
+            console.log(`[ALERTS] Spike detected but alert of type ${type} already exists for today. Skipping.`);
         }
     }
 
     // -- Rule 2: Negative Sentiment Spike --
+    console.log(`[ALERTS] Checking Rule 2 (Sentiment) for workspace: ${workspaceId}`);
     // Fetch all signals from the last 24h that have a sentiment
     const recentSignals = await prisma.signal.findMany({
         where: {
@@ -114,9 +122,12 @@ export async function detectAlerts(workspaceId) {
         const negativeCount = recentSignals.filter(s => s.sentiment.toLowerCase() === "negative").length;
         const negativePercentage = (negativeCount / totalAnalyzed) * 100;
 
+        console.log(`[ALERTS] Sentiment: Total=${totalAnalyzed}, Negative=${negativeCount} (${Math.round(negativePercentage)}%)`);
+
         if (negativePercentage > 40 && totalAnalyzed >= 5) {
             const type = "risk";
             if (!(await hasAlertToday(type))) {
+                console.log(`[ALERTS] Negative sentiment spike detected! Fetching context for AI...`);
                 const topNegativeSignals = await prisma.signal.findMany({
                     where: { 
                         workspaceId, 
@@ -150,7 +161,10 @@ export async function detectAlerts(workspaceId) {
                         status: "open",
                     }
                 });
+                console.log(`[ALERTS] Created Sentiment Alert: ${newAlert.id}`);
                 alerts.push(newAlert);
+            } else {
+                console.log(`[ALERTS] Sentiment spike detected but alert of type ${type} already exists for today. Skipping.`);
             }
         }
     }

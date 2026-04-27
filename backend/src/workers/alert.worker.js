@@ -20,16 +20,21 @@ const alertWorker = new Worker(
 
             // 2. Evaluate rules for each workspace
             for (const workspace of workspaces) {
-                const alerts = await detectAlerts(workspace.id);
-                
-                if (alerts.length > 0) {
-                    totalAlertsFound += alerts.length;
-                    console.log(`\n[ALERT TRIGGERED] Workspace: ${workspace.name} (${workspace.id})`);
+                try {
+                    const alerts = await detectAlerts(workspace.id);
                     
-                    alerts.forEach((alert, index) => {
-                        console.log(`  --> Alert ${index + 1}: [${alert.severity.toUpperCase()}] ${alert.title}`);
-                        console.log(`      Reason: ${alert.whatHappened}`);
-                    });
+                    if (alerts.length > 0) {
+                        totalAlertsFound += alerts.length;
+                        console.log(`\n[ALERT TRIGGERED] Workspace: ${workspace.name} (${workspace.id})`);
+                        
+                        alerts.forEach((alert, index) => {
+                            console.log(`  --> Alert ${index + 1}: [${alert.severity.toUpperCase()}] ${alert.title}`);
+                            console.log(`      Reason: ${alert.whatHappened}`);
+                        });
+                    }
+                } catch (workspaceError) {
+                    console.error(`[WORKER] Failed to evaluate alerts for workspace ${workspace.name}:`, workspaceError.message);
+                    // Continue to the next workspace
                 }
             }
 
