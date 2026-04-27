@@ -61,6 +61,41 @@ function buildSignalUserMessage(title, content) {
     return lines.join("\n\n");
 }
 
+/**
+ * Builds the strict system prompt for alert enhancement.
+ */
+function buildAlertEnhancementSystemPrompt() {
+    return `You are an expert PR & crisis communications strategist.
+Your task is to analyze an automated intelligence alert and the recent signals that triggered it, then generate strategic insights.
+
+STRICT RULES:
+1. Return ONLY a raw JSON object. No markdown. No code fences. No explanation.
+2. All fields are REQUIRED.
+3. "why_it_matters" must be a concise explanation (2-3 sentences) of the strategic significance of this alert.
+4. "what_to_do" must be a single, actionable recommendation (1-2 sentences) for the PR/comms team.
+
+REQUIRED OUTPUT FORMAT (pure JSON):
+{
+  "why_it_matters": "<explanation>",
+  "what_to_do": "<recommendation>"
+}`;
+}
+
+/**
+ * Builds the user message for alert enhancement.
+ */
+function buildAlertEnhancementUserMessage(alertData, signalsContext) {
+    return `ALERT TYPE: ${alertData.type}
+ALERT SEVERITY: ${alertData.severity}
+ALERT TITLE: ${alertData.title}
+WHAT HAPPENED: ${alertData.whatHappened}
+
+RECENT RELEVANT SIGNALS CONTEXT:
+${signalsContext}
+
+Analyze the above and provide the strategic insights in JSON.`;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // INTERNAL HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -175,6 +210,65 @@ Please return ONLY a valid JSON object with all required fields. No markdown. No
  */
 export const analyzeText = async (text) => {
     return analyzeSignal(null, text);
+};
+
+/**
+ * Analyzes an alert and its context to generate strategic insights.
+ *
+ * @param {object} alertData - The basic alert information.
+ * @param {string} signalsContext - Summarized text of recent signals that triggered the alert.
+ * @returns {Promise<object>} - { whyItMatters, whatToDo }
+ */
+export const enhanceAlert = async (alertData, signalsContext) => {
+    if (!OPENAI_API_KEY) {
+        console.warn("[AI] Cannot enhance alert: Missing API key.");
+        return { whyItMatters: null, whatToDo: null };
+    }
+
+    const systemPrompt = buildAlertEnhancementSystemPrompt();
+    const userMessage = buildAlertEnhancementUserMessage(alertData, signalsContext);
+
+    const messages = [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userMessage }
+    ];
+
+    try {
+        console.log(`[AI] enhanceAlert running for alert: "${alertData.title}"`);
+        const rawContent = await callOpenAI(messages);
+        const parsed = tryParseJSON(rawContent);
+
+        if (parsed.ok && parsed.data) {
+            return {
+                whyItMatters: parsed.data.why_it_matters || null,
+                whatToDo: parsed.data.what_to_do || null
+            };
+        } else {
+            // Attempt 2 (Retry)
+            const correctionMessages = [
+                ...messages,
+                { role: "assistant", content: rawContent },
+                {
+                    role: "user",
+                    content: `Your previous response was not valid JSON. Parse error: "${parsed.error}". Please return ONLY a valid JSON object.`
+                }
+            ];
+            const rawRetry = await callOpenAI(correctionMessages);
+            const parsedRetry = tryParseJSON(rawRetry);
+            
+            if (parsedRetry.ok && parsedRetry.data) {
+                 return {
+                    whyItMatters: parsedRetry.data.why_it_matters || null,
+                    whatToDo: parsedRetry.data.what_to_do || null
+                };
+            }
+            console.warn(`[AI] enhanceAlert failed to parse JSON after retry.`);
+            return { whyItMatters: null, whatToDo: null };
+        }
+    } catch (error) {
+        console.error(`[AI] enhanceAlert error:`, error.message);
+        return { whyItMatters: null, whatToDo: null };
+    }
 };
 
 export default client;

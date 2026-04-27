@@ -1,4 +1,5 @@
 import prisma from "../../prisma.js";
+import { enhanceAlert } from "../ai/ai.service.js";
 
 /**
  * Detects rule-based alerts for a given workspace.
@@ -59,15 +60,32 @@ export async function detectAlerts(workspaceId) {
     if (previousVolume > 0 && currentVolume > previousVolume * 1.5) {
         const type = "positioning";
         if (!(await hasAlertToday(type))) {
+            const topSignals = await prisma.signal.findMany({
+                where: { workspaceId, capturedAt: { gte: yesterday, lte: now } },
+                orderBy: { capturedAt: 'desc' },
+                take: 5,
+                select: { title: true, content: true, sentiment: true }
+            });
+            const signalsContext = topSignals.map(s => `[${s.sentiment || 'UNKNOWN'}] ${s.title || 'No Title'}\n${s.content.substring(0, 150)}...`).join("\n\n");
+
+            const alertDataObj = {
+                type,
+                severity: "medium",
+                title: "Signal Volume Spike",
+                whatHappened: `Volume increased by ${Math.round(((currentVolume - previousVolume) / previousVolume) * 100)}% vs yesterday.`
+            };
+
+            const enhanced = await enhanceAlert(alertDataObj, signalsContext);
+
             const newAlert = await prisma.alert.create({
                 data: {
                     workspaceId,
-                    type,
-                    severity: "medium",
-                    title: "Signal Volume Spike",
-                    whatHappened: `Volume increased by ${Math.round(((currentVolume - previousVolume) / previousVolume) * 100)}% vs yesterday.`,
-                    whyItMatters: null,
-                    whatToDo: null,
+                    type: alertDataObj.type,
+                    severity: alertDataObj.severity,
+                    title: alertDataObj.title,
+                    whatHappened: alertDataObj.whatHappened,
+                    whyItMatters: enhanced ? enhanced.whyItMatters : null,
+                    whatToDo: enhanced ? enhanced.whatToDo : null,
                     status: "open",
                 }
             });
@@ -99,15 +117,36 @@ export async function detectAlerts(workspaceId) {
         if (negativePercentage > 40 && totalAnalyzed >= 5) {
             const type = "risk";
             if (!(await hasAlertToday(type))) {
+                const topNegativeSignals = await prisma.signal.findMany({
+                    where: { 
+                        workspaceId, 
+                        sentiment: { contains: "negative", mode: "insensitive" }, 
+                        capturedAt: { gte: yesterday, lte: now } 
+                    },
+                    orderBy: { capturedAt: 'desc' },
+                    take: 5,
+                    select: { title: true, content: true }
+                });
+                const signalsContext = topNegativeSignals.map(s => `[NEGATIVE] ${s.title || 'No Title'}\n${s.content.substring(0, 150)}...`).join("\n\n");
+
+                const alertDataObj = {
+                    type,
+                    severity: "high",
+                    title: "High Negative Sentiment",
+                    whatHappened: `Negative sentiment reached ${Math.round(negativePercentage)}%.`
+                };
+
+                const enhanced = await enhanceAlert(alertDataObj, signalsContext);
+
                 const newAlert = await prisma.alert.create({
                     data: {
                         workspaceId,
-                        type,
-                        severity: "high",
-                        title: "High Negative Sentiment",
-                        whatHappened: `Negative sentiment reached ${Math.round(negativePercentage)}%.`,
-                        whyItMatters: null,
-                        whatToDo: null,
+                        type: alertDataObj.type,
+                        severity: alertDataObj.severity,
+                        title: alertDataObj.title,
+                        whatHappened: alertDataObj.whatHappened,
+                        whyItMatters: enhanced ? enhanced.whyItMatters : null,
+                        whatToDo: enhanced ? enhanced.whatToDo : null,
                         status: "open",
                     }
                 });
