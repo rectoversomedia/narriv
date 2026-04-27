@@ -23,6 +23,13 @@ const SEVERITY_STYLES: Record<string, string> = {
   critical: "bg-red-500/15 text-red-400 border-red-500/30",
 };
 
+const SEVERITY_BORDER_TOP: Record<string, string> = {
+  low: "border-t-blue-500",
+  medium: "border-t-amber-500",
+  high: "border-t-orange-500",
+  critical: "border-t-red-500",
+};
+
 function Badge({ value, styles }: { value: string; styles: Record<string, string> }) {
   const cls = styles[value.toLowerCase()] ?? "bg-zinc-700 text-zinc-300 border-zinc-600";
   return (
@@ -97,7 +104,7 @@ export default function AlertDetailPage() {
         <ChevronLeft className="w-4 h-4 mr-1" /> Back to Alerts
       </button>
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
+      <div className={`bg-zinc-900 border border-zinc-800 border-t-4 ${SEVERITY_BORDER_TOP[alert.severity.toLowerCase()] || "border-t-zinc-700"} rounded-2xl overflow-hidden shadow-2xl`}>
         {/* Header Section */}
         <div className="p-6 md:p-8 border-b border-zinc-800 bg-zinc-950/50">
           <div className="flex flex-wrap items-center gap-3 mb-4">
