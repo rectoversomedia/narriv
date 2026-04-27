@@ -62,4 +62,26 @@ router.get("/", async (req, res) => {
     }
 });
 
+// GET /api/alerts/:id - Get a single alert by ID
+router.get("/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const alert = await prisma.alert.findUnique({
+            where: { id },
+        });
+
+        if (!alert) {
+            return res.status(404).json({ error: "Alert not found" });
+        }
+
+        // Prisma automatically includes all scalar fields, which covers:
+        // title, whatHappened, whyItMatters, whatToDo, severity, etc.
+        res.json(alert);
+    } catch (error) {
+        console.error("Error fetching alert:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
 export default router;
