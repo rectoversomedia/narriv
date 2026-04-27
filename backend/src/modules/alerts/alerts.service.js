@@ -16,6 +16,22 @@ export async function detectAlerts(workspaceId) {
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const dayBeforeYesterday = new Date(now.getTime() - 48 * 60 * 60 * 1000);
 
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+
+    async function hasAlertToday(type) {
+        const count = await prisma.alert.count({
+            where: {
+                workspaceId,
+                type,
+                createdAt: {
+                    gte: startOfToday
+                }
+            }
+        });
+        return count > 0;
+    }
+
     // -- Rule 1: Spike Detection --
     // Fetch current 24h volume
     const currentVolume = await prisma.signal.count({
@@ -40,20 +56,23 @@ export async function detectAlerts(workspaceId) {
     });
 
     // Only alert if previous volume > 0 and current is > 150% of previous.
-    // E.g., yesterday = 100, today = 151 -> Alert.
-    // Also add a minimal baseline (e.g., > 10 signals) to prevent noise from very low volumes.
     if (previousVolume > 0 && currentVolume > previousVolume * 1.5) {
-        alerts.push({
-            workspaceId,
-            type: "positioning", // Spike in volume relates to positioning/visibility
-            severity: "medium",
-            title: "Unusual Signal Volume Spike Detected",
-            whatHappened: `Signal volume increased by ${Math.round(((currentVolume - previousVolume) / previousVolume) * 100)}% compared to yesterday.`,
-            whyItMatters: "A sudden spike in mentions often indicates a viral event, breaking news, or a coordinated campaign.",
-            whatToDo: "Review the latest signals to identify the driving narrative and decide if a public response is necessary.",
-            status: "open",
-            createdAt: new Date(),
-        });
+        const type = "positioning";
+        if (!(await hasAlertToday(type))) {
+            const newAlert = await prisma.alert.create({
+                data: {
+                    workspaceId,
+                    type,
+                    severity: "medium",
+                    title: "Signal Volume Spike",
+                    whatHappened: `Volume increased by ${Math.round(((currentVolume - previousVolume) / previousVolume) * 100)}% vs yesterday.`,
+                    whyItMatters: null,
+                    whatToDo: null,
+                    status: "open",
+                }
+            });
+            alerts.push(newAlert);
+        }
     }
 
     // -- Rule 2: Negative Sentiment Spike --
@@ -78,17 +97,22 @@ export async function detectAlerts(workspaceId) {
         const negativePercentage = (negativeCount / totalAnalyzed) * 100;
 
         if (negativePercentage > 40 && totalAnalyzed >= 5) {
-            alerts.push({
-                workspaceId,
-                type: "risk",
-                severity: "high",
-                title: "Critical Negative Sentiment Spike",
-                whatHappened: `Negative sentiment has reached ${Math.round(negativePercentage)}% of recent signals (over 40% threshold).`,
-                whyItMatters: "High negative sentiment can severely damage brand reputation if left unchecked and often precedes a crisis.",
-                whatToDo: "Immediately investigate the root cause of the negative signals and prepare a holding statement or mitigation strategy.",
-                status: "open",
-                createdAt: new Date(),
-            });
+            const type = "risk";
+            if (!(await hasAlertToday(type))) {
+                const newAlert = await prisma.alert.create({
+                    data: {
+                        workspaceId,
+                        type,
+                        severity: "high",
+                        title: "High Negative Sentiment",
+                        whatHappened: `Negative sentiment reached ${Math.round(negativePercentage)}%.`,
+                        whyItMatters: null,
+                        whatToDo: null,
+                        status: "open",
+                    }
+                });
+                alerts.push(newAlert);
+            }
         }
     }
 
