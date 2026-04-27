@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { AlertTriangle, Bell, Loader2, Info, ChevronRight, CheckCircle2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useCallback, Suspense } from "react";
+import { AlertTriangle, Bell, Loader2, Info, ChevronRight, CheckCircle2, Filter } from "lucide-react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 type Alert = {
   id: string;
@@ -35,17 +35,43 @@ function Badge({ value, styles }: { value: string; styles: Record<string, string
   );
 }
 
-export default function AlertsPage() {
+function AlertsContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Sync filters from URL
+  const typeParam = searchParams.get("type") || "";
+  const severityParam = searchParams.get("severity") || "";
+  const statusParam = searchParams.get("status") || "";
+
+  const updateQuery = useCallback(
+    (params: Record<string, string | null>) => {
+      const current = new URLSearchParams(Array.from(searchParams.entries()));
+      Object.entries(params).forEach(([key, value]) => {
+        if (!value) current.delete(key);
+        else current.set(key, value);
+      });
+      const search = current.toString();
+      router.push(`${pathname}${search ? `?${search}` : ""}`);
+    },
+    [searchParams, pathname, router]
+  );
 
   useEffect(() => {
     const fetchAlerts = async () => {
       try {
         setLoading(true);
-        const res = await fetch("http://localhost:3000/api/alerts");
+        const queryParams = new URLSearchParams();
+        if (typeParam) queryParams.append("type", typeParam);
+        if (severityParam) queryParams.append("severity", severityParam);
+        if (statusParam) queryParams.append("status", statusParam);
+
+        const res = await fetch(`http://localhost:3000/api/alerts?${queryParams.toString()}`);
         if (!res.ok) throw new Error("Failed to fetch alerts");
         const data = await res.json();
         setAlerts(data.data || []);
@@ -56,17 +82,68 @@ export default function AlertsPage() {
       }
     };
     fetchAlerts();
-  }, []);
+  }, [typeParam, severityParam, statusParam]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-5xl mx-auto p-4 md:p-6 lg:p-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2 text-white">
             <Bell className="text-red-500" />
             Intelligence Alerts
           </h1>
           <p className="text-zinc-400 mt-1">Automated anomaly and risk detections.</p>
+        </div>
+
+        {/* Filters UI */}
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto bg-zinc-900/50 p-2 rounded-xl border border-zinc-800/50">
+          <div className="flex items-center gap-2 px-2 text-zinc-500 mr-1">
+            <Filter size={14} />
+            <span className="text-xs font-medium uppercase tracking-wider">Filters</span>
+          </div>
+          
+          <select
+            value={typeParam}
+            onChange={(e) => updateQuery({ type: e.target.value })}
+            className="bg-zinc-900 border border-zinc-800 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-red-500 transition-colors cursor-pointer"
+          >
+            <option value="">All Types</option>
+            <option value="risk">Risk</option>
+            <option value="opportunity">Opportunity</option>
+            <option value="positioning">Positioning</option>
+          </select>
+
+          <select
+            value={severityParam}
+            onChange={(e) => updateQuery({ severity: e.target.value })}
+            className="bg-zinc-900 border border-zinc-800 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-red-500 transition-colors cursor-pointer"
+          >
+            <option value="">All Severities</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+
+          <select
+            value={statusParam}
+            onChange={(e) => updateQuery({ status: e.target.value })}
+            className="bg-zinc-900 border border-zinc-800 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-red-500 transition-colors cursor-pointer"
+          >
+            <option value="">All Statuses</option>
+            <option value="open">Open</option>
+            <option value="acknowledged">Acknowledged</option>
+            <option value="resolved">Resolved</option>
+          </select>
+
+          {(typeParam || severityParam || statusParam) && (
+            <button
+              onClick={() => router.push(pathname)}
+              className="text-xs text-zinc-500 hover:text-white px-2 py-1 transition-colors underline underline-offset-4"
+            >
+              Reset
+            </button>
+          )}
         </div>
       </div>
 
@@ -83,8 +160,8 @@ export default function AlertsPage() {
       ) : alerts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-zinc-500 bg-zinc-900/30 rounded-xl border border-zinc-800 border-dashed">
           <CheckCircle2 className="w-12 h-12 mb-4 text-emerald-500/50" />
-          <p className="text-zinc-400 font-medium text-lg">All Clear</p>
-          <p className="text-sm mt-1 text-zinc-500">No active alerts detected at this time.</p>
+          <p className="text-zinc-400 font-medium text-lg">No alerts found</p>
+          <p className="text-sm mt-1 text-zinc-500">Try adjusting your filters or check back later.</p>
         </div>
       ) : (
         <div className="grid gap-4">
@@ -103,6 +180,9 @@ export default function AlertsPage() {
                     <Badge value={alert.severity} styles={SEVERITY_STYLES} />
                     <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded">
                       {alert.type}
+                    </span>
+                    <span className="text-xs text-zinc-400 font-medium bg-zinc-800/50 px-2 py-0.5 rounded border border-zinc-700/30">
+                      {alert.status}
                     </span>
                     <span className="text-xs text-zinc-500 ml-2">
                       {new Date(alert.createdAt).toLocaleString()}
@@ -124,5 +204,17 @@ export default function AlertsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AlertsPage() {
+  return (
+    <Suspense fallback={
+      <div className="p-8 flex items-center justify-center min-h-64">
+        <Loader2 className="animate-spin text-red-500 w-8 h-8" />
+      </div>
+    }>
+      <AlertsContent />
+    </Suspense>
   );
 }
