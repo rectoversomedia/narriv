@@ -124,6 +124,7 @@ model Signal {
   workspace     Workspace @relation(fields: [workspaceId], references: [id])
   rawDocument   RawDocument? @relation(fields: [rawDocumentId], references: [id])
   analyses      SignalAnalysis[]
+  narrativeClusterSignals NarrativeClusterSignal[]
 }
 
 model SignalAnalysis {
@@ -158,16 +159,39 @@ model Alert {
 }
 
 model NarrativeCluster {
-  id            String   @id @default(uuid())
-  workspaceId   String
-  title         String
-  summary       String?
-  trendDirection String?
-  sentimentBias String?
-  createdAt     DateTime @default(now())
+  id             String   @id @default(uuid())
+  workspaceId    String
+  title          String
+  description    String?
+  mainNarrative  String?
+  sentiment      String?      // dominant sentiment
+  impact         ImpactLevel? // low, medium, high, critical
+  signalCount    Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  workspace     Workspace @relation(fields: [workspaceId], references: [id])
-  actionPlans   ActionPlan[]
+  workspace      Workspace @relation(fields: [workspaceId], references: [id])
+  actionPlans    ActionPlan[]
+  narrativeClusterSignals NarrativeClusterSignal[]
+}
+
+model NarrativeClusterSignal {
+  id                 String @id @default(uuid())
+  narrativeClusterId String
+  signalId           String
+  createdAt          DateTime @default(now())
+
+  narrativeCluster   NarrativeCluster @relation(fields: [narrativeClusterId], references: [id])
+  signal             Signal           @relation(fields: [signalId], references: [id])
+
+  @@unique([narrativeClusterId, signalId])
+}
+
+enum ImpactLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
 }
 
 model Report {
