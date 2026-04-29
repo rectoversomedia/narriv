@@ -33,11 +33,20 @@ export const triggerIngestion = async (req, res) => {
                  // In real MVP we might map Type -> Actor. For now fallback to a mock ID
                  const actorTarget = source.actorId || "apify/google-search-scraper";
                  
-                 // Map config for Apify. Default to searching the source's name if empty
+                 let queryModifiers = "";
+                 if (source.type === "social") {
+                     queryModifiers = "site:twitter.com OR site:facebook.com OR site:instagram.com OR site:tiktok.com";
+                 } else if (source.type === "forum") {
+                     queryModifiers = "site:reddit.com OR site:quora.com OR site:kaskus.co.id";
+                 } else {
+                     queryModifiers = "news";
+                 }
+
                  const apifyInput = {
-                     queries: `${source.name} news trending`,
+                     queries: `${source.name} ${queryModifiers} trending`,
                      maxPagesPerQuery: 1,
                      resultsPerPage: 5,
+                     sourceType: source.type,
                      ...(source.inputConfig || {})
                  };
 
