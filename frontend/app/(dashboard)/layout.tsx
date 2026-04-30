@@ -4,24 +4,26 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const { token } = useAuthStore();
   const [mounted, setMounted] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    const token = localStorage.getItem("token");
-    if (!token) {
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && !token) {
       router.push("/login");
-    } else {
-      setIsAuthenticated(true);
     }
-  }, [router]);
+  }, [mounted, token, router]);
 
   // Prevent flash of content before redirect
-  if (!mounted || !isAuthenticated) {
+  if (!mounted || !token) {
     return <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
         <div className="w-6 h-6 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
     </div>;

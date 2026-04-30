@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef, Suspense } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { Activity, Loader2, Search, Brain, Zap, Users, TrendingUp, FileText, Lightbulb, ExternalLink } from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
@@ -145,13 +145,11 @@ function AnalysisPanel({ analysis }: { analysis: Analysis }) {
           <span className="text-xs text-zinc-500">Confidence</span>
           <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-red-600 to-red-400 rounded-full transition-all duration-500"
+              className="h-full bg-linear-to-r from-red-600 to-red-400 rounded-full transition-all duration-500"
               style={{ width: `${Math.round(analysis.confidenceScore * 100)}%` }}
             />
           </div>
-          <span className="text-xs text-zinc-400 font-medium tabular-nums">
-            {Math.round(analysis.confidenceScore * 100)}%
-          </span>
+          <span className="text-xs text-zinc-400 font-medium">{Math.round(analysis.confidenceScore * 100)}%</span>
         </div>
       )}
     </div>
@@ -160,14 +158,13 @@ function AnalysisPanel({ analysis }: { analysis: Analysis }) {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/apiClient";
+
 function SignalsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
-
-  const [signals, setSignals] = useState<Signal[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const pageParam = parseInt(searchParams.get("page") || "1", 10);
   const keywordParam = searchParams.get("keyword") || "";
@@ -177,63 +174,39 @@ function SignalsContent() {
 
   const [page, setPage] = useState(pageParam);
   const limit = 10;
-  const [total, setTotal] = useState(0);
   const [keyword, setKeyword] = useState(keywordParam);
 
   const [selectedSignalId, setSelectedSignalId] = useState<string | null>(null);
-  const [signalDetail, setSignalDetail] = useState<SignalDetail | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Stop polling helper
-  const stopPolling = useCallback(() => {
-    if (pollingRef.current) {
-      clearInterval(pollingRef.current);
-      pollingRef.current = null;
+  const { data: signalsData, isLoading: loading, error: fetchError } = useQuery({
+    queryKey: ['signals', page, limit, keywordParam, platformParam, startDateParam, endDateParam],
+    queryFn: () => {
+      let url = `/signals?page=${page}&limit=${limit}`;
+      if (keywordParam)   url += `&keyword=${encodeURIComponent(keywordParam)}`;
+      if (platformParam)  url += `&platform=${encodeURIComponent(platformParam)}`;
+      if (startDateParam) url += `&startDate=${encodeURIComponent(startDateParam)}`;
+      if (endDateParam)   url += `&endDate=${encodeURIComponent(endDateParam)}`;
+      return apiClient<{ data: Signal[], meta: { total: number } }>(url);
     }
-  }, []);
+  });
 
-  const fetchSignalDetail = useCallback(async (id: string) => {
-    const token = localStorage.getItem("token");
-    const res = await fetch(`http://localhost:3000/signals/${id}`, {
-      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    });
-    if (!res.ok) {
-      const errData = await res.json().catch(() => null);
-      throw new Error(errData?.error || "Failed to load signal details");
+  const signals = signalsData?.data || [];
+  const total = signalsData?.meta?.total || 0;
+  const error = fetchError ? (fetchError as Error).message : null;
+
+  const { data: signalDetail, isLoading: detailLoading } = useQuery({
+    queryKey: ['signalDetail', selectedSignalId],
+    queryFn: () => apiClient<SignalDetail>(`/signals/${selectedSignalId}`),
+    enabled: !!selectedSignalId,
+    refetchInterval: (query) => {
+      const hasAnalysisId = !!query.state.data?.analysis?.id;
+      if (hasAnalysisId) return false;
+      return 4000;
     }
-    return res.json() as Promise<SignalDetail>;
-  }, []);
+  });
 
-  const handleSelectSignal = async (id: string) => {
-    stopPolling();
+  const handleSelectSignal = (id: string) => {
     setSelectedSignalId(id);
-    setSignalDetail(null);
-    setDetailLoading(true);
-    try {
-      const data = await fetchSignalDetail(id);
-      setSignalDetail(data);
-
-      // Mulai polling jika analisis belum selesai
-      if (!data.analysis.id) {
-        pollingRef.current = setInterval(async () => {
-          try {
-            const updated = await fetchSignalDetail(id);
-            setSignalDetail(updated);
-            // Berhenti polling saat analisis sudah ada
-            if (updated.analysis.id) {
-              stopPolling();
-            }
-          } catch {
-            stopPolling();
-          }
-        }, 4000);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setDetailLoading(false);
-    }
   };
 
   const updateQuery = useCallback(
@@ -258,44 +231,15 @@ function SignalsContent() {
   }, [keyword, updateQuery, keywordParam]);
 
   useEffect(() => {
-    setPage(pageParam);
-    setKeyword(keywordParam);
+    const id = setTimeout(() => {
+      setPage(pageParam);
+      setKeyword(keywordParam);
+    }, 0);
+    return () => clearTimeout(id);
   }, [pageParam, keywordParam]);
 
-  useEffect(() => {
-    const fetchSignals = async () => {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem("token");
-        let url = `http://localhost:3000/signals?page=${page}&limit=${limit}`;
-        if (keywordParam)   url += `&keyword=${encodeURIComponent(keywordParam)}`;
-        if (platformParam)  url += `&platform=${encodeURIComponent(platformParam)}`;
-        if (startDateParam) url += `&startDate=${encodeURIComponent(startDateParam)}`;
-        if (endDateParam)   url += `&endDate=${encodeURIComponent(endDateParam)}`;
-
-        const res = await fetch(url, {
-          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => null);
-          throw new Error(errData?.error || `Failed to fetch signals (${res.status})`);
-        }
-        const data = await res.json();
-        setSignals(data.data || []);
-        if (data.meta) setTotal(data.meta.total || 0);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSignals();
-  }, [page, limit, keywordParam, platformParam, startDateParam, endDateParam]);
-
   const closeModal = () => {
-    stopPolling();
     setSelectedSignalId(null);
-    setSignalDetail(null);
   };
 
   return (

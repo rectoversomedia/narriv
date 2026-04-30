@@ -52,7 +52,7 @@ export default function AlertDetailPage() {
     const fetchAlert = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`http://localhost:3000/api/alerts/${params.id}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/alerts/${params.id}`);
         if (!res.ok) {
           if (res.status === 404) throw new Error("Alert not found");
           throw new Error("Failed to fetch alert details");

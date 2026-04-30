@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -17,6 +18,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
+  const setToken = useAuthStore((state) => state.setToken);
   const [error, setError] = useState<string | null>(null);
 
   const {
@@ -30,7 +32,7 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormValues) => {
     setError(null);
     try {
-      const res = await fetch("http://localhost:3000/auth/login", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -42,10 +44,14 @@ export default function LoginPage() {
         throw new Error(result.error || "Login failed");
       }
 
-      localStorage.setItem("token", result.token);
+      setToken(result.token);
       router.push("/");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unexpected error occurred");
+      }
     }
   };
 
@@ -56,7 +62,7 @@ export default function LoginPage() {
            <BrainCircuit className="h-12 w-12 text-red-500" />
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold tracking-tight">
-          Sign in to <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">Narriv</span>
+          Sign in to <span className="text-transparent bg-clip-text bg-linear-to-r from-red-500 to-orange-500">Narriv</span>
         </h2>
         <p className="mt-2 text-center text-sm text-zinc-400">
           Or{" "}
@@ -69,7 +75,7 @@ export default function LoginPage() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-zinc-900 border border-zinc-800 py-8 px-4 shadow-xl sm:rounded-xl sm:px-10 relative overflow-hidden">
           {/* Decorative glow */}
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-red-500/20 blur-[64px] rounded-full point-events-none"></div>
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-red-500/20 blur-3xl rounded-full point-events-none"></div>
 
           <form className="space-y-6 relative z-10" onSubmit={handleSubmit(onSubmit)}>
             {error && (

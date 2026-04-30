@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Plus, Database, Play, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/apiClient";
 
 type Source = {
   id: string;
@@ -12,84 +14,83 @@ type Source = {
 };
 
 export default function SourcesPage() {
-  const [sources, setSources] = useState<Source[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [isAdding, setIsAdding] = useState(false);
   const [newSourceName, setNewSourceName] = useState("");
   const [newSourceType, setNewSourceType] = useState("web");
   const [ingestingId, setIngestingId] = useState<string | null>(null);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [ingestionStatus, setIngestionStatus] = useState<{ id: string, status: 'success' | 'error' } | null>(null);
 
-  const fetchSources = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:3000/sources", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setSources(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch sources", error);
-    } finally {
-      setLoading(false);
+  const { data: sources = [], isLoading: loading } = useQuery({
+    queryKey: ['sources'],
+    queryFn: () => apiClient<Source[]>('/sources'),
+  });
+
+  const addSourceMutation = useMutation({
+    mutationFn: (newSource: { name: string; type: string }) => 
+      apiClient('/sources', {
+        method: 'POST',
+        body: JSON.stringify(newSource)
+      }),
+    onSuccess: () => {
+      setNewSourceName("");
+      setIsAdding(false);
+      queryClient.invalidateQueries({ queryKey: ['sources'] });
     }
-  };
+  });
 
-  useEffect(() => {
-    fetchSources();
-  }, []);
-
-  const handleAddSource = async (e: React.FormEvent) => {
+  const handleAddSource = (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:3000/sources", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ name: newSourceName, type: newSourceType })
-      });
-      
-      if (res.ok) {
-        setNewSourceName("");
-        setIsAdding(false);
-        fetchSources();
-      }
-    } catch (error) {
-       console.error("Failed to add source", error);
-    }
+    addSourceMutation.mutate({ name: newSourceName, type: newSourceType });
   };
 
-  const handleRunIngestion = async (id: string) => {
-    setIngestingId(id);
-    setIngestionStatus(null);
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:3000/ingestion/run/${id}`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      if (res.ok) {
-        // Since we return 202 Accepted, the background job might still be running.
-        // For simple UI feedback, we just say success immediately or simulate a delay.
-        setTimeout(() => {
-            setIngestionStatus({ id, status: 'success' });
-            setIngestingId(null);
-        }, 1500); // UI feel delay
-      } else {
-        setIngestionStatus({ id, status: 'error' });
-        setIngestingId(null);
-      }
-    } catch (error) {
+  const runIngestionMutation = useMutation({
+    mutationFn: (id: string) => 
+      apiClient<{ jobId: string }>(`/ingestion/run/${id}`, { method: 'POST' }),
+    onSuccess: (data) => {
+      setActiveJobId(data.jobId);
+    },
+    onError: (_, id) => {
       setIngestionStatus({ id, status: 'error' });
       setIngestingId(null);
     }
+  });
+
+  const handleRunIngestion = (id: string) => {
+    setIngestingId(id);
+    setIngestionStatus(null);
+    runIngestionMutation.mutate(id);
   };
+
+  const { data: jobStatus } = useQuery({
+    queryKey: ['ingestionStatus', activeJobId],
+    queryFn: () => apiClient<{ status: string }>(`/ingestion/status/${activeJobId}`),
+    enabled: !!activeJobId,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      if (status === 'COMPLETED' || status === 'FAILED') return false;
+      return 3000;
+    }
+  });
+
+  useEffect(() => {
+    if (jobStatus && activeJobId && ingestingId) {
+      if (jobStatus.status === 'COMPLETED') {
+        setTimeout(() => {
+          setIngestionStatus({ id: ingestingId, status: 'success' });
+          setIngestingId(null);
+          setActiveJobId(null);
+        }, 0);
+      } else if (jobStatus.status === 'FAILED') {
+        setTimeout(() => {
+          setIngestionStatus({ id: ingestingId, status: 'error' });
+          setIngestingId(null);
+          setActiveJobId(null);
+        }, 0);
+      }
+    }
+  }, [jobStatus, activeJobId, ingestingId]);
 
   return (
     <div className="space-y-6">
@@ -138,8 +139,8 @@ export default function SourcesPage() {
                       <option value="forum">Community Forum</option>
                   </select>
                </div>
-               <button type="submit" className="bg-white text-black px-6 py-2 rounded-lg font-medium text-sm hover:bg-zinc-200 transition-colors">
-                  Save Source
+               <button type="submit" disabled={addSourceMutation.isPending} className="bg-white text-black px-6 py-2 rounded-lg font-medium text-sm hover:bg-zinc-200 transition-colors disabled:opacity-50">
+                  {addSourceMutation.isPending ? "Saving..." : "Save Source"}
                </button>
             </form>
          </div>
@@ -196,8 +197,8 @@ export default function SourcesPage() {
                         ) : (
                             <button
                                 onClick={() => handleRunIngestion(source.id)}
-                                disabled={ingestingId === source.id}
-                                className="inline-flex items-center gap-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-medium px-3 py-1.5 rounded-lg transition-colors border border-red-500/20 disabled:opacity-50"
+                                disabled={ingestingId !== null}
+                                className={`inline-flex items-center gap-1.5 font-medium px-3 py-1.5 rounded-lg transition-colors border ${ingestingId !== null && ingestingId !== source.id ? 'bg-zinc-800/50 text-zinc-500 border-zinc-800/50 cursor-not-allowed' : 'bg-red-500/10 hover:bg-red-500/20 text-red-500 border-red-500/20 disabled:opacity-50'}`}
                             >
                                 {ingestingId === source.id ? (
                                     <><Loader2 size={14} className="animate-spin" /> Ingesting...</>

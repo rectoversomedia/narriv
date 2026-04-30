@@ -31,7 +31,7 @@ export default function SignupPage() {
   const onSubmit = async (data: SignupFormValues) => {
     setError(null);
     try {
-      const res = await fetch("http://localhost:3000/auth/register", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -46,8 +46,12 @@ export default function SignupPage() {
       // Auto login after signup by redirecting to login page with a success message
       // Or we can log them in directly if API returns token, but our API currently only returns the user.
       router.push("/login");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unexpected error occurred");
+      }
     }
   };
 
@@ -71,7 +75,7 @@ export default function SignupPage() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-zinc-900 border border-zinc-800 py-8 px-4 shadow-xl sm:rounded-xl sm:px-10 relative overflow-hidden">
           {/* Decorative glow */}
-          <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-orange-500/10 blur-[64px] rounded-full point-events-none"></div>
+          <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-orange-500/10 blur-3xl rounded-full point-events-none"></div>
 
           <form className="space-y-6 relative z-10" onSubmit={handleSubmit(onSubmit)}>
             {error && (

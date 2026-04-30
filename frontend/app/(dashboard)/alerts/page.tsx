@@ -71,7 +71,7 @@ function AlertsContent() {
         if (severityParam) queryParams.append("severity", severityParam);
         if (statusParam) queryParams.append("status", statusParam);
 
-        const res = await fetch(`http://localhost:3000/api/alerts?${queryParams.toString()}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/alerts?${queryParams.toString()}`);
         if (!res.ok) throw new Error("Failed to fetch alerts");
         const data = await res.json();
         setAlerts(data.data || []);

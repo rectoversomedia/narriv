@@ -1,16 +1,22 @@
 "use client";
 
-import { LogOut, User } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export const Topbar = () => {
     const router = useRouter();
-    const [user, setUser] = useState<{name: string, email: string} | null>(null);
+    const { token, user, setUser, logout } = useAuthStore();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setMounted(true), 0);
+        return () => clearTimeout(timer);
+    }, []);
 
     useEffect(() => {
         const fetchMe = async () => {
-            const token = localStorage.getItem("token");
             if (!token) return;
 
             try {
@@ -27,13 +33,19 @@ export const Topbar = () => {
                 console.error("Failed to fetch user", error);
             }
         };
-        fetchMe();
-    }, []);
+        // Only fetch if user is not already in the store, or just fetch anyway to refresh?
+        if (token && !user) {
+            fetchMe();
+        }
+    }, [token, user, setUser]);
 
     const handleLogout = () => {
-        localStorage.removeItem("token");
+        logout();
         router.push("/login");
     };
+
+    if (!mounted) return null; // Avoid hydration mismatch
+
 
     return (
         <header className="h-16 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md flex items-center justify-between px-6 shrink-0 sticky top-0 z-10">
