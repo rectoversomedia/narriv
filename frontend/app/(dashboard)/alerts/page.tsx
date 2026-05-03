@@ -1,220 +1,88 @@
 "use client";
 
-import { useEffect, useState, useCallback, Suspense } from "react";
-import { AlertTriangle, Bell, Loader2, Info, ChevronRight, CheckCircle2, Filter } from "lucide-react";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useState } from "react";
+import Link from "next/link";
+import { DesignFrame, InnerPanel, SectionHeader } from "@/components/ui/demo-primitives";
+import { getCopy } from "@/lib/i18n";
+import { useUiStore } from "@/store/useUiStore";
 
-type Alert = {
-  id: string;
-  type: string;
-  severity: string;
-  title: string;
-  status: string;
-  createdAt: string;
-};
+const alerts = [
+  ["Delivery reliability narrative likely to escalate", "84% · 6h window", "Velocity 2.4x · source authority high · negative skew rising", "text-[#F97066]"],
+  ["Competitor AI visibility advantage widening", "71% · 48h", "Brand absent in 6 priority prompts · competitor citations rising", "text-[#FDB022]"],
+  ["Podcast discussion may trigger regional news pickup", "58% · watch", "Source type expansion detected · sentiment still mixed", "text-[#D0D5DD]"],
+];
 
-const SEVERITY_STYLES: Record<string, string> = {
-  low: "bg-blue-500/15 text-blue-400 border-blue-500/30",
-  medium: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-  high: "bg-orange-500/15 text-orange-400 border-orange-500/30",
-  critical: "bg-red-500/15 text-red-400 border-red-500/30",
-};
+const flow = [
+  ["1. Recommend", "AI proposes action from narrative evidence."],
+  ["2. Human feedback", "Accept, edit, reject, and explain why."],
+  ["3. Score prompt", "Quality signal updates prompt scoring."],
+  ["4. Improve model", "Ranking, tone, evidence fit improve."],
+  ["5. Better alerts", "Future recommendations get sharper."],
+];
 
-const TYPE_ICONS: Record<string, React.ReactNode> = {
-  risk: <AlertTriangle className="w-4 h-4 text-red-400" />,
-  opportunity: <Info className="w-4 h-4 text-emerald-400" />,
-  positioning: <Bell className="w-4 h-4 text-blue-400" />,
-};
-
-function Badge({ value, styles }: { value: string; styles: Record<string, string> }) {
-  const cls = styles[value.toLowerCase()] ?? "bg-zinc-700 text-zinc-300 border-zinc-600";
-  return (
-    <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold border capitalize ${cls}`}>
-      {value}
-    </span>
-  );
-}
-
-function AlertsContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Sync filters from URL
-  const typeParam = searchParams.get("type") || "";
-  const severityParam = searchParams.get("severity") || "";
-  const statusParam = searchParams.get("status") || "";
-
-  const updateQuery = useCallback(
-    (params: Record<string, string | null>) => {
-      const current = new URLSearchParams(Array.from(searchParams.entries()));
-      Object.entries(params).forEach(([key, value]) => {
-        if (!value) current.delete(key);
-        else current.set(key, value);
-      });
-      const search = current.toString();
-      router.push(`${pathname}${search ? `?${search}` : ""}`);
-    },
-    [searchParams, pathname, router]
-  );
-
-  useEffect(() => {
-    const fetchAlerts = async () => {
-      try {
-        setLoading(true);
-        const queryParams = new URLSearchParams();
-        if (typeParam) queryParams.append("type", typeParam);
-        if (severityParam) queryParams.append("severity", severityParam);
-        if (statusParam) queryParams.append("status", statusParam);
-
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/alerts?${queryParams.toString()}`);
-        if (!res.ok) throw new Error("Failed to fetch alerts");
-        const data = await res.json();
-        setAlerts(data.data || []);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAlerts();
-  }, [typeParam, severityParam, statusParam]);
+export default function AlertsPage() {
+  const [reviewed, setReviewed] = useState(false);
+  const language = useUiStore((state) => state.language);
+  const t = getCopy(language);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-5xl mx-auto p-4 md:p-6 lg:p-8">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2 text-white">
-            <Bell className="text-red-500" />
-            Intelligence Alerts
-          </h1>
-          <p className="text-zinc-400 mt-1">Automated anomaly and risk detections.</p>
-        </div>
+    <div className="space-y-6 pb-6">
+      <SectionHeader
+        title={t.alerts.title}
+        description={t.alerts.subtitle}
+      />
 
-        {/* Filters UI */}
-        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto bg-zinc-900/50 p-2 rounded-xl border border-zinc-800/50">
-          <div className="flex items-center gap-2 px-2 text-zinc-500 mr-1">
-            <Filter size={14} />
-            <span className="text-xs font-medium uppercase tracking-wider">Filters</span>
+      <div className="grid gap-6 xl:grid-cols-[660px_416px]">
+        <DesignFrame className="min-h-[376px]">
+          <h2 className="theme-text text-lg font-semibold">{t.alerts.queue}</h2>
+          <div className="mt-7 space-y-3">
+            {alerts.map(([title, metric, detail, tone], index) => (
+              <Link key={title} href={`/alerts/alert-${index + 1}`} className="block">
+                <InnerPanel className="min-h-[76px] px-4 py-3 transition-colors hover:border-[#465FFF33]">
+                  <div className="grid gap-2 md:grid-cols-[1fr_auto]">
+                    <p className="theme-text max-w-[360px] text-sm font-semibold">{title}</p>
+                    <p className={`text-[13px] font-semibold ${tone}`}>{metric}</p>
+                  </div>
+                  <p className="theme-muted mt-2 text-xs">{detail}</p>
+                </InnerPanel>
+              </Link>
+            ))}
           </div>
-          
-          <select
-            value={typeParam}
-            onChange={(e) => updateQuery({ type: e.target.value })}
-            className="bg-zinc-900 border border-zinc-800 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-red-500 transition-colors cursor-pointer"
-          >
-            <option value="">All Types</option>
-            <option value="risk">Risk</option>
-            <option value="opportunity">Opportunity</option>
-            <option value="positioning">Positioning</option>
-          </select>
+        </DesignFrame>
 
-          <select
-            value={severityParam}
-            onChange={(e) => updateQuery({ severity: e.target.value })}
-            className="bg-zinc-900 border border-zinc-800 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-red-500 transition-colors cursor-pointer"
-          >
-            <option value="">All Severities</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-            <option value="critical">Critical</option>
-          </select>
-
-          <select
-            value={statusParam}
-            onChange={(e) => updateQuery({ status: e.target.value })}
-            className="bg-zinc-900 border border-zinc-800 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-red-500 transition-colors cursor-pointer"
-          >
-            <option value="">All Statuses</option>
-            <option value="open">Open</option>
-            <option value="acknowledged">Acknowledged</option>
-            <option value="resolved">Resolved</option>
-          </select>
-
-          {(typeParam || severityParam || statusParam) && (
-            <button
-              onClick={() => router.push(pathname)}
-              className="text-xs text-zinc-500 hover:text-white px-2 py-1 transition-colors underline underline-offset-4"
-            >
-              Reset
-            </button>
-          )}
-        </div>
+        <DesignFrame className="min-h-[376px]">
+          <h2 className="theme-text text-lg font-semibold">{t.alerts.scoring}</h2>
+          <p className="mt-8 text-[58px] font-semibold leading-none text-[#12B76A]">+8.4</p>
+          <p className="theme-muted mt-5 max-w-[330px] text-[13px] leading-[1.45]">{t.alerts.scoringDesc}</p>
+          <div className="mt-12 grid grid-cols-3 gap-5">
+            {[[t.alerts.accepted, "81"], [t.alerts.edited, "34"], [t.alerts.rejected, "12"]].map(([label, value]) => (
+              <div key={label}>
+                <p className="theme-muted text-xs font-semibold">{label}</p>
+                <p className="theme-text mt-2 text-[28px] font-semibold">{value}</p>
+              </div>
+            ))}
+          </div>
+          <button onClick={() => setReviewed(true)} className="mt-6 rounded-lg bg-[#465FFF] px-4 py-2 text-[13px] font-semibold text-white" type="button">
+            {reviewed ? t.alerts.reviewed : t.common.learningQueue}
+          </button>
+        </DesignFrame>
       </div>
 
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-24 text-zinc-500 bg-zinc-900/30 rounded-xl border border-zinc-800 border-dashed">
-          <Loader2 className="animate-spin w-8 h-8 text-red-500 mb-4" />
-          <p>Scanning for alerts...</p>
-        </div>
-      ) : error ? (
-        <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-center">
-          <AlertTriangle className="w-8 h-8 mx-auto mb-3 opacity-80" />
-          <p>{error}</p>
-        </div>
-      ) : alerts.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-zinc-500 bg-zinc-900/30 rounded-xl border border-zinc-800 border-dashed">
-          <CheckCircle2 className="w-12 h-12 mb-4 text-emerald-500/50" />
-          <p className="text-zinc-400 font-medium text-lg">No alerts found</p>
-          <p className="text-sm mt-1 text-zinc-500">Try adjusting your filters or check back later.</p>
-        </div>
-      ) : (
-        <div className="grid gap-4">
-          {alerts.map((alert) => (
-            <div
-              key={alert.id}
-              onClick={() => router.push(`/alerts/${alert.id}`)}
-              className="bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800 hover:border-zinc-700 p-5 rounded-xl transition-all cursor-pointer group flex flex-col md:flex-row gap-4 justify-between"
-            >
-              <div className="flex items-start gap-4">
-                <div className="mt-1 p-2 bg-zinc-950 rounded-lg border border-zinc-800 shadow-inner">
-                  {TYPE_ICONS[alert.type.toLowerCase()] || <Bell className="w-4 h-4 text-zinc-400" />}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                    <Badge value={alert.severity} styles={SEVERITY_STYLES} />
-                    <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded">
-                      {alert.type}
-                    </span>
-                    <span className="text-xs text-zinc-400 font-medium bg-zinc-800/50 px-2 py-0.5 rounded border border-zinc-700/30">
-                      {alert.status}
-                    </span>
-                    <span className="text-xs text-zinc-500 ml-2">
-                      {new Date(alert.createdAt).toLocaleString()}
-                    </span>
-                  </div>
-                  <h3 className="text-lg font-semibold text-white group-hover:text-red-400 transition-colors">
-                    {alert.title}
-                  </h3>
-                </div>
-              </div>
-              <div className="flex items-center justify-end md:w-auto">
-                <div className="hidden md:flex items-center text-sm font-medium text-zinc-500 group-hover:text-zinc-300 transition-colors">
-                  View Detail
-                  <ChevronRight className="w-4 h-4 ml-1 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-                </div>
-              </div>
+      <DesignFrame className="min-h-[204px]">
+        <h2 className="theme-text text-lg font-semibold">{t.alerts.flow}</h2>
+        <div className="mt-7 grid gap-4 md:grid-cols-5">
+          {flow.map(([title, detail], index) => (
+            <div key={title} className={`min-h-[82px] rounded-xl border p-[16px_18px] ${index === 4 ? "border-[#465FFF33] bg-[#465FFF14]" : "theme-panel"}`}>
+              <p className="theme-text text-sm font-semibold">{title}</p>
+              <p className={`mt-2 text-xs leading-[1.35] ${index === 4 ? "text-[#9AA8FF]" : "theme-muted"}`}>{detail}</p>
             </div>
           ))}
         </div>
-      )}
-    </div>
-  );
-}
+      </DesignFrame>
 
-export default function AlertsPage() {
-  return (
-    <Suspense fallback={
-      <div className="p-8 flex items-center justify-center min-h-64">
-        <Loader2 className="animate-spin text-red-500 w-8 h-8" />
+      <div className="rounded-2xl border border-[#465FFF33] bg-[#465FFF0F] p-[18px_24px] text-[13px] leading-[1.45] text-[#D0D5DD]">
+        {t.alerts.footer}
       </div>
-    }>
-      <AlertsContent />
-    </Suspense>
+    </div>
   );
 }

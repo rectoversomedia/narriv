@@ -1,43 +1,46 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useUiStore } from "@/store/useUiStore";
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const { token } = useAuthStore();
+  const token = useAuthStore((state) => state.token);
+  const theme = useUiStore((state) => state.theme);
+  const sidebarCollapsed = useUiStore((state) => state.sidebarCollapsed);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setMounted(true), 0);
-    return () => clearTimeout(timer);
+    const id = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(id);
   }, []);
 
   useEffect(() => {
     if (mounted && !token) {
-      router.push("/login");
+      router.replace("/login");
     }
   }, [mounted, token, router]);
 
-  // Prevent flash of content before redirect
   if (!mounted || !token) {
-    return <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
-    </div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#101828]">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#465FFF] border-t-transparent" />
+      </div>
+    );
   }
 
   return (
-    <div className="flex min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-red-500/30">
+    <div data-theme={theme} className="theme-shell min-h-screen selection:bg-[#465FFF]/30">
       <Sidebar />
-      <div className="flex-1 flex flex-col min-h-screen relative overflow-hidden">
+      <div className={`flex min-h-screen min-w-0 flex-col transition-[padding] duration-300 ${sidebarCollapsed ? "md:pl-[92px]" : "md:pl-[292px]"}`}>
         <Topbar />
-        <main className="flex-1 overflow-y-auto p-6 bg-zinc-950">
-           <div className="max-w-7xl mx-auto w-full">
-            {children}
-           </div>
+        <main className="flex-1 overflow-x-hidden px-4 pb-24 pt-6 sm:px-6 md:px-6 md:pb-8">
+          <div className="mx-auto w-full max-w-[1148px]">{children}</div>
         </main>
       </div>
     </div>

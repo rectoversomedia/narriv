@@ -1,16 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/useAuthStore";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Building2, Loader2, Mail, ShieldCheck } from "lucide-react";
 import * as z from "zod";
-import Link from "next/link";
-import { BrainCircuit, Loader2 } from "lucide-react";
+import { createGoogleDemoSession, createPasswordDemoSession, DEMO_TOKEN } from "@/lib/demo-auth";
+import { useAuthStore } from "@/store/useAuthStore";
 
 const loginSchema = z.object({
-  email: z.string().email({ message: "Invalid email address" }),
+  email: z.email({ message: "Enter a valid work email" }),
   password: z.string().min(1, { message: "Password is required" }),
 });
 
@@ -18,8 +19,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const setToken = useAuthStore((state) => state.setToken);
-  const [error, setError] = useState<string | null>(null);
+  const setSession = useAuthStore((state) => state.setSession);
 
   const {
     register,
@@ -27,107 +27,116 @@ export default function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
+    defaultValues: { email: "demo@narriv.ai", password: "demo" },
   });
 
+  const finishLogin = (user = createGoogleDemoSession()) => {
+    setSession(DEMO_TOKEN, user);
+    router.push("/");
+  };
+
   const onSubmit = async (data: LoginFormValues) => {
-    setError(null);
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-
-      const result = await res.json();
-
-      if (!res.ok) {
-        throw new Error(result.error || "Login failed");
-      }
-
-      setToken(result.token);
-      router.push("/");
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("An unexpected error occurred");
-      }
-    }
+    finishLogin(createPasswordDemoSession(data.email));
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-zinc-100">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="flex justify-center">
-           <BrainCircuit className="h-12 w-12 text-red-500" />
-        </div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold tracking-tight">
-          Sign in to <span className="text-transparent bg-clip-text bg-linear-to-r from-red-500 to-orange-500">Narriv</span>
-        </h2>
-        <p className="mt-2 text-center text-sm text-zinc-400">
-          Or{" "}
-          <Link href="/signup" className="font-medium text-red-500 hover:text-red-400 transition-colors">
-            create a new workspace account
-          </Link>
-        </p>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-zinc-900 border border-zinc-800 py-8 px-4 shadow-xl sm:rounded-xl sm:px-10 relative overflow-hidden">
-          {/* Decorative glow */}
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-red-500/20 blur-3xl rounded-full point-events-none"></div>
-
-          <form className="space-y-6 relative z-10" onSubmit={handleSubmit(onSubmit)}>
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/50 text-red-500 text-sm p-3 rounded-lg flex items-center justify-center">
-                {error}
+    <main className="min-h-screen bg-[#F9FAFB] text-[#101828]">
+      <div className="grid min-h-screen lg:grid-cols-[1fr_520px]">
+        <section className="hidden border-r border-[#E4E7EC] bg-white px-12 py-10 lg:flex lg:flex-col lg:justify-between">
+          <Image src="/narriv-logo-light.png" alt="Narriv" width={142} height={40} priority />
+          <div className="max-w-xl">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#465FFF]">Stakeholder preview</p>
+            <h1 className="mt-5 text-5xl font-semibold leading-tight tracking-[-0.04em]">
+              Narrative intelligence from signal to action.
+            </h1>
+            <p className="mt-5 text-lg leading-8 text-[#667085]">
+              Demo workspace with dummy data, localStorage auth, GEO visibility, predictive alerts, and structured action recommendations.
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-4 text-sm">
+            {[
+              ["82", "AI Visibility"],
+              ["18", "Narratives"],
+              ["74%", "Actions Accepted"],
+            ].map(([value, label]) => (
+              <div key={label} className="rounded-2xl border border-[#E4E7EC] bg-[#F9FAFB] p-4">
+                <p className="text-2xl font-semibold">{value}</p>
+                <p className="mt-1 text-[#667085]">{label}</p>
               </div>
-            )}
+            ))}
+          </div>
+        </section>
 
+        <section className="flex items-center justify-center px-5 py-10">
+          <div className="w-full max-w-md rounded-3xl border border-[#E4E7EC] bg-white p-8 shadow-[0_24px_80px_rgba(16,24,40,0.08)]">
+            <div className="mb-8 lg:hidden">
+              <Image src="/narriv-logo-light.png" alt="Narriv" width={128} height={36} priority />
+            </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-300">
-                Email address
-              </label>
-              <div className="mt-1">
-                <input
-                  {...register("email")}
-                  type="email"
-                  className="appearance-none block w-full px-3 py-2 border border-zinc-700 rounded-lg shadow-sm placeholder-zinc-500 bg-zinc-950 text-white focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 sm:text-sm transition-colors"
-                />
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>
-                )}
-              </div>
+              <p className="text-sm font-semibold text-[#465FFF]">Welcome back</p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight">Sign in to Narriv</h2>
+              <p className="mt-2 text-sm text-[#667085]">Use demo credentials or continue with Google Workspace.</p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-zinc-300">
-                Password
+            <button
+              type="button"
+              onClick={() => finishLogin()}
+              className="mt-8 flex w-full items-center justify-center gap-3 rounded-xl border border-[#D0D5DD] bg-white px-4 py-3 text-sm font-semibold text-[#344054] transition hover:bg-[#F9FAFB]"
+            >
+              <Building2 size={18} className="text-[#465FFF]" />
+              Continue with Google Workspace
+            </button>
+
+            <div className="my-6 flex items-center gap-3 text-xs font-medium uppercase tracking-[0.18em] text-[#98A2B3]">
+              <span className="h-px flex-1 bg-[#E4E7EC]" />
+              Demo email
+              <span className="h-px flex-1 bg-[#E4E7EC]" />
+            </div>
+
+            <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+              <label className="block text-sm font-medium text-[#344054]">
+                Email address
+                <span className="relative mt-2 block">
+                  <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#98A2B3]" />
+                  <input
+                    {...register("email")}
+                    type="email"
+                    className="w-full rounded-xl border border-[#D0D5DD] bg-white py-3 pl-10 pr-3 text-sm outline-none transition focus:border-[#465FFF] focus:ring-4 focus:ring-[#465FFF]/10"
+                  />
+                </span>
+                {errors.email ? <span className="mt-1 block text-xs text-[#D92D20]">{errors.email.message}</span> : null}
               </label>
-              <div className="mt-1">
+
+              <label className="block text-sm font-medium text-[#344054]">
+                Password
                 <input
                   {...register("password")}
                   type="password"
-                  className="appearance-none block w-full px-3 py-2 border border-zinc-700 rounded-lg shadow-sm placeholder-zinc-500 bg-zinc-950 text-white focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 sm:text-sm transition-colors"
+                  className="mt-2 w-full rounded-xl border border-[#D0D5DD] bg-white px-3 py-3 text-sm outline-none transition focus:border-[#465FFF] focus:ring-4 focus:ring-[#465FFF]/10"
                 />
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>
-                )}
-              </div>
-            </div>
+                {errors.password ? <span className="mt-1 block text-xs text-[#D92D20]">{errors.password.message}</span> : null}
+              </label>
 
-            <div>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
+                className="flex w-full items-center justify-center rounded-xl bg-[#465FFF] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#364CE5] disabled:opacity-60"
               >
-                {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : "Sign in"}
+                {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : "Sign in to demo"}
               </button>
+            </form>
+
+            <div className="mt-6 rounded-2xl border border-[#E4E7EC] bg-[#F9FAFB] p-4 text-sm text-[#667085]">
+              <div className="flex items-center gap-2 font-semibold text-[#344054]"><ShieldCheck size={16} className="text-[#12B76A]" />Vercel-safe demo auth</div>
+              <p className="mt-1">No backend or secrets required. Session persists locally for preview refreshes.</p>
             </div>
-          </form>
-        </div>
+
+            <p className="mt-6 text-center text-sm text-[#667085]">
+              Need access? <Link href="/signup" className="font-semibold text-[#465FFF]">Create demo workspace</Link>
+            </p>
+          </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

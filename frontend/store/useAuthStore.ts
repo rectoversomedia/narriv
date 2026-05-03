@@ -1,17 +1,14 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-
-interface User {
-  name: string;
-  email: string;
-}
+import type { DemoUser } from "@/lib/demo-auth";
 
 interface AuthState {
   token: string | null;
-  user: User | null;
+  user: DemoUser | null;
   isAuthenticated: boolean;
   setToken: (token: string | null) => void;
-  setUser: (user: User | null) => void;
+  setUser: (user: DemoUser | null) => void;
+  setSession: (token: string, user: DemoUser) => void;
   logout: () => void;
 }
 
@@ -23,10 +20,11 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       setToken: (token) => set({ token, isAuthenticated: !!token }),
       setUser: (user) => set({ user }),
+      setSession: (token, user) => set({ token, user, isAuthenticated: true }),
       logout: () => set({ token: null, user: null, isAuthenticated: false }),
     }),
     {
-      name: "auth-storage", // name of the item in the storage (must be unique)
+      name: "narriv-demo-auth",
     }
   )
 );

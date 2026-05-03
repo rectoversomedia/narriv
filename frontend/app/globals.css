@@ -1,26 +1,94 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #101828;
+  --foreground: #ffffff;
+  --primary: #465fff;
+  --border-dark: #1d2939;
+  --muted-dark: #98a2b3;
+  --surface-dark: rgba(255, 255, 255, 0.04);
+}
+
+[data-theme="dark"] {
+  --app-bg: #101828;
+  --shell-bg: #101828;
+  --panel-bg: #101828;
+  --card-bg: rgba(255, 255, 255, 0.03);
+  --active-bg: rgba(255, 255, 255, 0.03);
+  --border: #1d2939;
+  --text: #ffffff;
+  --text-soft: #d0d5dd;
+  --muted: #98a2b3;
+  --muted-2: #667085;
+  --badge-slate-bg: rgba(255, 255, 255, 0.05);
+  --shadow: transparent;
+}
+
+[data-theme="light"] {
+  --app-bg: #f9fafb;
+  --shell-bg: #f9fafb;
+  --panel-bg: #ffffff;
+  --card-bg: #ffffff;
+  --active-bg: #eef4ff;
+  --border: #e4e7ec;
+  --text: #101828;
+  --text-soft: #344054;
+  --muted: #667085;
+  --muted-2: #98a2b3;
+  --badge-slate-bg: #f2f4f7;
+  --shadow: 0 16px 48px rgba(16, 24, 40, 0.06);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-outfit);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-outfit), Arial, Helvetica, sans-serif;
+}
+
+.theme-text { color: var(--text); }
+.theme-soft { color: var(--text-soft); }
+.theme-muted { color: var(--muted); }
+.theme-muted-2 { color: var(--muted-2); }
+.theme-border { border-color: var(--border); }
+.theme-card { background: var(--card-bg); border-color: var(--border); box-shadow: var(--shadow); }
+.theme-panel { background: var(--panel-bg); border-color: var(--border); }
+.theme-shell { background: var(--shell-bg); color: var(--text); }
+.theme-active { background: var(--active-bg); }
+
+[data-theme="light"] .text-white { color: var(--text) !important; }
+[data-theme="light"] [class*="text-[#D0D5DD]"],
+[data-theme="light"] [class*="text-\[\#D0D5DD\]"] { color: var(--text-soft) !important; }
+[data-theme="light"] [class*="text-[#98A2B3]"],
+[data-theme="light"] [class*="text-\[\#98A2B3\]"] { color: var(--muted) !important; }
+[data-theme="light"] [class*="text-[#667085]"],
+[data-theme="light"] [class*="text-\[\#667085\]"] { color: var(--muted) !important; }
+[data-theme="light"] [class*="border-[#1D2939]"],
+[data-theme="light"] [class*="border-\[\#1D2939\]"] { border-color: var(--border) !important; }
+[data-theme="light"] [class*="bg-[#101828]"],
+[data-theme="light"] [class*="bg-\[\#101828\]"] { background-color: var(--panel-bg) !important; }
+[data-theme="light"] [class*="bg-white/[0.03]"],
+[data-theme="light"] [class*="bg-white/\[0\.03\]"] { background-color: var(--card-bg) !important; }
+[data-theme="light"] [class*="bg-white/[0.04]"],
+[data-theme="light"] [class*="bg-white/\[0\.04\]"] { background-color: var(--card-bg) !important; }
+
+button,
+a,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: rgba(70, 95, 255, 0.32);
 }
