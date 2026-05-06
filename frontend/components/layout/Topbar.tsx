@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { startTransition } from "react";
-import { Languages, LogOut, Menu, Moon, Search, Sun } from "lucide-react";
+import { Languages, LogOut, Menu, Moon, Sun } from "lucide-react";
 import { getCopy } from "@/lib/i18n";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useUiStore } from "@/store/useUiStore";
@@ -13,6 +13,7 @@ export function Topbar() {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const theme = useUiStore((state) => state.theme);
+  const logoSrc = theme === "light" ? "/narriv-logo-light.png" : "/narriv-logo-dark.png";
   const language = useUiStore((state) => state.language);
   const toggleTheme = useUiStore((state) => state.toggleTheme);
   const toggleLanguage = useUiStore((state) => state.toggleLanguage);
@@ -34,15 +35,11 @@ export function Topbar() {
     <header className="theme-shell theme-border sticky top-0 z-20 flex h-[76px] items-center justify-between border-b px-4 backdrop-blur-xl sm:px-6">
       <div className="flex min-w-0 items-center gap-4">
         <div className="md:hidden">
-          <Image src="/narriv-logo-dark.png" alt="Narriv" width={92} height={28} priority />
+          <Image src={logoSrc} alt="Narriv" width={92} height={28} priority />
         </div>
         <button onClick={toggleSidebar} className="theme-border theme-muted hidden h-11 w-11 items-center justify-center rounded-lg border transition-colors hover:text-[#465FFF] md:flex" type="button" aria-label="Toggle sidebar">
           <Menu size={18} />
         </button>
-        <div className="theme-card theme-muted hidden w-[430px] items-center rounded-[10px] border px-[18px] py-3 text-[13px] lg:flex">
-          <Search size={16} className="mr-2" />
-          {t.common.search}
-        </div>
       </div>
 
       <div className="flex items-center gap-3">

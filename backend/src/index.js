@@ -20,7 +20,15 @@ dotenv.config();
 scheduleAlertDetection();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+    origin: [
+        "http://localhost:3001",   // Next.js dev server
+        "http://localhost:3000",   // same-origin fallback
+        /\.vercel\.app$/,          // Vercel preview deployments
+    ],
+    methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

@@ -15,6 +15,7 @@ function isRouteActive(pathname: string, href: string) {
 export function Sidebar() {
   const pathname = usePathname();
   const language = useUiStore((state) => state.language);
+  const theme = useUiStore((state) => state.theme);
   const sidebarCollapsed = useUiStore((state) => state.sidebarCollapsed);
   const t = getCopy(language);
   const mobileRoutes = coreRoutes.slice(0, 5);
@@ -23,7 +24,7 @@ export function Sidebar() {
     <>
       <aside className={`theme-shell theme-border fixed inset-y-0 left-0 z-30 hidden flex-col border-r transition-[width] duration-300 md:flex ${sidebarCollapsed ? "w-[92px]" : "w-[292px]"}`}>
         <div className="px-5 pb-[35px] pt-7">
-          <Image src="/narriv-logo-dark.png" alt="Narriv" width={184} height={45} priority className={sidebarCollapsed ? "h-9 w-12 object-contain object-left" : "h-auto w-[184px]"} />
+          <Image src={theme === "light" ? "/narriv-logo-light.png" : "/narriv-logo-dark.png"} alt="Narriv" width={184} height={45} priority style={{ height: "auto" }} className={sidebarCollapsed ? "w-12 object-contain object-left" : "w-[184px]"} />
         </div>
 
         <nav className="flex-1 overflow-y-auto px-4 pb-4">
@@ -39,7 +40,7 @@ export function Sidebar() {
                   href={route.href}
                   title={label}
                   className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${sidebarCollapsed ? "justify-center" : ""} ${
-                    active ? "bg-[#465FFF] text-white" : "theme-soft hover:bg-white/[0.03] hover:text-white"
+                    active ? "bg-[#465FFF] text-white" : "theme-soft hover:bg-white/3 hover:text-white"
                   }`}
                 >
                   <Icon size={18} className="shrink-0" />
@@ -61,7 +62,7 @@ export function Sidebar() {
                   href={route.href}
                   title={label}
                   className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${sidebarCollapsed ? "justify-center" : ""} ${
-                    active ? "bg-[#465FFF] text-white" : "theme-soft hover:bg-white/[0.03] hover:text-white"
+                    active ? "bg-[#465FFF] text-white" : "theme-soft hover:bg-white/3 hover:text-white"
                   }`}
                 >
                   <Icon size={18} className="shrink-0" />

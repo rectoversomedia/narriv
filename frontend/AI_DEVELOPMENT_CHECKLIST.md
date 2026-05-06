@@ -1,0 +1,79 @@
+# Frontend AI Development Checklist
+
+This checklist is generated from the Narriv knowledge graph and Frontend Development Guidelines. As an AI Agent working on this repository, you should check off these items (`- [x]`) when you have completed them.
+
+## About Narriv (Application Overview)
+Narriv is a **Narrative Intelligence & GEO (Generative Engine Optimization) Platform** designed to monitor, analyze, and act upon omnichannel data. It tracks brand presence and narratives across news, social media, videos, and podcasts. 
+
+Core capabilities include:
+1. **Omnichannel Ingestion:** Pulling multi-source data into a core data model.
+2. **AI Intelligence Engine:** Processing signals to extract sentiment, detect themes, and cluster data into dominant narratives.
+3. **Predictive Alerts:** Identifying emerging risks and opportunities.
+4. **GEO AI Visibility:** Monitoring brand presence and competitor mentions on AI search engines (ChatGPT, Perplexity).
+5. **Action Engine:** Generating structured, actionable recommendations.
+6. **AI Learning Loop:** Continuously improving the system based on user feedback.
+
+## Phase 1: Foundation & Theme
+- [x] Read `frontend/FRONTEND_DEVELOPMENT_GUIDELINES.md` completely.
+- [x] Update global theme and font tokens to use `Outfit`, brand blue (`#465FFF`), and light/dark surface tokens (`app/globals.css`).
+- [x] Remove all old zinc/red-orange UI themes.
+
+## Phase 2: Mock Data & Demo Architecture
+- [x] Create `lib/mock-data.ts` to hold dummy data for all dashboard modules.
+- [x] Convert `lib/apiClient.ts` to be API-ready but non-blocking (use dummy data for Vercel demo).
+
+## Phase 3: Auth & Shell Updates
+- [x] Convert auth flow to use demo `localStorage` auth (no backend dependency for demo).
+- [x] Add "Continue with Google" demo button to the login page.
+- [x] Rebuild the Dashboard Shell (`app/(dashboard)/layout.tsx`): Update Sidebar and Topbar using stakeholder-v2 naming.
+- [x] Ensure responsive behavior (Desktop: full sidebar, Tablet: narrow/rail, Mobile: top app bar + sticky action controls).
+
+## Phase 4: Core Pages Implementation (V2)
+- [x] **Command Center** (`/`): Build the 4 metric cards, Narrative Intelligence Layer, Predictive Alerts, Structured Recommendations, GEO Watch, and Learning Loop panels using `mock-data.ts`.
+- [x] **GEO / AI Visibility** (`/visibility`): Build AI Visibility Score, Brand Presence Rate, Competitor Mention Rate, and prompt-level result tables.
+- [x] **Action Engine** (`/action-plans`): Build Intelligence Input card, Recommendation Outputs matrix, Generated Execution Plan, and feedback controls (Accept/Edit/Reject) with local state.
+- [x] **Predictive Alerts + Learning Loop** (`/alerts`): Build Predictive Alert Queue, Explainable Drivers, Adaptive Model Scoring, and Triage CTA.
+
+## Phase 5: Secondary Pages & Finalization
+- [x] **Narrative Signals** (`/signals`): Build Signal feed with sentiment badges and signal detail panel.
+- [x] **Narrative Intelligence** (`/intelligence`): Build cluster list/map approximation and dominant narrative details.
+- [x] Update remaining placeholder pages (Reports, Workspace Sources, Settings) enough for navigation completeness.
+- [x] Run `npm run lint` and resolve issues.
+- [x] Run `npm run build` to verify Vercel deployment readiness (no secret env vars required).
+
+## Phase 6: Production API Integration
+- [x] Create `lib/api-service.ts` — typed API fetcher layer with graceful fallback to mock data.
+- [x] Update `lib/apiClient.ts` — skip `demo-token` for Authorization, add `credentials: "omit"`.
+- [x] Update `app/(auth)/login/page.tsx` — call real `POST /auth/login` backend endpoint; fallback to demo session if backend unreachable; display auth errors.
+- [x] Update `app/(dashboard)/page.tsx` (Command Center) — fetch live KPI metrics from `GET /api/dashboard`; render mock metrics as fallback.
+- [x] Update `app/(dashboard)/signals/page.tsx` — fetch signals from `GET /signals`; initialize with mock data to avoid blank screen.
+- [x] Update `app/(dashboard)/alerts/page.tsx` — fetch alerts from `GET /api/alerts`; expose Acknowledge/Resolve actions when backend is live.
+- [x] Update `backend/src/index.js` — configure CORS to explicitly allow `localhost:3001` and `*.vercel.app` origins.
+
+## Phase 7: Remaining API Connections (TODO)
+- [x] Connect `app/(dashboard)/visibility/page.tsx` to a future `GET /api/visibility` endpoint.
+- [x] Connect `app/(dashboard)/action-plans/page.tsx` to a future `GET /api/action-plans` endpoint.
+- [x] Connect `app/(auth)/signup/page.tsx` to `POST /auth/register` backend endpoint.
+- [x] Redesign `login` and `signup` pages to match premium dark OLED style and design guidelines using `ui-ux-pro-max` skill.
+- [x] Add loading skeleton states to all pages that fetch from backend.
+- [x] Add error boundary for failed API fetches.
+
+## Phase 8: Page Polish, API Detail Flows, and Localization
+- [x] Remove the Topbar global search field to simplify dashboard chrome.
+- [x] Redesign `app/(dashboard)/signals/page.tsx` into a clean shadcn-style responsive data table.
+- [x] Add search, sentiment filter, source/resource filter, and icon-only pagination to Narrative Signals.
+- [x] Replace the old right-side Signal Detail panel with a responsive scrollable Review modal.
+- [x] Connect the Signal Review modal to `GET /signals/:id` through `getSignalById()`.
+- [x] Show Signal Review details from backend analysis when available: AI summary, raw scraped content, sentiment, narrative type, stakeholder, impact, confidence score, published/captured dates, and recommended action.
+- [x] Preserve graceful fallback behavior for Signal Review when detail API or analysis data is unavailable.
+- [x] Redesign `app/(dashboard)/workspace/sources/page.tsx` into a clean shadcn-style Data Sources page.
+- [x] Correct Data Sources API integration from `/api/sources` to backend `/sources`.
+- [x] Add `createSource()`, `runSourceIngestion()`, and `getIngestionStatus()` API helpers in `lib/api-service.ts`.
+- [x] Add Data Sources create form, type filter, search, responsive desktop table, mobile cards, and icon-only pagination.
+- [x] Connect Data Sources run action to `POST /ingestion/run/:sourceId` with status polling via `GET /ingestion/status/:jobId`.
+- [x] Fix dark-theme dropdown styling for Data Sources type filter by replacing the native filter select with a custom dropdown.
+- [x] Add `next-intl` dependency and client provider wired to the existing Zustand language setting.
+- [x] Add `messages/en.json` and `messages/id.json` and migrate Data Sources copy to `useTranslations("DataSources")`.
+- [x] Update Sidebar Indonesian navigation labels to match the simplified product language.
+- [x] Run `npm run lint` after the latest frontend changes.
+- [x] Run `npm run build` after the latest frontend changes.
