@@ -29,19 +29,19 @@ export function LatestSignalsTable({ signals }: LatestSignalsTableProps) {
   };
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl shadow-sm w-full h-[350px] overflow-hidden flex flex-col">
-      <div className="p-5 border-b border-zinc-800 flex justify-between items-center">
-        <h3 className="text-white font-semibold">Latest Signals</h3>
-        <Activity className="w-4 h-4 text-zinc-500" />
+    <div className="theme-card rounded-xl border shadow-sm w-full h-[350px] overflow-hidden flex flex-col">
+      <div className="theme-border p-5 border-b flex justify-between items-center">
+        <h3 className="theme-text font-semibold">Latest Signals</h3>
+        <Activity className="theme-muted w-4 h-4" />
       </div>
       <div className="p-0 flex-1 overflow-auto">
         {signals.length === 0 ? (
-          <div className="w-full h-full flex items-center justify-center text-zinc-500 text-sm">
+          <div className="theme-muted w-full h-full flex items-center justify-center text-sm">
             No signals found
           </div>
         ) : (
-          <table className="w-full text-sm text-left text-zinc-400">
-            <thead className="text-xs text-zinc-500 uppercase bg-zinc-800/50 sticky top-0">
+          <table className="theme-muted w-full text-sm text-left">
+            <thead className="theme-subtle sticky top-0 text-xs uppercase text-[var(--muted)]">
               <tr>
                 <th scope="col" className="px-4 py-3 font-medium">Title</th>
                 <th scope="col" className="px-4 py-3 font-medium">Platform</th>
@@ -49,14 +49,14 @@ export function LatestSignalsTable({ signals }: LatestSignalsTableProps) {
                 <th scope="col" className="px-4 py-3 font-medium">Date</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800">
+            <tbody className="divide-y divide-[var(--border)]">
               {signals.map((signal) => (
                 <tr 
                   key={signal.id} 
                   onClick={() => router.push('/signals')}
-                  className="hover:bg-zinc-800/50 transition-colors cursor-pointer"
+                  className="theme-row-hover transition-colors cursor-pointer"
                 >
-                  <td className="px-4 py-3 font-medium text-zinc-200 max-w-[200px] truncate">
+                  <td className="theme-text px-4 py-3 font-medium max-w-[200px] truncate">
                     {signal.title}
                   </td>
                   <td className="px-4 py-3 capitalize">

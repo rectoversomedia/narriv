@@ -9,16 +9,16 @@ interface KpiCardProps {
   iconColor?: string;
 }
 
-export function KpiCard({ title, value, subtitle, icon: Icon, iconColor = "text-zinc-400" }: KpiCardProps) {
+export function KpiCard({ title, value, subtitle, icon: Icon, iconColor = "theme-muted" }: KpiCardProps) {
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-sm flex flex-col justify-between">
+    <div className="theme-card rounded-xl border p-5 shadow-sm flex flex-col justify-between">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-zinc-400 font-medium text-sm">{title}</h3>
+        <h3 className="theme-muted font-medium text-sm">{title}</h3>
         <Icon className={`${iconColor} w-4 h-4`} />
       </div>
       <div>
-        <p className="text-3xl font-bold text-white mb-1">{value}</p>
-        {subtitle && <p className="text-xs text-zinc-500">{subtitle}</p>}
+        <p className="theme-text text-3xl font-bold mb-1">{value}</p>
+        {subtitle && <p className="theme-muted text-xs">{subtitle}</p>}
       </div>
     </div>
   );

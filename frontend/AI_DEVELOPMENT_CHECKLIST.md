@@ -77,3 +77,37 @@ Core capabilities include:
 - [x] Update Sidebar Indonesian navigation labels to match the simplified product language.
 - [x] Run `npm run lint` after the latest frontend changes.
 - [x] Run `npm run build` after the latest frontend changes.
+
+## Phase 9: Light Theme Stabilization and Dashboard Polish
+- [x] Set the app light theme as the safe visual baseline by removing the broad light-mode `.text-white` override that could affect primary buttons.
+- [x] Add shared theme hover/surface/accent utilities in `app/globals.css` for consistent light/dark interactions.
+- [x] Polish dashboard shell interactions in `Sidebar` and `Topbar` with theme-aware hover states.
+- [x] Update shared dashboard primitives (`SurfaceCard`, `InnerPanel`, `StatusBadge`, `ProgressBar`, `Skeleton`) to render cleanly in light theme.
+- [x] Audit and replace dark-first surface/hover classes across Command Center, Narrative Signals, Data Sources, Visibility, Action Plans, Alerts, Reports, Alert Detail, and workspace pages.
+- [x] Preserve primary CTA and active-navigation white text now that light-mode content text is handled explicitly with theme utilities.
+- [x] Redesign `app/(dashboard)/reports/page.tsx` into a shadcn-style Reporting & Export workspace with summary metrics, search/filter controls, readiness table, mobile cards, and distribution package panel.
+- [x] Keep Reports connected to `getReports()` with graceful mock fallback while documenting the next backend export contract in the UI.
+- [x] Add `next-intl` English/Indonesian copy for Reports and migrate `app/(dashboard)/reports/page.tsx` to `useTranslations("Reports")`.
+- [x] Add `next-intl` English/Indonesian copy for Narrative Signals and migrate `app/(dashboard)/signals/page.tsx` to `useTranslations("Signals")`.
+- [x] Add `next-intl` English/Indonesian copy for Command Center and migrate `app/(dashboard)/page.tsx` to `useTranslations("CommandCenter")`, including localized KPI labels and pipeline steps.
+- [x] Add `next-intl` English/Indonesian copy for Visibility / GEO and migrate `app/(dashboard)/visibility/page.tsx` to `useTranslations("Visibility")`.
+- [x] Add `next-intl` English/Indonesian copy for Action Plans and migrate `app/(dashboard)/action-plans/page.tsx` to `useTranslations("ActionPlans")`, including feedback state labels and fallback action-plan copy.
+- [x] Add `next-intl` English/Indonesian copy for Alerts and migrate `app/(dashboard)/alerts/page.tsx` to `useTranslations("Alerts")`.
+- [x] Add `next-intl` English/Indonesian copy for Narrative Intelligence and migrate `app/(dashboard)/intelligence/page.tsx` to `useTranslations("Intelligence")`.
+- [x] Run `npm run lint` after Phase 9 light-theme stabilization.
+- [x] Run `npm run build` after Phase 9 light-theme stabilization.
+
+## Phase 10: Shell and Remaining UI Localization
+- [x] Add `next-intl` English/Indonesian copy for Sidebar including menu, support, demo labels, and navigation labels.
+- [x] Migrate `components/layout/Sidebar.tsx` to `useTranslations("Sidebar")` and `useTranslations("Sidebar.nav")`.
+- [x] Add `next-intl` English/Indonesian copy for Topbar including dark/light toggle, language toggle, and logout labels.
+- [x] Migrate `components/layout/Topbar.tsx` to `useTranslations("Topbar")`.
+- [x] Add `next-intl` English/Indonesian copy for Alert Detail and migrate `app/(dashboard)/alerts/[id]/page.tsx` to `useTranslations("AlertDetail")`.
+- [x] Add `next-intl` English/Indonesian copy for Workspace pages including activity, cases, integrations, and settings.
+- [x] Migrate `app/(dashboard)/workspace/activity/page.tsx` to `useTranslations("Workspace.activity")`.
+- [x] Migrate `app/(dashboard)/workspace/cases/page.tsx` to `useTranslations("Workspace.cases")`.
+- [x] Migrate `app/(dashboard)/workspace/integrations/page.tsx` to `useTranslations("Workspace.integrations")`.
+- [x] Migrate `app/(dashboard)/workspace/settings/page.tsx` to `useTranslations("Workspace.settings")`.
+- [x] Configure next-intl with `src/i18n/request.ts` request config and `next.config.ts` plugin for static generation compatibility.
+- [x] Run `npm run lint` after Phase 10 localization work.
+- [x] Run `npm run build` after Phase 10 localization work.

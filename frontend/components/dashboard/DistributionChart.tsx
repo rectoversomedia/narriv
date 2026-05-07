@@ -16,11 +16,11 @@ export function DistributionChart({ title, data, colors = DEFAULT_COLORS }: Donu
   const activeData = data.filter(d => d.value > 0);
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-sm w-full h-[350px] flex flex-col">
-      <h3 className="text-white font-semibold mb-2">{title}</h3>
+    <div className="theme-card rounded-xl border p-5 shadow-sm w-full h-[350px] flex flex-col">
+      <h3 className="theme-text font-semibold mb-2">{title}</h3>
       <div className="flex-1 w-full relative">
         {activeData.length === 0 ? (
-          <div className="w-full h-full flex items-center justify-center text-zinc-500 text-sm">
+          <div className="theme-muted w-full h-full flex items-center justify-center text-sm">
             No data available
           </div>
         ) : (
@@ -48,7 +48,7 @@ export function DistributionChart({ title, data, colors = DEFAULT_COLORS }: Donu
                 verticalAlign="bottom" 
                 height={36} 
                 iconType="circle"
-                formatter={(value) => <span className="text-zinc-400 text-xs">{value}</span>}
+                formatter={(value) => <span className="theme-muted text-xs">{value}</span>}
               />
             </PieChart>
           </ResponsiveContainer>

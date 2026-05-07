@@ -28,7 +28,7 @@ export default function RootLayout({
       lang="en"
       className={`${outfit.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-[#101828] text-white">
+      <body className="min-h-full bg-[var(--app-bg)] text-[var(--text)]">
         <IntlProvider>
           <ReactQueryProvider>{children}</ReactQueryProvider>
         </IntlProvider>

@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { PlugZap } from "lucide-react";
 import { SectionHeader, StatusBadge, SurfaceCard } from "@/components/ui/demo-primitives";
 
@@ -9,13 +10,15 @@ const integrations = [
 ];
 
 export default function IntegrationsPage() {
+  const t = useTranslations("Workspace.integrations");
+
   return (
     <div className="space-y-6">
-      <SectionHeader eyebrow="Workspace" title="Integrations" description="All integrations render from dummy data for the Vercel stakeholder preview." />
+      <SectionHeader eyebrow={t("eyebrow")} title={t("title")} description={t("description")} />
       <div className="grid gap-4 lg:grid-cols-2">
         {integrations.map(([name, status, desc]) => (
           <SurfaceCard key={name} className="p-6">
-            <PlugZap className="text-[#A4BCFD]" />
+            <PlugZap className="theme-accent" />
             <div className="mt-4 flex items-start justify-between gap-3">
               <div>
                 <h2 className="theme-text text-xl font-semibold">{name}</h2>

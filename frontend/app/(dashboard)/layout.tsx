@@ -28,7 +28,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   if (!mounted || !token) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#101828]">
+      <div className="flex min-h-screen items-center justify-center bg-[#F9FAFB]">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#465FFF] border-t-transparent" />
       </div>
     );

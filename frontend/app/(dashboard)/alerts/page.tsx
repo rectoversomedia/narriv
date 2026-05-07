@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { DesignFrame, InnerPanel, SectionHeader } from "@/components/ui/demo-primitives";
-import { getCopy } from "@/lib/i18n";
-import { useUiStore } from "@/store/useUiStore";
 import {
   getAlerts,
   updateAlertStatus,
@@ -20,20 +19,18 @@ type AlertItem = {
   status: string;
 };
 
-const flow = [
-  ["1. Recommend", "AI proposes action from narrative evidence."],
-  ["2. Human feedback", "Accept, edit, reject, and explain why."],
-  ["3. Score prompt", "Quality signal updates prompt scoring."],
-  ["4. Improve model", "Ranking, tone, evidence fit improve."],
-  ["5. Better alerts", "Future recommendations get sharper."],
-];
-
 export default function AlertsPage() {
+  const t = useTranslations("Alerts");
   const [alertItems, setAlertItems] = useState<AlertItem[]>(getMockAlertItems());
   const [isLive, setIsLive] = useState(false);
   const [reviewed, setReviewed] = useState(false);
-  const language = useUiStore((state) => state.language);
-  const t = getCopy(language);
+  const flow = [
+    [t("flowSteps.recommendTitle"), t("flowSteps.recommendDesc")],
+    [t("flowSteps.feedbackTitle"), t("flowSteps.feedbackDesc")],
+    [t("flowSteps.scoreTitle"), t("flowSteps.scoreDesc")],
+    [t("flowSteps.improveTitle"), t("flowSteps.improveDesc")],
+    [t("flowSteps.betterTitle"), t("flowSteps.betterDesc")],
+  ];
 
   useEffect(() => {
     getAlerts({ limit: 10 }).then((res) => {
@@ -58,23 +55,23 @@ export default function AlertsPage() {
   return (
     <div className="space-y-6 pb-6">
       <SectionHeader
-        title={t.alerts.title}
-        description={t.alerts.subtitle}
+        title={t("title")}
+        description={t("subtitle")}
         action={
           <button
             type="button"
             className="hidden h-11 items-center justify-center rounded-lg bg-[#465FFF] px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90 lg:inline-flex"
           >
-            {t.common.learningQueue}
+            {t("learningQueue")}
           </button>
         }
       />
 
       <div className="grid gap-6 xl:grid-cols-[1fr_416px]">
         <DesignFrame className="min-h-[376px]">
-          <h2 className="theme-text text-lg font-semibold">{t.alerts.queue}</h2>
+          <h2 className="theme-text text-lg font-semibold">{t("queue")}</h2>
           {!isLive && (
-            <p className="mt-1 text-xs text-[#FDB022]">Demo data — connect backend to see live alerts</p>
+            <p className="mt-1 text-xs text-[#FDB022]">{t("demoNotice")}</p>
           )}
           <div className="mt-7 space-y-3">
             {alertItems.map((item) => (
@@ -92,19 +89,19 @@ export default function AlertsPage() {
                         onClick={() => handleStatusChange(item.id, "acknowledged")}
                         className="rounded-md bg-[#465FFF] px-3 py-1 text-xs font-semibold text-white hover:opacity-90"
                       >
-                        Acknowledge
+                        {t("acknowledge")}
                       </button>
                       <button
                         type="button"
                         onClick={() => handleStatusChange(item.id, "resolved")}
-                        className="rounded-md border border-[#465FFF33] px-3 py-1 text-xs font-semibold text-[#9AA8FF] hover:border-[#465FFF55]"
+                        className="rounded-md border border-[#465FFF33] px-3 py-1 text-xs font-semibold text-[#465FFF] hover:border-[#465FFF55]"
                       >
-                        Resolve
+                        {t("resolve")}
                       </button>
                     </div>
                   )}
                   {isLive && item.status !== "open" && (
-                    <span className="mt-2 inline-block rounded-full border border-[#12B76A]/30 bg-[#12B76A]/10 px-3 py-0.5 text-xs font-semibold text-[#6CE9A6]">
+                    <span className="mt-2 inline-block rounded-full border border-[#12B76A]/30 bg-[#12B76A]/10 px-3 py-0.5 text-xs font-semibold text-[#027A48]">
                       {item.status}
                     </span>
                   )}
@@ -115,13 +112,13 @@ export default function AlertsPage() {
         </DesignFrame>
 
         <DesignFrame className="min-h-[376px]">
-          <h2 className="theme-text text-lg font-semibold">{t.alerts.scoring}</h2>
+          <h2 className="theme-text text-lg font-semibold">{t("scoring")}</h2>
           <p className="mt-8 text-[58px] font-semibold leading-none text-[#12B76A]">+8.4</p>
           <p className="theme-muted mt-5 max-w-[330px] text-[13px] leading-[1.45]">
-            {t.alerts.scoringDesc}
+            {t("scoringDesc")}
           </p>
           <div className="mt-12 grid grid-cols-3 gap-5">
-            {[[t.alerts.accepted, "81"], [t.alerts.edited, "34"], [t.alerts.rejected, "12"]].map(
+            {[[t("accepted"), "81"], [t("edited"), "34"], [t("rejected"), "12"]].map(
               ([label, value]) => (
                 <div key={label}>
                   <p className="theme-muted text-xs font-semibold">{label}</p>
@@ -135,13 +132,13 @@ export default function AlertsPage() {
             className="mt-6 rounded-lg bg-[#465FFF] px-4 py-2 text-[13px] font-semibold text-white"
             type="button"
           >
-            {reviewed ? t.alerts.reviewed : t.common.learningQueue}
+            {reviewed ? t("reviewed") : t("learningQueue")}
           </button>
         </DesignFrame>
       </div>
 
       <DesignFrame className="min-h-[204px]">
-        <h2 className="theme-text text-lg font-semibold">{t.alerts.flow}</h2>
+        <h2 className="theme-text text-lg font-semibold">{t("flow")}</h2>
         <div className="mt-7 grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
           {flow.map(([title, detail], index) => (
             <div
@@ -149,7 +146,7 @@ export default function AlertsPage() {
               className={`flex min-h-[82px] flex-col gap-2 rounded-xl border p-4 ${index === 4 ? "border-[#465FFF33] bg-[#465FFF14]" : "theme-panel"}`}
             >
               <p className="theme-text text-sm font-semibold">{title}</p>
-              <p className={`text-xs leading-[1.35] ${index === 4 ? "text-[#9AA8FF]" : "theme-muted"}`}>
+              <p className={`text-xs leading-[1.35] ${index === 4 ? "text-[#465FFF]" : "theme-muted"}`}>
                 {detail}
               </p>
             </div>
@@ -157,8 +154,8 @@ export default function AlertsPage() {
         </div>
       </DesignFrame>
 
-      <div className="rounded-2xl border border-[#465FFF33] bg-[#465FFF0F] p-[18px_24px] text-[13px] leading-[1.45] text-[#D0D5DD]">
-        {t.alerts.footer}
+      <div className="theme-soft rounded-2xl border border-[#465FFF33] bg-[#465FFF0F] p-[18px_24px] text-[13px] leading-[1.45]">
+        {t("footer")}
       </div>
     </div>
   );

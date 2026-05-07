@@ -256,10 +256,20 @@ export default function SignupPage() {
   ];
 
   return (
-    <main className="flex min-h-screen" style={{ background: "#FFFFFF", fontFamily: "Outfit, sans-serif" }}>
+    <main
+      data-theme="light"
+      className="flex min-h-screen"
+      style={{
+        background: "linear-gradient(135deg, #F8FAFC 0%, #EEF4FF 54%, #FFFFFF 100%)",
+        fontFamily: "Outfit, sans-serif",
+      }}
+    >
 
       {/* ── LEFT ── */}
-      <div className="relative hidden flex-1 flex-col overflow-hidden lg:flex">
+      <div
+        className="relative hidden flex-1 flex-col overflow-hidden lg:flex"
+        style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(238,244,255,0.78) 100%)" }}
+      >
         <ParticleCanvas />
         <div className="pointer-events-none absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 rounded-full"
           style={{ width: 560, height: 560, background: "radial-gradient(circle, rgba(70,95,255,0.10) 0%, transparent 70%)" }} />
@@ -304,12 +314,12 @@ export default function SignupPage() {
 
       {/* ── RIGHT ── */}
       <div className="flex w-full flex-col items-center justify-center px-6 py-12 lg:w-[540px] lg:px-12"
-        style={{ background: "#FFFFFF", borderLeft: "1px solid #E2E8F0" }}>
+        style={{ background: "rgba(255,255,255,0.72)", borderLeft: "1px solid #E2E8F0" }}>
         <div className="mb-8 lg:hidden">
           <Image src="/narriv-logo-light.png" alt="Narriv" width={140} height={36} priority style={{ height: "auto" }} className="w-[140px]" />
         </div>
 
-        <div className="w-full max-w-[400px]">
+        <div className="w-full max-w-[424px] rounded-[28px] border border-[#E2E8F0] bg-white/95 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur sm:p-8">
           <div className="mb-8">
             <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-[12px]"
               style={{ background: "#465FFF0D", border: "1px solid #465FFF20" }}>

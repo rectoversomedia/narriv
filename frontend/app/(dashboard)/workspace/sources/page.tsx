@@ -39,8 +39,8 @@ function typeClass(type: string) {
 
 function statusClass(active?: boolean) {
   return active
-    ? "border-[#12B76A]/30 bg-[#12B76A]/10 text-[#6CE9A6]"
-    : "border-[#98A2B3]/25 bg-white/[0.04] text-[#D0D5DD]";
+    ? "border-[#12B76A]/30 bg-[#12B76A]/10 text-[#027A48]"
+    : "theme-border bg-[var(--badge-slate-bg)] theme-muted";
 }
 
 export default function SourcesPage() {
@@ -210,7 +210,7 @@ export default function SourcesPage() {
         <div className="flex flex-col gap-4 border-b border-[var(--border)] p-5 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="theme-text flex items-center gap-2 text-lg font-semibold tracking-tight">
-              <Database size={18} className="text-[#A4BCFD]" />
+              <Database size={18} className="theme-accent" />
               {t("connectedTitle")}
             </h2>
             <p className="theme-muted mt-1 text-sm">{t("connectedDesc")}</p>
@@ -232,7 +232,7 @@ export default function SourcesPage() {
               <button
                 type="button"
                 onClick={() => setTypeFilterOpen((value) => !value)}
-                className={`theme-card theme-text inline-flex h-9 w-full min-w-[128px] items-center justify-between gap-2 rounded-md border px-3 text-sm font-medium transition-colors hover:bg-white/[0.03] sm:w-auto ${typeFilterOpen ? "border-[#465FFF]/50 bg-[#465FFF]/10 text-[#A4BCFD]" : ""}`}
+                className={`theme-card theme-hover theme-text inline-flex h-9 w-full min-w-[128px] items-center justify-between gap-2 rounded-md border px-3 text-sm font-medium sm:w-auto ${typeFilterOpen ? "border-[#465FFF]/50 bg-[#465FFF]/10 text-[#465FFF]" : ""}`}
                 aria-expanded={typeFilterOpen}
               >
                 <span>{typeFilter === "all" ? t("allTypes") : getTypeLabel(typeFilter)}</span>
@@ -240,7 +240,7 @@ export default function SourcesPage() {
               </button>
 
               {typeFilterOpen ? (
-                <div className="absolute right-0 top-[44px] z-30 w-full min-w-[180px] rounded-lg border border-[#1D2939] bg-[#101828] p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.35)] ring-1 ring-white/10">
+                <div className="theme-card absolute right-0 top-[44px] z-30 w-full min-w-[180px] rounded-lg border p-1.5 shadow-[0_20px_50px_rgba(16,24,40,0.14)] ring-1 ring-black/5">
                   {["all", ...sourceTypes].map((sourceType) => {
                     const active = typeFilter === sourceType;
                     const label = sourceType === "all" ? t("allTypes") : getTypeLabel(sourceType);
@@ -250,7 +250,7 @@ export default function SourcesPage() {
                         key={sourceType}
                         type="button"
                         onClick={() => handleTypeFilter(sourceType)}
-                        className={`flex h-9 w-full items-center justify-between rounded-md px-2.5 text-sm transition-colors ${active ? "bg-[#465FFF14] text-[#A4BCFD]" : "text-[#D0D5DD] hover:bg-white/[0.05]"}`}
+                        className={`flex h-9 w-full items-center justify-between rounded-md px-2.5 text-sm transition-colors ${active ? "bg-[#465FFF14] text-[#465FFF]" : "theme-hover theme-text"}`}
                       >
                         <span>{label}</span>
                         {sourceType !== "all" ? (
@@ -269,9 +269,9 @@ export default function SourcesPage() {
 
         {isLoading ? (
           <div className="space-y-3 p-5">
-            <div className="h-12 rounded-md bg-white/[0.04]" />
-            <div className="h-12 rounded-md bg-white/[0.04]" />
-            <div className="h-12 rounded-md bg-white/[0.04]" />
+            <div className="theme-subtle h-12 rounded-md" />
+            <div className="theme-subtle h-12 rounded-md" />
+            <div className="theme-subtle h-12 rounded-md" />
           </div>
         ) : filteredSources.length === 0 ? (
           <div className="p-10 text-center">
@@ -306,7 +306,7 @@ export default function SourcesPage() {
                     const isRunning = runStatus === "RUNNING";
 
                     return (
-                      <tr key={source.id} className="border-b border-[var(--border)] last:border-0 hover:bg-white/[0.025]">
+                      <tr key={source.id} className="theme-row-hover border-b border-[var(--border)] last:border-0">
                         <td className="px-5 py-4 align-top">
                           <p className="theme-text truncate font-medium">{source.name}</p>
                           <p className="theme-muted mt-1 truncate text-xs">{source.actorId ?? t("defaultActor")}</p>
@@ -329,7 +329,7 @@ export default function SourcesPage() {
                             type="button"
                             onClick={() => void handleRunIngestion(source)}
                             disabled={isRunning}
-                            className="inline-flex h-8 w-[82px] items-center justify-center gap-1 rounded-md border border-[#465FFF]/30 bg-[#465FFF]/10 text-xs font-medium text-[#A4BCFD] transition-colors hover:bg-[#465FFF]/20 disabled:pointer-events-none disabled:opacity-50"
+                            className="inline-flex h-8 w-[82px] items-center justify-center gap-1 rounded-md border border-[#465FFF]/30 bg-[#465FFF]/10 text-xs font-medium text-[#465FFF] transition-colors hover:bg-[#465FFF]/20 disabled:pointer-events-none disabled:opacity-50"
                           >
                             {isRunning ? <Loader2 className="animate-spin" size={13} /> : <Play size={13} />}
                             {t("run")}
@@ -370,7 +370,7 @@ export default function SourcesPage() {
                       type="button"
                       onClick={() => void handleRunIngestion(source)}
                       disabled={isRunning}
-                      className="mt-4 inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-[#465FFF]/30 bg-[#465FFF]/10 text-sm font-medium text-[#A4BCFD] transition-colors hover:bg-[#465FFF]/20 disabled:pointer-events-none disabled:opacity-50"
+                      className="mt-4 inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-[#465FFF]/30 bg-[#465FFF]/10 text-sm font-medium text-[#465FFF] transition-colors hover:bg-[#465FFF]/20 disabled:pointer-events-none disabled:opacity-50"
                     >
                       {isRunning ? <Loader2 className="animate-spin" size={14} /> : <Play size={14} />}
                       {t("runIngestion")}
@@ -389,7 +389,7 @@ export default function SourcesPage() {
                   type="button"
                   disabled={safePage === 1}
                   onClick={() => setPage(1)}
-                  className="theme-card theme-text inline-flex h-9 w-9 items-center justify-center rounded-md border transition-colors hover:bg-white/[0.03] disabled:pointer-events-none disabled:opacity-50"
+                  className="theme-card theme-hover theme-text inline-flex h-9 w-9 items-center justify-center rounded-md border disabled:pointer-events-none disabled:opacity-50"
                   aria-label="First page"
                 >
                   <ChevronsLeft size={15} />
@@ -398,7 +398,7 @@ export default function SourcesPage() {
                   type="button"
                   disabled={safePage === 1}
                   onClick={() => setPage((value) => Math.max(1, value - 1))}
-                  className="theme-card theme-text inline-flex h-9 w-9 items-center justify-center rounded-md border transition-colors hover:bg-white/[0.03] disabled:pointer-events-none disabled:opacity-50"
+                  className="theme-card theme-hover theme-text inline-flex h-9 w-9 items-center justify-center rounded-md border disabled:pointer-events-none disabled:opacity-50"
                   aria-label="Previous page"
                 >
                   <ChevronLeft size={15} />
@@ -410,7 +410,7 @@ export default function SourcesPage() {
                   type="button"
                   disabled={safePage === totalPages}
                   onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-                  className="theme-card theme-text inline-flex h-9 w-9 items-center justify-center rounded-md border transition-colors hover:bg-white/[0.03] disabled:pointer-events-none disabled:opacity-50"
+                  className="theme-card theme-hover theme-text inline-flex h-9 w-9 items-center justify-center rounded-md border disabled:pointer-events-none disabled:opacity-50"
                   aria-label="Next page"
                 >
                   <ChevronRight size={15} />
@@ -419,7 +419,7 @@ export default function SourcesPage() {
                   type="button"
                   disabled={safePage === totalPages}
                   onClick={() => setPage(totalPages)}
-                  className="theme-card theme-text inline-flex h-9 w-9 items-center justify-center rounded-md border transition-colors hover:bg-white/[0.03] disabled:pointer-events-none disabled:opacity-50"
+                  className="theme-card theme-hover theme-text inline-flex h-9 w-9 items-center justify-center rounded-md border disabled:pointer-events-none disabled:opacity-50"
                   aria-label="Last page"
                 >
                   <ChevronsRight size={15} />

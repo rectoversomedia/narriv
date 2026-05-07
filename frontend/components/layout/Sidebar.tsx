@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { getCopy } from "@/lib/i18n";
+import { useTranslations } from "next-intl";
 import { coreRoutes, workspaceRoutes } from "@/lib/routes";
 import { useUiStore } from "@/store/useUiStore";
 
@@ -14,10 +14,10 @@ function isRouteActive(pathname: string, href: string) {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const language = useUiStore((state) => state.language);
   const theme = useUiStore((state) => state.theme);
   const sidebarCollapsed = useUiStore((state) => state.sidebarCollapsed);
-  const t = getCopy(language);
+  const t = useTranslations("Sidebar");
+  const nav = useTranslations("Sidebar.nav");
   const mobileRoutes = coreRoutes.slice(0, 5);
 
   return (
@@ -28,19 +28,19 @@ export function Sidebar() {
         </div>
 
         <nav className="flex-1 overflow-y-auto px-4 pb-4">
-          <p className="theme-muted-2 px-2 pb-5 text-[11px] font-semibold uppercase tracking-[0.18em]">{sidebarCollapsed ? "" : t.common.menu}</p>
+          <p className="theme-muted-2 px-2 pb-5 text-[11px] font-semibold uppercase tracking-[0.18em]">{sidebarCollapsed ? "" : t("menu")}</p>
           <div className="space-y-1">
             {coreRoutes.map((route) => {
               const active = isRouteActive(pathname, route.href);
               const Icon = route.icon;
-              const label = t.nav[route.key as keyof typeof t.nav];
+              const label = nav(route.key);
               return (
                 <Link
                   key={route.href}
                   href={route.href}
                   title={label}
                   className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${sidebarCollapsed ? "justify-center" : ""} ${
-                    active ? "bg-[#465FFF] text-white" : "theme-soft hover:bg-white/3 hover:text-white"
+                    active ? "bg-[#465FFF] text-white" : "theme-hover theme-soft hover:text-[#465FFF]"
                   }`}
                 >
                   <Icon size={18} className="shrink-0" />
@@ -50,19 +50,19 @@ export function Sidebar() {
             })}
           </div>
 
-          <p className="theme-muted-2 mt-7 px-2 py-3 text-[11px] font-semibold uppercase tracking-[0.18em]">{sidebarCollapsed ? "" : t.common.support}</p>
+          <p className="theme-muted-2 mt-7 px-2 py-3 text-[11px] font-semibold uppercase tracking-[0.18em]">{sidebarCollapsed ? "" : t("support")}</p>
           <div className="space-y-1">
             {workspaceRoutes.map((route) => {
               const active = isRouteActive(pathname, route.href);
               const Icon = route.icon;
-              const label = t.nav[route.key as keyof typeof t.nav];
+              const label = nav(route.key);
               return (
                 <Link
                   key={route.href}
                   href={route.href}
                   title={label}
                   className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${sidebarCollapsed ? "justify-center" : ""} ${
-                    active ? "bg-[#465FFF] text-white" : "theme-soft hover:bg-white/3 hover:text-white"
+                    active ? "bg-[#465FFF] text-white" : "theme-hover theme-soft hover:text-[#465FFF]"
                   }`}
                 >
                   <Icon size={18} className="shrink-0" />
@@ -75,8 +75,8 @@ export function Sidebar() {
 
         <div className={`p-4 ${sidebarCollapsed ? "hidden" : "block"}`}>
           <div className="theme-card rounded-2xl border p-4">
-            <p className="theme-text text-sm font-semibold">{t.common.demo}</p>
-            <p className="theme-muted mt-1 text-xs leading-5">{t.common.demoDesc}</p>
+            <p className="theme-text text-sm font-semibold">{t("demo")}</p>
+            <p className="theme-muted mt-1 text-xs leading-5">{t("demoDesc")}</p>
           </div>
         </div>
       </aside>
@@ -85,9 +85,9 @@ export function Sidebar() {
         {mobileRoutes.map((route) => {
           const active = isRouteActive(pathname, route.href);
           const Icon = route.icon;
-          const label = t.nav[route.key as keyof typeof t.nav];
+          const label = nav(route.key);
           return (
-            <Link key={route.href} href={route.href} className={`flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-semibold ${active ? "bg-[#465FFF] text-white" : "theme-muted"}`}>
+            <Link key={route.href} href={route.href} className={`flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-semibold ${active ? "bg-[#465FFF] text-white" : "theme-hover theme-muted hover:text-[#465FFF]"}`}>
               <Icon size={17} />
               <span className="truncate">{label.split(" ")[0]}</span>
             </Link>

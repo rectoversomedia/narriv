@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { startTransition } from "react";
 import { Languages, LogOut, Menu, Moon, Sun } from "lucide-react";
-import { getCopy } from "@/lib/i18n";
+import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useUiStore } from "@/store/useUiStore";
 
@@ -14,11 +14,10 @@ export function Topbar() {
   const logout = useAuthStore((state) => state.logout);
   const theme = useUiStore((state) => state.theme);
   const logoSrc = theme === "light" ? "/narriv-logo-light.png" : "/narriv-logo-dark.png";
-  const language = useUiStore((state) => state.language);
   const toggleTheme = useUiStore((state) => state.toggleTheme);
   const toggleLanguage = useUiStore((state) => state.toggleLanguage);
   const toggleSidebar = useUiStore((state) => state.toggleSidebar);
-  const t = getCopy(language);
+  const t = useTranslations("Topbar");
 
   const handleLogout = () => {
     logout();
@@ -37,19 +36,19 @@ export function Topbar() {
         <div className="md:hidden">
           <Image src={logoSrc} alt="Narriv" width={92} height={28} priority />
         </div>
-        <button onClick={toggleSidebar} className="theme-border theme-muted hidden h-11 w-11 items-center justify-center rounded-lg border transition-colors hover:text-[#465FFF] md:flex" type="button" aria-label="Toggle sidebar">
+        <button onClick={toggleSidebar} className="theme-border theme-hover theme-muted hidden h-11 w-11 items-center justify-center rounded-lg border hover:text-[#465FFF] md:flex" type="button" aria-label="Toggle sidebar">
           <Menu size={18} />
         </button>
       </div>
 
       <div className="flex items-center gap-3">
-        <button onClick={toggleTheme} className="theme-border theme-muted inline-flex h-10 w-[92px] items-center justify-center gap-2 rounded-lg border px-3 text-xs font-semibold transition-colors hover:text-[#465FFF]" type="button">
-          {theme === "dark" ? <Moon size={15} /> : <Sun size={15} />}
-          <span className="hidden sm:inline">{theme === "dark" ? t.common.dark : t.common.light}</span>
+        <button onClick={toggleTheme} className="theme-border theme-hover theme-muted inline-flex h-10 w-[92px] items-center justify-center gap-2 rounded-lg border px-3 text-xs font-semibold hover:text-[#465FFF]" type="button" aria-label="Toggle theme">
+          {theme === "dark" ? <Moon size={15} className="shrink-0" /> : <Sun size={15} className="shrink-0" />}
+          <span className="hidden min-w-10 text-center sm:inline">{theme === "dark" ? t("dark") : t("light")}</span>
         </button>
-        <button onClick={handleLanguageToggle} className="theme-border theme-muted inline-flex h-10 w-[74px] items-center justify-center gap-2 rounded-lg border px-3 text-xs font-semibold transition-colors hover:text-[#465FFF]" type="button" aria-label="Toggle language">
+        <button onClick={handleLanguageToggle} className="theme-border theme-hover theme-muted inline-flex h-10 w-[74px] items-center justify-center gap-2 rounded-lg border px-3 text-xs font-semibold hover:text-[#465FFF]" type="button" aria-label="Toggle language">
           <Languages size={15} />
-          <span className="min-w-5 text-center">{t.common.language}</span>
+          <span className="min-w-5 text-center">{t("language")}</span>
         </button>
         <div className="flex items-center gap-2">
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#465FFF] text-sm font-semibold text-white">
@@ -60,7 +59,7 @@ export function Topbar() {
             <p className="theme-muted mt-1 text-xs">{user?.workspace ?? "Narriv Demo"}</p>
           </div>
         </div>
-        <button onClick={handleLogout} className="theme-muted rounded-xl p-2 transition-colors hover:bg-white/10 hover:text-[#465FFF]" title={t.common.logout} type="button">
+        <button onClick={handleLogout} className="theme-hover theme-muted rounded-xl p-2 hover:text-[#465FFF]" title={t("logout")} type="button">
           <LogOut size={18} />
         </button>
       </div>

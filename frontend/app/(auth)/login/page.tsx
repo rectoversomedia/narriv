@@ -250,10 +250,20 @@ export default function LoginPage() {
   ];
 
   return (
-    <main className="flex min-h-screen" style={{ background: "#FFFFFF", fontFamily: "Outfit, sans-serif" }}>
+    <main
+      data-theme="light"
+      className="flex min-h-screen"
+      style={{
+        background: "linear-gradient(135deg, #F8FAFC 0%, #EEF4FF 54%, #FFFFFF 100%)",
+        fontFamily: "Outfit, sans-serif",
+      }}
+    >
 
       {/* ── LEFT — Brand Panel ─────────────────────────────────────────────── */}
-      <div className="relative hidden flex-1 flex-col justify-between overflow-hidden lg:flex">
+      <div
+        className="relative hidden flex-1 flex-col justify-between overflow-hidden lg:flex"
+        style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(238,244,255,0.78) 100%)" }}
+      >
         <ParticleCanvas />
 
         <div
@@ -318,7 +328,7 @@ export default function LoginPage() {
       {/* ── RIGHT — Form Panel ─────────────────────────────────────────────── */}
       <div
         className="flex w-full flex-col items-center justify-center px-6 py-12 lg:w-[540px] lg:px-12"
-        style={{ background: "#FFFFFF", borderLeft: "1px solid #E2E8F0" }}
+        style={{ background: "rgba(255,255,255,0.72)", borderLeft: "1px solid #E2E8F0" }}
       >
         {/* Mobile logo */}
         <div className="mb-8 lg:hidden">
@@ -333,7 +343,7 @@ export default function LoginPage() {
           />
         </div>
 
-        <div className="w-full max-w-[400px]">
+        <div className="w-full max-w-[424px] rounded-[28px] border border-[#E2E8F0] bg-white/95 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur sm:p-8">
           {/* Header */}
           <div className="mb-8">
             <div

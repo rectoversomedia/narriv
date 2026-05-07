@@ -1,12 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  --background: #101828;
-  --foreground: #ffffff;
+  --background: #f9fafb;
+  --foreground: #101828;
   --primary: #465fff;
   --border-dark: #1d2939;
   --muted-dark: #98a2b3;
   --surface-dark: rgba(255, 255, 255, 0.04);
+  --app-bg: #f9fafb;
+  --shell-bg: #f9fafb;
+  --panel-bg: #ffffff;
+  --card-bg: #ffffff;
+  --active-bg: #eef4ff;
+  --border: #e4e7ec;
+  --text: #101828;
+  --text-soft: #344054;
+  --muted: #667085;
+  --muted-2: #98a2b3;
+  --badge-slate-bg: #f2f4f7;
+  --hover-bg: #f8faff;
+  --hover-border: rgba(70, 95, 255, 0.32);
+  --subtle-bg: #f9fafb;
+  --accent-text: #465fff;
+  --shadow: 0 16px 48px rgba(16, 24, 40, 0.06);
+  color-scheme: light;
 }
 
 [data-theme="dark"] {
@@ -21,7 +38,12 @@
   --muted: #98a2b3;
   --muted-2: #667085;
   --badge-slate-bg: rgba(255, 255, 255, 0.05);
+  --hover-bg: rgba(255, 255, 255, 0.04);
+  --hover-border: rgba(255, 255, 255, 0.1);
+  --subtle-bg: rgba(255, 255, 255, 0.03);
+  --accent-text: #a4bcfd;
   --shadow: transparent;
+  color-scheme: dark;
 }
 
 [data-theme="light"] {
@@ -36,6 +58,10 @@
   --muted: #667085;
   --muted-2: #98a2b3;
   --badge-slate-bg: #f2f4f7;
+  --hover-bg: #f8faff;
+  --hover-border: rgba(70, 95, 255, 0.32);
+  --subtle-bg: #f9fafb;
+  --accent-text: #465fff;
   --shadow: 0 16px 48px rgba(16, 24, 40, 0.06);
 }
 
@@ -46,8 +72,8 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--app-bg);
+  color: var(--text);
   font-family: var(--font-outfit), Arial, Helvetica, sans-serif;
 }
 
@@ -60,8 +86,12 @@ body {
 .theme-panel { background: var(--panel-bg); border-color: var(--border); }
 .theme-shell { background: var(--shell-bg); color: var(--text); }
 .theme-active { background: var(--active-bg); }
+.theme-accent { color: var(--accent-text); }
+.theme-subtle { background: var(--subtle-bg); }
+.theme-hover { transition-property: color, background-color, border-color, box-shadow, transform; transition-duration: 200ms; }
+.theme-hover:hover { background: var(--hover-bg); border-color: var(--hover-border); }
+.theme-row-hover:hover { background: var(--hover-bg); }
 
-[data-theme="light"] .text-white { color: var(--text) !important; }
 [data-theme="light"] [class*="text-[#D0D5DD]"],
 [data-theme="light"] [class*="text-\[\#D0D5DD\]"] { color: var(--text-soft) !important; }
 [data-theme="light"] [class*="text-[#98A2B3]"],
@@ -70,6 +100,8 @@ body {
 [data-theme="light"] [class*="text-\[\#667085\]"] { color: var(--muted) !important; }
 [data-theme="light"] [class*="border-[#1D2939]"],
 [data-theme="light"] [class*="border-\[\#1D2939\]"] { border-color: var(--border) !important; }
+[data-theme="light"] [class*="border-white/"] { border-color: var(--border) !important; }
+[data-theme="light"] [class*="divide-white/"] > :not([hidden]) ~ :not([hidden]) { border-color: var(--border) !important; }
 [data-theme="light"] [class*="bg-[#101828]"],
 [data-theme="light"] [class*="bg-\[\#101828\]"] { background-color: var(--panel-bg) !important; }
 [data-theme="light"] [class*="bg-white/[0.03]"],
