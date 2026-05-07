@@ -18,15 +18,18 @@ type UiState = {
 export const useUiStore = create<UiState>()(
   persist(
     (set) => ({
-      theme: "dark",
+      theme: "light",
       language: "en",
       sidebarCollapsed: false,
       setTheme: (theme) => set({ theme }),
       setLanguage: (language) => set({ language }),
-      toggleTheme: () => set((state) => ({ theme: state.theme === "dark" ? "light" : "dark" })),
-      toggleLanguage: () => set((state) => ({ language: state.language === "en" ? "id" : "en" })),
-      toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+      toggleTheme: () =>
+        set((state) => ({ theme: state.theme === "dark" ? "light" : "dark" })),
+      toggleLanguage: () =>
+        set((state) => ({ language: state.language === "en" ? "id" : "en" })),
+      toggleSidebar: () =>
+        set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
     }),
-    { name: "narriv-ui-settings" }
-  )
+    { name: "narriv-ui-settings" },
+  ),
 );

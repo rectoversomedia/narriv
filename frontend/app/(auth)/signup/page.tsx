@@ -100,17 +100,9 @@ function StreamingHeadline() {
     return () => clearInterval(id);
   }, []);
 
-  const part1 = displayed.slice(0, HEADLINE_PART1.length);
-  const part2 = displayed.slice(HEADLINE_PART1.length);
-
   return (
-    <h1 className="text-[42px] font-semibold leading-[1.1] tracking-[-0.03em] text-white">
-      {part1}
-      {part2 && (
-        <span style={{ background: "linear-gradient(90deg, #465FFF, #6B7FFF)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-          {part2}
-        </span>
-      )}
+    <h1 className="text-[40px] font-semibold leading-[1.1] tracking-[-0.03em] text-[#0F172A] lg:text-[44px]">
+      {displayed}
       {!done && <span className="ml-0.5 inline-block h-8 w-0.5 animate-pulse bg-[#465FFF]" />}
     </h1>
   );
@@ -133,7 +125,7 @@ function PasswordStrength({ password }: { password: string }) {
       <div className="flex gap-1.5">
         {[0, 1, 2, 3].map((i) => (
           <div key={i} className="h-1 flex-1 rounded-full transition-all duration-300"
-            style={{ background: i < score ? colors[score - 1] : "#1D2939" }} />
+            style={{ background: i < score ? colors[score - 1] : "#E2E8F0" }} />
         ))}
       </div>
       {score > 0 && (
@@ -168,10 +160,10 @@ function FloatInput({ id, label, type = "text", autoComplete, error, registratio
     <div>
       <div className={`relative h-[60px] w-full rounded-[14px] border transition-all duration-200 ${
         error
-          ? "border-[#F97066] bg-[#F9706610]"
+          ? "border-[#F97066] bg-[#F9706608]"
           : focused
-            ? "border-[#465FFF] bg-[#0A0E27] shadow-[0_0_0_3px_rgba(70,95,255,0.15)]"
-            : "border-[#1D2939] bg-[#0A0E1F] hover:border-[#2D3A50]"
+            ? "border-[#465FFF] bg-white shadow-[0_0_0_4px_rgba(70,95,255,0.1)]"
+            : "border-[#E2E8F0] bg-[#F9FAFB] hover:border-[#CBD5E1]"
       }`}>
         <label
           htmlFor={id}
@@ -197,7 +189,7 @@ function FloatInput({ id, label, type = "text", autoComplete, error, registratio
             void registration.onChange(e);
             onValueChange?.(e.target.value);
           }}
-          className="absolute inset-0 w-full bg-transparent px-4 pb-2 pt-6 text-[14px] font-medium text-white outline-none placeholder-transparent"
+          className="absolute inset-0 w-full bg-transparent px-4 pb-2 pt-6 text-[14px] font-medium text-[#0F172A] outline-none placeholder-transparent"
           placeholder={label}
         />
         {isPwd && (
@@ -264,7 +256,7 @@ export default function SignupPage() {
   ];
 
   return (
-    <main className="flex min-h-screen" style={{ background: "#050A14", fontFamily: "Outfit, sans-serif" }}>
+    <main className="flex min-h-screen" style={{ background: "#FFFFFF", fontFamily: "Outfit, sans-serif" }}>
 
       {/* ── LEFT ── */}
       <div className="relative hidden flex-1 flex-col overflow-hidden lg:flex">
@@ -273,7 +265,7 @@ export default function SignupPage() {
           style={{ width: 560, height: 560, background: "radial-gradient(circle, rgba(70,95,255,0.10) 0%, transparent 70%)" }} />
 
         <div className="relative z-10 flex flex-1 flex-col p-12">
-          <Image src="/narriv-logo-dark.png" alt="Narriv" width={160} height={40} priority style={{ height: "auto" }} className="w-[160px]" />
+          <Image src="/narriv-logo-light.png" alt="Narriv" width={160} height={40} priority style={{ height: "auto" }} className="w-[160px]" />
 
           <div className="my-auto max-w-[500px]">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#465FFF33] bg-[#465FFF14] px-4 py-2">
@@ -312,19 +304,19 @@ export default function SignupPage() {
 
       {/* ── RIGHT ── */}
       <div className="flex w-full flex-col items-center justify-center px-6 py-12 lg:w-[540px] lg:px-12"
-        style={{ background: "#080C18", borderLeft: "1px solid #0F1928" }}>
+        style={{ background: "#FFFFFF", borderLeft: "1px solid #E2E8F0" }}>
         <div className="mb-8 lg:hidden">
-          <Image src="/narriv-logo-dark.png" alt="Narriv" width={140} height={36} priority style={{ height: "auto" }} className="w-[140px]" />
+          <Image src="/narriv-logo-light.png" alt="Narriv" width={140} height={36} priority style={{ height: "auto" }} className="w-[140px]" />
         </div>
 
         <div className="w-full max-w-[400px]">
           <div className="mb-8">
             <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-[12px]"
-              style={{ background: "#465FFF1A", border: "1px solid #465FFF33" }}>
+              style={{ background: "#465FFF0D", border: "1px solid #465FFF20" }}>
               <Sparkles size={20} className="text-[#465FFF]" />
             </div>
-            <h2 className="text-[26px] font-semibold tracking-[-0.02em] text-white">Create your account</h2>
-            <p className="mt-1.5 text-[14px] leading-normal text-[#475569]">
+            <h2 className="text-[26px] font-semibold tracking-[-0.02em] text-[#0F172A]">Create your account</h2>
+            <p className="mt-1.5 text-[14px] leading-normal text-[#64748B]">
               Start monitoring narratives in under 2 minutes.
             </p>
           </div>
@@ -367,19 +359,19 @@ export default function SignupPage() {
           </form>
 
           <div className="my-5 flex items-center gap-3">
-            <div className="h-px flex-1" style={{ background: "#0F1928" }} />
-            <span className="text-[12px] font-medium text-[#334155]">or sign up with</span>
-            <div className="h-px flex-1" style={{ background: "#0F1928" }} />
+            <div className="h-px flex-1" style={{ background: "#E2E8F0" }} />
+            <span className="text-[12px] font-medium text-[#64748B]">or sign up with</span>
+            <div className="h-px flex-1" style={{ background: "#E2E8F0" }} />
           </div>
 
           <button type="button"
-            className="flex h-[52px] w-full cursor-pointer items-center justify-center gap-3 rounded-[14px] border text-[14px] font-semibold text-[#94A3B8] transition-all duration-200 hover:border-[#1D2939] hover:text-white"
-            style={{ borderColor: "#0F1928", background: "#0A0E1F" }}>
+            className="flex h-[52px] w-full cursor-pointer items-center justify-center gap-3 rounded-[14px] border text-[14px] font-semibold text-[#475569] transition-all duration-200 hover:border-[#CBD5E1] hover:bg-[#F9FAFB]"
+            style={{ borderColor: "#E2E8F0", background: "#FFFFFF" }}>
             <svg width="18" height="18" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-              <path d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#FFF"/>
-              <path d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" fill="#FF3D00"/>
-              <path d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0124 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" fill="#4CAF50"/>
-              <path d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 01-4.087 5.571l.003-.002 6.19 5.238C36.971 39.801 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" fill="#1976D2"/>
+              <path d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#4285F4"/>
+              <path d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" fill="#EA4335"/>
+              <path d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0124 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" fill="#34A853"/>
+              <path d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 01-4.087 5.571l.003-.002 6.19 5.238C36.971 39.801 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" fill="#FBBC05"/>
             </svg>
             Continue with Google Workspace
           </button>
