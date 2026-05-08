@@ -38,6 +38,7 @@ model Workspace {
   reports          Report[]
   actionPlans      ActionPlan[]
   generatedAssets  GeneratedAsset[]
+  aiVisibilityResults AIVisibilityResult[]
 }
 
 model WorkspaceMember {
@@ -235,4 +236,19 @@ model GeneratedAsset {
 
   workspace     Workspace  @relation(fields: [workspaceId], references: [id])
   actionPlan    ActionPlan @relation(fields: [actionPlanId], references: [id])
+}
+
+model AIVisibilityResult {
+  id                    String   @id @default(uuid())
+  workspaceId           String
+  engineName            String   // (chatgpt, gemini, perplexity, copilot, claude, etc.)
+  visibilityScore       Float    // 0.0 - 100.0
+  brandPresenceRate     Float    // 0.0 - 1.0 (percentage as decimal)
+  competitorMentionRate Float    // 0.0 - 1.0 (percentage as decimal)
+  queryUsed             String?  // the prompt/query sent to the AI engine
+  rawResponse           Json?    // full raw response for auditing
+  metadata              Json?    // additional context (model version, tokens, etc.)
+  createdAt             DateTime @default(now())
+
+  workspace             Workspace @relation(fields: [workspaceId], references: [id])
 }
