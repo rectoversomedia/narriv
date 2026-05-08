@@ -1,15 +1,10 @@
 import prisma from "../../prisma.js";
+import { getUserWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 
 export const getSources = async (req, res) => {
     try {
         const userId = req.user.id;
-
-        // Find workspaces the user belongs to
-        const memberships = await prisma.workspaceMember.findMany({
-            where: { userId },
-            select: { workspaceId: true }
-        });
-        const workspaceIds = memberships.map(m => m.workspaceId);
+        const workspaceIds = await getUserWorkspaceIds(userId);
 
         const sources = await prisma.source.findMany({
             where: { workspaceId: { in: workspaceIds } }
@@ -31,33 +26,10 @@ export const createSource = async (req, res) => {
         }
 
         const userId = req.user.id;
+        const targetWorkspaceId = await resolveWorkspaceIdForUser(userId, workspaceId);
 
-        // Ideally, workspaceId comes from the active user's workspace
-        let targetWorkspaceId = workspaceId;
         if (!targetWorkspaceId) {
-            const membership = await prisma.workspaceMember.findFirst({
-                where: { userId }, // user's own workspace
-                include: { workspace: true }
-            });
-            
-            if (membership) {
-                targetWorkspaceId = membership.workspaceId;
-            } else {
-                // Auto create workspace for new user
-                const newWorkspace = await prisma.workspace.create({
-                    data: {
-                        name: "My Workspace",
-                        slug: "workspace-" + userId + "-" + Date.now(),
-                        members: {
-                            create: {
-                                userId,
-                                role: "admin"
-                            }
-                        }
-                    }
-                });
-                targetWorkspaceId = newWorkspace.id;
-            }
+            return res.status(403).json({ error: "Workspace access denied" });
         }
 
         const source = await prisma.source.create({
@@ -73,6 +45,72 @@ export const createSource = async (req, res) => {
         res.status(201).json(source);
     } catch (error) {
         console.error("Error creating source:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+export const updateSource = async (req, res) => {
+    try {
+        const { sourceId } = req.params;
+        const { name, type, actorId, inputConfig, isActive } = req.body;
+        const workspaceIds = await getUserWorkspaceIds(req.user.id);
+
+        const existingSource = await prisma.source.findFirst({
+            where: { id: sourceId, workspaceId: { in: workspaceIds } }
+        });
+
+        if (!existingSource) {
+            return res.status(404).json({ error: "Source not found" });
+        }
+
+        const data = {};
+        if (name !== undefined) data.name = name;
+        if (type !== undefined) data.type = type;
+        if (actorId !== undefined) data.actorId = actorId || null;
+        if (inputConfig !== undefined) data.inputConfig = inputConfig || {};
+        if (isActive !== undefined) data.isActive = Boolean(isActive);
+
+        if (Object.keys(data).length === 0) {
+            return res.status(400).json({ error: "No source fields provided" });
+        }
+
+        if (data.name === "" || data.type === "") {
+            return res.status(400).json({ error: "Name and type cannot be empty" });
+        }
+
+        const source = await prisma.source.update({
+            where: { id: sourceId },
+            data
+        });
+
+        res.json(source);
+    } catch (error) {
+        console.error("Error updating source:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+export const deleteSource = async (req, res) => {
+    try {
+        const { sourceId } = req.params;
+        const workspaceIds = await getUserWorkspaceIds(req.user.id);
+
+        const existingSource = await prisma.source.findFirst({
+            where: { id: sourceId, workspaceId: { in: workspaceIds } }
+        });
+
+        if (!existingSource) {
+            return res.status(404).json({ error: "Source not found" });
+        }
+
+        const source = await prisma.source.update({
+            where: { id: sourceId },
+            data: { isActive: false }
+        });
+
+        res.json(source);
+    } catch (error) {
+        console.error("Error deleting source:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 };

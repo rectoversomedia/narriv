@@ -1,13 +1,15 @@
 import prisma from "../../prisma.js";
 import { runActorAndFetchDataset } from "../apify/apify.service.js";
 import { addAnalysisJob } from "../../lib/queue.js";
+import { getUserWorkspaceIds } from "../../lib/workspace-access.js";
 
 export const triggerIngestion = async (req, res) => {
   try {
     const { sourceId } = req.params;
+    const workspaceIds = await getUserWorkspaceIds(req.user.id);
 
-    const source = await prisma.source.findUnique({
-      where: { id: sourceId },
+    const source = await prisma.source.findFirst({
+      where: { id: sourceId, workspaceId: { in: workspaceIds } },
     });
 
     if (!source) {
@@ -281,6 +283,7 @@ export const triggerIngestion = async (req, res) => {
           // Check if already exists in RawDocument for this source
           const existingDoc = await prisma.rawDocument.findFirst({
             where: {
+              workspaceId: source.workspaceId,
               sourceId: source.id,
               externalId: externalId,
             },
@@ -364,8 +367,9 @@ export const triggerIngestion = async (req, res) => {
 export const getIngestionStatus = async (req, res) => {
     try {
         const { jobId } = req.params;
-        const job = await prisma.ingestionJob.findUnique({
-            where: { id: jobId }
+        const workspaceIds = await getUserWorkspaceIds(req.user.id);
+        const job = await prisma.ingestionJob.findFirst({
+            where: { id: jobId, workspaceId: { in: workspaceIds } }
         });
 
         if (!job) {

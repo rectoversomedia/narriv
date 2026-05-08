@@ -11,8 +11,10 @@ This checklist is the backend todo list for Narriv after the frontend is ready. 
 ## Completed Backend Foundation
 - [x] Auth module: `POST /auth/login`, `POST /auth/register`, `GET /auth/me`.
 - [x] Auth middleware: `verifyToken` for protected routes.
-- [x] Sources module: `GET /sources`, `POST /sources`.
+- [x] Sources module: `GET /sources`, `POST /sources`, `PATCH /sources/:sourceId`, `DELETE /sources/:sourceId`.
+- [x] Sources module is scoped by workspace membership.
 - [x] Ingestion module: `POST /ingestion/run/:sourceId`, `GET /ingestion/status/:jobId`.
+- [x] Ingestion source and job status access is scoped by workspace membership.
 - [x] Signals module: `GET /signals`, `GET /signals/:id`, `POST /signals/:id/analyze`.
 - [x] Dashboard summary: `GET /dashboard/summary`.
 - [x] Alerts module: `GET /api/alerts`, `GET /api/alerts/:id`, `PATCH /api/alerts/:id/status`.
@@ -112,6 +114,10 @@ Acceptance criteria:
 ## Priority 3: Data and Operations
 
 ### 8. Source and Ingestion Hardening
+- [x] Add workspace membership checks for source list/create/update/delete.
+- [x] Add workspace membership checks before triggering ingestion.
+- [x] Add workspace membership checks before reading ingestion job status.
+- [x] Add soft delete for sources through `DELETE /sources/:sourceId` by setting `isActive=false`.
 - [ ] Verify `POST /sources` validates source type, name, actor ID, and input config.
 - [ ] Ensure ingestion jobs write raw documents and create signals consistently.
 - [ ] Add clear job status values: `queued`, `running`, `completed`, `failed`.
@@ -165,6 +171,8 @@ Acceptance criteria:
 | `getSignalById()` | `GET /signals/:id` | Ready |
 | `getSources()` | `GET /sources` | Ready |
 | `createSource()` | `POST /sources` | Ready |
+| `updateSource()` | `PATCH /sources/:sourceId` | Backend ready; frontend helper pending |
+| `deleteSource()` | `DELETE /sources/:sourceId` | Backend ready; frontend helper pending |
 | `runSourceIngestion()` | `POST /ingestion/run/:sourceId` | Ready |
 | `getIngestionStatus()` | `GET /ingestion/status/:jobId` | Ready |
 | `getAlerts()` | `GET /api/alerts` | Ready |
@@ -197,7 +205,8 @@ Acceptance criteria:
 - [ ] Test refresh-token flow if implemented.
 - [ ] Test logout invalidates refresh token if implemented.
 - [ ] Test repeated failed login attempts trigger rate limit or cooldown.
-- [ ] Run source creation and ingestion job flow.
+- [ ] Run source create, update, soft delete, and ingestion job flow.
+- [ ] Test source and ingestion endpoints reject another workspace's records.
 - [ ] Run signal list and signal detail with analysis.
 - [ ] Run dashboard summary with empty and non-empty database.
 - [ ] Run alerts list and status update.
