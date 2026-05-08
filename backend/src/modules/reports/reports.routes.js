@@ -4,6 +4,34 @@ import { generateReport } from "./reports.service.js";
 
 const router = express.Router();
 
+
+const REPORT_TEMPLATES = {
+    "Weekly Narrative Intelligence Brief": {
+        readiness: 92,
+        sections: "Signals, clusters, GEO, actions",
+        status: "Ready for exec review",
+    },
+    "AI Visibility Movement Report": {
+        readiness: 76,
+        sections: "Prompt set, citations, competitors",
+        status: "Needs GEO annotations",
+    },
+    "Predictive Risk Review": {
+        readiness: 64,
+        sections: "Drivers, owner actions, learning loop",
+        status: "Awaiting comms feedback",
+    },
+};
+
+function toFrontendReport(report) {
+    const template = REPORT_TEMPLATES[report.title] || {};
+    return {
+        title: report.title,
+        readiness: Number(template.readiness || 70),
+        sections: template.sections || "Signals, clusters, insights",
+        status: template.status || "In progress",
+    };
+}
 // POST /api/reports — Generate a new intelligence report
 router.post("/", async (req, res) => {
     try {
@@ -22,44 +50,27 @@ router.post("/", async (req, res) => {
     }
 });
 
-// GET /api/reports — List all reports for a workspace
+// GET /api/reports - Frontend contract endpoint
 router.get("/", async (req, res) => {
     try {
         const { workspaceId } = req.query;
-        const page = parseInt(req.query.page, 10) || 1;
-        const limit = parseInt(req.query.limit, 10) || 10;
-
-        const safePage = Math.max(1, page);
-        const safeLimit = Math.max(1, limit);
-        const skip = (safePage - 1) * safeLimit;
 
         const whereClause = {};
         if (workspaceId) whereClause.workspaceId = workspaceId;
 
-        const [data, total] = await Promise.all([
-            prisma.report.findMany({
-                where: whereClause,
-                skip,
-                take: safeLimit,
-                orderBy: { createdAt: "desc" }
-            }),
-            prisma.report.count({ where: whereClause })
-        ]);
+        const data = await prisma.report.findMany({
+            where: whereClause,
+            orderBy: { createdAt: "desc" }
+        });
 
         res.json({
-            data,
-            meta: {
-                page: safePage,
-                limit: safeLimit,
-                total: total || 0
-            }
+            reports: data.map(toFrontendReport),
         });
     } catch (error) {
         console.error("Error fetching reports:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 });
-
 // GET /api/reports/:id — Get a single report (re-generates full sections)
 router.get("/:id", async (req, res) => {
     try {

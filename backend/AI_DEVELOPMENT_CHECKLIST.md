@@ -59,17 +59,17 @@ Acceptance criteria:
 - [x] Missing plan data returns a safe empty state, not a crash.
 
 ### 3. Reports Endpoint
-- [ ] Implement `GET /api/reports`.
-- [ ] Return a stable response shape compatible with `frontend/lib/api-service.ts#getReports()`.
-- [ ] Return `{ reports: [...] }`.
-- [ ] Each report should include `title`, `readiness`, `sections`, and `status`.
-- [ ] Add Prisma model/table for reports.
-- [ ] Add seed/demo reports for Weekly Brief, AI Visibility Movement, and Risk Review.
+- [x] Implement `GET /api/reports`.
+- [x] Return a stable response shape compatible with `frontend/lib/api-service.ts#getReports()`.
+- [x] Return `{ reports: [...] }`.
+- [x] Each report should include `title`, `readiness`, `sections`, and `status`.
+- [x] Add Prisma model/table for reports.
+- [x] Add seed/demo reports for Weekly Brief, AI Visibility Movement, and Risk Review.
 
 Acceptance criteria:
-- [ ] `/reports` table renders backend data.
-- [ ] Search/filter/pagination continue working on frontend.
-- [ ] Empty reports state is supported.
+- [x] `/reports` table renders backend data.
+- [x] Search/filter/pagination continue working on frontend.
+- [x] Empty reports state is supported.
 
 ### 4. Narrative / Topic Map Endpoint
 - [ ] Implement `GET /api/narratives` or `GET /api/clusters`.
@@ -190,7 +190,7 @@ Acceptance criteria:
 - [x] `PromptTestRun`
 - [x] `ActionPlan`
 - [ ] `ActionFeedback`
-- [ ] `Report`
+- [x] `Report`
 - [ ] `ReportExport`
 - [ ] `Narrative` or `TopicCluster`
 - [ ] Join table between `Narrative` and `Signal` if using many-to-many clustering.

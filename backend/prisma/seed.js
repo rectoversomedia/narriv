@@ -151,6 +151,35 @@ async function main() {
     } else {
         console.log("Action plan demo data already exists. Skipping.");
     }
+
+    const reportCount = await prisma.report.count({
+        where: { workspaceId: workspace.id },
+    });
+
+    if (reportCount === 0) {
+        await prisma.report.createMany({
+            data: [
+                {
+                    workspaceId: workspace.id,
+                    title: "Weekly Narrative Intelligence Brief",
+                    summary: "Weekly rollup for signals, clusters, AI visibility, and recommended actions.",
+                },
+                {
+                    workspaceId: workspace.id,
+                    title: "AI Visibility Movement Report",
+                    summary: "Prompt-set movement, citations, and competitor presence changes.",
+                },
+                {
+                    workspaceId: workspace.id,
+                    title: "Predictive Risk Review",
+                    summary: "Risk drivers, owner actions, and feedback-loop status.",
+                },
+            ],
+        });
+        console.log(`Seeded reports demo data for workspaceId=${workspace.id}`);
+    } else {
+        console.log("Reports demo data already exists. Skipping.");
+    }
 }
 
 main()
