@@ -3,6 +3,108 @@ import prisma from "../../prisma.js";
 
 const router = express.Router();
 
+function buildGeoActions({ score, competitor, hasWeakPrompts }) {
+    const actions = [];
+
+    if (score < 60) {
+        actions.push({
+            title: "Create a plan to improve AI visibility",
+            tag: "High impact",
+            highlighted: true,
+        });
+    }
+
+    if (competitor >= 45) {
+        actions.push({
+            title: "Publish comparative proof points for key prompts",
+            tag: "Defensive",
+        });
+    }
+
+    if (hasWeakPrompts) {
+        actions.push({
+            title: "Improve answer quality on unanswered prompts",
+            tag: "Quick win",
+        });
+    }
+
+    if (actions.length === 0) {
+        actions.push({
+            title: "Maintain prompt monitoring cadence",
+            tag: "Stable",
+        });
+    }
+
+    return actions;
+}
+
+// GET /api/visibility — Frontend contract endpoint
+router.get("/", async (req, res) => {
+    try {
+        const { workspaceId } = req.query;
+        const whereClause = workspaceId ? { workspaceId } : {};
+
+        const latest = await prisma.aIVisibilityResult.findFirst({
+            where: whereClause,
+            orderBy: { createdAt: "desc" },
+            include: {
+                promptTestRuns: {
+                    orderBy: { createdAt: "asc" },
+                    select: {
+                        prompt: true,
+                        engine: true,
+                        brand: true,
+                        competitor: true,
+                        brandTone: true,
+                        compTone: true,
+                        highlighted: true,
+                    }
+                }
+            }
+        });
+
+        if (!latest) {
+            return res.json({
+                score: 0,
+                presence: 0,
+                presenceMentions: "0 of 0",
+                competitor: 0,
+                prompts: [],
+                geoActions: [],
+            });
+        }
+
+        const prompts = latest.promptTestRuns.map((row) => ({
+            prompt: row.prompt,
+            engine: row.engine,
+            brand: row.brand,
+            competitor: row.competitor,
+            brandTone: row.brandTone,
+            compTone: row.compTone,
+        }));
+
+        const mentionedCount = latest.promptTestRuns.filter((row) => row.brand.toLowerCase() === "mentioned").length;
+        const presence = Math.round(latest.brandPresenceRate * 100);
+        const competitor = Math.round(latest.competitorMentionRate * 100);
+
+        res.json({
+            score: Number(latest.visibilityScore),
+            presence,
+            presenceMentions: `${mentionedCount} of ${latest.promptTestRuns.length}`,
+            competitor,
+            prompts,
+            geoActions: buildGeoActions({
+                score: Number(latest.visibilityScore),
+                competitor,
+                hasWeakPrompts: mentionedCount < latest.promptTestRuns.length,
+            }),
+        });
+    } catch (error) {
+        console.error("Error fetching visibility data:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
 // GET /api/visibility/summary — Latest visibility snapshot per engine
 router.get("/summary", async (req, res) => {
     try {

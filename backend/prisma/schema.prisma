@@ -39,6 +39,7 @@ model Workspace {
   actionPlans      ActionPlan[]
   generatedAssets  GeneratedAsset[]
   aiVisibilityResults AIVisibilityResult[]
+  promptTestRuns    PromptTestRun[]
   aiFeedback        AIFeedback[]
 }
 
@@ -252,6 +253,24 @@ model AIVisibilityResult {
   createdAt             DateTime @default(now())
 
   workspace             Workspace @relation(fields: [workspaceId], references: [id])
+  promptTestRuns        PromptTestRun[]
+}
+
+model PromptTestRun {
+  id                    String   @id @default(uuid())
+  workspaceId           String
+  aiVisibilityResultId  String
+  prompt                String
+  engine                String
+  brand                 String
+  competitor            String
+  brandTone             String
+  compTone              String
+  highlighted           Boolean  @default(false)
+  createdAt             DateTime @default(now())
+
+  workspace             Workspace          @relation(fields: [workspaceId], references: [id])
+  aiVisibilityResult    AIVisibilityResult @relation(fields: [aiVisibilityResultId], references: [id], onDelete: Cascade)
 }
 
 model AIFeedback {

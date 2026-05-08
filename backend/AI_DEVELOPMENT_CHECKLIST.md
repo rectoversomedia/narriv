@@ -27,36 +27,36 @@ This checklist is the backend todo list for Narriv after the frontend is ready. 
 These endpoints are already wired in the frontend and should be implemented first.
 
 ### 1. AI Visibility Endpoint
-- [ ] Implement `GET /api/visibility`.
-- [ ] Return a stable response shape compatible with `frontend/lib/api-service.ts#getVisibility()`.
-- [ ] Include `score` as number.
-- [ ] Include `presence` as percentage number.
-- [ ] Include `presenceMentions` as string or number shown in the UI.
-- [ ] Include `competitor` as percentage number.
-- [ ] Include `prompts[]` with `prompt`, `engine`, `brand`, `competitor`, `brandTone`, and `compTone`.
-- [ ] Include `geoActions[]` with `title`, `tag`, and optional `highlighted`.
-- [ ] Add Prisma model/table for AI visibility results and prompt test runs.
-- [ ] Add seed/demo rows so frontend is not empty in local development.
+- [x] Implement `GET /api/visibility`.
+- [x] Return a stable response shape compatible with `frontend/lib/api-service.ts#getVisibility()`.
+- [x] Include `score` as number.
+- [x] Include `presence` as percentage number.
+- [x] Include `presenceMentions` as string or number shown in the UI.
+- [x] Include `competitor` as percentage number.
+- [x] Include `prompts[]` with `prompt`, `engine`, `brand`, `competitor`, `brandTone`, and `compTone`.
+- [x] Include `geoActions[]` with `title`, `tag`, and optional `highlighted`.
+- [x] Add Prisma model/table for AI visibility results and prompt test runs.
+- [x] Add seed/demo rows so frontend is not empty in local development.
 
 Acceptance criteria:
-- [ ] `/visibility` page renders backend data without falling back to mock data.
-- [ ] Empty state still works when there are no visibility records.
-- [ ] Response works for both English and Indonesian frontend labels.
+- [x] `/visibility` page renders backend data without falling back to mock data.
+- [x] Empty state still works when there are no visibility records.
+- [x] Response works for both English and Indonesian frontend labels.
 
 ### 2. Action Plans Endpoint
-- [ ] Implement `GET /api/action-plans`.
-- [ ] Return a stable response shape compatible with `frontend/lib/api-service.ts#getActionPlans()`.
-- [ ] Include `inputNarrative` as plain text summary.
-- [ ] Include `evidenceSummary` as plain text evidence line.
-- [ ] Include `outputs` as array of `[label, value]` pairs.
-- [ ] Include `plan` as array of `[step, time]` pairs.
-- [ ] Add Prisma model/table for action plans.
-- [ ] Add seed/demo action plan linked to high-risk alert or narrative.
+- [x] Implement `GET /api/action-plans`.
+- [x] Return a stable response shape compatible with `frontend/lib/api-service.ts#getActionPlans()`.
+- [x] Include `inputNarrative` as plain text summary.
+- [x] Include `evidenceSummary` as plain text evidence line.
+- [x] Include `outputs` as array of `[label, value]` pairs.
+- [x] Include `plan` as array of `[step, time]` pairs.
+- [x] Add Prisma model/table for action plans.
+- [x] Add seed/demo action plan linked to high-risk alert or narrative.
 
 Acceptance criteria:
-- [ ] `/action-plans` renders backend action plan data.
-- [ ] Feedback controls still work locally while feedback endpoint is pending.
-- [ ] Missing plan data returns a safe empty state, not a crash.
+- [x] `/action-plans` renders backend action plan data.
+- [x] Feedback controls still work locally while feedback endpoint is pending.
+- [x] Missing plan data returns a safe empty state, not a crash.
 
 ### 3. Reports Endpoint
 - [ ] Implement `GET /api/reports`.
@@ -186,9 +186,9 @@ Acceptance criteria:
 
 ## Suggested Prisma Tables to Add
 
-- [ ] `AIVisibilityResult`
-- [ ] `PromptTestRun`
-- [ ] `ActionPlan`
+- [x] `AIVisibilityResult`
+- [x] `PromptTestRun`
+- [x] `ActionPlan`
 - [ ] `ActionFeedback`
 - [ ] `Report`
 - [ ] `ReportExport`
