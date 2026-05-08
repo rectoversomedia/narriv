@@ -102,12 +102,12 @@ Acceptance criteria:
 - [x] Prevent duplicate alerts for the same topic/window.
 
 ### 7. Learning Loop and Feedback
-- [ ] Implement feedback endpoint for action suggestions.
-- [ ] Suggested endpoint: `POST /api/action-plans/:id/feedback`.
-- [ ] Support feedback values: `accepted`, `edited`, `rejected`.
-- [ ] Store reason/comment when feedback is edited or rejected.
-- [ ] Add Prisma model/table: `recommendation_feedback` or `ActionFeedback`.
-- [ ] Use feedback to improve future prompt scoring.
+- [x] Implement feedback endpoint for action suggestions.
+- [x] Suggested endpoint: `POST /api/action-plans/:id/feedback`.
+- [x] Support feedback values: `accepted`, `edited`, `rejected`.
+- [x] Store reason/comment when feedback is edited or rejected.
+- [x] Add Prisma model/table: `recommendation_feedback` or `ActionFeedback`. (Implemented via existing `AIFeedback` table)
+- [x] Use feedback to improve future prompt scoring.
 
 ---
 
@@ -189,7 +189,7 @@ Acceptance criteria:
 - [x] `AIVisibilityResult`
 - [x] `PromptTestRun`
 - [x] `ActionPlan`
-- [ ] `ActionFeedback`
+- [x] `ActionFeedback` (implemented via `AIFeedback`)
 - [x] `Report`
 - [ ] `ReportExport`
 - [x] `Narrative` or `TopicCluster`

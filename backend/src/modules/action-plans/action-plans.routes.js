@@ -1,5 +1,6 @@
 import express from "express";
 import prisma from "../../prisma.js";
+import { submitFeedback } from "../feedback/feedback.service.js";
 
 const router = express.Router();
 
@@ -66,6 +67,53 @@ router.get("/", async (req, res) => {
     } catch (error) {
         console.error("Error fetching action plan contract data:", error);
         return res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// POST /api/action-plans/:id/feedback — Feedback endpoint for action suggestions
+router.post("/:id/feedback", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { action, reason, comment, editedOutput, originalOutput, userId } = req.body;
+
+        const validActions = ["accepted", "edited", "rejected"];
+        if (!validActions.includes(action)) {
+            return res.status(400).json({
+                error: `Invalid action. Must be one of: ${validActions.join(", ")}`
+            });
+        }
+
+        const plan = await prisma.actionPlan.findUnique({
+            where: { id },
+            select: { id: true, workspaceId: true },
+        });
+
+        if (!plan) {
+            return res.status(404).json({ error: "Action plan not found" });
+        }
+
+        const feedback = await submitFeedback({
+            workspaceId: plan.workspaceId,
+            targetType: "action_plan",
+            targetId: plan.id,
+            action,
+            originalOutput: originalOutput || null,
+            editedOutput: editedOutput || null,
+            reason: reason || comment || null,
+            userId: userId || null,
+        });
+
+        return res.status(201).json({
+            id: feedback.id,
+            action: feedback.action,
+            targetType: feedback.targetType,
+            targetId: feedback.targetId,
+            reason: feedback.reason,
+            createdAt: feedback.createdAt,
+        });
+    } catch (error) {
+        console.error("Error submitting action plan feedback:", error);
+        return res.status(400).json({ error: error.message || "Internal server error" });
     }
 });
 

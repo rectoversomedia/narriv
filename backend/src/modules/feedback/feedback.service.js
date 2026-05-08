@@ -29,6 +29,10 @@ export async function submitFeedback({ workspaceId, targetType, targetId, action
         throw new Error(`Invalid targetType: ${targetType}. Must be one of: ${validTypes.join(", ")}`);
     }
 
+    if ((action === "edited" || action === "rejected") && (!reason || !String(reason).trim())) {
+        throw new Error("reason is required when action is edited or rejected");
+    }
+
     // If editing a signal analysis, also update the analysis record in-place
     if (targetType === "signal_analysis" && action === "edited" && editedOutput) {
         try {
@@ -64,6 +68,63 @@ export async function submitFeedback({ workspaceId, targetType, targetId, action
 
     console.log(`[FEEDBACK] Recorded: ${action} on ${targetType}/${targetId}`);
     return feedback;
+}
+
+/**
+ * Summarizes action-plan feedback into prompt-scoring signals
+ * so future prompts can optimize for acceptance quality.
+ *
+ * @param {string} workspaceId
+ * @returns {Promise<object>}
+ */
+export async function getActionPlanPromptScoring(workspaceId) {
+    const rows = await prisma.aIFeedback.findMany({
+        where: { workspaceId, targetType: "action_plan" },
+        orderBy: { createdAt: "desc" },
+        take: 200,
+    });
+
+    const total = rows.length;
+    if (total === 0) {
+        return {
+            total_feedback: 0,
+            acceptance_rate: 0,
+            edit_rate: 0,
+            rejection_rate: 0,
+            prompt_score: null,
+            top_reasons: [],
+        };
+    }
+
+    const accepted = rows.filter((r) => r.action === "accepted").length;
+    const edited = rows.filter((r) => r.action === "edited").length;
+    const rejected = rows.filter((r) => r.action === "rejected").length;
+
+    // Weighted score intended for prompt tuning dashboards.
+    const promptScore = Math.round((((accepted * 1.0) + (edited * 0.55)) / total) * 100);
+
+    const reasonCounts = {};
+    rows
+        .filter((r) => r.reason)
+        .forEach((r) => {
+            const key = String(r.reason).trim().toLowerCase();
+            if (!key) return;
+            reasonCounts[key] = (reasonCounts[key] || 0) + 1;
+        });
+
+    const topReasons = Object.entries(reasonCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([reason, count]) => ({ reason, count }));
+
+    return {
+        total_feedback: total,
+        acceptance_rate: Math.round((accepted / total) * 100),
+        edit_rate: Math.round((edited / total) * 100),
+        rejection_rate: Math.round((rejected / total) * 100),
+        prompt_score: promptScore,
+        top_reasons: topReasons,
+    };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

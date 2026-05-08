@@ -1,5 +1,5 @@
 import express from "express";
-import { submitFeedback, getAccuracyMetrics, getRejectionInsights } from "./feedback.service.js";
+import { submitFeedback, getAccuracyMetrics, getRejectionInsights, getActionPlanPromptScoring } from "./feedback.service.js";
 
 const router = express.Router();
 
@@ -55,6 +55,23 @@ router.get("/rejections", async (req, res) => {
         res.json(insights);
     } catch (error) {
         console.error("Error fetching rejection insights:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// GET /api/feedback/prompt-scoring â€” Feedback-derived prompt scoring signal
+router.get("/prompt-scoring", async (req, res) => {
+    try {
+        const { workspaceId } = req.query;
+
+        if (!workspaceId) {
+            return res.status(400).json({ error: "workspaceId query param is required" });
+        }
+
+        const scoring = await getActionPlanPromptScoring(workspaceId);
+        res.json(scoring);
+    } catch (error) {
+        console.error("Error fetching prompt scoring:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 });
