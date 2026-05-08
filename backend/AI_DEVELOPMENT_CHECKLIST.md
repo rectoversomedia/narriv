@@ -121,9 +121,26 @@ Acceptance criteria:
 ### 9. Security and Auth
 - [ ] Ensure all protected endpoints use `verifyToken`.
 - [ ] Confirm frontend token format matches backend auth middleware.
+- [ ] Set access token expiration time explicitly, e.g. `15m`, `1h`, or another approved TTL.
+- [ ] Add refresh-token strategy if sessions need to last longer than the access token TTL.
+- [ ] Store refresh tokens securely, preferably hashed in the database if persistent sessions are required.
+- [ ] Add token revocation/logout support so old refresh tokens can be invalidated.
+- [ ] Return clear `401` responses when access tokens are expired or invalid.
+- [ ] Avoid silently accepting expired JWTs in `verifyToken`.
+- [ ] Add password hashing policy using `bcrypt` or equivalent with an approved salt round value.
+- [ ] Add password strength validation for registration and password updates.
+- [ ] Add rate limiting for `POST /auth/login` and `POST /auth/register` to reduce brute-force attempts.
+- [ ] Add account lockout or cooldown after repeated failed login attempts.
+- [ ] Do not expose whether an email exists during login errors; use generic invalid credential messages.
+- [ ] Add `GET /auth/me` response shape contract for frontend session validation.
+- [ ] Add optional `POST /auth/logout` endpoint if refresh tokens or server-side sessions are implemented.
+- [ ] Add optional `POST /auth/refresh` endpoint if refresh-token flow is implemented.
 - [ ] Add workspace scoping to protected queries.
 - [ ] Prevent users from reading another workspace's data.
 - [ ] Add basic request validation for all POST/PATCH endpoints.
+- [ ] Add audit log entries for login, logout, failed login, password change, and sensitive settings updates.
+- [ ] Review CORS origins and allowed headers before production deployment.
+- [ ] Ensure secrets like `JWT_SECRET`, refresh-token secret, and database credentials are loaded from environment variables only.
 
 ### 10. Reporting Export Jobs
 - [ ] Add report export job creation endpoint when ready.
@@ -141,6 +158,9 @@ Acceptance criteria:
 | `getDashboardSummary()` | `GET /dashboard/summary` | Ready |
 | `login()` | `POST /auth/login` | Ready |
 | `signup()` | `POST /auth/register` | Ready |
+| `logout()` | `POST /auth/logout` | Optional if refresh tokens are used |
+| `refreshSession()` | `POST /auth/refresh` | Optional if refresh tokens are used |
+| `getCurrentUser()` | `GET /auth/me` | Ready |
 | `getSignals()` | `GET /signals` | Ready |
 | `getSignalById()` | `GET /signals/:id` | Ready |
 | `getSources()` | `GET /sources` | Ready |
@@ -172,6 +192,11 @@ Acceptance criteria:
 ## Testing Checklist
 
 - [ ] Run auth happy path: register, login, me.
+- [ ] Test expired access token returns `401`.
+- [ ] Test invalid JWT signature returns `401`.
+- [ ] Test refresh-token flow if implemented.
+- [ ] Test logout invalidates refresh token if implemented.
+- [ ] Test repeated failed login attempts trigger rate limit or cooldown.
 - [ ] Run source creation and ingestion job flow.
 - [ ] Run signal list and signal detail with analysis.
 - [ ] Run dashboard summary with empty and non-empty database.
