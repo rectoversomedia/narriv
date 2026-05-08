@@ -1,16 +1,20 @@
 import express from "express";
 import prisma from "../../prisma.js";
 import { generateActionPlan } from "./actions.service.js";
+import { verifyToken } from "../../middlewares/auth.middleware.js";
+import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 
 const router = express.Router();
+router.use(verifyToken);
 
 // POST /api/actions — Generate a new action plan
 router.post("/", async (req, res) => {
     try {
         const { workspaceId, strategyType, alertId, clusterId } = req.body;
 
-        if (!workspaceId) {
-            return res.status(400).json({ error: "workspaceId is required" });
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
+        if (!scopedWorkspaceId) {
+            return res.status(403).json({ error: "Workspace access denied" });
         }
 
         const validTypes = ["pr_response", "content_strategy", "influencer_strategy", "crisis_response"];
@@ -20,7 +24,7 @@ router.post("/", async (req, res) => {
             });
         }
 
-        const plan = await generateActionPlan({ workspaceId, strategyType, alertId, clusterId });
+        const plan = await generateActionPlan({ workspaceId: scopedWorkspaceId, strategyType, alertId, clusterId });
 
         res.status(201).json(plan);
     } catch (error) {
@@ -33,6 +37,10 @@ router.post("/", async (req, res) => {
 router.get("/", async (req, res) => {
     try {
         const { workspaceId } = req.query;
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
+        if (scopedWorkspaceIds.length === 0) {
+            return res.json({ data: [], meta: { page: 1, limit, total: 0 } });
+        }
         const page = parseInt(req.query.page, 10) || 1;
         const limit = parseInt(req.query.limit, 10) || 10;
 
@@ -41,7 +49,7 @@ router.get("/", async (req, res) => {
         const skip = (safePage - 1) * safeLimit;
 
         const whereClause = {};
-        if (workspaceId) whereClause.workspaceId = workspaceId;
+        whereClause.workspaceId = { in: scopedWorkspaceIds };
 
         const [data, total] = await Promise.all([
             prisma.actionPlan.findMany({
@@ -77,6 +85,7 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
         const plan = await prisma.actionPlan.findUnique({
             where: { id },
@@ -87,7 +96,7 @@ router.get("/:id", async (req, res) => {
             }
         });
 
-        if (!plan) {
+        if (!plan || !scopedWorkspaceIds.includes(plan.workspaceId)) {
             return res.status(404).json({ error: "Action plan not found" });
         }
 

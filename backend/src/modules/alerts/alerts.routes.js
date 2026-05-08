@@ -1,7 +1,10 @@
 import express from "express";
 import prisma from "../../prisma.js";
+import { verifyToken } from "../../middlewares/auth.middleware.js";
+import { resolveScopedWorkspaceIds } from "../../lib/workspace-access.js";
 
 const router = express.Router();
+router.use(verifyToken);
 
 // GET /api/alerts - Get list of alerts with filtering and pagination
 router.get("/", async (req, res) => {
@@ -10,6 +13,10 @@ router.get("/", async (req, res) => {
         const limit = parseInt(req.query.limit, 10) || 10;
         
         const { type, severity, status, workspaceId } = req.query;
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
+        if (scopedWorkspaceIds.length === 0) {
+            return res.json({ data: [], meta: { page: 1, limit, total: 0 } });
+        }
         
         const safePage = Math.max(1, page);
         const safeLimit = Math.max(1, limit);
@@ -30,9 +37,7 @@ router.get("/", async (req, res) => {
             whereClause.status = status;
         }
         
-        if (workspaceId) {
-            whereClause.workspaceId = workspaceId;
-        }
+        whereClause.workspaceId = { in: scopedWorkspaceIds };
 
         const [data, total] = await Promise.all([
             prisma.alert.findMany({
@@ -66,12 +71,13 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
         const alert = await prisma.alert.findUnique({
             where: { id },
         });
 
-        if (!alert) {
+        if (!alert || !scopedWorkspaceIds.includes(alert.workspaceId)) {
             return res.status(404).json({ error: "Alert not found" });
         }
 
@@ -89,12 +95,18 @@ router.patch("/:id/status", async (req, res) => {
     try {
         const { id } = req.params;
         const { status } = req.body;
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
         const validStatuses = ["open", "acknowledged", "resolved"];
         if (!validStatuses.includes(status)) {
             return res.status(400).json({ 
                 error: `Invalid status. Must be one of: ${validStatuses.join(", ")}` 
             });
+        }
+
+        const existing = await prisma.alert.findUnique({ where: { id } });
+        if (!existing || !scopedWorkspaceIds.includes(existing.workspaceId)) {
+            return res.status(404).json({ error: "Alert not found" });
         }
 
         const updatedAlert = await prisma.alert.update({

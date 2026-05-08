@@ -1,7 +1,10 @@
 import express from "express";
 import { submitFeedback, getAccuracyMetrics, getRejectionInsights, getActionPlanPromptScoring } from "./feedback.service.js";
+import { verifyToken } from "../../middlewares/auth.middleware.js";
+import { resolveWorkspaceIdForUser, resolveScopedWorkspaceIds } from "../../lib/workspace-access.js";
 
 const router = express.Router();
+router.use(verifyToken);
 
 // POST /api/feedback — Submit feedback on an AI output
 router.post("/", async (req, res) => {
@@ -14,8 +17,13 @@ router.post("/", async (req, res) => {
             });
         }
 
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
+        if (!scopedWorkspaceId) {
+            return res.status(403).json({ error: "Workspace access denied" });
+        }
+
         const feedback = await submitFeedback({
-            workspaceId, targetType, targetId, action, originalOutput, editedOutput, reason, userId
+            workspaceId: scopedWorkspaceId, targetType, targetId, action, originalOutput, editedOutput, reason, userId
         });
 
         res.status(201).json(feedback);
@@ -34,7 +42,10 @@ router.get("/accuracy", async (req, res) => {
             return res.status(400).json({ error: "workspaceId query param is required" });
         }
 
-        const metrics = await getAccuracyMetrics(workspaceId);
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
+        if (scopedWorkspaceIds.length === 0) return res.json({ total_feedback: 0, accuracy_score: null, acceptance_rate: 0, edit_rate: 0, rejection_rate: 0, by_type: {}, trend: [] });
+
+        const metrics = await getAccuracyMetrics(scopedWorkspaceIds[0]);
         res.json(metrics);
     } catch (error) {
         console.error("Error fetching accuracy metrics:", error);
@@ -51,7 +62,10 @@ router.get("/rejections", async (req, res) => {
             return res.status(400).json({ error: "workspaceId query param is required" });
         }
 
-        const insights = await getRejectionInsights(workspaceId);
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
+        if (scopedWorkspaceIds.length === 0) return res.json({ total_rejections: 0, by_type: {} });
+
+        const insights = await getRejectionInsights(scopedWorkspaceIds[0]);
         res.json(insights);
     } catch (error) {
         console.error("Error fetching rejection insights:", error);
@@ -68,7 +82,10 @@ router.get("/prompt-scoring", async (req, res) => {
             return res.status(400).json({ error: "workspaceId query param is required" });
         }
 
-        const scoring = await getActionPlanPromptScoring(workspaceId);
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
+        if (scopedWorkspaceIds.length === 0) return res.json({ total_feedback: 0, acceptance_rate: 0, edit_rate: 0, rejection_rate: 0, prompt_score: null, top_reasons: [] });
+
+        const scoring = await getActionPlanPromptScoring(scopedWorkspaceIds[0]);
         res.json(scoring);
     } catch (error) {
         console.error("Error fetching prompt scoring:", error);

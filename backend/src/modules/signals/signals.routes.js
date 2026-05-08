@@ -1,13 +1,17 @@
 import express from "express";
 import prisma from "../../prisma.js";
 import { analyzeSignal } from "../ai/ai.service.js";
+import { verifyToken } from "../../middlewares/auth.middleware.js";
+import { getUserWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 
 const router = express.Router();
+router.use(verifyToken);
 
 
 // GET semua data dengan pagination dan filtering
 router.get("/", async (req, res) => {
     try {
+        const workspaceIds = await getUserWorkspaceIds(req.user.id);
         const page = parseInt(req.query.page, 10) || 1;
         const limit = parseInt(req.query.limit, 10) || 10;
         
@@ -18,7 +22,7 @@ router.get("/", async (req, res) => {
         const skip = (safePage - 1) * safeLimit;
 
         // Build dynamic where clause
-        const whereClause = {};
+        const whereClause = { workspaceId: { in: workspaceIds } };
 
         if (keyword) {
             whereClause.OR = [
@@ -86,7 +90,7 @@ router.post("/", async (req, res) => {
             });
         }
 
-        const { content, sentiment } = req.body;
+        const { content, sentiment, workspaceId } = req.body;
 
         if (!content) {
             return res.status(400).json({
@@ -94,8 +98,13 @@ router.post("/", async (req, res) => {
             });
         }
 
+        const targetWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
+        if (!targetWorkspaceId) {
+            return res.status(403).json({ error: "Workspace access denied" });
+        }
+
         const newSignal = await prisma.signal.create({
-            data: { content, sentiment },
+            data: { workspaceId: targetWorkspaceId, content, sentiment },
         });
 
         res.json(newSignal);
@@ -109,6 +118,7 @@ router.post("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
+        const workspaceIds = await getUserWorkspaceIds(req.user.id);
 
         const signal = await prisma.signal.findUnique({
             where: { id },
@@ -121,7 +131,7 @@ router.get("/:id", async (req, res) => {
             }
         });
 
-        if (!signal) {
+        if (!signal || !workspaceIds.includes(signal.workspaceId)) {
             return res.status(404).json({ error: "Signal not found" });
         }
 
@@ -147,10 +157,11 @@ router.get("/:id", async (req, res) => {
 router.post("/:id/analyze", async (req, res) => {
     try {
         const { id } = req.params;
+        const workspaceIds = await getUserWorkspaceIds(req.user.id);
 
         // 1. Fetch the signal
         const signal = await prisma.signal.findUnique({ where: { id } });
-        if (!signal) {
+        if (!signal || !workspaceIds.includes(signal.workspaceId)) {
             return res.status(404).json({ error: "Signal not found" });
         }
 

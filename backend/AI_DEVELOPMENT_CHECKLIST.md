@@ -118,35 +118,35 @@ Acceptance criteria:
 - [x] Add workspace membership checks before triggering ingestion.
 - [x] Add workspace membership checks before reading ingestion job status.
 - [x] Add soft delete for sources through `DELETE /sources/:sourceId` by setting `isActive=false`.
-- [ ] Verify `POST /sources` validates source type, name, actor ID, and input config.
-- [ ] Ensure ingestion jobs write raw documents and create signals consistently.
-- [ ] Add clear job status values: `queued`, `running`, `completed`, `failed`.
-- [ ] Store ingestion errors for frontend troubleshooting.
-- [ ] Add pagination and filtering for source records if the list grows.
+- [x] Verify `POST /sources` validates source type, name, actor ID, and input config.
+- [x] Ensure ingestion jobs write raw documents and create signals consistently.
+- [x] Add clear job status values: `queued`, `running`, `completed`, `failed`.
+- [x] Store ingestion errors for frontend troubleshooting.
+- [x] Add pagination and filtering for source records if the list grows.
 
 ### 9. Security and Auth
-- [ ] Ensure all protected endpoints use `verifyToken`.
-- [ ] Confirm frontend token format matches backend auth middleware.
-- [ ] Set access token expiration time explicitly, e.g. `15m`, `1h`, or another approved TTL.
-- [ ] Add refresh-token strategy if sessions need to last longer than the access token TTL.
-- [ ] Store refresh tokens securely, preferably hashed in the database if persistent sessions are required.
-- [ ] Add token revocation/logout support so old refresh tokens can be invalidated.
-- [ ] Return clear `401` responses when access tokens are expired or invalid.
-- [ ] Avoid silently accepting expired JWTs in `verifyToken`.
-- [ ] Add password hashing policy using `bcrypt` or equivalent with an approved salt round value.
-- [ ] Add password strength validation for registration and password updates.
-- [ ] Add rate limiting for `POST /auth/login` and `POST /auth/register` to reduce brute-force attempts.
-- [ ] Add account lockout or cooldown after repeated failed login attempts.
-- [ ] Do not expose whether an email exists during login errors; use generic invalid credential messages.
-- [ ] Add `GET /auth/me` response shape contract for frontend session validation.
-- [ ] Add optional `POST /auth/logout` endpoint if refresh tokens or server-side sessions are implemented.
-- [ ] Add optional `POST /auth/refresh` endpoint if refresh-token flow is implemented.
-- [ ] Add workspace scoping to protected queries.
-- [ ] Prevent users from reading another workspace's data.
+- [x] Ensure all protected endpoints use `verifyToken`.
+- [x] Confirm frontend token format matches backend auth middleware.
+- [x] Set access token expiration time explicitly, e.g. `15m`, `1h`, or another approved TTL.
+- [x] Add refresh-token strategy if sessions need to last longer than the access token TTL.
+- [x] Store refresh tokens securely, preferably hashed in the database if persistent sessions are required.
+- [x] Add token revocation/logout support so old refresh tokens can be invalidated.
+- [x] Return clear `401` responses when access tokens are expired or invalid.
+- [x] Avoid silently accepting expired JWTs in `verifyToken`.
+- [x] Add password hashing policy using `bcrypt` or equivalent with an approved salt round value.
+- [x] Add password strength validation for registration and password updates.
+- [x] Add rate limiting for `POST /auth/login` and `POST /auth/register` to reduce brute-force attempts.
+- [x] Add account lockout or cooldown after repeated failed login attempts.
+- [x] Do not expose whether an email exists during login errors; use generic invalid credential messages.
+- [x] Add `GET /auth/me` response shape contract for frontend session validation.
+- [x] Add optional `POST /auth/logout` endpoint if refresh tokens or server-side sessions are implemented.
+- [x] Add optional `POST /auth/refresh` endpoint if refresh-token flow is implemented.
+- [x] Add workspace scoping to protected queries.
+- [x] Prevent users from reading another workspace's data.
 - [ ] Add basic request validation for all POST/PATCH endpoints.
 - [ ] Add audit log entries for login, logout, failed login, password change, and sensitive settings updates.
-- [ ] Review CORS origins and allowed headers before production deployment.
-- [ ] Ensure secrets like `JWT_SECRET`, refresh-token secret, and database credentials are loaded from environment variables only.
+- [x] Review CORS origins and allowed headers before production deployment.
+- [x] Ensure secrets like `JWT_SECRET`, refresh-token secret, and database credentials are loaded from environment variables only.
 
 ### 10. Reporting Export Jobs
 - [ ] Add report export job creation endpoint when ready.

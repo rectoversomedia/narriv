@@ -1,6 +1,5 @@
 import prisma from "../../prisma.js";
-import { runActorAndFetchDataset } from "../apify/apify.service.js";
-import { addAnalysisJob, addIngestionJob } from "../../lib/queue.js";
+import { addIngestionJob } from "../../lib/queue.js";
 import { getUserWorkspaceIds } from "../../lib/workspace-access.js";
 
 export const triggerIngestion = async (req, res) => {
@@ -21,7 +20,7 @@ export const triggerIngestion = async (req, res) => {
       data: {
         workspaceId: source.workspaceId,
         sourceId: source.id,
-        status: "RUNNING",
+        status: "queued",
       },
     });
 

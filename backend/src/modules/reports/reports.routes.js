@@ -1,8 +1,11 @@
 import express from "express";
 import prisma from "../../prisma.js";
 import { generateReport } from "./reports.service.js";
+import { verifyToken } from "../../middlewares/auth.middleware.js";
+import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 
 const router = express.Router();
+router.use(verifyToken);
 
 
 const REPORT_TEMPLATES = {
@@ -36,12 +39,12 @@ function toFrontendReport(report) {
 router.post("/", async (req, res) => {
     try {
         const { workspaceId, title, periodStart, periodEnd } = req.body;
-
-        if (!workspaceId) {
-            return res.status(400).json({ error: "workspaceId is required" });
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
+        if (!scopedWorkspaceId) {
+            return res.status(403).json({ error: "Workspace access denied" });
         }
 
-        const report = await generateReport({ workspaceId, title, periodStart, periodEnd });
+        const report = await generateReport({ workspaceId: scopedWorkspaceId, title, periodStart, periodEnd });
 
         res.status(201).json(report);
     } catch (error) {
@@ -54,9 +57,12 @@ router.post("/", async (req, res) => {
 router.get("/", async (req, res) => {
     try {
         const { workspaceId } = req.query;
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
+        if (scopedWorkspaceIds.length === 0) {
+            return res.json({ reports: [] });
+        }
 
-        const whereClause = {};
-        if (workspaceId) whereClause.workspaceId = workspaceId;
+        const whereClause = { workspaceId: { in: scopedWorkspaceIds } };
 
         const data = await prisma.report.findMany({
             where: whereClause,
@@ -75,12 +81,13 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
         const report = await prisma.report.findUnique({
             where: { id }
         });
 
-        if (!report) {
+        if (!report || !scopedWorkspaceIds.includes(report.workspaceId)) {
             return res.status(404).json({ error: "Report not found" });
         }
 
@@ -107,9 +114,10 @@ router.get("/:id", async (req, res) => {
 router.get("/:id/export/json", async (req, res) => {
     try {
         const { id } = req.params;
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
         const report = await prisma.report.findUnique({ where: { id } });
-        if (!report) {
+        if (!report || !scopedWorkspaceIds.includes(report.workspaceId)) {
             return res.status(404).json({ error: "Report not found" });
         }
 
@@ -142,9 +150,10 @@ router.get("/:id/export/json", async (req, res) => {
 router.get("/:id/export/pdf", async (req, res) => {
     try {
         const { id } = req.params;
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
         const report = await prisma.report.findUnique({ where: { id } });
-        if (!report) {
+        if (!report || !scopedWorkspaceIds.includes(report.workspaceId)) {
             return res.status(404).json({ error: "Report not found" });
         }
 

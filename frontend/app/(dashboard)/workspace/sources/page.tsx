@@ -82,7 +82,10 @@ export default function SourcesPage() {
 
   const activeCount = sources.filter((source) => source.isActive !== false).length;
   const apiBackedCount = sources.filter((source) => !source.id.startsWith("mock-source")).length;
-  const runningCount = Object.values(runningBySource).filter((status) => status === "RUNNING").length;
+  const normalizedRunningCount = Object.values(runningBySource).filter((status) => {
+    const value = String(status).toLowerCase();
+    return value === "running" || value === "queued";
+  }).length;
 
   const getTypeLabel = (sourceType: string) => {
     const keys: Record<string, "typeNews" | "typeSocial" | "typeForum" | "typeWeb"> = {
@@ -119,11 +122,11 @@ export default function SourcesPage() {
   };
 
   const handleRunIngestion = async (source: SourceRecord) => {
-    setRunningBySource((current) => ({ ...current, [source.id]: "RUNNING" }));
+    setRunningBySource((current) => ({ ...current, [source.id]: "running" }));
 
     if (source.id.startsWith("mock-source") || source.id.startsWith("local-source")) {
       window.setTimeout(() => {
-        setRunningBySource((current) => ({ ...current, [source.id]: "COMPLETED" }));
+        setRunningBySource((current) => ({ ...current, [source.id]: "completed" }));
       }, 900);
       return;
     }
@@ -138,7 +141,7 @@ export default function SourcesPage() {
       const status = await getIngestionStatus(started.jobId);
       setRunningBySource((current) => ({
         ...current,
-        [source.id]: status?.status ?? "RUNNING",
+        [source.id]: status?.status ?? "running",
       }));
     }, 1200);
   };
@@ -161,7 +164,7 @@ export default function SourcesPage() {
         {[
           [t("connectedSources"), String(sources.length), `${activeCount} ${t("active")}`],
           [t("liveApiRecords"), String(apiBackedCount), "Backend /sources"],
-          [t("runningJobs"), String(runningCount), t("ingestionQueue")],
+          [t("runningJobs"), String(normalizedRunningCount), t("ingestionQueue")],
         ].map(([label, value, helper]) => (
           <section key={label} className="theme-card rounded-xl border p-5">
             <p className="theme-muted text-sm">{label}</p>
@@ -303,7 +306,8 @@ export default function SourcesPage() {
                 <tbody>
                   {pageSources.map((source) => {
                     const runStatus = runningBySource[source.id];
-                    const isRunning = runStatus === "RUNNING";
+                    const normalizedRunStatus = runStatus ? String(runStatus).toLowerCase() : "";
+                    const isRunning = normalizedRunStatus === "running" || normalizedRunStatus === "queued";
 
                     return (
                       <tr key={source.id} className="theme-row-hover border-b border-[var(--border)] last:border-0">
@@ -345,7 +349,8 @@ export default function SourcesPage() {
             <div className="divide-y divide-[var(--border)] md:hidden">
               {pageSources.map((source) => {
                 const runStatus = runningBySource[source.id];
-                const isRunning = runStatus === "RUNNING";
+                const normalizedRunStatus = runStatus ? String(runStatus).toLowerCase() : "";
+                const isRunning = normalizedRunStatus === "running" || normalizedRunStatus === "queued";
 
                 return (
                   <article key={source.id} className="p-4">

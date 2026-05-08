@@ -1,7 +1,10 @@
 import express from "express";
 import prisma from "../../prisma.js";
+import { verifyToken } from "../../middlewares/auth.middleware.js";
+import { resolveScopedWorkspaceIds } from "../../lib/workspace-access.js";
 
 const router = express.Router();
+router.use(verifyToken);
 
 function toNarrativeItem(cluster) {
     const signals = cluster.narrativeClusterSignals.map((ncs) => ncs.signal);
@@ -42,11 +45,13 @@ function toNarrativeItem(cluster) {
 router.get("/", async (req, res) => {
     try {
         const { sentiment, impact, workspaceId } = req.query;
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
+        if (scopedWorkspaceIds.length === 0) return res.json({ narratives: [] });
 
         const whereClause = {};
         if (sentiment) whereClause.sentiment = sentiment;
         if (impact) whereClause.impact = String(impact).toUpperCase();
-        if (workspaceId) whereClause.workspaceId = workspaceId;
+        whereClause.workspaceId = { in: scopedWorkspaceIds };
 
         const data = await prisma.narrativeCluster.findMany({
             where: whereClause,
@@ -88,6 +93,7 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
         const cluster = await prisma.narrativeCluster.findUnique({
             where: { id },
@@ -108,7 +114,7 @@ router.get("/:id", async (req, res) => {
             }
         });
 
-        if (!cluster) {
+        if (!cluster || !scopedWorkspaceIds.includes(cluster.workspaceId)) {
             return res.status(404).json({ error: "Narrative cluster not found" });
         }
 

@@ -1,21 +1,29 @@
 import jwt from "jsonwebtoken";
 
 export const verifyToken = (req, res, next) => {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+        return res.status(500).json({ error: "JWT secret is not configured." });
+    }
+
     const bearerHeader = req.headers["authorization"];
     if (!bearerHeader) {
-        return res.status(403).json({ error: "Access denied. No token provided." });
+        return res.status(401).json({ error: "Access token required." });
     }
 
     const token = bearerHeader.split(" ")[1];
     if (!token) {
-         return res.status(403).json({ error: "Access denied. Token missing." });
+         return res.status(401).json({ error: "Access token missing." });
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || "narriv_secret_key");
+        const decoded = jwt.verify(token, secret);
         req.user = decoded;
         next();
     } catch (error) {
-        return res.status(401).json({ error: "Invalid token." });
+        if (error.name === "TokenExpiredError") {
+            return res.status(401).json({ error: "Access token expired." });
+        }
+        return res.status(401).json({ error: "Invalid access token." });
     }
 };

@@ -1,30 +1,25 @@
 import prisma from "../../prisma.js";
+import { getUserWorkspaceIds } from "../../lib/workspace-access.js";
 
 export const getSummary = async (req, res) => {
     try {
-        // Run both queries in parallel for faster response (<500ms)
-        const [signals, trendsRaw] = await Promise.all([
-            prisma.signal.findMany({
-                include: {
-                    analyses: {
-                        orderBy: {
-                            createdAt: 'desc'
-                        },
-                        take: 1
-                    }
-                },
-                orderBy: {
-                    capturedAt: 'desc'
+        const workspaceIds = await getUserWorkspaceIds(req.user.id);
+        const where = { workspaceId: { in: workspaceIds } };
+
+        const signals = await prisma.signal.findMany({
+            where,
+            include: {
+                analyses: {
+                    orderBy: {
+                        createdAt: 'desc'
+                    },
+                    take: 1
                 }
-            }),
-            prisma.$queryRaw`
-                SELECT TO_CHAR("capturedAt", 'YYYY-MM-DD') as date, CAST(COUNT(*) AS INTEGER) as count
-                FROM "Signal"
-                WHERE "capturedAt" IS NOT NULL
-                GROUP BY TO_CHAR("capturedAt", 'YYYY-MM-DD')
-                ORDER BY date ASC
-            `
-        ]);
+            },
+            orderBy: {
+                capturedAt: 'desc'
+            }
+        });
 
         const totalSignals = signals.length;
 
@@ -68,6 +63,16 @@ export const getSummary = async (req, res) => {
             published_at: signal.publishedAt || signal.capturedAt
         }));
 
+        const trendMap = {};
+        signals.forEach((signal) => {
+            if (!signal.capturedAt) return;
+            const date = new Date(signal.capturedAt).toISOString().split("T")[0];
+            trendMap[date] = (trendMap[date] || 0) + 1;
+        });
+        const trends = Object.entries(trendMap)
+            .map(([date, count]) => ({ date, count }))
+            .sort((a, b) => a.date.localeCompare(b.date));
+
         const response = {
             kpis: {
                 total_signals: totalSignals,
@@ -77,7 +82,7 @@ export const getSummary = async (req, res) => {
                 neutral_percentage: analyzedCount ? Math.round((neutral / analyzedCount) * 100) : 0,
                 mixed_percentage: analyzedCount ? Math.round((mixed / analyzedCount) * 100) : 0
             },
-            trends: trendsRaw,
+            trends,
             sentiment_distribution: {
                 positive,
                 negative,

@@ -1,8 +1,11 @@
 import express from "express";
 import prisma from "../../prisma.js";
 import { submitFeedback } from "../feedback/feedback.service.js";
+import { verifyToken } from "../../middlewares/auth.middleware.js";
+import { resolveScopedWorkspaceIds } from "../../lib/workspace-access.js";
 
 const router = express.Router();
+router.use(verifyToken);
 
 function parseOption(raw) {
     if (!raw) return null;
@@ -43,7 +46,11 @@ function buildActionPlanResponse(plan) {
 router.get("/", async (req, res) => {
     try {
         const { workspaceId } = req.query;
-        const whereClause = workspaceId ? { workspaceId } : {};
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
+        if (scopedWorkspaceIds.length === 0) {
+            return res.json({ inputNarrative: "", evidenceSummary: "", outputs: [], plan: [] });
+        }
+        const whereClause = { workspaceId: { in: scopedWorkspaceIds } };
 
         const latestPlan = await prisma.actionPlan.findFirst({
             where: whereClause,
@@ -87,8 +94,9 @@ router.post("/:id/feedback", async (req, res) => {
             where: { id },
             select: { id: true, workspaceId: true },
         });
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
-        if (!plan) {
+        if (!plan || !scopedWorkspaceIds.includes(plan.workspaceId)) {
             return res.status(404).json({ error: "Action plan not found" });
         }
 

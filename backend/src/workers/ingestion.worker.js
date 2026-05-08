@@ -9,6 +9,10 @@ const ingestionWorker = new Worker(
     async (job) => {
         const { jobId, sourceId } = job.data;
         console.log(`[INGESTION WORKER] Processing job: ${jobId} for source: ${sourceId}`);
+        await prisma.ingestionJob.update({
+            where: { id: jobId },
+            data: { status: "running" },
+        });
 
         const source = await prisma.source.findUnique({
             where: { id: sourceId },
@@ -177,7 +181,11 @@ const ingestionWorker = new Worker(
             if (allDatasets.length === 0) {
                 await prisma.ingestionJob.update({
                     where: { id: jobId },
-                    data: { status: "COMPLETED", finishedAt: new Date() },
+                    data: {
+                        status: "failed",
+                        errorMessage: "Ingestion returned no data from configured actors.",
+                        finishedAt: new Date()
+                    },
                 });
                 return { processedCount: 0 };
             }
@@ -257,7 +265,7 @@ const ingestionWorker = new Worker(
 
             await prisma.ingestionJob.update({
                 where: { id: jobId },
-                data: { status: "COMPLETED", finishedAt: new Date() },
+                data: { status: "completed", errorMessage: null, finishedAt: new Date() },
             });
 
             return { processedCount };
@@ -267,7 +275,7 @@ const ingestionWorker = new Worker(
             await prisma.ingestionJob.update({
                 where: { id: jobId },
                 data: {
-                    status: "FAILED",
+                    status: "failed",
                     errorMessage: backgroundError.message,
                     finishedAt: new Date(),
                 },

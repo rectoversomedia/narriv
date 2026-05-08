@@ -15,6 +15,10 @@ model User {
   name          String?
   email         String   @unique
   password      String   // the summary.md uses password_hash, but we'll stick to 'password' or use password_hash. Let's use password to be simple.
+  failedLoginAttempts Int @default(0)
+  lockedUntil   DateTime?
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -301,4 +305,25 @@ model AIAnalysisFailureLog {
 
   workspace     Workspace @relation(fields: [workspaceId], references: [id])
   signal        Signal    @relation(fields: [signalId], references: [id], onDelete: Cascade)
+}
+
+model RefreshToken {
+  id          String   @id @default(uuid())
+  userId      String
+  tokenHash   String
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  event       String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 }

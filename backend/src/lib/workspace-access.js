@@ -43,3 +43,10 @@ export const resolveWorkspaceIdForUser = async (userId, requestedWorkspaceId) =>
 
   return workspace.id;
 };
+
+export const resolveScopedWorkspaceIds = async (userId, requestedWorkspaceId) => {
+  const allowedWorkspaceIds = await getUserWorkspaceIds(userId);
+  if (!requestedWorkspaceId) return allowedWorkspaceIds;
+  if (allowedWorkspaceIds.includes(requestedWorkspaceId)) return [requestedWorkspaceId];
+  return [];
+};

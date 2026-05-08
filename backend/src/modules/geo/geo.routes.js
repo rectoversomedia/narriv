@@ -1,7 +1,10 @@
 import express from "express";
 import prisma from "../../prisma.js";
+import { verifyToken } from "../../middlewares/auth.middleware.js";
+import { resolveScopedWorkspaceIds } from "../../lib/workspace-access.js";
 
 const router = express.Router();
+router.use(verifyToken);
 
 function buildGeoActions({ score, competitor, hasWeakPrompts }) {
     const actions = [];
@@ -42,7 +45,11 @@ function buildGeoActions({ score, competitor, hasWeakPrompts }) {
 router.get("/", async (req, res) => {
     try {
         const { workspaceId } = req.query;
-        const whereClause = workspaceId ? { workspaceId } : {};
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
+        if (scopedWorkspaceIds.length === 0) {
+            return res.json({ score: 0, presence: 0, presenceMentions: "0 of 0", competitor: 0, prompts: [], geoActions: [] });
+        }
+        const whereClause = { workspaceId: { in: scopedWorkspaceIds } };
 
         const latest = await prisma.aIVisibilityResult.findFirst({
             where: whereClause,
@@ -109,9 +116,12 @@ router.get("/", async (req, res) => {
 router.get("/summary", async (req, res) => {
     try {
         const { workspaceId } = req.query;
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
+        if (scopedWorkspaceIds.length === 0) {
+            return res.json({ kpis: { avg_visibility_score: 0, avg_brand_presence_rate: 0, avg_competitor_mention_rate: 0, engines_tracked: 0, total_analyses: 0 }, engine_breakdown: [] });
+        }
 
-        const whereClause = {};
-        if (workspaceId) whereClause.workspaceId = workspaceId;
+        const whereClause = { workspaceId: { in: scopedWorkspaceIds } };
 
         // Fetch the most recent result for each engine
         const allResults = await prisma.aIVisibilityResult.findMany({
@@ -171,6 +181,10 @@ router.get("/summary", async (req, res) => {
 router.get("/trends", async (req, res) => {
     try {
         const { workspaceId, engineName, days } = req.query;
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
+        if (scopedWorkspaceIds.length === 0) {
+            return res.json({ period: { from: new Date().toISOString(), to: new Date().toISOString(), days: parseInt(days, 10) || 30 }, trends: [], engine_trends: {} });
+        }
 
         const lookbackDays = parseInt(days, 10) || 30;
         const since = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000);
@@ -178,7 +192,7 @@ router.get("/trends", async (req, res) => {
         const whereClause = {
             createdAt: { gte: since }
         };
-        if (workspaceId) whereClause.workspaceId = workspaceId;
+        whereClause.workspaceId = { in: scopedWorkspaceIds };
         if (engineName) whereClause.engineName = engineName;
 
         const results = await prisma.aIVisibilityResult.findMany({

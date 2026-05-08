@@ -1,7 +1,9 @@
 import express from "express";
 import { analyzeSignal } from "./ai.service.js";
+import { verifyToken } from "../../middlewares/auth.middleware.js";
 
 const router = express.Router();
+router.use(verifyToken);
 
 /**
  * POST /ai/analyze
