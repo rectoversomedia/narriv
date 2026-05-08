@@ -39,6 +39,7 @@ model Workspace {
   actionPlans      ActionPlan[]
   generatedAssets  GeneratedAsset[]
   aiVisibilityResults AIVisibilityResult[]
+  aiFeedback        AIFeedback[]
 }
 
 model WorkspaceMember {
@@ -251,4 +252,19 @@ model AIVisibilityResult {
   createdAt             DateTime @default(now())
 
   workspace             Workspace @relation(fields: [workspaceId], references: [id])
+}
+
+model AIFeedback {
+  id              String   @id @default(uuid())
+  workspaceId     String
+  targetType      String   // (signal_analysis, alert, action_plan, cluster)
+  targetId        String   // ID of the entity being rated
+  action          String   // (accepted, edited, rejected)
+  originalOutput  Json?    // the AI output before feedback
+  editedOutput    Json?    // user's corrected version (if edited)
+  reason          String?  // optional reason for rejection/edit
+  userId          String?  // who gave the feedback
+  createdAt       DateTime @default(now())
+
+  workspace       Workspace @relation(fields: [workspaceId], references: [id])
 }

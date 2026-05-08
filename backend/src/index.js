@@ -14,6 +14,7 @@ import narrativesRoutes from "./modules/narratives/narratives.routes.js";
 import geoRoutes from "./modules/geo/geo.routes.js";
 import reportsRoutes from "./modules/reports/reports.routes.js";
 import actionsRoutes from "./modules/actions/actions.routes.js";
+import feedbackRoutes from "./modules/feedback/feedback.routes.js";
 import "./workers/ai-analysis.worker.js";
 import "./workers/alert.worker.js";
 import "./workers/ingestion.worker.js";
@@ -57,6 +58,7 @@ app.use("/api/narratives", narrativesRoutes);
 app.use("/api/visibility", geoRoutes);
 app.use("/api/reports", reportsRoutes);
 app.use("/api/actions", actionsRoutes);
+app.use("/api/feedback", feedbackRoutes);
 
 app.listen(3000, () => {
     console.log("Server running on http://localhost:3000");
