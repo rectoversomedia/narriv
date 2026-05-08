@@ -301,7 +301,7 @@ export async function getVisibility(): Promise<unknown | null> {
         compTone: prompt.competitors.startsWith("1") ? "text-[#FDB022]" : "text-[#F97066]",
       })),
       geoActions: [
-        { title: "Create action plan from visibility gap", tag: "High impact", highlighted: true },
+        { title: "Create a plan to improve AI visibility", tag: "High impact", highlighted: true },
         ...actionRecommendations.slice(0, 2).map((action) => ({
           title: action.title,
           tag: action.impact,
@@ -319,9 +319,9 @@ export async function getActionPlans(): Promise<unknown | null> {
 
     return {
       inputNarrative:
-        "Delivery reliability complaints are clustering into a trust issue across social, community, news, and AI answer surfaces.",
+        "Delivery reliability complaints are becoming a trust issue across social media, communities, news, and AI answers.",
       evidenceSummary:
-        "Evidence: 148 linked findings · 6 source types · 92% confidence · 84% escalation probability",
+        "Evidence: 148 related findings · 6 source types · 92% confidence · 84% chance the issue grows",
       outputs: [
         ["Primary action", primary.title],
         ["Channel", primary.channel],

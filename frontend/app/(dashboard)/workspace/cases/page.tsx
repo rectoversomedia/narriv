@@ -2,14 +2,13 @@ import { useTranslations } from "next-intl";
 import { BriefcaseBusiness } from "lucide-react";
 import { SectionHeader, StatusBadge, SurfaceCard } from "@/components/ui/demo-primitives";
 
-const cases = [
-  ["Delivery reliability escalation", "Open", "Comms"],
-  ["Competitor AI visibility gap", "Review", "Growth"],
-  ["Procurement trust narrative", "Monitoring", "PR"],
-];
-
 export default function CasesPage() {
   const t = useTranslations("Workspace.cases");
+  const cases = [
+    [t("items.deliveryTitle"), t("items.deliveryStatus"), t("items.deliveryOwner")],
+    [t("items.competitorTitle"), t("items.competitorStatus"), t("items.competitorOwner")],
+    [t("items.trustTitle"), t("items.trustStatus"), t("items.trustOwner")],
+  ];
 
   return (
     <div className="space-y-6">

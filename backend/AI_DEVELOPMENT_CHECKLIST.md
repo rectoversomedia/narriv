@@ -1,150 +1,183 @@
 # Backend AI Development Checklist
 
-This checklist is generated from the Narriv knowledge graph and project structure. As an AI Agent working on this repository, you should check off these items (`- [x]`) when you have completed them.
+This checklist is the backend todo list for Narriv after the frontend is ready. Keep this file updated so backend and frontend development stay aligned.
 
-## About Narriv (Application Overview)
-Narriv is a **Narrative Intelligence & GEO (Generative Engine Optimization) Platform** designed to monitor, analyze, and act upon omnichannel data. It tracks brand presence and narratives across news, social media, videos, and podcasts. 
+## Current Frontend State
+- Frontend UI is ready in light/dark mode with shadcn-style dashboard pages.
+- Frontend supports English and Indonesian through `next-intl`.
+- Frontend has safe mock fallback behavior when backend endpoints are not ready.
+- Frontend already calls the backend contracts listed below.
 
-Core capabilities include:
-1. **Omnichannel Ingestion:** Pulling multi-source data (via Apify) into a core data model.
-2. **AI Intelligence Engine:** Processing signals to extract sentiment, detect themes, and cluster data into dominant narratives.
-3. **Predictive Alerts:** Identifying emerging risks and opportunities with response window tracking.
-4. **GEO AI Visibility:** Monitoring brand presence and competitor mentions specifically on AI search engines (e.g., ChatGPT, Perplexity).
-5. **Action Engine:** Generating structured, actionable recommendations (e.g., PR responses, content strategies).
-6. **AI Learning Loop:** Continuously improving the system based on user feedback (Accept/Edit/Reject) on generated actions.
-
----
-
-## Phase 1: Foundation & Auth (COMPLETED)
-- [x] Auth module: `POST /auth/login`, `POST /auth/register`, `GET /auth/me`
-- [x] Middleware: `verifyToken` for protected routes
-- [x] Database: Prisma schema with User, Workspace, Signal, Alert models
+## Completed Backend Foundation
+- [x] Auth module: `POST /auth/login`, `POST /auth/register`, `GET /auth/me`.
+- [x] Auth middleware: `verifyToken` for protected routes.
+- [x] Sources module: `GET /sources`, `POST /sources`.
+- [x] Ingestion module: `POST /ingestion/run/:sourceId`, `GET /ingestion/status/:jobId`.
+- [x] Signals module: `GET /signals`, `GET /signals/:id`, `POST /signals/:id/analyze`.
+- [x] Dashboard summary: `GET /dashboard/summary`.
+- [x] Alerts module: `GET /api/alerts`, `GET /api/alerts/:id`, `PATCH /api/alerts/:id/status`.
+- [x] CORS allows local frontend and Vercel preview domains.
 
 ---
 
-## Phase 2: Data Ingestion & Sources (COMPLETED)
-- [x] Sources module: `GET /sources`, `POST /sources`
-- [x] Ingestion module: `POST /ingestion/run/:sourceId`, `GET /ingestion/status/:jobId`
-- [x] Apify integration: `apify.service.js` for web scraping
-- [x] End-to-end data flow from sources to signals
+## Priority 1: Frontend-Blocking Endpoints
+
+These endpoints are already wired in the frontend and should be implemented first.
+
+### 1. AI Visibility Endpoint
+- [ ] Implement `GET /api/visibility`.
+- [ ] Return a stable response shape compatible with `frontend/lib/api-service.ts#getVisibility()`.
+- [ ] Include `score` as number.
+- [ ] Include `presence` as percentage number.
+- [ ] Include `presenceMentions` as string or number shown in the UI.
+- [ ] Include `competitor` as percentage number.
+- [ ] Include `prompts[]` with `prompt`, `engine`, `brand`, `competitor`, `brandTone`, and `compTone`.
+- [ ] Include `geoActions[]` with `title`, `tag`, and optional `highlighted`.
+- [ ] Add Prisma model/table for AI visibility results and prompt test runs.
+- [ ] Add seed/demo rows so frontend is not empty in local development.
+
+Acceptance criteria:
+- [ ] `/visibility` page renders backend data without falling back to mock data.
+- [ ] Empty state still works when there are no visibility records.
+- [ ] Response works for both English and Indonesian frontend labels.
+
+### 2. Action Plans Endpoint
+- [ ] Implement `GET /api/action-plans`.
+- [ ] Return a stable response shape compatible with `frontend/lib/api-service.ts#getActionPlans()`.
+- [ ] Include `inputNarrative` as plain text summary.
+- [ ] Include `evidenceSummary` as plain text evidence line.
+- [ ] Include `outputs` as array of `[label, value]` pairs.
+- [ ] Include `plan` as array of `[step, time]` pairs.
+- [ ] Add Prisma model/table for action plans.
+- [ ] Add seed/demo action plan linked to high-risk alert or narrative.
+
+Acceptance criteria:
+- [ ] `/action-plans` renders backend action plan data.
+- [ ] Feedback controls still work locally while feedback endpoint is pending.
+- [ ] Missing plan data returns a safe empty state, not a crash.
+
+### 3. Reports Endpoint
+- [ ] Implement `GET /api/reports`.
+- [ ] Return a stable response shape compatible with `frontend/lib/api-service.ts#getReports()`.
+- [ ] Return `{ reports: [...] }`.
+- [ ] Each report should include `title`, `readiness`, `sections`, and `status`.
+- [ ] Add Prisma model/table for reports.
+- [ ] Add seed/demo reports for Weekly Brief, AI Visibility Movement, and Risk Review.
+
+Acceptance criteria:
+- [ ] `/reports` table renders backend data.
+- [ ] Search/filter/pagination continue working on frontend.
+- [ ] Empty reports state is supported.
+
+### 4. Narrative / Topic Map Endpoint
+- [ ] Implement `GET /api/narratives` or `GET /api/clusters`.
+- [ ] Decide one endpoint name and document it here.
+- [ ] Return topic clusters grouped from analyzed signals.
+- [ ] Include title, description, source count, confidence, impact, speed/velocity, and recommended focus.
+- [ ] Add Prisma model/table for narratives/clusters and signal relations.
+- [ ] Update frontend API service after endpoint name is finalized.
+
+Acceptance criteria:
+- [ ] `/intelligence` can render backend topic data instead of static demo copy.
+- [ ] Topic detail panel has enough data for stakeholder review.
 
 ---
 
-## Phase 3: Signals & AI Analysis (COMPLETED)
-- [x] Signals module: `GET /signals`, `GET /signals/:id`
-- [x] AI Analysis: `POST /signals/:id/analyze` with `analyzeSignal()`
-- [x] SignalAnalysis table for storing AI results (sentiment, narrative type, stakeholder, impact, summary, confidence score)
+## Priority 2: Product Logic
+
+### 5. AI Analysis Quality
+- [ ] Review and harden `analyzeSignal()` output.
+- [ ] Ensure AI output includes sentiment, narrative type, stakeholder, impact, summary, recommended action, and confidence score.
+- [ ] Add `validateAIOutput()` so malformed AI responses do not break persistence.
+- [ ] Add retry behavior with safe fallback for AI failures.
+- [ ] Store raw AI output for debugging when validation fails.
+
+### 6. Predictive Alert Engine
+- [ ] Implement `detectAlerts()` to generate alerts from signals or narrative clusters.
+- [ ] Implement alert scoring using speed, sentiment, source strength, spread, time-to-impact, and confidence.
+- [ ] Implement `enhanceAlert()` for plain-language alert explanation.
+- [ ] Add alert background worker and queue integration.
+- [ ] Prevent duplicate alerts for the same topic/window.
+
+### 7. Learning Loop and Feedback
+- [ ] Implement feedback endpoint for action suggestions.
+- [ ] Suggested endpoint: `POST /api/action-plans/:id/feedback`.
+- [ ] Support feedback values: `accepted`, `edited`, `rejected`.
+- [ ] Store reason/comment when feedback is edited or rejected.
+- [ ] Add Prisma model/table: `recommendation_feedback` or `ActionFeedback`.
+- [ ] Use feedback to improve future prompt scoring.
 
 ---
 
-## Phase 4: Dashboard & Alerts (COMPLETED)
-- [x] Dashboard module: `GET /dashboard/summary` with KPI metrics
-- [x] Alerts module: `GET /api/alerts`, `GET /api/alerts/:id`, `PATCH /api/alerts/:id/status`
-- [x] Alert status workflow: open → acknowledged → resolved
-- [x] Frontend connected: getAlerts(), updateAlertStatus()
+## Priority 3: Data and Operations
 
----
+### 8. Source and Ingestion Hardening
+- [ ] Verify `POST /sources` validates source type, name, actor ID, and input config.
+- [ ] Ensure ingestion jobs write raw documents and create signals consistently.
+- [ ] Add clear job status values: `queued`, `running`, `completed`, `failed`.
+- [ ] Store ingestion errors for frontend troubleshooting.
+- [ ] Add pagination and filtering for source records if the list grows.
 
-## Phase 5: Visibility / GEO (TODO)
-- [ ] Implement `GET /api/visibility` endpoint
-- [ ] Build GEO module with:
-  - AI Visibility Score calculation
-  - Brand Presence Rate (mention count / prompt count)
-  - Competitor Mention Rate
-  - Prompt-level visibility results
-- [ ] Database: `ai_visibility_results` table
-- [ ] Frontend already connected: `getVisibility()` in `api-service.ts`
+### 9. Security and Auth
+- [ ] Ensure all protected endpoints use `verifyToken`.
+- [ ] Confirm frontend token format matches backend auth middleware.
+- [ ] Add workspace scoping to protected queries.
+- [ ] Prevent users from reading another workspace's data.
+- [ ] Add basic request validation for all POST/PATCH endpoints.
 
----
-
-## Phase 6: Action Plans (TODO)
-- [ ] Implement `GET /api/action-plans` endpoint
-- [ ] Build Action Engine module with:
-  - Primary action recommendation
-  - Channel strategy (PR, content, influencer, crisis)
-  - Impact/effort scoring
-  - Execution plan with timeline (Today, 6h, 24h, 48h)
-- [ ] Database: `action_plans` table
-- [ ] Frontend already connected: `getActionPlans()` in `api-service.ts`
-
----
-
-## Phase 7: Reports & Export (TODO)
-- [ ] Implement `GET /api/reports` endpoint
-- [ ] Build Reports module with:
-  - Report templates (Weekly Brief, GEO Movement, Risk Review)
-  - Readiness status tracking (ready, needs review, pending)
-  - Section completion tracking
-  - Export job queue
-- [ ] Database: `reports` table, `report_exports` table
-- [ ] Frontend already connected: `getReports()` in `api-service.ts`
-
----
-
-## Phase 8: AI Intelligence Engine Enhancement
-- [ ] Implement `detectAlerts()` - generate predictive alerts from intelligence clusters
-- [ ] Implement `enhanceAlert()` - build alert enhancement prompts
-- [ ] Prompt templates: `buildAlertEnhancementSystemPrompt()`, `buildAlertUserMessage()`
-- [ ] Alert worker: queue integration for background processing
-
----
-
-## Phase 9: Narrative Clustering
-- [ ] Implement clustering logic to group signals into dominant narratives
-- [ ] Build `GET /api/narratives` or `GET /api/clusters` endpoint
-- [ ] Database: `narratives` table with relations to signals
-- [ ] Frontend: Intelligence page already built, needs backend data
-
----
-
-## Phase 10: Learning Loop & Feedback
-- [ ] Build feedback processing: Accept/Edit/Reject actions
-- [ ] Implement prompt scoring improvement from feedback
-- [ ] Store feedback in `recommendation_feedback` table
-- [ ] Connect to frontend Action Plans feedback buttons
-
----
-
-## Phase 11: Finalization & Testing
-- [ ] Verify all API endpoints with `verifyToken` where needed
-- [ ] Test CORS for frontend connection (already allowed localhost:3001, *.vercel.app)
-- [ ] Review Prisma schema for stability and scaling
-- [ ] Test scripts: test-platforms.js, test-sources.js, test-titles.js, test-trends.js
+### 10. Reporting Export Jobs
+- [ ] Add report export job creation endpoint when ready.
+- [ ] Suggested endpoint: `POST /api/reports/:id/export`.
+- [ ] Add export job status endpoint.
+- [ ] Suggested endpoint: `GET /api/reports/exports/:jobId`.
+- [ ] Add signed download URL support when files are generated.
 
 ---
 
 ## Frontend-Backend API Contract Summary
 
 | Frontend Function | Backend Endpoint | Status |
-|-------------------|------------------|--------|
-| `getDashboardSummary()` | `GET /dashboard/summary` | ✅ Ready |
-| `login()` | `POST /auth/login` | ✅ Ready |
-| `signup()` | `POST /auth/register` | ✅ Ready |
-| `getSignals()` | `GET /signals` | ✅ Ready |
-| `getSignalById()` | `GET /signals/:id` | ✅ Ready |
-| `getSources()` | `GET /sources` | ✅ Ready |
-| `createSource()` | `POST /sources` | ✅ Ready |
-| `runSourceIngestion()` | `POST /ingestion/run/:sourceId` | ✅ Ready |
-| `getIngestionStatus()` | `GET /ingestion/status/:jobId` | ✅ Ready |
-| `getAlerts()` | `GET /api/alerts` | ✅ Ready |
-| `updateAlertStatus()` | `PATCH /api/alerts/:id/status` | ✅ Ready |
-| `getVisibility()` | `GET /api/visibility` | 🔄 Needs implementation |
-| `getActionPlans()` | `GET /api/action-plans` | 🔄 Needs implementation |
-| `getReports()` | `GET /api/reports` | 🔄 Needs implementation |
-| `getNarratives()` | `GET /api/narratives` | 🔄 Needs implementation |
+| --- | --- | --- |
+| `getDashboardSummary()` | `GET /dashboard/summary` | Ready |
+| `login()` | `POST /auth/login` | Ready |
+| `signup()` | `POST /auth/register` | Ready |
+| `getSignals()` | `GET /signals` | Ready |
+| `getSignalById()` | `GET /signals/:id` | Ready |
+| `getSources()` | `GET /sources` | Ready |
+| `createSource()` | `POST /sources` | Ready |
+| `runSourceIngestion()` | `POST /ingestion/run/:sourceId` | Ready |
+| `getIngestionStatus()` | `GET /ingestion/status/:jobId` | Ready |
+| `getAlerts()` | `GET /api/alerts` | Ready |
+| `updateAlertStatus()` | `PATCH /api/alerts/:id/status` | Ready |
+| `getVisibility()` | `GET /api/visibility` | TODO |
+| `getActionPlans()` | `GET /api/action-plans` | TODO |
+| `getReports()` | `GET /api/reports` | TODO |
+| `getNarratives()` | `GET /api/narratives` or `GET /api/clusters` | TODO |
 
 ---
 
-## Database Schema (Prisma)
+## Suggested Prisma Tables to Add
 
-Key tables already in schema:
-- User, Workspace
-- Signal, SignalAnalysis
-- Alert
-- Source, IngestionJob
+- [ ] `AIVisibilityResult`
+- [ ] `PromptTestRun`
+- [ ] `ActionPlan`
+- [ ] `ActionFeedback`
+- [ ] `Report`
+- [ ] `ReportExport`
+- [ ] `Narrative` or `TopicCluster`
+- [ ] Join table between `Narrative` and `Signal` if using many-to-many clustering.
 
-Tables to add:
-- ActionPlan, ActionFeedback
-- Report, ReportExport
-- Narrative, NarrativeCluster
-- AI_Visibility_Result, PromptTest
+---
+
+## Testing Checklist
+
+- [ ] Run auth happy path: register, login, me.
+- [ ] Run source creation and ingestion job flow.
+- [ ] Run signal list and signal detail with analysis.
+- [ ] Run dashboard summary with empty and non-empty database.
+- [ ] Run alerts list and status update.
+- [ ] Run visibility endpoint with empty and seeded data.
+- [ ] Run action plans endpoint with empty and seeded data.
+- [ ] Run reports endpoint with empty and seeded data.
+- [ ] Test all frontend pages against backend with `NEXT_PUBLIC_API_URL` set.
+- [ ] Confirm frontend no longer falls back to mock data for implemented endpoints.

@@ -111,3 +111,21 @@ Core capabilities include:
 - [x] Configure next-intl with `src/i18n/request.ts` request config and `next.config.ts` plugin for static generation compatibility.
 - [x] Run `npm run lint` after Phase 10 localization work.
 - [x] Run `npm run build` after Phase 10 localization work.
+
+## Phase 11: Plain-Language Copy Audit
+- [x] Rewrite `messages/en.json` into clear English for non-technical users while preserving the Narrative Signals namespace.
+- [x] Rewrite `messages/id.json` into clear Indonesian for non-technical users while preserving the Narrative Signals namespace.
+- [x] Remove mixed-language and corrupted copy tokens from frontend messages (`citados`, `citada`, Cyrillic, Han characters, and mixed Indonesian text in English copy).
+- [x] Simplify copy for Dashboard, Data Sources, AI Visibility, Action Plans, Early Warnings, Topic Map, Reports, Sidebar, Alert Detail, and Workspace pages.
+- [x] Localize remaining hardcoded Workspace Cases and Integrations content through `next-intl` messages.
+- [x] Delete unused legacy `lib/i18n.ts` copy dictionary after all UI copy moved to `next-intl`.
+- [x] Simplify fallback/mock copy in `lib/api-service.ts` and `lib/mock-data.ts` for backend-offline demo mode.
+- [x] Validate `messages/en.json` and `messages/id.json` with JSON parsing.
+- [x] Run `npm run lint` after plain-language copy audit.
+- [x] Run `npm run build` after plain-language copy audit.
+
+## Phase 12: Pencil Stakeholder Copy Review Screens
+- [x] Add light-theme EN screenshot reference screens to `narriv-ui-design.pen` for Dashboard, Narrative Signals, Topic Map, Early Warnings, AI Visibility, Reports, Action Plans, Data Sources, and Workspace Settings.
+- [x] Add light-theme ID screenshot reference screens to `narriv-ui-design.pen` for Dashboard, Temuan Naratif, Peta Topik, Peringatan Dini, Visibilitas AI, Laporan, Rencana Aksi, Sumber Data, and Pengaturan Workspace.
+- [x] Add a clearly labeled Stakeholder Copy Review header in the Pencil canvas.
+- [x] Verify Pencil layout has no clipping or overflow problems after adding the review screens.

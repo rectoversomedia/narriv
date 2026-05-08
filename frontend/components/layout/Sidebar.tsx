@@ -81,15 +81,21 @@ export function Sidebar() {
         </div>
       </aside>
 
-      <nav className="theme-card fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 rounded-2xl border p-2 shadow-2xl backdrop-blur md:hidden">
+      <nav className="mobile-nav-surface fixed inset-x-4 bottom-3 z-40 grid grid-cols-5 rounded-2xl border p-1.5 md:hidden">
         {mobileRoutes.map((route) => {
           const active = isRouteActive(pathname, route.href);
           const Icon = route.icon;
           const label = nav(route.key);
           return (
-            <Link key={route.href} href={route.href} className={`flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-semibold ${active ? "bg-[#465FFF] text-white" : "theme-hover theme-muted hover:text-[#465FFF]"}`}>
-              <Icon size={17} />
-              <span className="truncate">{label.split(" ")[0]}</span>
+            <Link
+              key={route.href}
+              href={route.href}
+              title={label}
+              aria-label={label}
+              className={`flex h-10 items-center justify-center rounded-xl transition-colors ${active ? "bg-[#465FFF] text-white" : "theme-hover theme-muted hover:text-[#465FFF]"}`}
+            >
+              <Icon size={20} strokeWidth={2.1} />
+              <span className="sr-only">{label}</span>
             </Link>
           );
         })}

@@ -39,7 +39,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <Sidebar />
       <div className={`flex min-h-screen min-w-0 flex-col transition-[padding] duration-300 ${sidebarCollapsed ? "md:pl-[92px]" : "md:pl-[292px]"}`}>
         <Topbar />
-        <main className="flex-1 overflow-x-hidden px-4 pb-24 pt-6 sm:px-6 md:px-6 md:pb-8">
+        <main className="flex-1 overflow-x-hidden px-4 pb-20 pt-6 sm:px-6 md:px-6 md:pb-8">
           <div className="mx-auto w-full max-w-[1148px]">{children}</div>
         </main>
       </div>
