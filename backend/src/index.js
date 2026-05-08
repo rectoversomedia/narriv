@@ -12,6 +12,7 @@ import dashboardRoutes from "./modules/dashboard/dashboard.routes.js";
 import alertsRoutes from "./modules/alerts/alerts.routes.js";
 import "./workers/ai-analysis.worker.js";
 import "./workers/alert.worker.js";
+import "./workers/ingestion.worker.js";
 import { scheduleAlertDetection } from "./lib/queue.js";
 
 dotenv.config();

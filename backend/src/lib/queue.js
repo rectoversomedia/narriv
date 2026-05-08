@@ -75,3 +75,31 @@ export const scheduleAlertDetection = async () => {
         console.error("[QUEUE] Failed to schedule alert detection:", error.message);
     }
 };
+
+// ── Ingestion Queue ───────────────────────────────────────────────────────────
+
+export const ingestionQueue = new Queue("ingestion", {
+    connection,
+    defaultJobOptions: {
+        attempts: 3,
+        backoff: {
+            type: "exponential",
+            delay: 5000,
+        },
+        removeOnComplete: true,
+        removeOnFail: false,
+    },
+});
+
+export const addIngestionJob = async (jobId, sourceId) => {
+    try {
+        const job = await ingestionQueue.add(
+            "run-ingestion",
+            { jobId, sourceId },
+            { jobId: `ingest_${jobId}` }
+        );
+        console.log(`[QUEUE] Job enqueued for ingestion: ${jobId}`);
+    } catch (error) {
+        console.error(`[QUEUE] Failed to add ingestion job ${jobId}:`, error.message);
+    }
+};
