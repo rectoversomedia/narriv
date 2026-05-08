@@ -12,6 +12,7 @@ import dashboardRoutes from "./modules/dashboard/dashboard.routes.js";
 import alertsRoutes from "./modules/alerts/alerts.routes.js";
 import narrativesRoutes from "./modules/narratives/narratives.routes.js";
 import geoRoutes from "./modules/geo/geo.routes.js";
+import reportsRoutes from "./modules/reports/reports.routes.js";
 import "./workers/ai-analysis.worker.js";
 import "./workers/alert.worker.js";
 import "./workers/ingestion.worker.js";
@@ -53,6 +54,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/alerts", alertsRoutes);
 app.use("/api/narratives", narrativesRoutes);
 app.use("/api/visibility", geoRoutes);
+app.use("/api/reports", reportsRoutes);
 
 app.listen(3000, () => {
     console.log("Server running on http://localhost:3000");
