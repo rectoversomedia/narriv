@@ -3,30 +3,30 @@ import connection from "../lib/redis.js";
 import prisma from "../prisma.js";
 import { analyzeSignal } from "../modules/ai/ai.service.js";
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-/**
- * Calls analyzeSignal with one automatic retry on failure.
- * Waits RETRY_DELAY_MS between attempts.
- */
 const RETRY_DELAY_MS = 3000;
 
 async function analyzeWithRetry(title, content, signalId) {
-    // Attempt 1
     try {
         return await analyzeSignal(title, content);
     } catch (err) {
         console.warn(`[WORKER] analyzeSignal attempt 1 failed for signal ${signalId}:`, err.message);
     }
 
-    // Wait before retry
     await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
-
-    // Attempt 2
     return await analyzeSignal(title, content);
 }
 
-// ── Worker ────────────────────────────────────────────────────────────────────
+function buildSafeFallbackAnalysis() {
+    return {
+        sentiment: "neutral",
+        narrative_type: "Unclassified Signal",
+        stakeholder: "General Public",
+        impact: "low",
+        summary: "Automated analysis is temporarily unavailable. This signal was saved with a safe fallback summary.",
+        recommended_action: "Review this signal manually and re-run AI analysis when service is stable.",
+        confidence_score: 0.2,
+    };
+}
 
 const worker = new Worker(
     "ai-analysis",
@@ -34,7 +34,6 @@ const worker = new Worker(
         const { signal_id: signalId } = job.data;
         console.log(`[WORKER] Processing job ${job.id} for signal: ${signalId}`);
 
-        // 1. Fetch signal
         const signal = await prisma.signal.findUnique({
             where: { id: signalId },
         });
@@ -44,33 +43,20 @@ const worker = new Worker(
             return;
         }
 
-        // 2. Run analysis with one retry
         let analysisResult;
+        let failureError = null;
+
         try {
             console.log(`[WORKER] Analyzing signal: "${signal.title || "(no title)"}"`);
             analysisResult = await analyzeWithRetry(signal.title, signal.content, signalId);
         } catch (error) {
-            // Both attempts failed — log and mark signal as errored; do NOT throw
-            console.error(
-                `[WORKER] Both analysis attempts failed for signal ${signalId}. Error:`,
-                error.message
-            );
-
-            try {
-                await prisma.signal.update({
-                    where: { id: signalId },
-                    data: { sentiment: "error" },
-                });
-            } catch (dbErr) {
-                console.error(`[WORKER] Failed to mark signal ${signalId} as errored in DB:`, dbErr.message);
-            }
-
-            return; // Resolve cleanly — job done, no crash
+            failureError = error;
+            console.error(`[WORKER] Analysis failed for signal ${signalId}. Using safe fallback.`, error.message);
+            analysisResult = buildSafeFallbackAnalysis();
         }
 
-        // 3. Save result to DB
         try {
-            await prisma.$transaction([
+            const tx = [
                 prisma.signalAnalysis.create({
                     data: {
                         signalId: signal.id,
@@ -86,12 +72,26 @@ const worker = new Worker(
                 prisma.signal.update({
                     where: { id: signal.id },
                     data: { sentiment: analysisResult.sentiment },
-                }),
-            ]);
+                })
+            ];
 
+            if (failureError) {
+                tx.push(
+                    prisma.aiAnalysisFailureLog.create({
+                        data: {
+                            workspaceId: signal.workspaceId,
+                            signalId: signal.id,
+                            errorMessage: failureError.message || "AI analysis failed",
+                            rawAttempt1: failureError.details?.rawAttempt1 || null,
+                            rawAttempt2: failureError.details?.rawAttempt2 || null,
+                        }
+                    })
+                );
+            }
+
+            await prisma.$transaction(tx);
             console.log(`[WORKER] Job ${job.id} completed successfully for signal: ${signalId}`);
         } catch (dbError) {
-            // DB write failed — log but don't crash
             console.error(`[WORKER] Failed to save analysis for signal ${signalId}:`, dbError.message);
         }
     },
@@ -103,7 +103,6 @@ worker.on("failed", (job, err) => {
 });
 
 worker.on("error", (err) => {
-    // Suppress ECONNREFUSED spam - Redis will reconnect automatically
     if (err.code === "ECONNREFUSED") return;
     console.error("[WORKER] Worker error:", err.message);
 });

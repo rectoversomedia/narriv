@@ -12,6 +12,14 @@ const client = new OpenAI({
     apiKey: OPENAI_API_KEY || "sk-placeholder",
 });
 
+class AIAnalysisError extends Error {
+    constructor(message, details = {}) {
+        super(message);
+        this.name = "AIAnalysisError";
+        this.details = details;
+    }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // PROMPT BUILDER
 // ─────────────────────────────────────────────────────────────────────────────

@@ -15,6 +15,7 @@ import {
   actionRecommendations,
   dataSources,
   geoVisibility,
+  narrativeClusters,
   predictiveAlerts,
   reports,
   signals as mockSignals,
@@ -338,6 +339,27 @@ export async function getReports(): Promise<unknown | null> {
     return await apiClient<unknown>("/api/reports");
   } catch {
     return { reports };
+  }
+}
+
+export async function getNarratives(): Promise<unknown | null> {
+  try {
+    return await apiClient<unknown>("/api/narratives");
+  } catch {
+    return {
+      narratives: narrativeClusters.map((cluster) => ({
+        id: cluster.title.toLowerCase().replace(/\s+/g, "-"),
+        title: cluster.title,
+        description: cluster.title,
+        sourceCount: String(cluster.sources).split(",").length,
+        confidence: cluster.confidence,
+        impact: cluster.sentiment === "negative" ? "HIGH" : "MEDIUM",
+        velocity: cluster.velocity,
+        recommendedFocus: "Align messaging and publish supporting proof points.",
+        signalCount: cluster.evidence,
+        sentiment: cluster.sentiment,
+      })),
+    };
   }
 }
 

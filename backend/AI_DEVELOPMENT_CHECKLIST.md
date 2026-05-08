@@ -72,27 +72,27 @@ Acceptance criteria:
 - [x] Empty reports state is supported.
 
 ### 4. Narrative / Topic Map Endpoint
-- [ ] Implement `GET /api/narratives` or `GET /api/clusters`.
-- [ ] Decide one endpoint name and document it here.
-- [ ] Return topic clusters grouped from analyzed signals.
-- [ ] Include title, description, source count, confidence, impact, speed/velocity, and recommended focus.
-- [ ] Add Prisma model/table for narratives/clusters and signal relations.
-- [ ] Update frontend API service after endpoint name is finalized.
+- [x] Implement `GET /api/narratives` or `GET /api/clusters`.
+- [x] Decide one endpoint name and document it here. (`GET /api/narratives`)
+- [x] Return topic clusters grouped from analyzed signals.
+- [x] Include title, description, source count, confidence, impact, speed/velocity, and recommended focus.
+- [x] Add Prisma model/table for narratives/clusters and signal relations.
+- [x] Update frontend API service after endpoint name is finalized.
 
 Acceptance criteria:
-- [ ] `/intelligence` can render backend topic data instead of static demo copy.
-- [ ] Topic detail panel has enough data for stakeholder review.
+- [x] `/intelligence` can render backend topic data instead of static demo copy.
+- [x] Topic detail panel has enough data for stakeholder review.
 
 ---
 
 ## Priority 2: Product Logic
 
 ### 5. AI Analysis Quality
-- [ ] Review and harden `analyzeSignal()` output.
-- [ ] Ensure AI output includes sentiment, narrative type, stakeholder, impact, summary, recommended action, and confidence score.
-- [ ] Add `validateAIOutput()` so malformed AI responses do not break persistence.
-- [ ] Add retry behavior with safe fallback for AI failures.
-- [ ] Store raw AI output for debugging when validation fails.
+- [x] Review and harden `analyzeSignal()` output.
+- [x] Ensure AI output includes sentiment, narrative type, stakeholder, impact, summary, recommended action, and confidence score.
+- [x] Add `validateAIOutput()` so malformed AI responses do not break persistence.
+- [x] Add retry behavior with safe fallback for AI failures.
+- [x] Store raw AI output for debugging when validation fails.
 
 ### 6. Predictive Alert Engine
 - [ ] Implement `detectAlerts()` to generate alerts from signals or narrative clusters.
@@ -192,8 +192,8 @@ Acceptance criteria:
 - [ ] `ActionFeedback`
 - [x] `Report`
 - [ ] `ReportExport`
-- [ ] `Narrative` or `TopicCluster`
-- [ ] Join table between `Narrative` and `Signal` if using many-to-many clustering.
+- [x] `Narrative` or `TopicCluster`
+- [x] Join table between `Narrative` and `Signal` if using many-to-many clustering.
 
 ---
 

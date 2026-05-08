@@ -3,94 +3,88 @@ import prisma from "../../prisma.js";
 
 const router = express.Router();
 
-// GET /api/narratives — List all narrative clusters with pagination & filtering
+function toNarrativeItem(cluster) {
+    const signals = cluster.narrativeClusterSignals.map((ncs) => ncs.signal);
+    const uniquePlatforms = new Set(signals.map((signal) => signal.platform).filter(Boolean));
+    const confidenceValues = signals
+        .flatMap((signal) => signal.analyses.map((analysis) => analysis.confidenceScore))
+        .filter((value) => typeof value === "number");
+
+    const avgConfidence = confidenceValues.length > 0
+        ? Math.round((confidenceValues.reduce((sum, value) => sum + value, 0) / confidenceValues.length) * 100)
+        : 72;
+
+    const now = Date.now();
+    const last24hCount = signals.filter((signal) => {
+        if (!signal.capturedAt) return false;
+        return now - new Date(signal.capturedAt).getTime() <= 24 * 60 * 60 * 1000;
+    }).length;
+
+    const velocity = cluster.signalCount > 0
+        ? `+${Math.round((last24hCount / cluster.signalCount) * 100)}%`
+        : "+0%";
+
+    return {
+        id: cluster.id,
+        title: cluster.title,
+        description: cluster.description || cluster.mainNarrative || "",
+        sourceCount: uniquePlatforms.size || 0,
+        confidence: avgConfidence,
+        impact: (cluster.impact || "MEDIUM").toString(),
+        velocity,
+        recommendedFocus: cluster.mainNarrative || cluster.description || "Prioritize stakeholder messaging and monitor escalation.",
+        signalCount: cluster.signalCount,
+        sentiment: cluster.sentiment || "neutral",
+    };
+}
+
+// GET /api/narratives - Frontend contract endpoint
 router.get("/", async (req, res) => {
     try {
-        const page = parseInt(req.query.page, 10) || 1;
-        const limit = parseInt(req.query.limit, 10) || 10;
         const { sentiment, impact, workspaceId } = req.query;
 
-        const safePage = Math.max(1, page);
-        const safeLimit = Math.max(1, limit);
-        const skip = (safePage - 1) * safeLimit;
-
-        // Build dynamic where clause
         const whereClause = {};
+        if (sentiment) whereClause.sentiment = sentiment;
+        if (impact) whereClause.impact = String(impact).toUpperCase();
+        if (workspaceId) whereClause.workspaceId = workspaceId;
 
-        if (sentiment) {
-            whereClause.sentiment = sentiment;
-        }
-
-        if (impact) {
-            whereClause.impact = impact.toUpperCase();
-        }
-
-        if (workspaceId) {
-            whereClause.workspaceId = workspaceId;
-        }
-
-        const [data, total] = await Promise.all([
-            prisma.narrativeCluster.findMany({
-                where: whereClause,
-                skip,
-                take: safeLimit,
-                orderBy: { updatedAt: "desc" },
-                include: {
-                    // Include signal count and a preview of linked signals
-                    narrativeClusterSignals: {
-                        take: 3,
-                        orderBy: { createdAt: "desc" },
-                        include: {
-                            signal: {
-                                select: {
-                                    id: true,
-                                    title: true,
-                                    platform: true,
-                                    sentiment: true,
-                                    capturedAt: true
+        const data = await prisma.narrativeCluster.findMany({
+            where: whereClause,
+            orderBy: { updatedAt: "desc" },
+            include: {
+                narrativeClusterSignals: {
+                    include: {
+                        signal: {
+                            select: {
+                                id: true,
+                                title: true,
+                                platform: true,
+                                sentiment: true,
+                                capturedAt: true,
+                                analyses: {
+                                    orderBy: { createdAt: "desc" },
+                                    take: 1,
+                                    select: {
+                                        confidenceScore: true,
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }),
-            prisma.narrativeCluster.count({ where: whereClause })
-        ]);
-
-        // Compute a simple trend indicator for each cluster
-        const enrichedData = data.map(cluster => {
-            const previewSignals = cluster.narrativeClusterSignals.map(ncs => ncs.signal);
-
-            return {
-                id: cluster.id,
-                workspaceId: cluster.workspaceId,
-                title: cluster.title,
-                description: cluster.description,
-                mainNarrative: cluster.mainNarrative,
-                sentiment: cluster.sentiment,
-                impact: cluster.impact,
-                signalCount: cluster.signalCount,
-                createdAt: cluster.createdAt,
-                updatedAt: cluster.updatedAt,
-                previewSignals
-            };
+            }
         });
 
-        res.json({
-            data: enrichedData,
-            meta: {
-                page: safePage,
-                limit: safeLimit,
-                total: total || 0
-            }
+        return res.json({
+            narratives: data.map(toNarrativeItem),
         });
     } catch (error) {
         console.error("Error fetching narratives:", error);
-        res.status(500).json({ error: "Internal server error" });
+        return res.status(500).json({ error: "Internal server error" });
     }
 });
 
-// GET /api/narratives/:id — Get full narrative detail with related signals and trends
+// GET /api/narratives/:id - Detailed narrative for topic detail panel
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
@@ -118,8 +112,7 @@ router.get("/:id", async (req, res) => {
             return res.status(404).json({ error: "Narrative cluster not found" });
         }
 
-        // Extract full signal list
-        const relatedSignals = cluster.narrativeClusterSignals.map(ncs => ({
+        const relatedSignals = cluster.narrativeClusterSignals.map((ncs) => ({
             id: ncs.signal.id,
             title: ncs.signal.title,
             content: ncs.signal.content,
@@ -131,11 +124,10 @@ router.get("/:id", async (req, res) => {
             publishedAt: ncs.signal.publishedAt
         }));
 
-        // Build a date-based trend from the related signals
         const trendMap = {};
-        relatedSignals.forEach(signal => {
+        relatedSignals.forEach((signal) => {
             if (!signal.capturedAt) return;
-            const dateKey = new Date(signal.capturedAt).toISOString().split("T")[0]; // YYYY-MM-DD
+            const dateKey = new Date(signal.capturedAt).toISOString().split("T")[0];
             if (!trendMap[dateKey]) trendMap[dateKey] = 0;
             trendMap[dateKey]++;
         });
@@ -144,31 +136,21 @@ router.get("/:id", async (req, res) => {
             .map(([date, count]) => ({ date, count }))
             .sort((a, b) => a.date.localeCompare(b.date));
 
-        // Sentiment breakdown of related signals
-        const sentimentBreakdown = relatedSignals.reduce((acc, s) => {
-            const sent = s.sentiment || "unanalyzed";
+        const sentimentBreakdown = relatedSignals.reduce((acc, signal) => {
+            const sent = signal.sentiment || "unanalyzed";
             acc[sent] = (acc[sent] || 0) + 1;
             return acc;
         }, {});
 
-        res.json({
-            id: cluster.id,
-            workspaceId: cluster.workspaceId,
-            title: cluster.title,
-            description: cluster.description,
-            mainNarrative: cluster.mainNarrative,
-            sentiment: cluster.sentiment,
-            impact: cluster.impact,
-            signalCount: cluster.signalCount,
-            createdAt: cluster.createdAt,
-            updatedAt: cluster.updatedAt,
+        return res.json({
+            ...toNarrativeItem(cluster),
             trends,
             sentimentBreakdown,
             relatedSignals
         });
     } catch (error) {
         console.error("Error fetching narrative:", error);
-        res.status(500).json({ error: "Internal server error" });
+        return res.status(500).json({ error: "Internal server error" });
     }
 });
 

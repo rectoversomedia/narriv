@@ -103,6 +103,45 @@ async function main() {
         },
     });
 
+    const narrativeCount = await prisma.narrativeCluster.count({
+        where: { workspaceId: workspace.id },
+    });
+
+    if (narrativeCount < 3) {
+        await prisma.narrativeCluster.upsert({
+            where: { id: "seed-cluster-action-2" },
+            update: {},
+            create: {
+                id: "seed-cluster-action-2",
+                workspaceId: workspace.id,
+                title: "Buyers need clearer vendor scoring",
+                description: "Procurement-facing conversations request clearer proof and scoring transparency.",
+                mainNarrative: "Explainability and procurement confidence are becoming decision blockers.",
+                sentiment: "negative",
+                impact: "MEDIUM",
+                signalCount: 74,
+            },
+        });
+
+        await prisma.narrativeCluster.upsert({
+            where: { id: "seed-cluster-action-3" },
+            update: {},
+            create: {
+                id: "seed-cluster-action-3",
+                workspaceId: workspace.id,
+                title: "Trust in AI planning tools is rising",
+                description: "Leadership and analyst mentions show positive momentum for AI-assisted planning.",
+                mainNarrative: "Opportunity to lead with case studies and measurable outcomes.",
+                sentiment: "positive",
+                impact: "HIGH",
+                signalCount: 51,
+            },
+        });
+        console.log(`Seeded additional narrative clusters for workspaceId=${workspace.id}`);
+    } else {
+        console.log("Narrative clusters demo data already sufficient. Skipping extra seed.");
+    }
+
     const existingActionPlan = await prisma.actionPlan.findFirst({
         where: { workspaceId: workspace.id },
     });

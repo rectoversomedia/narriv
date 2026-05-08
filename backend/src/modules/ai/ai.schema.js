@@ -8,6 +8,19 @@
 const VALID_SENTIMENTS = ["positive", "neutral", "negative", "mixed"];
 const VALID_IMPACTS = ["low", "medium", "high", "critical"];
 
+function normalizeText(value) {
+    if (typeof value !== "string") return "";
+    return value.trim();
+}
+
+function clampConfidence(value) {
+    const num = Number(value);
+    if (Number.isNaN(num)) return null;
+    if (num < 0) return 0;
+    if (num > 1) return 1;
+    return num;
+}
+
 /**
  * Validates an AI analysis output object against the expected schema.
  * Throws a descriptive error if any required field is missing or invalid.
@@ -22,45 +35,54 @@ export function validateAIOutput(output) {
     }
 
     const errors = [];
+    const normalized = {
+        sentiment: normalizeText(output.sentiment).toLowerCase(),
+        narrative_type: normalizeText(output.narrative_type),
+        stakeholder: normalizeText(output.stakeholder),
+        impact: normalizeText(output.impact).toLowerCase(),
+        summary: normalizeText(output.summary),
+        recommended_action: normalizeText(output.recommended_action),
+        confidence_score: clampConfidence(output.confidence_score),
+    };
 
     // sentiment: required, must be one of the valid values
-    if (!output.sentiment) {
+    if (!normalized.sentiment) {
         errors.push("Missing required field: 'sentiment'");
-    } else if (!VALID_SENTIMENTS.includes(output.sentiment)) {
-        errors.push(`Invalid 'sentiment': "${output.sentiment}". Must be one of: ${VALID_SENTIMENTS.join(", ")}`);
+    } else if (!VALID_SENTIMENTS.includes(normalized.sentiment)) {
+        errors.push(`Invalid 'sentiment': "${normalized.sentiment}". Must be one of: ${VALID_SENTIMENTS.join(", ")}`);
     }
 
     // narrative_type: required, must be a non-empty string
-    if (!output.narrative_type || typeof output.narrative_type !== "string" || output.narrative_type.trim() === "") {
+    if (!normalized.narrative_type) {
         errors.push("Missing or empty required field: 'narrative_type'");
     }
 
     // stakeholder: required, must be a non-empty string
-    if (!output.stakeholder || typeof output.stakeholder !== "string" || output.stakeholder.trim() === "") {
+    if (!normalized.stakeholder) {
         errors.push("Missing or empty required field: 'stakeholder'");
     }
 
     // impact: required, must be one of the valid values
-    if (!output.impact) {
+    if (!normalized.impact) {
         errors.push("Missing required field: 'impact'");
-    } else if (!VALID_IMPACTS.includes(output.impact)) {
-        errors.push(`Invalid 'impact': "${output.impact}". Must be one of: ${VALID_IMPACTS.join(", ")}`);
+    } else if (!VALID_IMPACTS.includes(normalized.impact)) {
+        errors.push(`Invalid 'impact': "${normalized.impact}". Must be one of: ${VALID_IMPACTS.join(", ")}`);
     }
 
     // summary: required, must be a non-empty string
-    if (!output.summary || typeof output.summary !== "string" || output.summary.trim() === "") {
+    if (!normalized.summary) {
         errors.push("Missing or empty required field: 'summary'");
     }
 
     // recommended_action: required, must be a non-empty string
-    if (!output.recommended_action || typeof output.recommended_action !== "string" || output.recommended_action.trim() === "") {
+    if (!normalized.recommended_action) {
         errors.push("Missing or empty required field: 'recommended_action'");
     }
 
     // confidence_score: required, must be a number between 0 and 1
     if (output.confidence_score === undefined || output.confidence_score === null) {
         errors.push("Missing required field: 'confidence_score'");
-    } else if (typeof output.confidence_score !== "number" || output.confidence_score < 0 || output.confidence_score > 1) {
+    } else if (normalized.confidence_score === null) {
         errors.push(`Invalid 'confidence_score': ${output.confidence_score}. Must be a number between 0 and 1.`);
     }
 
@@ -68,7 +90,7 @@ export function validateAIOutput(output) {
         throw new Error(`AI output schema validation failed:\n${errors.map(e => `  - ${e}`).join("\n")}`);
     }
 
-    return output;
+    return normalized;
 }
 
 /**
