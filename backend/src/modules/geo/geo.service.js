@@ -1,0 +1,208 @@
+import OpenAI from "openai";
+import prisma from "../../prisma.js";
+
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+const client = new OpenAI({
+    apiKey: OPENAI_API_KEY || "sk-placeholder",
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CORE CALCULATION HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Counts how many times a term appears in text (case-insensitive).
+ * Matches whole words only to avoid partial matches.
+ *
+ * @param {string} text - The text to search in.
+ * @param {string} term - The term to search for.
+ * @returns {number} - Number of occurrences.
+ */
+function countMentions(text, term) {
+    if (!text || !term) return 0;
+    const regex = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+    const matches = text.match(regex);
+    return matches ? matches.length : 0;
+}
+
+/**
+ * Calculates Brand Presence Rate.
+ * = (number of responses mentioning the brand) / (total responses)
+ *
+ * @param {Array<string>} responses - Array of AI response texts.
+ * @param {string} brandName - The brand name to search for.
+ * @returns {number} - Rate between 0.0 and 1.0.
+ */
+function calculateBrandPresenceRate(responses, brandName) {
+    if (responses.length === 0) return 0;
+    const mentioningCount = responses.filter(r => countMentions(r, brandName) > 0).length;
+    return mentioningCount / responses.length;
+}
+
+/**
+ * Calculates Competitor Mention Rate.
+ * = (number of responses mentioning any competitor) / (total responses)
+ *
+ * @param {Array<string>} responses - Array of AI response texts.
+ * @param {Array<string>} competitors - Array of competitor names.
+ * @returns {number} - Rate between 0.0 and 1.0.
+ */
+function calculateCompetitorMentionRate(responses, competitors) {
+    if (responses.length === 0 || competitors.length === 0) return 0;
+    const mentioningCount = responses.filter(r => {
+        return competitors.some(comp => countMentions(r, comp) > 0);
+    }).length;
+    return mentioningCount / responses.length;
+}
+
+/**
+ * Calculates the AI Visibility Score (0 - 100).
+ *
+ * Formula:
+ *   visibilityScore = (brandPresenceRate * 60) + (positionBonus * 25) + (sentimentBonus * 15)
+ *
+ * - brandPresenceRate (60% weight): How often the brand appears.
+ * - positionBonus (25% weight): How early the brand appears in responses (top-3 mention bonus).
+ * - sentimentBonus (15% weight): Positive framing when the brand is mentioned.
+ *
+ * @param {Array<string>} responses - Array of AI response texts.
+ * @param {string} brandName - The brand name.
+ * @returns {number} - Score between 0.0 and 100.0.
+ */
+function calculateVisibilityScore(responses, brandName) {
+    if (responses.length === 0) return 0;
+
+    const brandPresenceRate = calculateBrandPresenceRate(responses, brandName);
+
+    // Position bonus: check if brand appears in the first 200 chars of each response
+    let earlyMentionCount = 0;
+    responses.forEach(r => {
+        const firstSegment = r.substring(0, 200).toLowerCase();
+        if (firstSegment.includes(brandName.toLowerCase())) {
+            earlyMentionCount++;
+        }
+    });
+    const positionBonus = responses.length > 0 ? earlyMentionCount / responses.length : 0;
+
+    // Sentiment bonus: check for positive framing around the brand
+    const positiveIndicators = ["leading", "top", "best", "recommended", "trusted", "popular", "innovative", "excellent", "premier", "renowned"];
+    let positiveMentionCount = 0;
+    responses.forEach(r => {
+        const lowerText = r.toLowerCase();
+        if (countMentions(lowerText, brandName.toLowerCase()) > 0) {
+            const hasPositive = positiveIndicators.some(indicator => lowerText.includes(indicator));
+            if (hasPositive) positiveMentionCount++;
+        }
+    });
+    const sentimentBonus = responses.length > 0 ? positiveMentionCount / responses.length : 0;
+
+    // Weighted formula
+    const score = (brandPresenceRate * 60) + (positionBonus * 25) + (sentimentBonus * 15);
+    return Math.round(score * 100) / 100; // Round to 2 decimals
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AI ENGINE QUERY
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Queries an AI engine with a set of prompts and returns the raw responses.
+ * Currently uses OpenAI as the engine. Future: add Gemini, Perplexity, etc.
+ *
+ * @param {string} engineName - The AI engine identifier.
+ * @param {Array<string>} queries - Array of prompts to send.
+ * @returns {Promise<Array<{query: string, response: string}>>} - Query-response pairs.
+ */
+async function queryAIEngine(engineName, queries) {
+    if (!OPENAI_API_KEY) {
+        console.warn("[GEO] No OPENAI_API_KEY set. Returning mock responses.");
+        return queries.map(q => ({
+            query: q,
+            response: `Mock response for: ${q}. This is placeholder text for development.`
+        }));
+    }
+
+    const results = [];
+
+    for (const query of queries) {
+        try {
+            const response = await client.chat.completions.create({
+                model: "gpt-4o-mini",
+                messages: [
+                    {
+                        role: "system",
+                        content: "You are a helpful assistant. Answer the user's question thoroughly and mention specific brands, products, or companies when relevant."
+                    },
+                    { role: "user", content: query }
+                ],
+                temperature: 0.7,
+                max_tokens: 512
+            });
+
+            results.push({
+                query,
+                response: response.choices[0]?.message?.content || ""
+            });
+        } catch (error) {
+            console.error(`[GEO] Error querying ${engineName} with "${query}":`, error.message);
+            results.push({ query, response: "" });
+        }
+    }
+
+    return results;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN SERVICE FUNCTION
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Runs a full GEO visibility analysis for a given brand within a workspace.
+ *
+ * @param {object} params
+ * @param {string} params.workspaceId - The workspace ID.
+ * @param {string} params.brandName - The brand name to track.
+ * @param {Array<string>} params.competitors - Array of competitor names.
+ * @param {Array<string>} params.queries - Industry-relevant prompts to test.
+ * @param {string} [params.engineName="chatgpt"] - The AI engine to query.
+ * @returns {Promise<object>} - The saved AIVisibilityResult record.
+ */
+export async function runVisibilityAnalysis({ workspaceId, brandName, competitors = [], queries, engineName = "chatgpt" }) {
+    console.log(`[GEO] Starting visibility analysis for "${brandName}" on engine: ${engineName}`);
+    console.log(`[GEO] Competitors: ${competitors.join(", ") || "(none)"}`);
+    console.log(`[GEO] Queries: ${queries.length}`);
+
+    // 1. Query the AI engine
+    const queryResults = await queryAIEngine(engineName, queries);
+    const responses = queryResults.map(qr => qr.response);
+
+    // 2. Calculate metrics
+    const visibilityScore = calculateVisibilityScore(responses, brandName);
+    const brandPresenceRate = calculateBrandPresenceRate(responses, brandName);
+    const competitorMentionRate = calculateCompetitorMentionRate(responses, competitors);
+
+    console.log(`[GEO] Results — Visibility: ${visibilityScore}, Brand Presence: ${(brandPresenceRate * 100).toFixed(1)}%, Competitor Mention: ${(competitorMentionRate * 100).toFixed(1)}%`);
+
+    // 3. Save to database
+    const result = await prisma.aIVisibilityResult.create({
+        data: {
+            workspaceId,
+            engineName,
+            visibilityScore,
+            brandPresenceRate: Math.round(brandPresenceRate * 1000) / 1000,
+            competitorMentionRate: Math.round(competitorMentionRate * 1000) / 1000,
+            queryUsed: JSON.stringify(queries),
+            rawResponse: queryResults,
+            metadata: {
+                brandName,
+                competitors,
+                totalQueries: queries.length,
+                totalResponses: responses.filter(r => r.length > 0).length
+            }
+        }
+    });
+
+    console.log(`[GEO] Analysis saved: ${result.id}`);
+    return result;
+}
