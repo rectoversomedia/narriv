@@ -112,6 +112,13 @@ router.get("/:id", async (req, res) => {
 
         const signal = await prisma.signal.findUnique({
             where: { id },
+            include: {
+                rawDocument: {
+                    select: {
+                        metadata: true
+                    }
+                }
+            }
         });
 
         if (!signal) {
