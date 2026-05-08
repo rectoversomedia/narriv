@@ -96,6 +96,40 @@ ${signalsContext}
 Analyze the above and provide the strategic insights in JSON.`;
 }
 
+/**
+ * Builds the strict system prompt for cluster analysis.
+ */
+function buildClusterAnalysisSystemPrompt() {
+    return `You are a strategic intelligence analyst for a PR & crisis communications platform.
+Your task is to analyze a cluster of related signals and provide a narrative summary.
+
+STRICT RULES:
+1. Return ONLY a raw JSON object. No markdown. No code fences. No explanation.
+2. All fields are REQUIRED.
+3. "title" must be a short, compelling title for the narrative cluster (max 6 words).
+4. "description" must be a 1-2 sentence summary of the overarching narrative.
+5. "dominant_sentiment" must be exactly one of: "positive", "neutral", "negative", "mixed".
+6. "impact" must be exactly one of: "LOW", "MEDIUM", "HIGH", "CRITICAL".
+
+REQUIRED OUTPUT FORMAT (pure JSON):
+{
+  "title": "<title>",
+  "description": "<description>",
+  "dominant_sentiment": "positive | neutral | negative | mixed",
+  "impact": "LOW | MEDIUM | HIGH | CRITICAL"
+}`;
+}
+
+/**
+ * Builds the user message for cluster analysis.
+ */
+function buildClusterAnalysisUserMessage(signalsContext) {
+    return `Analyze the following group of related signals and provide the narrative summary in JSON.
+
+SIGNALS:
+${signalsContext}`;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // INTERNAL HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -268,6 +302,58 @@ export const enhanceAlert = async (alertData, signalsContext) => {
     } catch (error) {
         console.error(`[AI] enhanceAlert error:`, error.message);
         return { whyItMatters: null, whatToDo: null };
+    }
+};
+
+/**
+ * Analyzes a cluster of signals to generate a narrative summary.
+ *
+ * @param {string} signalsContext - Summarized text of signals in the cluster.
+ * @returns {Promise<object>} - { title, description, dominant_sentiment, impact }
+ */
+export const analyzeCluster = async (signalsContext) => {
+    if (!OPENAI_API_KEY) {
+        console.warn("[AI] Cannot analyze cluster: Missing API key.");
+        return null;
+    }
+
+    const systemPrompt = buildClusterAnalysisSystemPrompt();
+    const userMessage = buildClusterAnalysisUserMessage(signalsContext);
+
+    const messages = [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userMessage }
+    ];
+
+    try {
+        console.log(`[AI] analyzeCluster running...`);
+        const rawContent = await callOpenAI(messages);
+        const parsed = tryParseJSON(rawContent);
+
+        if (parsed.ok && parsed.data) {
+            return parsed.data;
+        } else {
+            // Attempt 2 (Retry)
+            const correctionMessages = [
+                ...messages,
+                { role: "assistant", content: rawContent },
+                {
+                    role: "user",
+                    content: `Your previous response was not valid JSON. Parse error: "${parsed.error}". Please return ONLY a valid JSON object.`
+                }
+            ];
+            const rawRetry = await callOpenAI(correctionMessages);
+            const parsedRetry = tryParseJSON(rawRetry);
+            
+            if (parsedRetry.ok && parsedRetry.data) {
+                 return parsedRetry.data;
+            }
+            console.warn(`[AI] analyzeCluster failed to parse JSON after retry.`);
+            return null;
+        }
+    } catch (error) {
+        console.error(`[AI] analyzeCluster error:`, error.message);
+        return null;
     }
 };
 

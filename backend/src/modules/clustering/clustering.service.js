@@ -1,4 +1,5 @@
 import prisma from "../../prisma.js";
+import { analyzeCluster } from "../ai/ai.service.js";
 
 // Helper to extract basic keywords (lowercase, basic stop words removed)
 function extractKeywords(text) {
@@ -88,50 +89,41 @@ export const runClustering = async (workspaceId) => {
     // 4. Save narrative groups to database
     let createdCount = 0;
     for (const cluster of clusters) {
-        // Find dominant sentiment
-        const sentimentCounts = cluster.reduce((acc, s) => {
-            acc[s.sentiment] = (acc[s.sentiment] || 0) + 1;
-            return acc;
-        }, {});
-        
+        // Compile signals context for AI
+        const signalsContext = cluster
+            .slice(0, 10) // Limit to top 10 to fit in context window
+            .map(s => `[${s.sentiment || 'UNKNOWN'}] ${s.title || 'No Title'}\n${s.content.substring(0, 150)}...`)
+            .join("\n\n");
+
+        console.log(`[CLUSTERING] Asking AI to analyze cluster of ${cluster.length} signals...`);
+        const aiAnalysis = await analyzeCluster(signalsContext);
+
+        let title = "General Narrative Cluster";
+        let description = `Automatically generated cluster containing ${cluster.length} signals.`;
+        let mainNarrative = "This narrative was clustered by keyword similarity but AI analysis failed.";
         let dominantSentiment = "neutral";
-        let maxCount = 0;
-        for (const [sent, count] of Object.entries(sentimentCounts)) {
-            if (count > maxCount) {
-                maxCount = count;
-                dominantSentiment = sent;
+        let impact = "LOW";
+
+        if (aiAnalysis) {
+            title = aiAnalysis.title || title;
+            description = aiAnalysis.description || description;
+            mainNarrative = aiAnalysis.description || mainNarrative;
+            dominantSentiment = aiAnalysis.dominant_sentiment || dominantSentiment;
+            
+            // Map AI string directly to uppercase enum values if valid
+            const safeImpact = aiAnalysis.impact ? aiAnalysis.impact.toUpperCase() : "LOW";
+            if (["LOW", "MEDIUM", "HIGH", "CRITICAL"].includes(safeImpact)) {
+                impact = safeImpact;
             }
         }
-
-        // Generate title based on top keywords
-        const allKeywords = cluster.flatMap(s => Array.from(s.keywords));
-        const keywordFrequency = allKeywords.reduce((acc, kw) => {
-            acc[kw] = (acc[kw] || 0) + 1;
-            return acc;
-        }, {});
-        
-        const topKeywords = Object.entries(keywordFrequency)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 3)
-            .map(e => e[0]);
-            
-        const clusterTitle = topKeywords.length > 0 
-            ? `Narrative around: ${topKeywords.join(", ")}` 
-            : "General Narrative Cluster";
-
-        // Determine Impact mapping to Prisma Enum ImpactLevel (LOW, MEDIUM, HIGH, CRITICAL)
-        let impact = "LOW";
-        if (cluster.length >= 5 || dominantSentiment === "negative") impact = "MEDIUM";
-        if (cluster.length >= 10 && dominantSentiment === "negative") impact = "HIGH";
-        if (cluster.length >= 20 && dominantSentiment === "negative") impact = "CRITICAL";
 
         // Create the NarrativeCluster in the DB
         const dbCluster = await prisma.narrativeCluster.create({
             data: {
                 workspaceId,
-                title: clusterTitle,
-                description: `Automatically generated cluster containing ${cluster.length} signals.`,
-                mainNarrative: `This narrative centers around the topics: ${topKeywords.join(", ")}. The dominant sentiment across these sources is ${dominantSentiment}.`,
+                title: title,
+                description: description,
+                mainNarrative: mainNarrative,
                 sentiment: dominantSentiment,
                 impact: impact,
                 signalCount: cluster.length
