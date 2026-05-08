@@ -95,11 +95,11 @@ Acceptance criteria:
 - [x] Store raw AI output for debugging when validation fails.
 
 ### 6. Predictive Alert Engine
-- [ ] Implement `detectAlerts()` to generate alerts from signals or narrative clusters.
-- [ ] Implement alert scoring using speed, sentiment, source strength, spread, time-to-impact, and confidence.
-- [ ] Implement `enhanceAlert()` for plain-language alert explanation.
-- [ ] Add alert background worker and queue integration.
-- [ ] Prevent duplicate alerts for the same topic/window.
+- [x] Implement `detectAlerts()` to generate alerts from signals or narrative clusters.
+- [x] Implement alert scoring using speed, sentiment, source strength, spread, time-to-impact, and confidence.
+- [x] Implement `enhanceAlert()` for plain-language alert explanation.
+- [x] Add alert background worker and queue integration.
+- [x] Prevent duplicate alerts for the same topic/window.
 
 ### 7. Learning Loop and Feedback
 - [ ] Implement feedback endpoint for action suggestions.
