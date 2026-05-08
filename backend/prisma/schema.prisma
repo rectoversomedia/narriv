@@ -214,6 +214,7 @@ model Report {
   createdAt     DateTime @default(now())
 
   workspace     Workspace @relation(fields: [workspaceId], references: [id])
+  exports       ReportExport[]
 }
 
 model ActionPlan {
@@ -326,4 +327,21 @@ model AuditLog {
   createdAt   DateTime @default(now())
 
   user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model ReportExport {
+  id            String   @id @default(uuid())
+  reportId      String
+  status        String   // queued, running, completed, failed
+  format        String   // json, pdf
+  fileName      String?
+  fileContent   Json?
+  signedToken   String?
+  signedUrl     String?
+  errorMessage  String?
+  expiresAt     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  report        Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
 }

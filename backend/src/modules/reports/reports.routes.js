@@ -1,4 +1,5 @@
 import express from "express";
+import crypto from "crypto";
 import prisma from "../../prisma.js";
 import { generateReport } from "./reports.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
@@ -6,7 +7,6 @@ import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/
 
 const router = express.Router();
 router.use(verifyToken);
-
 
 const REPORT_TEMPLATES = {
     "Weekly Narrative Intelligence Brief": {
@@ -35,7 +35,104 @@ function toFrontendReport(report) {
         status: template.status || "In progress",
     };
 }
-// POST /api/reports — Generate a new intelligence report
+
+function buildPdfData(fullReport, reportId) {
+    const metrics = fullReport.sections.dashboard_metrics;
+    const alerts = fullReport.sections.alerts;
+    const narratives = fullReport.sections.narratives;
+
+    return {
+        metadata: {
+            title: fullReport.title,
+            generatedAt: new Date().toISOString(),
+            periodStart: fullReport.periodStart,
+            periodEnd: fullReport.periodEnd,
+            reportId,
+        },
+        sections: [
+            {
+                order: 1,
+                heading: "Executive Summary",
+                type: "text",
+                content: fullReport.summary,
+            },
+            {
+                order: 2,
+                heading: "Key Performance Indicators",
+                type: "kpi_grid",
+                items: [
+                    { label: "Total Signals", value: metrics.total_signals },
+                    { label: "Analyzed Signals", value: metrics.analyzed_signals },
+                    { label: "Positive", value: `${metrics.sentiment_percentages.positive}%` },
+                    { label: "Negative", value: `${metrics.sentiment_percentages.negative}%` },
+                    { label: "Neutral", value: `${metrics.sentiment_percentages.neutral}%` },
+                    { label: "Mixed", value: `${metrics.sentiment_percentages.mixed}%` },
+                ],
+            },
+            {
+                order: 3,
+                heading: "Sentiment Distribution",
+                type: "chart_data",
+                chartType: "pie",
+                data: [
+                    { label: "Positive", value: metrics.sentiment_distribution.positive, color: "#22c55e" },
+                    { label: "Negative", value: metrics.sentiment_distribution.negative, color: "#ef4444" },
+                    { label: "Neutral", value: metrics.sentiment_distribution.neutral, color: "#64748b" },
+                    { label: "Mixed", value: metrics.sentiment_distribution.mixed, color: "#f59e0b" },
+                ],
+            },
+            {
+                order: 4,
+                heading: "Platform Distribution",
+                type: "chart_data",
+                chartType: "bar",
+                data: metrics.platform_distribution.map((p) => ({
+                    label: p.platform,
+                    value: p.count,
+                })),
+            },
+            {
+                order: 5,
+                heading: "Alerts Overview",
+                type: "summary_with_table",
+                summary: `${alerts.total} alerts detected. ${alerts.by_severity.critical + alerts.by_severity.high} require immediate attention.`,
+                columns: ["Title", "Severity", "Status", "What Happened"],
+                rows: alerts.items.map((a) => [
+                    a.title,
+                    a.severity,
+                    a.status,
+                    a.whatHappened || "-",
+                ]),
+            },
+            {
+                order: 6,
+                heading: "Narrative Clusters",
+                type: "cards",
+                items: narratives.items.map((n) => ({
+                    title: n.title,
+                    description: n.description,
+                    sentiment: n.sentiment,
+                    impact: n.impact,
+                    signalCount: n.signalCount,
+                })),
+            },
+            {
+                order: 7,
+                heading: "Top Signals",
+                type: "table",
+                columns: ["Title", "Platform", "Sentiment", "Date"],
+                rows: metrics.top_signals.map((s) => [
+                    s.title,
+                    s.platform,
+                    s.sentiment,
+                    new Date(s.capturedAt).toLocaleDateString("en-US"),
+                ]),
+            },
+        ],
+    };
+}
+
+// POST /api/reports - Generate a new intelligence report
 router.post("/", async (req, res) => {
     try {
         const { workspaceId, title, periodStart, periodEnd } = req.body;
@@ -45,11 +142,10 @@ router.post("/", async (req, res) => {
         }
 
         const report = await generateReport({ workspaceId: scopedWorkspaceId, title, periodStart, periodEnd });
-
-        res.status(201).json(report);
+        return res.status(201).json(report);
     } catch (error) {
         console.error("Error generating report:", error);
-        res.status(500).json({ error: "Internal server error" });
+        return res.status(500).json({ error: "Internal server error" });
     }
 });
 
@@ -62,55 +158,186 @@ router.get("/", async (req, res) => {
             return res.json({ reports: [] });
         }
 
-        const whereClause = { workspaceId: { in: scopedWorkspaceIds } };
-
         const data = await prisma.report.findMany({
-            where: whereClause,
-            orderBy: { createdAt: "desc" }
+            where: { workspaceId: { in: scopedWorkspaceIds } },
+            orderBy: { createdAt: "desc" },
         });
 
-        res.json({
-            reports: data.map(toFrontendReport),
-        });
+        return res.json({ reports: data.map(toFrontendReport) });
     } catch (error) {
         console.error("Error fetching reports:", error);
-        res.status(500).json({ error: "Internal server error" });
+        return res.status(500).json({ error: "Internal server error" });
     }
 });
-// GET /api/reports/:id — Get a single report (re-generates full sections)
+
+// POST /api/reports/:id/export - Create report export job
+router.post("/:id/export", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { format = "json" } = req.body || {};
+        const normalizedFormat = String(format).toLowerCase();
+        if (!["json", "pdf"].includes(normalizedFormat)) {
+            return res.status(400).json({ error: "format must be one of: json, pdf" });
+        }
+
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
+        const report = await prisma.report.findUnique({ where: { id } });
+        if (!report || !scopedWorkspaceIds.includes(report.workspaceId)) {
+            return res.status(404).json({ error: "Report not found" });
+        }
+
+        const exportJob = await prisma.reportExport.create({
+            data: {
+                reportId: report.id,
+                status: "queued",
+                format: normalizedFormat,
+            }
+        });
+
+        try {
+            await prisma.reportExport.update({ where: { id: exportJob.id }, data: { status: "running" } });
+
+            const fullReport = await generateReport({
+                workspaceId: report.workspaceId,
+                title: report.title,
+                periodStart: report.periodStart,
+                periodEnd: report.periodEnd,
+            });
+
+            const payload = normalizedFormat === "pdf"
+                ? buildPdfData(fullReport, report.id)
+                : {
+                    ...fullReport,
+                    id: report.id,
+                    createdAt: report.createdAt,
+                    exportedAt: new Date().toISOString(),
+                };
+
+            const signedToken = crypto.randomBytes(24).toString("hex");
+            const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+            const baseUrl = `${req.protocol}://${req.get("host")}`;
+            const signedUrl = `${baseUrl}/api/reports/exports/${exportJob.id}/download?token=${signedToken}`;
+
+            await prisma.reportExport.update({
+                where: { id: exportJob.id },
+                data: {
+                    status: "completed",
+                    fileName: `narriv-report-${report.id.substring(0, 8)}.${normalizedFormat}`,
+                    fileContent: payload,
+                    signedToken,
+                    signedUrl,
+                    expiresAt,
+                    errorMessage: null,
+                }
+            });
+        } catch (jobError) {
+            await prisma.reportExport.update({
+                where: { id: exportJob.id },
+                data: {
+                    status: "failed",
+                    errorMessage: jobError.message || "Export failed",
+                }
+            });
+        }
+
+        return res.status(202).json({ message: "Export job created", jobId: exportJob.id });
+    } catch (error) {
+        console.error("Error creating export job:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// GET /api/reports/exports/:jobId - Get export job status
+router.get("/exports/:jobId", async (req, res) => {
+    try {
+        const { jobId } = req.params;
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
+
+        const job = await prisma.reportExport.findUnique({
+            where: { id: jobId },
+            include: { report: true },
+        });
+
+        if (!job || !scopedWorkspaceIds.includes(job.report.workspaceId)) {
+            return res.status(404).json({ error: "Export job not found" });
+        }
+
+        return res.json({
+            jobId: job.id,
+            reportId: job.reportId,
+            format: job.format,
+            status: job.status,
+            errorMessage: job.errorMessage,
+            signedUrl: job.status === "completed" ? job.signedUrl : null,
+            expiresAt: job.expiresAt,
+        });
+    } catch (error) {
+        console.error("Error fetching export job:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// GET /api/reports/exports/:jobId/download?token=... - Signed download URL endpoint
+router.get("/exports/:jobId/download", async (req, res) => {
+    try {
+        const { jobId } = req.params;
+        const { token } = req.query;
+        if (!token) return res.status(400).json({ error: "token is required" });
+
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
+        const job = await prisma.reportExport.findUnique({
+            where: { id: jobId },
+            include: { report: true },
+        });
+
+        if (!job || !scopedWorkspaceIds.includes(job.report.workspaceId)) {
+            return res.status(404).json({ error: "Export job not found" });
+        }
+        if (job.status !== "completed" || !job.fileContent) {
+            return res.status(409).json({ error: "Export is not ready" });
+        }
+        if (!job.signedToken || String(token) !== job.signedToken) {
+            return res.status(401).json({ error: "Invalid download token" });
+        }
+        if (job.expiresAt && new Date(job.expiresAt) < new Date()) {
+            return res.status(410).json({ error: "Signed URL has expired" });
+        }
+
+        res.setHeader("Content-Type", "application/json");
+        res.setHeader("Content-Disposition", `attachment; filename="${job.fileName || `report-export-${job.id}.${job.format}`}"`);
+        return res.json(job.fileContent);
+    } catch (error) {
+        console.error("Error downloading export file:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// GET /api/reports/:id - Get a single report (re-generates full sections)
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
-        const report = await prisma.report.findUnique({
-            where: { id }
-        });
-
+        const report = await prisma.report.findUnique({ where: { id } });
         if (!report || !scopedWorkspaceIds.includes(report.workspaceId)) {
             return res.status(404).json({ error: "Report not found" });
         }
 
-        // Re-generate the full report content from the saved period
         const fullReport = await generateReport({
             workspaceId: report.workspaceId,
             title: report.title,
             periodStart: report.periodStart,
-            periodEnd: report.periodEnd
+            periodEnd: report.periodEnd,
         });
 
-        // Return using the original report ID and createdAt
-        res.json({
-            ...fullReport,
-            id: report.id,
-            createdAt: report.createdAt
-        });
+        return res.json({ ...fullReport, id: report.id, createdAt: report.createdAt });
     } catch (error) {
         console.error("Error fetching report:", error);
-        res.status(500).json({ error: "Internal server error" });
+        return res.status(500).json({ error: "Internal server error" });
     }
 });
-// GET /api/reports/:id/export/json — Export full report as downloadable JSON
+
+// GET /api/reports/:id/export/json - Export full report as downloadable JSON
 router.get("/:id/export/json", async (req, res) => {
     try {
         const { id } = req.params;
@@ -125,28 +352,27 @@ router.get("/:id/export/json", async (req, res) => {
             workspaceId: report.workspaceId,
             title: report.title,
             periodStart: report.periodStart,
-            periodEnd: report.periodEnd
+            periodEnd: report.periodEnd,
         });
 
         const exportData = {
             ...fullReport,
             id: report.id,
             createdAt: report.createdAt,
-            exportedAt: new Date().toISOString()
+            exportedAt: new Date().toISOString(),
         };
 
         const filename = `narriv-report-${report.id.substring(0, 8)}.json`;
-
         res.setHeader("Content-Type", "application/json");
         res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-        res.json(exportData);
+        return res.json(exportData);
     } catch (error) {
         console.error("Error exporting report JSON:", error);
-        res.status(500).json({ error: "Internal server error" });
+        return res.status(500).json({ error: "Internal server error" });
     }
 });
 
-// GET /api/reports/:id/export/pdf — Export PDF-ready structured data
+// GET /api/reports/:id/export/pdf - Export PDF-ready structured data
 router.get("/:id/export/pdf", async (req, res) => {
     try {
         const { id } = req.params;
@@ -161,108 +387,13 @@ router.get("/:id/export/pdf", async (req, res) => {
             workspaceId: report.workspaceId,
             title: report.title,
             periodStart: report.periodStart,
-            periodEnd: report.periodEnd
+            periodEnd: report.periodEnd,
         });
 
-        const metrics = fullReport.sections.dashboard_metrics;
-        const alerts = fullReport.sections.alerts;
-        const narratives = fullReport.sections.narratives;
-
-        // Build PDF-ready document structure with ordered sections
-        const pdfData = {
-            metadata: {
-                title: fullReport.title,
-                generatedAt: new Date().toISOString(),
-                periodStart: fullReport.periodStart,
-                periodEnd: fullReport.periodEnd,
-                reportId: report.id
-            },
-            sections: [
-                {
-                    order: 1,
-                    heading: "Executive Summary",
-                    type: "text",
-                    content: fullReport.summary
-                },
-                {
-                    order: 2,
-                    heading: "Key Performance Indicators",
-                    type: "kpi_grid",
-                    items: [
-                        { label: "Total Signals", value: metrics.total_signals },
-                        { label: "Analyzed Signals", value: metrics.analyzed_signals },
-                        { label: "Positive", value: `${metrics.sentiment_percentages.positive}%` },
-                        { label: "Negative", value: `${metrics.sentiment_percentages.negative}%` },
-                        { label: "Neutral", value: `${metrics.sentiment_percentages.neutral}%` },
-                        { label: "Mixed", value: `${metrics.sentiment_percentages.mixed}%` }
-                    ]
-                },
-                {
-                    order: 3,
-                    heading: "Sentiment Distribution",
-                    type: "chart_data",
-                    chartType: "pie",
-                    data: [
-                        { label: "Positive", value: metrics.sentiment_distribution.positive, color: "#22c55e" },
-                        { label: "Negative", value: metrics.sentiment_distribution.negative, color: "#ef4444" },
-                        { label: "Neutral", value: metrics.sentiment_distribution.neutral, color: "#64748b" },
-                        { label: "Mixed", value: metrics.sentiment_distribution.mixed, color: "#f59e0b" }
-                    ]
-                },
-                {
-                    order: 4,
-                    heading: "Platform Distribution",
-                    type: "chart_data",
-                    chartType: "bar",
-                    data: metrics.platform_distribution.map(p => ({
-                        label: p.platform,
-                        value: p.count
-                    }))
-                },
-                {
-                    order: 5,
-                    heading: "Alerts Overview",
-                    type: "summary_with_table",
-                    summary: `${alerts.total} alerts detected. ${alerts.by_severity.critical + alerts.by_severity.high} require immediate attention.`,
-                    columns: ["Title", "Severity", "Status", "What Happened"],
-                    rows: alerts.items.map(a => [
-                        a.title,
-                        a.severity,
-                        a.status,
-                        a.whatHappened || "—"
-                    ])
-                },
-                {
-                    order: 6,
-                    heading: "Narrative Clusters",
-                    type: "cards",
-                    items: narratives.items.map(n => ({
-                        title: n.title,
-                        description: n.description,
-                        sentiment: n.sentiment,
-                        impact: n.impact,
-                        signalCount: n.signalCount
-                    }))
-                },
-                {
-                    order: 7,
-                    heading: "Top Signals",
-                    type: "table",
-                    columns: ["Title", "Platform", "Sentiment", "Date"],
-                    rows: metrics.top_signals.map(s => [
-                        s.title,
-                        s.platform,
-                        s.sentiment,
-                        new Date(s.capturedAt).toLocaleDateString("en-US")
-                    ])
-                }
-            ]
-        };
-
-        res.json(pdfData);
+        return res.json(buildPdfData(fullReport, report.id));
     } catch (error) {
         console.error("Error exporting PDF-ready data:", error);
-        res.status(500).json({ error: "Internal server error" });
+        return res.status(500).json({ error: "Internal server error" });
     }
 });
 

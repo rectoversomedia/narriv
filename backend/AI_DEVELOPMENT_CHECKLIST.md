@@ -149,11 +149,11 @@ Acceptance criteria:
 - [x] Ensure secrets like `JWT_SECRET`, refresh-token secret, and database credentials are loaded from environment variables only.
 
 ### 10. Reporting Export Jobs
-- [ ] Add report export job creation endpoint when ready.
-- [ ] Suggested endpoint: `POST /api/reports/:id/export`.
-- [ ] Add export job status endpoint.
-- [ ] Suggested endpoint: `GET /api/reports/exports/:jobId`.
-- [ ] Add signed download URL support when files are generated.
+- [x] Add report export job creation endpoint when ready.
+- [x] Suggested endpoint: `POST /api/reports/:id/export`.
+- [x] Add export job status endpoint.
+- [x] Suggested endpoint: `GET /api/reports/exports/:jobId`.
+- [x] Add signed download URL support when files are generated.
 
 ---
 
@@ -191,7 +191,7 @@ Acceptance criteria:
 - [x] `ActionPlan`
 - [x] `ActionFeedback` (implemented via `AIFeedback`)
 - [x] `Report`
-- [ ] `ReportExport`
+- [x] `ReportExport`
 - [x] `Narrative` or `TopicCluster`
 - [x] Join table between `Narrative` and `Signal` if using many-to-many clustering.
 
