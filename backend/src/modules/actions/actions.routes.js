@@ -37,15 +37,14 @@ router.post("/", async (req, res) => {
 router.get("/", async (req, res) => {
     try {
         const { workspaceId } = req.query;
-        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
-        if (scopedWorkspaceIds.length === 0) {
-            return res.json({ data: [], meta: { page: 1, limit, total: 0 } });
-        }
         const page = parseInt(req.query.page, 10) || 1;
         const limit = parseInt(req.query.limit, 10) || 10;
-
         const safePage = Math.max(1, page);
         const safeLimit = Math.max(1, limit);
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
+        if (scopedWorkspaceIds.length === 0) {
+            return res.json({ data: [], meta: { page: safePage, limit: safeLimit, total: 0 } });
+        }
         const skip = (safePage - 1) * safeLimit;
 
         const whereClause = {};

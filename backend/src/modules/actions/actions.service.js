@@ -86,17 +86,17 @@ async function buildContext({ alertId, clusterId, workspaceId }) {
     const lines = [];
 
     if (alertId) {
-        const alert = await prisma.alert.findUnique({ where: { id: alertId } });
+        const alert = await prisma.alert.findFirst({ where: { id: alertId, workspaceId } });
         if (alert) {
-            lines.push(`ALERT: [${alert.severity.toUpperCase()}] ${alert.title}`);
+            lines.push(`ALERT: [${(alert.severity || "medium").toUpperCase()}] ${alert.title}`);
             if (alert.whatHappened) lines.push(`What Happened: ${alert.whatHappened}`);
             if (alert.whyItMatters) lines.push(`Why It Matters: ${alert.whyItMatters}`);
         }
     }
 
     if (clusterId) {
-        const cluster = await prisma.narrativeCluster.findUnique({
-            where: { id: clusterId },
+        const cluster = await prisma.narrativeCluster.findFirst({
+            where: { id: clusterId, workspaceId },
             include: {
                 narrativeClusterSignals: {
                     take: 5,
@@ -161,8 +161,26 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
 
     console.log(`[ACTION] Generating ${strategyType} plan for workspace ${workspaceId}`);
 
+    const scopedAlertId = alertId || null;
+    if (scopedAlertId) {
+        const alert = await prisma.alert.findFirst({
+            where: { id: scopedAlertId, workspaceId },
+            select: { id: true }
+        });
+        if (!alert) throw new Error("Alert not found");
+    }
+
+    const scopedClusterId = clusterId || null;
+    if (scopedClusterId) {
+        const cluster = await prisma.narrativeCluster.findFirst({
+            where: { id: scopedClusterId, workspaceId },
+            select: { id: true }
+        });
+        if (!cluster) throw new Error("Narrative cluster not found");
+    }
+
     // 1. Build context
-    const context = await buildContext({ alertId, clusterId, workspaceId });
+    const context = await buildContext({ alertId: scopedAlertId, clusterId: scopedClusterId, workspaceId });
 
     // 2. Generate 3 strategic options in parallel
     const options = await Promise.all([
@@ -175,8 +193,8 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
     const actionPlan = await prisma.actionPlan.create({
         data: {
             workspaceId,
-            alertId: alertId || null,
-            clusterId: clusterId || null,
+            alertId: scopedAlertId,
+            clusterId: scopedClusterId,
             title: `${formatStrategyName(strategyType)} Action Plan`,
             option1: JSON.stringify(options[0]),
             option2: JSON.stringify(options[1]),

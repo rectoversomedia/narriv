@@ -29,6 +29,7 @@ const REPORT_TEMPLATES = {
 function toFrontendReport(report) {
     const template = REPORT_TEMPLATES[report.title] || {};
     return {
+        id: report.id,
         title: report.title,
         readiness: Number(template.readiness || 70),
         sections: template.sections || "Signals, clusters, insights",

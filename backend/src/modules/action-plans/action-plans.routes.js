@@ -16,29 +16,63 @@ function parseOption(raw) {
     }
 }
 
+function collectActionSteps(...options) {
+    const stepFields = [
+        "immediate_actions",
+        "talking_points",
+        "key_messages",
+        "content_pillars",
+        "recommended_formats",
+        "distribution_channels",
+        "key_themes",
+        "success_metrics",
+        "collaboration_formats",
+        "key_messages_for_influencers",
+        "platforms",
+        "stakeholder_management"
+    ];
+
+    return options
+        .filter(Boolean)
+        .flatMap((option) => stepFields.flatMap((field) => Array.isArray(option[field]) ? option[field] : []))
+        .filter((step) => typeof step === "string" && step.trim().length > 0)
+        .filter((step, index, steps) => steps.indexOf(step) === index);
+}
+
 function buildActionPlanResponse(plan) {
-    const balanced = parseOption(plan.option2) || parseOption(plan.option1) || parseOption(plan.option3) || {};
-    const steps = Array.isArray(balanced.immediate_actions)
-        ? balanced.immediate_actions
-        : Array.isArray(balanced.key_messages)
-            ? balanced.key_messages
-            : [];
+    const conservative = parseOption(plan.option1) || {};
+    const balanced = parseOption(plan.option2) || {};
+    const bold = parseOption(plan.option3) || {};
+    const primaryOption = balanced.error ? (conservative.error ? bold : conservative) : balanced;
+    const steps = collectActionSteps(primaryOption, conservative, balanced, bold);
+    const fallbackSteps = [
+        "Review the evidence and confirm the audience priority.",
+        "Prepare the message, content, or response owner.",
+        "Publish the approved action and monitor new findings.",
+        "Record feedback so future suggestions improve."
+    ];
+    const channel = primaryOption.media_channels?.join(", ")
+        || primaryOption.distribution_channels?.join(", ")
+        || primaryOption.platforms?.join(", ")
+        || "Owned + PR";
 
     const timelineSlots = ["Today", "Next 6h", "24h", "48h"];
 
     return {
-        inputNarrative: balanced.executive_summary
+        id: plan.id,
+        inputNarrative: primaryOption.executive_summary
+            || primaryOption.severity_assessment
             || plan.alert?.whatHappened
             || plan.cluster?.description
             || "",
         evidenceSummary: `Evidence: ${plan.cluster?.signalCount || 0} related findings · Severity: ${plan.alert?.severity || "medium"} · Status: ${plan.alert?.status || "open"}`,
         outputs: [
             ["Primary action", plan.title || "Action plan"],
-            ["Channel", balanced.media_channels?.join(", ") || "Owned + PR"],
+            ["Channel", channel],
             ["Impact / effort", `${plan.alert?.severity === "high" ? "High" : "Medium"} impact · Medium effort`],
             ["Confidence", "82%"],
         ],
-        plan: steps.slice(0, 4).map((step, index) => [step, timelineSlots[index] || "Later"]),
+        plan: (steps.length ? steps : fallbackSteps).slice(0, 4).map((step, index) => [step, timelineSlots[index] || "Later"]),
     };
 }
 

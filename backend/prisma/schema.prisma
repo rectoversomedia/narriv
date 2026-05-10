@@ -23,6 +23,8 @@ model User {
   updatedAt     DateTime @updatedAt
 
   memberships WorkspaceMember[]
+
+  @@index([createdAt])
 }
 
 model Workspace {
@@ -57,6 +59,10 @@ model WorkspaceMember {
 
   user        User      @relation(fields: [userId], references: [id])
   workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@unique([userId, workspaceId])
+  @@index([workspaceId])
+  @@index([userId])
 }
 
 model Source {
@@ -68,10 +74,15 @@ model Source {
   inputConfig   Json?
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
 
   workspace     Workspace @relation(fields: [workspaceId], references: [id])
   ingestionJobs IngestionJob[]
   rawDocuments  RawDocument[]
+
+  @@index([workspaceId, isActive, createdAt])
+  @@index([workspaceId, type])
+  @@index([workspaceId, name])
 }
 
 model IngestionJob {
@@ -86,6 +97,9 @@ model IngestionJob {
 
   workspace     Workspace @relation(fields: [workspaceId], references: [id])
   source        Source    @relation(fields: [sourceId], references: [id])
+
+  @@index([workspaceId, status, startedAt])
+  @@index([sourceId, startedAt])
 }
 
 model RawDocument {
@@ -107,6 +121,11 @@ model RawDocument {
   workspace     Workspace @relation(fields: [workspaceId], references: [id])
   source        Source    @relation(fields: [sourceId], references: [id])
   signals       Signal[]
+
+  @@index([workspaceId, capturedAt])
+  @@index([sourceId, capturedAt])
+  @@index([workspaceId, sourceType, capturedAt])
+  @@index([workspaceId, externalId])
 }
 
 model Signal {
@@ -134,6 +153,12 @@ model Signal {
   analyses      SignalAnalysis[]
   aiAnalysisFailureLogs AIAnalysisFailureLog[]
   narrativeClusterSignals NarrativeClusterSignal[]
+
+  @@index([workspaceId, capturedAt])
+  @@index([workspaceId, sentiment, capturedAt])
+  @@index([workspaceId, platform, capturedAt])
+  @@index([rawDocumentId])
+  @@index([workspaceId, dedupeHash])
 }
 
 model SignalAnalysis {
@@ -149,6 +174,10 @@ model SignalAnalysis {
   createdAt         DateTime @default(now())
 
   signal            Signal @relation(fields: [signalId], references: [id])
+
+  @@index([signalId, createdAt])
+  @@index([sentiment])
+  @@index([impact])
 }
 
 model Alert {
@@ -165,6 +194,10 @@ model Alert {
 
   workspace     Workspace @relation(fields: [workspaceId], references: [id])
   actionPlans   ActionPlan[]
+
+  @@index([workspaceId, status, createdAt])
+  @@index([workspaceId, severity, createdAt])
+  @@index([workspaceId, type, createdAt])
 }
 
 model NarrativeCluster {
@@ -182,6 +215,10 @@ model NarrativeCluster {
   workspace      Workspace @relation(fields: [workspaceId], references: [id])
   actionPlans    ActionPlan[]
   narrativeClusterSignals NarrativeClusterSignal[]
+
+  @@index([workspaceId, updatedAt])
+  @@index([workspaceId, impact, updatedAt])
+  @@index([workspaceId, sentiment, updatedAt])
 }
 
 model NarrativeClusterSignal {
@@ -194,6 +231,7 @@ model NarrativeClusterSignal {
   signal             Signal           @relation(fields: [signalId], references: [id])
 
   @@unique([narrativeClusterId, signalId])
+  @@index([signalId])
 }
 
 enum ImpactLevel {
@@ -215,6 +253,9 @@ model Report {
 
   workspace     Workspace @relation(fields: [workspaceId], references: [id])
   exports       ReportExport[]
+
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, title])
 }
 
 model ActionPlan {
@@ -232,6 +273,10 @@ model ActionPlan {
   alert         Alert?    @relation(fields: [alertId], references: [id])
   cluster       NarrativeCluster? @relation(fields: [clusterId], references: [id])
   generatedAssets GeneratedAsset[]
+
+  @@index([workspaceId, createdAt])
+  @@index([alertId])
+  @@index([clusterId])
 }
 
 model GeneratedAsset {
@@ -245,6 +290,9 @@ model GeneratedAsset {
 
   workspace     Workspace  @relation(fields: [workspaceId], references: [id])
   actionPlan    ActionPlan @relation(fields: [actionPlanId], references: [id])
+
+  @@index([workspaceId, createdAt])
+  @@index([actionPlanId])
 }
 
 model AIVisibilityResult {
@@ -261,6 +309,9 @@ model AIVisibilityResult {
 
   workspace             Workspace @relation(fields: [workspaceId], references: [id])
   promptTestRuns        PromptTestRun[]
+
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, engineName, createdAt])
 }
 
 model PromptTestRun {
@@ -278,6 +329,10 @@ model PromptTestRun {
 
   workspace             Workspace          @relation(fields: [workspaceId], references: [id])
   aiVisibilityResult    AIVisibilityResult @relation(fields: [aiVisibilityResultId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, engine, createdAt])
+  @@index([aiVisibilityResultId])
 }
 
 model AIFeedback {
@@ -293,6 +348,11 @@ model AIFeedback {
   createdAt       DateTime @default(now())
 
   workspace       Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, targetType, targetId])
+  @@index([workspaceId, action, createdAt])
+  @@index([userId, createdAt])
 }
 
 model AIAnalysisFailureLog {
@@ -306,17 +366,24 @@ model AIAnalysisFailureLog {
 
   workspace     Workspace @relation(fields: [workspaceId], references: [id])
   signal        Signal    @relation(fields: [signalId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+  @@index([signalId])
 }
 
 model RefreshToken {
   id          String   @id @default(uuid())
   userId      String
-  tokenHash   String
+  tokenHash   String   @unique
   expiresAt   DateTime
   revokedAt   DateTime?
   createdAt   DateTime @default(now())
 
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+  @@index([revokedAt])
 }
 
 model AuditLog {
@@ -327,6 +394,9 @@ model AuditLog {
   createdAt   DateTime @default(now())
 
   user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([event, createdAt])
 }
 
 model ReportExport {
@@ -336,7 +406,7 @@ model ReportExport {
   format        String   // json, pdf
   fileName      String?
   fileContent   Json?
-  signedToken   String?
+  signedToken   String?  @unique
   signedUrl     String?
   errorMessage  String?
   expiresAt     DateTime?
@@ -344,4 +414,8 @@ model ReportExport {
   updatedAt     DateTime @updatedAt
 
   report        Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId, status])
+  @@index([status, createdAt])
+  @@index([expiresAt])
 }
