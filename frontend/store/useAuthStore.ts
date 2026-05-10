@@ -1,14 +1,22 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { DemoUser } from "@/lib/demo-auth";
+
+export type AuthUser = {
+  name: string;
+  email: string;
+  provider: "password" | "google";
+  workspace: string;
+};
 
 interface AuthState {
   token: string | null;
-  user: DemoUser | null;
+  refreshToken: string | null;
+  user: AuthUser | null;
   isAuthenticated: boolean;
   setToken: (token: string | null) => void;
-  setUser: (user: DemoUser | null) => void;
-  setSession: (token: string, user: DemoUser) => void;
+  setRefreshToken: (refreshToken: string | null) => void;
+  setUser: (user: AuthUser | null) => void;
+  setSession: (token: string, user: AuthUser, refreshToken?: string | null) => void;
   logout: () => void;
 }
 
@@ -16,15 +24,17 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       token: null,
+      refreshToken: null,
       user: null,
       isAuthenticated: false,
       setToken: (token) => set({ token, isAuthenticated: !!token }),
+      setRefreshToken: (refreshToken) => set({ refreshToken }),
       setUser: (user) => set({ user }),
-      setSession: (token, user) => set({ token, user, isAuthenticated: true }),
-      logout: () => set({ token: null, user: null, isAuthenticated: false }),
+      setSession: (token, user, refreshToken = null) => set({ token, refreshToken, user, isAuthenticated: true }),
+      logout: () => set({ token: null, refreshToken: null, user: null, isAuthenticated: false }),
     }),
     {
-      name: "narriv-demo-auth",
+      name: "narriv-auth",
     }
   )
 );

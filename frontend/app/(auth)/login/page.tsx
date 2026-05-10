@@ -8,9 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Loader2, ShieldCheck, Zap } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import * as z from "zod";
-import { createPasswordDemoSession, DEMO_TOKEN } from "@/lib/demo-auth";
-import type { DemoUser } from "@/lib/demo-auth";
-import { useAuthStore } from "@/store/useAuthStore";
+import { useAuthStore, type AuthUser } from "@/store/useAuthStore";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:3000";
@@ -196,8 +194,8 @@ export default function LoginPage() {
     defaultValues: { email: "", password: "" },
   });
 
-  const finishLogin = (token: string, user: DemoUser) => {
-    setSession(token, user);
+  const finishLogin = (token: string, user: AuthUser, refreshToken?: string | null) => {
+    setSession(token, user, refreshToken);
     router.push("/");
   };
 
@@ -212,13 +210,13 @@ export default function LoginPage() {
       });
 
       if (res.ok) {
-        const json = await res.json() as { token: string; user: { name: string; email: string } };
+        const json = await res.json() as { token: string; refreshToken?: string; user: { name: string; email: string } };
         finishLogin(json.token, {
           name: json.user.name,
           email: json.user.email,
           provider: "password",
           workspace: "Narriv Workspace",
-        });
+        }, json.refreshToken);
         return;
       }
 
@@ -227,20 +225,17 @@ export default function LoginPage() {
         setApiError(errJson.error ?? "Invalid credentials. Please try again.");
         return;
       }
-    } catch {
-      // Backend unreachable — demo fallback
-    }
 
-    finishLogin(DEMO_TOKEN, createPasswordDemoSession(data.email));
+      setApiError(errJson.error ?? "Login failed. Please try again.");
+      return;
+    } catch {
+      setApiError("Unable to reach the backend API. Please check the API URL and try again.");
+      return;
+    }
   };
 
   const handleGoogleSSO = () => {
-    finishLogin(DEMO_TOKEN, {
-      name: "Google Workspace User",
-      email: "user@workspace.example",
-      provider: "google",
-      workspace: "Narriv Demo",
-    });
+    setApiError("Google sign-in is not configured for this production build yet.");
   };
 
   const stats = [

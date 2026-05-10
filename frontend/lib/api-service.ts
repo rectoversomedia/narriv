@@ -3,23 +3,13 @@
  *
  * Production API service layer for Narriv.
  * Wraps apiClient with typed fetchers for each domain.
- * Falls back gracefully to mock data when the backend is unreachable.
+ * Returns null when the backend is unreachable so pages can show production empty/error states.
  *
  * Usage:
  *   import { getDashboardSummary, getSignals, getAlerts } from "@/lib/api-service";
  */
 
 import { apiClient } from "@/lib/apiClient";
-import {
-  commandMetrics,
-  actionRecommendations,
-  dataSources,
-  geoVisibility,
-  narrativeClusters,
-  predictiveAlerts,
-  reports,
-  signals as mockSignals,
-} from "@/lib/mock-data";
 
 // ---------------------------------------------------------------------------
 // Types — shaped to match actual backend responses
@@ -105,9 +95,8 @@ export interface Alert {
 
 export async function getDashboardSummary(): Promise<DashboardSummary | null> {
   try {
-    return await apiClient<DashboardSummary>("/api/dashboard");
+    return await apiClient<DashboardSummary>("/api/dashboard/summary");
   } catch {
-    // Backend unreachable — callers should fall back to mock data
     return null;
   }
 }
@@ -176,6 +165,14 @@ export async function getAlerts(
   }
 }
 
+export async function getAlertById(id: string): Promise<Alert | null> {
+  try {
+    return await apiClient<Alert>(`/api/alerts/${id}`);
+  } catch {
+    return null;
+  }
+}
+
 export async function updateAlertStatus(
   id: string,
   status: "open" | "acknowledged" | "resolved"
@@ -191,38 +188,10 @@ export async function updateAlertStatus(
 }
 
 // ---------------------------------------------------------------------------
-// Helpers — Build dashboard KPI cards from real or mock data
+// Helpers — Build page data from backend responses
 // ---------------------------------------------------------------------------
 
-export function buildDashboardMetrics(summary: DashboardSummary | null) {
-  if (!summary) return commandMetrics; // graceful mock fallback
-
-  const { kpis } = summary;
-  return [
-    {
-      label: "Total Signals",
-      value: String(kpis.total_signals),
-      delta: `${kpis.analyzed_signals} analyzed`,
-    },
-    {
-      label: "Positive Sentiment",
-      value: `${kpis.positive_percentage}%`,
-      delta: `${kpis.negative_percentage}% negative`,
-    },
-    {
-      label: "Analyzed Signals",
-      value: String(kpis.analyzed_signals),
-      delta: `of ${kpis.total_signals} total`,
-    },
-    {
-      label: "Neutral / Mixed",
-      value: `${kpis.neutral_percentage + kpis.mixed_percentage}%`,
-      delta: `${kpis.neutral_percentage}% neutral`,
-    },
-  ];
-}
-
-/** Map backend Alert[] → mock-data shape used by AlertsPage */
+/** Map backend Alert[] → page shape used by AlertsPage */
 export function buildAlertItems(alerts: Alert[]) {
   const severityTone: Record<string, string> = {
     high: "text-[#F97066]",
@@ -240,14 +209,14 @@ export function buildAlertItems(alerts: Alert[]) {
   }));
 }
 
-/** Map backend Signal[] → mock-data shape used by SignalsPage */
+/** Map backend Signal[] → page shape used by SignalsPage */
 export function buildSignalItems(apiSignals: Signal[]) {
   return apiSignals.map((s) => ({
     id: s.id,
     source: s.platform ?? "Unknown",
     sentiment: (s.sentiment ?? "neutral").toLowerCase(),
     excerpt: s.content,
-    confidence: 80, // confidence not in signal model yet; use placeholder
+    confidence: null,
     recommendation: "Review signal for action opportunities.",
     narrative: s.title ?? "Unnamed narrative",
     publishedAt: s.publishedAt,
@@ -255,90 +224,130 @@ export function buildSignalItems(apiSignals: Signal[]) {
   }));
 }
 
-/** Returns mock signals shaped like buildSignalItems output */
-export function getMockSignalItems() {
-  return mockSignals.map((s, i) => ({ ...s, id: `mock-${i}` }));
-}
-
-/** Returns mock alert items shaped like buildAlertItems output */
-export function getMockAlertItems() {
-  return predictiveAlerts.map((a) => ({
-    id: a.id,
-    title: a.title,
-    metric: `${a.probability}% · ${a.window}`,
-    detail: a.drivers.join(" · "),
-    tone:
-      a.severity === "high"
-        ? "text-[#F97066]"
-        : a.severity === "medium"
-          ? "text-[#FDB022]"
-          : "text-[#D0D5DD]",
-    status: a.status,
-  }));
-}
-
 // ---------------------------------------------------------------------------
 // V2 Endpoints (Visibility, Action Plans, Reports, Sources)
 // ---------------------------------------------------------------------------
 
-export async function getVisibility(): Promise<unknown | null> {
-  try {
-    return await apiClient<unknown>("/api/visibility");
-  } catch {
-    const mentionedPrompts = geoVisibility.prompts.filter((prompt) => prompt.brand === "Mentioned").length;
+export interface VisibilityResponse {
+  score?: number | string;
+  presence?: number | string;
+  presenceMentions?: number | string;
+  competitor?: number | string;
+  prompts?: {
+    prompt: string;
+    engine: string;
+    brand: string;
+    competitor: string;
+    brandTone?: string;
+    compTone?: string;
+  }[];
+  geoActions?: { title: string; tag: string; highlighted?: boolean }[];
+}
 
-    return {
-      score: geoVisibility.score,
-      presence: geoVisibility.brandPresenceRate,
-      presenceMentions: `${mentionedPrompts} of ${geoVisibility.prompts.length}`,
-      competitor: geoVisibility.competitorMentionRate,
-      prompts: geoVisibility.prompts.map((prompt, index) => ({
-        prompt: prompt.prompt,
-        engine: ["ChatGPT", "Perplexity", "Gemini"][index] ?? "AI",
-        brand: prompt.brand,
-        competitor: prompt.competitors,
-        brandTone:
-          prompt.brand === "Mentioned" ? "text-[#12B76A]" : "text-[#F97066]",
-        compTone: prompt.competitors.startsWith("1") ? "text-[#FDB022]" : "text-[#F97066]",
-      })),
-      geoActions: [
-        { title: "Create a plan to improve AI visibility", tag: "High impact", highlighted: true },
-        ...actionRecommendations.slice(0, 2).map((action) => ({
-          title: action.title,
-          tag: action.impact,
-        })),
-      ],
-    };
+export async function getVisibility(): Promise<VisibilityResponse | null> {
+  try {
+    return await apiClient<VisibilityResponse>("/api/visibility");
+  } catch {
+    return null;
   }
 }
 
-export async function getActionPlans(): Promise<unknown | null> {
-  try {
-    return await apiClient<unknown>("/api/action-plans");
-  } catch {
-    const primary = actionRecommendations[0];
+export interface ActionPlanResponse {
+  id?: string;
+  inputNarrative?: string;
+  evidenceSummary?: string;
+  outputs?: [string, string][];
+  plan?: [string, string][];
+}
 
-    return {
-      inputNarrative:
-        "Delivery reliability complaints are becoming a trust issue across social media, communities, news, and AI answers.",
-      evidenceSummary:
-        "Evidence: 148 related findings · 6 source types · 92% confidence · 84% chance the issue grows",
-      outputs: [
-        ["Primary action", primary.title],
-        ["Channel", primary.channel],
-        ["Impact / effort", `${primary.impact} impact · ${primary.effort} effort`],
-        ["Confidence", `${primary.confidence}%`],
-      ],
-      plan: primary.steps.map((step, index) => [step, ["Today", "Next 6h", "24h", "48h"][index] ?? "Later"]),
-    };
+export type ActionStrategyType =
+  | "pr_response"
+  | "content_strategy"
+  | "influencer_strategy"
+  | "crisis_response";
+
+export interface CreateActionPlanInput {
+  workspaceId?: string;
+  strategyType: ActionStrategyType;
+  alertId?: string;
+  clusterId?: string;
+}
+
+export interface CreatedActionPlan {
+  id: string;
+  title: string;
+  strategyType: ActionStrategyType;
+  createdAt: string;
+}
+
+export interface ActionQueueRecord {
+  id: string;
+  title: string;
+  alert?: { title: string; severity: string | null } | null;
+  cluster?: { title: string; sentiment: string | null } | null;
+  createdAt: string;
+}
+
+export async function getActionPlans(): Promise<ActionPlanResponse | null> {
+  try {
+    return await apiClient<ActionPlanResponse>("/api/action-plans");
+  } catch {
+    return null;
   }
 }
 
-export async function getReports(): Promise<unknown | null> {
+export async function createActionPlan(input: CreateActionPlanInput): Promise<CreatedActionPlan | null> {
   try {
-    return await apiClient<unknown>("/api/reports");
+    return await apiClient<CreatedActionPlan>("/api/actions", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
   } catch {
-    return { reports };
+    return null;
+  }
+}
+
+export async function getActionQueue(
+  options: { page?: number; limit?: number } = {}
+): Promise<PaginatedResponse<ActionQueueRecord> | null> {
+  const { page = 1, limit = 10 } = options;
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+
+  try {
+    return await apiClient<PaginatedResponse<ActionQueueRecord>>(`/api/actions?${params.toString()}`);
+  } catch {
+    return null;
+  }
+}
+
+export interface CurrentUserResponse {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: string;
+}
+
+export async function getCurrentUser(): Promise<CurrentUserResponse | null> {
+  try {
+    return await apiClient<CurrentUserResponse>("/auth/me");
+  } catch {
+    return null;
+  }
+}
+
+export interface ReportRecord {
+  id?: string;
+  title: string;
+  sections: string;
+  readiness: number;
+  status: string;
+}
+
+export async function getReports(): Promise<{ reports: ReportRecord[] } | null> {
+  try {
+    return await apiClient<{ reports: ReportRecord[] }>("/api/reports");
+  } catch {
+    return null;
   }
 }
 
@@ -346,20 +355,7 @@ export async function getNarratives(): Promise<unknown | null> {
   try {
     return await apiClient<unknown>("/api/narratives");
   } catch {
-    return {
-      narratives: narrativeClusters.map((cluster) => ({
-        id: cluster.title.toLowerCase().replace(/\s+/g, "-"),
-        title: cluster.title,
-        description: cluster.title,
-        sourceCount: String(cluster.sources).split(",").length,
-        confidence: cluster.confidence,
-        impact: cluster.sentiment === "negative" ? "HIGH" : "MEDIUM",
-        velocity: cluster.velocity,
-        recommendedFocus: "Align messaging and publish supporting proof points.",
-        signalCount: cluster.evidence,
-        sentiment: cluster.sentiment,
-      })),
-    };
+    return null;
   }
 }
 
@@ -367,18 +363,7 @@ export async function getSources(): Promise<unknown | null> {
   try {
     return await apiClient<unknown>("/sources");
   } catch {
-    return {
-      sources: dataSources.map((source, index) => ({
-        id: `mock-source-${index}`,
-        name: source.name,
-        type: source.type.toLowerCase(),
-        isActive: source.health === "Healthy",
-        createdAt: new Date(Date.now() - index * 86400000).toISOString(),
-        health: source.health,
-        coverage: source.coverage,
-        latency: source.latency,
-      })),
-    };
+    return null;
   }
 }
 
@@ -403,11 +388,40 @@ export interface CreateSourceInput {
   inputConfig?: Record<string, unknown>;
 }
 
+export interface UpdateSourceInput {
+  name?: string;
+  type?: string;
+  actorId?: string | null;
+  inputConfig?: Record<string, unknown>;
+  isActive?: boolean;
+}
+
 export async function createSource(input: CreateSourceInput): Promise<SourceRecord | null> {
   try {
     return await apiClient<SourceRecord>("/sources", {
       method: "POST",
       body: JSON.stringify(input),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function updateSource(sourceId: string, input: UpdateSourceInput): Promise<SourceRecord | null> {
+  try {
+    return await apiClient<SourceRecord>(`/sources/${sourceId}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteSource(sourceId: string): Promise<SourceRecord | null> {
+  try {
+    return await apiClient<SourceRecord>(`/sources/${sourceId}`, {
+      method: "DELETE",
     });
   } catch {
     return null;
@@ -427,6 +441,52 @@ export async function runSourceIngestion(sourceId: string): Promise<{ message: s
 export async function getIngestionStatus(jobId: string): Promise<{ status: string; errorMessage?: string | null } | null> {
   try {
     return await apiClient<{ status: string; errorMessage?: string | null }>(`/ingestion/status/${jobId}`);
+  } catch {
+    return null;
+  }
+}
+
+export async function submitActionPlanFeedback(
+  actionPlanId: string,
+  action: "accepted" | "edited" | "rejected",
+  reason?: string
+): Promise<{ id: string; action: string } | null> {
+  try {
+    return await apiClient<{ id: string; action: string }>(`/api/action-plans/${actionPlanId}/feedback`, {
+      method: "POST",
+      body: JSON.stringify({ action, reason }),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function logoutSession(refreshToken: string): Promise<boolean> {
+  try {
+    await apiClient<{ success: boolean }>("/auth/logout", {
+      method: "POST",
+      body: JSON.stringify({ refreshToken }),
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function createReportExport(reportId: string, format: "json" | "pdf" = "json"): Promise<{ message: string; jobId: string } | null> {
+  try {
+    return await apiClient<{ message: string; jobId: string }>(`/api/reports/${reportId}/export`, {
+      method: "POST",
+      body: JSON.stringify({ format }),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function getReportExportStatus(jobId: string): Promise<{ jobId: string; reportId: string; format: string; status: string; errorMessage?: string | null; signedUrl?: string | null } | null> {
+  try {
+    return await apiClient<{ jobId: string; reportId: string; format: string; status: string; errorMessage?: string | null; signedUrl?: string | null }>(`/api/reports/exports/${jobId}`);
   } catch {
     return null;
   }

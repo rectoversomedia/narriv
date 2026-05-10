@@ -75,8 +75,8 @@ export function Sidebar() {
 
         <div className={`p-4 ${sidebarCollapsed ? "hidden" : "block"}`}>
           <div className="theme-card rounded-2xl border p-4">
-            <p className="theme-text text-sm font-semibold">{t("demo")}</p>
-            <p className="theme-muted mt-1 text-xs leading-5">{t("demoDesc")}</p>
+            <p className="theme-text text-sm font-semibold">{t("productionMode")}</p>
+            <p className="theme-muted mt-1 text-xs leading-5">{t("productionDesc")}</p>
           </div>
         </div>
       </aside>
@@ -92,7 +92,7 @@ export function Sidebar() {
               href={route.href}
               title={label}
               aria-label={label}
-              className={`flex h-10 items-center justify-center rounded-xl transition-colors ${active ? "bg-[#465FFF] text-white" : "theme-hover theme-muted hover:text-[#465FFF]"}`}
+                className={`flex h-10 items-center justify-center rounded-xl transition-colors ${active ? "bg-[#465FFF] text-white" : "theme-hover theme-muted hover:text-[#465FFF]"}`}
             >
               <Icon size={20} strokeWidth={2.1} />
               <span className="sr-only">{label}</span>

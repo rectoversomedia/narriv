@@ -8,7 +8,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Loader2, ShieldCheck, Sparkles } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import * as z from "zod";
-import { DEMO_TOKEN } from "@/lib/demo-auth";
 import { useAuthStore } from "@/store/useAuthStore";
 
 const API_URL =
@@ -17,7 +16,12 @@ const API_URL =
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.email({ message: "Enter a valid work email" }),
-  password: z.string().min(8, { message: "Use at least 8 characters" }),
+  password: z.string()
+    .min(10, { message: "Use at least 10 characters" })
+    .regex(/[A-Z]/, { message: "Add at least one uppercase letter" })
+    .regex(/[a-z]/, { message: "Add at least one lowercase letter" })
+    .regex(/[0-9]/, { message: "Add at least one number" })
+    .regex(/[^A-Za-z0-9]/, { message: "Add at least one symbol" }),
 });
 
 type SignupFormValues = z.infer<typeof signupSchema>;
@@ -112,7 +116,7 @@ function StreamingHeadline() {
 function PasswordStrength({ password }: { password: string }) {
   if (!password) return null;
   const checks = [
-    password.length >= 8,
+    password.length >= 10,
     /[A-Z]/.test(password),
     /[0-9]/.test(password),
     /[^a-zA-Z0-9]/.test(password),
@@ -229,8 +233,8 @@ export default function SignupPage() {
       });
 
       if (res.ok) {
-        const json = await res.json() as { token: string; user: { name: string; email: string } };
-        setSession(json.token, { name: json.user.name, email: json.user.email, provider: "password", workspace: "Narriv Workspace" });
+        const json = await res.json() as { token: string; refreshToken?: string; user: { name: string; email: string } };
+        setSession(json.token, { name: json.user.name, email: json.user.email, provider: "password", workspace: "Narriv Workspace" }, json.refreshToken);
         router.push("/");
         return;
       }
@@ -242,10 +246,12 @@ export default function SignupPage() {
       }
       setApiError(errJson.error ?? "Registration failed. Please try again.");
     } catch {
-      // Demo fallback
-      setSession(DEMO_TOKEN, { name: data.name, email: data.email, provider: "password", workspace: "Narriv Demo" });
-      router.push("/");
+      setApiError("Unable to reach the backend API. Please check the API URL and try again.");
     }
+  };
+
+  const handleGoogleSSO = () => {
+    setApiError("Google sign-up is not configured for this production build yet.");
   };
 
   const features = [
@@ -375,6 +381,7 @@ export default function SignupPage() {
           </div>
 
           <button type="button"
+            onClick={handleGoogleSSO}
             className="flex h-[52px] w-full cursor-pointer items-center justify-center gap-3 rounded-[14px] border text-[14px] font-semibold text-[#475569] transition-all duration-200 hover:border-[#CBD5E1] hover:bg-[#F9FAFB]"
             style={{ borderColor: "#E2E8F0", background: "#FFFFFF" }}>
             <svg width="18" height="18" viewBox="0 0 48 48" fill="none" aria-hidden="true">

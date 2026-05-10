@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import { startTransition } from "react";
 import { Languages, LogOut, Menu, Moon, Sun } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { logoutSession } from "@/lib/api-service";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useUiStore } from "@/store/useUiStore";
 
 export function Topbar() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
+  const refreshToken = useAuthStore((state) => state.refreshToken);
   const logout = useAuthStore((state) => state.logout);
   const theme = useUiStore((state) => state.theme);
   const logoSrc = theme === "light" ? "/narriv-logo-light.png" : "/narriv-logo-dark.png";
@@ -20,6 +22,7 @@ export function Topbar() {
   const t = useTranslations("Topbar");
 
   const handleLogout = () => {
+    if (refreshToken) void logoutSession(refreshToken);
     logout();
     router.replace("/login");
   };
@@ -55,8 +58,8 @@ export function Topbar() {
             {user?.name?.charAt(0).toUpperCase() ?? "D"}
           </div>
           <div className="hidden text-sm xl:block">
-            <p className="theme-text font-semibold leading-none">{user?.name ?? "Demo User"}</p>
-            <p className="theme-muted mt-1 text-xs">{user?.workspace ?? "Narriv Demo"}</p>
+            <p className="theme-text font-semibold leading-none">{user?.name ?? t("notSignedIn")}</p>
+            <p className="theme-muted mt-1 text-xs">{user?.workspace ?? t("noWorkspace")}</p>
           </div>
         </div>
         <button onClick={handleLogout} className="theme-hover theme-muted rounded-xl p-2 hover:text-[#465FFF]" title={t("logout")} type="button">

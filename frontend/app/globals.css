@@ -1,38 +1,39 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f9fafb;
+  --background: #f5f7fb;
   --foreground: #101828;
   --primary: #465fff;
   --border-dark: #1d2939;
   --muted-dark: #98a2b3;
   --surface-dark: rgba(255, 255, 255, 0.04);
-  --app-bg: #f9fafb;
+  --app-bg: #f5f7fb;
   --shell-bg: #f9fafb;
   --panel-bg: #ffffff;
   --card-bg: #ffffff;
   --active-bg: #eef4ff;
-  --border: #e4e7ec;
+  --border: #e3e8f2;
   --text: #101828;
   --text-soft: #344054;
   --muted: #667085;
   --muted-2: #98a2b3;
   --badge-slate-bg: #f2f4f7;
-  --hover-bg: #f8faff;
+  --hover-bg: #f4f7ff;
   --hover-border: rgba(70, 95, 255, 0.32);
-  --subtle-bg: #f9fafb;
+  --subtle-bg: #f6f8fc;
   --accent-text: #465fff;
-  --shadow: 0 16px 48px rgba(16, 24, 40, 0.06);
+  --shadow: 0 18px 55px rgba(29, 41, 57, 0.07);
+  --shadow-strong: 0 26px 70px rgba(29, 41, 57, 0.1);
   color-scheme: light;
 }
 
 [data-theme="dark"] {
-  --app-bg: #101828;
+  --app-bg: #0b1220;
   --shell-bg: #101828;
-  --panel-bg: #101828;
-  --card-bg: rgba(255, 255, 255, 0.03);
+  --panel-bg: #111827;
+  --card-bg: rgba(17, 24, 39, 0.88);
   --active-bg: rgba(255, 255, 255, 0.03);
-  --border: #1d2939;
+  --border: #263348;
   --text: #ffffff;
   --text-soft: #d0d5dd;
   --muted: #98a2b3;
@@ -40,29 +41,31 @@
   --badge-slate-bg: rgba(255, 255, 255, 0.05);
   --hover-bg: rgba(255, 255, 255, 0.04);
   --hover-border: rgba(255, 255, 255, 0.1);
-  --subtle-bg: rgba(255, 255, 255, 0.03);
+  --subtle-bg: rgba(255, 255, 255, 0.035);
   --accent-text: #a4bcfd;
-  --shadow: transparent;
+  --shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+  --shadow-strong: 0 30px 90px rgba(0, 0, 0, 0.36);
   color-scheme: dark;
 }
 
 [data-theme="light"] {
-  --app-bg: #f9fafb;
+  --app-bg: #f5f7fb;
   --shell-bg: #f9fafb;
   --panel-bg: #ffffff;
   --card-bg: #ffffff;
   --active-bg: #eef4ff;
-  --border: #e4e7ec;
+  --border: #e3e8f2;
   --text: #101828;
   --text-soft: #344054;
   --muted: #667085;
   --muted-2: #98a2b3;
   --badge-slate-bg: #f2f4f7;
-  --hover-bg: #f8faff;
+  --hover-bg: #f4f7ff;
   --hover-border: rgba(70, 95, 255, 0.32);
-  --subtle-bg: #f9fafb;
+  --subtle-bg: #f6f8fc;
   --accent-text: #465fff;
-  --shadow: 0 16px 48px rgba(16, 24, 40, 0.06);
+  --shadow: 0 18px 55px rgba(29, 41, 57, 0.07);
+  --shadow-strong: 0 26px 70px rgba(29, 41, 57, 0.1);
 }
 
 @theme inline {
@@ -77,6 +80,26 @@ body {
   font-family: var(--font-outfit), Arial, Helvetica, sans-serif;
 }
 
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(70, 95, 255, 0.12), transparent 30%),
+    radial-gradient(circle at 82% 2%, rgba(12, 18, 32, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(245, 247, 251, 0.92));
+}
+
+[data-theme="dark"] body::before,
+[data-theme="dark"]::before {
+  background:
+    radial-gradient(circle at 18% 8%, rgba(70, 95, 255, 0.22), transparent 30%),
+    radial-gradient(circle at 82% 2%, rgba(164, 188, 253, 0.1), transparent 24%),
+    linear-gradient(180deg, rgba(11, 18, 32, 0.98), rgba(11, 18, 32, 0.96));
+}
+
 .theme-text { color: var(--text); }
 .theme-soft { color: var(--text-soft); }
 .theme-muted { color: var(--muted); }
@@ -85,6 +108,19 @@ body {
 .theme-card { background: var(--card-bg); border-color: var(--border); box-shadow: var(--shadow); }
 .theme-panel { background: var(--panel-bg); border-color: var(--border); }
 .theme-shell { background: var(--shell-bg); color: var(--text); }
+.dashboard-shell {
+  background:
+    radial-gradient(circle at 18% 8%, rgba(70, 95, 255, 0.12), transparent 30%),
+    radial-gradient(circle at 82% 2%, rgba(12, 18, 32, 0.08), transparent 24%),
+    var(--app-bg);
+  color: var(--text);
+}
+[data-theme="dark"].dashboard-shell {
+  background:
+    radial-gradient(circle at 18% 8%, rgba(70, 95, 255, 0.22), transparent 30%),
+    radial-gradient(circle at 82% 2%, rgba(164, 188, 253, 0.1), transparent 24%),
+    var(--app-bg);
+}
 .theme-active { background: var(--active-bg); }
 .theme-accent { color: var(--accent-text); }
 .theme-subtle { background: var(--subtle-bg); }

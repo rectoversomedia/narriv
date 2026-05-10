@@ -20,12 +20,13 @@ import { useTranslations } from "next-intl";
 import { ProgressBar, SectionHeader, StatusBadge } from "@/components/ui/demo-primitives";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { getReports } from "@/lib/api-service";
+import { createReportExport, getReportExportStatus, getReports } from "@/lib/api-service";
 
 type ReportFilter = "all" | "ready" | "review" | "pending";
 const PAGE_SIZE = 6;
 
 interface ReportData {
+  id?: string;
   title: string;
   sections: string;
   readiness: number;
@@ -76,6 +77,7 @@ export default function ReportsPage() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [packagePrepared, setPackagePrepared] = useState(false);
+  const [exportStatusByReport, setExportStatusByReport] = useState<Record<string, string>>({});
 
   useEffect(() => {
     async function fetchData() {
@@ -134,24 +136,42 @@ export default function ReportsPage() {
     setPage(1);
   };
 
+  const handleExportReport = async (report: ReportData) => {
+    if (!report.id) return;
+
+    setExportStatusByReport((current) => ({ ...current, [report.id as string]: "queued" }));
+    const created = await createReportExport(report.id, "json");
+    if (!created) {
+      setExportStatusByReport((current) => ({ ...current, [report.id as string]: "failed" }));
+      return;
+    }
+
+    const status = await getReportExportStatus(created.jobId);
+    setExportStatusByReport((current) => ({
+      ...current,
+      [report.id as string]: status?.status ?? "queued",
+    }));
+    if (status?.status === "completed") setPackagePrepared(true);
+  };
+
   const displayReportTitle = (report: ReportData) => {
-    if (report.title === "Weekly Narrative Intelligence Brief") return t("mock.weeklyTitle");
-    if (report.title === "AI Visibility Movement Report") return t("mock.visibilityTitle");
-    if (report.title === "Predictive Risk Review") return t("mock.riskTitle");
+    if (report.title === "Weekly Narrative Intelligence Brief") return t("templates.weeklyTitle");
+    if (report.title === "AI Visibility Movement Report") return t("templates.visibilityTitle");
+    if (report.title === "Predictive Risk Review") return t("templates.riskTitle");
     return report.title;
   };
 
   const displayReportSections = (report: ReportData) => {
-    if (report.sections === "Signals, clusters, GEO, actions") return t("mock.weeklySections");
-    if (report.sections === "Prompt set, citations, competitors") return t("mock.visibilitySections");
-    if (report.sections === "Drivers, owner actions, learning loop") return t("mock.riskSections");
+    if (report.sections === "Signals, clusters, GEO, actions") return t("templates.weeklySections");
+    if (report.sections === "Prompt set, citations, competitors") return t("templates.visibilitySections");
+    if (report.sections === "Drivers, owner actions, learning loop") return t("templates.riskSections");
     return report.sections;
   };
 
   const displayReportStatus = (report: ReportData) => {
-    if (report.status === "Ready for exec review") return t("mock.readyStatus");
-    if (report.status === "Needs GEO annotations") return t("mock.geoStatus");
-    if (report.status === "Awaiting comms feedback") return t("mock.feedbackStatus");
+    if (report.status === "Ready for exec review") return t("templates.readyStatus");
+    if (report.status === "Needs GEO annotations") return t("templates.geoStatus");
+    if (report.status === "Awaiting comms feedback") return t("templates.feedbackStatus");
     return report.status;
   };
 
@@ -295,8 +315,12 @@ export default function ReportsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {pageReports.map((report) => (
-                        <tr key={report.title} className="theme-row-hover border-b border-[var(--border)] last:border-0">
+                      {pageReports.map((report) => {
+                        const exportStatus = report.id ? exportStatusByReport[report.id] : undefined;
+                        const isExporting = exportStatus === "queued" || exportStatus === "running";
+
+                        return (
+                        <tr key={report.id ?? report.title} className="theme-row-hover border-b border-[var(--border)] last:border-0">
                           <td className="px-5 py-4 align-top">
                             <p className="theme-text font-medium">{displayReportTitle(report)}</p>
                             <p className="theme-muted mt-1 text-xs">{t("updatedSnapshot")}</p>
@@ -315,21 +339,28 @@ export default function ReportsPage() {
                           <td className="px-5 py-4 text-center align-top">
                             <button
                               type="button"
+                              onClick={() => void handleExportReport(report)}
+                              disabled={!report.id || isExporting}
                               className="theme-card theme-hover theme-text inline-flex h-8 w-8 items-center justify-center rounded-md border"
                               aria-label={t("exportAria", { title: displayReportTitle(report) })}
                             >
-                              <Download size={14} />
+                              {isExporting ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#465FFF]/30 border-t-[#465FFF]" /> : <Download size={14} />}
                             </button>
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
 
                 <div className="divide-y divide-[var(--border)] md:hidden">
-                  {pageReports.map((report) => (
-                    <article key={report.title} className="p-4">
+                  {pageReports.map((report) => {
+                    const exportStatus = report.id ? exportStatusByReport[report.id] : undefined;
+                    const isExporting = exportStatus === "queued" || exportStatus === "running";
+
+                    return (
+                    <article key={report.id ?? report.title} className="p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="theme-text line-clamp-2 text-sm font-medium leading-5">{displayReportTitle(report)}</p>
@@ -339,8 +370,18 @@ export default function ReportsPage() {
                       </div>
                       <div className="mt-4"><ProgressBar value={report.readiness} tone={readinessTone(report.readiness)} /></div>
                       <p className="theme-muted mt-3 text-xs">{displayReportStatus(report)}</p>
+                      <button
+                        type="button"
+                        onClick={() => void handleExportReport(report)}
+                        disabled={!report.id || isExporting}
+                        className="theme-card theme-hover theme-text mt-4 inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border text-sm font-medium disabled:pointer-events-none disabled:opacity-50"
+                      >
+                        {isExporting ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#465FFF]/30 border-t-[#465FFF]" /> : <Download size={14} />}
+                        {t("table.export")}
+                      </button>
                     </article>
-                  ))}
+                    );
+                  })}
                 </div>
                 <div className="flex flex-col gap-3 border-t border-[var(--border)] p-4 sm:flex-row sm:items-center sm:justify-between">
                   <p className="theme-muted text-sm">

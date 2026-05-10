@@ -5,9 +5,10 @@ import { useTranslations } from "next-intl";
 import { DesignFrame, InnerPanel, SectionHeader } from "@/components/ui/demo-primitives";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { getActionPlans } from "@/lib/api-service";
+import { createActionPlan, getActionPlans, submitActionPlanFeedback } from "@/lib/api-service";
 
 interface ActionPlanData {
+  id?: string;
   inputNarrative?: string;
   evidenceSummary?: string;
   outputs?: [string, string][];
@@ -17,6 +18,9 @@ interface ActionPlanData {
 export default function ActionPlansPage() {
   const t = useTranslations("ActionPlans");
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [isGeneratingAction, setIsGeneratingAction] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const [data, setData] = useState<ActionPlanData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,6 +53,30 @@ export default function ActionPlansPage() {
 
   const feedbackLabel = feedback ? t(`feedbackState.${feedback}`) : "";
 
+  const handleFeedback = async (action: "accepted" | "edited" | "rejected") => {
+    setFeedback(action);
+    if (!data?.id) return;
+
+    setIsSubmittingFeedback(true);
+    await submitActionPlanFeedback(data.id, action, action === "accepted" ? undefined : t("reason"));
+    setIsSubmittingFeedback(false);
+  };
+
+  const handleGenerateAction = async () => {
+    setActionError(null);
+    setIsGeneratingAction(true);
+    const created = await createActionPlan({ strategyType: "content_strategy" });
+    if (!created) {
+      setActionError(t("createActionFailed"));
+      setIsGeneratingAction(false);
+      return;
+    }
+
+    const res = await getActionPlans();
+    setData(res as ActionPlanData);
+    setIsGeneratingAction(false);
+  };
+
   return (
     <div className="space-y-6 pb-6">
       <SectionHeader
@@ -57,12 +85,20 @@ export default function ActionPlansPage() {
         action={
           <button
             type="button"
+            onClick={() => void handleGenerateAction()}
+            disabled={isGeneratingAction}
             className="hidden h-11 items-center justify-center rounded-lg bg-[#465FFF] px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90 lg:inline-flex"
           >
-            {t("generateAction")}
+            {isGeneratingAction ? t("creatingAction") : t("generateAction")}
           </button>
         }
       />
+
+      {actionError ? (
+        <div className="rounded-lg border border-[#F04438]/20 bg-[#F04438]/10 px-4 py-3 text-sm font-medium text-[#B42318] dark:text-[#FDA29B]">
+          {actionError}
+        </div>
+      ) : null}
 
       {isLoading ? (
         <>
@@ -75,7 +111,7 @@ export default function ActionPlansPage() {
             <Skeleton className="h-[332px] w-full" />
           </div>
         </>
-      ) : !data ? (
+      ) : !data || (!data.inputNarrative && !data.evidenceSummary && !data.outputs?.length && !data.plan?.length) ? (
         <EmptyState
           icon="search"
           title={t("emptyTitle")}
@@ -87,10 +123,10 @@ export default function ActionPlansPage() {
             <DesignFrame className="min-h-[248px] backdrop-blur-xl">
               <h2 className="theme-text text-xl font-bold tracking-tight">{t("input")}</h2>
               <p className="theme-text mt-6 max-w-[430px] text-[15px] leading-relaxed">
-                {data.inputNarrative || t("fallbackNarrative")}
+                {data.inputNarrative || t("emptyDesc")}
               </p>
               <p className="theme-muted mt-8 max-w-[440px] text-[13px] font-medium tracking-wide">
-                {data.evidenceSummary || t("fallbackEvidence")}
+                {data.evidenceSummary || t("noOutputs")}
               </p>
             </DesignFrame>
 
@@ -130,9 +166,9 @@ export default function ActionPlansPage() {
                 <p className="theme-muted text-[14px] leading-relaxed">{t("feedbackDesc")}</p>
               </div>
               <div className="mt-8 grid grid-cols-3 gap-3">
-                <button onClick={() => setFeedback("accepted")} className="h-12 rounded-xl bg-linear-to-b from-[#12B76A] to-[#0E9355] text-[13px] font-bold tracking-wide text-white shadow-[0_0_15px_rgba(18,183,106,0.2)] transition-all hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(18,183,106,0.4)]" type="button">{t("accept")}</button>
-                <button onClick={() => setFeedback("edited")} className="h-12 rounded-xl bg-linear-to-b from-[#465FFF] to-[#3B4DCD] text-[13px] font-bold tracking-wide text-white shadow-[0_0_15px_rgba(70,95,255,0.2)] transition-all hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(70,95,255,0.4)]" type="button">{t("edit")}</button>
-                <button onClick={() => setFeedback("rejected")} className="h-12 rounded-xl border border-[#F04438]/20 bg-[#F04438]/10 text-[13px] font-bold tracking-wide text-[#F97066] transition-colors hover:bg-[#F04438]/20" type="button">{t("reject")}</button>
+                <button onClick={() => void handleFeedback("accepted")} disabled={isSubmittingFeedback} className="h-12 rounded-xl bg-linear-to-b from-[#12B76A] to-[#0E9355] text-[13px] font-bold tracking-wide text-white shadow-[0_0_15px_rgba(18,183,106,0.2)] transition-all hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(18,183,106,0.4)] disabled:pointer-events-none disabled:opacity-50" type="button">{t("accept")}</button>
+                <button onClick={() => void handleFeedback("edited")} disabled={isSubmittingFeedback} className="h-12 rounded-xl bg-linear-to-b from-[#465FFF] to-[#3B4DCD] text-[13px] font-bold tracking-wide text-white shadow-[0_0_15px_rgba(70,95,255,0.2)] transition-all hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(70,95,255,0.4)] disabled:pointer-events-none disabled:opacity-50" type="button">{t("edit")}</button>
+                <button onClick={() => void handleFeedback("rejected")} disabled={isSubmittingFeedback} className="h-12 rounded-xl border border-[#F04438]/20 bg-[#F04438]/10 text-[13px] font-bold tracking-wide text-[#F97066] transition-colors hover:bg-[#F04438]/20 disabled:pointer-events-none disabled:opacity-50" type="button">{t("reject")}</button>
               </div>
               <InnerPanel className="mt-6 min-h-[92px] p-5">
                 <p className="theme-muted text-[11px] font-bold uppercase tracking-widest">{t("required")}</p>

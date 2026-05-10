@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { DesignFrame, InnerPanel, SectionHeader } from "@/components/ui/demo-primitives";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { getVisibility } from "@/lib/api-service";
+import { createActionPlan, getVisibility } from "@/lib/api-service";
 
 interface PromptData {
   prompt: string;
@@ -34,9 +34,12 @@ interface VisibilityData {
 
 export default function VisibilityPage() {
   const t = useTranslations("Visibility");
+  const router = useRouter();
 
   const [data, setData] = useState<VisibilityData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGeneratingAction, setIsGeneratingAction] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -48,20 +51,42 @@ export default function VisibilityPage() {
     fetchData();
   }, []);
 
+  const handleCreateAction = async () => {
+    setActionError(null);
+    setIsGeneratingAction(true);
+    const created = await createActionPlan({ strategyType: "content_strategy" });
+    setIsGeneratingAction(false);
+
+    if (!created) {
+      setActionError(t("createActionFailed"));
+      return;
+    }
+
+    router.push("/action-plans");
+  };
+
   return (
     <div className="space-y-6 pb-6">
       <SectionHeader
         title={t("title")}
         description={t("subtitle")}
         action={
-          <Link
-            href="/action-plans"
+          <button
+            type="button"
+            onClick={() => void handleCreateAction()}
+            disabled={isGeneratingAction}
             className="hidden h-11 items-center justify-center rounded-lg bg-[#465FFF] px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90 lg:inline-flex"
           >
-            {t("generateAction")}
-          </Link>
+            {isGeneratingAction ? t("creatingAction") : t("generateAction")}
+          </button>
         }
       />
+
+      {actionError ? (
+        <div className="rounded-lg border border-[#F04438]/20 bg-[#F04438]/10 px-4 py-3 text-sm font-medium text-[#B42318] dark:text-[#FDA29B]">
+          {actionError}
+        </div>
+      ) : null}
 
       {isLoading ? (
         <div className="grid gap-6 xl:grid-cols-[354px_354px_1fr]">
@@ -128,13 +153,15 @@ export default function VisibilityPage() {
               <div className="mt-8 space-y-3">
                 {data.geoActions && data.geoActions.length ? data.geoActions.map((action: GeoAction, i: number) =>
                   action.highlighted ? (
-                    <Link
+                    <button
                       key={i}
-                      href="/action-plans"
+                      type="button"
+                      onClick={() => void handleCreateAction()}
+                      disabled={isGeneratingAction}
                       className="group flex min-h-[64px] items-center justify-center rounded-xl bg-linear-to-br from-[#465FFF] to-[#3B4DCD] px-6 text-[14px] font-bold tracking-wide text-white shadow-[0_0_20px_rgba(70,95,255,0.2)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(70,95,255,0.4)]"
                     >
-                      {t("visibilityGapAction")}
-                    </Link>
+                      {isGeneratingAction ? t("creatingAction") : t("visibilityGapAction")}
+                    </button>
                   ) : (
                     <InnerPanel key={i} className="grid min-h-[64px] grid-cols-[1fr_auto] items-center gap-4 px-5 py-4 transition-colors">
                       <p className="theme-text max-w-[240px] text-[14px] font-medium">{action.title}</p>

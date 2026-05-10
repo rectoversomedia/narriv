@@ -1,11 +1,12 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { DesignFrame, InnerPanel, SectionHeader } from "@/components/ui/demo-primitives";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { getNarratives } from "@/lib/api-service";
+import { createActionPlan, getNarratives } from "@/lib/api-service";
 
 interface NarrativeItem {
   id: string;
@@ -42,9 +43,12 @@ function normalizeNarratives(data: unknown): NarrativeItem[] {
 
 export default function IntelligencePage() {
   const t = useTranslations("Intelligence");
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [items, setItems] = useState<NarrativeItem[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isGeneratingAction, setIsGeneratingAction] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -64,6 +68,23 @@ export default function IntelligencePage() {
     return items.find((item) => item.id === selectedId) ?? items[0] ?? null;
   }, [items, selectedId]);
 
+  const handleCreateAction = async () => {
+    setActionError(null);
+    setIsGeneratingAction(true);
+    const created = await createActionPlan({
+      strategyType: "content_strategy",
+      clusterId: selected?.id,
+    });
+    setIsGeneratingAction(false);
+
+    if (!created) {
+      setActionError(t("createActionFailed"));
+      return;
+    }
+
+    router.push("/action-plans");
+  };
+
   return (
     <div className="space-y-6 pb-6">
       <SectionHeader
@@ -72,12 +93,20 @@ export default function IntelligencePage() {
         action={
           <button
             type="button"
+            onClick={() => void handleCreateAction()}
+            disabled={isGeneratingAction}
             className="hidden h-11 items-center justify-center rounded-lg bg-[#465FFF] px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90 lg:inline-flex"
           >
-            {t("createAction")}
+            {isGeneratingAction ? t("creatingAction") : t("createAction")}
           </button>
         }
       />
+
+      {actionError ? (
+        <div className="rounded-lg border border-[#F04438]/20 bg-[#F04438]/10 px-4 py-3 text-sm font-medium text-[#B42318] dark:text-[#FDA29B]">
+          {actionError}
+        </div>
+      ) : null}
 
       {isLoading ? (
         <div className="grid gap-6 xl:grid-cols-[1fr_382px]">
@@ -124,7 +153,7 @@ export default function IntelligencePage() {
               <InnerPanel className="min-h-[88px] rounded-xl p-4"><p className="theme-muted text-xs">{t("confidence")}</p><p className="theme-text mt-3 text-base font-semibold">{selected.confidence}%</p></InnerPanel>
             </div>
             <InnerPanel className="mt-2 min-h-[100px] rounded-xl p-4"><p className="theme-text text-[15px] font-semibold">{t("focus")}</p><p className="theme-soft mt-2 text-[13px] leading-[1.4]">{selected.recommendedFocus}</p></InnerPanel>
-            <button className="mt-auto h-11 w-full rounded-lg bg-[#465FFF] text-sm font-medium text-white transition-opacity hover:opacity-90" type="button">{t("open")}</button>
+            <button className="mt-auto h-11 w-full rounded-lg bg-[#465FFF] text-sm font-medium text-white transition-opacity hover:opacity-90" type="button" onClick={() => void handleCreateAction()} disabled={isGeneratingAction}>{isGeneratingAction ? t("creatingAction") : t("open")}</button>
           </DesignFrame>
         </div>
       )}

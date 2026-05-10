@@ -1,15 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Search, SlidersHorizontal, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { SectionHeader } from "@/components/ui/demo-primitives";
 import {
   getSignals,
   getSignalById,
+  createActionPlan,
   buildSignalItems,
-  getMockSignalItems,
   type Signal,
   type SignalAnalysis,
 } from "@/lib/api-service";
@@ -19,7 +19,7 @@ type SignalItem = {
   source: string;
   sentiment: string;
   excerpt: string;
-  confidence: number;
+  confidence: number | null;
   recommendation: string;
   narrative: string;
   publishedAt?: string | null;
@@ -32,7 +32,6 @@ type SignalDetail = {
 };
 
 const PAGE_SIZE = 6;
-const initialSignals = getMockSignalItems();
 
 function sentimentClass(sentiment: string) {
   if (sentiment === "positive") return "border-[#12B76A]/30 bg-[#12B76A]/10 text-[#027A48] dark:text-[#6CE9A6]";
@@ -68,9 +67,10 @@ function formatDate(value: string | null | undefined, locale: string) {
 
 export default function SignalsPage() {
   const t = useTranslations("Signals");
+  const router = useRouter();
   const locale = useLocale();
-  const [items, setItems] = useState<SignalItem[]>(initialSignals);
-  const [activeId, setActiveId] = useState(initialSignals[0]?.id ?? "");
+  const [items, setItems] = useState<SignalItem[]>([]);
+  const [activeId, setActiveId] = useState("");
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -79,15 +79,15 @@ export default function SignalsPage() {
   const [detailSignal, setDetailSignal] = useState<SignalItem | null>(null);
   const [detailData, setDetailData] = useState<SignalDetail | null>(null);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [isGeneratingAction, setIsGeneratingAction] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     getSignals({ limit: 20 }).then((res) => {
-      if (res && res.data.length > 0) {
-        const nextItems = buildSignalItems(res.data);
-        setItems(nextItems);
-        setActiveId(nextItems[0]?.id ?? "");
-        setPage(1);
-      }
+      const nextItems = res ? buildSignalItems(res.data) : [];
+      setItems(nextItems);
+      setActiveId(nextItems[0]?.id ?? "");
+      setPage(1);
     });
   }, []);
 
@@ -198,6 +198,21 @@ export default function SignalsPage() {
     setIsDetailLoading(false);
   };
 
+  const handleCreateAction = async () => {
+    setActionError(null);
+    setIsGeneratingAction(true);
+    const created = await createActionPlan({ strategyType: "pr_response" });
+    setIsGeneratingAction(false);
+
+    if (!created) {
+      setActionError(t("createActionFailed"));
+      return;
+    }
+
+    closeSignalDetail();
+    router.push("/action-plans");
+  };
+
   return (
     <div className="space-y-6 pb-6">
       <SectionHeader
@@ -205,13 +220,19 @@ export default function SignalsPage() {
         title={t("title")}
         description={t("subtitle")}
         action={
-          <Link href="/action-plans">
-            <ButtonLike className="hidden min-w-[132px] bg-[#465FFF] text-white hover:bg-[#3B4DCD] lg:inline-flex">
-              {t("createAction")}
+          <button type="button" onClick={() => void handleCreateAction()} disabled={isGeneratingAction} className="hidden lg:inline-flex">
+            <ButtonLike className="min-w-[132px] bg-[#465FFF] text-white hover:bg-[#3B4DCD]">
+              {isGeneratingAction ? t("creatingAction") : t("createAction")}
             </ButtonLike>
-          </Link>
+          </button>
         }
       />
+
+      {actionError ? (
+        <div className="rounded-lg border border-[#F04438]/20 bg-[#F04438]/10 px-4 py-3 text-sm font-medium text-[#B42318] dark:text-[#FDA29B]">
+          {actionError}
+        </div>
+      ) : null}
 
       <div>
         <section className="theme-card rounded-xl border">
@@ -340,7 +361,7 @@ export default function SignalsPage() {
                           </span>
                         </td>
                         <td className="px-4 py-4 text-center align-top">
-                          <span className="theme-text text-sm font-medium">{item.confidence}%</span>
+                          <span className="theme-text text-sm font-medium">{item.confidence === null ? "-" : `${item.confidence}%`}</span>
                         </td>
                         <td className="px-5 py-4 text-center align-top">
                           <button
@@ -389,7 +410,7 @@ export default function SignalsPage() {
                       </div>
                       <div>
                         <p className="theme-muted">{copy.confidence}</p>
-                        <p className="theme-text mt-1 font-medium">{item.confidence}%</p>
+                        <p className="theme-text mt-1 font-medium">{item.confidence === null ? "-" : `${item.confidence}%`}</p>
                       </div>
                     </div>
 
@@ -570,11 +591,11 @@ export default function SignalsPage() {
               >
                 {copy.close}
               </button>
-              <Link href="/action-plans" onClick={closeSignalDetail}>
+              <button type="button" onClick={() => void handleCreateAction()} disabled={isGeneratingAction}>
                 <ButtonLike className="w-full min-w-[160px] bg-[#465FFF] text-white hover:bg-[#3B4DCD] sm:w-auto">
-                  {t("cta")}
+                  {isGeneratingAction ? t("creatingAction") : t("cta")}
                 </ButtonLike>
-              </Link>
+              </button>
               </div>
             </div>
           </div>

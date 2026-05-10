@@ -7,26 +7,47 @@ export async function apiClient<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token =
-    typeof window !== "undefined" ? useAuthStore.getState().token : null;
+  const authState = typeof window !== "undefined" ? useAuthStore.getState() : null;
+  const token = authState?.token ?? null;
 
   const path = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
 
-  const headers = new Headers(options.headers);
-  // Only attach bearer token if it's a real JWT (not the demo sentinel)
-  if (token && token !== "demo-token" && !headers.has("Authorization")) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
-  if (!headers.has("Content-Type") && !(options.body instanceof FormData)) {
-    headers.set("Content-Type", "application/json");
-  }
+  const buildHeaders = (accessToken: string | null) => {
+    const headers = new Headers(options.headers);
+    if (accessToken && !headers.has("Authorization")) {
+      headers.set("Authorization", `Bearer ${accessToken}`);
+    }
+    if (!headers.has("Content-Type") && !(options.body instanceof FormData)) {
+      headers.set("Content-Type", "application/json");
+    }
+    return headers;
+  };
 
-  const response = await fetch(`${BASE_URL}${path}`, {
+  const send = (accessToken: string | null) => fetch(`${BASE_URL}${path}`, {
     ...options,
-    headers,
+    headers: buildHeaders(accessToken),
     // Ensure cookies are not sent cross-origin; JWT is header-based
     credentials: "omit",
   });
+
+  let response = await send(token);
+
+  if (response.status === 401 && authState?.refreshToken) {
+    const refreshResponse = await fetch(`${BASE_URL}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken: authState.refreshToken }),
+      credentials: "omit",
+    });
+
+    if (refreshResponse.ok) {
+      const refreshed = await refreshResponse.json() as { token: string; refreshToken?: string };
+      const store = useAuthStore.getState();
+      store.setToken(refreshed.token);
+      if (refreshed.refreshToken) store.setRefreshToken(refreshed.refreshToken);
+      response = await send(refreshed.token);
+    }
+  }
 
   if (!response.ok) {
     let errorData: { error?: string; message?: string } | null = null;

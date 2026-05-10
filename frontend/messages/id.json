@@ -1,8 +1,17 @@
 {
   "CommandCenter": {
+    "eyebrow": "Pusat komando",
+    "decisionQueueLabel": "Antrean keputusan",
+    "openWarnings": "peringatan terbuka",
+    "noDecisionItems": "Belum ada keputusan yang perlu diambil",
+    "noDecisionItemsDesc": "Peringatan terbuka dari workspace akan muncul di sini saat sistem menemukan hal yang perlu perhatian.",
+    "visibilityLabel": "Visibilitas AI",
+    "recommendationLabel": "Rekomendasi",
     "title": "Dashboard",
     "subtitle": "Lihat apa yang sedang terjadi, isu mana yang perlu perhatian, bagaimana brand muncul di jawaban AI, dan apa langkah berikutnya.",
     "last7Days": "7 hari terakhir",
+    "emptyTitle": "Belum Ada Data Dashboard Live",
+    "emptyDesc": "Hubungkan backend API dan masuk dengan akun asli untuk memuat data workspace.",
     "metrics": {
       "aiVisibility": "Skor Visibilitas AI",
       "aiVisibilityDelta": "+7 poin dari minggu lalu",
@@ -29,20 +38,22 @@
       "actions": "Rencana Aksi",
       "feedback": "Feedback"
     },
-    "narrativeTitle": "Isu Aktif: Keluhan pengiriman mulai menjadi masalah kepercayaan",
-    "narrativeDesc": "Ada 126 temuan dari TikTok, Reddit, berita lokal, Gemini, dan Perplexity yang mengarah ke isu yang sama.",
-    "narrativeRuleTitle": "Lihat ini sebagai satu kasus, bukan banyak layar terpisah",
-    "narrativeRuleDesc": "Isu yang sama muncul di Temuan, Peringatan, Visibilitas AI, Rencana Aksi, Laporan, dan Feedback Tim.",
+    "narrativeTitle": "Belum ada temuan terbaru",
+    "narrativeDesc": "Temuan terbaru dari backend akan muncul di sini setelah ingestion berjalan.",
+    "narrativeRuleTitle": "Pipeline workspace live",
+    "narrativeRuleDesc": "Temuan, peringatan, visibilitas AI, rencana aksi, laporan, dan feedback tim dimuat dari data workspace.",
     "alertTitle": "Antrean Keputusan",
-    "alertDesc": "Risiko naik 84%. Kami menyarankan respons dalam 6 jam karena isu bergerak cepat, sumbernya berpengaruh, sentimen negatif, dan kompetitor lebih sering muncul di jawaban AI.",
+    "alertDesc": "Peringatan dini terbuka dari backend akan muncul di halaman Peringatan Dini.",
     "reviewAlert": "Tinjau dan buat rencana",
+    "creatingAction": "Membuat rencana...",
+    "createActionFailed": "Rencana aksi belum bisa dibuat. Silakan coba lagi.",
     "geoCardTitle": "Brand kurang terlihat di jawaban AI",
-    "geoCardDesc": "Brand muncul di 42% jawaban, sedangkan kompetitor muncul di 61%. Saran berikutnya: buat halaman penjelasan yang jelas dan perkuat sumber resmi.",
+    "geoCardDesc": "Hasil visibilitas AI dimuat dari uji prompt live saat tersedia.",
     "geoAction": "Buat rencana aksi",
     "recTitle": "Rencana yang Disarankan",
-    "recDesc": "Respons PR, pekerjaan konten, dan langkah krisis digabung menjadi satu rencana dengan penanggung jawab, kanal, tenggat, dan review legal.",
+    "recDesc": "Rencana aksi dibuat dari alert atau cluster narasi live di workspace.",
     "feedback": "Feedback",
-    "feedbackStats": "81 / 34 / 12",
+    "feedbackStats": "Live",
     "feedbackLabel": "diterima / diedit / ditolak"
   },
   "DataSources": {
@@ -72,6 +83,10 @@
     "idle": "Menunggu",
     "run": "Jalankan",
     "runIngestion": "Ambil data",
+    "editSource": "Edit",
+    "deleteSource": "Hapus",
+    "save": "Simpan",
+    "cancel": "Batal",
     "noSources": "Tidak ada sumber ditemukan",
     "noSourcesDesc": "Tambah sumber atau ubah filter untuk mulai mengambil data.",
     "rows": "baris",
@@ -87,6 +102,8 @@
     "title": "Intelijen Temuan",
     "subtitle": "Triage temuan mentah dan ubah analisis berkeyakinan tinggi menjadi tindakan.",
     "createAction": "Buat Aksi",
+    "creatingAction": "Membuat...",
+    "createActionFailed": "Rencana aksi belum bisa dibuat. Silakan coba lagi.",
     "search": "Cari temuan...",
     "filter": "Filter",
     "tableTitle": "Daftar Temuan",
@@ -124,6 +141,8 @@
     "title": "Visibilitas AI",
     "subtitle": "Lihat bagaimana AI seperti ChatGPT, Gemini, dan Perplexity menyebut brand, sumber apa yang dipakai, dan di mana kompetitor muncul.",
     "generateAction": "Buat Aksi",
+    "creatingAction": "Membuat...",
+    "createActionFailed": "Rencana aksi belum bisa dibuat. Silakan coba lagi.",
     "emptyTitle": "Belum Ada Data Visibilitas AI",
     "emptyDesc": "Kami sedang mengumpulkan data jawaban AI untuk mengukur seberapa sering brand muncul. Silakan cek lagi nanti.",
     "score": "Skor Visibilitas AI",
@@ -149,11 +168,11 @@
     "title": "Rencana Aksi",
     "subtitle": "Ubah hasil analisis menjadi langkah jelas, seperti respons PR, update konten, atau penanganan krisis.",
     "generateAction": "Buat Aksi",
+    "creatingAction": "Membuat...",
+    "createActionFailed": "Rencana aksi belum bisa dibuat. Silakan coba lagi.",
     "emptyTitle": "Belum Ada Rencana Aksi",
     "emptyDesc": "Rencana aksi dibuat saat ada topik berisiko tinggi. Saat ini belum ada yang perlu ditindaklanjuti.",
     "input": "Yang Dianalisis",
-    "fallbackNarrative": "Topik: keluhan reliabilitas pengiriman menyebar di TikTok, forum, dan berita lokal. Sentimen negatif dan volume 2,4x lebih tinggi dari normal.",
-    "fallbackEvidence": "Bukti: 1.248 temuan · 6 jenis sumber · 92% keyakinan · 84% kemungkinan eskalasi",
     "outputsTitle": "Aksi yang Disarankan",
     "outputs": {
       "primaryAction": "Aksi utama",
@@ -191,7 +210,10 @@
     "subtitle": "Temukan masalah sebelum membesar, lalu catat keputusan tim agar saran berikutnya lebih baik.",
     "learningQueue": "Tinjau Antrean",
     "queue": "Antrean Peringatan",
-    "demoNotice": "Data demo - hubungkan backend untuk melihat alert live",
+    "noAlerts": "Belum ada peringatan live.",
+    "createAction": "Buat Aksi",
+    "creatingAction": "Membuat...",
+    "createActionFailed": "Rencana aksi untuk peringatan ini belum bisa dibuat. Silakan coba lagi.",
     "acknowledge": "Akui",
     "resolve": "Selesaikan",
     "scoring": "Skor Model",
@@ -219,6 +241,8 @@
     "title": "Peta Topik",
     "subtitle": "Pahami topik yang sedang naik, siapa yang terlibat, dampaknya, dan risiko di baliknya.",
     "createAction": "Buat Aksi",
+    "creatingAction": "Membuat...",
+    "createActionFailed": "Rencana aksi belum bisa dibuat. Silakan coba lagi.",
     "map": "Peta Topik",
     "mapDesc": "19 topik aktif dari 428 temuan di berbagai sumber",
     "clusterCenter": "Kepercayaan",
@@ -295,10 +319,10 @@
       "scheduleTime": "Jumat 09:00"
     },
     "exportReadiness": "Kesiapan export",
-    "exportReadinessDesc": "Frontend siap untuk endpoint export laporan. Sampai endpoint tersedia, aksi export tetap berupa interaksi demo yang aman.",
+    "exportReadinessDesc": "Export laporan sekarang membuat job di backend, lalu mengecek apakah file sudah siap.",
     "backendContract": "Koneksi backend berikutnya",
-    "backendContractDesc": "GET /api/reports, status job export laporan, dan signed download URL saat tersedia.",
-    "mock": {
+    "backendContractDesc": "GET /api/reports, POST /api/reports/:id/export, dan GET /api/reports/exports/:jobId sudah tersambung.",
+    "templates": {
       "weeklyTitle": "Ringkasan Intelijen Naratif Mingguan",
       "visibilityTitle": "Laporan Pergerakan Visibilitas AI",
       "riskTitle": "Review Risiko Prediktif",
@@ -313,8 +337,8 @@
   "Sidebar": {
     "menu": "Menu",
     "support": "Dukungan",
-    "demo": "Mode Demo",
-    "demoDesc": "Preview ini memakai data demo. Integrasi backend sudah siap untuk endpoint yang tersedia.",
+    "productionMode": "Mode Production",
+    "productionDesc": "Build ini memakai API backend live dan menampilkan empty state saat data belum tersedia.",
     "nav": {
       "command": "Dashboard",
       "signals": "Temuan Naratif",
@@ -331,14 +355,21 @@
     "dark": "Gelap",
     "light": "Terang",
     "language": "ID",
-    "logout": "Keluar"
+    "logout": "Keluar",
+    "notSignedIn": "Belum masuk",
+    "noWorkspace": "Tidak ada workspace"
   },
   "AlertDetail": {
     "backToAlerts": "Kembali ke peringatan",
     "responseWindow": "jendela respons",
-    "demoDetail": "Halaman detail demo ini menjelaskan mengapa peringatan penting dan aksi apa yang perlu dilakukan berikutnya.",
+    "liveDetail": "Detail peringatan live dari backend.",
+    "notFoundTitle": "Peringatan tidak ditemukan",
+    "notFoundDesc": "Peringatan ini tidak ada atau workspace kamu tidak punya akses.",
     "recommendedStep": "Langkah berikutnya yang disarankan",
-    "routeTo": "Teruskan peringatan ini ke {owner} dan buat rencana aksi dengan feedback terima, edit, atau tolak."
+    "createAction": "Buat Aksi",
+    "creatingAction": "Membuat...",
+    "createActionFailed": "Rencana aksi untuk peringatan ini belum bisa dibuat. Silakan coba lagi.",
+    "routeTo": "Buat rencana aksi dengan feedback terima, edit, atau tolak."
   },
   "Workspace": {
     "activity": {
@@ -346,6 +377,12 @@
       "title": "Timeline Aktivitas",
       "description": "Timeline sederhana berisi aktivitas terbaru dari sistem dan tim.",
       "recentActivity": "Aktivitas terbaru",
+      "sourceActivity": "Sumber terhubung atau diperbarui: {name}",
+      "alertActivity": "Peringatan ditemukan: {title}",
+      "actionActivity": "Rencana aksi dibuat: {title}",
+      "reportActivity": "Paket laporan tersedia: {title}",
+      "emptyTitle": "Belum Ada Aktivitas",
+      "emptyDesc": "Aktivitas live akan muncul setelah ada sumber, peringatan, rencana aksi, atau laporan.",
       "items": {
         "item1": "AI membuat saran respons untuk Alert #204",
         "item2": "Topik kepercayaan baru ditemukan di Reddit dan Berita",
@@ -359,6 +396,9 @@
       "description": "Gabungkan peringatan, aksi, owner, dan hasil ke dalam satu kasus.",
       "queue": "Antrean kasus",
       "owner": "Pemilik",
+      "actionPlanStatus": "Rencana aksi",
+      "emptyTitle": "Belum Ada Kasus",
+      "emptyDesc": "Kasus dibuat dari peringatan dan rencana aksi live di workspace.",
       "items": {
         "deliveryTitle": "Masalah reliabilitas pengiriman",
         "deliveryStatus": "Terbuka",
@@ -375,11 +415,12 @@
       "eyebrow": "Workspace",
       "title": "Integrasi",
       "description": "Hubungkan alat dan sumber yang mengirim data ke Narriv.",
-      "status": {
-        "connected": "Terhubung",
-        "demo": "Demo",
-        "mocked": "Demo saja"
-      },
+      "emptyTitle": "API Integrasi Belum Terhubung",
+      "emptyDesc": "Integrasi production akan muncul di sini setelah endpoint backend integrasi workspace tersedia.",
+      "connected": "Terhubung",
+      "notConnected": "Belum terhubung",
+      "records": "data live",
+      "status": {},
       "items": {
         "googleNewsName": "Google News",
         "googleNewsDesc": "Sumber liputan berita",
@@ -394,19 +435,22 @@
     "settings": {
       "eyebrow": "Pengaturan",
       "title": "Pengaturan Workspace",
-      "description": "Lihat pengaturan workspace dan catatan kesiapan deployment.",
+      "description": "Kelola konfigurasi workspace setelah API settings production tersedia.",
+      "emptyTitle": "API Pengaturan Workspace Belum Terhubung",
+      "emptyDesc": "Profil workspace, akses tim, setup monitoring, dan preferensi alert production harus dimuat dari data backend di sini.",
       "workspaceProfile": "Profil workspace",
       "workspace": "Workspace",
+      "member": "Anggota",
+      "unknown": "User tidak dikenal",
+      "preferences": "Preferensi",
+      "language": "Bahasa",
       "mode": "Mode",
-      "demo": "Demo",
       "primaryColor": "Warna aksi utama",
       "vercelReadiness": "Kesiapan deployment",
-      "readinessItems": {
-        "item1": "Preview tidak membutuhkan env backend",
-        "item2": "Auth disimpan di localStorage untuk mode demo",
-        "item3": "Data demo berasal dari satu modul mock utama",
-        "item4": "API client siap untuk integrasi backend berikutnya"
-      }
+      "session": "Sesi",
+      "connected": "Terhubung",
+      "notConnected": "Belum terhubung",
+      "readinessItems": {}
     }
   }
 }

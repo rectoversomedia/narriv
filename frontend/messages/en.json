@@ -1,8 +1,17 @@
 {
   "CommandCenter": {
+    "eyebrow": "Command center",
+    "decisionQueueLabel": "Decision queue",
+    "openWarnings": "open warnings",
+    "noDecisionItems": "No decision items right now",
+    "noDecisionItemsDesc": "Open warnings from your workspace will appear here when the system finds something that needs attention.",
+    "visibilityLabel": "AI visibility",
+    "recommendationLabel": "Recommendation",
     "title": "Dashboard",
     "subtitle": "See what is happening, which issues need attention, how your brand appears in AI answers, and what your team should do next.",
     "last7Days": "Last 7 days",
+    "emptyTitle": "No Live Dashboard Data",
+    "emptyDesc": "Connect the backend API and sign in with a real account to load workspace data.",
     "metrics": {
       "aiVisibility": "AI Visibility Score",
       "aiVisibilityDelta": "+7 points from last week",
@@ -29,20 +38,22 @@
       "actions": "Action Plans",
       "feedback": "Feedback"
     },
-    "narrativeTitle": "Active Issue: Delivery complaints are becoming a trust problem",
-    "narrativeDesc": "126 findings from TikTok, Reddit, local news, Gemini, and Perplexity point to the same issue.",
-    "narrativeRuleTitle": "Treat this as one case, not many separate screens",
-    "narrativeRuleDesc": "The same issue appears in Findings, Alerts, AI Visibility, Action Plans, Reports, and Team Feedback.",
+    "narrativeTitle": "No recent finding yet",
+    "narrativeDesc": "Latest findings from the backend will appear here after ingestion runs.",
+    "narrativeRuleTitle": "Live workspace pipeline",
+    "narrativeRuleDesc": "Findings, alerts, AI visibility, action plans, reports, and team feedback are loaded from your workspace data.",
     "alertTitle": "Decision Queue",
-    "alertDesc": "Risk is up 84%. We recommend responding within 6 hours because the issue is moving fast, the sources are influential, sentiment is negative, and competitors appear more often in AI answers.",
+    "alertDesc": "Open early warnings from the backend will appear in the Early Warnings page.",
     "reviewAlert": "Review and create a plan",
+    "creatingAction": "Creating plan...",
+    "createActionFailed": "Could not create an action plan. Please try again.",
     "geoCardTitle": "Your brand is less visible in AI answers",
-    "geoCardDesc": "Your brand appears in 42% of answers, while competitors appear in 61%. Suggested next step: publish a clear explanation page and strengthen official sources.",
+    "geoCardDesc": "AI visibility results are loaded from live prompt test runs when available.",
     "geoAction": "Create an action plan",
     "recTitle": "Suggested Plan",
-    "recDesc": "PR response, content work, and crisis steps are combined into one plan with an owner, channel, deadline, and legal review.",
+    "recDesc": "Action plans are generated from live alerts or narrative clusters in your workspace.",
     "feedback": "Feedback",
-    "feedbackStats": "81 / 34 / 12",
+    "feedbackStats": "Live",
     "feedbackLabel": "accepted / edited / rejected"
   },
   "DataSources": {
@@ -72,6 +83,10 @@
     "idle": "Idle",
     "run": "Run",
     "runIngestion": "Collect data",
+    "editSource": "Edit",
+    "deleteSource": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
     "noSources": "No sources found",
     "noSourcesDesc": "Add a source or change the filter to start collecting data.",
     "rows": "rows",
@@ -87,6 +102,8 @@
     "title": "Signals Intelligence",
     "subtitle": "Triage raw signals and convert high-confidence analysis into action.",
     "createAction": "Create Action",
+    "creatingAction": "Creating...",
+    "createActionFailed": "Could not create an action plan. Please try again.",
     "search": "Search signals...",
     "filter": "Filter",
     "tableTitle": "Signal List",
@@ -124,6 +141,8 @@
     "title": "AI Visibility",
     "subtitle": "See how AI tools like ChatGPT, Gemini, and Perplexity mention your brand, which sources they use, and where competitors appear.",
     "generateAction": "Create Action",
+    "creatingAction": "Creating...",
+    "createActionFailed": "Could not create an action plan. Please try again.",
     "emptyTitle": "No AI Visibility Data Yet",
     "emptyDesc": "We are collecting AI answer data to measure how often your brand appears. Please check again later.",
     "score": "AI Visibility Score",
@@ -149,11 +168,11 @@
     "title": "Action Plans",
     "subtitle": "Turn analysis into clear next steps, such as PR response, content updates, or crisis handling.",
     "generateAction": "Create Action",
+    "creatingAction": "Creating...",
+    "createActionFailed": "Could not create an action plan. Please try again.",
     "emptyTitle": "No Action Plans Yet",
     "emptyDesc": "Action plans are created when a high-risk topic is found. Nothing needs action right now.",
     "input": "What We Analyzed",
-    "fallbackNarrative": "Topic: delivery reliability complaints are spreading on TikTok, forums, and local news. Sentiment is negative and volume is 2.4x higher than normal.",
-    "fallbackEvidence": "Evidence: 1,248 findings · 6 source types · 92% confidence · 84% chance of escalation",
     "outputsTitle": "Suggested Actions",
     "outputs": {
       "primaryAction": "Main action",
@@ -191,7 +210,10 @@
     "subtitle": "Find issues before they grow, then record team decisions so future suggestions get better.",
     "learningQueue": "Review Queue",
     "queue": "Warning Queue",
-    "demoNotice": "Demo data - connect backend to see live alerts",
+    "noAlerts": "No live warnings found yet.",
+    "createAction": "Create Action",
+    "creatingAction": "Creating...",
+    "createActionFailed": "Could not create an action plan for this warning. Please try again.",
     "acknowledge": "Acknowledge",
     "resolve": "Resolve",
     "scoring": "Model Score",
@@ -219,6 +241,8 @@
     "title": "Topic Map",
     "subtitle": "Understand which topics are growing, who is involved, their impact, and the risks behind them.",
     "createAction": "Create Action",
+    "creatingAction": "Creating...",
+    "createActionFailed": "Could not create an action plan. Please try again.",
     "map": "Topic Map",
     "mapDesc": "19 active topics from 428 findings across monitored sources",
     "clusterCenter": "Trust",
@@ -295,10 +319,10 @@
       "scheduleTime": "Friday 09:00"
     },
     "exportReadiness": "Export readiness",
-    "exportReadinessDesc": "The frontend is ready for report export endpoints. Until then, export actions are safe demo interactions.",
+    "exportReadinessDesc": "Report export now creates a backend export job, then checks whether the file is ready.",
     "backendContract": "Next backend connection",
-    "backendContractDesc": "GET /api/reports, report export job status, and signed download URL when available.",
-    "mock": {
+    "backendContractDesc": "GET /api/reports, POST /api/reports/:id/export, and GET /api/reports/exports/:jobId are connected.",
+    "templates": {
       "weeklyTitle": "Weekly Narrative Intelligence Brief",
       "visibilityTitle": "AI Visibility Movement Report",
       "riskTitle": "Predictive Risk Review",
@@ -313,8 +337,8 @@
   "Sidebar": {
     "menu": "Menu",
     "support": "Support",
-    "demo": "Demo Mode",
-    "demoDesc": "This preview uses demo data. Backend integration is ready where endpoints exist.",
+    "productionMode": "Production Mode",
+    "productionDesc": "This build uses live backend APIs and shows empty states when data is unavailable.",
     "nav": {
       "command": "Dashboard",
       "signals": "Narrative Signals",
@@ -331,14 +355,21 @@
     "dark": "Dark",
     "light": "Light",
     "language": "EN",
-    "logout": "Log out"
+    "logout": "Log out",
+    "notSignedIn": "Not signed in",
+    "noWorkspace": "No workspace"
   },
   "AlertDetail": {
     "backToAlerts": "Back to warnings",
     "responseWindow": "response window",
-    "demoDetail": "This demo detail page explains why the warning matters and what action should happen next.",
+    "liveDetail": "Live warning detail from the backend.",
+    "notFoundTitle": "Warning not found",
+    "notFoundDesc": "This warning does not exist or your workspace cannot access it.",
     "recommendedStep": "Recommended next step",
-    "routeTo": "Route this warning to {owner} and create an action plan with accept, edit, or reject feedback."
+    "createAction": "Create Action",
+    "creatingAction": "Creating...",
+    "createActionFailed": "Could not create an action plan for this warning. Please try again.",
+    "routeTo": "Create an action plan with accept, edit, or reject feedback."
   },
   "Workspace": {
     "activity": {
@@ -346,6 +377,12 @@
       "title": "Activity Timeline",
       "description": "A simple timeline of recent system and team activity.",
       "recentActivity": "Recent activity",
+      "sourceActivity": "Source connected or updated: {name}",
+      "alertActivity": "Warning found: {title}",
+      "actionActivity": "Action plan created: {title}",
+      "reportActivity": "Report package available: {title}",
+      "emptyTitle": "No Activity Yet",
+      "emptyDesc": "Live activity will appear after sources, warnings, action plans, or reports exist.",
       "items": {
         "item1": "AI created a response suggestion for Alert #204",
         "item2": "A new trust topic was found across Reddit and News",
@@ -359,6 +396,9 @@
       "description": "Group warnings, actions, owners, and outcomes into one case.",
       "queue": "Case queue",
       "owner": "Owner",
+      "actionPlanStatus": "Action plan",
+      "emptyTitle": "No Cases Yet",
+      "emptyDesc": "Cases are built from live warnings and action plans in your workspace.",
       "items": {
         "deliveryTitle": "Delivery reliability issue",
         "deliveryStatus": "Open",
@@ -375,11 +415,12 @@
       "eyebrow": "Workspace",
       "title": "Integrations",
       "description": "Connect the tools and sources that send data into Narriv.",
-      "status": {
-        "connected": "Connected",
-        "demo": "Demo",
-        "mocked": "Demo only"
-      },
+      "emptyTitle": "Integrations API Not Connected Yet",
+      "emptyDesc": "Production integrations will appear here after a backend workspace integrations endpoint is available.",
+      "connected": "Connected",
+      "notConnected": "Not connected",
+      "records": "live records",
+      "status": {},
       "items": {
         "googleNewsName": "Google News",
         "googleNewsDesc": "News coverage source",
@@ -394,19 +435,22 @@
     "settings": {
       "eyebrow": "Settings",
       "title": "Workspace Settings",
-      "description": "View workspace setup and deployment readiness notes.",
+      "description": "Manage workspace configuration once the production settings API is available.",
+      "emptyTitle": "Workspace Settings API Not Connected Yet",
+      "emptyDesc": "Production workspace profile, team access, monitoring setup, and alert preferences should load from backend data here.",
       "workspaceProfile": "Workspace profile",
       "workspace": "Workspace",
+      "member": "Member",
+      "unknown": "Unknown user",
+      "preferences": "Preferences",
+      "language": "Language",
       "mode": "Mode",
-      "demo": "Demo",
       "primaryColor": "Primary action color",
       "vercelReadiness": "Deployment readiness",
-      "readinessItems": {
-        "item1": "No backend environment variables required for preview",
-        "item2": "Auth is stored in localStorage for demo mode",
-        "item3": "Demo data comes from one central mock module",
-        "item4": "API client is ready for later backend integration"
-      }
+      "session": "Session",
+      "connected": "Connected",
+      "notConnected": "Not connected",
+      "readinessItems": {}
     }
   }
 }

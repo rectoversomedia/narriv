@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Database, Loader2, Play, Plus, Search, XCircle } from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Database, Loader2, Pencil, Play, Plus, Save, Search, Trash2, X, XCircle } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { SectionHeader } from "@/components/ui/demo-primitives";
 import {
   createSource,
+  deleteSource,
   getIngestionStatus,
   getSources,
   runSourceIngestion,
+  updateSource,
   type SourceRecord,
 } from "@/lib/api-service";
 
@@ -38,7 +40,7 @@ function typeClass(type: string) {
 }
 
 function statusClass(active?: boolean) {
-  return active
+  return active !== false
     ? "border-[#12B76A]/30 bg-[#12B76A]/10 text-[#027A48]"
     : "theme-border bg-[var(--badge-slate-bg)] theme-muted";
 }
@@ -56,6 +58,11 @@ export default function SourcesPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [name, setName] = useState("");
   const [type, setType] = useState("news");
+  const [editingSourceId, setEditingSourceId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editType, setEditType] = useState("news");
+  const [savingSourceId, setSavingSourceId] = useState<string | null>(null);
+  const [deletingSourceId, setDeletingSourceId] = useState<string | null>(null);
   const [runningBySource, setRunningBySource] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -81,7 +88,7 @@ export default function SourcesPage() {
   const lastRow = Math.min(startIndex + pageSources.length, filteredSources.length);
 
   const activeCount = sources.filter((source) => source.isActive !== false).length;
-  const apiBackedCount = sources.filter((source) => !source.id.startsWith("mock-source")).length;
+  const apiBackedCount = sources.length;
   const normalizedRunningCount = Object.values(runningBySource).filter((status) => {
     const value = String(status).toLowerCase();
     return value === "running" || value === "queued";
@@ -104,32 +111,16 @@ export default function SourcesPage() {
 
     setIsAdding(true);
     const created = await createSource({ name: trimmedName, type });
-    const nextSource = created ?? {
-      id: `local-source-${Date.now()}`,
-      name: trimmedName,
-      type,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      health: "Demo",
-      coverage: "Pending",
-      latency: "Pending",
-    };
-
-    setSources((current) => [nextSource, ...current]);
-    setName("");
-    setType("news");
+    if (created) {
+      setSources((current) => [created, ...current]);
+      setName("");
+      setType("news");
+    }
     setIsAdding(false);
   };
 
   const handleRunIngestion = async (source: SourceRecord) => {
     setRunningBySource((current) => ({ ...current, [source.id]: "running" }));
-
-    if (source.id.startsWith("mock-source") || source.id.startsWith("local-source")) {
-      window.setTimeout(() => {
-        setRunningBySource((current) => ({ ...current, [source.id]: "completed" }));
-      }, 900);
-      return;
-    }
 
     const started = await runSourceIngestion(source.id);
     if (!started) {
@@ -144,6 +135,43 @@ export default function SourcesPage() {
         [source.id]: status?.status ?? "running",
       }));
     }, 1200);
+  };
+
+  const startEditing = (source: SourceRecord) => {
+    setEditingSourceId(source.id);
+    setEditName(source.name);
+    setEditType(source.type);
+  };
+
+  const cancelEditing = () => {
+    setEditingSourceId(null);
+    setEditName("");
+    setEditType("news");
+  };
+
+  const handleUpdateSource = async (source: SourceRecord) => {
+    const trimmedName = editName.trim();
+    if (!trimmedName) return;
+
+    setSavingSourceId(source.id);
+    const updated = await updateSource(source.id, { name: trimmedName, type: editType });
+
+    if (updated) {
+      setSources((current) => current.map((item) => item.id === source.id ? { ...item, ...updated } : item));
+      cancelEditing();
+    }
+    setSavingSourceId(null);
+  };
+
+  const handleDeleteSource = async (source: SourceRecord) => {
+    setDeletingSourceId(source.id);
+    const deleted = await deleteSource(source.id);
+
+    if (deleted) {
+      setSources((current) => current.map((item) => item.id === source.id ? { ...item, ...deleted } : item));
+      if (editingSourceId === source.id) cancelEditing();
+    }
+    setDeletingSourceId(null);
   };
 
   const handleTypeFilter = (nextType: string) => {
@@ -286,12 +314,12 @@ export default function SourcesPage() {
             <div className="hidden md:block">
               <table className="w-full table-fixed text-sm">
                 <colgroup>
-                  <col className="w-[30%]" />
+                  <col className="w-[28%]" />
                   <col className="w-[14%]" />
                   <col className="w-[14%]" />
                   <col className="w-[16%]" />
-                  <col className="w-[14%]" />
                   <col className="w-[12%]" />
+                  <col className="w-[16%]" />
                 </colgroup>
                 <thead>
                   <tr className="border-b border-[var(--border)] text-left text-xs font-medium text-[var(--muted)]">
@@ -308,15 +336,38 @@ export default function SourcesPage() {
                     const runStatus = runningBySource[source.id];
                     const normalizedRunStatus = runStatus ? String(runStatus).toLowerCase() : "";
                     const isRunning = normalizedRunStatus === "running" || normalizedRunStatus === "queued";
+                    const isEditing = editingSourceId === source.id;
+                    const isSaving = savingSourceId === source.id;
+                    const isDeleting = deletingSourceId === source.id;
 
                     return (
                       <tr key={source.id} className="theme-row-hover border-b border-[var(--border)] last:border-0">
                         <td className="px-5 py-4 align-top">
-                          <p className="theme-text truncate font-medium">{source.name}</p>
+                          {isEditing ? (
+                            <input
+                              value={editName}
+                              onChange={(event) => setEditName(event.target.value)}
+                              className="theme-panel theme-text h-8 w-full rounded-md border border-[var(--border)] px-2 text-sm outline-none focus:border-[#465FFF]/60"
+                            />
+                          ) : (
+                            <p className="theme-text truncate font-medium">{source.name}</p>
+                          )}
                           <p className="theme-muted mt-1 truncate text-xs">{source.actorId ?? t("defaultActor")}</p>
                         </td>
                         <td className="px-4 py-4 text-center align-top">
-                          <span className={`inline-flex h-6 items-center rounded-md border px-2 text-xs font-medium ${typeClass(source.type)}`}>{getTypeLabel(source.type)}</span>
+                          {isEditing ? (
+                            <select
+                              value={editType}
+                              onChange={(event) => setEditType(event.target.value)}
+                              className="theme-panel theme-text h-8 w-full rounded-md border border-[var(--border)] px-2 text-xs outline-none focus:border-[#465FFF]/60"
+                            >
+                              {sourceTypes.map((sourceType) => (
+                                <option key={sourceType} value={sourceType}>{getTypeLabel(sourceType)}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span className={`inline-flex h-6 items-center rounded-md border px-2 text-xs font-medium ${typeClass(source.type)}`}>{getTypeLabel(source.type)}</span>
+                          )}
                         </td>
                         <td className="px-4 py-4 text-center align-top">
                           <span className={`inline-flex h-6 items-center gap-1 rounded-md border px-2 text-xs font-medium ${statusClass(source.isActive)}`}>
@@ -329,15 +380,58 @@ export default function SourcesPage() {
                           <span className="theme-muted text-xs">{runStatus ?? source.health ?? t("idle")}</span>
                         </td>
                         <td className="px-5 py-4 text-center align-top">
-                          <button
-                            type="button"
-                            onClick={() => void handleRunIngestion(source)}
-                            disabled={isRunning}
-                            className="inline-flex h-8 w-[82px] items-center justify-center gap-1 rounded-md border border-[#465FFF]/30 bg-[#465FFF]/10 text-xs font-medium text-[#465FFF] transition-colors hover:bg-[#465FFF]/20 disabled:pointer-events-none disabled:opacity-50"
-                          >
-                            {isRunning ? <Loader2 className="animate-spin" size={13} /> : <Play size={13} />}
-                            {t("run")}
-                          </button>
+                          <div className="flex justify-center gap-1.5">
+                            {isEditing ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => void handleUpdateSource(source)}
+                                  disabled={isSaving || !editName.trim()}
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#12B76A]/30 bg-[#12B76A]/10 text-[#027A48] transition-colors hover:bg-[#12B76A]/20 disabled:pointer-events-none disabled:opacity-50"
+                                  aria-label={t("save")}
+                                >
+                                  {isSaving ? <Loader2 className="animate-spin" size={13} /> : <Save size={13} />}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={cancelEditing}
+                                  className="theme-card theme-hover theme-text inline-flex h-8 w-8 items-center justify-center rounded-md border"
+                                  aria-label={t("cancel")}
+                                >
+                                  <X size={13} />
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => void handleRunIngestion(source)}
+                                  disabled={isRunning || source.isActive === false}
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#465FFF]/30 bg-[#465FFF]/10 text-[#465FFF] transition-colors hover:bg-[#465FFF]/20 disabled:pointer-events-none disabled:opacity-50"
+                                  aria-label={t("run")}
+                                >
+                                  {isRunning ? <Loader2 className="animate-spin" size={13} /> : <Play size={13} />}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => startEditing(source)}
+                                  className="theme-card theme-hover theme-text inline-flex h-8 w-8 items-center justify-center rounded-md border"
+                                  aria-label={t("editSource")}
+                                >
+                                  <Pencil size={13} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => void handleDeleteSource(source)}
+                                  disabled={isDeleting || source.isActive === false}
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#F04438]/20 bg-[#F04438]/10 text-[#F97066] transition-colors hover:bg-[#F04438]/20 disabled:pointer-events-none disabled:opacity-50"
+                                  aria-label={t("deleteSource")}
+                                >
+                                  {isDeleting ? <Loader2 className="animate-spin" size={13} /> : <Trash2 size={13} />}
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -351,15 +445,38 @@ export default function SourcesPage() {
                 const runStatus = runningBySource[source.id];
                 const normalizedRunStatus = runStatus ? String(runStatus).toLowerCase() : "";
                 const isRunning = normalizedRunStatus === "running" || normalizedRunStatus === "queued";
+                const isEditing = editingSourceId === source.id;
+                const isSaving = savingSourceId === source.id;
+                const isDeleting = deletingSourceId === source.id;
 
                 return (
                   <article key={source.id} className="p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="theme-text line-clamp-2 text-sm font-medium">{source.name}</p>
+                        {isEditing ? (
+                          <input
+                            value={editName}
+                            onChange={(event) => setEditName(event.target.value)}
+                            className="theme-panel theme-text h-9 w-full rounded-md border border-[var(--border)] px-2 text-sm outline-none focus:border-[#465FFF]/60"
+                          />
+                        ) : (
+                          <p className="theme-text line-clamp-2 text-sm font-medium">{source.name}</p>
+                        )}
                         <p className="theme-muted mt-1 text-xs">{t("created")} {formatDate(source.createdAt, language)}</p>
                       </div>
-                      <span className={`shrink-0 rounded-md border px-2 py-1 text-xs font-medium ${typeClass(source.type)}`}>{getTypeLabel(source.type)}</span>
+                      {isEditing ? (
+                        <select
+                          value={editType}
+                          onChange={(event) => setEditType(event.target.value)}
+                          className="theme-panel theme-text h-9 shrink-0 rounded-md border border-[var(--border)] px-2 text-xs outline-none focus:border-[#465FFF]/60"
+                        >
+                          {sourceTypes.map((sourceType) => (
+                            <option key={sourceType} value={sourceType}>{getTypeLabel(sourceType)}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className={`shrink-0 rounded-md border px-2 py-1 text-xs font-medium ${typeClass(source.type)}`}>{getTypeLabel(source.type)}</span>
+                      )}
                     </div>
                     <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
                       <div>
@@ -371,15 +488,49 @@ export default function SourcesPage() {
                         <p className="theme-text mt-1 font-medium">{runStatus ?? source.health ?? t("idle")}</p>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => void handleRunIngestion(source)}
-                      disabled={isRunning}
-                      className="mt-4 inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-[#465FFF]/30 bg-[#465FFF]/10 text-sm font-medium text-[#465FFF] transition-colors hover:bg-[#465FFF]/20 disabled:pointer-events-none disabled:opacity-50"
-                    >
-                      {isRunning ? <Loader2 className="animate-spin" size={14} /> : <Play size={14} />}
-                      {t("runIngestion")}
-                    </button>
+                    <div className="mt-4 grid grid-cols-3 gap-2">
+                      {isEditing ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => void handleUpdateSource(source)}
+                            disabled={isSaving || !editName.trim()}
+                            className="col-span-2 inline-flex h-9 items-center justify-center gap-2 rounded-md border border-[#12B76A]/30 bg-[#12B76A]/10 text-sm font-medium text-[#027A48] transition-colors hover:bg-[#12B76A]/20 disabled:pointer-events-none disabled:opacity-50"
+                          >
+                            {isSaving ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />}
+                            {t("save")}
+                          </button>
+                          <button type="button" onClick={cancelEditing} className="theme-card theme-hover theme-text h-9 rounded-md border text-sm font-medium">
+                            {t("cancel")}
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => void handleRunIngestion(source)}
+                            disabled={isRunning || source.isActive === false}
+                            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-[#465FFF]/30 bg-[#465FFF]/10 text-sm font-medium text-[#465FFF] transition-colors hover:bg-[#465FFF]/20 disabled:pointer-events-none disabled:opacity-50"
+                          >
+                            {isRunning ? <Loader2 className="animate-spin" size={14} /> : <Play size={14} />}
+                            {t("run")}
+                          </button>
+                          <button type="button" onClick={() => startEditing(source)} className="theme-card theme-hover theme-text inline-flex h-9 items-center justify-center gap-1.5 rounded-md border text-sm font-medium">
+                            <Pencil size={14} />
+                            {t("editSource")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleDeleteSource(source)}
+                            disabled={isDeleting || source.isActive === false}
+                            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-[#F04438]/20 bg-[#F04438]/10 text-sm font-medium text-[#F97066] transition-colors hover:bg-[#F04438]/20 disabled:pointer-events-none disabled:opacity-50"
+                          >
+                            {isDeleting ? <Loader2 className="animate-spin" size={14} /> : <Trash2 size={14} />}
+                            {t("deleteSource")}
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </article>
                 );
               })}
