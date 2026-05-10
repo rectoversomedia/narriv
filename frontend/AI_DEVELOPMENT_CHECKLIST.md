@@ -13,6 +13,61 @@ Core capabilities include:
 5. **Action Engine:** Generating structured, actionable recommendations.
 6. **AI Learning Loop:** Continuously improving the system based on user feedback.
 
+## Current Frontend Development Todo
+
+Use this as the active frontend backlog. Older completed phases below are historical and may mention the earlier mock/demo architecture.
+
+### Production QA
+- [ ] Run full browser QA with backend running and `NEXT_PUBLIC_API_URL` pointed at the local API.
+- [ ] Test every route in light mode and dark mode: `/`, `/signals`, `/intelligence`, `/alerts`, `/alerts/[id]`, `/visibility`, `/action-plans`, `/reports`, `/workspace/sources`, `/workspace/activity`, `/workspace/cases`, `/workspace/integrations`, and `/workspace/settings`.
+- [ ] Test responsive layouts at 375px, 768px, 1024px, and desktop widths.
+- [ ] Confirm all production/live-only empty states render correctly when the backend returns no records.
+- [ ] Confirm no mock/demo data appears in production-only pages.
+- [ ] Capture updated screenshots after final UI approval.
+
+### Feature Flow Testing
+- [ ] Auth: register, login, refresh token behavior, logout, and protected-route redirect.
+- [ ] Sources: create, edit, soft delete, search/filter, mobile cards, desktop table, and ingestion run/status.
+- [ ] Signals: list, search/filter, pagination, review modal, and detail API fallback.
+- [ ] Alerts: list, detail route, acknowledge, resolve, and create action from alert contexts.
+- [ ] Dashboard: summary metrics, decision queue live warnings, alert detail navigation, and AI visibility action CTA.
+- [ ] Topic Map: live narrative loading, selected topic state, and create action from selected topic.
+- [ ] AI Visibility: live visibility data, highlighted action CTA, and empty state.
+- [ ] Action Plans: create action, latest action plan reload, execution plan rendering, accept/edit/reject feedback.
+- [ ] Reports: search/filter/pagination, export job creation, export status, and failure state.
+- [ ] Workspace pages: activity, cases, integrations, and settings all display real API/state-derived content.
+
+### UX and Error Handling
+- [ ] Add a consistent toast or inline notification pattern for create/update/delete/export/action errors.
+- [ ] Add user-facing messages for `OPENAI_API_KEY` missing or action generation unavailable.
+- [ ] Add clearer retry controls for failed API fetches where useful.
+- [ ] Add loading states for action creation buttons that are page-specific and do not block unrelated CTAs.
+- [ ] Add disabled/error states for report exports when backend storage is not configured.
+- [ ] Improve Data Sources native create/edit validation messages.
+
+### Accessibility and Design QA
+- [ ] Run keyboard navigation QA for sidebar, topbar controls, dropdowns, modals, filters, tables, and action buttons.
+- [ ] Check focus-visible styling on all interactive controls.
+- [ ] Verify color contrast for all status badges and muted text in light and dark themes.
+- [ ] Confirm the Signal Review modal traps focus or has acceptable keyboard behavior.
+- [ ] Ensure interactive cards use semantic links/buttons and clear labels.
+- [ ] Audit hardcoded English copy introduced after localization and move remaining strings into `messages/en.json` and `messages/id.json`.
+
+### Backend-Dependent Frontend Work
+- [ ] Replace derived Workspace Activity with dedicated `GET /api/workspace/activity` once backend endpoint exists.
+- [ ] Replace derived Workspace Cases with dedicated cases endpoint once backend endpoint exists.
+- [ ] Replace derived Integrations status with `GET /api/workspace/integrations` once backend endpoint exists.
+- [ ] Replace Settings user/session-only page with real workspace settings once `GET/PATCH /api/workspace/settings` exists.
+- [ ] Add UI for workspace members/team access once backend supports it.
+- [ ] Add UI for action generation failure logs or history if backend exposes them.
+
+### Release Checks
+- [ ] Run `npm run lint` before every handoff.
+- [ ] Run `npm run build` before every handoff.
+- [ ] Validate `messages/en.json` and `messages/id.json` after copy changes.
+- [ ] Verify `.env.example` documents required `NEXT_PUBLIC_API_URL` and production frontend variables.
+- [ ] Confirm Vercel build works without local-only files or mock dependencies.
+
 ## Phase 1: Foundation & Theme
 - [x] Read `frontend/FRONTEND_DEVELOPMENT_GUIDELINES.md` completely.
 - [x] Update global theme and font tokens to use `Outfit`, brand blue (`#465FFF`), and light/dark surface tokens (`app/globals.css`).

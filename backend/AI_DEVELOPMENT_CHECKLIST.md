@@ -5,8 +5,54 @@ This checklist is the backend todo list for Narriv after the frontend is ready. 
 ## Current Frontend State
 - Frontend UI is ready in light/dark mode with shadcn-style dashboard pages.
 - Frontend supports English and Indonesian through `next-intl`.
-- Frontend has safe mock fallback behavior when backend endpoints are not ready.
+- Frontend is production/live-only; implemented pages show API data, loading states, empty states, or errors without mock fallback.
 - Frontend already calls the backend contracts listed below.
+
+## Current Backend Development Todo
+
+Use this as the active backend backlog before production deployment.
+
+### Production Readiness
+- [ ] Baseline existing local/staging/production databases before running `npx prisma migrate deploy` on non-empty databases.
+- [ ] Run `npx prisma migrate deploy` successfully against a clean database and a baselined existing database.
+- [ ] Document required backend environment variables in `.env.example`, including `JWT_SECRET`, `DATABASE_URL`, `OPENAI_API_KEY`, Apify configuration, queue configuration, and report export storage settings.
+- [ ] Add a startup/runtime health check that reports database, queue, OpenAI, and ingestion provider availability without leaking secrets.
+- [ ] Decide long-term workspace deletion policy: restrict, soft delete, or cascade tenant-owned data.
+
+### API Reliability and Validation
+- [ ] Add schema validation for every `POST`, `PATCH`, and `PUT` endpoint, including auth, sources, ingestion, alerts, action generation, feedback, and report export.
+- [ ] Normalize API error responses into one contract: `{ error, code?, details? }`.
+- [ ] Return correct status codes for action generation failures, e.g. missing `OPENAI_API_KEY`, invalid alert/topic ownership, and provider timeout.
+- [ ] Add pagination metadata consistently for list endpoints.
+- [ ] Add integration tests for every frontend-facing endpoint listed in the contract table.
+
+### Workspace and Product Endpoints
+- [ ] Add a dedicated workspace settings endpoint for `/workspace/settings`, e.g. `GET /api/workspace/settings` and `PATCH /api/workspace/settings`.
+- [ ] Add a dedicated workspace integrations endpoint for `/workspace/integrations`, e.g. `GET /api/workspace/integrations`.
+- [ ] Add backend support for workspace members/team access if settings will manage users.
+- [ ] Add cases endpoint if `/workspace/cases` should become a first-class object instead of being composed from alerts/action plans.
+- [ ] Add activity endpoint if `/workspace/activity` should become an audit/event timeline instead of being composed from existing records.
+
+### AI and Action Engine
+- [ ] Add a non-AI fallback or explicit unavailable state for `POST /api/actions` when `OPENAI_API_KEY` is missing.
+- [ ] Add provider timeout/retry policy for action generation.
+- [ ] Store generation failure logs with workspace ID, strategy type, target IDs, provider error, and timestamp.
+- [ ] Add strategy-specific response normalization so action plans always produce useful `outputs` and `plan` fields.
+- [ ] Add tests for PR response, content strategy, influencer strategy, and crisis response action generation.
+
+### Ingestion and Reporting
+- [ ] Verify Apify/collector production configuration and document actor IDs/input schema.
+- [ ] Add ingestion retry/backoff policy and job cancellation/timeout behavior.
+- [ ] Ensure raw documents and signals have deterministic dedupe behavior per workspace.
+- [ ] Finish report export storage implementation for production downloads, including signed URL expiration and cleanup.
+- [ ] Add export worker tests for success, failed, and expired download cases.
+
+### Security and Observability
+- [ ] Add audit log entries for password change and sensitive workspace settings updates.
+- [ ] Add request IDs and structured logging for API requests, worker jobs, and AI provider calls.
+- [ ] Add rate limits to AI generation, report export, ingestion run, and feedback endpoints.
+- [ ] Add basic metrics for endpoint latency, AI failures, ingestion failures, and export failures.
+- [ ] Review CORS production allowlist before launch and replace broad preview settings if needed.
 
 ## Completed Backend Foundation
 - [x] Auth module: `POST /auth/login`, `POST /auth/register`, `GET /auth/me`.
@@ -19,6 +65,7 @@ This checklist is the backend todo list for Narriv after the frontend is ready. 
 - [x] Dashboard summary: `GET /dashboard/summary`.
 - [x] Alerts module: `GET /api/alerts`, `GET /api/alerts/:id`, `PATCH /api/alerts/:id/status`.
 - [x] CORS allows local frontend and Vercel preview domains.
+- [x] Production database hardening migration added for tenant indexes, token uniqueness, report export uniqueness, and source update tracking.
 
 ---
 
@@ -123,6 +170,7 @@ Acceptance criteria:
 - [x] Add clear job status values: `queued`, `running`, `completed`, `failed`.
 - [x] Store ingestion errors for frontend troubleshooting.
 - [x] Add pagination and filtering for source records if the list grows.
+- [x] Add database indexes for source, ingestion, raw document, and signal workspace queries.
 
 ### 9. Security and Auth
 - [x] Ensure all protected endpoints use `verifyToken`.
@@ -147,6 +195,8 @@ Acceptance criteria:
 - [ ] Add audit log entries for login, logout, failed login, password change, and sensitive settings updates.
 - [x] Review CORS origins and allowed headers before production deployment.
 - [x] Ensure secrets like `JWT_SECRET`, refresh-token secret, and database credentials are loaded from environment variables only.
+- [x] Add unique index for refresh token hashes.
+- [x] Add audit log indexes for user/event lookup.
 
 ### 10. Reporting Export Jobs
 - [x] Add report export job creation endpoint when ready.
@@ -154,6 +204,17 @@ Acceptance criteria:
 - [x] Add export job status endpoint.
 - [x] Suggested endpoint: `GET /api/reports/exports/:jobId`.
 - [x] Add signed download URL support when files are generated.
+- [x] Add report export indexes and signed-token uniqueness.
+
+### 11. Database Production Readiness
+- [x] Add composite indexes for tenant-owned tables using `workspaceId` plus common filter/sort columns.
+- [x] Add foreign-key lookup indexes for relation-heavy tables.
+- [x] Add unique membership constraint: one `WorkspaceMember` per `userId` and `workspaceId`.
+- [x] Add `Source.updatedAt` for source CRUD tracking.
+- [x] Add deployable migration: `20260509050000_production_database_hardening`.
+- [ ] Baseline existing local/production databases before running `prisma migrate deploy` if they were created before Prisma migration history.
+- [ ] Decide long-term workspace deletion policy: restrict, soft delete, or cascade tenant data.
+- [ ] Add optional Postgres RLS if any client ever connects directly to the database instead of only through the Node API.
 
 ---
 
@@ -161,26 +222,31 @@ Acceptance criteria:
 
 | Frontend Function | Backend Endpoint | Status |
 | --- | --- | --- |
-| `getDashboardSummary()` | `GET /dashboard/summary` | Ready |
+| `getDashboardSummary()` | `GET /api/dashboard/summary` | Ready |
 | `login()` | `POST /auth/login` | Ready |
 | `signup()` | `POST /auth/register` | Ready |
-| `logout()` | `POST /auth/logout` | Optional if refresh tokens are used |
-| `refreshSession()` | `POST /auth/refresh` | Optional if refresh tokens are used |
+| `logout()` | `POST /auth/logout` | Ready |
+| `refreshSession()` | `POST /auth/refresh` | Ready |
 | `getCurrentUser()` | `GET /auth/me` | Ready |
 | `getSignals()` | `GET /signals` | Ready |
 | `getSignalById()` | `GET /signals/:id` | Ready |
 | `getSources()` | `GET /sources` | Ready |
 | `createSource()` | `POST /sources` | Ready |
-| `updateSource()` | `PATCH /sources/:sourceId` | Backend ready; frontend helper pending |
-| `deleteSource()` | `DELETE /sources/:sourceId` | Backend ready; frontend helper pending |
+| `updateSource()` | `PATCH /sources/:sourceId` | Ready |
+| `deleteSource()` | `DELETE /sources/:sourceId` | Ready |
 | `runSourceIngestion()` | `POST /ingestion/run/:sourceId` | Ready |
 | `getIngestionStatus()` | `GET /ingestion/status/:jobId` | Ready |
 | `getAlerts()` | `GET /api/alerts` | Ready |
 | `updateAlertStatus()` | `PATCH /api/alerts/:id/status` | Ready |
-| `getVisibility()` | `GET /api/visibility` | TODO |
-| `getActionPlans()` | `GET /api/action-plans` | TODO |
-| `getReports()` | `GET /api/reports` | TODO |
-| `getNarratives()` | `GET /api/narratives` or `GET /api/clusters` | TODO |
+| `getVisibility()` | `GET /api/visibility` | Ready |
+| `getActionPlans()` | `GET /api/action-plans` | Ready |
+| `createActionPlan()` | `POST /api/actions` | Ready; requires `OPENAI_API_KEY` |
+| `getActionQueue()` | `GET /api/actions` | Ready |
+| `submitActionPlanFeedback()` | `POST /api/action-plans/:id/feedback` | Ready |
+| `getReports()` | `GET /api/reports` | Ready |
+| `createReportExport()` | `POST /api/reports/:id/export` | Ready; storage must be production-verified |
+| `getReportExportStatus()` | `GET /api/reports/exports/:jobId` | Ready; storage must be production-verified |
+| `getNarratives()` | `GET /api/narratives` | Ready |
 
 ---
 
