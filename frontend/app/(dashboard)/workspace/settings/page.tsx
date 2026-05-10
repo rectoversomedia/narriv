@@ -52,7 +52,7 @@ export default function SettingsPage() {
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <div className="theme-subtle rounded-xl border border-[var(--border)] p-4">
                 <p className="theme-muted text-xs font-semibold uppercase tracking-wider">{t("workspace")}</p>
-                <p className="theme-text mt-2 font-semibold">{storedUser?.workspace || "Narriv Workspace"}</p>
+                <p className="theme-text mt-2 font-semibold">{storedUser?.workspace || t("defaultWorkspace")}</p>
               </div>
               <div className="theme-subtle rounded-xl border border-[var(--border)] p-4">
                 <p className="theme-muted text-xs font-semibold uppercase tracking-wider">{t("member")}</p>
@@ -82,7 +82,7 @@ export default function SettingsPage() {
         <h2 className="theme-text text-lg font-semibold">{t("vercelReadiness")}</h2>
         <div className="mt-5 grid gap-3 md:grid-cols-3">
           <div className="theme-subtle rounded-xl border border-[var(--border)] p-4">
-            <p className="theme-muted text-xs font-semibold uppercase tracking-wider">API</p>
+            <p className="theme-muted text-xs font-semibold uppercase tracking-wider">{t("apiConnection")}</p>
             <p className="theme-text mt-2 break-all text-sm font-semibold">{apiUrl}</p>
           </div>
           <div className="theme-subtle rounded-xl border border-[var(--border)] p-4">

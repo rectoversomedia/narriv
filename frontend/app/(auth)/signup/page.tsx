@@ -234,7 +234,7 @@ export default function SignupPage() {
 
       if (res.ok) {
         const json = await res.json() as { token: string; refreshToken?: string; user: { name: string; email: string } };
-        setSession(json.token, { name: json.user.name, email: json.user.email, provider: "password", workspace: "Narriv Workspace" }, json.refreshToken);
+        setSession(json.token, { name: json.user.name, email: json.user.email, provider: "password", workspace: "Narriv" }, json.refreshToken);
         router.push("/");
         return;
       }

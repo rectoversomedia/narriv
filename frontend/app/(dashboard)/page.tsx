@@ -96,6 +96,18 @@ export default function DashboardPage() {
   };
 
   const primaryAlert = alerts[0];
+  const displaySeverity = (severity: string | null | undefined) => {
+    if (severity === "high") return t("severity.high");
+    if (severity === "medium") return t("severity.medium");
+    if (severity === "low") return t("severity.low");
+    return t("severity.clear");
+  };
+  const displaySentiment = (sentiment: string | null | undefined) => {
+    if (sentiment === "positive") return t("sentiment.positive");
+    if (sentiment === "negative") return t("sentiment.negative");
+    if (sentiment === "mixed") return t("sentiment.mixed");
+    return t("sentiment.neutral");
+  };
 
   return (
     <div className="space-y-6 pb-6">
@@ -147,7 +159,7 @@ export default function DashboardPage() {
                     {latestSignal?.title || t("narrativeTitle")}
                   </h2>
                   <p className="theme-muted mt-4 max-w-xl text-[15px] leading-7">
-                    {latestSignal ? `${latestSignal.platform} · ${latestSignal.sentiment} · ${latestSignal.published_at}` : t("narrativeDesc")}
+                    {latestSignal ? `${latestSignal.platform} · ${displaySentiment(latestSignal.sentiment)} · ${latestSignal.published_at}` : t("narrativeDesc")}
                   </p>
                 </div>
                 <div className="rounded-[24px] border border-[#465FFF]/20 bg-[#465FFF]/10 p-4 text-[#465FFF]">
@@ -200,7 +212,7 @@ export default function DashboardPage() {
                     <p className="theme-muted mt-2 text-sm font-medium">{t("openWarnings")}</p>
                   </div>
                   <span className="rounded-full border border-[#F97066]/25 bg-[#F97066]/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-[#B42318] dark:text-[#FDA29B]">
-                    {primaryAlert?.severity ?? "clear"}
+                    {displaySeverity(primaryAlert?.severity)}
                   </span>
                 </div>
               </div>
@@ -216,7 +228,7 @@ export default function DashboardPage() {
                     <div className="flex items-start justify-between gap-3">
                       <p className="theme-text line-clamp-2 text-sm font-semibold leading-5">{alert.title}</p>
                       <span className="shrink-0 rounded-full bg-[#F97066]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#B42318] dark:text-[#FDA29B]">
-                        {alert.severity ?? "medium"}
+                        {displaySeverity(alert.severity)}
                       </span>
                     </div>
                     <p className="theme-muted mt-2 line-clamp-2 text-xs leading-5">{alert.whyItMatters ?? alert.whatHappened ?? alert.whatToDo ?? t("alertDesc")}</p>

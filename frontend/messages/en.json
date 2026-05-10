@@ -12,6 +12,18 @@
     "last7Days": "Last 7 days",
     "emptyTitle": "No Live Dashboard Data",
     "emptyDesc": "Connect the backend API and sign in with a real account to load workspace data.",
+    "severity": {
+      "high": "high",
+      "medium": "medium",
+      "low": "low",
+      "clear": "clear"
+    },
+    "sentiment": {
+      "positive": "positive",
+      "negative": "negative",
+      "neutral": "neutral",
+      "mixed": "mixed"
+    },
     "metrics": {
       "aiVisibility": "AI Visibility Score",
       "aiVisibilityDelta": "+7 points from last week",
@@ -336,6 +348,9 @@
   },
   "Sidebar": {
     "menu": "Menu",
+    "more": "More",
+    "allMenu": "All navigation",
+    "closeMenu": "Close menu",
     "support": "Support",
     "productionMode": "Production Mode",
     "productionDesc": "This build uses live backend APIs and shows empty states when data is unavailable.",
@@ -348,6 +363,9 @@
       "reports": "Reports",
       "action": "Action Plans",
       "sources": "Data Sources",
+      "activity": "Activity",
+      "cases": "Cases",
+      "integrations": "Integrations",
       "settings": "Settings"
     }
   },
@@ -440,6 +458,7 @@
       "emptyDesc": "Production workspace profile, team access, monitoring setup, and alert preferences should load from backend data here.",
       "workspaceProfile": "Workspace profile",
       "workspace": "Workspace",
+      "defaultWorkspace": "Narriv Workspace",
       "member": "Member",
       "unknown": "Unknown user",
       "preferences": "Preferences",
@@ -447,6 +466,7 @@
       "mode": "Mode",
       "primaryColor": "Primary action color",
       "vercelReadiness": "Deployment readiness",
+      "apiConnection": "API connection",
       "session": "Session",
       "connected": "Connected",
       "notConnected": "Not connected",

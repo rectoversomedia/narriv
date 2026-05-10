@@ -215,7 +215,7 @@ export default function LoginPage() {
           name: json.user.name,
           email: json.user.email,
           provider: "password",
-          workspace: "Narriv Workspace",
+          workspace: "Narriv",
         }, json.refreshToken);
         return;
       }
