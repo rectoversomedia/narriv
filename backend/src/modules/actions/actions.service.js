@@ -170,7 +170,7 @@ function toPlanSteps(primaryList, fallbackList) {
     return steps.map((step, index) => [step, timelineSlots[index] || "Later"]);
 }
 
-function normalizeStrategyOutput(strategyType, raw, toneSuffix) {
+export function normalizeStrategyOutput(strategyType, raw, toneSuffix) {
     const commonTitle = toStringOrFallback(raw?.title, `${formatStrategyName(strategyType)} (${toneSuffix})`);
     const commonSummary = toStringOrFallback(raw?.executive_summary, "Action summary will be refined by the team.");
 
