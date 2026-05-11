@@ -4,6 +4,8 @@ export const workspaceSettingsQuerySchema = z.object({
     workspaceId: z.string().uuid("workspaceId must be a valid UUID.").optional(),
 });
 
+const WORKSPACE_MEMBER_ROLES = ["owner", "admin", "analyst"];
+
 export const updateWorkspaceSettingsBodySchema = z.object({
     workspaceId: z.string().uuid("workspaceId must be a valid UUID.").optional(),
     brandName: z.string().trim().min(1, "brandName cannot be empty.").max(120, "brandName is too long.").optional().nullable(),
@@ -18,3 +20,18 @@ export const updateWorkspaceSettingsBodySchema = z.object({
     message: "At least one settings field must be provided.",
 });
 
+export const workspaceMembersQuerySchema = z.object({
+    workspaceId: z.string().uuid("workspaceId must be a valid UUID.").optional(),
+});
+
+export const createWorkspaceMemberBodySchema = z.object({
+    workspaceId: z.string().uuid("workspaceId must be a valid UUID.").optional(),
+    userId: z.string({ required_error: "userId is required." }).uuid("userId must be a valid UUID."),
+    role: z.enum(WORKSPACE_MEMBER_ROLES, {
+        errorMap: () => ({ message: `role must be one of: ${WORKSPACE_MEMBER_ROLES.join(", ")}` }),
+    }),
+});
+
+export const deleteWorkspaceMemberParamsSchema = z.object({
+    id: z.string().uuid("id must be a valid UUID."),
+});
