@@ -35,3 +35,11 @@ export const createWorkspaceMemberBodySchema = z.object({
 export const deleteWorkspaceMemberParamsSchema = z.object({
     id: z.string().uuid("id must be a valid UUID."),
 });
+
+export const deleteWorkspaceBodySchema = z.object({
+    workspaceId: z.string().uuid("workspaceId must be a valid UUID.").optional(),
+    reason: z.string().trim().min(1, "reason is required.").max(300, "reason is too long."),
+    confirmText: z.literal("DELETE_WORKSPACE", {
+        errorMap: () => ({ message: "confirmText must be exactly DELETE_WORKSPACE." }),
+    }),
+});

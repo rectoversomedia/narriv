@@ -187,3 +187,89 @@ export async function deleteWorkspaceMember(req, res) {
         return internalError(res);
     }
 }
+
+export async function deleteWorkspace(req, res) {
+    try {
+        const { workspaceId, reason } = req.body;
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
+        if (!scopedWorkspaceId) {
+            return forbidden(res, "Workspace access denied", "WORKSPACE_ACCESS_DENIED");
+        }
+
+        const counts = await prisma.$transaction([
+            prisma.source.count({ where: { workspaceId: scopedWorkspaceId } }),
+            prisma.ingestionJob.count({ where: { workspaceId: scopedWorkspaceId } }),
+            prisma.rawDocument.count({ where: { workspaceId: scopedWorkspaceId } }),
+            prisma.signal.count({ where: { workspaceId: scopedWorkspaceId } }),
+            prisma.alert.count({ where: { workspaceId: scopedWorkspaceId } }),
+            prisma.narrativeCluster.count({ where: { workspaceId: scopedWorkspaceId } }),
+            prisma.report.count({ where: { workspaceId: scopedWorkspaceId } }),
+            prisma.actionPlan.count({ where: { workspaceId: scopedWorkspaceId } }),
+            prisma.generatedAsset.count({ where: { workspaceId: scopedWorkspaceId } }),
+            prisma.aIVisibilityResult.count({ where: { workspaceId: scopedWorkspaceId } }),
+            prisma.promptTestRun.count({ where: { workspaceId: scopedWorkspaceId } }),
+            prisma.aIFeedback.count({ where: { workspaceId: scopedWorkspaceId } }),
+        ]);
+
+        const hasTenantData = counts.some((count) => count > 0);
+        if (hasTenantData) {
+            await prisma.auditLog.create({
+                data: {
+                    userId: req.user.id,
+                    event: "workspace_delete_restricted",
+                    metadata: {
+                        workspaceId: scopedWorkspaceId,
+                        reason,
+                        dataCounts: {
+                            sources: counts[0],
+                            ingestionJobs: counts[1],
+                            rawDocuments: counts[2],
+                            signals: counts[3],
+                            alerts: counts[4],
+                            narrativeClusters: counts[5],
+                            reports: counts[6],
+                            actionPlans: counts[7],
+                            generatedAssets: counts[8],
+                            visibilityResults: counts[9],
+                            promptTestRuns: counts[10],
+                            aiFeedback: counts[11],
+                        }
+                    }
+                }
+            });
+
+            return res.status(409).json({
+                error: "Workspace deletion is restricted because tenant data still exists.",
+                code: "WORKSPACE_DELETE_RESTRICTED",
+                details: {
+                    workspaceId: scopedWorkspaceId,
+                    rule: "restrict_delete",
+                }
+            });
+        }
+
+        await prisma.$transaction([
+            prisma.workspaceSettings.deleteMany({ where: { workspaceId: scopedWorkspaceId } }),
+            prisma.workspaceNotificationSettings.deleteMany({ where: { workspaceId: scopedWorkspaceId } }),
+            prisma.workspaceMember.deleteMany({ where: { workspaceId: scopedWorkspaceId } }),
+            prisma.workspace.delete({ where: { id: scopedWorkspaceId } }),
+        ]);
+
+        await prisma.auditLog.create({
+            data: {
+                userId: req.user.id,
+                event: "workspace_deleted",
+                metadata: {
+                    workspaceId: scopedWorkspaceId,
+                    reason,
+                    strategy: "restrict_delete",
+                }
+            }
+        });
+
+        return res.json({ success: true, workspaceId: scopedWorkspaceId });
+    } catch (error) {
+        console.error("Error deleting workspace:", error);
+        return internalError(res);
+    }
+}

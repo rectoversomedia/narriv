@@ -3,6 +3,7 @@ import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
 import {
     createWorkspaceMember,
+    deleteWorkspace,
     deleteWorkspaceMember,
     getWorkspaceSettings,
     listWorkspaceMembers,
@@ -10,6 +11,7 @@ import {
 } from "./workspace-settings.controller.js";
 import {
     createWorkspaceMemberBodySchema,
+    deleteWorkspaceBodySchema,
     deleteWorkspaceMemberParamsSchema,
     updateWorkspaceSettingsBodySchema,
     workspaceMembersQuerySchema,
@@ -27,6 +29,11 @@ router.delete(
     "/members/:id",
     validateRequest({ params: deleteWorkspaceMemberParamsSchema, query: workspaceMembersQuerySchema }),
     deleteWorkspaceMember
+);
+router.delete(
+    "/",
+    validateRequest({ body: deleteWorkspaceBodySchema }),
+    deleteWorkspace
 );
 
 export default router;
