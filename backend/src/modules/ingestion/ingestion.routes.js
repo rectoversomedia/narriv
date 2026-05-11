@@ -1,8 +1,12 @@
 import express from "express";
-import { triggerIngestion, getIngestionStatus } from "./ingestion.controller.js";
+import { triggerIngestion, getIngestionStatus, cancelIngestion } from "./ingestion.controller.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
-import { triggerIngestionParamsSchema } from "./ingestion.schema.js";
+import {
+    cancelIngestionBodySchema,
+    cancelIngestionParamsSchema,
+    triggerIngestionParamsSchema
+} from "./ingestion.schema.js";
 
 const router = express.Router();
 
@@ -13,5 +17,11 @@ router.post(
     triggerIngestion
 );
 router.get("/status/:jobId", verifyToken, getIngestionStatus);
+router.post(
+    "/cancel/:jobId",
+    verifyToken,
+    validateRequest({ params: cancelIngestionParamsSchema, body: cancelIngestionBodySchema }),
+    cancelIngestion
+);
 
 export default router;

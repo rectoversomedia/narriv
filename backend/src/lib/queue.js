@@ -86,6 +86,7 @@ export const ingestionQueue = new Queue("ingestion", {
             type: "exponential",
             delay: Number(process.env.INGESTION_BACKOFF_MS || 5000),
         },
+        timeout: Number(process.env.INGESTION_JOB_TIMEOUT_MS || 300000),
         removeOnComplete: true,
         removeOnFail: false,
     },
@@ -123,6 +124,27 @@ export const scheduleAlertEscalation = async () => {
         console.log("[QUEUE] Scheduled recurring alert escalation job (Every 10 minutes).");
     } catch (error) {
         console.error("[QUEUE] Failed to schedule alert escalation:", error.message);
+    }
+};
+
+export const cancelIngestionQueueJob = async (ingestionJobId) => {
+    try {
+        const queueJobId = `ingest_${ingestionJobId}`;
+        const job = await ingestionQueue.getJob(queueJobId);
+        if (!job) {
+            return { removed: false, reason: "job_not_found_in_queue" };
+        }
+
+        const state = await job.getState();
+        if (state === "active") {
+            return { removed: false, reason: "job_active_cannot_remove" };
+        }
+
+        await job.remove();
+        return { removed: true, reason: "job_removed_from_queue" };
+    } catch (error) {
+        console.error(`[QUEUE] Failed to cancel ingestion job ${ingestionJobId}:`, error.message);
+        return { removed: false, reason: error.message || "cancel_failed" };
     }
 };
 

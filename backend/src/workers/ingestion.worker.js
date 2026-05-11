@@ -4,6 +4,23 @@ import prisma from "../prisma.js";
 import { runActorAndFetchDataset } from "../modules/apify/apify.service.js";
 import { addAnalysisJob } from "../lib/queue.js";
 
+class IngestionCancelledError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = "IngestionCancelledError";
+    }
+}
+
+async function assertNotCancelled(ingestionJobId) {
+    const row = await prisma.ingestionJob.findUnique({
+        where: { id: ingestionJobId },
+        select: { status: true, errorMessage: true }
+    });
+    if (row?.status === "cancelled") {
+        throw new IngestionCancelledError(row.errorMessage || "Cancelled by user");
+    }
+}
+
 function logStructured(level, event, payload = {}) {
     const entry = {
         level,
@@ -36,6 +53,7 @@ const ingestionWorker = new Worker(
             maxAttempts,
         });
 
+        await assertNotCancelled(jobId);
         await prisma.ingestionJob.update({
             where: { id: jobId },
             data: { status: "running" },
@@ -50,6 +68,7 @@ const ingestionWorker = new Worker(
         }
 
         try {
+            await assertNotCancelled(jobId);
             let actorConfigs = [];
 
             // Map multiple actors and specific configs based on source type chosen in frontend
@@ -191,6 +210,7 @@ const ingestionWorker = new Worker(
             let allDatasets = [];
 
             for (const config of actorConfigs) {
+                await assertNotCancelled(jobId);
                 logStructured("info", "ingestion_actor_started", {
                     queueJobId: job.id,
                     ingestionJobId: jobId,
@@ -243,6 +263,7 @@ const ingestionWorker = new Worker(
             }
 
             for (const item of flatItems) {
+                await assertNotCancelled(jobId);
                 const content = item.text || item.description || item.snippet || item.title || "";
                 if (!content) continue;
 
@@ -312,6 +333,17 @@ const ingestionWorker = new Worker(
             return { processedCount };
 
         } catch (backgroundError) {
+            if (backgroundError instanceof IngestionCancelledError) {
+                logStructured("warn", "ingestion_job_cancelled", {
+                    queueJobId: job.id,
+                    ingestionJobId: jobId,
+                    sourceId,
+                    attemptNumber,
+                    reason: backgroundError.message,
+                });
+                return { processedCount: 0, cancelled: true };
+            }
+
             const willRetry = attemptNumber < maxAttempts;
             logStructured(willRetry ? "warn" : "error", "ingestion_job_failed", {
                 queueJobId: job.id,
@@ -349,12 +381,44 @@ ingestionWorker.on("completed", (job, returnvalue) => {
     });
 });
 
-ingestionWorker.on("failed", (job, err) => {
+ingestionWorker.on("failed", async (job, err) => {
     logStructured("error", "ingestion_worker_failed_event", {
         queueJobId: job?.id,
+        ingestionJobId: job?.data?.jobId,
         attemptsMade: job?.attemptsMade,
         error: err.message,
     });
+
+    try {
+        const ingestionJobId = job?.data?.jobId;
+        if (!ingestionJobId) return;
+
+        const existing = await prisma.ingestionJob.findUnique({
+            where: { id: ingestionJobId },
+            select: { status: true }
+        });
+        if (!existing || existing.status === "cancelled" || existing.status === "completed") return;
+
+        const normalizedReason = String(err?.message || "Ingestion failed");
+        const timeoutReason = normalizedReason.toLowerCase().includes("timed out")
+            ? `Timed out: ${normalizedReason}`
+            : normalizedReason;
+
+        await prisma.ingestionJob.update({
+            where: { id: ingestionJobId },
+            data: {
+                status: "failed",
+                errorMessage: timeoutReason,
+                finishedAt: new Date(),
+            }
+        });
+    } catch (persistError) {
+        logStructured("error", "ingestion_failure_persist_error", {
+            queueJobId: job?.id,
+            ingestionJobId: job?.data?.jobId,
+            error: persistError.message,
+        });
+    }
 });
 
 export default ingestionWorker;
