@@ -39,17 +39,17 @@ export function Topbar() {
         <div className="md:hidden">
           <Image src={logoSrc} alt="Narriv" width={92} height={28} priority />
         </div>
-        <button onClick={toggleSidebar} className="theme-border theme-hover theme-muted hidden h-11 w-11 items-center justify-center rounded-lg border hover:text-[#465FFF] md:flex" type="button" aria-label="Toggle sidebar">
+        <button onClick={toggleSidebar} className="theme-border theme-hover theme-muted hidden h-11 w-11 items-center justify-center rounded-lg border hover:text-[#465FFF] md:flex" type="button" aria-label={t("toggleSidebar")}>
           <Menu size={18} />
         </button>
       </div>
 
       <div className="flex items-center gap-3">
-        <button onClick={toggleTheme} className="theme-border theme-hover theme-muted inline-flex h-10 w-[92px] items-center justify-center gap-2 rounded-lg border px-3 text-xs font-semibold hover:text-[#465FFF]" type="button" aria-label="Toggle theme">
+        <button onClick={toggleTheme} className="theme-border theme-hover theme-muted inline-flex h-10 w-[92px] items-center justify-center gap-2 rounded-lg border px-3 text-xs font-semibold hover:text-[#465FFF]" type="button" aria-label={t("toggleTheme")}>
           {theme === "dark" ? <Moon size={15} className="shrink-0" /> : <Sun size={15} className="shrink-0" />}
           <span className="hidden min-w-10 text-center sm:inline">{theme === "dark" ? t("dark") : t("light")}</span>
         </button>
-        <button onClick={handleLanguageToggle} className="theme-border theme-hover theme-muted inline-flex h-10 w-[74px] items-center justify-center gap-2 rounded-lg border px-3 text-xs font-semibold hover:text-[#465FFF]" type="button" aria-label="Toggle language">
+        <button onClick={handleLanguageToggle} className="theme-border theme-hover theme-muted inline-flex h-10 w-[74px] items-center justify-center gap-2 rounded-lg border px-3 text-xs font-semibold hover:text-[#465FFF]" type="button" aria-label={t("toggleLanguage")}>
           <Languages size={15} />
           <span className="min-w-5 text-center">{t("language")}</span>
         </button>
@@ -62,7 +62,7 @@ export function Topbar() {
             <p className="theme-muted mt-1 text-xs">{user?.workspace ?? t("noWorkspace")}</p>
           </div>
         </div>
-        <button onClick={handleLogout} className="theme-hover theme-muted rounded-xl p-2 hover:text-[#465FFF]" title={t("logout")} type="button">
+        <button onClick={handleLogout} className="theme-hover theme-muted rounded-xl p-2 hover:text-[#465FFF]" title={t("logout")} type="button" aria-label={t("logout")}>
           <LogOut size={18} />
         </button>
       </div>

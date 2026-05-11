@@ -1,12 +1,14 @@
 import { AlertCircle, FileSearch, Inbox } from "lucide-react";
+import type { ReactNode } from "react";
 
 interface EmptyStateProps {
   title: string;
   description: string;
   icon?: "inbox" | "search" | "alert";
+  action?: ReactNode;
 }
 
-export function EmptyState({ title, description, icon = "inbox" }: EmptyStateProps) {
+export function EmptyState({ title, description, icon = "inbox", action }: EmptyStateProps) {
   return (
     <div className="flex min-h-[320px] flex-col items-center justify-center rounded-2xl border border-dashed border-(--border) bg-(--card)/50 p-8 text-center">
       <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#465FFF]/10 text-[#465FFF]">
@@ -18,6 +20,7 @@ export function EmptyState({ title, description, icon = "inbox" }: EmptyStatePro
       <p className="theme-muted mt-2 max-w-[400px] text-sm leading-relaxed">
         {description}
       </p>
+      {action ? <div className="mt-5">{action}</div> : null}
     </div>
   );
 }

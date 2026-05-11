@@ -24,6 +24,7 @@ export default function ActionPlansPage() {
 
   const [data, setData] = useState<ActionPlanData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     async function fetchData() {
@@ -33,7 +34,7 @@ export default function ActionPlansPage() {
       setIsLoading(false);
     }
     fetchData();
-  }, []);
+  }, [reloadKey]);
 
   const displayOutputLabel = (label: string) => {
     if (label === "Primary action") return t("outputs.primaryAction");
@@ -116,6 +117,11 @@ export default function ActionPlansPage() {
           icon="search"
           title={t("emptyTitle")}
           description={t("emptyDesc")}
+          action={(
+            <button type="button" onClick={() => setReloadKey((value) => value + 1)} className="rounded-lg bg-[#465FFF] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3547D8]">
+              {t("retry")}
+            </button>
+          )}
         />
       ) : (
         <>

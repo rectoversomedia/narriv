@@ -38,8 +38,9 @@ export default function VisibilityPage() {
 
   const [data, setData] = useState<VisibilityData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isGeneratingAction, setIsGeneratingAction] = useState(false);
+  const [generatingActionSource, setGeneratingActionSource] = useState<"header" | "gap" | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     async function fetchData() {
@@ -49,13 +50,13 @@ export default function VisibilityPage() {
       setIsLoading(false);
     }
     fetchData();
-  }, []);
+  }, [reloadKey]);
 
-  const handleCreateAction = async () => {
+  const handleCreateAction = async (source: "header" | "gap") => {
     setActionError(null);
-    setIsGeneratingAction(true);
+    setGeneratingActionSource(source);
     const created = await createActionPlan({ strategyType: "content_strategy" });
-    setIsGeneratingAction(false);
+    setGeneratingActionSource(null);
 
     if (!created) {
       setActionError(t("createActionFailed"));
@@ -73,11 +74,11 @@ export default function VisibilityPage() {
         action={
           <button
             type="button"
-            onClick={() => void handleCreateAction()}
-            disabled={isGeneratingAction}
+            onClick={() => void handleCreateAction("header")}
+            disabled={generatingActionSource === "header"}
             className="hidden h-11 items-center justify-center rounded-lg bg-[#465FFF] px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90 lg:inline-flex"
           >
-            {isGeneratingAction ? t("creatingAction") : t("generateAction")}
+            {generatingActionSource === "header" ? t("creatingAction") : t("generateAction")}
           </button>
         }
       />
@@ -99,6 +100,11 @@ export default function VisibilityPage() {
           icon="search"
           title={t("emptyTitle")}
           description={t("emptyDesc")}
+          action={(
+            <button type="button" onClick={() => setReloadKey((value) => value + 1)} className="rounded-lg bg-[#465FFF] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3547D8]">
+              {t("retry")}
+            </button>
+          )}
         />
       ) : (
         <>
@@ -156,11 +162,11 @@ export default function VisibilityPage() {
                     <button
                       key={i}
                       type="button"
-                      onClick={() => void handleCreateAction()}
-                      disabled={isGeneratingAction}
+                      onClick={() => void handleCreateAction("gap")}
+                      disabled={generatingActionSource === "gap"}
                       className="group flex min-h-[64px] items-center justify-center rounded-xl bg-linear-to-br from-[#465FFF] to-[#3B4DCD] px-6 text-[14px] font-bold tracking-wide text-white shadow-[0_0_20px_rgba(70,95,255,0.2)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(70,95,255,0.4)]"
                     >
-                      {isGeneratingAction ? t("creatingAction") : t("visibilityGapAction")}
+                      {generatingActionSource === "gap" ? t("creatingAction") : t("visibilityGapAction")}
                     </button>
                   ) : (
                     <InnerPanel key={i} className="grid min-h-[64px] grid-cols-[1fr_auto] items-center gap-4 px-5 py-4 transition-colors">

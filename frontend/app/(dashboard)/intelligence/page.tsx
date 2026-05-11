@@ -49,6 +49,7 @@ export default function IntelligencePage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isGeneratingAction, setIsGeneratingAction] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     async function fetchData() {
@@ -61,7 +62,7 @@ export default function IntelligencePage() {
     }
 
     fetchData();
-  }, []);
+  }, [reloadKey]);
 
   const selected = useMemo(() => {
     if (!selectedId) return items[0] ?? null;
@@ -114,7 +115,16 @@ export default function IntelligencePage() {
           <Skeleton className="h-[600px] w-full" />
         </div>
       ) : items.length === 0 || !selected ? (
-        <EmptyState icon="search" title={t("title")} description={t("subtitle")} />
+        <EmptyState
+          icon="search"
+          title={t("title")}
+          description={t("subtitle")}
+          action={(
+            <button type="button" onClick={() => setReloadKey((value) => value + 1)} className="rounded-lg bg-[#465FFF] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3547D8]">
+              {t("retry")}
+            </button>
+          )}
+        />
       ) : (
         <div className="grid gap-6 xl:grid-cols-[1fr_382px]">
           <DesignFrame className="flex min-h-[600px] flex-col gap-5">
@@ -131,7 +141,9 @@ export default function IntelligencePage() {
                     className={`rounded-xl border p-4 text-left transition-colors ${active ? "border-[#465FFF66] bg-[#465FFF12]" : "border-[var(--border)]"}`}
                   >
                     <p className="theme-text text-[15px] font-semibold">{item.title}</p>
-                    <p className="theme-muted mt-1 text-[12px]">{item.signalCount} evidence · {item.sourceCount} sources · {item.velocity}</p>
+                    <p className="theme-muted mt-1 text-[12px]">
+                      {t("evidenceLine", { signals: item.signalCount, sources: item.sourceCount, velocity: item.velocity })}
+                    </p>
                   </button>
                 );
               })}

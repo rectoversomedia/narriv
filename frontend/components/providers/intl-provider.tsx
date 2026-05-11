@@ -16,7 +16,7 @@ export function IntlProvider({ children }: { children: ReactNode }) {
   }, [language]);
 
   return (
-    <NextIntlClientProvider locale={language} messages={messages[language]}>
+    <NextIntlClientProvider locale={language} messages={messages[language]} timeZone="UTC">
       {children}
     </NextIntlClientProvider>
   );

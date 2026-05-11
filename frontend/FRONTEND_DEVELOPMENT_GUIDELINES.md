@@ -4,9 +4,9 @@ This document is the working handoff guide for developing the Narriv frontend in
 
 ## Current Goal
 
-Build a Vercel-deployable frontend preview for stakeholder progress review using dummy data first.
+Maintain a production/live-only frontend for stakeholder review and deployment. Implemented pages must show live API data, loading states, empty states, or clear errors without mock/demo fallback.
 
-The goal is not backend completeness. The goal is a polished, navigable, responsive product demo that matches the completed design reference and can later be connected to real API/auth with minimal rewiring.
+The goal is now an operational response platform, not a scraping or monitoring dashboard. UI should make the flow clear for non-technical users: data is synced automatically, risks are prioritized, recommended actions are generated, owners respond, and feedback improves future recommendations.
 
 ## Primary References
 
@@ -64,33 +64,31 @@ Important existing files:
 
 Important current gaps:
 
-- UI still uses old zinc/red-orange direction in multiple places.
-- Several dashboard pages are placeholders.
-- Dashboard and alerts currently attempt backend fetches.
-- Auth currently calls backend endpoints.
-- Root layout still uses Geist; design target is `Outfit`.
-- Existing sidebar labels need stakeholder-v2 naming.
+- Full browser QA is still needed against the live backend in light/dark mode and mobile/desktop sizes.
+- Dedicated backend settings/team workflow endpoints are still pending.
+- Notification, assignment, deadline, and escalation workflows are roadmap items and should not be faked in UI.
+- Existing `/workspace/activity`, `/workspace/cases`, and `/workspace/integrations` routes were removed; do not re-add them unless product scope changes.
 
 ## Development Strategy
 
-Implement the frontend in two modes:
+Implement the frontend as production/live-only:
 
-- Demo mode now: dummy data, localStorage auth, Vercel-safe, no backend dependency.
-- API-ready mode later: API client and auth abstractions remain in place for real backend connection.
-
-Do not delete API/auth scaffolding unless it directly blocks the demo. Instead, isolate dummy behavior behind clear modules.
+- Use backend API helpers in `lib/api-service.ts` and `lib/apiClient.ts`.
+- Do not introduce dummy data, mock auth, `demo-token`, or local-only fallback sessions.
+- If an endpoint is unavailable, show an empty or unavailable state with plain user-facing copy.
+- Keep light mode as the safe visual baseline while preserving dark theme support.
+- Keep sidebar/topbar aligned with the established shell; mobile navigation uses bottom nav plus a `More` drawer.
 
 Recommended structure:
 
-- `lib/mock-data.ts`: all dummy dashboard/domain data.
-- `lib/demo-auth.ts`: localStorage demo auth helpers if needed.
+- `lib/api-service.ts`: typed production API helpers for dashboard, sources, signals, alerts, visibility, action plans, reports, narratives, and action creation.
 - `lib/routes.ts`: route/nav definitions if shared by sidebar/mobile nav.
-- `lib/apiClient.ts`: keep as future backend adapter; do not make UI depend on live backend for Vercel preview.
-- `store/useAuthStore.ts`: keep Zustand persist, but make it work fully without backend.
+- `lib/apiClient.ts`: bearer-token API client with refresh handling.
+- `store/useAuthStore.ts`: persisted authenticated session state using backend auth responses.
 - `components/ui/`: reusable primitive components if needed: `Card`, `Button`, `Badge`, `MetricCard`, `PageHeader`, `ShellCard`.
 - `components/dashboard/`: product-specific dashboard components.
 
-Keep changes pragmatic and shippable. Avoid overbuilding a full design system if a few reusable components cover the demo.
+Keep changes pragmatic and shippable. Avoid overbuilding a full design system if a few reusable components cover the production app.
 
 ## Visual Direction
 
@@ -143,6 +141,17 @@ Use stakeholder-v2 naming in navigation:
 - Learning Loop: can be a section on alerts/action pages first, or a dedicated future route.
 - Settings: `/workspace/settings`
 
+Current active workspace routes are `/workspace/sources` and `/workspace/settings`. Workspace Activity, Cases, and Integrations are intentionally removed until backend/product scope reintroduces them.
+
+Latest stakeholder positioning:
+
+- Elevate AI Visibility as a hero feature, not a secondary report.
+- Prefer `Auto Sync`, `Live Monitoring`, or `Scheduled Collection` over `Collect Data` for ingestion language.
+- Prefer `Predictive Alerts`, `Smart Alerts`, or `Risk Alerts` over generic `Early Warnings`.
+- Use simple Topic Map copy, e.g. "See which issues are growing and how they connect." Indonesian: "Melihat isu mana yang mulai membesar dan saling terhubung."
+- Plan notification surfaces for WhatsApp to PIC, email, and optional Slack/Telegram.
+- Plan assignment workflows with PIC, team, deadline, and escalation level.
+
 If time is limited, prioritize routes in this order:
 
 1. `/login`
@@ -156,36 +165,35 @@ If time is limited, prioritize routes in this order:
 9. `/workspace/sources`
 10. `/workspace/settings`
 
-## Auth Plan For Demo
+## Auth Plan
 
-Use localStorage auth first.
+Use backend auth only.
 
 Requirements:
 
-- Login works without backend.
-- Signup/request-access can create a demo session or redirect to login with clear copy.
-- Logout clears demo session.
+- Login calls `POST /auth/login` and stores the returned user/session.
+- Signup calls `POST /auth/register` and stores the returned user/session.
+- Logout calls `POST /auth/logout` and clears local session state.
 - Dashboard routes remain protected by localStorage/Zustand state.
-- Do not require `NEXT_PUBLIC_API_URL` for the Vercel preview.
+- Refresh behavior uses `POST /auth/refresh` where available.
 
-Recommended demo credentials behavior:
+Rules:
 
-- Accept any valid email and non-empty password on login.
-- Store a fake token such as `demo-token`.
-- Store user object from email, e.g. `{ name: "Demo User", email }`.
-- Provide `Continue with Google` button that creates a demo Google Workspace-style session.
-- Clearly mark this as demo auth in code comments and constants, not in stakeholder-facing UI unless useful.
+- Do not create fallback sessions if the backend is unavailable.
+- Do not accept arbitrary demo credentials.
+- Do not store or special-case fake tokens such as `demo-token`.
+- Google SSO UI must not create a fake session unless a real backend SSO contract exists.
 
-Keep `apiClient.ts` and auth store API-ready:
+Keep `apiClient.ts` and auth store production-ready:
 
-- Future real auth can replace demo login logic without rewriting layouts.
 - Keep token/user shape simple.
+- Keep protected-route behavior explicit and easy to debug.
 
-## Dummy Data Plan
+## Production Data Plan
 
-All dashboard pages should render from local dummy data first.
+All dashboard pages should render from live API data or clear empty/unavailable states.
 
-Create one central dummy data module, preferably `lib/mock-data.ts`, containing typed data for:
+API helpers should cover:
 
 - Command center metrics: AI Visibility Score, Narratives Detected, Predictive Alerts, Actions Accepted.
 - Narrative clusters: title, confidence, sources, sentiment, velocity, evidence count.
@@ -195,26 +203,21 @@ Create one central dummy data module, preferably `lib/mock-data.ts`, containing 
 - Signals: source, sentiment, excerpt, confidence, narrative link, recommendation.
 - Reports: report readiness, sections, distribution status.
 - Data sources: source type, sync health, coverage, latency.
-- Settings: profile/demo workspace preferences.
+- Settings: profile/workspace preferences from current session until dedicated settings endpoints exist.
 
 Keep types close to data in the same file unless they become widely reused. Do not introduce a large domain model prematurely.
 
-## API Placeholder Plan
+## API Integration Plan
 
-For now, do not block UI on backend availability.
+Do not hide backend unavailability with mock data.
 
 Recommended approach:
 
-- Pages import dummy data directly or through small functions like `getCommandCenterMock()`.
-- Keep `lib/apiClient.ts` as a future real API adapter.
-- If adding a service layer, name it explicitly as demo-safe, e.g. `lib/demo-api.ts`.
-- Avoid route handlers unless needed for Vercel demo behavior. Static client data is enough for now.
-
-When backend integration starts later:
-
-- Replace dummy functions with API calls at module boundaries.
+- Pages call typed helpers in `lib/api-service.ts`.
+- Keep `lib/apiClient.ts` responsible for auth headers, refresh, and consistent request behavior.
+- Avoid frontend route handlers unless the UI truly needs a frontend-owned endpoint.
 - Keep component props stable where possible.
-- Preserve loading/error/empty states already designed for demo.
+- Preserve loading/error/empty states for every live data surface.
 
 ## Page Implementation Targets
 
@@ -230,7 +233,7 @@ Implement:
 - Logo asset usage where available.
 - `Continue with Google` button.
 - Workspace/security copy.
-- LocalStorage demo login.
+- Backend login/signup with no demo fallback.
 
 ### Command Center `/`
 
@@ -285,7 +288,7 @@ Implement:
 - Recommendation Outputs matrix.
 - Generated Execution Plan.
 - Accept/Edit/Reject feedback controls.
-- Demo interactions can update local component state only.
+- Feedback controls call the backend feedback endpoint and update page state from the response.
 
 ### Predictive Alerts `/alerts`
 
@@ -302,7 +305,7 @@ Implement:
 - Explainable drivers.
 - Adaptive Model Scoring.
 - Learning Loop Workflow.
-- Triage CTA with local state.
+- Triage/status CTA calls backend alert status or action creation endpoints.
 
 ### Narrative Signals `/signals`
 
@@ -355,7 +358,7 @@ This project uses Next.js `16.2.4`, so do not rely on outdated assumptions.
 Rules:
 
 - Read `AGENTS.md` before code changes.
-- Prefer Server Components by default, but dashboard demo pages can be client components where localStorage/interactivity is needed.
+- Prefer Server Components by default, but dashboard pages can be client components where auth state, filters, modals, or live interactions require client state.
 - Do not make async Client Components.
 - If using `useSearchParams`, wrap with `Suspense` where required.
 - Use `next/font/google` for `Outfit`.
@@ -367,16 +370,16 @@ React guidance:
 
 - Do not add `useMemo`/`useCallback` by default.
 - Use plain derived values unless there is a measured issue or existing code pattern.
-- Keep local demo interactions simple.
+- Keep client interactions simple and tied to live API contracts.
 
 ## Vercel Deployment Requirements
 
-The preview must build without backend services.
+The frontend must build without connecting to backend services, but runtime stakeholder review should use a real API through `NEXT_PUBLIC_API_URL`.
 
 Before deployment:
 
-- Remove hard dependency on `NEXT_PUBLIC_API_URL` for demo pages.
-- Ensure login works on Vercel through localStorage auth.
+- Document `NEXT_PUBLIC_API_URL` and fail gracefully at runtime if it is missing.
+- Ensure login works on Vercel through backend auth and persisted frontend session state.
 - Ensure `npm run build` passes.
 - Ensure no `.env` secrets are required.
 - Keep `.env.example` if environment variables are documented.
@@ -388,25 +391,21 @@ Recommended Vercel settings:
 - Install command: default `npm install`
 - Output: Next.js default
 
-No backend environment variables should be required for the first stakeholder demo.
+No backend secrets should be required in the frontend build.
 
 ## Implementation Order
 
 Recommended sequence for the next coding session:
 
-1. Update global theme/font tokens to `Outfit`, brand blue, and light/dark surfaces.
-2. Add central mock data module.
-3. Convert auth to demo localStorage auth with Google demo button.
-4. Rebuild dashboard shell: sidebar, topbar, responsive behavior.
-5. Implement Command Center v2 from dummy data.
-6. Implement GEO / AI Visibility page.
-7. Implement Action Engine page.
-8. Implement Predictive Alerts + Learning Loop page.
-9. Update remaining placeholder pages enough for navigation completeness.
-10. Run lint/build and fix blockers.
-11. Deploy to Vercel.
+1. Keep production/live-only API behavior intact.
+2. Run browser QA across all active routes in light and dark mode.
+3. Review copy for operational-response positioning and non-technical language.
+4. Elevate AI Visibility on dashboard and action/report CTAs where product hierarchy allows.
+5. Add notification and assignment UI only after backend contracts exist.
+6. Run lint/build and fix blockers.
+7. Deploy to Vercel/staging with `NEXT_PUBLIC_API_URL` configured.
 
-If time is constrained, ship steps `1-8` first and keep secondary pages simple but polished.
+If time is constrained, prioritize live route stability, AI Visibility, alerts/action creation, and clear empty/error states.
 
 ## Verification Checklist
 
@@ -414,21 +413,20 @@ Before saying the frontend is ready for stakeholder preview:
 
 - `npm run lint` passes.
 - `npm run build` passes.
-- Login works with demo credentials.
-- Logout clears session.
+- Login works against backend auth.
+- Logout calls backend and clears session.
 - Refreshing a protected page preserves session through localStorage.
-- App works without backend running.
+- App shows clear errors or empty states when backend data is unavailable.
 - Command Center, GEO, Action Engine, and Predictive Alerts pages are navigable.
 - Mobile layout has no horizontal overflow at `390px`.
 - UI uses blue primary brand, not red/orange primary.
 - Text and cards align with `NARRIV_UI_DESIGN_GUIDELINES.md`.
-- Vercel deployment does not require secret env vars.
+- Vercel deployment uses public frontend env vars only.
 
 ## Do Not Do Yet
 
-- Do not integrate real backend auth yet.
-- Do not add database writes.
-- Do not add paid services.
+- Do not reintroduce demo auth, mock data, or fake backend fallbacks.
+- Do not add paid services directly from the frontend.
 - Do not add complex RBAC.
 - Do not overbuild charting if simple cards/tables communicate the progress better.
 - Do not refactor unrelated backend code.
@@ -436,15 +434,13 @@ Before saying the frontend is ready for stakeholder preview:
 
 ## Current Known Technical Debt
 
-- Existing UI uses red/orange and zinc palette from earlier direction.
-- Existing pages use live `fetch()` calls that will fail without backend.
-- Existing auth pages call backend endpoints.
-- Existing root font is Geist instead of Outfit.
-- Existing placeholder pages need real stakeholder-v2 content.
-- Existing route names are mostly usable, but labels must be updated to stakeholder-v2 naming.
+- Full end-to-end QA still depends on backend env readiness: OpenAI, ingestion provider, report storage, and database migration baseline.
+- Dedicated workspace settings endpoint is still pending.
+- Notification, assignment, deadline, and escalation contracts are not implemented yet.
+- Copy should continue moving away from monitoring/scraping language toward operational response language.
 
 ## Handoff Note For Future Model
 
-Start by reading this file, then read `../NARRIV_UI_DESIGN_GUIDELINES.md`. The design phase is complete; the next phase is implementation in `frontend/` for a Vercel stakeholder demo using dummy data and localStorage auth.
+Start by reading this file, then read `../NARRIV_UI_DESIGN_GUIDELINES.md`. The current phase is production/live-only stabilization, copy refinement, and backend-aligned workflow expansion.
 
 Do small, verifiable steps. After each major page, run at least lint if practical, and run full build before deployment handoff.

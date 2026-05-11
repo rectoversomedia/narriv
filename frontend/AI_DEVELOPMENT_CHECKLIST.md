@@ -3,7 +3,7 @@
 This checklist is generated from the Narriv knowledge graph and Frontend Development Guidelines. As an AI Agent working on this repository, you should check off these items (`- [x]`) when you have completed them.
 
 ## About Narriv (Application Overview)
-Narriv is a **Narrative Intelligence & GEO (Generative Engine Optimization) Platform** designed to monitor, analyze, and act upon omnichannel data. It tracks brand presence and narratives across news, social media, videos, and podcasts. 
+Narriv is a **Narrative Intelligence, AI Visibility, and Operational Response Platform** designed to sync external signals, prioritize emerging risks, generate response plans, assign owners, and learn from user feedback. It tracks brand presence and narratives across news, social media, videos, podcasts, and AI answer engines.
 
 Core capabilities include:
 1. **Omnichannel Ingestion:** Pulling multi-source data into a core data model.
@@ -13,17 +13,32 @@ Core capabilities include:
 5. **Action Engine:** Generating structured, actionable recommendations.
 6. **AI Learning Loop:** Continuously improving the system based on user feedback.
 
+Current positioning rules:
+- AI Visibility is a hero feature and should appear as a first-class decision surface, not only a report.
+- Use `Auto Sync`, `Live Monitoring`, or `Scheduled Collection` instead of `Collect Data`.
+- Use `Predictive Alerts`, `Smart Alerts`, or `Risk Alerts` instead of generic `Early Warnings`.
+- Keep Topic Map copy simple: "See which issues are growing and how they connect." Indonesian: "Melihat isu mana yang mulai membesar dan saling terhubung."
+- Future workflow surfaces should support WhatsApp-to-PIC/email notifications, team assignment, deadlines, and escalation levels when backend contracts exist.
+
 ## Current Frontend Development Todo
 
 Use this as the active frontend backlog. Older completed phases below are historical and may mention the earlier mock/demo architecture.
 
 ### Production QA
 - [ ] Run full browser QA with backend running and `NEXT_PUBLIC_API_URL` pointed at the local API.
-- [ ] Test every route in light mode and dark mode: `/`, `/signals`, `/intelligence`, `/alerts`, `/alerts/[id]`, `/visibility`, `/action-plans`, `/reports`, `/workspace/sources`, `/workspace/activity`, `/workspace/cases`, `/workspace/integrations`, and `/workspace/settings`.
+- [ ] Test every active route in light mode and dark mode: `/`, `/signals`, `/intelligence`, `/alerts`, `/alerts/[id]`, `/visibility`, `/action-plans`, `/reports`, `/workspace/sources`, and `/workspace/settings`.
 - [ ] Test responsive layouts at 375px, 768px, 1024px, and desktop widths.
 - [ ] Confirm all production/live-only empty states render correctly when the backend returns no records.
 - [ ] Confirm no mock/demo data appears in production-only pages.
 - [ ] Capture updated screenshots after final UI approval.
+
+### Stakeholder Positioning Updates
+- [x] Review all user-facing copy for operational-response positioning instead of scraping/monitoring-dashboard language.
+- [x] Elevate AI Visibility on dashboard and related CTAs so it reads as a core differentiator.
+- [x] Replace any remaining `Collect Data` copy with `Auto Sync`, `Live Monitoring`, or `Scheduled Collection`.
+- [x] Replace any remaining generic `Early Warnings` copy with `Predictive Alerts`, `Smart Alerts`, or `Risk Alerts`, except where historical checklist items are being referenced.
+- [ ] Add notification settings UI only after backend supports WhatsApp-to-PIC/email/Slack/Telegram configuration.
+- [ ] Add alert/action assignment UI only after backend supports PIC, team, deadline, and escalation-level fields.
 
 ### Feature Flow Testing
 - [ ] Auth: register, login, refresh token behavior, logout, and protected-route redirect.
@@ -35,37 +50,36 @@ Use this as the active frontend backlog. Older completed phases below are histor
 - [ ] AI Visibility: live visibility data, highlighted action CTA, and empty state.
 - [ ] Action Plans: create action, latest action plan reload, execution plan rendering, accept/edit/reject feedback.
 - [ ] Reports: search/filter/pagination, export job creation, export status, and failure state.
-- [ ] Workspace pages: activity, cases, integrations, and settings all display real API/state-derived content.
+- [ ] Workspace pages: sources and settings display real API/state-derived content.
 
 ### UX and Error Handling
-- [ ] Add a consistent toast or inline notification pattern for create/update/delete/export/action errors.
-- [ ] Add user-facing messages for `OPENAI_API_KEY` missing or action generation unavailable.
-- [ ] Add clearer retry controls for failed API fetches where useful.
-- [ ] Add loading states for action creation buttons that are page-specific and do not block unrelated CTAs.
-- [ ] Add disabled/error states for report exports when backend storage is not configured.
-- [ ] Improve Data Sources native create/edit validation messages.
+- [x] Add a consistent toast or inline notification pattern for create/update/delete/export/action errors.
+- [x] Add user-facing messages for `OPENAI_API_KEY` missing or action generation unavailable.
+- [x] Add clearer retry controls for failed API fetches where useful.
+- [x] Add loading states for action creation buttons that are page-specific and do not block unrelated CTAs.
+- [x] Add disabled/error states for report exports when backend storage is not configured.
+- [x] Improve Data Sources native create/edit validation messages.
 
 ### Accessibility and Design QA
 - [ ] Run keyboard navigation QA for sidebar, topbar controls, dropdowns, modals, filters, tables, and action buttons.
-- [ ] Check focus-visible styling on all interactive controls.
+- [x] Check focus-visible styling on all interactive controls.
 - [ ] Verify color contrast for all status badges and muted text in light and dark themes.
-- [ ] Confirm the Signal Review modal traps focus or has acceptable keyboard behavior.
-- [ ] Ensure interactive cards use semantic links/buttons and clear labels.
-- [ ] Audit hardcoded English copy introduced after localization and move remaining strings into `messages/en.json` and `messages/id.json`.
+- [x] Confirm the Signal Review modal traps focus or has acceptable keyboard behavior.
+- [x] Ensure interactive cards use semantic links/buttons and clear labels.
+- [x] Audit hardcoded English copy introduced after localization and move remaining strings into `messages/en.json` and `messages/id.json`.
 
 ### Backend-Dependent Frontend Work
-- [ ] Replace derived Workspace Activity with dedicated `GET /api/workspace/activity` once backend endpoint exists.
-- [ ] Replace derived Workspace Cases with dedicated cases endpoint once backend endpoint exists.
-- [ ] Replace derived Integrations status with `GET /api/workspace/integrations` once backend endpoint exists.
 - [ ] Replace Settings user/session-only page with real workspace settings once `GET/PATCH /api/workspace/settings` exists.
 - [ ] Add UI for workspace members/team access once backend supports it.
 - [ ] Add UI for action generation failure logs or history if backend exposes them.
+- [ ] Add UI for notification channels once backend supports WhatsApp, email, Slack, and Telegram settings.
+- [ ] Add UI for assignment workflow once backend supports PIC, team, deadline, and escalation level.
 
 ### Release Checks
-- [ ] Run `npm run lint` before every handoff.
-- [ ] Run `npm run build` before every handoff.
-- [ ] Validate `messages/en.json` and `messages/id.json` after copy changes.
-- [ ] Verify `.env.example` documents required `NEXT_PUBLIC_API_URL` and production frontend variables.
+- [x] Run `npm run lint` before every handoff.
+- [x] Run `npm run build` before every handoff.
+- [x] Validate `messages/en.json` and `messages/id.json` after copy changes.
+- [x] Verify `.env.example` documents required `NEXT_PUBLIC_API_URL` and production frontend variables.
 - [ ] Confirm Vercel build works without local-only files or mock dependencies.
 
 ## Phase 1: Foundation & Theme

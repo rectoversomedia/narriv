@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Database, Loader2, Pencil, Play, Plus, Save, Search, Trash2, X, XCircle } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { SectionHeader } from "@/components/ui/demo-primitives";
+import { FeedbackBanner, type FeedbackMessage } from "@/components/ui/FeedbackBanner";
 import {
   createSource,
   deleteSource,
@@ -64,6 +65,8 @@ export default function SourcesPage() {
   const [savingSourceId, setSavingSourceId] = useState<string | null>(null);
   const [deletingSourceId, setDeletingSourceId] = useState<string | null>(null);
   const [runningBySource, setRunningBySource] = useState<Record<string, string>>({});
+  const [feedback, setFeedback] = useState<FeedbackMessage | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     getSources().then((res) => {
@@ -107,14 +110,33 @@ export default function SourcesPage() {
 
   const handleCreateSource = async () => {
     const trimmedName = name.trim();
-    if (!trimmedName) return;
+    if (!trimmedName) {
+      setFormError(t("sourceNameRequired"));
+      return;
+    }
+    if (trimmedName.length < 2) {
+      setFormError(t("sourceNameTooShort"));
+      return;
+    }
+    if (trimmedName.length > 80) {
+      setFormError(t("sourceNameTooLong"));
+      return;
+    }
+    if (!sourceTypes.includes(type)) {
+      setFormError(t("sourceTypeInvalid"));
+      return;
+    }
 
+    setFormError(null);
     setIsAdding(true);
     const created = await createSource({ name: trimmedName, type });
     if (created) {
       setSources((current) => [created, ...current]);
       setName("");
       setType("news");
+      setFeedback({ tone: "success", title: t("sourceCreated"), description: t("sourceCreatedDesc") });
+    } else {
+      setFeedback({ tone: "error", title: t("sourceCreateFailed"), description: t("sourceCreateFailedDesc") });
     }
     setIsAdding(false);
   };
@@ -125,8 +147,11 @@ export default function SourcesPage() {
     const started = await runSourceIngestion(source.id);
     if (!started) {
       setRunningBySource((current) => ({ ...current, [source.id]: "FAILED" }));
+      setFeedback({ tone: "error", title: t("syncFailed"), description: t("syncFailedDesc") });
       return;
     }
+
+    setFeedback({ tone: "info", title: t("syncStarted"), description: t("syncStartedDesc") });
 
     window.setTimeout(async () => {
       const status = await getIngestionStatus(started.jobId);
@@ -134,6 +159,11 @@ export default function SourcesPage() {
         ...current,
         [source.id]: status?.status ?? "running",
       }));
+      if (status?.status === "failed") {
+        setFeedback({ tone: "error", title: t("syncFailed"), description: status.errorMessage ?? t("syncFailedDesc") });
+      } else if (status?.status === "completed") {
+        setFeedback({ tone: "success", title: t("syncCompleted"), description: t("syncCompletedDesc") });
+      }
     }, 1200);
   };
 
@@ -159,6 +189,9 @@ export default function SourcesPage() {
     if (updated) {
       setSources((current) => current.map((item) => item.id === source.id ? { ...item, ...updated } : item));
       cancelEditing();
+      setFeedback({ tone: "success", title: t("sourceUpdated"), description: t("sourceUpdatedDesc") });
+    } else {
+      setFeedback({ tone: "error", title: t("sourceUpdateFailed"), description: t("sourceUpdateFailedDesc") });
     }
     setSavingSourceId(null);
   };
@@ -170,6 +203,9 @@ export default function SourcesPage() {
     if (deleted) {
       setSources((current) => current.map((item) => item.id === source.id ? { ...item, ...deleted } : item));
       if (editingSourceId === source.id) cancelEditing();
+      setFeedback({ tone: "success", title: t("sourceDeleted"), description: t("sourceDeletedDesc") });
+    } else {
+      setFeedback({ tone: "error", title: t("sourceDeleteFailed"), description: t("sourceDeleteFailedDesc") });
     }
     setDeletingSourceId(null);
   };
@@ -188,10 +224,12 @@ export default function SourcesPage() {
         description={t("description")}
       />
 
+      <FeedbackBanner message={feedback} />
+
       <div className="grid gap-4 md:grid-cols-3">
         {[
           [t("connectedSources"), String(sources.length), `${activeCount} ${t("active")}`],
-          [t("liveApiRecords"), String(apiBackedCount), "Backend /sources"],
+          [t("liveApiRecords"), String(apiBackedCount), t("sourceEndpoint")],
           [t("runningJobs"), String(normalizedRunningCount), t("ingestionQueue")],
         ].map(([label, value, helper]) => (
           <section key={label} className="theme-card rounded-xl border p-5">
@@ -235,6 +273,7 @@ export default function SourcesPage() {
             {t("addSource")}
           </button>
         </div>
+        {formError ? <p className="mt-3 text-sm font-medium text-[#B42318] dark:text-[#FDA29B]">{formError}</p> : null}
       </section>
 
       <section className="theme-card overflow-hidden rounded-xl border">
@@ -546,7 +585,7 @@ export default function SourcesPage() {
                   disabled={safePage === 1}
                   onClick={() => setPage(1)}
                   className="theme-card theme-hover theme-text inline-flex h-9 w-9 items-center justify-center rounded-md border disabled:pointer-events-none disabled:opacity-50"
-                  aria-label="First page"
+                  aria-label={t("firstPage")}
                 >
                   <ChevronsLeft size={15} />
                 </button>
@@ -555,7 +594,7 @@ export default function SourcesPage() {
                   disabled={safePage === 1}
                   onClick={() => setPage((value) => Math.max(1, value - 1))}
                   className="theme-card theme-hover theme-text inline-flex h-9 w-9 items-center justify-center rounded-md border disabled:pointer-events-none disabled:opacity-50"
-                  aria-label="Previous page"
+                  aria-label={t("previousPage")}
                 >
                   <ChevronLeft size={15} />
                 </button>
@@ -567,7 +606,7 @@ export default function SourcesPage() {
                   disabled={safePage === totalPages}
                   onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
                   className="theme-card theme-hover theme-text inline-flex h-9 w-9 items-center justify-center rounded-md border disabled:pointer-events-none disabled:opacity-50"
-                  aria-label="Next page"
+                  aria-label={t("nextPage")}
                 >
                   <ChevronRight size={15} />
                 </button>
@@ -576,7 +615,7 @@ export default function SourcesPage() {
                   disabled={safePage === totalPages}
                   onClick={() => setPage(totalPages)}
                   className="theme-card theme-hover theme-text inline-flex h-9 w-9 items-center justify-center rounded-md border disabled:pointer-events-none disabled:opacity-50"
-                  aria-label="Last page"
+                  aria-label={t("lastPage")}
                 >
                   <ChevronsRight size={15} />
                 </button>

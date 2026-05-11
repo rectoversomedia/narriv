@@ -12,6 +12,12 @@ This checklist is the backend todo list for Narriv after the frontend is ready. 
 
 Use this as the active backend backlog before production deployment.
 
+Product positioning to preserve in backend contracts:
+- Narriv is an operational response platform, not a scraping/monitoring dashboard.
+- AI Visibility is a hero feature and should remain first-class in APIs, reports, and action generation.
+- Ingestion language should map to automatic syncing/monitoring concepts, not manual collection.
+- Alert workflows should support predictive/risk framing, owner assignment, deadline tracking, escalation levels, notifications, and feedback-based learning.
+
 ### Production Readiness
 - [ ] Baseline existing local/staging/production databases before running `npx prisma migrate deploy` on non-empty databases.
 - [ ] Run `npx prisma migrate deploy` successfully against a clean database and a baselined existing database.
@@ -28,10 +34,14 @@ Use this as the active backend backlog before production deployment.
 
 ### Workspace and Product Endpoints
 - [ ] Add a dedicated workspace settings endpoint for `/workspace/settings`, e.g. `GET /api/workspace/settings` and `PATCH /api/workspace/settings`.
-- [ ] Add a dedicated workspace integrations endpoint for `/workspace/integrations`, e.g. `GET /api/workspace/integrations`.
 - [ ] Add backend support for workspace members/team access if settings will manage users.
-- [ ] Add cases endpoint if `/workspace/cases` should become a first-class object instead of being composed from alerts/action plans.
-- [ ] Add activity endpoint if `/workspace/activity` should become an audit/event timeline instead of being composed from existing records.
+
+### Assignment, Notifications, and Escalation
+- [ ] Add assignment fields or models for alerts/action plans: PIC, team, deadline, status, and escalation level.
+- [ ] Add notification channel settings for WhatsApp-to-PIC and email first; keep Slack/Telegram optional.
+- [ ] Add notification dispatch jobs for newly high-risk alerts, assignment changes, deadline reminders, and escalation changes.
+- [ ] Add audit log entries for assignment changes, notification attempts, and escalation-level changes.
+- [ ] Add API contracts for frontend assignment controls and notification settings once the data model is finalized.
 
 ### AI and Action Engine
 - [ ] Add a non-AI fallback or explicit unavailable state for `POST /api/actions` when `OPENAI_API_KEY` is missing.

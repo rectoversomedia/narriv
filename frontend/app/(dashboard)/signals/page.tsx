@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Search, SlidersHorizontal, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
@@ -81,6 +81,8 @@ export default function SignalsPage() {
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [isGeneratingAction, setIsGeneratingAction] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const modalRef = useRef<HTMLDivElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     getSignals({ limit: 20 }).then((res) => {
@@ -120,6 +122,12 @@ export default function SignalsPage() {
     published: t("published"),
     captured: t("captured"),
     sourceFilter: t("sourceFilter"),
+    firstPage: t("firstPage"),
+    previousPage: t("previousPage"),
+    nextPage: t("nextPage"),
+    lastPage: t("lastPage"),
+    closeBackdrop: t("closeBackdrop"),
+    unknown: t("unknown"),
     loadingDetail: t("loadingDetail"),
     processing: t("processing"),
     noAnalysis: t("noAnalysis"),
@@ -152,7 +160,7 @@ export default function SignalsPage() {
   const analysisDetail = isSignalAnalysis(detailData?.analysis) ? detailData.analysis : null;
   const processingStatus = detailData?.analysis && "status" in detailData.analysis ? detailData.analysis.status : null;
   const modalTitle = detailData?.signal.title ?? detailSignal?.narrative ?? "";
-  const modalSource = detailData?.signal.platform ?? detailSignal?.source ?? "Unknown";
+  const modalSource = detailData?.signal.platform ?? detailSignal?.source ?? copy.unknown;
   const modalSentiment = (analysisDetail?.sentiment ?? detailData?.signal.sentiment ?? detailSignal?.sentiment ?? "neutral").toLowerCase();
   const modalConfidence = analysisDetail?.confidenceScore ?? detailSignal?.confidence ?? null;
   const modalRawContent = detailData?.signal.content ?? detailSignal?.excerpt ?? "";
@@ -192,11 +200,49 @@ export default function SignalsPage() {
     setIsDetailLoading(false);
   };
 
-  const closeSignalDetail = () => {
+  const closeSignalDetail = useCallback(() => {
     setDetailSignal(null);
     setDetailData(null);
     setIsDetailLoading(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!detailSignal) return;
+
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeSignalDetail();
+        return;
+      }
+
+      if (event.key !== "Tab" || !modalRef.current) return;
+
+      const focusable = Array.from(
+        modalRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((element) => !element.hasAttribute("aria-hidden"));
+
+      if (focusable.length === 0) return;
+
+      const firstElement = focusable[0];
+      const lastElement = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [closeSignalDetail, detailSignal]);
 
   const handleCreateAction = async () => {
     setActionError(null);
@@ -439,7 +485,7 @@ export default function SignalsPage() {
                 disabled={safePage === 1}
                 onClick={() => setPage(1)}
                 className="theme-card theme-hover theme-text inline-flex h-9 w-9 items-center justify-center rounded-md border disabled:pointer-events-none disabled:opacity-50"
-                aria-label="First page"
+                aria-label={copy.firstPage}
               >
                 <ChevronsLeft size={15} />
               </button>
@@ -448,7 +494,7 @@ export default function SignalsPage() {
                 disabled={safePage === 1}
                 onClick={() => setPage((value) => Math.max(1, value - 1))}
                 className="theme-card theme-hover theme-text inline-flex h-9 w-9 items-center justify-center rounded-md border disabled:pointer-events-none disabled:opacity-50"
-                aria-label="Previous page"
+                aria-label={copy.previousPage}
               >
                 <ChevronLeft size={15} />
               </button>
@@ -460,7 +506,7 @@ export default function SignalsPage() {
                 disabled={safePage === totalPages}
                 onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
                 className="theme-card theme-hover theme-text inline-flex h-9 w-9 items-center justify-center rounded-md border disabled:pointer-events-none disabled:opacity-50"
-                aria-label="Next page"
+                aria-label={copy.nextPage}
               >
                 <ChevronRight size={15} />
               </button>
@@ -469,7 +515,7 @@ export default function SignalsPage() {
                 disabled={safePage === totalPages}
                 onClick={() => setPage(totalPages)}
                 className="theme-card theme-hover theme-text inline-flex h-9 w-9 items-center justify-center rounded-md border disabled:pointer-events-none disabled:opacity-50"
-                aria-label="Last page"
+                aria-label={copy.lastPage}
               >
                 <ChevronsRight size={15} />
               </button>
@@ -483,10 +529,11 @@ export default function SignalsPage() {
           <button
             type="button"
             className="absolute inset-0 cursor-default"
+            tabIndex={-1}
             onClick={closeSignalDetail}
-            aria-label="Close signal detail backdrop"
+            aria-label={copy.closeBackdrop}
           />
-          <div className="relative flex max-h-[92dvh] w-full max-w-[720px] flex-col overflow-hidden rounded-t-2xl border border-[var(--border)] bg-[var(--panel-bg)] shadow-[0_24px_90px_rgba(16,24,40,0.22)] sm:rounded-2xl dark:shadow-[0_24px_90px_rgba(0,0,0,0.48)]">
+          <div ref={modalRef} className="relative flex max-h-[92dvh] w-full max-w-[720px] flex-col overflow-hidden rounded-t-2xl border border-[var(--border)] bg-[var(--panel-bg)] shadow-[0_24px_90px_rgba(16,24,40,0.22)] sm:rounded-2xl dark:shadow-[0_24px_90px_rgba(0,0,0,0.48)]">
             <div className="shrink-0 border-b border-[var(--border)] bg-[var(--panel-bg)] p-5 sm:p-6">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
@@ -496,10 +543,11 @@ export default function SignalsPage() {
                 </h2>
                 </div>
                 <button
+                  ref={closeButtonRef}
                   type="button"
                   onClick={closeSignalDetail}
                   className="theme-card theme-hover theme-text inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border"
-                  aria-label="Close signal detail"
+                  aria-label={copy.close}
                 >
                   <X size={16} />
                 </button>
@@ -514,7 +562,7 @@ export default function SignalsPage() {
               ) : null}
 
               {processingStatus ? (
-                <div className="rounded-lg border border-[#FDB022]/30 bg-[#FDB022]/10 p-4 text-sm text-[#FEDF89]">
+                <div className="rounded-lg border border-[#FDB022]/30 bg-[#FDB022]/10 p-4 text-sm text-[#B54708] dark:text-[#FEDF89]">
                   {copy.processing}: {processingStatus}
                 </div>
               ) : null}

@@ -11,9 +11,11 @@ import {
   createActionPlan,
   getAlerts,
   getDashboardSummary,
+  getVisibility,
   type Alert,
   type ActionStrategyType,
   type DashboardSummary,
+  type VisibilityResponse,
 } from "@/lib/api-service";
 
 const metricTones = [
@@ -28,25 +30,29 @@ export default function DashboardPage() {
   const router = useRouter();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [visibility, setVisibility] = useState<VisibilityResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isGeneratingAction, setIsGeneratingAction] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true);
-      const [summaryData, alertData] = await Promise.all([
+      const [summaryData, alertData, visibilityData] = await Promise.all([
         getDashboardSummary(),
         getAlerts({ limit: 3, status: "open" }),
+        getVisibility(),
       ]);
 
       setSummary(summaryData);
       setAlerts(alertData?.data ?? []);
+      setVisibility(visibilityData);
       setIsLoading(false);
     }
 
     void fetchData();
-  }, []);
+  }, [reloadKey]);
 
   const metrics = summary ? [
     {
@@ -96,6 +102,7 @@ export default function DashboardPage() {
   };
 
   const primaryAlert = alerts[0];
+  const visibilityScore = visibility?.score ?? "-";
   const displaySeverity = (severity: string | null | undefined) => {
     if (severity === "high") return t("severity.high");
     if (severity === "medium") return t("severity.medium");
@@ -135,7 +142,16 @@ export default function DashboardPage() {
           <Skeleton className="h-[420px] w-full" />
         </div>
       ) : !summary ? (
-        <EmptyState icon="search" title={t("emptyTitle")} description={t("emptyDesc")} />
+        <EmptyState
+          icon="search"
+          title={t("emptyTitle")}
+          description={t("emptyDesc")}
+          action={(
+            <button type="button" onClick={() => setReloadKey((value) => value + 1)} className="rounded-lg bg-[#465FFF] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3547D8]">
+              {t("retry")}
+            </button>
+          )}
+        />
       ) : (
         <>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -244,19 +260,36 @@ export default function DashboardPage() {
             </DesignFrame>
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-            <DesignFrame className="min-h-[240px]">
-              <p className="theme-muted text-[11px] font-bold uppercase tracking-[0.18em]">{t("visibilityLabel")}</p>
-              <h2 className="theme-text mt-4 text-2xl font-semibold tracking-[-0.04em]">{t("geoCardTitle")}</h2>
-              <p className="theme-muted mt-3 text-sm leading-6">{t("geoCardDesc")}</p>
-              <button
-                type="button"
-                onClick={() => void handleCreateAction("content_strategy")}
-                disabled={isGeneratingAction}
-                className="mt-7 inline-flex h-10 items-center justify-center rounded-2xl border border-[#465FFF]/25 bg-[#465FFF]/10 px-4 text-sm font-semibold text-[#465FFF] transition-colors hover:bg-[#465FFF]/15 disabled:pointer-events-none disabled:opacity-50"
-              >
-                {isGeneratingAction ? t("creatingAction") : t("geoAction")}
-              </button>
+          <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+            <DesignFrame className="min-h-[260px] border-[#465FFF]/25 bg-[#465FFF]/[0.07]">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                <div className="max-w-xl">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#465FFF]">{t("visibilityLabel")}</p>
+                  <h2 className="theme-text mt-4 text-3xl font-semibold tracking-[-0.05em]">{t("geoCardTitle")}</h2>
+                  <p className="theme-muted mt-3 text-sm leading-6">{t("geoCardDesc")}</p>
+                </div>
+                <div className="rounded-[28px] border border-[#465FFF]/25 bg-white/70 p-5 text-right shadow-sm dark:bg-[#101828]/70">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#465FFF]">{t("geoScoreLabel")}</p>
+                  <p className="mt-3 text-[46px] font-semibold leading-none tracking-[-0.07em] text-[#465FFF]">{visibilityScore}</p>
+                </div>
+              </div>
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => router.push("/visibility")}
+                  className="inline-flex h-11 items-center justify-center rounded-2xl bg-[#465FFF] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#3547D8]"
+                >
+                  {t("viewVisibility")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleCreateAction("content_strategy")}
+                  disabled={isGeneratingAction}
+                  className="inline-flex h-11 items-center justify-center rounded-2xl border border-[#465FFF]/25 bg-[#465FFF]/10 px-5 text-sm font-semibold text-[#465FFF] transition-colors hover:bg-[#465FFF]/15 disabled:pointer-events-none disabled:opacity-50"
+                >
+                  {isGeneratingAction ? t("creatingAction") : t("geoAction")}
+                </button>
+              </div>
             </DesignFrame>
 
             <DesignFrame className="min-h-[240px]">

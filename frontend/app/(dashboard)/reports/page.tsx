@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
+  AlertCircle,
   Archive,
   CalendarDays,
   ChevronLeft,
@@ -19,10 +20,12 @@ import {
 import { useTranslations } from "next-intl";
 import { ProgressBar, SectionHeader, StatusBadge } from "@/components/ui/demo-primitives";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { FeedbackBanner, type FeedbackMessage } from "@/components/ui/FeedbackBanner";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { createReportExport, getReportExportStatus, getReports } from "@/lib/api-service";
 
 type ReportFilter = "all" | "ready" | "review" | "pending";
+type ReportExportStatus = "queued" | "running" | "completed" | "failed" | "storage_unavailable";
 const PAGE_SIZE = 6;
 
 interface ReportData {
@@ -68,6 +71,12 @@ function filterDotClass(value: ReportFilter) {
   return "bg-[var(--muted-2)]";
 }
 
+function exportStatusTone(status: ReportExportStatus | undefined) {
+  if (status === "failed" || status === "storage_unavailable") return "text-[#B42318] dark:text-[#FDA29B]";
+  if (status === "completed") return "text-[#027A48] dark:text-[#6CE9A6]";
+  return "text-[#465FFF]";
+}
+
 export default function ReportsPage() {
   const t = useTranslations("Reports");
   const [reports, setReports] = useState<ReportData[]>([]);
@@ -77,7 +86,9 @@ export default function ReportsPage() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [packagePrepared, setPackagePrepared] = useState(false);
-  const [exportStatusByReport, setExportStatusByReport] = useState<Record<string, string>>({});
+  const [exportStatusByReport, setExportStatusByReport] = useState<Record<string, ReportExportStatus>>({});
+  const [feedback, setFeedback] = useState<FeedbackMessage | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     async function fetchData() {
@@ -88,7 +99,7 @@ export default function ReportsPage() {
     }
 
     fetchData();
-  }, []);
+  }, [reloadKey]);
 
   const filteredReports = reports.filter((report) => {
     const matchesQuery = [report.title, report.sections, report.status]
@@ -142,16 +153,22 @@ export default function ReportsPage() {
     setExportStatusByReport((current) => ({ ...current, [report.id as string]: "queued" }));
     const created = await createReportExport(report.id, "json");
     if (!created) {
-      setExportStatusByReport((current) => ({ ...current, [report.id as string]: "failed" }));
+      setExportStatusByReport((current) => ({ ...current, [report.id as string]: "storage_unavailable" }));
+      setFeedback({ tone: "error", title: t("exportStorageUnavailable"), description: t("exportStorageUnavailableDesc") });
       return;
     }
 
+    setFeedback({ tone: "info", title: t("exportStarted"), description: t("exportStartedDesc") });
+
     const status = await getReportExportStatus(created.jobId);
-    setExportStatusByReport((current) => ({
-      ...current,
-      [report.id as string]: status?.status ?? "queued",
-    }));
-    if (status?.status === "completed") setPackagePrepared(true);
+    const nextStatus = (status?.status ?? "queued") as ReportExportStatus;
+    setExportStatusByReport((current) => ({ ...current, [report.id as string]: nextStatus }));
+    if (status?.status === "completed") {
+      setPackagePrepared(true);
+      setFeedback({ tone: "success", title: t("exportReady"), description: t("exportReadyDesc") });
+    } else if (status?.status === "failed") {
+      setFeedback({ tone: "error", title: t("exportFailed"), description: status.errorMessage ?? t("exportFailedDesc") });
+    }
   };
 
   const displayReportTitle = (report: ReportData) => {
@@ -181,6 +198,15 @@ export default function ReportsPage() {
     return t("readiness.pending");
   };
 
+  const displayExportStatus = (status: ReportExportStatus | undefined) => {
+    if (status === "queued") return t("exportQueued");
+    if (status === "running") return t("exportRunning");
+    if (status === "completed") return t("exportCompleted");
+    if (status === "storage_unavailable") return t("exportStorageUnavailableShort");
+    if (status === "failed") return t("exportFailed");
+    return "";
+  };
+
   return (
     <div className="space-y-6 pb-6">
       <SectionHeader
@@ -188,6 +214,8 @@ export default function ReportsPage() {
         title={t("title")}
         description={t("description")}
       />
+
+      <FeedbackBanner message={feedback} />
 
       {isLoading ? (
         <div className="space-y-4">
@@ -203,6 +231,11 @@ export default function ReportsPage() {
           icon="search"
           title={t("emptyTitle")}
           description={t("emptyDesc")}
+          action={(
+            <button type="button" onClick={() => setReloadKey((value) => value + 1)} className="rounded-lg bg-[#465FFF] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3547D8]">
+              {t("retry")}
+            </button>
+          )}
         />
       ) : (
         <>
@@ -318,6 +351,7 @@ export default function ReportsPage() {
                       {pageReports.map((report) => {
                         const exportStatus = report.id ? exportStatusByReport[report.id] : undefined;
                         const isExporting = exportStatus === "queued" || exportStatus === "running";
+                        const hasExportError = exportStatus === "failed" || exportStatus === "storage_unavailable";
 
                         return (
                         <tr key={report.id ?? report.title} className="theme-row-hover border-b border-[var(--border)] last:border-0">
@@ -337,15 +371,23 @@ export default function ReportsPage() {
                             <p className="theme-muted mt-2 text-xs">{displayReportStatus(report)}</p>
                           </td>
                           <td className="px-5 py-4 text-center align-top">
-                            <button
-                              type="button"
-                              onClick={() => void handleExportReport(report)}
-                              disabled={!report.id || isExporting}
-                              className="theme-card theme-hover theme-text inline-flex h-8 w-8 items-center justify-center rounded-md border"
-                              aria-label={t("exportAria", { title: displayReportTitle(report) })}
-                            >
-                              {isExporting ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#465FFF]/30 border-t-[#465FFF]" /> : <Download size={14} />}
-                            </button>
+                            <div className="flex flex-col items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => void handleExportReport(report)}
+                                disabled={!report.id || isExporting}
+                                className={`theme-card theme-hover inline-flex h-8 w-8 items-center justify-center rounded-md border disabled:pointer-events-none disabled:opacity-50 ${hasExportError ? "border-[#F04438]/30 text-[#B42318] dark:text-[#FDA29B]" : "theme-text"}`}
+                                aria-label={t("exportAria", { title: displayReportTitle(report) })}
+                                title={!report.id ? t("exportUnavailableNoId") : hasExportError ? displayExportStatus(exportStatus) : t("table.export")}
+                              >
+                                {isExporting ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#465FFF]/30 border-t-[#465FFF]" /> : hasExportError ? <AlertCircle size={14} /> : <Download size={14} />}
+                              </button>
+                              {exportStatus ? (
+                                <span className={`max-w-[96px] text-center text-[11px] font-medium leading-4 ${exportStatusTone(exportStatus)}`}>
+                                  {displayExportStatus(exportStatus)}
+                                </span>
+                              ) : null}
+                            </div>
                           </td>
                         </tr>
                         );
@@ -358,6 +400,7 @@ export default function ReportsPage() {
                   {pageReports.map((report) => {
                     const exportStatus = report.id ? exportStatusByReport[report.id] : undefined;
                     const isExporting = exportStatus === "queued" || exportStatus === "running";
+                    const hasExportError = exportStatus === "failed" || exportStatus === "storage_unavailable";
 
                     return (
                     <article key={report.id ?? report.title} className="p-4">
@@ -374,11 +417,13 @@ export default function ReportsPage() {
                         type="button"
                         onClick={() => void handleExportReport(report)}
                         disabled={!report.id || isExporting}
-                        className="theme-card theme-hover theme-text mt-4 inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border text-sm font-medium disabled:pointer-events-none disabled:opacity-50"
+                        className={`theme-card theme-hover mt-4 inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border text-sm font-medium disabled:pointer-events-none disabled:opacity-50 ${hasExportError ? "border-[#F04438]/30 text-[#B42318] dark:text-[#FDA29B]" : "theme-text"}`}
+                        title={!report.id ? t("exportUnavailableNoId") : undefined}
                       >
-                        {isExporting ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#465FFF]/30 border-t-[#465FFF]" /> : <Download size={14} />}
+                        {isExporting ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#465FFF]/30 border-t-[#465FFF]" /> : hasExportError ? <AlertCircle size={14} /> : <Download size={14} />}
                         {t("table.export")}
                       </button>
+                      {exportStatus ? <p className={`mt-2 text-xs font-medium ${exportStatusTone(exportStatus)}`}>{displayExportStatus(exportStatus)}</p> : null}
                     </article>
                     );
                   })}
@@ -393,7 +438,7 @@ export default function ReportsPage() {
                       disabled={safePage === 1}
                       onClick={() => setPage(1)}
                       className="theme-card theme-hover theme-text inline-flex h-9 w-9 items-center justify-center rounded-md border disabled:pointer-events-none disabled:opacity-50"
-                      aria-label="First page"
+                      aria-label={t("firstPage")}
                     >
                       <ChevronsLeft size={15} />
                     </button>
@@ -402,7 +447,7 @@ export default function ReportsPage() {
                       disabled={safePage === 1}
                       onClick={() => setPage((value) => Math.max(1, value - 1))}
                       className="theme-card theme-hover theme-text inline-flex h-9 w-9 items-center justify-center rounded-md border disabled:pointer-events-none disabled:opacity-50"
-                      aria-label="Previous page"
+                      aria-label={t("previousPage")}
                     >
                       <ChevronLeft size={15} />
                     </button>
@@ -414,7 +459,7 @@ export default function ReportsPage() {
                       disabled={safePage === totalPages}
                       onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
                       className="theme-card theme-hover theme-text inline-flex h-9 w-9 items-center justify-center rounded-md border disabled:pointer-events-none disabled:opacity-50"
-                      aria-label="Next page"
+                      aria-label={t("nextPage")}
                     >
                       <ChevronRight size={15} />
                     </button>
@@ -423,7 +468,7 @@ export default function ReportsPage() {
                       disabled={safePage === totalPages}
                       onClick={() => setPage(totalPages)}
                       className="theme-card theme-hover theme-text inline-flex h-9 w-9 items-center justify-center rounded-md border disabled:pointer-events-none disabled:opacity-50"
-                      aria-label="Last page"
+                      aria-label={t("lastPage")}
                     >
                       <ChevronsRight size={15} />
                     </button>
@@ -443,7 +488,10 @@ export default function ReportsPage() {
                 <button
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-[#465FFF] px-4 text-sm font-medium text-white transition-colors hover:bg-[#3B4DCD]"
                   type="button"
-                  onClick={() => setPackagePrepared(true)}
+                  onClick={() => {
+                    setPackagePrepared(true);
+                    setFeedback({ tone: "success", title: t("packagePrepared"), description: t("packagePreparedDesc") });
+                  }}
                 >
                   <Send size={15} />
                   {packagePrepared ? t("packagePrepared") : t("preparePackage")}
