@@ -7,6 +7,81 @@ const client = new OpenAI({
     apiKey: OPENAI_API_KEY || "sk-placeholder",
 });
 
+const OPENAI_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 20000);
+const OPENAI_MAX_RETRIES = 1;
+
+function logStructured(level, event, payload = {}) {
+    const entry = {
+        level,
+        event,
+        module: "actions.ai",
+        timestamp: new Date().toISOString(),
+        ...payload,
+    };
+    const line = JSON.stringify(entry);
+    if (level === "error") {
+        console.error(line);
+    } else if (level === "warn") {
+        console.warn(line);
+    } else {
+        console.log(line);
+    }
+}
+
+function isAbortError(error) {
+    return error?.name === "AbortError" || String(error?.message || "").toLowerCase().includes("aborted");
+}
+
+async function callOpenAIWithTimeout(messages, timeoutMs) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+        return await client.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages,
+            temperature: 0.7,
+            max_tokens: 800,
+            response_format: { type: "json_object" },
+            signal: controller.signal,
+        });
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
+async function callOpenAIWithRetry(messages, context) {
+    let lastError = null;
+    const maxAttempts = OPENAI_MAX_RETRIES + 1;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        const startedAt = Date.now();
+        try {
+            const response = await callOpenAIWithTimeout(messages, OPENAI_TIMEOUT_MS);
+            logStructured("info", "openai_call_success", {
+                ...context,
+                attempt,
+                latencyMs: Date.now() - startedAt,
+            });
+            return response;
+        } catch (error) {
+            lastError = error;
+            const willRetry = attempt < maxAttempts;
+            logStructured(willRetry ? "warn" : "error", "openai_call_failed", {
+                ...context,
+                attempt,
+                willRetry,
+                timeoutMs: OPENAI_TIMEOUT_MS,
+                aborted: isAbortError(error),
+                error: error?.message || "Unknown error",
+            });
+            if (!willRetry) break;
+        }
+    }
+
+    throw lastError;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // PROMPT BUILDERS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -222,21 +297,22 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
  */
 async function generateOption(promptConfig, context, toneSuffix) {
     try {
-        const response = await client.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [
-                { role: "system", content: promptConfig.system },
-                { role: "user", content: `${promptConfig.user(context)}\n\nGenerate this as: ${toneSuffix}` }
-            ],
-            temperature: 0.7,
-            max_tokens: 800,
-            response_format: { type: "json_object" }
-        });
+        const messages = [
+            { role: "system", content: promptConfig.system },
+            { role: "user", content: `${promptConfig.user(context)}\n\nGenerate this as: ${toneSuffix}` }
+        ];
+        const response = await callOpenAIWithRetry(messages, { toneSuffix });
 
         const raw = response.choices[0]?.message?.content || "{}";
         return JSON.parse(raw);
     } catch (error) {
-        console.error(`[ACTION] Error generating option (${toneSuffix}):`, error.message);
+        logStructured("error", "generate_option_failed", {
+            toneSuffix,
+            timeoutMs: OPENAI_TIMEOUT_MS,
+            retries: OPENAI_MAX_RETRIES,
+            aborted: isAbortError(error),
+            error: error?.message || "Unknown error",
+        });
         return { error: `Failed to generate: ${error.message}` };
     }
 }
