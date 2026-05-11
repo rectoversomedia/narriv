@@ -11,6 +11,32 @@ const SOURCE_STRENGTH = {
     unknown: 0.5,
 };
 
+const ESCALATION_ORDER = ["low", "medium", "high", "critical"];
+
+function logStructured(level, event, payload = {}) {
+    const entry = {
+        level,
+        event,
+        module: "alerts.escalation",
+        timestamp: new Date().toISOString(),
+        ...payload,
+    };
+    const line = JSON.stringify(entry);
+    if (level === "error") {
+        console.error(line);
+    } else if (level === "warn") {
+        console.warn(line);
+    } else {
+        console.log(line);
+    }
+}
+
+function nextEscalationLevel(currentLevel) {
+    const currentIndex = ESCALATION_ORDER.indexOf((currentLevel || "low").toLowerCase());
+    if (currentIndex < 0) return "medium";
+    return ESCALATION_ORDER[Math.min(currentIndex + 1, ESCALATION_ORDER.length - 1)];
+}
+
 function toSeverity(score) {
     if (score >= 80) return "critical";
     if (score >= 65) return "high";
@@ -175,4 +201,102 @@ export async function detectAlerts(workspaceId) {
     }
 
     return alerts;
+}
+
+export async function escalateAlertsForWorkspace(workspaceId) {
+    const now = new Date();
+    let overdueEscalated = 0;
+    let criticalRiskEscalated = 0;
+
+    const overdueAlerts = await prisma.alert.findMany({
+        where: {
+            workspaceId,
+            deadline: { lt: now },
+            status: { not: "resolved" },
+        },
+        select: {
+            id: true,
+            escalationLevel: true,
+            status: true,
+            deadline: true,
+        }
+    });
+
+    for (const alert of overdueAlerts) {
+        const nextLevel = nextEscalationLevel(alert.escalationLevel);
+        if (nextLevel === alert.escalationLevel) continue;
+
+        const updated = await prisma.alert.update({
+            where: { id: alert.id },
+            data: {
+                escalationLevel: nextLevel,
+                workflowStatus: "blocked",
+            }
+        });
+
+        overdueEscalated += 1;
+        await prisma.auditLog.create({
+            data: {
+                event: "alert_escalated_overdue",
+                metadata: {
+                    alertId: updated.id,
+                    workspaceId: updated.workspaceId,
+                    previousEscalationLevel: alert.escalationLevel,
+                    escalationLevel: updated.escalationLevel,
+                    deadline: alert.deadline,
+                    status: alert.status,
+                }
+            }
+        });
+    }
+
+    const unresolvedCriticalRisks = await prisma.alert.findMany({
+        where: {
+            workspaceId,
+            type: "risk",
+            severity: "critical",
+            status: { not: "resolved" },
+            escalationLevel: { not: "critical" },
+        },
+        select: {
+            id: true,
+            escalationLevel: true,
+            status: true,
+        }
+    });
+
+    for (const alert of unresolvedCriticalRisks) {
+        const updated = await prisma.alert.update({
+            where: { id: alert.id },
+            data: {
+                escalationLevel: "critical",
+                workflowStatus: "blocked",
+            }
+        });
+        criticalRiskEscalated += 1;
+
+        await prisma.auditLog.create({
+            data: {
+                event: "alert_escalated_unresolved_critical_risk",
+                metadata: {
+                    alertId: updated.id,
+                    workspaceId: updated.workspaceId,
+                    previousEscalationLevel: alert.escalationLevel,
+                    escalationLevel: updated.escalationLevel,
+                    status: alert.status,
+                    severity: "critical",
+                    type: "risk",
+                }
+            }
+        });
+    }
+
+    const summary = {
+        workspaceId,
+        overdueEscalated,
+        criticalRiskEscalated,
+        totalEscalated: overdueEscalated + criticalRiskEscalated,
+    };
+    logStructured("info", "escalation_workspace_complete", summary);
+    return summary;
 }

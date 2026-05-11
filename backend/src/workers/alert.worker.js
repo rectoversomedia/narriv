@@ -1,12 +1,30 @@
 import { Worker } from "bullmq";
 import connection from "../lib/redis.js";
 import prisma from "../prisma.js";
-import { detectAlerts } from "../modules/alerts/alerts.service.js";
+import { detectAlerts, escalateAlertsForWorkspace } from "../modules/alerts/alerts.service.js";
+
+function logStructured(level, event, payload = {}) {
+    const entry = {
+        level,
+        event,
+        worker: "alert-worker",
+        timestamp: new Date().toISOString(),
+        ...payload,
+    };
+    const line = JSON.stringify(entry);
+    if (level === "error") {
+        console.error(line);
+    } else if (level === "warn") {
+        console.warn(line);
+    } else {
+        console.log(line);
+    }
+}
 
 const alertWorker = new Worker(
     "alert-detection",
     async (job) => {
-        console.log(`[WORKER] Running scheduled alert detection (Job: ${job.id})`);
+        logStructured("info", "job_started", { jobId: job.id, jobName: job.name });
 
         try {
             // 1. Fetch all active workspaces
@@ -14,34 +32,50 @@ const alertWorker = new Worker(
                 select: { id: true, name: true }
             });
 
-            console.log(`[WORKER] Found ${workspaces.length} workspaces to evaluate.`);
+            logStructured("info", "workspaces_loaded", { jobId: job.id, count: workspaces.length, jobName: job.name });
 
             let totalAlertsFound = 0;
+            let totalEscalated = 0;
 
             // 2. Evaluate rules for each workspace
             for (const workspace of workspaces) {
                 try {
-                    const alerts = await detectAlerts(workspace.id);
-                    
-                    if (alerts.length > 0) {
-                        totalAlertsFound += alerts.length;
-                        console.log(`\n[ALERT TRIGGERED] Workspace: ${workspace.name} (${workspace.id})`);
-                        
-                        alerts.forEach((alert, index) => {
-                            console.log(`  --> Alert ${index + 1}: [${alert.severity.toUpperCase()}] ${alert.title}`);
-                            console.log(`      Reason: ${alert.whatHappened}`);
-                        });
+                    if (job.name === "escalate-alerts") {
+                        const summary = await escalateAlertsForWorkspace(workspace.id);
+                        totalEscalated += summary.totalEscalated;
+                    } else {
+                        const alerts = await detectAlerts(workspace.id);
+                        if (alerts.length > 0) {
+                            totalAlertsFound += alerts.length;
+                            logStructured("info", "alerts_detected", {
+                                jobId: job.id,
+                                workspaceId: workspace.id,
+                                workspaceName: workspace.name,
+                                count: alerts.length,
+                            });
+                        }
                     }
                 } catch (workspaceError) {
-                    console.error(`[WORKER] Failed to evaluate alerts for workspace ${workspace.name}:`, workspaceError.message);
+                    logStructured("error", "workspace_evaluation_failed", {
+                        jobId: job.id,
+                        workspaceId: workspace.id,
+                        workspaceName: workspace.name,
+                        jobName: job.name,
+                        error: workspaceError.message,
+                    });
                     // Continue to the next workspace
                 }
             }
 
-            console.log(`\n[WORKER] Alert detection complete. Total alerts generated: ${totalAlertsFound}`);
+            logStructured("info", "job_completed", {
+                jobId: job.id,
+                jobName: job.name,
+                totalAlertsGenerated: totalAlertsFound,
+                totalEscalated,
+            });
 
         } catch (error) {
-            console.error(`[WORKER] Alert detection job failed:`, error.message);
+            logStructured("error", "job_failed", { jobId: job.id, jobName: job.name, error: error.message });
             throw error;
         }
     },
@@ -49,14 +83,14 @@ const alertWorker = new Worker(
 );
 
 alertWorker.on("failed", (job, err) => {
-    console.error(`[WORKER] Alert job ${job?.id} failed (BullMQ):`, err.message);
+    logStructured("error", "bullmq_job_failed", { jobId: job?.id, error: err.message });
 });
 
 alertWorker.on("error", (err) => {
     if (err.code === "ECONNREFUSED") return;
-    console.error("[WORKER] Alert worker error:", err.message);
+    logStructured("error", "worker_error", { error: err.message });
 });
 
-console.log("[WORKER] Alert Detection Worker initialized");
+logStructured("info", "worker_initialized", { queue: "alert-detection" });
 
 export default alertWorker;

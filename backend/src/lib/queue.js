@@ -103,3 +103,25 @@ export const addIngestionJob = async (jobId, sourceId) => {
         console.error(`[QUEUE] Failed to add ingestion job ${jobId}:`, error.message);
     }
 };
+
+/**
+ * Schedules recurring alert escalation automation.
+ * By default, this runs every 10 minutes.
+ */
+export const scheduleAlertEscalation = async () => {
+    try {
+        await alertDetectionQueue.add(
+            "escalate-alerts",
+            {},
+            {
+                repeat: {
+                    pattern: "*/10 * * * *",
+                },
+                jobId: "recurring-alert-escalation"
+            }
+        );
+        console.log("[QUEUE] Scheduled recurring alert escalation job (Every 10 minutes).");
+    } catch (error) {
+        console.error("[QUEUE] Failed to schedule alert escalation:", error.message);
+    }
+};

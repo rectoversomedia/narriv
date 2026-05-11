@@ -20,13 +20,14 @@ import workspaceSettingsRoutes from "./modules/workspace-settings/workspace-sett
 import "./workers/ai-analysis.worker.js";
 import "./workers/alert.worker.js";
 import "./workers/ingestion.worker.js";
-import { scheduleAlertDetection } from "./lib/queue.js";
+import { scheduleAlertDetection, scheduleAlertEscalation } from "./lib/queue.js";
 import { getRuntimeHealth } from "./lib/runtime-health.js";
 
 dotenv.config();
 
 // Initialize Scheduled Jobs
 scheduleAlertDetection();
+scheduleAlertEscalation();
 
 const app = express();
 app.use(cors({
