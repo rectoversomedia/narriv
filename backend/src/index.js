@@ -16,6 +16,7 @@ import reportsRoutes from "./modules/reports/reports.routes.js";
 import actionsRoutes from "./modules/actions/actions.routes.js";
 import actionPlansRoutes from "./modules/action-plans/action-plans.routes.js";
 import feedbackRoutes from "./modules/feedback/feedback.routes.js";
+import workspaceSettingsRoutes from "./modules/workspace-settings/workspace-settings.routes.js";
 import "./workers/ai-analysis.worker.js";
 import "./workers/alert.worker.js";
 import "./workers/ingestion.worker.js";
@@ -83,6 +84,7 @@ app.use("/api/reports", reportsRoutes);
 app.use("/api/actions", actionsRoutes);
 app.use("/api/action-plans", actionPlansRoutes);
 app.use("/api/feedback", feedbackRoutes);
+app.use("/api/workspace", workspaceSettingsRoutes);
 
 app.listen(3000, () => {
     console.log("Server running on http://localhost:3000");
