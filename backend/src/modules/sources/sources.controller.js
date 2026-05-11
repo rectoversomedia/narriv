@@ -39,8 +39,13 @@ export const getSources = async (req, res) => {
         ]);
 
         res.json({
-            sources,
-            meta: { page, limit, total }
+            data: sources,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit)
+            }
         });
     } catch (error) {
         console.error("Error fetching sources:", error);

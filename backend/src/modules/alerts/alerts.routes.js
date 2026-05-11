@@ -15,7 +15,11 @@ router.get("/", async (req, res) => {
         const { type, severity, status, workspaceId } = req.query;
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
         if (scopedWorkspaceIds.length === 0) {
-            return res.json({ data: [], meta: { page: 1, limit, total: 0 } });
+            const safeLimit = Math.max(1, limit);
+            return res.json({
+                data: [],
+                pagination: { page: 1, limit: safeLimit, total: 0, totalPages: 0 }
+            });
         }
         
         const safePage = Math.max(1, page);
@@ -55,10 +59,11 @@ router.get("/", async (req, res) => {
 
         res.json({
             data: data || [],
-            meta: {
+            pagination: {
                 page: safePage,
                 limit: safeLimit,
-                total: total || 0
+                total: total || 0,
+                totalPages: Math.ceil((total || 0) / safeLimit)
             }
         });
     } catch (error) {

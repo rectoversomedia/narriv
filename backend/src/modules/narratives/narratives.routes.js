@@ -45,43 +45,64 @@ function toNarrativeItem(cluster) {
 router.get("/", async (req, res) => {
     try {
         const { sentiment, impact, workspaceId } = req.query;
+        const page = parseInt(req.query.page, 10) || 1;
+        const limit = parseInt(req.query.limit, 10) || 10;
+        const safePage = Math.max(1, page);
+        const safeLimit = Math.max(1, limit);
+        const skip = (safePage - 1) * safeLimit;
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
-        if (scopedWorkspaceIds.length === 0) return res.json({ narratives: [] });
+        if (scopedWorkspaceIds.length === 0) {
+            return res.json({
+                data: [],
+                pagination: { page: safePage, limit: safeLimit, total: 0, totalPages: 0 }
+            });
+        }
 
         const whereClause = {};
         if (sentiment) whereClause.sentiment = sentiment;
         if (impact) whereClause.impact = String(impact).toUpperCase();
         whereClause.workspaceId = { in: scopedWorkspaceIds };
 
-        const data = await prisma.narrativeCluster.findMany({
-            where: whereClause,
-            orderBy: { updatedAt: "desc" },
-            include: {
-                narrativeClusterSignals: {
-                    include: {
-                        signal: {
-                            select: {
-                                id: true,
-                                title: true,
-                                platform: true,
-                                sentiment: true,
-                                capturedAt: true,
-                                analyses: {
-                                    orderBy: { createdAt: "desc" },
-                                    take: 1,
-                                    select: {
-                                        confidenceScore: true,
+        const [data, total] = await Promise.all([
+            prisma.narrativeCluster.findMany({
+                where: whereClause,
+                skip,
+                take: safeLimit,
+                orderBy: { updatedAt: "desc" },
+                include: {
+                    narrativeClusterSignals: {
+                        include: {
+                            signal: {
+                                select: {
+                                    id: true,
+                                    title: true,
+                                    platform: true,
+                                    sentiment: true,
+                                    capturedAt: true,
+                                    analyses: {
+                                        orderBy: { createdAt: "desc" },
+                                        take: 1,
+                                        select: {
+                                            confidenceScore: true,
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
-        });
+            }),
+            prisma.narrativeCluster.count({ where: whereClause })
+        ]);
 
         return res.json({
-            narratives: data.map(toNarrativeItem),
+            data: data.map(toNarrativeItem),
+            pagination: {
+                page: safePage,
+                limit: safeLimit,
+                total,
+                totalPages: Math.ceil(total / safeLimit)
+            }
         });
     } catch (error) {
         console.error("Error fetching narratives:", error);

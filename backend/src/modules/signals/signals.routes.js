@@ -69,10 +69,11 @@ router.get("/", async (req, res) => {
 
         res.json({
             data: data || [],
-            meta: {
+            pagination: {
                 page: safePage,
                 limit: safeLimit,
-                total: total || 0
+                total: total || 0,
+                totalPages: Math.ceil((total || 0) / safeLimit)
             }
         });
     } catch (error) {

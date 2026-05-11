@@ -154,17 +154,39 @@ router.post("/", async (req, res) => {
 router.get("/", async (req, res) => {
     try {
         const { workspaceId } = req.query;
+        const page = parseInt(req.query.page, 10) || 1;
+        const limit = parseInt(req.query.limit, 10) || 10;
+        const safePage = Math.max(1, page);
+        const safeLimit = Math.max(1, limit);
+        const skip = (safePage - 1) * safeLimit;
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
         if (scopedWorkspaceIds.length === 0) {
-            return res.json({ reports: [] });
+            return res.json({
+                data: [],
+                pagination: { page: safePage, limit: safeLimit, total: 0, totalPages: 0 }
+            });
         }
 
-        const data = await prisma.report.findMany({
-            where: { workspaceId: { in: scopedWorkspaceIds } },
-            orderBy: { createdAt: "desc" },
-        });
+        const where = { workspaceId: { in: scopedWorkspaceIds } };
+        const [data, total] = await Promise.all([
+            prisma.report.findMany({
+                where,
+                skip,
+                take: safeLimit,
+                orderBy: { createdAt: "desc" },
+            }),
+            prisma.report.count({ where })
+        ]);
 
-        return res.json({ reports: data.map(toFrontendReport) });
+        return res.json({
+            data: data.map(toFrontendReport),
+            pagination: {
+                page: safePage,
+                limit: safeLimit,
+                total,
+                totalPages: Math.ceil(total / safeLimit)
+            }
+        });
     } catch (error) {
         console.error("Error fetching reports:", error);
         return res.status(500).json({ error: "Internal server error" });
