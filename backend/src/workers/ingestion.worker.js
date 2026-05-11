@@ -1,4 +1,5 @@
 import { Worker } from "bullmq";
+import crypto from "crypto";
 import connection from "../lib/redis.js";
 import prisma from "../prisma.js";
 import { runActorAndFetchDataset } from "../modules/apify/apify.service.js";
@@ -37,6 +38,29 @@ function logStructured(level, event, payload = {}) {
     } else {
         console.log(line);
     }
+}
+
+function normalizeText(value) {
+    return String(value || "")
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function buildDeterministicDocHash({ workspaceId, sourceId, sourceType, item }) {
+    const canonical = {
+        workspaceId: normalizeText(workspaceId),
+        sourceId: normalizeText(sourceId),
+        sourceType: normalizeText(sourceType),
+        url: normalizeText(item.url),
+        title: normalizeText(item.title),
+        content: normalizeText(item.text || item.description || item.snippet || item.title),
+        author: normalizeText(item.author),
+        publishedDate: normalizeText(item.publishedDate),
+    };
+
+    const raw = JSON.stringify(canonical);
+    return crypto.createHash("sha256").update(raw).digest("hex");
 }
 
 const ingestionWorker = new Worker(
@@ -267,7 +291,15 @@ const ingestionWorker = new Worker(
                 const content = item.text || item.description || item.snippet || item.title || "";
                 if (!content) continue;
 
-                const externalId = item.id || item.url || (item.text ? item.text.substring(0, 20) : "") + Date.now().toString();
+                const deterministicDocHash = buildDeterministicDocHash({
+                    workspaceId: source.workspaceId,
+                    sourceId: source.id,
+                    sourceType: source.type,
+                    item,
+                });
+                const externalId = item.id
+                    ? `ext_${String(item.id).trim()}`
+                    : `hash_${deterministicDocHash}`;
 
                 const existingDoc = await prisma.rawDocument.findFirst({
                     where: {
@@ -291,11 +323,29 @@ const ingestionWorker = new Worker(
                         sourceName: source.name,
                         sourceType: source.type,
                         publishedAt: item.publishedDate ? new Date(item.publishedDate) : null,
-                        metadata: item,
+                        metadata: {
+                            ...item,
+                            dedupeHash: deterministicDocHash,
+                        },
                     },
                 });
 
-                const dedupeHash = Buffer.from(`${source.id}-${externalId}`).toString("base64");
+                const dedupeHash = crypto
+                    .createHash("sha256")
+                    .update(`${source.workspaceId}:${source.id}:${externalId}`)
+                    .digest("hex");
+
+                const existingSignal = await prisma.signal.findFirst({
+                    where: {
+                        workspaceId: source.workspaceId,
+                        dedupeHash,
+                    },
+                    select: { id: true },
+                });
+                if (existingSignal) {
+                    continue;
+                }
+
                 const createdSignal = await prisma.signal.create({
                     data: {
                         workspaceId: createdDoc.workspaceId,
