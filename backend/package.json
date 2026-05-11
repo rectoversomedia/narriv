@@ -22,7 +22,8 @@
     "ioredis": "^5.10.1",
     "jsonwebtoken": "^9.0.3",
     "openai": "^6.34.0",
-    "prisma": "^5.22.0"
+    "prisma": "^5.22.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
