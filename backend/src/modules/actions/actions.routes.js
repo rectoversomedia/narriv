@@ -3,6 +3,7 @@ import prisma from "../../prisma.js";
 import { generateActionPlan } from "./actions.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
+import { badRequest, forbidden, internalError, notFound } from "../../lib/api-error.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -14,13 +15,26 @@ router.post("/", async (req, res) => {
 
         const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
         if (!scopedWorkspaceId) {
-            return res.status(403).json({ error: "Workspace access denied" });
+            return forbidden(res, "Workspace access denied", "WORKSPACE_ACCESS_DENIED");
         }
 
         const validTypes = ["pr_response", "content_strategy", "influencer_strategy", "crisis_response"];
         if (!strategyType || !validTypes.includes(strategyType)) {
-            return res.status(400).json({
-                error: `strategyType is required. Must be one of: ${validTypes.join(", ")}`
+            return badRequest(
+                res,
+                `strategyType is required. Must be one of: ${validTypes.join(", ")}`,
+                "INVALID_STRATEGY_TYPE"
+            );
+        }
+
+        if (!process.env.OPENAI_API_KEY) {
+            return res.status(503).json({
+                error: "Action generation is currently unavailable.",
+                code: "AI_PROVIDER_UNAVAILABLE",
+                details: {
+                    provider: "openai",
+                    reason: "OPENAI_API_KEY is not configured",
+                }
             });
         }
 
@@ -29,7 +43,12 @@ router.post("/", async (req, res) => {
         res.status(201).json(plan);
     } catch (error) {
         console.error("Error generating action plan:", error);
-        res.status(500).json({ error: error.message || "Internal server error" });
+        if (error?.message === "Alert not found" || error?.message === "Narrative cluster not found") {
+            return notFound(res, error.message, "TARGET_NOT_FOUND");
+        }
+        return internalError(res, "Failed to generate action plan", "ACTION_GENERATION_FAILED", {
+            reason: error?.message || "Unknown error",
+        });
     }
 });
 
