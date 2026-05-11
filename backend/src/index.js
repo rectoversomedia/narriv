@@ -24,6 +24,7 @@ import "./workers/notification.worker.js";
 import { scheduleAlertDetection, scheduleAlertEscalation } from "./lib/queue.js";
 import { getRuntimeHealth } from "./lib/runtime-health.js";
 import { requestLogger } from "./lib/logger.js";
+import { getMetricsSnapshot } from "./lib/metrics.js";
 
 dotenv.config();
 
@@ -72,6 +73,10 @@ app.get("/health/runtime", async (req, res) => {
     const health = await getRuntimeHealth();
     const statusCode = health.status === "ok" ? 200 : 503;
     res.status(statusCode).json(health);
+});
+
+app.get("/metrics", (req, res) => {
+    res.status(200).json(getMetricsSnapshot());
 });
 
 // Use Routes

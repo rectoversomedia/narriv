@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { validateAIOutput } from "./ai.schema.js";
 import { logStructured } from "../../lib/logger.js";
+import { incrementAIFailure } from "../../lib/metrics.js";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
@@ -171,6 +172,7 @@ async function callOpenAI(messages) {
         });
         return response.choices[0]?.message?.content || "{}";
     } catch (error) {
+        incrementAIFailure();
         logStructured("error", "ai_provider_call_failed", {
             provider: "openai",
             model: "gpt-4o-mini",

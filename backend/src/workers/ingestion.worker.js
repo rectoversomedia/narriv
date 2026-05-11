@@ -4,6 +4,7 @@ import connection from "../lib/redis.js";
 import prisma from "../prisma.js";
 import { runActorAndFetchDataset } from "../modules/apify/apify.service.js";
 import { addAnalysisJob } from "../lib/queue.js";
+import { incrementIngestionFailure } from "../lib/metrics.js";
 
 class IngestionCancelledError extends Error {
     constructor(message) {
@@ -432,6 +433,7 @@ ingestionWorker.on("completed", (job, returnvalue) => {
 });
 
 ingestionWorker.on("failed", async (job, err) => {
+    incrementIngestionFailure();
     logStructured("error", "ingestion_worker_failed_event", {
         queueJobId: job?.id,
         ingestionJobId: job?.data?.jobId,

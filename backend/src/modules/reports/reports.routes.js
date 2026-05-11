@@ -6,6 +6,7 @@ import {
     resolveSignedReportDownload,
     storeReportExportPayload
 } from "./report-export-storage.service.js";
+import { incrementExportFailure } from "../../lib/metrics.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 
@@ -249,6 +250,7 @@ router.post("/:id/export", async (req, res) => {
                 baseUrl,
             });
         } catch (jobError) {
+            incrementExportFailure();
             await prisma.reportExport.update({
                 where: { id: exportJob.id },
                 data: {

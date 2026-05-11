@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { recordEndpointLatency } from "./metrics.js";
 
 const SENSITIVE_HEADERS = new Set([
     "authorization",
@@ -51,15 +52,16 @@ export function requestLogger(req, res, next) {
     });
 
     res.on("finish", () => {
+        const latencyMs = Date.now() - startedAt;
+        recordEndpointLatency(req.method, req.route?.path || req.path || req.originalUrl, latencyMs);
         logStructured("info", "api_request_finished", {
             requestId: req.requestId,
             method: req.method,
             path: req.originalUrl,
             statusCode: res.statusCode,
-            latencyMs: Date.now() - startedAt,
+            latencyMs,
         });
     });
 
     next();
 }
-
