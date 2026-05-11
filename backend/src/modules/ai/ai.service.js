@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { validateAIOutput } from "./ai.schema.js";
+import { logStructured } from "../../lib/logger.js";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
@@ -149,14 +150,35 @@ ${signalsContext}`;
  * @returns {Promise<string>} - The raw string content from the model.
  */
 async function callOpenAI(messages) {
-    const response = await client.chat.completions.create({
+    const startedAt = Date.now();
+    logStructured("info", "ai_provider_call_started", {
+        provider: "openai",
         model: "gpt-4o-mini",
-        messages,
-        temperature: 0.2,
-        max_tokens: 512,
-        response_format: { type: "json_object" }
+        messageCount: Array.isArray(messages) ? messages.length : 0,
     });
-    return response.choices[0]?.message?.content || "{}";
+    try {
+        const response = await client.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages,
+            temperature: 0.2,
+            max_tokens: 512,
+            response_format: { type: "json_object" }
+        });
+        logStructured("info", "ai_provider_call_succeeded", {
+            provider: "openai",
+            model: "gpt-4o-mini",
+            latencyMs: Date.now() - startedAt,
+        });
+        return response.choices[0]?.message?.content || "{}";
+    } catch (error) {
+        logStructured("error", "ai_provider_call_failed", {
+            provider: "openai",
+            model: "gpt-4o-mini",
+            latencyMs: Date.now() - startedAt,
+            error: error.message,
+        });
+        throw error;
+    }
 }
 
 /**

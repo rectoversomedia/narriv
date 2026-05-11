@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import prisma from "../../prisma.js";
+import { logStructured } from "../../lib/logger.js";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
@@ -127,6 +128,12 @@ async function queryAIEngine(engineName, queries) {
 
     for (const query of queries) {
         try {
+            const startedAt = Date.now();
+            logStructured("info", "ai_provider_call_started", {
+                provider: "openai",
+                module: "geo",
+                engineName,
+            });
             const response = await client.chat.completions.create({
                 model: "gpt-4o-mini",
                 messages: [
@@ -144,8 +151,19 @@ async function queryAIEngine(engineName, queries) {
                 query,
                 response: response.choices[0]?.message?.content || ""
             });
+            logStructured("info", "ai_provider_call_succeeded", {
+                provider: "openai",
+                module: "geo",
+                engineName,
+                latencyMs: Date.now() - startedAt,
+            });
         } catch (error) {
-            console.error(`[GEO] Error querying ${engineName} with "${query}":`, error.message);
+            logStructured("error", "ai_provider_call_failed", {
+                provider: "openai",
+                module: "geo",
+                engineName,
+                error: error.message,
+            });
             results.push({ query, response: "" });
         }
     }

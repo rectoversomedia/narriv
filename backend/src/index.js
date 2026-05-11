@@ -23,6 +23,7 @@ import "./workers/ingestion.worker.js";
 import "./workers/notification.worker.js";
 import { scheduleAlertDetection, scheduleAlertEscalation } from "./lib/queue.js";
 import { getRuntimeHealth } from "./lib/runtime-health.js";
+import { requestLogger } from "./lib/logger.js";
 
 dotenv.config();
 
@@ -57,6 +58,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(requestLogger);
 
 app.get("/", (req, res) => {
     res.send("API is running 🚀");
