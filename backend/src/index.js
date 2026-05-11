@@ -20,6 +20,7 @@ import "./workers/ai-analysis.worker.js";
 import "./workers/alert.worker.js";
 import "./workers/ingestion.worker.js";
 import { scheduleAlertDetection } from "./lib/queue.js";
+import { getRuntimeHealth } from "./lib/runtime-health.js";
 
 dotenv.config();
 
@@ -60,6 +61,12 @@ app.get("/", (req, res) => {
 
 app.get("/health", (req, res) => {
     res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+app.get("/health/runtime", async (req, res) => {
+    const health = await getRuntimeHealth();
+    const statusCode = health.status === "ok" ? 200 : 503;
+    res.status(statusCode).json(health);
 });
 
 // Use Routes

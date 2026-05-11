@@ -21,8 +21,8 @@ Product positioning to preserve in backend contracts:
 ### Production Readiness
 - [ ] Baseline existing local/staging/production databases before running `npx prisma migrate deploy` on non-empty databases.
 - [ ] Run `npx prisma migrate deploy` successfully against a clean database and a baselined existing database.
-- [ ] Document required backend environment variables in `.env.example`, including `JWT_SECRET`, `DATABASE_URL`, `OPENAI_API_KEY`, Apify configuration, queue configuration, and report export storage settings.
-- [ ] Add a startup/runtime health check that reports database, queue, OpenAI, and ingestion provider availability without leaking secrets.
+- [x] Document required backend environment variables in `.env.example`, including `JWT_SECRET`, `DATABASE_URL`, `OPENAI_API_KEY`, Apify configuration, queue configuration, and report export storage settings.
+- [x] Add a startup/runtime health check that reports database, queue, OpenAI, and ingestion provider availability without leaking secrets.
 - [ ] Decide long-term workspace deletion policy: restrict, soft delete, or cascade tenant-owned data.
 
 ### API Reliability and Validation
