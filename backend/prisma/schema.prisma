@@ -206,6 +206,11 @@ model Alert {
   whatHappened  String?
   whyItMatters  String?
   whatToDo      String?
+  assignedTo    String?
+  assignedTeam  String?
+  deadline      DateTime?
+  escalationLevel EscalationLevel @default(medium)
+  workflowStatus String?  // (todo, in_progress, blocked, done)
   status        String   @default("open") // (open, acknowledged, in_progress, resolved)
   createdAt     DateTime @default(now())
 
@@ -258,6 +263,13 @@ enum ImpactLevel {
   CRITICAL
 }
 
+enum EscalationLevel {
+  low
+  medium
+  high
+  critical
+}
+
 model Report {
   id            String   @id @default(uuid())
   workspaceId   String
@@ -284,6 +296,11 @@ model ActionPlan {
   option1       String?
   option2       String?
   option3       String?
+  assignedTo    String?
+  assignedTeam  String?
+  deadline      DateTime?
+  escalationLevel EscalationLevel @default(medium)
+  workflowStatus String?  // (todo, in_progress, blocked, done)
   createdAt     DateTime @default(now())
 
   workspace     Workspace @relation(fields: [workspaceId], references: [id])
