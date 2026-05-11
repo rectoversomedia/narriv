@@ -39,3 +39,9 @@ export const refreshBodySchema = z.object({
         .min(1, "refreshToken is required."),
 });
 
+export const changePasswordBodySchema = z.object({
+    currentPassword: z
+        .string({ required_error: "currentPassword is required." })
+        .min(1, "currentPassword is required."),
+    newPassword: passwordStrengthSchema,
+});

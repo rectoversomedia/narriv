@@ -65,6 +65,21 @@ export async function updateWorkspaceSettings(req, res) {
             },
         });
 
+        await prisma.auditLog.create({
+            data: {
+                userId: req.user.id,
+                event: "workspace_settings_updated",
+                metadata: {
+                    workspaceId: scopedWorkspaceId,
+                    brandName: updated.brandName,
+                    industry: updated.industry,
+                    timezone: updated.timezone,
+                    notificationEmail: updated.notificationEmail,
+                    whatsappPIC: updated.whatsappPIC,
+                }
+            }
+        });
+
         return res.json(updated);
     } catch (error) {
         console.error("Error updating workspace settings:", error);

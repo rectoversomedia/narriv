@@ -1,8 +1,9 @@
 import express from "express";
-import { register, login, me, refresh, logout } from "./auth.controller.js";
+import { register, login, me, refresh, logout, changePassword } from "./auth.controller.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
 import {
+    changePasswordBodySchema,
     loginBodySchema,
     refreshBodySchema,
     registerBodySchema,
@@ -14,6 +15,7 @@ router.post("/register", validateRequest({ body: registerBodySchema }), register
 router.post("/login", validateRequest({ body: loginBodySchema }), login);
 router.post("/refresh", validateRequest({ body: refreshBodySchema }), refresh);
 router.post("/logout", logout);
+router.post("/change-password", verifyToken, validateRequest({ body: changePasswordBodySchema }), changePassword);
 router.get("/me", verifyToken, me);
 
 export default router;

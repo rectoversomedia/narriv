@@ -248,6 +248,19 @@ export async function escalateAlertsForWorkspace(workspaceId) {
                 }
             }
         });
+        await prisma.auditLog.create({
+            data: {
+                event: "escalation_change",
+                metadata: {
+                    targetType: "alert",
+                    alertId: updated.id,
+                    workspaceId: updated.workspaceId,
+                    previousEscalationLevel: alert.escalationLevel,
+                    escalationLevel: updated.escalationLevel,
+                    reason: "overdue_alert",
+                }
+            }
+        });
     }
 
     const unresolvedCriticalRisks = await prisma.alert.findMany({
@@ -286,6 +299,19 @@ export async function escalateAlertsForWorkspace(workspaceId) {
                     status: alert.status,
                     severity: "critical",
                     type: "risk",
+                }
+            }
+        });
+        await prisma.auditLog.create({
+            data: {
+                event: "escalation_change",
+                metadata: {
+                    targetType: "alert",
+                    alertId: updated.id,
+                    workspaceId: updated.workspaceId,
+                    previousEscalationLevel: alert.escalationLevel,
+                    escalationLevel: updated.escalationLevel,
+                    reason: "unresolved_critical_risk",
                 }
             }
         });

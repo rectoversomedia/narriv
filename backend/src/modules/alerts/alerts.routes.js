@@ -167,8 +167,9 @@ router.patch("/:id/assign", validateRequest({ params: assignAlertParamsSchema, b
         await prisma.auditLog.create({
             data: {
                 userId: req.user.id,
-                event: "alert_assignment_updated",
+                event: "assignment_change",
                 metadata: {
+                    targetType: "alert",
                     alertId: updated.id,
                     workspaceId: updated.workspaceId,
                     assignedTo: updated.assignedTo,
@@ -178,6 +179,22 @@ router.patch("/:id/assign", validateRequest({ params: assignAlertParamsSchema, b
                 }
             }
         });
+
+        if (escalationLevel && escalationLevel !== existing.escalationLevel) {
+            await prisma.auditLog.create({
+                data: {
+                    userId: req.user.id,
+                    event: "escalation_change",
+                    metadata: {
+                        targetType: "alert",
+                        alertId: updated.id,
+                        workspaceId: updated.workspaceId,
+                        previousEscalationLevel: existing.escalationLevel,
+                        escalationLevel: updated.escalationLevel,
+                    }
+                }
+            });
+        }
 
         return res.json(updated);
     } catch (error) {

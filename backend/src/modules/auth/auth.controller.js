@@ -153,12 +153,12 @@ export const login = async (req, res) => {
 
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user) {
-            await writeAuditLog(null, "login_failed_invalid_credentials", { email });
+            await writeAuditLog(null, "failed_login", { email });
             return res.status(401).json({ error: "Invalid credentials." });
         }
 
         if (user.lockedUntil && user.lockedUntil > new Date()) {
-            await writeAuditLog(user.id, "login_blocked_locked", { lockedUntil: user.lockedUntil.toISOString() });
+            await writeAuditLog(user.id, "failed_login", { reason: "account_locked", lockedUntil: user.lockedUntil.toISOString() });
             return res.status(429).json({ error: "Account temporarily locked. Try again later." });
         }
 
@@ -173,7 +173,7 @@ export const login = async (req, res) => {
                     lockedUntil: shouldLock ? new Date(Date.now() + 15 * 60 * 1000) : null,
                 }
             });
-            await writeAuditLog(user.id, "login_failed_invalid_credentials", { attempts: nextAttempts, locked: shouldLock });
+            await writeAuditLog(user.id, "failed_login", { attempts: nextAttempts, locked: shouldLock });
             return res.status(401).json({ error: "Invalid credentials." });
         }
 
@@ -186,7 +186,7 @@ export const login = async (req, res) => {
         const { refreshToken } = await issueRefreshToken(user.id);
 
         const { password: _, ...userWithoutPassword } = user;
-        await writeAuditLog(user.id, "login_success", { email: user.email });
+        await writeAuditLog(user.id, "login", { email: user.email });
 
         res.json({ token, refreshToken, user: userWithoutPassword });
     } catch (error) {
@@ -256,7 +256,7 @@ export const logout = async (req, res) => {
             data: { revokedAt: new Date() }
         });
 
-        await writeAuditLog(tokenRow.userId, "logout_success");
+        await writeAuditLog(tokenRow.userId, "logout");
         return res.json({ success: true });
     } catch (error) {
         console.error("Error logging out:", error);
@@ -278,5 +278,40 @@ export const me = async (req, res) => {
     } catch (error) {
         console.error("Error fetching me:", error);
         res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+export const changePassword = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { currentPassword, newPassword } = req.body;
+
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) {
+            return res.status(404).json({ error: "User not found." });
+        }
+
+        const match = await bcrypt.compare(currentPassword, user.password);
+        if (!match) {
+            await writeAuditLog(userId, "failed_login", { reason: "password_change_invalid_current_password" });
+            return res.status(401).json({ error: "Current password is invalid." });
+        }
+
+        const passwordError = validatePasswordStrength(newPassword);
+        if (passwordError) {
+            return res.status(400).json({ error: passwordError });
+        }
+
+        const hashed = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
+        await prisma.user.update({
+            where: { id: userId },
+            data: { password: hashed },
+        });
+
+        await writeAuditLog(userId, "password_change", { email: user.email });
+        return res.json({ success: true });
+    } catch (error) {
+        console.error("Error changing password:", error);
+        return res.status(500).json({ error: "Internal server error" });
     }
 };
