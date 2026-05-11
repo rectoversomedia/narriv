@@ -20,6 +20,7 @@ import workspaceSettingsRoutes from "./modules/workspace-settings/workspace-sett
 import "./workers/ai-analysis.worker.js";
 import "./workers/alert.worker.js";
 import "./workers/ingestion.worker.js";
+import "./workers/notification.worker.js";
 import { scheduleAlertDetection, scheduleAlertEscalation } from "./lib/queue.js";
 import { getRuntimeHealth } from "./lib/runtime-health.js";
 

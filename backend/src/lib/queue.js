@@ -125,3 +125,49 @@ export const scheduleAlertEscalation = async () => {
         console.error("[QUEUE] Failed to schedule alert escalation:", error.message);
     }
 };
+
+// Notification Queue
+export const notificationQueue = new Queue("notifications", {
+    connection,
+    defaultJobOptions: {
+        attempts: 3,
+        backoff: {
+            type: "exponential",
+            delay: 5000,
+        },
+        removeOnComplete: true,
+        removeOnFail: false,
+    },
+});
+
+/**
+ * Enqueue notification dispatch job with dedupe protection.
+ * @param {string} eventName
+ * @param {object} payload
+ * @param {object} options
+ * @param {string} [options.dedupeKey] - Deterministic key to prevent duplicate sends.
+ * @param {number} [options.delayMs]
+ */
+export const addNotificationJob = async (eventName, payload, options = {}) => {
+    try {
+        const dedupeKey = options.dedupeKey || `${eventName}_${payload?.workspaceId || "global"}_${payload?.targetId || payload?.alertId || "na"}`;
+        const safeKey = String(dedupeKey).replace(/[^a-zA-Z0-9_-]/g, "_");
+
+        const job = await notificationQueue.add(
+            "dispatch-notification",
+            { eventName, payload },
+            {
+                jobId: `notif_${safeKey}`,
+                delay: options.delayMs || 0,
+            }
+        );
+
+        if (job) {
+            console.log(`[QUEUE] Notification job enqueued: ${eventName} (jobId: ${job.id})`);
+        } else {
+            console.log(`[QUEUE] Duplicate notification skipped: ${eventName}`);
+        }
+    } catch (error) {
+        console.error(`[QUEUE] Failed to add notification job (${eventName}):`, error.message);
+    }
+};
