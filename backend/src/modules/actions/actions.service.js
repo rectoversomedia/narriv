@@ -150,6 +150,139 @@ Return ONLY a raw JSON object with these fields:
     }
 };
 
+function toStringOrFallback(value, fallback = "") {
+    if (typeof value !== "string") return fallback;
+    const trimmed = value.trim();
+    return trimmed || fallback;
+}
+
+function toStringArray(value, fallback = []) {
+    if (!Array.isArray(value)) return fallback;
+    const normalized = value
+        .map((item) => (typeof item === "string" ? item.trim() : ""))
+        .filter(Boolean);
+    return normalized.length > 0 ? normalized : fallback;
+}
+
+function toPlanSteps(primaryList, fallbackList) {
+    const steps = toStringArray(primaryList, fallbackList).slice(0, 4);
+    const timelineSlots = ["Today", "Next 6h", "24h", "48h"];
+    return steps.map((step, index) => [step, timelineSlots[index] || "Later"]);
+}
+
+function normalizeStrategyOutput(strategyType, raw, toneSuffix) {
+    const commonTitle = toStringOrFallback(raw?.title, `${formatStrategyName(strategyType)} (${toneSuffix})`);
+    const commonSummary = toStringOrFallback(raw?.executive_summary, "Action summary will be refined by the team.");
+
+    if (strategyType === "pr_response") {
+        const keyMessages = toStringArray(raw?.key_messages, ["Acknowledge concerns", "State verified facts", "Commit to follow-up"]);
+        const talkingPoints = toStringArray(raw?.talking_points, ["Prepare spokesperson points", "Align with legal/comms", "Issue approved statement"]);
+        const mediaChannels = toStringArray(raw?.media_channels, ["Press release", "Owned channels"]);
+        const timeline = toStringOrFallback(raw?.timeline, "Initial response within 24 hours");
+        const riskConsiderations = toStringOrFallback(raw?.risk_considerations, "Monitor narrative spread and stakeholder sentiment.");
+
+        return {
+            title: commonTitle,
+            executive_summary: commonSummary,
+            key_messages: keyMessages,
+            talking_points: talkingPoints,
+            media_channels: mediaChannels,
+            timeline,
+            risk_considerations: riskConsiderations,
+            outputs: [
+                ["Primary action", commonTitle],
+                ["Channel", mediaChannels.join(", ")],
+                ["Timeline", timeline],
+                ["Risk", riskConsiderations],
+            ],
+            plan: toPlanSteps(talkingPoints, keyMessages),
+        };
+    }
+
+    if (strategyType === "content_strategy") {
+        const pillars = toStringArray(raw?.content_pillars, ["Clarify key narrative", "Address audience concerns", "Show evidence-led updates"]);
+        const formats = toStringArray(raw?.recommended_formats, ["Short post", "Carousel", "FAQ article"]);
+        const channels = toStringArray(raw?.distribution_channels, ["Owned social", "Website"]);
+        const themes = toStringArray(raw?.key_themes, ["Transparency", "Consistency", "Actionability"]);
+        const cadence = toStringOrFallback(raw?.publishing_cadence, "Daily for 3 days, then bi-weekly.");
+        const metrics = toStringArray(raw?.success_metrics, ["Engagement rate", "Sentiment lift"]);
+
+        return {
+            title: commonTitle,
+            executive_summary: commonSummary,
+            content_pillars: pillars,
+            recommended_formats: formats,
+            distribution_channels: channels,
+            key_themes: themes,
+            publishing_cadence: cadence,
+            success_metrics: metrics,
+            outputs: [
+                ["Primary action", commonTitle],
+                ["Channel", channels.join(", ")],
+                ["Cadence", cadence],
+                ["Metrics", metrics.join(", ")],
+            ],
+            plan: toPlanSteps(pillars, themes),
+        };
+    }
+
+    if (strategyType === "influencer_strategy") {
+        const profile = toStringOrFallback(raw?.target_influencer_profile, "Relevant creator aligned to brand audience.");
+        const approach = toStringOrFallback(raw?.engagement_approach, "Start with transparent context and collaboration brief.");
+        const collabFormats = toStringArray(raw?.collaboration_formats, ["Story mention", "Q&A session", "Co-created post"]);
+        const messages = toStringArray(raw?.key_messages_for_influencers, ["Use verified facts", "Maintain neutral tone"]);
+        const platforms = toStringArray(raw?.platforms, ["Instagram", "TikTok"]);
+        const budget = toStringOrFallback(raw?.budget_consideration, "Prioritize mid-tier creators with high trust.");
+        const metrics = toStringArray(raw?.success_metrics, ["Reach quality", "Audience sentiment"]);
+
+        return {
+            title: commonTitle,
+            executive_summary: commonSummary,
+            target_influencer_profile: profile,
+            engagement_approach: approach,
+            collaboration_formats: collabFormats,
+            key_messages_for_influencers: messages,
+            platforms,
+            budget_consideration: budget,
+            success_metrics: metrics,
+            outputs: [
+                ["Primary action", commonTitle],
+                ["Platforms", platforms.join(", ")],
+                ["Approach", approach],
+                ["Metrics", metrics.join(", ")],
+            ],
+            plan: toPlanSteps(collabFormats, messages),
+        };
+    }
+
+    const severity = toStringOrFallback(raw?.severity_assessment, "high");
+    const immediateActions = toStringArray(raw?.immediate_actions, ["Acknowledge issue", "Publish holding statement", "Activate response team"]);
+    const holdingStatement = toStringOrFallback(raw?.holding_statement, "We are aware of the situation and are actively addressing it.");
+    const internalCommunication = toStringOrFallback(raw?.internal_communication, "Brief internal teams with approved key points.");
+    const stakeholderManagement = toStringArray(raw?.stakeholder_management, ["Brief key partners", "Open direct escalation line"]);
+    const monitoringPlan = toStringOrFallback(raw?.monitoring_plan, "Monitor media, social velocity, and sentiment hourly.");
+    const recoveryTimeline = toStringOrFallback(raw?.recovery_timeline, "Stabilization target within 48 hours.");
+
+    return {
+        title: commonTitle,
+        severity_assessment: severity,
+        executive_summary: commonSummary,
+        immediate_actions: immediateActions,
+        holding_statement: holdingStatement,
+        internal_communication: internalCommunication,
+        stakeholder_management: stakeholderManagement,
+        monitoring_plan: monitoringPlan,
+        recovery_timeline: recoveryTimeline,
+        outputs: [
+            ["Primary action", commonTitle],
+            ["Severity", severity],
+            ["Holding statement", holdingStatement],
+            ["Recovery timeline", recoveryTimeline],
+        ],
+        plan: toPlanSteps(immediateActions, stakeholderManagement),
+    };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // CONTEXT BUILDER
 // ─────────────────────────────────────────────────────────────────────────────
@@ -259,9 +392,9 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
 
     // 2. Generate 3 strategic options in parallel
     const options = await Promise.all([
-        generateOption(promptConfig, context, "Option A (Conservative/Safe)"),
-        generateOption(promptConfig, context, "Option B (Balanced/Recommended)"),
-        generateOption(promptConfig, context, "Option C (Bold/Aggressive)")
+        generateOption(strategyType, promptConfig, context, "Option A (Conservative/Safe)"),
+        generateOption(strategyType, promptConfig, context, "Option B (Balanced/Recommended)"),
+        generateOption(strategyType, promptConfig, context, "Option C (Bold/Aggressive)")
     ]);
 
     // 3. Save to database
@@ -295,7 +428,7 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
 /**
  * Generates a single strategic option via OpenAI.
  */
-async function generateOption(promptConfig, context, toneSuffix) {
+async function generateOption(strategyType, promptConfig, context, toneSuffix) {
     try {
         const messages = [
             { role: "system", content: promptConfig.system },
@@ -304,7 +437,8 @@ async function generateOption(promptConfig, context, toneSuffix) {
         const response = await callOpenAIWithRetry(messages, { toneSuffix });
 
         const raw = response.choices[0]?.message?.content || "{}";
-        return JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        return normalizeStrategyOutput(strategyType, parsed, toneSuffix);
     } catch (error) {
         logStructured("error", "generate_option_failed", {
             toneSuffix,
@@ -313,7 +447,14 @@ async function generateOption(promptConfig, context, toneSuffix) {
             aborted: isAbortError(error),
             error: error?.message || "Unknown error",
         });
-        return { error: `Failed to generate: ${error.message}` };
+        return normalizeStrategyOutput(
+            strategyType,
+            {
+                title: `${formatStrategyName(promptConfig.type)} (${toneSuffix})`,
+                executive_summary: `Generation fallback used due to provider failure: ${error.message}`,
+            },
+            toneSuffix
+        );
     }
 }
 
