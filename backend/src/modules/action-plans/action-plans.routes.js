@@ -3,9 +3,22 @@ import prisma from "../../prisma.js";
 import { submitFeedback } from "../feedback/feedback.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds } from "../../lib/workspace-access.js";
+import { validateRequest } from "../../middlewares/validate-request.js";
+import { z } from "zod";
 
 const router = express.Router();
 router.use(verifyToken);
+
+const assignActionPlanParamsSchema = z.object({
+    id: z.string().uuid("id must be a valid UUID."),
+});
+
+const assignActionPlanBodySchema = z.object({
+    assignedTo: z.string().trim().min(1, "assignedTo cannot be empty.").max(120, "assignedTo is too long.").optional().nullable(),
+    assignedTeam: z.string().trim().min(1, "assignedTeam cannot be empty.").max(120, "assignedTeam is too long.").optional().nullable(),
+    deadline: z.string().datetime("deadline must be a valid ISO datetime.").optional().nullable(),
+    escalationLevel: z.enum(["low", "medium", "high", "critical"]).optional(),
+});
 
 function parseOption(raw) {
     if (!raw) return null;
@@ -156,6 +169,54 @@ router.post("/:id/feedback", async (req, res) => {
     } catch (error) {
         console.error("Error submitting action plan feedback:", error);
         return res.status(400).json({ error: error.message || "Internal server error" });
+    }
+});
+
+// PATCH /api/action-plans/:id/assign - Update assignment workflow fields
+router.patch("/:id/assign", validateRequest({ params: assignActionPlanParamsSchema, body: assignActionPlanBodySchema }), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { assignedTo, assignedTeam, deadline, escalationLevel } = req.body;
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
+
+        const existing = await prisma.actionPlan.findUnique({
+            where: { id },
+            select: { id: true, workspaceId: true, escalationLevel: true },
+        });
+
+        if (!existing || !scopedWorkspaceIds.includes(existing.workspaceId)) {
+            return res.status(404).json({ error: "Action plan not found" });
+        }
+
+        const updated = await prisma.actionPlan.update({
+            where: { id },
+            data: {
+                assignedTo: assignedTo ?? null,
+                assignedTeam: assignedTeam ?? null,
+                deadline: deadline ? new Date(deadline) : null,
+                escalationLevel: escalationLevel ?? existing.escalationLevel,
+            }
+        });
+
+        await prisma.auditLog.create({
+            data: {
+                userId: req.user.id,
+                event: "action_plan_assignment_updated",
+                metadata: {
+                    actionPlanId: updated.id,
+                    workspaceId: updated.workspaceId,
+                    assignedTo: updated.assignedTo,
+                    assignedTeam: updated.assignedTeam,
+                    deadline: updated.deadline,
+                    escalationLevel: updated.escalationLevel,
+                }
+            }
+        });
+
+        return res.json(updated);
+    } catch (error) {
+        console.error("Error updating action plan assignment:", error);
+        return res.status(500).json({ error: "Internal server error" });
     }
 });
 
