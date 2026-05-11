@@ -1,7 +1,11 @@
 import express from "express";
-import crypto from "crypto";
 import prisma from "../../prisma.js";
 import { generateReport } from "./reports.service.js";
+import {
+    cleanupExpiredReportExports,
+    resolveSignedReportDownload,
+    storeReportExportPayload
+} from "./report-export-storage.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 
@@ -196,6 +200,7 @@ router.get("/", async (req, res) => {
 // POST /api/reports/:id/export - Create report export job
 router.post("/:id/export", async (req, res) => {
     try {
+        await cleanupExpiredReportExports();
         const { id } = req.params;
         const { format = "json" } = req.body || {};
         const normalizedFormat = String(format).toLowerCase();
@@ -236,22 +241,12 @@ router.post("/:id/export", async (req, res) => {
                     exportedAt: new Date().toISOString(),
                 };
 
-            const signedToken = crypto.randomBytes(24).toString("hex");
-            const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
             const baseUrl = `${req.protocol}://${req.get("host")}`;
-            const signedUrl = `${baseUrl}/api/reports/exports/${exportJob.id}/download?token=${signedToken}`;
-
-            await prisma.reportExport.update({
-                where: { id: exportJob.id },
-                data: {
-                    status: "completed",
-                    fileName: `narriv-report-${report.id.substring(0, 8)}.${normalizedFormat}`,
-                    fileContent: payload,
-                    signedToken,
-                    signedUrl,
-                    expiresAt,
-                    errorMessage: null,
-                }
+            await storeReportExportPayload({
+                exportId: exportJob.id,
+                payload,
+                fileName: `narriv-report-${report.id.substring(0, 8)}.${normalizedFormat}`,
+                baseUrl,
             });
         } catch (jobError) {
             await prisma.reportExport.update({
@@ -273,6 +268,7 @@ router.post("/:id/export", async (req, res) => {
 // GET /api/reports/exports/:jobId - Get export job status
 router.get("/exports/:jobId", async (req, res) => {
     try {
+        await cleanupExpiredReportExports();
         const { jobId } = req.params;
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
@@ -303,6 +299,7 @@ router.get("/exports/:jobId", async (req, res) => {
 // GET /api/reports/exports/:jobId/download?token=... - Signed download URL endpoint
 router.get("/exports/:jobId/download", async (req, res) => {
     try {
+        await cleanupExpiredReportExports();
         const { jobId } = req.params;
         const { token } = req.query;
         if (!token) return res.status(400).json({ error: "token is required" });
@@ -316,19 +313,14 @@ router.get("/exports/:jobId/download", async (req, res) => {
         if (!job || !scopedWorkspaceIds.includes(job.report.workspaceId)) {
             return res.status(404).json({ error: "Export job not found" });
         }
-        if (job.status !== "completed" || !job.fileContent) {
-            return res.status(409).json({ error: "Export is not ready" });
-        }
-        if (!job.signedToken || String(token) !== job.signedToken) {
-            return res.status(401).json({ error: "Invalid download token" });
-        }
-        if (job.expiresAt && new Date(job.expiresAt) < new Date()) {
-            return res.status(410).json({ error: "Signed URL has expired" });
+        const resolved = await resolveSignedReportDownload({ exportId: jobId, token: String(token) });
+        if (!resolved.ok) {
+            return res.status(resolved.status).json({ error: resolved.error });
         }
 
         res.setHeader("Content-Type", "application/json");
         res.setHeader("Content-Disposition", `attachment; filename="${job.fileName || `report-export-${job.id}.${job.format}`}"`);
-        return res.json(job.fileContent);
+        return res.json(resolved.payload);
     } catch (error) {
         console.error("Error downloading export file:", error);
         return res.status(500).json({ error: "Internal server error" });
