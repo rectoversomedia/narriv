@@ -9,6 +9,8 @@ import {
 import { incrementExportFailure } from "../../lib/metrics.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
+import { validateRequest } from "../../middlewares/validate-request.js";
+import { createReportBodySchema, createReportExportBodySchema, reportIdParamsSchema } from "./reports.schema.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -139,7 +141,7 @@ function buildPdfData(fullReport, reportId) {
 }
 
 // POST /api/reports - Generate a new intelligence report
-router.post("/", async (req, res) => {
+router.post("/", validateRequest({ body: createReportBodySchema }), async (req, res) => {
     try {
         const { workspaceId, title, periodStart, periodEnd } = req.body;
         const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
@@ -199,7 +201,7 @@ router.get("/", async (req, res) => {
 });
 
 // POST /api/reports/:id/export - Create report export job
-router.post("/:id/export", async (req, res) => {
+router.post("/:id/export", validateRequest({ params: reportIdParamsSchema, body: createReportExportBodySchema }), async (req, res) => {
     try {
         await cleanupExpiredReportExports();
         const { id } = req.params;

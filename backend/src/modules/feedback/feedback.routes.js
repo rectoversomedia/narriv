@@ -2,12 +2,14 @@ import express from "express";
 import { submitFeedback, getAccuracyMetrics, getRejectionInsights, getActionPlanPromptScoring } from "./feedback.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveWorkspaceIdForUser, resolveScopedWorkspaceIds } from "../../lib/workspace-access.js";
+import { validateRequest } from "../../middlewares/validate-request.js";
+import { submitFeedbackBodySchema } from "./feedback.schema.js";
 
 const router = express.Router();
 router.use(verifyToken);
 
 // POST /api/feedback — Submit feedback on an AI output
-router.post("/", async (req, res) => {
+router.post("/", validateRequest({ body: submitFeedbackBodySchema }), async (req, res) => {
     try {
         const { workspaceId, targetType, targetId, action, originalOutput, editedOutput, reason, userId } = req.body;
 

@@ -4,6 +4,7 @@ import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds } from "../../lib/workspace-access.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
 import { z } from "zod";
+import { alertIdParamsSchema, updateAlertStatusBodySchema } from "./alerts.schema.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -109,7 +110,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // PATCH /api/alerts/:id/status - Update alert status
-router.patch("/:id/status", async (req, res) => {
+router.patch("/:id/status", validateRequest({ params: alertIdParamsSchema, body: updateAlertStatusBodySchema }), async (req, res) => {
     try {
         const { id } = req.params;
         const { status } = req.body;

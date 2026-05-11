@@ -3,6 +3,8 @@ import prisma from "../../prisma.js";
 import { analyzeSignal } from "../ai/ai.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { getUserWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
+import { validateRequest } from "../../middlewares/validate-request.js";
+import { createSignalBodySchema, signalIdParamsSchema } from "./signals.schema.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -83,7 +85,7 @@ router.get("/", async (req, res) => {
 });
 
 // POST tambah data
-router.post("/", async (req, res) => {
+router.post("/", validateRequest({ body: createSignalBodySchema }), async (req, res) => {
     try {
         if (!req.body) {
             return res.status(400).json({
@@ -155,7 +157,7 @@ router.get("/:id", async (req, res) => {
 
 
 // POST /signals/:id/analyze — Run AI analysis and save to SignalAnalysis
-router.post("/:id/analyze", async (req, res) => {
+router.post("/:id/analyze", validateRequest({ params: signalIdParamsSchema }), async (req, res) => {
     try {
         const { id } = req.params;
         const workspaceIds = await getUserWorkspaceIds(req.user.id);

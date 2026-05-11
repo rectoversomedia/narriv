@@ -45,3 +45,10 @@ export const changePasswordBodySchema = z.object({
         .min(1, "currentPassword is required."),
     newPassword: passwordStrengthSchema,
 });
+
+export const logoutBodySchema = z.object({
+    refreshToken: z
+        .string({ required_error: "refreshToken is required." })
+        .trim()
+        .min(1, "refreshToken is required."),
+});

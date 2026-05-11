@@ -23,45 +23,45 @@ Product positioning to preserve in backend contracts:
 - [ ] Run `npx prisma migrate deploy` successfully against a clean database and a baselined existing database.
 - [x] Document required backend environment variables in `.env.example`, including `JWT_SECRET`, `DATABASE_URL`, `OPENAI_API_KEY`, Apify configuration, queue configuration, and report export storage settings.
 - [x] Add a startup/runtime health check that reports database, queue, OpenAI, and ingestion provider availability without leaking secrets.
-- [ ] Decide long-term workspace deletion policy: restrict, soft delete, or cascade tenant-owned data.
+- [x] Decide long-term workspace deletion policy: restrict, soft delete, or cascade tenant-owned data. (Implemented: restrict delete strategy)
 
 ### API Reliability and Validation
-- [ ] Add schema validation for every `POST`, `PATCH`, and `PUT` endpoint, including auth, sources, ingestion, alerts, action generation, feedback, and report export.
+- [x] Add schema validation for every `POST`, `PATCH`, and `PUT` endpoint, including auth, sources, ingestion, alerts, action generation, feedback, and report export.
 - [ ] Normalize API error responses into one contract: `{ error, code?, details? }`.
-- [ ] Return correct status codes for action generation failures, e.g. missing `OPENAI_API_KEY`, invalid alert/topic ownership, and provider timeout.
-- [ ] Add pagination metadata consistently for list endpoints.
+- [x] Return correct status codes for action generation failures, e.g. missing `OPENAI_API_KEY`, invalid alert/topic ownership, and provider timeout.
+- [x] Add pagination metadata consistently for list endpoints.
 - [ ] Add integration tests for every frontend-facing endpoint listed in the contract table.
 
 ### Workspace and Product Endpoints
-- [ ] Add a dedicated workspace settings endpoint for `/workspace/settings`, e.g. `GET /api/workspace/settings` and `PATCH /api/workspace/settings`.
-- [ ] Add backend support for workspace members/team access if settings will manage users.
+- [x] Add a dedicated workspace settings endpoint for `/workspace/settings`, e.g. `GET /api/workspace/settings` and `PATCH /api/workspace/settings`.
+- [x] Add backend support for workspace members/team access if settings will manage users.
 
 ### Assignment, Notifications, and Escalation
-- [ ] Add assignment fields or models for alerts/action plans: PIC, team, deadline, status, and escalation level.
-- [ ] Add notification channel settings for WhatsApp-to-PIC and email first; keep Slack/Telegram optional.
-- [ ] Add notification dispatch jobs for newly high-risk alerts, assignment changes, deadline reminders, and escalation changes.
+- [x] Add assignment fields or models for alerts/action plans: PIC, team, deadline, status, and escalation level.
+- [x] Add notification channel settings for WhatsApp-to-PIC and email first; keep Slack/Telegram optional.
+- [x] Add notification dispatch jobs for newly high-risk alerts, assignment changes, deadline reminders, and escalation changes.
 - [ ] Add audit log entries for assignment changes, notification attempts, and escalation-level changes.
 - [ ] Add API contracts for frontend assignment controls and notification settings once the data model is finalized.
 
 ### AI and Action Engine
-- [ ] Add a non-AI fallback or explicit unavailable state for `POST /api/actions` when `OPENAI_API_KEY` is missing.
-- [ ] Add provider timeout/retry policy for action generation.
+- [x] Add a non-AI fallback or explicit unavailable state for `POST /api/actions` when `OPENAI_API_KEY` is missing.
+- [x] Add provider timeout/retry policy for action generation.
 - [ ] Store generation failure logs with workspace ID, strategy type, target IDs, provider error, and timestamp.
-- [ ] Add strategy-specific response normalization so action plans always produce useful `outputs` and `plan` fields.
-- [ ] Add tests for PR response, content strategy, influencer strategy, and crisis response action generation.
+- [x] Add strategy-specific response normalization so action plans always produce useful `outputs` and `plan` fields.
+- [x] Add tests for PR response, content strategy, influencer strategy, and crisis response action generation.
 
 ### Ingestion and Reporting
 - [ ] Verify Apify/collector production configuration and document actor IDs/input schema.
-- [ ] Add ingestion retry/backoff policy and job cancellation/timeout behavior.
-- [ ] Ensure raw documents and signals have deterministic dedupe behavior per workspace.
-- [ ] Finish report export storage implementation for production downloads, including signed URL expiration and cleanup.
-- [ ] Add export worker tests for success, failed, and expired download cases.
+- [x] Add ingestion retry/backoff policy and job cancellation/timeout behavior.
+- [x] Ensure raw documents and signals have deterministic dedupe behavior per workspace.
+- [x] Finish report export storage implementation for production downloads, including signed URL expiration and cleanup.
+- [x] Add export worker tests for success, failed, and expired download cases.
 
 ### Security and Observability
-- [ ] Add audit log entries for password change and sensitive workspace settings updates.
-- [ ] Add request IDs and structured logging for API requests, worker jobs, and AI provider calls.
+- [x] Add audit log entries for password change and sensitive workspace settings updates.
+- [x] Add request IDs and structured logging for API requests, worker jobs, and AI provider calls.
 - [ ] Add rate limits to AI generation, report export, ingestion run, and feedback endpoints.
-- [ ] Add basic metrics for endpoint latency, AI failures, ingestion failures, and export failures.
+- [x] Add basic metrics for endpoint latency, AI failures, ingestion failures, and export failures.
 - [ ] Review CORS production allowlist before launch and replace broad preview settings if needed.
 
 ## Completed Backend Foundation
@@ -201,8 +201,8 @@ Acceptance criteria:
 - [x] Add optional `POST /auth/refresh` endpoint if refresh-token flow is implemented.
 - [x] Add workspace scoping to protected queries.
 - [x] Prevent users from reading another workspace's data.
-- [ ] Add basic request validation for all POST/PATCH endpoints.
-- [ ] Add audit log entries for login, logout, failed login, password change, and sensitive settings updates.
+- [x] Add basic request validation for all POST/PATCH endpoints.
+- [x] Add audit log entries for login, logout, failed login, password change, and sensitive settings updates.
 - [x] Review CORS origins and allowed headers before production deployment.
 - [x] Ensure secrets like `JWT_SECRET`, refresh-token secret, and database credentials are loaded from environment variables only.
 - [x] Add unique index for refresh token hashes.
@@ -223,8 +223,8 @@ Acceptance criteria:
 - [x] Add `Source.updatedAt` for source CRUD tracking.
 - [x] Add deployable migration: `20260509050000_production_database_hardening`.
 - [ ] Baseline existing local/production databases before running `prisma migrate deploy` if they were created before Prisma migration history.
-- [ ] Decide long-term workspace deletion policy: restrict, soft delete, or cascade tenant data.
-- [ ] Add optional Postgres RLS if any client ever connects directly to the database instead of only through the Node API.
+- [x] Decide long-term workspace deletion policy: restrict, soft delete, or cascade tenant data.
+- [x] Add optional Postgres RLS if any client ever connects directly to the database instead of only through the Node API.
 
 ---
 

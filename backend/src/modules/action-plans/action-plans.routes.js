@@ -5,6 +5,7 @@ import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds } from "../../lib/workspace-access.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
 import { z } from "zod";
+import { actionPlanIdParamsSchema, submitActionPlanFeedbackBodySchema } from "./action-plans.schema.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -125,7 +126,7 @@ router.get("/", async (req, res) => {
 });
 
 // POST /api/action-plans/:id/feedback — Feedback endpoint for action suggestions
-router.post("/:id/feedback", async (req, res) => {
+router.post("/:id/feedback", validateRequest({ params: actionPlanIdParamsSchema, body: submitActionPlanFeedbackBodySchema }), async (req, res) => {
     try {
         const { id } = req.params;
         const { action, reason, comment, editedOutput, originalOutput, userId } = req.body;

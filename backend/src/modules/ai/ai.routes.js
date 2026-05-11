@@ -1,6 +1,8 @@
 import express from "express";
 import { analyzeSignal } from "./ai.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
+import { validateRequest } from "../../middlewares/validate-request.js";
+import { analyzeBodySchema } from "./ai.module.schema.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -10,7 +12,7 @@ router.use(verifyToken);
  * Analyzes a signal's title + content using OpenAI.
  * Body: { title?: string, content: string }
  */
-router.post("/analyze", async (req, res) => {
+router.post("/analyze", validateRequest({ body: analyzeBodySchema }), async (req, res) => {
     try {
         const { title, content, text } = req.body;
         const inputContent = content || text;

@@ -53,8 +53,8 @@ RLS policy can then compare table `workspace_id` to this setting.
 
 See:
 
-- `prisma/migrations/examples_optional_rls/001_enable_rls_example.sql`
-- `prisma/migrations/examples_optional_rls/002_disable_rls_rollback_example.sql`
+- `prisma/optional_migration_examples/rls/001_enable_rls_example.sql`
+- `prisma/optional_migration_examples/rls/002_disable_rls_rollback_example.sql`
 
 These are examples only and are not part of active Prisma migration chain unless explicitly copied into a real migration.
 

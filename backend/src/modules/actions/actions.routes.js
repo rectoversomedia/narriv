@@ -4,12 +4,14 @@ import { generateActionPlan } from "./actions.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { badRequest, forbidden, internalError, notFound } from "../../lib/api-error.js";
+import { validateRequest } from "../../middlewares/validate-request.js";
+import { createActionPlanBodySchema } from "./actions.schema.js";
 
 const router = express.Router();
 router.use(verifyToken);
 
 // POST /api/actions — Generate a new action plan
-router.post("/", async (req, res) => {
+router.post("/", validateRequest({ body: createActionPlanBodySchema }), async (req, res) => {
     try {
         const { workspaceId, strategyType, alertId, clusterId } = req.body;
 

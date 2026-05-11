@@ -71,3 +71,20 @@ Before production deploy:
 - ensure database backup/snapshot is created
 - ensure restore steps are tested in staging
 - ensure on-call owner is assigned for migration window
+
+## Verification Notes (2026-05-11)
+
+Executed in local environment (`backend/`):
+
+1. `npx prisma migrate status`  
+Result: `Database schema is up to date!`
+
+2. `npx prisma migrate deploy`  
+Result: `No pending migrations to apply.`
+
+3. `npx prisma migrate status` (post-check)  
+Result: `Database schema is up to date!`
+
+Important:
+- This verifies deploy flow on current database state.
+- Baselining flow for a pre-existing DB without migration history still must be validated in a dedicated environment where `_prisma_migrations` is intentionally absent/out-of-sync.
