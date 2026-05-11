@@ -81,10 +81,10 @@ export const scheduleAlertDetection = async () => {
 export const ingestionQueue = new Queue("ingestion", {
     connection,
     defaultJobOptions: {
-        attempts: 3,
+        attempts: Number(process.env.INGESTION_MAX_RETRIES || 3),
         backoff: {
             type: "exponential",
-            delay: 5000,
+            delay: Number(process.env.INGESTION_BACKOFF_MS || 5000),
         },
         removeOnComplete: true,
         removeOnFail: false,

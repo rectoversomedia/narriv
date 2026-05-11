@@ -4,11 +4,38 @@ import prisma from "../prisma.js";
 import { runActorAndFetchDataset } from "../modules/apify/apify.service.js";
 import { addAnalysisJob } from "../lib/queue.js";
 
+function logStructured(level, event, payload = {}) {
+    const entry = {
+        level,
+        event,
+        worker: "ingestion-worker",
+        timestamp: new Date().toISOString(),
+        ...payload,
+    };
+    const line = JSON.stringify(entry);
+    if (level === "error") {
+        console.error(line);
+    } else if (level === "warn") {
+        console.warn(line);
+    } else {
+        console.log(line);
+    }
+}
+
 const ingestionWorker = new Worker(
     "ingestion",
     async (job) => {
         const { jobId, sourceId } = job.data;
-        console.log(`[INGESTION WORKER] Processing job: ${jobId} for source: ${sourceId}`);
+        const maxAttempts = Number(job.opts?.attempts || 1);
+        const attemptNumber = Number(job.attemptsMade || 0) + 1;
+        logStructured("info", "ingestion_job_started", {
+            queueJobId: job.id,
+            ingestionJobId: jobId,
+            sourceId,
+            attemptNumber,
+            maxAttempts,
+        });
+
         await prisma.ingestionJob.update({
             where: { id: jobId },
             data: { status: "running" },
@@ -164,7 +191,13 @@ const ingestionWorker = new Worker(
             let allDatasets = [];
 
             for (const config of actorConfigs) {
-                console.log(`[INGESTION WORKER] Starting actor: ${config.actorTarget}`);
+                logStructured("info", "ingestion_actor_started", {
+                    queueJobId: job.id,
+                    ingestionJobId: jobId,
+                    sourceId,
+                    actorTarget: config.actorTarget,
+                    attemptNumber,
+                });
                 try {
                     const dataset = await runActorAndFetchDataset(
                         config.actorTarget,
@@ -174,20 +207,19 @@ const ingestionWorker = new Worker(
                         allDatasets = allDatasets.concat(dataset);
                     }
                 } catch (err) {
-                    console.error(`[INGESTION WORKER] Error running actor ${config.actorTarget}:`, err.message || err);
+                    logStructured("warn", "ingestion_actor_failed", {
+                        queueJobId: job.id,
+                        ingestionJobId: jobId,
+                        sourceId,
+                        actorTarget: config.actorTarget,
+                        attemptNumber,
+                        error: err.message || String(err),
+                    });
                 }
             }
 
             if (allDatasets.length === 0) {
-                await prisma.ingestionJob.update({
-                    where: { id: jobId },
-                    data: {
-                        status: "failed",
-                        errorMessage: "Ingestion returned no data from configured actors.",
-                        finishedAt: new Date()
-                    },
-                });
-                return { processedCount: 0 };
+                throw new Error("Ingestion returned no data from configured actors.");
             }
 
             let processedCount = 0;
@@ -268,17 +300,41 @@ const ingestionWorker = new Worker(
                 data: { status: "completed", errorMessage: null, finishedAt: new Date() },
             });
 
+            logStructured("info", "ingestion_job_completed", {
+                queueJobId: job.id,
+                ingestionJobId: jobId,
+                sourceId,
+                attemptNumber,
+                maxAttempts,
+                processedCount,
+            });
+
             return { processedCount };
 
         } catch (backgroundError) {
-            console.error("[INGESTION WORKER] Error:", backgroundError);
+            const willRetry = attemptNumber < maxAttempts;
+            logStructured(willRetry ? "warn" : "error", "ingestion_job_failed", {
+                queueJobId: job.id,
+                ingestionJobId: jobId,
+                sourceId,
+                attemptNumber,
+                maxAttempts,
+                willRetry,
+                error: backgroundError.message || String(backgroundError),
+            });
+
             await prisma.ingestionJob.update({
                 where: { id: jobId },
-                data: {
-                    status: "failed",
-                    errorMessage: backgroundError.message,
-                    finishedAt: new Date(),
-                },
+                data: willRetry
+                    ? {
+                        status: "queued",
+                        errorMessage: backgroundError.message || "Ingestion retry scheduled",
+                    }
+                    : {
+                        status: "failed",
+                        errorMessage: backgroundError.message,
+                        finishedAt: new Date(),
+                    },
             });
             throw backgroundError;
         }
@@ -287,11 +343,18 @@ const ingestionWorker = new Worker(
 );
 
 ingestionWorker.on("completed", (job, returnvalue) => {
-    console.log(`[INGESTION WORKER] Job ${job.id} completed. Processed items: ${returnvalue.processedCount}`);
+    logStructured("info", "ingestion_worker_completed_event", {
+        queueJobId: job.id,
+        processedCount: returnvalue?.processedCount || 0,
+    });
 });
 
 ingestionWorker.on("failed", (job, err) => {
-    console.error(`[INGESTION WORKER] Job ${job?.id} failed:`, err.message);
+    logStructured("error", "ingestion_worker_failed_event", {
+        queueJobId: job?.id,
+        attemptsMade: job?.attemptsMade,
+        error: err.message,
+    });
 });
 
 export default ingestionWorker;
