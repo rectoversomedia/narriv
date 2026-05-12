@@ -1,0 +1,166 @@
+{
+  "nodes": [
+    {
+      "id": "image_assets_5_png",
+      "type": "image",
+      "label": "assets\\5.png",
+      "file_type": "image",
+      "source_file": "assets\\5.png",
+      "properties": {
+        "description": "Black-background brand/logo image containing an abstract blue/cyan monogram mark and the wordmark Narriv.",
+        "background_color": "black",
+        "confidence_score": 0.99
+      }
+    },
+    {
+      "id": "brand_narriv",
+      "type": "brand_or_wordmark",
+      "label": "Narriv.",
+      "file_type": "image",
+      "source_file": "assets\\5.png",
+      "properties": {
+        "visible_text": "Narriv.",
+        "text_reading_status": "readable",
+        "letter_case": "title case",
+        "confidence_score": 0.98
+      }
+    },
+    {
+      "id": "abstract_monogram_mark",
+      "type": "logo_mark",
+      "label": "abstract blue/cyan monogram mark",
+      "file_type": "image",
+      "source_file": "assets\\5.png",
+      "properties": {
+        "description": "Rounded stroke symbol resembling an abstract N or connected path mark; exact intended letterform is AMBIGUOUS.",
+        "colors": [
+          "bright blue",
+          "cyan",
+          "dark indigo overlay"
+        ],
+        "shape_language": "rounded thick strokes with dot accents",
+        "ambiguous_reading": "May represent stylized N, wave/path, or initials; AMBIGUOUS.",
+        "confidence_score": 0.86
+      }
+    },
+    {
+      "id": "wordmark_text_narriv",
+      "type": "text_element",
+      "label": "Narriv.",
+      "file_type": "image",
+      "source_file": "assets\\5.png",
+      "properties": {
+        "content": "Narriv.",
+        "font_style": "bold geometric sans-serif",
+        "color": "very dark navy or indigo",
+        "position": "right of logo mark",
+        "confidence_score": 0.97
+      }
+    },
+    {
+      "id": "logo_lockup_layout",
+      "type": "ui_layout_or_design_composition",
+      "label": "horizontal logo lockup",
+      "file_type": "image",
+      "source_file": "assets\\5.png",
+      "properties": {
+        "layout": "logo mark on left, wordmark on right, centered horizontally in a wide black canvas",
+        "spacing": "wide gap between icon and text",
+        "visual_hierarchy": "mark and wordmark form a single brand identity lockup",
+        "confidence_score": 0.95
+      }
+    },
+    {
+      "id": "blue_cyan_gradient_concept",
+      "type": "design_concept",
+      "label": "blue/cyan technology gradient aesthetic",
+      "file_type": "image",
+      "source_file": "assets\\5.png",
+      "properties": {
+        "description": "Use of bright blue and cyan strokes suggests a modern digital, technology, motion, or navigation-oriented brand aesthetic; exact brand domain is AMBIGUOUS.",
+        "confidence_score": 0.78
+      }
+    },
+    {
+      "id": "black_negative_space",
+      "type": "design_concept",
+      "label": "black negative-space background",
+      "file_type": "image",
+      "source_file": "assets\\5.png",
+      "properties": {
+        "description": "Large black canvas creates strong contrast around the blue/cyan logo mark and dark indigo wordmark.",
+        "confidence_score": 0.93
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "image_assets_5_png",
+      "target": "logo_lockup_layout",
+      "type": "contains",
+      "confidence_score": 0.99
+    },
+    {
+      "source": "logo_lockup_layout",
+      "target": "abstract_monogram_mark",
+      "type": "includes_left_element",
+      "confidence_score": 0.97
+    },
+    {
+      "source": "logo_lockup_layout",
+      "target": "wordmark_text_narriv",
+      "type": "includes_right_element",
+      "confidence_score": 0.97
+    },
+    {
+      "source": "wordmark_text_narriv",
+      "target": "brand_narriv",
+      "type": "spells_or_identifies_brand",
+      "confidence_score": 0.98
+    },
+    {
+      "source": "abstract_monogram_mark",
+      "target": "brand_narriv",
+      "type": "represents_or_associates_with_brand",
+      "confidence_score": 0.9
+    },
+    {
+      "source": "abstract_monogram_mark",
+      "target": "blue_cyan_gradient_concept",
+      "type": "uses_visual_style",
+      "confidence_score": 0.88
+    },
+    {
+      "source": "logo_lockup_layout",
+      "target": "black_negative_space",
+      "type": "placed_on_background",
+      "confidence_score": 0.96
+    },
+    {
+      "source": "wordmark_text_narriv",
+      "target": "abstract_monogram_mark",
+      "type": "positioned_to_right_of",
+      "confidence_score": 0.96
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "brand_identity_lockup_hyperedge",
+      "type": "composes_brand_identity",
+      "nodes": [
+        "abstract_monogram_mark",
+        "wordmark_text_narriv",
+        "brand_narriv",
+        "logo_lockup_layout"
+      ],
+      "file_type": "image",
+      "source_file": "assets\\5.png",
+      "properties": {
+        "description": "The abstract mark and Narriv. wordmark combine into a single horizontal brand/logo lockup.",
+        "confidence_score": 0.94
+      }
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

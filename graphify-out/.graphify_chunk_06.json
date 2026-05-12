@@ -1,0 +1,150 @@
+{
+  "nodes": [
+    {
+      "id": "5_cropped_logo_asset",
+      "label": "Narriv Logo Asset",
+      "file_type": "image",
+      "source_file": "assets\\5-cropped.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "5_cropped_narriv_wordmark",
+      "label": "Narriv Wordmark",
+      "file_type": "image",
+      "source_file": "assets\\5-cropped.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "5_cropped_stylized_monogram",
+      "label": "Stylized N Monogram",
+      "file_type": "image",
+      "source_file": "assets\\5-cropped.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "5_cropped_blue_cyan_palette",
+      "label": "Blue and Cyan Brand Palette",
+      "file_type": "image",
+      "source_file": "assets\\5-cropped.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "5_cropped_dark_wordmark_contrast",
+      "label": "Dark Wordmark Contrast",
+      "file_type": "image",
+      "source_file": "assets\\5-cropped.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "5_cropped_ambiguous_navigation_path_motif",
+      "label": "AMBIGUOUS Navigation or Route Path Motif",
+      "file_type": "image",
+      "source_file": "assets\\5-cropped.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "5_cropped_logo_asset",
+      "target": "5_cropped_narriv_wordmark",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "assets\\5-cropped.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "5_cropped_logo_asset",
+      "target": "5_cropped_stylized_monogram",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "assets\\5-cropped.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "5_cropped_stylized_monogram",
+      "target": "5_cropped_blue_cyan_palette",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "assets\\5-cropped.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "5_cropped_narriv_wordmark",
+      "target": "5_cropped_dark_wordmark_contrast",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "assets\\5-cropped.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "5_cropped_stylized_monogram",
+      "target": "5_cropped_ambiguous_navigation_path_motif",
+      "relation": "conceptually_related_to",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.25,
+      "source_file": "assets\\5-cropped.png",
+      "source_location": null,
+      "weight": 0.4
+    },
+    {
+      "source": "5_cropped_logo_asset",
+      "target": "5_cropped_blue_cyan_palette",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "assets\\5-cropped.png",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "5_cropped_narriv_brand_identity",
+      "label": "Narriv Brand Identity",
+      "nodes": [
+        "5_cropped_logo_asset",
+        "5_cropped_narriv_wordmark",
+        "5_cropped_stylized_monogram",
+        "5_cropped_blue_cyan_palette"
+      ],
+      "relation": "form",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "assets\\5-cropped.png"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

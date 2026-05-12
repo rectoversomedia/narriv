@@ -1,0 +1,170 @@
+{
+  "nodes": [
+    {
+      "id": "image:frontend/public/narriv-logo-dark.png",
+      "type": "image",
+      "file_type": "image",
+      "source_file": "frontend\\public\\narriv-logo-dark.png",
+      "label": "Narriv dark logo image",
+      "description": "A logo on a dark/black background containing a blue/cyan abstract symbol and a white wordmark reading Narriv."
+    },
+    {
+      "id": "brand:narriv",
+      "type": "brand",
+      "file_type": "image",
+      "source_file": "frontend\\public\\narriv-logo-dark.png",
+      "label": "Narriv",
+      "description": "Brand name shown in the wordmark."
+    },
+    {
+      "id": "wordmark:narriv_with_period",
+      "type": "wordmark",
+      "file_type": "image",
+      "source_file": "frontend\\public\\narriv-logo-dark.png",
+      "label": "Narriv.",
+      "description": "White bold sans-serif wordmark reading Narriv followed by a period."
+    },
+    {
+      "id": "symbol:abstract_blue_cyan_mark",
+      "type": "logo_symbol",
+      "file_type": "image",
+      "source_file": "frontend\\public\\narriv-logo-dark.png",
+      "label": "Abstract blue/cyan mark",
+      "description": "A rounded, interlacing blue and cyan geometric mark positioned to the left of the wordmark."
+    },
+    {
+      "id": "concept:stylized_n_or_waveform",
+      "type": "visual_concept",
+      "file_type": "image",
+      "source_file": "frontend\\public\\narriv-logo-dark.png",
+      "label": "AMBIGUOUS: stylized N, path, or waveform",
+      "description": "The abstract mark may represent a stylized letter N, a route/path, or a waveform; the exact intended meaning is AMBIGUOUS."
+    },
+    {
+      "id": "color:white_wordmark",
+      "type": "color_concept",
+      "file_type": "image",
+      "source_file": "frontend\\public\\narriv-logo-dark.png",
+      "label": "White wordmark",
+      "description": "The brand text is rendered in white for high contrast on the dark background."
+    },
+    {
+      "id": "color:blue_cyan_gradient",
+      "type": "color_concept",
+      "file_type": "image",
+      "source_file": "frontend\\public\\narriv-logo-dark.png",
+      "label": "Blue and cyan gradient palette",
+      "description": "The symbol uses bright blue, deeper blue/purple overlaps, and cyan segments."
+    },
+    {
+      "id": "background:dark",
+      "type": "background",
+      "file_type": "image",
+      "source_file": "frontend\\public\\narriv-logo-dark.png",
+      "label": "Dark background",
+      "description": "The logo is displayed against a black or very dark background."
+    },
+    {
+      "id": "layout:horizontal_logo_lockup",
+      "type": "layout_concept",
+      "file_type": "image",
+      "source_file": "frontend\\public\\narriv-logo-dark.png",
+      "label": "Horizontal logo lockup",
+      "description": "The abstract symbol appears on the left and the wordmark appears on the right."
+    }
+  ],
+  "edges": [
+    {
+      "source": "image:frontend/public/narriv-logo-dark.png",
+      "target": "brand:narriv",
+      "relationship": "depicts_brand",
+      "confidence_score": 0.98
+    },
+    {
+      "source": "image:frontend/public/narriv-logo-dark.png",
+      "target": "wordmark:narriv_with_period",
+      "relationship": "contains",
+      "confidence_score": 0.99
+    },
+    {
+      "source": "image:frontend/public/narriv-logo-dark.png",
+      "target": "symbol:abstract_blue_cyan_mark",
+      "relationship": "contains",
+      "confidence_score": 0.99
+    },
+    {
+      "source": "wordmark:narriv_with_period",
+      "target": "brand:narriv",
+      "relationship": "names",
+      "confidence_score": 0.98
+    },
+    {
+      "source": "symbol:abstract_blue_cyan_mark",
+      "target": "concept:stylized_n_or_waveform",
+      "relationship": "may_represent",
+      "confidence_score": 0.55
+    },
+    {
+      "source": "symbol:abstract_blue_cyan_mark",
+      "target": "color:blue_cyan_gradient",
+      "relationship": "uses_color_palette",
+      "confidence_score": 0.96
+    },
+    {
+      "source": "wordmark:narriv_with_period",
+      "target": "color:white_wordmark",
+      "relationship": "uses_color",
+      "confidence_score": 0.99
+    },
+    {
+      "source": "image:frontend/public/narriv-logo-dark.png",
+      "target": "background:dark",
+      "relationship": "has_background",
+      "confidence_score": 0.98
+    },
+    {
+      "source": "symbol:abstract_blue_cyan_mark",
+      "target": "wordmark:narriv_with_period",
+      "relationship": "paired_with",
+      "confidence_score": 0.97
+    },
+    {
+      "source": "image:frontend/public/narriv-logo-dark.png",
+      "target": "layout:horizontal_logo_lockup",
+      "relationship": "uses_layout",
+      "confidence_score": 0.98
+    },
+    {
+      "source": "layout:horizontal_logo_lockup",
+      "target": "symbol:abstract_blue_cyan_mark",
+      "relationship": "places_left",
+      "confidence_score": 0.98
+    },
+    {
+      "source": "layout:horizontal_logo_lockup",
+      "target": "wordmark:narriv_with_period",
+      "relationship": "places_right",
+      "confidence_score": 0.98
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "hyperedge:narriv_logo_identity",
+      "type": "brand_identity_composition",
+      "file_type": "image",
+      "source_file": "frontend\\public\\narriv-logo-dark.png",
+      "nodes": [
+        "brand:narriv",
+        "wordmark:narriv_with_period",
+        "symbol:abstract_blue_cyan_mark",
+        "color:blue_cyan_gradient",
+        "color:white_wordmark",
+        "background:dark",
+        "layout:horizontal_logo_lockup"
+      ],
+      "description": "The Narriv brand identity in this asset combines a left abstract blue/cyan symbol with a right white wordmark on a dark background."
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

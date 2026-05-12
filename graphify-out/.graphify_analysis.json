@@ -1,0 +1,656 @@
+{
+  "communities": {
+    "0": [
+      "feedback_accept_recommendation",
+      "feedback_ai_visibility_results_table",
+      "feedback_ai_visibility_score",
+      "feedback_audience_sentiment_name",
+      "feedback_brand_mentioned_result",
+      "feedback_brand_presence_rate",
+      "feedback_competitive_intelligence",
+      "feedback_competitor_mention_rate",
+      "feedback_competitors_mentioned_result",
+      "feedback_content_gap_recommendations_table",
+      "feedback_content_gap_result",
+      "feedback_content_strategy",
+      "feedback_crisis_handling_steps",
+      "feedback_edit_recommendation",
+      "feedback_escalation_prediction",
+      "feedback_faq_page_recommendation",
+      "feedback_feedback_db_table",
+      "feedback_geo_action_engine_integration",
+      "feedback_geo_ai_visibility_layer",
+      "feedback_high_risk_prompts",
+      "feedback_influencer_education_brief",
+      "feedback_influencer_strategy",
+      "feedback_infrastruktur_narriv_pdf",
+      "feedback_intelligence_reports_name",
+      "feedback_issue_clustering",
+      "feedback_learning_loop",
+      "feedback_misinformation_risk_result",
+      "feedback_multi_source_intelligence",
+      "feedback_narrative_intelligence_layer",
+      "feedback_narrative_signals_name",
+      "feedback_narrative_theme_detection",
+      "feedback_narratives_db_table",
+      "feedback_negative_sentiment_increase_rule",
+      "feedback_news_sites_source",
+      "feedback_openai_multilabel_classification",
+      "feedback_owned_media_article_outline",
+      "feedback_podcast_source",
+      "feedback_pr_response",
+      "feedback_predictive_alert",
+      "feedback_press_release_angle",
+      "feedback_product_naming_restructure",
+      "feedback_prompt_scoring_improvement",
+      "feedback_query_runs_table",
+      "feedback_query_simulation",
+      "feedback_recommended_content_actions",
+      "feedback_reject_recommendation",
+      "feedback_risk_alerts_name",
+      "feedback_seo_content_brief",
+      "feedback_social_media_sources",
+      "feedback_source_filter_dashboard",
+      "feedback_source_type_tagging",
+      "feedback_spike_volume_rule",
+      "feedback_structured_action_recommendation_engine",
+      "feedback_thought_leadership_article",
+      "feedback_top_missing_topics",
+      "feedback_tracked_queries_table",
+      "feedback_video_youtube_source",
+      "feedback_visibility_backend_module",
+      "feedback_visibility_frontend_page"
+    ],
+    "1": [
+      "frontend_development_guidelines_action_engine_page",
+      "frontend_development_guidelines_api_placeholder_plan",
+      "frontend_development_guidelines_api_ready_mode",
+      "frontend_development_guidelines_auth_page",
+      "frontend_development_guidelines_command_center_page",
+      "frontend_development_guidelines_current_goal",
+      "frontend_development_guidelines_data_sources_page",
+      "frontend_development_guidelines_development_strategy",
+      "frontend_development_guidelines_do_not_do_yet_constraints",
+      "frontend_development_guidelines_document",
+      "frontend_development_guidelines_dummy_data_strategy",
+      "frontend_development_guidelines_existing_frontend_state",
+      "frontend_development_guidelines_geo_ai_visibility_page",
+      "frontend_development_guidelines_google_workspace_auth",
+      "frontend_development_guidelines_implementation_order",
+      "frontend_development_guidelines_known_technical_debt",
+      "frontend_development_guidelines_localstorage_auth",
+      "frontend_development_guidelines_mock_data_module",
+      "frontend_development_guidelines_narrative_intelligence_page",
+      "frontend_development_guidelines_narrative_signals_page",
+      "frontend_development_guidelines_nextjs_react_rules",
+      "frontend_development_guidelines_no_backend_dependency",
+      "frontend_development_guidelines_page_implementation_targets",
+      "frontend_development_guidelines_predictive_alerts_learning_loop_page",
+      "frontend_development_guidelines_product_navigation",
+      "frontend_development_guidelines_reports_page",
+      "frontend_development_guidelines_responsive_requirements",
+      "frontend_development_guidelines_route_priority",
+      "frontend_development_guidelines_settings_page",
+      "frontend_development_guidelines_vercel_deployment_requirements",
+      "frontend_development_guidelines_vercel_safe_build",
+      "frontend_development_guidelines_visual_direction",
+      "narriv_ui_design_guidelines_brand_blue",
+      "narriv_ui_design_guidelines_outfit_font"
+    ],
+    "2": [
+      "auth_controller_login",
+      "auth_controller_me",
+      "auth_controller_register",
+      "backend_src_modules_auth_auth_controller_js",
+      "backend_src_modules_dashboard_dashboard_controller_js",
+      "c_myproject_narriv_backend_src_modules_ingestion_ingestion_controller_js",
+      "c_myproject_narriv_frontend_app_dashboard_layout_tsx",
+      "c_myproject_narriv_frontend_app_dashboard_page_tsx",
+      "checklist_ai_analysis",
+      "checklist_alert_system",
+      "checklist_auth_system",
+      "checklist_dashboard",
+      "checklist_data_ingestion",
+      "checklist_narriv_platform",
+      "checklist_signal_monitoring",
+      "checklist_source_management",
+      "dashboard_controller_getsummary",
+      "ingestion_controller_getingestionstatus",
+      "ingestion_controller_triggeringestion",
+      "layout_dashboardlayout",
+      "page_dashboardpage",
+      "pdf_phase_1",
+      "pdf_phase_2",
+      "pdf_phase_3",
+      "pdf_phase_4",
+      "pdf_phase_5",
+      "pdf_phase_6"
+    ],
+    "3": [
+      "frontend_development_guidelines_handoff_note",
+      "frontend_development_guidelines_primary_references",
+      "frontend_development_guidelines_vercel_frontend_preview",
+      "frontend_development_guidelines_verification_checklist",
+      "narriv_ui_design_guidelines_auth_create_account_light",
+      "narriv_ui_design_guidelines_auth_forgot_password_light",
+      "narriv_ui_design_guidelines_auth_layouts",
+      "narriv_ui_design_guidelines_auth_reset_password_light",
+      "narriv_ui_design_guidelines_auth_sign_in_light",
+      "narriv_ui_design_guidelines_auth_verification_mfa_light",
+      "narriv_ui_design_guidelines_dark_theme_colors",
+      "narriv_ui_design_guidelines_desktop_shell",
+      "narriv_ui_design_guidelines_figma",
+      "narriv_ui_design_guidelines_google_account_sign_in",
+      "narriv_ui_design_guidelines_google_workspace_mfa",
+      "narriv_ui_design_guidelines_light_theme_colors",
+      "narriv_ui_design_guidelines_light_variants_03_09",
+      "narriv_ui_design_guidelines_logo_usage",
+      "narriv_ui_design_guidelines_main",
+      "narriv_ui_design_guidelines_mobile_command_center_responsive",
+      "narriv_ui_design_guidelines_mobile_signal_triage_responsive",
+      "narriv_ui_design_guidelines_pen_file",
+      "narriv_ui_design_guidelines_responsive_layouts",
+      "narriv_ui_design_guidelines_sidebar_layout",
+      "narriv_ui_design_guidelines_tablet_command_center_responsive",
+      "narriv_ui_design_guidelines_tablet_signals_responsive",
+      "narriv_ui_design_guidelines_typography_spec"
+    ],
+    "4": [
+      "ai_analysis_worker_analyzewithretry",
+      "ai_schema_getschemaprompt",
+      "ai_schema_validateaioutput",
+      "ai_service_analyzesignal",
+      "ai_service_analyzetext",
+      "ai_service_buildalertenhancementsystemprompt",
+      "ai_service_buildalertenhancementusermessage",
+      "ai_service_buildsignalsystemprompt",
+      "ai_service_buildsignalusermessage",
+      "ai_service_callopenai",
+      "ai_service_enhancealert",
+      "ai_service_tryparsejson",
+      "alerts_service_detectalerts",
+      "backend_scratch_test_alerts_js",
+      "backend_src_modules_ai_ai_schema_js",
+      "backend_src_modules_ai_ai_service_js",
+      "backend_src_modules_alerts_alerts_service_js",
+      "backend_src_workers_ai_analysis_worker_js",
+      "pdf_taxonomy",
+      "pdf_taxonomy_impact",
+      "pdf_taxonomy_narrative",
+      "pdf_taxonomy_sentiment",
+      "pdf_taxonomy_stakeholder",
+      "test_alerts_run"
+    ],
+    "5": [
+      "apify_service_runactorandfetchdataset",
+      "backend_src_modules_apify_apify_service_js",
+      "pdf_core_flow",
+      "pdf_data_model",
+      "pdf_db_tables",
+      "pdf_env_config",
+      "pdf_omnichannel",
+      "pdf_product_goals",
+      "pdf_product_vision",
+      "pdf_tech_stack"
+    ],
+    "6": [
+      "backend_src_index_js",
+      "backend_src_modules_ai_ai_routes_js",
+      "backend_src_modules_alerts_alerts_routes_js",
+      "backend_src_modules_auth_auth_routes_js",
+      "backend_src_modules_dashboard_dashboard_routes_js",
+      "backend_src_modules_signals_signals_routes_js",
+      "backend_src_modules_sources_sources_routes_js",
+      "pdf_api_endpoints",
+      "pdf_backend_modules"
+    ],
+    "7": [
+      "narriv_ui_design_guidelines_chart_styles",
+      "narriv_ui_design_guidelines_command_center",
+      "narriv_ui_design_guidelines_command_center_dark",
+      "narriv_ui_design_guidelines_enterprise_style",
+      "narriv_ui_design_guidelines_product_flow",
+      "narriv_ui_design_guidelines_sentiment_logic",
+      "narriv_ui_design_guidelines_signals_intelligence",
+      "narriv_ui_design_guidelines_signals_intelligence_dark"
+    ],
+    "8": [
+      "pdf_action_outputs",
+      "pdf_generated_asset_types",
+      "pdf_phase_10",
+      "pdf_phase_11",
+      "pdf_phase_7",
+      "pdf_phase_8",
+      "pdf_phase_9"
+    ],
+    "9": [
+      "backend_scratch_test_queue_js",
+      "backend_src_lib_queue_js",
+      "queue_addanalysisjob",
+      "queue_schedulealertdetection",
+      "test_queue_test"
+    ],
+    "10": [
+      "readme_geist_font",
+      "readme_nextjs_project",
+      "readme_vercel_deployment",
+      "svg_next_logo",
+      "svg_vercel_logo"
+    ],
+    "11": [
+      "backend_src_modules_sources_sources_controller_js",
+      "sources_controller_createsource",
+      "sources_controller_getsources"
+    ],
+    "12": [
+      "c_myproject_narriv_frontend_app_auth_login_page_tsx",
+      "c_myproject_narriv_frontend_app_auth_signup_page_tsx",
+      "page_onsubmit"
+    ],
+    "13": [
+      "frontend_app_dashboard_intelligence_page_tsx",
+      "page_intelligencepage",
+      "pdf_ui_pages"
+    ],
+    "14": [
+      "c_myproject_narriv_frontend_app_dashboard_workspace_sources_page_tsx",
+      "page_handleaddsource",
+      "page_handleruningestion"
+    ],
+    "15": [
+      "backend_clear_signals_js",
+      "clear_signals_main"
+    ],
+    "16": [
+      "backend_test_platforms_js",
+      "test_platforms_main"
+    ],
+    "17": [
+      "backend_test_sources_js",
+      "test_sources_main"
+    ],
+    "18": [
+      "backend_test_titles_js",
+      "test_titles_main"
+    ],
+    "19": [
+      "backend_scratch_test_trends_js",
+      "test_trends_testquery"
+    ],
+    "20": [
+      "auth_middleware_verifytoken",
+      "backend_src_middlewares_auth_middleware_js"
+    ],
+    "21": [
+      "c_myproject_narriv_frontend_app_layout_tsx",
+      "layout_rootlayout"
+    ],
+    "22": [
+      "frontend_app_dashboard_action_plans_page_tsx",
+      "page_actionplanspage"
+    ],
+    "23": [
+      "c_myproject_narriv_frontend_app_dashboard_alerts_page_tsx",
+      "page_fetchalerts"
+    ],
+    "24": [
+      "c_myproject_narriv_frontend_app_dashboard_alerts_id_page_tsx",
+      "page_fetchalert"
+    ],
+    "25": [
+      "frontend_app_dashboard_reports_page_tsx",
+      "page_reportspage"
+    ],
+    "26": [
+      "c_myproject_narriv_frontend_app_dashboard_signals_page_tsx",
+      "page_analysisprocessing"
+    ],
+    "27": [
+      "frontend_app_dashboard_visibility_page_tsx",
+      "page_visibilitypage"
+    ],
+    "28": [
+      "frontend_app_dashboard_workspace_activity_page_tsx",
+      "page_activitypage"
+    ],
+    "29": [
+      "frontend_app_dashboard_workspace_cases_page_tsx",
+      "page_casespage"
+    ],
+    "30": [
+      "frontend_app_dashboard_workspace_integrations_page_tsx",
+      "page_integrationspage"
+    ],
+    "31": [
+      "frontend_app_dashboard_workspace_settings_page_tsx",
+      "page_settingspage"
+    ],
+    "32": [
+      "frontend_components_dashboard_kpicard_tsx",
+      "kpicard_kpicard"
+    ],
+    "33": [
+      "frontend_components_dashboard_latestsignalstable_tsx",
+      "latestsignalstable_getsentimentcolor"
+    ],
+    "34": [
+      "frontend_components_layout_sidebar_tsx",
+      "sidebar_sidebar"
+    ],
+    "35": [
+      "c_myproject_narriv_frontend_components_layout_topbar_tsx",
+      "topbar_topbar"
+    ],
+    "36": [
+      "c_myproject_narriv_frontend_components_providers_react_query_provider_tsx",
+      "react_query_provider_reactqueryprovider"
+    ],
+    "37": [
+      "apiclient_apiclient",
+      "c_myproject_narriv_frontend_lib_apiclient_ts"
+    ],
+    "38": [
+      "agents_md_nextjs_breaking_changes",
+      "claude_md_agents_reference"
+    ],
+    "39": [
+      "backend_prisma_config_ts"
+    ],
+    "40": [
+      "backend_scratch_backfill_analysis_js"
+    ],
+    "41": [
+      "backend_scratch_check_db_js"
+    ],
+    "42": [
+      "backend_scratch_check_queue_js"
+    ],
+    "43": [
+      "backend_scratch_enqueue_test_js"
+    ],
+    "44": [
+      "backend_src_prisma_js"
+    ],
+    "45": [
+      "backend_src_lib_redis_js"
+    ],
+    "46": [
+      "c_myproject_narriv_backend_src_modules_ingestion_ingestion_routes_js"
+    ],
+    "47": [
+      "backend_src_workers_alert_worker_js"
+    ],
+    "48": [
+      "frontend_eslint_config_mjs"
+    ],
+    "49": [
+      "c_myproject_narriv_frontend_next_env_d_ts"
+    ],
+    "50": [
+      "frontend_next_config_ts"
+    ],
+    "51": [
+      "frontend_postcss_config_mjs"
+    ],
+    "52": [
+      "frontend_components_dashboard_dashboardskeleton_tsx"
+    ],
+    "53": [
+      "frontend_components_dashboard_distributionchart_tsx"
+    ],
+    "54": [
+      "frontend_components_dashboard_platformbarchart_tsx"
+    ],
+    "55": [
+      "frontend_components_dashboard_trendchart_tsx"
+    ],
+    "56": [
+      "c_myproject_narriv_frontend_store_useauthstore_ts"
+    ],
+    "57": [
+      "svg_file_icon"
+    ],
+    "58": [
+      "svg_globe_icon"
+    ],
+    "59": [
+      "svg_window_icon"
+    ],
+    "60": [
+      "pdf_priority_1"
+    ],
+    "61": [
+      "pdf_priority_2"
+    ],
+    "62": [
+      "pdf_priority_3"
+    ],
+    "63": [
+      "pdf_priority_4"
+    ],
+    "64": [
+      "pdf_priority_5"
+    ],
+    "65": [
+      "pdf_team_responsibilities"
+    ],
+    "66": [
+      "pdf_repo_structure"
+    ]
+  },
+  "cohesion": {
+    "0": 0.06,
+    "1": 0.1,
+    "2": 0.11,
+    "3": 0.12,
+    "4": 0.12,
+    "5": 0.2,
+    "6": 0.22,
+    "7": 0.25,
+    "8": 0.29,
+    "9": 0.4,
+    "10": 0.4,
+    "11": 0.67,
+    "12": 0.67,
+    "13": 0.67,
+    "14": 0.67,
+    "15": 1.0,
+    "16": 1.0,
+    "17": 1.0,
+    "18": 1.0,
+    "19": 1.0,
+    "20": 1.0,
+    "21": 1.0,
+    "22": 1.0,
+    "23": 1.0,
+    "24": 1.0,
+    "25": 1.0,
+    "26": 1.0,
+    "27": 1.0,
+    "28": 1.0,
+    "29": 1.0,
+    "30": 1.0,
+    "31": 1.0,
+    "32": 1.0,
+    "33": 1.0,
+    "34": 1.0,
+    "35": 1.0,
+    "36": 1.0,
+    "37": 1.0,
+    "38": 1.0,
+    "39": 1.0,
+    "40": 1.0,
+    "41": 1.0,
+    "42": 1.0,
+    "43": 1.0,
+    "44": 1.0,
+    "45": 1.0,
+    "46": 1.0,
+    "47": 1.0,
+    "48": 1.0,
+    "49": 1.0,
+    "50": 1.0,
+    "51": 1.0,
+    "52": 1.0,
+    "53": 1.0,
+    "54": 1.0,
+    "55": 1.0,
+    "56": 1.0,
+    "57": 1.0,
+    "58": 1.0,
+    "59": 1.0,
+    "60": 1.0,
+    "61": 1.0,
+    "62": 1.0,
+    "63": 1.0,
+    "64": 1.0,
+    "65": 1.0,
+    "66": 1.0
+  },
+  "gods": [
+    {
+      "id": "feedback_infrastruktur_narriv_pdf",
+      "label": "Feedback Infrastruktur Narriv",
+      "degree": 58
+    },
+    {
+      "id": "narriv_ui_design_guidelines_main",
+      "label": "Narriv UI Design Guidelines",
+      "degree": 24
+    },
+    {
+      "id": "feedback_geo_ai_visibility_layer",
+      "label": "GEO Layer (AI Visibility)",
+      "degree": 13
+    },
+    {
+      "id": "frontend_development_guidelines_product_navigation",
+      "label": "Product Navigation",
+      "degree": 11
+    },
+    {
+      "id": "ai_service_analyzesignal",
+      "label": "analyzeSignal()",
+      "degree": 10
+    },
+    {
+      "id": "ai_service_enhancealert",
+      "label": "enhanceAlert()",
+      "degree": 9
+    },
+    {
+      "id": "checklist_narriv_platform",
+      "label": "Narriv Platform Overview",
+      "degree": 8
+    },
+    {
+      "id": "narriv_ui_design_guidelines_auth_layouts",
+      "label": "Authentication Layouts (Sign In, Create Account, MFA)",
+      "degree": 8
+    },
+    {
+      "id": "feedback_geo_action_engine_integration",
+      "label": "GEO Action Engine Integration",
+      "degree": 8
+    },
+    {
+      "id": "frontend_development_guidelines_implementation_order",
+      "label": "Implementation Order",
+      "degree": 8
+    }
+  ],
+  "surprises": [
+    {
+      "source": "callOpenAI()",
+      "target": "Phase 4: AI Intelligence Engine",
+      "source_files": [
+        "backend\\src\\modules\\ai\\ai.service.js",
+        "NARRIV \u2014 FULL DEVELOPMENT CHECKLIST.pdf"
+      ],
+      "confidence": "INFERRED",
+      "relation": "specifies_impl",
+      "why": "inferred connection - not explicitly stated in source; crosses file types (code \u2194 paper); connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "analyzeSignal()",
+      "target": "Phase 4: AI Intelligence Engine",
+      "source_files": [
+        "backend\\src\\modules\\ai\\ai.service.js",
+        "NARRIV \u2014 FULL DEVELOPMENT CHECKLIST.pdf"
+      ],
+      "confidence": "INFERRED",
+      "relation": "specifies_impl",
+      "why": "inferred connection - not explicitly stated in source; crosses file types (code \u2194 paper); connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "enhanceAlert()",
+      "target": "AI Action Engine Outputs",
+      "source_files": [
+        "backend\\src\\modules\\ai\\ai.service.js",
+        "NARRIV \u2014 FULL DEVELOPMENT CHECKLIST.pdf"
+      ],
+      "confidence": "INFERRED",
+      "relation": "extends",
+      "why": "inferred connection - not explicitly stated in source; crosses file types (code \u2194 paper); connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "enhanceAlert()",
+      "target": "Phase 6: Alert Engine",
+      "source_files": [
+        "backend\\src\\modules\\ai\\ai.service.js",
+        "NARRIV \u2014 FULL DEVELOPMENT CHECKLIST.pdf"
+      ],
+      "confidence": "INFERRED",
+      "relation": "specifies_impl",
+      "why": "inferred connection - not explicitly stated in source; crosses file types (code \u2194 paper); connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "detectAlerts()",
+      "target": "Phase 6: Alert Engine",
+      "source_files": [
+        "backend\\src\\modules\\alerts\\alerts.service.js",
+        "NARRIV \u2014 FULL DEVELOPMENT CHECKLIST.pdf"
+      ],
+      "confidence": "INFERRED",
+      "relation": "specifies_impl",
+      "why": "inferred connection - not explicitly stated in source; crosses file types (code \u2194 paper); connects across different repos/directories; bridges separate communities"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `AI Action Engine Outputs` connect `AI Action Engine Outputs / Phase 10 Action Engine` to `Feedback Infrastruktur Narriv / GEO Layer AI Visibility`, `analyzeSignal / enhanceAlert`?",
+      "why": "High betweenness centrality (0.193) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `Learning Loop (AI Adaptive System)` connect `Feedback Infrastruktur Narriv / GEO Layer AI Visibility` to `AI Action Engine Outputs / Phase 10 Action Engine`?",
+      "why": "High betweenness centrality (0.190) - this node is a cross-community bridge."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 4 inferred relationships involving `analyzeSignal()` (e.g. with `validateAIOutput()` and `analyzeWithRetry()`) actually correct?",
+      "why": "`analyzeSignal()` has 4 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `Next.js Breaking Changes Warning`, `Claude Agent Config Reference`, `Geist Font Optimization` to the rest of the system?",
+      "why": "44 weakly-connected nodes found - possible documentation gaps or missing edges."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Feedback Infrastruktur Narriv / GEO Layer AI Visibility` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.06 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Product Navigation / Implementation Order` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.1 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Narriv Platform Overview / Phase 2 Apify Ingestion` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.11 - nodes in this community are weakly interconnected."
+    }
+  ]
+}

@@ -1,0 +1,121 @@
+{
+  "nodes": [
+    {
+      "id": "narriv_ui_design_guidelines_typography_spec",
+      "label": "Typography Spec (Outfit 30px/18px/14px)",
+      "file_type": "document",
+      "source_file": "NARRIV_UI_DESIGN_GUIDELINES.md"
+    },
+    {
+      "id": "narriv_ui_design_guidelines_dark_theme_colors",
+      "label": "Dark Theme Palette (#101828, #1D2939)",
+      "file_type": "document",
+      "source_file": "NARRIV_UI_DESIGN_GUIDELINES.md"
+    },
+    {
+      "id": "narriv_ui_design_guidelines_light_theme_colors",
+      "label": "Light Theme Palette (#F9FAFB, #E4E7EC)",
+      "file_type": "document",
+      "source_file": "NARRIV_UI_DESIGN_GUIDELINES.md"
+    },
+    {
+      "id": "narriv_ui_design_guidelines_sidebar_layout",
+      "label": "Sidebar Spec (292px, Logo, Menu, Support)",
+      "file_type": "document",
+      "source_file": "NARRIV_UI_DESIGN_GUIDELINES.md"
+    },
+    {
+      "id": "narriv_ui_design_guidelines_command_center_dark",
+      "label": "Command Center Dark (Reference Frame 01)",
+      "file_type": "document",
+      "source_file": "NARRIV_UI_DESIGN_GUIDELINES.md"
+    },
+    {
+      "id": "narriv_ui_design_guidelines_signals_intelligence_dark",
+      "label": "Signals Intelligence Dark (Reference Frame 03)",
+      "file_type": "document",
+      "source_file": "NARRIV_UI_DESIGN_GUIDELINES.md"
+    },
+    {
+      "id": "narriv_ui_design_guidelines_sentiment_logic",
+      "label": "Sentiment Badge Logic (Semantic Colors)",
+      "file_type": "document",
+      "source_file": "NARRIV_UI_DESIGN_GUIDELINES.md"
+    },
+    {
+      "id": "narriv_ui_design_guidelines_chart_styles",
+      "label": "Chart Visual Guidelines (Line/Donut)",
+      "file_type": "document",
+      "source_file": "NARRIV_UI_DESIGN_GUIDELINES.md"
+    }
+  ],
+  "edges": [
+    {
+      "source": "narriv_ui_design_guidelines_main",
+      "target": "narriv_ui_design_guidelines_typography_spec",
+      "relation": "specifies",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "NARRIV_UI_DESIGN_GUIDELINES.md"
+    },
+    {
+      "source": "narriv_ui_design_guidelines_main",
+      "target": "narriv_ui_design_guidelines_dark_theme_colors",
+      "relation": "specifies",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "NARRIV_UI_DESIGN_GUIDELINES.md"
+    },
+    {
+      "source": "narriv_ui_design_guidelines_main",
+      "target": "narriv_ui_design_guidelines_light_theme_colors",
+      "relation": "specifies",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "NARRIV_UI_DESIGN_GUIDELINES.md"
+    },
+    {
+      "source": "narriv_ui_design_guidelines_desktop_shell",
+      "target": "narriv_ui_design_guidelines_sidebar_layout",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "NARRIV_UI_DESIGN_GUIDELINES.md"
+    },
+    {
+      "source": "narriv_ui_design_guidelines_command_center",
+      "target": "narriv_ui_design_guidelines_command_center_dark",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "NARRIV_UI_DESIGN_GUIDELINES.md"
+    },
+    {
+      "source": "narriv_ui_design_guidelines_signals_intelligence",
+      "target": "narriv_ui_design_guidelines_signals_intelligence_dark",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "NARRIV_UI_DESIGN_GUIDELINES.md"
+    },
+    {
+      "source": "narriv_ui_design_guidelines_signals_intelligence",
+      "target": "narriv_ui_design_guidelines_sentiment_logic",
+      "relation": "uses",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "NARRIV_UI_DESIGN_GUIDELINES.md"
+    },
+    {
+      "source": "narriv_ui_design_guidelines_command_center",
+      "target": "narriv_ui_design_guidelines_chart_styles",
+      "relation": "uses",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "NARRIV_UI_DESIGN_GUIDELINES.md"
+    }
+  ],
+  "hyperedges": [],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

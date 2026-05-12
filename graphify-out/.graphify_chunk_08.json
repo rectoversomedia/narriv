@@ -1,0 +1,189 @@
+{
+  "nodes": [
+    {
+      "id": "6_cropped_narriv_logo_image",
+      "label": "Narriv Logo Image",
+      "file_type": "image",
+      "source_file": "assets\\6-cropped.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "A wide horizontal brand logo on a black background, combining a blue abstract icon at left with a white wordmark reading Narriv."
+    },
+    {
+      "id": "6_cropped_narriv_wordmark",
+      "label": "Narriv Wordmark",
+      "file_type": "image",
+      "source_file": "assets\\6-cropped.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "Bold white sans-serif text reading Narriv. with a period."
+    },
+    {
+      "id": "6_cropped_abstract_monogram_icon",
+      "label": "Abstract Monogram Icon",
+      "file_type": "image",
+      "source_file": "assets\\6-cropped.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "A rounded blue gradient mark resembling a looping N or connected waveform; exact intended letterform is AMBIGUOUS."
+    },
+    {
+      "id": "6_cropped_blue_gradient_palette",
+      "label": "Blue Gradient Palette",
+      "file_type": "image",
+      "source_file": "assets\\6-cropped.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "The icon uses saturated royal blue and cyan strokes with darker blue overlap accents."
+    },
+    {
+      "id": "6_cropped_horizontal_logo_layout",
+      "label": "Horizontal Logo Layout",
+      "file_type": "image",
+      "source_file": "assets\\6-cropped.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "The composition places the icon on the left and the wordmark on the right with generous spacing."
+    },
+    {
+      "id": "6_cropped_dark_background_contrast",
+      "label": "Dark Background Contrast",
+      "file_type": "image",
+      "source_file": "assets\\6-cropped.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "Black background creates strong contrast against the white wordmark and bright blue icon."
+    },
+    {
+      "id": "6_cropped_motion_ai_brand_concept",
+      "label": "Motion Or AI Brand Concept AMBIGUOUS",
+      "file_type": "image",
+      "source_file": "assets\\6-cropped.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "description": "The flowing connected strokes may suggest narrative flow, motion, audio waveform, or AI connectivity; interpretation is AMBIGUOUS."
+    }
+  ],
+  "edges": [
+    {
+      "source": "6_cropped_narriv_logo_image",
+      "target": "6_cropped_narriv_wordmark",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "assets\\6-cropped.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "6_cropped_narriv_logo_image",
+      "target": "6_cropped_abstract_monogram_icon",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "assets\\6-cropped.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "6_cropped_narriv_logo_image",
+      "target": "6_cropped_horizontal_logo_layout",
+      "relation": "uses_layout",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "assets\\6-cropped.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "6_cropped_abstract_monogram_icon",
+      "target": "6_cropped_blue_gradient_palette",
+      "relation": "uses_visual_style",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "assets\\6-cropped.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "6_cropped_narriv_wordmark",
+      "target": "6_cropped_dark_background_contrast",
+      "relation": "contrasts_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "assets\\6-cropped.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "6_cropped_abstract_monogram_icon",
+      "target": "6_cropped_dark_background_contrast",
+      "relation": "contrasts_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "assets\\6-cropped.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "6_cropped_abstract_monogram_icon",
+      "target": "6_cropped_motion_ai_brand_concept",
+      "relation": "conceptually_related_to",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.25,
+      "source_file": "assets\\6-cropped.png",
+      "source_location": null,
+      "weight": 0.5
+    },
+    {
+      "source": "6_cropped_narriv_wordmark",
+      "target": "6_cropped_motion_ai_brand_concept",
+      "relation": "conceptually_related_to",
+      "confidence": "AMBIGUOUS",
+      "confidence_score": 0.2,
+      "source_file": "assets\\6-cropped.png",
+      "source_location": null,
+      "weight": 0.4
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "6_cropped_narriv_brand_identity",
+      "label": "Narriv Brand Identity",
+      "nodes": [
+        "6_cropped_narriv_wordmark",
+        "6_cropped_abstract_monogram_icon",
+        "6_cropped_blue_gradient_palette",
+        "6_cropped_horizontal_logo_layout",
+        "6_cropped_dark_background_contrast"
+      ],
+      "relation": "form",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "assets\\6-cropped.png"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

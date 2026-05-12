@@ -1,0 +1,167 @@
+{
+  "nodes": [
+    {
+      "id": "image_1",
+      "type": "source_image",
+      "label": "assets\\1.png",
+      "file_type": "image",
+      "source_file": "assets\\1.png",
+      "description": "PNG image containing an abstract vector-style logo on a black background."
+    },
+    {
+      "id": "abstract_logo",
+      "type": "visual_subject",
+      "label": "abstract logo mark",
+      "file_type": "image",
+      "source_file": "assets\\1.png",
+      "description": "A large abstract logo composed of thick rounded strokes and circular dots."
+    },
+    {
+      "id": "black_background",
+      "type": "design_element",
+      "label": "black background",
+      "file_type": "image",
+      "source_file": "assets\\1.png",
+      "description": "Solid black canvas behind the logo."
+    },
+    {
+      "id": "blue_wave_stroke",
+      "type": "design_element",
+      "label": "royal blue rounded wave stroke",
+      "file_type": "image",
+      "source_file": "assets\\1.png",
+      "description": "A thick royal blue rounded stroke forms a wave-like arch and dip across the center."
+    },
+    {
+      "id": "cyan_diagonal_stroke",
+      "type": "design_element",
+      "label": "cyan diagonal rounded stroke",
+      "file_type": "image",
+      "source_file": "assets\\1.png",
+      "description": "A thick cyan rounded diagonal stroke rises from lower left toward upper right."
+    },
+    {
+      "id": "blue_right_diagonal_stroke",
+      "type": "design_element",
+      "label": "blue right diagonal rounded stroke",
+      "file_type": "image",
+      "source_file": "assets\\1.png",
+      "description": "A shorter thick blue rounded diagonal stroke appears on the right side."
+    },
+    {
+      "id": "blue_dots",
+      "type": "design_element",
+      "label": "blue circular dots",
+      "file_type": "image",
+      "source_file": "assets\\1.png",
+      "description": "Two royal blue circular dots appear near the lower left and upper right of the mark."
+    },
+    {
+      "id": "overlap_regions",
+      "type": "design_concept",
+      "label": "semi-transparent overlap regions",
+      "file_type": "image",
+      "source_file": "assets\\1.png",
+      "description": "Darker blue/purple overlap shapes appear where blue and cyan strokes intersect."
+    },
+    {
+      "id": "rounded_geometry",
+      "type": "design_concept",
+      "label": "rounded geometric vector style",
+      "file_type": "image",
+      "source_file": "assets\\1.png",
+      "description": "The logo uses smooth rounded stroke ends, large curves, and clean vector geometry."
+    },
+    {
+      "id": "ambiguous_monogram",
+      "type": "ambiguous_reading",
+      "label": "AMBIGUOUS stylized monogram",
+      "file_type": "image",
+      "source_file": "assets\\1.png",
+      "description": "AMBIGUOUS: the abstract strokes may suggest a stylized letter combination such as N, V, A, or lowercase n/i, but no text is explicitly legible."
+    }
+  ],
+  "edges": [
+    {
+      "source": "image_1",
+      "target": "abstract_logo",
+      "relationship": "depicts",
+      "confidence_score": 0.96
+    },
+    {
+      "source": "image_1",
+      "target": "black_background",
+      "relationship": "has_background",
+      "confidence_score": 0.99
+    },
+    {
+      "source": "abstract_logo",
+      "target": "blue_wave_stroke",
+      "relationship": "contains",
+      "confidence_score": 0.97
+    },
+    {
+      "source": "abstract_logo",
+      "target": "cyan_diagonal_stroke",
+      "relationship": "contains",
+      "confidence_score": 0.97
+    },
+    {
+      "source": "abstract_logo",
+      "target": "blue_right_diagonal_stroke",
+      "relationship": "contains",
+      "confidence_score": 0.93
+    },
+    {
+      "source": "abstract_logo",
+      "target": "blue_dots",
+      "relationship": "contains",
+      "confidence_score": 0.98
+    },
+    {
+      "source": "blue_wave_stroke",
+      "target": "cyan_diagonal_stroke",
+      "relationship": "overlaps_with",
+      "confidence_score": 0.92
+    },
+    {
+      "source": "cyan_diagonal_stroke",
+      "target": "blue_right_diagonal_stroke",
+      "relationship": "visually_parallel_to",
+      "confidence_score": 0.86
+    },
+    {
+      "source": "blue_wave_stroke",
+      "target": "overlap_regions",
+      "relationship": "creates",
+      "confidence_score": 0.9
+    },
+    {
+      "source": "cyan_diagonal_stroke",
+      "target": "overlap_regions",
+      "relationship": "creates",
+      "confidence_score": 0.9
+    },
+    {
+      "source": "abstract_logo",
+      "target": "rounded_geometry",
+      "relationship": "uses_design_style",
+      "confidence_score": 0.96
+    },
+    {
+      "source": "abstract_logo",
+      "target": "ambiguous_monogram",
+      "relationship": "may_represent",
+      "confidence_score": 0.45
+    },
+    {
+      "source": "blue_dots",
+      "target": "ambiguous_monogram",
+      "relationship": "may_function_as_letter_dots",
+      "confidence_score": 0.41
+    }
+  ],
+  "hyperedges": [],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

@@ -1,0 +1,40 @@
+{
+  "runs": [
+    {
+      "date": "2026-04-30T01:56:43.046174+00:00",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "files": 71
+    },
+    {
+      "date": "2026-05-03T08:55:11.739901+00:00",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "files": 1,
+      "mode": "targeted-guideline-update"
+    },
+    {
+      "date": "2026-05-03T09:02:26.249266+00:00",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "files": 1,
+      "mode": "targeted-pdf-add",
+      "source": "Feedback Infrastruktur Narriv.pdf"
+    },
+    {
+      "date": "2026-05-03T09:48:09.484259+00:00",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "files": 1
+    },
+    {
+      "date": "2026-05-03T17:00:51.133973+00:00",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "files": 1,
+      "note": "Targeted add: frontend/FRONTEND_DEVELOPMENT_GUIDELINES.md"
+    }
+  ],
+  "total_input_tokens": 0,
+  "total_output_tokens": 0
+}

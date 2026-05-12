@@ -1,0 +1,180 @@
+{
+  "nodes": [
+    {
+      "id": "6_narriv_logo_image",
+      "label": "Narriv Logo Image",
+      "file_type": "image",
+      "source_file": "assets\\6.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "6_narriv_wordmark",
+      "label": "Narriv Wordmark",
+      "file_type": "image",
+      "source_file": "assets\\6.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "6_abstract_monogram_mark",
+      "label": "Abstract Monogram Mark",
+      "file_type": "image",
+      "source_file": "assets\\6.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "6_black_background",
+      "label": "Black Background",
+      "file_type": "image",
+      "source_file": "assets\\6.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "6_blue_cyan_gradient_palette",
+      "label": "Blue And Cyan Gradient Palette",
+      "file_type": "image",
+      "source_file": "assets\\6.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "6_horizontal_brand_lockup",
+      "label": "Horizontal Brand Lockup",
+      "file_type": "image",
+      "source_file": "assets\\6.png",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "6_narriv_logo_image",
+      "target": "6_narriv_wordmark",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "assets\\6.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "6_narriv_logo_image",
+      "target": "6_abstract_monogram_mark",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "assets\\6.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "6_narriv_logo_image",
+      "target": "6_horizontal_brand_lockup",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "assets\\6.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "6_horizontal_brand_lockup",
+      "target": "6_abstract_monogram_mark",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "assets\\6.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "6_horizontal_brand_lockup",
+      "target": "6_narriv_wordmark",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "assets\\6.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "6_abstract_monogram_mark",
+      "target": "6_blue_cyan_gradient_palette",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "assets\\6.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "6_narriv_wordmark",
+      "target": "6_black_background",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "assets\\6.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "6_abstract_monogram_mark",
+      "target": "6_black_background",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "assets\\6.png",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "6_abstract_monogram_mark",
+      "target": "6_narriv_wordmark",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.86,
+      "source_file": "assets\\6.png",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "narriv_logo_lockup_elements",
+      "label": "Narriv Logo Lockup Elements",
+      "nodes": [
+        "6_abstract_monogram_mark",
+        "6_narriv_wordmark",
+        "6_black_background",
+        "6_blue_cyan_gradient_palette"
+      ],
+      "relation": "form",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "assets\\6.png"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}
