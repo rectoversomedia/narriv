@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { DesignFrame, InnerPanel, SectionHeader } from "@/components/ui/demo-primitives";
+import { DesignFrame, InnerPanel, SectionHeader } from "@/components/ui/dashboard-primitives";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { createActionPlan, getNarratives } from "@/lib/api-service";
@@ -22,7 +22,8 @@ interface NarrativeItem {
 }
 
 function normalizeNarratives(data: unknown): NarrativeItem[] {
-  const list = (data as { narratives?: unknown[] } | null)?.narratives;
+  const response = data as { narratives?: unknown[]; data?: unknown[] } | null;
+  const list = response?.narratives ?? response?.data;
   if (!Array.isArray(list)) return [];
 
   return list.filter((item): item is NarrativeItem => {

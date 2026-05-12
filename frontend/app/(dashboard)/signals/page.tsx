@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Search, SlidersHorizontal, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { SectionHeader } from "@/components/ui/demo-primitives";
+import { SectionHeader } from "@/components/ui/dashboard-primitives";
 import {
   getSignals,
   getSignalById,

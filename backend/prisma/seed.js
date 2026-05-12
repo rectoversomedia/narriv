@@ -73,10 +73,10 @@ async function main() {
     }
 
     const highRiskAlert = await prisma.alert.upsert({
-        where: { id: "seed-alert-high-risk-1" },
+        where: { id: "550e8400-e29b-41d4-a716-446655440001" },
         update: {},
         create: {
-            id: "seed-alert-high-risk-1",
+            id: "550e8400-e29b-41d4-a716-446655440001",
             workspaceId: workspace.id,
             type: "risk",
             severity: "high",
@@ -89,10 +89,10 @@ async function main() {
     });
 
     const narrative = await prisma.narrativeCluster.upsert({
-        where: { id: "seed-cluster-action-1" },
+        where: { id: "550e8400-e29b-41d4-a716-446655440002" },
         update: {},
         create: {
-            id: "seed-cluster-action-1",
+            id: "550e8400-e29b-41d4-a716-446655440002",
             workspaceId: workspace.id,
             title: "Delivery reliability trust risk",
             description: "Negative mentions around delivery reliability are clustering and accelerating.",
@@ -109,10 +109,10 @@ async function main() {
 
     if (narrativeCount < 3) {
         await prisma.narrativeCluster.upsert({
-            where: { id: "seed-cluster-action-2" },
+            where: { id: "550e8400-e29b-41d4-a716-446655440003" },
             update: {},
             create: {
-                id: "seed-cluster-action-2",
+                id: "550e8400-e29b-41d4-a716-446655440003",
                 workspaceId: workspace.id,
                 title: "Buyers need clearer vendor scoring",
                 description: "Procurement-facing conversations request clearer proof and scoring transparency.",
@@ -124,10 +124,10 @@ async function main() {
         });
 
         await prisma.narrativeCluster.upsert({
-            where: { id: "seed-cluster-action-3" },
+            where: { id: "550e8400-e29b-41d4-a716-446655440004" },
             update: {},
             create: {
-                id: "seed-cluster-action-3",
+                id: "550e8400-e29b-41d4-a716-446655440004",
                 workspaceId: workspace.id,
                 title: "Trust in AI planning tools is rising",
                 description: "Leadership and analyst mentions show positive momentum for AI-assisted planning.",

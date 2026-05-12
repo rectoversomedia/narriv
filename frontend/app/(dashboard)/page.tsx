@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUpRight, BarChart3, CheckCircle2, Radio, ShieldAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { DesignFrame, InnerPanel, SectionHeader } from "@/components/ui/demo-primitives";
+import { DesignFrame, InnerPanel, SectionHeader } from "@/components/ui/dashboard-primitives";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import {

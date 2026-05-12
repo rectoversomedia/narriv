@@ -74,6 +74,11 @@ function buildActionPlanResponse(plan) {
 
     return {
         id: plan.id,
+        assignedTo: plan.assignedTo,
+        assignedTeam: plan.assignedTeam,
+        deadline: plan.deadline,
+        escalationLevel: plan.escalationLevel,
+        workflowStatus: plan.workflowStatus,
         inputNarrative: primaryOption.executive_summary
             || primaryOption.severity_assessment
             || plan.alert?.whatHappened

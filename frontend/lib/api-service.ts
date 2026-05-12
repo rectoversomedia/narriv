@@ -86,7 +86,21 @@ export interface Alert {
   severity: string | null;
   status: string;
   type: string | null;
+  assignedTo?: string | null;
+  assignedTeam?: string | null;
+  deadline?: string | null;
+  escalationLevel?: EscalationLevel | null;
+  workflowStatus?: string | null;
   createdAt: string;
+}
+
+export type EscalationLevel = "low" | "medium" | "high" | "critical";
+
+export interface AssignmentInput {
+  assignedTo?: string | null;
+  assignedTeam?: string | null;
+  deadline?: string | null;
+  escalationLevel?: EscalationLevel;
 }
 
 // ---------------------------------------------------------------------------
@@ -206,6 +220,10 @@ export function buildAlertItems(alerts: Alert[]) {
     detail: a.whatHappened ?? a.whyItMatters ?? "",
     tone: severityTone[a.severity ?? "low"] ?? "text-[#D0D5DD]",
     status: a.status,
+    assignedTo: a.assignedTo ?? null,
+    assignedTeam: a.assignedTeam ?? null,
+    deadline: a.deadline ?? null,
+    escalationLevel: a.escalationLevel ?? "medium",
   }));
 }
 
@@ -252,12 +270,28 @@ export async function getVisibility(): Promise<VisibilityResponse | null> {
   }
 }
 
+export async function updateAlertAssignment(id: string, input: AssignmentInput): Promise<Alert | null> {
+  try {
+    return await apiClient<Alert>(`/api/alerts/${id}/assign`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return null;
+  }
+}
+
 export interface ActionPlanResponse {
   id?: string;
   inputNarrative?: string;
   evidenceSummary?: string;
   outputs?: [string, string][];
   plan?: [string, string][];
+  assignedTo?: string | null;
+  assignedTeam?: string | null;
+  deadline?: string | null;
+  escalationLevel?: EscalationLevel | null;
+  workflowStatus?: string | null;
 }
 
 export type ActionStrategyType =
@@ -307,6 +341,17 @@ export async function createActionPlan(input: CreateActionPlanInput): Promise<Cr
   }
 }
 
+export async function updateActionPlanAssignment(id: string, input: AssignmentInput): Promise<ActionPlanResponse | null> {
+  try {
+    return await apiClient<ActionPlanResponse>(`/api/action-plans/${id}/assign`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return null;
+  }
+}
+
 export async function getActionQueue(
   options: { page?: number; limit?: number } = {}
 ): Promise<PaginatedResponse<ActionQueueRecord> | null> {
@@ -327,11 +372,105 @@ export interface CurrentUserResponse {
   createdAt: string;
 }
 
+export interface WorkspaceSettingsResponse {
+  workspaceId: string;
+  brandName: string | null;
+  industry: string | null;
+  timezone: string | null;
+  notificationEmail: string | null;
+  whatsappPIC: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export interface UpdateWorkspaceSettingsInput {
+  brandName?: string | null;
+  industry?: string | null;
+  timezone?: string | null;
+  notificationEmail?: string | null;
+  whatsappPIC?: string | null;
+}
+
+export interface WorkspaceMemberRecord {
+  id: string;
+  workspaceId: string;
+  userId: string;
+  role: "owner" | "admin" | "analyst" | string;
+  createdAt: string;
+  user?: {
+    id: string;
+    email: string;
+    name: string | null;
+  } | null;
+}
+
 export async function getCurrentUser(): Promise<CurrentUserResponse | null> {
   try {
     return await apiClient<CurrentUserResponse>("/auth/me");
   } catch {
     return null;
+  }
+}
+
+export async function getWorkspaceSettings(): Promise<WorkspaceSettingsResponse | null> {
+  try {
+    return await apiClient<WorkspaceSettingsResponse>("/api/workspace/settings");
+  } catch {
+    return null;
+  }
+}
+
+export async function updateWorkspaceSettings(input: UpdateWorkspaceSettingsInput): Promise<WorkspaceSettingsResponse | null> {
+  try {
+    return await apiClient<WorkspaceSettingsResponse>("/api/workspace/settings", {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function getWorkspaceMembers(): Promise<WorkspaceMemberRecord[] | null> {
+  try {
+    const response = await apiClient<{ data: WorkspaceMemberRecord[] }>("/api/workspace/members");
+    return response.data;
+  } catch {
+    return null;
+  }
+}
+
+export async function createWorkspaceMember(input: { userId: string; role: "owner" | "admin" | "analyst" }): Promise<WorkspaceMemberRecord | null> {
+  try {
+    return await apiClient<WorkspaceMemberRecord>("/api/workspace/members", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteWorkspaceMember(memberId: string): Promise<boolean> {
+  try {
+    await apiClient<{ success: boolean }>(`/api/workspace/members/${memberId}`, {
+      method: "DELETE",
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function changePassword(input: { currentPassword: string; newPassword: string }): Promise<boolean> {
+  try {
+    await apiClient<{ success: boolean }>("/auth/change-password", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -487,6 +626,15 @@ export async function createReportExport(reportId: string, format: "json" | "pdf
 export async function getReportExportStatus(jobId: string): Promise<{ jobId: string; reportId: string; format: string; status: string; errorMessage?: string | null; signedUrl?: string | null } | null> {
   try {
     return await apiClient<{ jobId: string; reportId: string; format: string; status: string; errorMessage?: string | null; signedUrl?: string | null }>(`/api/reports/exports/${jobId}`);
+  } catch {
+    return null;
+  }
+}
+
+export async function downloadReportExport(signedUrl: string): Promise<unknown | null> {
+  try {
+    const url = new URL(signedUrl);
+    return await apiClient<unknown>(`${url.pathname}${url.search}`);
   } catch {
     return null;
   }

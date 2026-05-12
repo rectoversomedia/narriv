@@ -8,6 +8,19 @@ function formatZodIssues(issues = []) {
     }));
 }
 
+function assignRequestPart(req, key, value) {
+    try {
+        req[key] = value;
+    } catch {
+        Object.defineProperty(req, key, {
+            value,
+            writable: true,
+            configurable: true,
+            enumerable: true,
+        });
+    }
+}
+
 /**
  * Reusable request validator for body, params, and query using Zod.
  *
@@ -28,7 +41,7 @@ export function validateRequest({ body, params, query } = {}) {
                     issues: formatZodIssues(result.error.issues),
                 });
             } else {
-                req.body = result.data;
+                assignRequestPart(req, "body", result.data);
             }
         }
 
@@ -40,7 +53,7 @@ export function validateRequest({ body, params, query } = {}) {
                     issues: formatZodIssues(result.error.issues),
                 });
             } else {
-                req.params = result.data;
+                assignRequestPart(req, "params", result.data);
             }
         }
 
@@ -52,7 +65,7 @@ export function validateRequest({ body, params, query } = {}) {
                     issues: formatZodIssues(result.error.issues),
                 });
             } else {
-                req.query = result.data;
+                assignRequestPart(req, "query", result.data);
             }
         }
 

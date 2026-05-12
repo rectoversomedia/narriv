@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Database, Loader2, Pencil, Play, Plus, Save, Search, Trash2, X, XCircle } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { SectionHeader } from "@/components/ui/demo-primitives";
+import { SectionHeader } from "@/components/ui/dashboard-primitives";
 import { FeedbackBanner, type FeedbackMessage } from "@/components/ui/FeedbackBanner";
 import {
   createSource,

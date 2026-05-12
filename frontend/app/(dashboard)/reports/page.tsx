@@ -18,11 +18,11 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { ProgressBar, SectionHeader, StatusBadge } from "@/components/ui/demo-primitives";
+import { ProgressBar, SectionHeader, StatusBadge } from "@/components/ui/dashboard-primitives";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FeedbackBanner, type FeedbackMessage } from "@/components/ui/FeedbackBanner";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { createReportExport, getReportExportStatus, getReports } from "@/lib/api-service";
+import { createReportExport, downloadReportExport, getReportExportStatus, getReports } from "@/lib/api-service";
 
 type ReportFilter = "all" | "ready" | "review" | "pending";
 type ReportExportStatus = "queued" | "running" | "completed" | "failed" | "storage_unavailable";
@@ -37,7 +37,8 @@ interface ReportData {
 }
 
 function normalizeReports(data: unknown): ReportData[] {
-  const list = Array.isArray(data) ? data : (data as { reports?: unknown[] } | null)?.reports;
+  const response = data as { reports?: unknown[]; data?: unknown[] } | null;
+  const list = Array.isArray(data) ? data : response?.reports ?? response?.data;
   if (!Array.isArray(list)) return [];
 
   return list.filter((item): item is ReportData => {
@@ -87,6 +88,7 @@ export default function ReportsPage() {
   const [page, setPage] = useState(1);
   const [packagePrepared, setPackagePrepared] = useState(false);
   const [exportStatusByReport, setExportStatusByReport] = useState<Record<string, ReportExportStatus>>({});
+  const [exportUrlByReport, setExportUrlByReport] = useState<Record<string, string>>({});
   const [feedback, setFeedback] = useState<FeedbackMessage | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -147,8 +149,38 @@ export default function ReportsPage() {
     setPage(1);
   };
 
+  const savePayloadAsJson = (report: ReportData, payload: unknown) => {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `narriv-report-${report.id?.slice(0, 8) ?? "export"}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadReadyReport = async (report: ReportData, signedUrl: string) => {
+    const payload = await downloadReportExport(signedUrl);
+    if (!payload) {
+      setFeedback({ tone: "error", title: t("downloadFailed"), description: t("downloadFailedDesc") });
+      return;
+    }
+
+    savePayloadAsJson(report, payload);
+    setFeedback({ tone: "success", title: t("downloadStarted"), description: t("downloadStartedDesc") });
+  };
+
   const handleExportReport = async (report: ReportData) => {
     if (!report.id) return;
+
+    const existingStatus = exportStatusByReport[report.id];
+    const existingUrl = exportUrlByReport[report.id];
+    if (existingStatus === "completed" && existingUrl) {
+      await handleDownloadReadyReport(report, existingUrl);
+      return;
+    }
 
     setExportStatusByReport((current) => ({ ...current, [report.id as string]: "queued" }));
     const created = await createReportExport(report.id, "json");
@@ -164,8 +196,11 @@ export default function ReportsPage() {
     const nextStatus = (status?.status ?? "queued") as ReportExportStatus;
     setExportStatusByReport((current) => ({ ...current, [report.id as string]: nextStatus }));
     if (status?.status === "completed") {
+      if (status.signedUrl) {
+        setExportUrlByReport((current) => ({ ...current, [report.id as string]: status.signedUrl as string }));
+      }
       setPackagePrepared(true);
-      setFeedback({ tone: "success", title: t("exportReady"), description: t("exportReadyDesc") });
+      setFeedback({ tone: "success", title: t("exportReady"), description: status.signedUrl ? t("exportReadyDownloadDesc") : t("exportReadyDesc") });
     } else if (status?.status === "failed") {
       setFeedback({ tone: "error", title: t("exportFailed"), description: status.errorMessage ?? t("exportFailedDesc") });
     }
@@ -201,7 +236,7 @@ export default function ReportsPage() {
   const displayExportStatus = (status: ReportExportStatus | undefined) => {
     if (status === "queued") return t("exportQueued");
     if (status === "running") return t("exportRunning");
-    if (status === "completed") return t("exportCompleted");
+    if (status === "completed") return t("downloadReady");
     if (status === "storage_unavailable") return t("exportStorageUnavailableShort");
     if (status === "failed") return t("exportFailed");
     return "";

@@ -29,7 +29,7 @@ Use this as the active frontend backlog. Older completed phases below are histor
 - [ ] Test every active route in light mode and dark mode: `/`, `/signals`, `/intelligence`, `/alerts`, `/alerts/[id]`, `/visibility`, `/action-plans`, `/reports`, `/workspace/sources`, and `/workspace/settings`.
 - [ ] Test responsive layouts at 375px, 768px, 1024px, and desktop widths.
 - [ ] Confirm all production/live-only empty states render correctly when the backend returns no records.
-- [ ] Confirm no mock/demo data appears in production-only pages.
+- [x] Confirm no mock/demo data appears in production-only pages.
 - [ ] Capture updated screenshots after final UI approval.
 
 ### Stakeholder Positioning Updates
@@ -38,7 +38,9 @@ Use this as the active frontend backlog. Older completed phases below are histor
 - [x] Replace any remaining `Collect Data` copy with `Auto Sync`, `Live Monitoring`, or `Scheduled Collection`.
 - [x] Replace any remaining generic `Early Warnings` copy with `Predictive Alerts`, `Smart Alerts`, or `Risk Alerts`, except where historical checklist items are being referenced.
 - [ ] Add notification settings UI only after backend supports WhatsApp-to-PIC/email/Slack/Telegram configuration.
-- [ ] Add alert/action assignment UI only after backend supports PIC, team, deadline, and escalation-level fields.
+- [x] Add alert/action assignment UI only after backend supports PIC, team, deadline, and escalation-level fields.
+- [x] Show workflow ownership, deadline, and escalation visibility directly in alert/action-plan surfaces.
+- [x] Add quick-edit assignment controls for alerts and action plans.
 
 ### Feature Flow Testing
 - [ ] Auth: register, login, refresh token behavior, logout, and protected-route redirect.
@@ -69,11 +71,11 @@ Use this as the active frontend backlog. Older completed phases below are histor
 - [x] Audit hardcoded English copy introduced after localization and move remaining strings into `messages/en.json` and `messages/id.json`.
 
 ### Backend-Dependent Frontend Work
-- [ ] Replace Settings user/session-only page with real workspace settings once `GET/PATCH /api/workspace/settings` exists.
-- [ ] Add UI for workspace members/team access once backend supports it.
+- [x] Replace Settings user/session-only page with real workspace settings once `GET/PATCH /api/workspace/settings` exists.
+- [x] Add UI for workspace members/team access once backend supports it.
 - [ ] Add UI for action generation failure logs or history if backend exposes them.
 - [ ] Add UI for notification channels once backend supports WhatsApp, email, Slack, and Telegram settings.
-- [ ] Add UI for assignment workflow once backend supports PIC, team, deadline, and escalation level.
+- [x] Add UI for assignment workflow once backend supports PIC, team, deadline, and escalation level.
 
 ### Release Checks
 - [x] Run `npm run lint` before every handoff.
