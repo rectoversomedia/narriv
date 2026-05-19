@@ -1,191 +1,146 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { CalendarDays, Download, MessageCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { DesignFrame, InnerPanel, SectionHeader } from "@/components/ui/dashboard-primitives";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { Skeleton } from "@/components/ui/Skeleton";
-import { createActionPlan, getVisibility } from "@/lib/api-service";
-
-interface PromptData {
-  prompt: string;
-  engine: string;
-  brand: string;
-  competitor: string;
-  brandTone: "text-[#12B76A]" | "text-[#F97066]" | "text-[#FDB022]" | "theme-soft";
-  compTone: "text-[#12B76A]" | "text-[#F97066]" | "text-[#FDB022]" | "theme-soft";
-}
-
-interface GeoAction {
-  title: string;
-  tag: string;
-  highlighted?: boolean;
-}
-
-interface VisibilityData {
-  score?: number | string;
-  presence?: number | string;
-  presenceMentions?: number | string;
-  competitor?: number | string;
-  prompts?: PromptData[];
-  geoActions?: GeoAction[];
-}
+import { AppCard, MetricTile, SectionHeader, StatusPill } from "@/components/dashboard/dashboard-kit";
+import { AiMentionsLineChart, PlatformBarChart } from "@/components/dashboard/charts";
+import { CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { activitySeries, aiPlatforms, text, topTopics, visibilityMetrics } from "@/lib/mock-data";
+import { useUiStore } from "@/store/useUiStore";
 
 export default function VisibilityPage() {
-  const t = useTranslations("Visibility");
-  const router = useRouter();
-
-  const [data, setData] = useState<VisibilityData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [generatingActionSource, setGeneratingActionSource] = useState<"header" | "gap" | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [reloadKey, setReloadKey] = useState(0);
-
-  useEffect(() => {
-    async function fetchData() {
-      setIsLoading(true);
-      const res = await getVisibility();
-      setData(res as VisibilityData);
-      setIsLoading(false);
-    }
-    fetchData();
-  }, [reloadKey]);
-
-  const handleCreateAction = async (source: "header" | "gap") => {
-    setActionError(null);
-    setGeneratingActionSource(source);
-    const created = await createActionPlan({ strategyType: "content_strategy" });
-    setGeneratingActionSource(null);
-
-    if (!created) {
-      setActionError(t("createActionFailed"));
-      return;
-    }
-
-    router.push("/action-plans");
-  };
+  const t = useTranslations("DemoApp");
+  const language = useUiStore((state) => state.language);
+  const aiMentionData = activitySeries.slice(2, 9).map((value, index) => ({
+    label: `${8 + index} Mei`,
+    value: value + 640,
+    competitor: Math.round(value * 0.58 + 420),
+    secondary: Math.round(value * 0.3 + 240),
+  }));
 
   return (
-    <div className="space-y-6 pb-6">
-      <SectionHeader
-        title={t("title")}
-        description={t("subtitle")}
-        action={
-          <button
-            type="button"
-            onClick={() => void handleCreateAction("header")}
-            disabled={generatingActionSource === "header"}
-            className="hidden h-11 items-center justify-center rounded-lg bg-[#465FFF] px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90 lg:inline-flex"
-          >
-            {generatingActionSource === "header" ? t("creatingAction") : t("generateAction")}
+    <div className="space-y-8 pb-6">
+      {/* Header Section */}
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between mb-2">
+        <div>
+          <p className="text-sm font-semibold text-slate-400">Dashboard / AI Visibility</p>
+          <h1 className="mt-2 text-[34px] font-black tracking-tight text-slate-900 bg-clip-text text-transparent bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800">{t("pages.visibility.title")}</h1>
+          <p className="mt-3 text-[15px] font-semibold text-slate-400">{t("pages.visibility.desc")}</p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <button className="inline-flex h-[42px] items-center gap-2 rounded-[8px] border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-900 hover:bg-slate-100 transition-all">
+            <CalendarDays size={16} className="text-slate-500" />
+            7 Mei 2025 - 14 Mei 2025
           </button>
-        }
-      />
-
-      {actionError ? (
-        <div className="rounded-lg border border-[#F04438]/20 bg-[#F04438]/10 px-4 py-3 text-sm font-medium text-[#B42318] dark:text-[#FDA29B]">
-          {actionError}
+          <button className="inline-flex h-[42px] items-center gap-2 rounded-[8px] border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-900 hover:bg-slate-100 transition-all">
+            <Download size={16} className="text-slate-500" />
+            {t("common.export")}
+          </button>
         </div>
-      ) : null}
+      </div>
 
-      {isLoading ? (
-        <div className="grid gap-6 xl:grid-cols-[354px_354px_1fr]">
-          <Skeleton className="h-[220px] w-full" />
-          <Skeleton className="h-[220px] w-full" />
-          <Skeleton className="h-[220px] w-full" />
-        </div>
-      ) : !data ? (
-        <EmptyState
-          icon="search"
-          title={t("emptyTitle")}
-          description={t("emptyDesc")}
-          action={(
-            <button type="button" onClick={() => setReloadKey((value) => value + 1)} className="rounded-lg bg-[#465FFF] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3547D8]">
-              {t("retry")}
+      {/* Metrics Grid */}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        {visibilityMetrics.map((metric) => (
+          <MetricTile 
+            key={text(metric.label, language)} 
+            label={text(metric.label, language)} 
+            value={metric.value} 
+            helper={metric.helper} 
+            icon={metric.icon} 
+            tone={metric.tone} 
+          />
+        ))}
+      </div>
+
+      {/* Main Charts Row */}
+      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <AppCard>
+          <CardContent className="p-5">
+            <SectionHeader title={t("pages.visibility.trend")} description="Perkembangan jumlah penyebutan brand Anda di platform AI." />
+            <AiMentionsLineChart data={aiMentionData} />
+            <button className="mx-auto mt-6 flex items-center gap-2 text-sm font-bold text-[#465FFF] hover:text-[#465FFF] hover:underline transition-all">
+              Lihat analisis lengkap
             </button>
-          )}
-        />
-      ) : (
-        <>
-          <div className="grid gap-6 xl:grid-cols-[354px_354px_1fr]">
-            <DesignFrame className="min-h-[220px] backdrop-blur-xl">
-              <h2 className="theme-text text-xl font-bold tracking-tight">{t("score")}</h2>
-              <p className="theme-text mt-5 text-[64px] font-bold leading-none tracking-tight">{data.score || 0}</p>
-              <p className="theme-muted mt-5 max-w-[282px] text-[14px] leading-relaxed">{t("scoreDesc")}</p>
-            </DesignFrame>
-            <DesignFrame className="min-h-[220px] backdrop-blur-xl">
-              <h2 className="theme-text text-xl font-bold tracking-tight">{t("presence")}</h2>
-              <p className="theme-text mt-5 text-[54px] font-bold leading-none tracking-tight">{data.presence || 0}%</p>
-              <p className="theme-muted mt-5 max-w-[282px] text-[14px] leading-relaxed">{t("presenceDescPrefix")} <span className="theme-text font-semibold">{data.presenceMentions || 0}</span> {t("presenceDescSuffix")}</p>
-            </DesignFrame>
-            <DesignFrame className="min-h-[220px] backdrop-blur-xl">
-              <h2 className="theme-text text-xl font-bold tracking-tight">{t("competitor")}</h2>
-              <p className="mt-5 bg-linear-to-r from-[#F97066] to-[#FDA29B] bg-clip-text text-[54px] font-extrabold tracking-tight text-transparent">{data.competitor || 0}%</p>
-              <p className="theme-muted mt-5 max-w-[270px] text-[14px] leading-relaxed">{t("competitorDesc")}</p>
-            </DesignFrame>
-          </div>
+          </CardContent>
+        </AppCard>
+        
+        <AppCard>
+          <CardContent className="p-5">
+            <SectionHeader title={t("pages.visibility.platform")} description="Platform AI tempat brand Anda paling sering disebut." />
+            <div className="mt-6"><PlatformBarChart data={aiPlatforms} /></div>
+          </CardContent>
+        </AppCard>
+      </div>
 
-          <div className="grid gap-6 xl:grid-cols-[1fr_376px]">
-            <DesignFrame className="min-h-[360px] p-0 backdrop-blur-xl">
-              <div className="p-7 pb-0">
-                <h2 className="theme-text text-xl font-bold tracking-tight">{t("prompts")}</h2>
-                <div className="theme-muted mt-6 hidden text-[11px] font-bold uppercase tracking-widest md:grid md:grid-cols-[1fr_92px_76px_90px]">
-                  <span>{t("prompt")}</span>
-                  <span>{t("engine")}</span>
-                  <span>{t("brand")}</span>
-                  <span>{t("competitorColumn")}</span>
+      {/* Insight details */}
+      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.8fr_0.9fr]">
+        {/* Insights list */}
+        <AppCard>
+          <CardContent className="p-5">
+            <SectionHeader title={t("pages.visibility.insights")} description="Wawasan penting dari performa AI Visibility Anda." />
+            <div className="space-y-3 mt-4">
+              {["Brand Anda semakin sering direkomendasikan oleh AI.", "Topik AI di Indonesia mendorong peningkatan visibility.", "Kompetitor 1 unggul dalam topik Cloud Security."].map((item, index) => (
+                <div key={item} className="flex items-center gap-4 rounded-[8px] border border-slate-100 bg-slate-50 p-4 transition hover:border-slate-200">
+                  <MessageCircle size={20} className={index === 2 ? "text-[#F59E0B]" : "text-[#10B981]"} />
+                  <p className="flex-1 text-sm font-semibold text-slate-700">{item}</p>
+                  <StatusPill tone={index === 2 ? "amber" : "green"}>
+                    {index === 2 ? "Perhatian" : "Positif"}
+                  </StatusPill>
                 </div>
-              </div>
-              <div className="mt-2 divide-y divide-[var(--border)]">
-                {data.prompts && data.prompts.length ? data.prompts.map((p: PromptData, i: number) => (
-                  <div key={i} className="theme-row-hover group grid min-h-[64px] gap-2 px-7 py-4 text-[14px] transition-colors md:grid-cols-[1fr_92px_76px_90px] md:items-center">
-                    <p className="theme-text font-medium">{p.prompt}</p>
-                    <p className="theme-muted">{p.engine}</p>
-                    <p className={`font-semibold tracking-wide ${p.brandTone}`}>{p.brand}</p>
-                    <p className={`font-medium ${p.compTone}`}>{p.competitor}</p>
+              ))}
+            </div>
+          </CardContent>
+        </AppCard>
+
+        {/* Topics Table */}
+        <AppCard>
+          <CardContent className="p-5">
+            <SectionHeader title={t("pages.visibility.topics")} description="Topik yang paling sering dikaitkan dengan brand Anda." />
+            <div className="mt-4 border border-slate-100 rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader className="bg-slate-50">
+                  <TableRow className="border-b border-slate-100 hover:bg-transparent">
+                    <TableHead className="text-slate-500 font-semibold">Topik</TableHead>
+                    <TableHead className="text-slate-500 font-semibold text-right">Mentions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {topTopics.map((topic) => (
+                    <TableRow key={text(topic.name, language)} className="border-b border-slate-100 hover:bg-slate-50 last:border-0">
+                      <TableCell className="font-bold text-slate-800">{text(topic.name, language)}</TableCell>
+                      <TableCell className="text-right text-slate-600 font-semibold">{topic.mentions}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </AppCard>
+
+        {/* Brand Mention examples */}
+        <AppCard>
+          <CardContent className="p-5">
+            <SectionHeader title={t("pages.visibility.mentions")} description="Contoh bagaimana brand Anda disebut di platform AI." />
+            <div className="space-y-4 mt-6">
+              {["ChatGPT", "Google Gemini", "Perplexity"].map((name) => (
+                <div key={name} className="flex gap-4 border-b border-slate-100 pb-4 last:border-0 last:pb-0">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[8px] bg-[#8B5CFF]/15 text-[#8B5CFF] border border-[#8B5CFF]/20 font-black text-base shadow-[0_0_8px_rgba(139,92,255,0.25)]">
+                    {name[0]}
                   </div>
-                )) : (
-                  <p className="theme-muted px-7 pb-6 text-sm">{t("noPrompts")}</p>
-                )}
-              </div>
-            </DesignFrame>
-
-            <DesignFrame className="min-h-[360px] backdrop-blur-xl">
-              <div className="space-y-1">
-                <h2 className="theme-text text-xl font-bold tracking-tight">{t("geoAction")}</h2>
-                <p className="theme-muted text-[14px] leading-relaxed">{t("geoDesc")}</p>
-              </div>
-              <div className="mt-8 space-y-3">
-                {data.geoActions && data.geoActions.length ? data.geoActions.map((action: GeoAction, i: number) =>
-                  action.highlighted ? (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => void handleCreateAction("gap")}
-                      disabled={generatingActionSource === "gap"}
-                      className="group flex min-h-[64px] items-center justify-center rounded-xl bg-linear-to-br from-[#465FFF] to-[#3B4DCD] px-6 text-[14px] font-bold tracking-wide text-white shadow-[0_0_20px_rgba(70,95,255,0.2)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(70,95,255,0.4)]"
-                    >
-                      {generatingActionSource === "gap" ? t("creatingAction") : t("visibilityGapAction")}
-                    </button>
-                  ) : (
-                    <InnerPanel key={i} className="grid min-h-[64px] grid-cols-[1fr_auto] items-center gap-4 px-5 py-4 transition-colors">
-                      <p className="theme-text max-w-[240px] text-[14px] font-medium">{action.title}</p>
-                      <p className="theme-accent text-[12px] font-bold tracking-wide">{action.tag}</p>
-                    </InnerPanel>
-                  )
-                ) : (
-                  <p className="theme-muted text-sm">{t("noActions")}</p>
-                )}
-              </div>
-            </DesignFrame>
-          </div>
-
-          <div className="theme-soft rounded-2xl border border-[#465FFF33] bg-[#465FFF0F] p-[18px_24px] text-[13px] leading-[1.45]">
-            {t("footer")}
-          </div>
-        </>
-      )}
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">{name}</p>
+                    <p className="mt-1 text-sm leading-6 text-slate-500">
+                      Narriv adalah platform intelligence yang membantu organisasi memantau sinyal dan menganalisis data...
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </AppCard>
+      </div>
     </div>
   );
 }

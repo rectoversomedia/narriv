@@ -1,176 +1,97 @@
-﻿"use client";
+"use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { BrainCircuit, Network, Sparkles } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { DesignFrame, InnerPanel, SectionHeader } from "@/components/ui/dashboard-primitives";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { Skeleton } from "@/components/ui/Skeleton";
-import { createActionPlan, getNarratives } from "@/lib/api-service";
-
-interface NarrativeItem {
-  id: string;
-  title: string;
-  description: string;
-  sourceCount: number;
-  confidence: number;
-  impact: string;
-  velocity: string;
-  recommendedFocus: string;
-  signalCount: number;
-  sentiment: string;
-}
-
-function normalizeNarratives(data: unknown): NarrativeItem[] {
-  const response = data as { narratives?: unknown[]; data?: unknown[] } | null;
-  const list = response?.narratives ?? response?.data;
-  if (!Array.isArray(list)) return [];
-
-  return list.filter((item): item is NarrativeItem => {
-    return Boolean(
-      item &&
-      typeof item === "object" &&
-      "id" in item &&
-      "title" in item &&
-      "description" in item &&
-      "sourceCount" in item &&
-      "confidence" in item &&
-      "impact" in item &&
-      "velocity" in item &&
-      "recommendedFocus" in item
-    );
-  });
-}
+import { AppCard, IconBubble, MetricTile, PageTitle, StatusPill } from "@/components/dashboard/dashboard-kit";
+import { CardContent } from "@/components/ui/card";
+import { intelligenceClusters, text } from "@/lib/mock-data";
+import { useUiStore } from "@/store/useUiStore";
 
 export default function IntelligencePage() {
-  const t = useTranslations("Intelligence");
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [items, setItems] = useState<NarrativeItem[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [isGeneratingAction, setIsGeneratingAction] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [reloadKey, setReloadKey] = useState(0);
-
-  useEffect(() => {
-    async function fetchData() {
-      setIsLoading(true);
-      const res = await getNarratives();
-      const normalized = normalizeNarratives(res);
-      setItems(normalized);
-      setSelectedId(normalized[0]?.id ?? null);
-      setIsLoading(false);
-    }
-
-    fetchData();
-  }, [reloadKey]);
-
-  const selected = useMemo(() => {
-    if (!selectedId) return items[0] ?? null;
-    return items.find((item) => item.id === selectedId) ?? items[0] ?? null;
-  }, [items, selectedId]);
-
-  const handleCreateAction = async () => {
-    setActionError(null);
-    setIsGeneratingAction(true);
-    const created = await createActionPlan({
-      strategyType: "content_strategy",
-      clusterId: selected?.id,
-    });
-    setIsGeneratingAction(false);
-
-    if (!created) {
-      setActionError(t("createActionFailed"));
-      return;
-    }
-
-    router.push("/action-plans");
-  };
-
+  const t = useTranslations("DemoApp");
+  const language = useUiStore((state) => state.language);
+  
   return (
-    <div className="space-y-6 pb-6">
-      <SectionHeader
-        title={t("title")}
-        description={t("subtitle")}
-        action={
-          <button
-            type="button"
-            onClick={() => void handleCreateAction()}
-            disabled={isGeneratingAction}
-            className="hidden h-11 items-center justify-center rounded-lg bg-[#465FFF] px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90 lg:inline-flex"
-          >
-            {isGeneratingAction ? t("creatingAction") : t("createAction")}
-          </button>
-        }
-      />
+    <div className="space-y-8 pb-6">
+      <PageTitle title={t("pages.intelligence.title")} description={t("pages.intelligence.desc")} />
+      
+      {/* Metrics Row */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <MetricTile label="Clusters" value="14" helper="4 accelerating" icon={Network} tone="purple" />
+        <MetricTile label="Confidence" value="89%" helper="Evidence weighted" icon={BrainCircuit} tone="blue" />
+        <MetricTile label="Opportunities" value="3" helper="New positive gaps" icon={Sparkles} tone="green" />
+      </div>
 
-      {actionError ? (
-        <div className="rounded-lg border border-[#F04438]/20 bg-[#F04438]/10 px-4 py-3 text-sm font-medium text-[#B42318] dark:text-[#FDA29B]">
-          {actionError}
-        </div>
-      ) : null}
+      {/* Map & Clusters Detail Section */}
+      <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
+        {/* Visual Map */}
+        <AppCard>
+          <CardContent className="p-5">
+            <h2 className="text-[20px] font-bold text-slate-900 tracking-tight">{t("pages.intelligence.map")}</h2>
+            
+            <div className="relative mt-5 min-h-[520px] overflow-hidden rounded-[14px] border border-slate-100 bg-slate-50">
+              {/* Sci-fi Radar Scanning lines */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(70,95,255,0.08)_0%,transparent_70%)]" />
+              <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:40px_40px]" />
+              
+              {/* Cyberpunk Map Center Core */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-[360px] h-[360px] border border-dashed border-slate-100 rounded-full animate-spin-slow opacity-30" />
+                <div className="w-[180px] h-[180px] border border-dashed border-slate-200 rounded-full animate-spin-reverse-slow opacity-40" />
+              </div>
 
-      {isLoading ? (
-        <div className="grid gap-6 xl:grid-cols-[1fr_382px]">
-          <Skeleton className="h-[600px] w-full" />
-          <Skeleton className="h-[600px] w-full" />
-        </div>
-      ) : items.length === 0 || !selected ? (
-        <EmptyState
-          icon="search"
-          title={t("title")}
-          description={t("subtitle")}
-          action={(
-            <button type="button" onClick={() => setReloadKey((value) => value + 1)} className="rounded-lg bg-[#465FFF] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3547D8]">
-              {t("retry")}
-            </button>
-          )}
-        />
-      ) : (
-        <div className="grid gap-6 xl:grid-cols-[1fr_382px]">
-          <DesignFrame className="flex min-h-[600px] flex-col gap-5">
-            <h2 className="theme-text text-lg font-semibold">{t("map")}</h2>
-            <p className="theme-muted text-[13px]">{t("mapDesc")}</p>
-            <div className="mt-2 grid gap-3">
-              {items.map((item) => {
-                const active = item.id === selected.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setSelectedId(item.id)}
-                    className={`rounded-xl border p-4 text-left transition-colors ${active ? "border-[#465FFF66] bg-[#465FFF12]" : "border-[var(--border)]"}`}
-                  >
-                    <p className="theme-text text-[15px] font-semibold">{item.title}</p>
-                    <p className="theme-muted mt-1 text-[12px]">
-                      {t("evidenceLine", { signals: item.signalCount, sources: item.sourceCount, velocity: item.velocity })}
-                    </p>
-                  </button>
-                );
-              })}
+              {/* Floating Nodes */}
+              {intelligenceClusters.map((cluster, index) => (
+                <div 
+                  key={text(cluster.topic, language)} 
+                  className="soft-float absolute flex h-32 w-32 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border border-[#465FFF]/20 bg-slate-50/90 text-center shadow-[0_0_15px_rgba(70,95,255,0.1)] backdrop-blur-md transition-all duration-300 hover:scale-105 hover:border-[#8B5CFF] hover:shadow-[0_0_25px_rgba(139,92,255,0.25)] hover:z-10 cursor-pointer" 
+                  style={{ 
+                    left: `${26 + index * 18}%`, 
+                    top: `${36 + (index % 2) * 24 + Math.sin(index) * 6}%`,
+                    animationDelay: `${index * 0.4}s`
+                  }}
+                >
+                  {/* Glowing core indicator */}
+                  <span className="absolute top-3 right-3 h-2.5 w-2.5 rounded-full bg-[#465FFF] border border-slate-300 animate-pulse shadow-[0_0_8px_#465FFF]" />
+                  
+                  <p className="text-sm font-bold text-slate-900 px-2 leading-tight">{text(cluster.topic, language)}</p>
+                  <p className="mt-1.5 text-xs font-semibold text-slate-400">{cluster.signals} signals</p>
+                  
+                  {/* Small growth pill */}
+                  <span className="mt-2 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 text-[#10B981] border border-[#10B981]/25">
+                    {cluster.growth}
+                  </span>
+                </div>
+              ))}
             </div>
-            <InnerPanel className="mt-1 min-h-[140px] rounded-2xl p-5">
-              <h3 className="theme-text text-base font-semibold">{t("dominant")}</h3>
-              <p className="theme-soft mt-3 max-w-[560px] text-[13px] leading-[1.45]">{selected.description}</p>
-            </InnerPanel>
-          </DesignFrame>
+          </CardContent>
+        </AppCard>
 
-          <DesignFrame className="flex min-h-[600px] flex-col gap-4">
-            <h2 className="theme-text text-lg font-semibold">{t("detail")}</h2>
-            <p className="theme-muted text-xs font-medium uppercase tracking-[0.06em]">{t("source")}</p>
-            <h3 className="theme-text mt-2 text-[22px] font-semibold leading-[1.15]">{selected.title}</h3>
-            <InnerPanel className="mt-2 min-h-28 rounded-xl p-4"><p className="theme-soft text-[13px] leading-[1.45]">{selected.description}</p></InnerPanel>
-            <p className="theme-muted text-xs font-medium uppercase tracking-[0.08em]">{t("metrics")}</p>
-            <div className="mt-2 grid grid-cols-2 gap-3">
-              <InnerPanel className="min-h-[88px] rounded-xl p-4"><p className="theme-muted text-xs">{t("velocity")}</p><p className="mt-3 text-base font-semibold text-[#F97066]">{selected.velocity}</p></InnerPanel>
-              <InnerPanel className="min-h-[88px] rounded-xl p-4"><p className="theme-muted text-xs">{t("confidence")}</p><p className="theme-text mt-3 text-base font-semibold">{selected.confidence}%</p></InnerPanel>
+        {/* Intelligence clusters list */}
+        <AppCard>
+          <CardContent className="p-5">
+            <h2 className="text-[20px] font-bold text-slate-900 tracking-tight">{t("pages.intelligence.clusters")}</h2>
+            
+            <div className="mt-5 space-y-3.5">
+              {intelligenceClusters.map((cluster) => (
+                <div 
+                  key={text(cluster.topic, language)} 
+                  className="flex gap-4 rounded-[10px] border border-slate-100 bg-slate-50 p-4 transition-all hover:border-slate-200 hover:bg-white/[0.03]"
+                >
+                  <IconBubble icon={Network} tone={cluster.tone} className="shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-slate-900 truncate">{text(cluster.topic, language)}</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-400">{cluster.signals} signals</p>
+                  </div>
+                  <div className="flex items-center shrink-0">
+                    <StatusPill tone={cluster.tone}>{cluster.growth}</StatusPill>
+                  </div>
+                </div>
+              ))}
             </div>
-            <InnerPanel className="mt-2 min-h-[100px] rounded-xl p-4"><p className="theme-text text-[15px] font-semibold">{t("focus")}</p><p className="theme-soft mt-2 text-[13px] leading-[1.4]">{selected.recommendedFocus}</p></InnerPanel>
-            <button className="mt-auto h-11 w-full rounded-lg bg-[#465FFF] text-sm font-medium text-white transition-opacity hover:opacity-90" type="button" onClick={() => void handleCreateAction()} disabled={isGeneratingAction}>{isGeneratingAction ? t("creatingAction") : t("open")}</button>
-          </DesignFrame>
-        </div>
-      )}
+          </CardContent>
+        </AppCard>
+      </div>
     </div>
   );
 }
-

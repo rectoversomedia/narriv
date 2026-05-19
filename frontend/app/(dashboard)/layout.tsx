@@ -7,6 +7,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useUiStore } from "@/store/useUiStore";
+import { Particles } from "@/components/ui/particles";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -28,19 +29,20 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   if (!mounted || !token) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F9FAFB]">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#465FFF] border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-slate-200 border-[#465FFF] border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div data-theme={theme} className="theme-shell min-h-screen selection:bg-[#465FFF]/30">
+    <div data-theme={theme} className="min-h-screen bg-background text-foreground selection:bg-[#465FFF]/30 relative overflow-hidden">
+      <Particles particleCount={150} particleBaseSize={6} speed={0.08} particleColors={['#465FFF', '#8B5CFF', '#00F0FF']} />
       <Sidebar />
-      <div className={`flex min-h-screen min-w-0 flex-col transition-[padding] duration-300 ${sidebarCollapsed ? "md:pl-[92px]" : "md:pl-[292px]"}`}>
+      <div className={`flex min-h-screen min-w-0 flex-col transition-[padding] duration-300 ${sidebarCollapsed ? "lg:pl-[92px]" : "lg:pl-[292px]"}`}>
         <Topbar />
-        <main className="flex-1 overflow-x-hidden px-4 pb-20 pt-6 sm:px-6 md:px-6 md:pb-8">
-          <div className="mx-auto w-full max-w-[1148px]">{children}</div>
+        <main className="flex-1 overflow-x-hidden px-5 pb-24 pt-6 sm:px-8 lg:px-10 xl:px-12 lg:pb-10">
+          <div className="mx-auto w-full max-w-[1510px] relative z-10">{children}</div>
         </main>
       </div>
     </div>

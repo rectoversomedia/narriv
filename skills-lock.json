@@ -19,6 +19,12 @@
       "skillPath": "skills/code-review/SKILL.md",
       "computedHash": "f302ef24bb2effceff6e16da547898ad8ba6c21c1304a5c1756df20033b2b72d"
     },
+    "enhance-prompt": {
+      "source": "google-labs-code/stitch-skills",
+      "sourceType": "github",
+      "skillPath": "skills/enhance-prompt/SKILL.md",
+      "computedHash": "28c47bcbc0e8d81f48fbbbe41d227efe4018a32c5d4674b0d052a70d215072d3"
+    },
     "karpathy-guidelines": {
       "source": "forrestchang/andrej-karpathy-skills",
       "sourceType": "github",
@@ -48,6 +54,24 @@
       "sourceType": "github",
       "skillPath": "SKILL.md",
       "computedHash": "2a7d4e034f3f4aa67a60ce58c3afc919dda77665716ed48053c6f5fb11a97288"
+    },
+    "prompt-master": {
+      "source": "nidhinjs/prompt-master",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "beeb1139f4bdbdd09af533e9c2a7c2aa4a671033ac68757affd3ba58fc5442e7"
+    },
+    "shadcn": {
+      "source": "shadcn/ui",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn/SKILL.md",
+      "computedHash": "f0fdd03f4755cbb3b57e20fe6fd4a97c00d34e6780187b6559316986e8d848db"
+    },
+    "shadcn-ui": {
+      "source": "google-labs-code/stitch-skills",
+      "sourceType": "github",
+      "skillPath": "plugins/stitch-build/skills/shadcn-ui/SKILL.md",
+      "computedHash": "119a14a004bd30fa99d386df599bd0db8d057cca146f7ee08349daed48b2ea55"
     },
     "software-architecture-design": {
       "source": "vasilyu1983/ai-agents-public",

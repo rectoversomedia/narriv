@@ -1,315 +1,264 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowUpRight, BarChart3, CheckCircle2, Radio, ShieldAlert } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, CheckCircle2, ChevronDown, RefreshCcw, Settings, Zap } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { DesignFrame, InnerPanel, SectionHeader } from "@/components/ui/dashboard-primitives";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { Skeleton } from "@/components/ui/Skeleton";
-import {
-  createActionPlan,
-  getAlerts,
-  getDashboardSummary,
-  getVisibility,
-  type Alert,
-  type ActionStrategyType,
-  type DashboardSummary,
-  type VisibilityResponse,
-} from "@/lib/api-service";
-
-const metricTones = [
-  "text-[#465FFF]",
-  "text-[#12B76A]",
-  "theme-text",
-  "text-[#B54708]",
-] as const;
+import { AppCard, IconBubble, MetricTile, SectionHeader } from "@/components/dashboard/dashboard-kit";
+import { ActivityAreaChart, DonutChart, MiniSparkline, WorldActivityMap } from "@/components/dashboard/charts";
+import { CardContent } from "@/components/ui/card";
+import { activitySeries, alerts, dashboardMetrics, miniTopics, quickActions, sources, systemStatus, text, topTopics } from "@/lib/mock-data";
+import { useUiStore } from "@/store/useUiStore";
+import { DecryptedText } from "@/components/ui/decrypted-text";
 
 export default function DashboardPage() {
-  const t = useTranslations("CommandCenter");
-  const router = useRouter();
-  const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [visibility, setVisibility] = useState<VisibilityResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isGeneratingAction, setIsGeneratingAction] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [reloadKey, setReloadKey] = useState(0);
-
-  useEffect(() => {
-    async function fetchData() {
-      setIsLoading(true);
-      const [summaryData, alertData, visibilityData] = await Promise.all([
-        getDashboardSummary(),
-        getAlerts({ limit: 3, status: "open" }),
-        getVisibility(),
-      ]);
-
-      setSummary(summaryData);
-      setAlerts(alertData?.data ?? []);
-      setVisibility(visibilityData);
-      setIsLoading(false);
-    }
-
-    void fetchData();
-  }, [reloadKey]);
-
-  const metrics = summary ? [
-    {
-      label: t("metrics.totalSignals"),
-      value: String(summary.kpis.total_signals),
-      delta: t("metrics.analyzed", { count: summary.kpis.analyzed_signals }),
-    },
-    {
-      label: t("metrics.positiveSentiment"),
-      value: `${summary.kpis.positive_percentage}%`,
-      delta: t("metrics.negative", { count: summary.kpis.negative_percentage }),
-    },
-    {
-      label: t("metrics.analyzedSignals"),
-      value: String(summary.kpis.analyzed_signals),
-      delta: t("metrics.ofTotal", { count: summary.kpis.total_signals }),
-    },
-    {
-      label: t("metrics.neutralMixed"),
-      value: `${summary.kpis.neutral_percentage + summary.kpis.mixed_percentage}%`,
-      delta: t("metrics.neutral", { count: summary.kpis.neutral_percentage }),
-    },
-  ] : [];
-  const pipelineSteps = [
-    { label: t("pipeline.signals"), value: summary ? String(summary.kpis.total_signals) : "-" },
-    { label: t("pipeline.issues"), value: "-" },
-    { label: t("pipeline.alerts"), value: "-" },
-    { label: t("pipeline.visibility"), value: "-" },
-    { label: t("pipeline.actions"), value: "-" },
-    { label: t("pipeline.feedback"), value: "-" },
+  const t = useTranslations("DemoApp");
+  const language = useUiStore((state) => state.language);
+  const activityData = activitySeries.map((value, index) => ({ label: `${String(index * 2).padStart(2, "0")}:00`, value }));
+  const sentimentData = [
+    { name: "Positif", value: 1248, tone: "green" as const },
+    { name: "Netral", value: 842, tone: "blue" as const },
+    { name: "Negatif", value: 361, tone: "red" as const },
   ];
-  const latestSignal = summary?.latest_signals[0];
-  const trendMax = Math.max(...(summary?.trends.map((point) => point.count) ?? [1]), 1);
-
-  const handleCreateAction = async (strategyType: ActionStrategyType, alertId?: string) => {
-    setActionError(null);
-    setIsGeneratingAction(true);
-    const created = await createActionPlan({ strategyType, alertId });
-    setIsGeneratingAction(false);
-
-    if (!created) {
-      setActionError(t("createActionFailed"));
-      return;
-    }
-
-    router.push("/action-plans");
-  };
-
-  const primaryAlert = alerts[0];
-  const visibilityScore = visibility?.score ?? "-";
-  const displaySeverity = (severity: string | null | undefined) => {
-    if (severity === "high") return t("severity.high");
-    if (severity === "medium") return t("severity.medium");
-    if (severity === "low") return t("severity.low");
-    return t("severity.clear");
-  };
-  const displaySentiment = (sentiment: string | null | undefined) => {
-    if (sentiment === "positive") return t("sentiment.positive");
-    if (sentiment === "negative") return t("sentiment.negative");
-    if (sentiment === "mixed") return t("sentiment.mixed");
-    return t("sentiment.neutral");
-  };
 
   return (
-    <div className="space-y-6 pb-6">
-      <SectionHeader
-        eyebrow={t("eyebrow")}
-        title={t("title")}
-        description={t("subtitle")}
-        action={
-          <div className="theme-panel flex h-11 items-center gap-2 rounded-2xl border px-4 text-sm font-semibold">
-            <Radio size={15} className="text-[#12B76A]" />
-            <span className="theme-soft">{t("last7Days")}</span>
-          </div>
-        }
-      />
-
-      {actionError ? (
-        <div className="rounded-2xl border border-[#F04438]/20 bg-[#F04438]/10 px-4 py-3 text-sm font-medium text-[#B42318] dark:text-[#FDA29B]">
-          {actionError}
+    <div className="space-y-8 pb-6">
+      {/* Header Section */}
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between mb-2">
+        <div>
+          <h1 className="text-[34px] font-black tracking-tight text-slate-900 flex items-center gap-2">
+            <DecryptedText 
+              text={t("pages.command.title")} 
+              animateOn="view"
+              speed={40}
+              className="bg-clip-text text-transparent bg-linear-to-r from-slate-950 via-slate-900 to-slate-800"
+              encryptedClassName="text-[#465FFF]"
+            />
+          </h1>
+          <p className="mt-3 text-[15px] font-medium text-slate-400">{t("pages.command.desc")}</p>
         </div>
-      ) : null}
-
-      {isLoading ? (
-        <div className="space-y-6">
-          <Skeleton className="h-[148px] w-full" />
-          <Skeleton className="h-[420px] w-full" />
+        <div className="flex flex-wrap gap-3">
+          <button 
+            type="button" 
+            className="inline-flex h-[42px] items-center gap-2 rounded-[8px] border border-slate-200 bg-slate-50 px-4 text-[14px] font-bold text-slate-900 hover:bg-slate-100 hover:border-slate-300 transition-all active:scale-[0.98]"
+          >
+            <Settings size={16} className="text-slate-500" />
+            {t("pages.command.customize")}
+          </button>
+          <button 
+            type="button" 
+            className="inline-flex h-[42px] items-center gap-2 rounded-[8px] border border-slate-200 bg-slate-50 px-4 text-[14px] font-bold text-slate-900 hover:bg-slate-100 hover:border-slate-300 transition-all active:scale-[0.98]"
+          >
+            <RefreshCcw size={16} className="text-slate-500 animate-spin-slow" />
+            {t("pages.command.refresh")}
+            <ChevronDown size={16} className="text-slate-400" />
+          </button>
         </div>
-      ) : !summary ? (
-        <EmptyState
-          icon="search"
-          title={t("emptyTitle")}
-          description={t("emptyDesc")}
-          action={(
-            <button type="button" onClick={() => setReloadKey((value) => value + 1)} className="rounded-lg bg-[#465FFF] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3547D8]">
-              {t("retry")}
-            </button>
-          )}
-        />
-      ) : (
-        <>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {metrics.map((metric, index) => (
-              <DesignFrame key={metric.label} className="min-h-[150px] p-5">
-                <p className="theme-muted text-[11px] font-bold uppercase tracking-[0.18em]">{metric.label}</p>
-                <p className={`mt-5 text-[42px] font-semibold leading-none tracking-[-0.06em] ${metricTones[index]}`}>{metric.value}</p>
-                <p className="theme-muted mt-4 text-sm font-medium">{metric.delta}</p>
-              </DesignFrame>
-            ))}
-          </div>
+      </div>
 
-          <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-            <DesignFrame className="min-h-[420px]">
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                <div className="max-w-2xl">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-[#465FFF]/20 bg-[#465FFF]/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#465FFF]">
-                    <BarChart3 size={14} /> {t("narrativeRuleTitle")}
+      {/* Metrics Row */}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+        {dashboardMetrics.map((metric) => (
+          <MetricTile 
+            key={text(metric.label, language)} 
+            label={text(metric.label, language)} 
+            value={metric.value}
+            helper={text(metric.helper, language)} 
+            icon={metric.icon} 
+            tone={metric.tone} 
+          />
+        ))}
+      </div>
+
+      {/* Main Insights Grid */}
+      <div className="grid gap-6 xl:grid-cols-[1.25fr_1.05fr_0.8fr]">
+        {/* Signal Volume Trends */}
+        <AppCard>
+          <CardContent className="p-5">
+            <SectionHeader 
+              title={t("pages.command.activity")} 
+              description={t("pages.command.activityDesc")} 
+              action={
+                <button className="rounded-[8px] border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-all">
+                  24 Jam Terakhir <ChevronDown size={14} className="inline ml-1 text-slate-400" />
+                </button>
+              } 
+            />
+            <ActivityAreaChart data={activityData} />
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+              {miniTopics.map((topic) => (
+                <div key={topic.label} className="rounded-[8px] border border-slate-100 bg-slate-50 p-3 transition hover:border-[#465FFF]/20">
+                  <p className="text-xs font-bold text-slate-400 truncate">{topic.label}</p>
+                  <p className="mt-2 text-lg font-black text-slate-900">{topic.value}</p>
+                  <MiniSparkline tone={topic.tone} />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </AppCard>
+
+        {/* Narrative Command Map */}
+        <AppCard>
+          <CardContent className="p-5">
+            <SectionHeader 
+              title={t("pages.command.map")} 
+              description={t("pages.command.mapDesc")} 
+              action={
+                <button className="rounded-[8px] border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-all">
+                  Semua Negara <ChevronDown size={14} className="inline ml-1 text-slate-400" />
+                </button>
+              }
+            />
+            <WorldActivityMap />
+          </CardContent>
+        </AppCard>
+
+        {/* Predictive Alerts */}
+        <AppCard>
+          <CardContent className="p-5">
+            <SectionHeader 
+              title={t("pages.command.alerts")} 
+              description="Lihat peringatan yang memerlukan perhatian." 
+              action={<Link href="/alerts" className="text-xs font-bold text-[#465FFF] hover:underline hover:text-[#8B5CFF] transition-all">{t("common.viewAll")}</Link>} 
+            />
+            <div className="space-y-4">
+              {alerts.map((alert) => (
+                <div key={alert.id} className="flex gap-3 border-b border-slate-100 pb-3.5 last:border-0 last:pb-0">
+                  <IconBubble icon={Zap} tone={alert.tone} className="h-9 w-9 rounded-[8px]" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[13px] font-bold text-slate-800">{text(alert.title, language)}</p>
+                    <p className="mt-1 text-[11px] font-semibold text-slate-400">{alert.source}</p>
                   </div>
-                  <h2 className="theme-text mt-5 text-[32px] font-semibold leading-[1.08] tracking-[-0.05em]">
-                    {latestSignal?.title || t("narrativeTitle")}
-                  </h2>
-                  <p className="theme-muted mt-4 max-w-xl text-[15px] leading-7">
-                    {latestSignal ? `${latestSignal.platform} · ${displaySentiment(latestSignal.sentiment)} · ${latestSignal.published_at}` : t("narrativeDesc")}
+                  <span className="text-[11px] font-semibold text-slate-400">{alert.time}</span>
+                </div>
+              ))}
+            </div>
+            <button className="mt-6 flex w-full items-center justify-center gap-2 text-sm font-bold text-[#465FFF] hover:text-[#465FFF] transition-all group">
+              {t("common.viewAll")} 
+              <ArrowRight size={16} className="transform transition-transform group-hover:translate-x-1" />
+            </button>
+          </CardContent>
+        </AppCard>
+      </div>
+
+      {/* Extra Details Grid */}
+      <div className="grid gap-6 xl:grid-cols-[1fr_1fr_1fr_0.8fr]">
+        {/* Hot Topics */}
+        <AppCard>
+          <CardContent className="p-5">
+            <SectionHeader title={t("pages.command.topics")} description="Topik yang paling banyak dibicarakan" />
+            <div className="space-y-2 mt-4">
+              {topTopics.map((topic, index) => (
+                <div key={text(topic.name, language)} className="flex items-center gap-3 py-2.5 border-b border-slate-100 last:border-0 last:pb-0">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#8B5CFF]/15 text-xs font-bold text-[#8B5CFF] border border-[#8B5CFF]/20">
+                    {index + 1}
+                  </span>
+                  <p className="flex-1 text-sm font-bold text-slate-900 truncate">{text(topic.name, language)}</p>
+                  <p className="text-xs font-semibold text-slate-400">{topic.mentions}</p>
+                  <p className={`text-xs font-extrabold ${topic.tone === "red" ? "text-[#EF4444]" : "text-[#10B981]"}`}>
+                    {topic.delta}
                   </p>
                 </div>
-                <div className="rounded-[24px] border border-[#465FFF]/20 bg-[#465FFF]/10 p-4 text-[#465FFF]">
-                  <ArrowUpRight size={24} />
+              ))}
+            </div>
+          </CardContent>
+        </AppCard>
+
+        {/* Data Sources */}
+        <AppCard>
+          <CardContent className="p-5">
+            <SectionHeader title={t("pages.command.sources")} description="Status dan performa sumber data" />
+            <div className="space-y-2 mt-4">
+              {sources.map((source) => (
+                <div key={source.name} className="grid grid-cols-[1fr_75px_60px] items-center gap-2 py-3 border-b border-slate-100 last:border-0 last:pb-0 text-sm">
+                  <p className="font-bold text-slate-800 truncate">{source.name}</p>
+                  <p className="text-xs font-extrabold text-[#10B981] flex items-center gap-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
+                    {text(source.status, language)}
+                  </p>
+                  <p className="text-right text-xs font-bold text-slate-500">{source.signals}</p>
                 </div>
-              </div>
+              ))}
+            </div>
+          </CardContent>
+        </AppCard>
 
-              <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {pipelineSteps.map((step, index) => (
-                  <InnerPanel key={step.label} className={`p-4 ${index === 0 ? "border-[#465FFF]/25 bg-[#465FFF]/10" : ""}`}>
-                    <p className="theme-muted text-[11px] font-bold uppercase tracking-[0.16em]">{step.label}</p>
-                    <p className={`mt-3 text-3xl font-semibold tracking-[-0.05em] ${index === 0 ? "text-[#465FFF]" : "theme-text"}`}>{step.value}</p>
-                  </InnerPanel>
-                ))}
+        {/* Mentions Sentiment Visibility */}
+        <AppCard>
+          <CardContent className="p-5">
+            <SectionHeader title={t("pages.command.visibility")} description="Performa visibilitas AI" />
+            <DonutChart center="2.451" label="Total Mentions" data={sentimentData} />
+            <div className="mt-6 grid gap-2.5 text-sm">
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-[#12B76A]" />
+                  Positif
+                </span>
+                <b className="text-slate-900">1.248</b>
               </div>
-
-              <div className="mt-8 rounded-[24px] border border-[var(--border)] bg-[var(--subtle-bg)] p-5">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="theme-text text-sm font-semibold">{t("narrativeRuleTitle")}</p>
-                    <p className="theme-muted mt-1 text-sm leading-6">{t("narrativeRuleDesc")}</p>
-                  </div>
-                  <div className="hidden h-12 items-end gap-1.5 sm:flex">
-                    {(summary.trends.length ? summary.trends : [{ date: "", count: 1 }]).slice(-12).map((point, index) => (
-                      <span
-                        key={`${point.date}-${index}`}
-                        className="w-2 rounded-full bg-[#465FFF]/70"
-                        style={{ height: `${Math.max(10, Math.round((point.count / trendMax) * 48))}px` }}
-                      />
-                    ))}
-                  </div>
-                </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-[#465FFF]" />
+                  Netral
+                </span>
+                <b className="text-slate-900">842</b>
               </div>
-            </DesignFrame>
-
-            <DesignFrame className="flex min-h-[420px] flex-col">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="theme-muted text-[11px] font-bold uppercase tracking-[0.18em]">{t("decisionQueueLabel")}</p>
-                  <h2 className="theme-text mt-3 text-[28px] font-semibold tracking-[-0.05em]">{t("alertTitle")}</h2>
-                  <p className="theme-muted mt-3 text-sm leading-6">{t("alertDesc")}</p>
-                </div>
-                <ShieldAlert className="text-[#F97066]" size={24} />
+              <div className="flex justify-between py-1">
+                <span className="text-slate-500 flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-[#F04438]" />
+                  Negatif
+                </span>
+                <b className="text-slate-900">361</b>
               </div>
+            </div>
+          </CardContent>
+        </AppCard>
 
-              <div className="my-7 rounded-[28px] border border-[#F97066]/20 bg-[#F97066]/10 p-5">
-                <div className="flex items-end justify-between gap-4">
-                  <div>
-                    <p className="text-[54px] font-semibold leading-none tracking-[-0.08em] text-[#B42318] dark:text-[#FDA29B]">{alerts.length}</p>
-                    <p className="theme-muted mt-2 text-sm font-medium">{t("openWarnings")}</p>
-                  </div>
-                  <span className="rounded-full border border-[#F97066]/25 bg-[#F97066]/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-[#B42318] dark:text-[#FDA29B]">
-                    {displaySeverity(primaryAlert?.severity)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                {alerts.length ? alerts.map((alert) => (
-                  <button
-                    key={alert.id}
-                    type="button"
-                    onClick={() => router.push(`/alerts/${alert.id}`)}
-                    className="theme-panel theme-hover w-full rounded-2xl border p-4 text-left"
+        {/* Quick Actions */}
+        <AppCard>
+          <CardContent className="p-5">
+            <SectionHeader title={t("pages.command.quick")} description="Lakukan tindakan cepat." />
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              {quickActions.map((action) => { 
+                const Icon = action.icon; 
+                return (
+                  <button 
+                    key={action.key} 
+                    className="flex min-h-[82px] flex-col items-center justify-center gap-2.5 rounded-[8px] border border-slate-100 bg-slate-50 hover:bg-slate-100 hover:border-[#465FFF]/35 transition-all text-center text-xs font-bold text-slate-800 active:scale-[0.96]"
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="theme-text line-clamp-2 text-sm font-semibold leading-5">{alert.title}</p>
-                      <span className="shrink-0 rounded-full bg-[#F97066]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#B42318] dark:text-[#FDA29B]">
-                        {displaySeverity(alert.severity)}
-                      </span>
-                    </div>
-                    <p className="theme-muted mt-2 line-clamp-2 text-xs leading-5">{alert.whyItMatters ?? alert.whatHappened ?? alert.whatToDo ?? t("alertDesc")}</p>
+                    <Icon size={22} className="text-[#465FFF] drop-shadow-[0_0_8px_rgba(70,95,255,0.4)]" />
+                    <span className="px-1">{t(`quickActions.${action.key}`)}</span>
                   </button>
-                )) : (
-                  <div className="theme-panel rounded-2xl border p-4">
-                    <p className="theme-text text-sm font-semibold">{t("noDecisionItems")}</p>
-                    <p className="theme-muted mt-2 text-xs leading-5">{t("noDecisionItemsDesc")}</p>
-                  </div>
-                )}
-              </div>
+                ); 
+              })}
+            </div>
+          </CardContent>
+        </AppCard>
+      </div>
 
-            </DesignFrame>
-          </div>
-
-          <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-            <DesignFrame className="min-h-[260px] border-[#465FFF]/25 bg-[#465FFF]/[0.07]">
-              <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-                <div className="max-w-xl">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#465FFF]">{t("visibilityLabel")}</p>
-                  <h2 className="theme-text mt-4 text-3xl font-semibold tracking-[-0.05em]">{t("geoCardTitle")}</h2>
-                  <p className="theme-muted mt-3 text-sm leading-6">{t("geoCardDesc")}</p>
-                </div>
-                <div className="rounded-[28px] border border-[#465FFF]/25 bg-white/70 p-5 text-right shadow-sm dark:bg-[#101828]/70">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#465FFF]">{t("geoScoreLabel")}</p>
-                  <p className="mt-3 text-[46px] font-semibold leading-none tracking-[-0.07em] text-[#465FFF]">{visibilityScore}</p>
-                </div>
-              </div>
-              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={() => router.push("/visibility")}
-                  className="inline-flex h-11 items-center justify-center rounded-2xl bg-[#465FFF] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#3547D8]"
-                >
-                  {t("viewVisibility")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleCreateAction("content_strategy")}
-                  disabled={isGeneratingAction}
-                  className="inline-flex h-11 items-center justify-center rounded-2xl border border-[#465FFF]/25 bg-[#465FFF]/10 px-5 text-sm font-semibold text-[#465FFF] transition-colors hover:bg-[#465FFF]/15 disabled:pointer-events-none disabled:opacity-50"
-                >
-                  {isGeneratingAction ? t("creatingAction") : t("geoAction")}
-                </button>
-              </div>
-            </DesignFrame>
-
-            <DesignFrame className="min-h-[240px]">
-              <div className="grid gap-5 md:grid-cols-[1fr_220px] md:items-end">
+      {/* System Status Banner */}
+      <AppCard>
+        <CardContent className="p-5">
+          <SectionHeader 
+            title={t("pages.command.status")} 
+            action={
+              <a className="text-sm font-bold text-[#465FFF] hover:underline flex items-center gap-1">
+                Lihat status lengkap <ArrowRight size={16} className="inline ml-1" />
+              </a>
+            } 
+          />
+          <div className="grid gap-3 md:grid-cols-5 mt-4">
+            {systemStatus.map((item) => (
+              <div key={item} className="flex items-center gap-3 rounded-[10px] bg-slate-50 border border-slate-100 p-4 transition hover:border-[#10B981]/25">
+                <IconBubble icon={CheckCircle2} tone="green" className="h-8 w-8 rounded-full shrink-0" />
                 <div>
-                  <p className="theme-muted text-[11px] font-bold uppercase tracking-[0.18em]">{t("recommendationLabel")}</p>
-                  <h2 className="theme-text mt-4 text-2xl font-semibold tracking-[-0.04em]">{t("recTitle")}</h2>
-                  <p className="theme-muted mt-3 text-sm leading-6">{t("recDesc")}</p>
+                  <p className="text-sm font-bold text-slate-900">{item}</p>
+                  <p className="text-xs font-semibold text-[#10B981]">{t("common.operational")}</p>
                 </div>
-                <InnerPanel className="p-5">
-                  <CheckCircle2 size={20} className="text-[#12B76A]" />
-                  <p className="theme-muted mt-4 text-[11px] font-bold uppercase tracking-[0.16em]">{t("feedback")}</p>
-                  <p className="theme-text mt-2 text-3xl font-semibold tracking-[-0.05em]">{t("feedbackStats")}</p>
-                  <p className="theme-muted mt-1 text-xs leading-5">{t("feedbackLabel")}</p>
-                </InnerPanel>
               </div>
-            </DesignFrame>
+            ))}
           </div>
-        </>
-      )}
+        </CardContent>
+      </AppCard>
     </div>
   );
 }
