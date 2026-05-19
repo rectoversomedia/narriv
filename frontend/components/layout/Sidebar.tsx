@@ -3,183 +3,141 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { MoreHorizontal, X } from "lucide-react";
+import { ChevronDown, MoreHorizontal, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { coreRoutes, workspaceRoutes } from "@/lib/routes";
+import { useState } from "react";
+import { navGroups } from "@/lib/mock-data";
 import { useUiStore } from "@/store/useUiStore";
 
-function isRouteActive(pathname: string, href: string) {
+function activeRoute(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export function Sidebar() {
   const pathname = usePathname();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const theme = useUiStore((state) => state.theme);
+  const t = useTranslations("DemoApp");
+  const [open, setOpen] = useState(false);
   const sidebarCollapsed = useUiStore((state) => state.sidebarCollapsed);
-  const t = useTranslations("Sidebar");
-  const nav = useTranslations("Sidebar.nav");
-  const mobileRoutes = [coreRoutes[0], coreRoutes[1], coreRoutes[3], coreRoutes[6]];
-  const moreActive = [...coreRoutes, ...workspaceRoutes]
-    .filter((route) => !mobileRoutes.some((mobileRoute) => mobileRoute.href === route.href))
-    .some((route) => isRouteActive(pathname, route.href));
+  const toggleSidebar = useUiStore((state) => state.toggleSidebar);
+  const mobileItems = navGroups.flatMap((group) => group.items).slice(0, 4);
 
   return (
     <>
-      <aside className={`theme-shell theme-border fixed inset-y-0 left-0 z-30 hidden flex-col border-r transition-[width] duration-300 md:flex ${sidebarCollapsed ? "w-[92px]" : "w-[292px]"}`}>
-        <div className="px-5 pb-[35px] pt-7">
-          <Image src={theme === "light" ? "/narriv-logo-light.png" : "/narriv-logo-dark.png"} alt="Narriv" width={184} height={45} priority style={{ height: "auto" }} className={sidebarCollapsed ? "w-12 object-contain object-left" : "w-[184px]"} />
+      <aside className={`sidebar-gradient fixed inset-y-0 left-0 z-30 hidden overflow-y-auto px-5 py-8 text-white transition-[width,padding] duration-300 lg:block ${sidebarCollapsed ? "w-[92px] px-4" : "w-[292px]"}`}>
+        <div className={`flex items-center gap-3 px-1 ${sidebarCollapsed ? "justify-center" : ""}`}>
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full">
+            <Image src="/narriv-logo.svg" alt="Narriv" width={64} height={64} priority className="h-16 w-16 scale-[1.28] object-cover" />
+          </span>
+          {sidebarCollapsed ? null : <span className="text-[33px] font-bold tracking-[-0.05em] bg-clip-text text-transparent bg-linear-to-r from-white via-white to-white/70">Narriv</span>}
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-4 pb-4">
-          <p className="theme-muted-2 px-2 pb-5 text-[11px] font-semibold uppercase tracking-[0.18em]">{sidebarCollapsed ? "" : t("menu")}</p>
-          <div className="space-y-1">
-            {coreRoutes.map((route) => {
-              const active = isRouteActive(pathname, route.href);
-              const Icon = route.icon;
-              const label = nav(route.key);
-              return (
-                <Link
-                  key={route.href}
-                  href={route.href}
-                  title={label}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${sidebarCollapsed ? "justify-center" : ""} ${
-                    active ? "bg-[#465FFF] text-white" : "theme-hover theme-soft hover:text-[#465FFF]"
-                  }`}
-                >
-                  <Icon size={18} className="shrink-0" />
-                  {sidebarCollapsed ? null : label}
-                </Link>
-              );
-            })}
-          </div>
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          className="absolute right-4 top-8 flex h-9 w-9 items-center justify-center rounded-[8px] border border-white/10 bg-white/4 text-white/80 transition hover:bg-white/10 hover:text-white"
+          aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {sidebarCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+        </button>
 
-          <p className="theme-muted-2 mt-7 px-2 py-3 text-[11px] font-semibold uppercase tracking-[0.18em]">{sidebarCollapsed ? "" : t("support")}</p>
-          <div className="space-y-1">
-            {workspaceRoutes.map((route) => {
-              const active = isRouteActive(pathname, route.href);
-              const Icon = route.icon;
-              const label = nav(route.key);
-              return (
-                <Link
-                  key={route.href}
-                  href={route.href}
-                  title={label}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${sidebarCollapsed ? "justify-center" : ""} ${
-                    active ? "bg-[#465FFF] text-white" : "theme-hover theme-soft hover:text-[#465FFF]"
-                  }`}
-                >
-                  <Icon size={18} className="shrink-0" />
-                  {sidebarCollapsed ? null : label}
-                </Link>
-              );
-            })}
-          </div>
+        <nav className={`space-y-8 ${sidebarCollapsed ? "mt-10" : "mt-9"}`}>
+          {navGroups.map((group) => (
+            <div key={group.key}>
+              {sidebarCollapsed ? null : <p className="px-2 text-[13px] font-semibold uppercase tracking-[0.08em] text-white/40">{t(`navGroups.${group.key}`)}</p>}
+              <div className="mt-3 grid gap-2">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const active = activeRoute(pathname, item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      title={t(`nav.${item.key}`)}
+                      aria-label={t(`nav.${item.key}`)}
+                      className={`flex h-[52px] items-center gap-4 rounded-[8px] text-[16px] font-bold transition ${sidebarCollapsed ? "justify-center px-0" : "px-4"} ${active ? "bg-[#465FFF] text-white shadow-[0_0_15px_rgba(70,95,255,0.4)]" : "text-white/70 hover:bg-white/5"}`}
+                    >
+                      <Icon size={24} strokeWidth={2} className="shrink-0" />
+                      {sidebarCollapsed ? null : t(`nav.${item.key}`)}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
-        <div className={`p-4 ${sidebarCollapsed ? "hidden" : "block"}`}>
-          <div className="theme-card rounded-2xl border p-4">
-            <p className="theme-text text-sm font-semibold">{t("productionMode")}</p>
-            <p className="theme-muted mt-1 text-xs leading-5">{t("productionDesc")}</p>
+        {sidebarCollapsed ? null : <div className="mt-10 rounded-[10px] border border-white/10 bg-white/2 p-5 backdrop-blur-md">
+          <div className="flex items-center justify-between text-[13px] font-semibold text-white/90">
+            <span>{t("sidebar.scoreTitle")}</span>
+            <span className="flex h-4 w-4 items-center justify-center rounded-full border border-white/40 text-[10px]">i</span>
           </div>
-        </div>
+          <div className="mt-4 flex items-end gap-1">
+            <span className="text-[42px] font-bold leading-none text-[#8B5CFF] drop-shadow-[0_0_10px_rgba(139,92,255,0.3)]">86</span>
+            <span className="pb-1 text-sm text-white/50">/100</span>
+          </div>
+          <p className="mt-3 text-[15px] font-bold text-[#10B981]">{t("sidebar.good")}</p>
+          <p className="mt-2 text-[13px] text-white/60">{t("sidebar.scoreText")}</p>
+          <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/5">
+            <div className="h-full w-[78%] rounded-full bg-linear-to-r from-[#465FFF] to-[#8B5CFF] shadow-[0_0_10px_rgba(70,95,255,0.5)]" />
+          </div>
+        </div>}
+
+        {sidebarCollapsed ? null : <div className="mt-8 flex items-center gap-4 rounded-[10px] border border-white/10 bg-white/2 p-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-tr from-[#465FFF] to-[#8B5CFF] text-sm font-bold text-white shadow-[0_0_10px_rgba(70,95,255,0.3)]">TU</div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[15px] font-bold text-white">Testing User</p>
+            <p className="mt-1 truncate text-[13px] text-white/50">User Workspace</p>
+          </div>
+          <ChevronDown size={18} className="text-white/60" />
+        </div>}
+
+        {sidebarCollapsed ? null : <p className="mt-8 px-2 text-[13px] text-white/40">© 2025 Narriv</p>}
+        {sidebarCollapsed ? null : <p className="mt-3 px-2 text-[13px] text-white/40">All rights reserved.</p>}
       </aside>
 
-      <nav className="mobile-nav-surface fixed inset-x-4 bottom-3 z-40 grid grid-cols-5 rounded-2xl border p-1.5 md:hidden">
-        {mobileRoutes.map((route) => {
-          const active = isRouteActive(pathname, route.href);
-          const Icon = route.icon;
-          const label = nav(route.key);
+      <nav className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 rounded-2xl border border-border bg-[#090D16]/90 p-1.5 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] lg:hidden">
+        {mobileItems.map((item) => {
+          const Icon = item.icon;
+          const active = activeRoute(pathname, item.href);
           return (
             <Link
-              key={route.href}
-              href={route.href}
-              title={label}
-              aria-label={label}
-              className={`flex h-10 items-center justify-center rounded-xl transition-colors ${active ? "bg-[#465FFF] text-white" : "theme-hover theme-muted hover:text-[#465FFF]"}`}
+              key={item.href}
+              href={item.href}
+              className={`flex h-10 items-center justify-center rounded-xl transition ${active ? "bg-[#465FFF] text-white shadow-[0_0_10px_rgba(70,95,255,0.3)]" : "text-white/60 hover:text-white"}`}
             >
-              <Icon size={20} strokeWidth={2.1} />
-              <span className="sr-only">{label}</span>
+              <Icon size={20} />
             </Link>
           );
         })}
-        <button
-          type="button"
-          onClick={() => setMobileMenuOpen(true)}
-          aria-label={t("more")}
-          aria-expanded={mobileMenuOpen}
-          className={`flex h-10 items-center justify-center rounded-xl transition-colors ${moreActive || mobileMenuOpen ? "bg-[#465FFF] text-white" : "theme-hover theme-muted hover:text-[#465FFF]"}`}
-        >
-          <MoreHorizontal size={22} strokeWidth={2.1} />
-        </button>
+        <button type="button" onClick={() => setOpen(true)} className="flex h-10 items-center justify-center rounded-xl text-white/60 hover:text-white" aria-label="Open menu"><MoreHorizontal size={22} /></button>
       </nav>
 
-      {mobileMenuOpen ? (
-        <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label={t("allMenu")}>
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/35 backdrop-blur-[2px]"
-            onClick={() => setMobileMenuOpen(false)}
-            aria-label={t("closeMenu")}
-          />
-          <div className="mobile-nav-surface absolute inset-x-3 bottom-3 max-h-[82dvh] overflow-hidden rounded-[28px] border p-3">
-            <div className="flex items-center justify-between px-2 pb-3 pt-1">
-              <div>
-                <p className="theme-muted text-[11px] font-bold uppercase tracking-[0.18em]">{t("allMenu")}</p>
-                <p className="theme-text mt-1 text-base font-semibold">Narriv</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen(false)}
-                className="theme-border theme-hover theme-text flex h-10 w-10 items-center justify-center rounded-xl border"
-                aria-label={t("closeMenu")}
-              >
-                <X size={18} />
-              </button>
+      {open ? (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button type="button" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} aria-label="Close menu" />
+          <div className="absolute inset-x-3 bottom-3 max-h-[82dvh] overflow-y-auto rounded-[24px] bg-[#090D16] border border-border p-4 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <p className="text-lg font-bold bg-clip-text text-transparent bg-linear-to-r from-white to-white/70">Narriv</p>
+              <button type="button" onClick={() => setOpen(false)} className="rounded-xl border border-border p-2 text-white/60 hover:text-white hover:bg-white/5"><X size={18} /></button>
             </div>
-
-            <div className="max-h-[calc(82dvh-86px)] overflow-y-auto pb-2">
-              <p className="theme-muted-2 px-2 pb-2 text-[11px] font-semibold uppercase tracking-[0.18em]">{t("menu")}</p>
-              <div className="grid gap-2">
-                {coreRoutes.map((route) => {
-                  const active = isRouteActive(pathname, route.href);
-                  const Icon = route.icon;
-                  const label = nav(route.key);
-                  return (
-                    <Link
-                      key={route.href}
-                      href={route.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={`flex min-h-12 items-center gap-3 rounded-2xl px-3 text-sm font-semibold transition-colors ${active ? "bg-[#465FFF] text-white" : "theme-hover theme-text"}`}
-                    >
-                      <Icon size={18} className="shrink-0" />
-                      <span>{label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-
-              <p className="theme-muted-2 mt-5 px-2 pb-2 text-[11px] font-semibold uppercase tracking-[0.18em]">{t("support")}</p>
-              <div className="grid gap-2">
-                {workspaceRoutes.map((route) => {
-                  const active = isRouteActive(pathname, route.href);
-                  const Icon = route.icon;
-                  const label = nav(route.key);
-                  return (
-                    <Link
-                      key={route.href}
-                      href={route.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={`flex min-h-12 items-center gap-3 rounded-2xl px-3 text-sm font-semibold transition-colors ${active ? "bg-[#465FFF] text-white" : "theme-hover theme-text"}`}
-                    >
-                      <Icon size={18} className="shrink-0" />
-                      <span>{label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
+            <div className="grid gap-2">
+              {navGroups.flatMap((group) => group.items).map((item) => {
+                const Icon = item.icon;
+                const active = activeRoute(pathname, item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    className={`flex h-12 items-center gap-3 rounded-xl px-3 text-sm font-bold transition ${active ? "bg-[#465FFF] text-white" : "text-white/70 hover:bg-white/5"}`}
+                  >
+                    <Icon size={18} />
+                    {t(`nav.${item.key}`)}
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </div>
