@@ -8,7 +8,6 @@ import { ActivityAreaChart, DonutChart, MiniSparkline, WorldActivityMap } from "
 import { CardContent } from "@/components/ui/card";
 import { activitySeries, alerts, dashboardMetrics, miniTopics, quickActions, sources, systemStatus, text, topTopics } from "@/lib/mock-data";
 import { useUiStore } from "@/store/useUiStore";
-import { DecryptedText } from "@/components/ui/decrypted-text";
 
 export default function DashboardPage() {
   const t = useTranslations("DemoApp");
@@ -26,13 +25,7 @@ export default function DashboardPage() {
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between mb-2">
         <div>
           <h1 className="text-[34px] font-black tracking-tight text-slate-900 flex items-center gap-2">
-            <DecryptedText 
-              text={t("pages.command.title")} 
-              animateOn="view"
-              speed={40}
-              className="bg-clip-text text-transparent bg-linear-to-r from-slate-950 via-slate-900 to-slate-800"
-              encryptedClassName="text-[#465FFF]"
-            />
+            {t("pages.command.title")}
           </h1>
           <p className="mt-3 text-[15px] font-medium text-slate-400">{t("pages.command.desc")}</p>
         </div>

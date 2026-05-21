@@ -1,6 +1,7 @@
 .trunk
 opencode.json 
 .opencode
+.kilocode
 CLAUDE.md
 .claude 
 docs
