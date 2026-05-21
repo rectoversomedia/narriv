@@ -2,6 +2,7 @@
 
 import { BrainCircuit, Network, Sparkles } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 import { AppCard, IconBubble, MetricTile, PageTitle, StatusPill } from "@/components/dashboard/dashboard-kit";
 import { CardContent } from "@/components/ui/card";
 import { intelligenceClusters, text } from "@/lib/mock-data";
@@ -10,6 +11,7 @@ import { useUiStore } from "@/store/useUiStore";
 export default function IntelligencePage() {
   const t = useTranslations("DemoApp");
   const language = useUiStore((state) => state.language);
+  const [selectedCluster, setSelectedCluster] = useState(intelligenceClusters[0]);
   
   return (
     <div className="space-y-8 pb-6">
@@ -44,7 +46,8 @@ export default function IntelligencePage() {
               {intelligenceClusters.map((cluster, index) => (
                 <div 
                   key={text(cluster.topic, language)} 
-                  className="soft-float absolute flex h-32 w-32 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border border-[#465FFF]/20 bg-slate-50/90 text-center shadow-[0_0_15px_rgba(70,95,255,0.1)] backdrop-blur-md transition-all duration-300 hover:scale-105 hover:border-[#8B5CFF] hover:shadow-[0_0_25px_rgba(139,92,255,0.25)] hover:z-10 cursor-pointer" 
+                  onClick={() => setSelectedCluster(cluster)}
+                  className={`soft-float absolute flex h-32 w-32 -translate-x-1/2 -translate-y-1/2 cursor-pointer flex-col items-center justify-center rounded-full border bg-slate-50/90 text-center shadow-[0_0_15px_rgba(70,95,255,0.1)] backdrop-blur-md transition-all duration-300 hover:z-10 hover:scale-105 hover:border-[#8B5CFF] hover:shadow-[0_0_25px_rgba(139,92,255,0.25)] ${selectedCluster.topic.en === cluster.topic.en ? "border-[#465FFF] ring-4 ring-[#465FFF]/10" : "border-[#465FFF]/20"}`}
                   style={{ 
                     left: `${26 + index * 18}%`, 
                     top: `${36 + (index % 2) * 24 + Math.sin(index) * 6}%`,
@@ -76,7 +79,8 @@ export default function IntelligencePage() {
               {intelligenceClusters.map((cluster) => (
                 <div 
                   key={text(cluster.topic, language)} 
-                  className="flex gap-4 rounded-[10px] border border-slate-100 bg-slate-50 p-4 transition-all hover:border-slate-200 hover:bg-white/[0.03]"
+                  onClick={() => setSelectedCluster(cluster)}
+                  className={`flex cursor-pointer gap-4 rounded-[10px] border p-4 transition-all hover:border-slate-200 ${selectedCluster.topic.en === cluster.topic.en ? "border-[#465FFF] bg-[#465FFF]/5" : "border-slate-100 bg-slate-50"}`}
                 >
                   <IconBubble icon={Network} tone={cluster.tone} className="shrink-0" />
                   <div className="flex-1 min-w-0">
@@ -88,6 +92,17 @@ export default function IntelligencePage() {
                   </div>
                 </div>
               ))}
+            </div>
+            <div className="mt-6 rounded-[12px] border border-[#465FFF]/10 bg-[#465FFF]/5 p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#465FFF]">Selected narrative</p>
+              <h3 className="mt-2 text-lg font-black text-slate-900">{text(selectedCluster.topic, language)}</h3>
+              <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">
+                {selectedCluster.signals} sinyal membentuk cluster ini. Klik cluster pada map untuk mengubah konteks dan memperlihatkan bagaimana stakeholder akan menelusuri bukti narasi.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <StatusPill tone={selectedCluster.tone}>{selectedCluster.growth}</StatusPill>
+                <StatusPill tone="purple">Evidence weighted</StatusPill>
+              </div>
             </div>
           </CardContent>
         </AppCard>

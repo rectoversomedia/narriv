@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import * as z from "zod";
 import { useState } from "react";
 import { AuthInput, AuthShell, CenterIcon, Divider, HelpAction, InfoCallout, PrimaryButton, SecondaryLinkButton } from "@/components/auth/auth-shell";
+import { FieldGroup } from "@/components/ui/field";
 
 type ResetFormValues = {
   email: string;
@@ -42,12 +43,14 @@ export default function ResetPasswordPage() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-8">
-        <AuthInput label={t("email")} icon="email" type="email" autoComplete="email" placeholder={t("emailPlaceholder")} error={errors.email?.message} registration={register("email")} />
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <FieldGroup className="gap-8">
+          <AuthInput label={t("email")} icon="email" type="email" autoComplete="email" placeholder={t("emailPlaceholder")} error={errors.email?.message} registration={register("email")} />
 
-        {submitted ? <p className="rounded-[8px] border border-[#12B76A]/20 bg-[#ECFDF3] px-4 py-3 text-sm font-semibold text-[#027A48]">{t("submitted")}</p> : null}
+          {submitted ? <p className="rounded-[8px] border border-[#12B76A]/20 bg-[#ECFDF3] px-4 py-3 text-sm font-semibold text-[#027A48]">{t("submitted")}</p> : null}
 
-        <PrimaryButton loading={isSubmitting}>{isSubmitting ? t("submitting") : t("submit")}</PrimaryButton>
+          <PrimaryButton loading={isSubmitting}>{isSubmitting ? t("submitting") : t("submit")}</PrimaryButton>
+        </FieldGroup>
       </form>
 
       <div className="mt-8 grid gap-8">

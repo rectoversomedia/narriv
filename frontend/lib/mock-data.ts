@@ -167,3 +167,56 @@ export const settingsCards = [
   { key: "security", icon: Shield, tone: "red" as Tone },
   { key: "language", icon: Globe2, tone: "purple" as Tone },
 ];
+
+export const signalFilters = ["Semua", "Negatif", "Positif", "Campuran", "Kritis"];
+
+export const signalEvidence = [
+  { source: "X/Twitter", snippet: "Keluhan pembayaran tertunda melonjak di kota besar", reach: "128K", tone: "red" as Tone },
+  { source: "App Reviews", snippet: "Pengguna menyorot stabilitas versi terbaru aplikasi", reach: "42K", tone: "amber" as Tone },
+  { source: "Support", snippet: "Tim CS menerima pertanyaan berulang soal syarat kredit", reach: "18K", tone: "purple" as Tone },
+];
+
+export const alertRules = [
+  { name: "Lonjakan Penyebutan Brand", category: "Brand", level: "Kritis", status: "Aktif", activated: "12 Mei 2025 08:30", tone: "red" as Tone },
+  { name: "Sentimen Negatif Tinggi", category: "Sentimen", level: "Peringatan", status: "Aktif", activated: "12 Mei 2025 07:15", tone: "amber" as Tone },
+  { name: "Isu Viral", category: "Isu", level: "Kritis", status: "Aktif", activated: "12 Mei 2025 06:45", tone: "red" as Tone },
+  { name: "Kegagalan Data Source", category: "Sistem", level: "Peringatan", status: "Aktif", activated: "12 Mei 2025 06:30", tone: "amber" as Tone },
+  { name: "Laporan Harian", category: "Laporan", level: "Informasi", status: "Aktif", activated: "12 Mei 2025 05:00", tone: "blue" as Tone },
+];
+
+export const notificationChannels = [
+  { name: "Email", target: "email@company.com", active: true, tone: "blue" as Tone },
+  { name: "Slack", target: "#narriv-alerts", active: true, tone: "green" as Tone },
+  { name: "Microsoft Teams", target: "Narriv Alerts", active: true, tone: "purple" as Tone },
+  { name: "Webhook", target: "2 endpoint aktif", active: true, tone: "amber" as Tone },
+  { name: "SMS", target: "+62 812-3456-7890", active: false, tone: "slate" as Tone },
+];
+
+export const aiMentionExamples = [
+  { platform: "ChatGPT", date: "Hari ini, 12:03", quote: "Narriv adalah platform intelligence yang membantu organisasi memantau sinyal dan menganalisis data reputasi...", tone: "green" as Tone },
+  { platform: "Google Gemini", date: "Hari ini, 10:28", quote: "Untuk kebutuhan monitoring sinyal dan analisis data real-time, Narriv bisa menjadi solusi yang tepat...", tone: "blue" as Tone },
+  { platform: "Perplexity", date: "Hari ini, 08:15", quote: "Narriv menyediakan dashboard intelligence yang powerful untuk pengambilan keputusan berbasis data...", tone: "slate" as Tone },
+];
+
+export const reportVault = [
+  { name: "Executive Narrative Brief", type: "PDF", cadence: "Harian", status: "Siap", readiness: 96, tone: "green" as Tone },
+  { name: "AI Visibility Weekly", type: "Slides", cadence: "Mingguan", status: "Review", readiness: 84, tone: "amber" as Tone },
+  { name: "Crisis Response Pack", type: "PDF + CSV", cadence: "On-demand", status: "Draft", readiness: 72, tone: "purple" as Tone },
+  { name: "Source Health Audit", type: "CSV", cadence: "Mingguan", status: "Siap", readiness: 91, tone: "blue" as Tone },
+];
+
+export const connectors = [
+  { name: "Instagram", status: "Live Ingestion", health: "99.8%", signals: "842", active: true, tone: "purple" as Tone },
+  { name: "News Sites", status: "Auto Sync", health: "99.2%", signals: "643", active: true, tone: "blue" as Tone },
+  { name: "YouTube", status: "Scheduled", health: "97.4%", signals: "318", active: true, tone: "red" as Tone },
+  { name: "Podcast", status: "Scheduled", health: "94.1%", signals: "104", active: false, tone: "amber" as Tone },
+  { name: "Support Tickets", status: "Live Ingestion", health: "100%", signals: "287", active: true, tone: "green" as Tone },
+  { name: "Forums", status: "Auto Sync", health: "98.1%", signals: "398", active: true, tone: "slate" as Tone },
+];
+
+export const teamMembers = [
+  { name: "Arif Rahman", role: "PR Manager", email: "arif.rahman@narriv.ai", status: "Admin", tone: "purple" as Tone },
+  { name: "Dewi Lestari", role: "Product Manager", email: "dewi.lestari@narriv.ai", status: "Editor", tone: "blue" as Tone },
+  { name: "Rina Sari", role: "Marketing Lead", email: "rina.sari@narriv.ai", status: "Analyst", tone: "green" as Tone },
+  { name: "Anisa Nur", role: "CX Manager", email: "anisa.nur@narriv.ai", status: "Viewer", tone: "amber" as Tone },
+];

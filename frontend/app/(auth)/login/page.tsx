@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useState } from "react";
 import { AuthInput, AuthShell, Divider, LanguageSelector, PasswordInput, PrimaryButton, SecurityFooter, SocialButtons } from "@/components/auth/auth-shell";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { useAuthStore, type AuthUser } from "@/store/useAuthStore";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:3000";
@@ -93,37 +94,39 @@ export default function LoginPage() {
         <p className="mt-5 text-[19px] font-medium text-[#3E4975]">{t("subtitle")}</p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-7">
-        <AuthInput
-          label={t("email")}
-          icon="email"
-          type="email"
-          autoComplete="email"
-          placeholder={t("emailPlaceholder")}
-          error={errors.email?.message}
-          registration={register("email")}
-        />
-        <PasswordInput
-          label={t("password")}
-          autoComplete="current-password"
-          placeholder={t("passwordPlaceholder")}
-          error={errors.password?.message}
-          registration={register("password")}
-        />
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <FieldGroup className="gap-7">
+          <AuthInput
+            label={t("email")}
+            icon="email"
+            type="email"
+            autoComplete="email"
+            placeholder={t("emailPlaceholder")}
+            error={errors.email?.message}
+            registration={register("email")}
+          />
+          <PasswordInput
+            label={t("password")}
+            autoComplete="current-password"
+            placeholder={t("passwordPlaceholder")}
+            error={errors.password?.message}
+            registration={register("password")}
+          />
 
-        {apiError ? <p className="rounded-[8px] border border-[#F04438]/20 bg-[#FFF5F4] px-4 py-3 text-sm font-medium text-[#B42318]">{apiError}</p> : null}
+          {apiError ? <p className="rounded-[8px] border border-[#F04438]/20 bg-[#FFF5F4] px-4 py-3 text-sm font-medium text-[#B42318]">{apiError}</p> : null}
 
-        <div className="flex items-center justify-between pt-1">
-          <label className="flex items-center gap-3 text-[16px] font-semibold text-[#111536]">
-            <input type="checkbox" defaultChecked className="h-[19px] w-[19px] accent-[#2F20FF]" />
-            {t("rememberMe")}
-          </label>
-          <Link href="/reset-password" className="text-[16px] font-semibold text-[#2F20FF] hover:underline">
-            {t("forgotPassword")}
-          </Link>
-        </div>
+          <div className="flex items-center justify-between pt-1">
+            <Field orientation="horizontal" className="w-auto items-center gap-3">
+              <input id="remember-me" type="checkbox" defaultChecked className="h-[19px] w-[19px] accent-[#2F20FF]" />
+              <FieldLabel htmlFor="remember-me" className="text-[16px] font-semibold text-[#111536]">{t("rememberMe")}</FieldLabel>
+            </Field>
+            <Link href="/reset-password" className="text-[16px] font-semibold text-[#2F20FF] hover:underline">
+              {t("forgotPassword")}
+            </Link>
+          </div>
 
-        <PrimaryButton loading={isSubmitting}>{isSubmitting ? t("submitting") : t("submit")}</PrimaryButton>
+          <PrimaryButton loading={isSubmitting}>{isSubmitting ? t("submitting") : t("submit")}</PrimaryButton>
+        </FieldGroup>
       </form>
 
       <div className="mt-5 rounded-[10px] border border-[#DADAFE] bg-[#FBFAFF] p-4">

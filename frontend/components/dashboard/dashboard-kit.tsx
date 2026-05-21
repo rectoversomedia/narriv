@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { Tone } from "@/lib/mock-data";
@@ -40,15 +41,30 @@ export function PageTitle({ title, description, action }: { title: string; descr
 
 export function PrimaryAction({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <button
+    <Button
       type="button"
+      size="lg"
       className={cn(
-        "inline-flex h-[42px] items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#8B5CFF] px-5 text-[14px] font-bold text-white shadow-[0_0_15px_rgba(70,95,255,0.3)] transition hover:from-[#3b52d9] hover:to-[#764ee6] border border-slate-200 active:scale-[0.98]",
+        "inline-flex h-[42px] items-center justify-center gap-2 rounded-[8px] border border-slate-200 bg-linear-to-r from-[#465FFF] to-[#8B5CFF] px-5 text-[14px] font-bold text-white shadow-[0_0_15px_rgba(70,95,255,0.3)] transition hover:from-[#3b52d9] hover:to-[#764ee6] active:scale-[0.98]",
         className
       )}
     >
       {children}
-    </button>
+    </Button>
+  );
+}
+
+export function SecondaryAction({ children, className = "", onClick }: { children: ReactNode; className?: string; onClick?: () => void }) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="lg"
+      onClick={onClick}
+      className={cn("h-[42px] gap-2 rounded-[8px] border-slate-200 bg-slate-50 px-4 text-[14px] font-bold text-slate-900 hover:bg-slate-100", className)}
+    >
+      {children}
+    </Button>
   );
 }
 

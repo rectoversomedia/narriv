@@ -31,6 +31,7 @@ export default function RootLayout({
     <html
       lang="en"
       className={cn("h-full", "antialiased", outfit.variable, "font-sans", geist.variable)}
+      suppressHydrationWarning
     >
       <head>
         {process.env.NODE_ENV === "development" ? (
@@ -41,7 +42,7 @@ export default function RootLayout({
           />
         ) : null}
       </head>
-      <body className="min-h-full bg-[var(--app-bg)] text-[var(--text)]">
+      <body className="min-h-full bg-[var(--app-bg)] text-[var(--text)]" suppressHydrationWarning>
         <IntlProvider>
           <ReactQueryProvider>{children}</ReactQueryProvider>
         </IntlProvider>

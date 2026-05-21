@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useState } from "react";
 import { AuthInput, AuthShell, Divider, PasswordInput, PasswordRequirements, PrimaryButton, SecurityFooter, SocialButtons } from "@/components/auth/auth-shell";
+import { Field, FieldContent, FieldError, FieldGroup } from "@/components/ui/field";
 import { useAuthStore } from "@/store/useAuthStore";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:3000";
@@ -90,27 +91,31 @@ export default function SignupPage() {
         <p className="mt-4 text-[19px] font-medium text-[#3E4975]">{t("subtitle")}</p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
-        <AuthInput label={t("fullName")} icon="user" autoComplete="name" placeholder={t("fullNamePlaceholder")} error={errors.name?.message} registration={register("name")} />
-        <AuthInput label={t("email")} icon="email" type="email" autoComplete="email" placeholder={t("emailPlaceholder")} error={errors.email?.message} registration={register("email")} />
-        <AuthInput label={t("company")} icon="company" autoComplete="organization" placeholder={t("companyPlaceholder")} error={errors.company?.message} registration={register("company")} />
-        <AuthInput label={t("role")} icon="role" autoComplete="organization-title" placeholder={t("rolePlaceholder")} registration={register("role")} />
-        <div>
-          <PasswordInput label={t("password")} autoComplete="new-password" placeholder={t("passwordPlaceholder")} error={errors.password?.message} registration={register("password")} />
-          <PasswordRequirements />
-        </div>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <FieldGroup className="gap-6">
+          <AuthInput label={t("fullName")} icon="user" autoComplete="name" placeholder={t("fullNamePlaceholder")} error={errors.name?.message} registration={register("name")} />
+          <AuthInput label={t("email")} icon="email" type="email" autoComplete="email" placeholder={t("emailPlaceholder")} error={errors.email?.message} registration={register("email")} />
+          <AuthInput label={t("company")} icon="company" autoComplete="organization" placeholder={t("companyPlaceholder")} error={errors.company?.message} registration={register("company")} />
+          <AuthInput label={t("role")} icon="role" autoComplete="organization-title" placeholder={t("rolePlaceholder")} registration={register("role")} />
+          <div>
+            <PasswordInput label={t("password")} autoComplete="new-password" placeholder={t("passwordPlaceholder")} error={errors.password?.message} registration={register("password")} />
+            <PasswordRequirements />
+          </div>
 
-        <label className="flex items-start gap-3 text-[14px] font-medium text-[#111536]">
-          <input type="checkbox" className="mt-0.5 h-[18px] w-[18px] accent-[#2F20FF]" {...register("terms")} />
-          <span>
-            {t("termsPrefix")} <button type="button" className="font-semibold text-[#2F20FF]">{t("terms")}</button> {t("termsMiddle")} <button type="button" className="font-semibold text-[#2F20FF]">{t("privacy")}</button>
-            {errors.terms ? <span className="mt-1 block text-[#F04438]">{errors.terms.message}</span> : null}
-          </span>
-        </label>
+          <Field data-invalid={!!errors.terms} orientation="horizontal" className="items-start gap-3 text-[14px] font-medium text-[#111536]">
+            <input id="signup-terms" type="checkbox" aria-invalid={!!errors.terms || undefined} className="mt-0.5 h-[18px] w-[18px] accent-[#2F20FF]" {...register("terms")} />
+            <FieldContent className="text-[14px] font-medium leading-6 text-[#111536]">
+              <span>
+                {t("termsPrefix")} <button type="button" className="font-semibold text-[#2F20FF]">{t("terms")}</button> {t("termsMiddle")} <button type="button" className="font-semibold text-[#2F20FF]">{t("privacy")}</button>
+              </span>
+              <FieldError className="mt-1 text-[#F04438]">{errors.terms?.message}</FieldError>
+            </FieldContent>
+          </Field>
 
-        {apiError ? <p className="rounded-[8px] border border-[#F04438]/20 bg-[#FFF5F4] px-4 py-3 text-sm font-medium text-[#B42318]">{apiError}</p> : null}
+          {apiError ? <p className="rounded-[8px] border border-[#F04438]/20 bg-[#FFF5F4] px-4 py-3 text-sm font-medium text-[#B42318]">{apiError}</p> : null}
 
-        <PrimaryButton loading={isSubmitting}>{isSubmitting ? t("submitting") : t("submit")}</PrimaryButton>
+          <PrimaryButton loading={isSubmitting}>{isSubmitting ? t("submitting") : t("submit")}</PrimaryButton>
+        </FieldGroup>
       </form>
 
       <div className="mt-7 grid gap-6">

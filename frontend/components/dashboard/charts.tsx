@@ -35,6 +35,17 @@ const toneColor: Record<Tone, string> = {
   slate: "#667085",
 };
 
+const chartTick = { fill: "#53608C", fontSize: 11, fontWeight: 700 };
+const tooltipContentStyle = { border: "1px solid #E1E6F2", borderRadius: 10, boxShadow: "0 18px 44px rgba(16,19,52,.12)" };
+const activityMargin = { left: -18, right: 8, top: 12, bottom: 0 };
+const aiMentionsMargin = { left: -16, right: 12, top: 16, bottom: 0 };
+const activityCursor = { stroke: "#351EFF", strokeWidth: 1 };
+const activityDot = { r: 3, fill: "#351EFF", stroke: "#fff", strokeWidth: 2 };
+const activityActiveDot = { r: 5 };
+const brandDot = { r: 4, fill: "#351EFF", stroke: "#fff", strokeWidth: 2 };
+const competitorDot = { r: 3, fill: "#38A7FF", stroke: "#fff", strokeWidth: 2 };
+const secondaryDot = { r: 3, fill: "#12B76A", stroke: "#fff", strokeWidth: 2 };
+
 type SeriesPoint = {
   label: string;
   value: number;
@@ -46,7 +57,7 @@ export function ActivityAreaChart({ data }: { data: SeriesPoint[] }) {
   return (
     <div className="h-[214px] w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ left: -18, right: 8, top: 12, bottom: 0 }}>
+        <AreaChart data={data} margin={activityMargin}>
           <defs>
             <linearGradient id="activityFill" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#351EFF" stopOpacity={0.22} />
@@ -54,10 +65,10 @@ export function ActivityAreaChart({ data }: { data: SeriesPoint[] }) {
             </linearGradient>
           </defs>
           <CartesianGrid stroke="#E6EAF4" vertical={false} />
-          <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "#53608C", fontSize: 11, fontWeight: 700 }} />
-          <YAxis axisLine={false} tickLine={false} tick={{ fill: "#53608C", fontSize: 11, fontWeight: 700 }} />
-          <Tooltip cursor={{ stroke: "#351EFF", strokeWidth: 1 }} contentStyle={{ border: "1px solid #E1E6F2", borderRadius: 10, boxShadow: "0 18px 44px rgba(16,19,52,.12)" }} />
-          <Area type="monotone" dataKey="value" stroke="#351EFF" strokeWidth={3} fill="url(#activityFill)" dot={{ r: 3, fill: "#351EFF", stroke: "#fff", strokeWidth: 2 }} activeDot={{ r: 5 }} />
+          <XAxis dataKey="label" axisLine={false} tickLine={false} tick={chartTick} />
+          <YAxis axisLine={false} tickLine={false} tick={chartTick} />
+          <Tooltip cursor={activityCursor} contentStyle={tooltipContentStyle} />
+          <Area type="monotone" dataKey="value" stroke="#351EFF" strokeWidth={3} fill="url(#activityFill)" dot={activityDot} activeDot={activityActiveDot} />
         </AreaChart>
       </ResponsiveContainer>
     </div>
@@ -68,14 +79,14 @@ export function AiMentionsLineChart({ data }: { data: SeriesPoint[] }) {
   return (
     <div className="h-[280px] w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ left: -16, right: 12, top: 16, bottom: 0 }}>
+        <LineChart data={data} margin={aiMentionsMargin}>
           <CartesianGrid stroke="#E6EAF4" vertical={false} />
-          <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "#53608C", fontSize: 11, fontWeight: 700 }} />
-          <YAxis axisLine={false} tickLine={false} tick={{ fill: "#53608C", fontSize: 11, fontWeight: 700 }} />
-          <Tooltip contentStyle={{ border: "1px solid #E1E6F2", borderRadius: 10, boxShadow: "0 18px 44px rgba(16,19,52,.12)" }} />
-          <Line type="monotone" dataKey="value" name="Brand Anda" stroke="#351EFF" strokeWidth={3} dot={{ r: 4, fill: "#351EFF", stroke: "#fff", strokeWidth: 2 }} />
-          <Line type="monotone" dataKey="competitor" name="Kompetitor 1" stroke="#38A7FF" strokeWidth={2} strokeDasharray="5 4" dot={{ r: 3, fill: "#38A7FF", stroke: "#fff", strokeWidth: 2 }} />
-          <Line type="monotone" dataKey="secondary" name="Kompetitor 2" stroke="#12B76A" strokeWidth={2} strokeDasharray="5 4" dot={{ r: 3, fill: "#12B76A", stroke: "#fff", strokeWidth: 2 }} />
+          <XAxis dataKey="label" axisLine={false} tickLine={false} tick={chartTick} />
+          <YAxis axisLine={false} tickLine={false} tick={chartTick} />
+          <Tooltip contentStyle={tooltipContentStyle} />
+          <Line type="monotone" dataKey="value" name="Brand Anda" stroke="#351EFF" strokeWidth={3} dot={brandDot} />
+          <Line type="monotone" dataKey="competitor" name="Kompetitor 1" stroke="#38A7FF" strokeWidth={2} strokeDasharray="5 4" dot={competitorDot} />
+          <Line type="monotone" dataKey="secondary" name="Kompetitor 2" stroke="#12B76A" strokeWidth={2} strokeDasharray="5 4" dot={secondaryDot} />
         </LineChart>
       </ResponsiveContainer>
     </div>
@@ -83,13 +94,27 @@ export function AiMentionsLineChart({ data }: { data: SeriesPoint[] }) {
 }
 
 export function DonutChart({ data, center, label }: { data: Array<{ name: string; value: number; tone: Tone }>; center: string; label: string }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+
   return (
     <div className="relative mx-auto h-[188px] w-[188px]">
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
-          <Pie data={data} dataKey="value" nameKey="name" innerRadius={58} outerRadius={82} paddingAngle={2} stroke="#fff" strokeWidth={3}>
-            {data.map((entry) => <Cell key={entry.name} fill={toneColor[entry.tone]} />)}
+          <Pie
+            data={data}
+            dataKey="value"
+            nameKey="name"
+            innerRadius={58}
+            outerRadius={82}
+            paddingAngle={2}
+            stroke="#fff"
+            strokeWidth={3}
+            onMouseEnter={(entry) => setActiveIndex(Math.max(0, data.findIndex((item) => item.name === entry.name)))}
+            onClick={(entry) => setActiveIndex(Math.max(0, data.findIndex((item) => item.name === entry.name)))}
+          >
+            {data.map((entry, index) => <Cell key={entry.name} fill={toneColor[entry.tone]} opacity={index === activeIndex ? 1 : 0.82} className="cursor-pointer outline-none" />)}
           </Pie>
+          <Tooltip contentStyle={tooltipContentStyle} position={{ x: 50, y: -10 }} wrapperStyle={{ zIndex: 20 }} />
         </PieChart>
       </ResponsiveContainer>
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">

@@ -4,8 +4,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import type { ChangeEvent, ClipboardEvent, InputHTMLAttributes, KeyboardEvent, ReactNode } from "react";
-import { useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import type { UseFormRegisterReturn } from "react-hook-form";
+import { Button } from "@/components/ui/button";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { useUiStore } from "@/store/useUiStore";
 import {
   ArrowLeft,
@@ -147,11 +150,19 @@ export function LanguageSelector() {
   const language = useUiStore((state) => state.language);
   const toggleLanguage = useUiStore((state) => state.toggleLanguage);
   const t = useTranslations("AuthDesign");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const id = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(id);
+  }, []);
+
+  const activeLang = mounted ? language : "en";
 
   return (
-    <button type="button" onClick={toggleLanguage} className="flex items-center gap-3 rounded-full px-3 py-2 text-[15px] font-semibold text-[#1C2452] transition hover:bg-[#F6F8FF]">
+    <button type="button" onClick={() => startTransition(toggleLanguage)} className="flex items-center gap-3 rounded-full px-3 py-2 text-[15px] font-semibold text-[#1C2452] transition-colors duration-200 hover:bg-[#F6F8FF]">
       <Globe2 size={21} />
-      {language === "id" ? t("language.id") : t("language.en")}
+      {activeLang === "id" ? t("language.id") : t("language.en")}
       <ChevronDown size={18} />
     </button>
   );
@@ -190,20 +201,21 @@ export function AuthInput({ label, icon, error, registration, rightAddon, onValu
   };
 
   return (
-    <label className="block">
-      <span className="mb-3 block text-[15px] font-semibold text-[#111536]">{label}</span>
+    <Field data-invalid={!!error}>
+      <FieldLabel className="mb-1 block text-[15px] font-semibold text-[#111536]">{label}</FieldLabel>
       <span className={`flex h-[59px] items-center gap-4 rounded-[8px] border bg-white px-5 transition focus-within:border-[#3D2DFF] focus-within:shadow-[0_0_0_3px_rgba(61,45,255,0.08)] ${error ? "border-[#F04438]" : "border-[#D6DDEC]"}`}>
         <Icon size={22} className="shrink-0 text-[#344054]" strokeWidth={1.8} />
-        <input
+        <Input
           {...props}
           {...registration}
+          aria-invalid={!!error || undefined}
           onChange={handleChange}
-          className={`min-w-0 flex-1 border-0 bg-transparent text-[17px] font-medium text-[#27325F] outline-none placeholder:text-[#68739F] ${className}`}
+          className={`h-auto min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 py-0 text-[17px] font-medium text-[#27325F] shadow-none outline-none placeholder:text-[#68739F] focus-visible:border-0 focus-visible:ring-0 aria-invalid:border-0 aria-invalid:ring-0 ${className}`}
         />
         {rightAddon}
       </span>
-      {error ? <span className="mt-2 block text-sm font-medium text-[#F04438]">{error}</span> : null}
-    </label>
+      <FieldError className="mt-0 text-sm font-medium text-[#F04438]">{error}</FieldError>
+    </Field>
   );
 }
 
@@ -236,13 +248,14 @@ export function PasswordInput({ showLabel = "Tampilkan kata sandi", hideLabel = 
 
 export function PrimaryButton({ children, loading }: { children: ReactNode; loading?: boolean }) {
   return (
-    <button
+    <Button
       type="submit"
       disabled={loading}
+      size="lg"
       className="flex h-[58px] w-full items-center justify-center rounded-[8px] bg-gradient-to-r from-[#2819FF] to-[#6B2EFF] text-[18px] font-semibold text-white shadow-[0_14px_34px_rgba(63,43,255,0.28)] transition hover:brightness-105 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
     >
       {children}
-    </button>
+    </Button>
   );
 }
 

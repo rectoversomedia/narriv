@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { AuthShell, CenterIcon, Divider, HelpAction, PasswordInput, PasswordStrengthMeter, PrimaryButton, SecondaryLinkButton } from "@/components/auth/auth-shell";
+import { FieldGroup } from "@/components/ui/field";
 
 type NewPasswordFormValues = {
   password: string;
@@ -51,17 +52,19 @@ export default function NewPasswordPage() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-9">
-        <div>
-          <PasswordInput label={t("password")} autoComplete="new-password" placeholder={t("passwordPlaceholder")} error={errors.password?.message} registration={register("password")} />
-          <PasswordStrengthMeter />
-        </div>
-        <div>
-          <PasswordInput label={t("confirmPassword")} autoComplete="new-password" placeholder={t("confirmPasswordPlaceholder")} error={errors.confirmPassword?.message} registration={register("confirmPassword")} />
-          <p className="mt-4 text-[15px] font-medium text-[#3E4975]">{t("confirmHelp")}</p>
-        </div>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <FieldGroup className="gap-9">
+          <div>
+            <PasswordInput label={t("password")} autoComplete="new-password" placeholder={t("passwordPlaceholder")} error={errors.password?.message} registration={register("password")} />
+            <PasswordStrengthMeter />
+          </div>
+          <div>
+            <PasswordInput label={t("confirmPassword")} autoComplete="new-password" placeholder={t("confirmPasswordPlaceholder")} error={errors.confirmPassword?.message} registration={register("confirmPassword")} />
+            <p className="mt-4 text-[15px] font-medium text-[#3E4975]">{t("confirmHelp")}</p>
+          </div>
 
-        <PrimaryButton loading={isSubmitting}>{isSubmitting ? t("submitting") : t("submit")}</PrimaryButton>
+          <PrimaryButton loading={isSubmitting}>{isSubmitting ? t("submitting") : t("submit")}</PrimaryButton>
+        </FieldGroup>
       </form>
 
       <div className="mt-8 grid gap-8">

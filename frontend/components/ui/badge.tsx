@@ -12,7 +12,7 @@ const badgeVariants = cva(
         amber: "border-[#F59E0B]/20 bg-[#F59E0B]/10 text-[#F59E0B] shadow-[0_0_8px_rgba(245,158,11,0.15)]",
         red: "border-[#EF4444]/20 bg-[#EF4444]/10 text-[#EF4444] shadow-[0_0_8px_rgba(239,68,68,0.15)]",
         purple: "border-[#8B5CFF]/20 bg-[#8B5CFF]/10 text-[#8B5CFF] shadow-[0_0_8px_rgba(139,92,255,0.15)]",
-        slate: "border-white/10 bg-white/5 text-white/60",
+        slate: "border-slate-200 bg-slate-100 text-slate-600",
       },
     },
     defaultVariants: {

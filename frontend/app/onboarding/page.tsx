@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, startTransition, type ReactNode } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -198,6 +198,14 @@ function OnboardingTopbar({ showSearch }: { showSearch: boolean }) {
   const t = useTranslations("OnboardingDesign.topbar");
   const language = useUiStore((state) => state.language);
   const toggleLanguage = useUiStore((state) => state.toggleLanguage);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const id = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(id);
+  }, []);
+
+  const activeLang = mounted ? language : "en";
 
   return (
     <header className="sticky top-0 z-20 flex h-[88px] items-center justify-between border-b border-border bg-background/60 px-5 backdrop-blur-xl sm:px-8 lg:px-10 xl:px-12">
@@ -212,8 +220,8 @@ function OnboardingTopbar({ showSearch }: { showSearch: boolean }) {
         )}
       </div>
       <div className="flex items-center gap-5">
-        <button type="button" onClick={toggleLanguage} className="hidden rounded-[8px] border border-border px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-[#465FFF] sm:block">
-          {language === "id" ? "ID" : "EN"}
+        <button type="button" onClick={() => startTransition(toggleLanguage)} className="hidden rounded-[8px] border border-border px-3 py-2 text-xs font-bold text-slate-700 transition-colors duration-200 hover:border-[#465FFF] sm:block">
+          {activeLang === "id" ? "ID" : "EN"}
         </button>
         <button type="button" className="relative text-slate-900 hover:text-[#465FFF] transition">
           <Bell size={25} />

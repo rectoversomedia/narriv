@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, ChevronDown, RefreshCcw, Settings, Zap } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 import { AppCard, IconBubble, MetricTile, SectionHeader } from "@/components/dashboard/dashboard-kit";
 import { ActivityAreaChart, DonutChart, MiniSparkline, WorldActivityMap } from "@/components/dashboard/charts";
 import { CardContent } from "@/components/ui/card";
@@ -12,6 +13,8 @@ import { useUiStore } from "@/store/useUiStore";
 export default function DashboardPage() {
   const t = useTranslations("DemoApp");
   const language = useUiStore((state) => state.language);
+  const [timeRange, setTimeRange] = useState("24 Jam Terakhir");
+  const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const activityData = activitySeries.map((value, index) => ({ label: `${String(index * 2).padStart(2, "0")}:00`, value }));
   const sentimentData = [
     { name: "Positif", value: 1248, tone: "green" as const },
@@ -71,9 +74,13 @@ export default function DashboardPage() {
               title={t("pages.command.activity")} 
               description={t("pages.command.activityDesc")} 
               action={
-                <button className="rounded-[8px] border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-all">
-                  24 Jam Terakhir <ChevronDown size={14} className="inline ml-1 text-slate-400" />
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  {["24 Jam Terakhir", "7 Hari", "30 Hari"].map((range) => (
+                    <button key={range} type="button" onClick={() => setTimeRange(range)} className={`rounded-[8px] border px-3 py-2 text-xs font-bold transition-all ${timeRange === range ? "border-[#465FFF] bg-[#465FFF] text-white" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"}`}>
+                      {range}
+                    </button>
+                  ))}
+                </div>
               } 
             />
             <ActivityAreaChart data={activityData} />
@@ -111,7 +118,7 @@ export default function DashboardPage() {
             <SectionHeader 
               title={t("pages.command.alerts")} 
               description="Lihat peringatan yang memerlukan perhatian." 
-              action={<Link href="/alerts" className="text-xs font-bold text-[#465FFF] hover:underline hover:text-[#8B5CFF] transition-all">{t("common.viewAll")}</Link>} 
+              action={<Link href="/alerts" className="whitespace-nowrap text-[11px] font-bold text-[#465FFF] transition-all hover:text-[#8B5CFF] hover:underline">{t("common.viewAll")}</Link>} 
             />
             <div className="space-y-4">
               {alerts.map((alert) => (
@@ -214,16 +221,22 @@ export default function DashboardPage() {
               {quickActions.map((action) => { 
                 const Icon = action.icon; 
                 return (
-                  <button 
-                    key={action.key} 
-                    className="flex min-h-[82px] flex-col items-center justify-center gap-2.5 rounded-[8px] border border-slate-100 bg-slate-50 hover:bg-slate-100 hover:border-[#465FFF]/35 transition-all text-center text-xs font-bold text-slate-800 active:scale-[0.96]"
-                  >
+                    <button 
+                      key={action.key} 
+                      onClick={() => setSelectedAction(action.key)}
+                      className={`flex min-h-[82px] flex-col items-center justify-center gap-2.5 rounded-[8px] border transition-all text-center text-xs font-bold active:scale-[0.96] ${selectedAction === action.key ? "border-[#465FFF] bg-[#465FFF]/5 text-[#465FFF]" : "border-slate-100 bg-slate-50 text-slate-800 hover:bg-slate-100 hover:border-[#465FFF]/35"}`}
+                    >
                     <Icon size={22} className="text-[#465FFF] drop-shadow-[0_0_8px_rgba(70,95,255,0.4)]" />
                     <span className="px-1">{t(`quickActions.${action.key}`)}</span>
                   </button>
                 ); 
               })}
             </div>
+            {selectedAction ? (
+              <p className="mt-4 rounded-[8px] border border-[#465FFF]/10 bg-[#465FFF]/5 px-3 py-2 text-xs font-bold text-[#465FFF]">
+                Mock action aktif: {t(`quickActions.${selectedAction}`)} siap ditampilkan sebagai drawer/modal.
+              </p>
+            ) : null}
           </CardContent>
         </AppCard>
       </div>
