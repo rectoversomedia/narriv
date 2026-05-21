@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, MoreHorizontal, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
+import { MoreHorizontal, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { navGroups } from "@/lib/mock-data";
@@ -82,15 +82,6 @@ export function Sidebar() {
           <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/5">
             <div className="h-full w-[78%] rounded-full bg-linear-to-r from-[#465FFF] to-[#8B5CFF] shadow-[0_0_10px_rgba(70,95,255,0.5)]" />
           </div>
-        </div>}
-
-        {sidebarCollapsed ? null : <div className="mt-8 flex items-center gap-4 rounded-[10px] border border-white/10 bg-white/2 p-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-tr from-[#465FFF] to-[#8B5CFF] text-sm font-bold text-white shadow-[0_0_10px_rgba(70,95,255,0.3)]">TU</div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[15px] font-bold text-white">Testing User</p>
-            <p className="mt-1 truncate text-[13px] text-white/50">User Workspace</p>
-          </div>
-          <ChevronDown size={18} className="text-white/60" />
         </div>}
 
         {sidebarCollapsed ? null : <p className="mt-8 px-2 text-[13px] text-white/40">© 2025 Narriv</p>}
