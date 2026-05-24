@@ -123,11 +123,17 @@ function BrandPanel({ visual }: { visual: AuthVisual }) {
 function NarrivLogo() {
   return (
     <div className="flex items-center gap-3">
-      <div className="relative flex h-[100px] w-[100px] items-center justify-center overflow-hidden">
-        <Image src="/logo/Final Logo Only Narriv.png" alt="Narriv Logo" width={180} height={180} className="max-w-none scale-[1.4] object-contain" priority />
-      </div>
+      <LogoMark className="h-[112px] w-[112px]" priority />
       <span className="text-[64px] font-bold tracking-[-0.04em] text-white">Narriv</span>
     </div>
+  );
+}
+
+function LogoMark({ className = "h-16 w-16", priority = false }: { className?: string; priority?: boolean }) {
+  return (
+    <span className={`relative flex shrink-0 items-center justify-center overflow-hidden ${className}`}>
+      <Image src="/narriv-logo.svg" alt="Narriv Logo" fill sizes="112px" className="object-contain" priority={priority} />
+    </span>
   );
 }
 
@@ -357,9 +363,8 @@ export function InfoCallout({ title, text }: { title: string; text: string }) {
 export function CenterIcon({ variant }: { variant: "lock" | "lock-check" | "shield" }) {
   return (
     <div className="mx-auto mb-9 flex h-[136px] w-[136px] items-center justify-center rounded-full bg-[#F0EFFF] text-[#3626F6]">
-      {/* Icon illustration placeholder: replace with the exact lock/shield illustration from the auth design if you export it as an SVG/PNG. */}
-      {variant === "shield" ? <ShieldCheck size={70} strokeWidth={1.8} /> : <LockKeyhole size={70} strokeWidth={1.8} />}
-      {variant === "lock-check" ? <span className="-ml-6 mt-12 flex h-10 w-10 items-center justify-center rounded-full bg-[#3626F6] text-white"><Check size={24} strokeWidth={3} /></span> : null}
+      <LogoMark className="h-24 w-24" />
+      {variant === "lock-check" ? <span className="-ml-5 mt-16 flex h-9 w-9 items-center justify-center rounded-full bg-[#3626F6] text-white"><Check size={22} strokeWidth={3} /></span> : null}
     </div>
   );
 }

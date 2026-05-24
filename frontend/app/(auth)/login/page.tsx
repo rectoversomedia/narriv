@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -86,7 +87,12 @@ export default function LoginPage() {
   return (
     <AuthShell visual="dashboard" topAction={<LanguageSelector />}>
       <div className="mb-12 lg:hidden">
-        <p className="text-3xl font-bold tracking-[-0.04em] text-[#111536]">Narriv</p>
+        <div className="flex items-center gap-3">
+          <span className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden">
+            <Image src="/narriv-logo.svg" alt="Narriv Logo" fill sizes="64px" className="object-contain" priority />
+          </span>
+          <p className="text-3xl font-bold tracking-[-0.04em] text-[#111536]">Narriv</p>
+        </div>
       </div>
 
       <div className="mb-12">

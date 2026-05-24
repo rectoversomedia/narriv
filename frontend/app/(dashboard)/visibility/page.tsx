@@ -527,7 +527,7 @@ export default function VisibilityPage() {
             <CardContent className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_230px_260px] lg:items-center">
               <div className="flex items-start gap-4">
                 <div className="relative flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-purple-200 bg-[#F3ECFF] shadow-md sm:size-20">
-                  <Image src="/ai-avatar.png" alt="AI Agent avatar" fill sizes="80px" className="object-cover" />
+                  <Image src="/mainapp/ai-avatar.png" alt="AI Agent avatar" fill sizes="80px" className="object-cover" />
                 </div>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
