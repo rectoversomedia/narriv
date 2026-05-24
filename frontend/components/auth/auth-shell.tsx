@@ -368,8 +368,8 @@ export function InfoCallout({ title, text }: { title: string; text: string }) {
 export function CenterIcon({ variant }: { variant: "lock" | "lock-check" | "shield" }) {
   return (
     <div className="mx-auto mb-9 flex h-[136px] w-[136px] items-center justify-center rounded-full bg-[#F0EFFF] text-[#3626F6]">
-      <LogoMark className="h-24 w-24" />
-      {variant === "lock-check" ? <span className="-ml-5 mt-16 flex h-9 w-9 items-center justify-center rounded-full bg-[#3626F6] text-white"><Check size={22} strokeWidth={3} /></span> : null}
+      {variant === "shield" ? <ShieldCheck size={70} strokeWidth={1.8} /> : <LockKeyhole size={70} strokeWidth={1.8} />}
+      {variant === "lock-check" ? <span className="-ml-6 mt-12 flex h-10 w-10 items-center justify-center rounded-full bg-[#3626F6] text-white"><Check size={24} strokeWidth={3} /></span> : null}
     </div>
   );
 }
