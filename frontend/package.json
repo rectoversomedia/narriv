@@ -11,6 +11,7 @@
   "dependencies": {
     "@base-ui/react": "^1.5.0",
     "@hookform/resolvers": "^5.2.2",
+    "@ridemountainpig/svgl-react": "^1.0.17",
     "@tanstack/react-query": "^5.100.6",
     "@vnedyalk0v/react19-simple-maps": "^2.0.7",
     "axios": "^1.15.0",

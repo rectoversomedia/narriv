@@ -142,10 +142,225 @@ export const reports = [
 ];
 
 export const intelligenceClusters = [
-  { topic: { en: "Payment delay", id: "Keterlambatan pembayaran" }, signals: 1248, growth: "+24,5%", tone: "red" as Tone },
-  { topic: { en: "Mobile app stability", id: "Stabilitas aplikasi mobile" }, signals: 842, growth: "+18,3%", tone: "amber" as Tone },
-  { topic: { en: "Customer education", id: "Edukasi pelanggan" }, signals: 621, growth: "+12,7%", tone: "green" as Tone },
-  { topic: { en: "Privacy policy", id: "Kebijakan privasi" }, signals: 368, growth: "-6,2%", tone: "purple" as Tone },
+  {
+    id: "payment_delay",
+    topic: { en: "Payment delay", id: "Keterlambatan pembayaran" },
+    signals: 1248,
+    growth: "+24,5%",
+    tone: "red" as Tone,
+    sentiment: "negative" as const,
+    x: 50,
+    y: 48,
+    size: "high" as const,
+    priority: { en: "High Priority", id: "Prioritas Tinggi" },
+    priorityTone: "red" as Tone,
+    description: {
+      en: "1,248 signals form this cluster. Conversations have increased significantly in the last 48 hours, especially regarding transaction delays and payment confirmations.",
+      id: "1.248 sinyal membentuk cluster ini. Percakapan meningkat signifikan dalam 48 jam terakhir, terutama terkait keterlambatan transaksi dan konfirmasi pembayaran."
+    },
+    related: [
+      { topic: { en: "Refund complaints", id: "Keluhan refund" }, growth: "+16,2%" },
+      { topic: { en: "Mobile app stability", id: "Stabilitas aplikasi mobile" }, growth: "+18,3%" }
+    ],
+    aiRec: {
+      en: "It is recommended to issue an official statement and strengthen communication regarding service status.",
+      id: "Disarankan untuk mengeluarkan pernyataan resmi dan memperkuat komunikasi status layanan."
+    }
+  },
+  {
+    id: "mobile_app_stability",
+    topic: { en: "Mobile app stability", id: "Stabilitas aplikasi mobile" },
+    signals: 842,
+    growth: "+18,3%",
+    tone: "amber" as Tone,
+    sentiment: "neutral" as const,
+    x: 33,
+    y: 28,
+    size: "large" as const,
+    priority: { en: "Medium Priority", id: "Prioritas Sedang" },
+    priorityTone: "amber" as Tone,
+    description: {
+      en: "842 signals track app crashing and lag issues after the latest software update. Users report frustrations with loading times.",
+      id: "842 sinyal melacak kegagalan aplikasi dan masalah lag setelah pembaruan perangkat lunak terbaru. Pengguna melaporkan frustrasi dengan waktu pemuatan."
+    },
+    related: [
+      { topic: { en: "Payment delay", id: "Keterlambatan pembayaran" }, growth: "+24,5%" },
+      { topic: { en: "Customer education", id: "Edukasi pelanggan" }, growth: "+12,7%" }
+    ],
+    aiRec: {
+      en: "Prioritize hotfix release for the iOS and Android applications to restore stability.",
+      id: "Prioritaskan rilis perbaikan bug (hotfix) untuk aplikasi iOS dan Android guna memulihkan stabilitas."
+    }
+  },
+  {
+    id: "customer_education",
+    topic: { en: "Customer education", id: "Edukasi pelanggan" },
+    signals: 621,
+    growth: "+12,7%",
+    tone: "green" as Tone,
+    sentiment: "positive" as const,
+    x: 25,
+    y: 42,
+    size: "medium" as const,
+    priority: { en: "Low Priority", id: "Prioritas Rendah" },
+    priorityTone: "green" as Tone,
+    description: {
+      en: "621 signals highlight positive user feedback on the new interactive tutorials and onboarding videos.",
+      id: "621 sinyal menyoroti umpan balik pengguna yang positif tentang tutorial interaktif baru dan video onboarding."
+    },
+    related: [
+      { topic: { en: "Mobile app stability", id: "Stabilitas aplikasi mobile" }, growth: "+18,3%" }
+    ],
+    aiRec: {
+      en: "Expand the knowledge base library and continue promoting self-help video guides.",
+      id: "Perluas pustaka basis pengetahuan dan terus promosikan panduan video bantuan mandiri."
+    }
+  },
+  {
+    id: "privacy_policy",
+    topic: { en: "Privacy policy", id: "Kebijakan privasi" },
+    signals: 368,
+    growth: "-6,2%",
+    tone: "purple" as Tone,
+    sentiment: "neutral" as const,
+    x: 73,
+    y: 55,
+    size: "medium" as const,
+    priority: { en: "Medium Priority", id: "Prioritas Sedang" },
+    priorityTone: "amber" as Tone,
+    description: {
+      en: "368 signals discuss the updated privacy terms. Sentiment is steady with low risk of user attrition.",
+      id: "368 sinyal membahas pembaruan ketentuan privasi. Sentimen stabil dengan risiko rendah terhadap pengurangan pengguna."
+    },
+    related: [
+      { topic: { en: "KYC process", id: "Proses KYC" }, growth: "+3,4%" },
+      { topic: { en: "Pricing transparency", id: "Transparansi harga" }, growth: "+7,3%" }
+    ],
+    aiRec: {
+      en: "Keep user data consent options clear and comply with local data security regulations.",
+      id: "Jaga agar opsi persetujuan data pengguna tetap jelas dan patuhi regulasi keamanan data lokal."
+    }
+  },
+  {
+    id: "refund_complaints",
+    topic: { en: "Refund complaints", id: "Keluhan refund" },
+    signals: 512,
+    growth: "+16,2%",
+    tone: "red" as Tone,
+    sentiment: "negative" as const,
+    x: 50,
+    y: 17,
+    size: "medium" as const,
+    priority: { en: "High Priority", id: "Prioritas Tinggi" },
+    priorityTone: "red" as Tone,
+    description: {
+      en: "512 signals focus on delayed refund processing times. Users are venting on forums about missing funds.",
+      id: "512 sinyal berfokus pada keterlambatan waktu pemrosesan pengembalian dana. Pengguna meluapkan keluhan di forum tentang dana yang belum masuk."
+    },
+    related: [
+      { topic: { en: "Payment delay", id: "Keterlambatan pembayaran" }, growth: "+24,5%" }
+    ],
+    aiRec: {
+      en: "Speed up the refund approval queue and notify affected customers proactively.",
+      id: "Percepat antrean persetujuan pengembalian dana dan beri tahu pelanggan yang terdampak secara proaktif."
+    }
+  },
+  {
+    id: "pricing_transparency",
+    topic: { en: "Pricing transparency", id: "Transparansi harga" },
+    signals: 421,
+    growth: "+7,3%",
+    tone: "green" as Tone,
+    sentiment: "positive" as const,
+    x: 65,
+    y: 28,
+    size: "medium" as const,
+    priority: { en: "Low Priority", id: "Prioritas Rendah" },
+    priorityTone: "green" as Tone,
+    description: {
+      en: "421 signals reflect customer appreciation for clear pricing breakdowns and no hidden fees.",
+      id: "421 sinyal mencerminkan apresiasi pelanggan atas rincian harga yang jelas dan tidak adanya biaya tersembunyi."
+    },
+    related: [
+      { topic: { en: "Privacy policy", id: "Kebijakan privasi" }, growth: "-6,2%" }
+    ],
+    aiRec: {
+      en: "Maintain transparent communications and highlight pricing policy in promotional materials.",
+      id: "Pertahankan komunikasi transparan dan soroti kebijakan harga dalam materi promosi."
+    }
+  },
+  {
+    id: "kyc_process",
+    topic: { en: "KYC process", id: "Proses KYC" },
+    signals: 287,
+    growth: "+3,4%",
+    tone: "amber" as Tone,
+    sentiment: "neutral" as const,
+    x: 68,
+    y: 78,
+    size: "small" as const,
+    priority: { en: "Medium Priority", id: "Prioritas Sedang" },
+    priorityTone: "amber" as Tone,
+    description: {
+      en: "287 signals track user friction during identity verification steps. High dropoff rate detected.",
+      id: "287 sinyal melacak hambatan pengguna selama langkah verifikasi identitas. Tingkat kegagalan yang tinggi terdeteksi."
+    },
+    related: [
+      { topic: { en: "Privacy policy", id: "Kebijakan privasi" }, growth: "-6,2%" }
+    ],
+    aiRec: {
+      en: "Simplify the image upload step and add real-time feedback for scanning errors.",
+      id: "Sederhanakan langkah unggah gambar dan tambahkan umpan balik real-time untuk kesalahan pemindaian."
+    }
+  },
+  {
+    id: "security_concerns",
+    topic: { en: "Security concerns", id: "Keamanan akun" },
+    signals: 368,
+    growth: "+8,9%",
+    tone: "red" as Tone,
+    sentiment: "negative" as const,
+    x: 45,
+    y: 78,
+    size: "medium" as const,
+    priority: { en: "High Priority", id: "Prioritas Tinggi" },
+    priorityTone: "red" as Tone,
+    description: {
+      en: "368 signals report phishing attempt warnings and account security discussions in community forums.",
+      id: "368 sinyal melaporkan peringatan upaya phishing dan diskusi keamanan akun di forum komunitas."
+    },
+    related: [
+      { topic: { en: "Payment delay", id: "Keterlambatan pembayaran" }, growth: "+24,5%" }
+    ],
+    aiRec: {
+      en: "Publish security advisories and enforce multi-factor authentication (MFA) tips in-app.",
+      id: "Publikasikan maklumat keamanan dan tegaskan tips autentikasi multi-faktor (MFA) di dalam aplikasi."
+    }
+  },
+  {
+    id: "service_quality",
+    topic: { en: "Service quality", id: "Kualitas layanan" },
+    signals: 498,
+    growth: "-4,1%",
+    tone: "blue" as Tone,
+    sentiment: "neutral" as const,
+    x: 33,
+    y: 72,
+    size: "medium" as const,
+    priority: { en: "Medium Priority", id: "Prioritas Sedang" },
+    priorityTone: "amber" as Tone,
+    description: {
+      en: "498 signals note discussions about live support response times. Users appreciate fast chat agent responses.",
+      id: "498 sinyal mencatat diskusi tentang waktu respons dukungan langsung. Pengguna mengapresiasi respons agen obrolan yang cepat."
+    },
+    related: [
+      { topic: { en: "Payment delay", id: "Keterlambatan pembayaran" }, growth: "+24,5%" }
+    ],
+    aiRec: {
+      en: "Optimize support agent shifts to match peak hours and reduce initial wait times.",
+      id: "Optimalkan giliran kerja agen dukungan untuk menyesuaikan dengan jam-jam sibuk dan kurangi waktu tunggu awal."
+    }
+  }
 ];
 
 export const quickActions = [
