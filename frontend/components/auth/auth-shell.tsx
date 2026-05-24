@@ -3,8 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import type { ChangeEvent, ClipboardEvent, InputHTMLAttributes, KeyboardEvent, ReactNode } from "react";
-import { startTransition, useEffect, useState } from "react";
+import type { ChangeEvent, ClipboardEvent, InputHTMLAttributes, KeyboardEvent, MouseEvent, ReactNode } from "react";
+import { useRef, useState } from "react";
 import type { UseFormRegisterReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
@@ -156,19 +156,24 @@ export function LanguageSelector() {
   const language = useUiStore((state) => state.language);
   const toggleLanguage = useUiStore((state) => state.toggleLanguage);
   const t = useTranslations("AuthDesign");
-  const [mounted, setMounted] = useState(false);
+  const cooldownRef = useRef(false);
 
-  useEffect(() => {
-    const id = window.setTimeout(() => setMounted(true), 0);
-    return () => window.clearTimeout(id);
-  }, []);
-
-  const activeLang = mounted ? language : "en";
+  const handleToggleLanguage = (event: MouseEvent<HTMLButtonElement>) => {
+    event.currentTarget.blur();
+    if (cooldownRef.current) return;
+    cooldownRef.current = true;
+    toggleLanguage();
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        cooldownRef.current = false;
+      });
+    });
+  };
 
   return (
-    <button type="button" onClick={() => startTransition(toggleLanguage)} className="flex items-center gap-3 rounded-full px-3 py-2 text-[15px] font-semibold text-[#1C2452] transition-colors duration-200 hover:bg-[#F6F8FF]">
+    <button type="button" onClick={handleToggleLanguage} className="flex items-center gap-3 rounded-full px-3 py-2 text-[15px] font-semibold text-[#1C2452] hover:bg-[#F6F8FF]">
       <Globe2 size={21} />
-      {activeLang === "id" ? t("language.id") : t("language.en")}
+      {language === "id" ? t("language.id") : t("language.en")}
       <ChevronDown size={18} />
     </button>
   );
