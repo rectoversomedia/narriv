@@ -210,11 +210,11 @@ const countryNames: Record<string, string> = {
 
 const markers: Array<{ name: string; coordinates: [number, number]; signals: number; color: string }> = [
   { name: "Jakarta", coordinates: [106.8456, -6.2088], signals: 1842, color: "#351EFF" },
-  { name: "New York", coordinates: [-74.0060, 40.7128], signals: 1425, color: "#465FFF" },
-  { name: "London", coordinates: [-0.1278, 51.5074], signals: 754, color: "#38A7FF" },
-  { name: "Tokyo", coordinates: [139.6503, 35.6762], signals: 928, color: "#8B5CFF" },
-  { name: "Singapore", coordinates: [103.8198, 1.3521], signals: 412, color: "#12B76A" },
-  { name: "Sydney", coordinates: [151.2093, -33.8688], signals: 618, color: "#8B5CFF" },
+  { name: "Surabaya", coordinates: [112.7521, -7.2575], signals: 928, color: "#465FFF" },
+  { name: "Medan", coordinates: [98.6722, 3.5952], signals: 618, color: "#8B5CFF" },
+  { name: "Makassar", coordinates: [119.4173, -5.1476], signals: 412, color: "#12B76A" },
+  { name: "Bandung", coordinates: [107.6191, -6.9175], signals: 754, color: "#38A7FF" },
+  { name: "Yogyakarta", coordinates: [110.3695, -7.7956], signals: 485, color: "#F79009" },
 ];
 
 export function WorldActivityMap() {
@@ -241,7 +241,7 @@ export function WorldActivityMap() {
       onMouseLeave={handleMouseLeave}
     >
       <ComposableMap
-        projectionConfig={{ scale: 140, center: [0, 10] }}
+        projectionConfig={{ scale: 720, center: [118, -2] }}
         width={640}
         height={280}
         style={{ width: "100%", height: "100%" }}

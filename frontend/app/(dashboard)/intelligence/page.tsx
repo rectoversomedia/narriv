@@ -512,7 +512,7 @@ export default function IntelligencePage() {
                 </div>
               </div>
 
-              <div className="relative min-h-[350px] overflow-hidden rounded-[12px] bg-[#FEFEFF] sm:min-h-[382px]">
+              <div className="relative min-h-[350px] overflow-hidden rounded-[12px] bg-[#FEFEFF] sm:min-h-[382px] xl:min-h-[559px]">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_48%,rgba(139,92,255,0.08),transparent_28%),radial-gradient(circle_at_24%_40%,rgba(16,185,129,0.05),transparent_18%),radial-gradient(circle_at_72%_28%,rgba(245,158,11,0.06),transparent_18%)]" />
                 <div className="absolute left-1/2 top-1/2 size-[380px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-[#E8ECF5]" />
                 <div className="absolute left-1/2 top-1/2 size-[210px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-[#EDF0F7]" />
