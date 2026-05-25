@@ -329,7 +329,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, cl
         </div>
       </div>
 
-      <Panel className="overflow-hidden p-0">
+      <Panel className="overflow-hidden p-0 xl:min-h-[610px] flex flex-col">
         <div className="overflow-x-auto flex-1 flex flex-col">
           <table className="w-full min-w-[980px] border-collapse text-left flex-1 h-full">
             <thead>
