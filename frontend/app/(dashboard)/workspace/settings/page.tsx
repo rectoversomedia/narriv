@@ -273,7 +273,7 @@ export default function SettingsPage() {
                 <button
                   type="button"
                   onClick={handleLogoUpload}
-                  className="mt-3 w-full rounded-lg border border-[#DDE3EF] bg-white px-2 py-1.5 text-center text-[10px] font-black text-[#465FFF] shadow-xs transition hover:bg-slate-50"
+                  className="mt-2.5 w-full rounded-lg border border-[#DDE3EF] bg-white px-1 py-1 text-center text-[9px] font-extrabold text-[#465FFF] shadow-xs transition hover:bg-slate-50 whitespace-nowrap"
                 >
                   Ubah Logo
                 </button>

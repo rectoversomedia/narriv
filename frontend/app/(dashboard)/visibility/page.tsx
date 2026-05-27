@@ -73,7 +73,7 @@ const dictionary = {
       rec1: "Push thought leadership content",
       rec2: "Optimize landing page (enterprise intel)",
       rec3: "Increase authority in cloud security",
-      viewAll: "See all recommendations",
+      viewAll: "See all",
     },
     mentionsTrend: {
       title: "AI Mentions Trend",
@@ -135,7 +135,7 @@ const dictionary = {
       rec1: "Dorong konten thought leadership",
       rec2: "Optimasi landing page (enterprise intel)",
       rec3: "Tingkatkan authority di cloud security",
-      viewAll: "Lihat semua rekomendasi",
+      viewAll: "Lihat semua",
     },
     mentionsTrend: {
       title: "AI Mentions Trend",
@@ -568,8 +568,8 @@ export default function VisibilityPage() {
                     </div>
                   ))}
                 </div>
-                <button type="button" className="mt-3 flex h-8 items-center justify-center gap-1 rounded-[8px] bg-white px-3 text-[11px] font-black text-[#8B5CFF] shadow-sm transition hover:bg-[#F8FAFF]">
-                  {dict.execSummary.viewAll}
+                <button type="button" className="mt-3 flex min-h-9 w-full items-center justify-center gap-1 rounded-[8px] bg-white px-3 py-2 text-center text-[11px] font-black leading-tight text-[#8B5CFF] shadow-sm transition hover:bg-[#F8FAFF]">
+                  <span className="min-w-0 break-words">{dict.execSummary.viewAll}</span>
                   <ChevronRight size={13} />
                 </button>
               </div>

@@ -1,16 +1,15 @@
 import type { Metadata } from "next";
-import { Outfit, Geist } from "next/font/google";
+import { Poppins } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { ReactQueryProvider } from "@/components/providers/react-query-provider";
 import { IntlProvider } from "@/components/providers/intl-provider";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
-
-const outfit = Outfit({
-  variable: "--font-outfit",
+const poppins = Poppins({
+  variable: "--font-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
   display: "swap",
 });
 
@@ -30,7 +29,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", outfit.variable, "font-sans", geist.variable)}
+      className={cn("h-full", "antialiased", poppins.variable, "font-sans")}
       suppressHydrationWarning
     >
       <head>
