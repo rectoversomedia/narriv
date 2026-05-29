@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import type { ChangeEvent, ClipboardEvent, InputHTMLAttributes, KeyboardEvent, MouseEvent, ReactNode } from "react";
 import { useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 import type { UseFormRegisterReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
@@ -162,7 +163,15 @@ export function LanguageSelector() {
     event.currentTarget.blur();
     if (cooldownRef.current) return;
     cooldownRef.current = true;
-    toggleLanguage();
+
+    if (typeof document !== "undefined" && document.startViewTransition) {
+      document.startViewTransition(() => {
+        toggleLanguage();
+      });
+    } else {
+      toggleLanguage();
+    }
+
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
         cooldownRef.current = false;
@@ -172,8 +181,10 @@ export function LanguageSelector() {
 
   return (
     <button type="button" onClick={handleToggleLanguage} className="flex items-center gap-3 rounded-full px-3 py-2 text-[15px] font-semibold text-[#1C2452] hover:bg-[#F6F8FF]">
-      <Globe2 size={21} />
-      {language === "id" ? t("language.id") : t("language.en")}
+      <Globe2 size={21} className={cn("transition-transform duration-500", language === "id" ? "rotate-0" : "rotate-180")} />
+      <span key={language} className="inline-block animate-in fade-in slide-in-from-bottom-1 duration-200">
+        {language === "id" ? t("language.id") : t("language.en")}
+      </span>
       <ChevronDown size={18} />
     </button>
   );
