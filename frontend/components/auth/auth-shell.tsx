@@ -305,7 +305,6 @@ export function SocialButtons({ onClick }: { onClick?: () => void }) {
 
   return (
     <div className="grid gap-4">
-      <SocialButton icon={<AppleLogo />} label={t("social.apple")} onClick={onClick} />
       <SocialButton icon={<GoogleLogo />} label={t("social.google")} onClick={onClick} />
       <SocialButton icon={<MicrosoftLogo />} label={t("social.microsoft")} onClick={onClick} />
     </div>
@@ -321,13 +320,7 @@ function SocialButton({ icon, label, onClick }: { icon: ReactNode; label: string
   );
 }
 
-function AppleLogo() {
-  return (
-    <svg width="23" height="27" viewBox="0 0 23 27" aria-hidden="true" className="fill-black">
-      <path d="M18.9 14.2c0-3 2.5-4.5 2.6-4.6-1.4-2.1-3.6-2.4-4.4-2.4-1.9-.2-3.6 1.1-4.6 1.1-.9 0-2.4-1.1-4-1C6.5 7.3 4.6 8.5 3.6 10.2c-2.2 3.8-.6 9.5 1.6 12.6 1.1 1.5 2.3 3.2 3.9 3.1 1.6-.1 2.2-1 4-1s2.3 1 4 1c1.7 0 2.8-1.5 3.8-3 1.2-1.8 1.7-3.5 1.7-3.6-.1-.1-3.7-1.5-3.7-5.1ZM15.9 5.1c.9-1.1 1.4-2.5 1.3-4-1.3.1-2.8.8-3.7 1.9-.8.9-1.5 2.4-1.3 3.8 1.4.1 2.9-.7 3.7-1.7Z" />
-    </svg>
-  );
-}
+
 
 function GoogleLogo() {
   return (
