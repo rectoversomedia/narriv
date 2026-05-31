@@ -175,7 +175,7 @@
 | Alert Table | Main alert list with source, confidence, owner, status | Wired to `getAlerts()` with pagination and preview fallback |
 | Action Panels | Response playbook, source mix, timeline, investigation status | Inline SVG/CSS + static data |
 | Alert Detail | Drill-down page at `/alerts/[id]` | Wired to `getAlertById()` with preview/error state handling |
-| Status Actions | Backend function exists in `api-service.ts` | Status/assignment mutation UI is still not fully implemented |
+| Status Actions | `updateAlertStatus()` and `updateAlertAssignment()` wired | Status dropdown menu on alert list, editable assignment fields on detail page |
 
 #### 🔍 AI Visibility (`/visibility`)
 | Widget | Detail | Data Source |
@@ -207,9 +207,9 @@
 | AI Report Summary | AI assistant panel using `/mainapp/reports-ai-agent.png` | Static asset |
 | Preview + Metrics | Report preview, KPI cards, readiness indicators | Inline/static page data |
 | Report Table | Report vault table with owner, cadence, readiness, status | Wired to `getReports()` with pagination and preview fallback |
-| Quick Actions | Generate, export, schedule, share actions | UI-only |
+| Quick Actions | Generate, export, schedule, share actions | Export wired via `createReportExport()` with polling |
 | Bottom Cards | Format mix, trend chart, popular templates | Inline SVG/CSS + static data |
-| Export API | Backend/API service functions exist | Export/download actions remain UI-only |
+| Export API | Backend/API service functions exist | Export wired: `createReportExport()` + `getReportExportStatus()` with polling and auto-download |
 
 #### 🎯 Action Center (`/action-plans`)
 | Widget | Detail | Data Source |
@@ -219,7 +219,7 @@
 | Kanban Board | 4-column action workflow with avatars and priority | Inline/static page data |
 | Action Detail | Selected action detail with evidence and plan steps | Inline/static page data |
 | Performance + AI Learning | Performance metrics and feedback learning panels | Inline/static page data |
-| API Functions | Action-plan/feedback/assignment functions exist in `api-service.ts` | `getActionPlans()` and `getActionQueue()` are wired; create/assignment/feedback actions remain incomplete |
+| API Functions | Action-plan/feedback/assignment functions exist in `api-service.ts` | `getActionPlans()`, `getActionQueue()`, and `submitActionPlanFeedback()` are wired; accept/reject buttons on detail |
 
 ---
 
@@ -236,22 +236,22 @@
 | Notification Email | Text input | Loaded/saved via workspace settings API with local fallback |
 | WhatsApp PIC | Text input | Loaded/saved via workspace settings API with local fallback |
 | Team Members Table | Name, Role, Email, Status, Actions | Loaded via `getWorkspaceMembers()` with preview fallback |
-| Invite Member | Add member form | UI-only/local override; API creation flow still incomplete |
-| Remove Member | Delete action | Confirmed local removal only; backend delete flow still incomplete |
+| Invite Member | Add member form | Wired to `createWorkspaceMember()` API with validation |
+| Remove Member | Delete action | Wired to `deleteWorkspaceMember()` API with confirmation dialog |
 | Settings Cards | Profile, Notifications, Analysis, Team, Security, Language | Quick access grid |
 | Save Button | Submit all changes | Calls `updateWorkspaceSettings()` for supported fields |
-| Change Password | Current + New password form | UI-only; API exists but page is not wired |
+| Change Password | Current + New password form | Wired to `changePassword()` API with validation (min 10 chars, uppercase, number, symbol) |
 
 #### 📊 Sources (`/workspace/sources`)
 | Widget | Detail | Data Source |
 |--------|--------|-------------|
 | KPI Row | Connected sources, ingestion volume, health, latency | Inline/static page data |
-| Connector Grid | Connector tiles: Instagram, YouTube, X, Blogger, Discourse, etc. | Wired to `getSources()` with preview connector fallback; source CRUD/ingestion actions remain incomplete |
+| Connector Grid | Connector tiles: Instagram, YouTube, X, Blogger, Discourse, etc. | Wired to `getSources()` with preview connector fallback; toggle/sync/delete mutations wired |
 | Health Sidebar | Pipeline health and recent incidents | Inline/static page data |
 | Recent Activity | Source sync/activity list | Inline/static page data |
 | Global Settings | Sync frequency, language, dedupe, retention controls | UI-only |
 | Charts | Volume chart and source distribution donut | Inline SVG/CSS |
-| API Functions | Source CRUD/ingestion functions exist in `api-service.ts` | List/read flow uses `getSources()`; create/update/delete/ingestion actions remain incomplete |
+| API Functions | Source CRUD/ingestion functions exist in `api-service.ts` | `getSources()`, `updateSource()` (toggle), `deleteSource()`, and `runSourceIngestion()` (sync) are wired |
 
 #### `/settings`
 
@@ -475,7 +475,7 @@ These replace the removed frontend checklist/guidelines and should be treated as
 > These tasks convert pages from mock data to real backend API data.
 
 - [x] **API Contract Cleanup** — Fixed `getReports()`, `getNarratives()`, `getSources()`, and pagination typings to match backend response shapes. Completed 2026-05-30.
-- [ ] **Dashboard Home** — Partially wired to `getDashboardSummary()` for KPIs, trends, sentiment donut, latest signals, and date filters. Still uses preview/static data for topics, sources, quick actions, and some dashboard panels.
+- [x] **Dashboard Home** — Wired to `getDashboardSummary()` for KPIs, trends, sentiment donut, latest signals, and date filters. Quick actions wired to slide-over drawer. Secondary widgets (topics, sources, system status) still use mock fallback. Completed 2026-05-31.
 - [x] **Signals Page** — Wired the main table to `getSignals()` with API field mapping, search, 24h/7d/30d params, pagination, loading/error/empty states, and preview fallback. Completed 2026-05-31.
 - [x] **Alerts Page** — Main list wired to `getAlerts()` with pagination. Status/assignment mutations wired via dropdown menu and editable assignment fields on detail page. Completed 2026-05-31.
 - [x] **Alert Detail Page** — Replaced mock lookup with `getAlertById()` and React Query state handling. Completed 2026-05-30.
@@ -494,7 +494,7 @@ These replace the removed frontend checklist/guidelines and should be treated as
 - [ ] **Cases Page** — Create `/workspace/cases` page after the backend case model/API is designed
 - [ ] **Integrations Page** — Create `/workspace/integrations` page after integration/OAuth endpoints exist
 - [ ] **Real-time Signals** — Add polling or WebSocket for live signal/alert updates
-- [ ] **Export Downloads** — Complete report export download flow with signed URLs
+- [x] **Export Downloads** — PDF export via `createReportExport()` with polling via `getReportExportStatus()` and auto-download on completion. Completed 2026-05-31.
 - [ ] **Notification Settings** — Wire notification channel toggles to backend API
 - [x] **Mobile Responsive** — Completed code-level mobile audit and fixed high-risk overflow/button wrapping patterns across dashboard pages. Completed 2026-05-30. Final device/browser visual QA is still recommended before release.
 
