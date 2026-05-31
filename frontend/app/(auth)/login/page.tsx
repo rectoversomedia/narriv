@@ -40,7 +40,8 @@ export default function LoginPage() {
 
   const finishLogin = (token: string, user: AuthUser, refreshToken?: string | null) => {
     setSession(token, user, refreshToken);
-    router.push("/");
+    const nextPath = new URLSearchParams(window.location.search).get("next");
+    router.push(nextPath?.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/");
   };
 
   const onSubmit = async (data: LoginFormValues) => {

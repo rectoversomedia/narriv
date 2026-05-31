@@ -1,4 +1,5 @@
 import { ApifyClient } from "apify-client";
+import { logStructured } from "../../lib/logger.js";
 
 const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
 const isMockMode = !APIFY_TOKEN;
@@ -14,7 +15,7 @@ const client = new ApifyClient({
  * creates and returns a dummy dataset simulating news/social signals.
  */
 export const runActorAndFetchDataset = async (actorId, inputConfig = {}) => {
-    console.log(`[APIFY SERVICE] Running actor ${actorId} in ${isMockMode ? "MOCK" : "LIVE"} mode.`);
+    logStructured("info", "apify_actor_running", { actorId, mode: isMockMode ? "MOCK" : "LIVE" });
 
     if (isMockMode) {
         // MOCK MODE
@@ -109,14 +110,14 @@ export const runActorAndFetchDataset = async (actorId, inputConfig = {}) => {
 
     // LIVE MODE
     try {
-        console.log(`[APIFY] Calling actor: ${actorId} with input:`, JSON.stringify(inputConfig));
+        logStructured("info", "apify_actor_calling", { actorId });
         // Run the Actor and wait for it to finish
         const run = await client.actor(actorId).call(inputConfig);
-        console.log(`[APIFY] Run completed, datasetId: ${run.defaultDatasetId}`);
+        logStructured("info", "apify_run_completed", { datasetId: run.defaultDatasetId });
         
         // Fetch and return actor results from the run's dataset (if any)
         const { items } = await client.dataset(run.defaultDatasetId).listItems();
-        console.log(`[APIFY] Items fetched: ${items.length}`);
+        logStructured("info", "apify_items_fetched", { itemCount: items.length });
         return items;
     } catch (error) {
         console.error("[APIFY SERVICE] Error in Live Mode:", error.message || error);

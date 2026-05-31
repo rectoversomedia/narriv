@@ -187,9 +187,7 @@ async function queryAIEngine(engineName, queries) {
  * @returns {Promise<object>} - The saved AIVisibilityResult record.
  */
 export async function runVisibilityAnalysis({ workspaceId, brandName, competitors = [], queries, engineName = "chatgpt" }) {
-    console.log(`[GEO] Starting visibility analysis for "${brandName}" on engine: ${engineName}`);
-    console.log(`[GEO] Competitors: ${competitors.join(", ") || "(none)"}`);
-    console.log(`[GEO] Queries: ${queries.length}`);
+    logStructured("info", "geo_analysis_started", { brandName, engineName, competitorCount: competitors.length, queryCount: queries.length });
 
     // 1. Query the AI engine
     const queryResults = await queryAIEngine(engineName, queries);
@@ -200,7 +198,7 @@ export async function runVisibilityAnalysis({ workspaceId, brandName, competitor
     const brandPresenceRate = calculateBrandPresenceRate(responses, brandName);
     const competitorMentionRate = calculateCompetitorMentionRate(responses, competitors);
 
-    console.log(`[GEO] Results — Visibility: ${visibilityScore}, Brand Presence: ${(brandPresenceRate * 100).toFixed(1)}%, Competitor Mention: ${(competitorMentionRate * 100).toFixed(1)}%`);
+    logStructured("info", "geo_analysis_results", { visibilityScore, brandPresence: `${(brandPresenceRate * 100).toFixed(1)}%`, competitorMention: `${(competitorMentionRate * 100).toFixed(1)}%` });
 
     // 3. Save to database
     const result = await prisma.aIVisibilityResult.create({
@@ -221,6 +219,6 @@ export async function runVisibilityAnalysis({ workspaceId, brandName, competitor
         }
     });
 
-    console.log(`[GEO] Analysis saved: ${result.id}`);
+    logStructured("info", "geo_analysis_saved", { resultId: result.id });
     return result;
 }

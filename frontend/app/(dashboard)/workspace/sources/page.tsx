@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, type ComponentType, type ReactNode, type SVGProps } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import {
   ArrowRight,
   Bell,
@@ -29,8 +31,10 @@ import {
 import { SiBlogger, SiDiscourse } from "react-icons/si";
 import { Instagram, XDark, YouTube } from "@ridemountainpig/svgl-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/components/ui/toast";
+import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
+import { getSources, updateSource, deleteSource, runSourceIngestion, type SourceRecord } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
-import { useUiStore } from "@/store/useUiStore";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate" | "pink" | "black" | "orange";
 
@@ -78,60 +82,57 @@ const connectorsSeed: Connector[] = [
   { name: "Blogs", category: "Blog & Articles", health: "-", signals: "-", lastSync: "-", active: false, status: "Paused", tone: "orange", icon: SiBlogger, spark: [8, 8, 10, 8, 9, 8, 12, 8, 9, 8, 10, 8, 8, 8, 8, 8] },
 ];
 
-const copy = {
-  en: {
-    title: "Data Sources",
-    desc: "Manage and monitor every data source used by Narriv.",
-    learnMore: "Learn more",
-    add: "Add Integration",
-    gridTitle: "Connector Grid",
-    gridDesc: "Connection status and performance for every data source.",
-    syncAll: "Sync All",
-    allCategories: "All Categories",
-    healthTitle: "Source Health Overview",
-    healthDesc: "Summary of all source health.",
-    optimal: "System is running optimally",
-    optimalDesc: "All critical sources are in healthy condition.",
-    activity: "Recent Activity",
-    activityDesc: "Sync logs and connection changes.",
-    viewAll: "View All",
-    settings: "Global Configuration & Settings",
-    settingsDesc: "General source management settings.",
-    connect: "Connect New Source",
-    connectDesc: "Add a new data source to expand monitoring coverage.",
-    volume: "Signal Volume by Source (Last 7 Days)",
-    volumeDesc: "Comparison of signal volume from every source.",
-    distribution: "Source Type Distribution",
-    distributionDesc: "Composition by source category.",
-    last7: "Last 7 Days",
-  },
-  id: {
-    title: "Data Sources",
-    desc: "Kelola dan monitor semua sumber data yang digunakan Narriv.",
-    learnMore: "Pelajari lebih lanjut",
-    add: "Tambah Integrasi",
-    gridTitle: "Connector Grid",
-    gridDesc: "Status koneksi dan performa setiap sumber data.",
-    syncAll: "Sync Semua",
-    allCategories: "Semua Kategori",
-    healthTitle: "Source Health Overview",
-    healthDesc: "Ringkasan kesehatan semua sumber.",
-    optimal: "Sistem berjalan optimal",
-    optimalDesc: "Semua sumber kritis dalam kondisi sehat.",
-    activity: "Aktivitas Terbaru",
-    activityDesc: "Log sinkronisasi dan perubahan koneksi.",
-    viewAll: "Lihat Semua",
-    settings: "Konfigurasi & Pengaturan Global",
-    settingsDesc: "Pengaturan umum untuk manajemen sumber.",
-    connect: "Hubungkan Sumber Baru",
-    connectDesc: "Tambah sumber data baru untuk memperluas cakupan monitoring.",
-    volume: "Volume Signals per Sumber (7 Hari Terakhir)",
-    volumeDesc: "Perbandingan volume signal dari setiap sumber.",
-    distribution: "Distribusi Tipe Sumber",
-    distributionDesc: "Komposisi berdasarkan kategori sumber data.",
-    last7: "7 Hari Terakhir",
-  },
-};
+function formatSourceTime(value?: string) {
+  if (!value) return "-";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "-";
+  return parsed.toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
+}
+
+function stableSpark(seed: string) {
+  const base = seed.split("").reduce((total, char) => total + char.charCodeAt(0), 0) || 19;
+  return Array.from({ length: 16 }, (_, index) => 8 + ((base + index * 7) % 31));
+}
+
+function sourceIconForType(type: string): SourceIcon {
+  const normalized = type.toLowerCase();
+  if (normalized.includes("social")) return XDark;
+  if (normalized.includes("video")) return YouTube;
+  if (normalized.includes("podcast")) return Radio;
+  if (normalized.includes("forum")) return SiDiscourse;
+  if (normalized.includes("news") || normalized.includes("web")) return Newspaper;
+  return Database;
+}
+
+function sourceToneForType(type: string): Tone {
+  const normalized = type.toLowerCase();
+  if (normalized.includes("social")) return "black";
+  if (normalized.includes("video")) return "red";
+  if (normalized.includes("podcast")) return "purple";
+  if (normalized.includes("forum")) return "blue";
+  if (normalized.includes("news")) return "blue";
+  if (normalized.includes("web")) return "green";
+  return "slate";
+}
+
+function buildApiConnectors(sources: SourceRecord[]): Connector[] {
+  return sources.map((source) => {
+    const type = source.type || "source";
+    const active = source.isActive ?? true;
+    return {
+      name: source.name,
+      category: type.charAt(0).toUpperCase() + type.slice(1),
+      health: source.health ?? (active ? "Live" : "Paused"),
+      signals: source.coverage ?? "-",
+      lastSync: formatSourceTime(source.updatedAt || source.createdAt),
+      active,
+      status: active ? "Live" : "Paused",
+      tone: sourceToneForType(type),
+      icon: sourceIconForType(type),
+      spark: stableSpark(source.id),
+    };
+  });
+}
 
 function Panel({ children, className }: { children: ReactNode; className?: string }) {
   return <Card className={cn("rounded-[14px] border-[#E6EAF2] bg-white text-[#101334] shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)}>{children}</Card>;
@@ -164,14 +165,14 @@ function MiniSparkline({ values, color }: { values: number[]; color: string }) {
     const y = height - ((value - min) / range) * 26 - 6;
     return `${index === 0 ? "M" : "L"} ${x} ${y}`;
   }).join(" ");
-  return <svg className="h-10 w-full" viewBox={`0 0 ${width} ${height}`} aria-hidden="true"><path d={path} fill="none" stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>;
+  return <svg className="chart-line-draw h-10 w-full" viewBox={`0 0 ${width} ${height}`} aria-hidden="true"><path d={path} fill="none" stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>;
 }
 
 function Toggle({ active }: { active: boolean }) {
   return <span className={cn("relative h-5 w-9 rounded-full transition", active ? "bg-[#465FFF]" : "bg-[#CBD5E1]")}><span className={cn("absolute top-0.5 size-4 rounded-full bg-white shadow transition", active ? "left-4" : "left-0.5")} /></span>;
 }
 
-function ConnectorCard({ source, selected, onSelect }: { source: Connector; selected: boolean; onSelect: (source: Connector) => void }) {
+function ConnectorCard({ source, selected, onSelect, onToggle }: { source: Connector; selected: boolean; onSelect: (source: Connector) => void; onToggle?: (source: Connector) => void }) {
   const style = toneStyles[source.tone];
   const Icon = source.icon;
   return (
@@ -184,14 +185,14 @@ function ConnectorCard({ source, selected, onSelect }: { source: Connector; sele
       <p className="mt-1 text-[10px] font-bold text-[#68739F]">{source.category}</p>
       <div className="mt-4 grid grid-cols-2 gap-3 text-[11px] font-bold text-[#68739F]"><span>Health<br /><b className="text-[14px] text-[#101334]">{source.health}</b></span><span>Signals (24h)<br /><b className="text-[14px] text-[#101334]">{source.signals}</b></span></div>
       <div className="mt-3"><MiniSparkline values={source.spark} color={style.color} /></div>
-      <div className="mt-3 flex items-center justify-between gap-3 text-[10px] font-bold text-[#68739F]"><span>Last Sync</span><span>{source.lastSync}</span><Toggle active={source.active} /></div>
+      <div className="mt-3 flex items-center justify-between gap-3 text-[10px] font-bold text-[#68739F]"><span>Last Sync</span><span>{source.lastSync}</span><button type="button" onClick={(e) => { e.stopPropagation(); onToggle?.(source); }} className="focus:outline-none"><Toggle active={source.active} /></button></div>
     </button>
   );
 }
 
 function HealthDonut() {
   return (
-    <div className="relative flex size-[128px] shrink-0 items-center justify-center rounded-full bg-[conic-gradient(#10B981_0_83%,#F59E0B_83%_96%,#EF4444_96%_100%)]">
+    <div className="chart-donut-enter relative flex size-[128px] shrink-0 items-center justify-center rounded-full bg-[conic-gradient(#10B981_0_83%,#F59E0B_83%_96%,#EF4444_96%_100%)]">
       <span className="absolute size-[86px] rounded-full bg-white" />
       <span className="relative text-center"><b className="block text-[26px] font-black text-[#101334]">48</b><span className="text-[10px] font-bold text-[#68739F]">Total</span></span>
     </div>
@@ -200,7 +201,7 @@ function HealthDonut() {
 
 function DistributionDonut() {
   return (
-    <div className="relative flex size-[154px] shrink-0 items-center justify-center rounded-full bg-[conic-gradient(#465FFF_0_33%,#8B5CFF_33%_58%,#FF1D1D_58%_71%,#10B981_71%_86%,#F59E0B_86%_100%)]">
+    <div className="chart-donut-enter relative flex size-[154px] shrink-0 items-center justify-center rounded-full bg-[conic-gradient(#465FFF_0_33%,#8B5CFF_33%_58%,#FF1D1D_58%_71%,#10B981_71%_86%,#F59E0B_86%_100%)]">
       <span className="absolute size-[104px] rounded-full bg-white" />
       <span className="relative text-center"><b className="block text-[24px] font-black text-[#101334]">48</b><span className="text-[10px] font-bold text-[#68739F]">Total</span></span>
     </div>
@@ -221,10 +222,54 @@ function VolumeBars() {
 }
 
 export default function SourcesPage() {
-  const language = useUiStore((state) => state.language);
-  const dict = copy[language] ?? copy.en;
-  const [items] = useState(connectorsSeed);
-  const [selected, setSelected] = useState(connectorsSeed[0]);
+  const t = useTranslations("Sources");
+  const queryClient = useQueryClient();
+  const toastHook = useToast();
+
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    if (type === "error") { toastHook.error(message); return; }
+    toastHook.success(message);
+  };
+
+  const sourcesQuery = useQuery({
+    queryKey: ["sources", { limit: 50 }],
+    queryFn: () => getSources({ limit: 50 }),
+    staleTime: 30 * 1000,
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) => updateSource(id, { isActive }),
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: ["sources"] });
+      showToast(result ? "Status sumber berhasil diperbarui." : "Status sumber belum bisa diperbarui.", result ? "success" : "error");
+    },
+    onError: () => showToast("Status sumber belum bisa diperbarui. Coba lagi.", "error"),
+  });
+
+  const syncMutation = useMutation({
+    mutationFn: (sourceId: string) => runSourceIngestion(sourceId),
+    onSuccess: async (result) => {
+      if (result) {
+        showToast("Sinkronisasi berhasil dimulai.");
+      } else {
+        showToast("Sinkronisasi belum bisa dimulai. Coba lagi.", "error");
+      }
+    },
+    onError: () => showToast("Sinkronisasi belum bisa dimulai. Coba lagi.", "error"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (sourceId: string) => deleteSource(sourceId),
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: ["sources"] });
+      showToast(result ? "Sumber berhasil dihapus." : "Sumber belum bisa dihapus.", result ? "success" : "error");
+    },
+    onError: () => showToast("Sumber belum bisa dihapus. Coba lagi.", "error"),
+  });
+  const liveConnectors = sourcesQuery.data?.data ? buildApiConnectors(sourcesQuery.data.data) : [];
+  const isLiveUnavailable = sourcesQuery.data === null;
+  const items = liveConnectors.length > 0 || sourcesQuery.data ? liveConnectors : connectorsSeed;
+  const [selectedName, setSelectedName] = useState(connectorsSeed[0].name);
 
   const activity = [
     ["Instagram", "Sinkronisasi berhasil", "1 menit lalu", "green", Instagram],
@@ -245,8 +290,8 @@ export default function SourcesPage() {
   return (
     <div className="mx-auto flex max-w-[1600px] flex-col gap-4 pb-6 text-[#101334]">
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div><h1 className="text-[31px] font-black tracking-[-0.045em] text-[#060A23]">{dict.title}</h1><p className="mt-2 text-[14px] font-semibold text-[#68739F]">{dict.desc} <button type="button" className="font-black text-[#465FFF]">{dict.learnMore} <ArrowRight size={13} className="inline" /></button></p></div>
-        <button type="button" className="flex h-10 w-fit items-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#8B5CFF] px-4 text-[13px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)]"><Plus size={15} />{dict.add}</button>
+        <div><h1 className="text-[31px] font-black tracking-[-0.045em] text-[#060A23]">{t("title")}</h1><p className="mt-2 text-[14px] font-semibold text-[#68739F]">{t("desc")} <button type="button" className="font-black text-[#465FFF]">{t("learnMore")} <ArrowRight size={13} className="inline" /></button></p></div>
+        <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#8B5CFF] px-4 text-[13px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] sm:w-fit"><Plus size={15} />{t("add")}</button>
       </header>
 
       <section className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-5">
@@ -262,26 +307,35 @@ export default function SourcesPage() {
           <Panel>
             <CardContent className="p-4">
               <div className="mb-4 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                <div><h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{dict.gridTitle}</h2><p className="mt-1 text-[12px] font-semibold text-[#68739F]">{dict.gridDesc}</p></div>
-                <div className="flex flex-wrap gap-3"><button type="button" className="flex h-9 items-center gap-2 rounded-[8px] border border-[#DDE3EF] px-4 text-[12px] font-black text-[#53608C]"><RotateCw size={14} />{dict.syncAll}</button><button type="button" className="flex size-9 items-center justify-center rounded-[8px] bg-[#EEF0FF] text-[#465FFF]"><Grid3X3 size={15} /></button><button type="button" className="flex size-9 items-center justify-center rounded-[8px] border border-[#DDE3EF] text-[#53608C]"><List size={15} /></button><button type="button" className="flex h-9 items-center gap-2 rounded-[8px] border border-[#DDE3EF] px-4 text-[12px] font-black text-[#101334]">{dict.allCategories}<ChevronDown size={13} /></button></div>
+                <div><h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{t("gridTitle")}</h2><p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("gridDesc")}</p></div>
+                <div className="flex w-full flex-wrap gap-3 xl:w-auto"><button type="button" onClick={() => { const liveIds = sourcesQuery.data?.data?.map((s) => s.id) ?? []; liveIds.forEach((id) => syncMutation.mutate(id)); showToast("Sinkronisasi semua sumber dimulai."); }} disabled={syncMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] px-4 text-[12px] font-black text-[#53608C] sm:flex-none"><RotateCw size={14} className={syncMutation.isPending ? "animate-spin" : ""} />{t("syncAll")}</button><button type="button" aria-label="Tampilkan sumber dalam grid" className="flex size-9 items-center justify-center rounded-[8px] bg-[#EEF0FF] text-[#465FFF]"><Grid3X3 size={15} /></button><button type="button" aria-label="Tampilkan sumber dalam daftar" className="flex size-9 items-center justify-center rounded-[8px] border border-[#DDE3EF] text-[#53608C]"><List size={15} /></button><button type="button" className="flex h-9 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] px-4 text-[12px] font-black text-[#101334] sm:flex-none">{t("allCategories")}<ChevronDown size={13} /></button></div>
               </div>
-              <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-4">{items.map((source) => <ConnectorCard key={source.name} source={source} selected={selected.name === source.name} onSelect={setSelected} />)}</div>
-              <button type="button" className="mt-3 flex h-11 w-full items-center justify-between rounded-[10px] border border-[#DDE3EF] bg-[#FBFCFF] px-4 text-left"><span className="flex items-center gap-3"><CirclePlus size={20} className="text-[#465FFF]" /><span><b className="block text-[13px] font-black text-[#465FFF]">{dict.connect}</b><span className="text-[11px] font-semibold text-[#68739F]">{dict.connectDesc}</span></span></span><ArrowRight size={16} className="text-[#53608C]" /></button>
+              {sourcesQuery.isPending ? (
+                <PanelSkeleton />
+              ) : sourcesQuery.data && liveConnectors.length === 0 ? (
+                <DashboardEmptyState title="Belum ada sumber live" description="Backend berhasil dihubungi, tetapi belum ada sumber data yang dibuat." icon="inbox" minHeight="min-h-[320px]" />
+              ) : (
+                <>
+                  {isLiveUnavailable ? <DashboardErrorState title="Sumber live belum bisa dimuat" description="API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan connector contoh." onRetry={() => void sourcesQuery.refetch()} minHeight="min-h-[150px]" /> : null}
+                   <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-4">{items.map((source) => <ConnectorCard key={source.name} source={source} selected={selectedName === source.name} onSelect={(item) => setSelectedName(item.name)} onToggle={(item) => { const liveSource = sourcesQuery.data?.data?.find((s) => s.name === item.name); if (liveSource) toggleMutation.mutate({ id: liveSource.id, isActive: !item.active }); }} />)}</div>
+                </>
+              )}
+              <button type="button" className="mt-3 flex min-h-11 w-full items-center justify-between gap-3 rounded-[10px] border border-[#DDE3EF] bg-[#FBFCFF] px-4 py-2 text-left"><span className="flex min-w-0 items-center gap-3"><CirclePlus size={20} className="shrink-0 text-[#465FFF]" /><span className="min-w-0"><b className="block text-[13px] font-black text-[#465FFF]">{t("connect")}</b><span className="block text-[11px] font-semibold leading-snug text-[#68739F]">{t("connectDesc")}</span></span></span><ArrowRight size={16} className="shrink-0 text-[#53608C]" /></button>
             </CardContent>
           </Panel>
 
           <div className="grid gap-4 xl:grid-cols-[1.05fr_1fr]">
-            <Panel><CardContent className="p-5"><div className="mb-4 flex items-start justify-between"><div><h2 className="text-[17px] font-black text-[#101334]">{dict.volume}</h2><p className="mt-1 text-[12px] font-semibold text-[#68739F]">{dict.volumeDesc}</p></div><button type="button" className="flex h-9 items-center gap-2 rounded-[8px] border border-[#DDE3EF] px-3 text-[11px] font-black text-[#53608C]">{dict.last7}<ChevronDown size={12} /></button></div><VolumeBars /></CardContent></Panel>
-            <Panel><CardContent className="p-5"><h2 className="text-[17px] font-black text-[#101334]">{dict.distribution}</h2><p className="mt-1 text-[12px] font-semibold text-[#68739F]">{dict.distributionDesc}</p><div className="mt-5 grid items-center gap-6 sm:grid-cols-[170px_1fr]"><DistributionDonut /><div className="grid gap-3 text-[12px] font-bold text-[#53608C]">{[["Social Media", "16 (33%)", "blue"], ["News & Media", "12 (25%)", "purple"], ["Video Platform", "6 (13%)", "red"], ["Support & Community", "7 (15%)", "green"], ["Lainnya", "7 (14%)", "slate"]].map(([label, value, tone]) => <div key={label} className="flex items-center justify-between gap-3"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full" style={{ backgroundColor: toneStyles[tone as Tone].color }} />{label}</span><b className="text-[#101334]">{value}</b></div>)}</div></div></CardContent></Panel>
+            <Panel><CardContent className="p-5"><div className="mb-4 flex items-start justify-between"><div><h2 className="text-[17px] font-black text-[#101334]">{t("volume")}</h2><p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("volumeDesc")}</p></div><button type="button" className="flex h-9 items-center gap-2 rounded-[8px] border border-[#DDE3EF] px-3 text-[11px] font-black text-[#53608C]">{t("last7")}<ChevronDown size={12} /></button></div><VolumeBars /></CardContent></Panel>
+            <Panel><CardContent className="p-5"><h2 className="text-[17px] font-black text-[#101334]">{t("distribution")}</h2><p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("distributionDesc")}</p><div className="mt-5 grid items-center gap-6 sm:grid-cols-[170px_1fr]"><DistributionDonut /><div className="grid gap-3 text-[12px] font-bold text-[#53608C]">{[["Social Media", "16 (33%)", "blue"], ["News & Media", "12 (25%)", "purple"], ["Video Platform", "6 (13%)", "red"], ["Support & Community", "7 (15%)", "green"], ["Lainnya", "7 (14%)", "slate"]].map(([label, value, tone]) => <div key={label} className="flex items-center justify-between gap-3"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full" style={{ backgroundColor: toneStyles[tone as Tone].color }} />{label}</span><b className="text-[#101334]">{value}</b></div>)}</div></div></CardContent></Panel>
           </div>
         </div>
 
         <aside className="flex flex-col gap-4">
-          <Panel><CardContent className="p-5"><h2 className="text-[17px] font-black text-[#101334]">{dict.healthTitle}</h2><p className="mt-1 text-[12px] font-semibold text-[#68739F]">{dict.healthDesc}</p><div className="mt-5 grid items-center gap-5 sm:grid-cols-[128px_1fr] xl:grid-cols-1 2xl:grid-cols-[128px_1fr]"><HealthDonut /><div className="grid gap-3 text-[12px] font-bold text-[#53608C]"><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#10B981]" />Sehat</span><b className="text-[#101334]">40 (83%)</b></div><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#F59E0B]" />Peringatan</span><b className="text-[#101334]">6 (13%)</b></div><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#EF4444]" />Bermasalah</span><b className="text-[#101334]">2 (4%)</b></div></div></div><div className="mt-5 rounded-[12px] border border-[#BFEBD9] bg-[#ECFDF6] p-4"><div className="flex items-start gap-3"><ShieldCheck size={20} className="text-[#10B981]" /><span><b className="block text-[13px] font-black text-[#0C9B69]">{dict.optimal}</b><span className="text-[12px] font-semibold text-[#53608C]">{dict.optimalDesc}</span></span></div></div></CardContent></Panel>
+          <Panel><CardContent className="p-5"><h2 className="text-[17px] font-black text-[#101334]">{t("healthTitle")}</h2><p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("healthDesc")}</p><div className="mt-5 grid items-center gap-5 sm:grid-cols-[128px_1fr] xl:grid-cols-1 2xl:grid-cols-[128px_1fr]"><HealthDonut /><div className="grid gap-3 text-[12px] font-bold text-[#53608C]"><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#10B981]" />Sehat</span><b className="text-[#101334]">40 (83%)</b></div><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#F59E0B]" />Peringatan</span><b className="text-[#101334]">6 (13%)</b></div><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#EF4444]" />Bermasalah</span><b className="text-[#101334]">2 (4%)</b></div></div></div><div className="mt-5 rounded-[12px] border border-[#BFEBD9] bg-[#ECFDF6] p-4"><div className="flex items-start gap-3"><ShieldCheck size={20} className="text-[#10B981]" /><span><b className="block text-[13px] font-black text-[#0C9B69]">{t("optimal")}</b><span className="text-[12px] font-semibold text-[#53608C]">{t("optimalDesc")}</span></span></div></div></CardContent></Panel>
 
-          <Panel><CardContent className="p-5"><div className="mb-4 flex items-start justify-between"><div><h2 className="text-[17px] font-black text-[#101334]">{dict.activity}</h2><p className="mt-1 text-[12px] font-semibold text-[#68739F]">{dict.activityDesc}</p></div><button type="button" className="text-[11px] font-black text-[#465FFF]">{dict.viewAll}</button></div><div className="grid gap-3">{activity.map(([name, status, time, tone, Icon]) => { const TypedIcon = Icon as SourceIcon; const style = toneStyles[tone as Tone]; return <div key={name} className="flex items-center justify-between gap-3"><span className="flex min-w-0 items-center gap-3"><span className="flex size-7 items-center justify-center rounded-[7px]" style={{ color: style.color, backgroundColor: `rgba(${style.rgb}, .10)` }}><TypedIcon className="size-[15px]" /></span><span className="min-w-0"><b className="block truncate text-[12px] text-[#101334]">{name}</b><span className="text-[11px] font-semibold" style={{ color: style.color }}>{status}</span></span></span><span className="shrink-0 text-[10px] font-bold text-[#68739F]">{time}</span><Check size={13} style={{ color: style.color }} /></div>; })}</div></CardContent></Panel>
+          <Panel><CardContent className="p-5"><div className="mb-4 flex items-start justify-between"><div><h2 className="text-[17px] font-black text-[#101334]">{t("activity")}</h2><p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("activityDesc")}</p></div><button type="button" className="text-[11px] font-black text-[#465FFF]">{t("viewAll")}</button></div><div className="grid gap-3">{activity.map(([name, status, time, tone, Icon]) => { const TypedIcon = Icon as SourceIcon; const style = toneStyles[tone as Tone]; return <div key={name} className="flex items-center justify-between gap-3"><span className="flex min-w-0 items-center gap-3"><span className="flex size-7 items-center justify-center rounded-[7px]" style={{ color: style.color, backgroundColor: `rgba(${style.rgb}, .10)` }}><TypedIcon className="size-[15px]" /></span><span className="min-w-0"><b className="block truncate text-[12px] text-[#101334]">{name}</b><span className="text-[11px] font-semibold" style={{ color: style.color }}>{status}</span></span></span><span className="shrink-0 text-[10px] font-bold text-[#68739F]">{time}</span><Check size={13} style={{ color: style.color }} /></div>; })}</div></CardContent></Panel>
 
-          <Panel><CardContent className="p-5"><h2 className="text-[17px] font-black text-[#101334]">{dict.settings}</h2><p className="mt-1 text-[12px] font-semibold text-[#68739F]">{dict.settingsDesc}</p><div className="mt-4 grid gap-2.5">{settings.map(([title, desc, Icon, tone]) => { const TypedIcon = Icon as LucideIcon; const style = toneStyles[tone as Tone]; return <button key={title as string} type="button" className="flex items-center justify-between gap-3 rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-3 text-left"><span className="flex min-w-0 items-center gap-3"><span className="flex size-8 items-center justify-center rounded-[8px]" style={{ color: style.color, backgroundColor: `rgba(${style.rgb}, .10)` }}><TypedIcon size={16} /></span><span><b className="block text-[12px] text-[#101334]">{title as string}</b><span className="text-[10px] font-semibold text-[#68739F]">{desc as string}</span></span></span><ChevronDown size={14} className="-rotate-90 text-[#53608C]" /></button>; })}</div></CardContent></Panel>
+          <Panel><CardContent className="p-5"><h2 className="text-[17px] font-black text-[#101334]">{t("settings")}</h2><p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("settingsDesc")}</p><div className="mt-4 grid gap-2.5">{settings.map(([title, desc, Icon, tone]) => { const TypedIcon = Icon as LucideIcon; const style = toneStyles[tone as Tone]; return <button key={title as string} type="button" className="flex items-center justify-between gap-3 rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-3 text-left"><span className="flex min-w-0 items-center gap-3"><span className="flex size-8 items-center justify-center rounded-[8px]" style={{ color: style.color, backgroundColor: `rgba(${style.rgb}, .10)` }}><TypedIcon size={16} /></span><span><b className="block text-[12px] text-[#101334]">{title as string}</b><span className="text-[10px] font-semibold text-[#68739F]">{desc as string}</span></span></span><ChevronDown size={14} className="-rotate-90 text-[#53608C]" /></button>; })}</div></CardContent></Panel>
         </aside>
       </section>
     </div>

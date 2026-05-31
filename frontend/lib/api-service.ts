@@ -50,6 +50,31 @@ export interface DashboardSummary {
   latest_signals: LatestSignal[];
 }
 
+export type DateRangeKey = "24h" | "7d" | "30d";
+
+export interface DateRangeOptions {
+  startDate?: string;
+  endDate?: string;
+}
+
+export function getDateRangeOptions(range: DateRangeKey): DateRangeOptions {
+  const end = new Date();
+  const start = new Date(end);
+
+  if (range === "24h") {
+    start.setHours(start.getHours() - 24);
+  } else if (range === "7d") {
+    start.setDate(start.getDate() - 7);
+  } else {
+    start.setDate(start.getDate() - 30);
+  }
+
+  return {
+    startDate: start.toISOString(),
+    endDate: end.toISOString(),
+  };
+}
+
 export interface Signal {
   id: string;
   title: string | null;
@@ -72,7 +97,19 @@ export interface SignalAnalysis {
   confidenceScore: number | null;
 }
 
+export interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: PaginationInfo;
+}
+
+export interface MetaPaginatedResponse<T> {
   data: T[];
   meta: { page: number; limit: number; total: number };
 }
@@ -107,9 +144,14 @@ export interface AssignmentInput {
 // Dashboard
 // ---------------------------------------------------------------------------
 
-export async function getDashboardSummary(): Promise<DashboardSummary | null> {
+export async function getDashboardSummary(options: DateRangeOptions = {}): Promise<DashboardSummary | null> {
+  const params = new URLSearchParams();
+  if (options.startDate) params.set("startDate", options.startDate);
+  if (options.endDate) params.set("endDate", options.endDate);
+  const query = params.toString();
+
   try {
-    return await apiClient<DashboardSummary>("/api/dashboard/summary");
+    return await apiClient<DashboardSummary>(`/api/dashboard/summary${query ? `?${query}` : ""}`);
   } catch {
     return null;
   }
@@ -124,15 +166,19 @@ export interface GetSignalsOptions {
   limit?: number;
   keyword?: string;
   platform?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export async function getSignals(
   options: GetSignalsOptions = {}
 ): Promise<PaginatedResponse<Signal> | null> {
-  const { page = 1, limit = 20, keyword, platform } = options;
+  const { page = 1, limit = 20, keyword, platform, startDate, endDate } = options;
   const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (keyword) params.set("keyword", keyword);
   if (platform) params.set("platform", platform);
+  if (startDate) params.set("startDate", startDate);
+  if (endDate) params.set("endDate", endDate);
 
   try {
     return await apiClient<PaginatedResponse<Signal>>(`/signals?${params.toString()}`);
@@ -354,12 +400,12 @@ export async function updateActionPlanAssignment(id: string, input: AssignmentIn
 
 export async function getActionQueue(
   options: { page?: number; limit?: number } = {}
-): Promise<PaginatedResponse<ActionQueueRecord> | null> {
+): Promise<MetaPaginatedResponse<ActionQueueRecord> | null> {
   const { page = 1, limit = 10 } = options;
   const params = new URLSearchParams({ page: String(page), limit: String(limit) });
 
   try {
-    return await apiClient<PaginatedResponse<ActionQueueRecord>>(`/api/actions?${params.toString()}`);
+    return await apiClient<MetaPaginatedResponse<ActionQueueRecord>>(`/api/actions?${params.toString()}`);
   } catch {
     return null;
   }
@@ -475,32 +521,49 @@ export async function changePassword(input: { currentPassword: string; newPasswo
 }
 
 export interface ReportRecord {
-  id?: string;
+  id: string;
   title: string;
   sections: string;
   readiness: number;
   status: string;
 }
 
-export async function getReports(): Promise<{ reports: ReportRecord[] } | null> {
+export async function getReports(
+  options: { page?: number; limit?: number } = {}
+): Promise<PaginatedResponse<ReportRecord> | null> {
+  const { page = 1, limit = 10 } = options;
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+
   try {
-    return await apiClient<{ reports: ReportRecord[] }>("/api/reports");
+    return await apiClient<PaginatedResponse<ReportRecord>>(`/api/reports?${params.toString()}`);
   } catch {
     return null;
   }
 }
 
-export async function getNarratives(): Promise<unknown | null> {
-  try {
-    return await apiClient<unknown>("/api/narratives");
-  } catch {
-    return null;
-  }
+export interface NarrativeRecord {
+  id: string;
+  title: string;
+  description: string;
+  sourceCount: number;
+  confidence: number;
+  impact: string;
+  velocity: string;
+  recommendedFocus: string;
+  signalCount: number;
+  sentiment: string;
 }
 
-export async function getSources(): Promise<unknown | null> {
+export async function getNarratives(
+  options: { page?: number; limit?: number; sentiment?: string; impact?: string } = {}
+): Promise<PaginatedResponse<NarrativeRecord> | null> {
+  const { page = 1, limit = 10, sentiment, impact } = options;
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (sentiment) params.set("sentiment", sentiment);
+  if (impact) params.set("impact", impact);
+
   try {
-    return await apiClient<unknown>("/sources");
+    return await apiClient<PaginatedResponse<NarrativeRecord>>(`/api/narratives?${params.toString()}`);
   } catch {
     return null;
   }
@@ -515,9 +578,26 @@ export interface SourceRecord {
   inputConfig?: unknown;
   isActive?: boolean;
   createdAt?: string;
+  updatedAt?: string;
   health?: string;
   coverage?: string;
   latency?: string;
+}
+
+export async function getSources(
+  options: { page?: number; limit?: number; type?: string; isActive?: boolean; search?: string } = {}
+): Promise<PaginatedResponse<SourceRecord> | null> {
+  const { page = 1, limit = 50, type, isActive, search } = options;
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (type) params.set("type", type);
+  if (isActive !== undefined) params.set("isActive", String(isActive));
+  if (search) params.set("search", search);
+
+  try {
+    return await apiClient<PaginatedResponse<SourceRecord>>(`/sources?${params.toString()}`);
+  } catch {
+    return null;
+  }
 }
 
 export interface CreateSourceInput {

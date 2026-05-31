@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import {
   BarChart3,
   Check,
@@ -20,11 +22,14 @@ import {
   Timer,
   TrendingDown,
   TrendingUp,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/components/ui/toast";
+import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
+import { getActionPlans, getActionQueue, submitActionPlanFeedback, type ActionPlanResponse, type ActionQueueRecord } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
-import { useUiStore } from "@/store/useUiStore";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Priority = "high" | "medium" | "low" | "done";
@@ -161,62 +166,32 @@ const actions: ActionItem[] = [
   },
 ];
 
-const copy = {
-  en: {
-    title: "Action Center",
-    desc: "Manage actions and monitor progress on important issues in a structured way.",
-    newAction: "Create New Action",
-    search: "Search actions...",
-    filter: "Filter",
-    sort: "Sort: Priority",
-    tabs: ["All Actions", "Active", "In Progress", "Completed", "Needs Attention", "Delayed", "Created By Me"],
-    lanes: {
-      high: "High Priority",
-      medium: "Medium Priority",
-      low: "Low Priority",
-      done: "Completed",
-    },
-    viewAll: "View all",
-    detail: "Action Detail",
-    detailDesc: "Detailed AI recommendation for selected action.",
-    performance: "Action Performance",
-    performanceDesc: "Your action performance summary.",
-    learning: "AI Learning & Insights",
-    learningDesc: "AI insights to improve action effectiveness.",
-    status: {
-      active: "Active",
-      inProgress: "In Progress",
-      done: "Done",
-    },
-  },
-  id: {
-    title: "Action Center",
-    desc: "Kelola tindakan dan pantau progres penyelesaian issue penting secara terstruktur.",
-    newAction: "Buat Tindakan Baru",
-    search: "Cari tindakan...",
-    filter: "Filter",
-    sort: "Sortir: Prioritas",
-    tabs: ["Semua Tindakan", "Aktif", "Dalam Progress", "Selesai", "Perlu Perhatian", "Ditunda", "Dibuat Oleh Saya"],
-    lanes: {
-      high: "Prioritas Tinggi",
-      medium: "Prioritas Menengah",
-      low: "Prioritas Rendah",
-      done: "Selesai",
-    },
-    viewAll: "Lihat semua",
-    detail: "Pratinjau Tindakan",
-    detailDesc: "Detail dan rekomendasi AI untuk tindakan terpilih.",
-    performance: "Kinerja Tindakan",
-    performanceDesc: "Ringkasan performa tindakan Anda.",
-    learning: "AI Learning & Insights",
-    learningDesc: "Insight dari AI untuk meningkatkan efektivitas tindakan.",
-    status: {
-      active: "Aktif",
-      inProgress: "Dalam Progres",
-      done: "Selesai",
-    },
-  },
-};
+function buildActionItems(records: ActionQueueRecord[]): ActionItem[] {
+  return records.map((record, index) => {
+    const severity = record.alert?.severity?.toLowerCase() ?? "medium";
+    const priority: Exclude<Priority, "done"> = severity.includes("critical") || severity.includes("high") ? "high" : index % 3 === 0 ? "low" : "medium";
+    const tone: Tone = priority === "high" ? "red" : priority === "medium" ? "amber" : "green";
+
+    return {
+      id: record.id,
+      title: record.title,
+      issue: record.alert?.title || record.cluster?.title || "Action Plan",
+      impact: record.alert?.severity || record.cluster?.sentiment || "Review",
+      response: "Live API Plan",
+      owner: "Narriv Team",
+      role: "Action Owner",
+      due: new Date(record.createdAt).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }),
+      progress: priority === "high" ? 35 : priority === "medium" ? 55 : 75,
+      priority,
+      status: priority === "high" ? "active" : "in-progress",
+      tone,
+    };
+  });
+}
+
+function hasActionPlanData(plan: ActionPlanResponse | null | undefined) {
+  return Boolean(plan && (plan.inputNarrative || plan.evidenceSummary || plan.plan?.length || plan.outputs?.length));
+}
 
 function Panel({ children, className }: { children: ReactNode; className?: string }) {
   return (
@@ -335,7 +310,7 @@ function PerformanceChart() {
   const path = (values: number[]) => values.map((value, index) => `${index === 0 ? "M" : "L"} ${x(index)} ${y(value)}`).join(" ");
 
   return (
-    <svg className="h-[190px] w-full" viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+    <svg className="chart-enter chart-line-draw h-[190px] w-full" viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
       {[0, 20, 40].map((tick) => (
         <g key={tick}>
           <line x1="34" x2={width - 12} y1={y(tick)} y2={y(tick)} stroke="#EEF1F7" />
@@ -350,26 +325,58 @@ function PerformanceChart() {
 }
 
 export default function ActionPlansPage() {
-  const language = useUiStore((state) => state.language);
-  const dict = copy[language] ?? copy.en;
-  const [filter, setFilter] = useState(dict.tabs[0]);
-  const [selectedAction, setSelectedAction] = useState(actions[0]);
+  const t = useTranslations("ActionPlans");
+  const queryClient = useQueryClient();
+  const toastHook = useToast();
+  const [filter, setFilter] = useState("Semua Tindakan");
+  const [selectedActionId, setSelectedActionId] = useState(actions[0].id);
 
-  const highActions = actions.filter((action) => action.status !== "done" && action.priority === "high");
-  const mediumActions = actions.filter((action) => action.status !== "done" && action.priority === "medium");
-  const lowActions = actions.filter((action) => action.priority === "low");
-  const doneActions = actions.filter((action) => action.status === "done" && action.priority !== "low");
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    if (type === "error") { toastHook.error(message); return; }
+    toastHook.success(message);
+  };
+
+  const feedbackMutation = useMutation({
+    mutationFn: ({ actionPlanId, action, reason }: { actionPlanId: string; action: "accepted" | "edited" | "rejected"; reason?: string }) => submitActionPlanFeedback(actionPlanId, action, reason),
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: ["action-plans-latest"] });
+      showToast(result ? "Feedback berhasil dikirim." : "Feedback belum bisa dikirim.", result ? "success" : "error");
+    },
+    onError: () => showToast("Feedback belum bisa dikirim. Coba lagi.", "error"),
+  });
+  const actionQueueQuery = useQuery({
+    queryKey: ["action-queue", { limit: 20 }],
+    queryFn: () => getActionQueue({ limit: 20 }),
+    staleTime: 30 * 1000,
+  });
+  const actionPlanQuery = useQuery({
+    queryKey: ["action-plans-latest"],
+    queryFn: getActionPlans,
+    staleTime: 30 * 1000,
+  });
+  const liveActions = actionQueueQuery.data?.data ? buildActionItems(actionQueueQuery.data.data) : [];
+  const isQueueUnavailable = actionQueueQuery.data === null;
+  const isPlanUnavailable = actionPlanQuery.data === null;
+  const actionItems = liveActions.length > 0 || actionQueueQuery.data ? liveActions : actions;
+  const selectedAction = actionItems.find((action) => action.id === selectedActionId) ?? actionItems[0] ?? actions[0];
+  const latestPlan = actionPlanQuery.data;
+  const detailSteps = hasActionPlanData(latestPlan) && latestPlan?.plan?.length ? latestPlan.plan : null;
+
+  const highActions = actionItems.filter((action) => action.status !== "done" && action.priority === "high");
+  const mediumActions = actionItems.filter((action) => action.status !== "done" && action.priority === "medium");
+  const lowActions = actionItems.filter((action) => action.priority === "low");
+  const doneActions = actionItems.filter((action) => action.status === "done" && action.priority !== "low");
 
   return (
     <div className="mx-auto flex max-w-[1600px] flex-col gap-4 pb-6 text-[#101334]">
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-[31px] font-black tracking-[-0.045em] text-[#060A23]">{dict.title}</h1>
-          <p className="mt-2 text-[14px] font-semibold text-[#68739F]">{dict.desc}</p>
+          <h1 className="text-[31px] font-black tracking-[-0.045em] text-[#060A23]">{t("title")}</h1>
+          <p className="mt-2 text-[14px] font-semibold text-[#68739F]">{t("desc")}</p>
         </div>
-        <button type="button" className="flex h-10 w-fit items-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#3345F5] px-4 text-[13px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] transition hover:brightness-105">
+        <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#3345F5] px-4 text-[13px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] transition hover:brightness-105 sm:w-fit">
           <Plus size={15} />
-          {dict.newAction}
+          {t("newAction")}
           <ChevronDown size={13} />
         </button>
       </header>
@@ -382,42 +389,51 @@ export default function ActionPlansPage() {
         <MetricCard label="Rata-rata Resolusi" value="2h 34m" helper="12% vs 7 hari lalu" icon={Clock3} tone="blue" />
       </section>
 
+      {isQueueUnavailable ? <DashboardErrorState title="Daftar tindakan live belum bisa dimuat" description="API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan tindakan contoh." onRetry={() => void actionQueueQuery.refetch()} minHeight="min-h-[150px]" /> : null}
+      {isPlanUnavailable ? <DashboardErrorState title="Detail tindakan live belum bisa dimuat" description="Panel detail tetap memakai data contoh sampai backend tersedia." onRetry={() => void actionPlanQuery.refetch()} minHeight="min-h-[150px]" /> : null}
+
       <Panel>
         <CardContent className="p-3">
           <div className="flex flex-col gap-3 border-b border-[#EEF1F7] pb-3 xl:flex-row xl:items-center xl:justify-between">
             <div className="flex flex-wrap gap-1.5">
-              {dict.tabs.map((tab) => (
+              {t.raw("tabs").map((tab: string) => (
                 <button key={tab} type="button" onClick={() => setFilter(tab)} className={cn("h-10 rounded-[8px] px-4 text-[12px] font-black transition", filter === tab ? "bg-[#EEF0FF] text-[#465FFF]" : "text-[#53608C] hover:bg-[#F8FAFF]")}>{tab}</button>
               ))}
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex w-full flex-wrap gap-3 xl:w-auto">
               <label className="flex h-10 w-full min-w-[240px] items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-[#FBFCFF] px-3 text-[#8A94B8] sm:w-[260px]">
                 <Search size={15} />
-                <input className="min-w-0 flex-1 bg-transparent text-[12px] font-semibold outline-none placeholder:text-[#8A94B8]" placeholder={dict.search} />
+                <input className="min-w-0 flex-1 bg-transparent text-[12px] font-semibold outline-none placeholder:text-[#8A94B8]" placeholder={t("search")} />
               </label>
-              <button type="button" className="flex h-10 items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334]"><Funnel size={14} />{dict.filter}</button>
-              <button type="button" className="flex h-10 items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334]">{dict.sort}<ChevronDown size={13} /></button>
+              <button type="button" className="flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] sm:flex-none"><Funnel size={14} />{t("filter")}</button>
+              <button type="button" className="flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] sm:flex-none">{t("sort")}<ChevronDown size={13} /></button>
             </div>
           </div>
 
-          <div className="mt-3 grid gap-4 xl:grid-cols-4">
-            <Lane title={dict.lanes.high} count={highActions.length} tone="red">
-              {highActions.map((action) => <ActionCard key={action.id} action={action} selected={selectedAction.id === action.id} onSelect={setSelectedAction} />)}
-              <button type="button" className="text-center text-[12px] font-black text-[#465FFF]">{dict.viewAll} ({highActions.length})</button>
-            </Lane>
-            <Lane title={dict.lanes.medium} count={mediumActions.length} tone="amber">
-              {mediumActions.map((action) => <ActionCard key={action.id} action={action} selected={selectedAction.id === action.id} onSelect={setSelectedAction} />)}
-              <button type="button" className="text-center text-[12px] font-black text-[#465FFF]">{dict.viewAll} ({mediumActions.length})</button>
-            </Lane>
-            <Lane title={dict.lanes.low} count={lowActions.length} tone="green">
-              {lowActions.map((action) => <ActionCard key={action.id} action={action} selected={selectedAction.id === action.id} onSelect={setSelectedAction} />)}
-              <button type="button" className="text-center text-[12px] font-black text-[#465FFF]">{dict.viewAll} ({lowActions.length})</button>
-            </Lane>
-            <Lane title={dict.lanes.done} count={doneActions.length} tone="slate">
-              {doneActions.slice(0, 2).map((action) => <ActionCard key={action.id} action={action} selected={selectedAction.id === action.id} onSelect={setSelectedAction} />)}
-              <button type="button" className="text-center text-[12px] font-black text-[#465FFF]">{dict.viewAll} ({doneActions.length})</button>
-            </Lane>
-          </div>
+          {actionQueueQuery.isPending ? (
+            <PanelSkeleton className="mt-3" />
+          ) : actionQueueQuery.data && liveActions.length === 0 ? (
+            <DashboardEmptyState title="Belum ada tindakan live" description="Backend berhasil dihubungi, tetapi belum ada action plan yang dibuat." icon="inbox" minHeight="min-h-[360px]" />
+          ) : (
+            <div className="mt-3 grid gap-4 xl:grid-cols-4">
+              <Lane title={t("lanes.high")} count={highActions.length} tone="red">
+                {highActions.map((action) => <ActionCard key={action.id} action={action} selected={selectedAction.id === action.id} onSelect={(item) => setSelectedActionId(item.id)} />)}
+                <button type="button" className="text-center text-[12px] font-black text-[#465FFF]">{t("viewAll")} ({highActions.length})</button>
+              </Lane>
+              <Lane title={t("lanes.medium")} count={mediumActions.length} tone="amber">
+                {mediumActions.map((action) => <ActionCard key={action.id} action={action} selected={selectedAction.id === action.id} onSelect={(item) => setSelectedActionId(item.id)} />)}
+                <button type="button" className="text-center text-[12px] font-black text-[#465FFF]">{t("viewAll")} ({mediumActions.length})</button>
+              </Lane>
+              <Lane title={t("lanes.low")} count={lowActions.length} tone="green">
+                {lowActions.map((action) => <ActionCard key={action.id} action={action} selected={selectedAction.id === action.id} onSelect={(item) => setSelectedActionId(item.id)} />)}
+                <button type="button" className="text-center text-[12px] font-black text-[#465FFF]">{t("viewAll")} ({lowActions.length})</button>
+              </Lane>
+              <Lane title={t("lanes.done")} count={doneActions.length} tone="slate">
+                {doneActions.slice(0, 2).map((action) => <ActionCard key={action.id} action={action} selected={selectedAction.id === action.id} onSelect={(item) => setSelectedActionId(item.id)} />)}
+                <button type="button" className="text-center text-[12px] font-black text-[#465FFF]">{t("viewAll")} ({doneActions.length})</button>
+              </Lane>
+            </div>
+          )}
         </CardContent>
       </Panel>
 
@@ -427,8 +443,8 @@ export default function ActionPlansPage() {
             <div className="flex items-start gap-3">
               <Sparkles size={20} className="mt-0.5 text-[#465FFF]" />
               <div>
-                <h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{dict.detail}</h2>
-                <p className="mt-1 text-[12px] font-semibold text-[#68739F]">{dict.detailDesc}</p>
+                <h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{t("detail")}</h2>
+                <p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("detailDesc")}</p>
               </div>
             </div>
             <div className="mt-5 flex flex-wrap gap-2">
@@ -437,9 +453,9 @@ export default function ActionPlansPage() {
               <span className="rounded-full bg-[#EEF1F7] px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-[#53608C]">Dibuat 23 Mei 2025</span>
             </div>
             <h3 className="mt-4 text-[18px] font-black text-[#101334]">{selectedAction.title}</h3>
-            <p className="mt-3 text-[12px] font-semibold leading-relaxed text-[#53608C]">Siapkan respons publik yang empatik dan solutif, pastikan komunikasi konsisten di semua kanal bantuan. Pantau perkembangan sentimen setelah respons dikirim.</p>
+            <p className="mt-3 text-[12px] font-semibold leading-relaxed text-[#53608C]">{latestPlan?.inputNarrative || "Siapkan respons publik yang empatik dan solutif, pastikan komunikasi konsisten di semua kanal bantuan. Pantau perkembangan sentimen setelah respons dikirim."}</p>
             <div className="mt-5 grid gap-3 sm:grid-cols-4">
-              {["Payment Delay", "Reputation Risk", "4 jam", "23 Mei 2025 18:00 WIB"].map((item, index) => (
+              {[selectedAction.issue, selectedAction.impact, latestPlan?.workflowStatus || "4 jam", selectedAction.due].map((item, index) => (
                 <div key={item} className="rounded-[10px] bg-[#FBFCFF] p-3">
                   <p className="text-[10px] font-black text-[#8A94B8]">{["Kategori", "Dampak", "SLA", "Jatuh Tempo"][index]}</p>
                   <p className="mt-1 text-[11px] font-black text-[#465FFF]">{item}</p>
@@ -449,15 +465,19 @@ export default function ActionPlansPage() {
             <div className="mt-5">
               <p className="text-[12px] font-black text-[#101334]">Rekomendasi Langkah AI</p>
               <div className="mt-2 grid gap-2">
-                {["Siapkan pernyataan resmi untuk publik", "Update FAQ terkait payment delay", "Broadcast di semua kanal sosial"].map((item, index) => (
+                {(detailSteps ?? [["Siapkan pernyataan resmi untuk publik", "PR Team"], ["Update FAQ terkait payment delay", "Customer Support"], ["Broadcast di semua kanal sosial", "Social Media Team"]]).slice(0, 3).map(([item, owner], index) => (
                   <div key={item} className="flex items-center justify-between rounded-[8px] border border-[#E8ECF5] px-3 py-2 text-[12px] font-semibold text-[#53608C]">
                     <span className="flex items-center gap-2"><CircleCheck size={16} className="text-[#10B981]" />{item}</span>
-                    <span className="text-[10px] font-black text-[#68739F]">{["PR Team", "Customer Support", "Social Media Team"][index]}</span>
+                    <span className="text-[10px] font-black text-[#68739F]">{owner || ["PR Team", "Customer Support", "Social Media Team"][index]}</span>
                   </div>
                 ))}
               </div>
             </div>
-            <button type="button" className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#F8FAFF] text-[12px] font-black text-[#465FFF]">Lihat Rencana Lengkap <ChevronRight size={14} /></button>
+            <button type="button" onClick={() => { if (latestPlan?.id) feedbackMutation.mutate({ actionPlanId: latestPlan.id, action: "accepted" }); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#F8FAFF] text-[12px] font-black text-[#465FFF] disabled:opacity-50">Lihat Rencana Lengkap <ChevronRight size={14} /></button>
+            <div className="mt-3 flex gap-2">
+              <button type="button" onClick={() => { if (latestPlan?.id) feedbackMutation.mutate({ actionPlanId: latestPlan.id, action: "accepted" }); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[#10B981]/10 text-[11px] font-black text-[#0C9B69] transition hover:bg-[#10B981]/20 disabled:opacity-50"><Check size={14} /> Setuju</button>
+              <button type="button" onClick={() => { if (latestPlan?.id) feedbackMutation.mutate({ actionPlanId: latestPlan.id, action: "rejected" }); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[#EF4444]/10 text-[11px] font-black text-[#EF4444] transition hover:bg-[#EF4444]/20 disabled:opacity-50"><X size={14} /> Tolak</button>
+            </div>
           </CardContent>
         </Panel>
 
@@ -467,8 +487,8 @@ export default function ActionPlansPage() {
               <div className="flex items-start gap-3">
                 <BarChart3 size={20} className="mt-0.5 text-[#465FFF]" />
                 <div>
-                  <h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{dict.performance}</h2>
-                  <p className="mt-1 text-[12px] font-semibold text-[#68739F]">{dict.performanceDesc}</p>
+                  <h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{t("performance")}</h2>
+                  <p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("performanceDesc")}</p>
                 </div>
               </div>
               <button type="button" className="flex h-9 items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#53608C]">7 Hari Terakhir <ChevronDown size={12} /></button>
@@ -491,8 +511,8 @@ export default function ActionPlansPage() {
             <div className="flex items-start gap-3">
               <Lightbulb size={20} className="mt-0.5 text-[#465FFF]" />
               <div>
-                <h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{dict.learning}</h2>
-                <p className="mt-1 text-[12px] font-semibold text-[#68739F]">{dict.learningDesc}</p>
+                <h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{t("learning")}</h2>
+                <p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("learningDesc")}</p>
               </div>
             </div>
             <div className="mt-5">

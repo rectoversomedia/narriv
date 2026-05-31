@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import prisma from "../../prisma.js";
+import { logStructured } from "../../lib/logger.js";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
@@ -9,24 +10,6 @@ const client = new OpenAI({
 
 const OPENAI_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 20000);
 const OPENAI_MAX_RETRIES = 1;
-
-function logStructured(level, event, payload = {}) {
-    const entry = {
-        level,
-        event,
-        module: "actions.ai",
-        timestamp: new Date().toISOString(),
-        ...payload,
-    };
-    const line = JSON.stringify(entry);
-    if (level === "error") {
-        console.error(line);
-    } else if (level === "warn") {
-        console.warn(line);
-    } else {
-        console.log(line);
-    }
-}
 
 function isAbortError(error) {
     return error?.name === "AbortError" || String(error?.message || "").toLowerCase().includes("aborted");
@@ -367,7 +350,7 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
         throw new Error(`Unknown strategy type: ${strategyType}. Must be one of: ${Object.keys(STRATEGY_PROMPTS).join(", ")}`);
     }
 
-    console.log(`[ACTION] Generating ${strategyType} plan for workspace ${workspaceId}`);
+    logStructured("info", "action_plan_generating", { strategyType, workspaceId });
 
     const scopedAlertId = alertId || null;
     if (scopedAlertId) {
@@ -410,7 +393,7 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
         }
     });
 
-    console.log(`[ACTION] Action plan saved: ${actionPlan.id}`);
+    logStructured("info", "action_plan_saved", { actionPlanId: actionPlan.id });
 
     return {
         id: actionPlan.id,

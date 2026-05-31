@@ -5,6 +5,25 @@ export const getSummary = async (req, res) => {
     try {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
         const where = { workspaceId: { in: workspaceIds } };
+        const { startDate, endDate } = req.query;
+
+        if (startDate || endDate) {
+            where.capturedAt = {};
+            if (startDate) {
+                const dateStart = new Date(startDate);
+                if (isNaN(dateStart.getTime())) {
+                    return res.status(400).json({ error: "Invalid startDate format. Use ISO-8601 or YYYY-MM-DD." });
+                }
+                where.capturedAt.gte = dateStart;
+            }
+            if (endDate) {
+                const dateEnd = new Date(endDate);
+                if (isNaN(dateEnd.getTime())) {
+                    return res.status(400).json({ error: "Invalid endDate format. Use ISO-8601 or YYYY-MM-DD." });
+                }
+                where.capturedAt.lte = dateEnd;
+            }
+        }
 
         const signals = await prisma.signal.findMany({
             where,

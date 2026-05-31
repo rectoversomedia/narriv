@@ -2,24 +2,7 @@ import { Worker } from "bullmq";
 import connection from "../lib/redis.js";
 import prisma from "../prisma.js";
 import { detectAlerts, escalateAlertsForWorkspace } from "../modules/alerts/alerts.service.js";
-
-function logStructured(level, event, payload = {}) {
-    const entry = {
-        level,
-        event,
-        worker: "alert-worker",
-        timestamp: new Date().toISOString(),
-        ...payload,
-    };
-    const line = JSON.stringify(entry);
-    if (level === "error") {
-        console.error(line);
-    } else if (level === "warn") {
-        console.warn(line);
-    } else {
-        console.log(line);
-    }
-}
+import { logStructured } from "../lib/logger.js";
 
 const alertWorker = new Worker(
     "alert-detection",

@@ -22,7 +22,7 @@ export function PlatformBarChart({ title, data, colors = DEFAULT_COLORS }: Platf
   return (
     <div className="cyber-card rounded-xl border border-slate-100 p-5 w-full h-[350px] flex flex-col justify-between">
       <h3 className="text-slate-900 font-bold tracking-tight mb-4">{title}</h3>
-      <div className="flex-1 w-full">
+      <div className="chart-enter flex-1 w-full">
         {activeData.length === 0 ? (
           <div className="text-slate-400 w-full h-full flex items-center justify-center text-sm">
             No data available
@@ -51,7 +51,7 @@ export function PlatformBarChart({ title, data, colors = DEFAULT_COLORS }: Platf
                 itemStyle={{ color: "#ffffff" }}
                 cursor={{ fill: 'rgba(255, 255, 255, 0.03)', opacity: 0.4 }}
               />
-              <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={16}>
+              <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={16} isAnimationActive animationDuration={700}>
                 {activeData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
                 ))}

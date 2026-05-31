@@ -1,21 +1,8 @@
 import crypto from "crypto";
 import prisma from "../../prisma.js";
+import { logStructured } from "../../lib/logger.js";
 
 const DEFAULT_SIGNED_URL_TTL_SECONDS = Number(process.env.REPORT_EXPORT_URL_TTL_SECONDS || 3600);
-
-function logStructured(level, event, payload = {}) {
-    const entry = {
-        level,
-        event,
-        module: "reports.export-storage",
-        timestamp: new Date().toISOString(),
-        ...payload,
-    };
-    const line = JSON.stringify(entry);
-    if (level === "error") console.error(line);
-    else if (level === "warn") console.warn(line);
-    else console.log(line);
-}
 
 function getProviderName() {
     return process.env.REPORT_EXPORT_STORAGE_PROVIDER || "database";

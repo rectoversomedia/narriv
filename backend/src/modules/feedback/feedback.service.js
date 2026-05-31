@@ -1,4 +1,5 @@
 import prisma from "../../prisma.js";
+import { logStructured } from "../../lib/logger.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FEEDBACK SERVICE
@@ -47,7 +48,7 @@ export async function submitFeedback({ workspaceId, targetType, targetId, action
                     recommendedAction: editedOutput.recommended_action || undefined
                 }
             });
-            console.log(`[FEEDBACK] Updated SignalAnalysis ${targetId} with user corrections.`);
+            logStructured("info", "feedback_signal_analysis_updated", { targetId });
         } catch (err) {
             console.warn(`[FEEDBACK] Could not update SignalAnalysis ${targetId}:`, err.message);
         }
@@ -66,7 +67,7 @@ export async function submitFeedback({ workspaceId, targetType, targetId, action
         }
     });
 
-    console.log(`[FEEDBACK] Recorded: ${action} on ${targetType}/${targetId}`);
+    logStructured("info", "feedback_recorded", { action, targetType, targetId });
     return feedback;
 }
 

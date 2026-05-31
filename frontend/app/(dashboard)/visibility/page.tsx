@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import { useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import {
   CalendarDays,
   Download,
@@ -20,6 +22,8 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { DashboardEmptyState, DashboardErrorState, MetricRowSkeleton } from "@/components/dashboard/dashboard-states";
+import { getVisibility } from "@/lib/api-service";
 import { useUiStore } from "@/store/useUiStore";
 import {
   OpenAILight,
@@ -45,133 +49,6 @@ const toneStyles: Record<Tone, ToneStyle> = {
   red: { color: "#EF4444", rgb: "239,68,68", badge: "red" },
   amber: { color: "#F59E0B", rgb: "245,158,11", badge: "amber" },
   slate: { color: "#64748B", rgb: "100,116,139", badge: "slate" },
-};
-
-const dictionary = {
-  en: {
-    breadcrumb: "Dashboard / AI Visibility",
-    title: "AI Visibility",
-    subtitle: "Monitor how your brand, topics, and competitors appear on generative AI platforms.",
-    last7Days: "7 May 2025 - 14 May 2025",
-    export: "Export",
-    metrics: {
-      totalMentions: { label: "Total AI Mentions", value: "2,451", helper: "+18.7% vs last 7 days" },
-      brandMentions: { label: "Brand Mentions", value: "1,289", helper: "+22.1% vs last 7 days" },
-      sov: { label: "Share of Voice", value: "24.3%", helper: "+4.6 p.p." },
-      avgPos: { label: "Average Position (All AI)", value: "2.8", helper: "-0.4" },
-    },
-    execSummary: {
-      title: "AI Executive Summary",
-      aiGenerated: "A.I Generated",
-      heading: "Your brand visibility increased +18.7% this week.",
-      body: "The increase is driven by AI monitoring topics, cybersecurity discussions, and recommendations of ChatGPT for enterprise monitoring tools. However, competitors are leading on the 'cloud security' keyword in Google Gemini and Perplexity.",
-      opportunity: "Top Opportunity",
-      opportunityVal: "AI monitoring & enterprise intelligence tools",
-      risk: "Top Risk",
-      riskVal: "Cloud security (competitor dominated)",
-      recActions: "AI Recommended Actions",
-      rec1: "Push thought leadership content",
-      rec2: "Optimize landing page (enterprise intel)",
-      rec3: "Increase authority in cloud security",
-      viewAll: "See all",
-    },
-    mentionsTrend: {
-      title: "AI Mentions Trend",
-      desc: "Growth in the number of mentions of your brand on AI platforms.",
-      days7: "7 Days",
-      days30: "30 Days",
-    },
-    topTopics: {
-      title: "Top Topics Mentioned by AI",
-      headers: { topic: "Topic", mentions: "Mentions", direction: "Direction", type: "Type" },
-      viewAll: "See all topics",
-    },
-    sandbox: {
-      title: "AI Search Sandbox",
-      desc: "Simulate how AI responds to queries and mentions the Narriv brand.",
-      queryPlaceholder: "Search for signals, topics, issues, or cases...",
-      simulateBtn: "Simulate",
-      responseTitle: "AI Response (ChatGPT)",
-      citations: "Key Sources (Citations)",
-      confidence: "Confidence",
-    },
-    competitorVs: {
-      title: "Visibility vs Competitors (All AI Platforms)",
-    },
-    topPlatforms: {
-      title: "Top AI Platforms",
-    },
-    competitorShare: {
-      title: "Competitor Share of Voice",
-      totalShare: "Total SOV",
-    },
-    latestMentions: {
-      title: "Latest Mention Examples",
-      viewAll: "View all",
-    }
-  },
-  id: {
-    breadcrumb: "Dashboard / AI Visibility",
-    title: "AI Visibility",
-    subtitle: "Pantau bagaimana brand, topik, dan kompetitor Anda muncul di platform generative AI.",
-    last7Days: "7 Mei 2025 - 14 Mei 2025",
-    export: "Ekspor",
-    metrics: {
-      totalMentions: { label: "Total AI Mentions", value: "2.451", helper: "+18,7% vs 7 hari terakhir" },
-      brandMentions: { label: "Brand Mentions", value: "1.289", helper: "+22,1% vs 7 hari terakhir" },
-      sov: { label: "Share of Voice", value: "24,3%", helper: "+4,6 p.p." },
-      avgPos: { label: "Rata-rata Posisi (Semua AI)", value: "2,8", helper: "-0,4" },
-    },
-    execSummary: {
-      title: "AI Executive Summary",
-      aiGenerated: "A.I Generated",
-      heading: "Visibility merek Anda meningkat +18,7% minggu ini.",
-      body: "Peningkatan dipicu oleh topik AI monitoring, diskusi cybersecurity, dan rekomendasi ChatGPT terhadap tools monitoring enterprise. Namun, kompetitor mulai unggul pada keyword \"cloud security\" di Google Gemini dan Perplexity.",
-      opportunity: "Top Opportunity",
-      opportunityVal: "AI monitoring & enterprise intelligence tools",
-      risk: "Top Risk",
-      riskVal: "Cloud security (competitor dominated)",
-      recActions: "AI Recommended Actions",
-      rec1: "Dorong konten thought leadership",
-      rec2: "Optimasi landing page (enterprise intel)",
-      rec3: "Tingkatkan authority di cloud security",
-      viewAll: "Lihat semua",
-    },
-    mentionsTrend: {
-      title: "AI Mentions Trend",
-      desc: "Perkembangan jumlah penyebutan brand Anda di platform AI.",
-      days7: "7 Hari",
-      days30: "30 Hari",
-    },
-    topTopics: {
-      title: "Top Topics Mentioned by AI",
-      headers: { topic: "Topik", mentions: "Penyebutan", direction: "Arah", type: "Tipe" },
-      viewAll: "Lihat semua topik",
-    },
-    sandbox: {
-      title: "AI Search Sandbox",
-      desc: "Simulasi bagaimana AI merespons pertanyaan tentang brand Anda.",
-      queryPlaceholder: "Cari sinyal, topik, isu, atau kasus...",
-      simulateBtn: "Simulasi",
-      responseTitle: "AI Response (ChatGPT)",
-      citations: "Key Sources (Citations)",
-      confidence: "Confidence",
-    },
-    competitorVs: {
-      title: "Visibility vs Competitors (All AI Platforms)",
-    },
-    topPlatforms: {
-      title: "Top AI Platforms",
-    },
-    competitorShare: {
-      title: "Competitor Share of Voice",
-      totalShare: "Total SOV",
-    },
-    latestMentions: {
-      title: "Latest Mention Examples",
-      viewAll: "Lihat semua",
-    }
-  }
 };
 
 function Panel({ children, className }: { children: ReactNode; className?: string }) {
@@ -213,7 +90,7 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
     })
     .join(" ");
   return (
-    <svg className="h-6 w-24 shrink-0" viewBox={`0 0 ${width} ${height}`}>
+    <svg className="chart-line-draw h-6 w-24 shrink-0" viewBox={`0 0 ${width} ${height}`}>
       <path d={path} fill="none" stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" />
     </svg>
   );
@@ -270,7 +147,7 @@ function MentionsTrendChart() {
   return (
     <div className="relative w-full overflow-x-auto">
       <div className="min-w-[500px]">
-        <svg className="w-full h-[180px]" viewBox={`0 0 ${width} ${height}`}>
+        <svg className="chart-enter chart-line-draw w-full h-[180px]" viewBox={`0 0 ${width} ${height}`}>
           {[0, 600, 1200, 1800].map((yVal) => {
             const y = getY(yVal);
             return (
@@ -344,7 +221,7 @@ function CompetitorVsChart() {
   return (
     <div className="relative w-full overflow-x-auto">
       <div className="min-w-[500px]">
-        <svg className="w-full h-[180px]" viewBox={`0 0 ${width} ${height}`}>
+        <svg className="chart-enter chart-line-draw w-full h-[180px]" viewBox={`0 0 ${width} ${height}`}>
           {[0, 20, 40].map((yVal) => {
             const y = getY(yVal);
             return (
@@ -426,7 +303,7 @@ function TopicDirection({ val }: { val: string }) {
 
 function DonutChartVisibility({ center, label }: { center: string; label: string }) {
   return (
-    <div className="relative mx-auto flex size-[150px] items-center justify-center rounded-full bg-[conic-gradient(#8B5CFF_0_24.3%,#EF4444_24.3%_55.5%,#F59E0B_55.5%_72.3%,#10B981_72.3%_86.8%,#64748B_86.8%_100%)] shadow-[0_0_20px_rgba(70,95,255,0.08)]">
+    <div className="chart-donut-enter relative mx-auto flex size-[150px] items-center justify-center rounded-full bg-[conic-gradient(#8B5CFF_0_24.3%,#EF4444_24.3%_55.5%,#F59E0B_55.5%_72.3%,#10B981_72.3%_86.8%,#64748B_86.8%_100%)] shadow-[0_0_20px_rgba(70,95,255,0.08)]">
       <div className="absolute size-[104px] rounded-full bg-white" />
       <div className="relative text-center z-10">
         <p className="text-[24px] font-black text-[#101334]">{center}</p>
@@ -436,9 +313,26 @@ function DonutChartVisibility({ center, label }: { center: string; label: string
   );
 }
 
+function asNumber(value: number | string | undefined, fallback: number) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number.parseFloat(value.replace(/[^0-9.-]/g, ""));
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return fallback;
+}
+
 export default function VisibilityPage() {
+  const t = useTranslations("Visibility");
   const language = useUiStore((state) => state.language);
-  const dict = dictionary[language] || dictionary.en;
+  const visibilityQuery = useQuery({
+    queryKey: ["visibility"],
+    queryFn: getVisibility,
+    staleTime: 30 * 1000,
+  });
+  const visibilityData = visibilityQuery.data;
+  const isLiveUnavailable = visibilityData === null;
+  const hasLiveVisibility = Boolean(visibilityData && (asNumber(visibilityData.score, 0) > 0 || (visibilityData.prompts?.length ?? 0) > 0));
 
   const [sandboxQuery, setSandboxQuery] = useState("Best AI monitoring platform for enterprise");
   const [confidence, setConfidence] = useState(82);
@@ -476,13 +370,28 @@ export default function VisibilityPage() {
     }
   };
 
-  const topTopicsData = [
+  const fallbackTopTopicsData = [
     { topic: "AI monitoring", mentions: "1.248", direction: "↑ 24,5%", type: language === "id" ? "Peluang" : "Opportunity" },
     { topic: "Service disruption", mentions: "842", direction: "↑ 18,3%", type: language === "id" ? "Peringatan" : "Alert" },
     { topic: "App update", mentions: "621", direction: "↑ 12,7%", type: language === "id" ? "Informasi" : "Informational" },
     { topic: "Cloud security", mentions: "498", direction: "↓ 16,2%", type: language === "id" ? "Risiko" : "Risk" },
     { topic: "Privacy policy", mentions: "368", direction: "↓ 6,2%", type: language === "id" ? "Netral" : "Neutral" }
   ];
+  const topTopicsData = visibilityData?.prompts?.length
+    ? visibilityData.prompts.slice(0, 5).map((prompt, index) => ({
+      topic: prompt.prompt,
+      mentions: prompt.brand || "-",
+      direction: prompt.brandTone || (index % 2 === 0 ? "↑ live" : "→ live"),
+      type: prompt.engine,
+    }))
+    : fallbackTopTopicsData;
+  const totalMentions = visibilityData?.presenceMentions ? String(visibilityData.presenceMentions) : t("metrics.totalMentions.value");
+  const brandPresence = `${asNumber(visibilityData?.presence, 24.3)}%`;
+  const competitorPresence = `${asNumber(visibilityData?.competitor, 31.2)}%`;
+  const visibilityScore = asNumber(visibilityData?.score, 2.8).toString();
+  const geoActions = visibilityData?.geoActions?.length
+    ? visibilityData.geoActions.slice(0, 3).map((action) => action.title)
+    : [t("execSummary.rec1"), t("execSummary.rec2"), t("execSummary.rec3")];
 
   const shareOfVoiceLeg = [
     { name: language === "id" ? "Narriv (Anda)" : "Narriv (You)", val: "24.3%", tone: "purple" as Tone },
@@ -497,31 +406,38 @@ export default function VisibilityPage() {
       {/* Header section */}
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#8A94B8]">{dict.breadcrumb}</p>
-          <h1 className="mt-1 text-[28px] font-black leading-none tracking-[-0.03em] text-[#101334]">{dict.title}</h1>
-          <p className="mt-2 text-[13px] font-bold text-[#53608C]">{dict.subtitle}</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#8A94B8]">{t("breadcrumb")}</p>
+          <h1 className="mt-1 text-[28px] font-black leading-none tracking-[-0.03em] text-[#101334]">{t("title")}</h1>
+          <p className="mt-2 text-[13px] font-bold text-[#53608C]">{t("subtitle")}</p>
         </div>
-        <div className="flex flex-wrap gap-2.5">
-          <button type="button" className="flex h-10 items-center gap-2 rounded-[8px] border border-[#D9DEEA] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:bg-[#F8FAFF]">
+        <div className="flex w-full flex-wrap gap-2.5 md:w-auto">
+          <button type="button" className="flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#D9DEEA] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:bg-[#F8FAFF] sm:flex-none">
             <CalendarDays size={14} className="text-[#8A94B8]" />
-            {dict.last7Days}
+            {t("last7Days")}
             <ChevronDown size={12} className="text-[#8A94B8]" />
           </button>
-          <button type="button" className="flex h-10 items-center gap-2 rounded-[8px] border border-[#D9DEEA] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:bg-[#F8FAFF]">
+          <button type="button" className="flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#D9DEEA] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:bg-[#F8FAFF] sm:flex-none">
             <Download size={14} className="text-[#8A94B8]" />
-            {dict.export}
+            {t("export")}
           </button>
         </div>
       </div>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_382px]">
         <div className="flex min-w-0 flex-col gap-4">
-          <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard label={dict.metrics.totalMentions.label} value={dict.metrics.totalMentions.value} helper={dict.metrics.totalMentions.helper} icon={MessageCircle} tone="purple" sparklineValues={[260, 330, 310, 500, 470, 520, 680]} />
-            <MetricCard label={dict.metrics.brandMentions.label} value={dict.metrics.brandMentions.value} helper={dict.metrics.brandMentions.helper} icon={Target} tone="blue" sparklineValues={[150, 180, 170, 220, 210, 240, 289]} />
-            <MetricCard label={dict.metrics.sov.label} value={dict.metrics.sov.value} helper={dict.metrics.sov.helper} icon={Shield} tone="green" sparklineValues={[22.5, 23.1, 22.8, 24.0, 23.5, 24.1, 24.3]} />
-            <MetricCard label={dict.metrics.avgPos.label} value={dict.metrics.avgPos.value} helper={dict.metrics.avgPos.helper} icon={TrendingUp} tone="amber" sparklineValues={[3.2, 3.1, 3.0, 2.9, 2.8, 2.8, 2.8]} />
-          </div>
+          {visibilityQuery.isPending ? (
+            <MetricRowSkeleton count={4} />
+          ) : (
+            <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
+              <MetricCard label={t("metrics.totalMentions.label")} value={totalMentions} helper={hasLiveVisibility ? "Live API" : t("metrics.totalMentions.helper")} icon={MessageCircle} tone="purple" sparklineValues={[260, 330, 310, 500, 470, 520, 680]} />
+              <MetricCard label={t("metrics.brandMentions.label")} value={brandPresence} helper={hasLiveVisibility ? "Brand presence" : t("metrics.brandMentions.helper")} icon={Target} tone="blue" sparklineValues={[150, 180, 170, 220, 210, 240, 289]} />
+              <MetricCard label={t("metrics.sov.label")} value={competitorPresence} helper={hasLiveVisibility ? "Competitor presence" : t("metrics.sov.helper")} icon={Shield} tone="green" sparklineValues={[22.5, 23.1, 22.8, 24.0, 23.5, 24.1, 24.3]} />
+              <MetricCard label={t("metrics.avgPos.label")} value={visibilityScore} helper={hasLiveVisibility ? "Visibility score" : t("metrics.avgPos.helper")} icon={TrendingUp} tone="amber" sparklineValues={[3.2, 3.1, 3.0, 2.9, 2.8, 2.8, 2.8]} />
+            </div>
+          )}
+
+          {isLiveUnavailable ? <DashboardErrorState title="Visibility live belum bisa dimuat" description="API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan data contoh." onRetry={() => void visibilityQuery.refetch()} minHeight="min-h-[150px]" /> : null}
+          {visibilityData && !hasLiveVisibility ? <DashboardEmptyState title="Belum ada visibility live" description="Backend berhasil dihubungi, tetapi belum ada hasil AI visibility. Data contoh tetap ditampilkan sebagai preview." icon="search" minHeight="min-h-[180px]" /> : null}
 
           <Panel className="border-[#D6DEFF] bg-gradient-to-r from-[#F6F8FF] to-[#F1F3FF]">
             <CardContent className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_230px_260px] lg:items-center">
@@ -531,13 +447,13 @@ export default function VisibilityPage() {
                 </div>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-[12px] font-black uppercase tracking-[0.06em] text-[#101334]">{dict.execSummary.title}</p>
+                    <p className="text-[12px] font-black uppercase tracking-[0.06em] text-[#101334]">{t("execSummary.title")}</p>
                     <Badge variant="purple" className="px-2 py-0.5 text-[9px] font-bold normal-case tracking-normal">
-                      {dict.execSummary.aiGenerated}
+                      {t("execSummary.aiGenerated")}
                     </Badge>
                   </div>
-                  <h2 className="mt-1.5 text-[17px] font-black tracking-[-0.02em] text-[#101334]">{dict.execSummary.heading}</h2>
-                  <p className="mt-2 max-w-[620px] text-[12px] font-semibold leading-relaxed text-[#53608C]">{dict.execSummary.body}</p>
+                  <h2 className="mt-1.5 text-[17px] font-black tracking-[-0.02em] text-[#101334]">{t("execSummary.heading")}</h2>
+                  <p className="mt-2 max-w-[620px] text-[12px] font-semibold leading-relaxed text-[#53608C]">{t("execSummary.body")}</p>
                 </div>
               </div>
 
@@ -545,23 +461,23 @@ export default function VisibilityPage() {
                 <div>
                   <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#8A94B8]">
                     <TrendingUp size={11} className="text-[#10B981]" />
-                    {dict.execSummary.opportunity}
+                    {t("execSummary.opportunity")}
                   </div>
-                  <p className="mt-1 text-[11px] font-black leading-tight text-[#101334]">{dict.execSummary.opportunityVal}</p>
+                  <p className="mt-1 text-[11px] font-black leading-tight text-[#101334]">{t("execSummary.opportunityVal")}</p>
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#8A94B8]">
                     <AlertCircle size={11} className="text-[#EF4444]" />
-                    {dict.execSummary.risk}
+                    {t("execSummary.risk")}
                   </div>
-                  <p className="mt-1 text-[11px] font-black leading-tight text-[#101334]">{dict.execSummary.riskVal}</p>
+                  <p className="mt-1 text-[11px] font-black leading-tight text-[#101334]">{t("execSummary.riskVal")}</p>
                 </div>
               </div>
 
               <div className="border-t border-[#D9DDF2] pt-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
-                <p className="text-[10px] font-black uppercase tracking-[0.04em] text-[#8A94B8]">{dict.execSummary.recActions}</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.04em] text-[#8A94B8]">{t("execSummary.recActions")}</p>
                 <div className="mt-2.5 flex flex-col gap-2">
-                  {[dict.execSummary.rec1, dict.execSummary.rec2, dict.execSummary.rec3].map((action, idx) => (
+                  {geoActions.map((action, idx) => (
                     <div key={idx} className="flex items-start gap-2 text-[11px] font-semibold text-[#53608C]">
                       <CheckCircle size={13} className="mt-0.5 shrink-0 text-[#8B5CFF]" />
                       <span>{action}</span>
@@ -569,7 +485,7 @@ export default function VisibilityPage() {
                   ))}
                 </div>
                 <button type="button" className="mt-3 flex min-h-9 w-full items-center justify-center gap-1 rounded-[8px] bg-white px-3 py-2 text-center text-[11px] font-black leading-tight text-[#8B5CFF] shadow-sm transition hover:bg-[#F8FAFF]">
-                  <span className="min-w-0 break-words">{dict.execSummary.viewAll}</span>
+                  <span className="min-w-0 break-words">{t("execSummary.viewAll")}</span>
                   <ChevronRight size={13} />
                 </button>
               </div>
@@ -582,15 +498,15 @@ export default function VisibilityPage() {
               <CardContent className="p-5">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
-                    <h3 className="text-[15px] font-black tracking-[-0.02em] text-[#101334]">{dict.mentionsTrend.title}</h3>
-                    <p className="text-[11px] font-bold text-[#8A94B8]">{dict.mentionsTrend.desc}</p>
+                    <h3 className="text-[15px] font-black tracking-[-0.02em] text-[#101334]">{t("mentionsTrend.title")}</h3>
+                    <p className="text-[11px] font-bold text-[#8A94B8]">{t("mentionsTrend.desc")}</p>
                   </div>
                   <div className="flex rounded-lg bg-[#F5F7FC] p-0.5">
                     <button type="button" className="rounded-md bg-white px-2.5 py-1 text-[10px] font-black text-[#101334] shadow-sm">
-                      {dict.mentionsTrend.days7}
+                      {t("mentionsTrend.days7")}
                     </button>
                     <button type="button" className="px-2.5 py-1 text-[10px] font-bold text-[#8A94B8] hover:text-[#101334]">
-                      {dict.mentionsTrend.days30}
+                      {t("mentionsTrend.days30")}
                     </button>
                   </div>
                 </div>
@@ -608,15 +524,15 @@ export default function VisibilityPage() {
             <Panel>
               <CardContent className="p-5 flex flex-col justify-between h-full">
                 <div>
-                  <h3 className="mb-4 text-[15px] font-black tracking-[-0.02em] text-[#101334]">{dict.topTopics.title}</h3>
+                  <h3 className="mb-4 text-[15px] font-black tracking-[-0.02em] text-[#101334]">{t("topTopics.title")}</h3>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-[11px] font-bold text-[#53608C]">
                       <thead>
                         <tr className="border-b border-[#EEF1F7] text-[10px] font-black uppercase text-[#8A94B8]">
-                          <th className="pb-2.5">{dict.topTopics.headers.topic}</th>
-                          <th className="pb-2.5 text-right">{dict.topTopics.headers.mentions}</th>
-                          <th className="pb-2.5 text-center">{dict.topTopics.headers.direction}</th>
-                          <th className="pb-2.5 text-center">{dict.topTopics.headers.type}</th>
+                          <th className="pb-2.5">{t("topTopics.headers.topic")}</th>
+                          <th className="pb-2.5 text-right">{t("topTopics.headers.mentions")}</th>
+                          <th className="pb-2.5 text-center">{t("topTopics.headers.direction")}</th>
+                          <th className="pb-2.5 text-center">{t("topTopics.headers.type")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -633,7 +549,7 @@ export default function VisibilityPage() {
                   </div>
                 </div>
                 <button type="button" className="mt-4 flex items-center justify-center gap-1 text-[11px] font-black text-[#8B5CFF] hover:underline">
-                  {dict.topTopics.viewAll}
+                  {t("topTopics.viewAll")}
                   <ChevronRight size={13} />
                 </button>
               </CardContent>
@@ -644,8 +560,8 @@ export default function VisibilityPage() {
           <div className="grid gap-4 md:grid-cols-[1.2fr_1fr]">
             <Panel>
               <CardContent className="p-5">
-                <h3 className="text-[15px] font-black tracking-[-0.02em] text-[#101334]">{dict.sandbox.title}</h3>
-                <p className="text-[11px] font-bold text-[#8A94B8] mt-1">{dict.sandbox.desc}</p>
+                <h3 className="text-[15px] font-black tracking-[-0.02em] text-[#101334]">{t("sandbox.title")}</h3>
+                <p className="text-[11px] font-bold text-[#8A94B8] mt-1">{t("sandbox.desc")}</p>
                 <div className="mt-4 flex gap-2">
                   <div className="relative flex-1">
                     <Search className="absolute left-3.5 top-3 size-4 text-[#8A94B8]" />
@@ -653,7 +569,7 @@ export default function VisibilityPage() {
                       type="text"
                       value={sandboxQuery}
                       onChange={(e) => setSandboxQuery(e.target.value)}
-                      placeholder={dict.sandbox.queryPlaceholder}
+                      placeholder={t("sandbox.queryPlaceholder")}
                       className="h-10 w-full rounded-[8px] border border-[#D9DEEA] pl-10 pr-4 text-[12px] font-semibold text-[#101334] outline-none focus:border-[#8B5CFF]"
                     />
                   </div>
@@ -662,16 +578,16 @@ export default function VisibilityPage() {
                     onClick={handleSimulate}
                     className="h-10 rounded-[8px] bg-[#8B5CFF] px-4 text-[12px] font-black text-white transition hover:bg-[#764ee6] shadow-sm"
                   >
-                    {dict.sandbox.simulateBtn}
+                    {t("sandbox.simulateBtn")}
                   </button>
                 </div>
 
                 <div className="mt-4 grid gap-4 sm:grid-cols-[1.2fr_1fr]">
                   <div className="rounded-[10px] bg-[#F6F8FF] border border-[#D9E1FC] p-4">
-                    <p className="text-[10px] font-black uppercase text-[#8A94B8] tracking-[0.04em]">{dict.sandbox.responseTitle}</p>
+                    <p className="text-[10px] font-black uppercase text-[#8A94B8] tracking-[0.04em]">{t("sandbox.responseTitle")}</p>
                     <p className="mt-2 text-[12px] font-semibold leading-relaxed text-[#53608C]">{simulatedResponse}</p>
                     <div className="mt-4 flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-[#8A94B8]">{dict.sandbox.confidence}</span>
+                      <span className="text-[10px] font-bold text-[#8A94B8]">{t("sandbox.confidence")}</span>
                       <span className="text-[11px] font-black text-[#10B981]">{confidence}%</span>
                     </div>
                     <div className="mt-1.5 h-1.5 w-full rounded-full bg-[#E5E9FC] overflow-hidden">
@@ -681,7 +597,7 @@ export default function VisibilityPage() {
 
                   <div className="flex flex-col justify-between">
                     <div>
-                      <p className="text-[10px] font-black uppercase text-[#8A94B8] tracking-[0.04em]">{dict.sandbox.citations}</p>
+                      <p className="text-[10px] font-black uppercase text-[#8A94B8] tracking-[0.04em]">{t("sandbox.citations")}</p>
                       <div className="mt-2.5 space-y-2">
                         {citations.map((cite, idx) => (
                           <a key={idx} href={cite.url} className="flex items-center justify-between gap-3 text-[11px] font-semibold text-[#53608C] hover:text-[#8B5CFF] transition pb-2 border-b border-[#F0F2F7] last:border-0 last:pb-0">
@@ -698,7 +614,7 @@ export default function VisibilityPage() {
 
             <Panel>
               <CardContent className="p-5">
-                <h3 className="mb-4 text-[15px] font-black tracking-[-0.02em] text-[#101334]">{dict.competitorVs.title}</h3>
+                <h3 className="mb-4 text-[15px] font-black tracking-[-0.02em] text-[#101334]">{t("competitorVs.title")}</h3>
                 <CompetitorVsChart />
                 <div className="mt-4 flex flex-wrap justify-center gap-4 text-[10px] font-bold text-[#53608C]">
                   <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[#8B5CFF]" />Narriv (You)</span>
@@ -716,7 +632,7 @@ export default function VisibilityPage() {
           <Panel>
             <CardContent className="p-5">
               <h3 className="mb-4 flex items-center gap-1.5 text-[15px] font-black tracking-[-0.02em] text-[#101334]">
-                {dict.topPlatforms.title}
+                {t("topPlatforms.title")}
                 <Info size={13} className="text-[#98A2B3]" />
               </h3>
               <div className="space-y-4">
@@ -747,11 +663,11 @@ export default function VisibilityPage() {
           <Panel>
             <CardContent className="p-5">
               <h3 className="mb-4 flex items-center gap-1.5 text-[15px] font-black tracking-[-0.02em] text-[#101334]">
-                {dict.competitorShare.title}
+                {t("competitorShare.title")}
                 <Info size={13} className="text-[#98A2B3]" />
               </h3>
               <div className="grid items-center gap-4 sm:grid-cols-[150px_minmax(0,1fr)] xl:grid-cols-[150px_minmax(0,1fr)]">
-                <DonutChartVisibility center="24,3%" label={dict.competitorShare.totalShare} />
+                <DonutChartVisibility center="24,3%" label={t("competitorShare.totalShare")} />
                 <div className="flex w-full min-w-0 flex-col gap-2.5 text-[11px] font-bold text-[#53608C]">
                   {shareOfVoiceLeg.map((item) => {
                     const style = toneStyles[item.tone];
@@ -775,11 +691,11 @@ export default function VisibilityPage() {
               <div>
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <h3 className="flex items-center gap-1.5 text-[15px] font-black tracking-[-0.02em] text-[#101334]">
-                    {dict.latestMentions.title}
+                    {t("latestMentions.title")}
                     <Info size={13} className="text-[#98A2B3]" />
                   </h3>
                   <button type="button" className="text-[11px] font-black text-[#8B5CFF] hover:underline">
-                    {dict.latestMentions.viewAll}
+                    {t("latestMentions.viewAll")}
                   </button>
                 </div>
                 <div className="space-y-4">

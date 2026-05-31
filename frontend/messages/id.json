@@ -1270,5 +1270,120 @@
       "settings": "Pengaturan",
       "help": "Pusat Bantuan"
     }
+  },
+  "ActionPlans": {
+    "title": "Action Center",
+    "desc": "Kelola tindakan dan pantau progres penyelesaian issue penting secara terstruktur.",
+    "newAction": "Buat Tindakan Baru",
+    "search": "Cari tindakan...",
+    "filter": "Filter",
+    "sort": "Sortir: Prioritas",
+    "tabs": ["Semua Tindakan", "Aktif", "Dalam Progress", "Selesai", "Perlu Perhatian", "Ditunda", "Dibuat Oleh Saya"],
+    "lanes": {
+      "high": "Prioritas Tinggi",
+      "medium": "Prioritas Menengah",
+      "low": "Prioritas Rendah",
+      "done": "Selesai"
+    },
+    "viewAll": "Lihat semua",
+    "detail": "Pratinjau Tindakan",
+    "detailDesc": "Detail dan rekomendasi AI untuk tindakan terpilih.",
+    "performance": "Kinerja Tindakan",
+    "performanceDesc": "Ringkasan performa tindakan Anda.",
+    "learning": "AI Learning & Insights",
+    "learningDesc": "Insight dari AI untuk meningkatkan efektivitas tindakan.",
+    "status": {
+      "active": "Aktif",
+      "inProgress": "Dalam Progres",
+      "done": "Selesai"
+    }
+  },
+  "Sources": {
+    "title": "Data Sources",
+    "desc": "Kelola dan monitor semua sumber data yang digunakan Narriv.",
+    "learnMore": "Pelajari lebih lanjut",
+    "add": "Tambah Integrasi",
+    "gridTitle": "Connector Grid",
+    "gridDesc": "Status koneksi dan performa setiap sumber data.",
+    "syncAll": "Sync Semua",
+    "allCategories": "Semua Kategori",
+    "healthTitle": "Source Health Overview",
+    "healthDesc": "Ringkasan kesehatan semua sumber.",
+    "optimal": "Sistem berjalan optimal",
+    "optimalDesc": "Semua sumber kritis dalam kondisi sehat.",
+    "activity": "Aktivitas Terbaru",
+    "activityDesc": "Log sinkronisasi dan perubahan koneksi.",
+    "viewAll": "Lihat Semua",
+    "settings": "Konfigurasi & Pengaturan Global",
+    "settingsDesc": "Pengaturan umum untuk manajemen sumber.",
+    "connect": "Hubungkan Sumber Baru",
+    "connectDesc": "Tambah sumber data baru untuk memperluas cakupan monitoring.",
+    "volume": "Volume Signals per Sumber (7 Hari Terakhir)",
+    "volumeDesc": "Perbandingan volume signal dari setiap sumber.",
+    "distribution": "Distribusi Tipe Sumber",
+    "distributionDesc": "Komposisi berdasarkan kategori sumber data.",
+    "last7": "7 Hari Terakhir"
+  },
+  "Visibility": {
+    "breadcrumb": "Dashboard / AI Visibility",
+    "title": "AI Visibility",
+    "subtitle": "Pantau bagaimana brand, topik, dan kompetitor Anda muncul di platform generative AI.",
+    "last7Days": "7 Mei 2025 - 14 Mei 2025",
+    "export": "Ekspor",
+    "metrics": {
+      "totalMentions": { "label": "Total AI Mentions", "value": "2.451", "helper": "+18,7% vs 7 hari terakhir" },
+      "brandMentions": { "label": "Brand Mentions", "value": "1.289", "helper": "+22,1% vs 7 hari terakhir" },
+      "sov": { "label": "Share of Voice", "value": "24,3%", "helper": "+4,6 p.p." },
+      "avgPos": { "label": "Rata-rata Posisi (Semua AI)", "value": "2,8", "helper": "-0,4" }
+    },
+    "execSummary": {
+      "title": "AI Executive Summary",
+      "aiGenerated": "A.I Generated",
+      "heading": "Visibility merek Anda meningkat +18,7% minggu ini.",
+      "body": "Peningkatan dipicu oleh topik AI monitoring, diskusi cybersecurity, dan rekomendasi ChatGPT terhadap tools monitoring enterprise. Namun, kompetitor mulai unggul pada keyword \"cloud security\" di Google Gemini dan Perplexity.",
+      "opportunity": "Top Opportunity",
+      "opportunityVal": "AI monitoring & enterprise intelligence tools",
+      "risk": "Top Risk",
+      "riskVal": "Cloud security (competitor dominated)",
+      "recActions": "AI Recommended Actions",
+      "rec1": "Dorong konten thought leadership",
+      "rec2": "Optimasi landing page (enterprise intel)",
+      "rec3": "Tingkatkan authority di cloud security",
+      "viewAll": "Lihat semua"
+    },
+    "mentionsTrend": {
+      "title": "AI Mentions Trend",
+      "desc": "Perkembangan jumlah penyebutan brand Anda di platform AI.",
+      "days7": "7 Hari",
+      "days30": "30 Hari"
+    },
+    "topTopics": {
+      "title": "Top Topics Mentioned by AI",
+      "headers": { "topic": "Topik", "mentions": "Penyebutan", "direction": "Arah", "type": "Tipe" },
+      "viewAll": "Lihat semua topik"
+    },
+    "sandbox": {
+      "title": "AI Search Sandbox",
+      "desc": "Simulasi bagaimana AI merespons pertanyaan tentang brand Anda.",
+      "queryPlaceholder": "Cari sinyal, topik, isu, atau kasus...",
+      "simulateBtn": "Simulasi",
+      "responseTitle": "AI Response (ChatGPT)",
+      "citations": "Key Sources (Citations)",
+      "confidence": "Confidence"
+    },
+    "competitorVs": {
+      "title": "Visibility vs Competitors (All AI Platforms)"
+    },
+    "topPlatforms": {
+      "title": "Top AI Platforms"
+    },
+    "competitorShare": {
+      "title": "Competitor Share of Voice",
+      "totalShare": "Total SOV"
+    },
+    "latestMentions": {
+      "title": "Latest Mention Examples",
+      "viewAll": "Lihat semua"
+    }
   }
 }

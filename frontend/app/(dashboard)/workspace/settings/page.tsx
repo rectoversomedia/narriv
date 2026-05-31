@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import Image from "next/image";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Building,
   Users,
@@ -23,7 +24,6 @@ import {
   Plus,
   Copy,
   Check,
-  CheckCircle2,
   Trash,
   PlusCircle,
   X,
@@ -32,7 +32,71 @@ import {
   Database,
   Cloud,
 } from "lucide-react";
+import { DashboardEmptyState, DashboardErrorState, TableSkeleton } from "@/components/dashboard/dashboard-states";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { useToast } from "@/components/ui/toast";
+import { getWorkspaceMembers, getWorkspaceSettings, updateWorkspaceSettings, createWorkspaceMember, deleteWorkspaceMember, changePassword, type UpdateWorkspaceSettingsInput, type WorkspaceMemberRecord } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
+
+type TeamMember = {
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  permission: string;
+  time: string;
+  initials: string;
+  tone: string;
+};
+
+function toWorkspaceSlug(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "workspace";
+}
+
+function roleToLabel(role: string) {
+  if (role === "owner") return "Workspace Owner";
+  if (role === "admin") return "Admin";
+  if (role === "analyst") return "Analyst";
+  return "Viewer";
+}
+
+function roleToPermission(role: string) {
+  if (role === "owner" || role === "admin") return "Full Access";
+  if (role === "analyst") return "Read & Write";
+  return "Read Only";
+}
+
+function initialsFromName(name: string) {
+  return name.split(" ").filter(Boolean).map((word) => word[0]).join("").toUpperCase().slice(0, 2) || "NA";
+}
+
+function buildMemberRows(records: WorkspaceMemberRecord[]): TeamMember[] {
+  return records.map((member) => {
+    const name = member.user?.name || member.user?.email || "Workspace Member";
+    const role = roleToLabel(member.role);
+    return {
+      name,
+      email: member.user?.email || "unknown@narriv.ai",
+      role,
+      status: "Aktif",
+      permission: roleToPermission(member.role),
+      time: "Data live",
+      initials: initialsFromName(name),
+      tone: role === "Workspace Owner" ? "purple" : role === "Admin" ? "blue" : role === "Analyst" ? "emerald" : "slate",
+    };
+  });
+}
+
+const fallbackMembers: TeamMember[] = [
+  { name: "Testing User", email: "tu@narriv.ai", role: "Workspace Owner", status: "Aktif", permission: "Full Access", time: "Aktif sekarang", initials: "TU", tone: "purple" },
+  { name: "Jane Doe", email: "jane@narriv.ai", role: "Admin", status: "Aktif", permission: "Full Access", time: "Aktif kemarin", initials: "JD", tone: "blue" },
+  { name: "John Smith", email: "john@narriv.ai", role: "Analyst", status: "Aktif", permission: "Read & Write", time: "2 jam lalu", initials: "JS", tone: "emerald" },
+  { name: "Alice Cooper", email: "alice@narriv.ai", role: "Viewer", status: "Nonaktif", permission: "Read Only", time: "1 hari lalu", initials: "AC", tone: "slate" },
+];
 
 // Custom Panel Component
 function Panel({ children, className }: { children: ReactNode; className?: string }) {
@@ -85,7 +149,7 @@ function PlanSparkline({ values, className = "h-10 w-full" }: { values: number[]
   const areaD = `${pathD} L ${width - padding} ${height} L ${padding} ${height} Z`;
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className={cn("overflow-visible", className)} preserveAspectRatio="none">
+    <svg viewBox={`0 0 ${width} ${height}`} className={cn("chart-line-draw overflow-visible", className)} preserveAspectRatio="none">
       <defs>
         <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
           <stop offset="0%" stopColor="#465FFF" stopOpacity="0.25" />
@@ -100,35 +164,109 @@ function PlanSparkline({ values, className = "h-10 w-full" }: { values: number[]
 
 // Main Page Component
 export default function SettingsPage() {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+  const workspaceSettingsQuery = useQuery({
+    queryKey: ["workspace-settings"],
+    queryFn: getWorkspaceSettings,
+    staleTime: 30 * 1000,
+  });
+  const membersQuery = useQuery({
+    queryKey: ["workspace-members"],
+    queryFn: getWorkspaceMembers,
+    staleTime: 30 * 1000,
+  });
+  const updateSettingsMutation = useMutation({
+    mutationFn: (input: UpdateWorkspaceSettingsInput) => updateWorkspaceSettings(input),
+    onSuccess: async (result) => {
+      if (!result) {
+        showToast("Pengaturan belum bisa disimpan. Coba lagi sebentar.", "error");
+        return;
+      }
+      await queryClient.invalidateQueries({ queryKey: ["workspace-settings"] });
+      setSaveSuccess(true);
+      showToast("Perubahan workspace berhasil disimpan.");
+      setTimeout(() => setSaveSuccess(false), 3000);
+    },
+    onError: () => showToast("Pengaturan belum bisa disimpan. Coba lagi sebentar.", "error"),
+  });
+
+  const inviteMemberMutation = useMutation({
+    mutationFn: (input: { email: string; name: string; role: string }) => createWorkspaceMember(input),
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: ["workspace-members"] });
+      if (result) {
+        setShowInviteModal(false);
+        setInviteEmail("");
+        setInviteName("");
+        setInviteRole("Analyst");
+        showToast("Berhasil mengundang member ke workspace.");
+      } else {
+        showToast("Gagal mengundang member. Coba lagi.", "error");
+      }
+    },
+    onError: () => showToast("Gagal mengundang member. Coba lagi.", "error"),
+  });
+
+  const deleteMemberMutation = useMutation({
+    mutationFn: (memberId: string) => deleteWorkspaceMember(memberId),
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: ["workspace-members"] });
+      if (result) {
+        showToast("Member berhasil dihapus dari workspace.");
+      } else {
+        showToast("Gagal menghapus member. Coba lagi.", "error");
+      }
+      setMemberToDelete(null);
+    },
+    onError: () => showToast("Gagal menghapus member. Coba lagi.", "error"),
+  });
+
+  const changePasswordMutation = useMutation({
+    mutationFn: (input: { currentPassword: string; newPassword: string }) => changePassword(input),
+    onSuccess: async (result) => {
+      if (result) {
+        showToast("Password berhasil diubah.");
+      } else {
+        showToast("Gagal mengubah password. Coba lagi.", "error");
+      }
+    },
+    onError: () => showToast("Gagal mengubah password. Coba lagi.", "error"),
+  });
+
   // State: Workspace Info
-  const [workspaceName, setWorkspaceName] = useState("Narriv Intelligence");
-  const [industry, setIndustry] = useState("Technology");
-  const [timezone, setTimezone] = useState("Asia/Jakarta (GMT+7)");
+  const [workspaceName, setWorkspaceName] = useState<string | null>(null);
+  const [industry, setIndustry] = useState<string | null>(null);
+  const [timezone, setTimezone] = useState<string | null>(null);
   const [language, setLanguage] = useState("Bahasa Indonesia");
-  const [workspaceUrl, setWorkspaceUrl] = useState("narriv-intelligence");
+  const [workspaceUrl, setWorkspaceUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [workspaceLogo, setWorkspaceLogo] = useState("/narriv-logo.svg");
-  const [isSavingInfo, setIsSavingInfo] = useState(false);
+  const isSavingInfo = updateSettingsMutation.isPending;
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   // State: Team Members
-  const [members, setMembers] = useState([
-    { name: "Testing User", email: "tu@narriv.ai", role: "Workspace Owner", status: "Aktif", permission: "Full Access", time: "Aktif sekarang", initials: "TU", tone: "purple" },
-    { name: "Jane Doe", email: "jane@narriv.ai", role: "Admin", status: "Aktif", permission: "Full Access", time: "Aktif kemarin", initials: "JD", tone: "blue" },
-    { name: "John Smith", email: "john@narriv.ai", role: "Analyst", status: "Aktif", permission: "Read & Write", time: "2 jam lalu", initials: "JS", tone: "emerald" },
-    { name: "Alice Cooper", email: "alice@narriv.ai", role: "Viewer", status: "Nonaktif", permission: "Read Only", time: "1 hari lalu", initials: "AC", tone: "slate" },
-  ]);
+  const [memberOverrides, setMemberOverrides] = useState<TeamMember[] | null>(null);
 
   // Modal: Invite Member
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteName, setInviteName] = useState("");
   const [inviteRole, setInviteRole] = useState("Analyst");
+  const [inviteErrors, setInviteErrors] = useState<{ name?: string; email?: string }>({});
+
+  // State: Change Password
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordErrors, setPasswordErrors] = useState<{ current?: string; newPass?: string }>({});
+
+  // State: Workspace form validation
+  const [workspaceErrors, setWorkspaceErrors] = useState<{ name?: string }>({});
 
   // State: Notifications
-  const [notifEmail, setNotifEmail] = useState(true);
+  const [notifEmail, setNotifEmail] = useState<boolean | null>(null);
   const [notifSlack, setNotifSlack] = useState(true);
-  const [notifWhatsapp, setNotifWhatsapp] = useState(false);
+  const [notifWhatsapp, setNotifWhatsapp] = useState<boolean | null>(null);
   const [notifDaily, setNotifDaily] = useState(true);
   const [notifCritical, setNotifCritical] = useState(false);
 
@@ -154,22 +292,42 @@ export default function SettingsPage() {
   // Confirmation Modal State (Danger Zone)
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState<"pause" | "reset" | "delete" | null>(null);
-  const [toastMessage, setToastMessage] = useState("");
+  const [memberToDelete, setMemberToDelete] = useState<TeamMember | null>(null);
+  const liveMembers = membersQuery.data ? buildMemberRows(membersQuery.data) : null;
+  const members = memberOverrides ?? liveMembers ?? fallbackMembers;
+  const workspaceNameValue = workspaceName ?? workspaceSettingsQuery.data?.brandName ?? "Narriv Intelligence";
+  const industryValue = industry ?? workspaceSettingsQuery.data?.industry ?? "Technology";
+  const timezoneValue = timezone ?? workspaceSettingsQuery.data?.timezone ?? "Asia/Jakarta (GMT+7)";
+  const workspaceUrlValue = workspaceUrl ?? toWorkspaceSlug(workspaceNameValue);
+  const notifEmailValue = notifEmail ?? Boolean(workspaceSettingsQuery.data?.notificationEmail ?? true);
+  const notifWhatsappValue = notifWhatsapp ?? Boolean(workspaceSettingsQuery.data?.whatsappPIC);
 
   const handleCopyUrl = () => {
-    navigator.clipboard.writeText(`narriv.ai/workspace/${workspaceUrl}`);
+    navigator.clipboard.writeText(`narriv.ai/workspace/${workspaceUrlValue}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSaveWorkspaceInfo = (e: React.FormEvent) => {
+  const handleSaveWorkspaceInfo = (e: FormEvent) => {
     e.preventDefault();
-    setIsSavingInfo(true);
-    setTimeout(() => {
-      setIsSavingInfo(false);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-    }, 1200);
+    const errors: { name?: string } = {};
+
+    if (!workspaceNameValue.trim()) {
+      errors.name = "Nama workspace wajib diisi.";
+    } else if (workspaceNameValue.trim().length < 3) {
+      errors.name = "Nama workspace minimal 3 karakter.";
+    }
+
+    setWorkspaceErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    updateSettingsMutation.mutate({
+      brandName: workspaceNameValue.trim(),
+      industry: industryValue,
+      timezone: timezoneValue,
+      notificationEmail: notifEmailValue ? "enabled" : null,
+      whatsappPIC: notifWhatsappValue ? "enabled" : null,
+    });
   };
 
   const handleLogoUpload = () => {
@@ -177,32 +335,41 @@ export default function SettingsPage() {
     showToast("Unggah logo berhasil disimulasikan.");
   };
 
-  const handleInviteSubmit = (e: React.FormEvent) => {
+  const handleInviteSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (!inviteEmail || !inviteName) return;
+    const errors: { name?: string; email?: string } = {};
 
-    const newMember = {
-      name: inviteName,
-      email: inviteEmail,
-      role: inviteRole,
-      status: "Aktif",
-      permission: inviteRole === "Admin" ? "Full Access" : inviteRole === "Analyst" ? "Read & Write" : "Read Only",
-      time: "Baru ditambahkan",
-      initials: inviteName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2),
-      tone: inviteRole === "Admin" ? "blue" : inviteRole === "Analyst" ? "emerald" : "slate"
-    };
+    if (!inviteName.trim()) {
+      errors.name = "Nama wajib diisi.";
+    } else if (inviteName.trim().length < 2) {
+      errors.name = "Nama minimal 2 karakter.";
+    }
 
-    setMembers([...members, newMember]);
-    setShowInviteModal(false);
-    setInviteEmail("");
-    setInviteName("");
-    setInviteRole("Analyst");
-    showToast(`Berhasil mengundang ${inviteName} ke workspace.`);
+    if (!inviteEmail.trim()) {
+      errors.email = "Email wajib diisi.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteEmail.trim())) {
+      errors.email = "Format email tidak valid.";
+    }
+
+    setInviteErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    const roleMap: Record<string, string> = { "Admin": "admin", "Analyst": "analyst", "Viewer": "viewer" };
+    inviteMemberMutation.mutate({ email: inviteEmail.trim(), name: inviteName.trim(), role: roleMap[inviteRole] || "viewer" });
   };
 
-  const showToast = (message: string) => {
-    setToastMessage(message);
-    setTimeout(() => setToastMessage(""), 4000);
+  const showToast = (message: string, tone: "success" | "error" | "info" = "success") => {
+    if (tone === "error") {
+      toast.error(message);
+      return;
+    }
+
+    if (tone === "info") {
+      toast.info(message);
+      return;
+    }
+
+    toast.success(message);
   };
 
   const triggerConfirmAction = (action: "pause" | "reset" | "delete") => {
@@ -222,6 +389,36 @@ export default function SettingsPage() {
     setConfirmAction(null);
   };
 
+  const executeDeleteMember = () => {
+    if (!memberToDelete) return;
+
+    const liveMember = membersQuery.data?.find((m) => {
+      const name = m.user?.name || m.user?.email || "";
+      return name === memberToDelete.name || m.user?.email === memberToDelete.email;
+    });
+
+    if (liveMember) {
+      deleteMemberMutation.mutate(liveMember.id);
+    } else {
+      const updated = members.filter((member) => member.email !== memberToDelete.email);
+      setMemberOverrides(updated);
+      showToast(`${memberToDelete.name} dihapus dari workspace.`);
+      setMemberToDelete(null);
+    }
+  };
+
+  const confirmDescription = (() => {
+    if (confirmAction === "pause") {
+      return "Apakah Anda yakin ingin menonaktifkan workspace ini sementara? Pengumpulan sinyal baru, analisis sentimen otomatis, dan notifikasi akan dihentikan.";
+    }
+
+    if (confirmAction === "reset") {
+      return "Apakah Anda yakin ingin membersihkan cache lokal? Semua sinyal akan diunduh ulang dari platform monitoring asal. Proses ini memakan waktu beberapa menit.";
+    }
+
+    return "Apakah Anda yakin ingin menghapus workspace secara permanen? Seluruh riwayat analisis, integrasi, data pengguna, dan visualisasi akan dihapus selamanya. Tindakan ini tidak dapat dibatalkan.";
+  })();
+
   // Helper styles for roles
   const roleStyles: Record<string, string> = {
     "Workspace Owner": "bg-purple-50 text-purple-700 border-purple-100",
@@ -232,14 +429,6 @@ export default function SettingsPage() {
 
   return (
     <div className="mx-auto flex max-w-[1600px] flex-col gap-6 pb-12 text-[#101334]">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-[12px] border border-[#CDEEDD] bg-[#F1FCF6] px-4 py-3 text-[12px] font-black text-[#10B981] shadow-lg animate-in fade-in slide-in-from-bottom-5">
-          <CheckCircle2 size={16} />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
       {/* Header */}
       <div>
         <h1 className="text-[31px] font-black tracking-[-0.045em] text-[#060A23]">Settings</h1>
@@ -247,6 +436,14 @@ export default function SettingsPage() {
           Kelola pengaturan workspace, integrasi, dan preferensi sistem Anda.
         </p>
       </div>
+
+      {workspaceSettingsQuery.data === null ? (
+        <DashboardErrorState title="Pengaturan live belum bisa dimuat" description="API client sudah mencoba token refresh. Form tetap bisa digunakan dengan nilai sementara." onRetry={() => void workspaceSettingsQuery.refetch()} minHeight="min-h-[150px]" />
+      ) : null}
+
+      {membersQuery.data === null ? (
+        <DashboardErrorState title="Daftar member live belum bisa dimuat" description="API client sudah mencoba token refresh. Untuk sementara, tabel menampilkan member contoh." onRetry={() => void membersQuery.refetch()} minHeight="min-h-[150px]" />
+      ) : null}
 
       {/* Row 1: Workspace & User Management */}
       <div className="grid gap-6 xl:grid-cols-[1.1fr_1.45fr]">
@@ -287,10 +484,11 @@ export default function SettingsPage() {
                   </label>
                   <input
                     type="text"
-                    value={workspaceName}
-                    onChange={(e) => setWorkspaceName(e.target.value)}
-                    className="h-10 w-full rounded-lg border border-[#DDE3EF] px-3 text-[12px] font-bold text-[#101334] focus:border-[#465FFF] focus:outline-none focus:ring-2 focus:ring-[#465FFF]/15"
+                    value={workspaceNameValue}
+                    onChange={(e) => { setWorkspaceName(e.target.value); setWorkspaceErrors({}); }}
+                    className={cn("h-10 w-full rounded-lg border px-3 text-[12px] font-bold text-[#101334] focus:border-[#465FFF] focus:outline-none focus:ring-2 focus:ring-[#465FFF]/15", workspaceErrors.name ? "border-[#EF4444]" : "border-[#DDE3EF]")}
                   />
+                  {workspaceErrors.name && <p className="mt-1 text-[9px] font-bold text-[#EF4444]">{workspaceErrors.name}</p>}
                 </div>
 
                 <div>
@@ -299,7 +497,7 @@ export default function SettingsPage() {
                   </label>
                   <div className="relative">
                     <select
-                      value={industry}
+                      value={industryValue}
                       onChange={(e) => setIndustry(e.target.value)}
                       className="h-10 w-full appearance-none rounded-lg border border-[#DDE3EF] bg-white px-3 pr-8 text-[12px] font-bold text-[#101334] focus:border-[#465FFF] focus:outline-none"
                     >
@@ -315,6 +513,58 @@ export default function SettingsPage() {
               </div>
             </div>
 
+            <div className="border-t border-slate-100 pt-4">
+              <p className="mb-3 text-[11px] font-black text-[#101334]">Ubah Password</p>
+              <div className="space-y-2.5">
+                <div>
+                  <input
+                    type="password"
+                    placeholder="Password saat ini"
+                    value={currentPassword}
+                    onChange={(e) => { setCurrentPassword(e.target.value); setPasswordErrors((prev) => ({ ...prev, current: undefined })); }}
+                    className={cn("h-9 w-full rounded-md border bg-slate-50 px-3 text-[10px] font-semibold text-slate-700 outline-none focus:border-[#465FFF]", passwordErrors.current ? "border-[#EF4444]" : "border-[#DDE3EF]")}
+                  />
+                  {passwordErrors.current && <p className="mt-1 text-[9px] font-bold text-[#EF4444]">{passwordErrors.current}</p>}
+                </div>
+                <div>
+                  <input
+                    type="password"
+                    placeholder="Password baru (min 10 karakter, huruf besar, angka, simbol)"
+                    value={newPassword}
+                    onChange={(e) => { setNewPassword(e.target.value); setPasswordErrors((prev) => ({ ...prev, newPass: undefined })); }}
+                    className={cn("h-9 w-full rounded-md border bg-slate-50 px-3 text-[10px] font-semibold text-slate-700 outline-none focus:border-[#465FFF]", passwordErrors.newPass ? "border-[#EF4444]" : "border-[#DDE3EF]")}
+                  />
+                  {passwordErrors.newPass && <p className="mt-1 text-[9px] font-bold text-[#EF4444]">{passwordErrors.newPass}</p>}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const errors: { current?: string; newPass?: string } = {};
+                    if (!currentPassword) errors.current = "Password saat ini wajib diisi.";
+                    if (!newPassword) {
+                      errors.newPass = "Password baru wajib diisi.";
+                    } else if (newPassword.length < 10) {
+                      errors.newPass = "Password minimal 10 karakter.";
+                    } else if (!/[A-Z]/.test(newPassword)) {
+                      errors.newPass = "Password harus mengandung huruf besar.";
+                    } else if (!/[0-9]/.test(newPassword)) {
+                      errors.newPass = "Password harus mengandung angka.";
+                    } else if (!/[^A-Za-z0-9]/.test(newPassword)) {
+                      errors.newPass = "Password harus mengandung simbol.";
+                    }
+                    setPasswordErrors(errors);
+                    if (Object.keys(errors).length > 0) return;
+                    changePasswordMutation.mutate({ currentPassword, newPassword });
+                  }}
+                  disabled={changePasswordMutation.isPending}
+                  className="flex h-9 w-full items-center justify-center gap-2 rounded-md bg-[#465FFF] text-[11px] font-black text-white transition hover:bg-[#3B4FE0] disabled:opacity-50"
+                >
+                  <Lock size={13} />
+                  {changePasswordMutation.isPending ? "Menyimpan..." : "Ubah Password"}
+                </button>
+              </div>
+            </div>
+
             <div className="grid gap-3.5 sm:grid-cols-2">
               <div>
                 <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#68739F]">
@@ -322,7 +572,7 @@ export default function SettingsPage() {
                 </label>
                 <div className="relative">
                   <select
-                    value={timezone}
+                    value={timezoneValue}
                     onChange={(e) => setTimezone(e.target.value)}
                     className="h-10 w-full appearance-none rounded-lg border border-[#DDE3EF] bg-white px-3 pr-8 text-[12px] font-bold text-[#101334] focus:border-[#465FFF] focus:outline-none"
                   >
@@ -364,7 +614,7 @@ export default function SettingsPage() {
                 </span>
                 <input
                   type="text"
-                  value={workspaceUrl}
+                  value={workspaceUrlValue}
                   onChange={(e) => setWorkspaceUrl(e.target.value)}
                   className="h-10 flex-1 px-3 pr-10 text-[12px] font-bold text-[#101334] bg-white rounded-r-lg focus:outline-none"
                 />
@@ -417,7 +667,7 @@ export default function SettingsPage() {
             <div className="flex flex-wrap gap-2.5">
               <button
                 type="button"
-                onClick={() => showToast("Role & Permissions manager akan terbuka.")}
+                onClick={() => showToast("Role & Permissions manager akan terbuka.", "info")}
                 className="flex h-9 items-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-slate-700 shadow-xs transition hover:bg-slate-50"
               >
                 Kelola Role & Permission
@@ -433,6 +683,11 @@ export default function SettingsPage() {
           </div>
 
           <div className="flex-1 overflow-x-auto rounded-[12px] border border-[#EDF1F7] bg-white">
+            {membersQuery.isPending ? (
+              <TableSkeleton rows={4} columns={6} className="border-0 shadow-none" />
+            ) : membersQuery.data && members.length === 0 ? (
+              <DashboardEmptyState title="Belum ada member live" description="Workspace ini belum memiliki member yang dikembalikan oleh backend." icon="inbox" minHeight="min-h-[280px]" />
+            ) : (
             <table className="w-full min-w-[580px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-[#E6EAF2] bg-[#FBFCFF] text-[10px] font-black uppercase tracking-[0.1em] text-[#68739F]">
@@ -486,7 +741,7 @@ export default function SettingsPage() {
                             const action = member.status === "Aktif" ? "Nonaktif" : "Aktif";
                             const updated = [...members];
                             updated[idx].status = action;
-                            setMembers(updated);
+                            setMemberOverrides(updated);
                             showToast(`Status ${member.name} diubah menjadi ${action}.`);
                           }}
                           className="rounded-md border border-[#DDE3EF] bg-white p-1 text-slate-400 hover:text-[#465FFF] hover:bg-[#EEF2FF]"
@@ -494,15 +749,11 @@ export default function SettingsPage() {
                         >
                           <UserCheck size={14} />
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const updated = members.filter(m => m.email !== member.email);
-                            setMembers(updated);
-                            showToast(`${member.name} dihapus dari workspace.`);
-                          }}
-                          className="ml-1 rounded-md border border-[#DDE3EF] bg-white p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50"
-                          title="Hapus anggota"
+                          <button
+                            type="button"
+                            onClick={() => setMemberToDelete(member)}
+                            className="ml-1 rounded-md border border-[#DDE3EF] bg-white p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                            title="Hapus anggota"
                         >
                           <Trash size={14} />
                         </button>
@@ -512,6 +763,7 @@ export default function SettingsPage() {
                 ))}
               </tbody>
             </table>
+            )}
           </div>
         </Panel>
       </div>
@@ -537,7 +789,7 @@ export default function SettingsPage() {
                 <span className="block text-[11px] font-black text-[#101334]">Email Alerts</span>
                 <span className="block text-[9.5px] text-slate-400 font-semibold">Laporan alert ke email</span>
               </div>
-              <Switch checked={notifEmail} onChange={setNotifEmail} />
+              <Switch checked={notifEmailValue} onChange={setNotifEmail} />
             </div>
 
             <div className="flex items-center justify-between">
@@ -553,7 +805,7 @@ export default function SettingsPage() {
                 <span className="block text-[11px] font-black text-[#101334]">WhatsApp Alerts</span>
                 <span className="block text-[9.5px] text-slate-400 font-semibold">Alert real-time nomor terdaftar</span>
               </div>
-              <Switch checked={notifWhatsapp} onChange={setNotifWhatsapp} />
+              <Switch checked={notifWhatsappValue} onChange={setNotifWhatsapp} />
             </div>
 
             <div className="flex items-center justify-between">
@@ -582,7 +834,7 @@ export default function SettingsPage() {
               </div>
               <button
                 type="button"
-                onClick={() => showToast("Quiet Hours editor akan terbuka.")}
+                onClick={() => showToast("Quiet Hours editor akan terbuka.", "info")}
                 className="text-[10px] font-black text-[#465FFF] hover:underline"
               >
                 22:00 - 07:00 &gt;
@@ -695,7 +947,7 @@ export default function SettingsPage() {
                 <button
                   key={index}
                   type="button"
-                  onClick={() => showToast(`Manajemen ${item.label} akan terbuka.`)}
+                  onClick={() => showToast(`Manajemen ${item.label} akan terbuka.`, "info")}
                   className="flex w-full items-center justify-between rounded-lg p-2.5 text-left transition hover:bg-slate-50"
                 >
                   <div className="flex items-center gap-3">
@@ -785,7 +1037,7 @@ export default function SettingsPage() {
 
             <button
               type="button"
-              onClick={() => showToast("Log audit keamanan sedang diekspor.")}
+              onClick={() => showToast("Log audit keamanan sedang diekspor.", "info")}
               className="flex w-full items-center justify-between border-t border-slate-100 pt-3.5 text-left"
             >
               <div className="flex items-center gap-2">
@@ -847,7 +1099,7 @@ export default function SettingsPage() {
                 <p className="mt-1 text-[11px] font-semibold text-[#68739F]">Paket aktif profesional skala besar.</p>
                 <button
                   type="button"
-                  onClick={() => showToast("Panel langganan akan terbuka.")}
+                  onClick={() => showToast("Panel langganan akan terbuka.", "info")}
                   className="mt-4 w-full rounded-lg border border-indigo-200 bg-white py-2 text-center text-[11px] font-black text-[#465FFF] shadow-sm transition hover:bg-indigo-50/30"
                 >
                   Kelola Paket
@@ -1075,9 +1327,10 @@ export default function SettingsPage() {
                   required
                   placeholder="Contoh: Aldi Pratama"
                   value={inviteName}
-                  onChange={(e) => setInviteName(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-[#DDE3EF] px-3 text-[12px] font-bold text-[#101334] focus:border-[#465FFF] focus:outline-none focus:ring-2 focus:ring-[#465FFF]/15"
+                  onChange={(e) => { setInviteName(e.target.value); setInviteErrors((prev) => ({ ...prev, name: undefined })); }}
+                  className={cn("h-10 w-full rounded-lg border px-3 text-[12px] font-bold text-[#101334] focus:border-[#465FFF] focus:outline-none focus:ring-2 focus:ring-[#465FFF]/15", inviteErrors.name ? "border-[#EF4444]" : "border-[#DDE3EF]")}
                 />
+                {inviteErrors.name && <p className="mt-1 text-[9px] font-bold text-[#EF4444]">{inviteErrors.name}</p>}
               </div>
 
               <div>
@@ -1089,9 +1342,10 @@ export default function SettingsPage() {
                   required
                   placeholder="Contoh: aldi@narriv.ai"
                   value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  className="h-10 w-full rounded-lg border border-[#DDE3EF] px-3 text-[12px] font-bold text-[#101334] focus:border-[#465FFF] focus:outline-none focus:ring-2 focus:ring-[#465FFF]/15"
+                  onChange={(e) => { setInviteEmail(e.target.value); setInviteErrors((prev) => ({ ...prev, email: undefined })); }}
+                  className={cn("h-10 w-full rounded-lg border px-3 text-[12px] font-bold text-[#101334] focus:border-[#465FFF] focus:outline-none focus:ring-2 focus:ring-[#465FFF]/15", inviteErrors.email ? "border-[#EF4444]" : "border-[#DDE3EF]")}
                 />
+                {inviteErrors.email && <p className="mt-1 text-[9px] font-bold text-[#EF4444]">{inviteErrors.email}</p>}
               </div>
 
               <div>
@@ -1132,50 +1386,28 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* MODAL: Confirmation Danger Zone */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl border border-[#F8CACA] bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
-                <Trash2 size={18} />
-              </span>
-              <div>
-                <h3 className="text-base font-black text-rose-600">Konfirmasi Aksi</h3>
-                <p className="text-[10px] font-semibold text-slate-400">
-                  Aksi berbahaya ini membutuhkan otorisasi Anda.
-                </p>
-              </div>
-            </div>
+      <ConfirmationDialog
+        open={showConfirmModal}
+        title="Konfirmasi Aksi"
+        description={confirmDescription}
+        confirmLabel="Ya, lanjutkan"
+        onConfirm={executeConfirmAction}
+        onOpenChange={(open) => {
+          setShowConfirmModal(open);
+          if (!open) setConfirmAction(null);
+        }}
+      />
 
-            <p className="mt-4 text-xs font-semibold leading-relaxed text-[#101334]">
-              {confirmAction === "pause" &&
-                "Apakah Anda yakin ingin menonaktifkan workspace ini sementara? Pengumpulan sinyal baru, analisis sentimen otomatis, dan notifikasi akan dihentikan."}
-              {confirmAction === "reset" &&
-                "Apakah Anda yakin ingin membersihkan cache lokal? Semua sinyal akan diunduh ulang dari platform monitoring asal. Proses ini memakan waktu beberapa menit."}
-              {confirmAction === "delete" &&
-                "Apakah Anda yakin ingin menghapus workspace secara permanen? Seluruh riwayat analisis, integrasi, data pengguna, dan visualisasi akan dihapus selamanya. Tindakan ini TIDAK DAPAT dibatalkan."}
-            </p>
-
-            <div className="mt-6 flex gap-2.5">
-              <button
-                type="button"
-                onClick={() => setShowConfirmModal(false)}
-                className="flex h-10 flex-1 items-center justify-center rounded-lg border border-slate-200 bg-white text-[12px] font-black text-slate-700 hover:bg-slate-50"
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                onClick={executeConfirmAction}
-                className="flex h-10 flex-1 items-center justify-center rounded-lg bg-rose-600 text-[12px] font-black text-white hover:bg-rose-700"
-              >
-                Ya, Lanjutkan
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmationDialog
+        open={Boolean(memberToDelete)}
+        title="Hapus Member"
+        description={memberToDelete ? `Hapus ${memberToDelete.name} dari workspace? Akses pengguna ini ke dashboard dan data workspace akan dicabut.` : ""}
+        confirmLabel="Ya, hapus"
+        onConfirm={executeDeleteMember}
+        onOpenChange={(open) => {
+          if (!open) setMemberToDelete(null);
+        }}
+      />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import { ReactQueryProvider } from "@/components/providers/react-query-provider";
 import { IntlProvider } from "@/components/providers/intl-provider";
+import { ToastProvider } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
 const poppins = Poppins({
@@ -14,10 +15,25 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Narriv | Narrative Intelligence",
-  description: "Narrative intelligence command center preview.",
+  title: {
+    default: "Narriv | Narrative Intelligence",
+    template: "%s | Narriv",
+  },
+  description: "Narriv membantu tim memantau sinyal publik, memahami narasi, dan menentukan aksi yang tepat.",
+  applicationName: "Narriv",
   icons: {
     icon: "/narriv-logo.svg",
+  },
+  openGraph: {
+    title: "Narriv | Narrative Intelligence",
+    description: "Pantau sinyal publik, alert, laporan, dan rencana aksi dari satu command center.",
+    siteName: "Narriv",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Narriv | Narrative Intelligence",
+    description: "Pantau sinyal publik, alert, laporan, dan rencana aksi dari satu command center.",
   },
 };
 
@@ -43,7 +59,9 @@ export default function RootLayout({
       </head>
       <body className="min-h-full bg-[var(--app-bg)] text-[var(--text)]" suppressHydrationWarning>
         <IntlProvider>
-          <ReactQueryProvider>{children}</ReactQueryProvider>
+          <ReactQueryProvider>
+            <ToastProvider>{children}</ToastProvider>
+          </ReactQueryProvider>
         </IntlProvider>
       </body>
     </html>

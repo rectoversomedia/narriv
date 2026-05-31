@@ -1270,5 +1270,120 @@
       "settings": "Settings",
       "help": "Help Center"
     }
+  },
+  "ActionPlans": {
+    "title": "Action Center",
+    "desc": "Manage actions and monitor progress on important issues in a structured way.",
+    "newAction": "Create New Action",
+    "search": "Search actions...",
+    "filter": "Filter",
+    "sort": "Sort: Priority",
+    "tabs": ["All Actions", "Active", "In Progress", "Completed", "Needs Attention", "Delayed", "Created By Me"],
+    "lanes": {
+      "high": "High Priority",
+      "medium": "Medium Priority",
+      "low": "Low Priority",
+      "done": "Completed"
+    },
+    "viewAll": "View all",
+    "detail": "Action Detail",
+    "detailDesc": "Detailed AI recommendation for selected action.",
+    "performance": "Action Performance",
+    "performanceDesc": "Your action performance summary.",
+    "learning": "AI Learning & Insights",
+    "learningDesc": "AI insights to improve action effectiveness.",
+    "status": {
+      "active": "Active",
+      "inProgress": "In Progress",
+      "done": "Done"
+    }
+  },
+  "Sources": {
+    "title": "Data Sources",
+    "desc": "Manage and monitor every data source used by Narriv.",
+    "learnMore": "Learn more",
+    "add": "Add Integration",
+    "gridTitle": "Connector Grid",
+    "gridDesc": "Connection status and performance for every data source.",
+    "syncAll": "Sync All",
+    "allCategories": "All Categories",
+    "healthTitle": "Source Health Overview",
+    "healthDesc": "Summary of all source health.",
+    "optimal": "System is running optimally",
+    "optimalDesc": "All critical sources are in healthy condition.",
+    "activity": "Recent Activity",
+    "activityDesc": "Sync logs and connection changes.",
+    "viewAll": "View All",
+    "settings": "Global Configuration & Settings",
+    "settingsDesc": "General source management settings.",
+    "connect": "Connect New Source",
+    "connectDesc": "Add a new data source to expand monitoring coverage.",
+    "volume": "Signal Volume by Source (Last 7 Days)",
+    "volumeDesc": "Comparison of signal volume from every source.",
+    "distribution": "Source Type Distribution",
+    "distributionDesc": "Composition by source category.",
+    "last7": "Last 7 Days"
+  },
+  "Visibility": {
+    "breadcrumb": "Dashboard / AI Visibility",
+    "title": "AI Visibility",
+    "subtitle": "Monitor how your brand, topics, and competitors appear on generative AI platforms.",
+    "last7Days": "7 May 2025 - 14 May 2025",
+    "export": "Export",
+    "metrics": {
+      "totalMentions": { "label": "Total AI Mentions", "value": "2,451", "helper": "+18.7% vs last 7 days" },
+      "brandMentions": { "label": "Brand Mentions", "value": "1,289", "helper": "+22.1% vs last 7 days" },
+      "sov": { "label": "Share of Voice", "value": "24.3%", "helper": "+4.6 p.p." },
+      "avgPos": { "label": "Average Position (All AI)", "value": "2.8", "helper": "-0.4" }
+    },
+    "execSummary": {
+      "title": "AI Executive Summary",
+      "aiGenerated": "A.I Generated",
+      "heading": "Your brand visibility increased +18.7% this week.",
+      "body": "The increase is driven by AI monitoring topics, cybersecurity discussions, and recommendations of ChatGPT for enterprise monitoring tools. However, competitors are leading on the 'cloud security' keyword in Google Gemini and Perplexity.",
+      "opportunity": "Top Opportunity",
+      "opportunityVal": "AI monitoring & enterprise intelligence tools",
+      "risk": "Top Risk",
+      "riskVal": "Cloud security (competitor dominated)",
+      "recActions": "AI Recommended Actions",
+      "rec1": "Push thought leadership content",
+      "rec2": "Optimize landing page (enterprise intel)",
+      "rec3": "Increase authority in cloud security",
+      "viewAll": "See all"
+    },
+    "mentionsTrend": {
+      "title": "AI Mentions Trend",
+      "desc": "Growth in the number of mentions of your brand on AI platforms.",
+      "days7": "7 Days",
+      "days30": "30 Days"
+    },
+    "topTopics": {
+      "title": "Top Topics Mentioned by AI",
+      "headers": { "topic": "Topic", "mentions": "Mentions", "direction": "Direction", "type": "Type" },
+      "viewAll": "See all topics"
+    },
+    "sandbox": {
+      "title": "AI Search Sandbox",
+      "desc": "Simulate how AI responds to queries and mentions the Narriv brand.",
+      "queryPlaceholder": "Search for signals, topics, issues, or cases...",
+      "simulateBtn": "Simulate",
+      "responseTitle": "AI Response (ChatGPT)",
+      "citations": "Key Sources (Citations)",
+      "confidence": "Confidence"
+    },
+    "competitorVs": {
+      "title": "Visibility vs Competitors (All AI Platforms)"
+    },
+    "topPlatforms": {
+      "title": "Top AI Platforms"
+    },
+    "competitorShare": {
+      "title": "Competitor Share of Voice",
+      "totalShare": "Total SOV"
+    },
+    "latestMentions": {
+      "title": "Latest Mention Examples",
+      "viewAll": "View all"
+    }
   }
 }

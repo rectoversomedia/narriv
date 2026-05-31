@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useState, type ReactNode } from "react";
+import { useDeferredValue, useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
   ArrowRight,
@@ -27,6 +28,8 @@ import {
   TikTokDark,
 } from "@ridemountainpig/svgl-react";
 import { cn } from "@/lib/utils";
+import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton, formatPaginationSummary } from "@/components/dashboard/dashboard-states";
+import { getDateRangeOptions, getSignals, type DateRangeKey, type PaginationInfo, type Signal } from "@/lib/api-service";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Severity = "CRITICAL" | "HIGH" | "MEDIUM";
@@ -52,6 +55,13 @@ type SignalRow = {
   timeAgo: string;
   trend: number[];
 };
+
+const signalApiLimit = 20;
+const timeRangeOptions: Array<{ label: string; value: DateRangeKey }> = [
+  { label: "24 Jam", value: "24h" },
+  { label: "7 Hari", value: "7d" },
+  { label: "30 Hari", value: "30d" },
+];
 
 const aiAgentImage = "/mainapp/signals-ai-agent.png";
 
@@ -188,6 +198,66 @@ const sourceDistribution = [
 
 const timeline = [310, 420, 380, 460, 590, 520, 450, 620, 840, 1024, 890, 720, 650, 560, 910, 820, 740, 790];
 
+function compactTime(value: string | null | undefined) {
+  if (!value) return "-";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "-";
+  return `${String(parsed.getHours()).padStart(2, "0")}:${String(parsed.getMinutes()).padStart(2, "0")}`;
+}
+
+function stableTrend(seed: string) {
+  const base = seed.split("").reduce((total, char) => total + char.charCodeAt(0), 0) || 41;
+  return Array.from({ length: 8 }, (_, index) => 8 + ((base + index * 9) % 34));
+}
+
+function sourceFromPlatform(platform: string | null): SourceKey {
+  const value = platform?.toLowerCase() ?? "";
+  if (value.includes("tiktok")) return "tiktok";
+  if (value.includes("instagram")) return "instagram";
+  if (value.includes("facebook")) return "facebook";
+  if (value.includes("play") || value.includes("android")) return "playstore";
+  if (value.includes("app") || value.includes("ios")) return "appstore";
+  if (value.includes("ticket") || value.includes("support")) return "ticket";
+  return "x";
+}
+
+function sentimentFromApi(sentiment: string | null): Sentiment {
+  const value = sentiment?.toLowerCase() ?? "";
+  if (value.includes("positive")) return "POSITIVE";
+  if (value.includes("mixed") || value.includes("neutral")) return "MIXED";
+  return "NEGATIVE";
+}
+
+function buildApiSignalRows(apiSignals: Signal[]): SignalRow[] {
+  return apiSignals.map((signal, index) => {
+    const sentiment = sentimentFromApi(signal.sentiment);
+    const source = sourceFromPlatform(signal.platform);
+    const severity = sentiment === "NEGATIVE" && index < 2 ? (index === 0 ? "CRITICAL" : "HIGH") : "MEDIUM";
+    const severityTone = severity === "CRITICAL" ? "red" : severity === "HIGH" ? "amber" : sentiment === "POSITIVE" ? "green" : "purple";
+    const title = signal.title || signal.content.slice(0, 72) || "Untitled signal";
+
+    return {
+      id: signal.id,
+      title,
+      severity,
+      severityTone,
+      desc: signal.content || "Tidak ada ringkasan konten.",
+      tags: [signal.platform || "Unknown Source", sentiment === "NEGATIVE" ? "Needs Review" : "Monitoring"],
+      sourceType: signal.platform || "Live Source",
+      sources: [source],
+      sourceCount: 0,
+      sentiment,
+      velocity: "Live",
+      velocityPeriod: "from API",
+      mentions: "1",
+      confidence: "-",
+      time: compactTime(signal.publishedAt || signal.capturedAt),
+      timeAgo: "Data live",
+      trend: stableTrend(signal.id),
+    };
+  });
+}
+
 function Panel({ children, className }: { children: ReactNode; className?: string }) {
   return <section className={cn("rounded-[14px] border border-[#DDE3EF] bg-white shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)}>{children}</section>;
 }
@@ -212,7 +282,7 @@ function Sparkline({ values, tone, id, className = "h-8 w-[88px]" }: { values: n
   const areaPath = `${path} L ${width - 4} ${height} L 4 ${height} Z`;
 
   return (
-    <svg className={cn("overflow-visible", className)} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+    <svg className={cn("chart-line-draw overflow-visible", className)} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
       <defs>
         <linearGradient id={id} x1="0" x2="0" y1="0" y2="1">
           <stop offset="0%" stopColor={style.color} stopOpacity="0.22" />
@@ -308,7 +378,7 @@ function SourceIconList({ row }: { row: SignalRow }) {
   );
 }
 
-function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, className }: { activeFilter: string; setActiveFilter: (value: string) => void; query: string; setQuery: (value: string) => void; rows: SignalRow[]; className?: string }) {
+function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, footerText, timeRange, setTimeRange, pagination, onPageChange, isFetching, className }: { activeFilter: string; setActiveFilter: (value: string) => void; query: string; setQuery: (value: string) => void; rows: SignalRow[]; footerText: string; timeRange: DateRangeKey; setTimeRange: (value: DateRangeKey) => void; pagination?: PaginationInfo | null; onPageChange: (page: number) => void; isFetching?: boolean; className?: string }) {
   const tabs = ["Semua", "Negatif", "Positif", "Campuran", "Kritis"];
 
   return (
@@ -320,6 +390,18 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, cl
           ))}
         </div>
         <div className="flex flex-wrap gap-2">
+          <div className="flex rounded-[8px] border border-[#DDE3EF] bg-white p-0.5">
+            {timeRangeOptions.map((range) => (
+              <button
+                key={range.value}
+                type="button"
+                onClick={() => setTimeRange(range.value)}
+                className={cn("h-8 rounded-[6px] px-2.5 text-[10px] font-black transition", timeRange === range.value ? "bg-[#465FFF] text-white" : "text-[#31406B] hover:bg-[#F8FAFF]")}
+              >
+                {range.label}
+              </button>
+            ))}
+          </div>
           <label className="relative block w-full sm:w-[220px]">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#8B95B8]" />
             <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder="Search signal..." className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] pl-9 pr-3 text-[11px] font-bold text-[#101334] outline-none transition placeholder:text-[#8B95B8] focus:border-[#465FFF] focus:bg-white" />
@@ -364,8 +446,8 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, cl
           </table>
         </div>
         <div className="flex flex-col items-center justify-between gap-3 border-t border-[#EDF1F7] px-4 py-3 sm:flex-row">
-          <p className="text-[11px] font-bold text-[#68739F]">Menampilkan 1-4 dari 24 sinyal</p>
-          <button type="button" className="inline-flex h-8 items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-5 text-[11px] font-black text-[#31406B]">Load More<ChevronDown size={13} /></button>
+          <p className="text-[11px] font-bold text-[#68739F]">{footerText}</p>
+          <DashboardPagination pagination={pagination} onPageChange={onPageChange} disabled={isFetching} />
         </div>
       </Panel>
     </div>
@@ -382,10 +464,10 @@ function FollowUpPanel() {
           const style = toneStyles[item.tone];
           const Icon = item.tone === "green" ? Star : Zap;
           return (
-            <div key={item.title} className={cn("grid grid-cols-[36px_1fr_auto] gap-3 rounded-[12px] border p-3", item.tone === "red" ? "border-[#F8CACA] bg-[#FFF5F5]" : item.tone === "amber" ? "border-[#FFE8C2] bg-[#FFF9F0]" : "border-[#CDEEDD] bg-[#F1FCF6]")}>
+            <div key={item.title} className={cn("grid grid-cols-[36px_minmax(0,1fr)] gap-3 rounded-[12px] border p-3 sm:grid-cols-[36px_minmax(0,1fr)_auto]", item.tone === "red" ? "border-[#F8CACA] bg-[#FFF5F5]" : item.tone === "amber" ? "border-[#FFE8C2] bg-[#FFF9F0]" : "border-[#CDEEDD] bg-[#F1FCF6]")}>
               <span className={cn("flex h-8 w-8 items-center justify-center rounded-full", style.soft, style.text)}><Icon size={15} fill={item.tone === "green" ? style.color : "none"} /></span>
               <span className="min-w-0"><span className="block truncate text-[12px] font-black text-[#101334]">{item.title}</span><span className="mt-1 block text-[10px] font-bold text-[#58648C]">{item.meta}</span></span>
-              <span className="text-right"><span className={cn("rounded-full px-2 py-0.5 text-[9px] font-black", style.soft, style.text)}>{item.badge}</span><span className="mt-2 block text-[10px] font-bold text-[#31406B]">{item.time}</span></span>
+              <span className="col-start-2 text-left sm:col-start-auto sm:text-right"><span className={cn("rounded-full px-2 py-0.5 text-[9px] font-black", style.soft, style.text)}>{item.badge}</span><span className="mt-2 block text-[10px] font-bold text-[#31406B]">{item.time}</span></span>
             </div>
           );
         })}
@@ -405,10 +487,10 @@ function RecommendationPanel() {
           const style = toneStyles[item.tone];
           const Icon = item.icon;
           return (
-            <div key={item.title} className="grid grid-cols-[32px_1fr_auto] gap-3 rounded-[11px] border border-[#EDF1F7] bg-[#FBFCFF] p-3">
+            <div key={item.title} className="grid grid-cols-[32px_minmax(0,1fr)] gap-3 rounded-[11px] border border-[#EDF1F7] bg-[#FBFCFF] p-3 sm:grid-cols-[32px_minmax(0,1fr)_auto]">
               <span className={cn("flex h-8 w-8 items-center justify-center rounded-[9px]", style.soft, style.text)}><Icon size={15} /></span>
               <span className="min-w-0"><span className="block truncate text-[11.5px] font-black text-[#101334]">{item.title}</span><span className="mt-1 block text-[10px] font-bold text-[#68739F]">{item.desc}</span></span>
-              <span className={cn("h-fit rounded-full px-2 py-1 text-[8.5px] font-black", item.tone === "red" || item.tone === "purple" ? "bg-[#EF4444]/10 text-[#EF4444]" : item.tone === "blue" ? "bg-[#F59E0B]/12 text-[#D97706]" : "bg-[#10B981]/10 text-[#0C9B69]")}>{item.badge}</span>
+              <span className={cn("col-start-2 h-fit w-fit rounded-full px-2 py-1 text-[8.5px] font-black sm:col-start-auto", item.tone === "red" || item.tone === "purple" ? "bg-[#EF4444]/10 text-[#EF4444]" : item.tone === "blue" ? "bg-[#F59E0B]/12 text-[#D97706]" : "bg-[#10B981]/10 text-[#0C9B69]")}>{item.badge}</span>
             </div>
           );
         })}
@@ -423,7 +505,7 @@ function SourceDonut() {
     <Panel className="p-4">
       <div className="flex items-start justify-between gap-3"><div><h3 className="text-[15px] font-black text-[#101334]">Sumber Signal</h3><p className="mt-1 text-[11px] font-bold text-[#68739F]">Distribusi berdasarkan sumber data.</p></div><button type="button" className="inline-flex h-8 shrink-0 whitespace-nowrap items-center gap-1.5 rounded-[8px] border border-[#DDE3EF] px-2.5 text-[9px] font-black text-[#31406B]">24 Jam Terakhir <ChevronDown size={12} /></button></div>
       <div className="mt-5 grid gap-5 sm:grid-cols-[136px_1fr] md:grid-cols-1 xl:grid-cols-[136px_1fr]">
-        <div className="relative mx-auto flex h-[136px] w-[136px] items-center justify-center rounded-full bg-[conic-gradient(#465FFF_0_48%,#EF3F6B_48%_70%,#10B981_70%_84%,#8B5CFF_84%_94%,#94A3B8_94%_100%)]"><span className="absolute h-[88px] w-[88px] rounded-full bg-white" /><span className="relative text-center"><b className="block text-[22px] font-black text-[#101334]">2.842</b><span className="text-[10px] font-bold text-[#68739F]">Total Signals</span></span></div>
+        <div className="chart-donut-enter relative mx-auto flex h-[136px] w-[136px] items-center justify-center rounded-full bg-[conic-gradient(#465FFF_0_48%,#EF3F6B_48%_70%,#10B981_70%_84%,#8B5CFF_84%_94%,#94A3B8_94%_100%)]"><span className="absolute h-[88px] w-[88px] rounded-full bg-white" /><span className="relative text-center"><b className="block text-[22px] font-black text-[#101334]">2.842</b><span className="text-[10px] font-bold text-[#68739F]">Total Signals</span></span></div>
         <div className="space-y-2.5 self-center">{sourceDistribution.map((item) => <div key={item.name} className="flex items-center justify-between gap-3 text-[11px] font-bold"><span className="flex items-center gap-2 text-[#31406B]"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />{item.name}</span><span className="text-[#68739F]">{item.value}</span></div>)}</div>
       </div>
     </Panel>
@@ -438,7 +520,7 @@ function TimelineChart() {
       <h3 className="text-[15px] font-black text-[#101334]">Timeline Signal <span className="text-[11px] font-bold text-[#68739F]">(24 Jam Terakhir)</span></h3>
       <p className="mt-1 text-[11px] font-bold text-[#68739F]">Volume sinyal per jam.</p>
       <div className="relative mt-5 h-[170px] overflow-hidden rounded-[12px] bg-linear-to-b from-white to-[#F8FAFF]">
-        <svg className="h-full w-full" viewBox="0 0 520 178" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="signals-timeline" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#465FFF" stopOpacity="0.22" /><stop offset="100%" stopColor="#465FFF" stopOpacity="0" /></linearGradient></defs>{[34, 70, 106, 142].map((y) => <line key={y} x1="8" x2="512" y1={y} y2={y} stroke="#EDF1F7" strokeWidth="1" />)}<path d={area} fill="url(#signals-timeline)" /><path d={path} fill="none" stroke="#465FFF" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" vectorEffect="non-scaling-stroke" /></svg>
+        <svg className="chart-enter chart-line-draw h-full w-full" viewBox="0 0 520 178" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="signals-timeline" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#465FFF" stopOpacity="0.22" /><stop offset="100%" stopColor="#465FFF" stopOpacity="0" /></linearGradient></defs>{[34, 70, 106, 142].map((y) => <line key={y} x1="8" x2="512" y1={y} y2={y} stroke="#EDF1F7" strokeWidth="1" />)}<path d={area} fill="url(#signals-timeline)" /><path d={path} fill="none" stroke="#465FFF" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" vectorEffect="non-scaling-stroke" /></svg>
         <div className="absolute left-[48%] top-1 flex -translate-x-1/2 flex-col items-center"><span className="rounded-[8px] bg-[#101334] px-3 py-2 text-center shadow-lg"><b className="block text-[9px] font-black text-white">12:00</b><span className="text-[10px] font-black text-white">1.024 sinyal</span></span><span className="h-12 border-l border-dashed border-[#8B95B8]" /><span className="h-3 w-3 rounded-full border-2 border-white bg-[#465FFF] ring-4 ring-[#465FFF]/15" /></div>
         <div className="absolute inset-x-3 bottom-1 flex justify-between text-[10px] font-bold text-[#68739F]"><span>00:00</span><span>04:00</span><span>08:00</span><span>12:00</span><span>16:00</span><span>20:00</span><span>24:00</span></div>
       </div>
@@ -455,7 +537,7 @@ function InvestigationQueue() {
   return (
     <Panel className="p-4">
       <div className="flex items-start justify-between gap-3"><div><h3 className="text-[15px] font-black text-[#101334]">Queue Investigasi</h3><p className="mt-1 text-[11px] font-bold text-[#68739F]">Sinyal yang sedang dalam proses.</p></div><button type="button" className="text-[11px] font-black text-[#465FFF]">Lihat semua</button></div>
-      <div className="mt-4 space-y-3">{items.map((item) => { const style = toneStyles[item.tone]; return <div key={item.title} className="grid grid-cols-[34px_1fr_auto] gap-3 rounded-[11px] border border-[#EDF1F7] bg-[#FBFCFF] p-3"><span className={cn("flex h-8 w-8 items-center justify-center rounded-[9px]", style.soft, style.text)}><Zap size={15} /></span><span className="min-w-0"><span className="block truncate text-[12px] font-black text-[#101334]">{item.title}</span><span className="mt-1 block text-[10px] font-bold text-[#68739F]">{item.meta}</span></span><span className={cn("h-fit rounded-full px-2 py-1 text-[9px] font-black", item.badge === "Investigating" ? "bg-[#465FFF]/10 text-[#465FFF]" : "bg-[#F59E0B]/12 text-[#D97706]")}>{item.badge}</span></div>; })}</div>
+      <div className="mt-4 space-y-3">{items.map((item) => { const style = toneStyles[item.tone]; return <div key={item.title} className="grid grid-cols-[34px_minmax(0,1fr)] gap-3 rounded-[11px] border border-[#EDF1F7] bg-[#FBFCFF] p-3 sm:grid-cols-[34px_minmax(0,1fr)_auto]"><span className={cn("flex h-8 w-8 items-center justify-center rounded-[9px]", style.soft, style.text)}><Zap size={15} /></span><span className="min-w-0"><span className="block truncate text-[12px] font-black text-[#101334]">{item.title}</span><span className="mt-1 block text-[10px] font-bold text-[#68739F]">{item.meta}</span></span><span className={cn("col-start-2 h-fit w-fit rounded-full px-2 py-1 text-[9px] font-black sm:col-start-auto", item.badge === "Investigating" ? "bg-[#465FFF]/10 text-[#465FFF]" : "bg-[#F59E0B]/12 text-[#D97706]")}>{item.badge}</span></div>; })}</div>
     </Panel>
   );
 }
@@ -463,8 +545,31 @@ function InvestigationQueue() {
 export default function SignalsPage() {
   const [activeFilter, setActiveFilter] = useState("Semua");
   const [query, setQuery] = useState("");
+  const [timeRange, setTimeRange] = useState<DateRangeKey>("24h");
+  const [page, setPage] = useState(1);
+  const deferredQuery = useDeferredValue(query);
+  const dateRange = getDateRangeOptions(timeRange);
+  const signalsQuery = useQuery({
+    queryKey: ["signals", { keyword: deferredQuery, page, timeRange }],
+    queryFn: () => getSignals({ page, limit: signalApiLimit, keyword: deferredQuery.trim() || undefined, ...dateRange }),
+    staleTime: 30 * 1000,
+  });
 
-  const rows = signalRows.filter((row) => {
+  const handleQueryChange = (value: string) => {
+    setQuery(value);
+    setPage(1);
+  };
+
+  const handleTimeRangeChange = (value: DateRangeKey) => {
+    setTimeRange(value);
+    setPage(1);
+  };
+
+  const liveRows = signalsQuery.data?.data ? buildApiSignalRows(signalsQuery.data.data) : [];
+  const isLiveUnavailable = signalsQuery.data === null;
+  const sourceRows = liveRows.length > 0 || signalsQuery.data ? liveRows : signalRows;
+
+  const rows = sourceRows.filter((row) => {
     const matchesQuery = query.trim() === "" || row.title.toLowerCase().includes(query.toLowerCase()) || row.desc.toLowerCase().includes(query.toLowerCase());
     if (!matchesQuery) return false;
     if (activeFilter === "Negatif") return row.sentiment === "NEGATIVE";
@@ -473,18 +578,32 @@ export default function SignalsPage() {
     if (activeFilter === "Kritis") return row.severity === "CRITICAL";
     return true;
   });
+  const footerText = signalsQuery.data?.pagination
+    ? formatPaginationSummary(signalsQuery.data.pagination, "sinyal live")
+    : isLiveUnavailable
+      ? "Data live belum bisa dimuat. Menampilkan data contoh."
+      : "Menampilkan 1-4 dari 24 sinyal";
 
   return (
     <div className="mx-auto flex max-w-[1600px] flex-col gap-4 pb-6 text-[#101334]">
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div><h1 className="text-[31px] font-black tracking-[-0.045em] text-[#060A23]">Signals</h1><p className="mt-2 text-[14px] font-semibold text-[#68739F]">Track important conversations and narrative signals from every source.</p></div>
-        <button type="button" className="flex h-10 w-fit items-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)]"><Flag size={15} />Create Investigation</button>
+        <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] sm:w-fit"><Flag size={15} />Create Investigation</button>
       </header>
 
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_336px]">
         <div className="flex min-w-0 flex-col gap-4">
           <SummaryPanel />
-          <SignalsTable activeFilter={activeFilter} setActiveFilter={setActiveFilter} query={query} setQuery={setQuery} rows={rows} className="flex-1" />
+          {signalsQuery.isPending ? (
+            <TableSkeleton rows={6} columns={8} className="xl:min-h-[610px]" />
+          ) : signalsQuery.data && liveRows.length === 0 ? (
+            <DashboardEmptyState title="Belum ada signal live" description="Sumber data sudah terhubung, tetapi belum ada signal yang cocok dengan filter saat ini." icon="search" minHeight="min-h-[420px]" />
+          ) : (
+            <>
+              {isLiveUnavailable ? <DashboardErrorState title="Data live belum bisa dimuat" description="Refresh token tetap dicoba lewat API client. Untuk sementara, halaman menampilkan data contoh." onRetry={() => void signalsQuery.refetch()} minHeight="min-h-[150px]" /> : null}
+              <SignalsTable activeFilter={activeFilter} setActiveFilter={setActiveFilter} query={query} setQuery={handleQueryChange} rows={rows} footerText={footerText} timeRange={timeRange} setTimeRange={handleTimeRangeChange} pagination={signalsQuery.data?.pagination} onPageChange={setPage} isFetching={signalsQuery.isFetching} className="flex-1" />
+            </>
+          )}
         </div>
         <div className="flex flex-col gap-4">
           <FollowUpPanel />

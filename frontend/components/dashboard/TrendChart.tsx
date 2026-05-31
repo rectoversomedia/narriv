@@ -25,7 +25,7 @@ export function TrendChart({ data }: TrendChartProps) {
   return (
     <div className="cyber-card rounded-xl border border-slate-100 p-5 w-full h-[350px] flex flex-col justify-between">
       <h3 className="text-slate-900 font-bold tracking-tight mb-4">Signal Volume Trends</h3>
-      <div className="w-full h-[260px] flex-1">
+      <div className="chart-enter w-full h-[260px] flex-1">
         {data.length === 0 ? (
           <div className="text-slate-400 w-full h-full flex items-center justify-center text-sm">
             No data available
@@ -65,6 +65,8 @@ export function TrendChart({ data }: TrendChartProps) {
                 strokeWidth={3}
                 dot={{ r: 4, fill: "#465FFF", strokeWidth: 0 }}
                 activeDot={{ r: 6, fill: "#8B5CFF", strokeWidth: 0 }}
+                isAnimationActive
+                animationDuration={900}
               />
             </LineChart>
           </ResponsiveContainer>

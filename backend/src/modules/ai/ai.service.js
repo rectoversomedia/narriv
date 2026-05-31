@@ -224,7 +224,7 @@ export const analyzeSignal = async (title, content) => {
     ];
 
     // ── Attempt 1 ──────────────────────────────────────────────────────────
-    console.log(`[AI] analyzeSignal attempt 1 — title: "${title || "(none)"}"`);
+    logStructured("info", "ai_analyze_signal_started", { title: title || "(none)" });
     const rawContent = await callOpenAI(messages);
     const attempt1 = tryParseJSON(rawContent);
 
@@ -249,7 +249,7 @@ Please return ONLY a valid JSON object with all required fields. No markdown. No
             }
         ];
 
-        console.log(`[AI] analyzeSignal attempt 2 (retry)...`);
+        logStructured("info", "ai_analyze_signal_retry");
         const rawRetry = await callOpenAI(correctionMessages);
         const attempt2 = tryParseJSON(rawRetry);
 
@@ -300,7 +300,7 @@ export const enhanceAlert = async (alertData, signalsContext) => {
     ];
 
     try {
-        console.log(`[AI] enhanceAlert running for alert: "${alertData.title}"`);
+        logStructured("info", "ai_enhance_alert_started", { alertTitle: alertData.title });
         const rawContent = await callOpenAI(messages);
         const parsed = tryParseJSON(rawContent);
 
@@ -358,7 +358,7 @@ export const analyzeCluster = async (signalsContext) => {
     ];
 
     try {
-        console.log(`[AI] analyzeCluster running...`);
+        logStructured("info", "ai_analyze_cluster_started");
         const rawContent = await callOpenAI(messages);
         const parsed = tryParseJSON(rawContent);
 

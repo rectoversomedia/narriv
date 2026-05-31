@@ -1,26 +1,240 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, ChevronDown, RefreshCcw, Settings, Zap } from "lucide-react";
+import dynamic from "next/dynamic";
+import { ArrowRight, BarChart3, Bell, CheckCircle2, ChevronDown, Database, FileText, Headphones, RefreshCcw, Send, Settings, X, Zap } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppCard, IconBubble, MetricTile, SectionHeader } from "@/components/dashboard/dashboard-kit";
-import { ActivityAreaChart, DonutChart, MiniSparkline, WorldActivityMap } from "@/components/dashboard/charts";
 import { CardContent } from "@/components/ui/card";
-import { activitySeries, alerts, dashboardMetrics, miniTopics, quickActions, sources, systemStatus, text, topTopics } from "@/lib/mock-data";
+import { activitySeries, alerts, dashboardMetrics, miniTopics, quickActions, sources, systemStatus, text, topTopics, type Tone } from "@/lib/mock-data";
 import { useUiStore } from "@/store/useUiStore";
+
+import { useQuery } from "@tanstack/react-query";
+import { getDashboardSummary, getDateRangeOptions, type DateRangeKey } from "@/lib/api-service";
+import { DashboardErrorState, MetricRowSkeleton } from "@/components/dashboard/dashboard-states";
+import { Skeleton } from "@/components/ui/Skeleton";
+
+type SeriesPoint = {
+  label: string;
+  value: number;
+};
+
+type SentimentDatum = {
+  name: string;
+  value: number;
+  tone: Tone;
+};
+
+const ActivityAreaChart = dynamic<{ data: SeriesPoint[] }>(
+  () => import("@/components/dashboard/charts").then((mod) => mod.ActivityAreaChart),
+  { ssr: false, loading: () => <ChartPlaceholder className="h-[214px]" /> }
+);
+
+const DonutChart = dynamic<{ data: SentimentDatum[]; center: string; label: string }>(
+  () => import("@/components/dashboard/charts").then((mod) => mod.DonutChart),
+  { ssr: false, loading: () => <ChartPlaceholder className="mx-auto h-[188px] w-[188px] rounded-full" /> }
+);
+
+const MiniSparkline = dynamic<{ tone?: Tone }>(
+  () => import("@/components/dashboard/charts").then((mod) => mod.MiniSparkline),
+  { ssr: false, loading: () => <Skeleton className="h-7 w-full" /> }
+);
+
+const WorldActivityMap = dynamic(
+  () => import("@/components/dashboard/world-activity-map").then((mod) => mod.WorldActivityMap),
+  { ssr: false, loading: () => <ChartPlaceholder className="h-[300px] rounded-[10px]" /> }
+);
+
+const timeRangeOptions: Array<{ label: string; value: DateRangeKey }> = [
+  { label: "24 Jam Terakhir", value: "24h" },
+  { label: "7 Hari", value: "7d" },
+  { label: "30 Hari", value: "30d" },
+];
+
+function ChartPlaceholder({ className }: { className: string }) {
+  return (
+    <div className={`flex w-full items-center justify-center border border-slate-100 bg-slate-50/70 ${className}`} aria-label="Loading chart">
+      <Skeleton className="h-3/4 w-4/5" />
+    </div>
+  );
+}
+
+type QuickActionKey = "newAlert" | "report" | "analyze" | "sources" | "settings" | "help";
+
+const quickActionContent: Record<QuickActionKey, { title: string; description: string; icon: typeof Bell; href?: string; items?: Array<{ label: string; desc: string }> }> = {
+  newAlert: {
+    title: "Buat Alert Baru",
+    description: "Buat alert manual untuk memantau isu spesifik yang belum terdeteksi otomatis.",
+    icon: Bell,
+    items: [
+      { label: "Monitor Competitor", desc: "Pantau aktivitas dan sentimen kompetitor secara real-time." },
+      { label: "Track Campaign", desc: "Lacak performa kampanye marketing di semua kanal." },
+      { label: "Watch Issue", desc: "Awasi isu spesifik yang perlu perhatian segera." },
+    ],
+  },
+  report: {
+    title: "Buat Laporan Baru",
+    description: "Generate laporan analisis sentimen dan visibilitas AI secara otomatis.",
+    icon: FileText,
+    items: [
+      { label: "Executive Summary", desc: "Laporan ringkas untuk stakeholder senior." },
+      { label: "Weekly Brief", desc: "Ringkasan mingguan所有的 performa brand." },
+      { label: "Crisis Report", desc: "Laporan mendalam untuk situasi krisis." },
+    ],
+  },
+  analyze: {
+    title: "Analisis Data",
+    description: "Jalankan analisis mendalam pada sinyal dan narasi yang terkumpul.",
+    icon: BarChart3,
+    items: [
+      { label: "Sentiment Analysis", desc: "Analisis sentimen komprehensif dari semua sumber." },
+      { label: "Trend Detection", desc: "Deteksi tren dan pola yang muncul." },
+      { label: "Competitor Benchmark", desc: "Bandingkan performa dengan kompetitor." },
+    ],
+  },
+  sources: {
+    title: "Kelola Sumber Data",
+    description: "Akses dan konfigurasi sumber data yang terhubung ke platform.",
+    icon: Database,
+    href: "/workspace/sources",
+  },
+  settings: {
+    title: "Pengaturan Workspace",
+    description: "Kelola pengaturan workspace, integrasi, dan preferensi sistem.",
+    icon: Settings,
+    href: "/workspace/settings",
+  },
+  help: {
+    title: "Bantuan & Dukungan",
+    description: "Dapatkan bantuan dari tim support atau akses dokumentasi.",
+    icon: Headphones,
+    items: [
+      { label: "Documentation", desc: "Akses panduan lengkap penggunaan platform." },
+      { label: "Contact Support", desc: "Hubungi tim support untuk bantuan teknis." },
+      { label: "Video Tutorials", desc: "Tonton tutorial video langkah demi langkah." },
+    ],
+  },
+};
+
+function QuickActionDrawer({ actionKey, onClose }: { actionKey: QuickActionKey; onClose: () => void }) {
+  const content = quickActionContent[actionKey];
+  const Icon = content.icon;
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [onClose]);
+
+  return (
+    <>
+      <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs transition-opacity" onClick={onClose} />
+      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl animate-in slide-in-from-right duration-200">
+        <div className="flex h-full flex-col">
+          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#465FFF]/10 text-[#465FFF]">
+                <Icon size={18} />
+              </span>
+              <h2 className="text-[15px] font-black text-slate-900">{content.title}</h2>
+            </div>
+            <button type="button" onClick={onClose} className="rounded-lg border border-slate-100 p-1.5 text-slate-400 transition hover:bg-slate-50 hover:text-slate-700">
+              <X size={15} />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-6 py-5">
+            <p className="text-[13px] font-semibold leading-relaxed text-slate-500">{content.description}</p>
+
+            {content.href && (
+              <Link href={content.href} onClick={onClose} className="mt-6 flex items-center justify-between rounded-xl border border-[#465FFF]/15 bg-[#465FFF]/5 px-4 py-3 text-[13px] font-bold text-[#465FFF] transition hover:bg-[#465FFF]/10">
+                <span>Buka halaman terkait</span>
+                <ArrowRight size={15} />
+              </Link>
+            )}
+
+            {content.items && (
+              <div className="mt-6 space-y-3">
+                {content.items.map((item) => (
+                  <button key={item.label} type="button" className="flex w-full items-start gap-3 rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-3.5 text-left transition hover:border-[#465FFF]/20 hover:bg-[#465FFF]/5">
+                    <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#465FFF]/10 text-[#465FFF]">
+                      <Send size={13} />
+                    </span>
+                    <div>
+                      <p className="text-[13px] font-black text-slate-900">{item.label}</p>
+                      <p className="mt-0.5 text-[11px] font-semibold text-slate-400">{item.desc}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-slate-100 px-6 py-4">
+            <button type="button" onClick={onClose} className="flex h-10 w-full items-center justify-center rounded-xl border border-slate-200 bg-white text-[13px] font-bold text-slate-700 transition hover:bg-slate-50">
+              Tutup
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
 
 export default function DashboardPage() {
   const t = useTranslations("DemoApp");
   const language = useUiStore((state) => state.language);
-  const [timeRange, setTimeRange] = useState("24 Jam Terakhir");
+  const [timeRange, setTimeRange] = useState<DateRangeKey>("24h");
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
-  const activityData = activitySeries.map((value, index) => ({ label: `${String(index * 2).padStart(2, "0")}:00`, value }));
-  const sentimentData = [
-    { name: "Positif", value: 1248, tone: "green" as const },
-    { name: "Netral", value: 842, tone: "blue" as const },
-    { name: "Negatif", value: 361, tone: "red" as const },
-  ];
+  const dateRange = getDateRangeOptions(timeRange);
+
+  const dashboardQuery = useQuery({
+    queryKey: ["dashboard-summary", timeRange],
+    queryFn: () => getDashboardSummary(dateRange),
+    staleTime: 30 * 1000,
+  });
+  
+  const isLiveUnavailable = dashboardQuery.data === null;
+  const summary = dashboardQuery.data;
+
+  const activityData = summary?.trends?.length 
+    ? summary.trends.map(t => ({ label: new Date(t.date).toLocaleDateString(), value: t.count }))
+    : activitySeries.map((value, index) => ({ label: `${String(index * 2).padStart(2, "0")}:00`, value }));
+
+  const sentimentData = summary?.sentiment_distribution
+    ? [
+        { name: "Positif", value: summary.sentiment_distribution.positive, tone: "green" as const },
+        { name: "Netral", value: summary.sentiment_distribution.neutral, tone: "blue" as const },
+        { name: "Negatif", value: summary.sentiment_distribution.negative, tone: "red" as const },
+      ]
+    : [
+        { name: "Positif", value: 1248, tone: "green" as const },
+        { name: "Netral", value: 842, tone: "blue" as const },
+        { name: "Negatif", value: 361, tone: "red" as const },
+      ];
+
+  const metricsRow = summary?.kpis
+    ? [
+        { label: { en: "Total Signals", id: "Total Sinyal" }, value: String(summary.kpis.total_signals), helper: { en: "Live", id: "Live" }, icon: dashboardMetrics[0].icon, tone: "blue" as const },
+        { label: { en: "Analyzed Signals", id: "Sinyal Dianalisis" }, value: String(summary.kpis.analyzed_signals), helper: { en: "Live", id: "Live" }, icon: dashboardMetrics[1].icon, tone: "purple" as const },
+        { label: { en: "Positive Sent.", id: "Sent. Positif" }, value: `${summary.kpis.positive_percentage}%`, helper: { en: "Live", id: "Live" }, icon: dashboardMetrics[2].icon, tone: "green" as const },
+        { label: { en: "Negative Sent.", id: "Sent. Negatif" }, value: `${summary.kpis.negative_percentage}%`, helper: { en: "Live", id: "Live" }, icon: dashboardMetrics[3].icon, tone: "red" as const },
+        { label: { en: "Neutral Sent.", id: "Sent. Netral" }, value: `${summary.kpis.neutral_percentage}%`, helper: { en: "Live", id: "Live" }, icon: dashboardMetrics[4].icon, tone: "slate" as const },
+        { label: { en: "Mixed Sent.", id: "Sent. Campuran" }, value: `${summary.kpis.mixed_percentage}%`, helper: { en: "Live", id: "Live" }, icon: dashboardMetrics[5].icon, tone: "amber" as const },
+      ]
+    : dashboardMetrics;
+
+  const alertsRow = summary?.latest_signals?.length
+    ? summary.latest_signals.slice(0, 4).map((sig) => ({
+        id: sig.id,
+        title: { en: sig.title || "Unknown signal", id: sig.title || "Unknown signal" },
+        source: sig.platform,
+        time: new Date(sig.published_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+        tone: sig.sentiment.toLowerCase().includes("negative") ? "red" : sig.sentiment.toLowerCase().includes("positive") ? "green" : "blue",
+      }))
+    : alerts;
+
 
   return (
     <div className="space-y-8 pb-6">
@@ -35,14 +249,14 @@ export default function DashboardPage() {
         <div className="flex flex-wrap gap-3">
           <button 
             type="button" 
-            className="inline-flex h-[42px] items-center gap-2 rounded-[8px] border border-slate-200 bg-slate-50 px-4 text-[14px] font-bold text-slate-900 hover:bg-slate-100 hover:border-slate-300 transition-all active:scale-[0.98]"
+            className="inline-flex h-[42px] w-full items-center justify-center gap-2 rounded-[8px] border border-slate-200 bg-slate-50 px-4 text-[14px] font-bold text-slate-900 hover:bg-slate-100 hover:border-slate-300 transition-all active:scale-[0.98] sm:w-auto"
           >
             <Settings size={16} className="text-slate-500" />
             {t("pages.command.customize")}
           </button>
           <button 
             type="button" 
-            className="inline-flex h-[42px] items-center gap-2 rounded-[8px] border border-slate-200 bg-slate-50 px-4 text-[14px] font-bold text-slate-900 hover:bg-slate-100 hover:border-slate-300 transition-all active:scale-[0.98]"
+            className="inline-flex h-[42px] w-full items-center justify-center gap-2 rounded-[8px] border border-slate-200 bg-slate-50 px-4 text-[14px] font-bold text-slate-900 hover:bg-slate-100 hover:border-slate-300 transition-all active:scale-[0.98] sm:w-auto"
           >
             <RefreshCcw size={16} className="text-slate-500 animate-spin-slow" />
             {t("pages.command.refresh")}
@@ -52,18 +266,26 @@ export default function DashboardPage() {
       </div>
 
       {/* Metrics Row */}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
-        {dashboardMetrics.map((metric) => (
-          <MetricTile 
-            key={text(metric.label, language)} 
-            label={text(metric.label, language)} 
-            value={metric.value}
-            helper={text(metric.helper, language)} 
-            icon={metric.icon} 
-            tone={metric.tone} 
-          />
-        ))}
-      </div>
+      {isLiveUnavailable ? (
+        <DashboardErrorState title="Dashboard live belum bisa dimuat" description="API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan metrik contoh." onRetry={() => void dashboardQuery.refetch()} minHeight="min-h-[150px]" />
+      ) : null}
+
+      {dashboardQuery.isPending ? (
+        <MetricRowSkeleton count={6} />
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+          {metricsRow.map((metric) => (
+            <MetricTile 
+              key={text(metric.label, language)} 
+              label={text(metric.label, language)} 
+              value={metric.value}
+              helper={text(metric.helper, language)} 
+              icon={metric.icon} 
+              tone={metric.tone} 
+            />
+          ))}
+        </div>
+      )}
 
       {/* Main Insights Grid */}
       <div className="grid gap-6 xl:grid-cols-[1.25fr_1.05fr_0.8fr]">
@@ -75,9 +297,9 @@ export default function DashboardPage() {
               description={t("pages.command.activityDesc")} 
               action={
                 <div className="flex flex-wrap gap-2">
-                  {["24 Jam Terakhir", "7 Hari", "30 Hari"].map((range) => (
-                    <button key={range} type="button" onClick={() => setTimeRange(range)} className={`rounded-[8px] border px-3 py-2 text-xs font-bold transition-all ${timeRange === range ? "border-[#465FFF] bg-[#465FFF] text-white" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"}`}>
-                      {range}
+                  {timeRangeOptions.map((range) => (
+                    <button key={range.value} type="button" onClick={() => setTimeRange(range.value)} className={`rounded-[8px] border px-3 py-2 text-xs font-bold transition-all ${timeRange === range.value ? "border-[#465FFF] bg-[#465FFF] text-white" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"}`}>
+                      {range.label}
                     </button>
                   ))}
                 </div>
@@ -121,9 +343,9 @@ export default function DashboardPage() {
               action={<Link href="/alerts" className="whitespace-nowrap text-[11px] font-bold text-[#465FFF] transition-all hover:text-[#8B5CFF] hover:underline">{t("common.viewAll")}</Link>} 
             />
             <div className="space-y-4">
-              {alerts.map((alert) => (
+              {alertsRow.map((alert) => (
                 <div key={alert.id} className="flex gap-3 border-b border-slate-100 pb-3.5 last:border-0 last:pb-0">
-                  <IconBubble icon={Zap} tone={alert.tone} className="h-9 w-9 rounded-[8px]" />
+                  <IconBubble icon={Zap} tone={alert.tone as Tone} className="h-9 w-9 rounded-[8px]" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[13px] font-bold text-slate-800">{text(alert.title, language)}</p>
                     <p className="mt-1 text-[11px] font-semibold text-slate-400">{alert.source}</p>
@@ -233,9 +455,7 @@ export default function DashboardPage() {
               })}
             </div>
             {selectedAction ? (
-              <p className="mt-4 rounded-[8px] border border-[#465FFF]/10 bg-[#465FFF]/5 px-3 py-2 text-xs font-bold text-[#465FFF]">
-                Mock action aktif: {t(`quickActions.${selectedAction}`)} siap ditampilkan sebagai drawer/modal.
-              </p>
+              <QuickActionDrawer actionKey={selectedAction as QuickActionKey} onClose={() => setSelectedAction(null)} />
             ) : null}
           </CardContent>
         </AppCard>

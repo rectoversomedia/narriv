@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type CSSProperties, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Bot,
   Brain,
@@ -26,11 +27,15 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
+import { getNarratives, type NarrativeRecord } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
 import { intelligenceClusters, text, type Tone } from "@/lib/mock-data";
 import { useUiStore } from "@/store/useUiStore";
 
 type Cluster = (typeof intelligenceClusters)[number];
+
+const narrativeApiLimit = 10;
 
 type ToneStyle = {
   color: string;
@@ -127,6 +132,56 @@ function formatSignals(value: number) {
   return value.toLocaleString("en-US");
 }
 
+function sentimentToTone(sentiment: string): Tone {
+  const normalized = sentiment.toLowerCase();
+  if (normalized.includes("positive")) return "green";
+  if (normalized.includes("negative")) return "red";
+  if (normalized.includes("mixed")) return "amber";
+  return "purple";
+}
+
+function impactToPriorityTone(impact: string): Tone {
+  const normalized = impact.toLowerCase();
+  if (normalized.includes("high")) return "red";
+  if (normalized.includes("low")) return "green";
+  return "amber";
+}
+
+function buildNarrativeClusters(records: NarrativeRecord[]): Cluster[] {
+  const positions = intelligenceClusters;
+  return records.map((record, index) => {
+    const base = positions[index % positions.length];
+    const tone = sentimentToTone(record.sentiment);
+    const priorityTone = impactToPriorityTone(record.impact);
+
+    return {
+      ...base,
+      id: record.id,
+      topic: { en: record.title, id: record.title },
+      signals: record.signalCount,
+      growth: record.velocity,
+      tone,
+      sentiment: tone === "green" ? "positive" : tone === "red" ? "negative" : "neutral",
+      priority: {
+        en: record.impact || "Medium Priority",
+        id: record.impact || "Prioritas Sedang",
+      },
+      priorityTone,
+      description: {
+        en: record.description || record.recommendedFocus,
+        id: record.description || record.recommendedFocus,
+      },
+      related: [
+        { topic: { en: `${record.sourceCount} sources`, id: `${record.sourceCount} sumber` }, growth: `${record.confidence}%` },
+      ],
+      aiRec: {
+        en: record.recommendedFocus,
+        id: record.recommendedFocus,
+      },
+    };
+  }) as Cluster[];
+}
+
 function Panel({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <Card className={cn("rounded-[14px] border-[#E6EAF2] bg-white text-[#101334] shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)}>
@@ -185,7 +240,7 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
     .join(" ");
 
   return (
-    <svg className="h-10 w-full" viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+    <svg className="chart-line-draw h-10 w-full" viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
       <path d={`${path} L 98 ${height} L 2 ${height} Z`} fill={color} opacity="0.08" />
       <path d={path} fill="none" stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" />
     </svg>
@@ -219,7 +274,7 @@ function TrendBadge({ value, tone, className }: { value: string; tone: Tone; cla
 
 function CompetitorDonut({ label }: { label: string }) {
   return (
-    <div className="relative flex size-[150px] shrink-0 items-center justify-center rounded-full bg-[conic-gradient(#8B5CFF_0_32%,#EF4444_32%_60%,#F59E0B_60%_80%,#10B981_80%_92%,#94A3B8_92%_100%)] shadow-[0_12px_24px_rgba(70,95,255,0.10)]">
+    <div className="chart-donut-enter relative flex size-[150px] shrink-0 items-center justify-center rounded-full bg-[conic-gradient(#8B5CFF_0_32%,#EF4444_32%_60%,#F59E0B_60%_80%,#10B981_80%_92%,#94A3B8_92%_100%)] shadow-[0_12px_24px_rgba(70,95,255,0.10)]">
       <div className="absolute size-[102px] rounded-full bg-white" />
       <div className="relative max-w-[86px] text-center">
         <p className="text-[12px] font-black leading-tight text-[#101334]">Total</p>
@@ -266,7 +321,16 @@ function MapNode({ cluster, selected, language, onSelect }: { cluster: Cluster; 
 
 export default function IntelligencePage() {
   const language = useUiStore((state) => state.language);
-  const [selectedCluster, setSelectedCluster] = useState(intelligenceClusters[0]);
+  const [selectedClusterId, setSelectedClusterId] = useState(intelligenceClusters[0].id);
+  const narrativesQuery = useQuery({
+    queryKey: ["narratives", { limit: narrativeApiLimit }],
+    queryFn: () => getNarratives({ limit: narrativeApiLimit }),
+    staleTime: 30 * 1000,
+  });
+  const liveClusters = narrativesQuery.data?.data ? buildNarrativeClusters(narrativesQuery.data.data) : [];
+  const isLiveUnavailable = narrativesQuery.data === null;
+  const clusters = liveClusters.length > 0 ? liveClusters : intelligenceClusters;
+  const selectedCluster = clusters.find((cluster) => cluster.id === selectedClusterId) ?? clusters[0] ?? intelligenceClusters[0];
 
   const dictionary = {
     en: {
@@ -419,7 +483,7 @@ export default function IntelligencePage() {
   const selectedTone = toneStyles[selectedCluster.tone];
 
   const metrics = [
-    { ...dict.metrics.clusters, icon: Network, tone: "purple" as Tone },
+    { ...dict.metrics.clusters, value: String(narrativesQuery.data?.pagination.total ?? dict.metrics.clusters.value), icon: Network, tone: "purple" as Tone },
     { ...dict.metrics.confidence, icon: Brain, tone: "blue" as Tone },
     { ...dict.metrics.emerging, icon: TrendingUp, tone: "amber" as Tone },
     { ...dict.metrics.opportunities, icon: Target, tone: "green" as Tone },
@@ -472,7 +536,7 @@ export default function IntelligencePage() {
           <h1 className="text-[32px] font-black tracking-[-0.045em] text-[#060A23]">{dict.title}</h1>
           <p className="mt-2 text-[14px] font-semibold text-[#737D9F]">{dict.subtitle}</p>
         </div>
-        <button type="button" className="flex h-10 w-fit items-center gap-2 rounded-[10px] border border-[#E5E9F3] bg-white px-4 text-xs font-extrabold text-[#475070] shadow-sm transition hover:bg-[#F8FAFF]">
+        <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[10px] border border-[#E5E9F3] bg-white px-4 text-xs font-extrabold text-[#475070] shadow-sm transition hover:bg-[#F8FAFF] sm:w-fit">
           <Calendar size={15} className="text-[#8A94B8]" />
           {dict.last7Days}
           <ChevronDown size={14} className="text-[#8A94B8]" />
@@ -484,6 +548,10 @@ export default function IntelligencePage() {
           <MetricCard key={metric.label} {...metric} />
         ))}
       </section>
+
+      {narrativesQuery.isPending ? <PanelSkeleton /> : null}
+      {isLiveUnavailable ? <DashboardErrorState title="Narasi live belum bisa dimuat" description="API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan peta narasi contoh." onRetry={() => void narrativesQuery.refetch()} minHeight="min-h-[150px]" /> : null}
+      {narrativesQuery.data && liveClusters.length === 0 ? <DashboardEmptyState title="Belum ada narasi live" description="Backend berhasil dihubungi, tetapi belum ada cluster narasi. Peta contoh tetap ditampilkan sebagai preview." icon="search" minHeight="min-h-[180px]" /> : null}
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_408px]">
         <div className="flex min-w-0 flex-col gap-4">
@@ -536,10 +604,10 @@ export default function IntelligencePage() {
                   );
                 })}
 
-                <svg className="absolute inset-0 size-full" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                <svg className="chart-enter chart-line-draw absolute inset-0 size-full" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
                   {connections.map((connection, index) => {
-                    const from = intelligenceClusters.find((cluster) => cluster.id === connection.from);
-                    const to = intelligenceClusters.find((cluster) => cluster.id === connection.to);
+                    const from = clusters.find((cluster) => cluster.id === connection.from);
+                    const to = clusters.find((cluster) => cluster.id === connection.to);
                     if (!from || !to) return null;
 
                     const highlighted = selectedCluster.id === connection.from || selectedCluster.id === connection.to;
@@ -560,8 +628,8 @@ export default function IntelligencePage() {
                   })}
                 </svg>
 
-                {intelligenceClusters.map((cluster) => (
-                  <MapNode key={cluster.id} cluster={cluster} selected={selectedCluster.id === cluster.id} language={language} onSelect={setSelectedCluster} />
+                {clusters.map((cluster) => (
+                  <MapNode key={cluster.id} cluster={cluster} selected={selectedCluster.id === cluster.id} language={language} onSelect={(item) => setSelectedClusterId(item.id)} />
                 ))}
 
                 <div className="absolute bottom-5 left-5 z-30 flex flex-col gap-1 rounded-[9px] border border-[#E7EBF4] bg-white p-1 shadow-[0_10px_24px_rgba(16,24,40,0.08)]">
@@ -660,14 +728,14 @@ export default function IntelligencePage() {
                 <button type="button" className="text-[11px] font-black text-[#465FFF] transition hover:text-[#351EFF]">{dict.growingClusters.viewAll}</button>
               </div>
               <div className="flex flex-col gap-2">
-                {intelligenceClusters.slice(0, 5).map((cluster) => {
+                {clusters.slice(0, 5).map((cluster) => {
                   const selected = selectedCluster.id === cluster.id;
                   const toneStyle = toneStyles[cluster.tone];
                   return (
                     <button
                       key={cluster.id}
                       type="button"
-                      onClick={() => setSelectedCluster(cluster)}
+                      onClick={() => setSelectedClusterId(cluster.id)}
                       className="flex items-center justify-between gap-3 rounded-[10px] border px-3 py-2.5 text-left transition hover:border-[#DCE2F0]"
                       style={{
                         borderColor: selected ? `rgba(${toneStyle.rgb}, .18)` : "#EEF1F7",

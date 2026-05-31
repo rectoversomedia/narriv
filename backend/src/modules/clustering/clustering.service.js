@@ -1,5 +1,6 @@
 import prisma from "../../prisma.js";
 import { analyzeCluster } from "../ai/ai.service.js";
+import { logStructured } from "../../lib/logger.js";
 
 // Helper to extract basic keywords (lowercase, basic stop words removed)
 function extractKeywords(text) {
@@ -18,7 +19,7 @@ function calculateSimilarity(setA, setB) {
 }
 
 export const runClustering = async (workspaceId) => {
-    console.log(`[CLUSTERING] Starting clustering for workspace: ${workspaceId}`);
+    logStructured("info", "clustering_started", { workspaceId });
     
     // 1. Fetch unclustered signals (or all recent signals)
     // For simplicity, let's fetch all signals in the last 7 days for the workspace
@@ -42,7 +43,7 @@ export const runClustering = async (workspaceId) => {
     const unclusteredSignals = signals.filter(s => s.narrativeClusterSignals.length === 0);
 
     if (unclusteredSignals.length === 0) {
-        console.log(`[CLUSTERING] No unclustered signals to process.`);
+        logStructured("info", "clustering_no_unclustered_signals", { workspaceId });
         return { message: "No signals to cluster", clustersCreated: 0 };
     }
 
@@ -84,7 +85,7 @@ export const runClustering = async (workspaceId) => {
         }
     }
 
-    console.log(`[CLUSTERING] Found ${clusters.length} potential narrative clusters.`);
+    logStructured("info", "clustering_clusters_found", { clusterCount: clusters.length });
 
     // 4. Save narrative groups to database
     let createdCount = 0;
@@ -95,7 +96,7 @@ export const runClustering = async (workspaceId) => {
             .map(s => `[${s.sentiment || 'UNKNOWN'}] ${s.title || 'No Title'}\n${s.content.substring(0, 150)}...`)
             .join("\n\n");
 
-        console.log(`[CLUSTERING] Asking AI to analyze cluster of ${cluster.length} signals...`);
+        logStructured("info", "clustering_analyzing_cluster", { signalCount: cluster.length });
         const aiAnalysis = await analyzeCluster(signalsContext);
 
         let title = "General Narrative Cluster";
@@ -144,7 +145,7 @@ export const runClustering = async (workspaceId) => {
         createdCount++;
     }
 
-    console.log(`[CLUSTERING] Successfully created ${createdCount} narrative groups.`);
+    logStructured("info", "clustering_completed", { createdCount });
     return { 
         message: "Clustering complete", 
         clustersFound: clusters.length, 

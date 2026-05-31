@@ -1,4 +1,5 @@
 import prisma from "../../prisma.js";
+import { logStructured } from "../../lib/logger.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // REPORT GENERATION ENGINE
@@ -19,8 +20,7 @@ export async function generateReport({ workspaceId, title, periodStart, periodEn
     const start = periodStart ? new Date(periodStart) : new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const end = periodEnd ? new Date(periodEnd) : now;
 
-    console.log(`[REPORT] Generating report for workspace ${workspaceId}`);
-    console.log(`[REPORT] Period: ${start.toISOString()} → ${end.toISOString()}`);
+    logStructured("info", "report_generating", { workspaceId, periodStart: start.toISOString(), periodEnd: end.toISOString() });
 
     // ── 1. Dashboard Metrics ─────────────────────────────────────────────────
     const signals = await prisma.signal.findMany({
@@ -186,7 +186,7 @@ export async function generateReport({ workspaceId, title, periodStart, periodEn
         }
     });
 
-    console.log(`[REPORT] Report saved: ${report.id}`);
+    logStructured("info", "report_saved", { reportId: report.id });
 
     return {
         id: report.id,

@@ -1,5 +1,6 @@
 import { Queue } from "bullmq";
 import connection from "./redis.js";
+import { logStructured } from "./logger.js";
 
 export const aiAnalysisQueue = new Queue("ai-analysis", {
     connection,
@@ -30,9 +31,9 @@ export const addAnalysisJob = async (signalId) => {
         );
 
         if (job) {
-            console.log(`[QUEUE] Job enqueued for signal: ${signalId} (jobId: ${job.id})`);
+            logStructured("info", "queue_job_enqueued", { queue: "ai-analysis", signalId, queueJobId: job.id });
         } else {
-            console.log(`[QUEUE] Duplicate job skipped for signal: ${signalId}`);
+            logStructured("info", "queue_job_duplicate_skipped", { queue: "ai-analysis", signalId });
         }
     } catch (error) {
         console.error(`[QUEUE] Failed to add job for signal ${signalId}:`, error.message);
@@ -70,7 +71,7 @@ export const scheduleAlertDetection = async () => {
                 jobId: "recurring-alert-detection"
             }
         );
-        console.log("[QUEUE] Scheduled recurring alert detection job (Every 15 minutes).");
+        logStructured("info", "queue_alert_detection_scheduled", { interval: "15min" });
     } catch (error) {
         console.error("[QUEUE] Failed to schedule alert detection:", error.message);
     }
@@ -99,7 +100,7 @@ export const addIngestionJob = async (jobId, sourceId) => {
             { jobId, sourceId },
             { jobId: `ingest_${jobId}` }
         );
-        console.log(`[QUEUE] Job enqueued for ingestion: ${jobId}`);
+            logStructured("info", "queue_ingestion_enqueued", { queue: "ingestion", jobId });
     } catch (error) {
         console.error(`[QUEUE] Failed to add ingestion job ${jobId}:`, error.message);
     }
@@ -121,7 +122,7 @@ export const scheduleAlertEscalation = async () => {
                 jobId: "recurring-alert-escalation"
             }
         );
-        console.log("[QUEUE] Scheduled recurring alert escalation job (Every 10 minutes).");
+        logStructured("info", "queue_alert_escalation_scheduled", { interval: "10min" });
     } catch (error) {
         console.error("[QUEUE] Failed to schedule alert escalation:", error.message);
     }
@@ -185,9 +186,9 @@ export const addNotificationJob = async (eventName, payload, options = {}) => {
         );
 
         if (job) {
-            console.log(`[QUEUE] Notification job enqueued: ${eventName} (jobId: ${job.id})`);
+            logStructured("info", "queue_notification_enqueued", { queue: "notification", eventName, queueJobId: job.id });
         } else {
-            console.log(`[QUEUE] Duplicate notification skipped: ${eventName}`);
+            logStructured("info", "queue_notification_duplicate_skipped", { eventName });
         }
     } catch (error) {
         console.error(`[QUEUE] Failed to add notification job (${eventName}):`, error.message);

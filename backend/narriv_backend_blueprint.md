@@ -290,26 +290,29 @@ Report ──1:N──▶ ReportExport
 
 ## 8. Frontend-Backend Contract Table
 
-> This maps each frontend page to intended backend endpoints. Current dashboard pages mostly do not call these endpoints yet; the endpoints exist for the mock/static → API migration.
+> This maps each frontend page to intended backend endpoints. Updated to reflect actual wiring status.
 
 | Frontend Page | Intended Endpoints | Current Frontend Usage |
 |---|---|---|
-| **Login** (`/login`) | `POST /auth/login` | Direct `fetch`; demo login bypass also exists |
-| **Signup** (`/signup`) | `POST /auth/register` | Direct `fetch` |
-| **Dashboard Home** (`/`) | `GET /api/dashboard/summary` | Static/mock data; not wired |
-| **Signals** (`/signals`) | `GET /signals` | Static/inline data; not wired |
-| **Alerts** (`/alerts`) | `GET /api/alerts`, `PATCH /api/alerts/:id/status` | Static/inline data; not wired |
-| **Alert Detail** (`/alerts/[id]`) | `GET /api/alerts/:id` | `mock-data.ts`; not wired |
-| **Visibility** (`/visibility`) | `GET /api/visibility`, optionally `/summary`, `/trends` | Static/inline data; not wired |
-| **Intelligence** (`/intelligence`) | `GET /api/narratives`, `GET /api/narratives/:id` | Static/inline data; not wired |
-| **Reports** (`/reports`) | `GET /api/reports`, `POST /api/reports/:id/export` | Static/inline data; not wired |
-| **Action Plans** (`/action-plans`) | `GET /api/action-plans`, `GET/POST /api/actions`, `POST /api/action-plans/:id/feedback` | Static/inline data; not wired |
-| **Sources** (`/workspace/sources`) | `GET/POST/PATCH/DELETE /sources`, ingestion endpoints | Static/inline data; not wired |
-| **Settings** (`/workspace/settings`, `/settings`) | `GET/PATCH /api/workspace/settings`, `GET/POST/DELETE /api/workspace/members`, `POST /auth/change-password` | Local state; not wired |
-| **Activity** (`/workspace/activity`) | No endpoint | No frontend route exists |
-| **Cases** (`/workspace/cases`) | No endpoint | No frontend route exists |
-| **Integrations** (`/workspace/integrations`) | No endpoint | No frontend route exists |
-| **Onboarding** (`/onboarding`) | No endpoint | UI-only |
+| **Login** (`/login`) | `POST /auth/login` | ✅ Wired — direct `fetch` + demo login bypass |
+| **Signup** (`/signup`) | `POST /auth/register` | ✅ Wired — direct `fetch` |
+| **Dashboard Home** (`/`) | `GET /api/dashboard/summary` | ✅ Wired — `useQuery` with time range, fallback to mock |
+| **Signals** (`/signals`) | `GET /signals` | ✅ Wired — `useQuery` with pagination, fallback to mock |
+| **Alerts** (`/alerts`) | `GET /api/alerts`, `PATCH /api/alerts/:id/status` | ✅ Wired — `useQuery` + `useMutation` for status change + assignment dropdown |
+| **Alert Detail** (`/alerts/[id]`) | `GET /api/alerts/:id`, `PATCH /api/alerts/:id/status`, `PATCH /api/alerts/:id/assign` | ✅ Wired — `useQuery` + editable assignment fields + status buttons |
+| **Visibility** (`/visibility`) | `GET /api/visibility` | ✅ Wired — `useQuery` with fallback to mock |
+| **Intelligence** (`/intelligence`) | `GET /api/narratives` | ✅ Wired — `useQuery` with `buildNarrativeClusters` mapping |
+| **Reports** (`/reports`) | `GET /api/reports`, `POST /api/reports/:id/export` | ✅ Wired — `useQuery` + `useMutation` for PDF export with polling |
+| **Action Plans** (`/action-plans`) | `GET /api/action-plans`, `GET /api/actions`, `POST /api/action-plans/:id/feedback` | ✅ Wired — `useQuery` + `useMutation` for feedback (accept/reject) |
+| **Sources** (`/workspace/sources`) | `GET /sources`, `PATCH /sources/:sourceId`, `DELETE /sources/:sourceId`, `POST /ingestion/run/:sourceId` | ✅ Wired — `useQuery` + toggle/sync/delete mutations |
+| **Settings** (`/workspace/settings`) | `GET/PATCH /api/workspace/settings`, `GET/POST/DELETE /api/workspace/members`, `POST /auth/change-password` | ✅ Wired — `useMutation` for settings, invite (API), delete member (API), change password |
+| **Route Protection** | N/A | ✅ `proxy.ts` checks `narriv-authenticated` cookie, redirects unauthenticated users |
+| **Logout** | `POST /auth/logout` | ✅ Wired — revokes refresh token via API before clearing local state |
+| **Activity** (`/workspace/activity`) | No endpoint | ❌ No frontend route exists |
+| **Cases** (`/workspace/cases`) | No endpoint | ❌ No frontend route exists |
+| **Integrations** (`/workspace/integrations`) | No endpoint | ❌ No frontend route exists |
+| **Onboarding** (`/onboarding`) | No endpoint | ❌ UI-only |
+| **Reset Password** (`/reset-password`) | No endpoint | ⚠️ UI exists but no backend API — flow is mocked |
 
 ---
 
@@ -351,8 +354,7 @@ Most frontend-facing backend contracts are implemented and returning data. See t
    - Audit logging exists for alert/action-plan assignment and escalation changes, but is not comprehensive across all mutations
 
 4. **Contract Gaps**:
-   - `GET /api/reports` returns `{ data, pagination }`; frontend `getReports()` currently expects `{ reports }`
-   - List endpoints are inconsistent: some return `pagination`, while `/api/actions` returns `meta`
+   - List endpoints are mixed: most return `pagination`, while `/api/actions` returns `meta`; frontend `api-service.ts` now models both response shapes explicitly
    - `/auth/logout` is public and revokes by refresh token body, so docs and clients should not treat it as bearer-token protected
 
 5. **Production Gaps**:
@@ -579,6 +581,64 @@ Optional RLS notes:
 - [ ] Test database performance with 100K+ signals
 - [ ] Test queue processing under high job volume
 - [ ] Test memory usage during large ingestion jobs
+
+---
+
+## Appendix: Frontend Development Status
+
+> Last updated: 2026-05-31
+
+### ✅ Completed Frontend Work
+
+#### API Wiring (All pages now use `useQuery`/`useMutation` with real API endpoints)
+- [x] Dashboard Home — `getDashboardSummary` with time range filtering
+- [x] Signals — `getSignals` with pagination
+- [x] Alerts — `getAlerts` with pagination + `updateAlertStatus` mutation
+- [x] Alert Detail — `getAlertById` + editable assignment fields + `updateAlertAssignment` mutation
+- [x] Visibility — `getVisibility` with fallback
+- [x] Intelligence — `getNarratives` with `buildNarrativeClusters` mapping
+- [x] Reports — `getReports` + `createReportExport` with polling via `getReportExportStatus`
+- [x] Action Plans — `getActionPlans` + `getActionQueue` + `submitActionPlanFeedback` mutation
+- [x] Sources — `getSources` + `updateSource` (toggle) + `deleteSource` + `runSourceIngestion` (sync)
+- [x] Settings — `updateWorkspaceSettings` + `createWorkspaceMember` (invite) + `deleteWorkspaceMember` + `changePassword`
+
+#### Authentication & Route Protection
+- [x] `proxy.ts` — Next.js 16 route protection (checks `narriv-authenticated` cookie)
+- [x] Logout — revokes refresh token via `POST /auth/logout` before clearing local state
+- [x] Login — wired to `POST /auth/login` with Zod validation
+- [x] Signup — wired to `POST /auth/register` with Zod validation
+
+#### Form Validation
+- [x] Invite Member — name (min 2 chars) + email (valid format) with inline error messages
+- [x] Workspace Info — workspace name (min 3 chars) with inline error messages
+- [x] Change Password — current password required + new password (min 10 chars, uppercase, number, symbol)
+
+#### UI Improvements
+- [x] Dashboard Quick Actions — slide-over drawer with contextual content (replaces placeholder)
+- [x] Alerts page — status dropdown menu (Baru/Investigating/Resolved) + "Tugaskan ke Saya"
+- [x] Alert Detail — status change buttons + editable assignment fields with save
+- [x] Sources — interactive toggle, sync all, delete via API
+- [x] Reports — PDF export with polling and auto-download
+- [x] Action Plans — accept/reject feedback buttons
+- [x] Settings — invite/delete member via API, change password form
+
+#### Infrastructure
+- [x] `apiClient.ts` — auto-refresh on 401, JWT token attachment
+- [x] `api-service.ts` — typed service layer for all domain endpoints
+- [x] TanStack Query — all pages use `useQuery`/`useMutation` with cache invalidation
+
+### ⚠️ Known Frontend Gaps
+
+#### Needs Backend APIs
+- [ ] Reset Password flow — UI exists (`/reset-password`) but no backend endpoint
+- [ ] Notification bell — currently uses mock alerts, needs real notification API
+- [ ] Dashboard widgets — `miniTopics`, `topTopics`, `sources`, `systemStatus` are still mock
+- [ ] Signals sidebar panels — `followUps`, `recommendations`, `sourceDistribution`, `timeline` are mock
+
+#### Low Priority Cleanup
+- [ ] Remove unused `LineChartMock` / `DonutMock` from `dashboard-kit.tsx`
+- [ ] Move `navGroups` from `mock-data.ts` to constants file
+- [ ] Intelligence page — competitor donut and lifecycle metrics are hardcoded
 
 ---
 

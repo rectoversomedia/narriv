@@ -1,23 +1,8 @@
 import prisma from "../../prisma.js";
 import { createNotificationProviders } from "./notification-providers.js";
+import { logStructured } from "../../lib/logger.js";
 
 const providers = createNotificationProviders();
-
-function logStructured(level, event, payload = {}) {
-    const entry = {
-        level,
-        event,
-        module: "notifications.dispatch",
-        timestamp: new Date().toISOString(),
-        ...payload,
-    };
-    const line = JSON.stringify(entry);
-    if (level === "error") {
-        console.error(line);
-    } else if (level === "warn") {
-        console.warn(line);
-    } else {
-        console.log(line);
     }
 }
 

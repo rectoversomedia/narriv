@@ -2,11 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { type ReactNode } from "react";
+import { useRef, useState, useEffect, type ReactNode } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   ArrowRight,
   Bell,
+  Check,
   ChevronDown,
   Headphones,
   HelpCircle,
@@ -21,7 +23,9 @@ import {
   Sparkles,
   Star,
   UserCheck,
+  UserPlus,
   Users,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -35,6 +39,9 @@ import {
   XLight,
 } from "@ridemountainpig/svgl-react";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/toast";
+import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton, formatPaginationSummary } from "@/components/dashboard/dashboard-states";
+import { getAlerts, updateAlertStatus, updateAlertAssignment, type Alert as ApiAlert, type PaginationInfo } from "@/lib/api-service";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Sentiment = "NEGATIF" | "POSITIF" | "CAMPURAN";
@@ -50,7 +57,7 @@ type ToneStyle = {
 };
 
 type AlertRow = {
-  id: number;
+  id: number | string;
   title: string;
   description: string;
   tags: string[];
@@ -68,6 +75,8 @@ type AlertRow = {
   time: string;
   tone: Exclude<Tone, "purple" | "slate">;
 };
+
+const alertsApiLimit = 10;
 
 const aiAgentImage = "/mainapp/alerts-ai-agent.png";
 
@@ -221,6 +230,61 @@ const sourceDistribution = [
 
 const timeline = [320, 450, 380, 690, 470, 720, 930, 1024, 850, 670, 980, 720, 710];
 
+function compactTime(value: string | null | undefined) {
+  if (!value) return "-";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "-";
+  return `${String(parsed.getHours()).padStart(2, "0")}:${String(parsed.getMinutes()).padStart(2, "0")}`;
+}
+
+function stableTrend(seed: string) {
+  const base = seed.split("").reduce((total, char) => total + char.charCodeAt(0), 0) || 37;
+  return Array.from({ length: 9 }, (_, index) => 7 + ((base + index * 11) % 36));
+}
+
+function toneFromSeverity(severity: string | null): Exclude<Tone, "purple" | "slate"> {
+  const value = severity?.toLowerCase() ?? "";
+  if (value.includes("critical") || value.includes("high")) return "red";
+  if (value.includes("medium")) return "amber";
+  if (value.includes("low")) return "blue";
+  return "green";
+}
+
+function statusFromApi(status: string): AlertStatus {
+  const value = status.toLowerCase();
+  if (value.includes("resolved")) return "Resolved";
+  if (value.includes("acknowledged") || value.includes("investigating")) return "Investigating";
+  if (value.includes("escalated")) return "Escalated";
+  return "Baru";
+}
+
+function buildApiAlertRows(apiAlerts: ApiAlert[]): AlertRow[] {
+  return apiAlerts.map((alert) => {
+    const tone = toneFromSeverity(alert.severity);
+    const isPositive = tone === "green";
+
+    return {
+      id: alert.id,
+      title: alert.title,
+      description: alert.whatHappened || alert.whyItMatters || alert.whatToDo || "Alert live dari backend Narriv.",
+      tags: [alert.type || "Alert", alert.severity || "Open"],
+      sourceLabel: "Narriv API",
+      sources: [tone === "blue" ? "support" : "discourse"],
+      extraSources: 0,
+      sentiment: isPositive ? "POSITIF" : tone === "blue" ? "CAMPURAN" : "NEGATIF",
+      velocity: "Live",
+      velocityPeriod: "from API",
+      velocityTrend: stableTrend(alert.id),
+      mentions: "1",
+      confidence: "-",
+      impact: tone === "red" ? "Tinggi" : "Sedang",
+      status: statusFromApi(alert.status),
+      time: compactTime(alert.createdAt),
+      tone,
+    };
+  });
+}
+
 function Panel({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <section className={cn("rounded-[14px] border border-[#DDE3EF] bg-white shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)}>
@@ -237,7 +301,7 @@ function Sparkline({ values, tone, id, className = "h-9" }: { values: number[]; 
   const areaPath = `${path} L ${width - 2} ${height} L 2 ${height} Z`;
 
   return (
-    <svg className={cn("w-full overflow-visible", className)} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+    <svg className={cn("chart-line-draw w-full overflow-visible", className)} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
       <defs>
         <linearGradient id={id} x1="0" x2="0" y1="0" y2="1">
           <stop offset="0%" stopColor={style.color} stopOpacity="0.22" />
@@ -436,7 +500,7 @@ function AlertIcon({ tone }: { tone: AlertRow["tone"] }) {
   );
 }
 
-function AlertsTable() {
+function AlertsTable({ rows, footerText, pagination, onPageChange, isFetching, onStatusChange, openMenuId, setOpenMenuId, menuRef }: { rows: AlertRow[]; footerText: string; pagination?: PaginationInfo | null; onPageChange: (page: number) => void; isFetching?: boolean; onStatusChange: (id: string | number, status: "open" | "acknowledged" | "resolved") => void; openMenuId: string | number | null; setOpenMenuId: (id: string | number | null) => void; menuRef: React.RefObject<HTMLDivElement | null> }) {
   return (
     <Panel className="p-4">
       <div>
@@ -453,7 +517,7 @@ function AlertsTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-[#EDF1F7]">
-            {alertRows.map((alert) => (
+            {rows.map((alert) => (
               <tr key={alert.id} className="transition hover:bg-[#F8FAFF]">
                 <td className="min-w-[240px] max-w-[315px] px-3 py-3.5">
                   <div className="flex items-start gap-3">
@@ -485,17 +549,28 @@ function AlertsTable() {
                 <td className="px-3 py-3.5 align-middle text-[12px] font-black text-[#101334]">{alert.impact}</td>
                 <td className="px-3 py-3.5 align-middle"><StatusBadge status={alert.status} /></td>
                 <td className="px-3 py-3.5 align-middle text-[11px] font-black text-[#31406B]">{alert.time}</td>
-                <td className="px-3 py-3.5 text-right align-middle"><button type="button" aria-label={`Open actions for ${alert.title}`} className="rounded-md p-1 text-[#68739F] transition hover:bg-[#EEF2FF] hover:text-[#465FFF]"><MoreVertical size={16} /></button></td>
+                <td className="relative px-3 py-3.5 text-right align-middle">
+                  <button type="button" aria-label={`Open actions for ${alert.title}`} onClick={() => setOpenMenuId(openMenuId === alert.id ? null : alert.id)} className="rounded-md p-1 text-[#68739F] transition hover:bg-[#EEF2FF] hover:text-[#465FFF]"><MoreVertical size={16} /></button>
+                  {openMenuId === alert.id && (
+                    <div ref={menuRef} className="absolute right-3 top-full z-50 mt-1 w-48 rounded-[10px] border border-[#E6EAF2] bg-white py-1 shadow-[0_12px_36px_rgba(16,24,40,0.12)]">
+                      <p className="px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-[#8B95B8]">Ubah Status</p>
+                      <button type="button" onClick={() => { onStatusChange(alert.id, "open"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]"><Bell size={13} className="text-[#465FFF]" /> Baru</button>
+                      <button type="button" onClick={() => { onStatusChange(alert.id, "acknowledged"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]"><Check size={13} className="text-[#10B981]" /> Investigating</button>
+                      <button type="button" onClick={() => { onStatusChange(alert.id, "resolved"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]"><ShieldCheck size={13} className="text-[#0C9B69]" /> Resolved</button>
+                      <div className="my-1 border-t border-[#EDF1F7]" />
+                      <p className="px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-[#8B95B8]">Tugaskan</p>
+                      <button type="button" onClick={() => { onStatusChange(alert.id, "acknowledged"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]"><UserPlus size={13} className="text-[#8B5CFF]" /> Tugaskan ke Saya</button>
+                    </div>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
       <div className="mt-3 flex flex-col items-center justify-between gap-3 border-t border-[#EDF1F7] pt-3 sm:flex-row">
-        <p className="text-[11px] font-bold text-[#68739F]">Menampilkan 1-5 dari 24 alert</p>
-        <button type="button" className="inline-flex h-[34px] items-center gap-2 rounded-[8px] border border-[#E6EAF2] bg-white px-5 text-[11px] font-black text-[#101334] transition hover:bg-[#F8FAFF]">
-          Muat lebih banyak <ChevronDown size={13} />
-        </button>
+        <p className="text-[11px] font-bold text-[#68739F]">{footerText}</p>
+        <DashboardPagination pagination={pagination} onPageChange={onPageChange} disabled={isFetching} />
       </div>
     </Panel>
   );
@@ -533,13 +608,13 @@ function ActionableAlert({ title, meta, badge, time, tone }: (typeof actionableA
   const Icon = tone === "green" ? Star : tone === "blue" ? HelpCircle : AlertTriangle;
 
   return (
-    <div className={cn("grid grid-cols-[34px_1fr_auto] gap-3 rounded-[12px] border p-3", tone === "red" ? "border-[#FDE2E2] bg-[#FFF5F5]" : "border-[#EDF1F7] bg-[#FBFCFF]")}>
+    <div className={cn("grid grid-cols-[34px_minmax(0,1fr)] gap-3 rounded-[12px] border p-3 sm:grid-cols-[34px_minmax(0,1fr)_auto]", tone === "red" ? "border-[#FDE2E2] bg-[#FFF5F5]" : "border-[#EDF1F7] bg-[#FBFCFF]")}>
       <span className={cn("flex h-8 w-8 items-center justify-center rounded-full", style.soft, style.text)}><Icon size={15} fill={tone === "green" ? style.color : "none"} /></span>
       <span className="min-w-0">
         <span className="block truncate text-[12px] font-black text-[#101334]">{title}</span>
         <span className="mt-1 block text-[10px] font-bold text-[#58648C]">{meta}</span>
       </span>
-      <span className="text-right">
+      <span className="col-start-2 text-left sm:col-start-auto sm:text-right">
         <span className={cn("rounded-full px-2 py-0.5 text-[9px] font-black tracking-[0.16em]", style.soft, style.text)}>{badge}</span>
         <span className="mt-2 block text-[10px] font-bold text-[#31406B]">{time}</span>
       </span>
@@ -550,13 +625,13 @@ function ActionableAlert({ title, meta, badge, time, tone }: (typeof actionableA
 function Recommendation({ action, desc, badge, icon: Icon, tone }: (typeof aiRecommendations)[number]) {
   const style = toneStyles[tone];
   return (
-    <div className="grid grid-cols-[32px_1fr_auto] gap-3">
+    <div className="grid grid-cols-[32px_minmax(0,1fr)] gap-3 sm:grid-cols-[32px_minmax(0,1fr)_auto]">
       <span className={cn("flex h-8 w-8 items-center justify-center rounded-[9px]", style.soft, style.text)}><Icon size={15} /></span>
       <span className="min-w-0">
         <span className="block text-[12px] font-black leading-snug text-[#101334]">{action}</span>
         <span className="mt-1 block text-[10.5px] font-bold text-[#68739F]">{desc}</span>
       </span>
-      <span className={cn("h-fit rounded-full px-2 py-1 text-[9px] font-black", badge.startsWith("High") ? "bg-[#EF4444]/10 text-[#EF4444]" : "bg-[#F59E0B]/12 text-[#F59E0B]")}>{badge}</span>
+      <span className={cn("col-start-2 h-fit w-fit rounded-full px-2 py-1 text-[9px] font-black sm:col-start-auto", badge.startsWith("High") ? "bg-[#EF4444]/10 text-[#EF4444]" : "bg-[#F59E0B]/12 text-[#F59E0B]")}>{badge}</span>
     </div>
   );
 }
@@ -574,7 +649,7 @@ function SourceDonut() {
         </button>
       </div>
       <div className="mt-5 grid gap-5 sm:grid-cols-[136px_1fr] md:grid-cols-1 xl:grid-cols-[136px_1fr]">
-        <div className="relative mx-auto flex h-[136px] w-[136px] items-center justify-center rounded-full bg-[conic-gradient(#465FFF_0_48%,#8B5CFF_48%_70%,#EF4444_70%_84%,#10B981_84%_94%,#94A3B8_94%_100%)]">
+        <div className="chart-donut-enter relative mx-auto flex h-[136px] w-[136px] items-center justify-center rounded-full bg-[conic-gradient(#465FFF_0_48%,#8B5CFF_48%_70%,#EF4444_70%_84%,#10B981_84%_94%,#94A3B8_94%_100%)]">
           <span className="absolute h-[88px] w-[88px] rounded-full bg-white" />
           <span className="relative text-center"><b className="block text-[22px] font-black text-[#101334]">2.842</b><span className="text-[10px] font-bold text-[#68739F]">Total Alert</span></span>
         </div>
@@ -604,7 +679,7 @@ function TimelineChart() {
           <span>1.200</span><span>900</span><span>600</span><span>300</span><span>0</span>
         </div>
         <div className="absolute inset-0 left-[40px] bottom-[22px] overflow-hidden">
-          <svg className="h-full w-full" viewBox="0 0 520 170" preserveAspectRatio="none" aria-hidden="true">
+          <svg className="chart-enter chart-line-draw h-full w-full" viewBox="0 0 520 170" preserveAspectRatio="none" aria-hidden="true">
             <defs>
               <linearGradient id="alerts-timeline" x1="0" x2="0" y1="0" y2="1">
                 <stop offset="0%" stopColor="#465FFF" stopOpacity="0.22" />
@@ -664,6 +739,53 @@ function StatusMetric({ label, value, delta }: { label: string; value: string; d
 
 export default function AlertsPage() {
   const t = useTranslations("DemoApp");
+  const queryClient = useQueryClient();
+  const toastHook = useToast();
+  const [page, setPage] = useState(1);
+  const [openMenuId, setOpenMenuId] = useState<string | number | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    if (type === "error") { toastHook.error(message); return; }
+    toastHook.success(message);
+  };
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpenMenuId(null);
+    }
+    if (openMenuId !== null) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [openMenuId]);
+
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string | number; status: "open" | "acknowledged" | "resolved" }) => updateAlertStatus(String(id), status),
+    onSuccess: async (result) => {
+      await queryClient.invalidateQueries({ queryKey: ["alerts"] });
+      if (result) {
+        showToast("Status alert berhasil diperbarui.");
+      } else {
+        showToast("Status alert belum bisa diperbarui. Coba lagi.", "error");
+      }
+    },
+    onError: () => showToast("Status alert belum bisa diperbarui. Coba lagi.", "error"),
+  });
+
+  const alertsQuery = useQuery({
+    queryKey: ["alerts", { page, limit: alertsApiLimit }],
+    queryFn: () => getAlerts({ page, limit: alertsApiLimit }),
+    staleTime: 30 * 1000,
+  });
+  const liveRows = alertsQuery.data?.data ? buildApiAlertRows(alertsQuery.data.data) : [];
+  const isLiveUnavailable = alertsQuery.data === null;
+  const rows = liveRows.length > 0 || alertsQuery.data ? liveRows : alertRows;
+  const footerText = alertsQuery.data?.pagination
+    ? formatPaginationSummary(alertsQuery.data.pagination, "alert live")
+    : isLiveUnavailable
+      ? "Data live belum bisa dimuat. Menampilkan data contoh."
+      : "Menampilkan 1-5 dari 24 alert";
 
   return (
     <div className="mx-auto flex max-w-[1600px] flex-col gap-4 pb-6 text-[#101334]">
@@ -673,9 +795,9 @@ export default function AlertsPage() {
           <p className="mt-2 text-[14px] font-semibold text-[#68739F]">{t("pages.alerts.desc")}</p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <button type="button" className="flex h-10 items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)]"><Users size={14} />Kelola Kontak</button>
-          <button type="button" className="flex h-10 items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)]"><Settings size={14} />Pengaturan Notifikasi</button>
-          <button type="button" className="flex h-10 items-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)]"><Plus size={15} />Buat Alert Baru</button>
+          <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] sm:w-auto"><Users size={14} />Kelola Kontak</button>
+          <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] sm:w-auto"><Settings size={14} />Pengaturan Notifikasi</button>
+          <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] sm:w-auto"><Plus size={15} />Buat Alert Baru</button>
         </div>
       </header>
 
@@ -689,7 +811,16 @@ export default function AlertsPage() {
             <SummaryCard />
             <QuickFilter />
           </div>
-          <AlertsTable />
+          {alertsQuery.isPending ? (
+            <TableSkeleton rows={6} columns={9} />
+          ) : alertsQuery.data && liveRows.length === 0 ? (
+            <DashboardEmptyState title="Belum ada alert live" description="Backend berhasil dihubungi, tetapi belum ada alert yang perlu ditampilkan." icon="alert" minHeight="min-h-[420px]" />
+          ) : (
+            <>
+              {isLiveUnavailable ? <DashboardErrorState title="Data live belum bisa dimuat" description="API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan data contoh." onRetry={() => void alertsQuery.refetch()} minHeight="min-h-[150px]" /> : null}
+              <AlertsTable rows={rows} footerText={footerText} pagination={alertsQuery.data?.pagination} onPageChange={setPage} isFetching={alertsQuery.isFetching} onStatusChange={(id, status) => statusMutation.mutate({ id, status })} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} menuRef={menuRef} />
+            </>
+          )}
         </div>
         <SidePanel />
       </div>

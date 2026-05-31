@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { type ReactNode, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowRight,
   Calendar,
@@ -23,6 +24,9 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/toast";
+import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton, formatPaginationSummary } from "@/components/dashboard/dashboard-states";
+import { getReports, createReportExport, getReportExportStatus, type PaginationInfo, type ReportRecord } from "@/lib/api-service";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type ReportStatus = "SIAP" | "REVIEW" | "DRAFT" | "SCHEDULED";
@@ -54,7 +58,7 @@ const metricCards = [
 ] as const;
 
 type ReportRow = {
-  id: number;
+  id: number | string;
   title: string;
   description: string;
   type: string;
@@ -65,6 +69,8 @@ type ReportRow = {
   createdTime: string;
   tone: Tone;
 };
+
+const reportsApiLimit = 10;
 
 const reportRows: ReportRow[] = [
   {
@@ -151,6 +157,39 @@ const popularReports = [
 
 const trendTimeline = [12, 19, 15, 22, 17, 24, 20, 26, 22, 28, 24, 30, 26];
 
+function statusFromApi(status: string): ReportStatus {
+  const value = status.toLowerCase();
+  if (value.includes("ready") || value.includes("siap")) return "SIAP";
+  if (value.includes("review")) return "REVIEW";
+  if (value.includes("scheduled")) return "SCHEDULED";
+  return "DRAFT";
+}
+
+function toneFromStatus(status: ReportStatus): Tone {
+  if (status === "SIAP") return "green";
+  if (status === "REVIEW") return "amber";
+  if (status === "SCHEDULED") return "blue";
+  return "purple";
+}
+
+function buildApiReportRows(reports: ReportRecord[]): ReportRow[] {
+  return reports.map((report) => {
+    const status = statusFromApi(report.status);
+    return {
+      id: report.id,
+      title: report.title,
+      description: report.sections || "Laporan intelligence dari backend Narriv.",
+      type: "Report · Live API",
+      period: "Periode aktif",
+      status,
+      progress: report.readiness,
+      created: "Data live",
+      createdTime: "API",
+      tone: toneFromStatus(status),
+    };
+  });
+}
+
 function Panel({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <section className={cn("rounded-[14px] border border-[#DDE3EF] bg-white shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)}>
@@ -203,7 +242,7 @@ function SentimentChart() {
         </div>
 
         {/* SVG Lines */}
-        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 160 80" preserveAspectRatio="none">
+        <svg className="chart-enter chart-line-draw absolute inset-0 w-full h-full" viewBox="0 0 160 80" preserveAspectRatio="none">
           {/* Positif (Green) */}
           <path d="M 10 60 L 50 68 L 90 60 L 130 50 L 150 42" fill="none" stroke="#10B981" strokeWidth="2.2" strokeLinecap="round" />
           <circle cx="150" cy="42" r="3" fill="#10B981" />
@@ -297,7 +336,7 @@ function SummaryPoint({ color, title, text }: { color: string; title: string; te
   );
 }
 
-function ReportPreviewSidebar() {
+function ReportPreviewSidebar({ onExportPdf }: { onExportPdf?: () => void }) {
   return (
     <Panel className="p-4">
       <h3 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">Pratinjau Laporan</h3>
@@ -349,7 +388,7 @@ function ReportPreviewSidebar() {
         <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[9px] bg-[#465FFF] text-[12px] font-black text-white shadow-[0_8px_20px_rgba(70,95,255,0.18)] transition hover:bg-[#3B20EA]">
           <Eye size={15} /> Lihat Preview
         </button>
-        <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[9px] border border-[#E6EAF2] bg-white text-[12px] font-black text-[#101334] transition hover:bg-[#F8FAFF]">
+        <button type="button" onClick={onExportPdf} className="flex h-10 w-full items-center justify-center gap-2 rounded-[9px] border border-[#E6EAF2] bg-white text-[12px] font-black text-[#101334] transition hover:bg-[#F8FAFF]">
           <Download size={15} /> Unduh PDF
         </button>
       </div>
@@ -414,9 +453,10 @@ function ProgressBar({ value, tone }: { value: number; tone: Tone }) {
   );
 }
 
-function ReportsTable() {
+function ReportsTable({ rows, footerText, pagination, onPageChange, isFetching }: { rows: ReportRow[]; footerText: string; pagination?: PaginationInfo | null; onPageChange: (page: number) => void; isFetching?: boolean }) {
   const [activeTab, setActiveTab] = useState("Semua");
   const tabs = ["Semua", "Siap", "Review", "Draft", "Scheduled", "Archived"];
+  const filteredRows = rows.filter((report) => activeTab === "Semua" || report.status.toLowerCase() === activeTab.toLowerCase());
 
   return (
     <Panel className="p-4">
@@ -425,7 +465,7 @@ function ReportsTable() {
           <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">Dokumen Laporan</h2>
           <p className="mt-1 text-[11px] font-bold text-[#68739F]">Kelola semua laporan harian, mingguan, dan laporan khusus.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto">
           <label className="relative block w-full sm:w-[180px]">
             <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-[#8B95B8]" />
             <input
@@ -434,10 +474,10 @@ function ReportsTable() {
               className="h-8 w-full rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] pl-8 pr-3 text-[10px] font-bold text-[#101334] outline-none transition placeholder:text-[#8B95B8] focus:border-[#465FFF] focus:bg-white"
             />
           </label>
-          <button type="button" className="inline-flex h-8 items-center gap-1.5 rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-2.5 text-[10px] font-black text-[#58648C] transition hover:bg-white">
+          <button type="button" className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-2.5 text-[10px] font-black text-[#58648C] transition hover:bg-white sm:flex-none">
             <SlidersHorizontal size={12} /> Filter
           </button>
-          <button type="button" className="inline-flex h-8 items-center gap-1 rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-2.5 text-[10px] font-black text-[#58648C] transition hover:bg-white">
+          <button type="button" className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-2.5 text-[10px] font-black text-[#58648C] transition hover:bg-white sm:flex-none">
             Terbaru <ChevronDown size={12} />
           </button>
         </div>
@@ -477,7 +517,7 @@ function ReportsTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-[#EDF1F7]">
-            {reportRows.map((report) => (
+            {filteredRows.map((report) => (
               <tr key={report.id} className="transition hover:bg-[#F8FAFF]">
                 <td className="px-3 py-3.5">
                   <div className="flex items-start gap-3">
@@ -522,10 +562,8 @@ function ReportsTable() {
 
       {/* Table Footer */}
       <div className="mt-3 flex flex-col items-center justify-between gap-3 border-t border-[#EDF1F7] pt-3 sm:flex-row">
-        <p className="text-[11px] font-bold text-[#68739F]">Menampilkan 1-5 dari 24 laporan</p>
-        <button type="button" className="inline-flex h-[34px] items-center gap-2 rounded-[8px] border border-[#E6EAF2] bg-white px-5 text-[11px] font-black text-[#101334] transition hover:bg-[#F8FAFF]">
-          Muat lebih banyak <ChevronDown size={13} />
-        </button>
+        <p className="text-[11px] font-bold text-[#68739F]">{footerText}</p>
+        <DashboardPagination pagination={pagination} onPageChange={onPageChange} disabled={isFetching} />
       </div>
     </Panel>
   );
@@ -537,7 +575,7 @@ function FormatDonut() {
       <h3 className="text-[15px] font-black text-[#101334]">Distribusi Format</h3>
       <p className="mt-1 text-[11px] font-bold text-[#68739F]">Perbandingan format laporan yang dibuat.</p>
       <div className="mt-5 grid gap-5 sm:grid-cols-[136px_1fr] md:grid-cols-1 xl:grid-cols-[136px_1fr]">
-        <div className="relative mx-auto flex h-[136px] w-[136px] items-center justify-center rounded-full bg-[conic-gradient(#465FFF_0_50%,#8B5CFF_50%_75%,#EF4444_75%_92%,#10B981_92%_100%)]">
+        <div className="chart-donut-enter relative mx-auto flex h-[136px] w-[136px] items-center justify-center rounded-full bg-[conic-gradient(#465FFF_0_50%,#8B5CFF_50%_75%,#EF4444_75%_92%,#10B981_92%_100%)]">
           <span className="absolute h-[88px] w-[88px] rounded-full bg-white" />
           <span className="relative text-center">
             <b className="block text-[22px] font-black text-[#101334]">24</b>
@@ -590,7 +628,7 @@ function TimelineChart() {
 
         {/* Chart plot */}
         <div className="absolute inset-0 left-[40px] bottom-[22px] overflow-hidden">
-          <svg className="h-full w-full" viewBox="0 0 520 170" preserveAspectRatio="none" aria-hidden="true">
+          <svg className="chart-enter chart-line-draw h-full w-full" viewBox="0 0 520 170" preserveAspectRatio="none" aria-hidden="true">
             <defs>
               <linearGradient id="reports-timeline-grad" x1="0" x2="0" y1="0" y2="1">
                 <stop offset="0%" stopColor="#465FFF" stopOpacity="0.22" />
@@ -661,6 +699,56 @@ function PopularReports() {
 
 export default function ReportsPage() {
   const t = useTranslations("DemoApp");
+  const queryClient = useQueryClient();
+  const toastHook = useToast();
+  const [page, setPage] = useState(1);
+
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    if (type === "error") { toastHook.error(message); return; }
+    toastHook.success(message);
+  };
+
+  const exportMutation = useMutation({
+    mutationFn: ({ reportId, format }: { reportId: string; format: "json" | "pdf" }) => createReportExport(reportId, format),
+    onSuccess: async (result) => {
+      if (result?.jobId) {
+        showToast("Export dimulai. Memeriksa status...");
+        const pollStatus = async () => {
+          for (let i = 0; i < 10; i++) {
+            await new Promise((r) => setTimeout(r, 2000));
+            const status = await getReportExportStatus(result.jobId);
+            if (status?.status === "completed" && status.signedUrl) {
+              window.open(status.signedUrl, "_blank");
+              showToast("Export berhasil. File siap diunduh.");
+              return;
+            }
+            if (status?.status === "failed") {
+              showToast("Export gagal. Coba lagi.", "error");
+              return;
+            }
+          }
+          showToast("Export masih diproses. Coba lagi nanti.", "info");
+        };
+        pollStatus();
+      } else {
+        showToast("Export belum bisa dimulai. Coba lagi.", "error");
+      }
+    },
+    onError: () => showToast("Export belum bisa dimulai. Coba lagi.", "error"),
+  });
+  const reportsQuery = useQuery({
+    queryKey: ["reports", { page, limit: reportsApiLimit }],
+    queryFn: () => getReports({ page, limit: reportsApiLimit }),
+    staleTime: 30 * 1000,
+  });
+  const liveRows = reportsQuery.data?.data ? buildApiReportRows(reportsQuery.data.data) : [];
+  const isLiveUnavailable = reportsQuery.data === null;
+  const rows = liveRows.length > 0 || reportsQuery.data ? liveRows : reportRows;
+  const footerText = reportsQuery.data?.pagination
+    ? formatPaginationSummary(reportsQuery.data.pagination, "laporan live")
+    : isLiveUnavailable
+      ? "Data live belum bisa dimuat. Menampilkan data contoh."
+      : "Menampilkan 1-5 dari 24 laporan";
 
   return (
     <div className="mx-auto flex max-w-[1600px] flex-col gap-4 pb-6 text-[#101334]">
@@ -671,13 +759,13 @@ export default function ReportsPage() {
           <p className="mt-2 text-[14px] font-semibold text-[#68739F]">{t("pages.reports.desc")}</p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <button type="button" className="flex h-10 items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:bg-[#F8FAFF]">
+          <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:bg-[#F8FAFF] sm:w-auto">
             <FileText size={14} /> Kelola Template
           </button>
-          <button type="button" className="flex h-10 items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:bg-[#F8FAFF]">
+          <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:bg-[#F8FAFF] sm:w-auto">
             <CalendarClock size={14} /> Pengaturan Jadwal
           </button>
-          <button type="button" className="flex h-10 items-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] transition hover:opacity-90">
+          <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] transition hover:opacity-90 sm:w-auto">
             <Plus size={15} /> Buat Laporan Baru
           </button>
         </div>
@@ -692,10 +780,19 @@ export default function ReportsPage() {
               <MetricCard key={metric.label} {...metric} />
             ))}
           </div>
-          <ReportsTable />
+          {reportsQuery.isPending ? (
+            <TableSkeleton rows={6} columns={7} />
+          ) : reportsQuery.data && liveRows.length === 0 ? (
+            <DashboardEmptyState title="Belum ada laporan live" description="Backend berhasil dihubungi, tetapi belum ada laporan yang tersedia." icon="search" minHeight="min-h-[420px]" />
+          ) : (
+            <>
+              {isLiveUnavailable ? <DashboardErrorState title="Data laporan belum bisa dimuat" description="API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan data contoh." onRetry={() => void reportsQuery.refetch()} minHeight="min-h-[150px]" /> : null}
+              <ReportsTable rows={rows} footerText={footerText} pagination={reportsQuery.data?.pagination} onPageChange={setPage} isFetching={reportsQuery.isFetching} />
+            </>
+          )}
         </div>
         <div className="space-y-4">
-          <ReportPreviewSidebar />
+          <ReportPreviewSidebar onExportPdf={() => { const firstRow = rows[0]; if (firstRow) exportMutation.mutate({ reportId: firstRow.id, format: "pdf" }); }} />
           <QuickActions />
         </div>
       </div>

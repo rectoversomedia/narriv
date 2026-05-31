@@ -117,11 +117,11 @@ export function ProgressBar({ value, tone = "purple" }: { value: number; tone?: 
 export function LineChartMock({ values }: { values: number[] }) {
   const max = Math.max(...values, 1);
   return (
-    <div className="relative h-[210px] overflow-hidden rounded-[10px] bg-slate-50/50 border border-slate-100 px-3 pb-4 pt-5">
+    <div className="chart-enter relative h-[210px] overflow-hidden rounded-[10px] bg-slate-50/50 border border-slate-100 px-3 pb-4 pt-5">
       <div className="absolute inset-x-0 top-10 h-px bg-slate-100" />
       <div className="absolute inset-x-0 top-24 h-px bg-slate-100" />
       <div className="absolute inset-x-0 top-38 h-px bg-slate-100" />
-      <div className="relative flex h-full items-end gap-2 z-10">
+      <div className="chart-bar-enter relative flex h-full items-end gap-2 z-10">
         {values.map((value, index) => (
           <div key={`${value}-${index}`} className="flex flex-1 flex-col items-center gap-2">
             <div className="w-full rounded-t-full bg-linear-to-t from-[#465FFF] to-[#8B5CFF] shadow-[0_0_12px_rgba(70,95,255,0.2)]" style={{ height: `${Math.max(8, (value / max) * 150)}px` }} />
@@ -135,7 +135,7 @@ export function LineChartMock({ values }: { values: number[] }) {
 
 export function DonutMock({ center, label }: { center: string; label: string }) {
   return (
-    <div className="relative mx-auto flex h-[160px] w-[160px] items-center justify-center rounded-full bg-[conic-gradient(#465FFF_0_45%,#8B5CFF_45%_76%,#10B981_76%_93%,#F59E0B_93%_100%)] shadow-[0_0_20px_rgba(70,95,255,0.15)]">
+    <div className="chart-donut-enter relative mx-auto flex h-[160px] w-[160px] items-center justify-center rounded-full bg-[conic-gradient(#465FFF_0_45%,#8B5CFF_45%_76%,#10B981_76%_93%,#F59E0B_93%_100%)] shadow-[0_0_20px_rgba(70,95,255,0.15)]">
       <div className="absolute h-[112px] w-[112px] rounded-full bg-background" />
       <div className="relative text-center z-10">
         <p className="text-[26px] font-black text-slate-900">{center}</p>
@@ -147,7 +147,7 @@ export function DonutMock({ center, label }: { center: string; label: string }) 
 
 export function MiniSpark({ tone = "purple" }: { tone?: Tone }) {
   return (
-    <div className="mt-3 flex h-6 items-end gap-1">
+    <div className="chart-bar-enter mt-3 flex h-6 items-end gap-1">
       {[8, 12, 7, 16, 10, 19, 13].map((height, index) => <span key={index} className={cn("w-1 rounded-full", toneMap[tone].soft)} style={{ height }} />)}
     </div>
   );

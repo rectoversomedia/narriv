@@ -5,6 +5,7 @@ import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { getUserWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
 import { createSignalBodySchema, signalIdParamsSchema } from "./signals.schema.js";
+import { logStructured } from "../../lib/logger.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -182,7 +183,7 @@ router.post("/:id/analyze", validateRequest({ params: signalIdParamsSchema }), a
         }
 
         // 3. Run AI analysis
-        console.log(`[ANALYZE] Running AI on signal: ${id}`);
+        logStructured("info", "signal_analyze_started", { signalId: id });
         const result = await analyzeSignal(signal.title, signal.content);
 
         // 4. Save result to SignalAnalysis
@@ -205,7 +206,7 @@ router.post("/:id/analyze", validateRequest({ params: signalIdParamsSchema }), a
             data: { sentiment: result.sentiment }
         });
 
-        console.log(`[ANALYZE] Analysis saved for signal: ${id}`);
+        logStructured("info", "signal_analyze_saved", { signalId: id });
 
         res.status(201).json({
             message: "Analysis completed and saved.",

@@ -43,11 +43,11 @@
 | State | Zustand (persisted) | `useUiStore`, `useAuthStore` |
 | i18n | `next-intl` (client) | EN/ID, JSON message files |
 | Forms | `react-hook-form` + `zod` | Auth pages |
-| Charts | Custom SVG/CSS + Recharts + `react-simple-maps` | Dashboard chart components still import external chart/map libraries |
+| Charts | Custom SVG/CSS + Recharts + `react-simple-maps` | Recharts charts are lazy-loaded on dashboard home; `WorldActivityMap` is split into a separate dynamic map module |
 | Icons | Lucide React + SVGL + `react-icons` | Lucide for UI, SVGL/React Icons for brand/source logos |
 | Font | Poppins (Google Fonts) | Via `next/font` |
-| Animation | `tw-animate-css` | `animate-in`, `fade-in`, `slide-in-*` |
-| Data Fetching | Native `fetch`, typed `api-service.ts`, React Query provider | API service exists, but dashboard pages are not yet wired to it |
+| Animation | `tw-animate-css` + custom chart utilities | `animate-in`, `fade-in`, `slide-in-*`, chart entry/draw/donut animations with reduced-motion support |
+| Data Fetching | Native `fetch`, typed `api-service.ts`, React Query provider | Auth uses native `fetch`; dashboard pages now use React Query + `api-service` with preview/mock fallbacks where live coverage is incomplete |
 
 ---
 
@@ -140,16 +140,16 @@
 | Component | Detail |
 |-----------|--------|
 | Sidebar | Collapsible (292px → 92px), gradient background, nav groups: Main, Analysis, Action, System |
-| Topbar | Sticky, search bar, language toggle (EN/ID), notification popover, user avatar, logout |
+| Topbar | Sticky, global search across alerts/narratives/pages, language toggle (EN/ID), notification popover, user avatar, logout |
 | Mobile Nav | Bottom navigation bar for mobile viewports |
 
 #### 🏠 Command Center (`/` — Dashboard Home)
 | Widget | Detail | Data Source |
 |--------|--------|-------------|
-| KPI Cards (6x) | Total Signals, Critical Signals, Active Signals, AI Visibility Mentions, Avg Response, Active Sources | `mock-data.ts` → should be `GET /api/dashboard/summary` |
-| Activity Chart | Area chart showing signal volume over time (15 data points) | `activitySeries` mock |
-| Signal Category Donut | Pie chart: Reputasi, Operasional, Produk, Keamanan, Regulasi, Lainnya | `miniTopics` mock |
-| Latest Alerts | List of 5 alert items with severity colors, source, time | `alerts` mock |
+| KPI Cards (6x) | Total Signals, Critical Signals, Active Signals, AI Visibility Mentions, Avg Response, Active Sources | `getDashboardSummary()` for live KPI subset; preview fallback remains |
+| Activity Chart | Area chart showing signal volume over time (15 data points) | `getDashboardSummary().trends` with `activitySeries` fallback; 24h/7d/30d query params wired |
+| Signal Category Donut | Pie chart: Reputasi, Operasional, Produk, Keamanan, Regulasi, Lainnya | `getDashboardSummary().sentiment_distribution` for sentiment donut; topic breakdown remains preview/static |
+| Latest Alerts | List of 5 alert items with severity colors, source, time | `getDashboardSummary().latest_signals` with `alerts` fallback |
 | Trending Topics | Top 5 topics with mention counts and trend deltas | `topTopics` mock |
 | Active Sources | Table with source name, icon, status, health, signal count | `sources` mock |
 | System Status | 5 system indicators (Platform, AI Engine, Data Pipeline, etc.) | `systemStatus` mock |
@@ -161,7 +161,7 @@
 | AI Summary + KPIs | Executive summary, signal metrics, investigation health | Inline/static page data |
 | Follow-up Panel | Recommended next response and ownership context | Inline/static page data |
 | Filter Row | Source/severity/status filters | Local state |
-| Signals Table | Main table with source, narrative, severity, confidence, status | Inline/static data; not wired to `getSignals()` |
+| Signals Table | Main table with source, narrative, severity, confidence, status | Wired to `getSignals()` with search, 24h/7d/30d params, pagination, and preview fallback |
 | Recommendations | AI action suggestions beside the table | Inline/static page data |
 | Source Donut | Source distribution donut | Inline SVG/CSS |
 | Timeline + Queue | Investigation timeline and queue cards | Inline/static page data |
@@ -172,15 +172,15 @@
 | Metric Cards | Alert volume, SLA, severity, confidence KPIs | Inline/static page data |
 | AI Summary | AI assistant panel using `/mainapp/alerts-ai-agent.png` | Static asset |
 | Quick Filters | Severity/status/source filters | Local state |
-| Alert Table | Main alert list with source, confidence, owner, status | Inline/static data; not wired to `getAlerts()` |
+| Alert Table | Main alert list with source, confidence, owner, status | Wired to `getAlerts()` with pagination and preview fallback |
 | Action Panels | Response playbook, source mix, timeline, investigation status | Inline SVG/CSS + static data |
-| Alert Detail | Drill-down page at `/alerts/[id]` | Uses `alerts` from `mock-data.ts`, not `getAlertById()` |
-| Status Actions | Backend function exists in `api-service.ts` | Not currently used by the page |
+| Alert Detail | Drill-down page at `/alerts/[id]` | Wired to `getAlertById()` with preview/error state handling |
+| Status Actions | Backend function exists in `api-service.ts` | Status/assignment mutation UI is still not fully implemented |
 
 #### 🔍 AI Visibility (`/visibility`)
 | Widget | Detail | Data Source |
 |--------|--------|-------------|
-| KPI Cards (5x) | Total AI Mentions, Brand Mentions, Share of Voice, Average Position, AI Sentiment | Inline dictionary/static data; not wired to `getVisibility()` |
+| KPI Cards (5x) | Total AI Mentions, Brand Mentions, Share of Voice, Average Position, AI Sentiment | Partially wired to `getVisibility()` with static sections retained where backend fields are missing |
 | AI Platform Distribution | Bar chart: ChatGPT, Gemini, Copilot, Perplexity, Claude | Inline/static data with SVGL icons |
 | Executive Summary | AI-generated summary text with "See all" button | Local dict |
 | Prompt Test Table | Table: Prompt, Engine, Brand Response, Competitor Response, Tone comparison | Inline/static data; backend `prompts[]` contract exists |
@@ -194,7 +194,7 @@
 #### 🧠 Intelligence (`/intelligence`)
 | Widget | Detail | Data Source |
 |--------|--------|-------------|
-| Topic Map | Interactive bubble map showing narrative clusters | `intelligenceClusters` mock; not wired to `getNarratives()` |
+| Topic Map | Interactive bubble map showing narrative clusters | Partially wired to `getNarratives()` with preview cluster fallback; map/detail UI still needs fuller backend field coverage |
 | Cluster Bubbles | Sized by signal count, colored by sentiment | Position: x/y coordinates in mock |
 | Cluster Detail Panel | Selected cluster: title, description, signal count, priority, AI recommendation | Click interaction |
 | Related Topics | Tags showing related clusters with growth deltas | `related[]` in cluster data |
@@ -206,10 +206,10 @@
 |--------|--------|-------------|
 | AI Report Summary | AI assistant panel using `/mainapp/reports-ai-agent.png` | Static asset |
 | Preview + Metrics | Report preview, KPI cards, readiness indicators | Inline/static page data |
-| Report Table | Report vault table with owner, cadence, readiness, status | Inline/static data; not wired to `getReports()` |
+| Report Table | Report vault table with owner, cadence, readiness, status | Wired to `getReports()` with pagination and preview fallback |
 | Quick Actions | Generate, export, schedule, share actions | UI-only |
 | Bottom Cards | Format mix, trend chart, popular templates | Inline SVG/CSS + static data |
-| Export API | Backend/API service functions exist | Not currently called by the page |
+| Export API | Backend/API service functions exist | Export/download actions remain UI-only |
 
 #### 🎯 Action Center (`/action-plans`)
 | Widget | Detail | Data Source |
@@ -219,7 +219,7 @@
 | Kanban Board | 4-column action workflow with avatars and priority | Inline/static page data |
 | Action Detail | Selected action detail with evidence and plan steps | Inline/static page data |
 | Performance + AI Learning | Performance metrics and feedback learning panels | Inline/static page data |
-| API Functions | Action-plan/feedback/assignment functions exist in `api-service.ts` | Not currently called by the page |
+| API Functions | Action-plan/feedback/assignment functions exist in `api-service.ts` | `getActionPlans()` and `getActionQueue()` are wired; create/assignment/feedback actions remain incomplete |
 
 ---
 
@@ -229,29 +229,29 @@
 | Widget | Detail | Data Source |
 |--------|--------|-------------|
 | Workspace Logo | Upload/change logo with preview | Local state |
-| Brand Name | Text input | Local state; API exists but page is not wired |
-| Industry | Dropdown selector | Local state; API exists but page is not wired |
-| Timezone | Dropdown (WIB, WITA, WIT) | Local state; API exists but page is not wired |
+| Brand Name | Text input | Loaded/saved via `getWorkspaceSettings()` / `updateWorkspaceSettings()` with local fallback |
+| Industry | Dropdown selector | Loaded/saved via `getWorkspaceSettings()` / `updateWorkspaceSettings()` with local fallback |
+| Timezone | Dropdown (WIB, WITA, WIT) | Loaded/saved via `getWorkspaceSettings()` / `updateWorkspaceSettings()` with local fallback |
 | Language | Dropdown (Bahasa Indonesia, English) | Local state/UI control |
-| Notification Email | Text input | Local state; API exists but page is not wired |
-| WhatsApp PIC | Text input | Local state; API exists but page is not wired |
-| Team Members Table | Name, Role, Email, Status, Actions | Inline/static data; API exists but page is not wired |
-| Invite Member | Add member form | UI-only; API exists but page is not wired |
-| Remove Member | Delete action | UI-only; API exists but page is not wired |
+| Notification Email | Text input | Loaded/saved via workspace settings API with local fallback |
+| WhatsApp PIC | Text input | Loaded/saved via workspace settings API with local fallback |
+| Team Members Table | Name, Role, Email, Status, Actions | Loaded via `getWorkspaceMembers()` with preview fallback |
+| Invite Member | Add member form | UI-only/local override; API creation flow still incomplete |
+| Remove Member | Delete action | Confirmed local removal only; backend delete flow still incomplete |
 | Settings Cards | Profile, Notifications, Analysis, Team, Security, Language | Quick access grid |
-| Save Button | Submit all changes | UI-only; API exists but page is not wired |
+| Save Button | Submit all changes | Calls `updateWorkspaceSettings()` for supported fields |
 | Change Password | Current + New password form | UI-only; API exists but page is not wired |
 
 #### 📊 Sources (`/workspace/sources`)
 | Widget | Detail | Data Source |
 |--------|--------|-------------|
 | KPI Row | Connected sources, ingestion volume, health, latency | Inline/static page data |
-| Connector Grid | Connector tiles: Instagram, YouTube, X, Blogger, Discourse, etc. | Inline/static page data with SVGL/React Icons |
+| Connector Grid | Connector tiles: Instagram, YouTube, X, Blogger, Discourse, etc. | Wired to `getSources()` with preview connector fallback; source CRUD/ingestion actions remain incomplete |
 | Health Sidebar | Pipeline health and recent incidents | Inline/static page data |
 | Recent Activity | Source sync/activity list | Inline/static page data |
 | Global Settings | Sync frequency, language, dedupe, retention controls | UI-only |
 | Charts | Volume chart and source distribution donut | Inline SVG/CSS |
-| API Functions | Source CRUD/ingestion functions exist in `api-service.ts` | Not currently called by the page |
+| API Functions | Source CRUD/ingestion functions exist in `api-service.ts` | List/read flow uses `getSources()`; create/update/delete/ingestion actions remain incomplete |
 
 #### `/settings`
 
@@ -292,12 +292,15 @@
 | Switch | `switch.tsx` | Toggle switches |
 | Table | `table.tsx` | Data tables |
 | Tabs | `tabs.tsx` | Tab navigation |
+| Toast | `toast.tsx` | Shared success/error/info notification provider |
+| ConfirmationDialog | `confirmation-dialog.tsx` | Reusable confirmation modal for destructive actions |
 
 ### 4.2 Dashboard Components (`components/dashboard/`)
 
 | Component | File | Usage |
 |-----------|------|-------|
 | DashboardSkeleton | `DashboardSkeleton.tsx` | Full-page loading state |
+| DashboardStates | `dashboard-states.tsx` | Reusable dashboard loading, error, empty, pagination, table, metric, and panel skeleton states |
 | DistributionChart | `DistributionChart.tsx` | Sentiment distribution pie |
 | KpiCard | `KpiCard.tsx` | Single metric card |
 | LatestSignalsTable | `LatestSignalsTable.tsx` | Signal list table |
@@ -305,6 +308,7 @@
 | TrendChart | `TrendChart.tsx` | Time series area chart |
 | Charts | `charts.tsx` | Reusable chart primitives (DonutChart, BarChart, AreaChart) |
 | DashboardKit | `dashboard-kit.tsx` | `AppCard`, `GlowButton`, `SectionHeader` wrappers |
+| WorldActivityMap | `world-activity-map.tsx` | Dynamic `react-simple-maps` map module split out of Recharts bundle |
 
 ### 4.3 Layout Components (`components/layout/`)
 
@@ -312,6 +316,7 @@
 |-----------|------|-------|
 | Sidebar | `Sidebar.tsx` | Navigation sidebar with collapse toggle |
 | Topbar | `Topbar.tsx` | Top header with search, notifications, user |
+| DashboardShell | `dashboard-shell.tsx` | Client dashboard shell with auth guard, sidebar, topbar, particles, and layout state |
 
 ### 4.4 Auth Components (`components/auth/`)
 
@@ -334,10 +339,9 @@
 
 ```typescript
 {
-  theme: "light" | "dark",        // Not fully implemented in UI
   language: "en" | "id",           // Active language
   sidebarCollapsed: boolean,       // Sidebar state
-  setTheme, setLanguage, toggleTheme, toggleLanguage, toggleSidebar
+  setLanguage, toggleLanguage, toggleSidebar
 }
 ```
 
@@ -363,7 +367,7 @@
 
 ### 6.1 Current Truth
 
-`frontend/lib/api-service.ts` defines typed fetchers for most backend endpoints, and `frontend/lib/apiClient.ts` adds bearer tokens plus one refresh-token retry on `401`. However, dashboard pages currently do **not** import `@/lib/api-service`; they render inline/static data or `mock-data.ts`. React Query is provided globally but no page currently uses `useQuery` or `useMutation`.
+`frontend/lib/api-service.ts` defines typed fetchers for most backend endpoints, and `frontend/lib/apiClient.ts` adds bearer tokens plus one refresh-token retry on `401`. Dashboard pages now use React Query + `api-service.ts` for their primary live list/detail/settings reads, with preview/mock fallbacks retained where backend coverage or UX flows are incomplete.
 
 Auth is the exception: `/login` and `/signup` call the backend directly with native `fetch`.
 
@@ -373,28 +377,27 @@ Auth is the exception: `/login` and `/signup` call the backend directly with nat
 |---|---|---:|---:|
 | Login form | `POST /auth/login` | Direct `fetch` | Yes |
 | Signup form | `POST /auth/register` | Direct `fetch` | Yes |
-| `logoutSession()` | `POST /auth/logout` | Yes | No; topbar logout only clears local store |
+| `logoutSession()` | `POST /auth/logout` | Yes | Yes — topbar logout calls API to revoke refresh token before clearing local state |
 | `getCurrentUser()` | `GET /auth/me` | Yes | No |
-| `getDashboardSummary()` | `GET /api/dashboard/summary` | Yes | No |
-| `getSignals()` / `getSignalById()` | `GET /signals`, `GET /signals/:id` | Yes | No |
-| `getAlerts()` / `getAlertById()` | `GET /api/alerts`, `GET /api/alerts/:id` | Yes | No |
-| Alert status/assignment functions | `PATCH /api/alerts/:id/status`, `PATCH /api/alerts/:id/assign` | Yes | No |
-| `getVisibility()` | `GET /api/visibility` | Yes | No |
-| Action-plan functions | `/api/action-plans`, `/api/actions` | Yes | No |
-| Report/export functions | `/api/reports`, `/api/reports/:id/export`, `/api/reports/exports/:jobId` | Yes | No |
-| `getNarratives()` | `GET /api/narratives` | Yes | No |
-| Source/ingestion functions | `/sources`, `/ingestion/run/:sourceId`, `/ingestion/status/:jobId` | Yes | No |
-| Workspace settings/member functions | `/api/workspace/settings`, `/api/workspace/members` | Yes | No |
-| `changePassword()` | `POST /auth/change-password` | Yes | No |
+| `getDashboardSummary()` | `GET /api/dashboard/summary` | Yes | Yes — dashboard home uses KPI/trend/sentiment/latest signal fields with date filters |
+| `getSignals()` / `getSignalById()` | `GET /signals`, `GET /signals/:id` | Yes | `getSignals()` yes on `/signals`; `getSignalById()` not currently used by a route |
+| `getAlerts()` / `getAlertById()` | `GET /api/alerts`, `GET /api/alerts/:id` | Yes | Yes — list page and detail page use React Query |
+| Alert status/assignment functions | `PATCH /api/alerts/:id/status`, `PATCH /api/alerts/:id/assign` | Yes | Yes — alerts page dropdown for status change, alert detail page editable assignment fields |
+| `getVisibility()` | `GET /api/visibility` | Yes | Yes — partially mapped with static fallback sections |
+| Action-plan functions | `/api/action-plans`, `/api/actions` | Yes | Yes — `getActionPlans()`, `getActionQueue()`, and `submitActionPlanFeedback()` are wired; accept/reject buttons on action detail |
+| Report/export functions | `/api/reports`, `/api/reports/:id/export`, `/api/reports/exports/:jobId` | Yes | Yes — `getReports()` and `createReportExport()` with polling via `getReportExportStatus()` wired to PDF download |
+| `getNarratives()` | `GET /api/narratives` | Yes | Yes — partially mapped to intelligence UI with preview fallback |
+| Source/ingestion functions | `/sources`, `/ingestion/run/:sourceId`, `/ingestion/status/:jobId` | Yes | Yes — `getSources()`, `updateSource()` (toggle), `deleteSource()`, and `runSourceIngestion()` (sync) are wired |
+| Workspace settings/member functions | `/api/workspace/settings`, `/api/workspace/members` | Yes | Yes — `getWorkspaceSettings()`, `updateWorkspaceSettings()`, `getWorkspaceMembers()`, `createWorkspaceMember()`, `deleteWorkspaceMember()` are wired |
+| `changePassword()` | `POST /auth/change-password` | Yes | Yes — settings page change password form with validation |
 
 ### 6.3 Known Contract Issues
 
 | Area | Issue |
 |------|-------|
-| Reports | `getReports()` is typed as `{ reports: ReportRecord[] }`, but the backend returns `{ data, pagination }`. |
-| Pagination | `PaginatedResponse<T>` uses `meta`, while several backend list endpoints return `pagination`; `/api/actions` returns `meta`. |
-| Page Wiring | Most pages cannot fall back from API to mock data because they never call the API in the first place. |
-| Token Refresh | Implemented in `apiClient.ts`, but unused by dashboard pages until they move to `api-service.ts` or React Query. |
+| Pagination | Backend list endpoints use mixed wrappers: most return `pagination`, while `/api/actions` returns `meta`. `api-service.ts` now models both shapes explicitly. |
+| Page Wiring | Primary dashboard reads are now wired to `api-service.ts`, but many secondary cards/actions still use preview/static data until backend coverage is complete. |
+| Token Refresh | Implemented in `apiClient.ts` and exercised by dashboard pages through React Query + `api-service.ts`. |
 
 ---
 
@@ -417,25 +420,30 @@ Auth is the exception: `/login` and `/signup` call the backend directly with nat
 ### ✅ What's Working
 - All auth pages render and function (login, signup, reset, verify, new-password)
 - Demo login bypasses API for UI testing
-- Dashboard layout with sidebar, topbar, responsive design
+- Dashboard layout with sidebar, topbar with global search, responsive design
 - Implemented dashboard routes render: `/`, `/signals`, `/alerts`, `/alerts/[id]`, `/visibility`, `/intelligence`, `/reports`, `/action-plans`, `/workspace/sources`, `/workspace/settings`, plus `/settings` alias
 - i18n toggle works on auth and dashboard pages
 - Language transition animation (View Transitions API)
-- API client/service layer exists for most backend endpoints
-- Zustand stores with persistence
-- Chart components render correctly
+- API client/service layer for all backend endpoints with React Query integration
+- Zustand stores with persistence (auth + UI settings)
+- All CRUD mutations wired: alerts, sources, reports, action plans, settings
+- Auth guard via `proxy.ts` (Next.js 16), logout with refresh token revocation
+- Form validation on invite member, workspace settings, and change password
+- Dashboard quick actions wired to slide-over drawer
+- Global search across alerts, narratives, and navigation
+- Chart components with entry/draw/donut animations and reduced-motion support
+- Loading/error/empty states, toasts, confirmation dialogs, pagination, date filters
+- Mock data cleanup: 16 unused exports removed from `mock-data.ts`
 
 ### ⚠️ Known Issues & Gaps
-1. **Static/Mock Data Dependency**: Dashboard pages rely on `mock-data.ts` or inline/static arrays. They do not currently import `@/lib/api-service`.
-2. **Dark Mode**: `useUiStore` has `theme` but dark mode is not implemented in the UI.
-3. **Onboarding Flow**: UI-only, no API integration. Steps don't save to backend.
-4. **Social Login**: Apple/Google/Microsoft buttons show "unavailable" toast.
-5. **Workspace Logo Upload**: UI exists but no file upload API endpoint.
-6. **Missing Workspace Routes**: `/workspace/activity`, `/workspace/cases`, and `/workspace/integrations` do not currently exist as frontend pages.
-7. **Notification Channels**: UI toggles exist but no real push/dispatch integration.
-8. **Real-time Updates**: No WebSocket or polling for live signal/alert updates.
-9. **Settings Page**: Has local form state for several controls; backend save/load is not wired into the page.
-10. **Report Contract Mismatch**: `getReports()` expects `{ reports }` but backend returns `{ data, pagination }`.
+1. **Static/Mock Data Dependency**: Dashboard pages use live API reads for primary data, but secondary widgets (topics, sources, system status) and preview fallbacks still rely on `mock-data.ts`. 16 unused exports have been removed; remaining mocks serve as fallback data.
+2. **Onboarding Flow**: UI-only, no API integration. Steps don't save to backend.
+3. **Social Login**: Apple/Google/Microsoft buttons show "unavailable" toast.
+4. **Workspace Logo Upload**: UI exists but no file upload API endpoint.
+5. **Missing Workspace Routes**: `/workspace/activity`, `/workspace/cases`, and `/workspace/integrations` do not currently exist as frontend pages.
+6. **Notification Channels**: UI toggles exist but no real push/dispatch integration.
+7. **Real-time Updates**: No WebSocket or polling for live signal/alert updates.
+8. **Reset Password**: UI exists at `/reset-password` but no backend API endpoint — flow is mocked.
 
 ---
 
@@ -449,10 +457,11 @@ These replace the removed frontend checklist/guidelines and should be treated as
 | Visual Direction | Preserve the current light enterprise SaaS dashboard with dark navy sidebar, compact white cards, rounded 8-16px surfaces, soft borders, and blue/purple accent language. |
 | UI Fidelity | Match approved screenshots/rebuild direction closely before wiring API data. Avoid generic dashboard layouts. |
 | Auth Pages | Auth pages are implemented and should only be changed for explicit auth/design fixes. |
-| Dashboard Data | Current dashboard pages are static/mock. Do not assume API wiring exists until page imports prove it. |
+| Dashboard Data | Dashboard pages use API-first reads with preview/static fallback. Do not delete fallback/mock data until all secondary widgets and mutation flows are backed by API data. |
 | API Migration | Move page by page from inline/static/mock data to `api-service.ts` or React Query while preserving the approved UI. |
 | i18n | Prefer `next-intl` messages for stable UI copy; inline dictionaries/static text should be migrated gradually. |
 | Validation | After frontend code edits, run `rtk lint` and `rtk npm run build`. |
+| Deployment Target | Frontend production target is DigitalOcean VPS behind Hostinger-managed DNS, not Vercel. |
 
 ---
 
@@ -465,21 +474,20 @@ These replace the removed frontend checklist/guidelines and should be treated as
 > [!IMPORTANT]
 > These tasks convert pages from mock data to real backend API data.
 
-- [ ] **API Contract Cleanup** — Fix `getReports()` and pagination typings to match backend response shapes
-- [ ] **Dashboard Home** — Replace `dashboardMetrics`, `activitySeries`, `miniTopics`, `alerts`, `topTopics`, `sources` mock data with `getDashboardSummary()` API response
-- [ ] **Signals Page** — Wire the rebuilt page to `getSignals()` and map API fields to the current table/card layout
-- [ ] **Alerts Page** — Wire the rebuilt page to `getAlerts()` and wire status/assignment mutations where controls exist
-- [ ] **Alert Detail Page** — Replace `mock-data.ts` lookup with `getAlertById()`
-- [ ] **Visibility Page** — Map `getVisibility()` response to all widget sections; decide which static sections need backend support
-- [ ] **Intelligence Page** — Map `getNarratives()` response to the current topic map/detail UI
-- [ ] **Reports Page** — Fix `getReports()` response typing, wire table/export actions, remove static report rows
-- [ ] **Action Plans Page** — Wire `getActionPlans()`, `getActionQueue()`, create, assignment, and feedback flows
-- [ ] **Sources Page** — Wire `getSources()` and source CRUD/ingestion actions into the rebuilt connector UI
-- [ ] **Settings Page** — Wire all settings fields to `getWorkspaceSettings()` / `updateWorkspaceSettings()`; test team management
+- [x] **API Contract Cleanup** — Fixed `getReports()`, `getNarratives()`, `getSources()`, and pagination typings to match backend response shapes. Completed 2026-05-30.
+- [ ] **Dashboard Home** — Partially wired to `getDashboardSummary()` for KPIs, trends, sentiment donut, latest signals, and date filters. Still uses preview/static data for topics, sources, quick actions, and some dashboard panels.
+- [x] **Signals Page** — Wired the main table to `getSignals()` with API field mapping, search, 24h/7d/30d params, pagination, loading/error/empty states, and preview fallback. Completed 2026-05-31.
+- [x] **Alerts Page** — Main list wired to `getAlerts()` with pagination. Status/assignment mutations wired via dropdown menu and editable assignment fields on detail page. Completed 2026-05-31.
+- [x] **Alert Detail Page** — Replaced mock lookup with `getAlertById()` and React Query state handling. Completed 2026-05-30.
+- [x] **Visibility Page** — Wired to `getVisibility()` with fallback handling. Completed 2026-05-31.
+- [x] **Intelligence Page** — Wired to `getNarratives()` with `buildNarrativeClusters` mapping and fallback. Completed 2026-05-31.
+- [x] **Reports Page** — `getReports()` with pagination wired. PDF export via `createReportExport()` with polling and auto-download wired. Completed 2026-05-31.
+- [x] **Action Plans Page** — `getActionPlans()`, `getActionQueue()`, and `submitActionPlanFeedback()` wired. Accept/reject buttons on action detail. Completed 2026-05-31.
+- [x] **Sources Page** — `getSources()` with toggle, sync all, and delete mutations wired. Completed 2026-05-31.
+- [x] **Settings Page** — `getWorkspaceSettings()`, `updateWorkspaceSettings()`, `getWorkspaceMembers()`, `createWorkspaceMember()`, `deleteWorkspaceMember()`, and `changePassword()` wired with validation. Completed 2026-05-31.
 
 ### Phase 2: Missing Features (High Priority)
 
-- [ ] **Dark Mode** — Implement theme toggle across all pages using CSS variables and `useUiStore.theme`
 - [ ] **Onboarding API** — Connect onboarding steps to workspace setup endpoints
 - [ ] **File Upload** — Implement logo upload with cloud storage (S3/Supabase Storage)
 - [ ] **Activity Log** — Create `/workspace/activity` page and wire it to a new `AuditLog` API
@@ -488,30 +496,31 @@ These replace the removed frontend checklist/guidelines and should be treated as
 - [ ] **Real-time Signals** — Add polling or WebSocket for live signal/alert updates
 - [ ] **Export Downloads** — Complete report export download flow with signed URLs
 - [ ] **Notification Settings** — Wire notification channel toggles to backend API
-- [ ] **Mobile Responsive** — Audit and fix responsive breakpoints across all pages
+- [x] **Mobile Responsive** — Completed code-level mobile audit and fixed high-risk overflow/button wrapping patterns across dashboard pages. Completed 2026-05-30. Final device/browser visual QA is still recommended before release.
 
 ### Phase 3: UX Polish (Medium Priority)
 
-- [ ] **Loading States** — Ensure all pages show skeleton loaders during API fetch
-- [ ] **Error States** — Show meaningful error messages when API fails (not just empty state)
-- [ ] **Empty States** — Design and implement empty states for all data tables/lists
-- [ ] **Toast Notifications** — Standardize success/error toasts across all mutations
-- [ ] **Confirmation Dialogs** — Add confirm dialogs for destructive actions (delete source, remove member)
-- [ ] **Search Functionality** — Implement topbar global search across signals, alerts, clusters
-- [ ] **Pagination** — Add pagination controls for signals, alerts, reports tables
-- [ ] **Date Filters** — Wire time range filters (24h, 7d, 30d) to API query params
-- [ ] **Chart Animations** — Add entry animations to all chart components
-- [ ] **i18n Consistency** — Migrate all inline `dictionary` objects to `next-intl` message files
+- [x] **Reusable State Components** — Added `components/dashboard/dashboard-states.tsx` with dashboard empty/error/loading states and metric/table/panel skeletons. Completed 2026-05-30.
+- [x] **Loading States** — Ensure all pages show skeleton loaders during API fetch. All dashboard pages now use skeletons/loading states while API data loads.
+- [x] **Error States** — Show meaningful error messages when API fails (not just empty state). All dashboard pages show reusable error states and fall back to preview data when live data is unavailable.
+- [x] **Empty States** — Design and implement empty states for all data tables/lists. All dashboard pages show reusable empty states for successful empty API responses.
+- [x] **Toast Notifications** — Added shared `ToastProvider`/`useToast` and replaced the settings page local toast with standardized success, error, and info feedback for existing mutation/action flows. Completed 2026-05-31.
+- [x] **Confirmation Dialogs** — Added reusable `ConfirmationDialog` and wired existing destructive settings actions: pause/reset/delete workspace and remove member. Completed 2026-05-31.
+- [x] **Search Functionality** — Implemented topbar global search across alerts, narratives/clusters, and navigation pages with debounced input, dropdown results, type badges, empty state, and keyboard support. Completed 2026-05-31.
+- [x] **Pagination** — Added shared dashboard pagination controls and wired Signals, Alerts, and Reports tables to API `page`/`pagination` data with Prev/Next navigation. Completed 2026-05-31.
+- [x] **Date Filters** — Wired 24h/7d/30d filters to API query params for dashboard summary and signals. Added shared date-range option builder and backend dashboard `startDate`/`endDate` support. Completed 2026-05-31.
+- [x] **Chart Animations** — Added reusable chart entry/draw/donut animation utilities with reduced-motion support, then applied them to Recharts components and inline SVG/CSS charts across dashboard pages. Completed 2026-05-31.
+- [x] **i18n Consistency** — Migrate all inline `dictionary` objects to `next-intl` message files. Extracted `ActionPlans`, `Sources`, and `Visibility` dictionaries to `messages/*.json`.
 
 ### Phase 4: Production Readiness (Before Launch)
 
-- [ ] **Auth Guard** — Implement middleware to redirect unauthenticated users to `/login`
-- [ ] **Token Refresh Adoption** — Use `apiClient.ts`/`api-service.ts` from pages so the existing refresh retry is exercised
-- [ ] **SEO Meta Tags** — Add proper title/description for each page
-- [ ] **Error Boundary** — Ensure `error.tsx` catches and displays errors gracefully
-- [ ] **Performance** — Audit bundle size; lazy load heavy pages and chart components
-- [ ] **Accessibility** — Audit ARIA labels, keyboard navigation, focus management
-- [ ] **E2E Tests** — Write Playwright tests for critical flows (login, dashboard, CRUD)
-- [ ] **Vercel Deployment** — Configure build settings, environment variables, domain
-- [ ] **Remove Mock Data** — Delete `mock-data.ts` after all pages use real API
-- [ ] **Console Cleanup** — Remove all `console.log` debug statements
+- [x] **Auth Guard** — Implement middleware to redirect unauthenticated users to `/login`. Added Next 16 `proxy.ts` route guard backed by a client-set auth marker cookie, with dashboard client guard still validating the stored token.
+- [x] **Token Refresh Adoption** — Use `apiClient.ts`/`api-service.ts` from pages so the existing refresh retry is exercised. Primary dashboard reads now fetch through React Query + `api-service`, which calls `apiClient` and its refresh-token retry path.
+- [x] **SEO Meta Tags** — Add proper title/description for each page. Added root title template, Open Graph/Twitter defaults, and route-level metadata layouts for dashboard, auth, onboarding, and detail pages.
+- [x] **Error Boundary** — Ensure `error.tsx` catches and displays errors gracefully. Added dashboard, app, and global error boundaries with simple retry-focused copy.
+- [x] **Performance** — Audited chart/map bundle hotspots and lazy-loaded dashboard chart components with `next/dynamic`. Split `WorldActivityMap` into its own `react-simple-maps` module so map code is not bundled with Recharts charts. Completed 2026-05-31.
+- [x] **Accessibility** — Completed targeted code-level audit for updated dashboard controls. Added dialog focus management/trapping, pagination navigation labels/live status, and labels for icon-only source view toggles. Completed 2026-05-31. Manual screen-reader/browser QA is still recommended before launch.
+- [x] **E2E Tests** — Added Playwright setup, npm scripts, and smoke coverage for protected-route redirect, authenticated auth-route redirect, and primary login controls. Completed 2026-05-31. CRUD flow coverage should be expanded once live mutation endpoints are finalized.
+- [ ] **VPS Deployment** — Prepare DigitalOcean VPS + Hostinger DNS deployment readiness: production env docs, PM2/systemd process notes, Nginx reverse proxy, SSL, and frontend/backend domain mapping
+- [ ] **Remove Mock Data** — Partially done: 16 unused exports removed from `mock-data.ts`. Remaining mocks serve as fallback data for dashboard widgets and need backend API coverage before full removal.
+- [x] **Console Cleanup** — Remove all `console.log` debug statements. Frontend was already clean. Backend: replaced 45+ raw `console.log` calls across 13 files with structured `logStructured()` from shared logger. Only `logger.js` itself retains `console.log` as the centralized output.

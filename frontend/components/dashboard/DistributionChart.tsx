@@ -17,7 +17,7 @@ export function DistributionChart({ title, data, colors = DEFAULT_COLORS }: Donu
   return (
     <div className="cyber-card rounded-xl border border-slate-100 p-5 w-full h-[350px] flex flex-col justify-between">
       <h3 className="text-slate-900 font-bold tracking-tight mb-2">{title}</h3>
-      <div className="flex-1 w-full relative">
+      <div className="chart-donut-enter flex-1 w-full relative">
         {activeData.length === 0 ? (
           <div className="text-slate-400 w-full h-full flex items-center justify-center text-sm">
             No data available
@@ -34,6 +34,8 @@ export function DistributionChart({ title, data, colors = DEFAULT_COLORS }: Donu
                 paddingAngle={5}
                 dataKey="value"
                 stroke="none"
+                isAnimationActive
+                animationDuration={720}
               >
                 {activeData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />

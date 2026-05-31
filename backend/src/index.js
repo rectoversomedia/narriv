@@ -23,7 +23,7 @@ import "./workers/ingestion.worker.js";
 import "./workers/notification.worker.js";
 import { scheduleAlertDetection, scheduleAlertEscalation } from "./lib/queue.js";
 import { getRuntimeHealth } from "./lib/runtime-health.js";
-import { requestLogger } from "./lib/logger.js";
+import { requestLogger, logStructured } from "./lib/logger.js";
 import { getMetricsSnapshot } from "./lib/metrics.js";
 
 dotenv.config();
@@ -96,5 +96,5 @@ app.use("/api/feedback", feedbackRoutes);
 app.use("/api/workspace", workspaceSettingsRoutes);
 
 app.listen(3000, () => {
-    console.log("Server running on http://localhost:3000");
+    logStructured("info", "server_started", { port: 3000, url: "http://localhost:3000" });
 });

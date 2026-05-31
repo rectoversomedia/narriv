@@ -5,6 +5,7 @@ import prisma from "../prisma.js";
 import { runActorAndFetchDataset } from "../modules/apify/apify.service.js";
 import { addAnalysisJob } from "../lib/queue.js";
 import { incrementIngestionFailure } from "../lib/metrics.js";
+import { logStructured } from "../lib/logger.js";
 
 class IngestionCancelledError extends Error {
     constructor(message) {
@@ -20,24 +21,6 @@ async function assertNotCancelled(ingestionJobId) {
     });
     if (row?.status === "cancelled") {
         throw new IngestionCancelledError(row.errorMessage || "Cancelled by user");
-    }
-}
-
-function logStructured(level, event, payload = {}) {
-    const entry = {
-        level,
-        event,
-        worker: "ingestion-worker",
-        timestamp: new Date().toISOString(),
-        ...payload,
-    };
-    const line = JSON.stringify(entry);
-    if (level === "error") {
-        console.error(line);
-    } else if (level === "warn") {
-        console.warn(line);
-    } else {
-        console.log(line);
     }
 }
 
