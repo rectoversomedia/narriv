@@ -2,11 +2,7 @@
 opencode.json 
 .opencode
 .kilocode
-CLAUDE.md
 .claude 
-docs
-assets
-NARRIV_UI_DESIGN_GUIDELINES.md
-narriv-ui-design.pen
 .playwright-mcp
-narriv-ui-design/
+.codex
+process

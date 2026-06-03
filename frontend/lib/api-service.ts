@@ -520,6 +520,432 @@ export async function changePassword(input: { currentPassword: string; newPasswo
   }
 }
 
+// ---------------------------------------------------------------------------
+// Notification Settings
+// ---------------------------------------------------------------------------
+
+export interface NotificationSettings {
+  workspaceId: string;
+  emailEnabled: boolean;
+  whatsappEnabled: boolean;
+  escalationNotifications: boolean;
+  reminderNotifications: boolean;
+}
+
+export async function getNotificationSettings(): Promise<NotificationSettings | null> {
+  try {
+    return await apiClient<NotificationSettings>("/api/workspace/notification-settings");
+  } catch {
+    return null;
+  }
+}
+
+export async function updateNotificationSettings(input: Partial<Pick<NotificationSettings, "emailEnabled" | "whatsappEnabled" | "escalationNotifications" | "reminderNotifications">>): Promise<NotificationSettings | null> {
+  try {
+    return await apiClient<NotificationSettings>("/api/workspace/notification-settings", {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Activity / Audit Log
+// ---------------------------------------------------------------------------
+
+export interface ActivityLogEntry {
+  id: string;
+  userId: string | null;
+  user: { id: string; name: string | null; email: string } | null;
+  event: string;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+export interface ActivityLogFilters {
+  workspaceId?: string;
+  eventType?: string;
+  userId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  limit?: number;
+}
+
+export async function getActivityLogs(filters: ActivityLogFilters = {}): Promise<{ data: ActivityLogEntry[]; meta: { page: number; limit: number; total: number; totalPages: number } } | null> {
+  const params = new URLSearchParams();
+  if (filters.workspaceId) params.set("workspaceId", filters.workspaceId);
+  if (filters.eventType) params.set("eventType", filters.eventType);
+  if (filters.userId) params.set("userId", filters.userId);
+  if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
+  if (filters.dateTo) params.set("dateTo", filters.dateTo);
+  if (filters.page) params.set("page", String(filters.page));
+  if (filters.limit) params.set("limit", String(filters.limit));
+
+  const query = params.toString();
+  try {
+    return await apiClient<{ data: ActivityLogEntry[]; meta: { page: number; limit: number; total: number; totalPages: number } }>(`/api/workspace/activity${query ? `?${query}` : ""}`);
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Onboarding
+// ---------------------------------------------------------------------------
+
+export interface OnboardingWorkspaceResponse {
+  id: string;
+  name: string;
+  slug: string;
+  settings: { brandName: string | null; industry: string | null; timezone: string | null } | null;
+  notificationSettings: { emailEnabled: boolean; whatsappEnabled: boolean; escalationNotifications: boolean; reminderNotifications: boolean } | null;
+}
+
+export async function createOnboardingWorkspace(input: { brandName: string; industry?: string; timezone?: string }): Promise<OnboardingWorkspaceResponse | null> {
+  try {
+    return await apiClient<OnboardingWorkspaceResponse>("/api/onboarding/workspace", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function createOnboardingSources(input: { workspaceId: string; sources: Array<{ name: string; type: string; actorId?: string; inputConfig?: Record<string, unknown> }> }): Promise<{ count: number } | null> {
+  try {
+    return await apiClient<{ count: number }>("/api/onboarding/sources", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function createOnboardingNotifications(input: { workspaceId: string; emailEnabled?: boolean; whatsappEnabled?: boolean; escalationNotifications?: boolean; reminderNotifications?: boolean }): Promise<boolean> {
+  try {
+    await apiClient<unknown>("/api/onboarding/notifications", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function createOnboardingTeam(input: { workspaceId: string; members: Array<{ email: string; role: string }> }): Promise<{ results: Array<{ email: string; status: string; role?: string }> } | null> {
+  try {
+    return await apiClient<{ results: Array<{ email: string; status: string; role?: string }> }>("/api/onboarding/team", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// File Upload (Logo)
+// ---------------------------------------------------------------------------
+
+export async function uploadWorkspaceLogo(input: { workspaceId?: string; fileName: string; fileContent: string; mimeType: string }): Promise<{ url: string; fileName: string } | null> {
+  try {
+    return await apiClient<{ url: string; fileName: string }>("/api/workspace/logo", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Cases
+// ---------------------------------------------------------------------------
+
+export interface CaseRecord {
+  id: string;
+  workspaceId: string;
+  title: string;
+  description: string | null;
+  status: string;
+  priority: string;
+  sourceType: string | null;
+  sourceId: string | null;
+  assignedTo: string | null;
+  assignedTeam: string | null;
+  deadline: string | null;
+  resolution: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CaseFilters {
+  workspaceId?: string;
+  status?: string;
+  priority?: string;
+  page?: number;
+  limit?: number;
+}
+
+export async function getCases(filters: CaseFilters = {}): Promise<{ data: CaseRecord[]; meta: { page: number; limit: number; total: number; totalPages: number } } | null> {
+  const params = new URLSearchParams();
+  if (filters.workspaceId) params.set("workspaceId", filters.workspaceId);
+  if (filters.status) params.set("status", filters.status);
+  if (filters.priority) params.set("priority", filters.priority);
+  if (filters.page) params.set("page", String(filters.page));
+  if (filters.limit) params.set("limit", String(filters.limit));
+
+  const query = params.toString();
+  try {
+    return await apiClient<{ data: CaseRecord[]; meta: { page: number; limit: number; total: number; totalPages: number } }>(`/api/workspace/cases${query ? `?${query}` : ""}`);
+  } catch {
+    return null;
+  }
+}
+
+export async function getCaseById(id: string): Promise<CaseRecord | null> {
+  try {
+    return await apiClient<CaseRecord>(`/api/workspace/cases/${id}`);
+  } catch {
+    return null;
+  }
+}
+
+export async function createCase(input: { title: string; description?: string; priority?: string; sourceType?: string; sourceId?: string; assignedTo?: string; assignedTeam?: string; deadline?: string }): Promise<CaseRecord | null> {
+  try {
+    return await apiClient<CaseRecord>("/api/workspace/cases", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function updateCase(id: string, input: Partial<Pick<CaseRecord, "title" | "description" | "status" | "priority" | "assignedTo" | "assignedTeam" | "deadline" | "resolution">>): Promise<CaseRecord | null> {
+  try {
+    return await apiClient<CaseRecord>(`/api/workspace/cases/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteCase(id: string): Promise<boolean> {
+  try {
+    await apiClient<{ success: boolean }>(`/api/workspace/cases/${id}`, { method: "DELETE" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Integrations
+// ---------------------------------------------------------------------------
+
+export interface IntegrationRecord {
+  id: string;
+  workspaceId: string;
+  name: string;
+  platform: string;
+  status: string;
+  config: Record<string, unknown> | null;
+  lastSyncAt: string | null;
+  errorMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getIntegrations(filters: { workspaceId?: string; platform?: string; status?: string } = {}): Promise<{ data: IntegrationRecord[] } | null> {
+  const params = new URLSearchParams();
+  if (filters.workspaceId) params.set("workspaceId", filters.workspaceId);
+  if (filters.platform) params.set("platform", filters.platform);
+  if (filters.status) params.set("status", filters.status);
+
+  const query = params.toString();
+  try {
+    return await apiClient<{ data: IntegrationRecord[] }>(`/api/workspace/integrations${query ? `?${query}` : ""}`);
+  } catch {
+    return null;
+  }
+}
+
+export async function getIntegrationById(id: string): Promise<IntegrationRecord | null> {
+  try {
+    return await apiClient<IntegrationRecord>(`/api/workspace/integrations/${id}`);
+  } catch {
+    return null;
+  }
+}
+
+export async function createIntegration(input: { name: string; platform: string; config?: Record<string, unknown> }): Promise<IntegrationRecord | null> {
+  try {
+    return await apiClient<IntegrationRecord>("/api/workspace/integrations", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function updateIntegration(id: string, input: Partial<Pick<IntegrationRecord, "name" | "status" | "config">>): Promise<IntegrationRecord | null> {
+  try {
+    return await apiClient<IntegrationRecord>(`/api/workspace/integrations/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteIntegration(id: string): Promise<boolean> {
+  try {
+    await apiClient<{ success: boolean }>(`/api/workspace/integrations/${id}`, { method: "DELETE" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// AI Visibility Analysis
+// ---------------------------------------------------------------------------
+
+export async function triggerVisibilityAnalysis(input: { brandName: string; competitors?: string[]; queries: string[]; engineName?: string }): Promise<unknown | null> {
+  try {
+    return await apiClient<unknown>("/api/visibility/analyze", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Batch Signal Analysis
+// ---------------------------------------------------------------------------
+
+export async function batchAnalyzeSignals(input: { signalIds: string[] }): Promise<{ analyzed: number; failed: number; skipped: number; results: Array<{ signalId: string; status: string; analysis?: unknown; error?: string }> } | null> {
+  try {
+    return await apiClient<{ analyzed: number; failed: number; skipped: number; results: Array<{ signalId: string; status: string; analysis?: unknown; error?: string }> }>("/signals/batch-analyze", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Source Health & Coverage
+// ---------------------------------------------------------------------------
+
+export interface SourceHealthSummary {
+  total: number;
+  active: number;
+  healthy: number;
+  warning: number;
+  critical: number;
+  unknown: number;
+}
+
+export async function getSourceHealth(): Promise<{ sources: Array<{ id: string; name: string; isActive: boolean; health: { health: string; score: number; lastSyncAt: string | null; recentJobs: number; successRate: number } }>; summary: SourceHealthSummary } | null> {
+  try {
+    return await apiClient("/sources/health");
+  } catch {
+    return null;
+  }
+}
+
+export async function getSourceCoverage(): Promise<{ totalSources: number; activeSources: number; totalDocuments: number; coverageRate: number; typeCoverage: Record<string, { sources: number; active: number; documents: number }> } | null> {
+  try {
+    return await apiClient("/sources/coverage");
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Ingestion — RSS & Webhook
+// ---------------------------------------------------------------------------
+
+export async function triggerRSSFeed(input: { sourceId: string; url: string; maxItems?: number }): Promise<{ fetched: number; created: number } | null> {
+  try {
+    return await apiClient<{ fetched: number; created: number }>(`/ingestion/rss/${input.sourceId}`, {
+      method: "POST",
+      body: JSON.stringify({ url: input.url, maxItems: input.maxItems }),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function triggerWebhook(input: { sourceId: string; payload: Record<string, unknown> }): Promise<{ received: number; created: number } | null> {
+  try {
+    return await apiClient<{ received: number; created: number }>(`/ingestion/webhook/${input.sourceId}`, {
+      method: "POST",
+      body: JSON.stringify(input.payload),
+    });
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Report Templates & Generation
+// ---------------------------------------------------------------------------
+
+export interface ReportTemplate {
+  key: string;
+  name: string;
+  description: string;
+  format: string;
+  cadence: string;
+  sectionCount: number;
+}
+
+export async function getReportTemplates(): Promise<{ data: ReportTemplate[] } | null> {
+  try {
+    return await apiClient<{ data: ReportTemplate[] }>("/api/reports/templates");
+  } catch {
+    return null;
+  }
+}
+
+export async function generateReportFromTemplate(input: { templateKey: string; dateRange?: { start: string; end: string } }): Promise<{ id: string; title: string; template: string; sections: Array<{ id: string; title: string; data: unknown }>; createdAt: string } | null> {
+  try {
+    return await apiClient("/api/reports/generate", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function sendReportEmail(input: { reportId: string; recipientEmail?: string; subject?: string; body?: string }): Promise<{ sent: boolean; to?: string; reason?: string } | null> {
+  try {
+    return await apiClient(`/api/reports/${input.reportId}/send-email`, {
+      method: "POST",
+      body: JSON.stringify({ recipientEmail: input.recipientEmail, subject: input.subject, body: input.body }),
+    });
+  } catch {
+    return null;
+  }
+}
+
 export interface ReportRecord {
   id: string;
   title: string;

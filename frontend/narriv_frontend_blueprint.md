@@ -390,6 +390,7 @@ Auth is the exception: `/login` and `/signup` call the backend directly with nat
 | Source/ingestion functions | `/sources`, `/ingestion/run/:sourceId`, `/ingestion/status/:jobId` | Yes | Yes — `getSources()`, `updateSource()` (toggle), `deleteSource()`, and `runSourceIngestion()` (sync) are wired |
 | Workspace settings/member functions | `/api/workspace/settings`, `/api/workspace/members` | Yes | Yes — `getWorkspaceSettings()`, `updateWorkspaceSettings()`, `getWorkspaceMembers()`, `createWorkspaceMember()`, `deleteWorkspaceMember()` are wired |
 | `changePassword()` | `POST /auth/change-password` | Yes | Yes — settings page change password form with validation |
+| `getNotificationSettings()` / `updateNotificationSettings()` | `GET/PATCH /api/workspace/notification-settings` | Yes | Yes — settings page notification toggles wired |
 
 ### 6.3 Known Contract Issues
 
@@ -495,7 +496,7 @@ These replace the removed frontend checklist/guidelines and should be treated as
 - [ ] **Integrations Page** — Create `/workspace/integrations` page after integration/OAuth endpoints exist
 - [ ] **Real-time Signals** — Add polling or WebSocket for live signal/alert updates
 - [x] **Export Downloads** — PDF export via `createReportExport()` with polling via `getReportExportStatus()` and auto-download on completion. Completed 2026-05-31.
-- [ ] **Notification Settings** — Wire notification channel toggles to backend API
+- [x] **Notification Settings** — Wired to `GET/PATCH /api/workspace/notification-settings` via workspace-settings API. Backend endpoints implemented. Completed 2026-05-31.
 - [x] **Mobile Responsive** — Completed code-level mobile audit and fixed high-risk overflow/button wrapping patterns across dashboard pages. Completed 2026-05-30. Final device/browser visual QA is still recommended before release.
 
 ### Phase 3: UX Polish (Medium Priority)
