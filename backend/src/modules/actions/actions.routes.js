@@ -1,6 +1,6 @@
 import express from "express";
 import prisma from "../../prisma.js";
-import { generateActionPlan } from "./actions.service.js";
+import { generateActionPlan, generateMultiStepPlan } from "./actions.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { badRequest, forbidden, internalError, notFound } from "../../lib/api-error.js";
@@ -20,7 +20,7 @@ router.post("/", validateRequest({ body: createActionPlanBodySchema }), async (r
             return forbidden(res, "Workspace access denied", "WORKSPACE_ACCESS_DENIED");
         }
 
-        const validTypes = ["pr_response", "content_strategy", "influencer_strategy", "crisis_response"];
+        const validTypes = ["pr_response", "content_strategy", "influencer_strategy", "crisis_response", "social_response", "stakeholder_update", "data_driven"];
         if (!strategyType || !validTypes.includes(strategyType)) {
             return badRequest(
                 res,
@@ -141,6 +141,49 @@ router.get("/:id", async (req, res) => {
     } catch (error) {
         console.error("Error fetching action plan:", error);
         res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// POST /api/actions/multi-step — Generate a multi-step sequential action plan
+router.post("/multi-step", async (req, res) => {
+    try {
+        const { workspaceId, strategyType, alertId, clusterId, maxSteps } = req.body;
+
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
+        if (!scopedWorkspaceId) {
+            return forbidden(res, "Workspace access denied", "WORKSPACE_ACCESS_DENIED");
+        }
+
+        const validTypes = ["pr_response", "content_strategy", "influencer_strategy", "crisis_response", "social_response", "stakeholder_update", "data_driven"];
+        if (!strategyType || !validTypes.includes(strategyType)) {
+            return badRequest(
+                res,
+                `strategyType is required. Must be one of: ${validTypes.join(", ")}`,
+                "INVALID_STRATEGY_TYPE"
+            );
+        }
+
+        if (!process.env.OPENAI_API_KEY) {
+            return res.status(503).json({
+                error: "Action generation is currently unavailable.",
+                code: "AI_PROVIDER_UNAVAILABLE",
+            });
+        }
+
+        const plan = await generateMultiStepPlan({
+            workspaceId: scopedWorkspaceId,
+            strategyType,
+            alertId,
+            clusterId,
+            maxSteps: Math.min(Math.max(parseInt(maxSteps) || 5, 2), 10),
+        });
+
+        res.status(201).json(plan);
+    } catch (error) {
+        console.error("Error generating multi-step plan:", error);
+        return internalError(res, "Failed to generate multi-step plan", "MULTI_STEP_GENERATION_FAILED", {
+            reason: error?.message || "Unknown error",
+        });
     }
 });
 

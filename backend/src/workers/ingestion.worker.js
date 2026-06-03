@@ -61,7 +61,21 @@ const ingestionWorker = new Worker(
             maxAttempts,
         });
 
-        await assertNotCancelled(jobId);
+        try {
+            await assertNotCancelled(jobId);
+        } catch (error) {
+            if (error instanceof IngestionCancelledError) {
+                logStructured("warn", "ingestion_job_cancelled", {
+                    queueJobId: job.id,
+                    ingestionJobId: jobId,
+                    sourceId,
+                    attemptNumber,
+                    reason: error.message,
+                });
+                return { processedCount: 0, cancelled: true };
+            }
+            throw error;
+        }
         await prisma.ingestionJob.update({
             where: { id: jobId },
             data: { status: "running" },
@@ -73,6 +87,23 @@ const ingestionWorker = new Worker(
 
         if (!source) {
             throw new Error(`Source not found: ${sourceId}`);
+        }
+
+        // Check for incremental ingestion — find last successful ingestion time
+        let lastIngestionAt = null;
+        try {
+            const lastJob = await prisma.ingestionJob.findFirst({
+                where: {
+                    sourceId,
+                    status: "completed",
+                    id: { not: jobId },
+                },
+                orderBy: { createdAt: "desc" },
+                select: { createdAt: true },
+            });
+            lastIngestionAt = lastJob?.createdAt || null;
+        } catch {
+            // Ignore — full ingestion if we can't determine last run
         }
 
         try {
@@ -210,10 +241,26 @@ const ingestionWorker = new Worker(
                 }
             }
 
-            actorConfigs = actorConfigs.map((config) => ({
-                ...config,
-                apifyInput: { ...(config.apifyInput || {}), sourceType: source.type },
-            }));
+            actorConfigs = actorConfigs.map((config) => {
+                const input = { ...(config.apifyInput || {}), sourceType: source.type };
+
+                // Incremental ingestion: modify input based on last ingestion time
+                if (lastIngestionAt && config.apifyInput) {
+                    const hoursSince = Math.floor((Date.now() - lastIngestionAt.getTime()) / (1000 * 60 * 60));
+                    if (hoursSince > 0 && hoursSince <= 168) { // Within 7 days
+                        // For Google News: set dateFilter to hours since last run
+                        if (config.actorTarget === "futurizerush/google-news-scraper") {
+                            input.dateFilter = `${Math.min(hoursSince, 168)}h`;
+                        }
+                        // For Google Search: reduce results since we already have old ones
+                        if (config.actorTarget === "apify/google-search-scraper") {
+                            input.resultsPerPage = Math.min(input.resultsPerPage || 10, 10);
+                        }
+                    }
+                }
+
+                return { ...config, apifyInput: input };
+            });
 
             let allDatasets = [];
 

@@ -220,4 +220,97 @@ router.post("/:id/analyze", validateRequest({ params: signalIdParamsSchema }), a
     }
 });
 
+// POST /signals/batch-analyze — Analyze multiple signals at once
+router.post("/batch-analyze", async (req, res) => {
+    try {
+        const { signalIds, workspaceId } = req.body;
+
+        if (!signalIds || !Array.isArray(signalIds) || signalIds.length === 0) {
+            return res.status(400).json({ error: "signalIds array is required." });
+        }
+
+        if (signalIds.length > 20) {
+            return res.status(400).json({ error: "Maximum 20 signals per batch." });
+        }
+
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
+        if (!scopedWorkspaceId) {
+            return res.status(403).json({ error: "Workspace access denied" });
+        }
+
+        const signals = await prisma.signal.findMany({
+            where: {
+                id: { in: signalIds },
+                workspaceId: scopedWorkspaceId,
+            },
+        });
+
+        // Filter out signals that already have analysis
+        const analyzedIds = new Set(
+            (await prisma.signalAnalysis.findMany({
+                where: { signalId: { in: signalIds } },
+                select: { signalId: true },
+            })).map((a) => a.signalId)
+        );
+
+        const unanalyzed = signals.filter((s) => !analyzedIds.has(s.id));
+
+        if (unanalyzed.length === 0) {
+            return res.json({
+                message: "All signals already have analysis.",
+                analyzed: 0,
+                skipped: signalIds.length,
+                results: [],
+            });
+        }
+
+        const results = [];
+        for (const signal of unanalyzed) {
+            try {
+                const result = await analyzeSignal(signal.title, signal.content);
+
+                const analysis = await prisma.signalAnalysis.create({
+                    data: {
+                        signalId: signal.id,
+                        sentiment: result.sentiment,
+                        narrativeType: result.narrative_type,
+                        stakeholder: result.stakeholder,
+                        impact: result.impact,
+                        summary: result.summary,
+                        recommendedAction: result.recommended_action,
+                        confidenceScore: result.confidence_score,
+                    },
+                });
+
+                await prisma.signal.update({
+                    where: { id: signal.id },
+                    data: { sentiment: result.sentiment },
+                });
+
+                results.push({ signalId: signal.id, status: "analyzed", analysis });
+            } catch (error) {
+                results.push({ signalId: signal.id, status: "failed", error: error.message });
+            }
+        }
+
+        logStructured("info", "batch_analyze_completed", {
+            total: signalIds.length,
+            analyzed: results.filter((r) => r.status === "analyzed").length,
+            failed: results.filter((r) => r.status === "failed").length,
+            skipped: signalIds.length - unanalyzed.length,
+        });
+
+        res.json({
+            message: "Batch analysis completed.",
+            analyzed: results.filter((r) => r.status === "analyzed").length,
+            failed: results.filter((r) => r.status === "failed").length,
+            skipped: signalIds.length - unanalyzed.length,
+            results,
+        });
+    } catch (error) {
+        console.error("[BATCH-ANALYZE] Error:", error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 export default router;

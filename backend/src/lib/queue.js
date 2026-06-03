@@ -194,3 +194,56 @@ export const addNotificationJob = async (eventName, payload, options = {}) => {
         console.error(`[QUEUE] Failed to add notification job (${eventName}):`, error.message);
     }
 };
+
+// Visibility Scan Queue
+export const visibilityScanQueue = new Queue("visibility-scan", {
+    connection,
+    defaultJobOptions: {
+        attempts: 2,
+        backoff: {
+            type: "exponential",
+            delay: 10000,
+        },
+        removeOnComplete: true,
+        removeOnFail: false,
+    },
+});
+
+/**
+ * Enqueue a visibility analysis job for a workspace.
+ */
+export const addVisibilityScanJob = async (workspaceId, scanConfig) => {
+    try {
+        const job = await visibilityScanQueue.add(
+            "run-visibility-scan",
+            { workspaceId, ...scanConfig },
+            { jobId: `vis_${workspaceId}_${Date.now()}` }
+        );
+        logStructured("info", "queue_visibility_scan_enqueued", { workspaceId, jobId: job?.id });
+        return job?.id || null;
+    } catch (error) {
+        console.error(`[QUEUE] Failed to add visibility scan job:`, error.message);
+        return null;
+    }
+};
+
+/**
+ * Schedule periodic visibility scans (daily at 2:00 AM).
+ */
+export const scheduleVisibilityScans = async () => {
+    try {
+        await visibilityScanQueue.add(
+            "daily-visibility-scan",
+            {},
+            {
+                repeat: {
+                    pattern: "0 2 * * *",
+                },
+                jobId: "recurring-visibility-scan",
+            }
+        );
+        logStructured("info", "queue_visibility_scan_scheduled", { interval: "daily-2am" });
+    } catch (error) {
+        console.error("[QUEUE] Failed to schedule visibility scans:", error.message);
+    }
+};

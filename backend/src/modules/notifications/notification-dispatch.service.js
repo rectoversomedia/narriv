@@ -3,8 +3,6 @@ import { createNotificationProviders } from "./notification-providers.js";
 import { logStructured } from "../../lib/logger.js";
 
 const providers = createNotificationProviders();
-    }
-}
 
 async function getWorkspaceNotificationContext(workspaceId) {
     const [notificationSettings, workspaceSettings] = await Promise.all([

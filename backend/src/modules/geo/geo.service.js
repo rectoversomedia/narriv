@@ -222,3 +222,83 @@ export async function runVisibilityAnalysis({ workspaceId, brandName, competitor
     logStructured("info", "geo_analysis_saved", { resultId: result.id });
     return result;
 }
+
+/**
+ * Analyze competitor mentions in detail across all responses.
+ * Returns per-competitor mention counts and sentiment.
+ */
+export function analyzeCompetitorMentions(responses, brandName, competitors) {
+    const results = {};
+
+    for (const competitor of competitors) {
+        const mentionCount = responses.filter(r =>
+            r.toLowerCase().includes(competitor.toLowerCase())
+        ).length;
+
+        const mentionRate = responses.length > 0 ? mentionCount / responses.length : 0;
+
+        // Check sentiment around competitor mentions
+        const positiveIndicators = ["leading", "top", "best", "recommended", "trusted", "popular", "excellent"];
+        const negativeIndicators = ["struggling", "declining", "losing", "failing", "issues", "problems", "complaints"];
+
+        let positiveCount = 0;
+        let negativeCount = 0;
+
+        responses.forEach(r => {
+            if (r.toLowerCase().includes(competitor.toLowerCase())) {
+                const lowerText = r.toLowerCase();
+                if (positiveIndicators.some(ind => lowerText.includes(ind))) positiveCount++;
+                if (negativeIndicators.some(ind => lowerText.includes(ind))) negativeCount++;
+            }
+        });
+
+        results[competitor] = {
+            mentionCount,
+            mentionRate: Number((mentionRate * 100).toFixed(1)),
+            sentiment: {
+                positive: positiveCount,
+                negative: negativeCount,
+                neutral: mentionCount - positiveCount - negativeCount,
+            },
+        };
+    }
+
+    return results;
+}
+
+/**
+ * Analyze overall sentiment of AI responses mentioning the brand.
+ */
+export function analyzeResponseSentiment(responses, brandName) {
+    const positiveIndicators = ["leading", "top", "best", "recommended", "trusted", "popular", "innovative", "excellent", "premier", "renowned", "great", "outstanding", "reliable"];
+    const negativeIndicators = ["struggling", "declining", "losing", "failing", "issues", "problems", "complaints", "controversy", "concerns", "poor", "weak"];
+
+    let positive = 0;
+    let negative = 0;
+    let neutral = 0;
+    let mentioned = 0;
+
+    responses.forEach(r => {
+        if (!r.toLowerCase().includes(brandName.toLowerCase())) return;
+        mentioned++;
+
+        const lowerText = r.toLowerCase();
+        const hasPositive = positiveIndicators.some(ind => lowerText.includes(ind));
+        const hasNegative = negativeIndicators.some(ind => lowerText.includes(ind));
+
+        if (hasPositive && !hasNegative) positive++;
+        else if (hasNegative && !hasPositive) negative++;
+        else neutral++;
+    });
+
+    return {
+        totalResponses: responses.length,
+        brandMentions: mentioned,
+        positive,
+        negative,
+        neutral,
+        sentimentScore: mentioned > 0 ? Number(((positive - negative) / mentioned).toFixed(3)) : 0,
+        positiveRate: mentioned > 0 ? Number((positive / mentioned).toFixed(3)) : 0,
+        negativeRate: mentioned > 0 ? Number((negative / mentioned).toFixed(3)) : 0,
+    };
+}

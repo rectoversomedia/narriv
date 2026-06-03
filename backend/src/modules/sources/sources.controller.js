@@ -1,5 +1,6 @@
 import prisma from "../../prisma.js";
 import { getUserWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
+import { invalidateWorkspaceCache } from "../../lib/cache.js";
 
 const VALID_SOURCE_TYPES = ["news", "web", "forum", "social", "video", "podcast"];
 
@@ -95,6 +96,7 @@ export const createSource = async (req, res) => {
             }
         });
 
+        await invalidateWorkspaceCache(targetWorkspaceId);
         res.status(201).json(source);
     } catch (error) {
         console.error("Error creating source:", error);
@@ -144,6 +146,7 @@ export const updateSource = async (req, res) => {
             data
         });
 
+        await invalidateWorkspaceCache(existingSource.workspaceId);
         res.json(source);
     } catch (error) {
         console.error("Error updating source:", error);
@@ -169,6 +172,7 @@ export const deleteSource = async (req, res) => {
             data: { isActive: false }
         });
 
+        await invalidateWorkspaceCache(existingSource.workspaceId);
         res.json(source);
     } catch (error) {
         console.error("Error deleting source:", error);

@@ -50,6 +50,8 @@ model Workspace {
   aiVisibilityResults AIVisibilityResult[]
   promptTestRuns    PromptTestRun[]
   aiFeedback        AIFeedback[]
+  cases             Case[]
+  integrations      Integration[]
 }
 
 model WorkspaceSettings {
@@ -197,6 +199,7 @@ model Signal {
 model SignalAnalysis {
   id                String   @id @default(uuid())
   signalId          String
+  contentHash       String?
   sentiment         String?
   narrativeType     String?
   stakeholder       String?
@@ -209,6 +212,7 @@ model SignalAnalysis {
   signal            Signal @relation(fields: [signalId], references: [id])
 
   @@index([signalId, createdAt])
+  @@index([contentHash])
   @@index([sentiment])
   @@index([impact])
 }
@@ -468,4 +472,60 @@ model ReportExport {
   @@index([reportId, status])
   @@index([status, createdAt])
   @@index([expiresAt])
+}
+
+model Case {
+  id            String   @id @default(uuid())
+  workspaceId   String
+  title         String
+  description   String?
+  status        String   @default("open")  // open, in_progress, resolved, closed
+  priority      String   @default("medium") // low, medium, high, critical
+  sourceType    String?                     // alert, narrative, manual
+  sourceId      String?                     // ID of the source alert/narrative
+  assignedTo    String?
+  assignedTeam  String?
+  deadline      DateTime?
+  resolution    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, status])
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, priority])
+}
+
+model Integration {
+  id            String   @id @default(uuid())
+  workspaceId   String
+  name          String
+  platform      String                      // slack, teams, email, webhook, etc.
+  status        String   @default("active") // active, inactive, error
+  config        Json?                       // platform-specific configuration
+  lastSyncAt    DateTime?
+  errorMessage  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, platform])
+  @@index([workspaceId, status])
+}
+
+model TokenUsage {
+  id              String   @id @default(uuid())
+  workspaceId     String
+  date            DateTime @db.Date
+  model           String
+  totalTokens     Int      @default(0)
+  callCount       Int      @default(0)
+  totalLatencyMs  Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([workspaceId, date, model])
+  @@index([workspaceId, date])
 }

@@ -3,6 +3,9 @@ import connection from "../lib/redis.js";
 import prisma from "../prisma.js";
 import { analyzeSignal } from "../modules/ai/ai.service.js";
 import { logStructured } from "../lib/logger.js";
+import { calibrateConfidence } from "../lib/confidence-calibration.js";
+import { generateContentHash, getCachedAnalysis } from "../lib/analysis-cache.js";
+import { workerMetrics } from "../lib/worker-metrics.js";
 
 const RETRY_DELAY_MS = 3000;
 
@@ -61,6 +64,28 @@ const worker = new Worker(
         let analysisResult;
         let failureError = null;
 
+        // Check analysis cache first
+        const contentHash = generateContentHash(signal.title, signal.content);
+        const cached = await getCachedAnalysis(contentHash);
+
+        if (cached) {
+            logStructured("info", "worker_cache_hit", {
+                worker: "ai-analysis-worker",
+                signalId,
+                cachedAnalysisId: cached.id,
+            });
+
+            // Create a new analysis record for this signal, copying cached data
+            analysisResult = {
+                sentiment: cached.sentiment,
+                narrative_type: cached.narrativeType,
+                stakeholder: cached.stakeholder,
+                impact: cached.impact,
+                summary: cached.summary,
+                recommended_action: cached.recommendedAction,
+                confidence_score: cached.confidenceScore,
+            };
+        } else {
         try {
             logStructured("info", "worker_signal_analysis_started", {
                 worker: "ai-analysis-worker",
@@ -68,6 +93,14 @@ const worker = new Worker(
                 signalId,
             });
             analysisResult = await analyzeWithRetry(signal.title, signal.content, signalId);
+
+            // Calibrate confidence based on historical feedback
+            const calibratedConfidence = await calibrateConfidence(
+                signal.workspaceId,
+                analysisResult.narrative_type,
+                analysisResult.confidence_score
+            );
+            analysisResult.confidence_score = calibratedConfidence;
         } catch (error) {
             failureError = error;
             logStructured("error", "worker_signal_analysis_failed_fallback", {
@@ -77,6 +110,7 @@ const worker = new Worker(
                 error: error.message,
             });
             analysisResult = buildSafeFallbackAnalysis();
+        }
         }
 
         try {
@@ -120,6 +154,12 @@ const worker = new Worker(
                 jobId: job.id,
                 signalId,
             });
+
+            workerMetrics.recordJob("ai-analysis", {
+                success: true,
+                durationMs: Date.now() - job.timestamp,
+                jobId: job.id,
+            });
         } catch (dbError) {
             logStructured("error", "worker_save_failed", {
                 worker: "ai-analysis-worker",
@@ -137,6 +177,13 @@ worker.on("failed", (job, err) => {
     logStructured("error", "worker_job_failed", {
         worker: "ai-analysis-worker",
         queue: "ai-analysis",
+        jobId: job?.id,
+        error: err.message,
+    });
+
+    workerMetrics.recordJob("ai-analysis", {
+        success: false,
+        durationMs: Date.now() - (job?.timestamp || Date.now()),
         jobId: job?.id,
         error: err.message,
     });

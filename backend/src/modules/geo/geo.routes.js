@@ -1,7 +1,8 @@
 import express from "express";
 import prisma from "../../prisma.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
-import { resolveScopedWorkspaceIds } from "../../lib/workspace-access.js";
+import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
+import { runVisibilityAnalysis } from "./geo.service.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -260,6 +261,35 @@ router.get("/trends", async (req, res) => {
         });
     } catch (error) {
         console.error("Error fetching visibility trends:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// POST /api/visibility/analyze — Trigger a new visibility analysis
+router.post("/analyze", async (req, res) => {
+    try {
+        const { brandName, competitors, queries, engineName, workspaceId } = req.body;
+
+        if (!brandName || !queries || !Array.isArray(queries) || queries.length === 0) {
+            return res.status(400).json({ error: "brandName and queries array are required." });
+        }
+
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
+        if (!scopedWorkspaceId) {
+            return res.status(403).json({ error: "Workspace access denied" });
+        }
+
+        const result = await runVisibilityAnalysis({
+            workspaceId: scopedWorkspaceId,
+            brandName,
+            competitors: competitors || [],
+            queries,
+            engineName: engineName || "chatgpt",
+        });
+
+        res.status(201).json(result);
+    } catch (error) {
+        console.error("Error running visibility analysis:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 });

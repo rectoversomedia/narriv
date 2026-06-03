@@ -11,6 +11,8 @@ import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
 import { createReportBodySchema, createReportExportBodySchema, reportIdParamsSchema } from "./reports.schema.js";
+import { generateReport as generateFromTemplate, sendReportEmail } from "./report-generation.js";
+import { getAllReportTemplates } from "./report-templates.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -196,6 +198,38 @@ router.get("/", async (req, res) => {
         });
     } catch (error) {
         console.error("Error fetching reports:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// GET /api/reports/templates — List available report templates
+router.get("/templates", (req, res) => {
+    const templates = getAllReportTemplates();
+    return res.json({ data: templates });
+});
+
+// POST /api/reports/generate — Generate a report from a template
+router.post("/generate", async (req, res) => {
+    try {
+        const { templateKey, dateRange } = req.body;
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, req.body.workspaceId);
+        if (!scopedWorkspaceId) {
+            return res.status(403).json({ error: "Workspace access denied" });
+        }
+
+        if (!templateKey) {
+            return res.status(400).json({ error: "templateKey is required" });
+        }
+
+        const report = await generateFromTemplate({
+            workspaceId: scopedWorkspaceId,
+            templateKey,
+            options: { dateRange },
+        });
+
+        return res.status(201).json(report);
+    } catch (error) {
+        console.error("Error generating report:", error);
         return res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -412,6 +446,33 @@ router.get("/:id/export/pdf", async (req, res) => {
         return res.json(buildPdfData(fullReport, report.id));
     } catch (error) {
         console.error("Error exporting PDF-ready data:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// POST /api/reports/:id/send-email — Send report via email
+router.post("/:id/send-email", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { recipientEmail, subject, body } = req.body;
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
+
+        const report = await prisma.report.findUnique({ where: { id } });
+        if (!report || !scopedWorkspaceIds.includes(report.workspaceId)) {
+            return res.status(404).json({ error: "Report not found" });
+        }
+
+        const result = await sendReportEmail({
+            workspaceId: report.workspaceId,
+            reportId: report.id,
+            recipientEmail,
+            subject: subject || `Laporan: ${report.title}`,
+            body: body || `Laporan ${report.title} sudah tersedia.`,
+        });
+
+        return res.json(result);
+    } catch (error) {
+        console.error("Error sending report email:", error);
         return res.status(500).json({ error: "Internal server error" });
     }
 });

@@ -1,7 +1,8 @@
 import express from "express";
 import prisma from "../../prisma.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
-import { resolveScopedWorkspaceIds } from "../../lib/workspace-access.js";
+import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
+import { compareClusterPeriods } from "../clustering/clustering.service.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -106,6 +107,35 @@ router.get("/", async (req, res) => {
         });
     } catch (error) {
         console.error("Error fetching narratives:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// GET /api/narratives/compare — Compare clusters across two time periods
+router.get("/compare", async (req, res) => {
+    try {
+        const { period1Start, period1End, period2Start, period2End, workspaceId } = req.query;
+
+        if (!period1Start || !period1End || !period2Start || !period2End) {
+            return res.status(400).json({ error: "All four period dates are required." });
+        }
+
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
+        if (!scopedWorkspaceId) {
+            return res.status(403).json({ error: "Workspace access denied" });
+        }
+
+        const result = await compareClusterPeriods(
+            scopedWorkspaceId,
+            new Date(period1Start),
+            new Date(period1End),
+            new Date(period2Start),
+            new Date(period2End)
+        );
+
+        return res.json(result);
+    } catch (error) {
+        console.error("Error comparing clusters:", error);
         return res.status(500).json({ error: "Internal server error" });
     }
 });

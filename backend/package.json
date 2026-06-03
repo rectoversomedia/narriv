@@ -5,7 +5,11 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon src/index.js",
-    "seed": "node prisma/seed.js"
+    "seed": "node prisma/seed.js",
+    "test": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "load:smoke": "node tests/load/run-k6.js smoke",
+    "load:baseline": "node tests/load/run-k6.js baseline",
+    "load:stress": "node tests/load/run-k6.js stress"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +20,7 @@
     "apify-client": "^2.23.0",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.75.2",
+    "compression": "^1.8.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
@@ -26,6 +31,9 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "cross-env": "^10.1.0",
+    "jest": "^30.4.2",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.2.2"
   }
 }
