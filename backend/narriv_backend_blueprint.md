@@ -350,7 +350,7 @@ Report ──1:N──▶ ReportExport
 
 | Frontend Page | Intended Endpoints | Current Frontend Usage |
 |---|---|---|
-| **Login** (`/login`) | `POST /auth/login` | ✅ Wired — direct `fetch` + demo login bypass |
+| **Login** (`/login`) | `POST /auth/login` | ✅ Wired — fully integrated |
 | **Signup** (`/signup`) | `POST /auth/register` | ✅ Wired — direct `fetch` |
 | **Dashboard Home** (`/`) | `GET /api/dashboard/summary` | ✅ Wired — `useQuery` with time range, fully unmocked (KPIs, trends, sentiment, sources, topics, system status) |
 | **Signals** (`/signals`) | `GET /signals`, `GET /signals/meta` | ✅ Wired — `useQuery` with pagination & `getSignalsMeta` for fully unmocked sidebar panels |
@@ -365,7 +365,7 @@ Report ──1:N──▶ ReportExport
 | **Route Protection** | N/A | ✅ `proxy.ts` checks `narriv-authenticated` cookie, redirects unauthenticated users |
 | **Logout** | `POST /auth/logout` | ✅ Wired — revokes refresh token via API before clearing local state |
 | **Activity** (`/workspace/activity`) | No endpoint | ❌ No frontend route exists |
-| **Cases** (`/workspace/cases`) | No endpoint | ❌ No frontend route exists |
+| **Cases** (`/workspace/cases`) | `GET/POST/PATCH/DELETE /api/workspace/cases` | ✅ Wired — UI built with `useQuery`/`useMutation` |
 | **Integrations** (`/workspace/integrations`) | No endpoint | ❌ No frontend route exists |
 | **Onboarding** (`/onboarding`) | No endpoint | ❌ UI-only |
 | **Reset Password** (`/reset-password`, `/verify-code`, `/new-password`) | `POST /auth/forgot-password`, `POST /auth/verify-reset-code`, `POST /auth/reset-password` | ✅ Wired — Ky-backed reset request, code verification, reset token, and new password submission |

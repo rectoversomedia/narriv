@@ -64,19 +64,9 @@ export default function LoginPage() {
     }
   };
 
-  const showUnavailable = () => setApiError(t("errors.socialUnavailable"));
+    const showUnavailable = () => setApiError(t("errors.socialUnavailable"));
 
-  const handleDemoLogin = () => {
-    setApiError(null);
-    finishLogin("demo-ui-session", {
-      name: "Testing User",
-      email: "testing@narriv.ai",
-      provider: "password",
-      workspace: "User Workspace",
-    }, null);
-  };
-
-  return (
+    return (
     <AuthShell visual="dashboard" topAction={<LanguageSelector />}>
       <div className="mb-12 lg:hidden">
         <div className="flex items-center gap-3">
@@ -125,23 +115,10 @@ export default function LoginPage() {
 
           <PrimaryButton loading={isSubmitting}>{isSubmitting ? t("submitting") : t("submit")}</PrimaryButton>
         </FieldGroup>
-      </form>
+        </form>
 
-      <div className="mt-5 rounded-[10px] border border-[#DADAFE] bg-[#FBFAFF] p-4">
-        <button
-          type="button"
-          onClick={handleDemoLogin}
-          className="flex h-[52px] w-full items-center justify-center rounded-[8px] border border-[#3B20EA] bg-white text-[16px] font-bold text-[#2F20FF] transition hover:bg-[#F6F4FF]"
-        >
-          {t("demoButton")}
-        </button>
-        <p className="mt-3 text-center text-[13px] font-medium leading-5 text-[#53608C]">
-          {t("demoNote")}
-        </p>
-      </div>
-
-      <div className="mt-8 grid gap-6">
-        <Divider label={t("divider")} />
+        <div className="mt-8 grid gap-6">
+          <Divider label={t("divider")} />
         <SocialButtons onClick={showUnavailable} />
       </div>
 

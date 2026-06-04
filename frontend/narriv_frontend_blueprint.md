@@ -65,7 +65,6 @@
 | Remember Me | Checkbox, default checked |
 | Forgot Password | Link → `/reset-password` |
 | Submit Button | Gradient primary button with loading state |
-| Demo Login | "Try Demo Mode" button — bypasses API, uses hardcoded session |
 | Social Login | Apple, Google, Microsoft buttons (currently show "unavailable" toast) |
 | Sign Up Link | Bottom link → `/signup` |
 | Security Footer | Shield icons + trust badges |
@@ -133,7 +132,7 @@
 | Step 5 | Preview/confirmation, then processing screen |
 | Progress | Step indicator with completion status |
 | Navigation | Back/Next buttons per step |
-| API Integration | Should call workspace setup endpoints (currently UI-only) |
+| API Integration | Calls workspace setup endpoints (`createOnboardingWorkspace`, etc) on Processing screen and redirects to dashboard |
 
 ---
 
@@ -260,13 +259,21 @@
 
 `/settings` exists as a route alias that re-exports `/workspace/settings`.
 
+#### 🗂️ Cases & Investigations (`/workspace/cases`)
+| Widget | Detail | Data Source |
+|--------|--------|-------------|
+| Header | Title and "Buat Case Baru" button | Static UI |
+| Filters | Status (Open, In Progress, Resolved, Closed) & Priority filters | Local state driving API `status`/`priority` queries |
+| Cases Table | List of cases with Title, Status dropdown, Priority badge, Assignee, Actions | Wired to `getCases()` with pagination and error/empty states |
+| Status Actions | Inline dropdown to change status | Wired to `updateCase()` mutation |
+| Delete Action | Trash icon with confirmation dialog | Wired to `deleteCase()` mutation |
+
 #### Not Present As Frontend Routes
 
 | Planned Route | Current Status |
 |---------------|----------------|
 | `/workspace/integrations` | No `page.tsx` exists |
 | `/workspace/activity` | No `page.tsx` exists |
-| `/workspace/cases` | No `page.tsx` exists |
 
 ---
 
@@ -426,7 +433,6 @@ All frontend-to-backend calls should go through the Ky-backed `apiClient.ts`/`ap
 
 ### ✅ What's Working
 - All auth pages render and function (login, signup, reset, verify, new-password)
-- Demo login bypasses API for UI testing
 - Dashboard layout with sidebar, topbar with global search, responsive design
 - Implemented dashboard routes render: `/`, `/signals`, `/alerts`, `/alerts/[id]`, `/visibility`, `/intelligence`, `/reports`, `/action-plans`, `/workspace/sources`, `/workspace/settings`, plus `/settings` alias
 - i18n toggle works on auth and dashboard pages
@@ -444,10 +450,10 @@ All frontend-to-backend calls should go through the Ky-backed `apiClient.ts`/`ap
 
 ### ⚠️ Known Issues & Gaps
 1. **Static/Mock Data Dependency**: All primary and secondary dashboard widgets (topics, sources, system status, signals sidebar) are now fully un-mocked and use API data. Some empty-state or fallback mocks remain solely for preview when live data is completely empty.
-2. **Onboarding Flow**: UI-only, no API integration. Steps don't save to backend.
+2. **Onboarding Flow**: UI wired to backend API using `OnboardingContext` state and `api-service.ts` functions. Submits default initial configuration and redirects to dashboard.
 3. **Social Login**: Apple/Google/Microsoft buttons show "unavailable" toast.
 4. **Workspace Logo Upload**: UI exists but no file upload API endpoint.
-5. **Missing Workspace Routes**: `/workspace/activity`, `/workspace/cases`, and `/workspace/integrations` do not currently exist as frontend pages.
+5. **Missing Workspace Routes**: `/workspace/activity` and `/workspace/integrations` do not currently exist as frontend pages.
 6. **Notification Channels**: Push/dispatch for email/whatsapp not fully implemented (settings exist). However, **In-App Notification Bell** is fully wired and functional using SSE.
 7. **Real-time Updates**: SSE is now active for `/api/notifications/stream` replacing polling for notification updates.
 8. **Reset Password Email Delivery**: Reset flow calls backend endpoints, but production email/SMS delivery provider is still future integration; non-production exposes dev reset code for local testing.
@@ -495,10 +501,10 @@ These replace the removed frontend checklist/guidelines and should be treated as
 
 ### Phase 2: Missing Features (High Priority)
 
-- [ ] **Onboarding API** — Connect onboarding steps to workspace setup endpoints
+- [x] **Onboarding API** — Connect onboarding steps to workspace setup endpoints. Flow processes and saves dummy default configuration, then redirects to dashboard. Completed 2026-06-04.
 - [ ] **File Upload** — Implement logo upload with cloud storage (S3/Supabase Storage)
 - [ ] **Activity Log** — Create `/workspace/activity` page and wire it to a new `AuditLog` API
-- [ ] **Cases Page** — Create `/workspace/cases` page after the backend case model/API is designed
+- [x] **Cases Page** — Create `/workspace/cases` page and wire it to the cases API endpoints. Completed 2026-06-04.
 - [ ] **Integrations Page** — Create `/workspace/integrations` page after integration/OAuth endpoints exist
 - [x] **Real-time Notifications** — Added SSE (`/api/notifications/stream`) to automatically push new notifications to the frontend bell icon without polling. Completed 2026-06-04.
 - [x] **Export Downloads** — PDF export via `createReportExport()` with polling via `getReportExportStatus()` and auto-download on completion. Completed 2026-05-31.

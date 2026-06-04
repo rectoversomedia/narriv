@@ -3,10 +3,6 @@
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useState, useEffect, startTransition, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
-import { createContext, useContext } from "react";
-import { createOnboardingWorkspace, createOnboardingSources, createOnboardingNotifications, createOnboardingTeam } from "@/lib/api-service";
-
 import {
   Activity,
   AlertTriangle,
@@ -49,27 +45,6 @@ import {
 import { useUiStore } from "@/store/useUiStore";
 import { Particles } from "@/components/ui/particles";
 
-
-type OnboardingFormData = {
-  profile: { brandName: string; industry: string; timezone: string };
-  sources: Array<{ name: string; type: string }>;
-  notifications: { emailEnabled: boolean; whatsappEnabled: boolean; escalationNotifications: boolean; reminderNotifications: boolean };
-  team: Array<{ email: string; role: string }>;
-};
-
-const OnboardingContext = createContext<{
-  formData: OnboardingFormData;
-  updateForm: (section: keyof OnboardingFormData, data: any) => void;
-  submitOnboarding: () => Promise<void>;
-  isSubmitting: boolean;
-} | null>(null);
-
-export function useOnboarding() {
-  const ctx = useContext(OnboardingContext);
-  if (!ctx) throw new Error("useOnboarding must be used within OnboardingContext");
-  return ctx;
-}
-
 type Step = 1 | 2 | 3 | 4 | 5;
 
 export default function OnboardingPage() {
@@ -94,46 +69,7 @@ export default function OnboardingPage() {
     if (step > 1) setStep((step - 1) as Step);
   };
 
-  const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<OnboardingFormData>({
-    profile: { brandName: "Narriv Workspace", industry: "Technology", timezone: "Asia/Jakarta" },
-    sources: [{ name: "Twitter Official", type: "twitter" }],
-    notifications: { emailEnabled: true, whatsappEnabled: false, escalationNotifications: true, reminderNotifications: true },
-    team: []
-  });
-
-  const updateForm = (section: keyof OnboardingFormData, data: any) => {
-    setFormData(prev => ({ ...prev, [section]: data }));
-  };
-
-  const submitOnboarding = async () => {
-    setIsSubmitting(true);
-    try {
-      const workspace = await createOnboardingWorkspace(formData.profile);
-      if (workspace && workspace.id) {
-        if (formData.sources.length > 0) {
-          await createOnboardingSources({ workspaceId: workspace.id, sources: formData.sources });
-        }
-        await createOnboardingNotifications({ workspaceId: workspace.id, ...formData.notifications });
-        if (formData.team.length > 0) {
-          await createOnboardingTeam({ workspaceId: workspace.id, members: formData.team });
-        }
-        // Redirect to dashboard
-        router.push("/");
-      } else {
-        setIsSubmitting(false);
-        setStep(5); // Go back to preview if failed
-      }
-    } catch (e) {
-      console.error(e);
-      setIsSubmitting(false);
-      setStep(5);
-    }
-  };
-
   return (
-    <OnboardingContext.Provider value={{ formData, updateForm, submitOnboarding, isSubmitting }}>
     <div className="min-h-screen bg-background text-foreground relative overflow-hidden selection:bg-[#465FFF]/30">
       <Particles particleCount={120} particleBaseSize={5} speed={0.06} particleColors={['#465FFF', '#8B5CFF', '#00F0FF']} />
       
@@ -173,7 +109,6 @@ export default function OnboardingPage() {
         </main>
       </div>
     </div>
-    </OnboardingContext.Provider>
   );
 }
 
@@ -354,8 +289,6 @@ function SectionTitle({ icon: Icon, step, title, desc }: { icon: LucideIcon; ste
 }
 
 function ProfileStep() {
-  const { formData, updateForm } = useOnboarding();
-
   const t = useTranslations("OnboardingDesign.profile");
   const goals = [
     { title: t("goalBrand"), desc: t("goalBrandDesc"), icon: BarChart3, checked: true, tone: "green" },
@@ -373,7 +306,7 @@ function ProfileStep() {
           <div className="grid gap-7 md:grid-cols-2">
             <TextField label={t("name")} value="Testing User" icon={User} />
             <SelectField label={t("role")} value="Marketing Manager" />
-            <TextField label={t("company")} value={formData.profile.brandName} onChange={(e) => updateForm("profile", { ...formData.profile, brandName: e.target.value })} />
+            <TextField label={t("company")} value="FIFGROUP" />
             <SelectField label={t("industry")} value={t("industryValue")} />
           </div>
           <label className="block">
@@ -400,14 +333,14 @@ function ProfileStep() {
   );
 }
 
-function TextField({ label, value, icon: Icon, onChange }: { label: string; value: string; icon?: LucideIcon; onChange?: (e: any) => void }) {
+function TextField({ label, value, icon: Icon }: { label: string; value: string; icon?: LucideIcon }) {
   return (
     <label className="block">
       <span className="mb-3 block text-[15px] font-bold text-slate-900">{label}</span>
-      <div className="flex h-[56px] items-center gap-3 rounded-[8px] border border-slate-200 bg-slate-50 px-5 text-[15px] font-semibold text-slate-700 focus-within:border-[#465FFF]/50">
+      <span className="flex h-[56px] items-center gap-3 rounded-[8px] border border-slate-200 bg-slate-50 px-5 text-[15px] font-semibold text-slate-700">
         {Icon ? <Icon size={19} className="text-slate-400" /> : null}
-        <input value={value} onChange={onChange} className="bg-transparent outline-none w-full" />
-      </div>
+        {value}
+      </span>
     </label>
   );
 }
@@ -942,9 +875,6 @@ function PreviewSummary() {
 }
 
 function ProcessingScreen() {
-  const { submitOnboarding } = useOnboarding();
-  useEffect(() => { submitOnboarding(); }, []);
-
   const t = useTranslations("OnboardingDesign.processing");
   const items = [[t("mineTitle"), t("mineDesc"), Search], [t("sentimentTitle"), t("sentimentDesc"), ShieldCheck], [t("insightTitle"), t("insightDesc"), BarChart3], [t("alertTitle"), t("alertDesc"), Bell]] as const;
   const summary = [[t("topics"), "6 keyword", Hash], [t("sources"), "6", Database], [t("alerts"), "4", Bell], [t("summaryTime"), t("dailyWeekly"), Clock3]] as const;
