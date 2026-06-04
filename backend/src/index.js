@@ -4,8 +4,8 @@ import compression from "compression";
 import dotenv from "dotenv";
 
 // Import Routes
-import signalsRoutes from "./modules/signals/signals.routes.js";
 import authRoutes from "./modules/auth/auth.routes.js";
+import signalsRoutes from "./modules/signals/signals.routes.js";
 import sourcesRoutes from "./modules/sources/sources.routes.js";
 import ingestionRoutes from "./modules/ingestion/ingestion.routes.js";
 import aiRoutes from "./modules/ai/ai.routes.js";
@@ -22,6 +22,7 @@ import activityRoutes from "./modules/activity/activity.routes.js";
 import onboardingRoutes from "./modules/onboarding/onboarding.routes.js";
 import casesRoutes from "./modules/cases/cases.routes.js";
 import integrationsRoutes from "./modules/integrations/integrations.routes.js";
+import appNotificationsRoutes from "./modules/app-notifications/app-notifications.routes.js";
 import "./workers/ai-analysis.worker.js";
 import "./workers/alert.worker.js";
 import "./workers/ingestion.worker.js";
@@ -109,6 +110,7 @@ app.use("/api/workspace/activity", activityRoutes);
 app.use("/api/onboarding", onboardingRoutes);
 app.use("/api/workspace/cases", casesRoutes);
 app.use("/api/workspace/integrations", integrationsRoutes);
+app.use("/api/notifications", appNotificationsRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

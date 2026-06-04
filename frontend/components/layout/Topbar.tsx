@@ -10,7 +10,9 @@ import { Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitl
 import { alerts, intelligenceClusters, text } from "@/lib/mock-data";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useUiStore } from "@/store/useUiStore";
-import { logoutSession } from "@/lib/api-service";
+import { logoutSession, getNotifications, markNotificationAsRead, markAllNotificationsAsRead, type AppNotification } from "@/lib/api-service";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
 
 const notificationToneClass = {
   red: "bg-[#EF4444] text-white",
@@ -112,7 +114,48 @@ export function Topbar() {
   const toggleLanguage = useUiStore((state) => state.toggleLanguage);
   const logout = useAuthStore((state) => state.logout);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const notifications = alerts.slice(0, 3);
+  
+  const queryClient = useQueryClient();
+  const token = useAuthStore((s) => s.token);
+  
+  const notificationsQuery = useQuery({
+    queryKey: ["notifications"],
+    queryFn: () => getNotifications(1, 50),
+    staleTime: 60 * 1000,
+  });
+
+  const markAllRead = useMutation({
+    mutationFn: () => markAllNotificationsAsRead(),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] })
+  });
+
+  const markRead = useMutation({
+    mutationFn: (id: string) => markNotificationAsRead(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] })
+  });
+
+  useEffect(() => {
+    if (!token) return;
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+    const sse = new EventSource(`${baseUrl}/api/notifications/stream?token=${token}`);
+    
+    sse.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "new_notification") {
+          queryClient.invalidateQueries({ queryKey: ["notifications"] });
+        }
+      } catch (e) {}
+    };
+
+    return () => {
+      sse.close();
+    };
+  }, [token, queryClient]);
+
+  const notifData = notificationsQuery.data?.data || [];
+  const unreadCount = notificationsQuery.data?.meta?.unreadCount || 0;
+
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -231,7 +274,7 @@ export function Topbar() {
             aria-label={t("notifications")}
           >
             <Bell size={24} />
-            <span className="absolute right-1 top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#465FFF] px-1 text-[11px] font-bold text-white shadow-[0_0_8px_rgba(70,95,255,0.4)]">{notifications.length}</span>
+              <span className="absolute right-1 top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#465FFF] px-1 text-[11px] font-bold text-white shadow-[0_0_8px_rgba(70,95,255,0.4)]">{unreadCount > 0 ? unreadCount : ""}</span>
           </PopoverTrigger>
           <PopoverContent align="end" sideOffset={12} className="w-[min(390px,calc(100vw-2rem))] gap-0 overflow-hidden rounded-[18px] border border-slate-200 bg-white p-0 text-slate-900 shadow-[0_24px_70px_rgba(15,23,42,0.16)] ring-0">
             <PopoverHeader className="border-b border-slate-100 px-4 py-4">
@@ -239,35 +282,49 @@ export function Topbar() {
                 <div>
                   <PopoverTitle className="text-[15px] font-black text-slate-950">Notifikasi</PopoverTitle>
                   <PopoverDescription className="mt-1 text-xs font-semibold text-slate-500">
-                    {notifications.length} alert terbaru membutuhkan perhatian.
+                    {unreadCount} notifikasi baru.
                   </PopoverDescription>
                 </div>
-                <Badge variant="purple" className="rounded-full px-2.5 py-1 text-[11px] font-black">Live</Badge>
+                <button onClick={() => markAllRead.mutate()} className="text-[11px] font-bold text-[#465FFF] hover:underline">Tandai semua dibaca</button>
               </div>
             </PopoverHeader>
 
             <div className="max-h-[330px] overflow-y-auto p-2">
-              {notifications.map((notification) => (
-                <Link
-                  key={notification.id}
-                  href={`/alerts/${notification.id}`}
-                  onClick={() => setNotificationsOpen(false)}
-                  className="group grid grid-cols-[10px_1fr_auto] gap-3 rounded-[14px] p-3 transition hover:bg-slate-50"
-                >
-                  <span className={`mt-2 h-2.5 w-2.5 rounded-full ${notificationToneClass[notification.tone]}`} />
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-black text-slate-950 group-hover:text-[#465FFF]">{text(notification.title, language)}</span>
-                    <span className="mt-1 block truncate text-xs font-semibold text-slate-500">{notification.source} - {text(notification.issue, language)}</span>
-                    <span className="mt-2 inline-flex rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-500">{notification.id}</span>
-                  </span>
-                  <span className="shrink-0 text-right">
-                    <Badge variant={notification.tone === "red" ? "red" : notification.tone === "amber" ? "amber" : "purple"} className="rounded-full text-[10px] font-black">
-                      {notification.tone === "red" ? "Kritis" : notification.tone === "amber" ? "Warning" : "Info"}
-                    </Badge>
-                    <span className="mt-2 block text-[11px] font-bold text-slate-400">{notification.time}</span>
-                  </span>
-                </Link>
-              ))}
+              
+                {notifData.length === 0 ? (
+                  <div className="py-8 text-center text-sm font-semibold text-slate-400">Belum ada notifikasi</div>
+                ) : notifData.map((notification: AppNotification) => {
+                  const tone = notification.type === "alert_created" ? "red" : notification.type === "report_ready" ? "green" : "blue";
+                  const badgeText = notification.type === "alert_created" ? "Alert" : "Info";
+                  return (
+                  <Link
+                    key={notification.id}
+                    href={notification.link || "#"}
+                    onClick={() => {
+                      if (!notification.isRead) markRead.mutate(notification.id);
+                      setNotificationsOpen(false);
+                    }}
+                    className={`group grid grid-cols-[10px_1fr_auto] gap-3 rounded-[14px] p-3 transition hover:bg-slate-50 ${notification.isRead ? 'opacity-60' : ''}`}
+                  >
+                    <span className={`mt-2 h-2.5 w-2.5 rounded-full ${notificationToneClass[tone as keyof typeof notificationToneClass]}`} />
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-black text-slate-950 group-hover:text-[#465FFF]">{notification.title}</span>
+                      <span className="mt-1 block text-xs font-semibold text-slate-500 line-clamp-2">{notification.message}</span>
+                    </span>
+                    <span className="shrink-0 text-right">
+                      <Badge variant={tone as any} className="rounded-full text-[10px] font-black">
+                        {badgeText}
+                      </Badge>
+                        <span className="mt-2 block text-[11px] font-bold text-slate-400">
+                          {new Intl.RelativeTimeFormat(language === "id" ? "id" : "en", { numeric: "auto" }).format(
+                            Math.round((new Date(notification.createdAt).getTime() - Date.now()) / (1000 * 60 * 60)),
+                            "hour"
+                          )}
+                        </span>
+                    </span>
+                  </Link>
+                )})}
+
             </div>
 
             <div className="border-t border-slate-100 bg-slate-50/80 p-3">

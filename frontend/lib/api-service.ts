@@ -49,6 +49,10 @@ export interface DashboardSummary {
   sentiment_distribution: { positive: number; negative: number; neutral: number; mixed: number };
   platform_distribution: PlatformCount[];
   latest_signals: LatestSignal[];
+  top_topics?: Array<{ name: { en: string; id: string }; mentions: string; delta: string; tone: string }>;
+  mini_topics?: Array<{ label: string; value: string; tone: string }>;
+  sources_health?: Array<{ name: string; status: { en: string; id: string }; health: { en: string; id: string }; signals: string; tone: string }>;
+  system_status?: string[];
 }
 
 export type DateRangeKey = "24h" | "7d" | "30d";
@@ -227,6 +231,22 @@ export interface GetSignalsOptions {
   platform?: string;
   startDate?: string;
   endDate?: string;
+}
+
+export interface SignalsMeta {
+  followUps: Array<{ title: string; badge: string; meta: string; time: string; tone: string }>;
+  recommendations: Array<{ title: string; desc: string; badge: string; tone: string; icon?: any }>;
+  sourceDistribution: Array<{ name: string; value: string; color: string }>;
+  timeline: number[];
+  investigationQueue: Array<{ title: string; meta: string; badge: string; tone: string }>;
+}
+
+export async function getSignalsMeta(): Promise<SignalsMeta | null> {
+  try {
+    return await apiClient<SignalsMeta>("/signals/meta");
+  } catch {
+    return null;
+  }
 }
 
 export async function getSignals(
@@ -1208,5 +1228,54 @@ export async function downloadReportExport(signedUrl: string): Promise<unknown |
     return await apiClient<unknown>(`${url.pathname}${url.search}`);
   } catch {
     return null;
+  }
+}
+
+
+// Notifications API
+export interface AppNotification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  link?: string | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface NotificationsResponse {
+  data: AppNotification[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    unreadCount: number;
+    totalPages: number;
+  };
+}
+
+export async function getNotifications(page = 1, limit = 20): Promise<NotificationsResponse | null> {
+  try {
+    return await apiClient<NotificationsResponse>(`/api/notifications?page=${page}&limit=${limit}`);
+  } catch {
+    return null;
+  }
+}
+
+export async function markNotificationAsRead(id: string): Promise<boolean> {
+  try {
+    const res = await apiClient<{ success: boolean }>(`/api/notifications/${id}/read`, { method: "PATCH" });
+    return res.success;
+  } catch {
+    return false;
+  }
+}
+
+export async function markAllNotificationsAsRead(): Promise<boolean> {
+  try {
+    const res = await apiClient<{ success: boolean }>("/api/notifications/read-all", { method: "PATCH" });
+    return res.success;
+  } catch {
+    return false;
   }
 }

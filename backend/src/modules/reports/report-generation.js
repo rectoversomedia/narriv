@@ -37,13 +37,42 @@ export async function sendReportEmail({ workspaceId, reportId, recipientEmail, s
             return { sent: false, reason: "no_recipient" };
         }
 
-        // TODO: Integrate with real email provider (SendGrid, AWS SES, etc.)
-        // For now, log the attempt
+        const { sendEmail, isEmailConfigured } = await import("../../lib/email.js");
+        
+        if (!isEmailConfigured()) {
+            logStructured("info", "report_email_skipped", { reason: "email_provider_not_configured", workspaceId, reportId });
+            return { sent: false, reason: "email_provider_not_configured" };
+        }
+
+        const html = `
+            <div style="font-family: sans-serif; padding: 20px;">
+                <h2>${subject}</h2>
+                <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                    ${body.replace(/\n/g, '<br />')}
+                </div>
+                <p style="margin-top: 30px;">
+                    <a href="${process.env.APP_URL || 'http://localhost:3001'}/reports" style="background: #465FFF; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px;">View Report Details</a>
+                </p>
+            </div>
+        `;
+
+        const result = await sendEmail({
+            to,
+            subject,
+            html,
+            text: body,
+        });
+
+        if (!result || !result.id) {
+            throw new Error("Email provider returned failure");
+        }
+
         logStructured("info", "report_email_sent", {
             workspaceId,
             reportId,
             to,
             subject,
+            messageId: result.id,
             bodyLength: body?.length || 0,
             brandName: workspaceSettings?.brandName,
         });

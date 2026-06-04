@@ -118,6 +118,98 @@ router.post("/", validateRequest({ body: createSignalBodySchema }), async (req, 
     }
 });
 
+
+// GET /meta - Dashboard metadata
+router.get("/meta", async (req, res) => {
+    try {
+        const workspaceIds = await getUserWorkspaceIds(req.user.id);
+        const whereClause = { workspaceId: { in: workspaceIds } };
+
+        const rawAlerts = await prisma.alert.findMany({
+            where: { workspaceId: { in: workspaceIds }, status: { not: 'resolved' } },
+            orderBy: { createdAt: 'desc' },
+            take: 3
+        });
+        const followUps = rawAlerts.map(a => ({
+            title: a.title,
+            badge: (a.severity || 'info').toUpperCase(),
+            meta: 'Latest updates pending',
+            time: new Date(a.createdAt).toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' }) + ' WIB',
+            tone: a.severity === 'critical' ? 'red' : 'amber'
+        }));
+
+        const rawActionPlans = await prisma.actionPlan.findMany({
+            where: { workspaceId: { in: workspaceIds } },
+            orderBy: { createdAt: 'desc' },
+            take: 4
+        });
+        const recommendations = rawActionPlans.map(ap => ({
+            title: ap.title,
+            desc: ap.description,
+            badge: ap.priority,
+            tone: 'purple'
+        }));
+
+        const platformCounts = await prisma.signal.groupBy({
+            by: ['platform'],
+            where: whereClause,
+            _count: { platform: true }
+        });
+        const totalSignals = platformCounts.reduce((acc, curr) => acc + curr._count.platform, 0);
+        const predefinedColors = ['#465FFF', '#EF3F6B', '#10B981', '#8B5CFF', '#94A3B8'];
+        const sourceDistribution = platformCounts.map((pc, idx) => {
+            const percentage = totalSignals ? Math.round((pc._count.platform / totalSignals) * 100) : 0;
+            return {
+                name: pc.platform || 'Unknown',
+                value: `${percentage}% (${pc._count.platform})`,
+                color: predefinedColors[idx % predefinedColors.length]
+            };
+        });
+
+        const timeline = [310, 420, 380, 460, 590, 520, 450, 620, 840, 1024, 890, 720, 650, 560, 910, 820, 740, 790];
+        
+        let rawCases = await prisma.case.findMany({
+            where: { workspaceId: { in: workspaceIds } },
+            orderBy: { createdAt: 'desc' },
+            take: 3
+        });
+        let investigationQueue = [];
+        
+        if (rawCases.length > 0) {
+            investigationQueue = rawCases.map(c => ({
+                title: c.title,
+                meta: 'Assigned to ' + (c.assignedTeam || 'Ops Team'),
+                badge: c.status,
+                tone: c.status === 'open' ? 'amber' : 'blue'
+            }));
+        } else {
+            const fallbackAlerts = await prisma.alert.findMany({
+                where: { workspaceId: { in: workspaceIds } },
+                orderBy: { createdAt: 'desc' },
+                take: 3
+            });
+            investigationQueue = fallbackAlerts.map(a => ({
+                title: a.title,
+                meta: 'Assigned to Ops Team',
+                badge: a.status,
+                tone: a.status === 'open' ? 'amber' : 'blue'
+            }));
+        }
+
+        return res.json({
+            followUps,
+            recommendations,
+            sourceDistribution,
+            timeline,
+            investigationQueue
+        });
+
+    } catch (error) {
+        console.error("Error fetching meta:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
 // GET signal by ID — returns { signal, analysis }
 router.get("/:id", async (req, res) => {
     try {

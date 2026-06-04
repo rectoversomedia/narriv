@@ -125,6 +125,7 @@
 | **AIFeedback** | User feedback on AI outputs | → Workspace |
 | **AIAnalysisFailureLog** | AI failure tracking | → Workspace, Signal |
 | **RefreshToken** | JWT refresh tokens | → User |
+| **AppNotification** | In-app real-time notifications | → Workspace, User |
 | **AuditLog** | Security audit trail | → User |
 
 ### 4.2 Enums
@@ -182,6 +183,7 @@ Report ──1:N──▶ ReportExport
 |--------|------|--------|---------|
 | `GET` | `/api/dashboard/summary` | Dashboard | Aggregated KPIs and trends |
 | `GET` | `/signals` | Signals | List signals (paginated) |
+| `GET` | `/signals/meta` | Signals | Signal metadata for sidebar (follow-ups, recommendations, timeline, sources, queue) |
 | `POST` | `/signals` | Signals | Create signal |
 | `GET` | `/signals/:id` | Signals | Signal detail + analysis |
 | `POST` | `/signals/:id/analyze` | Signals | Trigger AI analysis |
@@ -255,6 +257,10 @@ Report ──1:N──▶ ReportExport
 | `GET` | `/api/workspace/integrations/:id` | Integrations | Get integration detail |
 | `PATCH` | `/api/workspace/integrations/:id` | Integrations | Update integration |
 | `DELETE` | `/api/workspace/integrations/:id` | Integrations | Disconnect integration |
+| `GET` | `/api/notifications` | Notifications | List in-app notifications |
+| `GET` | `/api/notifications/stream` | Notifications | SSE stream for real-time notifications |
+| `PATCH` | `/api/notifications/read-all` | Notifications | Mark all notifications as read |
+| `PATCH` | `/api/notifications/:id/read` | Notifications | Mark single notification as read |
 | `DELETE` | `/api/workspace` | Workspace | Delete workspace |
 
 ---
@@ -346,8 +352,8 @@ Report ──1:N──▶ ReportExport
 |---|---|---|
 | **Login** (`/login`) | `POST /auth/login` | ✅ Wired — direct `fetch` + demo login bypass |
 | **Signup** (`/signup`) | `POST /auth/register` | ✅ Wired — direct `fetch` |
-| **Dashboard Home** (`/`) | `GET /api/dashboard/summary` | ✅ Wired — `useQuery` with time range, fallback to mock |
-| **Signals** (`/signals`) | `GET /signals` | ✅ Wired — `useQuery` with pagination, fallback to mock |
+| **Dashboard Home** (`/`) | `GET /api/dashboard/summary` | ✅ Wired — `useQuery` with time range, fully unmocked (KPIs, trends, sentiment, sources, topics, system status) |
+| **Signals** (`/signals`) | `GET /signals`, `GET /signals/meta` | ✅ Wired — `useQuery` with pagination & `getSignalsMeta` for fully unmocked sidebar panels |
 | **Alerts** (`/alerts`) | `GET /api/alerts`, `PATCH /api/alerts/:id/status` | ✅ Wired — `useQuery` + `useMutation` for status change + assignment dropdown |
 | **Alert Detail** (`/alerts/[id]`) | `GET /api/alerts/:id`, `PATCH /api/alerts/:id/status`, `PATCH /api/alerts/:id/assign` | ✅ Wired — `useQuery` + editable assignment fields + status buttons |
 | **Visibility** (`/visibility`) | `GET /api/visibility` | ✅ Wired — `useQuery` with fallback to mock |
@@ -408,7 +414,7 @@ All frontend-facing backend contracts are implemented and returning data. See th
    - ~~No API for logo/file upload~~ ✅ Done
    - ~~No dedicated notification-settings endpoint~~ ✅ Done
    - ~~No API for reset password flow (forgot password email)~~ ✅ Done — reset code/token flow implemented; Resend API integrated for production delivery
-   - No WebSocket/SSE for real-time updates
+   - ~~No WebSocket/SSE for real-time updates~~ ✅ Done — implemented SSE via `/api/notifications/stream` for real-time push.
 
 2. **Testing Gaps**:
    - ~~Integration tests not written for most endpoints~~ ✅ Broad API/worker/security/load coverage in place
@@ -595,7 +601,7 @@ Optional RLS notes:
 - [x] Implement actual PDF report generation (not just JSON export)
 - [x] Add report templates (Executive Brief, Risk Review, Visibility Report, Weekly Digest)
 - [x] Add scheduled report generation (daily, weekly)
-- [x] Implement report email delivery
+- [x] Implement report email delivery (Using Resend API)
 - [x] Add report customization (sections, date range, branding)
 
 ---
@@ -611,8 +617,8 @@ Optional RLS notes:
 
 #### Real-time Features
 - [ ] Implement WebSocket server for live signal/alert updates
-- [ ] Add Server-Sent Events (SSE) as a lighter alternative
-- [ ] Implement real-time notification push (not just job-based)
+- [x] Add Server-Sent Events (SSE) as a lighter alternative (Implemented for In-App Notifications)
+- [x] Implement real-time notification push (not just job-based)
 - [ ] Add live dashboard KPI updates
 
 #### Deployment

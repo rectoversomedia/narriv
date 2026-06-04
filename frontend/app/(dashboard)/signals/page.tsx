@@ -29,7 +29,7 @@ import {
 } from "@ridemountainpig/svgl-react";
 import { cn } from "@/lib/utils";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton, formatPaginationSummary } from "@/components/dashboard/dashboard-states";
-import { getDateRangeOptions, getSignals, type DateRangeKey, type PaginationInfo, type Signal } from "@/lib/api-service";
+import { getDateRangeOptions, getSignals, type DateRangeKey, type PaginationInfo, type Signal, getSignalsMeta, type SignalsMeta } from "@/lib/api-service";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Severity = "CRITICAL" | "HIGH" | "MEDIUM";
@@ -454,14 +454,14 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
   );
 }
 
-function FollowUpPanel() {
+function FollowUpPanel({ data }: { data?: SignalsMeta["followUps"] }) {
   return (
     <Panel className="p-4">
       <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">Yang Perlu Anda Tindak Lanjuti</h2>
       <p className="mt-1 text-[11.5px] font-bold text-[#68739F]">Sinyal yang membutuhkan perhatian segera.</p>
       <div className="mt-4 space-y-2.5">
-        {followUps.map((item) => {
-          const style = toneStyles[item.tone];
+        {(data || followUps).map((item) => {
+          const style = toneStyles[item.tone as Tone];
           const Icon = item.tone === "green" ? Star : Zap;
           return (
             <div key={item.title} className={cn("grid grid-cols-[36px_minmax(0,1fr)] gap-3 rounded-[12px] border p-3 sm:grid-cols-[36px_minmax(0,1fr)_auto]", item.tone === "red" ? "border-[#F8CACA] bg-[#FFF5F5]" : item.tone === "amber" ? "border-[#FFE8C2] bg-[#FFF9F0]" : "border-[#CDEEDD] bg-[#F1FCF6]")}>
@@ -477,15 +477,15 @@ function FollowUpPanel() {
   );
 }
 
-function RecommendationPanel() {
+function RecommendationPanel({ data }: { data?: SignalsMeta["recommendations"] }) {
   return (
     <Panel className="p-4">
       <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">Rekomendasi Tindakan</h2>
       <p className="mt-1 text-[11.5px] font-bold text-[#68739F]">Disarankan oleh Narriv AI.</p>
       <div className="mt-4 space-y-2.5">
-        {recommendations.map((item) => {
-          const style = toneStyles[item.tone];
-          const Icon = item.icon;
+        {(data || recommendations).map((item) => {
+          const style = toneStyles[item.tone as Tone];
+          const Icon = item.icon || Zap;
           return (
             <div key={item.title} className="grid grid-cols-[32px_minmax(0,1fr)] gap-3 rounded-[11px] border border-[#EDF1F7] bg-[#FBFCFF] p-3 sm:grid-cols-[32px_minmax(0,1fr)_auto]">
               <span className={cn("flex h-8 w-8 items-center justify-center rounded-[9px]", style.soft, style.text)}><Icon size={15} /></span>
@@ -500,20 +500,20 @@ function RecommendationPanel() {
   );
 }
 
-function SourceDonut() {
+function SourceDonut({ data }: { data?: SignalsMeta["sourceDistribution"] }) {
   return (
     <Panel className="p-4">
       <div className="flex items-start justify-between gap-3"><div><h3 className="text-[15px] font-black text-[#101334]">Sumber Signal</h3><p className="mt-1 text-[11px] font-bold text-[#68739F]">Distribusi berdasarkan sumber data.</p></div><button type="button" className="inline-flex h-8 shrink-0 whitespace-nowrap items-center gap-1.5 rounded-[8px] border border-[#DDE3EF] px-2.5 text-[9px] font-black text-[#31406B]">24 Jam Terakhir <ChevronDown size={12} /></button></div>
       <div className="mt-5 grid gap-5 sm:grid-cols-[136px_1fr] md:grid-cols-1 xl:grid-cols-[136px_1fr]">
         <div className="chart-donut-enter relative mx-auto flex h-[136px] w-[136px] items-center justify-center rounded-full bg-[conic-gradient(#465FFF_0_48%,#EF3F6B_48%_70%,#10B981_70%_84%,#8B5CFF_84%_94%,#94A3B8_94%_100%)]"><span className="absolute h-[88px] w-[88px] rounded-full bg-white" /><span className="relative text-center"><b className="block text-[22px] font-black text-[#101334]">2.842</b><span className="text-[10px] font-bold text-[#68739F]">Total Signals</span></span></div>
-        <div className="space-y-2.5 self-center">{sourceDistribution.map((item) => <div key={item.name} className="flex items-center justify-between gap-3 text-[11px] font-bold"><span className="flex items-center gap-2 text-[#31406B]"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />{item.name}</span><span className="text-[#68739F]">{item.value}</span></div>)}</div>
+        <div className="space-y-2.5 self-center">{(data || sourceDistribution).map((item) => <div key={item.name} className="flex items-center justify-between gap-3 text-[11px] font-bold"><span className="flex items-center gap-2 text-[#31406B]"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />{item.name}</span><span className="text-[#68739F]">{item.value}</span></div>)}</div>
       </div>
     </Panel>
   );
 }
 
-function TimelineChart() {
-  const path = makeLinePath(timeline, 520, 170, 14);
+function TimelineChart({ data }: { data?: SignalsMeta["timeline"] }) {
+  const path = makeLinePath(data || timeline, 520, 170, 14);
   const area = `${path} L 506 170 L 14 170 Z`;
   return (
     <Panel className="p-4">
@@ -528,16 +528,16 @@ function TimelineChart() {
   );
 }
 
-function InvestigationQueue() {
-  const items = [
+function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"] }) {
+  const items = data || [
     { title: "Payment delay complaints are rising", meta: "Assigned to Ops Team • 10:30 WIB", badge: "Investigating", tone: "red" },
     { title: "Mobile app stability disruption", meta: "Assigned to Product Team • 09:50 WIB", badge: "New", tone: "amber" },
     { title: "FAQ confusion around credit terms", meta: "Assigned to CS Team • 08:25 WIB", badge: "New", tone: "purple" },
-  ] as const;
+  ];
   return (
     <Panel className="p-4">
       <div className="flex items-start justify-between gap-3"><div><h3 className="text-[15px] font-black text-[#101334]">Queue Investigasi</h3><p className="mt-1 text-[11px] font-bold text-[#68739F]">Sinyal yang sedang dalam proses.</p></div><button type="button" className="text-[11px] font-black text-[#465FFF]">Lihat semua</button></div>
-      <div className="mt-4 space-y-3">{items.map((item) => { const style = toneStyles[item.tone]; return <div key={item.title} className="grid grid-cols-[34px_minmax(0,1fr)] gap-3 rounded-[11px] border border-[#EDF1F7] bg-[#FBFCFF] p-3 sm:grid-cols-[34px_minmax(0,1fr)_auto]"><span className={cn("flex h-8 w-8 items-center justify-center rounded-[9px]", style.soft, style.text)}><Zap size={15} /></span><span className="min-w-0"><span className="block truncate text-[12px] font-black text-[#101334]">{item.title}</span><span className="mt-1 block text-[10px] font-bold text-[#68739F]">{item.meta}</span></span><span className={cn("col-start-2 h-fit w-fit rounded-full px-2 py-1 text-[9px] font-black sm:col-start-auto", item.badge === "Investigating" ? "bg-[#465FFF]/10 text-[#465FFF]" : "bg-[#F59E0B]/12 text-[#D97706]")}>{item.badge}</span></div>; })}</div>
+      <div className="mt-4 space-y-3">{items.map((item) => { const style = toneStyles[item.tone as Tone]; return <div key={item.title} className="grid grid-cols-[34px_minmax(0,1fr)] gap-3 rounded-[11px] border border-[#EDF1F7] bg-[#FBFCFF] p-3 sm:grid-cols-[34px_minmax(0,1fr)_auto]"><span className={cn("flex h-8 w-8 items-center justify-center rounded-[9px]", style.soft, style.text)}><Zap size={15} /></span><span className="min-w-0"><span className="block truncate text-[12px] font-black text-[#101334]">{item.title}</span><span className="mt-1 block text-[10px] font-bold text-[#68739F]">{item.meta}</span></span><span className={cn("col-start-2 h-fit w-fit rounded-full px-2 py-1 text-[9px] font-black sm:col-start-auto", item.badge === "Investigating" || item.badge === "open" ? "bg-[#465FFF]/10 text-[#465FFF]" : "bg-[#F59E0B]/12 text-[#D97706]")}>{item.badge}</span></div>; })}</div>
     </Panel>
   );
 }
@@ -549,6 +549,14 @@ export default function SignalsPage() {
   const [page, setPage] = useState(1);
   const deferredQuery = useDeferredValue(query);
   const dateRange = getDateRangeOptions(timeRange);
+  
+  const metaQuery = useQuery({
+    queryKey: ["signalsMeta"],
+    queryFn: () => getSignalsMeta(),
+    staleTime: 60 * 1000,
+  });
+  const meta = metaQuery.data || undefined;
+
   const signalsQuery = useQuery({
     queryKey: ["signals", { keyword: deferredQuery, page, timeRange }],
     queryFn: () => getSignals({ page, limit: signalApiLimit, keyword: deferredQuery.trim() || undefined, ...dateRange }),
@@ -606,15 +614,15 @@ export default function SignalsPage() {
           )}
         </div>
         <div className="flex flex-col gap-4">
-          <FollowUpPanel />
-          <RecommendationPanel />
+          <FollowUpPanel data={meta?.followUps} />
+          <RecommendationPanel data={meta?.recommendations} />
         </div>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[0.92fr_1.08fr_1.18fr]">
-        <SourceDonut />
-        <TimelineChart />
-        <InvestigationQueue />
+        <SourceDonut data={meta?.sourceDistribution} />
+        <TimelineChart data={meta?.timeline} />
+        <InvestigationQueue data={meta?.investigationQueue} />
       </div>
     </div>
   );

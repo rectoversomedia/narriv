@@ -236,6 +236,11 @@ export default function DashboardPage() {
     : alerts;
 
 
+  const sysStatusData = summary?.system_status?.length ? summary.system_status : systemStatus;
+  const hotTopics = summary?.top_topics?.length ? summary.top_topics : topTopics;
+  const miniTrends = summary?.mini_topics?.length ? summary.mini_topics : miniTopics;
+  const sourcesData = summary?.sources_health?.length ? summary.sources_health : sources;
+
   return (
     <div className="space-y-8 pb-6">
       {/* Header Section */}
@@ -307,11 +312,11 @@ export default function DashboardPage() {
             />
             <ActivityAreaChart data={activityData} />
             <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
-              {miniTopics.map((topic) => (
+              {miniTrends.map((topic) => (
                 <div key={topic.label} className="rounded-[8px] border border-slate-100 bg-slate-50 p-3 transition hover:border-[#465FFF]/20">
                   <p className="text-xs font-bold text-slate-400 truncate">{topic.label}</p>
                   <p className="mt-2 text-lg font-black text-slate-900">{topic.value}</p>
-                  <MiniSparkline tone={topic.tone} />
+                  <MiniSparkline tone={topic.tone as Tone} />
                 </div>
               ))}
             </div>
@@ -369,7 +374,7 @@ export default function DashboardPage() {
           <CardContent className="p-5">
             <SectionHeader title={t("pages.command.topics")} description="Topik yang paling banyak dibicarakan" />
             <div className="space-y-2 mt-4">
-              {topTopics.map((topic, index) => (
+              {hotTopics.map((topic, index) => (
                 <div key={text(topic.name, language)} className="flex items-center gap-3 py-2.5 border-b border-slate-100 last:border-0 last:pb-0">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#8B5CFF]/15 text-xs font-bold text-[#8B5CFF] border border-[#8B5CFF]/20">
                     {index + 1}
@@ -390,7 +395,7 @@ export default function DashboardPage() {
           <CardContent className="p-5">
             <SectionHeader title={t("pages.command.sources")} description="Status dan performa sumber data" />
             <div className="space-y-2 mt-4">
-              {sources.map((source) => (
+              {sourcesData.map((source) => (
                 <div key={source.name} className="grid grid-cols-[1fr_75px_60px] items-center gap-2 py-3 border-b border-slate-100 last:border-0 last:pb-0 text-sm">
                   <p className="font-bold text-slate-800 truncate">{source.name}</p>
                   <p className="text-xs font-extrabold text-[#10B981] flex items-center gap-1">
@@ -408,28 +413,28 @@ export default function DashboardPage() {
         <AppCard>
           <CardContent className="p-5">
             <SectionHeader title={t("pages.command.visibility")} description="Performa visibilitas AI" />
-            <DonutChart center="2.451" label="Total Mentions" data={sentimentData} />
+            <DonutChart center={String(summary?.kpis?.analyzed_signals ?? "2.451")} label="Total Mentions" data={sentimentData} />
             <div className="mt-6 grid gap-2.5 text-sm">
               <div className="flex justify-between py-1 border-b border-slate-100">
                 <span className="text-slate-500 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-[#12B76A]" />
                   Positif
                 </span>
-                <b className="text-slate-900">1.248</b>
+                <b className="text-slate-900">{summary?.sentiment_distribution?.positive ?? 1248}</b>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-100">
                 <span className="text-slate-500 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-[#465FFF]" />
                   Netral
                 </span>
-                <b className="text-slate-900">842</b>
+                <b className="text-slate-900">{summary?.sentiment_distribution?.neutral ?? 842}</b>
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-slate-500 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-[#F04438]" />
                   Negatif
                 </span>
-                <b className="text-slate-900">361</b>
+                <b className="text-slate-900">{summary?.sentiment_distribution?.negative ?? 361}</b>
               </div>
             </div>
           </CardContent>
@@ -473,7 +478,7 @@ export default function DashboardPage() {
             } 
           />
           <div className="grid gap-3 md:grid-cols-5 mt-4">
-            {systemStatus.map((item) => (
+            {sysStatusData.map((item) => (
               <div key={item} className="flex items-center gap-3 rounded-[10px] bg-slate-50 border border-slate-100 p-4 transition hover:border-[#10B981]/25">
                 <IconBubble icon={CheckCircle2} tone="green" className="h-8 w-8 rounded-full shrink-0" />
                 <div>

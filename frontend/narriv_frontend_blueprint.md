@@ -383,8 +383,8 @@ All frontend-to-backend calls should go through the Ky-backed `apiClient.ts`/`ap
 | Reset password flow | `POST /auth/forgot-password`, `POST /auth/verify-reset-code`, `POST /auth/reset-password` | Yes — Ky-backed reset service functions | Yes — reset, verify, and new-password pages |
 | `logoutSession()` | `POST /auth/logout` | Yes | Yes — topbar logout calls API to revoke refresh token before clearing local state |
 | `getCurrentUser()` | `GET /auth/me` | Yes | No |
-| `getDashboardSummary()` | `GET /api/dashboard/summary` | Yes | Yes — dashboard home uses KPI/trend/sentiment/latest signal fields with date filters |
-| `getSignals()` / `getSignalById()` | `GET /signals`, `GET /signals/:id` | Yes | `getSignals()` yes on `/signals`; `getSignalById()` not currently used by a route |
+| `getDashboardSummary()` | `GET /api/dashboard/summary` | Yes | Yes — dashboard home uses KPI/trend/sentiment/latest signal fields, fully unmocked |
+| `getSignals()` / `getSignalsMeta()` | `GET /signals`, `GET /signals/meta` | Yes | `getSignals()` yes on `/signals`; `getSignalsMeta()` yes for signals sidebar |
 | `getAlerts()` / `getAlertById()` | `GET /api/alerts`, `GET /api/alerts/:id` | Yes | Yes — list page and detail page use React Query |
 | Alert status/assignment functions | `PATCH /api/alerts/:id/status`, `PATCH /api/alerts/:id/assign` | Yes | Yes — alerts page dropdown for status change, alert detail page editable assignment fields |
 | `getVisibility()` | `GET /api/visibility` | Yes | Yes — partially mapped with static fallback sections |
@@ -393,6 +393,7 @@ All frontend-to-backend calls should go through the Ky-backed `apiClient.ts`/`ap
 | `getNarratives()` | `GET /api/narratives` | Yes | Yes — partially mapped to intelligence UI with preview fallback |
 | Source/ingestion functions | `/sources`, `/ingestion/run/:sourceId`, `/ingestion/status/:jobId` | Yes | Yes — `getSources()`, `updateSource()` (toggle), `deleteSource()`, and `runSourceIngestion()` (sync) are wired |
 | Workspace settings/member functions | `/api/workspace/settings`, `/api/workspace/members` | Yes | Yes — `getWorkspaceSettings()`, `updateWorkspaceSettings()`, `getWorkspaceMembers()`, `createWorkspaceMember()` by registered-user email, and `deleteWorkspaceMember()` are wired |
+| In-App Notifications & SSE | `/api/notifications`, `/api/notifications/stream` | Yes | Yes — `getNotifications()` and SSE listeners wired to Topbar notification bell; mark as read mutations wired |
 | `changePassword()` | `POST /auth/change-password` | Yes | Yes — settings page change password form with validation |
 | `getNotificationSettings()` / `updateNotificationSettings()` | `GET/PATCH /api/workspace/notification-settings` | Yes | Yes — settings page notification toggles wired |
 
@@ -442,13 +443,13 @@ All frontend-to-backend calls should go through the Ky-backed `apiClient.ts`/`ap
 - Mock data cleanup: 16 unused exports removed from `mock-data.ts`
 
 ### ⚠️ Known Issues & Gaps
-1. **Static/Mock Data Dependency**: Dashboard pages use live API reads for primary data, but secondary widgets (topics, sources, system status) and preview fallbacks still rely on `mock-data.ts`. 16 unused exports have been removed; remaining mocks serve as fallback data.
+1. **Static/Mock Data Dependency**: All primary and secondary dashboard widgets (topics, sources, system status, signals sidebar) are now fully un-mocked and use API data. Some empty-state or fallback mocks remain solely for preview when live data is completely empty.
 2. **Onboarding Flow**: UI-only, no API integration. Steps don't save to backend.
 3. **Social Login**: Apple/Google/Microsoft buttons show "unavailable" toast.
 4. **Workspace Logo Upload**: UI exists but no file upload API endpoint.
 5. **Missing Workspace Routes**: `/workspace/activity`, `/workspace/cases`, and `/workspace/integrations` do not currently exist as frontend pages.
-6. **Notification Channels**: UI toggles exist but no real push/dispatch integration.
-7. **Real-time Updates**: No WebSocket or polling for live signal/alert updates.
+6. **Notification Channels**: Push/dispatch for email/whatsapp not fully implemented (settings exist). However, **In-App Notification Bell** is fully wired and functional using SSE.
+7. **Real-time Updates**: SSE is now active for `/api/notifications/stream` replacing polling for notification updates.
 8. **Reset Password Email Delivery**: Reset flow calls backend endpoints, but production email/SMS delivery provider is still future integration; non-production exposes dev reset code for local testing.
 
 ---
@@ -499,7 +500,7 @@ These replace the removed frontend checklist/guidelines and should be treated as
 - [ ] **Activity Log** — Create `/workspace/activity` page and wire it to a new `AuditLog` API
 - [ ] **Cases Page** — Create `/workspace/cases` page after the backend case model/API is designed
 - [ ] **Integrations Page** — Create `/workspace/integrations` page after integration/OAuth endpoints exist
-- [ ] **Real-time Signals** — Add polling or WebSocket for live signal/alert updates
+- [x] **Real-time Notifications** — Added SSE (`/api/notifications/stream`) to automatically push new notifications to the frontend bell icon without polling. Completed 2026-06-04.
 - [x] **Export Downloads** — PDF export via `createReportExport()` with polling via `getReportExportStatus()` and auto-download on completion. Completed 2026-05-31.
 - [x] **Notification Settings** — Wired to `GET/PATCH /api/workspace/notification-settings` via workspace-settings API. Backend endpoints implemented. Completed 2026-05-31.
 - [x] **Mobile Responsive** — Completed code-level mobile audit and fixed high-risk overflow/button wrapping patterns across dashboard pages. Completed 2026-05-30. Final device/browser visual QA is still recommended before release.
@@ -528,5 +529,5 @@ These replace the removed frontend checklist/guidelines and should be treated as
 - [x] **Accessibility** — Completed targeted code-level audit for updated dashboard controls. Added dialog focus management/trapping, pagination navigation labels/live status, and labels for icon-only source view toggles. Completed 2026-05-31. Manual screen-reader/browser QA is still recommended before launch.
 - [x] **E2E Tests** — Added Playwright setup, npm scripts, and smoke coverage for protected-route redirect, authenticated auth-route redirect, and primary login controls. Completed 2026-05-31. CRUD flow coverage should be expanded once live mutation endpoints are finalized.
 - [ ] **VPS Deployment** — Prepare DigitalOcean VPS + Hostinger DNS deployment readiness: production env docs, PM2/systemd process notes, Nginx reverse proxy, SSL, and frontend/backend domain mapping
-- [ ] **Remove Mock Data** — Partially done: 16 unused exports removed from `mock-data.ts`. Remaining mocks serve as fallback data for dashboard widgets and need backend API coverage before full removal.
+- [x] **Remove Mock Data** — All primary and secondary dashboard widgets (topics, sources, system status, signals sidebar panels) now use live API endpoints (`getDashboardSummary` and `getSignalsMeta`). Some mock arrays remain only as fallback data when the DB is entirely empty or API fails.
 - [x] **Console Cleanup** — Remove all `console.log` debug statements. Frontend was already clean. Backend: replaced 45+ raw `console.log` calls across 13 files with structured `logStructured()` from shared logger. Only `logger.js` itself retains `console.log` as the centralized output.

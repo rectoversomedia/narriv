@@ -6,12 +6,17 @@ export const verifyToken = (req, res, next) => {
         return res.status(500).json({ error: "JWT secret is not configured." });
     }
 
+    let token;
     const bearerHeader = req.headers["authorization"];
-    if (!bearerHeader) {
-        return res.status(401).json({ error: "Access token required." });
+    if (bearerHeader) {
+        token = bearerHeader.split(" ")[1];
+    } else if (req.query && req.query.token) {
+        token = req.query.token;
     }
 
-    const token = bearerHeader.split(" ")[1];
+    if (!token) {
+        return res.status(401).json({ error: "Access token required." });
+    }
     if (!token) {
          return res.status(401).json({ error: "Access token missing." });
     }

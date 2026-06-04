@@ -2,7 +2,7 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js" 
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -11,19 +11,20 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(uuid())
-  name          String?
-  email         String   @unique
-  password      String   // the summary.md uses password_hash, but we'll stick to 'password' or use password_hash. Let's use password to be simple.
-  failedLoginAttempts Int @default(0)
-  lockedUntil   DateTime?
-  refreshTokens RefreshToken[]
+  id                  String               @id @default(uuid())
+  name                String?
+  email               String               @unique
+  password            String // the summary.md uses password_hash, but we'll stick to 'password' or use password_hash. Let's use password to be simple.
+  failedLoginAttempts Int                  @default(0)
+  lockedUntil         DateTime?
+  refreshTokens       RefreshToken[]
   passwordResetTokens PasswordResetToken[]
-  auditLogs     AuditLog[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  auditLogs           AuditLog[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 
-  memberships WorkspaceMember[]
+  memberships      WorkspaceMember[]
+  appNotifications AppNotification[]
 
   @@index([createdAt])
 }
@@ -35,66 +36,67 @@ model Workspace {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  members          WorkspaceMember[]
-  settings         WorkspaceSettings?
-  notificationSettings WorkspaceNotificationSettings?
-  sources          Source[]
-  ingestionJobs    IngestionJob[]
-  rawDocuments     RawDocument[]
-  signals          Signal[]
+  members               WorkspaceMember[]
+  settings              WorkspaceSettings?
+  notificationSettings  WorkspaceNotificationSettings?
+  sources               Source[]
+  ingestionJobs         IngestionJob[]
+  rawDocuments          RawDocument[]
+  signals               Signal[]
   aiAnalysisFailureLogs AIAnalysisFailureLog[]
-  alerts           Alert[]
-  narrativeClusters NarrativeCluster[]
-  reports          Report[]
-  actionPlans      ActionPlan[]
-  generatedAssets  GeneratedAsset[]
-  aiVisibilityResults AIVisibilityResult[]
-  promptTestRuns    PromptTestRun[]
-  aiFeedback        AIFeedback[]
-  cases             Case[]
-  integrations      Integration[]
+  alerts                Alert[]
+  narrativeClusters     NarrativeCluster[]
+  reports               Report[]
+  actionPlans           ActionPlan[]
+  generatedAssets       GeneratedAsset[]
+  aiVisibilityResults   AIVisibilityResult[]
+  promptTestRuns        PromptTestRun[]
+  aiFeedback            AIFeedback[]
+  cases                 Case[]
+  integrations          Integration[]
+  AppNotification       AppNotification[]
 }
 
 model WorkspaceSettings {
-  id                 String   @id @default(uuid())
-  workspaceId        String   @unique
-  brandName          String?
-  industry           String?
-  timezone           String?
-  notificationEmail  String?
-  whatsappPIC        String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                String   @id @default(uuid())
+  workspaceId       String   @unique
+  brandName         String?
+  industry          String?
+  timezone          String?
+  notificationEmail String?
+  whatsappPIC       String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  workspace          Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId])
 }
 
 model WorkspaceNotificationSettings {
-  id                        String   @id @default(uuid())
-  workspaceId               String   @unique
-  emailEnabled              Boolean  @default(true)
-  whatsappEnabled           Boolean  @default(false)
-  escalationNotifications   Boolean  @default(true)
-  reminderNotifications     Boolean  @default(true)
-  createdAt                 DateTime @default(now())
-  updatedAt                 DateTime @updatedAt
+  id                      String   @id @default(uuid())
+  workspaceId             String   @unique
+  emailEnabled            Boolean  @default(true)
+  whatsappEnabled         Boolean  @default(false)
+  escalationNotifications Boolean  @default(true)
+  reminderNotifications   Boolean  @default(true)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 
-  workspace                 Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId])
 }
 
 model WorkspaceMember {
-  id          String @id @default(uuid())
+  id          String   @id @default(uuid())
   userId      String
   workspaceId String
   role        String // (admin, analyst, viewer)
   createdAt   DateTime @default(now())
 
-  user        User      @relation(fields: [userId], references: [id])
-  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
 
   @@unique([userId, workspaceId])
   @@index([workspaceId])
@@ -102,17 +104,17 @@ model WorkspaceMember {
 }
 
 model Source {
-  id            String   @id @default(uuid())
-  workspaceId   String
-  name          String
-  type          String   // (news, web, forum, social, video, podcast)
-  actorId       String?
-  inputConfig   Json?
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @default(now()) @updatedAt
+  id          String   @id @default(uuid())
+  workspaceId String
+  name        String
+  type        String // (news, web, forum, social, video, podcast)
+  actorId     String?
+  inputConfig Json?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 
-  workspace     Workspace @relation(fields: [workspaceId], references: [id])
+  workspace     Workspace      @relation(fields: [workspaceId], references: [id])
   ingestionJobs IngestionJob[]
   rawDocuments  RawDocument[]
 
@@ -122,41 +124,41 @@ model Source {
 }
 
 model IngestionJob {
-  id            String   @id @default(uuid())
-  workspaceId   String
-  sourceId      String
-  runId         String?
-  status        String
-  startedAt     DateTime @default(now())
-  finishedAt    DateTime?
-  errorMessage  String?
+  id           String    @id @default(uuid())
+  workspaceId  String
+  sourceId     String
+  runId        String?
+  status       String
+  startedAt    DateTime  @default(now())
+  finishedAt   DateTime?
+  errorMessage String?
 
-  workspace     Workspace @relation(fields: [workspaceId], references: [id])
-  source        Source    @relation(fields: [sourceId], references: [id])
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  source    Source    @relation(fields: [sourceId], references: [id])
 
   @@index([workspaceId, status, startedAt])
   @@index([sourceId, startedAt])
 }
 
 model RawDocument {
-  id            String   @id @default(uuid())
-  workspaceId   String
-  sourceId      String
-  externalId    String?
-  title         String?
-  content       String
-  url           String?
-  author        String?
-  sourceName    String?
-  sourceType    String?
-  platform      String?
-  publishedAt   DateTime?
-  capturedAt    DateTime @default(now())
-  metadata      Json?
+  id          String    @id @default(uuid())
+  workspaceId String
+  sourceId    String
+  externalId  String?
+  title       String?
+  content     String
+  url         String?
+  author      String?
+  sourceName  String?
+  sourceType  String?
+  platform    String?
+  publishedAt DateTime?
+  capturedAt  DateTime  @default(now())
+  metadata    Json?
 
-  workspace     Workspace @relation(fields: [workspaceId], references: [id])
-  source        Source    @relation(fields: [sourceId], references: [id])
-  signals       Signal[]
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  source    Source    @relation(fields: [sourceId], references: [id])
+  signals   Signal[]
 
   @@index([workspaceId, capturedAt])
   @@index([sourceId, capturedAt])
@@ -165,7 +167,7 @@ model RawDocument {
 }
 
 model Signal {
-  id            String   @id @default(uuid())
+  id            String    @id @default(uuid())
   workspaceId   String
   rawDocumentId String?
   title         String?
@@ -175,19 +177,19 @@ model Signal {
   platform      String?
   url           String?
   publishedAt   DateTime?
-  capturedAt    DateTime @default(now())
+  capturedAt    DateTime  @default(now())
   region        String?
   language      String?
   dedupeHash    String?
-  
+
   // NOTE: Based on old code, the router expected sentiment directly in the Signal model
   // I will add sentiment to signal as well to prevent breaking old code, or I can rely on SignalAnalysis
-  sentiment     String?
+  sentiment String?
 
-  workspace     Workspace @relation(fields: [workspaceId], references: [id])
-  rawDocument   RawDocument? @relation(fields: [rawDocumentId], references: [id])
-  analyses      SignalAnalysis[]
-  aiAnalysisFailureLogs AIAnalysisFailureLog[]
+  workspace               Workspace                @relation(fields: [workspaceId], references: [id])
+  rawDocument             RawDocument?             @relation(fields: [rawDocumentId], references: [id])
+  analyses                SignalAnalysis[]
+  aiAnalysisFailureLogs   AIAnalysisFailureLog[]
   narrativeClusterSignals NarrativeClusterSignal[]
 
   @@index([workspaceId, capturedAt])
@@ -210,7 +212,7 @@ model SignalAnalysis {
   confidenceScore   Float?
   createdAt         DateTime @default(now())
 
-  signal            Signal @relation(fields: [signalId], references: [id])
+  signal Signal @relation(fields: [signalId], references: [id])
 
   @@index([signalId, createdAt])
   @@index([contentHash])
@@ -219,24 +221,24 @@ model SignalAnalysis {
 }
 
 model Alert {
-  id            String   @id @default(uuid())
-  workspaceId   String
-  type          String   // (risk, opportunity, positioning)
-  severity      String   // (low, medium, high, critical)
-  title         String
-  whatHappened  String?
-  whyItMatters  String?
-  whatToDo      String?
-  assignedTo    String?
-  assignedTeam  String?
-  deadline      DateTime?
+  id              String          @id @default(uuid())
+  workspaceId     String
+  type            String // (risk, opportunity, positioning)
+  severity        String // (low, medium, high, critical)
+  title           String
+  whatHappened    String?
+  whyItMatters    String?
+  whatToDo        String?
+  assignedTo      String?
+  assignedTeam    String?
+  deadline        DateTime?
   escalationLevel EscalationLevel @default(medium)
-  workflowStatus String?  // (todo, in_progress, blocked, done)
-  status        String   @default("open") // (open, acknowledged, in_progress, resolved)
-  createdAt     DateTime @default(now())
+  workflowStatus  String? // (todo, in_progress, blocked, done)
+  status          String          @default("open") // (open, acknowledged, in_progress, resolved)
+  createdAt       DateTime        @default(now())
 
-  workspace     Workspace @relation(fields: [workspaceId], references: [id])
-  actionPlans   ActionPlan[]
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id])
+  actionPlans ActionPlan[]
 
   @@index([workspaceId, status, createdAt])
   @@index([workspaceId, severity, createdAt])
@@ -244,19 +246,19 @@ model Alert {
 }
 
 model NarrativeCluster {
-  id             String   @id @default(uuid())
-  workspaceId    String
-  title          String
-  description    String?
-  mainNarrative  String?
-  sentiment      String?      // dominant sentiment
-  impact         ImpactLevel? // low, medium, high, critical
-  signalCount    Int      @default(0)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id            String       @id @default(uuid())
+  workspaceId   String
+  title         String
+  description   String?
+  mainNarrative String?
+  sentiment     String? // dominant sentiment
+  impact        ImpactLevel? // low, medium, high, critical
+  signalCount   Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
-  workspace      Workspace @relation(fields: [workspaceId], references: [id])
-  actionPlans    ActionPlan[]
+  workspace               Workspace                @relation(fields: [workspaceId], references: [id])
+  actionPlans             ActionPlan[]
   narrativeClusterSignals NarrativeClusterSignal[]
 
   @@index([workspaceId, updatedAt])
@@ -265,13 +267,13 @@ model NarrativeCluster {
 }
 
 model NarrativeClusterSignal {
-  id                 String @id @default(uuid())
+  id                 String   @id @default(uuid())
   narrativeClusterId String
   signalId           String
   createdAt          DateTime @default(now())
 
-  narrativeCluster   NarrativeCluster @relation(fields: [narrativeClusterId], references: [id])
-  signal             Signal           @relation(fields: [signalId], references: [id])
+  narrativeCluster NarrativeCluster @relation(fields: [narrativeClusterId], references: [id])
+  signal           Signal           @relation(fields: [signalId], references: [id])
 
   @@unique([narrativeClusterId, signalId])
   @@index([signalId])
@@ -292,41 +294,41 @@ enum EscalationLevel {
 }
 
 model Report {
-  id            String   @id @default(uuid())
-  workspaceId   String
-  title         String
-  periodStart   DateTime?
-  periodEnd     DateTime?
-  summary       String?
-  exportUrl     String?
-  createdAt     DateTime @default(now())
+  id          String    @id @default(uuid())
+  workspaceId String
+  title       String
+  periodStart DateTime?
+  periodEnd   DateTime?
+  summary     String?
+  exportUrl   String?
+  createdAt   DateTime  @default(now())
 
-  workspace     Workspace @relation(fields: [workspaceId], references: [id])
-  exports       ReportExport[]
+  workspace Workspace      @relation(fields: [workspaceId], references: [id])
+  exports   ReportExport[]
 
   @@index([workspaceId, createdAt])
   @@index([workspaceId, title])
 }
 
 model ActionPlan {
-  id            String   @id @default(uuid())
-  workspaceId   String
-  alertId       String?
-  clusterId     String?
-  title         String
-  option1       String?
-  option2       String?
-  option3       String?
-  assignedTo    String?
-  assignedTeam  String?
-  deadline      DateTime?
+  id              String          @id @default(uuid())
+  workspaceId     String
+  alertId         String?
+  clusterId       String?
+  title           String
+  option1         String?
+  option2         String?
+  option3         String?
+  assignedTo      String?
+  assignedTeam    String?
+  deadline        DateTime?
   escalationLevel EscalationLevel @default(medium)
-  workflowStatus String?  // (todo, in_progress, blocked, done)
-  createdAt     DateTime @default(now())
+  workflowStatus  String? // (todo, in_progress, blocked, done)
+  createdAt       DateTime        @default(now())
 
-  workspace     Workspace @relation(fields: [workspaceId], references: [id])
-  alert         Alert?    @relation(fields: [alertId], references: [id])
-  cluster       NarrativeCluster? @relation(fields: [clusterId], references: [id])
+  workspace       Workspace         @relation(fields: [workspaceId], references: [id])
+  alert           Alert?            @relation(fields: [alertId], references: [id])
+  cluster         NarrativeCluster? @relation(fields: [clusterId], references: [id])
   generatedAssets GeneratedAsset[]
 
   @@index([workspaceId, createdAt])
@@ -335,16 +337,16 @@ model ActionPlan {
 }
 
 model GeneratedAsset {
-  id            String   @id @default(uuid())
-  workspaceId   String
-  actionPlanId  String
-  type          String   // (press_release, influencer_brief, holding_statement, faq, internal_memo, campaign_brief)
-  title         String
-  content       String
-  createdAt     DateTime @default(now())
+  id           String   @id @default(uuid())
+  workspaceId  String
+  actionPlanId String
+  type         String // (press_release, influencer_brief, holding_statement, faq, internal_memo, campaign_brief)
+  title        String
+  content      String
+  createdAt    DateTime @default(now())
 
-  workspace     Workspace  @relation(fields: [workspaceId], references: [id])
-  actionPlan    ActionPlan @relation(fields: [actionPlanId], references: [id])
+  workspace  Workspace  @relation(fields: [workspaceId], references: [id])
+  actionPlan ActionPlan @relation(fields: [actionPlanId], references: [id])
 
   @@index([workspaceId, createdAt])
   @@index([actionPlanId])
@@ -353,37 +355,37 @@ model GeneratedAsset {
 model AIVisibilityResult {
   id                    String   @id @default(uuid())
   workspaceId           String
-  engineName            String   // (chatgpt, gemini, perplexity, copilot, claude, etc.)
-  visibilityScore       Float    // 0.0 - 100.0
-  brandPresenceRate     Float    // 0.0 - 1.0 (percentage as decimal)
-  competitorMentionRate Float    // 0.0 - 1.0 (percentage as decimal)
-  queryUsed             String?  // the prompt/query sent to the AI engine
-  rawResponse           Json?    // full raw response for auditing
-  metadata              Json?    // additional context (model version, tokens, etc.)
+  engineName            String // (chatgpt, gemini, perplexity, copilot, claude, etc.)
+  visibilityScore       Float // 0.0 - 100.0
+  brandPresenceRate     Float // 0.0 - 1.0 (percentage as decimal)
+  competitorMentionRate Float // 0.0 - 1.0 (percentage as decimal)
+  queryUsed             String? // the prompt/query sent to the AI engine
+  rawResponse           Json? // full raw response for auditing
+  metadata              Json? // additional context (model version, tokens, etc.)
   createdAt             DateTime @default(now())
 
-  workspace             Workspace @relation(fields: [workspaceId], references: [id])
-  promptTestRuns        PromptTestRun[]
+  workspace      Workspace       @relation(fields: [workspaceId], references: [id])
+  promptTestRuns PromptTestRun[]
 
   @@index([workspaceId, createdAt])
   @@index([workspaceId, engineName, createdAt])
 }
 
 model PromptTestRun {
-  id                    String   @id @default(uuid())
-  workspaceId           String
-  aiVisibilityResultId  String
-  prompt                String
-  engine                String
-  brand                 String
-  competitor            String
-  brandTone             String
-  compTone              String
-  highlighted           Boolean  @default(false)
-  createdAt             DateTime @default(now())
+  id                   String   @id @default(uuid())
+  workspaceId          String
+  aiVisibilityResultId String
+  prompt               String
+  engine               String
+  brand                String
+  competitor           String
+  brandTone            String
+  compTone             String
+  highlighted          Boolean  @default(false)
+  createdAt            DateTime @default(now())
 
-  workspace             Workspace          @relation(fields: [workspaceId], references: [id])
-  aiVisibilityResult    AIVisibilityResult @relation(fields: [aiVisibilityResultId], references: [id], onDelete: Cascade)
+  workspace          Workspace          @relation(fields: [workspaceId], references: [id])
+  aiVisibilityResult AIVisibilityResult @relation(fields: [aiVisibilityResultId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, createdAt])
   @@index([workspaceId, engine, createdAt])
@@ -391,18 +393,18 @@ model PromptTestRun {
 }
 
 model AIFeedback {
-  id              String   @id @default(uuid())
-  workspaceId     String
-  targetType      String   // (signal_analysis, alert, action_plan, cluster)
-  targetId        String   // ID of the entity being rated
-  action          String   // (accepted, edited, rejected)
-  originalOutput  Json?    // the AI output before feedback
-  editedOutput    Json?    // user's corrected version (if edited)
-  reason          String?  // optional reason for rejection/edit
-  userId          String?  // who gave the feedback
-  createdAt       DateTime @default(now())
+  id             String   @id @default(uuid())
+  workspaceId    String
+  targetType     String // (signal_analysis, alert, action_plan, cluster)
+  targetId       String // ID of the entity being rated
+  action         String // (accepted, edited, rejected)
+  originalOutput Json? // the AI output before feedback
+  editedOutput   Json? // user's corrected version (if edited)
+  reason         String? // optional reason for rejection/edit
+  userId         String? // who gave the feedback
+  createdAt      DateTime @default(now())
 
-  workspace       Workspace @relation(fields: [workspaceId], references: [id])
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
 
   @@index([workspaceId, createdAt])
   @@index([workspaceId, targetType, targetId])
@@ -411,30 +413,30 @@ model AIFeedback {
 }
 
 model AIAnalysisFailureLog {
-  id            String   @id @default(uuid())
-  workspaceId   String
-  signalId      String
-  errorMessage  String
-  rawAttempt1   String?
-  rawAttempt2   String?
-  createdAt     DateTime @default(now())
+  id           String   @id @default(uuid())
+  workspaceId  String
+  signalId     String
+  errorMessage String
+  rawAttempt1  String?
+  rawAttempt2  String?
+  createdAt    DateTime @default(now())
 
-  workspace     Workspace @relation(fields: [workspaceId], references: [id])
-  signal        Signal    @relation(fields: [signalId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  signal    Signal    @relation(fields: [signalId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, createdAt])
   @@index([signalId])
 }
 
 model RefreshToken {
-  id          String   @id @default(uuid())
-  userId      String
-  tokenHash   String   @unique
-  expiresAt   DateTime
-  revokedAt   DateTime?
-  createdAt   DateTime @default(now())
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
   @@index([expiresAt])
@@ -442,16 +444,16 @@ model RefreshToken {
 }
 
 model PasswordResetToken {
-  id          String   @id @default(uuid())
-  userId      String
-  tokenHash   String   @unique
-  codeHash    String
-  expiresAt   DateTime
-  verifiedAt  DateTime?
-  usedAt      DateTime?
-  createdAt   DateTime @default(now())
+  id         String    @id @default(uuid())
+  userId     String
+  tokenHash  String    @unique
+  codeHash   String
+  expiresAt  DateTime
+  verifiedAt DateTime?
+  usedAt     DateTime?
+  createdAt  DateTime  @default(now())
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
   @@index([expiresAt])
@@ -459,33 +461,33 @@ model PasswordResetToken {
 }
 
 model AuditLog {
-  id          String   @id @default(uuid())
-  userId      String?
-  event       String
-  metadata    Json?
-  createdAt   DateTime @default(now())
+  id        String   @id @default(uuid())
+  userId    String?
+  event     String
+  metadata  Json?
+  createdAt DateTime @default(now())
 
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId, createdAt])
   @@index([event, createdAt])
 }
 
 model ReportExport {
-  id            String   @id @default(uuid())
-  reportId      String
-  status        String   // queued, running, completed, failed
-  format        String   // json, pdf
-  fileName      String?
-  fileContent   Json?
-  signedToken   String?  @unique
-  signedUrl     String?
-  errorMessage  String?
-  expiresAt     DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String    @id @default(uuid())
+  reportId     String
+  status       String // queued, running, completed, failed
+  format       String // json, pdf
+  fileName     String?
+  fileContent  Json?
+  signedToken  String?   @unique
+  signedUrl    String?
+  errorMessage String?
+  expiresAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  report        Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
   @@index([reportId, status])
   @@index([status, createdAt])
@@ -493,22 +495,22 @@ model ReportExport {
 }
 
 model Case {
-  id            String   @id @default(uuid())
-  workspaceId   String
-  title         String
-  description   String?
-  status        String   @default("open")  // open, in_progress, resolved, closed
-  priority      String   @default("medium") // low, medium, high, critical
-  sourceType    String?                     // alert, narrative, manual
-  sourceId      String?                     // ID of the source alert/narrative
-  assignedTo    String?
-  assignedTeam  String?
-  deadline      DateTime?
-  resolution    String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String    @id @default(uuid())
+  workspaceId  String
+  title        String
+  description  String?
+  status       String    @default("open") // open, in_progress, resolved, closed
+  priority     String    @default("medium") // low, medium, high, critical
+  sourceType   String? // alert, narrative, manual
+  sourceId     String? // ID of the source alert/narrative
+  assignedTo   String?
+  assignedTeam String?
+  deadline     DateTime?
+  resolution   String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, status])
   @@index([workspaceId, createdAt])
@@ -516,34 +518,53 @@ model Case {
 }
 
 model Integration {
-  id            String   @id @default(uuid())
-  workspaceId   String
-  name          String
-  platform      String                      // slack, teams, email, webhook, etc.
-  status        String   @default("active") // active, inactive, error
-  config        Json?                       // platform-specific configuration
-  lastSyncAt    DateTime?
-  errorMessage  String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String    @id @default(uuid())
+  workspaceId  String
+  name         String
+  platform     String // slack, teams, email, webhook, etc.
+  status       String    @default("active") // active, inactive, error
+  config       Json? // platform-specific configuration
+  lastSyncAt   DateTime?
+  errorMessage String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, platform])
   @@index([workspaceId, status])
 }
 
 model TokenUsage {
-  id              String   @id @default(uuid())
-  workspaceId     String
-  date            DateTime @db.Date
-  model           String
-  totalTokens     Int      @default(0)
-  callCount       Int      @default(0)
-  totalLatencyMs  Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(uuid())
+  workspaceId    String
+  date           DateTime @db.Date
+  model          String
+  totalTokens    Int      @default(0)
+  callCount      Int      @default(0)
+  totalLatencyMs Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@unique([workspaceId, date, model])
   @@index([workspaceId, date])
+}
+
+model AppNotification {
+  id          String   @id @default(uuid())
+  workspaceId String
+  userId      String?
+  type        String
+  title       String
+  message     String
+  link        String?
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([createdAt])
 }
