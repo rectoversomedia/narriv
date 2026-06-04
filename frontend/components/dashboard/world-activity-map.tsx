@@ -1,14 +1,18 @@
 "use client";
 
-import { useState, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
 import {
   ComposableMap,
   Geographies,
   Geography,
   Marker,
-} from "react-simple-maps";
+  createCoordinates,
+  type Coordinates,
+  type GeographiesProps,
+} from "@vnedyalk0v/react19-simple-maps";
 
 const geoUrl = "/maps/world-110m.json";
+type GeographyInput = GeographiesProps["geography"];
 
 const countryData: Record<string, { name: string; signals: number; level: string; color: string }> = {
   "360": { name: "Indonesia", signals: 1842, level: "Tinggi", color: "#351EFF" },
@@ -47,18 +51,45 @@ const countryNames: Record<string, string> = {
   "554": "Selandia Baru",
 };
 
-const markers: Array<{ name: string; coordinates: [number, number]; signals: number; color: string }> = [
-  { name: "Jakarta", coordinates: [106.8456, -6.2088], signals: 1842, color: "#351EFF" },
-  { name: "Surabaya", coordinates: [112.7521, -7.2575], signals: 928, color: "#465FFF" },
-  { name: "Medan", coordinates: [98.6722, 3.5952], signals: 618, color: "#8B5CFF" },
-  { name: "Makassar", coordinates: [119.4173, -5.1476], signals: 412, color: "#12B76A" },
-  { name: "Bandung", coordinates: [107.6191, -6.9175], signals: 754, color: "#38A7FF" },
-  { name: "Yogyakarta", coordinates: [110.3695, -7.7956], signals: 485, color: "#F79009" },
+const mapCenter = createCoordinates(118, -2);
+
+const markers: Array<{ name: string; coordinates: Coordinates; signals: number; color: string }> = [
+  { name: "Jakarta", coordinates: createCoordinates(106.8456, -6.2088), signals: 1842, color: "#351EFF" },
+  { name: "Surabaya", coordinates: createCoordinates(112.7521, -7.2575), signals: 928, color: "#465FFF" },
+  { name: "Medan", coordinates: createCoordinates(98.6722, 3.5952), signals: 618, color: "#8B5CFF" },
+  { name: "Makassar", coordinates: createCoordinates(119.4173, -5.1476), signals: 412, color: "#12B76A" },
+  { name: "Bandung", coordinates: createCoordinates(107.6191, -6.9175), signals: 754, color: "#38A7FF" },
+  { name: "Yogyakarta", coordinates: createCoordinates(110.3695, -7.7956), signals: 485, color: "#F79009" },
 ];
 
 export function WorldActivityMap() {
   const [tooltipContent, setTooltipContent] = useState<ReactNode | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+  const [geography, setGeography] = useState<GeographyInput | null>(null);
+  const [mapLoadFailed, setMapLoadFailed] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    fetch(geoUrl)
+      .then((response) => {
+        if (!response.ok) throw new Error(`Failed to load map data (${response.status})`);
+        return response.json() as Promise<GeographyInput>;
+      })
+      .then((data) => {
+        if (!isMounted) return;
+        setGeography(data);
+        setMapLoadFailed(false);
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setMapLoadFailed(true);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleMouseMove = (event: MouseEvent<HTMLDivElement>) => {
     const bounds = event.currentTarget.getBoundingClientRect();
@@ -79,93 +110,101 @@ export function WorldActivityMap() {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
-      <ComposableMap
-        projectionConfig={{ scale: 720, center: [118, -2] }}
-        width={640}
-        height={280}
-        style={{ width: "100%", height: "100%" }}
-      >
-        <Geographies geography={geoUrl}>
-          {({ geographies }) =>
-            geographies.map((geo) => {
-              const geoId = String(geo.id);
-              const hasData = countryData[geoId];
-              const name = countryNames[geoId] || (geo.properties as { name?: string }).name || "Unknown";
-              const fill = hasData ? hasData.color : "#E8EDF8";
+      {mapLoadFailed ? (
+        <div className="flex h-full items-center justify-center text-xs font-bold text-slate-400">
+          Peta dunia belum bisa dimuat
+        </div>
+      ) : geography ? (
+        <ComposableMap
+          projectionConfig={{ scale: 720, center: mapCenter }}
+          width={640}
+          height={280}
+          style={{ width: "100%", height: "100%" }}
+        >
+          <Geographies geography={geography}>
+            {({ geographies }) =>
+              geographies.map((geo, index) => {
+                const geoId = String(geo.id);
+                const hasData = countryData[geoId];
+                const name = countryNames[geoId] || (geo.properties as { name?: string }).name || "Unknown";
+                const fill = hasData ? hasData.color : "#E8EDF8";
 
-              return (
-                <Geography
-                  key={geo.rsmKey}
-                  geography={geo}
-                  onMouseEnter={() => {
-                    setTooltipContent(
-                      <div className="flex flex-col gap-1">
-                        <span className="text-[13px] font-bold text-[#111536]">{name}</span>
-                        {hasData ? (
-                          <>
-                            <span className="text-xs font-bold text-[#351EFF]">Signals: {hasData.signals.toLocaleString()}</span>
-                            <span className="text-[11px] text-slate-500">
-                              Level Aktivitas:{" "}
-                              <b className={hasData.level === "Tinggi" ? "text-[#F04438]" : "text-[#8B5CFF]"}>
-                                {hasData.level}
-                              </b>
-                            </span>
-                          </>
-                        ) : (
-                          <span className="text-[11px] text-slate-400">Tidak ada aktivitas narrative</span>
-                        )}
-                      </div>
-                    );
-                  }}
-                  onMouseLeave={() => setTooltipContent(null)}
-                  style={{
-                    default: {
-                      fill,
-                      stroke: "#FFFFFF",
-                      strokeWidth: 0.6,
-                      outline: "none",
-                    },
-                    hover: {
-                      fill: hasData ? "#2F20FF" : "#D1D9F0",
-                      stroke: "#FFFFFF",
-                      strokeWidth: 0.6,
-                      outline: "none",
-                      cursor: "pointer",
-                    },
-                    pressed: {
-                      fill: "#2F20FF",
-                      stroke: "#FFFFFF",
-                      strokeWidth: 0.6,
-                      outline: "none",
-                    },
-                  }}
-                />
-              );
-            })
-          }
-        </Geographies>
-
-        {markers.map(({ name, coordinates, signals, color }) => (
-          <Marker key={name} coordinates={coordinates}>
-            <g
-              onMouseEnter={() => {
-                setTooltipContent(
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[13px] font-bold text-[#111536]">{name}</span>
-                    <span className="text-xs font-bold text-[#351EFF]">Signals: {signals.toLocaleString()}</span>
-                    <span className="text-[11px] text-slate-500">Lokasi Pemantauan Aktif</span>
-                  </div>
+                return (
+                  <Geography
+                    key={`${geoId}-${index}`}
+                    geography={geo}
+                    onMouseEnter={() => {
+                      setTooltipContent(
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[13px] font-bold text-[#111536]">{name}</span>
+                          {hasData ? (
+                            <>
+                              <span className="text-xs font-bold text-[#351EFF]">Signals: {hasData.signals.toLocaleString()}</span>
+                              <span className="text-[11px] text-slate-500">
+                                Level Aktivitas:{" "}
+                                <b className={hasData.level === "Tinggi" ? "text-[#F04438]" : "text-[#8B5CFF]"}>
+                                  {hasData.level}
+                                </b>
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-[11px] text-slate-400">Tidak ada aktivitas narrative</span>
+                          )}
+                        </div>
+                      );
+                    }}
+                    onMouseLeave={() => setTooltipContent(null)}
+                    style={{
+                      default: {
+                        fill,
+                        stroke: "#FFFFFF",
+                        strokeWidth: 0.6,
+                        outline: "none",
+                      },
+                      hover: {
+                        fill: hasData ? "#2F20FF" : "#D1D9F0",
+                        stroke: "#FFFFFF",
+                        strokeWidth: 0.6,
+                        outline: "none",
+                        cursor: "pointer",
+                      },
+                      pressed: {
+                        fill: "#2F20FF",
+                        stroke: "#FFFFFF",
+                        strokeWidth: 0.6,
+                        outline: "none",
+                      },
+                    }}
+                  />
                 );
-              }}
-              onMouseLeave={() => setTooltipContent(null)}
-              style={{ cursor: "pointer" }}
-            >
-              <circle cx={0} cy={0} r={7} fill={color} opacity={0.25} />
-              <circle cx={0} cy={0} r={4} fill={color} stroke="#FFFFFF" strokeWidth={1.5} />
-            </g>
-          </Marker>
-        ))}
-      </ComposableMap>
+              })
+            }
+          </Geographies>
+
+          {markers.map(({ name, coordinates, signals, color }) => (
+            <Marker key={name} coordinates={coordinates}>
+              <g
+                onMouseEnter={() => {
+                  setTooltipContent(
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[13px] font-bold text-[#111536]">{name}</span>
+                      <span className="text-xs font-bold text-[#351EFF]">Signals: {signals.toLocaleString()}</span>
+                      <span className="text-[11px] text-slate-500">Lokasi Pemantauan Aktif</span>
+                    </div>
+                  );
+                }}
+                onMouseLeave={() => setTooltipContent(null)}
+                style={{ cursor: "pointer" }}
+              >
+                <circle cx={0} cy={0} r={7} fill={color} opacity={0.25} />
+                <circle cx={0} cy={0} r={4} fill={color} stroke="#FFFFFF" strokeWidth={1.5} />
+              </g>
+            </Marker>
+          ))}
+        </ComposableMap>
+      ) : (
+        <div className="h-full w-full animate-pulse bg-linear-to-br from-slate-50 via-white to-[#EEF2FF]" />
+      )}
 
       {tooltipContent && tooltipPos ? (
         <div

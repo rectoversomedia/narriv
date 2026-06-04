@@ -57,14 +57,17 @@ There is no root test command because this repo has separate `frontend/` and `ba
 - `backend/src/index.js` exports `app` and skips `app.listen()` when `NODE_ENV === "test"`.
 - Auth, auth/security, CRUD, ingestion, action, feedback, and report endpoint tests use mocked Prisma data. They do not currently require a running PostgreSQL database.
 - `backend/tests/auth-security.test.js` covers missing/expired/invalid access tokens, invalid refresh tokens, protected route token enforcement, and workspace-scoped source isolation.
-- `backend/tests/crud.test.js` covers source lifecycle, alert list/detail/status/assignment, workspace settings, workspace members, case lifecycle, and integration lifecycle with workspace-scoped mocks.
+- `backend/tests/auth.test.js` covers forgot-password, verify-reset-code, and reset-password behavior, including generic unknown-email response and invalid code/token rejection.
+- `backend/tests/crud.test.js` covers source lifecycle, alert list/detail/status/assignment, workspace settings, workspace members including registered-user email invites, case lifecycle, and integration lifecycle with workspace-scoped mocks.
 - `backend/tests/ingestion.test.js` covers ingestion job creation/enqueue, status lookup, cancellation, terminal-state rejection, and workspace scoping.
 - `backend/tests/actions-reports.test.js` covers action generation/list/detail/assignment/feedback, general feedback prompt scoring, report create/list/detail, export status, and signed export download.
+- `backend/tests/production-hardening.test.js` covers production HTTPS enforcement and production CORS origin allowlist behavior.
 - `backend/tests/workers.test.js` mocks `bullmq.Worker` to capture processors directly; it covers ingestion worker processing/cancellation/retry/final-failure, AI analysis persistence/fallback failure logs, alert detection/escalation dispatch with partial workspace failure recovery, and notification event dispatch/unknown-event failure.
 - `backend/tests/load/api.k6.js` is the live HTTP load-test skeleton with smoke, baseline, and stress profiles. It needs a running backend server and k6 installed; Jest does not run it.
 - Local k6 smoke, baseline, and stress profiles were run against the localhost backend and reported passing. Detailed k6 result artifacts are not stored in the repo.
 - `backend/src/workers/ingestion.worker.js` handles jobs already marked `cancelled` before worker start as `{ processedCount: 0, cancelled: true }` instead of failing the job.
 - `npm test` exits cleanly after Redis/cache runtime handles are mocked in test setup.
+- Security checks run during hardening: raw-query scan found no unsafe Prisma raw calls; `npm audit --audit-level=high` reports 0 vulnerabilities after `npm audit fix`.
 
 ## Frontend Test Notes
 
@@ -87,4 +90,4 @@ Unless the task clearly needs a different path:
 - Backend worker failure/retry coverage exists for current worker processors; add new matrix cases as worker behavior changes.
 - Backend load test skeleton exists and localhost smoke/baseline/stress execution has passed; deeper DB-scale, queue-volume, and memory-profile load tests are still pending.
 - Frontend Playwright coverage needs review before it can be treated as comprehensive.
-- Reset-password backend flow does not exist yet, so frontend reset-password UI cannot be end-to-end tested against a real API.
+- Reset-password backend flow exists and frontend pages call it; production email delivery is still a provider integration gap, so local/dev testing uses exposed reset code responses outside production.

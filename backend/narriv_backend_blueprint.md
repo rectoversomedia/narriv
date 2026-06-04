@@ -47,6 +47,7 @@
 | Auth | JWT + bcrypt | Access + refresh tokens |
 | Validation | Zod | Request body validation |
 | Logging | Custom structured logger | Request IDs, latency tracking |
+| Email Delivery | Resend | Transactional emails (password reset, reports) |
 | Environment | dotenv | `.env` configuration |
 
 ---
@@ -170,6 +171,9 @@ Report ──1:N──▶ ReportExport
 | `GET` | `/auth/me` | ✅ | Get current user info |
 | `POST` | `/auth/logout` | ❌ | Revoke refresh token from request body |
 | `POST` | `/auth/refresh` | ❌ | Refresh access token |
+| `POST` | `/auth/forgot-password` | ❌ | Generate password reset code for registered email |
+| `POST` | `/auth/verify-reset-code` | ❌ | Verify 6-digit reset code and issue reset token |
+| `POST` | `/auth/reset-password` | ❌ | Set new password using verified reset token |
 | `POST` | `/auth/change-password` | ✅ | Update password |
 
 ### 5.3 Protected API Routes
@@ -230,7 +234,7 @@ Report ──1:N──▶ ReportExport
 | `GET` | `/api/workspace/settings` | Workspace | Get workspace settings |
 | `PATCH` | `/api/workspace/settings` | Workspace | Update workspace settings |
 | `GET` | `/api/workspace/members` | Workspace | List workspace members |
-| `POST` | `/api/workspace/members` | Workspace | Add member |
+| `POST` | `/api/workspace/members` | Workspace | Add member by `userId` or registered user `email` |
 | `DELETE` | `/api/workspace/members/:id` | Workspace | Remove member |
 | `GET` | `/api/workspace/notification-settings` | Workspace | Get notification preferences |
 | `PATCH` | `/api/workspace/notification-settings` | Workspace | Update notification preferences |
@@ -358,7 +362,7 @@ Report ──1:N──▶ ReportExport
 | **Cases** (`/workspace/cases`) | No endpoint | ❌ No frontend route exists |
 | **Integrations** (`/workspace/integrations`) | No endpoint | ❌ No frontend route exists |
 | **Onboarding** (`/onboarding`) | No endpoint | ❌ UI-only |
-| **Reset Password** (`/reset-password`) | No endpoint | ⚠️ UI exists but no backend API — flow is mocked |
+| **Reset Password** (`/reset-password`, `/verify-code`, `/new-password`) | `POST /auth/forgot-password`, `POST /auth/verify-reset-code`, `POST /auth/reset-password` | ✅ Wired — Ky-backed reset request, code verification, reset token, and new password submission |
 
 ---
 
@@ -403,23 +407,24 @@ All frontend-facing backend contracts are implemented and returning data. See th
    - ~~No API for onboarding wizard steps~~ ✅ Done
    - ~~No API for logo/file upload~~ ✅ Done
    - ~~No dedicated notification-settings endpoint~~ ✅ Done
-   - No API for reset password flow (forgot password email)
+   - ~~No API for reset password flow (forgot password email)~~ ✅ Done — reset code/token flow implemented; Resend API integrated for production delivery
    - No WebSocket/SSE for real-time updates
 
 2. **Testing Gaps**:
-   - Integration tests not written for most endpoints
-   - Auth flow (register → login → refresh → logout) not tested end-to-end
-   - Worker failure scenarios not tested
+   - ~~Integration tests not written for most endpoints~~ ✅ Broad API/worker/security/load coverage in place
+   - ~~Auth flow (register → login → refresh → logout) not tested end-to-end~~ ✅ Done
+   - ~~Worker failure scenarios not tested~~ ✅ Done
 
 3. **Security Gaps**:
    - ~~Rate limiting not applied to AI generation, export, ingestion endpoints~~ ✅ Done
    - ~~CORS production allowlist needs review~~ ✅ Done
-   - HTTPS enforcement needed in production
-   - Audit logging exists for alert/action-plan assignment and escalation changes, but is not comprehensive across all mutations
+   - ~~HTTPS enforcement needed in production~~ ✅ Done
+   - ~~Audit logging exists for alert/action-plan assignment and escalation changes, but is not comprehensive across all mutations~~ ✅ Main mutations covered by audit logging
 
 4. **Contract Gaps**:
-   - List endpoints are mixed: most return `pagination`, while `/api/actions` returns `meta`; frontend `api-service.ts` now models both response shapes explicitly
-   - `/auth/logout` is public and revokes by refresh token body, so docs and clients should not treat it as bearer-token protected
+    - List endpoints are mixed: most return `pagination`, while `/api/actions` returns `meta`; frontend `api-service.ts` now models both response shapes explicitly
+    - `/auth/logout` is public and revokes by refresh token body, so docs and clients should not treat it as bearer-token protected
+   - ~~Workspace member invite UI sent `email`/`name` while backend required `userId`~~ ✅ Done for registered-user email lookup; full invite-token/email delivery remains future scope
 
 5. **Production Gaps**:
    - Database migration baseline not done for existing databases
@@ -457,10 +462,16 @@ Note: New models (Case, Integration, TokenUsage) are covered by migration `20260
 #### Security
 - [x] Add rate limits to: `POST /api/actions`, `POST /api/reports/:id/export`, `POST /ingestion/run/:sourceId`, `POST /api/feedback`
 - [x] Review and finalize CORS production allowlist (replace broad preview settings)
-- [ ] Add HTTPS enforcement in production
+- [x] Add HTTPS enforcement in production
 - [x] Audit all `verifyToken` usage — ensure no unprotected endpoints leak data
 - [x] Add request body size limits for all POST/PATCH endpoints
-- [ ] Add SQL injection protection review (Prisma handles most, verify raw queries)
+- [x] Add SQL injection protection review (Prisma handles most, verify raw queries)
+
+Security verification notes:
+- Production HTTPS enforcement rejects non-HTTPS requests with `426 HTTPS_REQUIRED`, while allowing reverse-proxy HTTPS via `x-forwarded-proto: https`.
+- Production CORS allows only `CORS_ORIGINS` by default; `.vercel.app` preview origins require `ALLOW_VERCEL_PREVIEW_ORIGINS=true`.
+- Raw SQL review found only Prisma tagged-template usage in runtime health and token usage tracking; no `queryRawUnsafe`/`executeRawUnsafe` usage found.
+- `npm audit --audit-level=high` currently reports 0 vulnerabilities after dependency fixes.
 
 Optional RLS notes:
 - Current recommended tenant isolation remains API-layer workspace scoping.
@@ -480,6 +491,7 @@ Optional RLS notes:
 - [ ] Add alert detection failure logging with workspace context
 - [x] Add ingestion worker metrics (jobs/min, success rate, avg duration)
 - [x] Add AI analysis metrics (tokens used, latency, failure rate)
+- [x] Add audit logging for source, ingestion, action generation, feedback, report generation/export, case, integration, workspace, notification, auth, alert, and action-plan mutations
 - [ ] Configure log rotation or external log shipping
 
 ---
@@ -628,6 +640,7 @@ Optional RLS notes:
 - [x] Test refresh token validation
 - [x] Test account lockout after failed login attempts
 - [x] Test password change flow
+- [x] Test forgot-password → verify-reset-code → reset-password flow
 - [x] Test workspace scoping (user A can't see workspace B data)
 
 #### CRUD Tests
@@ -704,7 +717,7 @@ Optional RLS notes:
 ### ⚠️ Known Frontend Gaps
 
 #### Needs Backend APIs
-- [ ] Reset Password flow — UI exists (`/reset-password`) but no backend endpoint
+- [x] Reset Password flow — backend endpoint and frontend wiring complete; production email provider delivery remains future integration
 - [ ] Notification bell — currently uses mock alerts, needs real notification API
 - [ ] Dashboard widgets — `miniTopics`, `topTopics`, `sources`, `systemStatus` are still mock
 - [ ] Signals sidebar panels — `followUps`, `recommendations`, `sourceDistribution`, `timeline` are mock
@@ -724,6 +737,7 @@ Optional RLS notes:
 | `JWT_SECRET` | ✅ | Access token signing secret |
 | `JWT_REFRESH_SECRET` | ✅ | Refresh token signing secret |
 | `OPENAI_API_KEY` | ⚠️ | Required for AI features |
+| `RESEND_API_KEY` | ⚠️ | Required for transactional emails |
 | `REDIS_URL` | ⚠️ | Required for BullMQ workers |
 | `APIFY_TOKEN` | ⚠️ | Required for data ingestion |
 | `PORT` | ❌ | Server port (default: 3000) |

@@ -1,6 +1,7 @@
 import prisma from "../../prisma.js";
 import { getUserWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { invalidateWorkspaceCache } from "../../lib/cache.js";
+import { recordAuditLog } from "../../lib/audit.js";
 
 const VALID_SOURCE_TYPES = ["news", "web", "forum", "social", "video", "podcast"];
 
@@ -97,6 +98,12 @@ export const createSource = async (req, res) => {
         });
 
         await invalidateWorkspaceCache(targetWorkspaceId);
+        await recordAuditLog({
+            userId,
+            event: "source_created",
+            workspaceId: targetWorkspaceId,
+            metadata: { sourceId: source.id, name: source.name, type: source.type },
+        });
         res.status(201).json(source);
     } catch (error) {
         console.error("Error creating source:", error);
@@ -147,6 +154,12 @@ export const updateSource = async (req, res) => {
         });
 
         await invalidateWorkspaceCache(existingSource.workspaceId);
+        await recordAuditLog({
+            userId: req.user.id,
+            event: "source_updated",
+            workspaceId: existingSource.workspaceId,
+            metadata: { sourceId, changes: Object.keys(data) },
+        });
         res.json(source);
     } catch (error) {
         console.error("Error updating source:", error);
@@ -173,6 +186,12 @@ export const deleteSource = async (req, res) => {
         });
 
         await invalidateWorkspaceCache(existingSource.workspaceId);
+        await recordAuditLog({
+            userId: req.user.id,
+            event: "source_deleted",
+            workspaceId: existingSource.workspaceId,
+            metadata: { sourceId },
+        });
         res.json(source);
     } catch (error) {
         console.error("Error deleting source:", error);

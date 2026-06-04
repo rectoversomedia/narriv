@@ -46,6 +46,34 @@ export const changePasswordBodySchema = z.object({
     newPassword: passwordStrengthSchema,
 });
 
+export const forgotPasswordBodySchema = z.object({
+    email: z
+        .string({ required_error: "Email is required." })
+        .trim()
+        .min(1, "Email is required.")
+        .email("Email format is invalid."),
+});
+
+export const verifyResetCodeBodySchema = z.object({
+    email: z
+        .string({ required_error: "Email is required." })
+        .trim()
+        .min(1, "Email is required.")
+        .email("Email format is invalid."),
+    code: z
+        .string({ required_error: "code is required." })
+        .trim()
+        .regex(/^\d{6}$/, "code must be a 6-digit code."),
+});
+
+export const resetPasswordBodySchema = z.object({
+    resetToken: z
+        .string({ required_error: "resetToken is required." })
+        .trim()
+        .min(32, "resetToken is invalid."),
+    newPassword: passwordStrengthSchema,
+});
+
 export const logoutBodySchema = z.object({
     refreshToken: z
         .string({ required_error: "refreshToken is required." })

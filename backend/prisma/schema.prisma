@@ -18,6 +18,7 @@ model User {
   failedLoginAttempts Int @default(0)
   lockedUntil   DateTime?
   refreshTokens RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
   auditLogs     AuditLog[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -438,6 +439,23 @@ model RefreshToken {
   @@index([userId, createdAt])
   @@index([expiresAt])
   @@index([revokedAt])
+}
+
+model PasswordResetToken {
+  id          String   @id @default(uuid())
+  userId      String
+  tokenHash   String   @unique
+  codeHash    String
+  expiresAt   DateTime
+  verifiedAt  DateTime?
+  usedAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+  @@index([usedAt])
 }
 
 model AuditLog {

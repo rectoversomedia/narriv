@@ -10,6 +10,7 @@
  */
 
 import { apiClient } from "@/lib/apiClient";
+import type { AuthUser } from "@/store/useAuthStore";
 
 // ---------------------------------------------------------------------------
 // Types — shaped to match actual backend responses
@@ -55,6 +56,64 @@ export type DateRangeKey = "24h" | "7d" | "30d";
 export interface DateRangeOptions {
   startDate?: string;
   endDate?: string;
+}
+
+export interface AuthSessionResponse {
+  token: string;
+  refreshToken?: string;
+  user: Pick<AuthUser, "name" | "email">;
+}
+
+export async function loginWithPassword(input: { email: string; password: string }): Promise<AuthSessionResponse> {
+  return await apiClient<AuthSessionResponse>("/auth/login", {
+    method: "POST",
+    body: JSON.stringify(input),
+    auth: false,
+    refreshOnUnauthorized: false,
+  });
+}
+
+export async function registerWithPassword(input: { name: string; email: string; password: string }): Promise<AuthSessionResponse> {
+  return await apiClient<AuthSessionResponse>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(input),
+    auth: false,
+    refreshOnUnauthorized: false,
+  });
+}
+
+export interface PasswordResetRequestResponse {
+  success: boolean;
+  message: string;
+  resetCode?: string;
+  expiresAt?: string;
+}
+
+export async function requestPasswordReset(input: { email: string }): Promise<PasswordResetRequestResponse> {
+  return await apiClient<PasswordResetRequestResponse>("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify(input),
+    auth: false,
+    refreshOnUnauthorized: false,
+  });
+}
+
+export async function verifyPasswordResetCode(input: { email: string; code: string }): Promise<{ success: boolean; resetToken: string }> {
+  return await apiClient<{ success: boolean; resetToken: string }>("/auth/verify-reset-code", {
+    method: "POST",
+    body: JSON.stringify(input),
+    auth: false,
+    refreshOnUnauthorized: false,
+  });
+}
+
+export async function resetPasswordWithToken(input: { resetToken: string; newPassword: string }): Promise<{ success: boolean }> {
+  return await apiClient<{ success: boolean }>("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify(input),
+    auth: false,
+    refreshOnUnauthorized: false,
+  });
 }
 
 export function getDateRangeOptions(range: DateRangeKey): DateRangeOptions {
@@ -450,6 +509,12 @@ export interface WorkspaceMemberRecord {
   } | null;
 }
 
+export type WorkspaceMemberRole = "owner" | "admin" | "analyst";
+
+export type CreateWorkspaceMemberInput =
+  | { userId: string; role: WorkspaceMemberRole; workspaceId?: string }
+  | { email: string; name?: string; role: WorkspaceMemberRole; workspaceId?: string };
+
 export async function getCurrentUser(): Promise<CurrentUserResponse | null> {
   try {
     return await apiClient<CurrentUserResponse>("/auth/me");
@@ -486,7 +551,7 @@ export async function getWorkspaceMembers(): Promise<WorkspaceMemberRecord[] | n
   }
 }
 
-export async function createWorkspaceMember(input: { userId: string; role: "owner" | "admin" | "analyst" }): Promise<WorkspaceMemberRecord | null> {
+export async function createWorkspaceMember(input: CreateWorkspaceMemberInput): Promise<WorkspaceMemberRecord | null> {
   try {
     return await apiClient<WorkspaceMemberRecord>("/api/workspace/members", {
       method: "POST",

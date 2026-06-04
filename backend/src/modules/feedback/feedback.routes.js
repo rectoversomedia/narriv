@@ -4,6 +4,7 @@ import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveWorkspaceIdForUser, resolveScopedWorkspaceIds } from "../../lib/workspace-access.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
 import { submitFeedbackBodySchema } from "./feedback.schema.js";
+import { recordAuditLog } from "../../lib/audit.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -26,6 +27,12 @@ router.post("/", validateRequest({ body: submitFeedbackBodySchema }), async (req
 
         const feedback = await submitFeedback({
             workspaceId: scopedWorkspaceId, targetType, targetId, action, originalOutput, editedOutput, reason, userId
+        });
+        await recordAuditLog({
+            userId: req.user.id,
+            event: "ai_feedback_submitted",
+            workspaceId: scopedWorkspaceId,
+            metadata: { feedbackId: feedback.id, targetType, targetId, action },
         });
 
         res.status(201).json(feedback);

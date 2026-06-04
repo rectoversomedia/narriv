@@ -10,9 +10,8 @@ import * as z from "zod";
 import { useState } from "react";
 import { AuthInput, AuthShell, Divider, LanguageSelector, PasswordInput, PrimaryButton, SecurityFooter, SocialButtons } from "@/components/auth/auth-shell";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { loginWithPassword } from "@/lib/api-service";
 import { useAuthStore, type AuthUser } from "@/store/useAuthStore";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:3000";
 
 type LoginFormValues = {
   email: string;
@@ -48,27 +47,19 @@ export default function LoginPage() {
     setApiError(null);
 
     try {
-      const res = await fetch(`${API_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: data.email, password: data.password }),
-        credentials: "omit",
-      });
-
-      if (res.ok) {
-        const json = await res.json() as { token: string; refreshToken?: string; user: { name: string; email: string } };
-        finishLogin(json.token, {
-          name: json.user.name,
-          email: json.user.email,
-          provider: "password",
-          workspace: "Narriv",
-        }, json.refreshToken);
+      const json = await loginWithPassword({ email: data.email, password: data.password });
+      finishLogin(json.token, {
+        name: json.user.name,
+        email: json.user.email,
+        provider: "password",
+        workspace: "Narriv",
+      }, json.refreshToken);
+    } catch (error) {
+      const status = (error as { status?: number }).status;
+      if (status) {
+        setApiError(status === 401 || status === 400 ? t("errors.invalidCredentials") : t("errors.loginFailed"));
         return;
       }
-
-      await res.json().catch(() => ({}));
-      setApiError(res.status === 401 || res.status === 400 ? t("errors.invalidCredentials") : t("errors.loginFailed"));
-    } catch {
       setApiError(t("errors.backendUnavailable"));
     }
   };

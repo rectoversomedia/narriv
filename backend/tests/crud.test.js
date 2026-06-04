@@ -390,6 +390,10 @@ describe('CRUD Integration Endpoints', () => {
 
       expect(createRes.status).toBe(201);
       expect(createRes.body).toMatchObject({ id: OTHER_MEMBER_ID, userId: OTHER_USER_ID, role: 'analyst' });
+      expect(createRes.body.user).toMatchObject({ id: OTHER_USER_ID, email: 'analyst@example.com' });
+      expect(mockPrisma.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ event: 'workspace_member_added' }),
+      }));
 
       const deleteRes = await request(app)
         .delete(`/api/workspace/members/${OTHER_MEMBER_ID}?workspaceId=${WORKSPACE_ID}`)
@@ -397,6 +401,30 @@ describe('CRUD Integration Endpoints', () => {
 
       expect(deleteRes.status).toBe(200);
       expect(deleteRes.body.success).toBe(true);
+    });
+
+    it('creates a workspace member by registered email invite payload', async () => {
+      const createRes = await request(app)
+        .post('/api/workspace/members')
+        .set(authHeader())
+        .send({ workspaceId: WORKSPACE_ID, email: 'Analyst@Example.com', name: 'Analyst User', role: 'admin' });
+
+      expect(createRes.status).toBe(201);
+      expect(createRes.body).toMatchObject({ id: OTHER_MEMBER_ID, userId: OTHER_USER_ID, role: 'admin' });
+      expect(createRes.body.user).toMatchObject({ id: OTHER_USER_ID, email: 'analyst@example.com' });
+      expect(mockPrisma.user.findUnique).toHaveBeenCalledWith(expect.objectContaining({
+        where: { email: 'analyst@example.com' },
+      }));
+    });
+
+    it('rejects invite-by-email when the user is not registered yet', async () => {
+      const createRes = await request(app)
+        .post('/api/workspace/members')
+        .set(authHeader())
+        .send({ workspaceId: WORKSPACE_ID, email: 'missing@example.com', name: 'Missing User', role: 'analyst' });
+
+      expect(createRes.status).toBe(404);
+      expect(createRes.body).toMatchObject({ code: 'USER_NOT_FOUND', details: { email: 'missing@example.com' } });
     });
   });
 

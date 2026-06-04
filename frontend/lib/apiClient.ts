@@ -1,43 +1,55 @@
+import ky from "ky";
 import { useAuthStore } from "@/store/useAuthStore";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:3000";
 
+const client = ky.create({
+  prefix: BASE_URL,
+  credentials: "omit",
+  retry: 0,
+});
+
+type ApiClientOptions = RequestInit & {
+  auth?: boolean;
+  refreshOnUnauthorized?: boolean;
+};
+
 export async function apiClient<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: ApiClientOptions = {}
 ): Promise<T> {
+  const { auth = true, refreshOnUnauthorized = true, ...requestOptions } = options;
   const authState = typeof window !== "undefined" ? useAuthStore.getState() : null;
   const token = authState?.token ?? null;
 
   const path = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  const kyPath = path.replace(/^\//, "");
 
   const buildHeaders = (accessToken: string | null) => {
-    const headers = new Headers(options.headers);
-    if (accessToken && !headers.has("Authorization")) {
+    const headers = new Headers(requestOptions.headers);
+    if (auth && accessToken && !headers.has("Authorization")) {
       headers.set("Authorization", `Bearer ${accessToken}`);
     }
-    if (!headers.has("Content-Type") && !(options.body instanceof FormData)) {
+    if (!headers.has("Content-Type") && !(requestOptions.body instanceof FormData)) {
       headers.set("Content-Type", "application/json");
     }
     return headers;
   };
 
-  const send = (accessToken: string | null) => fetch(`${BASE_URL}${path}`, {
-    ...options,
+  const send = (accessToken: string | null) => client(kyPath, {
+    ...requestOptions,
     headers: buildHeaders(accessToken),
-    // Ensure cookies are not sent cross-origin; JWT is header-based
-    credentials: "omit",
+    throwHttpErrors: false,
   });
 
   let response = await send(token);
 
-  if (response.status === 401 && authState?.refreshToken) {
-    const refreshResponse = await fetch(`${BASE_URL}/auth/refresh`, {
+  if (refreshOnUnauthorized && response.status === 401 && authState?.refreshToken) {
+    const refreshResponse = await client("auth/refresh", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken: authState.refreshToken }),
-      credentials: "omit",
+      json: { refreshToken: authState.refreshToken },
+      throwHttpErrors: false,
     });
 
     if (refreshResponse.ok) {

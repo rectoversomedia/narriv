@@ -91,7 +91,7 @@ There is no root `package.json`. `frontend/` and `backend/` are separate npm pac
 - **React:** React `19.2.4` and React DOM `19.2.4`.
 - **Styling:** Tailwind CSS v4 with `@theme inline` in `globals.css`; shadcn-style/custom dashboard primitives.
 - **State:** Zustand persisted stores (`useAuthStore`, `useUiStore`).
-- **Data fetching:** Native `fetch`, typed `api-service.ts`, TanStack Query `^5.100.6`.
+- **Data fetching:** Ky-backed `apiClient.ts`, typed `api-service.ts`, TanStack Query `^5.100.6`; native `fetch` is reserved for static local assets such as map JSON.
 - **Forms:** `react-hook-form` + Zod.
 - **i18n:** `next-intl` client usage with EN/ID messages.
 - **Testing:** Playwright E2E scripts exist.
@@ -187,9 +187,9 @@ Frontend:
 
 - Frontend API wiring is mostly complete for dashboard, signals, alerts, reports, action plans, sources, and settings.
 - Backend phases 2 through 5 are largely complete according to `backend/narriv_backend_blueprint.md`.
-- Backend Phase 6 testing is ongoing: Jest/Supertest infrastructure exists; auth tests cover register, login, refresh, logout, lockout, and password change.
-- Current backend API coverage includes auth happy paths, auth/security negative cases, sources, ingestion jobs, alerts, action plans/feedback, reports/exports, workspace settings, workspace members, cases, and integrations. Worker coverage includes ingestion processing/cancellation/retry/final-failure, AI analysis persistence/fallback failure logs, alert detection/escalation dispatch with partial workspace failure recovery, and notification event dispatch/unknown-event failure. k6 load-test skeleton exists under `backend/tests/load/`; localhost smoke, baseline, and stress profiles have been run and reported passing.
-- Known product/API gaps include reset-password backend flow, real-time updates, production HTTPS enforcement, migration baseline, and broader mutation audit logging.
+- Backend Phase 6 testing is ongoing: Jest/Supertest infrastructure exists; auth tests cover register, login, refresh, logout, lockout, password change, and forgot-password reset flow.
+- Current backend API coverage includes auth happy paths, auth/security negative cases, sources, ingestion jobs, alerts, action plans/feedback, reports/exports, workspace settings, workspace members including registered-user email invites, cases, and integrations. Worker coverage includes ingestion processing/cancellation/retry/final-failure, AI analysis persistence/fallback failure logs, alert detection/escalation dispatch with partial workspace failure recovery, and notification event dispatch/unknown-event failure. Production hardening coverage includes HTTPS enforcement and CORS allowlist behavior. k6 load-test skeleton exists under `backend/tests/load/`; localhost smoke, baseline, and stress profiles have been run and reported passing.
+- Known product/API gaps include reset-password production email delivery, real-time updates, migration baseline, deeper DB/queue/memory load profiles, and report/AI realism cleanup.
 
 ## Context Update Protocol
 

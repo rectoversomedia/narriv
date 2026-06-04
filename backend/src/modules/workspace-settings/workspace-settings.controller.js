@@ -1,5 +1,6 @@
 import prisma from "../../prisma.js";
 import { badRequest, forbidden, internalError, notFound } from "../../lib/api-error.js";
+import { recordAuditLog } from "../../lib/audit.js";
 import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 
 function toSafeDefaults(workspaceId) {
@@ -126,22 +127,23 @@ export async function listWorkspaceMembers(req, res) {
 
 export async function createWorkspaceMember(req, res) {
     try {
-        const { workspaceId, userId, role } = req.body;
+        const { workspaceId, userId, email, name, role } = req.body;
         const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
         if (!scopedWorkspaceId) {
             return forbidden(res, "Workspace access denied", "WORKSPACE_ACCESS_DENIED");
         }
 
+        const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : null;
         const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { id: true }
+            where: userId ? { id: userId } : { email: normalizedEmail },
+            select: { id: true, email: true, name: true }
         });
         if (!user) {
-            return notFound(res, "User not found", "USER_NOT_FOUND");
+            return notFound(res, "User not found. Ask the user to sign up before adding them to this workspace.", "USER_NOT_FOUND", normalizedEmail ? { email: normalizedEmail } : undefined);
         }
 
         const existing = await prisma.workspaceMember.findFirst({
-            where: { workspaceId: scopedWorkspaceId, userId }
+            where: { workspaceId: scopedWorkspaceId, userId: user.id }
         });
         if (existing) {
             return badRequest(res, "User is already a member of this workspace", "DUPLICATE_MEMBERSHIP");
@@ -150,12 +152,19 @@ export async function createWorkspaceMember(req, res) {
         const member = await prisma.workspaceMember.create({
             data: {
                 workspaceId: scopedWorkspaceId,
-                userId,
+                userId: user.id,
                 role,
             }
         });
 
-        return res.status(201).json(member);
+        await recordAuditLog({
+            userId: req.user.id,
+            event: "workspace_member_added",
+            workspaceId: scopedWorkspaceId,
+            metadata: { memberId: member.id, addedUserId: user.id, email: user.email || normalizedEmail, invitedName: name || null, role },
+        });
+
+        return res.status(201).json({ ...member, user });
     } catch (error) {
         console.error("Error creating workspace member:", error);
         return internalError(res);

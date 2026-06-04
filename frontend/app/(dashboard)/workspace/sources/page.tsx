@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ComponentType, type ReactNode, type SVGProps } from "react";
+import { useState, type ComponentType, type KeyboardEvent, type ReactNode, type SVGProps } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
@@ -175,8 +175,14 @@ function Toggle({ active }: { active: boolean }) {
 function ConnectorCard({ source, selected, onSelect, onToggle }: { source: Connector; selected: boolean; onSelect: (source: Connector) => void; onToggle?: (source: Connector) => void }) {
   const style = toneStyles[source.tone];
   const Icon = source.icon;
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    onSelect(source);
+  };
+
   return (
-    <button type="button" onClick={() => onSelect(source)} className={cn("rounded-[13px] border bg-white p-4 text-left transition hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(16,24,40,0.08)]", selected ? "border-[#465FFF] shadow-[0_12px_30px_rgba(70,95,255,0.08)]" : "border-[#E8ECF5]")}> 
+    <div role="button" tabIndex={0} onClick={() => onSelect(source)} onKeyDown={handleKeyDown} className={cn("rounded-[13px] border bg-white p-4 text-left transition hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(16,24,40,0.08)] focus:outline-none focus:ring-2 focus:ring-[#465FFF]/30", selected ? "border-[#465FFF] shadow-[0_12px_30px_rgba(70,95,255,0.08)]" : "border-[#E8ECF5]")}> 
       <div className="flex items-start justify-between gap-3">
         <span className={cn("flex size-10 items-center justify-center rounded-[10px]", style.bg)} style={source.tone === "black" ? undefined : { backgroundColor: `rgba(${style.rgb}, .10)`, color: style.color }}><Icon className="size-[21px]" /></span>
         <span className={cn("rounded-full px-2.5 py-1 text-[9px] font-black", source.status === "Live" ? "bg-[#10B981]/12 text-[#0C9B69]" : "bg-[#F59E0B]/12 text-[#F59E0B]")}>{source.status}</span>
@@ -186,7 +192,7 @@ function ConnectorCard({ source, selected, onSelect, onToggle }: { source: Conne
       <div className="mt-4 grid grid-cols-2 gap-3 text-[11px] font-bold text-[#68739F]"><span>Health<br /><b className="text-[14px] text-[#101334]">{source.health}</b></span><span>Signals (24h)<br /><b className="text-[14px] text-[#101334]">{source.signals}</b></span></div>
       <div className="mt-3"><MiniSparkline values={source.spark} color={style.color} /></div>
       <div className="mt-3 flex items-center justify-between gap-3 text-[10px] font-bold text-[#68739F]"><span>Last Sync</span><span>{source.lastSync}</span><button type="button" onClick={(e) => { e.stopPropagation(); onToggle?.(source); }} className="focus:outline-none"><Toggle active={source.active} /></button></div>
-    </button>
+    </div>
   );
 }
 

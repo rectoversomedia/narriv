@@ -9,9 +9,8 @@ import * as z from "zod";
 import { useState } from "react";
 import { AuthInput, AuthShell, Divider, PasswordInput, PasswordRequirements, PrimaryButton, SecurityFooter, SocialButtons } from "@/components/auth/auth-shell";
 import { Field, FieldContent, FieldError, FieldGroup } from "@/components/ui/field";
+import { registerWithPassword } from "@/lib/api-service";
 import { useAuthStore } from "@/store/useAuthStore";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:3000";
 
 type SignupFormValues = {
   name: string;
@@ -53,23 +52,15 @@ export default function SignupPage() {
     setApiError(null);
 
     try {
-      const res = await fetch(`${API_URL}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: data.name, email: data.email, password: data.password }),
-        credentials: "omit",
-      });
-
-      if (res.ok) {
-        const json = await res.json() as { token: string; refreshToken?: string; user: { name: string; email: string } };
-        setSession(json.token, { name: json.user.name, email: json.user.email, provider: "password", workspace: data.company || "Narriv" }, json.refreshToken);
-        router.push("/");
+      const json = await registerWithPassword({ name: data.name, email: data.email, password: data.password });
+      setSession(json.token, { name: json.user.name, email: json.user.email, provider: "password", workspace: data.company || "Narriv" }, json.refreshToken);
+      router.push("/");
+    } catch (error) {
+      const status = (error as { status?: number }).status;
+      if (status) {
+        setApiError(status === 400 || status === 409 ? t("errors.emailRegistered") : t("errors.registrationFailed"));
         return;
       }
-
-      await res.json().catch(() => ({}));
-      setApiError(res.status === 400 || res.status === 409 ? t("errors.emailRegistered") : t("errors.registrationFailed"));
-    } catch {
       setApiError(t("errors.backendUnavailable"));
     }
   };

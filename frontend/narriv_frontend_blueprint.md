@@ -43,11 +43,11 @@
 | State | Zustand (persisted) | `useUiStore`, `useAuthStore` |
 | i18n | `next-intl` (client) | EN/ID, JSON message files |
 | Forms | `react-hook-form` + `zod` | Auth pages |
-| Charts | Custom SVG/CSS + Recharts + `react-simple-maps` | Recharts charts are lazy-loaded on dashboard home; `WorldActivityMap` is split into a separate dynamic map module |
+| Charts | Custom SVG/CSS + Recharts + React 19-compatible `react-simple-maps` fork | Recharts charts are lazy-loaded on dashboard home; `WorldActivityMap` is split into a separate dynamic map module via `@vnedyalk0v/react19-simple-maps` |
 | Icons | Lucide React + SVGL + `react-icons` | Lucide for UI, SVGL/React Icons for brand/source logos |
 | Font | Poppins (Google Fonts) | Via `next/font` |
 | Animation | `tw-animate-css` + custom chart utilities | `animate-in`, `fade-in`, `slide-in-*`, chart entry/draw/donut animations with reduced-motion support |
-| Data Fetching | Native `fetch`, typed `api-service.ts`, React Query provider | Auth uses native `fetch`; dashboard pages now use React Query + `api-service` with preview/mock fallbacks where live coverage is incomplete |
+| Data Fetching | Ky, typed `api-service.ts`, React Query provider | `apiClient.ts` uses Ky for all frontend-to-backend calls; dashboard pages use React Query + `api-service` with preview/mock fallbacks where live coverage is incomplete |
 
 ---
 
@@ -92,6 +92,7 @@
 | Info Banner | Explanation text about reset process |
 | Submit Button | "Send Reset Code" |
 | Back Link | → `/login` |
+| API Integration | `POST /auth/forgot-password` via Ky-backed `requestPasswordReset()` |
 
 #### ✅ Verify Code (`/verify-code`)
 | Element | Detail |
@@ -104,6 +105,7 @@
 | Verify Button | Primary submit |
 | Resend Link | Resend code action |
 | Back Link | → `/reset-password` |
+| API Integration | `POST /auth/verify-reset-code` via Ky-backed `verifyPasswordResetCode()` |
 
 #### 🆕 New Password (`/new-password`)
 | Element | Detail |
@@ -115,6 +117,7 @@
 | Password Requirements | Same indicators as signup |
 | Submit Button | "Reset Password" |
 | Back Link | → `/login` |
+| API Integration | `POST /auth/reset-password` via Ky-backed `resetPasswordWithToken()` |
 
 ---
 
@@ -308,7 +311,7 @@
 | TrendChart | `TrendChart.tsx` | Time series area chart |
 | Charts | `charts.tsx` | Reusable chart primitives (DonutChart, BarChart, AreaChart) |
 | DashboardKit | `dashboard-kit.tsx` | `AppCard`, `GlowButton`, `SectionHeader` wrappers |
-| WorldActivityMap | `world-activity-map.tsx` | Dynamic `react-simple-maps` map module split out of Recharts bundle |
+| WorldActivityMap | `world-activity-map.tsx` | Dynamic simple-maps module split out of Recharts bundle; imports `@vnedyalk0v/react19-simple-maps` to keep map behavior compatible with React 19 |
 
 ### 4.3 Layout Components (`components/layout/`)
 
@@ -367,16 +370,17 @@
 
 ### 6.1 Current Truth
 
-`frontend/lib/api-service.ts` defines typed fetchers for most backend endpoints, and `frontend/lib/apiClient.ts` adds bearer tokens plus one refresh-token retry on `401`. Dashboard pages now use React Query + `api-service.ts` for their primary live list/detail/settings reads, with preview/mock fallbacks retained where backend coverage or UX flows are incomplete.
+`frontend/lib/api-service.ts` defines typed fetchers for backend endpoints, and `frontend/lib/apiClient.ts` uses Ky with bearer tokens plus one refresh-token retry on `401`. Dashboard pages now use React Query + `api-service.ts` for their primary live list/detail/settings reads, with preview/mock fallbacks retained where backend coverage or UX flows are incomplete.
 
-Auth is the exception: `/login` and `/signup` call the backend directly with native `fetch`.
+All frontend-to-backend calls should go through the Ky-backed `apiClient.ts`/`api-service.ts` layer. The remaining native `fetch()` usage is for static local assets only, such as `public/maps/world-110m.json`.
 
 ### 6.2 Service Functions vs Page Usage
 
 | Frontend Function / Flow | Endpoint | Service Exists | Used By Current Pages |
 |---|---|---:|---:|
-| Login form | `POST /auth/login` | Direct `fetch` | Yes |
-| Signup form | `POST /auth/register` | Direct `fetch` | Yes |
+| Login form | `POST /auth/login` | Yes — Ky-backed `loginWithPassword()` | Yes |
+| Signup form | `POST /auth/register` | Yes — Ky-backed `registerWithPassword()` | Yes |
+| Reset password flow | `POST /auth/forgot-password`, `POST /auth/verify-reset-code`, `POST /auth/reset-password` | Yes — Ky-backed reset service functions | Yes — reset, verify, and new-password pages |
 | `logoutSession()` | `POST /auth/logout` | Yes | Yes — topbar logout calls API to revoke refresh token before clearing local state |
 | `getCurrentUser()` | `GET /auth/me` | Yes | No |
 | `getDashboardSummary()` | `GET /api/dashboard/summary` | Yes | Yes — dashboard home uses KPI/trend/sentiment/latest signal fields with date filters |
@@ -388,7 +392,7 @@ Auth is the exception: `/login` and `/signup` call the backend directly with nat
 | Report/export functions | `/api/reports`, `/api/reports/:id/export`, `/api/reports/exports/:jobId` | Yes | Yes — `getReports()` and `createReportExport()` with polling via `getReportExportStatus()` wired to PDF download |
 | `getNarratives()` | `GET /api/narratives` | Yes | Yes — partially mapped to intelligence UI with preview fallback |
 | Source/ingestion functions | `/sources`, `/ingestion/run/:sourceId`, `/ingestion/status/:jobId` | Yes | Yes — `getSources()`, `updateSource()` (toggle), `deleteSource()`, and `runSourceIngestion()` (sync) are wired |
-| Workspace settings/member functions | `/api/workspace/settings`, `/api/workspace/members` | Yes | Yes — `getWorkspaceSettings()`, `updateWorkspaceSettings()`, `getWorkspaceMembers()`, `createWorkspaceMember()`, `deleteWorkspaceMember()` are wired |
+| Workspace settings/member functions | `/api/workspace/settings`, `/api/workspace/members` | Yes | Yes — `getWorkspaceSettings()`, `updateWorkspaceSettings()`, `getWorkspaceMembers()`, `createWorkspaceMember()` by registered-user email, and `deleteWorkspaceMember()` are wired |
 | `changePassword()` | `POST /auth/change-password` | Yes | Yes — settings page change password form with validation |
 | `getNotificationSettings()` / `updateNotificationSettings()` | `GET/PATCH /api/workspace/notification-settings` | Yes | Yes — settings page notification toggles wired |
 
@@ -399,6 +403,7 @@ Auth is the exception: `/login` and `/signup` call the backend directly with nat
 | Pagination | Backend list endpoints use mixed wrappers: most return `pagination`, while `/api/actions` returns `meta`. `api-service.ts` now models both shapes explicitly. |
 | Page Wiring | Primary dashboard reads are now wired to `api-service.ts`, but many secondary cards/actions still use preview/static data until backend coverage is complete. |
 | Token Refresh | Implemented in `apiClient.ts` and exercised by dashboard pages through React Query + `api-service.ts`. |
+| Workspace Member Invite | Backend accepts registered-user `email` or `userId`; full pending-user invite tokens and email delivery are not implemented yet. |
 
 ---
 
@@ -444,7 +449,7 @@ Auth is the exception: `/login` and `/signup` call the backend directly with nat
 5. **Missing Workspace Routes**: `/workspace/activity`, `/workspace/cases`, and `/workspace/integrations` do not currently exist as frontend pages.
 6. **Notification Channels**: UI toggles exist but no real push/dispatch integration.
 7. **Real-time Updates**: No WebSocket or polling for live signal/alert updates.
-8. **Reset Password**: UI exists at `/reset-password` but no backend API endpoint — flow is mocked.
+8. **Reset Password Email Delivery**: Reset flow calls backend endpoints, but production email/SMS delivery provider is still future integration; non-production exposes dev reset code for local testing.
 
 ---
 

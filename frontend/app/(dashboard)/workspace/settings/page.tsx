@@ -35,7 +35,7 @@ import {
 import { DashboardEmptyState, DashboardErrorState, TableSkeleton } from "@/components/dashboard/dashboard-states";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useToast } from "@/components/ui/toast";
-import { getWorkspaceMembers, getWorkspaceSettings, updateWorkspaceSettings, createWorkspaceMember, deleteWorkspaceMember, changePassword, type UpdateWorkspaceSettingsInput, type WorkspaceMemberRecord } from "@/lib/api-service";
+import { getWorkspaceMembers, getWorkspaceSettings, updateWorkspaceSettings, createWorkspaceMember, deleteWorkspaceMember, changePassword, type CreateWorkspaceMemberInput, type UpdateWorkspaceSettingsInput, type WorkspaceMemberRecord } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
 
 type TeamMember = {
@@ -192,7 +192,7 @@ export default function SettingsPage() {
   });
 
   const inviteMemberMutation = useMutation({
-    mutationFn: (input: { email: string; name: string; role: string }) => createWorkspaceMember(input),
+    mutationFn: (input: CreateWorkspaceMemberInput) => createWorkspaceMember(input),
     onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: ["workspace-members"] });
       if (result) {
@@ -354,8 +354,8 @@ export default function SettingsPage() {
     setInviteErrors(errors);
     if (Object.keys(errors).length > 0) return;
 
-    const roleMap: Record<string, string> = { "Admin": "admin", "Analyst": "analyst", "Viewer": "viewer" };
-    inviteMemberMutation.mutate({ email: inviteEmail.trim(), name: inviteName.trim(), role: roleMap[inviteRole] || "viewer" });
+    const roleMap: Record<string, "admin" | "analyst"> = { "Admin": "admin", "Analyst": "analyst", "Viewer": "analyst" };
+    inviteMemberMutation.mutate({ email: inviteEmail.trim(), name: inviteName.trim(), role: roleMap[inviteRole] || "analyst" });
   };
 
   const showToast = (message: string, tone: "success" | "error" | "info" = "success") => {

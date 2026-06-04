@@ -34,6 +34,7 @@ import { globalErrorHandler, notFoundHandler } from "./middlewares/error-handler
 import { requestTimeout, TIMEOUTS } from "./middlewares/request-timeout.js";
 import { rateLimit, RATE_LIMITS } from "./middlewares/rate-limit.js";
 import { verifyToken } from "./middlewares/auth.middleware.js";
+import { buildCorsOriginChecker, enforceHttps } from "./middlewares/security.js";
 
 dotenv.config();
 
@@ -43,6 +44,7 @@ scheduleAlertEscalation();
 scheduleVisibilityScans();
 
 const app = express();
+app.set("trust proxy", process.env.TRUST_PROXY || "loopback");
 
 // Compression (gzip) for responses > 1KB
 app.use(compression({
@@ -50,32 +52,15 @@ app.use(compression({
     level: 6,
 }));
 
+app.use(enforceHttps);
+
+const isCorsOriginAllowed = buildCorsOriginChecker();
+
 app.use(cors({
     origin: (origin, callback) => {
-        // Allow non-browser clients without Origin (curl/Postman/server-to-server)
-        if (!origin) return callback(null, true);
-
-        // Production allowlist from environment variable
-        const envOrigins = process.env.CORS_ORIGINS
-            ? process.env.CORS_ORIGINS.split(",").map((s) => s.trim())
-            : [];
-
-        const allowlist = [
-            ...envOrigins,
-            "http://localhost:3000",
-            "http://localhost:3001",
-            /^http:\/\/localhost:\d+$/,
-            /^http:\/\/127\.0\.0\.1:\d+$/,
-            /\.vercel\.app$/,
-        ];
-
-        const isAllowed = allowlist.some((rule) => {
-            if (typeof rule === "string") return rule === origin;
-            return rule.test(origin);
-        });
-
-        if (isAllowed) return callback(null, true);
-        return callback(new Error("Not allowed by CORS"));
+        if (isCorsOriginAllowed(origin)) return callback(null, true);
+        logStructured("warn", "cors_origin_denied", { origin });
+        return callback(null, false);
     },
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -131,7 +116,7 @@ app.use(notFoundHandler);
 // Global error handler (must be last)
 app.use(globalErrorHandler);
 
-if (process.env.NODE_ENV !== "test") {
+if (process.env.NODE_ENV !== "test" && !process.env.JEST_WORKER_ID) {
     app.listen(3000, () => {
         logStructured("info", "server_started", { port: 3000, url: "http://localhost:3000" });
     });

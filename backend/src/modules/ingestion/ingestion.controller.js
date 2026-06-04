@@ -1,6 +1,7 @@
 import prisma from "../../prisma.js";
 import { addIngestionJob, cancelIngestionQueueJob } from "../../lib/queue.js";
 import { getUserWorkspaceIds } from "../../lib/workspace-access.js";
+import { recordAuditLog } from "../../lib/audit.js";
 
 export const triggerIngestion = async (req, res) => {
   try {
@@ -26,6 +27,13 @@ export const triggerIngestion = async (req, res) => {
 
     // Respond immediately, processing continues in background
     res.status(202).json({ message: "Ingestion started", jobId: job.id });
+
+    await recordAuditLog({
+      userId: req.user.id,
+      event: "ingestion_job_queued",
+      workspaceId: source.workspaceId,
+      metadata: { ingestionJobId: job.id, sourceId: source.id },
+    });
 
     // --- BACKGROUND PROCESSING ---
     await addIngestionJob(job.id, source.id);
@@ -87,6 +95,13 @@ export const cancelIngestion = async (req, res) => {
         });
 
         const queueCancelResult = await cancelIngestionQueueJob(jobId);
+
+        await recordAuditLog({
+            userId: req.user.id,
+            event: "ingestion_job_cancelled",
+            workspaceId: job.workspaceId,
+            metadata: { ingestionJobId: jobId, sourceId: job.sourceId, reason },
+        });
 
         return res.json({
             success: true,

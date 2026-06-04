@@ -5,8 +5,10 @@ import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useState } from "react";
 import { AuthShell, CenterIcon, Divider, HelpAction, PasswordInput, PasswordStrengthMeter, PrimaryButton, SecondaryLinkButton } from "@/components/auth/auth-shell";
 import { FieldGroup } from "@/components/ui/field";
+import { resetPasswordWithToken } from "@/lib/api-service";
 
 type NewPasswordFormValues = {
   password: string;
@@ -16,6 +18,7 @@ type NewPasswordFormValues = {
 export default function NewPasswordPage() {
   const router = useRouter();
   const t = useTranslations("AuthDesign.newPassword");
+  const [apiError, setApiError] = useState<string | null>(null);
   const newPasswordSchema = z.object({
     password: z.string()
       .min(10, { message: t("errors.passwordTooShort") })
@@ -36,9 +39,23 @@ export default function NewPasswordPage() {
     defaultValues: { password: "", confirmPassword: "" },
   });
 
-  const onSubmit = async () => {
-    await new Promise((resolve) => setTimeout(resolve, 350));
-    router.push("/login");
+  const onSubmit = async (values: NewPasswordFormValues) => {
+    const resetToken = window.sessionStorage.getItem("narriv-reset-token");
+    if (!resetToken) {
+      setApiError("Token reset tidak ditemukan. Mulai ulang proses reset password.");
+      return;
+    }
+
+    setApiError(null);
+    try {
+      await resetPasswordWithToken({ resetToken, newPassword: values.password });
+      window.sessionStorage.removeItem("narriv-reset-email");
+      window.sessionStorage.removeItem("narriv-reset-token");
+      window.sessionStorage.removeItem("narriv-reset-dev-code");
+      router.push("/login");
+    } catch {
+      setApiError("Password belum bisa direset. Token mungkin sudah kedaluwarsa.");
+    }
   };
 
   return (
@@ -62,6 +79,8 @@ export default function NewPasswordPage() {
             <PasswordInput label={t("confirmPassword")} autoComplete="new-password" placeholder={t("confirmPasswordPlaceholder")} error={errors.confirmPassword?.message} registration={register("confirmPassword")} />
             <p className="mt-4 text-[15px] font-medium text-[#3E4975]">{t("confirmHelp")}</p>
           </div>
+
+          {apiError ? <p className="rounded-[8px] border border-[#F04438]/20 bg-[#FFF5F4] px-4 py-3 text-sm font-medium text-[#B42318]">{apiError}</p> : null}
 
           <PrimaryButton loading={isSubmitting}>{isSubmitting ? t("submitting") : t("submit")}</PrimaryButton>
         </FieldGroup>

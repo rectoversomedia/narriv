@@ -26,10 +26,15 @@ export const workspaceMembersQuerySchema = z.object({
 
 export const createWorkspaceMemberBodySchema = z.object({
     workspaceId: z.string().uuid("workspaceId must be a valid UUID.").optional(),
-    userId: z.string({ required_error: "userId is required." }).uuid("userId must be a valid UUID."),
+    userId: z.string().uuid("userId must be a valid UUID.").optional(),
+    email: z.string().trim().email("email format is invalid.").optional(),
+    name: z.string().trim().min(2, "name must be at least 2 characters.").max(120, "name is too long.").optional(),
     role: z.enum(WORKSPACE_MEMBER_ROLES, {
         errorMap: () => ({ message: `role must be one of: ${WORKSPACE_MEMBER_ROLES.join(", ")}` }),
     }),
+}).refine((data) => Boolean(data.userId || data.email), {
+    message: "Either userId or email is required.",
+    path: ["userId"],
 });
 
 export const deleteWorkspaceMemberParamsSchema = z.object({

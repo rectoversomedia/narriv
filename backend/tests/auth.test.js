@@ -16,6 +16,16 @@ jest.unstable_mockModule('../src/middlewares/rate-limit.js', () => ({
 }));
 
 const mockUsers = [];
+const mockPasswordResetTokens = [];
+
+function matchesTokenWhere(record, where = {}) {
+  if (where.userId && record.userId !== where.userId) return false;
+  if (where.tokenHash && record.tokenHash !== where.tokenHash) return false;
+  if (where.usedAt === null && record.usedAt !== null && record.usedAt !== undefined) return false;
+  if (where.verifiedAt?.not === null && !record.verifiedAt) return false;
+  if (where.expiresAt?.gt && !(record.expiresAt > where.expiresAt.gt)) return false;
+  return true;
+}
 
 const mockPrisma = {
   user: {
@@ -58,7 +68,43 @@ const mockPrisma = {
       };
     }),
     update: jest.fn(async () => ({})),
+    updateMany: jest.fn(async () => ({ count: 1 })),
     deleteMany: jest.fn(async () => ({ count: 1 })),
+  },
+  passwordResetToken: {
+    updateMany: jest.fn(async ({ where = {}, data }) => {
+      let count = 0;
+      mockPasswordResetTokens.forEach((record, index) => {
+        if (matchesTokenWhere(record, where)) {
+          mockPasswordResetTokens[index] = { ...record, ...data };
+          count += 1;
+        }
+      });
+      return { count };
+    }),
+    create: jest.fn(async ({ data }) => {
+      const token = { id: `prt-${mockPasswordResetTokens.length + 1}`, createdAt: new Date(), usedAt: null, verifiedAt: null, ...data };
+      mockPasswordResetTokens.push(token);
+      return token;
+    }),
+    findMany: jest.fn(async ({ where = {}, orderBy, take } = {}) => {
+      const records = mockPasswordResetTokens
+        .filter((record) => matchesTokenWhere(record, where))
+        .sort((a, b) => orderBy?.createdAt === 'desc' ? b.createdAt - a.createdAt : a.createdAt - b.createdAt);
+      return typeof take === 'number' ? records.slice(0, take) : records;
+    }),
+    findFirst: jest.fn(async ({ where = {}, include } = {}) => {
+      const record = mockPasswordResetTokens.find((token) => matchesTokenWhere(token, where)) || null;
+      if (!record) return null;
+      if (include?.user) return { ...record, user: mockUsers.find((user) => user.id === record.userId) || null };
+      return record;
+    }),
+    update: jest.fn(async ({ where, data }) => {
+      const index = mockPasswordResetTokens.findIndex((token) => token.id === where.id);
+      if (index === -1) return null;
+      mockPasswordResetTokens[index] = { ...mockPasswordResetTokens[index], ...data };
+      return mockPasswordResetTokens[index];
+    }),
   },
   auditLog: {
     create: jest.fn(async () => ({}))
@@ -78,6 +124,7 @@ const app = (await import('../src/index.js')).default;
 describe('Auth Endpoints', () => {
   beforeEach(() => {
     mockUsers.length = 0; // Clear users array
+    mockPasswordResetTokens.length = 0;
     jest.clearAllMocks();
   });
 
@@ -190,5 +237,84 @@ describe('Auth Endpoints', () => {
 
     if (res.status !== 200) console.log(res.body);
     expect(res.status).toBe(200);
+  });
+
+  it('should complete forgot-password, verify-code, and reset-password flow', async () => {
+    const hashedPassword = await bcrypt.hash('Password123!', 10);
+    mockUsers.push({
+      id: 'u1',
+      email: 'test@example.com',
+      password: hashedPassword,
+      failedLoginAttempts: 2,
+      lockedUntil: new Date(Date.now() + 10000),
+    });
+
+    const forgotRes = await request(app)
+      .post('/auth/forgot-password')
+      .send({ email: 'TEST@example.com' });
+
+    expect(forgotRes.status).toBe(200);
+    expect(forgotRes.body).toMatchObject({ success: true });
+    expect(forgotRes.body.resetCode).toMatch(/^\d{6}$/);
+    expect(mockPrisma.passwordResetToken.create).toHaveBeenCalled();
+
+    const verifyRes = await request(app)
+      .post('/auth/verify-reset-code')
+      .send({ email: 'test@example.com', code: forgotRes.body.resetCode });
+
+    expect(verifyRes.status).toBe(200);
+    expect(verifyRes.body.resetToken).toEqual(expect.any(String));
+
+    const resetRes = await request(app)
+      .post('/auth/reset-password')
+      .send({ resetToken: verifyRes.body.resetToken, newPassword: 'BrandNew123!' });
+
+    expect(resetRes.status).toBe(200);
+    expect(resetRes.body.success).toBe(true);
+    expect(mockPrisma.refreshToken.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { userId: 'u1', revokedAt: null },
+    }));
+
+    const loginRes = await request(app)
+      .post('/auth/login')
+      .send({ email: 'test@example.com', password: 'BrandNew123!' });
+
+    expect(loginRes.status).toBe(200);
+    expect(mockUsers[0].failedLoginAttempts).toBe(0);
+    expect(mockUsers[0].lockedUntil).toBeNull();
+  });
+
+  it('should return a generic forgot-password response for unknown emails', async () => {
+    const res = await request(app)
+      .post('/auth/forgot-password')
+      .send({ email: 'missing@example.com' });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ success: true });
+    expect(res.body.resetCode).toBeUndefined();
+    expect(mockPrisma.passwordResetToken.create).not.toHaveBeenCalled();
+  });
+
+  it('should reject invalid reset codes and tokens', async () => {
+    const hashedPassword = await bcrypt.hash('Password123!', 10);
+    mockUsers.push({ id: 'u1', email: 'test@example.com', password: hashedPassword, failedLoginAttempts: 0, lockedUntil: null });
+
+    await request(app)
+      .post('/auth/forgot-password')
+      .send({ email: 'test@example.com' });
+
+    const invalidCodeRes = await request(app)
+      .post('/auth/verify-reset-code')
+      .send({ email: 'test@example.com', code: '000000' });
+
+    expect(invalidCodeRes.status).toBe(400);
+    expect(invalidCodeRes.body.code).toBe('INVALID_RESET_CODE');
+
+    const invalidTokenRes = await request(app)
+      .post('/auth/reset-password')
+      .send({ resetToken: 'invalid-reset-token-value-0000000000000000', newPassword: 'BrandNew123!' });
+
+    expect(invalidTokenRes.status).toBe(400);
+    expect(invalidTokenRes.body.code).toBe('INVALID_RESET_TOKEN');
   });
 });

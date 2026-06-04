@@ -6,6 +6,7 @@ import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/
 import { badRequest, forbidden, internalError, notFound } from "../../lib/api-error.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
 import { createActionPlanBodySchema } from "./actions.schema.js";
+import { recordAuditLog } from "../../lib/audit.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -41,6 +42,12 @@ router.post("/", validateRequest({ body: createActionPlanBodySchema }), async (r
         }
 
         const plan = await generateActionPlan({ workspaceId: scopedWorkspaceId, strategyType, alertId, clusterId });
+        await recordAuditLog({
+            userId: req.user.id,
+            event: "action_plan_generated",
+            workspaceId: scopedWorkspaceId,
+            metadata: { actionPlanId: plan.id, strategyType, alertId, clusterId },
+        });
 
         res.status(201).json(plan);
     } catch (error) {
@@ -176,6 +183,12 @@ router.post("/multi-step", async (req, res) => {
             alertId,
             clusterId,
             maxSteps: Math.min(Math.max(parseInt(maxSteps) || 5, 2), 10),
+        });
+        await recordAuditLog({
+            userId: req.user.id,
+            event: "multi_step_action_plan_generated",
+            workspaceId: scopedWorkspaceId,
+            metadata: { actionPlanId: plan.id, strategyType, alertId, clusterId },
         });
 
         res.status(201).json(plan);

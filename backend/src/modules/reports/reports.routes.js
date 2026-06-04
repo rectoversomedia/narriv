@@ -13,6 +13,7 @@ import { validateRequest } from "../../middlewares/validate-request.js";
 import { createReportBodySchema, createReportExportBodySchema, reportIdParamsSchema } from "./reports.schema.js";
 import { generateReport as generateFromTemplate, sendReportEmail } from "./report-generation.js";
 import { getAllReportTemplates } from "./report-templates.js";
+import { recordAuditLog } from "../../lib/audit.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -152,6 +153,12 @@ router.post("/", validateRequest({ body: createReportBodySchema }), async (req, 
         }
 
         const report = await generateReport({ workspaceId: scopedWorkspaceId, title, periodStart, periodEnd });
+        await recordAuditLog({
+            userId: req.user.id,
+            event: "report_created",
+            workspaceId: scopedWorkspaceId,
+            metadata: { reportId: report.id, title: report.title },
+        });
         return res.status(201).json(report);
     } catch (error) {
         console.error("Error generating report:", error);
@@ -226,6 +233,12 @@ router.post("/generate", async (req, res) => {
             templateKey,
             options: { dateRange },
         });
+        await recordAuditLog({
+            userId: req.user.id,
+            event: "report_generated_from_template",
+            workspaceId: scopedWorkspaceId,
+            metadata: { reportId: report.id, templateKey },
+        });
 
         return res.status(201).json(report);
     } catch (error) {
@@ -284,6 +297,12 @@ router.post("/:id/export", validateRequest({ params: reportIdParamsSchema, body:
                 payload,
                 fileName: `narriv-report-${report.id.substring(0, 8)}.${normalizedFormat}`,
                 baseUrl,
+            });
+            await recordAuditLog({
+                userId: req.user.id,
+                event: "report_export_created",
+                workspaceId: report.workspaceId,
+                metadata: { reportId: report.id, exportId: exportJob.id, format: normalizedFormat },
             });
         } catch (jobError) {
             incrementExportFailure();

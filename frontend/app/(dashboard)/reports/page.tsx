@@ -703,8 +703,9 @@ export default function ReportsPage() {
   const toastHook = useToast();
   const [page, setPage] = useState(1);
 
-  const showToast = (message: string, type: "success" | "error" = "success") => {
+  const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
     if (type === "error") { toastHook.error(message); return; }
+    if (type === "info") { toastHook.info(message); return; }
     toastHook.success(message);
   };
 
@@ -792,7 +793,7 @@ export default function ReportsPage() {
           )}
         </div>
         <div className="space-y-4">
-          <ReportPreviewSidebar onExportPdf={() => { const firstRow = rows[0]; if (firstRow) exportMutation.mutate({ reportId: firstRow.id, format: "pdf" }); }} />
+          <ReportPreviewSidebar onExportPdf={() => { const firstRow = rows[0]; if (firstRow) exportMutation.mutate({ reportId: String(firstRow.id), format: "pdf" }); }} />
           <QuickActions />
         </div>
       </div>
