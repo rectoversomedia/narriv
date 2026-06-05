@@ -1,5 +1,5 @@
 import express from "express";
-import { register, login, me, refresh, logout, changePassword, forgotPassword, verifyResetCode, resetPassword } from "./auth.controller.js";
+import { register, login, me, refresh, logout, changePassword, forgotPassword, verifyResetCode, resetPassword, verifyEmail, resendVerification, googleAuth, googleCallback, microsoftAuth, microsoftCallback } from "./auth.controller.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
 import {
@@ -11,6 +11,8 @@ import {
     registerBodySchema,
     resetPasswordBodySchema,
     verifyResetCodeBodySchema,
+    verifyEmailBodySchema,
+    resendVerificationBodySchema,
 } from "./auth.schema.js";
 
 const router = express.Router();
@@ -22,7 +24,15 @@ router.post("/logout", validateRequest({ body: logoutBodySchema }), logout);
 router.post("/forgot-password", validateRequest({ body: forgotPasswordBodySchema }), forgotPassword);
 router.post("/verify-reset-code", validateRequest({ body: verifyResetCodeBodySchema }), verifyResetCode);
 router.post("/reset-password", validateRequest({ body: resetPasswordBodySchema }), resetPassword);
+router.post("/verify-email", validateRequest({ body: verifyEmailBodySchema }), verifyEmail);
+router.post("/resend-verification", validateRequest({ body: resendVerificationBodySchema }), resendVerification);
 router.post("/change-password", verifyToken, validateRequest({ body: changePasswordBodySchema }), changePassword);
 router.get("/me", verifyToken, me);
+
+// OAuth Routes
+router.get("/google", googleAuth);
+router.get("/google/callback", googleCallback);
+router.get("/microsoft", microsoftAuth);
+router.get("/microsoft/callback", microsoftCallback);
 
 export default router;

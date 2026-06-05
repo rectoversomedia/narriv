@@ -125,7 +125,7 @@ router.get("/", async (req, res) => {
 
         return res.json(buildActionPlanResponse(latestPlan));
     } catch (error) {
-        console.error("Error fetching action plan contract data:", error);
+        logStructured("error", "Error fetching action plan contract data:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -173,7 +173,7 @@ router.post("/:id/feedback", validateRequest({ params: actionPlanIdParamsSchema,
             createdAt: feedback.createdAt,
         });
     } catch (error) {
-        console.error("Error submitting action plan feedback:", error);
+        logStructured("error", "Error submitting action plan feedback:", { error: error?.message || error, stack: error?.stack });
         return res.status(400).json({ error: error.message || "Internal server error" });
     }
 });
@@ -238,7 +238,7 @@ router.patch("/:id/assign", validateRequest({ params: assignActionPlanParamsSche
 
         return res.json(updated);
     } catch (error) {
-        console.error("Error updating action plan assignment:", error);
+        logStructured("error", "Error updating action plan assignment:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
     }
 });

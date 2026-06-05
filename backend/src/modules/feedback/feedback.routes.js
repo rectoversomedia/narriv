@@ -37,7 +37,7 @@ router.post("/", validateRequest({ body: submitFeedbackBodySchema }), async (req
 
         res.status(201).json(feedback);
     } catch (error) {
-        console.error("Error submitting feedback:", error);
+        logStructured("error", "Error submitting feedback:", { error: error?.message || error, stack: error?.stack });
         res.status(400).json({ error: error.message || "Internal server error" });
     }
 });
@@ -57,7 +57,7 @@ router.get("/accuracy", async (req, res) => {
         const metrics = await getAccuracyMetrics(scopedWorkspaceIds[0]);
         res.json(metrics);
     } catch (error) {
-        console.error("Error fetching accuracy metrics:", error);
+        logStructured("error", "Error fetching accuracy metrics:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -77,7 +77,7 @@ router.get("/rejections", async (req, res) => {
         const insights = await getRejectionInsights(scopedWorkspaceIds[0]);
         res.json(insights);
     } catch (error) {
-        console.error("Error fetching rejection insights:", error);
+        logStructured("error", "Error fetching rejection insights:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -97,7 +97,7 @@ router.get("/prompt-scoring", async (req, res) => {
         const scoring = await getActionPlanPromptScoring(scopedWorkspaceIds[0]);
         res.json(scoring);
     } catch (error) {
-        console.error("Error fetching prompt scoring:", error);
+        logStructured("error", "Error fetching prompt scoring:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 });

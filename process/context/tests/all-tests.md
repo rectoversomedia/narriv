@@ -89,5 +89,5 @@ Unless the task clearly needs a different path:
 - Backend API endpoint coverage is broad for current Phase 6 scope, including targeted auth/security negative cases; add focused endpoint coverage as new routes are introduced.
 - Backend worker failure/retry coverage exists for current worker processors; add new matrix cases as worker behavior changes.
 - Backend load test skeleton exists and localhost smoke/baseline/stress execution has passed; deeper DB-scale, queue-volume, and memory-profile load tests are still pending.
-- Frontend Playwright coverage needs review before it can be treated as comprehensive.
+- Frontend Playwright coverage includes smoke checks for auth redirects/login controls plus workspace checks for Activity Log, Integrations CRUD/status/disconnect, and Settings logo upload. It is still not comprehensive across all dashboard CRUD flows.
 - Reset-password backend flow exists and frontend pages call it; production email delivery is still a provider integration gap, so local/dev testing uses exposed reset code responses outside production.

@@ -1,6 +1,6 @@
 import prisma from "../../prisma.js";
 import { getUserWorkspaceIds } from "../../lib/workspace-access.js";
-import { notificationEvents } from "./app-notifications.events.js";
+import { notificationEvents, globalEvents } from "./app-notifications.events.js";
 
 // Fetch paginated notifications
 export const getNotifications = async (req, res) => {
@@ -35,7 +35,7 @@ export const getNotifications = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error("Error fetching notifications:", error);
+        logStructured("error", "Error fetching notifications:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 };
@@ -58,7 +58,7 @@ export const markAsRead = async (req, res) => {
 
         res.json({ success: true });
     } catch (error) {
-        console.error("Error marking notification read:", error);
+        logStructured("error", "Error marking notification read:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 };
@@ -77,7 +77,7 @@ export const markAllAsRead = async (req, res) => {
 
         res.json({ success: true });
     } catch (error) {
-        console.error("Error marking all notifications read:", error);
+        logStructured("error", "Error marking all notifications read:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 };
@@ -104,7 +104,14 @@ export const streamNotifications = async (req, res) => {
             }
         };
 
+        const dashboardListener = (eventWorkspaceId) => {
+            if (eventWorkspaceId === workspaceId) {
+                res.write(`data: ${JSON.stringify({ type: "dashboard_update" })}\n\n`);
+            }
+        };
+
         notificationEvents.on("new", listener);
+        globalEvents.on("dashboard_update", dashboardListener);
 
         // Keep connection alive with a ping every 30 seconds
         const pingInterval = setInterval(() => {
@@ -114,11 +121,12 @@ export const streamNotifications = async (req, res) => {
         req.on("close", () => {
             clearInterval(pingInterval);
             notificationEvents.removeListener("new", listener);
+            globalEvents.removeListener("dashboard_update", dashboardListener);
             res.end();
         });
 
     } catch (error) {
-        console.error("Error in SSE stream:", error);
+        logStructured("error", "Error in SSE stream:", { error: error?.message || error, stack: error?.stack });
         res.status(500).end();
     }
 };
@@ -134,7 +142,7 @@ export const createNotification = async ({ workspaceId, userId = null, type, tit
         notificationEvents.emit("new", notification);
         return notification;
     } catch (error) {
-        console.error("Error creating notification:", error);
+        logStructured("error", "Error creating notification:", { error: error?.message || error, stack: error?.stack });
         return null;
     }
 };

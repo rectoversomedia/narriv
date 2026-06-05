@@ -108,7 +108,7 @@ router.get("/", async (req, res) => {
             }),
         });
     } catch (error) {
-        console.error("Error fetching visibility data:", error);
+        logStructured("error", "Error fetching visibility data:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -173,7 +173,7 @@ router.get("/summary", async (req, res) => {
             engine_breakdown: engineBreakdown
         });
     } catch (error) {
-        console.error("Error fetching visibility summary:", error);
+        logStructured("error", "Error fetching visibility summary:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -260,7 +260,7 @@ router.get("/trends", async (req, res) => {
             engine_trends: engineTrends
         });
     } catch (error) {
-        console.error("Error fetching visibility trends:", error);
+        logStructured("error", "Error fetching visibility trends:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -289,7 +289,7 @@ router.post("/analyze", async (req, res) => {
 
         res.status(201).json(result);
     } catch (error) {
-        console.error("Error running visibility analysis:", error);
+        logStructured("error", "Error running visibility analysis:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 });

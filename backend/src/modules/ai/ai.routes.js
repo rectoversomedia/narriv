@@ -24,7 +24,7 @@ router.post("/analyze", validateRequest({ body: analyzeBodySchema }), async (req
         const result = await analyzeSignal(title || null, inputContent);
         res.json({ result });
     } catch (error) {
-        console.error("[AI MODULE] Error:", error.message);
+        logStructured("error", "[AI MODULE] Error:", { error: error.message?.message || error.message, stack: error.message?.stack });
         res.status(500).json({ error: error.message });
     }
 });

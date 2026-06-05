@@ -163,7 +163,7 @@ export const getSummary = async (req, res) => {
 
         res.status(200).json(response);
     } catch (error) {
-        console.error("Error in getSummary:", error);
+        logStructured("error", "Error in getSummary:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };

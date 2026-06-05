@@ -120,7 +120,7 @@ export const runActorAndFetchDataset = async (actorId, inputConfig = {}) => {
         logStructured("info", "apify_items_fetched", { itemCount: items.length });
         return items;
     } catch (error) {
-        console.error("[APIFY SERVICE] Error in Live Mode:", error.message || error);
+        logStructured("error", "[APIFY SERVICE] Error in Live Mode", { error: error?.message || error, stack: error?.stack });
         throw new Error(`Apify live extraction failed: ${error.message}`);
     }
 };

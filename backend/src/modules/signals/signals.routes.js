@@ -6,6 +6,7 @@ import { getUserWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/worksp
 import { validateRequest } from "../../middlewares/validate-request.js";
 import { createSignalBodySchema, signalIdParamsSchema } from "./signals.schema.js";
 import { logStructured } from "../../lib/logger.js";
+import { globalEvents } from "../app-notifications/app-notifications.events.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -80,7 +81,7 @@ router.get("/", async (req, res) => {
             }
         });
     } catch (error) {
-        console.error("Error fetching signals:", error);
+        logStructured("error", "Error fetching signals:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -113,7 +114,7 @@ router.post("/", validateRequest({ body: createSignalBodySchema }), async (req, 
 
         res.json(newSignal);
     } catch (error) {
-        console.error("Error creating signal:", error);
+        logStructured("error", "Error creating signal:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -205,7 +206,7 @@ router.get("/meta", async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Error fetching meta:", error);
+        logStructured("error", "Error fetching meta:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -243,7 +244,7 @@ router.get("/:id", async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Error fetching signal:", error);
+        logStructured("error", "Error fetching signal:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -307,7 +308,7 @@ router.post("/:id/analyze", validateRequest({ params: signalIdParamsSchema }), a
         });
 
     } catch (error) {
-        console.error("[ANALYZE] Error:", error.message);
+        logStructured("error", "[ANALYZE] Error:", { error: error.message?.message || error.message, stack: error.message?.stack });
         res.status(500).json({ error: error.message });
     }
 });
@@ -400,7 +401,7 @@ router.post("/batch-analyze", async (req, res) => {
             results,
         });
     } catch (error) {
-        console.error("[BATCH-ANALYZE] Error:", error.message);
+        logStructured("error", "[BATCH-ANALYZE] Error:", { error: error.message?.message || error.message, stack: error.message?.stack });
         res.status(500).json({ error: error.message });
     }
 });

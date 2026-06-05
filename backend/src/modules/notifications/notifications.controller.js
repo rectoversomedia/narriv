@@ -29,7 +29,7 @@ export async function getNotificationSettings(req, res) {
 
         return res.json(settings);
     } catch (error) {
-        console.error("Error fetching notification settings:", error);
+        logStructured("error", "Error fetching notification settings:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }
@@ -76,7 +76,7 @@ export async function updateNotificationSettings(req, res) {
 
         return res.json(updated);
     } catch (error) {
-        console.error("Error updating notification settings:", error);
+        logStructured("error", "Error updating notification settings:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }

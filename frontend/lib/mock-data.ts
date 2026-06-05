@@ -17,6 +17,7 @@ import {
   Sparkles,
   Target,
   Users,
+  Webhook,
 } from "lucide-react";
 
 export type Localized = Record<"en" | "id", string>;
@@ -51,6 +52,8 @@ export const navGroups = [
     key: "system",
     items: [
       { key: "dataSources", href: "/workspace/sources", icon: Database },
+      { key: "activity", href: "/workspace/activity", icon: Clock3 },
+      { key: "integrations", href: "/workspace/integrations", icon: Webhook },
       { key: "settings", href: "/workspace/settings", icon: Settings },
     ],
   },

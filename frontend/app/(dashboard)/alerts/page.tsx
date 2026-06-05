@@ -25,7 +25,6 @@ import {
   UserCheck,
   UserPlus,
   Users,
-  X,
   type LucideIcon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -41,7 +40,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton, formatPaginationSummary } from "@/components/dashboard/dashboard-states";
-import { getAlerts, updateAlertStatus, updateAlertAssignment, type Alert as ApiAlert, type PaginationInfo } from "@/lib/api-service";
+import { getAlerts, updateAlertStatus, type Alert as ApiAlert, type PaginationInfo } from "@/lib/api-service";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Sentiment = "NEGATIF" | "POSITIF" | "CAMPURAN";

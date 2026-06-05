@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 import Image from "next/image";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -35,7 +35,7 @@ import {
 import { DashboardEmptyState, DashboardErrorState, TableSkeleton } from "@/components/dashboard/dashboard-states";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useToast } from "@/components/ui/toast";
-import { getWorkspaceMembers, getWorkspaceSettings, updateWorkspaceSettings, createWorkspaceMember, deleteWorkspaceMember, changePassword, type CreateWorkspaceMemberInput, type UpdateWorkspaceSettingsInput, type WorkspaceMemberRecord } from "@/lib/api-service";
+import { getWorkspaceMembers, getWorkspaceSettings, updateWorkspaceSettings, createWorkspaceMember, deleteWorkspaceMember, changePassword, uploadWorkspaceLogo, type CreateWorkspaceMemberInput, type UpdateWorkspaceSettingsInput, type WorkspaceMemberRecord } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
 
 type TeamMember = {
@@ -72,6 +72,30 @@ function roleToPermission(role: string) {
 
 function initialsFromName(name: string) {
   return name.split(" ").filter(Boolean).map((word) => word[0]).join("").toUpperCase().slice(0, 2) || "NA";
+}
+
+const LOGO_MAX_SIZE_BYTES = 2 * 1024 * 1024;
+const LOGO_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/jpg", "image/webp", "image/svg+xml"]);
+
+function resolveBackendAssetUrl(url: string) {
+  if (/^https?:\/\//.test(url)) return url;
+  if (url.startsWith("/uploads/")) {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:3000";
+    return `${baseUrl}${url}`;
+  }
+  return url;
+}
+
+function readFileAsBase64(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      resolve(result.includes(",") ? result.split(",")[1] : result);
+    };
+    reader.onerror = () => reject(reader.error || new Error("Logo file could not be read."));
+    reader.readAsDataURL(file);
+  });
 }
 
 function buildMemberRows(records: WorkspaceMemberRecord[]): TeamMember[] {
@@ -241,9 +265,32 @@ export default function SettingsPage() {
   const [language, setLanguage] = useState("Bahasa Indonesia");
   const [workspaceUrl, setWorkspaceUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [workspaceLogo, setWorkspaceLogo] = useState("/narriv-logo.svg");
+  const [workspaceLogo, setWorkspaceLogo] = useState<string | null>(null);
+  const activeLogo = workspaceLogo || (workspaceSettingsQuery.data?.logoUrl ? resolveBackendAssetUrl(workspaceSettingsQuery.data.logoUrl) : "/narriv-logo.svg");
+  const [logoError, setLogoError] = useState("");
+  const logoInputRef = useRef<HTMLInputElement | null>(null);
   const isSavingInfo = updateSettingsMutation.isPending;
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const uploadLogoMutation = useMutation({
+    mutationFn: (input: { fileName: string; fileContent: string; mimeType: string }) => uploadWorkspaceLogo(input),
+    onSuccess: (result) => {
+      if (!result) {
+        setLogoError("Logo belum bisa diunggah. Coba lagi sebentar.");
+        showToast("Logo belum bisa diunggah. Coba lagi sebentar.", "error");
+        return;
+      }
+
+      setWorkspaceLogo(resolveBackendAssetUrl(result.url));
+      setLogoError("");
+      showToast("Logo workspace berhasil diunggah.");
+      void queryClient.invalidateQueries({ queryKey: ["workspace-settings"] });
+    },
+    onError: () => {
+      setLogoError("Logo belum bisa diunggah. Coba lagi sebentar.");
+      showToast("Logo belum bisa diunggah. Coba lagi sebentar.", "error");
+    },
+  });
 
   // State: Team Members
   const [memberOverrides, setMemberOverrides] = useState<TeamMember[] | null>(null);
@@ -331,8 +378,33 @@ export default function SettingsPage() {
   };
 
   const handleLogoUpload = () => {
-    setWorkspaceLogo("/narriv-logo.svg");
-    showToast("Unggah logo berhasil disimulasikan.");
+    logoInputRef.current?.click();
+  };
+
+  const handleLogoFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (!LOGO_MIME_TYPES.has(file.type)) {
+      setLogoError("Format logo harus PNG, JPG, WEBP, atau SVG.");
+      showToast("Format logo tidak didukung.", "error");
+      return;
+    }
+
+    if (file.size > LOGO_MAX_SIZE_BYTES) {
+      setLogoError("Ukuran logo maksimal 2MB.");
+      showToast("Ukuran logo maksimal 2MB.", "error");
+      return;
+    }
+
+    try {
+      const fileContent = await readFileAsBase64(file);
+      uploadLogoMutation.mutate({ fileName: file.name, fileContent, mimeType: file.type });
+    } catch {
+      setLogoError("File logo belum bisa dibaca. Coba pilih file lain.");
+      showToast("File logo belum bisa dibaca.", "error");
+    }
   };
 
   const handleInviteSubmit = (e: FormEvent) => {
@@ -465,16 +537,26 @@ export default function SettingsPage() {
             <div className="grid gap-5 sm:grid-cols-[100px_1fr]">
               <div className="flex flex-col items-center">
                 <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl bg-slate-950 border border-slate-800 shadow-inner">
-                  <Image src={workspaceLogo} alt="Workspace Logo" width={60} height={60} className="object-contain" />
+                  <Image src={activeLogo} alt="Workspace Logo" width={60} height={60} unoptimized={activeLogo.startsWith("http")} className={cn("object-contain transition-opacity", uploadLogoMutation.isPending && "opacity-45")} />
+                  {uploadLogoMutation.isPending ? <span className="absolute inset-x-2 bottom-2 rounded-full bg-white/95 px-2 py-1 text-center text-[8px] font-black uppercase tracking-wide text-[#465FFF] shadow-sm">Uploading</span> : null}
                 </div>
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
+                  className="sr-only"
+                  onChange={handleLogoFileChange}
+                />
                 <button
                   type="button"
                   onClick={handleLogoUpload}
-                  className="mt-2.5 w-full rounded-lg border border-[#DDE3EF] bg-white px-1 py-1 text-center text-[9px] font-extrabold text-[#465FFF] shadow-xs transition hover:bg-slate-50 whitespace-nowrap"
+                  disabled={uploadLogoMutation.isPending}
+                  className="mt-2.5 w-full rounded-lg border border-[#DDE3EF] bg-white px-1 py-1 text-center text-[9px] font-extrabold text-[#465FFF] shadow-xs transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap"
                 >
-                  Ubah Logo
+                  {uploadLogoMutation.isPending ? "Mengunggah..." : "Ubah Logo"}
                 </button>
-                <span className="mt-1 text-[9px] font-semibold text-slate-400">PNG, JPG max 2MB</span>
+                <span className="mt-1 text-center text-[9px] font-semibold text-slate-400">PNG, JPG, WEBP, SVG max 2MB</span>
+                {logoError ? <span className="mt-1 text-center text-[9px] font-bold text-[#EF4444]">{logoError}</span> : null}
               </div>
 
               <div className="space-y-3.5">

@@ -17,6 +17,7 @@ const connection = process.env.REDIS_URL
     });
 
 connection.on("error", (err) => {
+    if (err.message && err.message.includes("ECONNRESET")) return;
     logStructured("error", "redis_error", { message: err.message });
 });
 

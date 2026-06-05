@@ -3,7 +3,7 @@ import OpenAI from "openai";
 const apiKey = process.env.OPENAI_API_KEY;
 
 if (!apiKey || apiKey === "sk-placeholder") {
-    console.warn("[AI] OPENAI_API_KEY is not set or is a placeholder. AI features will fail.");
+    logStructured("warn", "[AI] OPENAI_API_KEY is not set or is a placeholder. AI features will fail.");
 }
 
 let clientInstance = null;

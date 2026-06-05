@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowLeft, AlertTriangle, CheckCircle2, Save, ShieldCheck } from "lucide-react";
+import { ArrowLeft, AlertTriangle, CheckCircle2, Save } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

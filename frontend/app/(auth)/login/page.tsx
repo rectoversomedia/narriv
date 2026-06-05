@@ -2,12 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { AuthInput, AuthShell, Divider, LanguageSelector, PasswordInput, PrimaryButton, SecurityFooter, SocialButtons } from "@/components/auth/auth-shell";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { loginWithPassword } from "@/lib/api-service";
@@ -18,11 +18,18 @@ type LoginFormValues = {
   password: string;
 };
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const t = useTranslations("AuthDesign.login");
   const setSession = useAuthStore((state) => state.setSession);
   const [apiError, setApiError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (searchParams.get("error") === "oauth_failed") {
+      setApiError(t("errors.loginFailed") || "Social login failed. Please try again or use password.");
+    }
+  }, [searchParams, t]);
   const loginSchema = z.object({
     email: z.email({ message: t("errors.invalidEmail") }),
     password: z.string().min(1, { message: t("errors.passwordRequired") }),
@@ -55,6 +62,18 @@ export default function LoginPage() {
         workspace: "Narriv",
       }, json.refreshToken);
     } catch (error) {
+      if (error && typeof error === "object" && "response" in error) {
+        try {
+          const res = (error as { response: Response }).response;
+          const body = await res.json();
+          if (body.code === "EMAIL_NOT_VERIFIED") {
+            window.sessionStorage.setItem("narriv_verify_email", body.email);
+            router.push("/verify-email");
+            return;
+          }
+        } catch {}
+      }
+      
       const status = (error as { status?: number }).status;
       if (status) {
         setApiError(status === 401 || status === 400 ? t("errors.invalidCredentials") : t("errors.loginFailed"));
@@ -63,8 +82,6 @@ export default function LoginPage() {
       setApiError(t("errors.backendUnavailable"));
     }
   };
-
-    const showUnavailable = () => setApiError(t("errors.socialUnavailable"));
 
     return (
     <AuthShell visual="dashboard" topAction={<LanguageSelector />}>
@@ -119,7 +136,7 @@ export default function LoginPage() {
 
         <div className="mt-8 grid gap-6">
           <Divider label={t("divider")} />
-        <SocialButtons onClick={showUnavailable} />
+        <SocialButtons />
       </div>
 
       <p className="mt-10 text-center text-[16px] font-medium text-[#3E4975]">
@@ -133,5 +150,17 @@ export default function LoginPage() {
         <SecurityFooter />
       </div>
     </AuthShell>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-dvh items-center justify-center bg-white">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#2F20FF] border-t-transparent" />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }

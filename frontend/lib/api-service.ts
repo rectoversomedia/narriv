@@ -9,6 +9,7 @@
  *   import { getDashboardSummary, getSignals, getAlerts } from "@/lib/api-service";
  */
 
+import type { LucideIcon } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import type { AuthUser } from "@/store/useAuthStore";
 
@@ -77,8 +78,32 @@ export async function loginWithPassword(input: { email: string; password: string
   });
 }
 
-export async function registerWithPassword(input: { name: string; email: string; password: string }): Promise<AuthSessionResponse> {
-  return await apiClient<AuthSessionResponse>("/auth/register", {
+export interface RegisterResponse {
+  requireVerification: boolean;
+  email: string;
+  verificationCode?: string; // Exposed in dev mode
+}
+
+export async function registerWithPassword(input: { name: string; email: string; password: string }): Promise<RegisterResponse> {
+  return await apiClient<RegisterResponse>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(input),
+    auth: false,
+    refreshOnUnauthorized: false,
+  });
+}
+
+export async function verifyEmailCode(input: { email: string; code: string }): Promise<AuthSessionResponse> {
+  return await apiClient<AuthSessionResponse>("/auth/verify-email", {
+    method: "POST",
+    body: JSON.stringify(input),
+    auth: false,
+    refreshOnUnauthorized: false,
+  });
+}
+
+export async function resendVerificationCode(input: { email: string }): Promise<{ success: boolean; verificationCode?: string }> {
+  return await apiClient<{ success: boolean; verificationCode?: string }>("/auth/resend-verification", {
     method: "POST",
     body: JSON.stringify(input),
     auth: false,
@@ -235,7 +260,7 @@ export interface GetSignalsOptions {
 
 export interface SignalsMeta {
   followUps: Array<{ title: string; badge: string; meta: string; time: string; tone: string }>;
-  recommendations: Array<{ title: string; desc: string; badge: string; tone: string; icon?: any }>;
+  recommendations: Array<{ title: string; desc: string; badge: string; tone: string; icon?: LucideIcon }>;
   sourceDistribution: Array<{ name: string; value: string; color: string }>;
   timeline: number[];
   investigationQueue: Array<{ title: string; meta: string; badge: string; tone: string }>;
@@ -504,6 +529,7 @@ export interface WorkspaceSettingsResponse {
   timezone: string | null;
   notificationEmail: string | null;
   whatsappPIC: string | null;
+  logoUrl: string | null;
   createdAt: string | null;
   updatedAt: string | null;
 }

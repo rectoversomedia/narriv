@@ -70,7 +70,7 @@ alertWorker.on("failed", (job, err) => {
 });
 
 alertWorker.on("error", (err) => {
-    if (err.code === "ECONNREFUSED") return;
+    if (err.code === "ECONNREFUSED" || (err.message && err.message.includes("ECONNRESET"))) return;
     logStructured("error", "worker_error", { error: err.message });
 });
 

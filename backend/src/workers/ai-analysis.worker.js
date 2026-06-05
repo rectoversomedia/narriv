@@ -190,7 +190,7 @@ worker.on("failed", (job, err) => {
 });
 
 worker.on("error", (err) => {
-    if (err.code === "ECONNREFUSED") return;
+    if (err.code === "ECONNREFUSED" || (err.message && err.message.includes("ECONNRESET"))) return;
     logStructured("error", "worker_error", {
         worker: "ai-analysis-worker",
         queue: "ai-analysis",

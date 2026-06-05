@@ -62,7 +62,7 @@ export async function listActivityLogs(req, res) {
             meta: { page, limit, total, totalPages },
         });
     } catch (error) {
-        console.error("Error listing activity logs:", error);
+        logStructured("error", "Error listing activity logs:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }

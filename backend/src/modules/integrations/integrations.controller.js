@@ -22,7 +22,7 @@ export async function listIntegrations(req, res) {
 
         return res.json({ data: integrations });
     } catch (error) {
-        console.error("Error listing integrations:", error);
+        logStructured("error", "Error listing integrations:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }
@@ -44,7 +44,7 @@ export async function getIntegration(req, res) {
 
         return res.json(integration);
     } catch (error) {
-        console.error("Error getting integration:", error);
+        logStructured("error", "Error getting integration:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }
@@ -77,7 +77,7 @@ export async function createIntegration(req, res) {
 
         return res.status(201).json(integration);
     } catch (error) {
-        console.error("Error creating integration:", error);
+        logStructured("error", "Error creating integration:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }
@@ -114,7 +114,7 @@ export async function updateIntegration(req, res) {
 
         return res.json(updated);
     } catch (error) {
-        console.error("Error updating integration:", error);
+        logStructured("error", "Error updating integration:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }
@@ -146,7 +146,7 @@ export async function deleteIntegration(req, res) {
 
         return res.json({ success: true });
     } catch (error) {
-        console.error("Error deleting integration:", error);
+        logStructured("error", "Error deleting integration:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }

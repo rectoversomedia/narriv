@@ -50,7 +50,7 @@ export const getSources = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error("Error fetching sources:", error);
+        logStructured("error", "Error fetching sources:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 };
@@ -106,7 +106,7 @@ export const createSource = async (req, res) => {
         });
         res.status(201).json(source);
     } catch (error) {
-        console.error("Error creating source:", error);
+        logStructured("error", "Error creating source:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 };
@@ -162,7 +162,7 @@ export const updateSource = async (req, res) => {
         });
         res.json(source);
     } catch (error) {
-        console.error("Error updating source:", error);
+        logStructured("error", "Error updating source:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 };
@@ -194,7 +194,7 @@ export const deleteSource = async (req, res) => {
         });
         res.json(source);
     } catch (error) {
-        console.error("Error deleting source:", error);
+        logStructured("error", "Error deleting source:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 };

@@ -300,20 +300,30 @@ export function Divider({ label }: { label: string }) {
   );
 }
 
-export function SocialButtons({ onClick }: { onClick?: () => void }) {
+export function SocialButtons() {
   const t = useTranslations("AuthDesign");
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
   return (
     <div className="grid gap-4">
-      <SocialButton icon={<GoogleLogo />} label={t("social.google")} onClick={onClick} />
-      <SocialButton icon={<MicrosoftLogo />} label={t("social.microsoft")} onClick={onClick} />
+      <SocialButton icon={<GoogleLogo />} label={t("social.google")} href={`${apiUrl}/auth/google`} />
+      <SocialButton icon={<MicrosoftLogo />} label={t("social.microsoft")} href={`${apiUrl}/auth/microsoft`} />
     </div>
   );
 }
 
-function SocialButton({ icon, label, onClick }: { icon: ReactNode; label: string; onClick?: () => void }) {
+function SocialButton({ icon, label, href }: { icon: ReactNode; label: string; href?: string }) {
+  if (href) {
+    return (
+      <a href={href} className="relative flex h-[58px] w-full items-center justify-center rounded-[8px] border border-[#D6DDEC] bg-white text-[18px] font-semibold text-[#111536] transition hover:border-[#AAB4D5] hover:bg-[#FBFCFF]">
+        <span className="absolute left-9 flex h-6 w-6 items-center justify-center">{icon}</span>
+        {label}
+      </a>
+    );
+  }
+
   return (
-    <button type="button" onClick={onClick} className="relative flex h-[58px] w-full items-center justify-center rounded-[8px] border border-[#D6DDEC] bg-white text-[18px] font-semibold text-[#111536] transition hover:border-[#AAB4D5] hover:bg-[#FBFCFF]">
+    <button type="button" className="relative flex h-[58px] w-full items-center justify-center rounded-[8px] border border-[#D6DDEC] bg-white text-[18px] font-semibold text-[#111536] transition hover:border-[#AAB4D5] hover:bg-[#FBFCFF]">
       <span className="absolute left-9 flex h-6 w-6 items-center justify-center">{icon}</span>
       {label}
     </button>

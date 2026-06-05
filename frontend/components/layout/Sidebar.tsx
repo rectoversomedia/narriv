@@ -9,6 +9,18 @@ import { useState } from "react";
 import { navGroups } from "@/lib/mock-data";
 import { useUiStore } from "@/store/useUiStore";
 
+import { useQuery } from "@tanstack/react-query";
+import { getWorkspaceSettings } from "@/lib/api-service";
+
+function resolveBackendAssetUrl(url: string) {
+  if (/^https?:\/\//.test(url)) return url;
+  if (url.startsWith("/uploads/")) {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:3000";
+    return `${baseUrl}${url}`;
+  }
+  return url;
+}
+
 function activeRoute(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -22,14 +34,23 @@ export function Sidebar() {
   const toggleSidebar = useUiStore((state) => state.toggleSidebar);
   const mobileItems = navGroups.flatMap((group) => group.items).slice(0, 4);
 
+  const workspaceSettingsQuery = useQuery({
+    queryKey: ["workspace-settings"],
+    queryFn: getWorkspaceSettings,
+    staleTime: 30 * 1000,
+  });
+
+  const activeLogo = workspaceSettingsQuery.data?.logoUrl ? resolveBackendAssetUrl(workspaceSettingsQuery.data.logoUrl) : "/narriv-logo.svg";
+  const brandName = workspaceSettingsQuery.data?.brandName || "Narriv";
+
   return (
     <>
       <aside className={`sidebar-gradient fixed inset-y-0 left-0 z-30 hidden overflow-y-auto px-5 py-8 text-white transition-[width,padding] duration-300 lg:block ${sidebarCollapsed ? "w-[92px] px-4" : "w-[292px]"}`}>
         <div className={`flex items-center gap-3 px-1 ${sidebarCollapsed ? "justify-center" : ""}`}>
           <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full">
-            <Image src="/narriv-logo.svg" alt="Narriv" width={64} height={64} priority className="h-16 w-16 scale-[1.28] object-cover" />
+            <Image src={activeLogo} alt={brandName} width={64} height={64} priority unoptimized={activeLogo.startsWith("http")} className="h-16 w-16 scale-[1.28] object-contain" />
           </span>
-          {sidebarCollapsed ? null : <span className="text-[33px] font-bold tracking-[-0.05em] bg-clip-text text-transparent bg-linear-to-r from-white via-white to-white/70">Narriv</span>}
+          {sidebarCollapsed ? null : <span className="text-[33px] font-bold tracking-[-0.05em] bg-clip-text text-transparent bg-linear-to-r from-white via-white to-white/70">{brandName}</span>}
         </div>
 
         <button

@@ -81,7 +81,7 @@ router.get("/", async (req, res) => {
             }
         });
     } catch (error) {
-        console.error("Error fetching alerts:", error);
+        logStructured("error", "Error fetching alerts:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -104,7 +104,7 @@ router.get("/:id", async (req, res) => {
         // title, whatHappened, whyItMatters, whatToDo, severity, etc.
         res.json(alert);
     } catch (error) {
-        console.error("Error fetching alert:", error);
+        logStructured("error", "Error fetching alert:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -138,7 +138,7 @@ router.patch("/:id/status", validateRequest({ params: alertIdParamsSchema, body:
         if (error.code === 'P2025') {
             return res.status(404).json({ error: "Alert not found" });
         }
-        console.error("Error updating alert status:", error);
+        logStructured("error", "Error updating alert status:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -199,7 +199,7 @@ router.patch("/:id/assign", validateRequest({ params: assignAlertParamsSchema, b
 
         return res.json(updated);
     } catch (error) {
-        console.error("Error updating alert assignment:", error);
+        logStructured("error", "Error updating alert assignment:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
     }
 });

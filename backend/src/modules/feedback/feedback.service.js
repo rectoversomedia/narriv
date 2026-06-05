@@ -50,7 +50,7 @@ export async function submitFeedback({ workspaceId, targetType, targetId, action
             });
             logStructured("info", "feedback_signal_analysis_updated", { targetId });
         } catch (err) {
-            console.warn(`[FEEDBACK] Could not update SignalAnalysis ${targetId}:`, err.message);
+            logStructured("warn", `[FEEDBACK] Could not update SignalAnalysis ${targetId}:`, { details: err.message?.message || err.message });
         }
     }
 

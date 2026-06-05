@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { type ReactNode, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
   Calendar,
@@ -699,7 +699,6 @@ function PopularReports() {
 
 export default function ReportsPage() {
   const t = useTranslations("DemoApp");
-  const queryClient = useQueryClient();
   const toastHook = useToast();
   const [page, setPage] = useState(1);
 

@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { sendEmail } from "../../lib/email.js";
-import { passwordResetCode, passwordResetConfirmation } from "../../lib/email-templates.js";
+import { passwordResetCode, passwordResetConfirmation, emailVerificationCode } from "../../lib/email-templates.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const ACCESS_TOKEN_TTL = process.env.ACCESS_TOKEN_TTL || "1h";
@@ -107,7 +107,7 @@ async function writeAuditLog(userId, event, metadata = {}) {
             }
         });
     } catch (err) {
-        console.warn("[AUTH] Failed to write audit log:", err.message);
+        logStructured("warn", "[AUTH] Failed to write audit log:", { details: err.message?.message || err.message });
     }
 }
 
@@ -149,13 +149,33 @@ export const register = async (req, res) => {
 
         await writeAuditLog(user.id, "register_success", { email: user.email });
 
-        const token = signAccessToken(user);
-        const { refreshToken } = await issueRefreshToken(user.id);
+        // Generate email verification code
+        const verificationCode = createResetCode();
+        const expiresAt = new Date(Date.now() + PASSWORD_RESET_TTL_MINUTES * 60 * 1000);
+        
+        await prisma.emailVerificationToken.create({
+            data: {
+                userId: user.id,
+                codeHash: hashResetSecret(verificationCode),
+                expiresAt,
+            },
+        });
 
-        const { password: _, ...userWithoutPassword } = user;
-        res.status(201).json({ token, refreshToken, user: userWithoutPassword });
+        // Send verification email
+        const emailTemplate = emailVerificationCode({
+            name: user.name,
+            code: verificationCode,
+            expiresInMinutes: PASSWORD_RESET_TTL_MINUTES,
+        });
+        sendEmail({ to: user.email, ...emailTemplate }).catch(() => {});
+
+        res.status(201).json({ 
+            requireVerification: true, 
+            email: user.email,
+            ...(shouldExposeResetSecrets() ? { verificationCode, expiresAt: expiresAt.toISOString() } : {})
+        });
     } catch (error) {
-        console.error("Error registering user:", error);
+        logStructured("error", "Error registering user:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 };
@@ -179,6 +199,10 @@ export const login = async (req, res) => {
         if (!user) {
             await writeAuditLog(null, "failed_login", { email });
             return res.status(401).json({ error: "Invalid credentials." });
+        }
+
+        if (!user.emailVerified) {
+            return res.status(403).json({ error: "Email is not verified.", code: "EMAIL_NOT_VERIFIED", requireVerification: true, email: user.email });
         }
 
         if (user.lockedUntil && user.lockedUntil > new Date()) {
@@ -214,7 +238,7 @@ export const login = async (req, res) => {
 
         res.json({ token, refreshToken, user: userWithoutPassword });
     } catch (error) {
-        console.error("Error logging in:", error);
+        logStructured("error", "Error logging in:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 };
@@ -253,7 +277,7 @@ export const refresh = async (req, res) => {
 
         return res.json({ token, refreshToken: next.refreshToken });
     } catch (error) {
-        console.error("Error refreshing session:", error);
+        logStructured("error", "Error refreshing session:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
     }
 };
@@ -283,7 +307,7 @@ export const logout = async (req, res) => {
         await writeAuditLog(tokenRow.userId, "logout");
         return res.json({ success: true });
     } catch (error) {
-        console.error("Error logging out:", error);
+        logStructured("error", "Error logging out:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
     }
 };
@@ -340,7 +364,7 @@ export const forgotPassword = async (req, res) => {
             ...(shouldExposeResetSecrets() ? { resetCode, expiresAt: expiresAt.toISOString() } : {}),
         });
     } catch (error) {
-        console.error("Error requesting password reset:", error);
+        logStructured("error", "Error requesting password reset:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
     }
 };
@@ -375,7 +399,116 @@ export const verifyResetCode = async (req, res) => {
 
         return res.json({ success: true, resetToken });
     } catch (error) {
-        console.error("Error verifying password reset code:", error);
+        logStructured("error", "Error verifying password reset code:", { error: error?.message || error, stack: error?.stack });
+        return res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+
+export const verifyEmail = async (req, res) => {
+    try {
+        const email = String(req.body.email || "").trim().toLowerCase();
+        const code = String(req.body.code || "").trim();
+        const user = await prisma.user.findUnique({ where: { email } });
+        
+        if (!user) {
+            return res.status(400).json({ error: "Invalid or expired verification code.", code: "INVALID_VERIFICATION_CODE" });
+        }
+
+        if (user.emailVerified) {
+            return res.status(400).json({ error: "Email is already verified." });
+        }
+
+        const candidates = await prisma.emailVerificationToken.findMany({
+            where: { userId: user.id, usedAt: null, expiresAt: { gt: new Date() } },
+            orderBy: { createdAt: "desc" },
+            take: 5,
+        });
+        
+        const tokenRow = candidates.find((candidate) => compareResetSecret(code, candidate.codeHash));
+        if (!tokenRow) {
+            await writeAuditLog(user.id, "email_verification_failed", { email: user.email });
+            return res.status(400).json({ error: "Invalid or expired verification code.", code: "INVALID_VERIFICATION_CODE" });
+        }
+
+        await prisma.$transaction([
+            prisma.user.update({
+                where: { id: user.id },
+                data: { emailVerified: new Date() }
+            }),
+            prisma.emailVerificationToken.update({
+                where: { id: tokenRow.id },
+                data: { usedAt: new Date() }
+            })
+        ]);
+
+        await writeAuditLog(user.id, "email_verified", { email: user.email });
+
+        // Issue tokens and log them in
+        const token = signAccessToken(user);
+        const { refreshToken } = await issueRefreshToken(user.id);
+        const { password: _, ...userWithoutPassword } = user;
+        
+        return res.json({ token, refreshToken, user: userWithoutPassword });
+    } catch (error) {
+        logStructured("error", "Error verifying email:", { error: error?.message || error, stack: error?.stack });
+        return res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+export const resendVerification = async (req, res) => {
+    try {
+        const email = String(req.body.email || "").trim().toLowerCase();
+        const user = await prisma.user.findUnique({ where: { email } });
+        
+        const genericResponse = { success: true, message: "If an account exists, a verification code has been sent." };
+        
+        if (!user) {
+            return res.json(genericResponse);
+        }
+        
+        if (user.emailVerified) {
+            return res.status(400).json({ error: "Email is already verified." });
+        }
+        
+        // Rate limiting for resend
+        const rateKey = `resend-verification:${req.ip || "unknown"}::${email}`;
+        if (checkRateLimit(passwordResetRateBucket, rateKey, PASSWORD_RESET_MAX_ATTEMPTS, PASSWORD_RESET_WINDOW_MS)) {
+            return res.status(429).json({ error: "Too many verification requests. Try again later." });
+        }
+
+        // Invalidate previous unused tokens
+        await prisma.emailVerificationToken.updateMany({
+            where: { userId: user.id, usedAt: null },
+            data: { usedAt: new Date() },
+        });
+
+        const verificationCode = createResetCode();
+        const expiresAt = new Date(Date.now() + PASSWORD_RESET_TTL_MINUTES * 60 * 1000);
+        
+        await prisma.emailVerificationToken.create({
+            data: {
+                userId: user.id,
+                codeHash: hashResetSecret(verificationCode),
+                expiresAt,
+            },
+        });
+
+        const emailTemplate = emailVerificationCode({
+            name: user.name,
+            code: verificationCode,
+            expiresInMinutes: PASSWORD_RESET_TTL_MINUTES,
+        });
+        sendEmail({ to: user.email, ...emailTemplate }).catch(() => {});
+        
+        await writeAuditLog(user.id, "email_verification_resent", { email: user.email });
+
+        return res.json({ 
+            ...genericResponse,
+            ...(shouldExposeResetSecrets() ? { verificationCode, expiresAt: expiresAt.toISOString() } : {})
+        });
+    } catch (error) {
+        logStructured("error", "Error resending verification:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
     }
 };
@@ -426,7 +559,7 @@ export const resetPassword = async (req, res) => {
 
         return res.json({ success: true });
     } catch (error) {
-        console.error("Error resetting password:", error);
+        logStructured("error", "Error resetting password:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
     }
 };
@@ -443,7 +576,7 @@ export const me = async (req, res) => {
 
         res.json(user);
     } catch (error) {
-        console.error("Error fetching me:", error);
+        logStructured("error", "Error fetching me:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 };
@@ -478,7 +611,200 @@ export const changePassword = async (req, res) => {
         await writeAuditLog(userId, "password_change", { email: user.email });
         return res.json({ success: true });
     } catch (error) {
-        console.error("Error changing password:", error);
+        logStructured("error", "Error changing password:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
     }
 };
+
+
+// OAuth variables
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3001";
+
+// ==========================================
+// Google OAuth
+// ==========================================
+export const googleAuth = (req, res) => {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const redirectUri = process.env.GOOGLE_CALLBACK_URL;
+    if (!clientId || !redirectUri) return res.status(500).json({ error: "Google OAuth not configured." });
+
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=email profile`;
+    res.redirect(authUrl);
+};
+
+export const googleCallback = async (req, res) => {
+    try {
+        const { code } = req.query;
+        if (!code) return res.redirect(`${FRONTEND_URL}/login?error=oauth_failed`);
+
+        // Exchange code for token
+        const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                code,
+                client_id: process.env.GOOGLE_CLIENT_ID,
+                client_secret: process.env.GOOGLE_CLIENT_SECRET,
+                redirect_uri: process.env.GOOGLE_CALLBACK_URL,
+                grant_type: "authorization_code"
+            })
+        });
+
+        if (!tokenResponse.ok) throw new Error("Failed to exchange Google token");
+        const tokenData = await tokenResponse.json();
+
+        // Get user profile
+        const profileResponse = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+            headers: { Authorization: `Bearer ${tokenData.access_token}` }
+        });
+
+        if (!profileResponse.ok) throw new Error("Failed to fetch Google profile");
+        const profile = await profileResponse.json();
+
+        // Handle login/register
+        await handleOAuthLogin(res, {
+            provider: "google",
+            providerAccountId: profile.id,
+            email: profile.email.toLowerCase(),
+            name: profile.name
+        });
+    } catch (error) {
+        logStructured("error", "Google OAuth error:", { error: error?.message || error, stack: error?.stack });
+        res.redirect(`${FRONTEND_URL}/login?error=oauth_failed`);
+    }
+};
+
+// ==========================================
+// Microsoft OAuth
+// ==========================================
+export const microsoftAuth = (req, res) => {
+    const clientId = process.env.MICROSOFT_CLIENT_ID;
+    const redirectUri = process.env.MICROSOFT_CALLBACK_URL;
+    if (!clientId || !redirectUri) return res.status(500).json({ error: "Microsoft OAuth not configured." });
+
+    const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&response_mode=query&scope=User.Read email`;
+    res.redirect(authUrl);
+};
+
+export const microsoftCallback = async (req, res) => {
+    try {
+        const { code } = req.query;
+        if (!code) return res.redirect(`${FRONTEND_URL}/login?error=oauth_failed`);
+
+        // Exchange code for token
+        const tokenResponse = await fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                client_id: process.env.MICROSOFT_CLIENT_ID,
+                client_secret: process.env.MICROSOFT_CLIENT_SECRET,
+                code,
+                redirect_uri: process.env.MICROSOFT_CALLBACK_URL,
+                grant_type: "authorization_code"
+            })
+        });
+
+        if (!tokenResponse.ok) throw new Error("Failed to exchange Microsoft token");
+        const tokenData = await tokenResponse.json();
+
+        // Get user profile
+        const profileResponse = await fetch("https://graph.microsoft.com/v1.0/me", {
+            headers: { Authorization: `Bearer ${tokenData.access_token}` }
+        });
+
+        if (!profileResponse.ok) throw new Error("Failed to fetch Microsoft profile");
+        const profile = await profileResponse.json();
+        
+        // Microsoft Graph doesn't always return email in standard fields depending on account type
+        const email = profile.mail || profile.userPrincipalName;
+
+        await handleOAuthLogin(res, {
+            provider: "microsoft",
+            providerAccountId: profile.id,
+            email: email.toLowerCase(),
+            name: profile.displayName || profile.givenName || email
+        });
+    } catch (error) {
+        logStructured("error", "Microsoft OAuth error:", { error: error?.message || error, stack: error?.stack });
+        res.redirect(`${FRONTEND_URL}/login?error=oauth_failed`);
+    }
+};
+
+// ==========================================
+// Shared OAuth handler
+// ==========================================
+async function handleOAuthLogin(res, { provider, providerAccountId, email, name }) {
+    // 1. Check if OAuth account exists
+    let oauthAccount = await prisma.oAuthAccount.findUnique({
+        where: {
+            provider_providerAccountId: { provider, providerAccountId }
+        },
+        include: { user: true }
+    });
+
+    let user;
+
+    if (oauthAccount) {
+        user = oauthAccount.user;
+    } else {
+        // 2. Look up user by email
+        user = await prisma.user.findUnique({ where: { email } });
+        
+        if (!user) {
+            // 3. Create user if not exists
+            // We use a dummy password hash because password is required in DB
+            const dummyPassword = crypto.randomBytes(32).toString('hex');
+            const hashedPassword = await bcrypt.hash(dummyPassword, BCRYPT_SALT_ROUNDS);
+            
+            user = await prisma.user.create({
+                data: {
+                    email,
+                    name,
+                    password: hashedPassword,
+                    emailVerified: new Date() // implicitly verified since it came from OAuth provider
+                }
+            });
+            await writeAuditLog(user.id, "register_success_oauth", { provider, email });
+        } else if (!user.emailVerified) {
+            // Auto-verify email if they log in with a matching OAuth account
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { emailVerified: new Date() }
+            });
+        }
+
+        // Link the new OAuth account
+        await prisma.oAuthAccount.create({
+            data: {
+                userId: user.id,
+                provider,
+                providerAccountId
+            }
+        });
+    }
+
+    // Reset lockout if needed
+    if (user.failedLoginAttempts > 0 || user.lockedUntil) {
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { failedLoginAttempts: 0, lockedUntil: null }
+        });
+    }
+
+    // Create session
+    const token = signAccessToken(user);
+    const { refreshToken } = await issueRefreshToken(user.id);
+    
+    await writeAuditLog(user.id, "login_oauth", { provider, email });
+
+    // Base64 encode the user object to pass safely in URL
+    const userPayload = Buffer.from(JSON.stringify({
+        name: user.name,
+        email: user.email,
+        provider,
+        workspace: "Narriv"
+    })).toString('base64');
+
+    // Redirect to frontend callback
+    res.redirect(`${FRONTEND_URL}/oauth/callback?token=${token}&refreshToken=${refreshToken}&user=${userPayload}`);
+}

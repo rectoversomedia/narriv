@@ -106,6 +106,32 @@
 | Back Link | → `/reset-password` |
 | API Integration | `POST /auth/verify-reset-code` via Ky-backed `verifyPasswordResetCode()` |
 
+#### ✅ Verify Email (`/verify-email`)
+| Element | Detail |
+|---------|--------|
+| Layout | Same split layout, "verification" illustration |
+| Center Icon | Shield |
+| OTP Input | 6-digit code input boxes with auto-advance |
+| Verify Button | Primary submit |
+| Resend Link | Resend code action |
+| Back Link | → `/signup` |
+| API Integration | `POST /auth/verify-email` via Ky-backed `verifyEmailCode()` |
+
+#### 🔐 OAuth Callback (`/oauth/callback`)
+| Element | Detail |
+|---------|--------|
+| Layout | Security split layout |
+| API Integration | Captures URL params (`token`, `refreshToken`, `user`) from backend redirects |
+| Element | Detail |
+|---------|--------|
+| Layout | Same split layout, "verification" illustration |
+| Center Icon | Shield |
+| OTP Input | 6-digit code input boxes with auto-advance |
+| Verify Button | Primary submit |
+| Resend Link | Resend code action |
+| Back Link | → `/signup` |
+| API Integration | `POST /auth/verify-email` via Ky-backed `verifyEmailCode()` |
+
 #### 🆕 New Password (`/new-password`)
 | Element | Detail |
 |---------|--------|
@@ -148,8 +174,8 @@
 #### 🏠 Command Center (`/` — Dashboard Home)
 | Widget | Detail | Data Source |
 |--------|--------|-------------|
-| KPI Cards (6x) | Total Signals, Critical Signals, Active Signals, AI Visibility Mentions, Avg Response, Active Sources | `getDashboardSummary()` for live KPI subset; preview fallback remains |
-| Activity Chart | Area chart showing signal volume over time (15 data points) | `getDashboardSummary().trends` with `activitySeries` fallback; 24h/7d/30d query params wired |
+| KPI Cards (6x) | Total Signals, Critical Signals, Active Signals, AI Visibility Mentions, Avg Response, Active Sources | `getDashboardSummary()` for live KPI subset; preview fallback remains. Real-time updates via SSE (`dashboard_update` event) |
+| Activity Chart | Area chart showing signal volume over time (15 data points) | `getDashboardSummary().trends` with `activitySeries` fallback; 24h/7d/30d query params wired. Real-time updates via SSE |
 | Signal Category Donut | Pie chart: Reputasi, Operasional, Produk, Keamanan, Regulasi, Lainnya | `getDashboardSummary().sentiment_distribution` for sentiment donut; topic breakdown remains preview/static |
 | Latest Alerts | List of 5 alert items with severity colors, source, time | `getDashboardSummary().latest_signals` with `alerts` fallback |
 | Trending Topics | Top 5 topics with mention counts and trend deltas | `topTopics` mock |
@@ -230,7 +256,7 @@
 #### ⚙️ Settings (`/workspace/settings`)
 | Widget | Detail | Data Source |
 |--------|--------|-------------|
-| Workspace Logo | Upload/change logo with preview | Local state |
+| Workspace Logo | Upload/change logo with preview | Wired to `uploadWorkspaceLogo()` / `POST /api/workspace/logo` using base64 JSON; persistently loads `logoUrl` from DB via `getWorkspaceSettings()` |
 | Brand Name | Text input | Loaded/saved via `getWorkspaceSettings()` / `updateWorkspaceSettings()` with local fallback |
 | Industry | Dropdown selector | Loaded/saved via `getWorkspaceSettings()` / `updateWorkspaceSettings()` with local fallback |
 | Timezone | Dropdown (WIB, WITA, WIT) | Loaded/saved via `getWorkspaceSettings()` / `updateWorkspaceSettings()` with local fallback |
@@ -255,6 +281,23 @@
 | Charts | Volume chart and source distribution donut | Inline SVG/CSS |
 | API Functions | Source CRUD/ingestion functions exist in `api-service.ts` | `getSources()`, `updateSource()` (toggle), `deleteSource()`, and `runSourceIngestion()` (sync) are wired |
 
+#### 🧾 Activity Log (`/workspace/activity`)
+| Widget | Detail | Data Source |
+|--------|--------|-------------|
+| Header + Metrics | Audit trail summary, actor count, event count, today count | Derived from `getActivityLogs()` response and pagination meta |
+| Filters | Event type, date from, date to, reset action | Local state driving API query params |
+| Activity Table | Event badge, actor, metadata summary, relative/absolute timestamp | Wired to `getActivityLogs()` with pagination and error/empty states |
+| Navigation | Sidebar System menu entry | `navGroups` includes `/workspace/activity` |
+
+#### 🔌 Integrations (`/workspace/integrations`)
+| Widget | Detail | Data Source |
+|--------|--------|-------------|
+| Header + Metrics | Total integrations, active count, platform count, error count | Derived from `getIntegrations()` response |
+| Connect Form | Name, platform, optional JSON config | Wired to `createIntegration()` / `POST /api/workspace/integrations` |
+| Filters | Platform and status filters | Local state driving API query params |
+| Integrations Table | Integration, inline status update, config summary, sync timestamps, disconnect action | Wired to `getIntegrations()`, `updateIntegration()`, and `deleteIntegration()` |
+| Navigation | Sidebar System menu entry | `navGroups` includes `/workspace/integrations` |
+
 #### `/settings`
 
 `/settings` exists as a route alias that re-exports `/workspace/settings`.
@@ -267,13 +310,6 @@
 | Cases Table | List of cases with Title, Status dropdown, Priority badge, Assignee, Actions | Wired to `getCases()` with pagination and error/empty states |
 | Status Actions | Inline dropdown to change status | Wired to `updateCase()` mutation |
 | Delete Action | Trash icon with confirmation dialog | Wired to `deleteCase()` mutation |
-
-#### Not Present As Frontend Routes
-
-| Planned Route | Current Status |
-|---------------|----------------|
-| `/workspace/integrations` | No `page.tsx` exists |
-| `/workspace/activity` | No `page.tsx` exists |
 
 ---
 
@@ -390,6 +426,7 @@ All frontend-to-backend calls should go through the Ky-backed `apiClient.ts`/`ap
 | Reset password flow | `POST /auth/forgot-password`, `POST /auth/verify-reset-code`, `POST /auth/reset-password` | Yes — Ky-backed reset service functions | Yes — reset, verify, and new-password pages |
 | `logoutSession()` | `POST /auth/logout` | Yes | Yes — topbar logout calls API to revoke refresh token before clearing local state |
 | `getCurrentUser()` | `GET /auth/me` | Yes | No |
+| `getActivityLogs()` | `GET /api/workspace/activity` | Yes | Yes — `/workspace/activity` page uses filters, table rendering, and pagination |
 | `getDashboardSummary()` | `GET /api/dashboard/summary` | Yes | Yes — dashboard home uses KPI/trend/sentiment/latest signal fields, fully unmocked |
 | `getSignals()` / `getSignalsMeta()` | `GET /signals`, `GET /signals/meta` | Yes | `getSignals()` yes on `/signals`; `getSignalsMeta()` yes for signals sidebar |
 | `getAlerts()` / `getAlertById()` | `GET /api/alerts`, `GET /api/alerts/:id` | Yes | Yes — list page and detail page use React Query |
@@ -400,6 +437,8 @@ All frontend-to-backend calls should go through the Ky-backed `apiClient.ts`/`ap
 | `getNarratives()` | `GET /api/narratives` | Yes | Yes — partially mapped to intelligence UI with preview fallback |
 | Source/ingestion functions | `/sources`, `/ingestion/run/:sourceId`, `/ingestion/status/:jobId` | Yes | Yes — `getSources()`, `updateSource()` (toggle), `deleteSource()`, and `runSourceIngestion()` (sync) are wired |
 | Workspace settings/member functions | `/api/workspace/settings`, `/api/workspace/members` | Yes | Yes — `getWorkspaceSettings()`, `updateWorkspaceSettings()`, `getWorkspaceMembers()`, `createWorkspaceMember()` by registered-user email, and `deleteWorkspaceMember()` are wired |
+| Workspace logo upload | `POST /api/workspace/logo` | Yes — Ky-backed `uploadWorkspaceLogo()` | Yes — settings logo picker validates image type/size and uploads base64 JSON to backend |
+| Integrations functions | `GET/POST/PATCH/DELETE /api/workspace/integrations` | Yes | Yes — `/workspace/integrations` page supports create, filter, inline status update, and disconnect |
 | In-App Notifications & SSE | `/api/notifications`, `/api/notifications/stream` | Yes | Yes — `getNotifications()` and SSE listeners wired to Topbar notification bell; mark as read mutations wired |
 | `changePassword()` | `POST /auth/change-password` | Yes | Yes — settings page change password form with validation |
 | `getNotificationSettings()` / `updateNotificationSettings()` | `GET/PATCH /api/workspace/notification-settings` | Yes | Yes — settings page notification toggles wired |
@@ -434,7 +473,7 @@ All frontend-to-backend calls should go through the Ky-backed `apiClient.ts`/`ap
 ### ✅ What's Working
 - All auth pages render and function (login, signup, reset, verify, new-password)
 - Dashboard layout with sidebar, topbar with global search, responsive design
-- Implemented dashboard routes render: `/`, `/signals`, `/alerts`, `/alerts/[id]`, `/visibility`, `/intelligence`, `/reports`, `/action-plans`, `/workspace/sources`, `/workspace/settings`, plus `/settings` alias
+- Implemented dashboard routes render: `/`, `/signals`, `/alerts`, `/alerts/[id]`, `/visibility`, `/intelligence`, `/reports`, `/action-plans`, `/workspace/sources`, `/workspace/activity`, `/workspace/integrations`, `/workspace/settings`, plus `/settings` alias
 - i18n toggle works on auth and dashboard pages
 - Language transition animation (View Transitions API)
 - API client/service layer for all backend endpoints with React Query integration
@@ -452,11 +491,10 @@ All frontend-to-backend calls should go through the Ky-backed `apiClient.ts`/`ap
 1. **Static/Mock Data Dependency**: All primary and secondary dashboard widgets (topics, sources, system status, signals sidebar) are now fully un-mocked and use API data. Some empty-state or fallback mocks remain solely for preview when live data is completely empty.
 2. **Onboarding Flow**: UI wired to backend API using `OnboardingContext` state and `api-service.ts` functions. Submits default initial configuration and redirects to dashboard.
 3. **Social Login**: Apple/Google/Microsoft buttons show "unavailable" toast.
-4. **Workspace Logo Upload**: UI exists but no file upload API endpoint.
-5. **Missing Workspace Routes**: `/workspace/activity` and `/workspace/integrations` do not currently exist as frontend pages.
-6. **Notification Channels**: Push/dispatch for email/whatsapp not fully implemented (settings exist). However, **In-App Notification Bell** is fully wired and functional using SSE.
-7. **Real-time Updates**: SSE is now active for `/api/notifications/stream` replacing polling for notification updates.
-8. **Reset Password Email Delivery**: Reset flow calls backend endpoints, but production email/SMS delivery provider is still future integration; non-production exposes dev reset code for local testing.
+4. **Workspace Logo Upload**: Settings page is wired to the backend logo upload API using base64 JSON. Backend currently stores uploads locally; S3/Supabase Storage remains a future production storage upgrade.
+5. **Notification Channels**: Push/dispatch for email/whatsapp not fully implemented (settings exist). However, **In-App Notification Bell** is fully wired and functional using SSE.
+6. **Real-time Updates**: SSE is now active for `/api/notifications/stream` replacing polling for notification updates.
+7. **Reset Password Email Delivery**: Reset flow calls backend endpoints, but production email/SMS delivery provider is still future integration; non-production exposes dev reset code for local testing.
 
 ---
 
@@ -502,10 +540,10 @@ These replace the removed frontend checklist/guidelines and should be treated as
 ### Phase 2: Missing Features (High Priority)
 
 - [x] **Onboarding API** — Connect onboarding steps to workspace setup endpoints. Flow processes and saves dummy default configuration, then redirects to dashboard. Completed 2026-06-04.
-- [ ] **File Upload** — Implement logo upload with cloud storage (S3/Supabase Storage)
-- [ ] **Activity Log** — Create `/workspace/activity` page and wire it to a new `AuditLog` API
+- [ ] **File Upload** — Settings logo upload is wired to the backend local upload API. Remaining scope: migrate storage to cloud storage (S3/Supabase Storage) before production-scale deployment.
+- [x] **Activity Log** — Created `/workspace/activity` page and wired it to `getActivityLogs()` / `GET /api/workspace/activity` with filters, metrics, table states, sidebar navigation, and pagination. Completed 2026-06-05.
 - [x] **Cases Page** — Create `/workspace/cases` page and wire it to the cases API endpoints. Completed 2026-06-04.
-- [ ] **Integrations Page** — Create `/workspace/integrations` page after integration/OAuth endpoints exist
+- [x] **Integrations Page** — Created `/workspace/integrations` page and wired it to integration CRUD endpoints with create form, filters, inline status update, disconnect confirmation, sidebar navigation, and table states. Completed 2026-06-05.
 - [x] **Real-time Notifications** — Added SSE (`/api/notifications/stream`) to automatically push new notifications to the frontend bell icon without polling. Completed 2026-06-04.
 - [x] **Export Downloads** — PDF export via `createReportExport()` with polling via `getReportExportStatus()` and auto-download on completion. Completed 2026-05-31.
 - [x] **Notification Settings** — Wired to `GET/PATCH /api/workspace/notification-settings` via workspace-settings API. Backend endpoints implemented. Completed 2026-05-31.
@@ -533,7 +571,8 @@ These replace the removed frontend checklist/guidelines and should be treated as
 - [x] **Error Boundary** — Ensure `error.tsx` catches and displays errors gracefully. Added dashboard, app, and global error boundaries with simple retry-focused copy.
 - [x] **Performance** — Audited chart/map bundle hotspots and lazy-loaded dashboard chart components with `next/dynamic`. Split `WorldActivityMap` into its own `react-simple-maps` module so map code is not bundled with Recharts charts. Completed 2026-05-31.
 - [x] **Accessibility** — Completed targeted code-level audit for updated dashboard controls. Added dialog focus management/trapping, pagination navigation labels/live status, and labels for icon-only source view toggles. Completed 2026-05-31. Manual screen-reader/browser QA is still recommended before launch.
-- [x] **E2E Tests** — Added Playwright setup, npm scripts, and smoke coverage for protected-route redirect, authenticated auth-route redirect, and primary login controls. Completed 2026-05-31. CRUD flow coverage should be expanded once live mutation endpoints are finalized.
+- [x] **E2E Tests** — Added Playwright setup, npm scripts, smoke coverage for auth redirects/login controls, and workspace coverage for Activity Log, Integrations CRUD/status/disconnect, and Settings logo upload. Completed 2026-05-31; expanded workspace coverage 2026-06-05.
 - [ ] **VPS Deployment** — Prepare DigitalOcean VPS + Hostinger DNS deployment readiness: production env docs, PM2/systemd process notes, Nginx reverse proxy, SSL, and frontend/backend domain mapping
 - [x] **Remove Mock Data** — All primary and secondary dashboard widgets (topics, sources, system status, signals sidebar panels) now use live API endpoints (`getDashboardSummary` and `getSignalsMeta`). Some mock arrays remain only as fallback data when the DB is entirely empty or API fails.
 - [x] **Console Cleanup** — Remove all `console.log` debug statements. Frontend was already clean. Backend: replaced 45+ raw `console.log` calls across 13 files with structured `logStructured()` from shared logger. Only `logger.js` itself retains `console.log` as the centralized output.
+- [x] **NPM Audit Security Fix** — Upgraded `next` to `16.2.7` and added `postcss` override in `package.json` to resolve high/moderate vulnerabilities.

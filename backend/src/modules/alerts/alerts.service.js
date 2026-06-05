@@ -1,5 +1,6 @@
 import prisma from "../../prisma.js";
 import { enhanceAlert } from "../ai/ai.service.js";
+import { globalEvents } from "../app-notifications/app-notifications.events.js";
 import { logStructured } from "../../lib/logger.js";
 
 const SOURCE_STRENGTH = {
@@ -181,6 +182,7 @@ export async function detectAlerts(workspaceId) {
         });
 
         alerts.push(newAlert);
+        globalEvents.emit("dashboard_update", workspaceId);
     }
 
     return alerts;

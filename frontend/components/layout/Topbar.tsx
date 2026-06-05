@@ -107,6 +107,15 @@ const typeColor: Record<string, string> = {
   nav: "bg-[#465FFF]/10 text-[#465FFF]",
 };
 
+function formatNotificationTime(createdAt: string, nowMs: number, locale: string) {
+  if (!nowMs) return "";
+
+  return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(
+    Math.round((new Date(createdAt).getTime() - nowMs) / (1000 * 60 * 60)),
+    "hour"
+  );
+}
+
 export function Topbar() {
   const router = useRouter();
   const t = useTranslations("DemoApp.topbar");
@@ -114,6 +123,7 @@ export function Topbar() {
   const toggleLanguage = useUiStore((state) => state.toggleLanguage);
   const logout = useAuthStore((state) => state.logout);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notificationNow, setNotificationNow] = useState(0);
   
   const queryClient = useQueryClient();
   const token = useAuthStore((s) => s.token);
@@ -144,8 +154,10 @@ export function Topbar() {
         const data = JSON.parse(event.data);
         if (data.type === "new_notification") {
           queryClient.invalidateQueries({ queryKey: ["notifications"] });
+        } else if (data.type === "dashboard_update") {
+          queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
         }
-      } catch (e) {}
+      } catch {}
     };
 
     return () => {
@@ -190,6 +202,11 @@ export function Topbar() {
     setSearchOpen(false);
     setSearchQuery("");
     router.push(href);
+  };
+
+  const handleNotificationsOpenChange = (open: boolean) => {
+    setNotificationsOpen(open);
+    if (open) setNotificationNow(Date.now());
   };
 
   const handleLogout = async () => {
@@ -267,7 +284,7 @@ export function Topbar() {
             {language.toUpperCase()}
           </span>
         </button>
-        <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+        <Popover open={notificationsOpen} onOpenChange={handleNotificationsOpenChange}>
           <PopoverTrigger
             type="button"
             className="relative inline-flex h-10 w-10 items-center justify-center rounded-[10px] text-(--text) transition hover:bg-slate-100 hover:text-[#465FFF]"
@@ -294,7 +311,8 @@ export function Topbar() {
                 {notifData.length === 0 ? (
                   <div className="py-8 text-center text-sm font-semibold text-slate-400">Belum ada notifikasi</div>
                 ) : notifData.map((notification: AppNotification) => {
-                  const tone = notification.type === "alert_created" ? "red" : notification.type === "report_ready" ? "green" : "blue";
+                  const dotTone = notification.type === "alert_created" ? "red" : notification.type === "report_ready" ? "green" : "blue";
+                  const badgeVariant = notification.type === "alert_created" ? "red" : notification.type === "report_ready" ? "green" : "default";
                   const badgeText = notification.type === "alert_created" ? "Alert" : "Info";
                   return (
                   <Link
@@ -306,20 +324,17 @@ export function Topbar() {
                     }}
                     className={`group grid grid-cols-[10px_1fr_auto] gap-3 rounded-[14px] p-3 transition hover:bg-slate-50 ${notification.isRead ? 'opacity-60' : ''}`}
                   >
-                    <span className={`mt-2 h-2.5 w-2.5 rounded-full ${notificationToneClass[tone as keyof typeof notificationToneClass]}`} />
+                    <span className={`mt-2 h-2.5 w-2.5 rounded-full ${notificationToneClass[dotTone]}`} />
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-black text-slate-950 group-hover:text-[#465FFF]">{notification.title}</span>
                       <span className="mt-1 block text-xs font-semibold text-slate-500 line-clamp-2">{notification.message}</span>
                     </span>
                     <span className="shrink-0 text-right">
-                      <Badge variant={tone as any} className="rounded-full text-[10px] font-black">
+                      <Badge variant={badgeVariant} className="rounded-full text-[10px] font-black">
                         {badgeText}
                       </Badge>
                         <span className="mt-2 block text-[11px] font-bold text-slate-400">
-                          {new Intl.RelativeTimeFormat(language === "id" ? "id" : "en", { numeric: "auto" }).format(
-                            Math.round((new Date(notification.createdAt).getTime() - Date.now()) / (1000 * 60 * 60)),
-                            "hour"
-                          )}
+                          {formatNotificationTime(notification.createdAt, notificationNow, language === "id" ? "id" : "en")}
                         </span>
                     </span>
                   </Link>

@@ -161,7 +161,7 @@ router.post("/", validateRequest({ body: createReportBodySchema }), async (req, 
         });
         return res.status(201).json(report);
     } catch (error) {
-        console.error("Error generating report:", error);
+        logStructured("error", "Error generating report:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -204,7 +204,7 @@ router.get("/", async (req, res) => {
             }
         });
     } catch (error) {
-        console.error("Error fetching reports:", error);
+        logStructured("error", "Error fetching reports:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -242,7 +242,7 @@ router.post("/generate", async (req, res) => {
 
         return res.status(201).json(report);
     } catch (error) {
-        console.error("Error generating report:", error);
+        logStructured("error", "Error generating report:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -317,7 +317,7 @@ router.post("/:id/export", validateRequest({ params: reportIdParamsSchema, body:
 
         return res.status(202).json({ message: "Export job created", jobId: exportJob.id });
     } catch (error) {
-        console.error("Error creating export job:", error);
+        logStructured("error", "Error creating export job:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -348,7 +348,7 @@ router.get("/exports/:jobId", async (req, res) => {
             expiresAt: job.expiresAt,
         });
     } catch (error) {
-        console.error("Error fetching export job:", error);
+        logStructured("error", "Error fetching export job:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -379,7 +379,7 @@ router.get("/exports/:jobId/download", async (req, res) => {
         res.setHeader("Content-Disposition", `attachment; filename="${job.fileName || `report-export-${job.id}.${job.format}`}"`);
         return res.json(resolved.payload);
     } catch (error) {
-        console.error("Error downloading export file:", error);
+        logStructured("error", "Error downloading export file:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -404,7 +404,7 @@ router.get("/:id", async (req, res) => {
 
         return res.json({ ...fullReport, id: report.id, createdAt: report.createdAt });
     } catch (error) {
-        console.error("Error fetching report:", error);
+        logStructured("error", "Error fetching report:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -439,7 +439,7 @@ router.get("/:id/export/json", async (req, res) => {
         res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
         return res.json(exportData);
     } catch (error) {
-        console.error("Error exporting report JSON:", error);
+        logStructured("error", "Error exporting report JSON:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -464,7 +464,7 @@ router.get("/:id/export/pdf", async (req, res) => {
 
         return res.json(buildPdfData(fullReport, report.id));
     } catch (error) {
-        console.error("Error exporting PDF-ready data:", error);
+        logStructured("error", "Error exporting PDF-ready data:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -491,7 +491,7 @@ router.post("/:id/send-email", async (req, res) => {
 
         return res.json(result);
     } catch (error) {
-        console.error("Error sending report email:", error);
+        logStructured("error", "Error sending report email:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
     }
 });

@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCases, updateCase, deleteCase, createCase, type CaseRecord } from "@/lib/api-service";
-import { Plus, Search, MoreVertical, Trash2, Edit2, AlertCircle } from "lucide-react";
+import { getCases, updateCase, deleteCase } from "@/lib/api-service";
+import { Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DashboardErrorState, DashboardEmptyState, DashboardPagination } from "@/components/dashboard/dashboard-states";
 import { useToast } from "@/components/ui/toast";
-import { useUiStore } from "@/store/useUiStore";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
 export default function CasesPage() {
@@ -18,7 +17,6 @@ export default function CasesPage() {
   
   const queryClient = useQueryClient();
   const { success, error } = useToast();
-  const language = useUiStore((s) => s.language);
 
   const casesQuery = useQuery({
     queryKey: ["cases", { page, status: statusFilter, priority: priorityFilter }],

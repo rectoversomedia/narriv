@@ -36,7 +36,7 @@ export const addAnalysisJob = async (signalId) => {
             logStructured("info", "queue_job_duplicate_skipped", { queue: "ai-analysis", signalId });
         }
     } catch (error) {
-        console.error(`[QUEUE] Failed to add job for signal ${signalId}:`, error.message);
+        logStructured("error", `[QUEUE] Failed to add job for signal ${signalId}:`, { error: error.message?.message || error.message, stack: error.message?.stack });
     }
 };
 
@@ -73,7 +73,7 @@ export const scheduleAlertDetection = async () => {
         );
         logStructured("info", "queue_alert_detection_scheduled", { interval: "15min" });
     } catch (error) {
-        console.error("[QUEUE] Failed to schedule alert detection:", error.message);
+        logStructured("error", "[QUEUE] Failed to schedule alert detection:", { error: error.message?.message || error.message, stack: error.message?.stack });
     }
 };
 
@@ -102,7 +102,7 @@ export const addIngestionJob = async (jobId, sourceId) => {
         );
             logStructured("info", "queue_ingestion_enqueued", { queue: "ingestion", jobId });
     } catch (error) {
-        console.error(`[QUEUE] Failed to add ingestion job ${jobId}:`, error.message);
+        logStructured("error", `[QUEUE] Failed to add ingestion job ${jobId}:`, { error: error.message?.message || error.message, stack: error.message?.stack });
     }
 };
 
@@ -124,7 +124,7 @@ export const scheduleAlertEscalation = async () => {
         );
         logStructured("info", "queue_alert_escalation_scheduled", { interval: "10min" });
     } catch (error) {
-        console.error("[QUEUE] Failed to schedule alert escalation:", error.message);
+        logStructured("error", "[QUEUE] Failed to schedule alert escalation:", { error: error.message?.message || error.message, stack: error.message?.stack });
     }
 };
 
@@ -144,7 +144,7 @@ export const cancelIngestionQueueJob = async (ingestionJobId) => {
         await job.remove();
         return { removed: true, reason: "job_removed_from_queue" };
     } catch (error) {
-        console.error(`[QUEUE] Failed to cancel ingestion job ${ingestionJobId}:`, error.message);
+        logStructured("error", `[QUEUE] Failed to cancel ingestion job ${ingestionJobId}:`, { error: error.message?.message || error.message, stack: error.message?.stack });
         return { removed: false, reason: error.message || "cancel_failed" };
     }
 };
@@ -191,7 +191,7 @@ export const addNotificationJob = async (eventName, payload, options = {}) => {
             logStructured("info", "queue_notification_duplicate_skipped", { eventName });
         }
     } catch (error) {
-        console.error(`[QUEUE] Failed to add notification job (${eventName}):`, error.message);
+        logStructured("error", `[QUEUE] Failed to add notification job (${eventName}):`, { error: error.message?.message || error.message, stack: error.message?.stack });
     }
 };
 
@@ -222,7 +222,7 @@ export const addVisibilityScanJob = async (workspaceId, scanConfig) => {
         logStructured("info", "queue_visibility_scan_enqueued", { workspaceId, jobId: job?.id });
         return job?.id || null;
     } catch (error) {
-        console.error(`[QUEUE] Failed to add visibility scan job:`, error.message);
+        logStructured("error", `[QUEUE] Failed to add visibility scan job:`, { error: error.message?.message || error.message, stack: error.message?.stack });
         return null;
     }
 };
@@ -244,6 +244,6 @@ export const scheduleVisibilityScans = async () => {
         );
         logStructured("info", "queue_visibility_scan_scheduled", { interval: "daily-2am" });
     } catch (error) {
-        console.error("[QUEUE] Failed to schedule visibility scans:", error.message);
+        logStructured("error", "[QUEUE] Failed to schedule visibility scans:", { error: error.message?.message || error.message, stack: error.message?.stack });
     }
 };

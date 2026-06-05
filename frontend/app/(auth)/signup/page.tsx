@@ -10,7 +10,6 @@ import { useState } from "react";
 import { AuthInput, AuthShell, Divider, PasswordInput, PasswordRequirements, PrimaryButton, SecurityFooter, SocialButtons } from "@/components/auth/auth-shell";
 import { Field, FieldContent, FieldError, FieldGroup } from "@/components/ui/field";
 import { registerWithPassword } from "@/lib/api-service";
-import { useAuthStore } from "@/store/useAuthStore";
 
 type SignupFormValues = {
   name: string;
@@ -24,7 +23,6 @@ type SignupFormValues = {
 export default function SignupPage() {
   const router = useRouter();
   const t = useTranslations("AuthDesign.signup");
-  const setSession = useAuthStore((state) => state.setSession);
   const [apiError, setApiError] = useState<string | null>(null);
   const signupSchema = z.object({
     name: z.string().min(2, { message: t("errors.nameTooShort") }),
@@ -53,8 +51,14 @@ export default function SignupPage() {
 
     try {
       const json = await registerWithPassword({ name: data.name, email: data.email, password: data.password });
-      setSession(json.token, { name: json.user.name, email: json.user.email, provider: "password", workspace: data.company || "Narriv" }, json.refreshToken);
-      router.push("/");
+      
+      // Store email temporarily for verify page
+      sessionStorage.setItem("narriv_verify_email", json.email);
+      if (json.verificationCode) {
+        sessionStorage.setItem("narriv_dev_verification_code", json.verificationCode);
+      }
+      
+      router.push("/verify-email");
     } catch (error) {
       const status = (error as { status?: number }).status;
       if (status) {
@@ -64,8 +68,6 @@ export default function SignupPage() {
       setApiError(t("errors.backendUnavailable"));
     }
   };
-
-  const showUnavailable = () => setApiError(t("errors.socialUnavailable"));
 
   return (
     <AuthShell
@@ -111,7 +113,7 @@ export default function SignupPage() {
 
       <div className="mt-7 grid gap-6">
         <Divider label={t("divider")} />
-        <SocialButtons onClick={showUnavailable} />
+        <SocialButtons />
       </div>
 
       <div className="mt-10">

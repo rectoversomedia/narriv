@@ -106,7 +106,7 @@ router.get("/", async (req, res) => {
             }
         });
     } catch (error) {
-        console.error("Error fetching narratives:", error);
+        logStructured("error", "Error fetching narratives:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -135,7 +135,7 @@ router.get("/compare", async (req, res) => {
 
         return res.json(result);
     } catch (error) {
-        console.error("Error comparing clusters:", error);
+        logStructured("error", "Error comparing clusters:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -206,7 +206,7 @@ router.get("/:id", async (req, res) => {
             relatedSignals
         });
     } catch (error) {
-        console.error("Error fetching narrative:", error);
+        logStructured("error", "Error fetching narrative:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
     }
 });

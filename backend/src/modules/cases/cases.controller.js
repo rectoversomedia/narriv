@@ -33,7 +33,7 @@ export async function listCases(req, res) {
             meta: { page, limit, total, totalPages },
         });
     } catch (error) {
-        console.error("Error listing cases:", error);
+        logStructured("error", "Error listing cases:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }
@@ -55,7 +55,7 @@ export async function getCase(req, res) {
 
         return res.json(caseRecord);
     } catch (error) {
-        console.error("Error getting case:", error);
+        logStructured("error", "Error getting case:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }
@@ -93,7 +93,7 @@ export async function createCase(req, res) {
 
         return res.status(201).json(caseRecord);
     } catch (error) {
-        console.error("Error creating case:", error);
+        logStructured("error", "Error creating case:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }
@@ -131,7 +131,7 @@ export async function updateCase(req, res) {
 
         return res.json(updated);
     } catch (error) {
-        console.error("Error updating case:", error);
+        logStructured("error", "Error updating case:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }
@@ -163,7 +163,7 @@ export async function deleteCase(req, res) {
 
         return res.json({ success: true });
     } catch (error) {
-        console.error("Error deleting case:", error);
+        logStructured("error", "Error deleting case:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }

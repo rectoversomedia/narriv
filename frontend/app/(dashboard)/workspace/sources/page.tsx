@@ -33,7 +33,7 @@ import { Instagram, XDark, YouTube } from "@ridemountainpig/svgl-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
-import { getSources, updateSource, deleteSource, runSourceIngestion, type SourceRecord } from "@/lib/api-service";
+import { getSources, updateSource, runSourceIngestion, type SourceRecord } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate" | "pink" | "black" | "orange";
@@ -264,14 +264,6 @@ export default function SourcesPage() {
     onError: () => showToast("Sinkronisasi belum bisa dimulai. Coba lagi.", "error"),
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (sourceId: string) => deleteSource(sourceId),
-    onSuccess: async (result) => {
-      await queryClient.invalidateQueries({ queryKey: ["sources"] });
-      showToast(result ? "Sumber berhasil dihapus." : "Sumber belum bisa dihapus.", result ? "success" : "error");
-    },
-    onError: () => showToast("Sumber belum bisa dihapus. Coba lagi.", "error"),
-  });
   const liveConnectors = sourcesQuery.data?.data ? buildApiConnectors(sourcesQuery.data.data) : [];
   const isLiveUnavailable = sourcesQuery.data === null;
   const items = liveConnectors.length > 0 || sourcesQuery.data ? liveConnectors : connectorsSeed;

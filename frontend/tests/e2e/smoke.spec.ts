@@ -29,5 +29,4 @@ test("login page renders the primary authentication controls", async ({ page }) 
   await expect(page.getByPlaceholder("name@company.com")).toBeVisible();
   await expect(page.getByPlaceholder(/password|kata sandi/i)).toBeVisible();
   await expect(page.getByRole("button", { name: /^sign in$|^masuk$/i })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Continue as Demo" })).toBeVisible();
 });

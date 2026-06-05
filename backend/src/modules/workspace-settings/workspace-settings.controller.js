@@ -33,7 +33,7 @@ export async function getWorkspaceSettings(req, res) {
 
         return res.json(settings);
     } catch (error) {
-        console.error("Error fetching workspace settings:", error);
+        logStructured("error", "Error fetching workspace settings:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }
@@ -83,7 +83,7 @@ export async function updateWorkspaceSettings(req, res) {
 
         return res.json(updated);
     } catch (error) {
-        console.error("Error updating workspace settings:", error);
+        logStructured("error", "Error updating workspace settings:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }
@@ -120,7 +120,7 @@ export async function listWorkspaceMembers(req, res) {
             }))
         });
     } catch (error) {
-        console.error("Error listing workspace members:", error);
+        logStructured("error", "Error listing workspace members:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }
@@ -166,7 +166,7 @@ export async function createWorkspaceMember(req, res) {
 
         return res.status(201).json({ ...member, user });
     } catch (error) {
-        console.error("Error creating workspace member:", error);
+        logStructured("error", "Error creating workspace member:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }
@@ -192,7 +192,7 @@ export async function deleteWorkspaceMember(req, res) {
         await prisma.workspaceMember.delete({ where: { id: member.id } });
         return res.json({ success: true });
     } catch (error) {
-        console.error("Error deleting workspace member:", error);
+        logStructured("error", "Error deleting workspace member:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }
@@ -278,7 +278,7 @@ export async function deleteWorkspace(req, res) {
 
         return res.json({ success: true, workspaceId: scopedWorkspaceId });
     } catch (error) {
-        console.error("Error deleting workspace:", error);
+        logStructured("error", "Error deleting workspace:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }

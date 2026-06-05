@@ -38,7 +38,7 @@ export const triggerIngestion = async (req, res) => {
     // --- BACKGROUND PROCESSING ---
     await addIngestionJob(job.id, source.id);
   } catch (error) {
-    console.error("Error triggering ingestion:", error);
+    logStructured("error", "Error triggering ingestion:", { error: error?.message || error, stack: error?.stack });
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -57,7 +57,7 @@ export const getIngestionStatus = async (req, res) => {
 
         res.json({ status: job.status, errorMessage: job.errorMessage });
     } catch (error) {
-        console.error("Error fetching job status:", error);
+        logStructured("error", "Error fetching job status:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 };
@@ -110,7 +110,7 @@ export const cancelIngestion = async (req, res) => {
             queue: queueCancelResult,
         });
     } catch (error) {
-        console.error("Error cancelling ingestion job:", error);
+        logStructured("error", "Error cancelling ingestion job:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 };

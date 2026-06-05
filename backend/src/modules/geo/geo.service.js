@@ -117,7 +117,7 @@ function calculateVisibilityScore(responses, brandName) {
  */
 async function queryAIEngine(engineName, queries) {
     if (!OPENAI_API_KEY) {
-        console.warn("[GEO] No OPENAI_API_KEY set. Returning mock responses.");
+        logStructured("warn", "[GEO] No OPENAI_API_KEY set. Returning mock responses.");
         return queries.map(q => ({
             query: q,
             response: `Mock response for: ${q}. This is placeholder text for development.`

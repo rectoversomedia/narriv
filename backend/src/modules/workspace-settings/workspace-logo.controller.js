@@ -55,10 +55,10 @@ export async function uploadWorkspaceLogo(req, res) {
         // Update workspace settings with logo URL
         await prisma.workspaceSettings.upsert({
             where: { workspaceId: scopedWorkspaceId },
-            update: { brandName: req.body.brandName || undefined },
+            update: { logoUrl },
             create: {
                 workspaceId: scopedWorkspaceId,
-                brandName: req.body.brandName || null,
+                logoUrl,
             },
         });
 
@@ -78,7 +78,7 @@ export async function uploadWorkspaceLogo(req, res) {
 
         return res.json({ url: logoUrl, fileName: uniqueName });
     } catch (error) {
-        console.error("Error uploading workspace logo:", error);
+        logStructured("error", "Error uploading workspace logo:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }

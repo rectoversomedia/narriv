@@ -41,6 +41,47 @@ function baseLayout(bodyHtml) {
 </html>`;
 }
 
+/**
+ * @param {object} opts
+ * @param {string} opts.name       - User display name (fallback: "there").
+ * @param {string} opts.code       - 6-digit verification code.
+ * @param {number} opts.expiresInMinutes - TTL for the code.
+ * @returns {{ subject: string, html: string, text: string }}
+ */
+export function emailVerificationCode({ name, code, expiresInMinutes = 10 }) {
+    const greeting = name ? name.split(" ")[0] : "there";
+
+    const html = baseLayout(`
+    <p>Hi ${greeting},</p>
+    <p>Welcome to ${APP_NAME}! Use the code below to verify your email address:</p>
+    <div class="code-box">
+      <div class="code">${code}</div>
+    </div>
+    <p class="muted">This code expires in <strong>${expiresInMinutes} minutes</strong>.</p>
+    <p class="muted">If you didn't create an account, you can safely ignore this email.</p>
+  `);
+
+    const text = [
+        `Hi ${greeting},`,
+        "",
+        `Welcome to ${APP_NAME}!`,
+        "",
+        `Your email verification code: ${code}`,
+        "",
+        `This code expires in ${expiresInMinutes} minutes.`,
+        "",
+        "If you didn't create an account, you can safely ignore this email.",
+        "",
+        `-- ${APP_NAME}`,
+    ].join("\n");
+
+    return {
+        subject: `${code} is your ${APP_NAME} verification code`,
+        html,
+        text,
+    };
+}
+
 /* ------------------------------------------------------------------ */
 /*  Password Reset Code                                                */
 /* ------------------------------------------------------------------ */

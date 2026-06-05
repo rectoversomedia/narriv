@@ -1,7 +1,8 @@
 import { EventEmitter } from "events";
 
-class NotificationEmitter extends EventEmitter {}
+class AppEventEmitter extends EventEmitter {}
 
-export const notificationEvents = new NotificationEmitter();
+export const globalEvents = new AppEventEmitter();
+export const notificationEvents = globalEvents;
 // Increase limit if many clients connect
-notificationEvents.setMaxListeners(1000);
+globalEvents.setMaxListeners(1000);

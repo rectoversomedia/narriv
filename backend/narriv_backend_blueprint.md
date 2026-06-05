@@ -175,6 +175,12 @@ Report ──1:N──▶ ReportExport
 | `POST` | `/auth/forgot-password` | ❌ | Generate password reset code for registered email |
 | `POST` | `/auth/verify-reset-code` | ❌ | Verify 6-digit reset code and issue reset token |
 | `POST` | `/auth/reset-password` | ❌ | Set new password using verified reset token |
+| `POST` | `/auth/verify-email` | ❌ | Verify 6-digit email registration code |
+| `POST` | `/auth/resend-verification` | ❌ | Resend 6-digit email registration code |
+| `GET` | `/auth/google` | ❌ | Initiate Google OAuth2 flow |
+| `GET` | `/auth/google/callback` | ❌ | Handle Google OAuth2 callback |
+| `GET` | `/auth/microsoft` | ❌ | Initiate Microsoft OAuth2 flow |
+| `GET` | `/auth/microsoft/callback` | ❌ | Handle Microsoft OAuth2 callback |
 | `POST` | `/auth/change-password` | ✅ | Update password |
 
 ### 5.3 Protected API Routes
@@ -258,7 +264,7 @@ Report ──1:N──▶ ReportExport
 | `PATCH` | `/api/workspace/integrations/:id` | Integrations | Update integration |
 | `DELETE` | `/api/workspace/integrations/:id` | Integrations | Disconnect integration |
 | `GET` | `/api/notifications` | Notifications | List in-app notifications |
-| `GET` | `/api/notifications/stream` | Notifications | SSE stream for real-time notifications |
+| `GET` | `/api/notifications/stream` | Notifications | SSE stream for real-time notifications and dashboard KPI updates |
 | `PATCH` | `/api/notifications/read-all` | Notifications | Mark all notifications as read |
 | `PATCH` | `/api/notifications/:id/read` | Notifications | Mark single notification as read |
 | `DELETE` | `/api/workspace` | Workspace | Delete workspace |
@@ -351,7 +357,7 @@ Report ──1:N──▶ ReportExport
 | Frontend Page | Intended Endpoints | Current Frontend Usage |
 |---|---|---|
 | **Login** (`/login`) | `POST /auth/login` | ✅ Wired — fully integrated |
-| **Signup** (`/signup`) | `POST /auth/register` | ✅ Wired — direct `fetch` |
+| **Signup** (`/signup`, `/verify-email`) | `POST /auth/register`, `POST /auth/verify-email`, `POST /auth/resend-verification` | ✅ Wired — Ky-backed registration, email verification, and code resend |
 | **Dashboard Home** (`/`) | `GET /api/dashboard/summary` | ✅ Wired — `useQuery` with time range, fully unmocked (KPIs, trends, sentiment, sources, topics, system status) |
 | **Signals** (`/signals`) | `GET /signals`, `GET /signals/meta` | ✅ Wired — `useQuery` with pagination & `getSignalsMeta` for fully unmocked sidebar panels |
 | **Alerts** (`/alerts`) | `GET /api/alerts`, `PATCH /api/alerts/:id/status` | ✅ Wired — `useQuery` + `useMutation` for status change + assignment dropdown |
@@ -364,10 +370,10 @@ Report ──1:N──▶ ReportExport
 | **Settings** (`/workspace/settings`) | `GET/PATCH /api/workspace/settings`, `GET/POST/DELETE /api/workspace/members`, `POST /auth/change-password` | ✅ Wired — `useMutation` for settings, invite (API), delete member (API), change password |
 | **Route Protection** | N/A | ✅ `proxy.ts` checks `narriv-authenticated` cookie, redirects unauthenticated users |
 | **Logout** | `POST /auth/logout` | ✅ Wired — revokes refresh token via API before clearing local state |
-| **Activity** (`/workspace/activity`) | No endpoint | ❌ No frontend route exists |
+| **Activity** (`/workspace/activity`) | `GET /api/workspace/activity` | ✅ Wired — frontend route renders real audit log data with filters and pagination |
 | **Cases** (`/workspace/cases`) | `GET/POST/PATCH/DELETE /api/workspace/cases` | ✅ Wired — UI built with `useQuery`/`useMutation` |
-| **Integrations** (`/workspace/integrations`) | No endpoint | ❌ No frontend route exists |
-| **Onboarding** (`/onboarding`) | No endpoint | ❌ UI-only |
+| **Integrations** (`/workspace/integrations`) | `GET/POST/PATCH/DELETE /api/workspace/integrations` | ✅ Wired — frontend route supports create, filter, inline status update, and disconnect |
+| **Onboarding** (`/onboarding`) | `POST /api/onboarding/workspace`, `POST /api/onboarding/sources`, `POST /api/onboarding/notifications`, `POST /api/onboarding/team` | ✅ Wired — onboarding wizard saves setup data to backend |
 | **Reset Password** (`/reset-password`, `/verify-code`, `/new-password`) | `POST /auth/forgot-password`, `POST /auth/verify-reset-code`, `POST /auth/reset-password` | ✅ Wired — Ky-backed reset request, code verification, reset token, and new password submission |
 
 ---

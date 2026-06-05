@@ -66,6 +66,26 @@ export const verifyResetCodeBodySchema = z.object({
         .regex(/^\d{6}$/, "code must be a 6-digit code."),
 });
 
+export const verifyEmailBodySchema = z.object({
+    email: z
+        .string({ required_error: "Email is required." })
+        .trim()
+        .min(1, "Email is required.")
+        .email("Email format is invalid."),
+    code: z
+        .string({ required_error: "code is required." })
+        .trim()
+        .regex(/^\d{6}$/, "code must be a 6-digit code."),
+});
+
+export const resendVerificationBodySchema = z.object({
+    email: z
+        .string({ required_error: "Email is required." })
+        .trim()
+        .min(1, "Email is required.")
+        .email("Email format is invalid."),
+});
+
 export const resetPasswordBodySchema = z.object({
     resetToken: z
         .string({ required_error: "resetToken is required." })

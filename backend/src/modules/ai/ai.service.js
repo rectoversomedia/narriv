@@ -6,7 +6,7 @@ import { incrementAIFailure } from "../../lib/metrics.js";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 if (!OPENAI_API_KEY) {
-    console.warn("[AI SERVICE] WARNING: OPENAI_API_KEY is not set. AI features will be disabled.");
+    logStructured("warn", "[AI SERVICE] WARNING: OPENAI_API_KEY is not set. AI features will be disabled.");
 }
 
 // Initialize the OpenAI client
@@ -235,9 +235,9 @@ export const analyzeSignal = async (title, content) => {
     } else {
         // ── Attempt 2 (RETRY) ───────────────────────────────────────────────
         // Send the bad response back and ask OpenAI to self-correct
-        console.warn(`[AI] Attempt 1 produced invalid JSON — retrying with correction prompt.`);
-        console.warn(`[AI] Parse error: ${attempt1.error}`);
-        console.warn(`[AI] Raw response: ${rawContent.substring(0, 200)}`);
+        logStructured("warn", `[AI] Attempt 1 produced invalid JSON — retrying with correction prompt.`);
+        logStructured("warn", `[AI] Parse error: ${attempt1.error}`);
+        logStructured("warn", `[AI] Raw response: ${rawContent.substring(0, 200)}`);
 
         const correctionMessages = [
             ...messages,
@@ -287,7 +287,7 @@ export const analyzeText = async (text) => {
  */
 export const enhanceAlert = async (alertData, signalsContext) => {
     if (!OPENAI_API_KEY) {
-        console.warn("[AI] Cannot enhance alert: Missing API key.");
+        logStructured("warn", "[AI] Cannot enhance alert: Missing API key.");
         return { whyItMatters: null, whatToDo: null };
     }
 
@@ -328,11 +328,11 @@ export const enhanceAlert = async (alertData, signalsContext) => {
                     whatToDo: parsedRetry.data.what_to_do || null
                 };
             }
-            console.warn(`[AI] enhanceAlert failed to parse JSON after retry.`);
+            logStructured("warn", `[AI] enhanceAlert failed to parse JSON after retry.`);
             return { whyItMatters: null, whatToDo: null };
         }
     } catch (error) {
-        console.error(`[AI] enhanceAlert error:`, error.message);
+        logStructured("error", `[AI] enhanceAlert error:`, { error: error.message?.message || error.message, stack: error.message?.stack });
         return { whyItMatters: null, whatToDo: null };
     }
 };
@@ -345,7 +345,7 @@ export const enhanceAlert = async (alertData, signalsContext) => {
  */
 export const analyzeCluster = async (signalsContext) => {
     if (!OPENAI_API_KEY) {
-        console.warn("[AI] Cannot analyze cluster: Missing API key.");
+        logStructured("warn", "[AI] Cannot analyze cluster: Missing API key.");
         return null;
     }
 
@@ -380,11 +380,11 @@ export const analyzeCluster = async (signalsContext) => {
             if (parsedRetry.ok && parsedRetry.data) {
                  return parsedRetry.data;
             }
-            console.warn(`[AI] analyzeCluster failed to parse JSON after retry.`);
+            logStructured("warn", `[AI] analyzeCluster failed to parse JSON after retry.`);
             return null;
         }
     } catch (error) {
-        console.error(`[AI] analyzeCluster error:`, error.message);
+        logStructured("error", `[AI] analyzeCluster error:`, { error: error.message?.message || error.message, stack: error.message?.stack });
         return null;
     }
 };

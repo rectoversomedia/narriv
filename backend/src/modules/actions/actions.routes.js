@@ -51,7 +51,7 @@ router.post("/", validateRequest({ body: createActionPlanBodySchema }), async (r
 
         res.status(201).json(plan);
     } catch (error) {
-        console.error("Error generating action plan:", error);
+        logStructured("error", "Error generating action plan:", { error: error?.message || error, stack: error?.stack });
         if (error?.message === "Alert not found" || error?.message === "Narrative cluster not found") {
             return notFound(res, error.message, "TARGET_NOT_FOUND");
         }
@@ -103,7 +103,7 @@ router.get("/", async (req, res) => {
             meta: { page: safePage, limit: safeLimit, total }
         });
     } catch (error) {
-        console.error("Error fetching action plans:", error);
+        logStructured("error", "Error fetching action plans:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -146,7 +146,7 @@ router.get("/:id", async (req, res) => {
             generatedAssets: plan.generatedAssets
         });
     } catch (error) {
-        console.error("Error fetching action plan:", error);
+        logStructured("error", "Error fetching action plan:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -193,7 +193,7 @@ router.post("/multi-step", async (req, res) => {
 
         res.status(201).json(plan);
     } catch (error) {
-        console.error("Error generating multi-step plan:", error);
+        logStructured("error", "Error generating multi-step plan:", { error: error?.message || error, stack: error?.stack });
         return internalError(res, "Failed to generate multi-step plan", "MULTI_STEP_GENERATION_FAILED", {
             reason: error?.message || "Unknown error",
         });

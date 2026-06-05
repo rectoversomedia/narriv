@@ -276,6 +276,8 @@
       "reports": "Reports",
       "actionCenter": "Action Center",
       "dataSources": "Data Sources",
+      "integrations": "Integrations",
+      "activity": "Activity Log",
       "settings": "Settings",
       "scoreTitle": "Narriv Intelligence Score",
       "good": "Good",
@@ -1165,6 +1167,8 @@
       "reports": "Reports",
       "actionCenter": "Action Center",
       "dataSources": "Data Sources",
+      "integrations": "Integrations",
+      "activity": "Activity Log",
       "settings": "Settings"
     },
     "sidebar": {

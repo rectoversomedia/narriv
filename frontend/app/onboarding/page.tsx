@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { useState, useEffect, startTransition, type ReactNode } from "react";
+import { useState, useEffect, startTransition, useRef, type ChangeEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { createContext, useContext } from "react";
 import { createOnboardingWorkspace, createOnboardingSources, createOnboardingNotifications, createOnboardingTeam } from "@/lib/api-service";
@@ -57,12 +57,14 @@ type OnboardingFormData = {
   team: Array<{ email: string; role: string }>;
 };
 
-const OnboardingContext = createContext<{
+type OnboardingContextValue = {
   formData: OnboardingFormData;
-  updateForm: (section: keyof OnboardingFormData, data: any) => void;
+  updateForm: <K extends keyof OnboardingFormData>(section: K, data: OnboardingFormData[K]) => void;
   submitOnboarding: () => Promise<void>;
   isSubmitting: boolean;
-} | null>(null);
+};
+
+const OnboardingContext = createContext<OnboardingContextValue | null>(null);
 
 export function useOnboarding() {
   const ctx = useContext(OnboardingContext);
@@ -103,7 +105,7 @@ export default function OnboardingPage() {
     team: []
   });
 
-  const updateForm = (section: keyof OnboardingFormData, data: any) => {
+  const updateForm: OnboardingContextValue["updateForm"] = (section, data) => {
     setFormData(prev => ({ ...prev, [section]: data }));
   };
 
@@ -400,7 +402,7 @@ function ProfileStep() {
   );
 }
 
-function TextField({ label, value, icon: Icon, onChange }: { label: string; value: string; icon?: LucideIcon; onChange?: (e: any) => void }) {
+function TextField({ label, value, icon: Icon, onChange }: { label: string; value: string; icon?: LucideIcon; onChange?: (event: ChangeEvent<HTMLInputElement>) => void }) {
   return (
     <label className="block">
       <span className="mb-3 block text-[15px] font-bold text-slate-900">{label}</span>
@@ -943,7 +945,12 @@ function PreviewSummary() {
 
 function ProcessingScreen() {
   const { submitOnboarding } = useOnboarding();
-  useEffect(() => { submitOnboarding(); }, []);
+  const didSubmitRef = useRef(false);
+  useEffect(() => {
+    if (didSubmitRef.current) return;
+    didSubmitRef.current = true;
+    submitOnboarding();
+  }, [submitOnboarding]);
 
   const t = useTranslations("OnboardingDesign.processing");
   const items = [[t("mineTitle"), t("mineDesc"), Search], [t("sentimentTitle"), t("sentimentDesc"), ShieldCheck], [t("insightTitle"), t("insightDesc"), BarChart3], [t("alertTitle"), t("alertDesc"), Bell]] as const;

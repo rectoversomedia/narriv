@@ -40,7 +40,7 @@ export async function createOnboardingWorkspace(req, res) {
 
         return res.status(201).json(workspace);
     } catch (error) {
-        console.error("Error creating onboarding workspace:", error);
+        logStructured("error", "Error creating onboarding workspace:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }
@@ -82,7 +82,7 @@ export async function createOnboardingSources(req, res) {
 
         return res.status(201).json({ count: created.count });
     } catch (error) {
-        console.error("Error creating onboarding sources:", error);
+        logStructured("error", "Error creating onboarding sources:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }
@@ -121,7 +121,7 @@ export async function createOnboardingNotifications(req, res) {
 
         return res.json(settings);
     } catch (error) {
-        console.error("Error creating onboarding notifications:", error);
+        logStructured("error", "Error creating onboarding notifications:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }
@@ -183,7 +183,7 @@ export async function createOnboardingTeam(req, res) {
 
         return res.json({ results });
     } catch (error) {
-        console.error("Error creating onboarding team:", error);
+        logStructured("error", "Error creating onboarding team:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }

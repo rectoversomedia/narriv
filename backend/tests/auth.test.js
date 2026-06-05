@@ -17,6 +17,7 @@ jest.unstable_mockModule('../src/middlewares/rate-limit.js', () => ({
 
 const mockUsers = [];
 const mockPasswordResetTokens = [];
+const mockEmailVerificationTokens = [];
 
 function matchesTokenWhere(record, where = {}) {
   if (where.userId && record.userId !== where.userId) return false;
@@ -70,6 +71,36 @@ const mockPrisma = {
     update: jest.fn(async () => ({})),
     updateMany: jest.fn(async () => ({ count: 1 })),
     deleteMany: jest.fn(async () => ({ count: 1 })),
+  },
+
+  emailVerificationToken: {
+    updateMany: jest.fn(async ({ where = {}, data }) => {
+      let count = 0;
+      mockEmailVerificationTokens.forEach((record, index) => {
+        if (matchesTokenWhere(record, where)) {
+          mockEmailVerificationTokens[index] = { ...record, ...data };
+          count += 1;
+        }
+      });
+      return { count };
+    }),
+    create: jest.fn(async ({ data }) => {
+      const token = { id: `evt-${mockEmailVerificationTokens.length + 1}`, createdAt: new Date(), usedAt: null, verifiedAt: null, ...data };
+      mockEmailVerificationTokens.push(token);
+      return token;
+    }),
+    findMany: jest.fn(async ({ where = {}, orderBy, take } = {}) => {
+      const records = mockEmailVerificationTokens
+        .filter((record) => matchesTokenWhere(record, where))
+        .sort((a, b) => orderBy?.createdAt === 'desc' ? b.createdAt - a.createdAt : a.createdAt - b.createdAt);
+      return typeof take === 'number' ? records.slice(0, take) : records;
+    }),
+    update: jest.fn(async ({ where, data }) => {
+      const index = mockEmailVerificationTokens.findIndex((token) => token.id === where.id);
+      if (index === -1) return null;
+      mockEmailVerificationTokens[index] = { ...mockEmailVerificationTokens[index], ...data };
+      return mockEmailVerificationTokens[index];
+    }),
   },
   passwordResetToken: {
     updateMany: jest.fn(async ({ where = {}, data }) => {
@@ -125,6 +156,7 @@ describe('Auth Endpoints', () => {
   beforeEach(() => {
     mockUsers.length = 0; // Clear users array
     mockPasswordResetTokens.length = 0;
+    mockEmailVerificationTokens.length = 0;
     jest.clearAllMocks();
   });
 
@@ -140,10 +172,10 @@ describe('Auth Endpoints', () => {
     if (res.status !== 201) console.log(res.body);
 
     expect(res.status).toBe(201);
-    expect(res.body).toHaveProperty('user');
-    expect(res.body.user.email).toBe('test@example.com');
-    expect(res.body).toHaveProperty('token');
-    expect(res.body).toHaveProperty('refreshToken');
+    expect(res.body).toHaveProperty('requireVerification');
+    expect(res.body.requireVerification).toBe(true);
+    expect(res.body).toHaveProperty('email');
+    expect(res.body.email).toBe('test@example.com');
   });
 
   it('should login an existing user', async () => {
@@ -152,6 +184,7 @@ describe('Auth Endpoints', () => {
       id: 'u1',
       email: 'test@example.com',
       password: hashedPassword,
+      emailVerified: new Date(),
       failedLoginAttempts: 0,
       lockedUntil: null
     });
@@ -175,6 +208,7 @@ describe('Auth Endpoints', () => {
       id: 'u2',
       email: 'lockout@example.com',
       password: hashedPassword,
+      emailVerified: new Date(),
       failedLoginAttempts: 0,
       lockedUntil: null
     });
@@ -221,6 +255,7 @@ describe('Auth Endpoints', () => {
       id: 'u1',
       email: 'test@example.com',
       password: hashedPassword,
+      emailVerified: new Date(),
       failedLoginAttempts: 0,
       lockedUntil: null
     });
@@ -245,6 +280,7 @@ describe('Auth Endpoints', () => {
       id: 'u1',
       email: 'test@example.com',
       password: hashedPassword,
+      emailVerified: new Date(),
       failedLoginAttempts: 2,
       lockedUntil: new Date(Date.now() + 10000),
     });
@@ -297,7 +333,8 @@ describe('Auth Endpoints', () => {
 
   it('should reject invalid reset codes and tokens', async () => {
     const hashedPassword = await bcrypt.hash('Password123!', 10);
-    mockUsers.push({ id: 'u1', email: 'test@example.com', password: hashedPassword, failedLoginAttempts: 0, lockedUntil: null });
+    mockUsers.push({ id: 'u1', email: 'test@example.com', password: hashedPassword, emailVerified: new Date(),
+      failedLoginAttempts: 0, lockedUntil: null });
 
     await request(app)
       .post('/auth/forgot-password')
