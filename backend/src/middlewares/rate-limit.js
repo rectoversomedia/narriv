@@ -91,7 +91,7 @@ export const RATE_LIMITS = {
     },
     ingestion: {
         windowMs: 60 * 1000, // 1 minute
-        max: 5,
+        max: 10,
         message: "Ingestion rate limit exceeded. Please wait before trying again.",
     },
     feedback: {

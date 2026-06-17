@@ -179,8 +179,7 @@ Report ──1:N──▶ ReportExport
 | `POST` | `/auth/resend-verification` | ❌ | Resend 6-digit email registration code |
 | `GET` | `/auth/google` | ❌ | Initiate Google OAuth2 flow |
 | `GET` | `/auth/google/callback` | ❌ | Handle Google OAuth2 callback |
-| `GET` | `/auth/microsoft` | ❌ | Initiate Microsoft OAuth2 flow |
-| `GET` | `/auth/microsoft/callback` | ❌ | Handle Microsoft OAuth2 callback |
+| `POST` | `/auth/oauth/exchange` | ❌ | Exchange durable one-time OAuth callback code for session tokens |
 | `POST` | `/auth/change-password` | ✅ | Update password |
 
 ### 5.3 Protected API Routes
@@ -198,16 +197,19 @@ Report ──1:N──▶ ReportExport
 | `POST` | `/ai/analyze` | AI | Analyze ad-hoc title/content using OpenAI |
 | `GET` | `/sources` | Sources | List data sources |
 | `POST` | `/sources` | Sources | Create new source |
+| `GET` | `/sources/presets` | Sources | List Apify actor presets and blog/news web-scraper sources from `apify-actor.md` |
+| `POST` | `/sources/bootstrap-defaults` | Sources | Create default Apify actor source presets for a workspace |
 | `PATCH` | `/sources/:sourceId` | Sources | Update source |
 | `DELETE` | `/sources/:sourceId` | Sources | Soft-delete source |
 | `GET` | `/sources/health` | Sources | Get source health status |
 | `GET` | `/sources/coverage` | Sources | Get source coverage metrics |
+| `POST` | `/ingestion/run` | Ingestion | Batch-trigger data collection for active, non-deleted sources |
 | `POST` | `/ingestion/run/:sourceId` | Ingestion | Trigger data collection |
 | `GET` | `/ingestion/status/:jobId` | Ingestion | Check ingestion job status |
 | `POST` | `/ingestion/cancel/:jobId` | Ingestion | Cancel ingestion job |
 | `POST` | `/ingestion/webhook/:sourceId` | Ingestion | Receive webhook payload |
-| `POST` | `/ingestion/rss/:sourceId` | Ingestion | Fetch RSS feed |
 | `GET` | `/api/alerts` | Alerts | List alerts (paginated, filtered) |
+| `GET` | `/api/alerts/summary` | Alerts | Aggregate metrics: total, by_severity, by_status, by_type, 7-day trend delta, and 24h timeline labels/data |
 | `GET` | `/api/alerts/:id` | Alerts | Alert detail |
 | `PATCH` | `/api/alerts/:id/status` | Alerts | Update alert status |
 | `PATCH` | `/api/alerts/:id/assign` | Alerts | Assign alert to PIC/team |
@@ -220,6 +222,7 @@ Report ──1:N──▶ ReportExport
 | `POST` | `/api/reports` | Reports | Generate a new report |
 | `GET` | `/api/reports` | Reports | List reports |
 | `GET` | `/api/reports/templates` | Reports | List available report templates |
+| `GET` | `/api/reports/analytics` | Reports | Aggregate metrics: export format distribution (PDF/JSON), popular report titles, 14-day trend timeline |
 | `POST` | `/api/reports/generate` | Reports | Generate report from template |
 | `POST` | `/api/reports/:id/send-email` | Reports | Send report via email |
 | `GET` | `/api/reports/:id` | Reports | Full report detail |
@@ -233,6 +236,9 @@ Report ──1:N──▶ ReportExport
 | `GET` | `/api/actions` | Actions | List generated actions (paginated) |
 | `GET` | `/api/actions/:id` | Actions | Full generated action plan detail |
 | `GET` | `/api/action-plans` | Action Plans | Get latest action plan detail |
+| `GET` | `/api/action-plans/metrics` | Action Plans | Live action-plan metrics for Action Center KPI cards |
+| `GET` | `/api/action-plans/:id` | Action Plans | Get specific action plan detail; supports multi-step `option.steps` payloads |
+| `GET` | `/api/action-plans/:id/learning` | Action Plans | Feedback-derived learning insights for selected action plan |
 | `PATCH` | `/api/action-plans/:id/assign` | Action Plans | Assign action plan |
 | `POST` | `/api/action-plans/:id/feedback` | Feedback | Submit AI feedback |
 | `POST` | `/api/feedback` | Feedback | Submit generic AI feedback |
@@ -280,7 +286,7 @@ Report ──1:N──▶ ReportExport
 | Auth | `src/modules/auth/` | `auth.routes.js`, `auth.controller.js`, `auth.service.js` |
 | Signals | `src/modules/signals/` | `signals.routes.js`, `signals.controller.js`, `signals.service.js` |
 | Sources | `src/modules/sources/` | `sources.routes.js`, `sources.controller.js` |
-| Ingestion | `src/modules/ingestion/` | `ingestion.routes.js`, `ingestion.controller.js`, `custom-sources.service.js` |
+| Ingestion | `src/modules/ingestion/` | `ingestion.routes.js`, `ingestion.controller.js`, `custom-sources.service.js`, `actor-presets.js` |
 | AI | `src/modules/ai/` | `ai.routes.js`, `ai.service.js` |
 | Dashboard | `src/modules/dashboard/` | `dashboard.routes.js`, `dashboard.controller.js` |
 | Alerts | `src/modules/alerts/` | `alerts.routes.js`, `alerts.controller.js`, `alerts.service.js` |
@@ -335,7 +341,7 @@ Report ──1:N──▶ ReportExport
 
 | Worker | File | Queue | Purpose |
 |--------|------|-------|---------|
-| **Ingestion Worker** | `ingestion.worker.js` (19KB) | `ingestion` | Runs Apify actors, processes raw documents → signals |
+| **Ingestion Worker** | `ingestion.worker.js` (19KB) | `ingestion` | Runs configured Apify actors and normalizes raw documents → signals |
 | **AI Analysis Worker** | `ai-analysis.worker.js` (5KB) | `ai-analysis` | Sends signals to OpenAI for sentiment/impact analysis |
 | **Alert Worker** | `alert.worker.js` (3KB) | `alert-detection` | Detects anomalies from signals → creates alerts |
 | **Notification Worker** | `notification.worker.js` (2KB) | `notifications` | Dispatches alert notifications (email, WhatsApp) |
@@ -358,20 +364,20 @@ Report ──1:N──▶ ReportExport
 |---|---|---|
 | **Login** (`/login`) | `POST /auth/login` | ✅ Wired — fully integrated |
 | **Signup** (`/signup`, `/verify-email`) | `POST /auth/register`, `POST /auth/verify-email`, `POST /auth/resend-verification` | ✅ Wired — Ky-backed registration, email verification, and code resend |
-| **Dashboard Home** (`/`) | `GET /api/dashboard/summary` | ✅ Wired — `useQuery` with time range, fully unmocked (KPIs, trends, sentiment, sources, topics, system status) |
-| **Signals** (`/signals`) | `GET /signals`, `GET /signals/meta` | ✅ Wired — `useQuery` with pagination & `getSignalsMeta` for fully unmocked sidebar panels |
-| **Alerts** (`/alerts`) | `GET /api/alerts`, `PATCH /api/alerts/:id/status` | ✅ Wired — `useQuery` + `useMutation` for status change + assignment dropdown |
+| **Dashboard Home** (`/`) | `GET /api/dashboard/summary` | ✅ Wired — `useQuery` with time range, fully unmocked (KPIs, trends, sentiment, latest signals, top topics from `narrativeCluster`, sources health, system status) |
+| **Signals** (`/signals`) | `GET /signals`, `GET /signals/meta` | ✅ Wired — `useQuery` with pagination & `getSignalsMeta`; metadata now includes live `totalSignals`, `sourceDistribution` (with percentage-based values), `timeline` (24h data), `timelineLabels`, `followUps`, `recommendations`, `investigationQueue`, `metrics` (totalSignals24h, negativeSignals24h, criticalSignals24h), and bilingual `aiSummary` (en/id). Frontend now passes `totalSignals` to SourceDonut for live center total and dynamic conic gradient. TimelineChart uses `timelineLabels` for x-axis. InvestigationQueue links to Cases page via `/cases` redirect. All panels fully bilingual with 80+ translation keys. |
+| **Alerts** (`/alerts`) | `GET /api/alerts`, `PATCH /api/alerts/:id/status`, `GET /api/alerts/summary` | ✅ Wired — `useQuery` + `useMutation` for status change + assignment dropdown; metric cards, source distribution, and timeline now consume `getAlertsSummary()` live aggregates |
 | **Alert Detail** (`/alerts/[id]`) | `GET /api/alerts/:id`, `PATCH /api/alerts/:id/status`, `PATCH /api/alerts/:id/assign` | ✅ Wired — `useQuery` + editable assignment fields + status buttons |
-| **Visibility** (`/visibility`) | `GET /api/visibility` | ✅ Wired — `useQuery` with fallback to mock |
-| **Intelligence** (`/intelligence`) | `GET /api/narratives` | ✅ Wired — `useQuery` with `buildNarrativeClusters` mapping |
-| **Reports** (`/reports`) | `GET /api/reports`, `POST /api/reports/:id/export` | ✅ Wired — `useQuery` + `useMutation` for PDF export with polling |
-| **Action Plans** (`/action-plans`) | `GET /api/action-plans`, `GET /api/actions`, `POST /api/action-plans/:id/feedback` | ✅ Wired — `useQuery` + `useMutation` for feedback (accept/reject) |
-| **Sources** (`/workspace/sources`) | `GET /sources`, `PATCH /sources/:sourceId`, `DELETE /sources/:sourceId`, `POST /ingestion/run/:sourceId` | ✅ Wired — `useQuery` + toggle/sync/delete mutations |
+| **Visibility** (`/visibility`) | `GET /api/visibility`, `GET /api/visibility/summary`, `GET /api/visibility/trends` | ✅ Wired — `useQuery` maps latest visibility, prompts, geo actions, per-engine summary, and trend series with empty-data fallback |
+| **Intelligence** (`/intelligence`) | `GET /api/narratives` | ✅ Wired — `useQuery` with `buildNarrativeClusters` mapping; narrative share donut and lifecycle cards are live-derived from cluster signal counts, velocity, and impact |
+| **Reports** (`/reports`) | `GET /api/reports`, `GET /api/reports/templates`, `GET /api/reports/analytics`, `POST /api/reports/:id/export` | ✅ Wired — `useQuery` + `useMutation` for PDF export with polling; metric cards consume `getReportTemplates()`; format donut, popular templates list, and timeline chart now consume `getReportsAnalytics()` |
+| **Action Plans** (`/action-plans`) | `GET /api/action-plans`, `GET /api/action-plans/:id`, `GET /api/action-plans/metrics`, `GET /api/actions`, `POST /api/actions`, `POST /api/action-plans/:id/feedback`, `GET /api/action-plans/:id/learning`, `GET /api/feedback/accuracy` | ✅ Wired — `useQuery` + `useMutation` for create, queue, detail, metrics, feedback, learning, and performance panels. Static fallback mock logic removed; successful create now invalidates action queue/metrics/latest plan queries. Multi-step plans now render `option.steps` correctly. |
+| **Sources** (`/workspace/sources`) | `GET /sources`, `GET /sources/presets`, `POST /sources/bootstrap-defaults`, `PATCH /sources/:sourceId`, `DELETE /sources/:sourceId`, `GET /sources/health`, `GET /sources/coverage`, `POST /ingestion/run`, `POST /ingestion/run/:sourceId` | ✅ Wired — `useQuery` for sources/health/coverage + toggle/sync/delete mutations + individual sync per source + search by name/category + empty states for charts. Sync All uses `POST /ingestion/run` and frontend chunks batches into 25-source requests to match backend validation. |
 | **Settings** (`/workspace/settings`) | `GET/PATCH /api/workspace/settings`, `GET/POST/DELETE /api/workspace/members`, `POST /auth/change-password` | ✅ Wired — `useMutation` for settings, invite (API), delete member (API), change password |
 | **Route Protection** | N/A | ✅ `proxy.ts` checks `narriv-authenticated` cookie, redirects unauthenticated users |
 | **Logout** | `POST /auth/logout` | ✅ Wired — revokes refresh token via API before clearing local state |
 | **Activity** (`/workspace/activity`) | `GET /api/workspace/activity` | ✅ Wired — frontend route renders real audit log data with filters and pagination |
-| **Cases** (`/workspace/cases`) | `GET/POST/PATCH/DELETE /api/workspace/cases` | ✅ Wired — UI built with `useQuery`/`useMutation` |
+| **Cases** (`/workspace/cases`) | `GET/POST/PATCH/DELETE /api/workspace/cases` | ✅ Wired — UI built with `useQuery`/`useMutation`; sidebar navigation added; `/cases` redirect page |
 | **Integrations** (`/workspace/integrations`) | `GET/POST/PATCH/DELETE /api/workspace/integrations` | ✅ Wired — frontend route supports create, filter, inline status update, and disconnect |
 | **Onboarding** (`/onboarding`) | `POST /api/onboarding/workspace`, `POST /api/onboarding/sources`, `POST /api/onboarding/notifications`, `POST /api/onboarding/team` | ✅ Wired — onboarding wizard saves setup data to backend |
 | **Reset Password** (`/reset-password`, `/verify-code`, `/new-password`) | `POST /auth/forgot-password`, `POST /auth/verify-reset-code`, `POST /auth/reset-password` | ✅ Wired — Ky-backed reset request, code verification, reset token, and new password submission |
@@ -391,6 +397,7 @@ Report ──1:N──▶ ReportExport
 - Runtime health checks (DB, Redis, OpenAI)
 - Metrics tracking for latency and errors
 - CORS configuration for local and production (env-based allowlist)
+- Production server port now honors `PORT` from environment instead of hardcoding `3000`
 - Global error handler with normalized responses
 - Request timeout middleware (30s default, configurable per endpoint)
 - Rate limiting on AI/export/ingestion/auth endpoints
@@ -403,9 +410,14 @@ Report ──1:N──▶ ReportExport
 - Document deduplication checks
 - Worker metrics tracking (success rates, latency)
 - Report templates (Executive Brief, Risk Review, Visibility, Weekly Digest)
-- Custom RSS/webhook source ingestion
+- Custom webhook source ingestion
 - Incremental ingestion support
 - Apify actor documentation
+- Production readiness runbook created at `process/general-plans/references/production-readiness-runbook.md`
+- Backend package scripts include `start`, `prisma:generate`, `prisma:status`, and `prisma:deploy` for VPS/CI operations
+- Apify runtime now accepts both `APIFY_TOKEN` and legacy `APIFY_API_TOKEN`; Docker Compose passes both names, with runtime preferring `APIFY_TOKEN`.
+- Ingestion batch trigger is capped at 25 sources per request to reduce queue flood risk; frontend Sync All chunks larger source lists.
+- Action Plans response builder handles both legacy strategy arrays and multi-step `option.steps` objects; structured error logging is imported in action-plan routes.
 
 ### ✅ Completed API Endpoints
 All frontend-facing backend contracts are implemented and returning data. See the [API Route Map](#5-api-route-map) for the full list (50+ endpoints across 18 modules).
@@ -434,9 +446,10 @@ All frontend-facing backend contracts are implemented and returning data. See th
    - ~~Audit logging exists for alert/action-plan assignment and escalation changes, but is not comprehensive across all mutations~~ ✅ Main mutations covered by audit logging
 
 4. **Contract Gaps**:
-    - List endpoints are mixed: most return `pagination`, while `/api/actions` returns `meta`; frontend `api-service.ts` now models both response shapes explicitly
-    - `/auth/logout` is public and revokes by refresh token body, so docs and clients should not treat it as bearer-token protected
-   - ~~Workspace member invite UI sent `email`/`name` while backend required `userId`~~ ✅ Done for registered-user email lookup; full invite-token/email delivery remains future scope
+     - List endpoints are mixed: most return `pagination`, while `/api/actions` returns `meta`; frontend `api-service.ts` now models both response shapes explicitly
+     - `/auth/logout` is public and revokes by refresh token body, so docs and clients should not treat it as bearer-token protected
+    - ~~Workspace member invite UI sent `email`/`name` while backend required `userId`~~ ✅ Done for registered-user email lookup; full invite-token/email delivery remains future scope
+    - ~~OAuth, source bootstrap, and batch ingestion endpoint mismatches between frontend and backend~~ ✅ Done — frontend now calls `/auth/oauth/exchange`, `/sources/bootstrap-defaults`, and `/ingestion/run`.
 
 5. **Production Gaps**:
    - Database migration baseline not done for existing databases
@@ -472,12 +485,13 @@ Migration safety notes:
 Note: New models (Case, Integration, TokenUsage) are covered by migration `20260602090000_add_case_integration_token_usage`. Run `npx prisma migrate deploy` in production/CI after validating database baseline status.
 
 #### Security
-- [x] Add rate limits to: `POST /api/actions`, `POST /api/reports/:id/export`, `POST /ingestion/run/:sourceId`, `POST /api/feedback`
+- [x] Add rate limits to: `POST /api/actions`, `POST /api/reports/:id/export`, `POST /ingestion/run`, `POST /ingestion/run/:sourceId`, `POST /api/feedback` (Sync All now uses batch endpoint; ingestion limit set to 10/min)
 - [x] Review and finalize CORS production allowlist (replace broad preview settings)
 - [x] Add HTTPS enforcement in production
 - [x] Audit all `verifyToken` usage — ensure no unprotected endpoints leak data
 - [x] Add request body size limits for all POST/PATCH endpoints
 - [x] Add SQL injection protection review (Prisma handles most, verify raw queries)
+- [x] Remove Microsoft OAuth — only Google OAuth2 supported for social login
 
 Security verification notes:
 - Production HTTPS enforcement rejects non-HTTPS requests with `426 HTTPS_REQUIRED`, while allowing reverse-proxy HTTPS via `x-forwarded-proto: https`.
@@ -597,11 +611,14 @@ Optional RLS notes:
 
 #### Ingestion Improvements
 - [x] Document all Apify actor IDs and input schemas for production
+- [x] Add Apify-only source preset catalog from `backend/apify-actor.md` with bootstrap endpoint
 - [x] Add source health monitoring (auto-detect failing sources)
 - [x] Implement incremental ingestion (only fetch new data)
 - [x] Add data deduplication quality checks
 - [x] Add source coverage metrics (how much of the target is covered)
-- [x] Support custom RSS/webhook sources beyond Apify
+- [x] Support custom webhook sources beyond Apify
+- [x] Guard ingestion trigger/webhook/worker paths against inactive or soft-deleted sources; podcast sources without explicit actor IDs now default to podcast presets
+- [x] Cap batch ingestion requests at 25 source IDs and keep frontend Sync All compatible through request chunking
 
 #### Report Generation
 - [x] Implement actual PDF report generation (not just JSON export)
@@ -631,6 +648,7 @@ Optional RLS notes:
 - [x] Containerize with Docker (Dockerfile + docker-compose)
 - [x] Configure environment-specific settings (dev, staging, production)
 - [x] Set up health check for container orchestration
+- [x] Create production readiness runbook covering VPS, DNS, Nginx, SSL, env, migration baseline, storage, backup, monitoring, and QA gates
 - [ ] Configure database backup schedule
 - [x] Set up Redis persistence or managed Redis
 - [ ] Configure auto-scaling rules for workers
@@ -657,6 +675,7 @@ Optional RLS notes:
 
 #### CRUD Tests
 - [x] Test source CRUD lifecycle (create → read → update → soft-delete)
+- [x] Test Apify source presets and default bootstrap endpoint
 - [x] Test ingestion job creation, status tracking, cancellation, and workspace scoping
 - [x] Test alert CRUD (list → detail → status update → assignment)
 - [x] Test action plan generation, listing/detail, assignment, and feedback submission
@@ -685,20 +704,20 @@ Optional RLS notes:
 
 ## Appendix: Frontend Development Status
 
-> Last updated: 2026-05-31
+> Last updated: 2026-06-12
 
 ### ✅ Completed Frontend Work
 
 #### API Wiring (All pages now use `useQuery`/`useMutation` with real API endpoints)
 - [x] Dashboard Home — `getDashboardSummary` with time range filtering
-- [x] Signals — `getSignals` with pagination
-- [x] Alerts — `getAlerts` with pagination + `updateAlertStatus` mutation
+- [x] Signals — `getSignals` with pagination and `getSignalsMeta` for live sidebar/source/timeline panels; `totalSignals` field added to `SignalsMeta` type; `timelineLabels` exposed for x-axis; all panels fully bilingual with empty states; mock fallback data translated
+- [x] Alerts — `getAlerts` with pagination + `updateAlertStatus` mutation + `getAlertsSummary` live metrics/source distribution/timeline
 - [x] Alert Detail — `getAlertById` + editable assignment fields + `updateAlertAssignment` mutation
-- [x] Visibility — `getVisibility` with fallback
+- [x] Visibility — `getVisibility`, `getVisibilitySummary`, and `getVisibilityTrends` with fallback
 - [x] Intelligence — `getNarratives` with `buildNarrativeClusters` mapping
 - [x] Reports — `getReports` + `createReportExport` with polling via `getReportExportStatus`
 - [x] Action Plans — `getActionPlans` + `getActionQueue` + `submitActionPlanFeedback` mutation
-- [x] Sources — `getSources` + `updateSource` (toggle) + `deleteSource` + `runSourceIngestion` (sync)
+- [x] Sources — `getSources` + `updateSource` (toggle) + `deleteSource` + `runSourceIngestion` (sync) + `runBatchSourceIngestion` (Sync All) + `getSourceHealth` + `getSourceCoverage` + individual sync + search + empty states; all metric cards, health labels, distribution panel, settings labels translated to bilingual
 - [x] Settings — `updateWorkspaceSettings` + `createWorkspaceMember` (invite) + `deleteWorkspaceMember` + `changePassword`
 
 #### Authentication & Route Protection
@@ -716,7 +735,7 @@ Optional RLS notes:
 - [x] Dashboard Quick Actions — slide-over drawer with contextual content (replaces placeholder)
 - [x] Alerts page — status dropdown menu (Baru/Investigating/Resolved) + "Tugaskan ke Saya"
 - [x] Alert Detail — status change buttons + editable assignment fields with save
-- [x] Sources — interactive toggle, sync all, delete via API
+- [x] Sources — interactive toggle, sync all, delete via API, individual sync per source, search by name/category, empty states for VolumeBars/DistributionDonut/HealthDonut
 - [x] Reports — PDF export with polling and auto-download
 - [x] Action Plans — accept/reject feedback buttons
 - [x] Settings — invite/delete member via API, change password form
@@ -732,12 +751,12 @@ Optional RLS notes:
 - [x] Reset Password flow — backend endpoint and frontend wiring complete; production email provider delivery remains future integration
 - [ ] Notification bell — currently uses mock alerts, needs real notification API
 - [ ] Dashboard widgets — `miniTopics`, `topTopics`, `sources`, `systemStatus` are still mock
-- [ ] Signals sidebar panels — `followUps`, `recommendations`, `sourceDistribution`, `timeline` are mock
+- [x] Signals sidebar panels — `followUps`, `recommendations`, `sourceDistribution`, 24h `timeline`, labels, totals, and investigation queue consume `/signals/meta`; preview fallbacks remain only when API is unavailable
 
 #### Low Priority Cleanup
 - [ ] Remove unused `LineChartMock` / `DonutMock` from `dashboard-kit.tsx`
 - [ ] Move `navGroups` from `mock-data.ts` to constants file
-- [ ] Intelligence page — competitor donut and lifecycle metrics are hardcoded
+- [x] Intelligence page — competitor donut and lifecycle metrics are live-derived from `GET /api/narratives` cluster data
 
 ---
 
@@ -751,11 +770,18 @@ Optional RLS notes:
 | `OPENAI_API_KEY` | ⚠️ | Required for AI features |
 | `RESEND_API_KEY` | ⚠️ | Required for transactional emails |
 | `REDIS_URL` | ⚠️ | Required for BullMQ workers |
-| `APIFY_TOKEN` | ⚠️ | Required for data ingestion |
+| `APIFY_TOKEN` | ⚠️ | Required for live Apify data ingestion; preferred variable name |
+| `APIFY_API_TOKEN` | ⚠️ | Legacy Apify token fallback accepted for compatibility |
 | `PORT` | ❌ | Server port (default: 3000) |
 | `NODE_ENV` | ❌ | Environment (development/production) |
 | `CORS_ORIGINS` | ❌ | Comma-separated allowed origins |
 | `LOG_LEVEL` | ❌ | Logging verbosity |
+| `TRUST_PROXY` | ❌ | Express proxy trust setting for Nginx/reverse proxy deployments |
+| `ALLOW_INSECURE_HTTP` | ❌ | Production HTTPS bypass for controlled internal smoke tests only; keep false/blank for launch |
+| `EXPOSE_RESET_SECRETS` | ❌ | Dev reset/verification code exposure; must be false/blank in production |
+| `APP_URL` | ⚠️ | Frontend URL used in email links |
+| `FRONTEND_URL` | ⚠️ | Frontend URL used for OAuth redirects |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `GOOGLE_CALLBACK_URL` | ⚠️ | Google OAuth production credentials and callback URL |
 
 ---
 

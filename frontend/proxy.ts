@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const publicPaths = ["/login", "/signup", "/reset-password", "/verify-code", "/new-password"];
+const publicPaths = ["/login", "/signup", "/reset-password", "/verify-code", "/verify-email", "/oauth/callback", "/new-password"];
 const staticAssetPrefixes = ["/_next/", "/favicon", "/mainapp", "/narriv-logo"];
 
 function isPublicPath(pathname: string): boolean {

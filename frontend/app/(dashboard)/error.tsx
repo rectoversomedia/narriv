@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle, RefreshCcw } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export default function DashboardError({
   error,
@@ -9,7 +10,8 @@ export default function DashboardError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  const message = error.message || "Ada bagian dashboard yang belum bisa ditampilkan.";
+  const t = useTranslations("Sources.common.errors");
+  const message = error.message || t("fallback");
 
   return (
     <div className="flex min-h-[520px] items-center justify-center px-4 py-10">
@@ -18,13 +20,13 @@ export default function DashboardError({
           <AlertTriangle size={22} />
         </div>
         <h1 className="mt-5 text-2xl font-black tracking-[-0.03em] text-[#101334]">
-          Halaman ini belum bisa dibuka
+          {t("title")}
         </h1>
         <p className="mt-3 text-sm font-semibold leading-6 text-[#68739F]">
           {message}
         </p>
         {error.digest ? (
-          <p className="mt-2 text-xs font-semibold text-[#8A94B8]">Kode masalah: {error.digest}</p>
+          <p className="mt-2 text-xs font-semibold text-[#8A94B8]">{t("digest", { digest: error.digest })}</p>
         ) : null}
         <button
           type="button"
@@ -32,7 +34,7 @@ export default function DashboardError({
           className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-[#465FFF] px-5 text-sm font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.22)] transition hover:bg-[#3B20EA] sm:w-auto"
         >
           <RefreshCcw size={16} />
-          Coba muat ulang
+          {t("retry")}
         </button>
       </section>
     </div>

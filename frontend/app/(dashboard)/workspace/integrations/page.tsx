@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Cable, CheckCircle2, Cloud, Filter, Link2, Plus, RefreshCcw, Trash2, TriangleAlert, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -12,25 +13,8 @@ import { cn } from "@/lib/utils";
 
 const emptyIntegrations: IntegrationRecord[] = [];
 
-const platformOptions = [
-  { value: "slack", label: "Slack" },
-  { value: "teams", label: "Microsoft Teams" },
-  { value: "webhook", label: "Webhook" },
-  { value: "email", label: "Email" },
-  { value: "whatsapp", label: "WhatsApp" },
-  { value: "bigquery", label: "BigQuery" },
-  { value: "postgres", label: "Postgres" },
-];
-
-const statusOptions = [
-  { value: "", label: "Semua Status" },
-  { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
-  { value: "error", label: "Error" },
-];
-
-function platformLabel(platform: string) {
-  return platformOptions.find((option) => option.value === platform)?.label || platform;
+function platformLabel(platform: string, options: { value: string; label: string }[]) {
+  return options.find((option) => option.value === platform)?.label || platform;
 }
 
 function statusVariant(status: string): "green" | "amber" | "red" | "slate" {
@@ -40,8 +24,8 @@ function statusVariant(status: string): "green" | "amber" | "red" | "slate" {
   return "amber";
 }
 
-function formatDateTime(value: string | null) {
-  if (!value) return "Belum pernah sync";
+function formatDateTime(value: string | null, neverSyncedLabel: string) {
+  if (!value) return neverSyncedLabel;
   return new Intl.DateTimeFormat("id-ID", {
     dateStyle: "medium",
     timeStyle: "short",
@@ -60,8 +44,8 @@ function parseConfigJson(value: string) {
   return parsed as Record<string, unknown>;
 }
 
-function configSummary(config: IntegrationRecord["config"]) {
-  if (!config || Object.keys(config).length === 0) return "Tidak ada config tambahan";
+function configSummary(config: IntegrationRecord["config"], noConfigLabel: string) {
+  if (!config || Object.keys(config).length === 0) return noConfigLabel;
 
   return Object.keys(config)
     .slice(0, 4)
@@ -80,6 +64,25 @@ export default function IntegrationsPage() {
   const [formError, setFormError] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<IntegrationRecord | null>(null);
 
+  const t = useTranslations("Workspace.integrations");
+
+  const platformOptions = useMemo(() => [
+    { value: "slack", label: "Slack" },
+    { value: "teams", label: "Microsoft Teams" },
+    { value: "webhook", label: t("platforms.webhook") },
+    { value: "email", label: t("platforms.email") },
+    { value: "whatsapp", label: "WhatsApp" },
+    { value: "bigquery", label: "BigQuery" },
+    { value: "postgres", label: "Postgres" },
+  ], [t]);
+
+  const statusOptions = useMemo(() => [
+    { value: "", label: t("filter.allStatus") },
+    { value: "active", label: "Active" },
+    { value: "inactive", label: "Inactive" },
+    { value: "error", label: "Error" },
+  ], [t]);
+
   const integrationsQuery = useQuery({
     queryKey: ["integrations", { platform: platformFilter, status: statusFilter }],
     queryFn: () => getIntegrations({
@@ -92,7 +95,7 @@ export default function IntegrationsPage() {
     mutationFn: (input: { name: string; platform: string; config: Record<string, unknown> }) => createIntegration(input),
     onSuccess: async (result) => {
       if (!result) {
-        toast.error("Integrasi belum bisa dibuat. Coba lagi.");
+        toast.error(t("toast.createFailed"));
         return;
       }
 
@@ -101,38 +104,38 @@ export default function IntegrationsPage() {
       setConfigJson("{}");
       setFormError("");
       await queryClient.invalidateQueries({ queryKey: ["integrations"] });
-      toast.success("Integrasi berhasil ditambahkan.");
+      toast.success(t("toast.createSuccess"));
     },
-    onError: () => toast.error("Integrasi belum bisa dibuat. Coba lagi."),
+    onError: () => toast.error(t("toast.createFailed")),
   });
 
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) => updateIntegration(id, { status }),
     onSuccess: async (result) => {
       if (!result) {
-        toast.error("Status integrasi belum bisa diperbarui.");
+        toast.error(t("toast.updateFailed"));
         return;
       }
 
       await queryClient.invalidateQueries({ queryKey: ["integrations"] });
-      toast.success("Status integrasi diperbarui.");
+      toast.success(t("toast.updateSuccess"));
     },
-    onError: () => toast.error("Status integrasi belum bisa diperbarui."),
+    onError: () => toast.error(t("toast.updateFailed")),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteIntegration(id),
     onSuccess: async (result) => {
       if (!result) {
-        toast.error("Integrasi belum bisa dihapus.");
+        toast.error(t("toast.deleteFailed"));
         return;
       }
 
       setDeleteTarget(null);
       await queryClient.invalidateQueries({ queryKey: ["integrations"] });
-      toast.success("Integrasi berhasil diputus.");
+      toast.success(t("toast.deleteSuccess"));
     },
-    onError: () => toast.error("Integrasi belum bisa dihapus."),
+    onError: () => toast.error(t("toast.deleteFailed")),
   });
 
   const integrations = integrationsQuery.data?.data || emptyIntegrations;
@@ -143,12 +146,12 @@ export default function IntegrationsPage() {
     const platforms = new Set(integrations.map((item) => item.platform)).size;
 
     return [
-      { label: "Total Integrasi", value: integrations.length, helper: "Koneksi workspace", tone: "blue", icon: Cable },
-      { label: "Active", value: active, helper: "Siap dipakai", tone: "green", icon: CheckCircle2 },
-      { label: "Platform", value: platforms, helper: "Jenis koneksi unik", tone: "purple", icon: Cloud },
-      { label: "Needs Attention", value: errors, helper: "Status error", tone: "red", icon: TriangleAlert },
+      { label: t("metrics.total"), value: integrations.length, helper: t("metrics.totalDesc"), tone: "blue", icon: Cable },
+      { label: t("metrics.active"), value: active, helper: t("metrics.activeDesc"), tone: "green", icon: CheckCircle2 },
+      { label: t("metrics.platforms"), value: platforms, helper: t("metrics.platformsDesc"), tone: "purple", icon: Cloud },
+      { label: t("metrics.needsAttention"), value: errors, helper: t("metrics.needsAttentionDesc"), tone: "red", icon: TriangleAlert },
     ];
-  }, [integrations]);
+  }, [integrations, t]);
 
   const handleCreate = (event: FormEvent) => {
     event.preventDefault();
@@ -222,24 +225,24 @@ export default function IntegrationsPage() {
               <Plus size={19} />
             </span>
             <div>
-              <h2 className="text-base font-black text-slate-950">Connect Integration</h2>
-              <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">Tambahkan koneksi baru. Config opsional harus berupa JSON object.</p>
+              <h2 className="text-base font-black text-slate-950">{t("form.title")}</h2>
+              <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">{t("form.desc")}</p>
             </div>
           </div>
 
           <form onSubmit={handleCreate} className="space-y-4">
             <label className="grid gap-1.5">
-              <span className="text-[11px] font-black text-slate-500">Nama Integrasi</span>
+              <span className="text-[11px] font-black text-slate-500">{t("form.name")}</span>
               <input
                 value={name}
                 onChange={(event) => { setName(event.target.value); setFormError(""); }}
-                placeholder="Contoh: Slack Crisis Room"
+                placeholder={t("form.namePlaceholder")}
                 className="h-10 rounded-[8px] border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-800 outline-none transition placeholder:text-slate-300 focus:border-[#465FFF] focus:ring-2 focus:ring-[#465FFF]/15"
               />
             </label>
 
             <label className="grid gap-1.5">
-              <span className="text-[11px] font-black text-slate-500">Platform</span>
+              <span className="text-[11px] font-black text-slate-500">{t("form.platform")}</span>
               <select
                 value={platform}
                 onChange={(event) => setPlatform(event.target.value)}
@@ -267,7 +270,7 @@ export default function IntegrationsPage() {
               className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] px-4 text-sm font-black text-white transition hover:bg-[#3b52d9] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Link2 size={15} />
-              {createMutation.isPending ? "Connecting..." : "Connect Integration"}
+              {createMutation.isPending ? t("form.connecting") : t("form.connect")}
             </button>
           </form>
         </section>
@@ -276,22 +279,22 @@ export default function IntegrationsPage() {
           <div className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-3 flex items-center gap-2 text-[12px] font-black uppercase tracking-[0.12em] text-slate-400">
               <Filter size={14} />
-              Filter Integrasi
+              {t("filter.filterTitle")}
             </div>
             <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
               <label className="grid gap-1.5">
-                <span className="text-[11px] font-black text-slate-500">Platform</span>
+                <span className="text-[11px] font-black text-slate-500">{t("filter.platform")}</span>
                 <select
                   value={platformFilter}
                   onChange={(event) => setPlatformFilter(event.target.value)}
                   className="h-10 rounded-[8px] border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#465FFF] focus:ring-2 focus:ring-[#465FFF]/15"
                 >
-                  <option value="">Semua Platform</option>
+                  <option value="">{t("filter.allPlatform")}</option>
                   {platformOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                 </select>
               </label>
               <label className="grid gap-1.5">
-                <span className="text-[11px] font-black text-slate-500">Status</span>
+                <span className="text-[11px] font-black text-slate-500">{t("filter.status")}</span>
                 <select
                   value={statusFilter}
                   onChange={(event) => setStatusFilter(event.target.value)}
@@ -306,7 +309,7 @@ export default function IntegrationsPage() {
                 disabled={!platformFilter && !statusFilter}
                 className="h-10 rounded-[8px] border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45"
               >
-                Reset
+                {t("filter.reset")}
               </button>
             </div>
           </div>
@@ -331,11 +334,11 @@ export default function IntegrationsPage() {
                 <table className="w-full min-w-[860px] text-left text-sm">
                   <thead className="border-b border-slate-100 bg-slate-50">
                     <tr>
-                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">Integration</th>
-                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">Status</th>
-                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">Config</th>
-                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">Last Sync</th>
-                      <th className="px-6 py-4 text-right text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">Aksi</th>
+                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{t("table.integration")}</th>
+                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{t("table.status")}</th>
+                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{t("table.config")}</th>
+                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{t("table.lastSync")}</th>
+                      <th className="px-6 py-4 text-right text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{t("table.action")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -348,7 +351,7 @@ export default function IntegrationsPage() {
                             </span>
                             <div>
                               <p className="font-black text-slate-950">{item.name}</p>
-                              <p className="mt-1 text-xs font-semibold text-slate-500">{platformLabel(item.platform)} · {item.id.slice(0, 8)}</p>
+                              <p className="mt-1 text-xs font-semibold text-slate-500">{platformLabel(item.platform, platformOptions)} · {item.id.slice(0, 8)}</p>
                               {item.errorMessage ? <p className="mt-1 text-xs font-bold text-[#EF4444]">{item.errorMessage}</p> : null}
                             </div>
                           </div>
@@ -367,11 +370,11 @@ export default function IntegrationsPage() {
                           </select>
                         </td>
                         <td className="max-w-[260px] px-6 py-4 align-top">
-                          <p className="line-clamp-2 text-sm font-semibold leading-6 text-slate-600">{configSummary(item.config)}</p>
+                          <p className="line-clamp-2 text-sm font-semibold leading-6 text-slate-600">{configSummary(item.config, t("table.noConfig"))}</p>
                         </td>
                         <td className="px-6 py-4 align-top">
-                          <p className="font-bold text-slate-700">{formatDateTime(item.lastSyncAt)}</p>
-                          <p className="mt-1 text-xs font-semibold text-slate-400">Created {formatDateTime(item.createdAt)}</p>
+                          <p className="font-bold text-slate-700">{formatDateTime(item.lastSyncAt, t("table.neverSynced"))}</p>
+                          <p className="mt-1 text-xs font-semibold text-slate-400">Created {formatDateTime(item.createdAt, t("table.neverSynced"))}</p>
                         </td>
                         <td className="px-6 py-4 text-right align-top">
                           <button
@@ -397,10 +400,10 @@ export default function IntegrationsPage() {
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
-        title="Putus Integrasi"
-        description={deleteTarget ? `Putus integrasi ${deleteTarget.name}? Koneksi ini akan dihapus dari workspace.` : "Putus integrasi ini?"}
-        confirmLabel="Putus Integrasi"
-        cancelLabel="Batal"
+        title={t("delete.title")}
+        description={deleteTarget ? t("delete.description", { name: deleteTarget.name }) : t("delete.cancel")}
+        confirmLabel={t("delete.confirm")}
+        cancelLabel={t("delete.cancel")}
         tone="danger"
       />
     </div>

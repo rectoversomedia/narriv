@@ -1,5 +1,6 @@
 import prisma from "../../prisma.js";
 import { badRequest, internalError, notFound } from "../../lib/api-error.js";
+import { logStructured } from "../../lib/logger.js";
 
 export async function createOnboardingWorkspace(req, res) {
     try {

@@ -7,10 +7,9 @@ import { Bell, ChevronDown, Languages, LogOut, Search, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
-import { alerts, intelligenceClusters, text } from "@/lib/mock-data";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useUiStore } from "@/store/useUiStore";
-import { logoutSession, getNotifications, markNotificationAsRead, markAllNotificationsAsRead, type AppNotification } from "@/lib/api-service";
+import { logoutSession, getNotifications, getAlerts, getNarratives, markNotificationAsRead, markAllNotificationsAsRead, type AppNotification, type Alert as ApiAlert, type NarrativeRecord } from "@/lib/api-service";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 
@@ -43,57 +42,6 @@ const navLinks = [
   { title: "Sources", href: "/workspace/sources", subtitle: "Sumber data" },
   { title: "Settings", href: "/workspace/settings", subtitle: "Pengaturan" },
 ];
-
-function searchItems(query: string, language: string): SearchResult[] {
-  const q = query.toLowerCase();
-  if (q.length < 2) return [];
-
-  const results: SearchResult[] = [];
-
-  alerts.forEach((alert) => {
-    const title = text(alert.title, language);
-    const issue = text(alert.issue, language);
-    if (title.toLowerCase().includes(q) || issue.toLowerCase().includes(q) || alert.source.toLowerCase().includes(q)) {
-      results.push({
-        type: "alert",
-        id: alert.id,
-        title,
-        subtitle: `${alert.source} · ${issue}`,
-        href: `/alerts/${alert.id}`,
-        tone: alert.tone,
-      });
-    }
-  });
-
-  intelligenceClusters.forEach((cluster) => {
-    const topic = text(cluster.topic, language);
-    const desc = text(cluster.description, language);
-    if (topic.toLowerCase().includes(q) || desc.toLowerCase().includes(q)) {
-      results.push({
-        type: "narrative",
-        id: cluster.id,
-        title: topic,
-        subtitle: `${cluster.signals} signals · ${cluster.growth}`,
-        href: "/intelligence",
-        tone: cluster.tone,
-      });
-    }
-  });
-
-  navLinks.forEach((nav) => {
-    if (nav.title.toLowerCase().includes(q) || nav.subtitle.toLowerCase().includes(q)) {
-      results.push({
-        type: "nav",
-        id: nav.href,
-        title: nav.title,
-        subtitle: nav.subtitle,
-        href: nav.href,
-      });
-    }
-  });
-
-  return results.slice(0, 8);
-}
 
 const typeLabel: Record<string, string> = {
   alert: "Alert",
@@ -175,10 +123,56 @@ export function Topbar() {
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const searchAlertsQuery = useQuery({
+    queryKey: ["search-alerts", { q: searchQuery }],
+    queryFn: () => (searchQuery.trim().length >= 2 ? getAlerts({ limit: 20 }) : Promise.resolve(null)),
+    enabled: searchQuery.trim().length >= 2,
+    staleTime: 30 * 1000,
+  });
+  const searchNarrativesQuery = useQuery({
+    queryKey: ["search-narratives", { q: searchQuery }],
+    queryFn: () => (searchQuery.trim().length >= 2 ? getNarratives({ limit: 20 }) : Promise.resolve(null)),
+    enabled: searchQuery.trim().length >= 2,
+    staleTime: 30 * 1000,
+  });
+
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (searchQuery.trim()) {
-        setSearchResults(searchItems(searchQuery, language));
+      const q = searchQuery.trim().toLowerCase();
+      if (q.length >= 2) {
+        const results: SearchResult[] = [];
+        const liveAlerts = (searchAlertsQuery.data?.data || []) as ApiAlert[];
+        liveAlerts.forEach((alert) => {
+          if (alert.title?.toLowerCase().includes(q)) {
+            results.push({
+              type: "alert",
+              id: alert.id,
+              title: alert.title,
+              subtitle: `${alert.severity} · ${alert.status}`,
+              href: `/alerts/${alert.id}`,
+              tone: alert.severity === "critical" ? "red" : "amber",
+            });
+          }
+        });
+        const liveNarratives = (searchNarrativesQuery.data?.data || []) as NarrativeRecord[];
+        liveNarratives.forEach((n) => {
+          if (n.title?.toLowerCase().includes(q)) {
+            results.push({
+              type: "narrative",
+              id: n.id,
+              title: n.title,
+              subtitle: `${n.signalCount} signals`,
+              href: "/intelligence",
+              tone: n.sentiment === "negative" ? "red" : "purple",
+            });
+          }
+        });
+        navLinks.forEach((nav) => {
+          if (nav.title.toLowerCase().includes(q) || nav.subtitle.toLowerCase().includes(q)) {
+            results.push({ type: "nav", id: nav.href, title: nav.title, subtitle: nav.subtitle, href: nav.href });
+          }
+        });
+        setSearchResults(results.slice(0, 8));
         setSearchOpen(true);
       } else {
         setSearchResults([]);
@@ -186,7 +180,7 @@ export function Topbar() {
       }
     }, 200);
     return () => clearTimeout(timer);
-  }, [searchQuery, language]);
+  }, [searchQuery, language, searchAlertsQuery.data, searchNarrativesQuery.data]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -219,7 +213,7 @@ export function Topbar() {
   };
 
   return (
-    <header className="sticky top-0 z-20 flex h-[88px] items-center justify-between border-b border-border bg-background/60 px-5 backdrop-blur-xl sm:px-8 lg:px-10 xl:px-12">
+    <header className="sticky top-0 z-[100] flex h-[88px] items-center justify-between border-b border-border bg-background/60 px-5 backdrop-blur-xl sm:px-8 lg:px-10 xl:px-12">
       <div ref={searchRef} className="relative hidden w-full max-w-[530px] lg:block">
         <label className="flex h-[48px] items-center gap-4 rounded-[8px] border border-border bg-slate-50 px-5 text-(--text-soft) focus-within:border-[#465FFF]/50 focus-within:shadow-[0_0_10px_rgba(70,95,255,0.15)] transition-all">
           <Search size={20} className="text-(--text-muted)" />

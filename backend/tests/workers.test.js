@@ -45,6 +45,15 @@ function resetState() {
   aiFailureLogs.length = 0;
   jest.clearAllMocks();
   mockPrisma.workspace.findMany.mockResolvedValue([{ id: WORKSPACE_ID, name: 'Narriv Workspace' }]);
+  Object.assign(sourceRecord, {
+    id: SOURCE_ID,
+    workspaceId: WORKSPACE_ID,
+    name: 'Narriv News',
+    type: 'news',
+    actorId: 'test/news-actor',
+    inputConfig: { maxResults: 1 },
+    isActive: true,
+  });
   apifyService.runActorAndFetchDataset.mockResolvedValue(defaultApifyDataset());
   aiService.analyzeSignal.mockResolvedValue(defaultAnalysisResult());
   alertService.detectAlerts.mockResolvedValue([{ id: 'alert-1' }, { id: 'alert-2' }]);
@@ -59,8 +68,9 @@ function matchesWhere(record, where = {}) {
   return Object.entries(where).every(([key, value]) => {
     if (value === undefined) return true;
     if (key === 'id' && value && typeof value === 'object' && value.not !== undefined) return record.id !== value.not;
+    if (value && typeof value === 'object' && value.not !== undefined) return record[key] !== value.not;
     if (key === 'createdAt' || key === 'capturedAt') return true;
-    if (key === 'workspaceId' || key === 'sourceId' || key === 'externalId' || key === 'dedupeHash' || key === 'status' || key === 'id') {
+    if (key === 'workspaceId' || key === 'sourceId' || key === 'externalId' || key === 'dedupeHash' || key === 'status' || key === 'id' || key === 'isActive' || key === 'type') {
       return record[key] === value;
     }
     return true;
@@ -74,6 +84,7 @@ const sourceRecord = {
   type: 'news',
   actorId: 'test/news-actor',
   inputConfig: { maxResults: 1 },
+  isActive: true,
 };
 
 const mockPrisma = {
@@ -95,7 +106,7 @@ const mockPrisma = {
     }),
   },
   source: {
-    findUnique: jest.fn(async ({ where }) => (where.id === SOURCE_ID ? sourceRecord : null)),
+    findFirst: jest.fn(async ({ where = {} } = {}) => (matchesWhere(sourceRecord, where) ? sourceRecord : null)),
   },
   rawDocument: {
     findFirst: jest.fn(async ({ where = {} } = {}) => rawDocuments.find((record) => matchesWhere(record, where)) || null),

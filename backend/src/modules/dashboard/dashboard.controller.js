@@ -2,6 +2,7 @@ import prisma from "../../prisma.js";
 import { getUserWorkspaceIds } from "../../lib/workspace-access.js";
 import { cachedQuery, CACHE_KEYS, CACHE_TTL } from "../../lib/cache.js";
 import redis from "../../lib/redis.js";
+import { logStructured } from "../../lib/logger.js";
 
 export const getSummary = async (req, res) => {
     try {

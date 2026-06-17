@@ -1,7 +1,9 @@
 "use client";
 
 import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Building,
@@ -17,6 +19,7 @@ import {
   RefreshCw,
   Trash2,
   UserCheck,
+  Upload,
   ChevronDown,
   ArrowRight,
   Sliders,
@@ -57,21 +60,8 @@ function toWorkspaceSlug(value: string) {
     .replace(/^-+|-+$/g, "") || "workspace";
 }
 
-function roleToLabel(role: string) {
-  if (role === "owner") return "Workspace Owner";
-  if (role === "admin") return "Admin";
-  if (role === "analyst") return "Analyst";
-  return "Viewer";
-}
-
-function roleToPermission(role: string) {
-  if (role === "owner" || role === "admin") return "Full Access";
-  if (role === "analyst") return "Read & Write";
-  return "Read Only";
-}
-
-function initialsFromName(name: string) {
-  return name.split(" ").filter(Boolean).map((word) => word[0]).join("").toUpperCase().slice(0, 2) || "NA";
+function initialsFromName(name: string, fallback: string) {
+  return name.split(" ").filter(Boolean).map((word) => word[0]).join("").toUpperCase().slice(0, 2) || fallback;
 }
 
 const LOGO_MAX_SIZE_BYTES = 2 * 1024 * 1024;
@@ -98,29 +88,33 @@ function readFileAsBase64(file: File) {
   });
 }
 
-function buildMemberRows(records: WorkspaceMemberRecord[]): TeamMember[] {
+function buildMemberRows(records: WorkspaceMemberRecord[], labels: { defaultName: string; defaultEmail: string; statusActive: string; timeLive: string; permFull: string; permWrite: string; permRead: string; owner: string; admin: string; analyst: string; viewer: string; defaultInitials: string }): TeamMember[] {
+  const roleToLabel = (role: string) => {
+    if (role === "owner") return labels.owner;
+    if (role === "admin") return labels.admin;
+    if (role === "analyst") return labels.analyst;
+    return labels.viewer;
+  };
+  const roleToPermission = (role: string) => {
+    if (role === "owner" || role === "admin") return labels.permFull;
+    if (role === "analyst") return labels.permWrite;
+    return labels.permRead;
+  };
   return records.map((member) => {
-    const name = member.user?.name || member.user?.email || "Workspace Member";
+    const name = member.user?.name || member.user?.email || labels.defaultName;
     const role = roleToLabel(member.role);
     return {
       name,
-      email: member.user?.email || "unknown@narriv.ai",
+      email: member.user?.email || labels.defaultEmail,
       role,
-      status: "Aktif",
+      status: labels.statusActive,
       permission: roleToPermission(member.role),
-      time: "Data live",
-      initials: initialsFromName(name),
-      tone: role === "Workspace Owner" ? "purple" : role === "Admin" ? "blue" : role === "Analyst" ? "emerald" : "slate",
+      time: labels.timeLive,
+      initials: initialsFromName(name, labels.defaultInitials),
+      tone: role === labels.owner ? "purple" : role === labels.admin ? "blue" : role === labels.analyst ? "emerald" : "slate",
     };
   });
 }
-
-const fallbackMembers: TeamMember[] = [
-  { name: "Testing User", email: "tu@narriv.ai", role: "Workspace Owner", status: "Aktif", permission: "Full Access", time: "Aktif sekarang", initials: "TU", tone: "purple" },
-  { name: "Jane Doe", email: "jane@narriv.ai", role: "Admin", status: "Aktif", permission: "Full Access", time: "Aktif kemarin", initials: "JD", tone: "blue" },
-  { name: "John Smith", email: "john@narriv.ai", role: "Analyst", status: "Aktif", permission: "Read & Write", time: "2 jam lalu", initials: "JS", tone: "emerald" },
-  { name: "Alice Cooper", email: "alice@narriv.ai", role: "Viewer", status: "Nonaktif", permission: "Read Only", time: "1 hari lalu", initials: "AC", tone: "slate" },
-];
 
 // Custom Panel Component
 function Panel({ children, className }: { children: ReactNode; className?: string }) {
@@ -188,6 +182,7 @@ function PlanSparkline({ values, className = "h-10 w-full" }: { values: number[]
 
 // Main Page Component
 export default function SettingsPage() {
+  const ts = useTranslations("Workspace.settings");
   const queryClient = useQueryClient();
   const toast = useToast();
   const workspaceSettingsQuery = useQuery({
@@ -204,15 +199,15 @@ export default function SettingsPage() {
     mutationFn: (input: UpdateWorkspaceSettingsInput) => updateWorkspaceSettings(input),
     onSuccess: async (result) => {
       if (!result) {
-        showToast("Pengaturan belum bisa disimpan. Coba lagi sebentar.", "error");
+        showToast(ts("toast.saveFailed"), "error");
         return;
       }
       await queryClient.invalidateQueries({ queryKey: ["workspace-settings"] });
       setSaveSuccess(true);
-      showToast("Perubahan workspace berhasil disimpan.");
+      showToast(ts("toast.saveSuccess"));
       setTimeout(() => setSaveSuccess(false), 3000);
     },
-    onError: () => showToast("Pengaturan belum bisa disimpan. Coba lagi sebentar.", "error"),
+    onError: () => showToast(ts("toast.saveFailed"), "error"),
   });
 
   const inviteMemberMutation = useMutation({
@@ -224,12 +219,12 @@ export default function SettingsPage() {
         setInviteEmail("");
         setInviteName("");
         setInviteRole("Analyst");
-        showToast("Berhasil mengundang member ke workspace.");
+        showToast(ts("toast.inviteSuccess", { email: inviteEmail || "" }));
       } else {
-        showToast("Gagal mengundang member. Coba lagi.", "error");
+        showToast(ts("toast.inviteFailed"), "error");
       }
     },
-    onError: () => showToast("Gagal mengundang member. Coba lagi.", "error"),
+    onError: () => showToast(ts("toast.inviteFailed"), "error"),
   });
 
   const deleteMemberMutation = useMutation({
@@ -237,32 +232,32 @@ export default function SettingsPage() {
     onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: ["workspace-members"] });
       if (result) {
-        showToast("Member berhasil dihapus dari workspace.");
+        showToast(ts("toast.removeSuccess"));
       } else {
-        showToast("Gagal menghapus member. Coba lagi.", "error");
+        showToast(ts("toast.removeFailed"), "error");
       }
       setMemberToDelete(null);
     },
-    onError: () => showToast("Gagal menghapus member. Coba lagi.", "error"),
+    onError: () => showToast(ts("toast.removeFailed"), "error"),
   });
 
   const changePasswordMutation = useMutation({
     mutationFn: (input: { currentPassword: string; newPassword: string }) => changePassword(input),
     onSuccess: async (result) => {
       if (result) {
-        showToast("Password berhasil diubah.");
+        showToast(ts("toast.passwordSuccess"));
       } else {
-        showToast("Gagal mengubah password. Coba lagi.", "error");
+        showToast(ts("toast.passwordFailed"), "error");
       }
     },
-    onError: () => showToast("Gagal mengubah password. Coba lagi.", "error"),
+    onError: () => showToast(ts("toast.passwordFailed"), "error"),
   });
 
   // State: Workspace Info
   const [workspaceName, setWorkspaceName] = useState<string | null>(null);
   const [industry, setIndustry] = useState<string | null>(null);
   const [timezone, setTimezone] = useState<string | null>(null);
-  const [language, setLanguage] = useState("Bahasa Indonesia");
+  const [language, setLanguage] = useState(ts("workspaceInfo.languageId"));
   const [workspaceUrl, setWorkspaceUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [workspaceLogo, setWorkspaceLogo] = useState<string | null>(null);
@@ -276,19 +271,19 @@ export default function SettingsPage() {
     mutationFn: (input: { fileName: string; fileContent: string; mimeType: string }) => uploadWorkspaceLogo(input),
     onSuccess: (result) => {
       if (!result) {
-        setLogoError("Logo belum bisa diunggah. Coba lagi sebentar.");
-        showToast("Logo belum bisa diunggah. Coba lagi sebentar.", "error");
+        setLogoError(ts("toast.logoUploadError"));
+        showToast(ts("toast.logoUploadError"), "error");
         return;
       }
 
       setWorkspaceLogo(resolveBackendAssetUrl(result.url));
       setLogoError("");
-      showToast("Logo workspace berhasil diunggah.");
+      showToast(ts("toast.logoSuccess"));
       void queryClient.invalidateQueries({ queryKey: ["workspace-settings"] });
     },
     onError: () => {
-      setLogoError("Logo belum bisa diunggah. Coba lagi sebentar.");
-      showToast("Logo belum bisa diunggah. Coba lagi sebentar.", "error");
+      setLogoError(ts("toast.logoUploadError"));
+      showToast(ts("toast.logoUploadError"), "error");
     },
   });
 
@@ -333,17 +328,42 @@ export default function SettingsPage() {
 
   // State: Chart interactive hover
   const chartData = [18452, 22000, 19800, 26000, 24500, 31000, 29000, 34000, 32041];
-  const chartDates = ["13 Mei", "18 Mei", "25 Mei", "28 Mei", "2 Jun", "7 Jun", "12 Jun", "18 Jun", "24 Jun"];
+  const chartDates = ts.raw("billingCard.chartDates") as unknown as string[];
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   // Confirmation Modal State (Danger Zone)
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState<"pause" | "reset" | "delete" | null>(null);
   const [memberToDelete, setMemberToDelete] = useState<TeamMember | null>(null);
-  const liveMembers = membersQuery.data ? buildMemberRows(membersQuery.data) : null;
+  const memberLabels = {
+    defaultName: ts("defaultMemberName"),
+    defaultEmail: ts("defaultMemberEmail"),
+    statusActive: ts("memberStatusActive"),
+    statusInactive: ts("memberStatusInactive"),
+    timeLive: ts("timeLive"),
+    permFull: ts("permissionFullAccess"),
+    permWrite: ts("permissionReadWrite"),
+    permRead: ts("permissionReadOnly"),
+    owner: ts("roles.owner"),
+    admin: ts("roles.admin"),
+    analyst: ts("roles.analyst"),
+    viewer: ts("roles.viewer"),
+    defaultInitials: ts("defaultInitials"),
+    timeNow: ts("timeActiveNow"),
+    timeYesterday: ts("timeActiveYesterday"),
+    time2Hours: ts("time2HoursAgo"),
+    time1Day: ts("time1DayAgo"),
+  };
+  const liveMembers = membersQuery.data ? buildMemberRows(membersQuery.data, memberLabels) : null;
+  const fallbackMembers: TeamMember[] = [
+    { name: "Testing User", email: "tu@narriv.ai", role: memberLabels.owner, status: memberLabels.statusActive, permission: memberLabels.permFull, time: memberLabels.timeNow, initials: "TU", tone: "purple" },
+    { name: "Jane Doe", email: "jane@narriv.ai", role: memberLabels.admin, status: memberLabels.statusActive, permission: memberLabels.permFull, time: memberLabels.timeYesterday, initials: "JD", tone: "blue" },
+    { name: "John Smith", email: "john@narriv.ai", role: memberLabels.analyst, status: memberLabels.statusActive, permission: memberLabels.permWrite, time: memberLabels.time2Hours, initials: "JS", tone: "emerald" },
+    { name: "Alice Cooper", email: "alice@narriv.ai", role: memberLabels.viewer, status: memberLabels.statusInactive, permission: memberLabels.permRead, time: memberLabels.time1Day, initials: "AC", tone: "slate" },
+  ];
   const members = memberOverrides ?? liveMembers ?? fallbackMembers;
   const workspaceNameValue = workspaceName ?? workspaceSettingsQuery.data?.brandName ?? "Narriv Intelligence";
-  const industryValue = industry ?? workspaceSettingsQuery.data?.industry ?? "Technology";
+  const industryValue = industry ?? workspaceSettingsQuery.data?.industry ?? ts("workspaceInfo.industryTechnology");
   const timezoneValue = timezone ?? workspaceSettingsQuery.data?.timezone ?? "Asia/Jakarta (GMT+7)";
   const workspaceUrlValue = workspaceUrl ?? toWorkspaceSlug(workspaceNameValue);
   const notifEmailValue = notifEmail ?? Boolean(workspaceSettingsQuery.data?.notificationEmail ?? true);
@@ -360,9 +380,9 @@ export default function SettingsPage() {
     const errors: { name?: string } = {};
 
     if (!workspaceNameValue.trim()) {
-      errors.name = "Nama workspace wajib diisi.";
+      errors.name = ts("validation.workspaceNameRequired");
     } else if (workspaceNameValue.trim().length < 3) {
-      errors.name = "Nama workspace minimal 3 karakter.";
+      errors.name = ts("validation.workspaceNameMinLength");
     }
 
     setWorkspaceErrors(errors);
@@ -387,14 +407,14 @@ export default function SettingsPage() {
     if (!file) return;
 
     if (!LOGO_MIME_TYPES.has(file.type)) {
-      setLogoError("Format logo harus PNG, JPG, WEBP, atau SVG.");
-      showToast("Format logo tidak didukung.", "error");
+      setLogoError(ts("workspaceInfo.logoInvalidFormat"));
+      showToast(ts("toast.logoInvalidFormat"), "error");
       return;
     }
 
     if (file.size > LOGO_MAX_SIZE_BYTES) {
-      setLogoError("Ukuran logo maksimal 2MB.");
-      showToast("Ukuran logo maksimal 2MB.", "error");
+      setLogoError(ts("workspaceInfo.logoTooLarge"));
+      showToast(ts("toast.logoTooLarge"), "error");
       return;
     }
 
@@ -402,8 +422,8 @@ export default function SettingsPage() {
       const fileContent = await readFileAsBase64(file);
       uploadLogoMutation.mutate({ fileName: file.name, fileContent, mimeType: file.type });
     } catch {
-      setLogoError("File logo belum bisa dibaca. Coba pilih file lain.");
-      showToast("File logo belum bisa dibaca.", "error");
+      setLogoError(ts("workspaceInfo.logoReadError"));
+      showToast(ts("toast.logoReadFailed"), "error");
     }
   };
 
@@ -412,15 +432,15 @@ export default function SettingsPage() {
     const errors: { name?: string; email?: string } = {};
 
     if (!inviteName.trim()) {
-      errors.name = "Nama wajib diisi.";
+      errors.name = ts("validation.nameRequired");
     } else if (inviteName.trim().length < 2) {
-      errors.name = "Nama minimal 2 karakter.";
+      errors.name = ts("validation.nameMinLength");
     }
 
     if (!inviteEmail.trim()) {
-      errors.email = "Email wajib diisi.";
+      errors.email = ts("validation.emailRequired");
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteEmail.trim())) {
-      errors.email = "Format email tidak valid.";
+      errors.email = ts("validation.emailInvalid");
     }
 
     setInviteErrors(errors);
@@ -452,11 +472,11 @@ export default function SettingsPage() {
   const executeConfirmAction = () => {
     setShowConfirmModal(false);
     if (confirmAction === "pause") {
-      showToast("Workspace berhasil dinonaktifkan sementara.");
+      showToast(ts("toast.confirmPause"));
     } else if (confirmAction === "reset") {
-      showToast("Cache sinyal berhasil dibersihkan dan diproses ulang.");
+      showToast(ts("toast.confirmReset"));
     } else if (confirmAction === "delete") {
-      showToast("Prosedur penghapusan workspace diinisialisasi.");
+      showToast(ts("toast.confirmDelete"));
     }
     setConfirmAction(null);
   };
@@ -474,47 +494,47 @@ export default function SettingsPage() {
     } else {
       const updated = members.filter((member) => member.email !== memberToDelete.email);
       setMemberOverrides(updated);
-      showToast(`${memberToDelete.name} dihapus dari workspace.`);
+      showToast(ts("memberRemovedFromOverride", { name: memberToDelete.name }));
       setMemberToDelete(null);
     }
   };
 
   const confirmDescription = (() => {
     if (confirmAction === "pause") {
-      return "Apakah Anda yakin ingin menonaktifkan workspace ini sementara? Pengumpulan sinyal baru, analisis sentimen otomatis, dan notifikasi akan dihentikan.";
+      return ts("confirm.pauseDesc");
     }
 
     if (confirmAction === "reset") {
-      return "Apakah Anda yakin ingin membersihkan cache lokal? Semua sinyal akan diunduh ulang dari platform monitoring asal. Proses ini memakan waktu beberapa menit.";
+      return ts("confirm.resetDesc");
     }
 
-    return "Apakah Anda yakin ingin menghapus workspace secara permanen? Seluruh riwayat analisis, integrasi, data pengguna, dan visualisasi akan dihapus selamanya. Tindakan ini tidak dapat dibatalkan.";
+    return ts("confirm.deleteDesc");
   })();
 
   // Helper styles for roles
   const roleStyles: Record<string, string> = {
-    "Workspace Owner": "bg-purple-50 text-purple-700 border-purple-100",
-    "Admin": "bg-blue-50 text-blue-700 border-blue-100",
-    "Analyst": "bg-emerald-50 text-emerald-700 border-emerald-100",
-    "Viewer": "bg-slate-100 text-slate-700 border-slate-200/50"
+    [memberLabels.owner]: "bg-purple-50 text-purple-700 border-purple-100",
+    [memberLabels.admin]: "bg-blue-50 text-blue-700 border-blue-100",
+    [memberLabels.analyst]: "bg-emerald-50 text-emerald-700 border-emerald-100",
+    [memberLabels.viewer]: "bg-slate-100 text-slate-700 border-slate-200/50"
   };
 
   return (
     <div className="mx-auto flex max-w-[1600px] flex-col gap-6 pb-12 text-[#101334]">
       {/* Header */}
       <div>
-        <h1 className="text-[31px] font-black tracking-[-0.045em] text-[#060A23]">Settings</h1>
+        <h1 className="text-[31px] font-black tracking-[-0.045em] text-[#060A23]">{ts("pageHeaderTitle")}</h1>
         <p className="mt-2 text-[14px] font-semibold text-[#68739F]">
-          Kelola pengaturan workspace, integrasi, dan preferensi sistem Anda.
+          {ts("pageHeaderSubtitle")}
         </p>
       </div>
 
       {workspaceSettingsQuery.data === null ? (
-        <DashboardErrorState title="Pengaturan live belum bisa dimuat" description="API client sudah mencoba token refresh. Form tetap bisa digunakan dengan nilai sementara." onRetry={() => void workspaceSettingsQuery.refetch()} minHeight="min-h-[150px]" />
+        <DashboardErrorState title={ts("loadFailedTitle")} description={ts("loadFailedDesc")} onRetry={() => void workspaceSettingsQuery.refetch()} minHeight="min-h-[150px]" />
       ) : null}
 
       {membersQuery.data === null ? (
-        <DashboardErrorState title="Daftar member live belum bisa dimuat" description="API client sudah mencoba token refresh. Untuk sementara, tabel menampilkan member contoh." onRetry={() => void membersQuery.refetch()} minHeight="min-h-[150px]" />
+        <DashboardErrorState title={ts("membersLoadFailedTitle")} description={ts("membersLoadFailedDesc")} onRetry={() => void membersQuery.refetch()} minHeight="min-h-[150px]" />
       ) : null}
 
       {/* Row 1: Workspace & User Management */}
@@ -527,8 +547,8 @@ export default function SettingsPage() {
               <Building size={20} strokeWidth={2.3} />
             </span>
             <div>
-              <h2 className="text-base font-black text-[#101334]">Informasi Workspace</h2>
-              <p className="text-[11px] font-bold text-[#68739F]">Informasi dasar tentang workspace Anda.</p>
+              <h2 className="text-base font-black text-[#101334]">{ts("workspaceInfo.title")}</h2>
+              <p className="text-[11px] font-bold text-[#68739F]">{ts("workspaceInfo.description")}</p>
             </div>
           </div>
 
@@ -537,8 +557,8 @@ export default function SettingsPage() {
             <div className="grid gap-5 sm:grid-cols-[100px_1fr]">
               <div className="flex flex-col items-center">
                 <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl bg-slate-950 border border-slate-800 shadow-inner">
-                  <Image src={activeLogo} alt="Workspace Logo" width={60} height={60} unoptimized={activeLogo.startsWith("http")} className={cn("object-contain transition-opacity", uploadLogoMutation.isPending && "opacity-45")} />
-                  {uploadLogoMutation.isPending ? <span className="absolute inset-x-2 bottom-2 rounded-full bg-white/95 px-2 py-1 text-center text-[8px] font-black uppercase tracking-wide text-[#465FFF] shadow-sm">Uploading</span> : null}
+                  <Image src={activeLogo} alt={ts("workspaceInfo.logoAlt")} width={60} height={60} unoptimized={activeLogo.startsWith("http")} className={cn("object-contain transition-opacity", uploadLogoMutation.isPending && "opacity-45")} />
+                  {uploadLogoMutation.isPending ? <span className="absolute inset-x-2 bottom-2 rounded-full bg-white/95 px-2 py-1 text-center text-[8px] font-black uppercase tracking-wide text-[#465FFF] shadow-sm">{ts("workspaceInfo.logoUploading")}</span> : null}
                 </div>
                 <input
                   ref={logoInputRef}
@@ -549,20 +569,22 @@ export default function SettingsPage() {
                 />
                 <button
                   type="button"
+                  title={ts("logo.changeLogo")}
+                  aria-label={ts("logo.changeLogo")}
                   onClick={handleLogoUpload}
                   disabled={uploadLogoMutation.isPending}
-                  className="mt-2.5 w-full rounded-lg border border-[#DDE3EF] bg-white px-1 py-1 text-center text-[9px] font-extrabold text-[#465FFF] shadow-xs transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap"
+                  className="mt-2.5 flex h-7 w-full items-center justify-center rounded-lg border border-[#DDE3EF] bg-white text-[#465FFF] shadow-xs transition hover:bg-slate-50 hover:text-[#31406B] disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {uploadLogoMutation.isPending ? "Mengunggah..." : "Ubah Logo"}
+                  {uploadLogoMutation.isPending ? <RefreshCw size={14} className="animate-spin" /> : <Upload size={14} strokeWidth={2.5} />}
                 </button>
-                <span className="mt-1 text-center text-[9px] font-semibold text-slate-400">PNG, JPG, WEBP, SVG max 2MB</span>
+                <span className="mt-1 text-center text-[9px] font-semibold text-slate-400">{ts("logo.formatHint")}</span>
                 {logoError ? <span className="mt-1 text-center text-[9px] font-bold text-[#EF4444]">{logoError}</span> : null}
               </div>
 
               <div className="space-y-3.5">
                 <div>
                   <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#68739F]">
-                    Nama Workspace
+                    {ts("workspaceInfo.labelName")}
                   </label>
                   <input
                     type="text"
@@ -575,7 +597,7 @@ export default function SettingsPage() {
 
                 <div>
                   <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#68739F]">
-                    Industri
+                    {ts("workspaceInfo.labelIndustry")}
                   </label>
                   <div className="relative">
                     <select
@@ -583,11 +605,11 @@ export default function SettingsPage() {
                       onChange={(e) => setIndustry(e.target.value)}
                       className="h-10 w-full appearance-none rounded-lg border border-[#DDE3EF] bg-white px-3 pr-8 text-[12px] font-bold text-[#101334] focus:border-[#465FFF] focus:outline-none"
                     >
-                      <option value="Technology">Technology</option>
-                      <option value="Finance">Finance</option>
-                      <option value="Healthcare">Healthcare</option>
-                      <option value="Retail">Retail & E-Commerce</option>
-                      <option value="Government">Government & Non-Profit</option>
+                      <option value="Technology">{ts("workspaceInfo.industryTechnology")}</option>
+                      <option value="Finance">{ts("workspaceInfo.industryFinance")}</option>
+                      <option value="Healthcare">{ts("workspaceInfo.industryHealthcare")}</option>
+                      <option value="Retail">{ts("workspaceInfo.industryRetail")}</option>
+                      <option value="Government">{ts("workspaceInfo.industryGovernment")}</option>
                     </select>
                     <ChevronDown size={14} className="pointer-events-none absolute right-3 top-3.5 text-[#68739F]" />
                   </div>
@@ -596,12 +618,12 @@ export default function SettingsPage() {
             </div>
 
             <div className="border-t border-slate-100 pt-4">
-              <p className="mb-3 text-[11px] font-black text-[#101334]">Ubah Password</p>
+              <p className="mb-3 text-[11px] font-black text-[#101334]">{ts("workspaceInfo.sectionPassword")}</p>
               <div className="space-y-2.5">
                 <div>
                   <input
                     type="password"
-                    placeholder="Password saat ini"
+                    placeholder={ts("workspaceInfo.passwordCurrentPlaceholder")}
                     value={currentPassword}
                     onChange={(e) => { setCurrentPassword(e.target.value); setPasswordErrors((prev) => ({ ...prev, current: undefined })); }}
                     className={cn("h-9 w-full rounded-md border bg-slate-50 px-3 text-[10px] font-semibold text-slate-700 outline-none focus:border-[#465FFF]", passwordErrors.current ? "border-[#EF4444]" : "border-[#DDE3EF]")}
@@ -611,7 +633,7 @@ export default function SettingsPage() {
                 <div>
                   <input
                     type="password"
-                    placeholder="Password baru (min 10 karakter, huruf besar, angka, simbol)"
+                    placeholder={ts("workspaceInfo.passwordNewPlaceholder")}
                     value={newPassword}
                     onChange={(e) => { setNewPassword(e.target.value); setPasswordErrors((prev) => ({ ...prev, newPass: undefined })); }}
                     className={cn("h-9 w-full rounded-md border bg-slate-50 px-3 text-[10px] font-semibold text-slate-700 outline-none focus:border-[#465FFF]", passwordErrors.newPass ? "border-[#EF4444]" : "border-[#DDE3EF]")}
@@ -622,17 +644,17 @@ export default function SettingsPage() {
                   type="button"
                   onClick={() => {
                     const errors: { current?: string; newPass?: string } = {};
-                    if (!currentPassword) errors.current = "Password saat ini wajib diisi.";
+                    if (!currentPassword) errors.current = ts("validation.currentPasswordRequired");
                     if (!newPassword) {
-                      errors.newPass = "Password baru wajib diisi.";
+                      errors.newPass = ts("validation.newPasswordRequired");
                     } else if (newPassword.length < 10) {
-                      errors.newPass = "Password minimal 10 karakter.";
+                      errors.newPass = ts("validation.passwordMinLength");
                     } else if (!/[A-Z]/.test(newPassword)) {
-                      errors.newPass = "Password harus mengandung huruf besar.";
+                      errors.newPass = ts("validation.passwordUppercase");
                     } else if (!/[0-9]/.test(newPassword)) {
-                      errors.newPass = "Password harus mengandung angka.";
+                      errors.newPass = ts("validation.passwordNumber");
                     } else if (!/[^A-Za-z0-9]/.test(newPassword)) {
-                      errors.newPass = "Password harus mengandung simbol.";
+                      errors.newPass = ts("validation.passwordSymbol");
                     }
                     setPasswordErrors(errors);
                     if (Object.keys(errors).length > 0) return;
@@ -642,7 +664,7 @@ export default function SettingsPage() {
                   className="flex h-9 w-full items-center justify-center gap-2 rounded-md bg-[#465FFF] text-[11px] font-black text-white transition hover:bg-[#3B4FE0] disabled:opacity-50"
                 >
                   <Lock size={13} />
-                  {changePasswordMutation.isPending ? "Menyimpan..." : "Ubah Password"}
+                  {changePasswordMutation.isPending ? ts("common.saving") : ts("changePassword")}
                 </button>
               </div>
             </div>
@@ -650,7 +672,7 @@ export default function SettingsPage() {
             <div className="grid gap-3.5 sm:grid-cols-2">
               <div>
                 <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#68739F]">
-                  Time Zone
+                  {ts("workspaceInfo.labelTimezone")}
                 </label>
                 <div className="relative">
                   <select
@@ -669,7 +691,7 @@ export default function SettingsPage() {
 
               <div>
                 <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#68739F]">
-                  Bahasa
+                  {ts("workspaceInfo.labelLanguage")}
                 </label>
                 <div className="relative">
                   <select
@@ -677,9 +699,9 @@ export default function SettingsPage() {
                     onChange={(e) => setLanguage(e.target.value)}
                     className="h-10 w-full appearance-none rounded-lg border border-[#DDE3EF] bg-white px-3 pr-8 text-[12px] font-bold text-[#101334] focus:border-[#465FFF] focus:outline-none"
                   >
-                    <option value="Bahasa Indonesia">Bahasa Indonesia</option>
-                    <option value="English (US)">English (US)</option>
-                    <option value="English (UK)">English (UK)</option>
+                    <option value="Bahasa Indonesia">{ts("workspaceInfo.languageId")}</option>
+                    <option value="English (US)">{ts("workspaceInfo.languageEnUs")}</option>
+                    <option value="English (UK)">{ts("workspaceInfo.languageEnUk")}</option>
                   </select>
                   <ChevronDown size={14} className="pointer-events-none absolute right-3 top-3.5 text-[#68739F]" />
                 </div>
@@ -688,11 +710,11 @@ export default function SettingsPage() {
 
             <div>
               <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#68739F]">
-                Workspace URL
+                {ts("workspaceInfo.labelUrl")}
               </label>
               <div className="relative flex rounded-lg border border-[#DDE3EF] focus-within:border-[#465FFF] focus-within:ring-2 focus-within:ring-[#465FFF]/15">
                 <span className="flex items-center bg-slate-50 px-3 text-[11px] font-black text-slate-400 select-none border-r border-[#DDE3EF]">
-                  narriv.ai/workspace/
+                  {ts("workspaceInfo.urlPrefix")}
                 </span>
                 <input
                   type="text"
@@ -704,7 +726,7 @@ export default function SettingsPage() {
                   type="button"
                   onClick={handleCopyUrl}
                   className="absolute right-3 top-3 text-slate-400 hover:text-[#465FFF]"
-                  title="Salin URL workspace"
+                  title={ts("workspaceInfo.copyUrl")}
                 >
                   {copied ? <Check size={15} className="text-emerald-500" /> : <Copy size={15} />}
                 </button>
@@ -719,15 +741,15 @@ export default function SettingsPage() {
               {isSavingInfo ? (
                 <>
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Menyimpan...
+                  {ts("common.saving")}
                 </>
               ) : saveSuccess ? (
                 <>
                   <Check size={16} />
-                  Perubahan Disimpan
+                  {ts("common.changesSaved")}
                 </>
               ) : (
-                "Simpan Perubahan"
+                ts("common.saveChanges")
               )}
             </button>
           </form>
@@ -741,25 +763,25 @@ export default function SettingsPage() {
                 <Users size={20} strokeWidth={2.3} />
               </span>
               <div>
-                <h2 className="text-base font-black text-[#101334]">User & Access Management</h2>
-                <p className="text-[11px] font-bold text-[#68739F]">Kelola anggota workspace dan akses mereka.</p>
+                <h2 className="text-base font-black text-[#101334]">{ts("membersCard.title")}</h2>
+                <p className="text-[11px] font-bold text-[#68739F]">{ts("membersCard.desc")}</p>
               </div>
             </div>
 
             <div className="flex flex-wrap gap-2.5">
               <button
                 type="button"
-                onClick={() => showToast("Role & Permissions manager akan terbuka.", "info")}
+                onClick={() => showToast(ts("toast.rolePermissionsInfo"), "info")}
                 className="flex h-9 items-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-slate-700 shadow-xs transition hover:bg-slate-50"
               >
-                Kelola Role & Permission
+                {ts("common.manageRoles")}
               </button>
               <button
                 type="button"
                 onClick={() => setShowInviteModal(true)}
                 className="flex h-9 items-center gap-1.5 rounded-[8px] bg-[#465FFF] px-3.5 text-[11px] font-black text-white shadow-[0_4px_12px_rgba(70,95,255,0.2)] transition hover:bg-[#3B20EA]"
               >
-                <Plus size={14} /> Invite Member
+                <Plus size={14} /> {ts("common.inviteMember")}
               </button>
             </div>
           </div>
@@ -768,17 +790,17 @@ export default function SettingsPage() {
             {membersQuery.isPending ? (
               <TableSkeleton rows={4} columns={6} className="border-0 shadow-none" />
             ) : membersQuery.data && members.length === 0 ? (
-              <DashboardEmptyState title="Belum ada member live" description="Workspace ini belum memiliki member yang dikembalikan oleh backend." icon="inbox" minHeight="min-h-[280px]" />
+              <DashboardEmptyState title={ts("membersEmptyTitle")} description={ts("membersEmptyDesc")} icon="inbox" minHeight="min-h-[280px]" />
             ) : (
             <table className="w-full min-w-[580px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-[#E6EAF2] bg-[#FBFCFF] text-[10px] font-black uppercase tracking-[0.1em] text-[#68739F]">
-                  <th className="px-4 py-3">User</th>
-                  <th className="px-4 py-3">Role</th>
-                  <th className="px-4 py-3">Permission</th>
-                  <th className="px-4 py-3">Last Active</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 text-right">Aksi</th>
+                  <th className="px-4 py-3">{ts("table.user")}</th>
+                  <th className="px-4 py-3">{ts("table.role")}</th>
+                  <th className="px-4 py-3">{ts("table.permission")}</th>
+                  <th className="px-4 py-3">{ts("table.lastActive")}</th>
+                  <th className="px-4 py-3">{ts("table.status")}</th>
+                  <th className="px-4 py-3 text-right">{ts("table.action")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#EDF1F7] text-[11.5px] font-bold">
@@ -808,7 +830,7 @@ export default function SettingsPage() {
                     <td className="px-4 py-3">
                       <span className={cn(
                         "inline-flex items-center rounded-full px-2.5 py-0.5 text-[9.5px] font-black border",
-                        member.status === "Aktif" 
+                        member.status === memberLabels.statusActive 
                           ? "bg-emerald-50 text-emerald-700 border-emerald-100/50" 
                           : "bg-rose-50 text-rose-700 border-rose-100/50"
                       )}>
@@ -820,14 +842,14 @@ export default function SettingsPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            const action = member.status === "Aktif" ? "Nonaktif" : "Aktif";
+                            const action = member.status === memberLabels.statusActive ? memberLabels.statusInactive : memberLabels.statusActive;
                             const updated = [...members];
                             updated[idx].status = action;
                             setMemberOverrides(updated);
-                            showToast(`Status ${member.name} diubah menjadi ${action}.`);
+                            showToast(ts("memberStatusChanged", { name: member.name, action }));
                           }}
                           className="rounded-md border border-[#DDE3EF] bg-white p-1 text-slate-400 hover:text-[#465FFF] hover:bg-[#EEF2FF]"
-                          title={member.status === "Aktif" ? "Nonaktifkan pengguna" : "Aktifkan pengguna"}
+                          title={member.status === memberLabels.statusActive ? ts("deactivateUser") : ts("activateUser")}
                         >
                           <UserCheck size={14} />
                         </button>
@@ -835,7 +857,7 @@ export default function SettingsPage() {
                             type="button"
                             onClick={() => setMemberToDelete(member)}
                             className="ml-1 rounded-md border border-[#DDE3EF] bg-white p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50"
-                            title="Hapus anggota"
+                            title={ts("removeUser")}
                         >
                           <Trash size={14} />
                         </button>
@@ -860,48 +882,48 @@ export default function SettingsPage() {
               <Bell size={18} strokeWidth={2.3} />
             </span>
             <div>
-              <h3 className="text-[13.5px] font-black text-[#101334]">Notifikasi</h3>
-              <p className="text-[10px] font-semibold text-[#68739F]">Preferensi rute notifikasi Anda.</p>
+              <h3 className="text-[13.5px] font-black text-[#101334]">{ts("notifications.title")}</h3>
+              <p className="text-[10px] font-semibold text-[#68739F]">{ts("notifications.desc")}</p>
             </div>
           </div>
 
           <div className="space-y-3.5">
             <div className="flex items-center justify-between">
               <div>
-                <span className="block text-[11px] font-black text-[#101334]">Email Alerts</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">Laporan alert ke email</span>
+                <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.emailAlerts")}</span>
+                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("notifications.emailAlertsDesc")}</span>
               </div>
               <Switch checked={notifEmailValue} onChange={setNotifEmail} />
             </div>
 
             <div className="flex items-center justify-between">
               <div>
-                <span className="block text-[11px] font-black text-[#101334]">Slack Alerts</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">Eskalasi otomatis ke Slack</span>
+                <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.slackAlerts")}</span>
+                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("notifications.slackAlertsDesc")}</span>
               </div>
               <Switch checked={notifSlack} onChange={setNotifSlack} />
             </div>
 
             <div className="flex items-center justify-between">
               <div>
-                <span className="block text-[11px] font-black text-[#101334]">WhatsApp Alerts</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">Alert real-time nomor terdaftar</span>
+                <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.whatsappAlerts")}</span>
+                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("notifications.whatsappAlertsDesc")}</span>
               </div>
               <Switch checked={notifWhatsappValue} onChange={setNotifWhatsapp} />
             </div>
 
             <div className="flex items-center justify-between">
               <div>
-                <span className="block text-[11px] font-black text-[#101334]">Daily Summary</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">Ringkasan harian analisis narasi</span>
+                <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.dailySummary")}</span>
+                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("notifications.dailySummaryDesc")}</span>
               </div>
               <Switch checked={notifDaily} onChange={setNotifDaily} />
             </div>
 
             <div className="flex items-center justify-between">
               <div>
-                <span className="block text-[11px] font-black text-[#101334]">Critical Alert Only</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">Hanya notifikasi tingkat kritis</span>
+                <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.criticalOnly")}</span>
+                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("notifications.criticalOnlyDesc")}</span>
               </div>
               <Switch checked={notifCritical} onChange={setNotifCritical} />
             </div>
@@ -910,16 +932,16 @@ export default function SettingsPage() {
               <div className="flex items-center gap-2">
                 <Clock size={14} className="text-slate-400" />
                 <div>
-                  <span className="block text-[11px] font-black text-[#101334]">Quiet Hours</span>
-                  <span className="block text-[9.5px] text-slate-400 font-semibold">Jeda notifikasi di luar kerja</span>
+                  <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.quietHours")}</span>
+                  <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("notifications.quietHoursDesc")}</span>
                 </div>
               </div>
               <button
                 type="button"
-                onClick={() => showToast("Quiet Hours editor akan terbuka.", "info")}
+                onClick={() => showToast(ts("toast.quietHoursInfo"), "info")}
                 className="text-[10px] font-black text-[#465FFF] hover:underline"
               >
-                22:00 - 07:00 &gt;
+                {ts("quietHoursTime")}
               </button>
             </div>
           </div>
@@ -932,23 +954,23 @@ export default function SettingsPage() {
               <Sparkles size={18} strokeWidth={2.3} />
             </span>
             <div>
-              <h3 className="text-[13.5px] font-black text-[#101334]">AI Preferences</h3>
-              <p className="text-[10px] font-semibold text-[#68739F]">Sesuaikan cara kerja agen AI.</p>
+              <h3 className="text-[13.5px] font-black text-[#101334]">{ts("aiPrefs.title")}</h3>
+              <p className="text-[10px] font-semibold text-[#68739F]">{ts("aiPrefs.desc")}</p>
             </div>
           </div>
 
           <div className="space-y-3.5">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-black text-[#101334]">AI Sensitivity</span>
+              <span className="text-[11px] font-black text-[#101334]">{ts("aiPrefs.sensitivity")}</span>
               <div className="relative">
                 <select
                   value={aiSensitivity}
                   onChange={(e) => setAiSensitivity(e.target.value)}
                   className="h-8 appearance-none rounded-md border border-[#DDE3EF] bg-slate-50 px-2.5 pr-7 text-[10px] font-black text-slate-700 focus:outline-none"
                 >
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
+                  <option value="Low">{ts("sensitivityLow")}</option>
+                  <option value="Medium">{ts("sensitivityMedium")}</option>
+                  <option value="High">{ts("sensitivityHigh")}</option>
                 </select>
                 <ChevronDown size={11} className="pointer-events-none absolute right-2 top-2.5 text-slate-500" />
               </div>
@@ -956,31 +978,31 @@ export default function SettingsPage() {
 
             <div className="flex items-center justify-between">
               <div>
-                <span className="block text-[11px] font-black text-[#101334]">Auto Categorization</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">Otomatis kelompokkan tag cluster</span>
+                <span className="block text-[11px] font-black text-[#101334]">{ts("aiPrefs.autoCategorization")}</span>
+                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("aiPrefs.autoCategorizationDesc")}</span>
               </div>
               <Switch checked={autoCat} onChange={setAutoCat} />
             </div>
 
             <div className="flex items-center justify-between">
               <div>
-                <span className="block text-[11px] font-black text-[#101334]">Auto Sentiment Analysis</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">Tentukan polaritas sentimen berita</span>
+                <span className="block text-[11px] font-black text-[#101334]">{ts("aiPrefs.autoSentiment")}</span>
+                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("aiPrefs.autoSentimentDesc")}</span>
               </div>
               <Switch checked={autoSentiment} onChange={setAutoSentiment} />
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-black text-[#101334]">AI Summary Style</span>
+              <span className="text-[11px] font-black text-[#101334]">{ts("aiPrefs.summaryStyle")}</span>
               <div className="relative">
                 <select
                   value={summaryStyle}
                   onChange={(e) => setSummaryStyle(e.target.value)}
                   className="h-8 appearance-none rounded-md border border-[#DDE3EF] bg-slate-50 px-2.5 pr-7 text-[10px] font-black text-slate-700 focus:outline-none"
                 >
-                  <option value="Executive">Executive</option>
-                  <option value="Detailed">Detailed</option>
-                  <option value="Short">Short</option>
+                  <option value="Executive">{ts("summaryExecutive")}</option>
+                  <option value="Detailed">{ts("summaryDetailed")}</option>
+                  <option value="Short">{ts("summaryShort")}</option>
                 </select>
                 <ChevronDown size={11} className="pointer-events-none absolute right-2 top-2.5 text-slate-500" />
               </div>
@@ -988,16 +1010,16 @@ export default function SettingsPage() {
 
             <div className="flex items-center justify-between">
               <div>
-                <span className="block text-[11px] font-black text-[#101334]">Enable AI Recommendations</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">Tampilkan saran tindak lanjut</span>
+                <span className="block text-[11px] font-black text-[#101334]">{ts("aiPrefs.enableRecs")}</span>
+                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("aiPrefs.enableRecsDesc")}</span>
               </div>
               <Switch checked={enableRecs} onChange={setEnableRecs} />
             </div>
 
             <div className="flex items-center justify-between">
               <div>
-                <span className="block text-[11px] font-black text-[#101334]">Enable Predictive Signals</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">Deteksi tanda tren membesar</span>
+                <span className="block text-[11px] font-black text-[#101334]">{ts("aiPrefs.enablePredictive")}</span>
+                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("aiPrefs.enablePredictiveDesc")}</span>
               </div>
               <Switch checked={enablePredictive} onChange={setEnablePredictive} />
             </div>
@@ -1011,25 +1033,25 @@ export default function SettingsPage() {
               <Layers size={18} strokeWidth={2.3} />
             </span>
             <div>
-              <h3 className="text-[13.5px] font-black text-[#101334]">Integrations & API</h3>
-              <p className="text-[10px] font-semibold text-[#68739F]">Kelola integrasi dan akses API.</p>
+              <h3 className="text-[13.5px] font-black text-[#101334]">{ts("integrationsApi.title")}</h3>
+              <p className="text-[10px] font-semibold text-[#68739F]">{ts("integrationsApi.desc")}</p>
             </div>
           </div>
 
           <div className="space-y-1.5 flex-1">
             {[
-              { label: "Connected Platforms", sub: "Integrasi media & monitoring", icon: Cloud, badge: "12" },
-              { label: "API Keys", sub: "Buat & hapus token akses", icon: Key },
-              { label: "Webhooks", sub: "Pemberitahuan event eksternal", icon: Webhook },
-              { label: "Database Export", sub: "Sinkronisasi Postgres/BigQuery", icon: Database },
-              { label: "Slack App Settings", sub: "Hubungkan channel eskalasi", icon: Sliders },
+              { label: ts("integrationsApi.connectedPlatforms"), sub: ts("integrationsApi.connectedPlatformsDesc"), icon: Cloud, badge: ts("connectedPlatformsBadge") },
+              { label: ts("integrationsApi.apiKeys"), sub: ts("integrationsApi.apiKeysDesc"), icon: Key },
+              { label: ts("integrationsApi.webhooks"), sub: ts("integrationsApi.webhooksDesc"), icon: Webhook },
+              { label: ts("integrationsApi.dbExport"), sub: ts("integrationsApi.dbExportDesc"), icon: Database },
+              { label: ts("integrationsApi.slackSettings"), sub: ts("integrationsApi.slackSettingsDesc"), icon: Sliders },
             ].map((item, index) => {
               const Icon = item.icon;
               return (
                 <button
                   key={index}
                   type="button"
-                  onClick={() => showToast(`Manajemen ${item.label} akan terbuka.`, "info")}
+                  onClick={() => showToast(ts("toast.managementInfo", { label: item.label }), "info")}
                   className="flex w-full items-center justify-between rounded-lg p-2.5 text-left transition hover:bg-slate-50"
                 >
                   <div className="flex items-center gap-3">
@@ -1060,20 +1082,20 @@ export default function SettingsPage() {
               <Shield size={18} strokeWidth={2.3} />
             </span>
             <div>
-              <h3 className="text-[13.5px] font-black text-[#101334]">Security</h3>
-              <p className="text-[10px] font-semibold text-[#68739F]">Keamanan dan enkripsi workspace.</p>
+              <h3 className="text-[13.5px] font-black text-[#101334]">{ts("security.title")}</h3>
+              <p className="text-[10px] font-semibold text-[#68739F]">{ts("security.desc")}</p>
             </div>
           </div>
 
           <div className="space-y-3.5">
             <div className="flex items-center justify-between">
               <div>
-                <span className="block text-[11px] font-black text-[#101334]">Two-Factor Auth (2FA)</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">MFA wajib untuk semua anggota</span>
+                <span className="block text-[11px] font-black text-[#101334]">{ts("security.twoFa")}</span>
+                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("security.twoFaDesc")}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="rounded-md border border-[#CDEEDD] bg-[#F1FCF6] px-2 py-0.5 text-[9px] font-black text-[#10B981]">
-                  Aktif
+                  {ts("security.active")}
                 </span>
                 <Switch checked={security2fa} onChange={setSecurity2fa} />
               </div>
@@ -1081,8 +1103,8 @@ export default function SettingsPage() {
 
             <div className="flex items-center justify-between">
               <div>
-                <span className="block text-[11px] font-black text-[#101334]">Session Timeout</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">Masa berakhir login aktif</span>
+                <span className="block text-[11px] font-black text-[#101334]">{ts("security.sessionTimeout")}</span>
+                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("security.sessionTimeoutDesc")}</span>
               </div>
               <div className="relative">
                 <select
@@ -1090,10 +1112,10 @@ export default function SettingsPage() {
                   onChange={(e) => setSessionTimeout(e.target.value)}
                   className="h-8 appearance-none rounded-md border border-[#DDE3EF] bg-slate-50 px-2.5 pr-7 text-[10px] font-black text-slate-700 focus:outline-none"
                 >
-                  <option value="15 menit">15 menit</option>
-                  <option value="30 menit">30 menit</option>
-                  <option value="1 jam">1 jam</option>
-                  <option value="12 jam">12 jam</option>
+                  <option value="15 menit">{ts("sessionTimeout15")}</option>
+                  <option value="30 menit">{ts("sessionTimeout30")}</option>
+                  <option value="1 jam">{ts("sessionTimeout1h")}</option>
+                  <option value="12 jam">{ts("sessionTimeout12h")}</option>
                 </select>
                 <ChevronDown size={11} className="pointer-events-none absolute right-2 top-2.5 text-slate-500" />
               </div>
@@ -1101,8 +1123,8 @@ export default function SettingsPage() {
 
             <div className="flex items-center justify-between">
               <div>
-                <span className="block text-[11px] font-black text-[#101334]">IP Restriction</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">Batasi login dari IP kantor saja</span>
+                <span className="block text-[11px] font-black text-[#101334]">{ts("security.ipRestriction")}</span>
+                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("security.ipRestrictionDesc")}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className={cn(
@@ -1111,7 +1133,7 @@ export default function SettingsPage() {
                     ? "border-[#CDEEDD] bg-[#F1FCF6] text-[#10B981]" 
                     : "border-slate-200 bg-slate-100 text-slate-500"
                 )}>
-                  {ipRestrict ? "Aktif" : "Nonaktif"}
+                  {ipRestrict ? ts("security.active") : ts("security.inactive")}
                 </span>
                 <Switch checked={ipRestrict} onChange={setIpRestrict} />
               </div>
@@ -1119,14 +1141,14 @@ export default function SettingsPage() {
 
             <button
               type="button"
-              onClick={() => showToast("Log audit keamanan sedang diekspor.", "info")}
+              onClick={() => showToast(ts("toast.auditExport"), "info")}
               className="flex w-full items-center justify-between border-t border-slate-100 pt-3.5 text-left"
             >
               <div className="flex items-center gap-2">
                 <Lock size={14} className="text-slate-400" />
                 <div>
-                  <span className="block text-[11px] font-black text-[#101334]">Audit Logs</span>
-                  <span className="block text-[9.5px] text-slate-400 font-semibold">Unduh riwayat aktivitas keamanan</span>
+                  <span className="block text-[11px] font-black text-[#101334]">{ts("security.auditLog")}</span>
+                  <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("security.auditLogDesc")}</span>
                 </div>
               </div>
               <ArrowRight size={13} className="text-slate-400" />
@@ -1134,8 +1156,8 @@ export default function SettingsPage() {
 
             <div className="flex items-center justify-between">
               <div>
-                <span className="block text-[11px] font-black text-[#101334]">Data Retention</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">Lama penyimpanan arsip log</span>
+                <span className="block text-[11px] font-black text-[#101334]">{ts("retentionTitle")}</span>
+                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("retentionDesc")}</span>
               </div>
               <div className="relative">
                 <select
@@ -1143,10 +1165,10 @@ export default function SettingsPage() {
                   onChange={(e) => setDataRetention(e.target.value)}
                   className="h-8 appearance-none rounded-md border border-[#DDE3EF] bg-slate-50 px-2.5 pr-7 text-[10px] font-black text-slate-700 focus:outline-none"
                 >
-                  <option value="30 hari">30 hari</option>
-                  <option value="90 hari">90 hari</option>
-                  <option value="365 hari">365 hari</option>
-                  <option value="Selamanya">Selamanya</option>
+                  <option value="30 hari">{ts("retention30")}</option>
+                  <option value="90 hari">{ts("retention90")}</option>
+                  <option value="365 hari">{ts("retention365")}</option>
+                  <option value="Selamanya">{ts("retentionForever")}</option>
                 </select>
                 <ChevronDown size={11} className="pointer-events-none absolute right-2 top-2.5 text-slate-500" />
               </div>
@@ -1165,8 +1187,8 @@ export default function SettingsPage() {
               <CreditCard size={20} strokeWidth={2.3} />
             </span>
             <div>
-              <h2 className="text-base font-black text-[#101334]">Billing & Usage</h2>
-              <p className="text-[11px] font-bold text-[#68739F]">Informasi paket dan penggunaan workspace.</p>
+              <h2 className="text-base font-black text-[#101334]">{ts("billingCard.title")}</h2>
+              <p className="text-[11px] font-bold text-[#68739F]">{ts("billingCard.desc")}</p>
             </div>
           </div>
 
@@ -1177,27 +1199,27 @@ export default function SettingsPage() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 shadow-[inset_0_0_12px_rgba(70,95,255,0.15)]">
                   <Sparkles size={24} />
                 </div>
-                <h4 className="mt-3 text-[18px] font-black text-[#101334]">Enterprise</h4>
-                <p className="mt-1 text-[11px] font-semibold text-[#68739F]">Paket aktif profesional skala besar.</p>
+                <h4 className="mt-3 text-[18px] font-black text-[#101334]">{ts("billingCard.planEnterprise")}</h4>
+                <p className="mt-1 text-[11px] font-semibold text-[#68739F]">{ts("billingCard.planDesc")}</p>
                 <button
                   type="button"
-                  onClick={() => showToast("Panel langganan akan terbuka.", "info")}
+                  onClick={() => showToast(ts("billing.subscribe"), "info")}
                   className="mt-4 w-full rounded-lg border border-indigo-200 bg-white py-2 text-center text-[11px] font-black text-[#465FFF] shadow-sm transition hover:bg-indigo-50/30"
                 >
-                  Kelola Paket
+                  {ts("billingCard.managePlan")}
                 </button>
               </div>
 
               <div className="border-t border-slate-100 pt-3 text-[11px] font-bold space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-[#68739F]">Status</span>
+                  <span className="text-[#68739F]">{ts("billingCard.statusLabel")}</span>
                   <span className="rounded-full bg-emerald-50 border border-emerald-100/50 px-2.5 py-0.5 text-[9.5px] font-black text-emerald-600">
-                    Aktif
+                    {ts("security.active")}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#68739F]">Tagihan Berikutnya</span>
-                  <span className="text-[#101334]">12 Juni 2025 <span className="text-[10px] text-slate-400 font-semibold">(30 hari lagi)</span></span>
+                  <span className="text-[#68739F]">{ts("billingCard.nextBilling")}</span>
+                  <span className="text-[#101334]">{ts("billingCard.billingDateFormat")} <span className="text-[10px] text-slate-400 font-semibold">{ts("billingCard.billingDaysLeft")}</span></span>
                 </div>
               </div>
             </div>
@@ -1207,14 +1229,14 @@ export default function SettingsPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-[#68739F]">
-                    Penggunaan Signal (30 Hari Terakhir)
+                    {ts("billingCard.usageTitle")}
                   </span>
                   <div className="mt-1.5 flex items-baseline gap-2">
                     <span className="text-[25px] font-black text-[#101334]">128.452</span>
-                    <span className="text-[11px] font-bold text-slate-400">Total Signals</span>
+                    <span className="text-[11px] font-bold text-slate-400">{ts("billingCard.usageTotalSignals")}</span>
                   </div>
                   <span className="mt-1 block text-[10.5px] font-black text-emerald-600 flex items-center gap-0.5">
-                    <TrendingUp size={12} /> ▲ 18.6% vs periode sebelumnya
+                    <TrendingUp size={12} /> {ts("billingCard.usageChange")}
                   </span>
                 </div>
                 <div className="relative">
@@ -1222,8 +1244,8 @@ export default function SettingsPage() {
                     defaultValue="30"
                     className="h-7 rounded-md border border-[#DDE3EF] bg-white px-2.5 pr-7 text-[10px] font-black text-slate-700 focus:outline-none"
                   >
-                    <option value="30">30 Hari Terakhir</option>
-                    <option value="60">60 Hari Terakhir</option>
+                    <option value="30">{ts("billingCard.period30")}</option>
+                    <option value="60">{ts("billingCard.period60")}</option>
                   </select>
                   <ChevronDown size={11} className="pointer-events-none absolute right-2 top-2 text-slate-500" />
                 </div>
@@ -1273,7 +1295,7 @@ export default function SettingsPage() {
                             className="absolute z-30 flex flex-col items-center bg-slate-950 px-2.5 py-1.5 rounded-lg shadow-xl text-[9px] font-black text-white whitespace-nowrap animate-in fade-in zoom-in-95 duration-100"
                           >
                             <span className="text-slate-400 font-bold">{chartDates[idx]}</span>
-                            <span className="mt-0.5 text-[10px] text-[#00F0FF]">{val.toLocaleString("id-ID")} signals</span>
+                            <span className="mt-0.5 text-[10px] text-[#00F0FF]">{val.toLocaleString("id-ID")} {ts("billingCard.signalsUnit")}</span>
                           </div>
                         )}
                       </div>
@@ -1292,10 +1314,10 @@ export default function SettingsPage() {
           {/* Bottom Progress Metrics Sub-row */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 border-t border-slate-100 pt-5">
             {[
-              { label: "Signal Volume", usage: "128.452 / 200.000", pct: 64, fill: "bg-[#465FFF]" },
-              { label: "Connected Sources", usage: "8 / 10", pct: 80, fill: "bg-[#465FFF]" },
-              { label: "Users limit", usage: "12 / 25", pct: 48, fill: "bg-[#465FFF]" },
-              { label: "AI Credits", usage: "8.200 / 10.000", pct: 82, fill: "bg-emerald-500" },
+              { label: ts("billingCard.metricSignalVolume"), usage: "128.452 / 200.000", pct: 64, fill: "bg-[#465FFF]" },
+              { label: ts("billingCard.metricConnectedSources"), usage: "8 / 10", pct: 80, fill: "bg-[#465FFF]" },
+              { label: ts("billingCard.metricUsersLimit"), usage: "12 / 25", pct: 48, fill: "bg-[#465FFF]" },
+              { label: ts("billingCard.metricAiCredits"), usage: "8.200 / 10.000", pct: 82, fill: "bg-emerald-500" },
             ].map((metric) => (
               <div key={metric.label} className="rounded-xl border border-slate-100 bg-[#FBFCFF] p-4">
                 <div className="flex items-center justify-between text-[11px] font-black">
@@ -1317,9 +1339,9 @@ export default function SettingsPage() {
               <Shield size={20} strokeWidth={2.3} />
             </span>
             <div>
-              <h2 className="text-base font-black text-rose-600">Danger Zone</h2>
+              <h2 className="text-base font-black text-rose-600">{ts("danger.title")}</h2>
               <p className="text-[11px] font-bold text-slate-500">
-                Tindakan berisiko yang dapat mempengaruhi workspace Anda.
+                {ts("danger.desc")}
               </p>
             </div>
           </div>
@@ -1327,9 +1349,9 @@ export default function SettingsPage() {
           <div className="space-y-5">
             <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0 flex-1">
-                <span className="block text-[11.5px] font-black text-slate-800">Pause Workspace</span>
+                <span className="block text-[11.5px] font-black text-slate-800">{ts("danger.pauseTitle")}</span>
                 <span className="mt-1 block text-[10px] text-slate-400 font-semibold leading-normal">
-                  Hentikan sementara semua monitoring dan ingest data.
+                  {ts("danger.pauseDesc")}
                 </span>
               </div>
               <button
@@ -1337,15 +1359,15 @@ export default function SettingsPage() {
                 onClick={() => triggerConfirmAction("pause")}
                 className="flex h-9 min-w-[140px] items-center justify-center gap-1.5 rounded-lg bg-rose-600 px-3.5 text-[11px] font-black text-white transition hover:bg-rose-700 shadow-sm"
               >
-                <Pause size={13} /> Pause Workspace
+                <Pause size={13} /> {ts("danger.pauseButton")}
               </button>
             </div>
 
             <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between border-t border-slate-100/80 pt-4">
               <div className="min-w-0 flex-1">
-                <span className="block text-[11.5px] font-black text-slate-800">Reset Signals Cache</span>
+                <span className="block text-[11.5px] font-black text-slate-800">{ts("danger.resetTitle")}</span>
                 <span className="mt-1 block text-[10px] text-slate-400 font-semibold leading-normal">
-                  Hapus cache lokal dan proses ulang semua signals.
+                  {ts("danger.resetDesc")}
                 </span>
               </div>
               <button
@@ -1353,15 +1375,15 @@ export default function SettingsPage() {
                 onClick={() => triggerConfirmAction("reset")}
                 className="flex h-9 min-w-[140px] items-center justify-center gap-1.5 rounded-lg bg-rose-600 px-3.5 text-[11px] font-black text-white transition hover:bg-rose-700 shadow-sm"
               >
-                <RefreshCw size={13} /> Reset Cache
+                <RefreshCw size={13} /> {ts("danger.resetButton")}
               </button>
             </div>
 
             <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between border-t border-slate-100/80 pt-4">
               <div className="min-w-0 flex-1">
-                <span className="block text-[11.5px] font-black text-[#D32F2F]">Delete Workspace</span>
+                <span className="block text-[11.5px] font-black text-[#D32F2F]">{ts("danger.deleteTitle")}</span>
                 <span className="mt-1 block text-[10px] text-slate-400 font-semibold leading-normal">
-                  Hapus permanen workspace beserta semua data di dalamnya.
+                  {ts("danger.deleteDesc")}
                 </span>
               </div>
               <button
@@ -1369,16 +1391,16 @@ export default function SettingsPage() {
                 onClick={() => triggerConfirmAction("delete")}
                 className="flex h-9 min-w-[140px] items-center justify-center gap-1.5 rounded-lg bg-rose-600 px-3.5 text-[11px] font-black text-white transition hover:bg-rose-700 shadow-sm"
               >
-                <Trash2 size={13} /> Delete Workspace
+                <Trash2 size={13} /> {ts("danger.deleteButton")}
               </button>
             </div>
           </div>
         </Panel>
       </div>
 
-      {/* MODAL: Invite Member */}
-      {showInviteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+      {/* MODAL: Invite Member (portal to escape z-10 stacking context) */}
+      {showInviteModal && createPortal(
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
           <div className="w-full max-w-md rounded-2xl border border-slate-100 bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1386,8 +1408,8 @@ export default function SettingsPage() {
                   <PlusCircle size={18} />
                 </span>
                 <div>
-                  <h3 className="text-base font-black text-[#101334]">Invite New Member</h3>
-                  <p className="text-[10px] font-semibold text-slate-400">Tambahkan kolaborator baru ke workspace.</p>
+                  <h3 className="text-base font-black text-[#101334]">{ts("invite.modalTitle")}</h3>
+                  <p className="text-[10px] font-semibold text-slate-400">{ts("invite.subtitle")}</p>
                 </div>
               </div>
               <button
@@ -1402,12 +1424,12 @@ export default function SettingsPage() {
             <form onSubmit={handleInviteSubmit} className="mt-5 space-y-4">
               <div>
                 <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#68739F]">
-                  Nama Lengkap
+                  {ts("invite.nameLabel")}
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Contoh: Aldi Pratama"
+                  placeholder={ts("invite.namePlaceholder")}
                   value={inviteName}
                   onChange={(e) => { setInviteName(e.target.value); setInviteErrors((prev) => ({ ...prev, name: undefined })); }}
                   className={cn("h-10 w-full rounded-lg border px-3 text-[12px] font-bold text-[#101334] focus:border-[#465FFF] focus:outline-none focus:ring-2 focus:ring-[#465FFF]/15", inviteErrors.name ? "border-[#EF4444]" : "border-[#DDE3EF]")}
@@ -1417,12 +1439,12 @@ export default function SettingsPage() {
 
               <div>
                 <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#68739F]">
-                  Email Kerja
+                  {ts("invite.emailLabel")}
                 </label>
                 <input
                   type="email"
                   required
-                  placeholder="Contoh: aldi@narriv.ai"
+                  placeholder={ts("invite.emailPlaceholder")}
                   value={inviteEmail}
                   onChange={(e) => { setInviteEmail(e.target.value); setInviteErrors((prev) => ({ ...prev, email: undefined })); }}
                   className={cn("h-10 w-full rounded-lg border px-3 text-[12px] font-bold text-[#101334] focus:border-[#465FFF] focus:outline-none focus:ring-2 focus:ring-[#465FFF]/15", inviteErrors.email ? "border-[#EF4444]" : "border-[#DDE3EF]")}
@@ -1432,7 +1454,7 @@ export default function SettingsPage() {
 
               <div>
                 <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#68739F]">
-                  Pilih Role Akses
+                  {ts("invite.roleLabel")}
                 </label>
                 <div className="relative">
                   <select
@@ -1440,9 +1462,9 @@ export default function SettingsPage() {
                     onChange={(e) => setInviteRole(e.target.value)}
                     className="h-10 w-full appearance-none rounded-lg border border-[#DDE3EF] bg-white px-3 pr-8 text-[12px] font-bold text-[#101334] focus:border-[#465FFF] focus:outline-none"
                   >
-                    <option value="Admin">Admin (Akses Penuh Kelola)</option>
-                    <option value="Analyst">Analyst (Tulis & Baca Laporan)</option>
-                    <option value="Viewer">Viewer (Hanya Baca)</option>
+                    <option value="Admin">{ts("invite.roleOptionAdmin")}</option>
+                    <option value="Analyst">{ts("invite.roleOptionAnalyst")}</option>
+                    <option value="Viewer">{ts("invite.roleOptionViewer")}</option>
                   </select>
                   <ChevronDown size={14} className="pointer-events-none absolute right-3 top-3.5 text-[#68739F]" />
                 </div>
@@ -1454,25 +1476,26 @@ export default function SettingsPage() {
                   onClick={() => setShowInviteModal(false)}
                   className="flex h-10 flex-1 items-center justify-center rounded-lg border border-slate-200 bg-white text-[12px] font-black text-slate-700 hover:bg-slate-50"
                 >
-                  Batal
+                  {ts("invite.cancel")}
                 </button>
                 <button
                   type="submit"
                   className="flex h-10 flex-1 items-center justify-center rounded-lg bg-[#465FFF] text-[12px] font-black text-white hover:bg-[#3B20EA]"
                 >
-                  Kirim Undangan
+                  {ts("invite.submit")}
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <ConfirmationDialog
         open={showConfirmModal}
-        title="Konfirmasi Aksi"
+        title={ts("confirm.title")}
         description={confirmDescription}
-        confirmLabel="Ya, lanjutkan"
+        confirmLabel={ts("confirm.confirm")}
         onConfirm={executeConfirmAction}
         onOpenChange={(open) => {
           setShowConfirmModal(open);
@@ -1482,9 +1505,9 @@ export default function SettingsPage() {
 
       <ConfirmationDialog
         open={Boolean(memberToDelete)}
-        title="Hapus Member"
-        description={memberToDelete ? `Hapus ${memberToDelete.name} dari workspace? Akses pengguna ini ke dashboard dan data workspace akan dicabut.` : ""}
-        confirmLabel="Ya, hapus"
+        title={ts("deleteMemberDialog.title")}
+        description={memberToDelete ? ts("deleteMemberDialog.description", { name: memberToDelete.name }) : ""}
+        confirmLabel={ts("deleteMemberDialog.confirm")}
         onConfirm={executeDeleteMember}
         onOpenChange={(open) => {
           if (!open) setMemberToDelete(null);

@@ -55,7 +55,7 @@ export async function getSourceHealth(sourceId) {
 export async function getWorkspaceSourceHealth(workspaceId) {
     try {
         const sources = await prisma.source.findMany({
-            where: { workspaceId },
+            where: { workspaceId, type: { not: "deleted" } },
             select: { id: true, name: true, isActive: true },
         });
 
@@ -89,7 +89,7 @@ export async function getWorkspaceSourceHealth(workspaceId) {
 export async function getSourceCoverage(workspaceId) {
     try {
         const sources = await prisma.source.findMany({
-            where: { workspaceId },
+            where: { workspaceId, type: { not: "deleted" } },
             include: {
                 rawDocuments: {
                     select: { id: true },

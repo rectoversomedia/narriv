@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { logStructured } from "./logger.js";
 
 const apiKey = process.env.OPENAI_API_KEY;
 

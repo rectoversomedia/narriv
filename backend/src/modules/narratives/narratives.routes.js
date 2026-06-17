@@ -3,6 +3,7 @@ import prisma from "../../prisma.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { compareClusterPeriods } from "../clustering/clustering.service.js";
+import { logStructured } from "../../lib/logger.js";
 
 const router = express.Router();
 router.use(verifyToken);

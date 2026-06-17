@@ -1,5 +1,5 @@
 import express from "express";
-import { register, login, me, refresh, logout, changePassword, forgotPassword, verifyResetCode, resetPassword, verifyEmail, resendVerification, googleAuth, googleCallback, microsoftAuth, microsoftCallback } from "./auth.controller.js";
+import { register, login, me, refresh, logout, changePassword, forgotPassword, verifyResetCode, resetPassword, verifyEmail, resendVerification, googleAuth, googleCallback, exchangeOAuthCode } from "./auth.controller.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
 import {
@@ -32,7 +32,6 @@ router.get("/me", verifyToken, me);
 // OAuth Routes
 router.get("/google", googleAuth);
 router.get("/google/callback", googleCallback);
-router.get("/microsoft", microsoftAuth);
-router.get("/microsoft/callback", microsoftCallback);
+router.post("/oauth/exchange", exchangeOAuthCode);
 
 export default router;

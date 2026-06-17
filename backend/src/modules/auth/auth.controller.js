@@ -4,6 +4,7 @@ import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { sendEmail } from "../../lib/email.js";
 import { passwordResetCode, passwordResetConfirmation, emailVerificationCode } from "../../lib/email-templates.js";
+import { logStructured } from "../../lib/logger.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const ACCESS_TOKEN_TTL = process.env.ACCESS_TOKEN_TTL || "1h";
@@ -17,10 +18,47 @@ const REGISTER_MAX_ATTEMPTS = 5;
 const PASSWORD_RESET_WINDOW_MS = 15 * 60 * 1000;
 const PASSWORD_RESET_MAX_ATTEMPTS = 5;
 const PASSWORD_RESET_TTL_MINUTES = Number(process.env.PASSWORD_RESET_TTL_MINUTES || 10);
+const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
+const OAUTH_EXCHANGE_TTL_MS = 2 * 60 * 1000;
 
 const loginRateBucket = new Map();
 const registerRateBucket = new Map();
 const passwordResetRateBucket = new Map();
+
+function parseCookies(header = "") {
+    return Object.fromEntries(
+        String(header)
+            .split(";")
+            .map((item) => item.trim())
+            .filter(Boolean)
+            .map((item) => {
+                const index = item.indexOf("=");
+                if (index === -1) return [item, ""];
+                return [item.slice(0, index), decodeURIComponent(item.slice(index + 1))];
+            })
+    );
+}
+
+function createOAuthState(res, provider) {
+    const state = crypto.randomBytes(32).toString("hex");
+    res.cookie(`narriv_oauth_${provider}_state`, state, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: OAUTH_STATE_TTL_MS,
+        path: `/auth/${provider}/callback`,
+    });
+    return state;
+}
+
+function validateOAuthState(req, res, provider) {
+    const cookieName = `narriv_oauth_${provider}_state`;
+    const cookies = parseCookies(req.headers.cookie);
+    const expected = cookies[cookieName];
+    const received = String(req.query.state || "");
+    res.clearCookie(cookieName, { path: `/auth/${provider}/callback` });
+    return Boolean(expected && received && expected === received);
+}
 
 function checkRateLimit(map, key, max, windowMs) {
     const now = Date.now();
@@ -63,8 +101,21 @@ function signAccessToken(user) {
     );
 }
 
+function toSessionUser(user, provider = "password") {
+    return {
+        name: user.name,
+        email: user.email,
+        provider,
+        workspace: "Narriv",
+    };
+}
+
 function hashRefreshToken(token) {
     return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+function hashOAuthExchangeCode(code) {
+    return hashRefreshToken(`oauth-exchange:${code}`);
 }
 
 function hashResetSecret(value) {
@@ -95,6 +146,38 @@ async function issueRefreshToken(userId) {
     });
 
     return { refreshToken: rawToken, expiresAt };
+}
+
+async function storeOAuthExchange({ userId, provider }) {
+    const code = `${provider}.${crypto.randomBytes(32).toString("hex")}`;
+    const tokenHash = hashOAuthExchangeCode(code);
+    const expiresAt = new Date(Date.now() + OAUTH_EXCHANGE_TTL_MS);
+
+    await prisma.refreshToken.create({
+        data: { userId, tokenHash, expiresAt },
+    });
+
+    return code;
+}
+
+async function consumeOAuthExchange(code) {
+    const tokenHash = hashOAuthExchangeCode(code);
+    const now = new Date();
+    const revoked = await prisma.refreshToken.updateMany({
+        where: { tokenHash, revokedAt: null, expiresAt: { gt: now } },
+        data: { revokedAt: now },
+    });
+
+    if (revoked.count !== 1) return null;
+
+    const tokenRow = await prisma.refreshToken.findUnique({
+        where: { tokenHash },
+        include: { user: true },
+    });
+
+    if (!tokenRow?.user) return null;
+    const provider = code.includes(".") ? code.split(".", 1)[0] : "oauth";
+    return { user: tokenRow.user, provider };
 }
 
 async function writeAuditLog(userId, event, metadata = {}) {
@@ -233,10 +316,9 @@ export const login = async (req, res) => {
         const token = signAccessToken(user);
         const { refreshToken } = await issueRefreshToken(user.id);
 
-        const { password: _, ...userWithoutPassword } = user;
         await writeAuditLog(user.id, "login", { email: user.email });
 
-        res.json({ token, refreshToken, user: userWithoutPassword });
+        res.json({ token, refreshToken, user: toSessionUser(user) });
     } catch (error) {
         logStructured("error", "Error logging in:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
@@ -447,9 +529,8 @@ export const verifyEmail = async (req, res) => {
         // Issue tokens and log them in
         const token = signAccessToken(user);
         const { refreshToken } = await issueRefreshToken(user.id);
-        const { password: _, ...userWithoutPassword } = user;
         
-        return res.json({ token, refreshToken, user: userWithoutPassword });
+        return res.json({ token, refreshToken, user: toSessionUser(user) });
     } catch (error) {
         logStructured("error", "Error verifying email:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
@@ -628,14 +709,20 @@ export const googleAuth = (req, res) => {
     const redirectUri = process.env.GOOGLE_CALLBACK_URL;
     if (!clientId || !redirectUri) return res.status(500).json({ error: "Google OAuth not configured." });
 
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=email profile`;
-    res.redirect(authUrl);
+    const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    authUrl.searchParams.set("client_id", clientId);
+    authUrl.searchParams.set("redirect_uri", redirectUri);
+    authUrl.searchParams.set("response_type", "code");
+    authUrl.searchParams.set("scope", "email profile");
+    authUrl.searchParams.set("state", createOAuthState(res, "google"));
+    res.redirect(authUrl.toString());
 };
 
 export const googleCallback = async (req, res) => {
     try {
         const { code } = req.query;
         if (!code) return res.redirect(`${FRONTEND_URL}/login?error=oauth_failed`);
+        if (!validateOAuthState(req, res, "google")) return res.redirect(`${FRONTEND_URL}/login?error=oauth_failed`);
 
         // Exchange code for token
         const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
@@ -674,60 +761,17 @@ export const googleCallback = async (req, res) => {
     }
 };
 
-// ==========================================
-// Microsoft OAuth
-// ==========================================
-export const microsoftAuth = (req, res) => {
-    const clientId = process.env.MICROSOFT_CLIENT_ID;
-    const redirectUri = process.env.MICROSOFT_CALLBACK_URL;
-    if (!clientId || !redirectUri) return res.status(500).json({ error: "Microsoft OAuth not configured." });
+export const exchangeOAuthCode = async (req, res) => {
+    const code = String(req.body.code || "").trim();
+    if (!code) return res.status(400).json({ error: "OAuth exchange code is required." });
 
-    const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&response_mode=query&scope=User.Read email`;
-    res.redirect(authUrl);
-};
+    const payload = await consumeOAuthExchange(code);
+    if (!payload) return res.status(400).json({ error: "Invalid or expired OAuth exchange code." });
 
-export const microsoftCallback = async (req, res) => {
-    try {
-        const { code } = req.query;
-        if (!code) return res.redirect(`${FRONTEND_URL}/login?error=oauth_failed`);
+    const token = signAccessToken(payload.user);
+    const { refreshToken } = await issueRefreshToken(payload.user.id);
 
-        // Exchange code for token
-        const tokenResponse = await fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({
-                client_id: process.env.MICROSOFT_CLIENT_ID,
-                client_secret: process.env.MICROSOFT_CLIENT_SECRET,
-                code,
-                redirect_uri: process.env.MICROSOFT_CALLBACK_URL,
-                grant_type: "authorization_code"
-            })
-        });
-
-        if (!tokenResponse.ok) throw new Error("Failed to exchange Microsoft token");
-        const tokenData = await tokenResponse.json();
-
-        // Get user profile
-        const profileResponse = await fetch("https://graph.microsoft.com/v1.0/me", {
-            headers: { Authorization: `Bearer ${tokenData.access_token}` }
-        });
-
-        if (!profileResponse.ok) throw new Error("Failed to fetch Microsoft profile");
-        const profile = await profileResponse.json();
-        
-        // Microsoft Graph doesn't always return email in standard fields depending on account type
-        const email = profile.mail || profile.userPrincipalName;
-
-        await handleOAuthLogin(res, {
-            provider: "microsoft",
-            providerAccountId: profile.id,
-            email: email.toLowerCase(),
-            name: profile.displayName || profile.givenName || email
-        });
-    } catch (error) {
-        logStructured("error", "Microsoft OAuth error:", { error: error?.message || error, stack: error?.stack });
-        res.redirect(`${FRONTEND_URL}/login?error=oauth_failed`);
-    }
+    return res.json({ token, refreshToken, user: toSessionUser(payload.user, payload.provider) });
 };
 
 // ==========================================
@@ -791,20 +835,10 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
         });
     }
 
-    // Create session
-    const token = signAccessToken(user);
-    const { refreshToken } = await issueRefreshToken(user.id);
-    
     await writeAuditLog(user.id, "login_oauth", { provider, email });
 
-    // Base64 encode the user object to pass safely in URL
-    const userPayload = Buffer.from(JSON.stringify({
-        name: user.name,
-        email: user.email,
-        provider,
-        workspace: "Narriv"
-    })).toString('base64');
+    const exchangeCode = await storeOAuthExchange({ userId: user.id, provider });
 
-    // Redirect to frontend callback
-    res.redirect(`${FRONTEND_URL}/oauth/callback?token=${token}&refreshToken=${refreshToken}&user=${userPayload}`);
+    // Redirect with a short-lived one-time code instead of tokens in the URL.
+    res.redirect(`${FRONTEND_URL}/oauth/callback?code=${exchangeCode}`);
 }

@@ -5,6 +5,10 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
+    "prisma:generate": "prisma generate",
+    "prisma:status": "prisma migrate status",
+    "prisma:deploy": "prisma migrate deploy",
     "seed": "node prisma/seed.js",
     "test": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "load:smoke": "node tests/load/run-k6.js smoke",

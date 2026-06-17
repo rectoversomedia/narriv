@@ -2,6 +2,7 @@
 
 import { AlertCircle, FileSearch, Inbox, Loader2, RefreshCcw, WifiOff, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import type { PaginationInfo } from "@/lib/api-service";
@@ -80,8 +81,8 @@ function StateShell({ title, description, icon: Icon, tone = "purple", action, c
 }
 
 export function DashboardEmptyState({
-  title = "No data available yet",
-  description = "Once data is available, it will appear here with the same layout and controls.",
+  title,
+  description,
   icon = "inbox",
   action,
   className,
@@ -94,14 +95,15 @@ export function DashboardEmptyState({
   className?: string;
   minHeight?: string;
 }) {
+  const tp = useTranslations("DashboardStates");
   const Icon = icon === "search" ? FileSearch : icon === "alert" ? AlertCircle : Inbox;
 
-  return <StateShell title={title} description={description} icon={Icon} tone={icon === "alert" ? "amber" : "purple"} action={action} className={className} minHeight={minHeight} />;
+  return <StateShell title={title ?? tp("empty.title")} description={description ?? tp("empty.desc")} icon={Icon} tone={icon === "alert" ? "amber" : "purple"} action={action} className={className} minHeight={minHeight} />;
 }
 
 export function DashboardErrorState({
-  title = "Unable to load data",
-  description = "The request failed. Try again, or check the backend connection if this keeps happening.",
+  title,
+  description,
   onRetry,
   className,
   minHeight,
@@ -112,10 +114,12 @@ export function DashboardErrorState({
   className?: string;
   minHeight?: string;
 }) {
+  const tp = useTranslations("DashboardStates");
+
   return (
     <StateShell
-      title={title}
-      description={description}
+      title={title ?? tp("error.title")}
+      description={description ?? tp("error.desc")}
       icon={WifiOff}
       tone="red"
       className={className}
@@ -124,7 +128,7 @@ export function DashboardErrorState({
         onRetry ? (
           <Button type="button" onClick={onRetry} className="h-10 rounded-[8px] bg-[#EF4444] px-4 text-sm font-black text-white hover:bg-[#dc3333]">
             <RefreshCcw size={15} />
-            Retry
+            {tp("retry")}
           </Button>
         ) : null
       }
@@ -133,18 +137,20 @@ export function DashboardErrorState({
 }
 
 export function DashboardLoadingState({
-  title = "Loading dashboard data",
-  description = "Preparing the latest signals, alerts, and recommendations.",
+  title,
+  description,
   className,
 }: {
   title?: string;
   description?: string;
   className?: string;
 }) {
+  const tp = useTranslations("DashboardStates");
+
   return (
     <StateShell
-      title={title}
-      description={description}
+      title={title ?? tp("loading.title")}
+      description={description ?? tp("loading.desc")}
       icon={Loader2}
       tone="blue"
       className={className}
@@ -217,6 +223,8 @@ export function DashboardPagination({
   onPageChange: (page: number) => void;
   disabled?: boolean;
 }) {
+  const tp = useTranslations("DashboardStates");
+
   if (!pagination) return null;
 
   const { page, totalPages, total } = pagination;
@@ -226,7 +234,7 @@ export function DashboardPagination({
   return (
     <nav className="flex flex-wrap items-center justify-center gap-2 sm:justify-end" aria-label="Pagination">
       <span className="text-[11px] font-black text-[#68739F]" aria-live="polite">
-        Halaman {total === 0 ? 0 : page} dari {totalPages}
+        {tp("pagination.pageInfo", { page: total === 0 ? 0 : page, totalPages })}
       </span>
       <div className="flex items-center gap-1.5">
         <button
@@ -236,7 +244,7 @@ export function DashboardPagination({
           aria-label={`Ke halaman sebelumnya, halaman ${page - 1}`}
           className="inline-flex h-[34px] items-center rounded-[8px] border border-[#E6EAF2] bg-white px-3 text-[11px] font-black text-[#101334] transition hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-45"
         >
-          Prev
+          {tp("pagination.prev")}
         </button>
         <button
           type="button"
@@ -245,7 +253,7 @@ export function DashboardPagination({
           aria-label={`Ke halaman berikutnya, halaman ${page + 1}`}
           className="inline-flex h-[34px] items-center rounded-[8px] border border-[#E6EAF2] bg-white px-3 text-[11px] font-black text-[#101334] transition hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-45"
         >
-          Next
+          {tp("pagination.next")}
         </button>
       </div>
     </nav>

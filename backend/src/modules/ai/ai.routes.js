@@ -3,6 +3,7 @@ import { analyzeSignal } from "./ai.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
 import { analyzeBodySchema } from "./ai.module.schema.js";
+import { logStructured } from "../../lib/logger.js";
 
 const router = express.Router();
 router.use(verifyToken);

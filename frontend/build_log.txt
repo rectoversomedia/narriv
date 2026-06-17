@@ -1,0 +1,23 @@
+▲ Next.js 16.2.7 (Turbopack)
+- Environments: .env
+  Creating an optimized production build ...
+> Build error occurred
+Error: Turbopack build failed with 1 errors:
+./app/(dashboard)/workspace/sources/page.tsx:30:3
+the name `Check` is defined multiple times
+  [90m28 |[0m   [33mTrash2[0m,
+  [90m29 |[0m   [33mWebhook[0m,
+[31m[1m>[0m [90m30 |[0m   [33mCheck[0m,
+  [90m   |[0m   [31m[1m^^^^^[0m
+  [90m31 |[0m   [33mZap[0m,
+  [90m32 |[0m   [36mtype[0m [33mLucideIcon[0m,
+  [90m33 |[0m } [36mfrom[0m [32m"lucide-react"[0m;
+Ecmascript file had an error
+Import traces:
+  Client Component Browser:
+    ./app/(dashboard)/workspace/sources/page.tsx [Client Component Browser]
+    ./app/(dashboard)/workspace/sources/page.tsx [Server Component]
+  Client Component SSR:
+    ./app/(dashboard)/workspace/sources/page.tsx [Client Component SSR]
+    ./app/(dashboard)/workspace/sources/page.tsx [Server Component]
+    at <unknown> (./app/(dashboard)/workspace/sources/page.tsx:30:3)

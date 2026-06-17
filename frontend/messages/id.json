@@ -1,4 +1,10 @@
 {
+  "Toast": {
+    "success": "Berhasil",
+    "error": "Gagal",
+    "info": "Info",
+    "close": "Tutup notifikasi"
+  },
   "Auth": {
     "shared": {
       "liveBadge": "Sistem Intelijen Langsung",
@@ -135,8 +141,7 @@
       "contact": "Hubungi kami"
     },
     "social": {
-      "google": "Masuk dengan Google",
-      "microsoft": "Masuk dengan Microsoft"
+      "google": "Masuk dengan Google"
     },
     "passwordReq": {
       "length": "Minimal 10 karakter",
@@ -256,34 +261,56 @@
       "expiresIn": "Kode akan kedaluwarsa dalam",
       "infoTitle": "Tidak menerima kode?",
       "infoText": "Periksa folder spam atau junk email Anda.",
+      "resending": "Mengirim...",
       "resendCode": "Kirim ulang kode",
       "backToSignup": "Kembali ke halaman sign up"
+    },
+    "verifyEmail": {
+      "title": "Verifikasi Email Anda",
+      "subtitle": "Kami telah mengirimkan kode 6 digit ke email Anda. Masukkan kode di bawah untuk mengonfirmasi akun Anda.",
+      "email": "Email",
+      "devCode": "Dev verify code:",
+      "verifying": "Memverifikasi...",
+      "verifyButton": "Verifikasi akun",
+      "expiresIn": "Kedaluwarsa dalam",
+      "infoTitle": "Tidak menerima email?",
+      "infoText": "Cek folder Spam atau Promotion Anda. Jika tetap tidak ada, silakan minta pengiriman ulang.",
+      "resending": "Mengirim...",
+      "resendCode": "Kirim ulang kode",
+      "backToSignup": "Kembali ke pendaftaran",
+      "errors": {
+        "emailNotFound": "Email tidak ditemukan. Mulai ulang proses registrasi.",
+        "invalidCode": "Masukkan kode 6 digit.",
+        "verifyFailed": "Kode verifikasi tidak valid atau sudah kedaluwarsa.",
+        "resendFailed": "Kode verifikasi belum bisa dikirim ulang."
+      }
     }
   },
   "OnboardingDesign": {
     "title": "Pengaturan Awal",
     "subtitle": "Lengkapi pengaturan berikut untuk mempersonalisasi pengalaman Anda di Narriv.",
     "sidebar": {
-      "main": "Main",
-      "analysis": "Analysis",
-      "action": "Action",
-      "system": "System",
-      "command": "Command Center",
-      "signals": "Signals",
-      "alerts": "Alerts",
-      "visibility": "AI Visibility",
-      "intelligence": "Intelligence",
-      "reports": "Reports",
-      "actionCenter": "Action Center",
-      "dataSources": "Data Sources",
-      "integrations": "Integrations",
-      "activity": "Activity Log",
-      "settings": "Settings",
-      "scoreTitle": "Narriv Intelligence Score",
+      "main": "Utama",
+      "analysis": "Analisis",
+      "action": "Aksi",
+      "system": "Sistem",
+      "command": "Beranda",
+      "signals": "Temuan",
+      "alerts": "Peringatan",
+      "visibility": "Kemunculan AI",
+      "intelligence": "Intelijen",
+      "reports": "Laporan",
+      "actionCenter": "Pusat Aksi",
+      "cases": "Kasus",
+      "dataSources": "Sumber Data",
+      "integrations": "Integrasi",
+      "activity": "Log Aktivitas",
+      "settings": "Pengaturan",
+      "scoreTitle": "Skor Intelijen Narriv",
       "good": "Baik",
       "scoreText": "Sistem bekerja dengan baik.",
-      "user": "Testing User",
-      "workspace": "User Workspace"
+      "user": "Pengguna Uji",
+      "workspace": "Ruang Kerja Pengguna"
     },
     "topbar": {
       "search": "Cari sinyal, topik, isu, atau kasus...",
@@ -619,6 +646,82 @@
     "typeWeb": "Web"
   },
   "Signals": {
+    "emptyState": {
+      "title": "Belum ada sinyal live",
+      "desc": "Sumber data sudah terhubung, tetapi belum ada sinyal yang cocok dengan filter saat ini."
+    },
+    "summary": {
+      "title": "Ringkasan Sinyal AI",
+      "aiGenerated": "Dibuat oleh AI",
+      "noData": "Data belum tersedia",
+      "noDataDesc": "Belum ada sinyal yang ditangkap dalam 24 jam terakhir untuk membuat ringkasan.",
+      "total": "Total Sinyal (24j)",
+      "negative": "Sinyal Negatif",
+      "critical": "Peringatan Kritis",
+      "trendLabel": "Tren 24j"
+    },
+    "followUp": {
+      "title": "Yang Perlu Tindak Lanjut",
+      "desc": "Sinyal yang membutuhkan perhatian segera.",
+      "action": "Tindak Lanjuti di Action Center",
+      "emptyTitle": "Tidak ada tindak lanjut",
+      "emptyDesc": "Semua aman! Belum ada sinyal mendesak."
+    },
+    "recommendations": {
+      "title": "Rekomendasi Tindakan",
+      "desc": "Disarankan oleh Narriv AI.",
+      "action": "Buat Rencana Tindakan",
+      "emptyTitle": "Belum ada rekomendasi",
+      "emptyDesc": "Narriv AI akan membuat saran tindakan jika ada pola signifikan yang terdeteksi."
+    },
+    "sourceDonut": {
+      "title": "Sumber Sinyal",
+      "desc": "Distribusi berdasarkan sumber data.",
+      "timeframe": "24 Jam Terakhir",
+      "totalLabel": "Total Sinyal",
+      "emptyTitle": "Belum ada data sumber",
+      "emptyDesc": "Hubungkan sumber data untuk melihat distribusi."
+    },
+    "timeline": {
+      "title": "Timeline Sinyal",
+      "period": "(24 Jam Terakhir)",
+      "desc": "Volume sinyal per jam.",
+      "signalsLabel": "sinyal",
+      "emptyTitle": "Belum ada data timeline",
+      "emptyDesc": "Aktivitas sinyal akan muncul di sini saat data terkumpul."
+    },
+    "investigationQueue": {
+      "title": "Antrean Investigasi",
+      "desc": "Sinyal yang sedang dalam proses.",
+      "viewAll": "Lihat semua",
+      "emptyTitle": "Tidak ada investigasi dalam antrean",
+      "emptyDesc": "Semua aman! Tidak ada sinyal yang menunggu investigasi."
+    },
+    "createInvestigation": "Buat Investigasi",
+    "modal": {
+      "defaultTitle": "Investigasi: {title}",
+      "title": "Buat Investigasi",
+      "desc": "Mulai kasus baru dari temuan ini.",
+      "titleLabel": "Judul",
+      "titlePlaceholder": "mis. Lonjakan login tidak wajar di APAC",
+      "priorityLabel": "Prioritas",
+      "priority": {
+        "low": "Rendah",
+        "medium": "Sedang",
+        "high": "Tinggi",
+        "critical": "Kritis"
+      },
+      "descriptionLabel": "Deskripsi (Opsional)",
+      "descriptionPlaceholder": "Tambahkan konteks atau observasi...",
+      "cancel": "Batal",
+      "submit": "Buat Kasus",
+      "toast": {
+        "successTitle": "Investigasi dibuat",
+        "successDesc": "Kasus berhasil dibuat.",
+        "errorTitle": "Gagal membuat",
+        "errorDesc": "Terjadi kesalahan saat membuat investigasi."
+      }
+    },
     "eyebrow": "Temuan",
     "title": "Intelijen Temuan",
     "subtitle": "Tinjau temuan yang masuk dan ubah hasil penting menjadi langkah yang jelas.",
@@ -662,62 +765,157 @@
     "processing": "Rangkuman masih diproses",
     "noAnalysis": "Rangkuman belum tersedia. Isi asli dari sumber tetap ditampilkan di bawah.",
     "recommended": "Aksi yang disarankan",
-    "cta": "Buat Rencana Tindakan"
+    "cta": "Buat Rencana Tindakan",
+    "timeRange24h": "24 Jam",
+    "timeRange7d": "7 Hari",
+    "timeRange30d": "30 Hari",
+    "filterAll": "Semua",
+    "filterNegative": "Negatif",
+    "filterPositive": "Positif",
+    "filterMixed": "Campuran",
+    "filterCritical": "Kritis",
+    "sortLatest": "Terbaru",
+    "headerSignal": "Temuan",
+    "headerTrend": "Tren",
+    "headerSource": "Sumber",
+    "headerSentiment": "Sentimen",
+    "headerVelocity": "Velocity",
+    "headerMentions": "Mentions",
+    "headerConfidence": "Keyakinan",
+    "headerTime": "Waktu",
+    "footerLive": "{from}-{to} dari {total} sinyal",
+    "footerUnavailable": "Data live belum bisa dimuat. Menampilkan data contoh.",
+    "footerFallback": "Menampilkan 1-4 dari 24 sinyal",
+    "errorTitle": "Data live belum bisa dimuat",
+    "errorDesc": "Refresh token tetap dicoba lewat API client. Untuk sementara, halaman menampilkan data contoh.",
+    "mockSignal1Title": "Keluhan pembayaran tertunda meningkat",
+    "mockSignal1Desc": "Keluhan pembayaran tertunda meningkat signifikan di X/Twitter wilayah Jabodetabek sejak 08:00 WIB.",
+    "mockSignal2Title": "Gangguan stabilitas aplikasi mobile",
+    "mockSignal2Desc": "Pengguna melaporkan aplikasi sering crash saat melakukan transaksi.",
+    "mockSignal3Title": "Promo baru mendapat respon positif",
+    "mockSignal3Desc": "Promo cashback terbaru mendapatkan respon positif, banyak pengguna membagikan pengalaman mereka.",
+    "mockSignal4Title": "Kebingungan FAQ soal syarat kredit",
+    "mockSignal4Desc": "Banyak pengguna bingung dengan syarat kredit baru pada fitur pembayaran.",
+    "mockTagReputation": "Risiko Reputasi",
+    "mockTagCustomer": "Pengalaman Pelanggan",
+    "mockTagOperational": "Risiko Operasional",
+    "mockTagMarketing": "Peluang Pemasaran",
+    "mockSourceSocial": "Media Sosial",
+    "mockSourceApp": "Ulasan Aplikasi",
+    "mockSourceTicket": "Tiket Dukungan",
+    "mockVelocityPeriod2h": "dalam 2 jam",
+    "mockVelocityPeriod4h": "dalam 4 jam",
+    "mockVelocityPeriod5h": "dalam 5 jam",
+    "mockVelocityPeriod6h": "dalam 6 jam",
+    "mockTimeAgoJust": "Baru saja",
+    "mockTimeAgo38m": "38m lalu",
+    "mockTimeAgo1h": "1j lalu",
+    "mockFollowUpMeta1": "1.248 mentions • Keyakinan 94%",
+    "mockFollowUpMeta2": "842 mentions • Keyakinan 89%",
+    "mockFollowUpMeta3": "621 mentions • Keyakinan 87%",
+    "mockRec1Title": "Investigasi keluhan pembayaran tertunda",
+    "mockRec1Desc": "Periksa SLA dan sistem pembayaran",
+    "mockRec2Title": "Buat klarifikasi publik proaktif",
+    "mockRec2Desc": "Cegah eskalasi sentimen negatif",
+    "mockRec3Title": "Eskalasi ke Tim Operasional",
+    "mockRec3Desc": "Masalah stabilitas aplikasi meningkat",
+    "mockRec4Title": "Pantau topik syarat kredit",
+    "mockRec4Desc": "Pertimbangkan update FAQ",
+    "mockRecBadgeHigh": "Prioritas Tinggi",
+    "mockRecBadgeMedium": "Sedang",
+    "mockRecBadgeLow": "Rendah",
+    "fallbackUntitled": "Temuan tanpa judul",
+    "fallbackNoContent": "Ringkasan konten belum tersedia.",
+    "fallbackUnknownSource": "Sumber Tidak Diketahui",
+    "fallbackNeedsReview": "Perlu Ditinjau",
+    "fallbackMonitoring": "Dipantau",
+    "fallbackLiveSource": "Sumber Live",
+    "fallbackDataLive": "Data live"
   },
   "Visibility": {
-    "title": "Kemunculan di Jawaban AI",
-    "subtitle": "Lihat seberapa sering brand muncul di jawaban AI, sumber apa yang dipakai, dan kapan kompetitor ikut disebut.",
-    "generateAction": "Buat Aksi",
-    "creatingAction": "Membuat...",
-    "createActionFailed": "Rencana aksi belum bisa dibuat. Pembuatan AI mungkin belum tersedia atau konfigurasinya belum lengkap.",
-    "assignmentTitle": "Pemilik dan eskalasi",
-    "assignmentDesc": "Tetapkan owner, tim, tenggat, dan level eskalasi agar rencana berubah dari rekomendasi menjadi pelaksanaan.",
-    "quickEdit": "Edit cepat",
-    "closeAssignment": "Tutup editor",
-    "cancel": "Batal",
-    "unassigned": "Belum ditetapkan",
-    "noDeadline": "Belum ada tenggat",
-    "assignedTo": "PIC / Owner",
-    "assignedToPlaceholder": "Penanggung jawab",
-    "assignedTeam": "Tim",
-    "assignedTeamPlaceholder": "Comms, PR, Growth...",
-    "deadline": "Tenggat",
-    "escalationLevel": "Level eskalasi",
-    "saveAssignment": "Simpan assignment",
-    "savingAssignment": "Menyimpan...",
-    "assignmentSaved": "Assignment disimpan",
-    "assignmentSavedDesc": "Owner aksi dan detail eskalasi sudah disimpan.",
-    "assignmentFailed": "Assignment belum bisa disimpan",
-    "assignmentFailedDesc": "Periksa field assignment lalu coba lagi.",
-    "escalation": {
-      "low": "Rendah",
-      "medium": "Sedang",
-      "high": "Tinggi",
-      "critical": "Kritis"
+    "breadcrumb": "Dashboard / AI Visibility",
+    "title": "AI Visibility",
+    "subtitle": "Pantau bagaimana brand, topik, dan kompetitor Anda muncul di platform generative AI.",
+    "last7Days": "7 Mei 2025 - 14 Mei 2025",
+    "export": "Ekspor",
+    "metrics": {
+      "totalMentions": {
+        "label": "Total AI Mentions",
+        "value": "2.451",
+        "helper": "+18,7% vs 7 hari terakhir"
+      },
+      "brandMentions": {
+        "label": "Brand Mentions",
+        "value": "1.289",
+        "helper": "+22,1% vs 7 hari terakhir"
+      },
+      "sov": {
+        "label": "Share of Voice",
+        "value": "24,3%",
+        "helper": "+4,6 p.p."
+      },
+      "avgPos": {
+        "label": "Rata-rata Posisi (Semua AI)",
+        "value": "2,8",
+        "helper": "-0,4"
+      }
     },
-    "retry": "Coba lagi",
-    "emptyTitle": "Belum Ada Data Jawaban AI",
-    "emptyDesc": "Kami sedang mengumpulkan data untuk melihat seberapa sering brand muncul di jawaban AI. Silakan cek lagi nanti.",
-    "score": "Skor Kemunculan Brand",
-    "scoreDesc": "Skor sederhana berdasarkan seberapa sering brand muncul, kualitas sumber, kemunculan kompetitor, dan pertanyaan yang diuji.",
-    "presence": "Tingkat Kemunculan Brand",
-    "presenceDescPrefix": "Brand muncul di",
-    "presenceDescSuffix": "pertanyaan prioritas.",
-    "competitor": "Tingkat Kemunculan Kompetitor",
-    "competitorDesc": "Kompetitor lebih sering muncul di jawaban AI untuk pertanyaan tentang krisis dan pemantauan.",
-    "prompts": "Hasil per Pertanyaan",
-    "prompt": "Pertanyaan",
-    "engine": "Alat",
-    "brand": "Brand",
-    "competitorColumn": "Kompetitor",
-    "noPrompts": "Belum ada pertanyaan yang dianalisis.",
-    "geoAction": "Saran untuk Jawaban AI",
-    "geoDesc": "Saran aksi dibuat dari jawaban yang masih lemah dan hasil yang terlalu didominasi kompetitor.",
-    "visibilityGapAction": "Buat rencana untuk celah visibilitas",
-    "noActions": "Belum ada saran aksi.",
-    "footer": "Catatan: data jawaban AI, pertanyaan yang diuji, sumber, kompetitor, dan aksi sebaiknya masuk ke laporan yang sama."
+    "execSummary": {
+      "title": "AI Executive Summary",
+      "aiGenerated": "A.I Generated",
+      "heading": "Visibility merek Anda meningkat +18,7% minggu ini.",
+      "body": "Peningkatan dipicu oleh topik AI monitoring, diskusi cybersecurity, dan rekomendasi ChatGPT terhadap tools monitoring enterprise. Namun, kompetitor mulai unggul pada keyword \"cloud security\" di Google Gemini dan Perplexity.",
+      "opportunity": "Top Opportunity",
+      "opportunityVal": "AI monitoring & enterprise intelligence tools",
+      "risk": "Top Risk",
+      "riskVal": "Cloud security (competitor dominated)",
+      "recActions": "AI Recommended Actions",
+      "rec1": "Dorong konten thought leadership",
+      "rec2": "Optimasi landing page (enterprise intel)",
+      "rec3": "Tingkatkan authority di cloud security",
+      "viewAll": "Lihat semua"
+    },
+    "mentionsTrend": {
+      "title": "AI Mentions Trend",
+      "desc": "Perkembangan jumlah penyebutan brand Anda di platform AI.",
+      "days7": "7 Hari",
+      "days30": "30 Hari"
+    },
+    "topTopics": {
+      "title": "Top Topics Mentioned by AI",
+      "headers": {
+        "topic": "Topik",
+        "mentions": "Penyebutan",
+        "direction": "Arah",
+        "type": "Tipe"
+      },
+      "viewAll": "Lihat semua topik"
+    },
+    "sandbox": {
+      "title": "AI Search Sandbox",
+      "desc": "Simulasi bagaimana AI merespons pertanyaan tentang brand Anda.",
+      "queryPlaceholder": "Cari sinyal, topik, isu, atau kasus...",
+      "simulateBtn": "Simulasi",
+      "responseTitle": "AI Response (ChatGPT)",
+      "citations": "Key Sources (Citations)",
+      "confidence": "Confidence"
+    },
+    "competitorVs": {
+      "title": "Visibility vs Competitors (All AI Platforms)"
+    },
+    "topPlatforms": {
+      "title": "Top AI Platforms"
+    },
+    "competitorShare": {
+      "title": "Competitor Share of Voice",
+      "totalShare": "Total SOV"
+    },
+    "latestMentions": {
+      "title": "Latest Mention Examples",
+      "viewAll": "Lihat semua"
+    }
   },
-  "ActionPlans": {
+  "ActionPlansLegacy": {
     "title": "Rencana Aksi",
     "subtitle": "Ubah hasil analisis menjadi langkah jelas, seperti respons PR, update konten, atau penanganan krisis.",
     "generateAction": "Buat Aksi",
@@ -829,9 +1027,127 @@
       "betterTitle": "5. Peringatan lebih baik",
       "betterDesc": "Saran berikutnya jadi lebih berguna."
     },
-    "footer": "Catatan: setiap peringatan harus menjelaskan alasannya, seperti kecepatan isu, kekuatan sumber, sentimen, penyebaran topik, waktu dampak, dan keyakinan. Masukan juga perlu kategori yang jelas."
+    "footer": "Catatan: setiap peringatan harus menjelaskan alasannya, seperti kecepatan isu, kekuatan sumber, sentimen, penyebaran topik, waktu dampak, dan keyakinan. Masukan juga perlu kategori yang jelas.",
+    "toast": {
+      "statusUpdated": "Status alert berhasil diperbarui.",
+      "statusUpdateFailed": "Status alert belum bisa diperbarui. Coba lagi.",
+      "assignmentSaved": "Penugasan alert berhasil disimpan.",
+      "assignmentFailed": "Penugasan alert belum bisa disimpan. Coba lagi."
+    },
+    "filter": {
+      "allStatus": "Semua Status",
+      "allSource": "Semua Sumber",
+      "allSentiment": "Semua Sentimen",
+      "search": "Cari alert...",
+      "createAlert": "Buat Alert Baru"
+    },
+    "summary": {
+      "title": "AI Alert Summary",
+      "generated": "AI Generated",
+      "riskHighest": "Risiko Tertinggi",
+      "significantIncrease": "Peningkatan Signifikan",
+      "aiRecommendation": "Rekomendasi AI"
+    },
+    "table": {
+      "title": "Alert List",
+      "desc": "Showing alerts with the highest priority.",
+      "alert": "Alert",
+      "source": "Source",
+      "sentiment": "Sentiment",
+      "velocity": "Velocity",
+      "mentions": "Mentions",
+      "confidence": "Confidence",
+      "impact": "Dampak",
+      "status": "Status",
+      "time": "Waktu",
+      "actions": "Aksi",
+      "changeStatus": "Ubah status",
+      "statusNew": "Tandai Baru",
+      "statusInvestigating": "Tandai Investigating",
+      "statusResolved": "Tandai Resolved",
+      "assign": "Assign",
+      "assignToMe": "Assign ke saya"
+    },
+    "status": {
+      "new": "Baru",
+      "investigating": "Investigating",
+      "escalated": "Escalated",
+      "resolved": "Resolved"
+    },
+    "quickFilter": {
+      "title": "Filter Cepat",
+      "all": "Semua",
+      "critical": "Kritis",
+      "warning": "Peringatan",
+      "info": "Informasi",
+      "latest": "Terbaru",
+      "search": "Cari alert..."
+    },
+    "metrics": {
+      "totalAlert": "Total Alert",
+      "criticalHigh": "Kritis & Tinggi",
+      "mediumLow": "Sedang & Rendah",
+      "info": "Informasi",
+      "liveData": "Data live",
+      "needsAttention": "Perlu perhatian",
+      "monitor": "Monitor",
+      "infoOnly": "Info saja",
+      "resolved": "Resolved",
+      "closed": "Ditutup"
+    },
+    "actionable": {
+      "title": "Perlu Ditindaklanjuti",
+      "desc": "Alert yang membutuhkan perhatian segera.",
+      "viewAll": "Lihat semua alert"
+    },
+    "recommendations": {
+      "title": "Rekomendasi Tindakan AI",
+      "desc": "Disarankan berdasarkan prioritas dan dampak.",
+      "createPlan": "Buat Rencana Tindakan"
+    },
+    "sourceDonut": {
+      "title": "Sumber Alert",
+      "desc": "Distribusi alert berdasarkan sumber data.",
+      "last24h": "24 Jam Terakhir",
+      "total": "Total Alert"
+    },
+    "timeline": {
+      "title": "Timeline Alert",
+      "period": "(24 Jam Terakhir)",
+      "desc": "Volume alert per jam."
+    },
+    "investigation": {
+      "title": "Status Investigasi",
+      "desc": "Monitoring penyelesaian alert.",
+      "avgResponse": "Rata-rata waktu respons",
+      "avgResolution": "Rata-rata waktu resolusi"
+    },
+    "buttons": {
+      "manageContacts": "Kelola Kontak",
+      "notificationSettings": "Pengaturan Notifikasi",
+      "createNew": "Buat Alert Baru",
+      "viewAll": "Lihat Semua"
+    },
+    "impact": {
+      "high": "Tinggi",
+      "medium": "Sedang"
+    },
+    "empty": {
+      "title": "Belum ada alert live",
+      "desc": "Backend berhasil dihubungi, tetapi belum ada alert yang perlu ditampilkan.",
+      "noLiveAlerts": "Tidak ada alert live untuk ditampilkan",
+      "noAlertsDesc": "Saat ini tidak ada alert live yang cocok dengan filter aktif.",
+      "dataUnavailable": "Data live belum bisa dimuat",
+      "dataUnavailableDesc": "Gagal mengambil alert live. Untuk sementara, menampilkan data fallback."
+    },
+    "error": {
+      "title": "Data live belum bisa dimuat",
+      "desc": "API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan data contoh."
+    }
   },
   "Intelligence": {
+    "pageTitle": "Intelligence",
+    "pageSubtitle": "Pahami cluster topik, pertumbuhan narasi, dan konteks strategis.",
     "title": "Peta Topik",
     "subtitle": "Pahami topik yang sedang naik, siapa yang terlibat, dampaknya, dan risiko di baliknya.",
     "createAction": "Buat Aksi",
@@ -848,12 +1164,117 @@
     "source": "TOPIK #04 · 41 temuan · Dampak tinggi",
     "clusterTitle": "Topik akuntabilitas meluas dari keluhan gangguan",
     "clusterDesc": "Topik ini menghubungkan kepercayaan pelanggan, waktu pengungkapan, dan perhatian regulator. Kutipan berita menjadi pendorong terkuat.",
-    "metrics": "METRIK TOPIK",
+    "metrics": {
+      "clusters": {
+        "label": "Clusters Identified",
+        "value": "28",
+        "helper": "6 mempercepat"
+      },
+      "confidence": {
+        "label": "Narrative Confidence",
+        "value": "89%",
+        "helper": "Evidence weighted"
+      },
+      "emerging": {
+        "label": "Emerging Narratives",
+        "value": "7",
+        "helper": "2 baru minggu ini"
+      },
+      "opportunities": {
+        "label": "Opportunities Detected",
+        "value": "5",
+        "helper": "2 potensi tinggi"
+      }
+    },
     "velocity": "Kecepatan",
     "confidence": "Keyakinan",
     "focus": "Fokus yang disarankan",
     "focusDesc": "Siapkan poin respons pimpinan dan pantau stakeholder yang terkait regulator.",
-    "open": "Buka Topik"
+    "open": "Buka Topik",
+    "last7Days": "7 hari terakhir (12 Mei - 18 Mei 2025)",
+    "topicMap": {
+      "title": "Peta Topik",
+      "desc": "Visualisasikan bagaimana narasi saling terhubung dan memengaruhi satu sama lain.",
+      "allTopics": "Semua Topik",
+      "filter": "Filter",
+      "intensity": "Intensitas",
+      "sentiment": "Sentimen",
+      "connStrength": "Kekuatan Koneksi",
+      "pos": "Positif",
+      "neu": "Netral",
+      "neg": "Negatif",
+      "weak": "Lemah",
+      "strong": "Kuat",
+      "tip": "Klik pada cluster untuk mengeksplorasi insight detail dan narasi terkait."
+    },
+    "growingClusters": {
+      "title": "Cluster Narasi Berkembang",
+      "viewAll": "Lihat semua"
+    },
+    "selectedNarrative": {
+      "title": "Narasi Terpilih",
+      "related": "Top Narasi Terkait",
+      "aiRec": "Rekomendasi AI",
+      "btnAnalysis": "Lihat Analisis Lengkap",
+      "highImpact": "Dampak Tinggi",
+      "emerging": "Emerging"
+    },
+    "competitorShare": {
+      "title": "Pangsa Narasi Kompetitor",
+      "totalShare": "Total Pangsa Narasi",
+      "viewLandscape": "Lihat Lanskap Kompetitif"
+    },
+    "aiSummary": {
+      "title": "Insight Narasi (Ringkasan AI)",
+      "box": "Narrative utama minggu ini didominasi oleh isu operasional dan layanan pelanggan, dengan potensi dampak reputasi yang tinggi jika tidak ditangani segera.",
+      "bullets": {
+        "1": "Payment delay menjadi isu paling cepat berkembang.",
+        "2": "Keluhan refund mulai terkoneksi dengan isu kepercayaan.",
+        "3": "Peningkatan pembahasan di forum dan social media.",
+        "4": "Tidak ada lonjakan signifikan pada isu regulasi."
+      },
+      "btn": "Lihat Laporan Insight Lengkap"
+    },
+    "lifecycle": {
+      "title": "Siklus Hidup Narasi",
+      "phases": {
+        "emerging": {
+          "title": "Emerging",
+          "desc": "Baru muncul dan mulai berkembang"
+        },
+        "accelerating": {
+          "title": "Accelerating",
+          "desc": "Pertumbuhan cepat dan meluas"
+        },
+        "peaking": {
+          "title": "Peaking",
+          "desc": "Mencapai puncak perhatian publik"
+        },
+        "declining": {
+          "title": "Declining",
+          "desc": "Mulai menurun dan stabil"
+        },
+        "dormant": {
+          "title": "Dormant",
+          "desc": "Minim aktivitas, perlu monitoring"
+        }
+      }
+    },
+    "footer": {
+      "dataCoverage": "Cakupan Data",
+      "sourcesActive": "62 / 72 Sumber Aktif",
+      "coveragePercent": "86% Cakupan",
+      "updateFreq": "Frekuensi Pembaruan",
+      "realtime": "Real-time",
+      "autoUpdated": "Diperbarui otomatis 30 detik lalu",
+      "aiStatus": "Status Model AI",
+      "operational": "Operasional",
+      "systemsNormal": "Semua sistem normal",
+      "analysisDepth": "Kedalaman Analisis",
+      "deep": "Analisis Mendalam",
+      "multilingual": "Lintas platform & multibahasa",
+      "btnSettings": "Konfigurasi Pengaturan Intelijen"
+    }
   },
   "Reports": {
     "eyebrow": "Laporan",
@@ -873,7 +1294,17 @@
     "queueTitle": "Antrean laporan",
     "queueDesc": "Pantau kesiapan, input yang kurang, dan status export untuk laporan stakeholder.",
     "search": "Cari laporan",
-    "filter": "Filter",
+    "filter": {
+      "all": "Semua",
+      "ready": "Siap",
+      "review": "Review",
+      "draft": "Draft",
+      "scheduled": "Scheduled",
+      "archived": "Archived",
+      "search": "Cari laporan...",
+      "latest": "Terbaru",
+      "title": "Filter"
+    },
     "readinessStatus": "Status kesiapan",
     "clear": "Hapus",
     "filters": {
@@ -890,11 +1321,16 @@
     "noMatch": "Tidak ada laporan yang cocok",
     "noMatchDesc": "Coba kata kunci atau filter status lain.",
     "table": {
+      "title": "Dokumen Laporan",
+      "desc": "Kelola semua laporan harian, mingguan, dan laporan khusus.",
       "report": "Laporan",
-      "sections": "Bagian",
-      "readiness": "Kesiapan",
+      "type": "Jenis",
+      "period": "Periode",
       "status": "Status",
-      "export": "Unduh"
+      "progress": "Progress",
+      "created": "Dibuat",
+      "action": "Aksi",
+      "readyLabel": "Siap"
     },
     "updatedSnapshot": "Diperbarui dari snapshot intelijen terbaru",
     "exportAria": "Unduh {title}",
@@ -953,6 +1389,134 @@
       "readyStatus": "Siap ditinjau pimpinan",
       "geoStatus": "Butuh catatan jawaban AI",
       "feedbackStatus": "Menunggu masukan tim"
+    },
+    "toast": {
+      "exportStarted": "Export dimulai. Memeriksa status...",
+      "exportSuccess": "Export berhasil. File siap diunduh.",
+      "exportFailed": "Export gagal. Coba lagi.",
+      "exportProcessing": "Export masih diproses. Coba lagi nanti.",
+      "exportInitFailed": "Export belum bisa dimulai. Coba lagi."
+    },
+    "statusBadge": {
+      "SIAP": "Siap",
+      "REVIEW": "Review",
+      "DRAFT": "Draft",
+      "SCHEDULED": "Dijadwalkan"
+    },
+    "quickActions": {
+      "title": "Aksi Cepat",
+      "shareStakeholder": "Bagikan ke Stakeholder",
+      "shareDesc": "Kirim laporan ke email atau channel",
+      "scheduleReport": "Jadwalkan Laporan",
+      "scheduleDesc": "Atur pengiriman otomatis",
+      "customReport": "Buat Laporan Kustom",
+      "customDesc": "Pilih data & template sendiri",
+      "viewHistory": "Lihat Riwayat Laporan",
+      "historyDesc": "Akses semua laporan sebelumnya"
+    },
+    "preview": {
+      "title": "Pratinjau Laporan",
+      "desc": "Lihat ringkasan sebelum dibagikan ke stakeholder.",
+      "viewPreview": "Lihat Preview",
+      "downloadPdf": "Unduh PDF",
+      "executiveBrief": "Executive Narrative Brief",
+      "pdfDaily": "PDF · Harian",
+      "ready": "Siap",
+      "imageAlt": "Ilustrasi asisten AI untuk laporan",
+      "liveFallback": "Laporan intelligence dari backend Narriv.",
+      "liveType": "Report · Live API",
+      "activePeriod": "Periode aktif",
+      "liveCreated": "Data live"
+    },
+    "sentimentChart": {
+      "title": "Sentimen 7 Hari Terakhir",
+      "positive": "Positif",
+      "neutral": "Netral",
+      "negative": "Negatif"
+    },
+    "aiSummary": {
+      "title": "AI Report Summary",
+      "generated": "AI Generated",
+      "insightTitle": "Insight Utama",
+      "insightText": "Payment delay menjadi top issue dengan volume tertinggi.",
+      "riskTitle": "Risiko Tertinggi",
+      "riskText": "Potensi eskalasi reputasi jika tidak ada komunikasi publik.",
+      "movementTitle": "Pergerakan Signifikan",
+      "movementText": "Percakapan negatif di X/Twitter naik +248% dalam 2 jam terakhir.",
+      "recommendationTitle": "Rekomendasi AI",
+      "recommendationText": "Publikasikan klarifikasi dan perbarui status sistem pembayaran.",
+      "body": "Dalam 7 hari terakhir, sentimen negatif meningkat 18% didorong oleh keluhan pembayaran dan stabilitas aplikasi di wilayah Jabodetabek."
+    },
+    "formatDonut": {
+      "title": "Distribusi Format",
+      "desc": "Perbandingan format laporan yang dibuat.",
+      "total": "Total Laporan",
+      "noData": "Belum ada data format."
+    },
+    "timeline": {
+      "title": "Tren Pembuatan Laporan",
+      "period": "(14 Hari Terakhir)",
+      "desc": "Jumlah laporan yang dibuat per hari.",
+      "peak": "{count} laporan",
+      "noData": "Belum ada data"
+    },
+    "popular": {
+      "title": "Laporan Terpopuler",
+      "desc": "Berdasarkan judul laporan yang paling sering dibuat.",
+      "viewAll": "Lihat Semua Laporan",
+      "noData": "Belum ada data laporan populer.",
+      "created": "{count} dibuat"
+    },
+    "empty": {
+      "title": "Belum ada laporan live",
+      "desc": "Backend berhasil dihubungi, tetapi belum ada laporan yang tersedia."
+    },
+    "error": {
+      "title": "Data laporan belum bisa dimuat",
+      "desc": "API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan data contoh."
+    },
+    "buttons": {
+      "manageTemplates": "Kelola Template",
+      "scheduleSettings": "Pengaturan Jadwal",
+      "createNew": "Buat Laporan Baru"
+    },
+    "previewSections": {
+      "execSummary": "Executive Summary",
+      "riskMovement": "Risk Movement",
+      "keyInsights": "Key Insights",
+      "recommendedActions": "Recommended Actions"
+    },
+    "metricsCard": {
+      "templates": "Templates",
+      "templatesHelper": "3 siap",
+      "ready": "Siap",
+      "readyHelper": "Tinjauan eksekutif",
+      "scheduled": "Dijadwalkan",
+      "scheduledHelper": "Kadens mingguan",
+      "generated30": "Dibuat (30 Hari)",
+      "generatedHelper": "▲ 6 vs periode sebelumnya",
+      "generated30Helper": "▲ 6 vs periode sebelumnya"
+    },
+    "liveMetrics": {
+      "templates": "Templates",
+      "templatesHelper": "dari backend",
+      "reportsCreated": "Laporan Dibuat",
+      "totalLive": "total live",
+      "reportsCreatedHelper": "total live",
+      "inProgress": "Sedang Diproses",
+      "inProgressHelper": "dalam proses",
+      "ready": "Siap",
+      "readyHelper": "siap"
+    },
+    "liveData": {
+      "fallback": "Data live belum bisa dimuat. Menampilkan data contoh."
+    },
+    "paginationExtended": {
+      "labelLive": "laporan live",
+      "sampleSummary": "Menampilkan 1-5 dari 24 laporan"
+    },
+    "sidebar": {
+      "footerText": "Catatan: setiap saran harus mencakup bukti, jenis tindakan, alasan, pemilik, status persetujuan, dan hasil yang terukur."
     }
   },
   "Sidebar": {
@@ -1021,7 +1585,43 @@
     "createAction": "Buat Aksi",
     "creatingAction": "Membuat...",
     "createActionFailed": "Rencana aksi untuk peringatan ini belum bisa dibuat. Pembuatan AI mungkin belum tersedia atau konfigurasinya belum lengkap.",
-    "routeTo": "Buat rencana aksi, lalu beri masukan: terima, edit, atau tolak."
+    "routeTo": "Buat rencana aksi, lalu beri masukan: terima, edit, atau tolak.",
+    "toast": {
+      "statusUpdated": "Status alert berhasil diperbarui.",
+      "statusUpdateFailed": "Status alert belum bisa diperbarui. Coba lagi.",
+      "assignmentSaved": "Penugasan alert berhasil disimpan.",
+      "assignmentFailed": "Penugasan alert belum bisa disimpan. Coba lagi."
+    },
+    "status": {
+      "new": "Baru",
+      "investigating": "Investigating",
+      "resolved": "Resolved"
+    },
+    "section": {
+      "whatHappened": "What happened",
+      "whyItMatters": "Why it matters",
+      "whatToDo": "What to do"
+    },
+    "nav": {
+      "back": "Kembali"
+    },
+    "issue": {
+      "description": "Isu: {issue}"
+    },
+    "assignment": {
+      "title": "Assignment",
+      "save": "Simpan",
+      "saving": "Menyimpan...",
+      "back": "Back"
+    },
+    "recommendation": {
+      "title": "Recommended step",
+      "desc": "Route this alert to Action Center and assign an owner."
+    },
+    "empty": {
+      "title": "Detail alert live belum bisa dimuat",
+      "desc": "API client sudah mencoba token refresh. Halaman ini menggunakan data contoh sementara."
+    }
   },
   "Workspace": {
     "activity": {
@@ -1061,6 +1661,56 @@
         "trustTitle": "Kekhawatiran trust dari procurement",
         "trustStatus": "Dipantau",
         "trustOwner": "PR"
+      },
+      "toast": {
+        "deleteSuccess": "Kasus berhasil dihapus.",
+        "deleteFailed": "Gagal menghapus kasus.",
+        "statusUpdated": "Status berhasil diperbarui.",
+        "statusUpdateFailed": "Gagal memperbarui status."
+      },
+      "status": {
+        "open": "Open",
+        "in_progress": "In Progress",
+        "resolved": "Resolved",
+        "closed": "Closed",
+        "critical": "Critical",
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low"
+      },
+      "filter": {
+        "allStatus": "Semua Status",
+        "allPriority": "Semua Prioritas",
+        "search": "Cari kasus..."
+      },
+      "table": {
+        "case": "KASUS",
+        "status": "STATUS",
+        "priority": "PRIORITAS",
+        "assignee": "ASSIGNEE",
+        "action": "AKSI",
+        "unassigned": "Unassigned"
+      },
+      "header": {
+        "title": "Cases & Investigations",
+        "desc": "Kelola dan pantau antrean investigasi tim Anda.",
+        "newCase": "Buat Case Baru"
+      },
+      "empty": {
+        "title": "Tidak ada cases",
+        "desc": "Belum ada kasus investigasi yang sesuai dengan filter Anda."
+      },
+      "delete": {
+        "title": "Hapus Kasus",
+        "description": "Apakah Anda yakin ingin menghapus kasus ini? Data yang dihapus tidak dapat dikembalikan.",
+        "confirm": "Hapus Kasus",
+        "cancel": "Batal"
+      },
+      "pagination": {
+        "previous": "Sebelumnya",
+        "next": "Selanjutnya",
+        "pageInfo": "Halaman {page} dari {totalPages}",
+        "total": "{total} kasus ditemukan"
       }
     },
     "integrations": {
@@ -1072,7 +1722,12 @@
       "connected": "Terhubung",
       "notConnected": "Belum terhubung",
       "records": "data live",
-      "status": {},
+      "status": {
+        "all": "Semua Status",
+        "active": "Active",
+        "inactive": "Inactive",
+        "error": "Error"
+      },
       "items": {
         "googleNewsName": "Google News",
         "googleNewsDesc": "Sumber liputan berita",
@@ -1082,6 +1737,72 @@
         "benchmarksDesc": "Pertanyaan untuk menguji kemunculan brand di jawaban AI",
         "slackName": "Slack Handoff",
         "slackDesc": "Kirim notifikasi ke owner aksi di Slack"
+      },
+      "toast": {
+        "createSuccess": "Integrasi berhasil disimpan.",
+        "createFailed": "Gagal menyimpan integrasi.",
+        "deleteSuccess": "Integrasi berhasil dihapus.",
+        "deleteFailed": "Gagal menghapus integrasi.",
+        "updateSuccess": "Integrasi berhasil diperbarui.",
+        "updateFailed": "Gagal memperbarui integrasi.",
+        "configInvalid": "Config JSON tidak valid."
+      },
+      "platforms": {
+        "slack": "Slack",
+        "teams": "Microsoft Teams",
+        "webhook": "Webhook",
+        "email": "Email",
+        "whatsapp": "WhatsApp",
+        "bigquery": "BigQuery",
+        "postgres": "Postgres"
+      },
+      "form": {
+        "title": "Hubungkan Integrasi",
+        "desc": "Tambahkan koneksi baru. Config opsional harus berupa JSON object.",
+        "name": "Nama Integrasi",
+        "namePlaceholder": "Contoh: Slack Crisis Room",
+        "platform": "Platform",
+        "configJson": "Config JSON",
+        "connect": "Hubungkan Integrasi",
+        "connecting": "Menghubungkan..."
+      },
+      "filter": {
+        "allPlatform": "Semua Platform",
+        "allStatus": "Semua Status",
+        "filterTitle": "Filter Integrasi",
+        "platform": "Platform",
+        "status": "Status",
+        "reset": "Reset"
+      },
+      "table": {
+        "integration": "Integration",
+        "status": "Status",
+        "config": "Config",
+        "lastSync": "Last Sync",
+        "action": "Aksi",
+        "neverSynced": "Belum pernah sync",
+        "created": "Created {date}",
+        "noConfig": "Tidak ada config tambahan"
+      },
+      "metrics": {
+        "total": "Total Integrasi",
+        "totalDesc": "Koneksi workspace",
+        "active": "Active",
+        "activeDesc": "Siap dipakai",
+        "platforms": "Platform",
+        "platformsDesc": "Jenis koneksi unik",
+        "needsAttention": "Needs Attention",
+        "needsAttentionDesc": "Status error"
+      },
+      "empty": {
+        "title": "Belum ada integrasi",
+        "desc": "Hubungkan Slack, Teams, webhook, atau database export agar response workflow lebih otomatis."
+      },
+      "delete": {
+        "title": "Putus Integrasi",
+        "description": "Putus integrasi {name}? Koneksi ini akan dihapus dari workspace.",
+        "confirm": "Putus Integrasi",
+        "cancel": "Batal"
       }
     },
     "settings": {
@@ -1148,7 +1869,325 @@
       "session": "Sesi",
       "connected": "Terhubung",
       "notConnected": "Belum terhubung",
-      "readinessItems": {}
+      "readinessItems": {},
+      "pageHeaderTitle": "Settings",
+      "pageHeaderSubtitle": "Kelola pengaturan workspace, integrasi, dan preferensi sistem Anda.",
+      "loadFailedTitle": "Pengaturan live belum bisa dimuat",
+      "loadFailedDesc": "API client sudah mencoba token refresh. Form tetap bisa digunakan dengan nilai sementara.",
+      "membersLoadFailedTitle": "Daftar member live belum bisa dimuat",
+      "membersLoadFailedDesc": "API client sudah mencoba token refresh. Untuk sementara, tabel menampilkan member contoh.",
+      "table": {
+        "user": "User",
+        "role": "Role",
+        "permission": "Permission",
+        "lastActive": "Last Active",
+        "status": "Status",
+        "action": "Aksi"
+      },
+      "membersEmptyTitle": "Belum ada member live",
+      "membersEmptyDesc": "Workspace ini belum memiliki member yang dikembalikan oleh backend.",
+      "deactivateUser": "Nonaktifkan pengguna",
+      "activateUser": "Aktifkan pengguna",
+      "removeUser": "Hapus anggota",
+      "memberStatusChanged": "Status {name} diubah menjadi {action}.",
+      "memberRemovedFromOverride": "{name} dihapus dari workspace.",
+      "memberStatusActive": "Aktif",
+      "memberStatusInactive": "Nonaktif",
+      "timeActiveNow": "Aktif sekarang",
+      "timeActiveYesterday": "Aktif kemarin",
+      "time2HoursAgo": "2 jam lalu",
+      "time1DayAgo": "1 hari lalu",
+      "timeLive": "Data live",
+      "permissionFullAccess": "Full Access",
+      "permissionReadWrite": "Read & Write",
+      "permissionReadOnly": "Read Only",
+      "defaultMemberName": "Workspace Member",
+      "defaultMemberEmail": "unknown@narriv.ai",
+      "defaultInitials": "NA",
+      "quietHoursTime": "22:00 - 07:00 >",
+      "sensitivityLow": "Low",
+      "sensitivityMedium": "Medium",
+      "sensitivityHigh": "High",
+      "summaryExecutive": "Executive",
+      "summaryDetailed": "Detailed",
+      "summaryShort": "Short",
+      "connectedPlatformsBadge": "12",
+      "sessionTimeout15": "15 menit",
+      "sessionTimeout30": "30 menit",
+      "sessionTimeout1h": "1 jam",
+      "sessionTimeout12h": "12 jam",
+      "retention30": "30 hari",
+      "retention90": "90 hari",
+      "retention365": "365 hari",
+      "retentionForever": "Selamanya",
+      "retentionTitle": "Data Retention",
+      "retentionDesc": "Lama penyimpanan arsip log",
+      "workspaceInfo": {
+        "title": "Informasi Workspace",
+        "description": "Informasi dasar tentang workspace Anda.",
+        "logoUploading": "Uploading",
+        "logoAlt": "Workspace Logo",
+        "logoInvalidFormat": "Format logo harus PNG, JPG, WEBP, atau SVG.",
+        "logoTooLarge": "Ukuran logo maksimal 2MB.",
+        "logoReadError": "File logo belum bisa dibaca. Coba pilih file lain.",
+        "sectionPassword": "Ubah Password",
+        "passwordCurrentPlaceholder": "Password saat ini",
+        "passwordNewPlaceholder": "Password baru (min 10 karakter, huruf besar, angka, simbol)",
+        "labelName": "Nama Workspace",
+        "labelIndustry": "Industri",
+        "labelTimezone": "Time Zone",
+        "labelLanguage": "Bahasa",
+        "labelUrl": "Workspace URL",
+        "copyUrl": "Salin URL workspace",
+        "urlPrefix": "narriv.ai/workspace/",
+        "industryTechnology": "Technology",
+        "industryFinance": "Finance",
+        "industryHealthcare": "Healthcare",
+        "industryRetail": "Retail & E-Commerce",
+        "industryGovernment": "Government & Non-Profit",
+        "languageId": "Bahasa Indonesia",
+        "languageEnUs": "English (US)",
+        "languageEnUk": "English (UK)"
+      },
+      "membersCard": {
+        "title": "User & Access Management",
+        "desc": "Kelola anggota workspace dan akses mereka."
+      },
+      "billingCard": {
+        "title": "Billing & Usage",
+        "desc": "Informasi paket dan penggunaan workspace.",
+        "planEnterprise": "Enterprise",
+        "planDesc": "Paket aktif profesional skala besar.",
+        "managePlan": "Kelola Paket",
+        "statusLabel": "Status",
+        "nextBilling": "Tagihan Berikutnya",
+        "billingDateFormat": "12 Juni 2025",
+        "billingDaysLeft": "(30 hari lagi)",
+        "usageTitle": "Penggunaan Signal (30 Hari Terakhir)",
+        "usageTotalSignals": "Total Signals",
+        "usageChange": "▲ 18.6% vs periode sebelumnya",
+        "period30": "30 Hari Terakhir",
+        "period60": "60 Hari Terakhir",
+        "metricSignalVolume": "Signal Volume",
+        "metricConnectedSources": "Connected Sources",
+        "metricUsersLimit": "Users limit",
+        "metricAiCredits": "AI Credits",
+        "signalsUnit": "signals",
+        "chartDates": [
+          "13 Mei",
+          "18 Mei",
+          "25 Mei",
+          "28 Mei",
+          "2 Jun",
+          "7 Jun",
+          "12 Jun",
+          "18 Jun",
+          "24 Jun"
+        ]
+      },
+      "danger": {
+        "title": "Danger Zone",
+        "desc": "Tindakan berisiko yang dapat mempengaruhi workspace Anda.",
+        "pauseTitle": "Pause Workspace",
+        "pauseDesc": "Hentikan sementara semua monitoring dan ingest data.",
+        "pauseButton": "Pause Workspace",
+        "resetTitle": "Reset Signals Cache",
+        "resetDesc": "Hapus cache lokal dan proses ulang semua signals.",
+        "resetButton": "Reset Cache",
+        "deleteTitle": "Delete Workspace",
+        "deleteDesc": "Hapus permanen workspace beserta semua data di dalamnya.",
+        "deleteButton": "Delete Workspace"
+      },
+      "confirm": {
+        "title": "Konfirmasi Aksi",
+        "confirm": "Ya, lanjutkan",
+        "pauseDesc": "Apakah Anda yakin ingin menonaktifkan workspace ini sementara? Pengumpulan sinyal baru, analisis sentimen otomatis, dan notifikasi akan dihentikan.",
+        "resetDesc": "Apakah Anda yakin ingin membersihkan cache lokal? Semua sinyal akan diunduh ulang dari platform monitoring asal. Proses ini memakan waktu beberapa menit.",
+        "deleteDesc": "Apakah Anda yakin ingin menghapus workspace secara permanen? Seluruh riwayat analisis, integrasi, data pengguna, dan visualisasi akan dihapus selamanya. Tindakan ini tidak dapat dibatalkan."
+      },
+      "deleteMemberDialog": {
+        "title": "Hapus Member",
+        "description": "Hapus {name} dari workspace? Akses pengguna ini ke dashboard dan data workspace akan dicabut.",
+        "confirm": "Ya, hapus"
+      },
+      "toast": {
+        "saveSuccess": "Pengaturan workspace berhasil disimpan.",
+        "saveFailed": "Pengaturan belum bisa disimpan. Coba lagi.",
+        "inviteSuccess": "Undangan berhasil dikirim ke {email}.",
+        "inviteFailed": "Gagal mengirim undangan. Coba lagi.",
+        "removeSuccess": "Member berhasil dihapus dari workspace.",
+        "removeFailed": "Gagal menghapus member. Coba lagi.",
+        "passwordSuccess": "Password berhasil diubah.",
+        "passwordFailed": "Gagal mengubah password. Coba lagi.",
+        "passwordMismatch": "Sandi tidak cocok.",
+        "passwordMinLength": "Password harus minimal 8 karakter.",
+        "logoSuccess": "Logo workspace berhasil diupload.",
+        "logoFailed": "Gagal mengupload logo. Coba lagi.",
+        "logoTooLarge": "Ukuran gambar melebihi 2MB.",
+        "logoInvalidFormat": "Format logo tidak didukung.",
+        "logoReadFailed": "File logo belum bisa dibaca.",
+        "logoUploadError": "Logo belum bisa diunggah. Coba lagi sebentar.",
+        "twoFaSuccess": "2FA berhasil diaktifkan.",
+        "twoFaInvalid": "Kode tidak valid.",
+        "2faSuccess": "2FA berhasil diaktifkan.",
+        "2faInvalid": "Kode tidak valid. Silakan coba lagi.",
+        "auditExport": "Log audit keamanan sedang diekspor.",
+        "statusChanged": "Status anggota berhasil diperbarui.",
+        "confirmPause": "Workspace berhasil dinonaktifkan sementara.",
+        "confirmReset": "Cache sinyal berhasil dibersihkan dan diproses ulang.",
+        "confirmDelete": "Prosedur penghapusan workspace diinisialisasi.",
+        "rolePermissionsInfo": "Manajer Role & Permission akan terbuka.",
+        "quietHoursInfo": "Editor Quiet Hours akan terbuka.",
+        "managementInfo": "Panel manajemen {label} akan terbuka."
+      },
+      "invite": {
+        "title": "Undang Anggota",
+        "modalTitle": "Undang Anggota Baru",
+        "subtitle": "Tambahkan kolaborator baru ke workspace Anda.",
+        "email": "Email",
+        "emailLabel": "Email Kerja",
+        "emailPlaceholder": "Contoh: aldi@narriv.ai",
+        "emailInvalid": "Format email tidak valid.",
+        "nameRequired": "Nama wajib diisi.",
+        "nameMinLength": "Nama minimal 2 karakter.",
+        "nameLabel": "Nama Lengkap",
+        "namePlaceholder": "Contoh: Aldi Pratama",
+        "role": "Peran",
+        "roleLabel": "Pilih Role Akses",
+        "roleOptionAdmin": "Admin (Akses Penuh Kelola)",
+        "roleOptionAnalyst": "Analyst (Tulis & Baca Laporan)",
+        "roleOptionViewer": "Viewer (Hanya Baca)",
+        "cancel": "Batal",
+        "submit": "Kirim Undangan",
+        "submitting": "Mengirim..."
+      },
+      "memberForm": {
+        "name": "Nama",
+        "email": "Email",
+        "role": "Peran",
+        "cancel": "Batal",
+        "writer": "Penulis",
+        "viewer": "Penonton"
+      },
+      "deleteMember": {
+        "title": "Hapus Anggota",
+        "description": "Apakah Anda yakin ingin menghapus anggota ini dari workspace?",
+        "cancel": "Batal",
+        "confirm": "Hapus"
+      },
+      "logo": {
+        "uploadTitle": "Upload Logo",
+        "changeLogo": "Edit",
+        "formatHint": "Format: PNG atau JPG, maks 2MB",
+        "currentLogo": "Logo saat ini",
+        "uploadNew": "Upload Logo Baru",
+        "removeLogo": "Hapus Logo",
+        "uploading": "Mengunggah..."
+      },
+      "notifications": {
+        "title": "Notifikasi",
+        "desc": "Preferensi rute notifikasi Anda.",
+        "emailAlerts": "Email Alerts",
+        "emailAlertsDesc": "Laporan alert ke email",
+        "slackAlerts": "Slack Alerts",
+        "slackAlertsDesc": "Eskalasi otomatis ke Slack",
+        "whatsappAlerts": "WhatsApp Alerts",
+        "whatsappAlertsDesc": "Alert real-time nomor terdaftar",
+        "dailySummary": "Daily Summary",
+        "dailySummaryDesc": "Ringkasan harian analisis narasi",
+        "criticalOnly": "Critical Alert Only",
+        "criticalOnlyDesc": "Hanya notifikasi tingkat kritis",
+        "quietHours": "Quiet Hours",
+        "quietHoursDesc": "Jeda notifikasi di luar kerja"
+      },
+      "aiPrefs": {
+        "title": "AI Preferences",
+        "desc": "Sesuaikan cara kerja agen AI.",
+        "sensitivity": "AI Sensitivity",
+        "autoCategorization": "Auto Categorization",
+        "autoCategorizationDesc": "Otomatis kelompokkan tag cluster",
+        "autoSentiment": "Auto Sentiment Analysis",
+        "autoSentimentDesc": "Tentukan polaritas sentimen berita",
+        "summaryStyle": "AI Summary Style",
+        "enableRecs": "Enable AI Recommendations",
+        "enableRecsDesc": "Tampilkan saran tindak lanjut",
+        "enablePredictive": "Enable Predictive Signals",
+        "enablePredictiveDesc": "Deteksi tanda tren membesar"
+      },
+      "integrationsApi": {
+        "title": "Integrations & API",
+        "desc": "Kelola integrasi dan akses API.",
+        "connectedPlatforms": "Connected Platforms",
+        "connectedPlatformsDesc": "Integrasi media & monitoring",
+        "apiKeys": "API Keys",
+        "apiKeysDesc": "Buat & hapus token akses",
+        "webhooks": "Webhooks",
+        "webhooksDesc": "Pemberitahuan event eksternal",
+        "dbExport": "Database Export",
+        "dbExportDesc": "Sinkronisasi Postgres/BigQuery",
+        "slackSettings": "Slack App Settings",
+        "slackSettingsDesc": "Hubungkan channel eskalasi"
+      },
+      "security": {
+        "title": "Security",
+        "desc": "Keamanan dan enkripsi workspace.",
+        "twoFa": "Two-Factor Auth (2FA)",
+        "twoFaDesc": "MFA wajib untuk semua anggota",
+        "active": "Aktif",
+        "inactive": "Nonaktif",
+        "sessionTimeout": "Durasi Session",
+        "sessionTimeoutDesc": "Masa berakhir login aktif",
+        "otpDuration": "Durasi OTP",
+        "otpDurationDesc": "Durasi kode OTP",
+        "ipRestriction": "IP Restriction",
+        "ipRestrictionDesc": "Batasi login dari IP kantor saja",
+        "auditLog": "Audit Log",
+        "auditLogDesc": "Aktivitas keamanan dan login",
+        "exportAudit": "Ekspor log audit"
+      },
+      "billing": {
+        "currentPlan": "Paket saat ini: {name} ({price}/bulan)",
+        "status": "Status: {status}",
+        "subscribe": "Langganan",
+        "renew": "Perpanjang",
+        "upgrade": "Upgrade",
+        "cancelSubscription": "Batalkan Langganan",
+        "noActiveSubscription": "Tidak ada langganan aktif",
+        "confirmCancelTitle": "Konfirmasi Pembatalan Langganan",
+        "confirmCancelDesc": "Anda yakin ingin membatalkan langganan?",
+        "cancelConfirm": "Ya, Batalkan",
+        "upgradeUnavailable": "Upgrade ke paket berikutnya tidak tersedia untuk sementara."
+      },
+      "validation": {
+        "workspaceNameRequired": "Nama workspace wajib diisi.",
+        "workspaceNameMinLength": "Nama workspace minimal 3 karakter.",
+        "currentPasswordRequired": "Password saat ini wajib diisi.",
+        "newPasswordRequired": "Password baru wajib diisi.",
+        "passwordMinLength": "Password minimal 10 karakter.",
+        "passwordUppercase": "Password harus mengandung huruf besar.",
+        "passwordNumber": "Password harus mengandung angka.",
+        "passwordSymbol": "Password harus mengandung simbol.",
+        "nameRequired": "Nama wajib diisi.",
+        "nameMinLength": "Nama minimal 2 karakter.",
+        "emailRequired": "Email wajib diisi.",
+        "emailInvalid": "Format email tidak valid."
+      },
+      "roles": {
+        "owner": "Workspace Owner",
+        "admin": "Admin",
+        "analyst": "Analyst",
+        "viewer": "Viewer"
+      },
+      "common": {
+        "saveChanges": "Simpan Perubahan",
+        "saving": "Menyimpan...",
+        "changesSaved": "Perubahan Disimpan",
+        "close": "Tutup",
+        "cancel": "Batal",
+        "delete": "Hapus",
+        "inviteMember": "Invite Member",
+        "manageRoles": "Kelola Role & Permission"
+      }
     }
   },
   "DemoApp": {
@@ -1159,17 +2198,18 @@
       "system": "System"
     },
     "nav": {
-      "command": "Command Center",
-      "signals": "Signals",
-      "alerts": "Alerts",
-      "visibility": "AI Visibility",
-      "intelligence": "Intelligence",
-      "reports": "Reports",
-      "actionCenter": "Action Center",
-      "dataSources": "Data Sources",
-      "integrations": "Integrations",
-      "activity": "Activity Log",
-      "settings": "Settings"
+      "command": "Beranda",
+      "signals": "Temuan",
+      "alerts": "Peringatan",
+      "visibility": "Kemunculan AI",
+      "intelligence": "Intelijen",
+      "reports": "Laporan",
+      "actionCenter": "Pusat Tindakan",
+      "cases": "Kasus",
+      "dataSources": "Sumber Data",
+      "integrations": "Integrasi",
+      "activity": "Log Aktivitas",
+      "settings": "Pengaturan"
     },
     "sidebar": {
       "scoreTitle": "Narriv Intelligence Score",
@@ -1191,6 +2231,14 @@
       "latest": "Terbaru",
       "newAction": "Buat Tindakan Baru"
     },
+    "metrics": {
+      "totalSignals": "Total Sinyal",
+      "analyzedSignals": "Sinyal Dianalisis",
+      "positiveSent": "Sent. Positif",
+      "negativeSent": "Sent. Negatif",
+      "neutralSent": "Sent. Netral",
+      "mixedSent": "Sent. Campuran"
+    },
     "pages": {
       "command": {
         "title": "Command Center",
@@ -1206,7 +2254,70 @@
         "sources": "Sumber Sinyal",
         "visibility": "AI Visibility Snapshot",
         "quick": "Aksi Cepat",
-        "status": "Sistem Status"
+        "status": "Sistem Status",
+        "timeRange24h": "24 Jam Terakhir",
+        "timeRange7d": "7 Hari",
+        "timeRange30d": "30 Hari",
+        "alertsDesc": "Lihat peringatan yang memerlukan perhatian.",
+        "topicsDesc": "Topik yang paling banyak dibicarakan.",
+        "sourcesDesc": "Status dan performa sumber data.",
+        "visibilityDesc": "Performa visibilitas AI.",
+        "quickDesc": "Lakukan tindakan cepat.",
+        "viewStatus": "Lihat status lengkap",
+        "positive": "Positif",
+        "neutral": "Netral",
+        "negative": "Negatif",
+        "totalMentions": "Total Mentions",
+        "errorTitle": "Data live dashboard belum bisa dimuat",
+        "errorDesc": "API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan metrik contoh.",
+        "openRelated": "Buka halaman terkait",
+        "close": "Tutup"
+      },
+      "quickActions": {
+        "newAlert": "Alert Baru",
+        "report": "Laporan",
+        "analyze": "Analisis",
+        "sources": "Sumber",
+        "settings": "Pengaturan",
+        "help": "Bantuan"
+      },
+      "quickActionContent": {
+        "newAlertTitle": "Buat Alert Baru",
+        "newAlertDesc": "Buat alert manual untuk memantau isu spesifik yang belum terdeteksi otomatis.",
+        "newAlertItem1Label": "Monitor Kompetitor",
+        "newAlertItem1Desc": "Pantau aktivitas dan sentimen kompetitor secara real-time.",
+        "newAlertItem2Label": "Lacak Kampanye",
+        "newAlertItem2Desc": "Lacak performa kampanye marketing di semua kanal.",
+        "newAlertItem3Label": "Awasi Isu",
+        "newAlertItem3Desc": "Awasi isu spesifik yang perlu perhatian segera.",
+        "reportTitle": "Buat Laporan Baru",
+        "reportDesc": "Generate laporan analisis sentimen dan visibilitas AI secara otomatis.",
+        "reportItem1Label": "Executive Summary",
+        "reportItem1Desc": "Laporan ringkas untuk stakeholder senior.",
+        "reportItem2Label": "Weekly Brief",
+        "reportItem2Desc": "Ringkasan mingguan performa brand.",
+        "reportItem3Label": "Crisis Report",
+        "reportItem3Desc": "Laporan mendalam untuk situasi krisis.",
+        "analyzeTitle": "Analisis Data",
+        "analyzeDesc": "Jalankan analisis mendalam pada sinyal dan narasi yang terkumpul.",
+        "analyzeItem1Label": "Analisis Sentimen",
+        "analyzeItem1Desc": "Analisis sentimen komprehensif dari semua sumber.",
+        "analyzeItem2Label": "Deteksi Tren",
+        "analyzeItem2Desc": "Deteksi tren dan pola yang muncul.",
+        "analyzeItem3Label": "Banding Kompetitor",
+        "analyzeItem3Desc": "Bandingkan performa dengan kompetitor.",
+        "sourcesTitle": "Kelola Sumber Data",
+        "sourcesDesc": "Akses dan konfigurasi sumber data yang terhubung ke platform.",
+        "settingsTitle": "Pengaturan Workspace",
+        "settingsDesc": "Kelola pengaturan workspace, integrasi, dan preferensi sistem.",
+        "helpTitle": "Bantuan & Dukungan",
+        "helpDesc": "Dapatkan bantuan dari tim support atau akses dokumentasi.",
+        "helpItem1Label": "Dokumentasi",
+        "helpItem1Desc": "Akses panduan lengkap penggunaan platform.",
+        "helpItem2Label": "Hubungi Support",
+        "helpItem2Desc": "Hubungi tim support untuk bantuan teknis.",
+        "helpItem3Label": "Tutorial Video",
+        "helpItem3Desc": "Tonton tutorial video langkah demi langkah."
       },
       "visibility": {
         "title": "AI Visibility",
@@ -1276,30 +2387,155 @@
     }
   },
   "ActionPlans": {
-    "title": "Action Center",
+    "title": "Pusat Tindakan",
     "desc": "Kelola tindakan dan pantau progres penyelesaian issue penting secara terstruktur.",
     "newAction": "Buat Tindakan Baru",
     "search": "Cari tindakan...",
     "filter": "Filter",
+    "filterHint": "Filter lanjutan segera hadir.",
     "sort": "Sortir: Prioritas",
-    "tabs": ["Semua Tindakan", "Aktif", "Dalam Progress", "Selesai", "Perlu Perhatian", "Ditunda", "Dibuat Oleh Saya"],
+    "sortHint": "Opsi pengurutan segera hadir.",
+    "defaultSLA": "4 jam",
+    "filterModal": {
+      "title": "Filter Tindakan",
+      "clearAll": "Hapus semua",
+      "priority": "Prioritas",
+      "status": "Status",
+      "allPriorities": "Semua",
+      "high": "Tinggi",
+      "medium": "Sedang",
+      "low": "Rendah",
+      "allStatuses": "Semua",
+      "active": "Aktif",
+      "inProgress": "Dalam Progres",
+      "done": "Selesai",
+      "apply": "Terapkan Filter"
+    },
+    "tabs": [
+      "Semua Tindakan",
+      "Aktif",
+      "Dalam Progress",
+      "Selesai",
+      "Perlu Perhatian",
+      "Ditunda",
+      "Dibuat Oleh Saya"
+    ],
     "lanes": {
       "high": "Prioritas Tinggi",
-      "medium": "Prioritas Menengah",
+      "medium": "Prioritas Sedang",
       "low": "Prioritas Rendah",
       "done": "Selesai"
     },
     "viewAll": "Lihat semua",
+    "showLess": "Sembunyikan",
     "detail": "Pratinjau Tindakan",
     "detailDesc": "Detail dan rekomendasi AI untuk tindakan terpilih.",
     "performance": "Kinerja Tindakan",
     "performanceDesc": "Ringkasan performa tindakan Anda.",
-    "learning": "AI Learning & Insights",
+    "learning": "Wawasan & Pembelajaran AI",
     "learningDesc": "Insight dari AI untuk meningkatkan efektivitas tindakan.",
     "status": {
       "active": "Aktif",
       "inProgress": "Dalam Progres",
       "done": "Selesai"
+    },
+    "toast": {
+      "feedbackSent": "Feedback berhasil dikirim.",
+      "feedbackFailed": "Feedback belum bisa dikirim.",
+      "feedbackRetry": "Feedback belum bisa dikirim. Coba lagi."
+    },
+    "metricActiveActions": "Tindakan Aktif",
+    "metricActiveHelper": "{count} aktif saat ini",
+    "metricTrendHelper": "{trend}% vs 7 hari lalu",
+    "metricInProgress": "Dalam Progres",
+    "metricInProgressHelper": "{count} sedang dikerjakan",
+    "metricCompleted": "Selesai",
+    "metricCompletedHelper": "{count} total selesai",
+    "metricNeedsAttention": "Perlu Perhatian",
+    "metricNeedsAttentionHelper": "{count} item prioritas tinggi",
+    "metricAvgResolution": "Total Tindakan",
+    "metricAvgResolutionHelper": "{count} tindakan dalam antrean",
+    "statusActive": "AKTIF",
+    "statusInProgress": "DALAM PROGRES",
+    "statusDone": "SELESAI",
+    "impactLabel": "Dampak:",
+    "categoryLabel": "Kategori",
+    "impactFieldLabel": "Dampak",
+    "slaLabel": "SLA",
+    "dueDateLabel": "Jatuh Tempo",
+    "aiStepsTitle": "Rekomendasi Langkah AI",
+    "viewFullPlan": "Lihat Rencana Lengkap",
+    "approve": "Setuju",
+    "reject": "Tolak",
+    "last7Days": "7 Hari Terakhir",
+    "last30Days": "30 Hari Terakhir",
+    "aiAccuracy": "Akurasi AI",
+    "aiAccuracyHelper": "berdasarkan feedback",
+    "acceptanceRate": "Tingkat Penerimaan",
+    "acceptanceRateHelper": "dari total feedback",
+    "rejectionRate": "Tingkat Penolakan",
+    "rejectionRateHelper": "perlu review",
+    "accuracyPerCategory": "Akurasi per Kategori AI",
+    "total": "Total",
+    "accuracy": "Akurasi",
+    "noFeedback": "Belum ada feedback untuk dianalisis.",
+    "noFeedbackDesc": "Feedback akan muncul di sini setelah tindakan ditinjau.",
+    "detailEmptyTitle": "Belum ada tindakan dipilih",
+    "detailEmptyDesc": "Pilih tindakan dari daftar untuk melihat detail lengkap, status, dan riwayat.",
+    "detailNoPlanTitle": "Belum ada data rencana",
+    "detailNoPlanDesc": "Analisis AI akan muncul di sini setelah rencana aksi dihasilkan.",
+    "performanceEmptyTitle": "Belum ada tindakan dipilih",
+    "performanceEmptyDesc": "Pilih tindakan terlebih dahulu untuk melihat performa.",
+    "learningEmptyTitle": "Belum ada tindakan dipilih",
+    "learningEmptyDesc": "Pilih tindakan terlebih dahulu untuk melihat wawasan dan pembelajaran.",
+    "viewFullAnalytics": "Lihat Analytics Lengkap",
+    "keyInsights": "Insight Utama",
+    "insight1Title": "Topik payment delay memiliki resolusi paling lama",
+    "insight1Value": "Rata-rata 4j 12m",
+    "insight2Title": "Tindakan dengan template memiliki tingkat sukses lebih tinggi",
+    "insight2Value": "+28% lebih efektif",
+    "insight3Title": "Komunikasi cepat di 1 jam pertama menurunkan sentimen negatif",
+    "insight3Value": "-32% sentimen negatif",
+    "popularTemplates": "Template Tindakan Populer",
+    "template1": "Crisis Response Template",
+    "template2": "Customer Issue Response",
+    "template3": "Promo Communication Plan",
+    "templateUsed": "Digunakan {count}",
+    "manageAllTemplates": "Kelola Semua Template",
+    "queueErrorTitle": "Daftar tindakan live belum bisa dimuat",
+    "queueErrorDesc": "API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan tindakan contoh.",
+    "planErrorTitle": "Detail tindakan live belum bisa dimuat",
+    "planErrorDesc": "Panel detail tetap memakai data contoh sampai backend tersedia.",
+    "emptyTitle": "Belum ada tindakan live",
+    "emptyDesc": "Backend berhasil dihubungi, tetapi belum ada action plan yang dibuat.",
+    "filterAll": "Semua Tindakan",
+    "livePlanLabel": "Rencana Live API",
+    "liveOwnerLabel": "Tim Narriv",
+    "liveRoleLabel": "Pemilik Aksi",
+    "liveReviewLabel": "Tinjau",
+    "modal": {
+      "title": "Buat Rencana Aksi",
+      "desc": "Hasilkan rencana aksi berbasis AI untuk workspace Anda.",
+      "strategyLabel": "Jenis Strategi",
+      "strategy": {
+        "pr_response": "Respons PR",
+        "content_strategy": "Strategi Konten",
+        "influencer_strategy": "Strategi Influencer",
+        "crisis_response": "Respons Krisis"
+      },
+      "prDesc": "Fokus pada komunikasi publik dan media",
+      "csDesc": "Perencanaan konten dan narasi jangka panjang",
+      "isDesc": "Kolaborasi dengan Key Opinion Leaders",
+      "crDesc": "Mitigasi dan manajemen risiko cepat",
+      "hint": "AI akan menganalisis data workspace Anda dan menghasilkan rencana aksi yang sesuai.",
+      "cancel": "Batal",
+      "submit": "Hasilkan Rencana",
+      "toast": {
+        "successTitle": "Rencana aksi dibuat",
+        "successDesc": "Rencana aksi berhasil dihasilkan.",
+        "errorTitle": "Gagal membuat",
+        "errorDesc": "Terjadi kesalahan saat menghasilkan rencana aksi."
+      }
     }
   },
   "Sources": {
@@ -1307,11 +2543,12 @@
     "desc": "Kelola dan monitor semua sumber data yang digunakan Narriv.",
     "learnMore": "Pelajari lebih lanjut",
     "add": "Tambah Integrasi",
-    "gridTitle": "Connector Grid",
+    "gridTitle": "Grid Koneksi",
     "gridDesc": "Status koneksi dan performa setiap sumber data.",
     "syncAll": "Sync Semua",
     "allCategories": "Semua Kategori",
-    "healthTitle": "Source Health Overview",
+    "searchPlaceholder": "Cari sumber...",
+    "healthTitle": "Ringkasan Kesehatan Sumber",
     "healthDesc": "Ringkasan kesehatan semua sumber.",
     "optimal": "Sistem berjalan optimal",
     "optimalDesc": "Semua sumber kritis dalam kondisi sehat.",
@@ -1326,68 +2563,172 @@
     "volumeDesc": "Perbandingan volume signal dari setiap sumber.",
     "distribution": "Distribusi Tipe Sumber",
     "distributionDesc": "Komposisi berdasarkan kategori sumber data.",
-    "last7": "7 Hari Terakhir"
+    "last7": "7 Hari Terakhir",
+    "metricConnectedSources": "Sumber Terhubung",
+    "metricActive": "{count} aktif",
+    "metricLiveMonitoring": "Pemantauan Live",
+    "metricTotalDocuments": "Total Dokumen",
+    "metricCoverage": "{count}% cakupan",
+    "metricHealthWarning": "Peringatan Kesehatan",
+    "metricCritical": "{count} kritis",
+    "metricLastSync": "Sinkron Terakhir",
+    "metricFromHealthApi": "dari health API",
+    "settingsKeyword": "Keyword Target Global",
+    "settingsKeywordDesc": "Kelola keyword utama untuk semua sumber.",
+    "settingsDedup": "Aturan Deduplikasi",
+    "settingsDedupDesc": "Aturan untuk menghindari data duplikat.",
+    "settingsRateLimit": "Batas Rate & Throttling",
+    "settingsRateLimitDesc": "Atur batas permintaan dan kecepatan sinkronisasi.",
+    "settingsRetention": "Kebijakan Retensi Data",
+    "settingsRetentionDesc": "Kebijakan penyimpanan dan retensi data.",
+    "settingsWebhooks": "Webhook & Integrasi",
+    "settingsWebhooksDesc": "Integrasi lanjutan dengan sistem eksternal.",
+    "common": {
+      "errors": {
+        "title": "Halaman ini belum bisa dibuka",
+        "fallback": "Ada bagian dashboard yang belum bisa ditampilkan.",
+        "digest": "Kode masalah: {digest}",
+        "retry": "Coba muat ulang"
+      },
+      "dialog": {
+        "close": "Tutup dialog",
+        "notice": "Aksi ini membutuhkan konfirmasi Anda.",
+        "confirm": "Ya, lanjutkan",
+        "cancel": "Batal"
+      }
+    },
+    "modal": {
+      "title": "Hubungkan Sumber Data",
+      "desc": "Konfigurasi parameter monitoring untuk sumber baru.",
+      "keyword": "Keyword Target",
+      "keywordPlaceholder": "Contoh: Narriv atau Nama Brand",
+      "keywordHint": "Digunakan sebagai input pencarian di berbagai platform.",
+      "categoryTitle": "Pilih Sumber Pantauan",
+      "categoryDesc": "Sistem akan memantau aktivitas pada platform berikut.",
+      "socialTitle": "Sosial Media Utama & Pencarian",
+      "socialDesc": "Memantau percakapan di X (Twitter), TikTok, Instagram, Threads, dan hasil Google Search.",
+      "videoTitle": "Video & Komunitas Publik",
+      "videoDesc": "Memantau tren video di YouTube dan postingan publik di Facebook.",
+      "ecommerceTitle": "E-Commerce, Forum & Podcast",
+      "ecommerceDesc": "Memantau ulasan produk di Tokopedia & Shopee, diskusi Kaskus, serta podcast di Spotify & YT Music.",
+      "cancel": "Batal",
+      "deploy": "Deploy Sources",
+      "deploying": "Mendeploy..."
+    },
+    "toasts": {
+      "statusUpdated": "Status sumber berhasil diperbarui.",
+      "statusUpdateFailed": "Status sumber belum bisa diperbarui.",
+      "statusUpdateRetry": "Status sumber belum bisa diperbarui. Coba lagi.",
+      "syncAllNone": "Belum ada sumber yang bisa disinkronkan.",
+      "syncAllNoneActive": "Belum ada sumber aktif untuk disinkronkan.",
+      "syncAllScheduled": "Sinkronisasi dimulai untuk {count} sumber.",
+      "syncAllPartial": "{queued} sumber dijadwalkan, {failed} gagal.",
+      "syncAllAllFailed": "Semua {failed} sumber gagal disinkronkan. Periksa konsol untuk detail.",
+      "syncAllError": "Sinkronisasi belum bisa dimulai. Coba lagi.",
+      "bootstrapCreated": "{created} sumber ditambahkan, {skipped} dilewati.",
+      "bootstrapFailed": "Preset sumber belum bisa ditambahkan. Coba lagi.",
+      "deleted": "Sumber data berhasil dihapus.",
+      "deleteFailed": "Gagal menghapus sumber data.",
+      "liveApiRefreshing": "Memuat ulang data signal dari API...",
+      "activityLogMissing": "Log sinkronisasi lengkap belum tersedia.",
+      "activity": {
+        "emptyTitle": "Belum ada aktivitas terbaru",
+        "emptyDesc": "Log sinkronisasi akan muncul di sini setelah sebuah sumber menyelesaikan proses ingestion."
+      },
+      "settingsUnavailable": "Pengaturan \"{title}\" belum dapat dikonfigurasi. Hubungi tim platform untuk modul ini.",
+      "syncAllStarted": "Sinkronisasi semua sumber dimulai.",
+      "syncAllInProgress": "Menyinkronkan...",
+      "bootstrapInProgress": "Menambahkan preset...",
+      "delete": {
+        "title": "Hapus Sumber Data",
+        "description": "Apakah Anda yakin ingin menghapus sumber data {name}? Aksi ini akan mematikan sinkronisasi dan menghapus sumber ini dari daftar pantauan Anda.",
+        "confirm": "Hapus Sumber",
+        "deleting": "Menghapus..."
+      }
+    },
+    "noSourcesYet": "Belum ada sumber",
+    "noSourcesYetDesc": "Hubungkan sumber data untuk mulai memantau.",
+    "emptyDistribution": "Belum ada sumber data",
+    "emptyDistributionDesc": "Tambahkan source untuk melihat distribusi.",
+    "noCategoryMatch": "Tidak ada sumber di kategori ini",
+    "noCategoryMatchDesc": "Coba pilih kategori lain atau tambahkan source baru.",
+    "noLiveSources": "Belum ada sumber live",
+    "noLiveSourcesDesc": "Backend berhasil dihubungi, tetapi belum ada sumber data yang dibuat.",
+    "liveUnavailable": "Sumber live belum bisa dimuat",
+    "liveUnavailableDesc": "API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan data contoh.",
+    "healthHealthy": "Sehat",
+    "healthWarning": "Peringatan",
+    "healthCritical": "Bermasalah",
+    "healthNeedsAttention": "Perlu perhatian",
+    "healthHealthyCount": "{healthy}/{total} sehat",
+    "noSourcesLegend": "Belum ada sumber"
   },
-  "Visibility": {
-    "breadcrumb": "Dashboard / AI Visibility",
-    "title": "AI Visibility",
-    "subtitle": "Pantau bagaimana brand, topik, dan kompetitor Anda muncul di platform generative AI.",
-    "last7Days": "7 Mei 2025 - 14 Mei 2025",
-    "export": "Ekspor",
-    "metrics": {
-      "totalMentions": { "label": "Total AI Mentions", "value": "2.451", "helper": "+18,7% vs 7 hari terakhir" },
-      "brandMentions": { "label": "Brand Mentions", "value": "1.289", "helper": "+22,1% vs 7 hari terakhir" },
-      "sov": { "label": "Share of Voice", "value": "24,3%", "helper": "+4,6 p.p." },
-      "avgPos": { "label": "Rata-rata Posisi (Semua AI)", "value": "2,8", "helper": "-0,4" }
+  "DashboardStates": {
+    "empty": {
+      "title": "Belum ada data",
+      "desc": "Data akan muncul di sini setelah tersedia, dengan layout dan kontrol yang sama."
     },
-    "execSummary": {
-      "title": "AI Executive Summary",
-      "aiGenerated": "A.I Generated",
-      "heading": "Visibility merek Anda meningkat +18,7% minggu ini.",
-      "body": "Peningkatan dipicu oleh topik AI monitoring, diskusi cybersecurity, dan rekomendasi ChatGPT terhadap tools monitoring enterprise. Namun, kompetitor mulai unggul pada keyword \"cloud security\" di Google Gemini dan Perplexity.",
-      "opportunity": "Top Opportunity",
-      "opportunityVal": "AI monitoring & enterprise intelligence tools",
-      "risk": "Top Risk",
-      "riskVal": "Cloud security (competitor dominated)",
-      "recActions": "AI Recommended Actions",
-      "rec1": "Dorong konten thought leadership",
-      "rec2": "Optimasi landing page (enterprise intel)",
-      "rec3": "Tingkatkan authority di cloud security",
-      "viewAll": "Lihat semua"
+    "error": {
+      "title": "Gagal memuat data",
+      "desc": "Permintaan gagal. Coba lagi, atau periksa koneksi backend jika ini terus terjadi."
     },
-    "mentionsTrend": {
-      "title": "AI Mentions Trend",
-      "desc": "Perkembangan jumlah penyebutan brand Anda di platform AI.",
-      "days7": "7 Hari",
-      "days30": "30 Hari"
+    "loading": {
+      "title": "Memuat data dashboard",
+      "desc": "Menyiapkan sinyal, alert, dan rekomendasi terbaru."
     },
-    "topTopics": {
-      "title": "Top Topics Mentioned by AI",
-      "headers": { "topic": "Topik", "mentions": "Penyebutan", "direction": "Arah", "type": "Tipe" },
-      "viewAll": "Lihat semua topik"
-    },
-    "sandbox": {
-      "title": "AI Search Sandbox",
-      "desc": "Simulasi bagaimana AI merespons pertanyaan tentang brand Anda.",
-      "queryPlaceholder": "Cari sinyal, topik, isu, atau kasus...",
-      "simulateBtn": "Simulasi",
-      "responseTitle": "AI Response (ChatGPT)",
-      "citations": "Key Sources (Citations)",
-      "confidence": "Confidence"
-    },
-    "competitorVs": {
-      "title": "Visibility vs Competitors (All AI Platforms)"
-    },
-    "topPlatforms": {
-      "title": "Top AI Platforms"
-    },
-    "competitorShare": {
-      "title": "Competitor Share of Voice",
-      "totalShare": "Total SOV"
-    },
-    "latestMentions": {
-      "title": "Latest Mention Examples",
-      "viewAll": "Lihat semua"
+    "retry": "Coba Lagi",
+    "pagination": {
+      "pageInfo": "Halaman {page} dari {totalPages}",
+      "prev": "Prev",
+      "next": "Next",
+      "summary": "Menampilkan {start}-{end} dari {total} {label}"
     }
+  },
+  "ActivityLog": {
+    "title": "Log Aktivitas",
+    "subtitle": "Jejak Audit Workspace",
+    "desc": "Pantau perubahan penting di workspace: autentikasi, member, sumber data, kasus, integrasi, dan pengaturan.",
+    "refresh": "Perbarui",
+    "allEvents": "Semua Event",
+    "metricsTotal": "Total Log",
+    "metricsTotalHelper": "Audit events tercatat",
+    "metricsActors": "Actor Aktif",
+    "metricsActorsHelper": "User/system di halaman ini",
+    "metricsToday": "Hari Ini",
+    "metricsTodayHelper": "Event pada tanggal lokal",
+    "metricsTypes": "Jenis Event",
+    "metricsTypesHelper": "Kategori event tampil",
+    "filterTitle": "Filter Audit",
+    "filterEvent": "Event",
+    "filterFrom": "Dari Tanggal",
+    "filterTo": "Sampai Tanggal",
+    "filterReset": "Reset",
+    "errorTitle": "Gagal memuat activity log",
+    "errorDesc": "Audit log belum bisa diambil dari backend. Coba refresh atau periksa koneksi API.",
+    "emptyTitle": "Belum ada activity log",
+    "emptyDesc": "Event audit akan muncul di sini setelah ada perubahan workspace atau aktivitas user.",
+    "colEvent": "Event",
+    "colActor": "Actor",
+    "colMeta": "Metadata",
+    "colTime": "Waktu",
+    "systemGenerated": "System generated",
+    "justNow": "baru saja",
+    "noMetadata": "Tidak ada metadata tambahan",
+    "recordedMetadata": "Metadata workspace tercatat",
+    "event_login": "Login",
+    "event_logout": "Logout",
+    "event_register_success": "Registrasi Berhasil",
+    "event_password_change": "Password Diubah",
+    "event_workspace_settings_updated": "Workspace Diperbarui",
+    "event_workspace_logo_uploaded": "Logo Diunggah",
+    "event_workspace_member_created": "Member Ditambahkan",
+    "event_workspace_member_deleted": "Member Dihapus",
+    "event_source_created": "Sumber Ditambahkan",
+    "event_source_updated": "Sumber Diperbarui",
+    "event_source_deleted": "Sumber Dihapus",
+    "event_case_created": "Kasus Dibuat",
+    "event_case_updated": "Kasus Diperbarui",
+    "event_integration_created": "Integrasi Dibuat",
+    "event_integration_updated": "Integrasi Diperbarui"
   }
 }

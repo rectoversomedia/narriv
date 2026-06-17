@@ -2,6 +2,8 @@
 
 import { AlertTriangle, X } from "lucide-react";
 import { useEffect, useId, useRef, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 type ConfirmationTone = "danger" | "warning";
@@ -36,12 +38,13 @@ export function ConfirmationDialog({
   open,
   title,
   description,
-  confirmLabel = "Ya, lanjutkan",
-  cancelLabel = "Batal",
+  confirmLabel,
+  cancelLabel,
   tone = "danger",
   onConfirm,
   onOpenChange,
 }: ConfirmationDialogProps) {
+  const t = useTranslations("Sources.common.dialog");
   const styles = toneStyles[tone];
   const titleId = useId();
   const descriptionId = useId();
@@ -89,8 +92,10 @@ export function ConfirmationDialog({
 
   if (!open) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs" role="presentation" onMouseDown={() => onOpenChange(false)}>
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md" role="presentation" onMouseDown={() => onOpenChange(false)}>
       <div
         ref={dialogRef}
         role="dialog"
@@ -107,10 +112,10 @@ export function ConfirmationDialog({
             </span>
             <div>
               <h3 id={titleId} className={cn("text-base font-black", styles.title)}>{title}</h3>
-              <p className="text-[10px] font-semibold text-slate-400">Aksi ini membutuhkan konfirmasi Anda.</p>
+              <p className="text-[10px] font-semibold text-slate-400">{t("notice")}</p>
             </div>
           </div>
-          <button type="button" aria-label="Tutup dialog" onClick={() => onOpenChange(false)} className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
+          <button type="button" aria-label={t("close")} onClick={() => onOpenChange(false)} className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
             <X size={15} />
           </button>
         </div>
@@ -126,17 +131,18 @@ export function ConfirmationDialog({
             onClick={() => onOpenChange(false)}
             className="flex h-10 flex-1 items-center justify-center rounded-lg border border-slate-200 bg-white text-[12px] font-black text-slate-700 hover:bg-slate-50"
           >
-            {cancelLabel}
+            {cancelLabel ?? t("cancel")}
           </button>
           <button
             type="button"
             onClick={onConfirm}
             className={cn("flex h-10 flex-1 items-center justify-center rounded-lg text-[12px] font-black text-white", styles.button)}
           >
-            {confirmLabel}
+            {confirmLabel ?? t("confirm")}
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -4,6 +4,7 @@ import crypto from "crypto";
 import prisma from "../../prisma.js";
 import { badRequest, forbidden, internalError } from "../../lib/api-error.js";
 import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
+import { logStructured } from "../../lib/logger.js";
 
 const UPLOAD_DIR = path.join(process.cwd(), "uploads", "logos");
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB

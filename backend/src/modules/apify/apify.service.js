@@ -1,7 +1,7 @@
 import { ApifyClient } from "apify-client";
 import { logStructured } from "../../lib/logger.js";
 
-const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
+const APIFY_TOKEN = process.env.APIFY_TOKEN || process.env.APIFY_API_TOKEN;
 const isMockMode = !APIFY_TOKEN;
 
 // Initialize the ApifyClient silently if there's no token so it doesn't crash
@@ -11,7 +11,7 @@ const client = new ApifyClient({
 
 /**
  * Runs an Apify actor and retrieves the dataset items.
- * If APIFY_API_TOKEN is missing or running in mock mode,
+ * If APIFY_TOKEN is missing or running in mock mode,
  * creates and returns a dummy dataset simulating news/social signals.
  */
 export const runActorAndFetchDataset = async (actorId, inputConfig = {}) => {

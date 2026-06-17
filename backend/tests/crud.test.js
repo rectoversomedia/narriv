@@ -19,6 +19,7 @@ const sources = [];
 const alerts = [];
 const cases = [];
 const integrations = [];
+const signals = [];
 let workspaceSettings = null;
 
 function resetState() {
@@ -28,6 +29,7 @@ function resetState() {
   alerts.length = 0;
   cases.length = 0;
   integrations.length = 0;
+  signals.length = 0;
   workspaceSettings = null;
 
   users.push(
@@ -46,6 +48,12 @@ function resetState() {
 function matchesWhere(record, where = {}) {
   return Object.entries(where).every(([key, value]) => {
     if (value === undefined) return true;
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      if (Array.isArray(value.in)) return value.in.includes(record[key]);
+      if (value.not !== undefined) return record[key] !== value.not;
+      if (value.gte !== undefined) return new Date(record[key]).getTime() >= new Date(value.gte).getTime();
+      if (value.lte !== undefined) return new Date(record[key]).getTime() <= new Date(value.lte).getTime();
+    }
     if (key === 'workspaceId' && value && typeof value === 'object' && Array.isArray(value.in)) {
       return value.in.includes(record.workspaceId);
     }
@@ -127,6 +135,20 @@ const mockPrisma = {
     findMany: jest.fn(async ({ where = {}, skip = 0, take } = {}) => paginate(alerts.filter((alert) => matchesWhere(alert, where)), { skip, take })),
     count: jest.fn(async ({ where = {} } = {}) => alerts.filter((alert) => matchesWhere(alert, where)).length),
     findUnique: jest.fn(async ({ where }) => alerts.find((alert) => alert.id === where.id) || null),
+    groupBy: jest.fn(async ({ by = [], where = {} } = {}) => {
+      const records = alerts.filter((alert) => matchesWhere(alert, where));
+      if (!by.includes('type')) return [];
+      const groups = new Map();
+      records.forEach((alert) => {
+        const key = alert.type ?? null;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(alert);
+      });
+      return Array.from(groups.entries()).map(([type, grouped]) => ({
+        type,
+        _count: { _all: grouped.length },
+      }));
+    }),
     update: jest.fn(async ({ where, data }) => {
       const index = alerts.findIndex((alert) => alert.id === where.id);
       alerts[index] = { ...alerts[index], ...data, updatedAt: '2026-06-02T00:10:00.000Z' };
@@ -200,10 +222,37 @@ const mockPrisma = {
   },
   ingestionJob: { count: jest.fn(async () => 0) },
   rawDocument: { count: jest.fn(async () => 0) },
-  signal: { count: jest.fn(async () => 0) },
+  signal: {
+    count: jest.fn(async ({ where = {} } = {}) => signals.filter((signal) => matchesWhere(signal, where)).length),
+    findMany: jest.fn(async ({ where = {}, skip = 0, take, select } = {}) => {
+      const records = paginate(signals.filter((signal) => matchesWhere(signal, where)), { skip, take });
+      if (select?.capturedAt) return records.map((signal) => ({ capturedAt: signal.capturedAt }));
+      return records;
+    }),
+    groupBy: jest.fn(async ({ by = [], where = {} } = {}) => {
+      const records = signals.filter((signal) => matchesWhere(signal, where));
+      if (!by.includes('platform')) return [];
+      const groups = new Map();
+      records.forEach((signal) => {
+        const key = signal.platform ?? null;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(signal);
+      });
+      return Array.from(groups.entries()).map(([platform, grouped]) => ({
+        platform,
+        _count: {
+          _all: grouped.length,
+          platform: grouped.filter((signal) => signal.platform).length,
+        },
+      }));
+    }),
+  },
   narrativeCluster: { count: jest.fn(async () => 0) },
   report: { count: jest.fn(async () => 0) },
-  actionPlan: { count: jest.fn(async () => 0) },
+  actionPlan: {
+    count: jest.fn(async () => 0),
+    findMany: jest.fn(async () => []),
+  },
   generatedAsset: { count: jest.fn(async () => 0) },
   aIVisibilityResult: { count: jest.fn(async () => 0) },
   promptTestRun: { count: jest.fn(async () => 0) },
@@ -241,14 +290,14 @@ describe('CRUD Integration Endpoints', () => {
         .set(authHeader())
         .send({
           workspaceId: WORKSPACE_ID,
-          name: 'Industry RSS',
+          name: 'Industry News Actor',
           type: 'news',
           actorId: 'apify/news-actor',
-          inputConfig: { url: 'https://example.com/feed.xml' },
+          inputConfig: { keywords: 'industry news' },
         });
 
       expect(createRes.status).toBe(201);
-      expect(createRes.body).toMatchObject({ id: SOURCE_ID, workspaceId: WORKSPACE_ID, name: 'Industry RSS', isActive: true });
+      expect(createRes.body).toMatchObject({ id: SOURCE_ID, workspaceId: WORKSPACE_ID, name: 'Industry News Actor', isActive: true });
 
       const listRes = await request(app)
         .get('/sources')
@@ -261,10 +310,10 @@ describe('CRUD Integration Endpoints', () => {
       const updateRes = await request(app)
         .patch(`/sources/${SOURCE_ID}`)
         .set(authHeader())
-        .send({ name: 'Updated RSS', isActive: true });
+        .send({ name: 'Updated News Actor', isActive: true });
 
       expect(updateRes.status).toBe(200);
-      expect(updateRes.body.name).toBe('Updated RSS');
+      expect(updateRes.body.name).toBe('Updated News Actor');
 
       const deleteRes = await request(app)
         .delete(`/sources/${SOURCE_ID}`)
@@ -282,6 +331,42 @@ describe('CRUD Integration Endpoints', () => {
 
       expect(res.status).toBe(403);
       expect(res.body.error).toMatch(/Workspace access denied/i);
+    });
+
+    it('returns Apify actor presets and bootstraps selected defaults', async () => {
+      const presetsRes = await request(app)
+        .get('/sources/presets?keyword=prabowo')
+        .set(authHeader());
+
+      expect(presetsRes.status).toBe(200);
+      expect(presetsRes.body.actors).toEqual(expect.arrayContaining([
+        expect.objectContaining({ key: 'twitter-x-latest', actorId: 'apidojo/twitter-scraper-lite' }),
+        expect.objectContaining({ key: 'indonesia-news', actorId: 'nadpra/indonews' }),
+      ]));
+      expect(presetsRes.body.webScrapers).toEqual(expect.arrayContaining([
+        expect.objectContaining({ category: 'Teknologi & Startup', actorId: 'apify/web-scraper' }),
+      ]));
+
+      const bootstrapRes = await request(app)
+        .post('/sources/bootstrap-defaults')
+        .set(authHeader())
+        .send({
+          workspaceId: WORKSPACE_ID,
+          keyword: 'prabowo',
+          includeActors: true,
+          includeWebScrapers: false,
+          presetKeys: ['twitter-x-latest'],
+        });
+
+      expect(bootstrapRes.status).toBe(201);
+      expect(bootstrapRes.body).toMatchObject({ created: 1, skipped: 0 });
+      expect(bootstrapRes.body.sources[0]).toMatchObject({
+        workspaceId: WORKSPACE_ID,
+        name: 'X / Twitter Latest',
+        type: 'social',
+        actorId: 'apidojo/twitter-scraper-lite',
+      });
+      expect(bootstrapRes.body.sources[0].inputConfig.searchTerms).toEqual(['prabowo']);
     });
   });
 
@@ -335,6 +420,48 @@ describe('CRUD Integration Endpoints', () => {
       expect(mockPrisma.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({
         data: expect.objectContaining({ event: 'escalation_change' }),
       }));
+    });
+
+    it('returns live alert summary with type distribution and hourly timeline', async () => {
+      const now = new Date();
+      alerts[0].createdAt = new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString();
+      alerts.push(
+        {
+          id: '00000000-0000-4000-8000-000000000402',
+          workspaceId: WORKSPACE_ID,
+          title: 'Critical source risk',
+          type: 'source-risk',
+          severity: 'critical',
+          status: 'acknowledged',
+          escalationLevel: 'high',
+          createdAt: now.toISOString(),
+        },
+        {
+          id: '00000000-0000-4000-8000-000000000403',
+          workspaceId: WORKSPACE_ID,
+          title: 'Old payment risk',
+          type: 'payment-risk',
+          severity: 'medium',
+          status: 'resolved',
+          escalationLevel: 'medium',
+          createdAt: new Date(now.getTime() - 26 * 60 * 60 * 1000).toISOString(),
+        },
+      );
+
+      const res = await request(app)
+        .get('/api/alerts/summary')
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(res.body.total).toBe(3);
+      expect(res.body.by_type).toMatchObject({ risk: 1, 'source-risk': 1, 'payment-risk': 1 });
+      expect(res.body.by_severity.critical).toBe(1);
+      expect(res.body.by_severity.high).toBe(1);
+      expect(res.body.by_status.in_progress).toBe(1);
+      expect(res.body.by_status.resolved).toBe(1);
+      expect(res.body.timeline).toHaveLength(24);
+      expect(res.body.timeline_labels).toHaveLength(24);
+      expect(res.body.timeline.reduce((sum, value) => sum + value, 0)).toBe(2);
     });
 
     it('hides alerts outside the user workspace scope', async () => {
@@ -425,6 +552,53 @@ describe('CRUD Integration Endpoints', () => {
 
       expect(createRes.status).toBe(404);
       expect(createRes.body).toMatchObject({ code: 'USER_NOT_FOUND', details: { email: 'missing@example.com' } });
+    });
+  });
+
+  describe('Signals', () => {
+    it('returns live signal metadata with hourly timeline and total signal count', async () => {
+      const now = new Date();
+      signals.push(
+        {
+          id: 'signal-1',
+          workspaceId: WORKSPACE_ID,
+          title: 'Payment delay mention',
+          content: 'Payment delay issue',
+          platform: 'x',
+          capturedAt: now.toISOString(),
+        },
+        {
+          id: 'signal-2',
+          workspaceId: WORKSPACE_ID,
+          title: 'Instagram complaint',
+          content: 'Complaint from Instagram',
+          platform: 'instagram',
+          capturedAt: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(),
+        },
+        {
+          id: 'signal-3',
+          workspaceId: WORKSPACE_ID,
+          title: 'Unknown source',
+          content: 'Unknown source mention',
+          platform: null,
+          capturedAt: new Date(now.getTime() - 26 * 60 * 60 * 1000).toISOString(),
+        },
+      );
+
+      const res = await request(app)
+        .get('/signals/meta')
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(res.body.totalSignals).toBe(3);
+      expect(res.body.sourceDistribution).toEqual(expect.arrayContaining([
+        expect.objectContaining({ name: 'x', value: expect.stringContaining('(1)') }),
+        expect.objectContaining({ name: 'instagram', value: expect.stringContaining('(1)') }),
+        expect.objectContaining({ name: 'Unknown', value: expect.stringContaining('(1)') }),
+      ]));
+      expect(res.body.timeline).toHaveLength(24);
+      expect(res.body.timelineLabels).toHaveLength(24);
+      expect(res.body.timeline.reduce((sum, value) => sum + value, 0)).toBe(2);
     });
   });
 

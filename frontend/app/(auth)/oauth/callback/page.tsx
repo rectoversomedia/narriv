@@ -4,6 +4,7 @@ import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { AuthShell, CenterIcon } from "@/components/auth/auth-shell";
+import { exchangeOAuthCode } from "@/lib/api-service";
 
 function OAuthCallbackContent() {
   const router = useRouter();
@@ -11,24 +12,26 @@ function OAuthCallbackContent() {
   const setSession = useAuthStore((state) => state.setSession);
 
   useEffect(() => {
-    const token = searchParams.get("token");
-    const refreshToken = searchParams.get("refreshToken");
-    const userBase64 = searchParams.get("user");
-
-    if (token && refreshToken && userBase64) {
-      try {
-        const user = JSON.parse(atob(userBase64));
-        setSession(token, user, refreshToken);
-        
-        const nextPath = new URLSearchParams(window.location.search).get("next");
-        router.push(nextPath?.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/");
-      } catch (e) {
-        console.error("Failed to parse OAuth user payload", e);
-        router.push("/login?error=oauth_failed");
-      }
-    } else {
+    const code = searchParams.get("code");
+    if (!code) {
       router.push("/login?error=oauth_failed");
+      return;
     }
+
+    let cancelled = false;
+    exchangeOAuthCode(code)
+      .then(({ token, user, refreshToken }) => {
+        if (cancelled) return;
+        setSession(token, user, refreshToken);
+        router.replace("/");
+      })
+      .catch(() => {
+        if (!cancelled) router.replace("/login?error=oauth_failed");
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [searchParams, router, setSession]);
 
   return (

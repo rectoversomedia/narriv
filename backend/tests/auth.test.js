@@ -68,6 +68,13 @@ const mockPrisma = {
         user: { id: 'u1', email: 'test@example.com' }
       };
     }),
+    findUnique: jest.fn(async ({ where }) => ({
+      id: 'rt1',
+      userId: 'u1',
+      tokenHash: where.tokenHash,
+      expiresAt: new Date(Date.now() + 10000),
+      user: { id: 'u1', email: 'test@example.com' }
+    })),
     update: jest.fn(async () => ({})),
     updateMany: jest.fn(async () => ({ count: 1 })),
     deleteMany: jest.fn(async () => ({ count: 1 })),

@@ -1,6 +1,7 @@
 import prisma from "../../prisma.js";
 import { forbidden, internalError } from "../../lib/api-error.js";
 import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
+import { logStructured } from "../../lib/logger.js";
 
 export async function listActivityLogs(req, res) {
     try {

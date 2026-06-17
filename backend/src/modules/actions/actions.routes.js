@@ -7,6 +7,7 @@ import { badRequest, forbidden, internalError, notFound } from "../../lib/api-er
 import { validateRequest } from "../../middlewares/validate-request.js";
 import { createActionPlanBodySchema } from "./actions.schema.js";
 import { recordAuditLog } from "../../lib/audit.js";
+import { logStructured } from "../../lib/logger.js";
 
 const router = express.Router();
 router.use(verifyToken);

@@ -14,6 +14,7 @@ import { createReportBodySchema, createReportExportBodySchema, reportIdParamsSch
 import { generateReport as generateFromTemplate, sendReportEmail } from "./report-generation.js";
 import { getAllReportTemplates } from "./report-templates.js";
 import { recordAuditLog } from "../../lib/audit.js";
+import { logStructured } from "../../lib/logger.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -213,6 +214,78 @@ router.get("/", async (req, res) => {
 router.get("/templates", (req, res) => {
     const templates = getAllReportTemplates();
     return res.json({ data: templates });
+});
+
+// GET /api/reports/analytics — Aggregate metrics: format distribution, top templates, trend timeline
+router.get("/analytics", async (req, res) => {
+    try {
+        const { workspaceId } = req.query;
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
+        if (scopedWorkspaceIds.length === 0) {
+            return res.json({
+                format_distribution: { json: 0, pdf: 0 },
+                popular_templates: [],
+                trend_timeline: [],
+            });
+        }
+
+        const reportWhere = { workspaceId: { in: scopedWorkspaceIds } };
+        const exportWhere = { report: { workspaceId: { in: scopedWorkspaceIds } } };
+
+        const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+
+        const [formatGroups, popularGroups, trendReports] = await Promise.all([
+            prisma.reportExport.groupBy({
+                by: ["format"],
+                where: exportWhere,
+                _count: { _all: true },
+            }),
+            prisma.report.groupBy({
+                by: ["title"],
+                where: reportWhere,
+                _count: { _all: true },
+                orderBy: { _count: { title: "desc" } },
+                take: 5,
+            }),
+            prisma.report.findMany({
+                where: { ...reportWhere, createdAt: { gte: fourteenDaysAgo } },
+                select: { createdAt: true },
+            }),
+        ]);
+
+        // Format distribution
+        const formatDistribution = { json: 0, pdf: 0 };
+        for (const row of formatGroups) {
+            const fmt = String(row.format || "").toLowerCase();
+            if (fmt === "json") formatDistribution.json = row._count._all;
+            else if (fmt === "pdf") formatDistribution.pdf = row._count._all;
+        }
+
+        // Popular reports - count by report title because Report has no template/type columns.
+        const popularTemplates = popularGroups.map((row) => ({ name: row.title || "Unknown", count: row._count._all }));
+
+        // Trend timeline - reports generated per day for last 14 days
+        const dayBuckets = {};
+        for (let i = 13; i >= 0; i--) {
+            const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+            const key = d.toISOString().split("T")[0];
+            dayBuckets[key] = 0;
+        }
+        for (const r of trendReports) {
+            const key = new Date(r.createdAt).toISOString().split("T")[0];
+            if (key in dayBuckets) dayBuckets[key] += 1;
+        }
+        const trendTimeline = Object.entries(dayBuckets).map(([date, count]) => ({ date, count }));
+
+        return res.json({
+            format_distribution: formatDistribution,
+            popular_templates: popularTemplates,
+            trend_timeline: trendTimeline,
+        });
+    } catch (error) {
+        logStructured("error", "Error fetching reports analytics:", { error: error?.message || error, stack: error?.stack });
+        res.status(500).json({ error: "Internal server error" });
+    }
 });
 
 // POST /api/reports/generate — Generate a report from a template

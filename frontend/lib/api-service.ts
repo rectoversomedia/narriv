@@ -256,14 +256,27 @@ export interface GetSignalsOptions {
   platform?: string;
   startDate?: string;
   endDate?: string;
+  sentiment?: string;
 }
 
 export interface SignalsMeta {
+  totalSignals: number;
   followUps: Array<{ title: string; badge: string; meta: string; time: string; tone: string }>;
   recommendations: Array<{ title: string; desc: string; badge: string; tone: string; icon?: LucideIcon }>;
   sourceDistribution: Array<{ name: string; value: string; color: string }>;
   timeline: number[];
+  timelineLabels?: string[];
   investigationQueue: Array<{ title: string; meta: string; badge: string; tone: string }>;
+  metrics?: {
+    totalSignals24h: number;
+    negativeSignals24h: number;
+    criticalSignals24h: number;
+  };
+  aiSummary?: {
+    title: string;
+    content: { en: string; id: string };
+    insight: { en: string; id: string };
+  } | null;
 }
 
 export async function getSignalsMeta(): Promise<SignalsMeta | null> {
@@ -412,14 +425,6 @@ export interface VisibilityResponse {
   geoActions?: { title: string; tag: string; highlighted?: boolean }[];
 }
 
-export async function getVisibility(): Promise<VisibilityResponse | null> {
-  try {
-    return await apiClient<VisibilityResponse>("/api/visibility");
-  } catch {
-    return null;
-  }
-}
-
 export async function updateAlertAssignment(id: string, input: AssignmentInput): Promise<Alert | null> {
   try {
     return await apiClient<Alert>(`/api/alerts/${id}/assign`, {
@@ -442,6 +447,26 @@ export interface ActionPlanResponse {
   deadline?: string | null;
   escalationLevel?: EscalationLevel | null;
   workflowStatus?: string | null;
+}
+
+export interface ActionPlanLearningResponse {
+  insights: Array<{
+    titleKey: string;
+    valueKey: string;
+    icon: string;
+  }>;
+  templates: Array<{
+    nameKey: string;
+    usageCount: number;
+  }>;
+}
+
+export async function getActionPlanLearning(id: string): Promise<ActionPlanLearningResponse | null> {
+  try {
+    return await apiClient<ActionPlanLearningResponse>(`/api/action-plans/${id}/learning`);
+  } catch {
+    return null;
+  }
 }
 
 export type ActionStrategyType =
@@ -475,6 +500,15 @@ export interface ActionQueueRecord {
 export async function getActionPlans(): Promise<ActionPlanResponse | null> {
   try {
     return await apiClient<ActionPlanResponse>("/api/action-plans");
+  } catch {
+    return null;
+  }
+}
+
+export async function getActionPlanById(id: string): Promise<ActionPlanResponse | null> {
+  if (!id) return null;
+  try {
+    return await apiClient<ActionPlanResponse>(`/api/action-plans/${id}`);
   } catch {
     return null;
   }
@@ -828,7 +862,7 @@ export async function getCaseById(id: string): Promise<CaseRecord | null> {
   }
 }
 
-export async function createCase(input: { title: string; description?: string; priority?: string; sourceType?: string; sourceId?: string; assignedTo?: string; assignedTeam?: string; deadline?: string }): Promise<CaseRecord | null> {
+export async function createCase(input: { title: string; description?: string; priority?: string; sourceType?: string; sourceId?: string; assignedTo?: string; assignedTeam?: string; deadline?: string; workspaceId?: string }): Promise<CaseRecord | null> {
   try {
     return await apiClient<CaseRecord>("/api/workspace/cases", {
       method: "POST",
@@ -1303,5 +1337,242 @@ export async function markAllNotificationsAsRead(): Promise<boolean> {
     return res.success;
   } catch {
     return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Visibility
+// ---------------------------------------------------------------------------
+
+export interface VisibilityResponse {
+  score?: number | string;
+  presence?: number | string;
+  presenceMentions?: number | string;
+  competitor?: number | string;
+  prompts?: {
+    prompt: string;
+    engine: string;
+    brand: string;
+    competitor: string;
+    brandTone?: string;
+    compTone?: string;
+  }[];
+  geoActions?: { title: string; tag: string; highlighted?: boolean }[];
+}
+
+export interface VisibilitySummaryResponse {
+  kpis: {
+    avg_visibility_score: number;
+    avg_brand_presence_rate: number;
+    avg_competitor_mention_rate: number;
+    engines_tracked: number;
+    total_analyses: number;
+  };
+  engine_breakdown: Array<{
+    engineName: string;
+    visibilityScore: number;
+    brandPresenceRate: number;
+    competitorMentionRate: number;
+    lastChecked: string;
+    metadata: Record<string, unknown>;
+  }>;
+}
+
+export interface VisibilityTrendsResponse {
+  period: {
+    from: string;
+    to: string;
+    days: number;
+  };
+  trends: Array<{
+    date: string;
+    avg_visibility_score: number;
+    avg_brand_presence_rate: number;
+    avg_competitor_mention_rate: number;
+    data_points: number;
+  }>;
+  engine_trends: Record<string, Array<{
+    date: string;
+    visibilityScore: number;
+    brandPresenceRate: number;
+    competitorMentionRate: number;
+  }>>;
+}
+
+export async function getVisibility(workspaceId?: string): Promise<VisibilityResponse | null> {
+  try {
+    const qs = workspaceId ? `?workspaceId=${workspaceId}` : "";
+    return await apiClient<VisibilityResponse>(`/api/visibility${qs}`);
+  } catch {
+    return null;
+  }
+}
+
+export async function getVisibilitySummary(workspaceId?: string): Promise<VisibilitySummaryResponse | null> {
+  try {
+    const qs = workspaceId ? `?workspaceId=${workspaceId}` : "";
+    return await apiClient<VisibilitySummaryResponse>(`/api/visibility/summary${qs}`);
+  } catch {
+    return null;
+  }
+}
+
+export async function getVisibilityTrends(workspaceId?: string, engineName?: string, days?: number): Promise<VisibilityTrendsResponse | null> {
+  try {
+    const params = new URLSearchParams();
+    if (workspaceId) params.set("workspaceId", workspaceId);
+    if (engineName) params.set("engineName", engineName);
+    if (days) params.set("days", String(days));
+    const qs = params.toString();
+    return await apiClient<VisibilityTrendsResponse>(`/api/visibility/trends${qs ? `?${qs}` : ""}`);
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Alerts Summary
+// ---------------------------------------------------------------------------
+
+export interface AlertsSummaryResponse {
+  total: number;
+  by_severity: { critical: number; high: number; medium: number; low: number; info: number };
+  by_status: { open: number; in_progress: number; resolved: number };
+  by_type: Record<string, number>;
+  last_7_days: number;
+  previous_7_days: number;
+  trend_delta: number;
+  timeline: number[];
+  timeline_labels: string[];
+}
+
+// ---------------------------------------------------------------------------
+// Recovered Missing Endpoints
+// ---------------------------------------------------------------------------
+
+export async function exchangeOAuthCode(code: string): Promise<{ token: string; user: AuthUser; refreshToken: string }> {
+  const res = await apiClient<{ token: string; user: AuthUser; refreshToken: string }>("/auth/oauth/exchange", {
+    method: "POST",
+    body: JSON.stringify({ code })
+  });
+  return res as { token: string; user: AuthUser; refreshToken: string };
+}
+
+export interface FeedbackAccuracyResponse {
+  accuracy_score: number;
+  acceptance_rate: number;
+  rejection_rate: number;
+  by_type: Record<string, { total: number; accuracy: number }>;
+}
+
+export async function getFeedbackAccuracy(options: Record<string, string | number | boolean> = {}): Promise<FeedbackAccuracyResponse | null> {
+  try {
+    const params = new URLSearchParams(options as Record<string, string>);
+    return await apiClient<FeedbackAccuracyResponse>(`/api/feedback/accuracy?${params.toString()}`);
+  } catch {
+    return null;
+  }
+}
+
+export interface ReportsAnalyticsResponse {
+  format_distribution: {
+    pdf: number;
+    json: number;
+  };
+  popular_templates: Array<{
+    name: string;
+    count: number;
+  }>;
+  trend_timeline: Array<{
+    date: string;
+    count: number;
+  }>;
+}
+
+export async function getReportsAnalytics(options: Record<string, string | number | boolean> = {}): Promise<ReportsAnalyticsResponse | null> {
+  try {
+    const params = new URLSearchParams(options as Record<string, string>);
+    return await apiClient<ReportsAnalyticsResponse>(`/api/reports/analytics?${params.toString()}`);
+  } catch {
+    return null;
+  }
+}
+
+export interface BatchIngestionResponse {
+  total: number;
+  queued: number;
+  failed: number;
+  failures: string[];
+}
+
+export async function runBatchSourceIngestion(sourceIds: string[]): Promise<BatchIngestionResponse | null> {
+  try {
+    const batches = Array.from({ length: Math.ceil(sourceIds.length / 25) }, (_, index) => sourceIds.slice(index * 25, index * 25 + 25));
+    const summaries = await Promise.all(batches.map((batch) => apiClient<BatchIngestionResponse>("/ingestion/run", {
+      method: "POST",
+      body: JSON.stringify({ sourceIds: batch })
+    })));
+
+    return summaries.reduce<BatchIngestionResponse>((acc, summary) => ({
+      total: acc.total + summary.total,
+      queued: acc.queued + summary.queued,
+      failed: acc.failed + summary.failed,
+      failures: [...acc.failures, ...summary.failures],
+    }), { total: 0, queued: 0, failed: 0, failures: [] });
+  } catch {
+    return null;
+  }
+}
+
+export interface GetAlertsSummaryOptions {
+  workspaceId?: string;
+}
+
+export async function getAlertsSummary(options: GetAlertsSummaryOptions = {}): Promise<AlertsSummaryResponse | null> {
+  const params = new URLSearchParams();
+  if (options.workspaceId) params.set("workspaceId", options.workspaceId);
+  const qs = params.toString();
+
+  try {
+    return await apiClient<AlertsSummaryResponse>(`/api/alerts/summary${qs ? `?${qs}` : ""}`);
+  } catch {
+    return null;
+  }
+}
+
+export interface BootstrapSourcesResponse {
+  created: number;
+  skipped: number;
+}
+
+export async function bootstrapDefaultSources(options: Record<string, unknown> = {}): Promise<BootstrapSourcesResponse | null> {
+  try {
+    return await apiClient<BootstrapSourcesResponse>("/sources/bootstrap-defaults", {
+      method: "POST",
+      body: JSON.stringify(options)
+    });
+  } catch {
+    return null;
+  }
+}
+
+export interface ActionPlanMetric {
+  value: string | number;
+  trend: number;
+}
+
+export interface ActionPlanMetricsResponse {
+  active: ActionPlanMetric;
+  inProgress: ActionPlanMetric;
+  done: ActionPlanMetric;
+  needsAttention: ActionPlanMetric;
+  resolution: ActionPlanMetric;
+}
+
+export async function getActionPlansMetrics(): Promise<ActionPlanMetricsResponse | null> {
+  try {
+    return await apiClient<ActionPlanMetricsResponse>("/api/action-plans/metrics");
+  } catch {
+    return null;
   }
 }

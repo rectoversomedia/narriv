@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCases, updateCase, deleteCase } from "@/lib/api-service";
 import { Plus, Trash2 } from "lucide-react";
@@ -15,6 +16,7 @@ export default function CasesPage() {
   const [priorityFilter, setPriorityFilter] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   
+  const t = useTranslations("Workspace.cases");
   const queryClient = useQueryClient();
   const { success, error } = useToast();
 
@@ -24,22 +26,33 @@ export default function CasesPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteCase(id),
+    mutationFn: async (id: string) => {
+      const deleted = await deleteCase(id);
+      if (!deleted) throw new Error("Failed to delete case");
+      return deleted;
+    },
     onSuccess: () => {
-      success("Kasus berhasil dihapus");
+      success(t("toast.deleteSuccess"));
       queryClient.invalidateQueries({ queryKey: ["cases"] });
       setDeleteId(null);
     },
     onError: () => {
-      error("Gagal menghapus kasus");
+      error(t("toast.deleteFailed"));
     }
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) => updateCase(id, { status }),
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const updatedCase = await updateCase(id, { status });
+      if (!updatedCase) throw new Error("Failed to update case status");
+      return updatedCase;
+    },
     onSuccess: () => {
-      success("Status berhasil diperbarui");
+      success(t("toast.statusUpdated"));
       queryClient.invalidateQueries({ queryKey: ["cases"] });
+    },
+    onError: () => {
+      error(t("toast.statusUpdateFailed"));
     }
   });
 
@@ -71,12 +84,12 @@ export default function CasesPage() {
     <div className="space-y-6 pb-6">
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-[28px] font-black tracking-tight text-slate-900">Cases & Investigations</h1>
-          <p className="mt-1 text-sm font-medium text-slate-500">Kelola dan pantau antrean investigasi tim Anda.</p>
+          <h1 className="text-[28px] font-black tracking-tight text-slate-900">{t("header.title")}</h1>
+          <p className="mt-1 text-sm font-medium text-slate-500">{t("header.desc")}</p>
         </div>
         <button className="inline-flex items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#465FFF]/90">
           <Plus size={16} />
-          Buat Case Baru
+          {t("header.newCase")}
         </button>
       </header>
 
@@ -87,7 +100,7 @@ export default function CasesPage() {
             onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
             className="rounded-[8px] border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-[#465FFF] focus:ring-1 focus:ring-[#465FFF]"
           >
-            <option value="">Semua Status</option>
+            <option value="">{t("filter.allStatus")}</option>
             <option value="open">Open</option>
             <option value="in_progress">In Progress</option>
             <option value="resolved">Resolved</option>
@@ -99,7 +112,7 @@ export default function CasesPage() {
             onChange={(e) => { setPriorityFilter(e.target.value); setPage(1); }}
             className="rounded-[8px] border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:border-[#465FFF] focus:ring-1 focus:ring-[#465FFF]"
           >
-            <option value="">Semua Prioritas</option>
+            <option value="">{t("filter.allPriority")}</option>
             <option value="critical">Critical</option>
             <option value="high">High</option>
             <option value="medium">Medium</option>
@@ -111,16 +124,16 @@ export default function CasesPage() {
       <div className="rounded-[16px] border border-slate-200 bg-white overflow-hidden shadow-sm">
         {casesQuery.isError || casesQuery.data === null ? (
           <DashboardErrorState 
-            title="Gagal memuat data cases" 
-            description="Terjadi kesalahan saat mengambil data dari server." 
+            title={t("empty.title")} 
+            description={t("empty.desc")} 
             onRetry={() => casesQuery.refetch()} 
           />
         ) : isLoading ? (
           <div className="p-8 flex justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-[#465FFF]" /></div>
         ) : data.length === 0 ? (
           <DashboardEmptyState 
-            title="Tidak ada cases" 
-            description="Belum ada kasus investigasi yang sesuai dengan filter Anda." 
+            title={t("empty.title")} 
+            description={t("empty.desc")} 
             icon="inbox" 
           />
         ) : (
@@ -128,11 +141,11 @@ export default function CasesPage() {
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 border-b border-slate-100">
                 <tr>
-                  <th className="px-6 py-4 font-bold text-slate-500">KASUS</th>
-                  <th className="px-6 py-4 font-bold text-slate-500">STATUS</th>
-                  <th className="px-6 py-4 font-bold text-slate-500">PRIORITAS</th>
-                  <th className="px-6 py-4 font-bold text-slate-500">ASSIGNEE</th>
-                  <th className="px-6 py-4 text-right font-bold text-slate-500">AKSI</th>
+                  <th className="px-6 py-4 font-bold text-slate-500">{t("table.case")}</th>
+                  <th className="px-6 py-4 font-bold text-slate-500">{t("table.status")}</th>
+                  <th className="px-6 py-4 font-bold text-slate-500">{t("table.priority")}</th>
+                  <th className="px-6 py-4 font-bold text-slate-500">{t("table.assignee")}</th>
+                  <th className="px-6 py-4 text-right font-bold text-slate-500">{t("table.action")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -159,7 +172,7 @@ export default function CasesPage() {
                       {renderBadge(item.priority || 'medium', 'priority')}
                     </td>
                     <td className="px-6 py-4">
-                      <p className="font-semibold text-slate-700">{item.assignedTo || item.assignedTeam || "Unassigned"}</p>
+                      <p className="font-semibold text-slate-700">{item.assignedTo || item.assignedTeam || t("table.unassigned")}</p>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button onClick={() => setDeleteId(item.id)} className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500 transition">
@@ -184,10 +197,10 @@ export default function CasesPage() {
         open={!!deleteId}
         onOpenChange={(open) => !open && setDeleteId(null)}
         onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
-        title="Hapus Kasus"
-        description="Apakah Anda yakin ingin menghapus kasus ini? Data yang dihapus tidak dapat dikembalikan."
-        confirmLabel="Hapus Kasus"
-        cancelLabel="Batal"
+        title={t("delete.title")}
+        description={t("delete.description")}
+        confirmLabel={t("delete.confirm")}
+        cancelLabel={t("delete.cancel")}
         tone="danger"
       />
     </div>

@@ -3,6 +3,7 @@ import crypto from "crypto";
 import connection from "../lib/redis.js";
 import prisma from "../prisma.js";
 import { runActorAndFetchDataset } from "../modules/apify/apify.service.js";
+import { APIFY_ACTOR_PRESETS } from "../modules/ingestion/actor-presets.js";
 import { addAnalysisJob } from "../lib/queue.js";
 import { incrementIngestionFailure } from "../lib/metrics.js";
 import { logStructured } from "../lib/logger.js";
@@ -47,6 +48,69 @@ function buildDeterministicDocHash({ workspaceId, sourceId, sourceType, item }) 
     return crypto.createHash("sha256").update(raw).digest("hex");
 }
 
+function firstValue(...values) {
+    return values.find((value) => value !== undefined && value !== null && String(value).trim() !== "");
+}
+
+function normalizeDatasetItem(item) {
+    if (Array.isArray(item.organicResults) && item.organicResults.length > 0) {
+        return item.organicResults.map((result) => ({
+            id: result.id || result.position || result.url,
+            title: result.title,
+            url: result.url,
+            text: result.description || result.snippet || result.title,
+            description: result.description || result.snippet,
+            author: result.source || null,
+            publishedDate: result.date || null,
+            platform: "google-search",
+            _searchQuery: item.searchQuery?.query || item.query || "",
+        }));
+    }
+
+    const title = firstValue(item.title, item.pageTitle, item.name, item.fullName, item.videoTitle, item.caption, item.text);
+    const text = firstValue(
+        item.text,
+        item.full_text,
+        item.caption,
+        item.description,
+        item.snippet,
+        item.content,
+        item.body,
+        item.transcript,
+        item.title
+    );
+    const url = firstValue(item.url, item.link, item.permalink, item.postUrl, item.videoUrl, item.displayUrl, item.inputUrl);
+    const author = firstValue(item.author, item.username, item.ownerUsername, item.userName, item.channelName, item.profileName);
+    const publishedDate = firstValue(item.publishedDate, item.timestamp, item.date, item.createdAt, item.takenAt, item.creationDate, item.publishedAt);
+    const id = firstValue(item.id, item.postId, item.tweetId, item.videoId, item.shortCode, url);
+
+    return [{
+        ...item,
+        id,
+        title,
+        text,
+        url,
+        author,
+        publishedDate,
+        platform: firstValue(item.platform, item.source, item.type),
+    }];
+}
+
+function defaultActorConfigsForSource(source) {
+    const keyword = source.name;
+    const presetsByType = APIFY_ACTOR_PRESETS.filter((preset) => {
+        if (source.type === "news") return preset.key === "indonesia-news" || preset.key === "google-search";
+        if (source.type === "web") return preset.key === "google-search";
+        if (source.type === "forum") return preset.key === "google-search";
+        return preset.type === source.type && (preset.tier <= 2 || source.type === "podcast");
+    });
+
+    return presetsByType.map((preset) => ({
+        actorTarget: preset.actorId,
+        apifyInput: preset.buildInput(source.type === "forum" ? `${keyword} forum lokal kaskus` : keyword),
+    }));
+}
+
 const ingestionWorker = new Worker(
     "ingestion",
     async (job) => {
@@ -81,12 +145,12 @@ const ingestionWorker = new Worker(
             data: { status: "running" },
         });
 
-        const source = await prisma.source.findUnique({
-            where: { id: sourceId },
+        const source = await prisma.source.findFirst({
+            where: { id: sourceId, isActive: true, type: { not: "deleted" } },
         });
 
         if (!source) {
-            throw new Error(`Source not found: ${sourceId}`);
+            throw new Error(`Source not found, inactive, or deleted: ${sourceId}`);
         }
 
         // Check for incremental ingestion — find last successful ingestion time
@@ -110,7 +174,7 @@ const ingestionWorker = new Worker(
             await assertNotCancelled(jobId);
             let actorConfigs = [];
 
-            // Map multiple actors and specific configs based on source type chosen in frontend
+            // Map Apify actors and specific configs based on source type chosen in frontend.
             if (source.actorId) {
                 // If a specific actorId was provided, use just that one
                 actorConfigs.push({
@@ -118,127 +182,7 @@ const ingestionWorker = new Worker(
                     apifyInput: { ...(source.inputConfig || {}) },
                 });
             } else {
-                switch (source.type) {
-                    case "social":
-                        actorConfigs = [
-                            {
-                                actorTarget: "caprolok/all-social-media-posts-extractor-by-hashtag-and-username",
-                                apifyInput: {
-                                    search_inputs: [`#${source.name.trim().toLowerCase().replace(/\s+/g, "")}`],
-                                    max_posts: 3,
-                                    platform: "INSTAGRAM",
-                                },
-                            },
-                            {
-                                actorTarget: "caprolok/all-social-media-posts-extractor-by-hashtag-and-username",
-                                apifyInput: {
-                                    search_inputs: [`#${source.name.trim().toLowerCase().replace(/\s+/g, "")}`],
-                                    max_posts: 3,
-                                    platform: "TIKTOK",
-                                },
-                            },
-                            {
-                                actorTarget: "caprolok/all-social-media-posts-extractor-by-hashtag-and-username",
-                                apifyInput: {
-                                    search_inputs: [`#${source.name.trim().toLowerCase().replace(/\s+/g, "")}`],
-                                    max_posts: 3,
-                                    platform: "TWITTER",
-                                },
-                            },
-                            {
-                                actorTarget: "watcher.data/search-threads-by-keywords",
-                                apifyInput: {
-                                    keywords: [
-                                        `${source.name}`,
-                                        `${source.name} trending`,
-                                        `${source.name} update`,
-                                        `${source.name} news`,
-                                    ],
-                                    maxItemsPerKeyword: 3,
-                                    proxyConfiguration: { useApifyProxy: false },
-                                    sortByRecent: true,
-                                },
-                            },
-                        ];
-                        break;
-                    case "news":
-                        actorConfigs = [
-                            {
-                                actorTarget: "futurizerush/google-news-scraper",
-                                apifyInput: {
-                                    dateFilter: "1d",
-                                    language: "id",
-                                    maxResults: 10,
-                                    region: "id",
-                                    searchQueries: `${source.name} trending`,
-                                },
-                            },
-                            {
-                                actorTarget: "apify/google-search-scraper",
-                                apifyInput: {
-                                    queries: `${source.name} trending`,
-                                    maxPagesPerQuery: 1,
-                                    resultsPerPage: 10,
-                                },
-                            },
-                        ];
-                        break;
-                    case "forum":
-                        actorConfigs = [
-                            {
-                                actorTarget: "crawlerbros/reddit-keywords-pro",
-                                apifyInput: {
-                                    excludeNsfw: false,
-                                    keywordRequireAll: false,
-                                    keywords: [
-                                        `${source.name}`,
-                                        `${source.name} trending`,
-                                        `${source.name} update`,
-                                        `${source.name} news`,
-                                    ],
-                                    resultLimit: 3,
-                                },
-                            },
-                            {
-                                actorTarget: "crawlerbros/quora-search-scraper",
-                                apifyInput: {
-                                    maxResults: 3,
-                                    proxyConfiguration: {
-                                        useApifyProxy: true,
-                                        apifyProxyGroups: ["RESIDENTIAL"],
-                                    },
-                                    searchQueries: [
-                                        `${source.name}`,
-                                        `${source.name} trending`,
-                                        `${source.name} update`,
-                                        `${source.name} news`,
-                                    ],
-                                },
-                            },
-                            {
-                                actorTarget: "apify/google-search-scraper",
-                                apifyInput: {
-                                    queries: `${source.name} forum discussions`,
-                                    maxPagesPerQuery: 1,
-                                    resultsPerPage: 2,
-                                },
-                            },
-                        ];
-                        break;
-                    case "web":
-                    default:
-                        actorConfigs = [
-                            {
-                                actorTarget: "apify/google-search-scraper",
-                                apifyInput: {
-                                    queries: `${source.name} trending`,
-                                    maxPagesPerQuery: 1,
-                                    resultsPerPage: 20,
-                                },
-                            },
-                        ];
-                        break;
-                }
+                actorConfigs = defaultActorConfigsForSource(source);
             }
 
             actorConfigs = actorConfigs.map((config) => {
@@ -300,21 +244,7 @@ const ingestionWorker = new Worker(
             let processedCount = 0;
             const flatItems = [];
             for (const item of allDatasets) {
-                if (Array.isArray(item.organicResults) && item.organicResults.length > 0) {
-                    for (const result of item.organicResults) {
-                        flatItems.push({
-                            title: result.title,
-                            url: result.url,
-                            text: result.description || result.snippet || result.title,
-                            description: result.description,
-                            author: null,
-                            publishedDate: null,
-                            _searchQuery: item.searchQuery?.query || "",
-                        });
-                    }
-                } else {
-                    flatItems.push(item);
-                }
+                flatItems.push(...normalizeDatasetItem(item));
             }
 
             for (const item of flatItems) {
@@ -353,6 +283,7 @@ const ingestionWorker = new Worker(
                         author: item.author || null,
                         sourceName: source.name,
                         sourceType: source.type,
+                        platform: item.platform || source.type || null,
                         publishedAt: item.publishedDate ? new Date(item.publishedDate) : null,
                         metadata: {
                             ...item,

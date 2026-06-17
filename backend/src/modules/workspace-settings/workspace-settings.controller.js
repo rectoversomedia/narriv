@@ -2,6 +2,7 @@ import prisma from "../../prisma.js";
 import { badRequest, forbidden, internalError, notFound } from "../../lib/api-error.js";
 import { recordAuditLog } from "../../lib/audit.js";
 import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
+import { logStructured } from "../../lib/logger.js";
 
 function toSafeDefaults(workspaceId) {
     return {

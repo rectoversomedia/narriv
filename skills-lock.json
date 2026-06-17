@@ -26,10 +26,10 @@
       "computedHash": "ed38caef4b297cc399d717258d6ea4e6ecb8894c453c83450064c7e7c6e5cc02"
     },
     "code-review": {
-      "source": "coderabbitai/skills",
+      "source": "paulrberg/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/code-review/SKILL.md",
-      "computedHash": "f302ef24bb2effceff6e16da547898ad8ba6c21c1304a5c1756df20033b2b72d"
+      "computedHash": "a9b84f8be7d2fd862ff7d9123416f04d84e47906b3818c810bc7f4daf88c683a"
     },
     "create-auth-skill": {
       "source": "better-auth/skills",

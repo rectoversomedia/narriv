@@ -100,5 +100,5 @@ Jika Source record punya `actorId` non-null, actor tersebut digunakan langsung d
 
 | Variable | Required | Purpose |
 |----------|----------|---------|
-| `APIFY_API_TOKEN` | ✅ | Apify API token |
+| `APIFY_TOKEN` | ✅ | Apify API token |
 | `APIFY_TIMEOUT_MS` | ❌ | Timeout per actor call (default: 120000ms) |

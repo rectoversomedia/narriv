@@ -30,10 +30,27 @@ import { Card, CardContent } from "@/components/ui/card";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
 import { getNarratives, type NarrativeRecord } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
-import { intelligenceClusters, text, type Tone } from "@/lib/mock-data";
+import { text, type Tone } from "@/lib/mock-data";
+import { useTranslations } from "next-intl";
 import { useUiStore } from "@/store/useUiStore";
 
-type Cluster = (typeof intelligenceClusters)[number];
+type Cluster = {
+  id: string;
+  topic: { en: string; id: string };
+  signals: number;
+  growth: string;
+  tone: Tone;
+  sentiment: "positive" | "negative" | "neutral" | "mixed";
+  x: number;
+  y: number;
+  color: string;
+  size?: "high" | "large" | "medium" | "small";
+  priority: { en: string; id: string };
+  priorityTone: Tone;
+  description: { en: string; id: string };
+  related: Array<{ topic: { en: string; id: string }; growth: string }>;
+  aiRec: { en: string; id: string };
+};
 
 const narrativeApiLimit = 10;
 
@@ -99,14 +116,6 @@ const mapSpecks: Array<{ x: number; y: number; tone: Tone; size: number; opacity
   { x: 90, y: 49, tone: "blue", size: 9, opacity: 0.28 },
 ];
 
-const lifecycleSeries = {
-  emerging: [10, 15, 8, 20, 14, 25, 18, 30, 22, 35],
-  accelerating: [5, 10, 15, 12, 22, 18, 28, 32, 26, 40],
-  peaking: [20, 30, 25, 45, 38, 50, 48, 55, 42, 60],
-  declining: [60, 55, 48, 42, 38, 30, 28, 22, 18, 15],
-  dormant: [15, 14, 15, 12, 13, 11, 12, 10, 12, 9],
-};
-
 const nodeSizeClasses = {
   high: "size-[92px] text-[10px] sm:size-[116px] sm:text-[11px]",
   large: "size-[82px] text-[9px] sm:size-[96px] sm:text-[10px]",
@@ -120,13 +129,41 @@ const sentimentColor = {
   neutral: "#94A3B8",
 };
 
-const donutData = [
-  { name: "Your Brand", value: 32, tone: "purple" as Tone },
-  { name: "Competitor A", value: 28, tone: "red" as Tone },
-  { name: "Competitor B", value: 20, tone: "amber" as Tone },
-  { name: "Competitor C", value: 12, tone: "green" as Tone },
-  { name: "Others", value: 8, tone: "slate" as Tone },
-];
+type DonutDatum = { name: string; value: number; tone: Tone };
+type LifecycleKey = "emerging" | "accelerating" | "peaking" | "declining" | "dormant";
+type LifecycleSeries = Record<LifecycleKey, number[]>;
+
+const fallbackLifecycleSeries: LifecycleSeries = {
+  emerging: [1, 2, 2, 3, 4, 5, 7],
+  accelerating: [2, 3, 3, 4, 5, 5, 6],
+  peaking: [1, 1, 2, 2, 3, 3, 3],
+  declining: [7, 6, 6, 5, 5, 4, 3],
+  dormant: [8, 8, 7, 7, 6, 6, 5],
+};
+
+const emptyCluster: Cluster = {
+  id: "empty",
+  topic: { en: "No narrative selected", id: "Belum ada narasi" },
+  signals: 0,
+  growth: "0%",
+  tone: "slate",
+  sentiment: "neutral",
+  x: 50,
+  y: 50,
+  color: "#94A3B8",
+  size: "medium",
+  priority: { en: "No data", id: "Tidak ada data" },
+  priorityTone: "slate",
+  description: {
+    en: "Live narrative data is not available yet.",
+    id: "Data narasi live belum tersedia.",
+  },
+  related: [],
+  aiRec: {
+    en: "Add signals or retry loading live data to populate this panel.",
+    id: "Tambahkan sinyal atau muat ulang data live untuk mengisi panel ini.",
+  },
+};
 
 function formatSignals(value: number) {
   return value.toLocaleString("en-US");
@@ -148,14 +185,13 @@ function impactToPriorityTone(impact: string): Tone {
 }
 
 function buildNarrativeClusters(records: NarrativeRecord[]): Cluster[] {
-  const positions = intelligenceClusters;
   return records.map((record, index) => {
-    const base = positions[index % positions.length];
     const tone = sentimentToTone(record.sentiment);
     const priorityTone = impactToPriorityTone(record.impact);
+    const mapSpeck = mapSpecks[index % mapSpecks.length];
+    const sentimentHex = sentimentColor[tone === "green" ? "positive" : tone === "red" ? "negative" : "neutral"];
 
     return {
-      ...base,
       id: record.id,
       topic: { en: record.title, id: record.title },
       signals: record.signalCount,
@@ -178,8 +214,84 @@ function buildNarrativeClusters(records: NarrativeRecord[]): Cluster[] {
         en: record.recommendedFocus,
         id: record.recommendedFocus,
       },
+      x: mapSpeck.x,
+      y: mapSpeck.y,
+      color: sentimentHex,
+      size: (record.signalCount > 1000 ? "high" : record.signalCount > 500 ? "large" : record.signalCount > 100 ? "medium" : "small") as Cluster["size"],
     };
   }) as Cluster[];
+}
+
+function parseGrowthPercent(value: string) {
+  const parsed = Number.parseFloat(value.replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function buildNarrativeShareData(clusters: Cluster[]): DonutDatum[] {
+  const totalSignals = clusters.reduce((sum, cluster) => sum + cluster.signals, 0);
+  if (totalSignals <= 0) return [{ name: "No data", value: 100, tone: "slate" }];
+
+  const topClusters = clusters
+    .slice()
+    .sort((a, b) => b.signals - a.signals)
+    .slice(0, 4);
+  const topTotal = topClusters.reduce((sum, cluster) => sum + cluster.signals, 0);
+  const rows = topClusters.map((cluster) => ({
+    name: text(cluster.topic, "en"),
+    value: Math.round((cluster.signals / totalSignals) * 100),
+    tone: cluster.tone,
+  }));
+  const remaining = Math.max(0, totalSignals - topTotal);
+  if (remaining > 0) {
+    rows.push({ name: "Others", value: Math.max(1, Math.round((remaining / totalSignals) * 100)), tone: "slate" });
+  }
+  return rows;
+}
+
+function classifyLifecycle(cluster: Cluster): LifecycleKey {
+  const growth = parseGrowthPercent(cluster.growth);
+  const priority = text(cluster.priority, "en").toLowerCase();
+  if (growth < 0) return "declining";
+  if (growth >= 25) return "accelerating";
+  if (priority.includes("high") || cluster.signals >= 1000) return "peaking";
+  if (growth === 0 || cluster.signals <= 0) return "dormant";
+  return "emerging";
+}
+
+function buildLifecycleFromClusters(clusters: Cluster[]) {
+  const counts: Record<LifecycleKey, number> = {
+    emerging: 0,
+    accelerating: 0,
+    peaking: 0,
+    declining: 0,
+    dormant: 0,
+  };
+
+  clusters.forEach((cluster) => {
+    counts[classifyLifecycle(cluster)] += 1;
+  });
+
+  const series = Object.fromEntries(
+    (Object.keys(counts) as LifecycleKey[]).map((key) => {
+      const count = counts[key];
+      return [key, count > 0 ? [Math.max(0, count - 2), Math.max(0, count - 1), count, count + 1, count, count + 2, count] : fallbackLifecycleSeries[key]];
+    })
+  ) as LifecycleSeries;
+
+  return { counts, series };
+}
+
+function buildDonutGradient(items: DonutDatum[]) {
+  let cursor = 0;
+  const stops = items.map((item) => {
+    const toneStyle = toneStyles[item.tone];
+    const next = Math.min(100, cursor + Math.max(0, item.value));
+    const stop = `${toneStyle.color} ${cursor}% ${next}%`;
+    cursor = next;
+    return stop;
+  });
+  if (cursor < 100) stops.push(`${toneStyles.slate.color} ${cursor}% 100%`);
+  return `conic-gradient(${stops.join(",")})`;
 }
 
 function Panel({ children, className }: { children: ReactNode; className?: string }) {
@@ -226,14 +338,15 @@ function MetricCard({ label, value, helper, icon, tone }: { label: string; value
 }
 
 function Sparkline({ values, color }: { values: number[]; color: string }) {
+  const safeValues = values.length > 1 ? values : [0, 0];
   const width = 100;
   const height = 36;
-  const max = Math.max(...values);
-  const min = Math.min(...values);
+  const max = Math.max(...safeValues);
+  const min = Math.min(...safeValues);
   const range = max - min || 1;
-  const path = values
+  const path = safeValues
     .map((value, index) => {
-      const x = (index / (values.length - 1)) * 96 + 2;
+      const x = (index / (safeValues.length - 1)) * 96 + 2;
       const y = height - ((value - min) / range) * 28 - 4;
       return `${index === 0 ? "M" : "L"} ${x} ${y}`;
     })
@@ -272,9 +385,9 @@ function TrendBadge({ value, tone, className }: { value: string; tone: Tone; cla
   );
 }
 
-function CompetitorDonut({ label }: { label: string }) {
+function CompetitorDonut({ label, gradient }: { label: string; gradient: string }) {
   return (
-    <div className="chart-donut-enter relative flex size-[150px] shrink-0 items-center justify-center rounded-full bg-[conic-gradient(#8B5CFF_0_32%,#EF4444_32%_60%,#F59E0B_60%_80%,#10B981_80%_92%,#94A3B8_92%_100%)] shadow-[0_12px_24px_rgba(70,95,255,0.10)]">
+    <div className="chart-donut-enter relative flex size-[150px] shrink-0 items-center justify-center rounded-full shadow-[0_12px_24px_rgba(70,95,255,0.10)]" style={{ background: gradient }}>
       <div className="absolute size-[102px] rounded-full bg-white" />
       <div className="relative max-w-[86px] text-center">
         <p className="text-[12px] font-black leading-tight text-[#101334]">Total</p>
@@ -301,14 +414,14 @@ function MapNode({ cluster, selected, language, onSelect }: { cluster: Cluster; 
       onClick={() => onSelect(cluster)}
       className={cn(
         "absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border bg-white/95 text-center outline-none backdrop-blur transition duration-300 hover:-translate-y-[52%] hover:shadow-[0_18px_42px_rgba(16,24,40,0.1)]",
-        nodeSizeClasses[cluster.size]
+        nodeSizeClasses[cluster.size ?? "medium"]
       )}
       style={style}
     >
       {selected ? <span className="absolute -inset-3 rounded-full opacity-20 blur-xl" style={{ backgroundColor: toneStyle.color }} /> : null}
       <span
         className="absolute right-[17%] top-[17%] size-2 rounded-full border border-white shadow-sm"
-        style={{ backgroundColor: sentimentColor[cluster.sentiment] }}
+        style={{ backgroundColor: sentimentColor[cluster.sentiment === "mixed" ? "neutral" : cluster.sentiment] }}
       />
       <span className="relative px-2 font-black leading-tight text-[#101334]">{text(cluster.topic, language)}</span>
       <span className="relative mt-1 text-[9px] font-bold text-[#8A94B8]">{formatSignals(cluster.signals)} signals</span>
@@ -320,8 +433,9 @@ function MapNode({ cluster, selected, language, onSelect }: { cluster: Cluster; 
 }
 
 export default function IntelligencePage() {
+  const ti = useTranslations("Intelligence");
   const language = useUiStore((state) => state.language);
-  const [selectedClusterId, setSelectedClusterId] = useState(intelligenceClusters[0].id);
+  const [selectedClusterId, setSelectedClusterId] = useState<string | null>(null);
   const narrativesQuery = useQuery({
     queryKey: ["narratives", { limit: narrativeApiLimit }],
     queryFn: () => getNarratives({ limit: narrativeApiLimit }),
@@ -329,202 +443,90 @@ export default function IntelligencePage() {
   });
   const liveClusters = narrativesQuery.data?.data ? buildNarrativeClusters(narrativesQuery.data.data) : [];
   const isLiveUnavailable = narrativesQuery.data === null;
-  const clusters = liveClusters.length > 0 ? liveClusters : intelligenceClusters;
-  const selectedCluster = clusters.find((cluster) => cluster.id === selectedClusterId) ?? clusters[0] ?? intelligenceClusters[0];
+  const clusters = liveClusters;
+  const selectedCluster = clusters.find((cluster) => cluster.id === selectedClusterId) ?? clusters[0] ?? emptyCluster;
 
-  const dictionary = {
-    en: {
-      title: "Intelligence",
-      subtitle: "Understand topic clusters, narrative growth, and strategic context.",
-      last7Days: "Last 7 days (May 12 - May 18, 2025)",
-      metrics: {
-        clusters: { label: "Clusters Identified", value: "28", helper: "6 accelerating" },
-        confidence: { label: "Narrative Confidence", value: "89%", helper: "Evidence weighted" },
-        emerging: { label: "Emerging Narratives", value: "7", helper: "2 new this week" },
-        opportunities: { label: "Opportunities Detected", value: "5", helper: "2 high potential" },
-      },
-      topicMap: {
-        title: "Topic Map",
-        desc: "Visualize how narratives connect and influence each other.",
-        allTopics: "All Topics",
-        filter: "Filter",
-        intensity: "Intensity",
-        sentiment: "Sentiment",
-        connStrength: "Connection Strength",
-        pos: "Positive",
-        neu: "Neutral",
-        neg: "Negative",
-        weak: "Weak",
-        strong: "Strong",
-        tip: "Tip: Click on any cluster to explore detailed insights and related narratives.",
-      },
-      growingClusters: { title: "Growing Narrative Clusters", viewAll: "View all" },
-      selectedNarrative: {
-        title: "Selected Narrative",
-        related: "Top Related Narratives",
-        aiRec: "AI Recommendation",
-        btnAnalysis: "See Full Analysis",
-        highImpact: "High Impact",
-        emerging: "Emerging",
-      },
-      competitorShare: { title: "Competitor Narrative Share", totalShare: "Total Narrative Share", viewLandscape: "View Competitive Landscape" },
-      aiSummary: {
-        title: "Narrative Insights (AI Summary)",
-        box: "The main narrative this week is dominated by operational and customer service issues, with a high potential reputational impact if not addressed immediately.",
-        bullets: [
-          "Payment delay is the fastest growing issue.",
-          "Refund complaints are beginning to connect with trust issues.",
-          "Increased discussions in forums and social media.",
-          "No significant spike in regulatory issues.",
-        ],
-        btn: "View Full Insight Report",
-      },
-      lifecycle: {
-        title: "Narrative Lifecycle",
-        phases: {
-          emerging: { title: "Emerging", desc: "Newly emerging and starting to grow" },
-          accelerating: { title: "Accelerating", desc: "Fast growth and spreading" },
-          peaking: { title: "Peaking", desc: "Reaching peak public attention" },
-          declining: { title: "Declining", desc: "Starting to decline and stabilize" },
-          dormant: { title: "Dormant", desc: "Minimal activity, needs monitoring" },
-        },
-      },
-      footer: {
-        dataCoverage: "Data Coverage",
-        sourcesActive: "62 / 72 Sources Active",
-        coveragePercent: "86% Coverage",
-        updateFreq: "Update Frequency",
-        realtime: "Real-time",
-        autoUpdated: "Auto-updated 30 seconds ago",
-        aiStatus: "AI Model Status",
-        operational: "Operational",
-        systemsNormal: "All systems normal",
-        analysisDepth: "Analysis Depth",
-        deep: "Deep Analysis",
-        multilingual: "Cross-platform & multilingual",
-        btnSettings: "Configure Intelligence Settings",
-      },
-    },
-    id: {
-      title: "Intelligence",
-      subtitle: "Pahami cluster topik, pertumbuhan narasi, dan konteks strategis.",
-      last7Days: "7 hari terakhir (12 Mei - 18 Mei 2025)",
-      metrics: {
-        clusters: { label: "Clusters Identified", value: "28", helper: "6 mempercepat" },
-        confidence: { label: "Narrative Confidence", value: "89%", helper: "Evidence weighted" },
-        emerging: { label: "Emerging Narratives", value: "7", helper: "2 baru minggu ini" },
-        opportunities: { label: "Opportunities Detected", value: "5", helper: "2 potensi tinggi" },
-      },
-      topicMap: {
-        title: "Peta Topik",
-        desc: "Visualisasikan bagaimana narasi saling terhubung dan memengaruhi satu sama lain.",
-        allTopics: "Semua Topik",
-        filter: "Filter",
-        intensity: "Intensitas",
-        sentiment: "Sentimen",
-        connStrength: "Kekuatan Koneksi",
-        pos: "Positif",
-        neu: "Netral",
-        neg: "Negatif",
-        weak: "Lemah",
-        strong: "Kuat",
-        tip: "Klik pada cluster untuk mengeksplorasi insight detail dan narasi terkait.",
-      },
-      growingClusters: { title: "Cluster Narasi Berkembang", viewAll: "Lihat semua" },
-      selectedNarrative: {
-        title: "Narasi Terpilih",
-        related: "Top Narasi Terkait",
-        aiRec: "Rekomendasi AI",
-        btnAnalysis: "Lihat Analisis Lengkap",
-        highImpact: "Dampak Tinggi",
-        emerging: "Emerging",
-      },
-      competitorShare: { title: "Pangsa Narasi Kompetitor", totalShare: "Total Pangsa Narasi", viewLandscape: "Lihat Lanskap Kompetitif" },
-      aiSummary: {
-        title: "Insight Narasi (Ringkasan AI)",
-        box: "Narrative utama minggu ini didominasi oleh isu operasional dan layanan pelanggan, dengan potensi dampak reputasi yang tinggi jika tidak ditangani segera.",
-        bullets: [
-          "Payment delay menjadi isu paling cepat berkembang.",
-          "Keluhan refund mulai terkoneksi dengan isu kepercayaan.",
-          "Peningkatan pembahasan di forum dan social media.",
-          "Tidak ada lonjakan signifikan pada isu regulasi.",
-        ],
-        btn: "Lihat Laporan Insight Lengkap",
-      },
-      lifecycle: {
-        title: "Siklus Hidup Narasi",
-        phases: {
-          emerging: { title: "Emerging", desc: "Baru muncul dan mulai berkembang" },
-          accelerating: { title: "Accelerating", desc: "Pertumbuhan cepat dan meluas" },
-          peaking: { title: "Peaking", desc: "Mencapai puncak perhatian publik" },
-          declining: { title: "Declining", desc: "Mulai menurun dan stabil" },
-          dormant: { title: "Dormant", desc: "Minim aktivitas, perlu monitoring" },
-        },
-      },
-      footer: {
-        dataCoverage: "Cakupan Data",
-        sourcesActive: "62 / 72 Sumber Aktif",
-        coveragePercent: "86% Cakupan",
-        updateFreq: "Frekuensi Pembaruan",
-        realtime: "Real-time",
-        autoUpdated: "Diperbarui otomatis 30 detik lalu",
-        aiStatus: "Status Model AI",
-        operational: "Operasional",
-        systemsNormal: "Semua sistem normal",
-        analysisDepth: "Kedalaman Analisis",
-        deep: "Analisis Mendalam",
-        multilingual: "Lintas platform & multibahasa",
-        btnSettings: "Konfigurasi Pengaturan Intelijen",
-      },
-    },
-  };
-
-  const dict = dictionary[language] ?? dictionary.en;
   const selectedTone = toneStyles[selectedCluster.tone];
+  const narrativeShareData = buildNarrativeShareData(clusters);
+  const aiSummaryBullets = [1, 2, 3, 4].map((i) => ti(`aiSummary.bullets.${i}`));
+  const narrativeShareGradient = buildDonutGradient(narrativeShareData);
+  const lifecycle = buildLifecycleFromClusters(clusters);
+  const averageConfidence = liveClusters.length > 0
+    ? Math.round(liveClusters.reduce((sum, cluster) => {
+      const confidence = Number.parseFloat(cluster.related[0]?.growth.replace(/[^0-9.-]/g, "") ?? "0");
+      return sum + (Number.isFinite(confidence) ? confidence : 0);
+    }, 0) / liveClusters.length)
+    : null;
+  const acceleratingCount = lifecycle.counts.accelerating;
+  const highPotentialCount = liveClusters.filter((cluster) => text(cluster.priority, "en").toLowerCase().includes("high")).length;
 
   const metrics = [
-    { ...dict.metrics.clusters, value: String(narrativesQuery.data?.pagination.total ?? dict.metrics.clusters.value), icon: Network, tone: "purple" as Tone },
-    { ...dict.metrics.confidence, icon: Brain, tone: "blue" as Tone },
-    { ...dict.metrics.emerging, icon: TrendingUp, tone: "amber" as Tone },
-    { ...dict.metrics.opportunities, icon: Target, tone: "green" as Tone },
+    {
+      label: ti("metrics.clusters.label"),
+      value: String(narrativesQuery.data?.pagination.total ?? ti("metrics.clusters.value")),
+      helper: liveClusters.length > 0 ? `${acceleratingCount} accelerating` : ti("metrics.clusters.helper"),
+      icon: Network,
+      tone: "purple" as Tone,
+    },
+    {
+      label: ti("metrics.confidence.label"),
+      value: averageConfidence === null ? ti("metrics.confidence.value") : `${averageConfidence}%`,
+      helper: ti("metrics.confidence.helper"),
+      icon: Brain,
+      tone: "blue" as Tone,
+    },
+    {
+      label: ti("metrics.emerging.label"),
+      value: liveClusters.length > 0 ? String(lifecycle.counts.emerging) : ti("metrics.emerging.value"),
+      helper: liveClusters.length > 0 ? `${liveClusters.length} live narratives` : ti("metrics.emerging.helper"),
+      icon: TrendingUp,
+      tone: "amber" as Tone,
+    },
+    {
+      label: ti("metrics.opportunities.label"),
+      value: liveClusters.length > 0 ? String(highPotentialCount) : ti("metrics.opportunities.value"),
+      helper: liveClusters.length > 0 ? `${highPotentialCount} high impact` : ti("metrics.opportunities.helper"),
+      icon: Target,
+      tone: "green" as Tone,
+    },
   ];
 
   const lifecycleCards = [
-    { key: "emerging" as const, count: 7, tone: "green" as Tone, values: lifecycleSeries.emerging },
-    { key: "accelerating" as const, count: 6, tone: "amber" as Tone, values: lifecycleSeries.accelerating },
-    { key: "peaking" as const, count: 3, tone: "red" as Tone, values: lifecycleSeries.peaking },
-    { key: "declining" as const, count: 5, tone: "blue" as Tone, values: lifecycleSeries.declining },
-    { key: "dormant" as const, count: 7, tone: "slate" as Tone, values: lifecycleSeries.dormant },
+    { key: "emerging" as const, count: lifecycle.counts.emerging, tone: "green" as Tone, values: lifecycle.series.emerging },
+    { key: "accelerating" as const, count: lifecycle.counts.accelerating, tone: "amber" as Tone, values: lifecycle.series.accelerating },
+    { key: "peaking" as const, count: lifecycle.counts.peaking, tone: "red" as Tone, values: lifecycle.series.peaking },
+    { key: "declining" as const, count: lifecycle.counts.declining, tone: "blue" as Tone, values: lifecycle.series.declining },
+    { key: "dormant" as const, count: lifecycle.counts.dormant, tone: "slate" as Tone, values: lifecycle.series.dormant },
   ];
 
   const footerItems = [
     {
       icon: Database,
-      title: dict.footer.dataCoverage,
-      value: dict.footer.sourcesActive,
-      detail: dict.footer.coveragePercent,
+      title: ti("footer.dataCoverage"),
+      value: ti("footer.sourcesActive"),
+      detail: ti("footer.coveragePercent"),
       tone: "purple" as Tone,
       progress: true,
     },
     {
       icon: RefreshCcw,
-      title: dict.footer.updateFreq,
-      value: dict.footer.realtime,
-      detail: dict.footer.autoUpdated,
+      title: ti("footer.updateFreq"),
+      value: ti("footer.realtime"),
+      detail: ti("footer.autoUpdated"),
       tone: "blue" as Tone,
     },
     {
       icon: Bot,
-      title: dict.footer.aiStatus,
-      value: dict.footer.operational,
-      detail: dict.footer.systemsNormal,
+      title: ti("footer.aiStatus"),
+      value: ti("footer.operational"),
+      detail: ti("footer.systemsNormal"),
       tone: "green" as Tone,
     },
     {
       icon: Layers3,
-      title: dict.footer.analysisDepth,
-      value: dict.footer.deep,
-      detail: dict.footer.multilingual,
+      title: ti("footer.analysisDepth"),
+      value: ti("footer.deep"),
+      detail: ti("footer.multilingual"),
       tone: "purple" as Tone,
     },
   ];
@@ -533,12 +535,12 @@ export default function IntelligencePage() {
     <div className="flex flex-col gap-4 pb-8 text-[#101334]">
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-[32px] font-black tracking-[-0.045em] text-[#060A23]">{dict.title}</h1>
-          <p className="mt-2 text-[14px] font-semibold text-[#737D9F]">{dict.subtitle}</p>
+          <h1 className="text-[32px] font-black tracking-[-0.045em] text-[#060A23]">{ti("pageTitle")}</h1>
+          <p className="mt-2 text-[14px] font-semibold text-[#737D9F]">{ti("pageSubtitle")}</p>
         </div>
         <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[10px] border border-[#E5E9F3] bg-white px-4 text-xs font-extrabold text-[#475070] shadow-sm transition hover:bg-[#F8FAFF] sm:w-fit">
           <Calendar size={15} className="text-[#8A94B8]" />
-          {dict.last7Days}
+          {ti("last7Days")}
           <ChevronDown size={14} className="text-[#8A94B8]" />
         </button>
       </header>
@@ -560,19 +562,19 @@ export default function IntelligencePage() {
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <h2 className="flex items-center gap-2 text-[17px] font-black tracking-[-0.02em] text-[#101334]">
-                    {dict.topicMap.title}
+                    {ti("topicMap.title")}
                     <Info size={14} className="text-[#98A2B3]" />
                   </h2>
-                  <p className="mt-1 text-[12px] font-semibold text-[#737D9F]">{dict.topicMap.desc}</p>
+                  <p className="mt-1 text-[12px] font-semibold text-[#737D9F]">{ti("topicMap.desc")}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <button type="button" className="flex h-9 items-center gap-2 rounded-[9px] border border-[#E5E9F3] bg-white px-3 text-[11px] font-extrabold text-[#4F5877] shadow-sm transition hover:bg-[#F8FAFF]">
-                    {dict.topicMap.allTopics}
+                    {ti("topicMap.allTopics")}
                     <ChevronDown size={13} className="text-[#8A94B8]" />
                   </button>
                   <button type="button" className="flex h-9 items-center gap-2 rounded-[9px] border border-[#E5E9F3] bg-white px-3 text-[11px] font-extrabold text-[#4F5877] shadow-sm transition hover:bg-[#F8FAFF]">
                     <Filter size={13} className="text-[#8A94B8]" />
-                    {dict.topicMap.filter}
+                    {ti("topicMap.filter")}
                   </button>
                   <button type="button" aria-label="Expand map" className="flex size-9 items-center justify-center rounded-[9px] border border-[#E5E9F3] bg-white text-[#4F5877] shadow-sm transition hover:bg-[#F8FAFF]">
                     <Maximize2 size={13} />
@@ -643,7 +645,7 @@ export default function IntelligencePage() {
 
               <div className="mt-3 flex flex-wrap items-center gap-x-9 gap-y-2 border-t border-[#EEF1F7] pt-3 text-[10px] font-extrabold text-[#53608C]">
                 <div className="flex items-center gap-2">
-                  <span className="text-[#8A94B8]">{dict.topicMap.intensity}</span>
+                  <span className="text-[#8A94B8]">{ti("topicMap.intensity")}</span>
                   <span className="size-1.5 rounded-full bg-[#C9D0E2]" />
                   <span className="size-2 rounded-full bg-[#B3BDD4]" />
                   <span className="size-2.5 rounded-full bg-[#98A2B8]" />
@@ -651,18 +653,18 @@ export default function IntelligencePage() {
                   <span className="text-[#8A94B8]">High</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-[#8A94B8]">{dict.topicMap.sentiment}</span>
-                  <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#10B981]" />{dict.topicMap.pos}</span>
-                  <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#CBD5E1]" />{dict.topicMap.neu}</span>
-                  <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#EF4444]" />{dict.topicMap.neg}</span>
+                  <span className="text-[#8A94B8]">{ti("topicMap.sentiment")}</span>
+                  <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#10B981]" />{ti("topicMap.pos")}</span>
+                  <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#CBD5E1]" />{ti("topicMap.neu")}</span>
+                  <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#EF4444]" />{ti("topicMap.neg")}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-[#8A94B8]">{dict.topicMap.connStrength}</span>
-                  <span className="flex items-center gap-1.5"><span className="w-9 border-b border-dashed border-[#B9C2D6]" />{dict.topicMap.weak}</span>
-                  <span className="flex items-center gap-1.5"><span className="w-9 border-b border-[#8A94B8]" />{dict.topicMap.strong}</span>
+                  <span className="text-[#8A94B8]">{ti("topicMap.connStrength")}</span>
+                  <span className="flex items-center gap-1.5"><span className="w-9 border-b border-dashed border-[#B9C2D6]" />{ti("topicMap.weak")}</span>
+                  <span className="flex items-center gap-1.5"><span className="w-9 border-b border-[#8A94B8]" />{ti("topicMap.strong")}</span>
                 </div>
               </div>
-              <p className="mt-2 text-[10px] font-semibold text-[#98A2B3]">{dict.topicMap.tip}</p>
+              <p className="mt-2 text-[10px] font-semibold text-[#98A2B3]">{ti("topicMap.tip")}</p>
             </CardContent>
           </Panel>
 
@@ -672,13 +674,13 @@ export default function IntelligencePage() {
                 <div>
                   <h3 className="flex items-center gap-2 text-[15px] font-black tracking-[-0.02em] text-[#101334]">
                     <Sparkles size={16} className="text-[#8B5CFF]" />
-                    {dict.aiSummary.title}
+                    {ti("aiSummary.title")}
                   </h3>
                   <div className="mt-4 rounded-[11px] border border-[#8B5CFF]/10 bg-[#8B5CFF]/7 p-3 text-[11px] font-bold leading-relaxed text-[#7654E7]">
-                    {dict.aiSummary.box}
+                    {ti("aiSummary.box")}
                   </div>
                   <ul className="mt-4 flex flex-col gap-2.5">
-                    {dict.aiSummary.bullets.map((item) => (
+                    {aiSummaryBullets.map((item) => (
                       <li key={item} className="flex items-start gap-2.5 text-[12px] font-semibold leading-snug text-[#53608C]">
                         <Check size={14} className="mt-0.5 shrink-0 text-[#53608C]" strokeWidth={2.6} />
                         {item}
@@ -687,7 +689,7 @@ export default function IntelligencePage() {
                   </ul>
                 </div>
                 <button type="button" className="mt-5 flex h-9 w-full items-center justify-center gap-2 rounded-[8px] border border-[#D9DEEA] bg-white text-[11px] font-extrabold text-[#53608C] transition hover:bg-[#F8FAFF]">
-                  {dict.aiSummary.btn}
+                  {ti("aiSummary.btn")}
                   <ChevronRight size={13} />
                 </button>
               </CardContent>
@@ -696,19 +698,18 @@ export default function IntelligencePage() {
             <Panel>
               <CardContent className="p-5">
                 <h3 className="flex items-center gap-2 text-[15px] font-black tracking-[-0.02em] text-[#101334]">
-                  {dict.lifecycle.title}
+                  {ti("lifecycle.title")}
                   <Info size={13} className="text-[#98A2B3]" />
                 </h3>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                   {lifecycleCards.map((phase) => {
                     const toneStyle = toneStyles[phase.tone];
-                    const copy = dict.lifecycle.phases[phase.key];
                     return (
                       <div key={phase.key} className="flex min-h-[182px] flex-col justify-between rounded-[12px] border border-[#EEF1F7] bg-[#FBFCFF] p-3">
                         <div>
-                          <p className="text-[10px] font-black uppercase tracking-[0.06em]" style={{ color: toneStyle.color }}>{copy.title}</p>
+                          <p className="text-[10px] font-black uppercase tracking-[0.06em]" style={{ color: toneStyle.color }}>{ti(`lifecycle.phases.${phase.key}.title`)}</p>
                           <p className="mt-2 text-[27px] font-black leading-none tracking-[-0.04em] text-[#101334]">{phase.count}</p>
-                          <p className="mt-2 text-[10px] font-bold leading-snug text-[#737D9F]">{copy.desc}</p>
+                          <p className="mt-2 text-[10px] font-bold leading-snug text-[#737D9F]">{ti(`lifecycle.phases.${phase.key}.desc`)}</p>
                         </div>
                         <Sparkline values={phase.values} color={toneStyle.color} />
                       </div>
@@ -724,8 +725,8 @@ export default function IntelligencePage() {
           <Panel>
             <CardContent className="p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <h3 className="text-[15px] font-black tracking-[-0.02em] text-[#101334]">{dict.growingClusters.title}</h3>
-                <button type="button" className="text-[11px] font-black text-[#465FFF] transition hover:text-[#351EFF]">{dict.growingClusters.viewAll}</button>
+                <h3 className="text-[15px] font-black tracking-[-0.02em] text-[#101334]">{ti("growingClusters.title")}</h3>
+                <button type="button" className="text-[11px] font-black text-[#465FFF] transition hover:text-[#351EFF]">{ti("growingClusters.viewAll")}</button>
               </div>
               <div className="flex flex-col gap-2">
                 {clusters.slice(0, 5).map((cluster) => {
@@ -760,7 +761,7 @@ export default function IntelligencePage() {
           <Panel className="border-[#D9D6FF]">
             <CardContent className="p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <p className="text-[11px] font-black text-[#53608C]">{dict.selectedNarrative.title}</p>
+                <p className="text-[11px] font-black text-[#53608C]">{ti("selectedNarrative.title")}</p>
                 <button type="button" aria-label="More selected narrative actions" className="rounded-full p-1 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
                   <MoreHorizontal size={16} />
                 </button>
@@ -777,11 +778,11 @@ export default function IntelligencePage() {
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 <TrendBadge value={selectedCluster.growth} tone={selectedCluster.tone} className="px-2.5 py-1 text-[10px]" />
-                <Badge variant="default" className="normal-case tracking-normal px-2.5 py-1 text-[10px]">{dict.selectedNarrative.highImpact}</Badge>
-                <Badge variant="purple" className="normal-case tracking-normal px-2.5 py-1 text-[10px]">{dict.selectedNarrative.emerging}</Badge>
+                <Badge variant="default" className="normal-case tracking-normal px-2.5 py-1 text-[10px]">{ti("selectedNarrative.highImpact")}</Badge>
+                <Badge variant="purple" className="normal-case tracking-normal px-2.5 py-1 text-[10px]">{ti("selectedNarrative.emerging")}</Badge>
               </div>
               <div className="mt-3 border-t border-[#EEF1F7] pt-3">
-                <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#53608C]">{dict.selectedNarrative.related}</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#53608C]">{ti("selectedNarrative.related")}</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {selectedCluster.related.map((item) => (
                     <span key={`${text(item.topic, language)}-${item.growth}`} className="rounded-full bg-[#F5F7FC] px-2.5 py-1 text-[10px] font-bold text-[#53608C]">
@@ -794,13 +795,13 @@ export default function IntelligencePage() {
                 <div className="flex items-start gap-2.5">
                   <Sparkles size={15} className="mt-0.5 shrink-0 text-[#465FFF]" />
                   <div>
-                    <p className="text-[10px] font-black text-[#53608C]">{dict.selectedNarrative.aiRec}</p>
+                    <p className="text-[10px] font-black text-[#53608C]">{ti("selectedNarrative.aiRec")}</p>
                     <p className="mt-1 text-[11px] font-semibold leading-relaxed text-[#53608C]">{text(selectedCluster.aiRec, language)}</p>
                   </div>
                 </div>
               </div>
               <button type="button" className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-[9px] bg-gradient-to-r from-[#465FFF] to-[#8B5CFF] text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.22)] transition hover:brightness-105">
-                {dict.selectedNarrative.btnAnalysis}
+                {ti("selectedNarrative.btnAnalysis")}
                 <ChevronRight size={14} />
               </button>
             </CardContent>
@@ -809,13 +810,13 @@ export default function IntelligencePage() {
           <Panel>
             <CardContent className="p-4">
               <h3 className="mb-3 flex items-center gap-2 text-[15px] font-black tracking-[-0.02em] text-[#101334]">
-                {dict.competitorShare.title}
+                {ti("competitorShare.title")}
                 <Info size={13} className="text-[#98A2B3]" />
               </h3>
               <div className="grid items-center justify-items-center gap-4 sm:grid-cols-[156px_minmax(0,1fr)] sm:justify-items-stretch xl:grid-cols-[156px_minmax(0,1fr)]">
-                <CompetitorDonut label={dict.competitorShare.totalShare} />
+                <CompetitorDonut label={ti("competitorShare.totalShare")} gradient={narrativeShareGradient} />
                 <div className="flex w-full min-w-0 flex-col gap-2 text-[12px] font-bold text-[#53608C]">
-                  {donutData.map((item) => {
+                  {narrativeShareData.map((item) => {
                     const toneStyle = toneStyles[item.tone];
                     return (
                       <div key={item.name} className="flex items-center justify-between gap-3">
@@ -830,7 +831,7 @@ export default function IntelligencePage() {
                 </div>
               </div>
               <button type="button" className="mt-3 flex w-full items-center justify-center gap-1.5 text-[11px] font-extrabold text-[#465FFF] transition hover:text-[#351EFF]">
-                {dict.competitorShare.viewLandscape}
+                {ti("competitorShare.viewLandscape")}
                 <ChevronRight size={13} />
               </button>
             </CardContent>
@@ -866,7 +867,7 @@ export default function IntelligencePage() {
         </div>
         <button type="button" className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#C9C6F8] bg-white px-5 text-[12px] font-black text-[#6B4DE6] shadow-sm transition hover:bg-[#F8F6FF]">
           <Settings size={14} />
-          {dict.footer.btnSettings}
+          {ti("footer.btnSettings")}
         </button>
       </footer>
     </div>

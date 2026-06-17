@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useEffect, useState, Suspense } from "react";
+import { useMemo, useState, Suspense } from "react";
 import { AuthInput, AuthShell, Divider, LanguageSelector, PasswordInput, PrimaryButton, SecurityFooter, SocialButtons } from "@/components/auth/auth-shell";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { loginWithPassword } from "@/lib/api-service";
@@ -25,11 +25,14 @@ function LoginContent() {
   const setSession = useAuthStore((state) => state.setSession);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const oauthError = useMemo(() => {
     if (searchParams.get("error") === "oauth_failed") {
-      setApiError(t("errors.loginFailed") || "Social login failed. Please try again or use password.");
+      return t("errors.loginFailed") || "Social login failed. Please try again or use password.";
     }
+    return null;
   }, [searchParams, t]);
+
+  const displayError = apiError ?? oauthError;
   const loginSchema = z.object({
     email: z.email({ message: t("errors.invalidEmail") }),
     password: z.string().min(1, { message: t("errors.passwordRequired") }),
@@ -62,19 +65,15 @@ function LoginContent() {
         workspace: "Narriv",
       }, json.refreshToken);
     } catch (error) {
-      if (error && typeof error === "object" && "response" in error) {
-        try {
-          const res = (error as { response: Response }).response;
-          const body = await res.json();
-          if (body.code === "EMAIL_NOT_VERIFIED") {
-            window.sessionStorage.setItem("narriv_verify_email", body.email);
-            router.push("/verify-email");
-            return;
-          }
-        } catch {}
+      const err = error as { status?: number; info?: { code?: string; email?: string } };
+      
+      if (err.info?.code === "EMAIL_NOT_VERIFIED") {
+        window.sessionStorage.setItem("narriv_verify_email", err.info.email || data.email);
+        router.push("/verify-email");
+        return;
       }
       
-      const status = (error as { status?: number }).status;
+      const status = err.status;
       if (status) {
         setApiError(status === 401 || status === 400 ? t("errors.invalidCredentials") : t("errors.loginFailed"));
         return;
@@ -99,7 +98,15 @@ function LoginContent() {
         <p className="mt-5 text-[19px] font-medium text-[#3E4975]">{t("subtitle")}</p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+      <form
+        method="post"
+        onSubmit={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          void handleSubmit(onSubmit)(event);
+        }}
+        noValidate
+      >
         <FieldGroup className="gap-7">
           <AuthInput
             label={t("email")}
@@ -118,7 +125,7 @@ function LoginContent() {
             registration={register("password")}
           />
 
-          {apiError ? <p className="rounded-[8px] border border-[#F04438]/20 bg-[#FFF5F4] px-4 py-3 text-sm font-medium text-[#B42318]">{apiError}</p> : null}
+          {displayError ? <p className="rounded-[8px] border border-[#F04438]/20 bg-[#FFF5F4] px-4 py-3 text-sm font-medium text-[#B42318]">{displayError}</p> : null}
 
           <div className="flex items-center justify-between pt-1">
             <Field orientation="horizontal" className="w-auto items-center gap-3">

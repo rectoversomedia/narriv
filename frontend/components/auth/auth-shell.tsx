@@ -44,12 +44,13 @@ type AuthShellProps = {
   visual: AuthVisual;
   children: ReactNode;
   topAction?: ReactNode;
+  email?: string;
 };
 
-export function AuthShell({ visual, children, topAction }: AuthShellProps) {
+export function AuthShell({ visual, children, topAction, email }: AuthShellProps) {
   return (
     <main className="min-h-dvh bg-white font-sans text-[#111536] lg:grid lg:grid-cols-[minmax(520px,1fr)_minmax(560px,1fr)]">
-      <BrandPanel visual={visual} />
+      <BrandPanel visual={visual} email={email} />
       <section className="relative flex min-h-dvh items-center justify-center px-6 py-10 sm:px-10 lg:px-14">
         {topAction ? <div className="absolute right-6 top-6 sm:right-10 lg:right-14 lg:top-10">{topAction}</div> : null}
         <div className="w-full max-w-[520px] pt-12 lg:pt-0">{children}</div>
@@ -58,7 +59,7 @@ export function AuthShell({ visual, children, topAction }: AuthShellProps) {
   );
 }
 
-function BrandPanel({ visual }: { visual: AuthVisual }) {
+function BrandPanel({ visual, email }: { visual: AuthVisual; email?: string }) {
   const t = useTranslations("AuthDesign");
   const isVerification = visual === "verification";
 
@@ -78,7 +79,7 @@ function BrandPanel({ visual }: { visual: AuthVisual }) {
               <p className="mt-7 max-w-[500px] text-xl leading-8 text-white/72">
                 {t("brand.verifyDescription")}
                 <br />
-                <span className="font-semibold text-[#6B7FFF]">{t("sampleEmail")}</span>
+                <span className="font-semibold text-[#6B7FFF]">{email || t("sampleEmail")}</span>
               </p>
             </>
           ) : (
@@ -307,7 +308,6 @@ export function SocialButtons() {
   return (
     <div className="grid gap-4">
       <SocialButton icon={<GoogleLogo />} label={t("social.google")} href={`${apiUrl}/auth/google`} />
-      <SocialButton icon={<MicrosoftLogo />} label={t("social.microsoft")} href={`${apiUrl}/auth/microsoft`} />
     </div>
   );
 }
@@ -340,17 +340,6 @@ function GoogleLogo() {
       <path d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0124 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" fill="#34A853" />
       <path d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 01-4.087 5.571l.003-.002 6.19 5.238C36.971 39.801 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" fill="#FBBC05" />
     </svg>
-  );
-}
-
-function MicrosoftLogo() {
-  return (
-    <span className="grid h-6 w-6 grid-cols-2 gap-0.5" aria-hidden="true">
-      <span className="bg-[#F35325]" />
-      <span className="bg-[#81BC06]" />
-      <span className="bg-[#05A6F0]" />
-      <span className="bg-[#FFBA08]" />
-    </span>
   );
 }
 

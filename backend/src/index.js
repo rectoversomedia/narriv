@@ -119,8 +119,9 @@ app.use(notFoundHandler);
 app.use(globalErrorHandler);
 
 if (process.env.NODE_ENV !== "test" && !process.env.JEST_WORKER_ID) {
-    app.listen(3000, () => {
-        logStructured("info", "server_started", { port: 3000, url: "http://localhost:3000" });
+    const port = Number(process.env.PORT || 3000);
+    app.listen(port, () => {
+        logStructured("info", "server_started", { port, url: `http://localhost:${port}` });
     });
 }
 

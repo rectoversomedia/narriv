@@ -19,7 +19,7 @@ router.get("/", async (req, res) => {
         const page = parseInt(req.query.page, 10) || 1;
         const limit = parseInt(req.query.limit, 10) || 10;
         
-        const { keyword, platform, startDate, endDate } = req.query;
+        const { keyword, platform, startDate, endDate, sentiment } = req.query;
         
         const safePage = Math.max(1, page);
         const safeLimit = Math.max(1, limit);
@@ -37,6 +37,10 @@ router.get("/", async (req, res) => {
 
         if (platform) {
             whereClause.platform = platform;
+        }
+
+        if (sentiment) {
+            whereClause.sentiment = { equals: sentiment, mode: 'insensitive' };
         }
 
         if (startDate || endDate) {
@@ -154,21 +158,43 @@ router.get("/meta", async (req, res) => {
         const platformCounts = await prisma.signal.groupBy({
             by: ['platform'],
             where: whereClause,
-            _count: { platform: true }
+            _count: { _all: true }
         });
-        const totalSignals = platformCounts.reduce((acc, curr) => acc + curr._count.platform, 0);
+        const totalSignals = platformCounts.reduce((acc, curr) => acc + curr._count._all, 0);
         const predefinedColors = ['#465FFF', '#EF3F6B', '#10B981', '#8B5CFF', '#94A3B8'];
         const sourceDistribution = platformCounts.map((pc, idx) => {
-            const percentage = totalSignals ? Math.round((pc._count.platform / totalSignals) * 100) : 0;
+            const percentage = totalSignals ? Math.round((pc._count._all / totalSignals) * 100) : 0;
             return {
                 name: pc.platform || 'Unknown',
-                value: `${percentage}% (${pc._count.platform})`,
+                value: `${percentage}% (${pc._count._all})`,
                 color: predefinedColors[idx % predefinedColors.length]
             };
         });
 
-        const timeline = [310, 420, 380, 460, 590, 520, 450, 620, 840, 1024, 890, 720, 650, 560, 910, 820, 740, 790];
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const timelineData = await prisma.signal.findMany({
+            where: { ...whereClause, capturedAt: { gte: twentyFourHoursAgo } },
+            select: { capturedAt: true }
+        });
+
+        const timeline = Array(24).fill(0);
+        const timelineLabels = Array(24).fill('');
         
+        const now = new Date();
+        for (let i = 23; i >= 0; i--) {
+            const date = new Date(now.getTime() - i * 60 * 60 * 1000);
+            timelineLabels[23 - i] = `${date.getHours().toString().padStart(2, '0')}:00`;
+        }
+
+        timelineData.forEach(sig => {
+            const hDiff = Math.floor((now.getTime() - new Date(sig.capturedAt).getTime()) / (60 * 60 * 1000));
+            if (hDiff >= 0 && hDiff < 24) {
+                timeline[23 - hDiff]++;
+            }
+        });
+
+        const totalSignals24h = timelineData.length;
+
         let rawCases = await prisma.case.findMany({
             where: { workspaceId: { in: workspaceIds } },
             orderBy: { createdAt: 'desc' },
@@ -196,13 +222,43 @@ router.get("/meta", async (req, res) => {
                 tone: a.status === 'open' ? 'amber' : 'blue'
             }));
         }
+        const negativeSignals24h = await prisma.signal.count({
+            where: { ...whereClause, sentiment: { equals: 'NEGATIVE', mode: 'insensitive' }, capturedAt: { gte: twentyFourHoursAgo } }
+        });
+        const criticalAlerts24h = await prisma.alert.count({
+            where: { workspaceId: { in: workspaceIds }, severity: { in: ['critical', 'high'] }, createdAt: { gte: twentyFourHoursAgo } }
+        });
+
+        const metrics = {
+            totalSignals24h,
+            negativeSignals24h,
+            criticalSignals24h: criticalAlerts24h
+        };
+
+        const aiSummary = totalSignals24h === 0 
+            ? null 
+            : {
+                title: "AI Signal Summary",
+                content: {
+                    en: `In the last 24 hours, ${totalSignals24h} signals were captured. ${negativeSignals24h} negative discussions detected.`,
+                    id: `Dalam 24 jam terakhir, tertangkap ${totalSignals24h} sinyal. Ada ${negativeSignals24h} percakapan negatif yang terdeteksi.`
+                },
+                insight: {
+                    en: `Narriv recommends investigating critical alerts and communicating proactively.`,
+                    id: `Narriv merekomendasikan investigasi pada peringatan kritis dan melakukan komunikasi secara proaktif.`
+                }
+            };
 
         return res.json({
+            totalSignals,
             followUps,
             recommendations,
             sourceDistribution,
             timeline,
-            investigationQueue
+            timelineLabels,
+            investigationQueue,
+            metrics,
+            aiSummary
         });
 
     } catch (error) {

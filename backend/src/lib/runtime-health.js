@@ -45,9 +45,9 @@ export async function checkOpenAIHealth() {
 }
 
 export async function checkIngestionProviderHealth() {
-    const token = process.env.APIFY_API_TOKEN;
+    const token = process.env.APIFY_TOKEN || process.env.APIFY_API_TOKEN;
     if (!token) {
-        return { service: "ingestion_provider", provider: "apify", status: "unavailable", reason: "APIFY_API_TOKEN is missing" };
+        return { service: "ingestion_provider", provider: "apify", status: "unavailable", reason: "APIFY_TOKEN is missing" };
     }
 
     try {

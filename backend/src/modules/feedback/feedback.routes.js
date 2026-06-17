@@ -5,6 +5,7 @@ import { resolveWorkspaceIdForUser, resolveScopedWorkspaceIds } from "../../lib/
 import { validateRequest } from "../../middlewares/validate-request.js";
 import { submitFeedbackBodySchema } from "./feedback.schema.js";
 import { recordAuditLog } from "../../lib/audit.js";
+import { logStructured } from "../../lib/logger.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -47,14 +48,10 @@ router.get("/accuracy", async (req, res) => {
     try {
         const { workspaceId } = req.query;
 
-        if (!workspaceId) {
-            return res.status(400).json({ error: "workspaceId query param is required" });
-        }
-
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
         if (scopedWorkspaceIds.length === 0) return res.json({ total_feedback: 0, accuracy_score: null, acceptance_rate: 0, edit_rate: 0, rejection_rate: 0, by_type: {}, trend: [] });
 
-        const metrics = await getAccuracyMetrics(scopedWorkspaceIds[0]);
+        const metrics = await getAccuracyMetrics(scopedWorkspaceIds);
         res.json(metrics);
     } catch (error) {
         logStructured("error", "Error fetching accuracy metrics:", { error: error?.message || error, stack: error?.stack });

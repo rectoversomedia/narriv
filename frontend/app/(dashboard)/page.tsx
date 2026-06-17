@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { AppCard, IconBubble, MetricTile, SectionHeader } from "@/components/dashboard/dashboard-kit";
 import { CardContent } from "@/components/ui/card";
-import { activitySeries, alerts, dashboardMetrics, miniTopics, quickActions, sources, systemStatus, text, topTopics, type Tone } from "@/lib/mock-data";
+import { quickActions, text, type Tone } from "@/lib/mock-data";
 import { useUiStore } from "@/store/useUiStore";
 
 import { useQuery } from "@tanstack/react-query";
@@ -46,12 +46,6 @@ const WorldActivityMap = dynamic(
   { ssr: false, loading: () => <ChartPlaceholder className="h-[300px] rounded-[10px]" /> }
 );
 
-const timeRangeOptions: Array<{ label: string; value: DateRangeKey }> = [
-  { label: "24 Jam Terakhir", value: "24h" },
-  { label: "7 Hari", value: "7d" },
-  { label: "30 Hari", value: "30d" },
-];
-
 function ChartPlaceholder({ className }: { className: string }) {
   return (
     <div className={`flex w-full items-center justify-center border border-slate-100 bg-slate-50/70 ${className}`} aria-label="Loading chart">
@@ -62,62 +56,64 @@ function ChartPlaceholder({ className }: { className: string }) {
 
 type QuickActionKey = "newAlert" | "report" | "analyze" | "sources" | "settings" | "help";
 
-const quickActionContent: Record<QuickActionKey, { title: string; description: string; icon: typeof Bell; href?: string; items?: Array<{ label: string; desc: string }> }> = {
-  newAlert: {
-    title: "Buat Alert Baru",
-    description: "Buat alert manual untuk memantau isu spesifik yang belum terdeteksi otomatis.",
-    icon: Bell,
-    items: [
-      { label: "Monitor Competitor", desc: "Pantau aktivitas dan sentimen kompetitor secara real-time." },
-      { label: "Track Campaign", desc: "Lacak performa kampanye marketing di semua kanal." },
-      { label: "Watch Issue", desc: "Awasi isu spesifik yang perlu perhatian segera." },
-    ],
-  },
-  report: {
-    title: "Buat Laporan Baru",
-    description: "Generate laporan analisis sentimen dan visibilitas AI secara otomatis.",
-    icon: FileText,
-    items: [
-      { label: "Executive Summary", desc: "Laporan ringkas untuk stakeholder senior." },
-      { label: "Weekly Brief", desc: "Ringkasan mingguan所有的 performa brand." },
-      { label: "Crisis Report", desc: "Laporan mendalam untuk situasi krisis." },
-    ],
-  },
-  analyze: {
-    title: "Analisis Data",
-    description: "Jalankan analisis mendalam pada sinyal dan narasi yang terkumpul.",
-    icon: BarChart3,
-    items: [
-      { label: "Sentiment Analysis", desc: "Analisis sentimen komprehensif dari semua sumber." },
-      { label: "Trend Detection", desc: "Deteksi tren dan pola yang muncul." },
-      { label: "Competitor Benchmark", desc: "Bandingkan performa dengan kompetitor." },
-    ],
-  },
-  sources: {
-    title: "Kelola Sumber Data",
-    description: "Akses dan konfigurasi sumber data yang terhubung ke platform.",
-    icon: Database,
-    href: "/workspace/sources",
-  },
-  settings: {
-    title: "Pengaturan Workspace",
-    description: "Kelola pengaturan workspace, integrasi, dan preferensi sistem.",
-    icon: Settings,
-    href: "/workspace/settings",
-  },
-  help: {
-    title: "Bantuan & Dukungan",
-    description: "Dapatkan bantuan dari tim support atau akses dokumentasi.",
-    icon: Headphones,
-    items: [
-      { label: "Documentation", desc: "Akses panduan lengkap penggunaan platform." },
-      { label: "Contact Support", desc: "Hubungi tim support untuk bantuan teknis." },
-      { label: "Video Tutorials", desc: "Tonton tutorial video langkah demi langkah." },
-    ],
-  },
-};
+function getQuickActionContent(t: (key: string) => string): Record<QuickActionKey, { title: string; description: string; icon: typeof Bell; href?: string; items?: Array<{ label: string; desc: string }> }> {
+  return {
+    newAlert: {
+      title: t("pages.quickActionContent.newAlertTitle"),
+      description: t("pages.quickActionContent.newAlertDesc"),
+      icon: Bell,
+      items: [
+        { label: t("pages.quickActionContent.newAlertItem1Label"), desc: t("pages.quickActionContent.newAlertItem1Desc") },
+        { label: t("pages.quickActionContent.newAlertItem2Label"), desc: t("pages.quickActionContent.newAlertItem2Desc") },
+        { label: t("pages.quickActionContent.newAlertItem3Label"), desc: t("pages.quickActionContent.newAlertItem3Desc") },
+      ],
+    },
+    report: {
+      title: t("pages.quickActionContent.reportTitle"),
+      description: t("pages.quickActionContent.reportDesc"),
+      icon: FileText,
+      items: [
+        { label: t("pages.quickActionContent.reportItem1Label"), desc: t("pages.quickActionContent.reportItem1Desc") },
+        { label: t("pages.quickActionContent.reportItem2Label"), desc: t("pages.quickActionContent.reportItem2Desc") },
+        { label: t("pages.quickActionContent.reportItem3Label"), desc: t("pages.quickActionContent.reportItem3Desc") },
+      ],
+    },
+    analyze: {
+      title: t("pages.quickActionContent.analyzeTitle"),
+      description: t("pages.quickActionContent.analyzeDesc"),
+      icon: BarChart3,
+      items: [
+        { label: t("pages.quickActionContent.analyzeItem1Label"), desc: t("pages.quickActionContent.analyzeItem1Desc") },
+        { label: t("pages.quickActionContent.analyzeItem2Label"), desc: t("pages.quickActionContent.analyzeItem2Desc") },
+        { label: t("pages.quickActionContent.analyzeItem3Label"), desc: t("pages.quickActionContent.analyzeItem3Desc") },
+      ],
+    },
+    sources: {
+      title: t("pages.quickActionContent.sourcesTitle"),
+      description: t("pages.quickActionContent.sourcesDesc"),
+      icon: Database,
+      href: "/workspace/sources",
+    },
+    settings: {
+      title: t("pages.quickActionContent.settingsTitle"),
+      description: t("pages.quickActionContent.settingsDesc"),
+      icon: Settings,
+      href: "/workspace/settings",
+    },
+    help: {
+      title: t("pages.quickActionContent.helpTitle"),
+      description: t("pages.quickActionContent.helpDesc"),
+      icon: Headphones,
+      items: [
+        { label: t("pages.quickActionContent.helpItem1Label"), desc: t("pages.quickActionContent.helpItem1Desc") },
+        { label: t("pages.quickActionContent.helpItem2Label"), desc: t("pages.quickActionContent.helpItem2Desc") },
+        { label: t("pages.quickActionContent.helpItem3Label"), desc: t("pages.quickActionContent.helpItem3Desc") },
+      ],
+    },
+  };
+}
 
-function QuickActionDrawer({ actionKey, onClose }: { actionKey: QuickActionKey; onClose: () => void }) {
+function QuickActionDrawer({ actionKey, onClose, quickActionContent, tDrawer }: { actionKey: QuickActionKey; onClose: () => void; quickActionContent: ReturnType<typeof getQuickActionContent>; tDrawer: (key: string) => string }) {
   const content = quickActionContent[actionKey];
   const Icon = content.icon;
 
@@ -149,7 +145,7 @@ function QuickActionDrawer({ actionKey, onClose }: { actionKey: QuickActionKey; 
 
             {content.href && (
               <Link href={content.href} onClick={onClose} className="mt-6 flex items-center justify-between rounded-xl border border-[#465FFF]/15 bg-[#465FFF]/5 px-4 py-3 text-[13px] font-bold text-[#465FFF] transition hover:bg-[#465FFF]/10">
-                <span>Buka halaman terkait</span>
+                <span>{tDrawer("pages.command.openRelated")}</span>
                 <ArrowRight size={15} />
               </Link>
             )}
@@ -173,7 +169,7 @@ function QuickActionDrawer({ actionKey, onClose }: { actionKey: QuickActionKey; 
 
           <div className="border-t border-slate-100 px-6 py-4">
             <button type="button" onClick={onClose} className="flex h-10 w-full items-center justify-center rounded-xl border border-slate-200 bg-white text-[13px] font-bold text-slate-700 transition hover:bg-slate-50">
-              Tutup
+              {tDrawer("pages.command.close")}
             </button>
           </div>
         </div>
@@ -184,10 +180,18 @@ function QuickActionDrawer({ actionKey, onClose }: { actionKey: QuickActionKey; 
 
 export default function DashboardPage() {
   const t = useTranslations("DemoApp");
+  const tDrawer = useTranslations("DemoApp");
   const language = useUiStore((state) => state.language);
   const [timeRange, setTimeRange] = useState<DateRangeKey>("24h");
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const dateRange = getDateRangeOptions(timeRange);
+  const quickActionContent = getQuickActionContent((key) => tDrawer(key));
+
+  const timeRangeOptions: Array<{ label: string; value: DateRangeKey }> = [
+    { label: t("pages.command.timeRange24h"), value: "24h" },
+    { label: t("pages.command.timeRange7d"), value: "7d" },
+    { label: t("pages.command.timeRange30d"), value: "30d" },
+  ];
 
   const dashboardQuery = useQuery({
     queryKey: ["dashboard-summary", timeRange],
@@ -200,46 +204,42 @@ export default function DashboardPage() {
 
   const activityData = summary?.trends?.length 
     ? summary.trends.map(t => ({ label: new Date(t.date).toLocaleDateString(), value: t.count }))
-    : activitySeries.map((value, index) => ({ label: `${String(index * 2).padStart(2, "0")}:00`, value }));
+    : [];
 
   const sentimentData = summary?.sentiment_distribution
     ? [
-        { name: "Positif", value: summary.sentiment_distribution.positive, tone: "green" as const },
-        { name: "Netral", value: summary.sentiment_distribution.neutral, tone: "blue" as const },
-        { name: "Negatif", value: summary.sentiment_distribution.negative, tone: "red" as const },
+        { name: t("pages.command.positive"), value: summary.sentiment_distribution.positive, tone: "green" as const },
+        { name: t("pages.command.neutral"), value: summary.sentiment_distribution.neutral, tone: "blue" as const },
+        { name: t("pages.command.negative"), value: summary.sentiment_distribution.negative, tone: "red" as const },
       ]
-    : [
-        { name: "Positif", value: 1248, tone: "green" as const },
-        { name: "Netral", value: 842, tone: "blue" as const },
-        { name: "Negatif", value: 361, tone: "red" as const },
-      ];
+    : [];
 
   const metricsRow = summary?.kpis
     ? [
-        { label: { en: "Total Signals", id: "Total Sinyal" }, value: String(summary.kpis.total_signals), helper: { en: "Live", id: "Live" }, icon: dashboardMetrics[0].icon, tone: "blue" as const },
-        { label: { en: "Analyzed Signals", id: "Sinyal Dianalisis" }, value: String(summary.kpis.analyzed_signals), helper: { en: "Live", id: "Live" }, icon: dashboardMetrics[1].icon, tone: "purple" as const },
-        { label: { en: "Positive Sent.", id: "Sent. Positif" }, value: `${summary.kpis.positive_percentage}%`, helper: { en: "Live", id: "Live" }, icon: dashboardMetrics[2].icon, tone: "green" as const },
-        { label: { en: "Negative Sent.", id: "Sent. Negatif" }, value: `${summary.kpis.negative_percentage}%`, helper: { en: "Live", id: "Live" }, icon: dashboardMetrics[3].icon, tone: "red" as const },
-        { label: { en: "Neutral Sent.", id: "Sent. Netral" }, value: `${summary.kpis.neutral_percentage}%`, helper: { en: "Live", id: "Live" }, icon: dashboardMetrics[4].icon, tone: "slate" as const },
-        { label: { en: "Mixed Sent.", id: "Sent. Campuran" }, value: `${summary.kpis.mixed_percentage}%`, helper: { en: "Live", id: "Live" }, icon: dashboardMetrics[5].icon, tone: "amber" as const },
+        { label: t("metrics.totalSignals"), value: String(summary.kpis.total_signals), helper: "Live", icon: BarChart3, tone: "blue" as const },
+        { label: t("metrics.analyzedSignals"), value: String(summary.kpis.analyzed_signals), helper: "Live", icon: BarChart3, tone: "purple" as const },
+        { label: t("metrics.positiveSent"), value: `${summary.kpis.positive_percentage}%`, helper: "Live", icon: BarChart3, tone: "green" as const },
+        { label: t("metrics.negativeSent"), value: `${summary.kpis.negative_percentage}%`, helper: "Live", icon: BarChart3, tone: "red" as const },
+        { label: t("metrics.neutralSent"), value: `${summary.kpis.neutral_percentage}%`, helper: "Live", icon: BarChart3, tone: "slate" as const },
+        { label: t("metrics.mixedSent"), value: `${summary.kpis.mixed_percentage}%`, helper: "Live", icon: BarChart3, tone: "amber" as const },
       ]
-    : dashboardMetrics;
+    : [];
 
   const alertsRow = summary?.latest_signals?.length
     ? summary.latest_signals.slice(0, 4).map((sig) => ({
         id: sig.id,
-        title: { en: sig.title || "Unknown signal", id: sig.title || "Unknown signal" },
+        title: sig.title || "Unknown signal",
         source: sig.platform,
         time: new Date(sig.published_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
         tone: sig.sentiment.toLowerCase().includes("negative") ? "red" : sig.sentiment.toLowerCase().includes("positive") ? "green" : "blue",
       }))
-    : alerts;
+    : [];
 
 
-  const sysStatusData = summary?.system_status?.length ? summary.system_status : systemStatus;
-  const hotTopics = summary?.top_topics?.length ? summary.top_topics : topTopics;
-  const miniTrends = summary?.mini_topics?.length ? summary.mini_topics : miniTopics;
-  const sourcesData = summary?.sources_health?.length ? summary.sources_health : sources;
+  const sysStatusData = summary?.system_status ?? [];
+  const hotTopics = summary?.top_topics ?? [];
+  const miniTrends = summary?.mini_topics ?? [];
+  const sourcesData = summary?.sources_health ?? [];
 
   return (
     <div className="space-y-8 pb-6">
@@ -272,7 +272,7 @@ export default function DashboardPage() {
 
       {/* Metrics Row */}
       {isLiveUnavailable ? (
-        <DashboardErrorState title="Dashboard live belum bisa dimuat" description="API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan metrik contoh." onRetry={() => void dashboardQuery.refetch()} minHeight="min-h-[150px]" />
+        <DashboardErrorState title={t("pages.command.errorTitle")} description={t("pages.command.errorDesc")} onRetry={() => void dashboardQuery.refetch()} minHeight="min-h-[150px]" />
       ) : null}
 
       {dashboardQuery.isPending ? (
@@ -281,10 +281,10 @@ export default function DashboardPage() {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
           {metricsRow.map((metric) => (
             <MetricTile 
-              key={text(metric.label, language)} 
-              label={text(metric.label, language)} 
+              key={metric.label} 
+              label={metric.label} 
               value={metric.value}
-              helper={text(metric.helper, language)} 
+              helper={metric.helper} 
               icon={metric.icon} 
               tone={metric.tone} 
             />
@@ -344,7 +344,7 @@ export default function DashboardPage() {
           <CardContent className="p-5">
             <SectionHeader 
               title={t("pages.command.alerts")} 
-              description="Lihat peringatan yang memerlukan perhatian." 
+              description={t("pages.command.alertsDesc")} 
               action={<Link href="/alerts" className="whitespace-nowrap text-[11px] font-bold text-[#465FFF] transition-all hover:text-[#8B5CFF] hover:underline">{t("common.viewAll")}</Link>} 
             />
             <div className="space-y-4">
@@ -352,7 +352,7 @@ export default function DashboardPage() {
                 <div key={alert.id} className="flex gap-3 border-b border-slate-100 pb-3.5 last:border-0 last:pb-0">
                   <IconBubble icon={Zap} tone={alert.tone as Tone} className="h-9 w-9 rounded-[8px]" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-bold text-slate-800">{text(alert.title, language)}</p>
+                    <p className="truncate text-[13px] font-bold text-slate-800">{alert.title}</p>
                     <p className="mt-1 text-[11px] font-semibold text-slate-400">{alert.source}</p>
                   </div>
                   <span className="text-[11px] font-semibold text-slate-400">{alert.time}</span>
@@ -372,7 +372,7 @@ export default function DashboardPage() {
         {/* Hot Topics */}
         <AppCard>
           <CardContent className="p-5">
-            <SectionHeader title={t("pages.command.topics")} description="Topik yang paling banyak dibicarakan" />
+            <SectionHeader title={t("pages.command.topics")} description={t("pages.command.topicsDesc")} />
             <div className="space-y-2 mt-4">
               {hotTopics.map((topic, index) => (
                 <div key={text(topic.name, language)} className="flex items-center gap-3 py-2.5 border-b border-slate-100 last:border-0 last:pb-0">
@@ -393,10 +393,10 @@ export default function DashboardPage() {
         {/* Data Sources */}
         <AppCard>
           <CardContent className="p-5">
-            <SectionHeader title={t("pages.command.sources")} description="Status dan performa sumber data" />
+            <SectionHeader title={t("pages.command.sources")} description={t("pages.command.sourcesDesc")} />
             <div className="space-y-2 mt-4">
-              {sourcesData.map((source) => (
-                <div key={source.name} className="grid grid-cols-[1fr_75px_60px] items-center gap-2 py-3 border-b border-slate-100 last:border-0 last:pb-0 text-sm">
+              {sourcesData.map((source, index) => (
+                <div key={`${source.name}-${index}`} className="grid grid-cols-[1fr_75px_60px] items-center gap-2 py-3 border-b border-slate-100 last:border-0 last:pb-0 text-sm">
                   <p className="font-bold text-slate-800 truncate">{source.name}</p>
                   <p className="text-xs font-extrabold text-[#10B981] flex items-center gap-1">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
@@ -412,27 +412,27 @@ export default function DashboardPage() {
         {/* Mentions Sentiment Visibility */}
         <AppCard>
           <CardContent className="p-5">
-            <SectionHeader title={t("pages.command.visibility")} description="Performa visibilitas AI" />
-            <DonutChart center={String(summary?.kpis?.analyzed_signals ?? "2.451")} label="Total Mentions" data={sentimentData} />
+            <SectionHeader title={t("pages.command.visibility")} description={t("pages.command.visibilityDesc")} />
+            <DonutChart center={String(summary?.kpis?.analyzed_signals ?? "2.451")} label={t("pages.command.totalMentions")} data={sentimentData} />
             <div className="mt-6 grid gap-2.5 text-sm">
               <div className="flex justify-between py-1 border-b border-slate-100">
                 <span className="text-slate-500 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-[#12B76A]" />
-                  Positif
+                  {t("pages.command.positive")}
                 </span>
                 <b className="text-slate-900">{summary?.sentiment_distribution?.positive ?? 1248}</b>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-100">
                 <span className="text-slate-500 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-[#465FFF]" />
-                  Netral
+                  {t("pages.command.neutral")}
                 </span>
                 <b className="text-slate-900">{summary?.sentiment_distribution?.neutral ?? 842}</b>
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-slate-500 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-[#F04438]" />
-                  Negatif
+                  {t("pages.command.negative")}
                 </span>
                 <b className="text-slate-900">{summary?.sentiment_distribution?.negative ?? 361}</b>
               </div>
@@ -443,7 +443,7 @@ export default function DashboardPage() {
         {/* Quick Actions */}
         <AppCard>
           <CardContent className="p-5">
-            <SectionHeader title={t("pages.command.quick")} description="Lakukan tindakan cepat." />
+            <SectionHeader title={t("pages.command.quick")} description={t("pages.command.quickDesc")} />
             <div className="grid grid-cols-2 gap-3 mt-4">
               {quickActions.map((action) => { 
                 const Icon = action.icon; 
@@ -454,13 +454,13 @@ export default function DashboardPage() {
                       className={`flex min-h-[82px] flex-col items-center justify-center gap-2.5 rounded-[8px] border transition-all text-center text-xs font-bold active:scale-[0.96] ${selectedAction === action.key ? "border-[#465FFF] bg-[#465FFF]/5 text-[#465FFF]" : "border-slate-100 bg-slate-50 text-slate-800 hover:bg-slate-100 hover:border-[#465FFF]/35"}`}
                     >
                     <Icon size={22} className="text-[#465FFF] drop-shadow-[0_0_8px_rgba(70,95,255,0.4)]" />
-                    <span className="px-1">{t(`quickActions.${action.key}`)}</span>
+                    <span className="px-1">{t(`pages.quickActions.${action.key}`)}</span>
                   </button>
                 ); 
               })}
             </div>
             {selectedAction ? (
-              <QuickActionDrawer actionKey={selectedAction as QuickActionKey} onClose={() => setSelectedAction(null)} />
+              <QuickActionDrawer actionKey={selectedAction as QuickActionKey} onClose={() => setSelectedAction(null)} quickActionContent={quickActionContent} tDrawer={(key) => tDrawer(key)} />
             ) : null}
           </CardContent>
         </AppCard>
@@ -473,7 +473,7 @@ export default function DashboardPage() {
             title={t("pages.command.status")} 
             action={
               <a className="text-sm font-bold text-[#465FFF] hover:underline flex items-center gap-1">
-                Lihat status lengkap <ArrowRight size={16} className="inline ml-1" />
+                {t("pages.command.viewStatus")} <ArrowRight size={16} className="inline ml-1" />
               </a>
             } 
           />

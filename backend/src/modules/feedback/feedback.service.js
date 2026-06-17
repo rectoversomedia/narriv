@@ -135,12 +135,13 @@ export async function getActionPlanPromptScoring(workspaceId) {
 /**
  * Calculates AI accuracy scores based on historical feedback.
  *
- * @param {string} workspaceId
+ * @param {string|string[]} workspaceId
  * @returns {Promise<object>} - Accuracy metrics.
  */
 export async function getAccuracyMetrics(workspaceId) {
+    const workspaceIds = Array.isArray(workspaceId) ? workspaceId : [workspaceId];
     const allFeedback = await prisma.aIFeedback.findMany({
-        where: { workspaceId },
+        where: { workspaceId: { in: workspaceIds } },
         orderBy: { createdAt: "desc" }
     });
 
@@ -208,9 +209,9 @@ export async function getAccuracyMetrics(workspaceId) {
     return {
         total_feedback: total,
         accuracy_score: accuracyScore,
-        acceptance_rate: Math.round((accepted / total) * 100),
-        edit_rate: Math.round((edited / total) * 100),
-        rejection_rate: Math.round((rejected / total) * 100),
+        acceptance_rate: Math.round((accepted / total) * 100) / 100,
+        edit_rate: Math.round((edited / total) * 100) / 100,
+        rejection_rate: Math.round((rejected / total) * 100) / 100,
         by_type: byType,
         trend
     };

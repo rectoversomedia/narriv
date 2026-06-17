@@ -42,11 +42,18 @@ function matchesWhere(record, where = {}) {
     if (key === 'workspaceId' && value && typeof value === 'object' && Array.isArray(value.in)) {
       return value.in.includes(record.workspaceId);
     }
+    if (key === 'report' && value?.workspaceId?.in) {
+      const report = reports.find((item) => item.id === record.reportId);
+      return report ? value.workspaceId.in.includes(report.workspaceId) : false;
+    }
     if (key === 'id' && value && typeof value === 'object' && Array.isArray(value.in)) {
       return value.in.includes(record.id);
     }
     if (key === 'expiresAt' && value?.lt) {
       return record.expiresAt && new Date(record.expiresAt) < new Date(value.lt);
+    }
+    if (key === 'createdAt' && value?.gte) {
+      return record.createdAt && new Date(record.createdAt) >= new Date(value.gte);
     }
     if (key === 'id' || key === 'workspaceId' || key === 'userId' || key === 'targetType' || key === 'targetId' || key === 'action' || key === 'status') {
       return record[key] === value;
@@ -179,6 +186,17 @@ const mockPrisma = {
     findMany: jest.fn(async ({ where = {}, skip = 0, take } = {}) => paginate(orderByCreatedDesc(reports.filter((report) => matchesWhere(report, where))), { skip, take })),
     count: jest.fn(async ({ where = {} } = {}) => reports.filter((report) => matchesWhere(report, where)).length),
     findUnique: jest.fn(async ({ where }) => reports.find((report) => report.id === where.id) || null),
+    groupBy: jest.fn(async ({ by, where = {}, take } = {}) => {
+      const key = by[0];
+      const counts = new Map();
+      reports.filter((report) => matchesWhere(report, where)).forEach((report) => {
+        counts.set(report[key], (counts.get(report[key]) || 0) + 1);
+      });
+      return Array.from(counts.entries())
+        .map(([value, count]) => ({ [key]: value, _count: { _all: count } }))
+        .sort((a, b) => b._count._all - a._count._all)
+        .slice(0, take || counts.size);
+    }),
   },
   reportExport: {
     create: jest.fn(async ({ data }) => {
@@ -207,6 +225,14 @@ const mockPrisma = {
       const records = reportExports.filter((job) => matchesWhere(job, where)).slice(0, take || reportExports.length);
       if (select?.id) return records.map((job) => ({ id: job.id }));
       return records;
+    }),
+    groupBy: jest.fn(async ({ by, where = {} } = {}) => {
+      const key = by[0];
+      const counts = new Map();
+      reportExports.filter((job) => matchesWhere(job, where)).forEach((job) => {
+        counts.set(job[key], (counts.get(job[key]) || 0) + 1);
+      });
+      return Array.from(counts.entries()).map(([value, count]) => ({ [key]: value, _count: { _all: count } }));
     }),
     update: jest.fn(async ({ where, data }) => {
       const index = reportExports.findIndex((job) => job.id === where.id);
@@ -428,6 +454,26 @@ describe('Report and Export Endpoints', () => {
 
     expect(downloadRes.status).toBe(200);
     expect(downloadRes.body).toMatchObject({ id: REPORT_ID, title: 'Weekly Narrative Intelligence Brief' });
+  });
+
+  it('returns workspace-scoped report analytics including export format distribution', async () => {
+    reports.push(
+      buildReport({ id: REPORT_ID, workspaceId: WORKSPACE_ID, title: 'Weekly Narrative Intelligence Brief', createdAt: new Date().toISOString() }),
+      buildReport({ id: OTHER_REPORT_ID, workspaceId: OTHER_WORKSPACE_ID, title: 'Other Report', createdAt: new Date().toISOString() }),
+    );
+    reportExports.push(
+      { id: EXPORT_ID, reportId: REPORT_ID, status: 'completed', format: 'pdf', errorMessage: null, createdAt: new Date().toISOString() },
+      { id: '00000000-0000-4000-8000-000000001102', reportId: OTHER_REPORT_ID, status: 'completed', format: 'json', errorMessage: null, createdAt: new Date().toISOString() },
+    );
+
+    const analyticsRes = await request(app)
+      .get('/api/reports/analytics')
+      .set(authHeader());
+
+    expect(analyticsRes.status).toBe(200);
+    expect(analyticsRes.body.format_distribution).toEqual({ json: 0, pdf: 1 });
+    expect(analyticsRes.body.popular_templates).toEqual([{ name: 'Weekly Narrative Intelligence Brief', count: 1 }]);
+    expect(analyticsRes.body.trend_timeline).toHaveLength(14);
   });
 
   it('hides reports and export jobs outside the user workspace scope', async () => {

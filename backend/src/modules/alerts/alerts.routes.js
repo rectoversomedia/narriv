@@ -5,6 +5,7 @@ import { resolveScopedWorkspaceIds } from "../../lib/workspace-access.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
 import { z } from "zod";
 import { alertIdParamsSchema, updateAlertStatusBodySchema } from "./alerts.schema.js";
+import { logStructured } from "../../lib/logger.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -19,6 +20,28 @@ const assignAlertBodySchema = z.object({
     deadline: z.string().datetime("deadline must be a valid ISO datetime.").optional().nullable(),
     escalationLevel: z.enum(["low", "medium", "high", "critical"]).optional(),
 });
+
+function buildHourlyAlertTimeline(alerts, now = new Date()) {
+    const bucketCount = 24;
+    const hourMs = 60 * 60 * 1000;
+    const currentTime = now.getTime();
+    const timeline = Array.from({ length: bucketCount }, () => 0);
+    const timelineLabels = Array.from({ length: bucketCount }, (_, index) => {
+        const bucketDate = new Date(currentTime - (bucketCount - 1 - index) * hourMs);
+        return `${bucketDate.toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", hour12: false })}:00`;
+    });
+
+    alerts.forEach((alert) => {
+        const createdAt = new Date(alert.createdAt);
+        if (Number.isNaN(createdAt.getTime())) return;
+        const hoursAgo = Math.floor((currentTime - createdAt.getTime()) / hourMs);
+        const bucketIndex = bucketCount - 1 - hoursAgo;
+        if (bucketIndex < 0 || bucketIndex >= bucketCount) return;
+        timeline[bucketIndex] += 1;
+    });
+
+    return { timeline, timelineLabels };
+}
 
 // GET /api/alerts - Get list of alerts with filtering and pagination
 router.get("/", async (req, res) => {
@@ -82,6 +105,87 @@ router.get("/", async (req, res) => {
         });
     } catch (error) {
         logStructured("error", "Error fetching alerts:", { error: error?.message || error, stack: error?.stack });
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// GET /api/alerts/summary - Aggregate metrics for the workspace
+router.get("/summary", async (req, res) => {
+    try {
+        const { workspaceId } = req.query;
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
+        if (scopedWorkspaceIds.length === 0) {
+            return res.json({
+                total: 0,
+                by_severity: { critical: 0, high: 0, medium: 0, low: 0, info: 0 },
+                by_status: { open: 0, in_progress: 0, resolved: 0 },
+                by_type: {},
+                timeline: [],
+                timeline_labels: [],
+            });
+        }
+
+        const where = { workspaceId: { in: scopedWorkspaceIds } };
+
+        const [all, byType] = await Promise.all([
+            prisma.alert.findMany({
+                where,
+                select: { severity: true, status: true, type: true, createdAt: true },
+            }),
+            prisma.alert.groupBy({
+                by: ["type"],
+                where,
+                _count: { _all: true },
+            }),
+        ]);
+
+        const bySeverity = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
+        const byStatus = { open: 0, in_progress: 0, resolved: 0 };
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        let last7Days = 0;
+        let previous7Days = 0;
+        const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+
+        for (const a of all) {
+            const sev = String(a.severity || "").toLowerCase();
+            if (sev === "critical") bySeverity.critical += 1;
+            else if (sev === "high") bySeverity.high += 1;
+            else if (sev === "medium") bySeverity.medium += 1;
+            else if (sev === "low") bySeverity.low += 1;
+            else bySeverity.info += 1;
+
+            const stt = String(a.status || "").toLowerCase();
+            if (stt === "open") byStatus.open += 1;
+            else if (stt === "in_progress" || stt === "in-progress" || stt === "acknowledged") byStatus.in_progress += 1;
+            else if (stt === "resolved") byStatus.resolved += 1;
+
+            const t = new Date(a.createdAt);
+            if (Number.isNaN(t.getTime())) continue;
+            if (t >= sevenDaysAgo) last7Days += 1;
+            else if (t >= fourteenDaysAgo) previous7Days += 1;
+        }
+
+        const typeMap = {};
+        for (const row of byType) {
+            typeMap[row.type] = row._count._all;
+        }
+
+        const trendDelta = previous7Days === 0 ? (last7Days > 0 ? 1 : 0) : (last7Days - previous7Days) / previous7Days;
+        const { timeline, timelineLabels } = buildHourlyAlertTimeline(all);
+
+        return res.json({
+            total: all.length,
+            by_severity: bySeverity,
+            by_status: byStatus,
+            by_type: typeMap,
+            last_7_days: last7Days,
+            previous_7_days: previous7Days,
+            trend_delta: trendDelta,
+            timeline,
+            timeline_labels: timelineLabels,
+        });
+    } catch (error) {
+        logStructured("error", "Error fetching alerts summary:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 });

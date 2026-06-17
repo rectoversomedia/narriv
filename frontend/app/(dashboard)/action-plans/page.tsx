@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
@@ -28,8 +29,9 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
-import { getActionPlans, getActionQueue, submitActionPlanFeedback, type ActionPlanResponse, type ActionQueueRecord } from "@/lib/api-service";
+import { getActionPlanById, getActionQueue, getFeedbackAccuracy, submitActionPlanFeedback, getActionPlansMetrics, getActionPlanLearning, type ActionPlanResponse, type ActionQueueRecord } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
+import { CreateActionPlanModal } from "./components/create-action-plan-modal";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Priority = "high" | "medium" | "low" | "done";
@@ -65,108 +67,7 @@ const toneStyles: Record<Tone, ToneStyle> = {
   slate: { color: "#64748B", rgb: "100,116,139", soft: "bg-slate-100 text-slate-500" },
 };
 
-const actions: ActionItem[] = [
-  {
-    id: "act-001",
-    title: "Respond to payment delay complaints",
-    issue: "Payment Delay",
-    impact: "Reputation Risk",
-    response: "Sprint Response",
-    owner: "Arif Rahman",
-    role: "PR Manager",
-    due: "23 Mei 2025",
-    progress: 35,
-    priority: "high",
-    status: "active",
-    tone: "red",
-  },
-  {
-    id: "act-002",
-    title: "Investigate negative sentiment spike",
-    issue: "Service Disruption",
-    impact: "Reputation Risk",
-    response: "Immediate Response",
-    owner: "Dewi Lestari",
-    role: "Product Manager",
-    due: "22 Mei 2025",
-    progress: 40,
-    priority: "high",
-    status: "active",
-    tone: "red",
-  },
-  {
-    id: "act-003",
-    title: "Educate users about new features",
-    issue: "Customer Service",
-    impact: "Opportunity",
-    response: "User Education",
-    owner: "Rina Sari",
-    role: "Marketing Lead",
-    due: "30 Mei 2025",
-    progress: 60,
-    priority: "medium",
-    status: "active",
-    tone: "amber",
-  },
-  {
-    id: "act-004",
-    title: "Monitor promo conversations",
-    issue: "Promo Discount",
-    impact: "Opportunity",
-    response: "Monitoring",
-    owner: "M. Hidayat",
-    role: "Social Media Lead",
-    due: "28 Mei 2025",
-    progress: 45,
-    priority: "medium",
-    status: "in-progress",
-    tone: "amber",
-  },
-  {
-    id: "act-005",
-    title: "Evaluate FAQ and chatbot response",
-    issue: "Customer Service",
-    impact: "Efficiency",
-    response: "Improvement",
-    owner: "Anisa Nur",
-    role: "CX Manager",
-    due: "20 Mei 2025",
-    progress: 100,
-    priority: "low",
-    status: "done",
-    tone: "green",
-  },
-  {
-    id: "act-006",
-    title: "Improve mobile app stability",
-    issue: "Mobile App Issue",
-    impact: "Customer Trust",
-    response: "Product Fix",
-    owner: "Budi Santoso",
-    role: "Product Lead",
-    due: "25 Mei 2025",
-    progress: 100,
-    priority: "medium",
-    status: "done",
-    tone: "green",
-  },
-  {
-    id: "act-007",
-    title: "Update crisis communication plan",
-    issue: "Crisis Management",
-    impact: "Preparedness",
-    response: "Playbook Update",
-    owner: "Sarah A.",
-    role: "Comms Lead",
-    due: "18 Mei 2025",
-    progress: 100,
-    priority: "high",
-    status: "done",
-    tone: "green",
-  },
-];
-
-function buildActionItems(records: ActionQueueRecord[]): ActionItem[] {
+function buildActionItems(records: ActionQueueRecord[], t: (key: string) => string): ActionItem[] {
   return records.map((record, index) => {
     const severity = record.alert?.severity?.toLowerCase() ?? "medium";
     const priority: Exclude<Priority, "done"> = severity.includes("critical") || severity.includes("high") ? "high" : index % 3 === 0 ? "low" : "medium";
@@ -175,11 +76,11 @@ function buildActionItems(records: ActionQueueRecord[]): ActionItem[] {
     return {
       id: record.id,
       title: record.title,
-      issue: record.alert?.title || record.cluster?.title || "Action Plan",
-      impact: record.alert?.severity || record.cluster?.sentiment || "Review",
-      response: "Live API Plan",
-      owner: "Narriv Team",
-      role: "Action Owner",
+      issue: record.alert?.title || record.cluster?.title || t("livePlanLabel"),
+      impact: record.alert?.severity || record.cluster?.sentiment || t("liveReviewLabel"),
+      response: t("livePlanLabel"),
+      owner: t("liveOwnerLabel"),
+      role: t("liveRoleLabel"),
       due: new Date(record.createdAt).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }),
       progress: priority === "high" ? 35 : priority === "medium" ? 55 : 75,
       priority,
@@ -201,8 +102,10 @@ function Panel({ children, className }: { children: ReactNode; className?: strin
   );
 }
 
-function MetricCard({ label, value, helper, icon: Icon, tone, negative = false }: { label: string; value: string; helper: string; icon: LucideIcon; tone: Tone; negative?: boolean }) {
+function MetricCard({ label, value, helper, trend, icon: Icon, tone, negative = false }: { label: string; value: string; helper?: string; trend?: number; icon: LucideIcon; tone: Tone; negative?: boolean }) {
   const style = toneStyles[tone];
+  const isTrendNegative = trend != null && trend < 0;
+  const isNegativeDisplay = negative || isTrendNegative;
   return (
     <Panel>
       <CardContent className="flex min-h-[94px] items-center gap-4 p-4">
@@ -212,16 +115,24 @@ function MetricCard({ label, value, helper, icon: Icon, tone, negative = false }
         <span className="min-w-0">
           <span className="block text-[12px] font-extrabold text-[#68739F]">{label}</span>
           <span className="mt-1 block text-[27px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</span>
-          <span className={cn("mt-2 flex items-center gap-1 text-[11px] font-black", negative ? "text-[#EF4444]" : "text-[#10B981]")}>{negative ? "▲" : "▲"} {helper}</span>
+          {trend != null ? (
+            <span className={cn("mt-2 flex items-center gap-1 text-[11px] font-black", isNegativeDisplay ? "text-[#EF4444]" : "text-[#10B981]")}>
+              {trend >= 0 ? "▲" : "▼"} {helper}
+            </span>
+          ) : helper ? (
+            <span className={cn("mt-2 flex items-center gap-1 text-[11px] font-black", negative ? "text-[#EF4444]" : "text-[#10B981]")}>
+              {negative ? "▼" : "▲"} {helper}
+            </span>
+          ) : null}
         </span>
       </CardContent>
     </Panel>
   );
 }
 
-function StatusPill({ status }: { status: ActionStatus }) {
+function StatusPill({ status, t }: { status: ActionStatus; t: (key: string) => string }) {
   const style = status === "done" ? "bg-[#10B981]/12 text-[#0C9B69]" : status === "in-progress" ? "bg-[#F59E0B]/12 text-[#F59E0B]" : "bg-[#EF4444]/10 text-[#EF4444]";
-  const label = status === "done" ? "SELESAI" : status === "in-progress" ? "DALAM PROGRES" : "AKTIF";
+  const label = status === "done" ? t("statusDone") : status === "in-progress" ? t("statusInProgress") : t("statusActive");
   return <span className={cn("rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.08em]", style)}>{label}</span>;
 }
 
@@ -248,7 +159,7 @@ function ProgressLine({ value, tone }: { value: number; tone: Tone }) {
   );
 }
 
-function ActionCard({ action, selected, onSelect }: { action: ActionItem; selected: boolean; onSelect: (action: ActionItem) => void }) {
+function ActionCard({ action, selected, onSelect, t }: { action: ActionItem; selected: boolean; onSelect: (action: ActionItem) => void; t: (key: string) => string }) {
   const style = toneStyles[action.tone];
   return (
     <button
@@ -258,11 +169,11 @@ function ActionCard({ action, selected, onSelect }: { action: ActionItem; select
     >
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-[13px] font-black leading-5 text-[#101334]">{action.title}</h3>
-        <StatusPill status={action.status} />
+        <StatusPill status={action.status} t={t} />
       </div>
       <div className="mt-3 flex flex-col gap-1 text-[11px] font-semibold text-[#68739F]">
         <span>{action.issue}</span>
-        <span>Dampak: <b className="font-black" style={{ color: style.color }}>{action.impact}</b></span>
+        <span>{t("impactLabel")} <b className="font-black" style={{ color: style.color }}>{action.impact}</b></span>
         <span>{action.response}</span>
       </div>
       <div className="mt-4 flex items-center justify-between gap-3">
@@ -283,53 +194,75 @@ function ActionCard({ action, selected, onSelect }: { action: ActionItem; select
   );
 }
 
-function Lane({ title, count, tone, children }: { title: string; count: number; tone: Tone; children: ReactNode }) {
-  const style = toneStyles[tone];
+
+
+function FilterDropdown({ isOpen, onClose, filterPriority, setFilterPriority, filterStatus, setFilterStatus, t }: {
+  isOpen: boolean;
+  onClose: () => void;
+  filterPriority: string;
+  setFilterPriority: (v: string) => void;
+  filterStatus: string;
+  setFilterStatus: (v: string) => void;
+  t: (key: string) => string;
+}) {
+  if (!isOpen) return null;
+  const priorities = [
+    { value: "all", label: t("filterModal.allPriorities") },
+    { value: "high", label: t("filterModal.high") },
+    { value: "medium", label: t("filterModal.medium") },
+    { value: "low", label: t("filterModal.low") },
+  ];
+  const statuses = [
+    { value: "all", label: t("filterModal.allStatuses") },
+    { value: "active", label: t("filterModal.active") },
+    { value: "in-progress", label: t("filterModal.inProgress") },
+    { value: "done", label: t("filterModal.done") },
+  ];
+  const activeCount = (filterPriority !== "all" ? 1 : 0) + (filterStatus !== "all" ? 1 : 0);
   return (
-    <div className="rounded-[13px] border border-[#E8ECF5] bg-white p-3">
-      <div className="mb-3 flex items-center justify-between px-1">
-        <h2 className="flex items-center gap-1.5 text-[12px] font-black text-[#101334]">
-          <Flag size={13} style={{ color: style.color }} />
-          {title}
-        </h2>
-        <span className="rounded-full px-2.5 py-1 text-[10px] font-black" style={{ color: style.color, backgroundColor: `rgba(${style.rgb}, .10)` }}>{count}</span>
+    <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-[12px] border border-[#E6EAF2] bg-white p-4 shadow-[0_12px_40px_rgba(16,24,40,0.12)]">
+      <div className="flex items-center justify-between">
+        <h3 className="text-[13px] font-black text-[#101334]">{t("filterModal.title")}</h3>
+        {activeCount > 0 && (
+          <button type="button" onClick={() => { setFilterPriority("all"); setFilterStatus("all"); }} className="text-[11px] font-bold text-[#465FFF]">{t("filterModal.clearAll")}</button>
+        )}
       </div>
-      <div className="grid gap-3">{children}</div>
+      <div className="mt-4 space-y-3">
+        <div>
+          <p className="mb-2 text-[11px] font-bold text-[#68739F]">{t("filterModal.priority")}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {priorities.map((p) => (
+              <button key={p.value} type="button" onClick={() => setFilterPriority(p.value)} className={cn("rounded-full px-3 py-1.5 text-[10px] font-black transition", filterPriority === p.value ? "bg-[#465FFF] text-white" : "bg-[#F8FAFF] text-[#53608C] hover:bg-[#EEF0FF]")}>{p.label}</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="mb-2 text-[11px] font-bold text-[#68739F]">{t("filterModal.status")}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {statuses.map((s) => (
+              <button key={s.value} type="button" onClick={() => setFilterStatus(s.value)} className={cn("rounded-full px-3 py-1.5 text-[10px] font-black transition", filterStatus === s.value ? "bg-[#465FFF] text-white" : "bg-[#F8FAFF] text-[#53608C] hover:bg-[#EEF0FF]")}>{s.label}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <button type="button" onClick={onClose} className="mt-4 flex h-9 w-full items-center justify-center rounded-[8px] bg-[#465FFF] text-[12px] font-black text-white transition hover:brightness-105">{t("filterModal.apply")}</button>
     </div>
-  );
-}
-
-function PerformanceChart() {
-  const width = 480;
-  const height = 170;
-  const dates = ["13 Mei", "14 Mei", "15 Mei", "16 Mei", "17 Mei", "18 Mei", "19 Mei"];
-  const made = [12, 30, 25, 29, 31, 28, 30];
-  const done = [18, 20, 17, 20, 24, 21, 18];
-  const x = (index: number) => 38 + (index / (dates.length - 1)) * (width - 58);
-  const y = (value: number) => 18 + (1 - value / 40) * (height - 42);
-  const path = (values: number[]) => values.map((value, index) => `${index === 0 ? "M" : "L"} ${x(index)} ${y(value)}`).join(" ");
-
-  return (
-    <svg className="chart-enter chart-line-draw h-[190px] w-full" viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
-      {[0, 20, 40].map((tick) => (
-        <g key={tick}>
-          <line x1="34" x2={width - 12} y1={y(tick)} y2={y(tick)} stroke="#EEF1F7" />
-          <text x="22" y={y(tick) + 4} textAnchor="end" className="fill-[#8A94B8] text-[10px] font-bold">{tick}</text>
-        </g>
-      ))}
-      <path d={path(made)} fill="none" stroke="#465FFF" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.4" />
-      <path d={path(done)} fill="none" stroke="#10B981" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.4" />
-      {dates.map((date, index) => <text key={date} x={x(index)} y={height - 5} textAnchor="middle" className="fill-[#8A94B8] text-[9px] font-bold">{date}</text>)}
-    </svg>
   );
 }
 
 export default function ActionPlansPage() {
   const t = useTranslations("ActionPlans");
+  const tPagination = useTranslations("DashboardStates.pagination");
   const queryClient = useQueryClient();
   const toastHook = useToast();
-  const [filter, setFilter] = useState("Semua Tindakan");
-  const [selectedActionId, setSelectedActionId] = useState(actions[0].id);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedActionId, setSelectedActionId] = useState<string>("");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perfTimeRange, setPerfTimeRange] = useState<"7d" | "30d">("7d");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filterPriority, setFilterPriority] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
 
   const showToast = (message: string, type: "success" | "error" = "success") => {
     if (type === "error") { toastHook.error(message); return; }
@@ -340,9 +273,9 @@ export default function ActionPlansPage() {
     mutationFn: ({ actionPlanId, action, reason }: { actionPlanId: string; action: "accepted" | "edited" | "rejected"; reason?: string }) => submitActionPlanFeedback(actionPlanId, action, reason),
     onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: ["action-plans-latest"] });
-      showToast(result ? "Feedback berhasil dikirim." : "Feedback belum bisa dikirim.", result ? "success" : "error");
+      showToast(result ? t("toast.feedbackSent") : t("toast.feedbackFailed"), result ? "success" : "error");
     },
-    onError: () => showToast("Feedback belum bisa dikirim. Coba lagi.", "error"),
+    onError: () => showToast(t("toast.feedbackRetry"), "error"),
   });
   const actionQueueQuery = useQuery({
     queryKey: ["action-queue", { limit: 20 }],
@@ -350,22 +283,61 @@ export default function ActionPlansPage() {
     staleTime: 30 * 1000,
   });
   const actionPlanQuery = useQuery({
-    queryKey: ["action-plans-latest"],
-    queryFn: getActionPlans,
+    queryKey: ["action-plan", selectedActionId],
+    queryFn: () => getActionPlanById(selectedActionId),
+    enabled: !!selectedActionId,
     staleTime: 30 * 1000,
   });
-  const liveActions = actionQueueQuery.data?.data ? buildActionItems(actionQueueQuery.data.data) : [];
+  const metricsQuery = useQuery({
+    queryKey: ["action-plans-metrics"],
+    queryFn: () => getActionPlansMetrics(),
+    staleTime: 60 * 1000,
+  });
+  const feedbackAccuracyQuery = useQuery({
+    queryKey: ["feedback-accuracy"],
+    queryFn: () => getFeedbackAccuracy(),
+    staleTime: 60 * 1000,
+  });
+
+
+  const accuracy = feedbackAccuracyQuery.data;
+  const accuracyScorePercent = accuracy?.accuracy_score != null ? Math.round(accuracy.accuracy_score * 100) : null;
+  const acceptanceRatePercent = accuracy ? Math.round(accuracy.acceptance_rate * 100) : null;
+  const rejectionRatePercent = accuracy ? Math.round(accuracy.rejection_rate * 100) : null;
+  const liveActions = actionQueueQuery.data?.data ? buildActionItems(actionQueueQuery.data.data, t) : [];
   const isQueueUnavailable = actionQueueQuery.data === null;
   const isPlanUnavailable = actionPlanQuery.data === null;
-  const actionItems = liveActions.length > 0 || actionQueueQuery.data ? liveActions : actions;
-  const selectedAction = actionItems.find((action) => action.id === selectedActionId) ?? actionItems[0] ?? actions[0];
+  const actionItems = liveActions;
+
+  const filteredItems = actionItems.filter((action) => {
+    const matchesSearch = searchQuery.trim() === "" || action.title.toLowerCase().includes(searchQuery.toLowerCase()) || action.issue.toLowerCase().includes(searchQuery.toLowerCase());
+    if (!matchesSearch) return false;
+    if (filterPriority !== "all" && action.priority !== filterPriority) return false;
+    if (filterStatus !== "all" && action.status !== filterStatus) return false;
+    return true;
+  });
+
+  const pageSize = 8;
+  const totalFilteredItems = filteredItems.length;
+  const totalPages = Math.max(1, Math.ceil(totalFilteredItems / pageSize));
+  const validPage = Math.min(Math.max(1, currentPage), totalPages > 0 ? totalPages : 1);
+  const paginatedItems = filteredItems.slice((validPage - 1) * pageSize, validPage * pageSize);
+
+  const selectedAction = selectedActionId ? filteredItems.find((action) => action.id === selectedActionId) || null : null;
+  
+  const actionPlanLearningQuery = useQuery({
+    queryKey: ["actionPlanLearning", selectedAction?.id],
+    queryFn: () => selectedAction ? getActionPlanLearning(selectedAction.id) : null,
+    enabled: !!selectedAction?.id,
+  });
   const latestPlan = actionPlanQuery.data;
   const detailSteps = hasActionPlanData(latestPlan) && latestPlan?.plan?.length ? latestPlan.plan : null;
 
-  const highActions = actionItems.filter((action) => action.status !== "done" && action.priority === "high");
-  const mediumActions = actionItems.filter((action) => action.status !== "done" && action.priority === "medium");
-  const lowActions = actionItems.filter((action) => action.priority === "low");
-  const doneActions = actionItems.filter((action) => action.status === "done" && action.priority !== "low");
+  const highActions = filteredItems.filter((action) => action.status !== "done" && action.priority === "high");
+  const activeCount = actionItems.filter((a) => a.status === "active").length;
+  const inProgressCount = actionItems.filter((a) => a.status === "in-progress").length;
+  const completedCount = actionItems.filter((a) => a.status === "done").length;
+  const needsAttentionCount = highActions.length;
 
   return (
     <div className="mx-auto flex max-w-[1600px] flex-col gap-4 pb-6 text-[#101334]">
@@ -374,65 +346,86 @@ export default function ActionPlansPage() {
           <h1 className="text-[31px] font-black tracking-[-0.045em] text-[#060A23]">{t("title")}</h1>
           <p className="mt-2 text-[14px] font-semibold text-[#68739F]">{t("desc")}</p>
         </div>
-        <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#3345F5] px-4 text-[13px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] transition hover:brightness-105 sm:w-fit">
+        <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#3345F5] px-4 text-[13px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] transition hover:brightness-105 sm:w-fit">
           <Plus size={15} />
           {t("newAction")}
           <ChevronDown size={13} />
         </button>
       </header>
 
+      <CreateActionPlanModal open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen} />
+
       <section className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-5">
-        <MetricCard label="Tindakan Aktif" value="12" helper="20% vs 7 hari lalu" icon={Target} tone="blue" />
-        <MetricCard label="Dalam Progres" value="7" helper="18% vs 7 hari lalu" icon={Sparkles} tone="amber" />
-        <MetricCard label="Selesai" value="28" helper="25% vs 7 hari lalu" icon={Check} tone="green" />
-        <MetricCard label="Perlu Perhatian" value="3" helper="25% vs 7 hari lalu" icon={Flag} tone="red" negative />
-        <MetricCard label="Rata-rata Resolusi" value="2h 34m" helper="12% vs 7 hari lalu" icon={Clock3} tone="blue" />
+        <MetricCard label={t("metricActiveActions")} value={metricsQuery.data ? String(metricsQuery.data.active.value) : String(activeCount)} trend={metricsQuery.data?.active.trend} helper={metricsQuery.data ? t("metricTrendHelper", { trend: Math.abs(metricsQuery.data.active.trend) }) : t("metricActiveHelper", { count: activeCount })} icon={Target} tone="blue" />
+        <MetricCard label={t("metricInProgress")} value={metricsQuery.data ? String(metricsQuery.data.inProgress.value) : String(inProgressCount)} trend={metricsQuery.data?.inProgress.trend} helper={metricsQuery.data ? t("metricTrendHelper", { trend: Math.abs(metricsQuery.data.inProgress.trend) }) : t("metricInProgressHelper", { count: inProgressCount })} icon={Sparkles} tone="amber" />
+        <MetricCard label={t("metricCompleted")} value={metricsQuery.data ? String(metricsQuery.data.done.value) : String(completedCount)} trend={metricsQuery.data?.done.trend} helper={metricsQuery.data ? t("metricTrendHelper", { trend: Math.abs(metricsQuery.data.done.trend) }) : t("metricCompletedHelper", { count: completedCount })} icon={Check} tone="green" />
+        <MetricCard label={t("metricNeedsAttention")} value={metricsQuery.data ? String(metricsQuery.data.needsAttention.value) : String(needsAttentionCount)} trend={metricsQuery.data?.needsAttention.trend} helper={metricsQuery.data ? t("metricTrendHelper", { trend: Math.abs(metricsQuery.data.needsAttention.trend) }) : t("metricNeedsAttentionHelper", { count: needsAttentionCount })} icon={Flag} tone="red" negative={needsAttentionCount > 0} />
+        <MetricCard label={t("metricAvgResolution")} value={metricsQuery.data ? String(metricsQuery.data.resolution.value) : (actionItems.length > 0 ? String(actionItems.length) : "—")} trend={metricsQuery.data?.resolution.trend} helper={metricsQuery.data ? t("metricTrendHelper", { trend: Math.abs(metricsQuery.data.resolution.trend) }) : t("metricAvgResolutionHelper", { count: actionItems.length })} icon={Clock3} tone="blue" />
       </section>
 
-      {isQueueUnavailable ? <DashboardErrorState title="Daftar tindakan live belum bisa dimuat" description="API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan tindakan contoh." onRetry={() => void actionQueueQuery.refetch()} minHeight="min-h-[150px]" /> : null}
-      {isPlanUnavailable ? <DashboardErrorState title="Detail tindakan live belum bisa dimuat" description="Panel detail tetap memakai data contoh sampai backend tersedia." onRetry={() => void actionPlanQuery.refetch()} minHeight="min-h-[150px]" /> : null}
+      {isQueueUnavailable ? <DashboardErrorState title={t("queueErrorTitle")} description={t("queueErrorDesc")} onRetry={() => void actionQueueQuery.refetch()} minHeight="min-h-[150px]" /> : null}
+      {isPlanUnavailable ? <DashboardErrorState title={t("planErrorTitle")} description={t("planErrorDesc")} onRetry={() => void actionPlanQuery.refetch()} minHeight="min-h-[150px]" /> : null}
 
       <Panel>
         <CardContent className="p-3">
-          <div className="flex flex-col gap-3 border-b border-[#EEF1F7] pb-3 xl:flex-row xl:items-center xl:justify-between">
-            <div className="flex flex-wrap gap-1.5">
-              {t.raw("tabs").map((tab: string) => (
-                <button key={tab} type="button" onClick={() => setFilter(tab)} className={cn("h-10 rounded-[8px] px-4 text-[12px] font-black transition", filter === tab ? "bg-[#EEF0FF] text-[#465FFF]" : "text-[#53608C] hover:bg-[#F8FAFF]")}>{tab}</button>
-              ))}
-            </div>
+          <div className="flex flex-col gap-3 border-b border-[#EEF1F7] pb-3 xl:flex-row xl:items-center xl:justify-end">
             <div className="flex w-full flex-wrap gap-3 xl:w-auto">
               <label className="flex h-10 w-full min-w-[240px] items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-[#FBFCFF] px-3 text-[#8A94B8] sm:w-[260px]">
                 <Search size={15} />
-                <input className="min-w-0 flex-1 bg-transparent text-[12px] font-semibold outline-none placeholder:text-[#8A94B8]" placeholder={t("search")} />
+                <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="min-w-0 flex-1 bg-transparent text-[12px] font-semibold outline-none placeholder:text-[#8A94B8]" placeholder={t("search")} />
               </label>
-              <button type="button" className="flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] sm:flex-none"><Funnel size={14} />{t("filter")}</button>
-              <button type="button" className="flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] sm:flex-none">{t("sort")}<ChevronDown size={13} /></button>
+              <div className="relative">
+                <button type="button" onClick={() => setIsFilterOpen(!isFilterOpen)} className={cn("flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border px-4 text-[12px] font-black sm:flex-none", isFilterOpen || filterPriority !== "all" || filterStatus !== "all" ? "border-[#465FFF] bg-[#465FFF]/5 text-[#465FFF]" : "border-[#DDE3EF] bg-white text-[#101334]")}><Funnel size={14} />{t("filter")}{(filterPriority !== "all" || filterStatus !== "all") ? <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#465FFF] text-[8px] text-white">{(filterPriority !== "all" ? 1 : 0) + (filterStatus !== "all" ? 1 : 0)}</span> : null}</button>
+                <FilterDropdown isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} filterPriority={filterPriority} setFilterPriority={setFilterPriority} filterStatus={filterStatus} setFilterStatus={setFilterStatus} t={t} />
+              </div>
             </div>
           </div>
 
           {actionQueueQuery.isPending ? (
             <PanelSkeleton className="mt-3" />
           ) : actionQueueQuery.data && liveActions.length === 0 ? (
-            <DashboardEmptyState title="Belum ada tindakan live" description="Backend berhasil dihubungi, tetapi belum ada action plan yang dibuat." icon="inbox" minHeight="min-h-[360px]" />
+            <DashboardEmptyState title={t("emptyTitle")} description={t("emptyDesc")} icon="inbox" minHeight="min-h-[360px]" />
           ) : (
-            <div className="mt-3 grid gap-4 xl:grid-cols-4">
-              <Lane title={t("lanes.high")} count={highActions.length} tone="red">
-                {highActions.map((action) => <ActionCard key={action.id} action={action} selected={selectedAction.id === action.id} onSelect={(item) => setSelectedActionId(item.id)} />)}
-                <button type="button" className="text-center text-[12px] font-black text-[#465FFF]">{t("viewAll")} ({highActions.length})</button>
-              </Lane>
-              <Lane title={t("lanes.medium")} count={mediumActions.length} tone="amber">
-                {mediumActions.map((action) => <ActionCard key={action.id} action={action} selected={selectedAction.id === action.id} onSelect={(item) => setSelectedActionId(item.id)} />)}
-                <button type="button" className="text-center text-[12px] font-black text-[#465FFF]">{t("viewAll")} ({mediumActions.length})</button>
-              </Lane>
-              <Lane title={t("lanes.low")} count={lowActions.length} tone="green">
-                {lowActions.map((action) => <ActionCard key={action.id} action={action} selected={selectedAction.id === action.id} onSelect={(item) => setSelectedActionId(item.id)} />)}
-                <button type="button" className="text-center text-[12px] font-black text-[#465FFF]">{t("viewAll")} ({lowActions.length})</button>
-              </Lane>
-              <Lane title={t("lanes.done")} count={doneActions.length} tone="slate">
-                {doneActions.slice(0, 2).map((action) => <ActionCard key={action.id} action={action} selected={selectedAction.id === action.id} onSelect={(item) => setSelectedActionId(item.id)} />)}
-                <button type="button" className="text-center text-[12px] font-black text-[#465FFF]">{t("viewAll")} ({doneActions.length})</button>
-              </Lane>
-            </div>
+            <>
+              <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {paginatedItems.map((action) => (
+                  <ActionCard key={action.id} action={action} selected={selectedAction?.id === action.id} onSelect={(item) => setSelectedActionId(item.id)} t={t} />
+                ))}
+              </div>
+              {totalFilteredItems > pageSize && (
+                <div className="mt-6 flex items-center justify-between border-t border-[#E8ECF5] pt-4">
+                  <span className="text-[12px] font-bold text-[#68739F]">
+                    {tPagination("summary", {
+                      start: (validPage - 1) * pageSize + 1,
+                      end: Math.min(validPage * pageSize, totalFilteredItems),
+                      total: totalFilteredItems,
+                      label: "actions",
+                    })}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={validPage === 1}
+                      className="flex h-8 items-center justify-center rounded-[6px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#53608C] transition hover:bg-[#F4F6FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {tPagination("prev")}
+                    </button>
+                    <span className="text-[12px] font-bold text-[#101334]">
+                      {validPage} / {totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={validPage === totalPages}
+                      className="flex h-8 items-center justify-center rounded-[6px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#53608C] transition hover:bg-[#F4F6FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {tPagination("next")}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Panel>
@@ -447,37 +440,61 @@ export default function ActionPlansPage() {
                 <p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("detailDesc")}</p>
               </div>
             </div>
+            {!selectedAction ? (
+              <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDF1F7]">
+                  <Sparkles size={18} className="text-[#8B95B8]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-[#58648C]">{t("detailEmptyTitle")}</p>
+                  <p className="mt-1 text-[10px] font-semibold text-[#8B95B8]">{t("detailEmptyDesc")}</p>
+                </div>
+              </div>
+            ) : actionPlanQuery.isPending ? (
+              <PanelSkeleton className="mt-6" />
+            ) : !hasActionPlanData(latestPlan) ? (
+              <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDF1F7]">
+                  <Sparkles size={18} className="text-[#8B95B8]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-[#58648C]">{t("detailNoPlanTitle")}</p>
+                  <p className="mt-1 text-[10px] font-semibold text-[#8B95B8]">{t("detailNoPlanDesc")}</p>
+                </div>
+              </div>
+            ) : (<>
             <div className="mt-5 flex flex-wrap gap-2">
-              <span className="rounded-full bg-[#EF4444]/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-[#EF4444]">High Priority</span>
-              <span className="rounded-full bg-[#EF4444]/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-[#EF4444]">Aktif</span>
-              <span className="rounded-full bg-[#EEF1F7] px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-[#53608C]">Dibuat 23 Mei 2025</span>
+              <span className={cn("rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em]", selectedAction.priority === "high" ? "bg-[#EF4444]/10 text-[#EF4444]" : selectedAction.priority === "medium" ? "bg-[#F59E0B]/12 text-[#F59E0B]" : "bg-[#10B981]/12 text-[#0C9B69]")}>{t(`lanes.${selectedAction.priority}`)}</span>
+              <span className={cn("rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em]", selectedAction.status === "active" ? "bg-[#EF4444]/10 text-[#EF4444]" : selectedAction.status === "in-progress" ? "bg-[#F59E0B]/12 text-[#F59E0B]" : "bg-[#10B981]/12 text-[#0C9B69]")}>{selectedAction.status === "active" ? t("statusActive") : selectedAction.status === "in-progress" ? t("statusInProgress") : t("statusDone")}</span>
+              <span className="rounded-full bg-[#EEF1F7] px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-[#53608C]">{selectedAction.due}</span>
             </div>
             <h3 className="mt-4 text-[18px] font-black text-[#101334]">{selectedAction.title}</h3>
-            <p className="mt-3 text-[12px] font-semibold leading-relaxed text-[#53608C]">{latestPlan?.inputNarrative || "Siapkan respons publik yang empatik dan solutif, pastikan komunikasi konsisten di semua kanal bantuan. Pantau perkembangan sentimen setelah respons dikirim."}</p>
+            <p className="mt-3 text-[12px] font-semibold leading-relaxed text-[#53608C]">{latestPlan?.inputNarrative}</p>
             <div className="mt-5 grid gap-3 sm:grid-cols-4">
-              {[selectedAction.issue, selectedAction.impact, latestPlan?.workflowStatus || "4 jam", selectedAction.due].map((item, index) => (
-                <div key={item} className="rounded-[10px] bg-[#FBFCFF] p-3">
-                  <p className="text-[10px] font-black text-[#8A94B8]">{["Kategori", "Dampak", "SLA", "Jatuh Tempo"][index]}</p>
+              {[selectedAction.issue, selectedAction.impact, latestPlan?.workflowStatus, selectedAction.due].map((item, index) => (
+                <div key={index} className="rounded-[10px] bg-[#FBFCFF] p-3">
+                  <p className="text-[10px] font-black text-[#8A94B8]">{[t("categoryLabel"), t("impactFieldLabel"), t("slaLabel"), t("dueDateLabel")][index]}</p>
                   <p className="mt-1 text-[11px] font-black text-[#465FFF]">{item}</p>
                 </div>
               ))}
             </div>
             <div className="mt-5">
-              <p className="text-[12px] font-black text-[#101334]">Rekomendasi Langkah AI</p>
+              <p className="text-[12px] font-black text-[#101334]">{t("aiStepsTitle")}</p>
               <div className="mt-2 grid gap-2">
-                {(detailSteps ?? [["Siapkan pernyataan resmi untuk publik", "PR Team"], ["Update FAQ terkait payment delay", "Customer Support"], ["Broadcast di semua kanal sosial", "Social Media Team"]]).slice(0, 3).map(([item, owner], index) => (
+                {(detailSteps ?? []).slice(0, 3).map(([item, owner]) => (
                   <div key={item} className="flex items-center justify-between rounded-[8px] border border-[#E8ECF5] px-3 py-2 text-[12px] font-semibold text-[#53608C]">
                     <span className="flex items-center gap-2"><CircleCheck size={16} className="text-[#10B981]" />{item}</span>
-                    <span className="text-[10px] font-black text-[#68739F]">{owner || ["PR Team", "Customer Support", "Social Media Team"][index]}</span>
+                    <span className="text-[10px] font-black text-[#68739F]">{owner}</span>
                   </div>
                 ))}
               </div>
             </div>
-            <button type="button" onClick={() => { if (latestPlan?.id) feedbackMutation.mutate({ actionPlanId: latestPlan.id, action: "accepted" }); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#F8FAFF] text-[12px] font-black text-[#465FFF] disabled:opacity-50">Lihat Rencana Lengkap <ChevronRight size={14} /></button>
+            <button type="button" onClick={() => { if (latestPlan?.id) feedbackMutation.mutate({ actionPlanId: latestPlan.id, action: "accepted" }); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#F8FAFF] text-[12px] font-black text-[#465FFF] disabled:opacity-50 transition hover:bg-[#465FFF]/5">{t("viewFullPlan")} <ChevronRight size={14} /></button>
             <div className="mt-3 flex gap-2">
-              <button type="button" onClick={() => { if (latestPlan?.id) feedbackMutation.mutate({ actionPlanId: latestPlan.id, action: "accepted" }); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[#10B981]/10 text-[11px] font-black text-[#0C9B69] transition hover:bg-[#10B981]/20 disabled:opacity-50"><Check size={14} /> Setuju</button>
-              <button type="button" onClick={() => { if (latestPlan?.id) feedbackMutation.mutate({ actionPlanId: latestPlan.id, action: "rejected" }); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[#EF4444]/10 text-[11px] font-black text-[#EF4444] transition hover:bg-[#EF4444]/20 disabled:opacity-50"><X size={14} /> Tolak</button>
+              <button type="button" onClick={() => { if (latestPlan?.id) feedbackMutation.mutate({ actionPlanId: latestPlan.id, action: "accepted" }); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[#10B981]/10 text-[11px] font-black text-[#0C9B69] transition hover:bg-[#10B981]/20 disabled:opacity-50"><Check size={14} /> {t("approve")}</button>
+              <button type="button" onClick={() => { if (latestPlan?.id) feedbackMutation.mutate({ actionPlanId: latestPlan.id, action: "rejected" }); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[#EF4444]/10 text-[11px] font-black text-[#EF4444] transition hover:bg-[#EF4444]/20 disabled:opacity-50"><X size={14} /> {t("reject")}</button>
             </div>
+            </>)}
           </CardContent>
         </Panel>
 
@@ -491,18 +508,49 @@ export default function ActionPlansPage() {
                   <p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("performanceDesc")}</p>
                 </div>
               </div>
-              <button type="button" className="flex h-9 items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#53608C]">7 Hari Terakhir <ChevronDown size={12} /></button>
+              <button type="button" onClick={() => setPerfTimeRange(perfTimeRange === "7d" ? "30d" : "7d")} className="flex h-9 items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#53608C] transition hover:bg-[#F8FAFF]">{perfTimeRange === "7d" ? t("last7Days") : t("last30Days")} <ChevronDown size={12} /></button>
             </div>
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-[10px] bg-[#FBFCFF] p-4"><p className="text-[11px] font-bold text-[#8A94B8]">Rata-rata Resolusi</p><p className="mt-1 text-[22px] font-black text-[#101334]">2h 34m</p><p className="text-[11px] font-black text-[#10B981]">▼ 12%</p></div>
-              <div className="rounded-[10px] bg-[#FBFCFF] p-4"><p className="text-[11px] font-bold text-[#8A94B8]">Tingkat Penyelesaian</p><p className="mt-1 text-[22px] font-black text-[#101334]">82%</p><p className="text-[11px] font-black text-[#10B981]">▲ 15%</p></div>
-              <div className="rounded-[10px] bg-[#FBFCFF] p-4"><p className="text-[11px] font-bold text-[#8A94B8]">Tepat Waktu</p><p className="mt-1 text-[22px] font-black text-[#101334]">78%</p><p className="text-[11px] font-black text-[#10B981]">▲ 9%</p></div>
-            </div>
-            <div className="mt-5">
-              <div className="mb-2 flex items-center justify-between text-[12px] font-black text-[#101334]"><span>Tindakan Dibuat vs Selesai</span><span className="flex gap-3 text-[10px] text-[#53608C]"><b className="text-[#465FFF]">Dibuat</b><b className="text-[#10B981]">Selesai</b></span></div>
-              <PerformanceChart />
-            </div>
-            <button type="button" className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#F8FAFF] text-[12px] font-black text-[#465FFF]">Lihat Analytics Lengkap <ChevronRight size={14} /></button>
+            {!selectedAction ? (
+              <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDF1F7]">
+                  <BarChart3 size={18} className="text-[#8B95B8]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-[#58648C]">{t("performanceEmptyTitle")}</p>
+                  <p className="mt-1 text-[10px] font-semibold text-[#8B95B8]">{t("performanceEmptyDesc")}</p>
+                </div>
+              </div>
+            ) : feedbackAccuracyQuery.isPending ? (
+              <PanelSkeleton className="mt-5" />
+            ) : (
+              <>
+                <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-[10px] bg-[#FBFCFF] p-4"><p className="text-[11px] font-bold text-[#8A94B8]">{t("aiAccuracy")}</p><p className="mt-1 text-[22px] font-black text-[#101334]">{accuracyScorePercent != null ? `${accuracyScorePercent}%` : "—"}</p><p className="text-[11px] font-black text-[#8A94B8]">{t("aiAccuracyHelper")}</p></div>
+                  <div className="rounded-[10px] bg-[#FBFCFF] p-4"><p className="text-[11px] font-bold text-[#8A94B8]">{t("acceptanceRate")}</p><p className="mt-1 text-[22px] font-black text-[#101334]">{acceptanceRatePercent != null ? `${acceptanceRatePercent}%` : "—"}</p><p className="text-[11px] font-black text-[#10B981]">{t("acceptanceRateHelper")}</p></div>
+                  <div className="rounded-[10px] bg-[#FBFCFF] p-4"><p className="text-[11px] font-bold text-[#8A94B8]">{t("rejectionRate")}</p><p className="mt-1 text-[22px] font-black text-[#101334]">{rejectionRatePercent != null ? `${rejectionRatePercent}%` : "—"}</p><p className="text-[11px] font-black text-[#EF4444]">{t("rejectionRateHelper")}</p></div>
+                </div>
+                {accuracy && Object.keys(accuracy.by_type).length > 0 ? (
+                  <div className="mt-5">
+                    <div className="mb-2 flex items-center justify-between text-[12px] font-black text-[#101334]"><span>{t("accuracyPerCategory")}</span><span className="flex gap-3 text-[10px] text-[#53608C]"><b className="text-[#465FFF]">{t("total")}</b><b className="text-[#10B981]">{t("accuracy")}</b></span></div>
+                    <div className="grid gap-2">
+                      {Object.entries(accuracy.by_type).map(([key, value]) => (
+                        <div key={key} className="flex items-center justify-between rounded-[8px] border border-[#E9EDF5] bg-white px-3 py-2 text-[11px]">
+                          <span className="font-bold capitalize text-[#101334]">{key.replace(/_/g, " ")}</span>
+                          <span className="flex items-center gap-3 text-[#53608C]"><span className="font-black text-[#465FFF]">{value.total}</span><span className="font-black text-[#10B981]">{Math.round(value.accuracy * 100)}%</span></span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-5 flex flex-col items-center justify-center gap-2 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-6 text-center">
+                    <BarChart3 size={20} className="text-[#A0ABC0]" />
+                    <p className="text-[12px] font-bold text-[#58648C]">{t("noFeedback")}</p>
+                    <p className="text-[10px] font-semibold text-[#8B95B8]">{t("noFeedbackDesc")}</p>
+                  </div>
+                )}
+              </>
+            )}
+            <Link href="/alerts" className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#F8FAFF] text-[12px] font-black text-[#465FFF] transition hover:bg-[#465FFF]/5">{t("viewFullAnalytics")} <ChevronRight size={14} /></Link>
           </CardContent>
         </Panel>
 
@@ -515,28 +563,52 @@ export default function ActionPlansPage() {
                 <p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("learningDesc")}</p>
               </div>
             </div>
-            <div className="mt-5">
-              <p className="text-[13px] font-black text-[#101334]">Insight Utama</p>
-              <div className="mt-3 grid gap-2.5">
-                {[
-                  ["Topik payment delay memiliki resolusi paling lama", "Rata-rata 4j 12m", TrendingDown],
-                  ["Tindakan dengan template memiliki tingkat sukses lebih tinggi", "+28% lebih efektif", TrendingUp],
-                  ["Komunikasi cepat di 1 jam pertama menurunkan sentimen negatif", "-32% sentimen negatif", Timer],
-                ].map(([title, value, Icon]) => {
-                  const TypedIcon = Icon as LucideIcon;
-                  return <div key={title as string} className="flex items-center justify-between gap-4 rounded-[9px] bg-[#FBFCFF] p-3 text-[11px] font-semibold text-[#53608C]"><span className="flex items-center gap-2"><TypedIcon size={15} className="text-[#465FFF]" />{title as string}</span><b className="shrink-0 text-[#53608C]">{value as string}</b></div>;
-                })}
+            {!selectedAction ? (
+              <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDF1F7]">
+                  <Lightbulb size={18} className="text-[#8B95B8]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-[#58648C]">{t("learningEmptyTitle")}</p>
+                  <p className="mt-1 text-[10px] font-semibold text-[#8B95B8]">{t("learningEmptyDesc")}</p>
+                </div>
               </div>
-            </div>
-            <div className="mt-5">
-              <p className="text-[13px] font-black text-[#101334]">Template Tindakan Populer</p>
-              <div className="mt-3 grid gap-2.5">
-                {["Crisis Response Template", "Customer Issue Response", "Promo Communication Plan"].map((template, index) => (
-                  <div key={template} className="flex items-center justify-between rounded-[9px] border border-[#EEF1F7] px-3 py-2.5 text-[12px] font-semibold text-[#53608C]"><span className="flex items-center gap-2"><ListChecks size={15} className="text-[#EF4444]" />{template}</span><span className="text-[10px] font-black">Digunakan {index === 0 ? "24x" : index === 1 ? "18x" : "12x"}</span></div>
-                ))}
-              </div>
-            </div>
-            <button type="button" className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#F8FAFF] text-[12px] font-black text-[#465FFF]">Kelola Semua Template <ChevronRight size={14} /></button>
+            ) : actionPlanLearningQuery.isPending ? (
+              <PanelSkeleton className="mt-5" />
+            ) : (
+              <>
+                {actionPlanLearningQuery.data?.insights && actionPlanLearningQuery.data.insights.length > 0 && (
+                  <div className="mt-5">
+                    <p className="text-[13px] font-black text-[#101334]">{t("keyInsights")}</p>
+                    <div className="mt-3 grid gap-2.5">
+                      {actionPlanLearningQuery.data.insights.map((insight) => {
+                        const Icon = insight.icon === "trending-down" ? TrendingDown : insight.icon === "trending-up" ? TrendingUp : Timer;
+                        return (
+                          <div key={insight.titleKey} className="flex items-center justify-between gap-4 rounded-[9px] bg-[#FBFCFF] p-3 text-[11px] font-semibold text-[#53608C]">
+                            <span className="flex items-center gap-2"><Icon size={15} className="text-[#465FFF]" />{t(insight.titleKey)}</span>
+                            <b className="shrink-0 text-[#53608C]">{t(insight.valueKey)}</b>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                {actionPlanLearningQuery.data?.templates && actionPlanLearningQuery.data.templates.length > 0 && (
+                  <div className="mt-5">
+                    <p className="text-[13px] font-black text-[#101334]">{t("popularTemplates")}</p>
+                    <div className="mt-3 grid gap-2.5">
+                      {actionPlanLearningQuery.data.templates.map((template) => (
+                        <div key={template.nameKey} className="flex items-center justify-between rounded-[9px] border border-[#EEF1F7] px-3 py-2.5 text-[12px] font-semibold text-[#53608C]">
+                          <span className="flex items-center gap-2"><ListChecks size={15} className="text-[#EF4444]" />{t(template.nameKey)}</span>
+                          <span className="text-[10px] font-black">{t("templateUsed", { count: template.usageCount + "x" })}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <Link href="/workspace/settings" className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#F8FAFF] text-[12px] font-black text-[#465FFF] transition hover:bg-[#465FFF]/5">{t("manageAllTemplates")} <ChevronRight size={14} /></Link>
+              </>
+            )}
           </CardContent>
         </Panel>
       </section>

@@ -1,6 +1,7 @@
 import prisma from "../../prisma.js";
 import { getUserWorkspaceIds } from "../../lib/workspace-access.js";
 import { notificationEvents, globalEvents } from "./app-notifications.events.js";
+import { logStructured } from "../../lib/logger.js";
 
 // Fetch paginated notifications
 export const getNotifications = async (req, res) => {

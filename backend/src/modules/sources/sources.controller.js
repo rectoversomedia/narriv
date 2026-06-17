@@ -2,6 +2,8 @@ import prisma from "../../prisma.js";
 import { getUserWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { invalidateWorkspaceCache } from "../../lib/cache.js";
 import { recordAuditLog } from "../../lib/audit.js";
+import { logStructured } from "../../lib/logger.js";
+import { APIFY_ACTOR_PRESETS, buildSourceSeed, buildWebScraperSeeds, listSourcePresets } from "../ingestion/actor-presets.js";
 
 const VALID_SOURCE_TYPES = ["news", "web", "forum", "social", "video", "podcast"];
 
@@ -21,7 +23,14 @@ export const getSources = async (req, res) => {
         const search = req.query.search ? String(req.query.search).trim() : null;
 
         const where = { workspaceId: { in: workspaceIds } };
+        if (type === "deleted") {
+            return res.json({
+                data: [],
+                pagination: { page, limit, total: 0, totalPages: 0 }
+            });
+        }
         if (type) where.type = type;
+        else where.type = { not: "deleted" };
         if (isActive !== null) where.isActive = isActive;
         if (search) {
             where.OR = [
@@ -111,14 +120,14 @@ export const createSource = async (req, res) => {
     }
 };
 
-export const updateSource = async (req, res) => {
+    export const updateSource = async (req, res) => {
     try {
         const { sourceId } = req.params;
         const { name, type, actorId, inputConfig, isActive } = req.body;
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
 
         const existingSource = await prisma.source.findFirst({
-            where: { id: sourceId, workspaceId: { in: workspaceIds } }
+            where: { id: sourceId, workspaceId: { in: workspaceIds }, type: { not: "deleted" } }
         });
 
         if (!existingSource) {
@@ -173,7 +182,7 @@ export const deleteSource = async (req, res) => {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
 
         const existingSource = await prisma.source.findFirst({
-            where: { id: sourceId, workspaceId: { in: workspaceIds } }
+            where: { id: sourceId, workspaceId: { in: workspaceIds }, type: { not: "deleted" } }
         });
 
         if (!existingSource) {
@@ -182,7 +191,7 @@ export const deleteSource = async (req, res) => {
 
         const source = await prisma.source.update({
             where: { id: sourceId },
-            data: { isActive: false }
+            data: { isActive: false, type: "deleted" }
         });
 
         await invalidateWorkspaceCache(existingSource.workspaceId);
@@ -196,5 +205,97 @@ export const deleteSource = async (req, res) => {
     } catch (error) {
         logStructured("error", "Error deleting source:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+export const getSourcePresets = async (req, res) => {
+    const keyword = req.query.keyword || "Narriv";
+    return res.json(listSourcePresets(keyword));
+};
+
+export const bootstrapDefaultSources = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const {
+            workspaceId,
+            keyword = "Narriv",
+            includeActors = true,
+            includeWebScrapers = true,
+            tiers = [1, 2],
+            presetKeys,
+            maxWebItems = 20,
+        } = req.body;
+        const targetWorkspaceId = await resolveWorkspaceIdForUser(userId, workspaceId);
+
+        if (!targetWorkspaceId) {
+            return res.status(403).json({ error: "Workspace access denied" });
+        }
+
+        const selectedTierSet = new Set(tiers);
+        const selectedKeySet = Array.isArray(presetKeys) && presetKeys.length > 0 ? new Set(presetKeys) : null;
+        const actorSeeds = includeActors
+            ? APIFY_ACTOR_PRESETS
+                .filter((preset) => selectedKeySet ? selectedKeySet.has(preset.key) : selectedTierSet.has(preset.tier))
+                .map((preset) => buildSourceSeed({ presetKey: preset.key, keyword }))
+                .filter(Boolean)
+            : [];
+        const webScraperSeeds = includeWebScrapers ? buildWebScraperSeeds({ maxItems: maxWebItems }) : [];
+        const seeds = [...actorSeeds, ...webScraperSeeds];
+        const created = [];
+        const skipped = [];
+
+        for (const seed of seeds) {
+            const existings = await prisma.source.findMany({
+                where: {
+                    workspaceId: targetWorkspaceId,
+                    name: seed.name,
+                    type: { not: "deleted" },
+                },
+            });
+            
+            const isDuplicate = existings.some((existing) => {
+                return JSON.stringify(existing.inputConfig) === JSON.stringify(seed.inputConfig);
+            });
+
+            if (isDuplicate) {
+                skipped.push({ name: seed.name });
+                continue;
+            }
+
+            const source = await prisma.source.create({
+                data: {
+                    workspaceId: targetWorkspaceId,
+                    name: seed.name,
+                    type: seed.type,
+                    actorId: seed.actorId,
+                    inputConfig: seed.inputConfig,
+                },
+            });
+            created.push(source);
+        }
+
+        await invalidateWorkspaceCache(targetWorkspaceId);
+        await recordAuditLog({
+            userId,
+            event: "default_sources_bootstrapped",
+            workspaceId: targetWorkspaceId,
+            metadata: {
+                keyword,
+                createdCount: created.length,
+                skippedCount: skipped.length,
+                includeActors,
+                includeWebScrapers,
+            },
+        });
+
+        return res.status(201).json({
+            created: created.length,
+            skipped: skipped.length,
+            sources: created,
+            skippedSources: skipped,
+        });
+    } catch (error) {
+        logStructured("error", "Error bootstrapping default sources:", { error: error?.message || error, stack: error?.stack });
+        return res.status(500).json({ error: "Internal server error" });
     }
 };

@@ -16,6 +16,7 @@ Narriv is a Narrative Intelligence & Operational Response platform. It helps org
 | `process/context/tests/all-tests.md` | testing, verification, debugging test failures, execution planning |
 | `process/context/planning/all-planning.md` | plan-shape calibration, SIMPLE vs COMPLEX references, plan lifecycle routing |
 | `process/development-protocols/all-development-protocols.md` | workflow, RIPER-5, planning, execution, or process questions |
+| `process/general-plans/references/production-readiness-runbook.md` | production deployment, VPS, DNS, migration baseline, env, storage, backup, and QA gates |
 | `frontend/narriv_frontend_blueprint.md` | frontend page inventory, UI contracts, API wiring status, frontend tracker |
 | `backend/narriv_backend_blueprint.md` | backend architecture, API map, schema summary, backend tracker |
 | `graphify-out/GRAPH_REPORT.md` | high-level product/community map generated from prior project analysis |
@@ -37,6 +38,7 @@ No additional context groups exist yet. Promote a group when a durable domain ha
 | frontend UI, routes, Next.js behavior | `process/context/all-context.md` | `frontend/narriv_frontend_blueprint.md`, then `frontend/AGENTS.md` |
 | backend API, Prisma, workers, infra | `process/context/all-context.md` | `backend/narriv_backend_blueprint.md`, then relevant `backend/src/` files |
 | tests or verification | `process/context/all-context.md` | `process/context/tests/all-tests.md` |
+| production deployment or launch readiness | `process/context/all-context.md` | `process/general-plans/references/production-readiness-runbook.md`, then both blueprints |
 | plans or phase workflow | `process/context/all-context.md` | `process/context/planning/all-planning.md`, then `process/development-protocols/all-development-protocols.md` |
 | product area orientation | `process/context/all-context.md` | `graphify-out/GRAPH_REPORT.md` and the two blueprints |
 
@@ -86,7 +88,7 @@ There is no root `package.json`. `frontend/` and `backend/` are separate npm pac
 
 ### Frontend
 
-- **Framework:** Next.js `16.2.4` with App Router and Turbopack dev server.
+- **Framework:** Next.js `16.2.7` with App Router and Turbopack dev server.
 - **Language:** TypeScript `^5`.
 - **React:** React `19.2.4` and React DOM `19.2.4`.
 - **Styling:** Tailwind CSS v4 with `@theme inline` in `globals.css`; shadcn-style/custom dashboard primitives.
@@ -128,7 +130,7 @@ The backend is a modular Express API server with Prisma persistence and BullMQ w
 Important modules:
 
 - `src/modules/auth/` handles register, login, me, refresh, logout, and change password.
-- `src/modules/sources/` and `src/modules/ingestion/` manage collection sources, ingestion jobs, RSS/webhook ingestion, and Apify integration.
+- `src/modules/sources/` and `src/modules/ingestion/` manage collection sources, Apify-only source presets, ingestion jobs, webhook ingestion, and Apify integration.
 - `src/modules/signals/`, `src/modules/ai/`, `src/modules/clustering/`, and `src/workers/ai-analysis.worker.js` implement signal analysis and narrative intelligence.
 - `src/modules/alerts/` plus `src/workers/alert.worker.js` implement anomaly/risk alerting.
 - `src/modules/reports/` implements report templates, export jobs, PDF-ready data, and email send stubs/services.
@@ -175,7 +177,7 @@ Backend:
 - `JWT_SECRET` and `JWT_REFRESH_SECRET` required for auth.
 - `OPENAI_API_KEY` required for live AI features.
 - `REDIS_URL` required for BullMQ workers/queues.
-- `APIFY_TOKEN` required for Apify ingestion.
+- `APIFY_TOKEN` is preferred for live Apify ingestion; `APIFY_API_TOKEN` is still accepted by the backend for compatibility.
 - `PORT`, `NODE_ENV`, `CORS_ORIGINS`, and `LOG_LEVEL` are optional/configuration variables.
 
 Frontend:
@@ -188,8 +190,8 @@ Frontend:
 - Frontend API wiring is mostly complete for dashboard, signals, alerts, reports, action plans, sources, and settings.
 - Backend phases 2 through 5 are largely complete according to `backend/narriv_backend_blueprint.md`.
 - Backend Phase 6 testing is ongoing: Jest/Supertest infrastructure exists; auth tests cover register, login, refresh, logout, lockout, password change, and forgot-password reset flow.
-- Current backend API coverage includes auth happy paths, auth/security negative cases, sources, ingestion jobs, alerts, action plans/feedback, reports/exports, workspace settings, workspace members including registered-user email invites, cases, and integrations. Worker coverage includes ingestion processing/cancellation/retry/final-failure, AI analysis persistence/fallback failure logs, alert detection/escalation dispatch with partial workspace failure recovery, and notification event dispatch/unknown-event failure. Production hardening coverage includes HTTPS enforcement and CORS allowlist behavior. k6 load-test skeleton exists under `backend/tests/load/`; localhost smoke, baseline, and stress profiles have been run and reported passing.
-- Known product/API gaps include reset-password production email delivery, real-time updates, migration baseline, deeper DB/queue/memory load profiles, and report/AI realism cleanup.
+- Current backend API coverage includes auth happy paths, auth/security negative cases, sources, Apify source presets and bootstrap, ingestion jobs, alerts, action plans/feedback, reports/exports, workspace settings, workspace members including registered-user email invites, cases, and integrations. Worker coverage includes ingestion processing/cancellation/retry/final-failure, AI analysis persistence/fallback failure logs, alert detection/escalation dispatch with partial workspace failure recovery, and notification event dispatch/unknown-event failure. Production hardening coverage includes HTTPS enforcement and CORS allowlist behavior. k6 load-test skeleton exists under `backend/tests/load/`; localhost smoke, baseline, and stress profiles have been run and reported passing.
+- Known production gaps include migration baseline, deployment runbook execution on the real VPS, persistent upload storage/backup verification, deeper DB/queue/memory load profiles, and final OAuth/email/manual QA against production domains.
 
 ## Context Update Protocol
 

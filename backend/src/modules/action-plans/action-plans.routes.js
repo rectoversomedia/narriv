@@ -4,6 +4,7 @@ import { submitFeedback } from "../feedback/feedback.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds } from "../../lib/workspace-access.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
+import { logStructured } from "../../lib/logger.js";
 import { z } from "zod";
 import { actionPlanIdParamsSchema, submitActionPlanFeedbackBodySchema } from "./action-plans.schema.js";
 
@@ -48,7 +49,17 @@ function collectActionSteps(...options) {
 
     return options
         .filter(Boolean)
-        .flatMap((option) => stepFields.flatMap((field) => Array.isArray(option[field]) ? option[field] : []))
+        .flatMap((option) => {
+            const fieldSteps = stepFields.flatMap((field) => Array.isArray(option[field]) ? option[field] : []);
+            const structuredSteps = Array.isArray(option.steps)
+                ? option.steps.map((step) => {
+                    if (typeof step === "string") return step;
+                    if (!step || typeof step !== "object") return "";
+                    return step.objective || step.phase || step.success_criteria || "";
+                })
+                : [];
+            return [...fieldSteps, ...structuredSteps];
+        })
         .filter((step) => typeof step === "string" && step.trim().length > 0)
         .filter((step, index, steps) => steps.indexOf(step) === index);
 }
@@ -59,12 +70,7 @@ function buildActionPlanResponse(plan) {
     const bold = parseOption(plan.option3) || {};
     const primaryOption = balanced.error ? (conservative.error ? bold : conservative) : balanced;
     const steps = collectActionSteps(primaryOption, conservative, balanced, bold);
-    const fallbackSteps = [
-        "Review the evidence and confirm the audience priority.",
-        "Prepare the message, content, or response owner.",
-        "Publish the approved action and monitor new findings.",
-        "Record feedback so future suggestions improve."
-    ];
+
     const channel = primaryOption.media_channels?.join(", ")
         || primaryOption.distribution_channels?.join(", ")
         || primaryOption.platforms?.join(", ")
@@ -91,7 +97,7 @@ function buildActionPlanResponse(plan) {
             ["Impact / effort", `${plan.alert?.severity === "high" ? "High" : "Medium"} impact · Medium effort`],
             ["Confidence", "82%"],
         ],
-        plan: (steps.length ? steps : fallbackSteps).slice(0, 4).map((step, index) => [step, timelineSlots[index] || "Later"]),
+        plan: steps.slice(0, 4).map((step, index) => [step, timelineSlots[index] || "Later"]),
     };
 }
 
@@ -130,6 +136,150 @@ router.get("/", async (req, res) => {
     }
 });
 
+
+// GET /api/action-plans/metrics — Action Plan metrics for dashboard
+router.get("/metrics", async (req, res) => {
+    try {
+        const { workspaceId } = req.query;
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
+        
+        const fallback = {
+            active: { value: 0, trend: 0 },
+            inProgress: { value: 0, trend: 0 },
+            done: { value: 0, trend: 0 },
+            needsAttention: { value: 0, trend: 0 },
+            resolution: { value: "0h", trend: 0 }
+        };
+
+        if (scopedWorkspaceIds.length === 0) {
+            return res.json(fallback);
+        }
+
+        const now = new Date();
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+        const allPlans = await prisma.actionPlan.findMany({
+            where: { workspaceId: { in: scopedWorkspaceIds } },
+            select: { workflowStatus: true, escalationLevel: true, createdAt: true }
+        });
+
+        const calculateTrend = (current, previous) => {
+            if (previous === 0) return current > 0 ? 100 : 0;
+            return Math.round(((current - previous) / previous) * 100);
+        };
+
+        const metrics = {
+            active: { current: 0, previous: 0, total: 0 },
+            inProgress: { current: 0, previous: 0, total: 0 },
+            done: { current: 0, previous: 0, total: 0 },
+            needsAttention: { current: 0, previous: 0, total: 0 }
+        };
+
+        for (const plan of allPlans) {
+            const isCurrent = plan.createdAt >= sevenDaysAgo;
+            const isPrevious = plan.createdAt >= fourteenDaysAgo && plan.createdAt < sevenDaysAgo;
+            const isActive = plan.workflowStatus !== "done";
+            const isInProgress = plan.workflowStatus === "in_progress";
+            const isDone = plan.workflowStatus === "done";
+            const isNeedsAttention = isActive && ["high", "critical"].includes(plan.escalationLevel);
+
+            if (isActive) metrics.active.total++;
+            if (isInProgress) metrics.inProgress.total++;
+            if (isDone) metrics.done.total++;
+            if (isNeedsAttention) metrics.needsAttention.total++;
+
+            if (isCurrent) {
+                if (isActive) metrics.active.current++;
+                if (isInProgress) metrics.inProgress.current++;
+                if (isDone) metrics.done.current++;
+                if (isNeedsAttention) metrics.needsAttention.current++;
+            } else if (isPrevious) {
+                if (isActive) metrics.active.previous++;
+                if (isInProgress) metrics.inProgress.previous++;
+                if (isDone) metrics.done.previous++;
+                if (isNeedsAttention) metrics.needsAttention.previous++;
+            }
+        }
+
+        return res.json({
+            active: { value: metrics.active.total, trend: calculateTrend(metrics.active.current, metrics.active.previous) },
+            inProgress: { value: metrics.inProgress.total, trend: calculateTrend(metrics.inProgress.current, metrics.inProgress.previous) },
+            done: { value: metrics.done.total, trend: calculateTrend(metrics.done.current, metrics.done.previous) },
+            needsAttention: { value: metrics.needsAttention.total, trend: calculateTrend(metrics.needsAttention.current, metrics.needsAttention.previous) },
+            resolution: { 
+                value: allPlans.length, 
+                trend: calculateTrend(
+                    metrics.active.current + metrics.inProgress.current + metrics.done.current, 
+                    metrics.active.previous + metrics.inProgress.previous + metrics.done.previous
+                ) 
+            }
+        });
+
+    } catch (error) {
+        logStructured("error", "Error fetching action plan metrics:", { error: error?.message || error, stack: error?.stack });
+        return res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// GET /api/action-plans/:id — Get a specific action plan for preview
+router.get("/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
+
+        const plan = await prisma.actionPlan.findUnique({
+            where: { id },
+            include: {
+                alert: true,
+                cluster: true,
+            },
+        });
+
+        if (!plan || !scopedWorkspaceIds.includes(plan.workspaceId)) {
+            return res.json({
+                inputNarrative: "",
+                evidenceSummary: "",
+                outputs: [],
+                plan: [],
+            });
+        }
+
+        const response = buildActionPlanResponse(plan);
+        response.id = plan.id;
+        return res.json(response);
+    } catch (error) {
+        logStructured("error", "Error fetching specific action plan data:", { error: error?.message || error, stack: error?.stack });
+        return res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// GET /api/action-plans/:id/learning — Insights and learning data for an action plan
+router.get("/:id/learning", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
+
+        const plan = await prisma.actionPlan.findUnique({
+            where: { id },
+            select: { id: true, workspaceId: true },
+        });
+
+        if (!plan || !scopedWorkspaceIds.includes(plan.workspaceId)) {
+            return res.status(404).json({ error: "Action plan not found" });
+        }
+
+        // Return mock data that can be localized or displayed directly
+        // In a real implementation, this would aggregate data from related actions/reports
+        return res.json({
+            insights: [],
+            templates: []
+        });
+    } catch (error) {
+        logStructured("error", "Error fetching action plan learning:", { error: error?.message || error, stack: error?.stack });
+        return res.status(500).json({ error: "Internal server error" });
+    }
+});
 // POST /api/action-plans/:id/feedback — Feedback endpoint for action suggestions
 router.post("/:id/feedback", validateRequest({ params: actionPlanIdParamsSchema, body: submitActionPlanFeedbackBodySchema }), async (req, res) => {
     try {

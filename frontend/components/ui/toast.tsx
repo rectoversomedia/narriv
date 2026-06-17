@@ -2,6 +2,7 @@
 
 import { CheckCircle2, Info, X, XCircle } from "lucide-react";
 import { createContext, useContext, useState, type ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 type ToastTone = "success" | "error" | "info";
@@ -53,6 +54,7 @@ function createToastId() {
 }
 
 export function ToastProvider({ children }: { children: ReactNode }) {
+  const t = useTranslations("Toast");
   const [toasts, setToasts] = useState<ToastRecord[]>([]);
 
   const dismiss = (id: string) => {
@@ -65,7 +67,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     const duration = normalized.duration ?? 4000;
     const toast: ToastRecord = {
       id,
-      title: normalized.title ?? (normalized.tone === "error" ? "Gagal" : normalized.tone === "info" ? "Info" : "Berhasil"),
+      title: normalized.title ?? (normalized.tone === "error" ? t("error") : normalized.tone === "info" ? t("info") : t("success")),
       description: normalized.description,
       tone: normalized.tone ?? "success",
     };
@@ -98,7 +100,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 <p className="text-[13px] font-black">{toast.title}</p>
                 <p className="mt-0.5 text-[12px] font-bold leading-5 opacity-85">{toast.description}</p>
               </div>
-              <button type="button" aria-label="Tutup notifikasi" onClick={() => dismiss(toast.id)} className="rounded-full p-1 opacity-65 transition hover:bg-black/5 hover:opacity-100">
+              <button type="button" aria-label={t("close")} onClick={() => dismiss(toast.id)} className="rounded-full p-1 opacity-65 transition hover:bg-black/5 hover:opacity-100">
                 <X size={14} />
               </button>
             </div>

@@ -40,7 +40,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton, formatPaginationSummary } from "@/components/dashboard/dashboard-states";
-import { getAlerts, updateAlertStatus, type Alert as ApiAlert, type PaginationInfo } from "@/lib/api-service";
+import { getAlerts, getAlertsSummary, updateAlertStatus, type Alert as ApiAlert, type AlertsSummaryResponse, type PaginationInfo } from "@/lib/api-service";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Sentiment = "NEGATIF" | "POSITIF" | "CAMPURAN";
@@ -74,6 +74,8 @@ type AlertRow = {
   time: string;
   tone: Exclude<Tone, "purple" | "slate">;
 };
+
+type AlertSourceDistributionItem = { name: string; value: string; color: string; percentage: number; count: number };
 
 const alertsApiLimit = 10;
 
@@ -220,14 +222,16 @@ const aiRecommendations = [
 ] satisfies Array<{ action: string; desc: string; badge: string; icon: LucideIcon; tone: Tone }>;
 
 const sourceDistribution = [
-  { name: "X / Twitter", value: "48% (1.364)", color: "#465FFF" },
-  { name: "TikTok", value: "22% (625)", color: "#8B5CFF" },
-  { name: "News", value: "14% (398)", color: "#EF4444" },
-  { name: "App Reviews", value: "10% (284)", color: "#10B981" },
-  { name: "Lainnya", value: "6% (171)", color: "#94A3B8" },
-];
+  { name: "X / Twitter", value: "48% (1.364)", color: "#465FFF", percentage: 48, count: 1364 },
+  { name: "TikTok", value: "22% (625)", color: "#8B5CFF", percentage: 22, count: 625 },
+  { name: "News", value: "14% (398)", color: "#EF4444", percentage: 14, count: 398 },
+  { name: "App Reviews", value: "10% (284)", color: "#10B981", percentage: 10, count: 284 },
+  { name: "Lainnya", value: "6% (171)", color: "#94A3B8", percentage: 6, count: 171 },
+] satisfies AlertSourceDistributionItem[];
 
 const timeline = [320, 450, 380, 690, 470, 720, 930, 1024, 850, 670, 980, 720, 710];
+
+const alertSourceColors = ["#465FFF", "#8B5CFF", "#EF4444", "#10B981", "#94A3B8"];
 
 function compactTime(value: string | null | undefined) {
   if (!value) return "-";
@@ -239,6 +243,51 @@ function compactTime(value: string | null | undefined) {
 function stableTrend(seed: string) {
   const base = seed.split("").reduce((total, char) => total + char.charCodeAt(0), 0) || 37;
   return Array.from({ length: 9 }, (_, index) => 7 + ((base + index * 11) % 36));
+}
+
+function formatAlertType(type: string) {
+  if (!type) return "Unknown";
+  return type
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function buildAlertSourceDistribution(summary?: AlertsSummaryResponse | null): AlertSourceDistributionItem[] {
+  if (!summary || summary.total <= 0) return sourceDistribution;
+
+  const entries = Object.entries(summary.by_type)
+    .sort(([, countA], [, countB]) => countB - countA)
+    .slice(0, 5);
+
+  if (entries.length === 0) {
+    return [{ name: "Unclassified", value: `100% (${summary.total})`, color: alertSourceColors[0], percentage: 100, count: summary.total }];
+  }
+
+  return entries.map(([type, count], index) => {
+    const percentage = summary.total ? Math.round((count / summary.total) * 100) : 0;
+    return {
+      name: formatAlertType(type),
+      value: `${percentage}% (${count.toLocaleString("id-ID")})`,
+      color: alertSourceColors[index % alertSourceColors.length],
+      percentage,
+      count,
+    };
+  });
+}
+
+function buildConicGradient(items: AlertSourceDistributionItem[]) {
+  let cursor = 0;
+  const stops = items.map((item) => {
+    const next = Math.min(100, cursor + Math.max(0, item.percentage));
+    const stop = `${item.color} ${cursor}% ${next}%`;
+    cursor = next;
+    return stop;
+  });
+
+  if (cursor < 100) stops.push(`#94A3B8 ${cursor}% 100%`);
+  return `conic-gradient(${stops.join(",")})`;
 }
 
 function toneFromSeverity(severity: string | null): Exclude<Tone, "purple" | "slate"> {
@@ -365,32 +414,6 @@ function AlertAgentImage() {
   );
 }
 
-function SummaryCard() {
-  return (
-    <Panel className="overflow-hidden p-5">
-      <div className="grid gap-5 md:grid-cols-[96px_1fr]">
-        <AlertAgentImage />
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">AI Alert Summary</h2>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black text-[#8B5CFF]">
-              <Sparkles size={12} /> AI Generated
-            </span>
-          </div>
-          <p className="mt-3 max-w-[720px] text-[14px] font-black leading-relaxed text-[#101334]">
-            Dalam 24 jam terakhir, terjadi lonjakan keluhan terkait payment delay dan stabilitas aplikasi di wilayah Jabodetabek.
-          </p>
-          <div className="mt-5 grid gap-4 sm:grid-cols-3">
-            <SummaryPoint color="#EF4444" title="Risiko Tertinggi" text="Payment delay complaints (Confidence 94%)" />
-            <SummaryPoint color="#F59E0B" title="Peningkatan Signifikan" text="Keluhan meningkat +248% dalam 2 jam terakhir di X/Twitter." />
-            <SummaryPoint color="#10B981" title="Rekomendasi AI" text="Investigasi SLA pembayaran dan komunikasi publik proaktif." />
-          </div>
-        </div>
-      </div>
-    </Panel>
-  );
-}
-
 function SummaryPoint({ color, title, text }: { color: string; title: string; text: string }) {
   return (
     <div className="border-l border-[#D8DEEF] pl-4">
@@ -400,42 +423,6 @@ function SummaryPoint({ color, title, text }: { color: string; title: string; te
       </div>
       <p className="mt-2 text-[11px] font-bold leading-relaxed text-[#58648C]">{text}</p>
     </div>
-  );
-}
-
-function QuickFilter() {
-  return (
-    <Panel className="flex min-h-full flex-col justify-between gap-5 p-5">
-      <div>
-        <h3 className="text-[12px] font-black text-[#101334]">Quick Filter</h3>
-        <label className="relative mt-3 block">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#68739F]" />
-          <input
-            type="search"
-            placeholder="Cari alert..."
-            className="h-10 w-full rounded-[9px] border border-[#DDE3EF] bg-[#F8FAFF] px-10 text-[11px] font-bold text-[#101334] outline-none transition placeholder:text-[#8B95B8] focus:border-[#465FFF] focus:bg-white"
-          />
-          <SlidersHorizontal className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#68739F]" />
-        </label>
-      </div>
-      <div>
-        <h3 className="text-[12px] font-black text-[#101334]">Filter Cepat</h3>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {['Semua', 'Kritis', 'Peringatan', 'Informasi'].map((label, index) => (
-            <button
-              key={label}
-              type="button"
-              className={cn("h-7 rounded-[7px] px-3 text-[10px] font-black transition", index === 0 ? "bg-[#465FFF] text-white shadow-[0_8px_18px_rgba(70,95,255,0.22)]" : "border border-[#DDE3EF] bg-[#F8FAFF] text-[#58648C] hover:bg-white")}
-            >
-              {label}
-            </button>
-          ))}
-          <button type="button" className="inline-flex h-7 items-center gap-1 rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[10px] font-black text-[#58648C] transition hover:bg-white">
-            Terbaru <ChevronDown size={13} />
-          </button>
-        </div>
-      </div>
-    </Panel>
   );
 }
 
@@ -499,109 +486,6 @@ function AlertIcon({ tone }: { tone: AlertRow["tone"] }) {
   );
 }
 
-function AlertsTable({ rows, footerText, pagination, onPageChange, isFetching, onStatusChange, openMenuId, setOpenMenuId, menuRef }: { rows: AlertRow[]; footerText: string; pagination?: PaginationInfo | null; onPageChange: (page: number) => void; isFetching?: boolean; onStatusChange: (id: string | number, status: "open" | "acknowledged" | "resolved") => void; openMenuId: string | number | null; setOpenMenuId: (id: string | number | null) => void; menuRef: React.RefObject<HTMLDivElement | null> }) {
-  return (
-    <Panel className="p-4">
-      <div>
-        <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">Daftar Alert</h2>
-        <p className="mt-1 text-[11px] font-bold text-[#68739F]">Menampilkan alert dengan prioritas tertinggi.</p>
-      </div>
-      <div className="mt-4 overflow-x-auto">
-        <table className="w-full min-w-[940px] border-collapse text-left">
-          <thead>
-            <tr className="border-b border-[#E6EAF2] text-[10px] font-black uppercase tracking-[0.18em] text-[#68739F]">
-              {['Alert', 'Sumber', 'Sentimen', 'Velocity', 'Mentions', 'Confidence', 'Dampak', 'Status', 'Waktu', ''].map((header) => (
-                <th key={header || 'actions'} className="px-3 py-3">{header}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#EDF1F7]">
-            {rows.map((alert) => (
-              <tr key={alert.id} className="transition hover:bg-[#F8FAFF]">
-                <td className="min-w-[240px] max-w-[315px] px-3 py-3.5">
-                  <div className="flex items-start gap-3">
-                    <AlertIcon tone={alert.tone} />
-                    <div className="min-w-0">
-                      <Link href={`/alerts/${alert.id}`} className="text-[12px] font-black leading-snug text-[#101334] hover:text-[#465FFF]">
-                        {alert.title}
-                      </Link>
-                      <p className="mt-1 text-[11px] font-bold leading-snug text-[#68739F]">{alert.description}</p>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {alert.tags.map((tag) => <TagBadge key={tag} tag={tag} />)}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-3 py-3.5 align-middle"><SourceIconList label={alert.sourceLabel} sources={alert.sources} extraSources={alert.extraSources} /></td>
-                <td className="px-3 py-3.5 align-middle"><SentimentBadge sentiment={alert.sentiment} /></td>
-                <td className="px-3 py-3.5 align-middle">
-                  <div className="flex items-center gap-3">
-                    <span>
-                      <span className={cn("block text-[12px] font-black", alert.sentiment === "POSITIF" ? "text-[#10B981]" : "text-[#EF4444]")}>{alert.velocity}</span>
-                      <span className="mt-1 block whitespace-nowrap text-[10px] font-bold text-[#68739F]">{alert.velocityPeriod}</span>
-                    </span>
-                    <Sparkline values={alert.velocityTrend} tone={alert.tone} id={`row-${alert.id}`} className="h-8 w-[62px]" />
-                  </div>
-                </td>
-                <td className="px-3 py-3.5 align-middle text-[12px] font-black text-[#101334]">{alert.mentions}</td>
-                <td className="px-3 py-3.5 align-middle text-[12px] font-black text-[#10B981]">{alert.confidence}</td>
-                <td className="px-3 py-3.5 align-middle text-[12px] font-black text-[#101334]">{alert.impact}</td>
-                <td className="px-3 py-3.5 align-middle"><StatusBadge status={alert.status} /></td>
-                <td className="px-3 py-3.5 align-middle text-[11px] font-black text-[#31406B]">{alert.time}</td>
-                <td className="relative px-3 py-3.5 text-right align-middle">
-                  <button type="button" aria-label={`Open actions for ${alert.title}`} onClick={() => setOpenMenuId(openMenuId === alert.id ? null : alert.id)} className="rounded-md p-1 text-[#68739F] transition hover:bg-[#EEF2FF] hover:text-[#465FFF]"><MoreVertical size={16} /></button>
-                  {openMenuId === alert.id && (
-                    <div ref={menuRef} className="absolute right-3 top-full z-50 mt-1 w-48 rounded-[10px] border border-[#E6EAF2] bg-white py-1 shadow-[0_12px_36px_rgba(16,24,40,0.12)]">
-                      <p className="px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-[#8B95B8]">Ubah Status</p>
-                      <button type="button" onClick={() => { onStatusChange(alert.id, "open"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]"><Bell size={13} className="text-[#465FFF]" /> Baru</button>
-                      <button type="button" onClick={() => { onStatusChange(alert.id, "acknowledged"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]"><Check size={13} className="text-[#10B981]" /> Investigating</button>
-                      <button type="button" onClick={() => { onStatusChange(alert.id, "resolved"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]"><ShieldCheck size={13} className="text-[#0C9B69]" /> Resolved</button>
-                      <div className="my-1 border-t border-[#EDF1F7]" />
-                      <p className="px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-[#8B95B8]">Tugaskan</p>
-                      <button type="button" onClick={() => { onStatusChange(alert.id, "acknowledged"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]"><UserPlus size={13} className="text-[#8B5CFF]" /> Tugaskan ke Saya</button>
-                    </div>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="mt-3 flex flex-col items-center justify-between gap-3 border-t border-[#EDF1F7] pt-3 sm:flex-row">
-        <p className="text-[11px] font-bold text-[#68739F]">{footerText}</p>
-        <DashboardPagination pagination={pagination} onPageChange={onPageChange} disabled={isFetching} />
-      </div>
-    </Panel>
-  );
-}
-
-function SidePanel() {
-  return (
-    <div className="space-y-4">
-      <Panel className="p-4">
-        <h3 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">Perlu Ditindaklanjuti</h3>
-        <p className="mt-1 text-[12px] font-bold text-[#68739F]">Alert yang membutuhkan perhatian segera.</p>
-        <div className="mt-4 space-y-2.5">
-          {actionableAlerts.map((alert) => <ActionableAlert key={alert.title} {...alert} />)}
-        </div>
-        <Link href="/alerts" className="mt-4 flex items-center justify-center gap-2 text-[12px] font-black text-[#465FFF] hover:underline">
-          Lihat semua alert <ArrowRight size={14} />
-        </Link>
-      </Panel>
-      <Panel className="p-4">
-        <h3 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">Rekomendasi Tindakan AI</h3>
-        <p className="mt-1 text-[12px] font-bold text-[#68739F]">Disarankan berdasarkan prioritas dan dampak.</p>
-        <div className="mt-5 space-y-4">
-          {aiRecommendations.map((item) => <Recommendation key={item.action} {...item} />)}
-        </div>
-        <button type="button" className="mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-[9px] border border-[#E6EAF2] bg-white text-[12px] font-black text-[#101334] transition hover:bg-[#F8FAFF]">
-          Buat Rencana Tindakan <ArrowRight size={14} />
-        </button>
-      </Panel>
-    </div>
-  );
-}
-
 function ActionableAlert({ title, meta, badge, time, tone }: (typeof actionableAlerts)[number]) {
   const style = toneStyles[tone];
   const Icon = tone === "green" ? Star : tone === "blue" ? HelpCircle : AlertTriangle;
@@ -635,25 +519,202 @@ function Recommendation({ action, desc, badge, icon: Icon, tone }: (typeof aiRec
   );
 }
 
-function SourceDonut() {
+function StatusMetric({ label, value, delta }: { label: string; value: string; delta: string }) {
+  return <div><p className="text-[11px] font-bold text-[#68739F]">{label}</p><div className="mt-1 flex items-center gap-2"><b className="text-[18px] font-black text-[#101334]">{value}</b><span className="rounded-full bg-[#10B981]/10 px-2 py-0.5 text-[11px] font-black text-[#10B981]">{delta}</span></div></div>;
+}
+
+type AlertsTa = ReturnType<typeof useTranslations<"Alerts">>;
+
+function SummaryCard({ ta }: { ta: AlertsTa }) {
+  return (
+    <Panel className="overflow-hidden p-5">
+      <div className="grid gap-5 md:grid-cols-[96px_1fr]">
+        <AlertAgentImage />
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{ta("summary.title")}</h2>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black text-[#8B5CFF]">
+              <Sparkles size={12} /> {ta("summary.generated")}
+            </span>
+          </div>
+          <p className="mt-3 max-w-[720px] text-[14px] font-black leading-relaxed text-[#101334]">
+            Dalam 24 jam terakhir, terjadi lonjakan keluhan terkait payment delay dan stabilitas aplikasi di wilayah Jabodetabek.
+          </p>
+          <div className="mt-5 grid gap-4 sm:grid-cols-3">
+            <SummaryPoint color="#EF4444" title={ta("summary.riskHighest")} text="Payment delay complaints (Confidence 94%)" />
+            <SummaryPoint color="#F59E0B" title={ta("summary.significantIncrease")} text="Keluhan meningkat +248% dalam 2 jam terakhir di X/Twitter." />
+            <SummaryPoint color="#10B981" title={ta("summary.aiRecommendation")} text="Investigasi SLA pembayaran dan komunikasi publik proaktif." />
+          </div>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+function QuickFilter({ ta }: { ta: AlertsTa }) {
+  return (
+    <Panel className="flex min-h-full flex-col justify-between gap-5 p-5">
+      <div>
+        <h3 className="text-[12px] font-black text-[#101334]">{ta("quickFilter.title")}</h3>
+        <label className="relative mt-3 block">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#68739F]" />
+          <input
+            type="search"
+            placeholder={ta("quickFilter.search")}
+            className="h-10 w-full rounded-[9px] border border-[#DDE3EF] bg-[#F8FAFF] px-10 text-[11px] font-bold text-[#101334] outline-none transition placeholder:text-[#8B95B8] focus:border-[#465FFF] focus:bg-white"
+          />
+          <SlidersHorizontal className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-[#68739F]" />
+        </label>
+      </div>
+      <div>
+        <h3 className="text-[12px] font-black text-[#101334]">{ta("quickFilter.title")}</h3>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {[ta("quickFilter.all"), ta("quickFilter.critical"), ta("quickFilter.warning"), ta("quickFilter.info")].map((label, index) => (
+            <button
+              key={label}
+              type="button"
+              className={cn("h-7 rounded-[7px] px-3 text-[10px] font-black transition", index === 0 ? "bg-[#465FFF] text-white shadow-[0_8px_18px_rgba(70,95,255,0.22)]" : "border border-[#DDE3EF] bg-[#F8FAFF] text-[#58648C] hover:bg-white")}
+            >
+              {label}
+            </button>
+          ))}
+          <button type="button" className="inline-flex h-7 items-center gap-1 rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[10px] font-black text-[#58648C] transition hover:bg-white">
+            {ta("quickFilter.latest")} <ChevronDown size={13} />
+          </button>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+
+
+
+function AlertsTable({ ta, rows, footerText, pagination, onPageChange, isFetching, onStatusChange, openMenuId, setOpenMenuId, menuRef }: { ta: AlertsTa; rows: AlertRow[]; footerText: string; pagination?: PaginationInfo | null; onPageChange: (page: number) => void; isFetching?: boolean; onStatusChange: (id: string | number, status: "open" | "acknowledged" | "resolved") => void; openMenuId: string | number | null; setOpenMenuId: (id: string | number | null) => void; menuRef: React.RefObject<HTMLDivElement | null> }) {
+  return (
+    <Panel className="p-4">
+      <div>
+        <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{ta("table.title")}</h2>
+        <p className="mt-1 text-[11px] font-bold text-[#68739F]">{ta("table.desc")}</p>
+      </div>
+      <div className="mt-4 overflow-x-auto">
+        <table className="w-full min-w-[940px] border-collapse text-left">
+          <thead>
+            <tr className="border-b border-[#E6EAF2] text-[10px] font-black uppercase tracking-[0.18em] text-[#68739F]">
+              {[ta("table.alert"), ta("table.source"), ta("table.sentiment"), ta("table.velocity"), ta("table.mentions"), ta("table.confidence"), ta("table.impact"), ta("table.status"), ta("table.time"), ""].map((header) => (
+                <th key={header || "actions"} className="px-3 py-3">{header}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#EDF1F7]">
+            {rows.map((alert) => (
+              <tr key={alert.id} className="transition hover:bg-[#F8FAFF]">
+                <td className="min-w-[240px] max-w-[315px] px-3 py-3.5">
+                  <div className="flex items-start gap-3">
+                    <AlertIcon tone={alert.tone} />
+                    <div className="min-w-0">
+                      <Link href={`/alerts/${alert.id}`} className="text-[12px] font-black leading-snug text-[#101334] hover:text-[#465FFF]">
+                        {alert.title}
+                      </Link>
+                      <p className="mt-1 text-[11px] font-bold leading-snug text-[#68739F]">{alert.description}</p>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {alert.tags.map((tag) => <TagBadge key={tag} tag={tag} />)}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-3 py-3.5 align-middle"><SourceIconList label={alert.sourceLabel} sources={alert.sources} extraSources={alert.extraSources} /></td>
+                <td className="px-3 py-3.5 align-middle"><SentimentBadge sentiment={alert.sentiment} /></td>
+                <td className="px-3 py-3.5 align-middle">
+                  <div className="flex items-center gap-3">
+                    <span>
+                      <span className={cn("block text-[12px] font-black", alert.sentiment === "POSITIF" ? "text-[#10B981]" : "text-[#EF4444]")}>{alert.velocity}</span>
+                      <span className="mt-1 block whitespace-nowrap text-[10px] font-bold text-[#68739F]">{alert.velocityPeriod}</span>
+                    </span>
+                    <Sparkline values={alert.velocityTrend} tone={alert.tone} id={"row-" + alert.id} className="h-8 w-[62px]" />
+                  </div>
+                </td>
+                <td className="px-3 py-3.5 align-middle text-[12px] font-black text-[#101334]">{alert.mentions}</td>
+                <td className="px-3 py-3.5 align-middle text-[12px] font-black text-[#10B981]">{alert.confidence}</td>
+                <td className="px-3 py-3.5 align-middle text-[12px] font-black text-[#101334]">{alert.impact}</td>
+                <td className="px-3 py-3.5 align-middle"><StatusBadge status={alert.status} /></td>
+                <td className="px-3 py-3.5 align-middle text-[11px] font-black text-[#31406B]">{alert.time}</td>
+                <td className="relative px-3 py-3.5 text-right align-middle">
+                  <button type="button" aria-label={"Open actions for " + alert.title} onClick={() => setOpenMenuId(openMenuId === alert.id ? null : alert.id)} className="rounded-md p-1 text-[#68739F] transition hover:bg-[#EEF2FF] hover:text-[#465FFF]"><MoreVertical size={16} /></button>
+                  {openMenuId === alert.id && (
+                    <div ref={menuRef} className="absolute right-3 top-full z-50 mt-1 w-48 rounded-[10px] border border-[#E6EAF2] bg-white py-1 shadow-[0_12px_36px_rgba(16,24,40,0.12)]">
+                      <p className="px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-[#8B95B8]">{ta("table.changeStatus")}</p>
+                      <button type="button" onClick={() => { onStatusChange(alert.id, "open"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]"><Bell size={13} className="text-[#465FFF]" /> {ta("table.statusNew")}</button>
+                      <button type="button" onClick={() => { onStatusChange(alert.id, "acknowledged"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]"><Check size={13} className="text-[#10B981]" /> {ta("table.statusInvestigating")}</button>
+                      <button type="button" onClick={() => { onStatusChange(alert.id, "resolved"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]"><ShieldCheck size={13} className="text-[#0C9B69]" /> {ta("table.statusResolved")}</button>
+                      <div className="my-1 border-t border-[#EDF1F7]" />
+                      <p className="px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-[#8B95B8]">{ta("table.assign")}</p>
+                      <button type="button" onClick={() => { onStatusChange(alert.id, "acknowledged"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]"><UserPlus size={13} className="text-[#8B5CFF]" /> {ta("table.assignToMe")}</button>
+                    </div>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-3 flex flex-col items-center justify-between gap-3 border-t border-[#EDF1F7] pt-3 sm:flex-row">
+        <p className="text-[11px] font-bold text-[#68739F]">{footerText}</p>
+        <DashboardPagination pagination={pagination} onPageChange={onPageChange} disabled={isFetching} />
+      </div>
+    </Panel>
+  );
+}
+
+function SidePanel({ ta }: { ta: AlertsTa }) {
+  return (
+    <div className="space-y-4">
+      <Panel className="p-4">
+        <h3 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{ta("actionable.title")}</h3>
+        <p className="mt-1 text-[12px] font-bold text-[#68739F]">{ta("actionable.desc")}</p>
+        <div className="mt-4 space-y-2.5">
+          {actionableAlerts.map((alert) => <ActionableAlert key={alert.title} {...alert} />)}
+        </div>
+        <Link href="/alerts" className="mt-4 flex items-center justify-center gap-2 text-[12px] font-black text-[#465FFF] hover:underline">
+          {ta("actionable.viewAll")} <ArrowRight size={14} />
+        </Link>
+      </Panel>
+      <Panel className="p-4">
+        <h3 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{ta("recommendations.title")}</h3>
+        <p className="mt-1 text-[12px] font-bold text-[#68739F]">{ta("recommendations.desc")}</p>
+        <div className="mt-5 space-y-4">
+          {aiRecommendations.map((item) => <Recommendation key={item.action} {...item} />)}
+        </div>
+        <button type="button" className="mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-[9px] border border-[#E6EAF2] bg-white text-[12px] font-black text-[#101334] transition hover:bg-[#F8FAFF]">
+          {ta("recommendations.createPlan")} <ArrowRight size={14} />
+        </button>
+      </Panel>
+    </div>
+  );
+}
+
+function SourceDonut({ ta, data, total }: { ta: AlertsTa; data: AlertSourceDistributionItem[]; total: number }) {
+  const totalLabel = total > 0 ? total.toLocaleString("id-ID") : "0";
+  const gradient = buildConicGradient(data);
+
   return (
     <Panel className="p-4">
       <div className="flex items-start justify-between">
         <div>
-          <h3 className="text-[15px] font-black text-[#101334]">Sumber Alert</h3>
-          <p className="mt-1 text-[11px] font-bold text-[#68739F]">Distribusi alert berdasarkan sumber data.</p>
+          <h3 className="text-[15px] font-black text-[#101334]">{ta("sourceDonut.title")}</h3>
+          <p className="mt-1 text-[11px] font-bold text-[#68739F]">{ta("sourceDonut.desc")}</p>
         </div>
         <button type="button" className="inline-flex h-8 items-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[10px] font-black text-[#31406B] shadow-[0_1px_3px_rgba(15,23,42,0.04)] transition hover:bg-[#F8FAFF]">
-          24 Jam Terakhir <ChevronDown size={12} />
+          {ta("sourceDonut.last24h")} <ChevronDown size={12} />
         </button>
       </div>
       <div className="mt-5 grid gap-5 sm:grid-cols-[136px_1fr] md:grid-cols-1 xl:grid-cols-[136px_1fr]">
-        <div className="chart-donut-enter relative mx-auto flex h-[136px] w-[136px] items-center justify-center rounded-full bg-[conic-gradient(#465FFF_0_48%,#8B5CFF_48%_70%,#EF4444_70%_84%,#10B981_84%_94%,#94A3B8_94%_100%)]">
+        <div className="chart-donut-enter relative mx-auto flex h-[136px] w-[136px] items-center justify-center rounded-full" style={{ background: gradient }}>
           <span className="absolute h-[88px] w-[88px] rounded-full bg-white" />
-          <span className="relative text-center"><b className="block text-[22px] font-black text-[#101334]">2.842</b><span className="text-[10px] font-bold text-[#68739F]">Total Alert</span></span>
+          <span className="relative text-center"><b className="block text-[22px] font-black text-[#101334]">{totalLabel}</b><span className="text-[10px] font-bold text-[#68739F]">{ta("sourceDonut.total")}</span></span>
         </div>
         <div className="space-y-2.5 self-center">
-          {sourceDistribution.map((item) => (
+          {data.map((item) => (
             <div key={item.name} className="flex items-center justify-between gap-3 text-[11px] font-bold">
               <span className="flex items-center gap-2 text-[#31406B]"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />{item.name}</span>
               <span className="text-[#68739F]">{item.value}</span>
@@ -665,17 +726,24 @@ function SourceDonut() {
   );
 }
 
-function TimelineChart() {
-  const path = makeLinePath(timeline, 520, 170, 14);
-  const area = `${path} L 506 170 L 14 170 Z`;
+function TimelineChart({ ta, data, labels }: { ta: AlertsTa; data?: number[]; labels?: string[] }) {
+  const values = data?.length ? data : timeline;
+  const path = makeLinePath(values, 520, 170, 14);
+  const area = path + " L 506 170 L 14 170 Z";
+  const peakValue = Math.max(...values);
+  const peakIndex = values.indexOf(peakValue);
+  const peakX = values.length > 1 ? 14 + (peakIndex / (values.length - 1)) * (520 - 28) : 260;
+  const peakLabel = labels?.[peakIndex] ?? "12:00";
+  const maxTick = Math.max(1, Math.ceil(peakValue / 10) * 10);
+  const tickValues = [maxTick, Math.round(maxTick * 0.75), Math.round(maxTick * 0.5), Math.round(maxTick * 0.25), 0];
 
   return (
     <Panel className="p-4">
-      <h3 className="text-[15px] font-black text-[#101334]">Timeline Alert <span className="text-[11px] font-bold text-[#68739F]">(24 Jam Terakhir)</span></h3>
-      <p className="mt-1 text-[11px] font-bold text-[#68739F]">Volume alert per jam.</p>
+      <h3 className="text-[15px] font-black text-[#101334]">{ta("timeline.title")} <span className="text-[11px] font-bold text-[#68739F]">{ta("timeline.period")}</span></h3>
+      <p className="mt-1 text-[11px] font-bold text-[#68739F]">{ta("timeline.desc")}</p>
       <div className="relative mt-5 h-[190px] rounded-[12px] bg-linear-to-b from-white to-[#F8FAFF]">
         <div className="absolute left-0 top-0 bottom-[22px] flex w-[38px] flex-col justify-between py-1 text-right text-[9px] font-bold text-[#8B95B8]">
-          <span>1.200</span><span>900</span><span>600</span><span>300</span><span>0</span>
+          {tickValues.map((tick, index) => <span key={tick + "-" + index}>{tick.toLocaleString("id-ID")}</span>)}
         </div>
         <div className="absolute inset-0 left-[40px] bottom-[22px] overflow-hidden">
           <svg className="chart-enter chart-line-draw h-full w-full" viewBox="0 0 520 170" preserveAspectRatio="none" aria-hidden="true">
@@ -689,8 +757,8 @@ function TimelineChart() {
             <path d={area} fill="url(#alerts-timeline)" />
             <path d={path} fill="none" stroke="#465FFF" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" vectorEffect="non-scaling-stroke" />
           </svg>
-          <div className="absolute left-[48%] top-1 flex -translate-x-1/2 flex-col items-center">
-            <span className="rounded-[8px] bg-[#101334] px-3 py-2 text-center shadow-lg"><b className="block text-[9px] font-black text-white">12:00</b><span className="text-[10px] font-black text-white">1.024 alert</span></span>
+          <div className="absolute top-1 flex -translate-x-1/2 flex-col items-center" style={{ left: Math.max(12, Math.min(88, (peakX / 520) * 100)) + "%" }}>
+            <span className="rounded-[8px] bg-[#101334] px-3 py-2 text-center shadow-lg"><b className="block text-[9px] font-black text-white">{peakLabel}</b><span className="text-[10px] font-black text-white">{peakValue.toLocaleString("id-ID")} alert</span></span>
             <span className="h-10 border-l border-dashed border-[#8B95B8]" />
             <span className="h-3 w-3 rounded-full border-2 border-white bg-[#465FFF] ring-4 ring-[#465FFF]/15" />
           </div>
@@ -701,7 +769,7 @@ function TimelineChart() {
   );
 }
 
-function InvestigationStatus() {
+function InvestigationStatus({ ta }: { ta: AlertsTa }) {
   const segments = [
     { label: "Baru", value: "28% (694)", width: "28%", color: "#465FFF" },
     { label: "Investigating", value: "32% (790)", width: "32%", color: "#0284C7" },
@@ -711,8 +779,8 @@ function InvestigationStatus() {
 
   return (
     <Panel className="p-4">
-      <h3 className="text-[15px] font-black text-[#101334]">Status Investigasi</h3>
-      <p className="mt-1 text-[11px] font-bold text-[#68739F]">Monitoring penyelesaian alert.</p>
+      <h3 className="text-[15px] font-black text-[#101334]">{ta("investigation.title")}</h3>
+      <p className="mt-1 text-[11px] font-bold text-[#68739F]">{ta("investigation.desc")}</p>
       <div className="mt-5 flex h-2.5 overflow-hidden rounded-full bg-[#EEF2F8]">
         {segments.map((segment) => <span key={segment.label} style={{ width: segment.width, backgroundColor: segment.color }} />)}
       </div>
@@ -725,19 +793,16 @@ function InvestigationStatus() {
         ))}
       </div>
       <div className="mt-5 grid grid-cols-2 gap-4 border-t border-[#EDF1F7] pt-4">
-        <StatusMetric label="Rata-rata waktu respons" value="1h 24m" delta="↓ 12%" />
-        <StatusMetric label="Rata-rata waktu resolusi" value="6h 42m" delta="↓ 8%" />
+        <StatusMetric label={ta("investigation.avgResponse")} value="1h 24m" delta="↓ 12%" />
+        <StatusMetric label={ta("investigation.avgResolution")} value="6h 42m" delta="↓ 8%" />
       </div>
     </Panel>
   );
 }
 
-function StatusMetric({ label, value, delta }: { label: string; value: string; delta: string }) {
-  return <div><p className="text-[11px] font-bold text-[#68739F]">{label}</p><div className="mt-1 flex items-center gap-2"><b className="text-[18px] font-black text-[#101334]">{value}</b><span className="rounded-full bg-[#10B981]/10 px-2 py-0.5 text-[11px] font-black text-[#10B981]">{delta}</span></div></div>;
-}
-
 export default function AlertsPage() {
   const t = useTranslations("DemoApp");
+  const ta = useTranslations("Alerts");
   const queryClient = useQueryClient();
   const toastHook = useToast();
   const [page, setPage] = useState(1);
@@ -764,12 +829,12 @@ export default function AlertsPage() {
     onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: ["alerts"] });
       if (result) {
-        showToast("Status alert berhasil diperbarui.");
+        showToast(ta("toast.statusUpdated"));
       } else {
-        showToast("Status alert belum bisa diperbarui. Coba lagi.", "error");
+        showToast(ta("toast.statusUpdateFailed"), "error");
       }
     },
-    onError: () => showToast("Status alert belum bisa diperbarui. Coba lagi.", "error"),
+    onError: () => showToast(ta("toast.statusUpdateFailed"), "error"),
   });
 
   const alertsQuery = useQuery({
@@ -777,13 +842,32 @@ export default function AlertsPage() {
     queryFn: () => getAlerts({ page, limit: alertsApiLimit }),
     staleTime: 30 * 1000,
   });
+  const alertsSummaryQuery = useQuery({
+    queryKey: ["alerts-summary"],
+    queryFn: () => getAlertsSummary(),
+    staleTime: 60 * 1000,
+  });
+  const summary = alertsSummaryQuery.data;
   const liveRows = alertsQuery.data?.data ? buildApiAlertRows(alertsQuery.data.data) : [];
   const isLiveUnavailable = alertsQuery.data === null;
   const rows = liveRows.length > 0 || alertsQuery.data ? liveRows : alertRows;
+  const alertTimeline = summary?.timeline?.length ? summary.timeline : undefined;
+  const alertTimelineSpark = alertTimeline?.slice(-12) ?? stableTrend("alerts-summary");
+  const alertSourceDistribution = buildAlertSourceDistribution(summary);
+  const alertTotal = summary?.total ?? alertSourceDistribution.reduce((sum, item) => sum + item.count, 0);
+  const liveMetricCards = summary
+    ? [
+        { label: ta("metrics.totalAlert"), value: summary.total.toLocaleString("id-ID"), helper: ta("metrics.liveData"), helperTone: "blue" as Tone, icon: Bell, tone: "purple" as Tone, spark: alertTimelineSpark },
+        { label: ta("metrics.criticalHigh"), value: (summary.by_severity.critical + summary.by_severity.high).toLocaleString("id-ID"), helper: ta("metrics.needsAttention"), helperTone: "red" as Tone, icon: AlertTriangle, tone: "red" as Tone, spark: alertTimelineSpark },
+        { label: ta("metrics.mediumLow"), value: (summary.by_severity.medium + summary.by_severity.low).toLocaleString("id-ID"), helper: ta("metrics.monitor"), helperTone: "green" as Tone, icon: AlertTriangle, tone: "amber" as Tone, spark: alertTimelineSpark },
+        { label: ta("metrics.info"), value: summary.by_severity.info.toLocaleString("id-ID"), helper: ta("metrics.infoOnly"), helperTone: "blue" as Tone, icon: Info, tone: "blue" as Tone, spark: alertTimelineSpark },
+        { label: ta("metrics.resolved"), value: summary.by_status.resolved.toLocaleString("id-ID"), helper: ta("metrics.closed"), helperTone: "green" as Tone, icon: ShieldCheck, tone: "green" as Tone, spark: alertTimelineSpark },
+      ]
+    : metricCards;
   const footerText = alertsQuery.data?.pagination
     ? formatPaginationSummary(alertsQuery.data.pagination, "alert live")
     : isLiveUnavailable
-      ? "Data live belum bisa dimuat. Menampilkan data contoh."
+      ? ta("error.title")
       : "Menampilkan 1-5 dari 24 alert";
 
   return (
@@ -794,40 +878,40 @@ export default function AlertsPage() {
           <p className="mt-2 text-[14px] font-semibold text-[#68739F]">{t("pages.alerts.desc")}</p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] sm:w-auto"><Users size={14} />Kelola Kontak</button>
-          <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] sm:w-auto"><Settings size={14} />Pengaturan Notifikasi</button>
-          <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] sm:w-auto"><Plus size={15} />Buat Alert Baru</button>
+          <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] sm:w-auto"><Users size={14} />{ta("buttons.manageContacts")}</button>
+          <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] sm:w-auto"><Settings size={14} />{ta("buttons.notificationSettings")}</button>
+          <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] sm:w-auto"><Plus size={15} />{ta("buttons.createNew")}</button>
         </div>
       </header>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        {metricCards.map((metric) => <MetricCard key={metric.label} {...metric} />)}
+        {liveMetricCards.map((metric) => <MetricCard key={metric.label} {...metric} />)}
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_372px]">
         <div className="min-w-0 space-y-4">
           <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]">
-            <SummaryCard />
-            <QuickFilter />
+            <SummaryCard ta={ta} />
+            <QuickFilter ta={ta} />
           </div>
           {alertsQuery.isPending ? (
             <TableSkeleton rows={6} columns={9} />
           ) : alertsQuery.data && liveRows.length === 0 ? (
-            <DashboardEmptyState title="Belum ada alert live" description="Backend berhasil dihubungi, tetapi belum ada alert yang perlu ditampilkan." icon="alert" minHeight="min-h-[420px]" />
+            <DashboardEmptyState title={ta("empty.noLiveAlerts")} description={ta("empty.noAlertsDesc")} icon="alert" minHeight="min-h-[420px]" />
           ) : (
             <>
-              {isLiveUnavailable ? <DashboardErrorState title="Data live belum bisa dimuat" description="API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan data contoh." onRetry={() => void alertsQuery.refetch()} minHeight="min-h-[150px]" /> : null}
-              <AlertsTable rows={rows} footerText={footerText} pagination={alertsQuery.data?.pagination} onPageChange={setPage} isFetching={alertsQuery.isFetching} onStatusChange={(id, status) => statusMutation.mutate({ id, status })} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} menuRef={menuRef} />
+              {isLiveUnavailable ? <DashboardErrorState title={ta("empty.dataUnavailable")} description={ta("empty.dataUnavailableDesc")} onRetry={() => void alertsQuery.refetch()} minHeight="min-h-[150px]" /> : null}
+              <AlertsTable ta={ta} rows={rows} footerText={footerText} pagination={alertsQuery.data?.pagination} onPageChange={setPage} isFetching={alertsQuery.isFetching} onStatusChange={(id, status) => statusMutation.mutate({ id, status })} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} menuRef={menuRef} />
             </>
           )}
         </div>
-        <SidePanel />
+        <SidePanel ta={ta} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <SourceDonut />
-        <TimelineChart />
-        <InvestigationStatus />
+        <SourceDonut ta={ta} data={alertSourceDistribution} total={alertTotal} />
+        <TimelineChart ta={ta} data={alertTimeline} labels={summary?.timeline_labels} />
+        <InvestigationStatus ta={ta} />
       </div>
 
       <div className="sr-only" aria-live="polite">AI image slot: {aiAgentImage}</div>

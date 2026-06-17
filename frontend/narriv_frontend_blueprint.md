@@ -26,7 +26,7 @@
 **Narriv** adalah platform *Narrative Intelligence & Operational Response* yang membantu organisasi memantau sinyal digital, menganalisis narasi, mendeteksi risiko, dan merespon secara proaktif menggunakan AI.
 
 **Frontend Path**: `c:\MyProject\narriv\frontend`
-**Framework**: Next.js 16.2.4 (App Router, Turbopack)
+**Framework**: Next.js 16.2.7 (App Router, Turbopack)
 **Port**: `localhost:3001`
 **Backend API**: `localhost:3000`
 
@@ -48,6 +48,7 @@
 | Font | Poppins (Google Fonts) | Via `next/font` |
 | Animation | `tw-animate-css` + custom chart utilities | `animate-in`, `fade-in`, `slide-in-*`, chart entry/draw/donut animations with reduced-motion support |
 | Data Fetching | Ky, typed `api-service.ts`, React Query provider | `apiClient.ts` uses Ky for all frontend-to-backend calls; dashboard pages use React Query + `api-service` with preview/mock fallbacks where live coverage is incomplete |
+| Deployment | DigitalOcean VPS + Hostinger DNS target | Production readiness runbook lives at `process/general-plans/references/production-readiness-runbook.md`; real VPS execution still pending |
 
 ---
 
@@ -65,7 +66,7 @@
 | Remember Me | Checkbox, default checked |
 | Forgot Password | Link → `/reset-password` |
 | Submit Button | Gradient primary button with loading state |
-| Social Login | Apple, Google, Microsoft buttons (currently show "unavailable" toast) |
+| Social Login | Google OAuth2 button |
 | Sign Up Link | Bottom link → `/signup` |
 | Security Footer | Shield icons + trust badges |
 | API Integration | `POST /auth/login` → sets token/user in `useAuthStore` |
@@ -78,7 +79,7 @@
 | Password Strength | Visual meter (Weak/Medium/Strong) with colored bars |
 | Password Requirements | Length, uppercase, number, special character indicators |
 | Submit Button | "Create Account" with loading state |
-| Social Sign Up | Apple, Google, Microsoft |
+| Social Sign Up | Google OAuth2 |
 | Login Link | Bottom link → `/login` |
 | API Integration | `POST /auth/register` |
 
@@ -121,16 +122,7 @@
 | Element | Detail |
 |---------|--------|
 | Layout | Security split layout |
-| API Integration | Captures URL params (`token`, `refreshToken`, `user`) from backend redirects |
-| Element | Detail |
-|---------|--------|
-| Layout | Same split layout, "verification" illustration |
-| Center Icon | Shield |
-| OTP Input | 6-digit code input boxes with auto-advance |
-| Verify Button | Primary submit |
-| Resend Link | Resend code action |
-| Back Link | → `/signup` |
-| API Integration | `POST /auth/verify-email` via Ky-backed `verifyEmailCode()` |
+| API Integration | Captures one-time `code` from backend redirect and exchanges it through Ky-backed `exchangeOAuthCode()` (`POST /auth/oauth/exchange`) |
 
 #### 🆕 New Password (`/new-password`)
 | Element | Detail |
@@ -167,7 +159,7 @@
 #### Layout Components
 | Component | Detail |
 |-----------|--------|
-| Sidebar | Collapsible (292px → 92px), gradient background, nav groups: Main, Analysis, Action, System |
+| Sidebar | Collapsible (292px → 92px), gradient background, nav groups: Main, Analysis, Action (includes Cases), System — all labels bilingual via `next-intl` |
 | Topbar | Sticky, global search across alerts/narratives/pages, language toggle (EN/ID), notification popover, user avatar, logout |
 | Mobile Nav | Bottom navigation bar for mobile viewports |
 
@@ -178,56 +170,61 @@
 | Activity Chart | Area chart showing signal volume over time (15 data points) | `getDashboardSummary().trends` with `activitySeries` fallback; 24h/7d/30d query params wired. Real-time updates via SSE |
 | Signal Category Donut | Pie chart: Reputasi, Operasional, Produk, Keamanan, Regulasi, Lainnya | `getDashboardSummary().sentiment_distribution` for sentiment donut; topic breakdown remains preview/static |
 | Latest Alerts | List of 5 alert items with severity colors, source, time | `getDashboardSummary().latest_signals` with `alerts` fallback |
-| Trending Topics | Top 5 topics with mention counts and trend deltas | `topTopics` mock |
-| Active Sources | Table with source name, icon, status, health, signal count | `sources` mock |
-| System Status | 5 system indicators (Platform, AI Engine, Data Pipeline, etc.) | `systemStatus` mock |
+| Trending Topics | Top 5 topics with mention counts and trend deltas | `getDashboardSummary().top_topics` (live data from `narrativeCluster` table) |
+| Active Sources | Table with source name, icon, status, health, signal count | `getDashboardSummary().sources_health` (live data from `source` + `rawDocument` count) |
+| System Status | 5 system indicators (Platform, AI Engine, Data Pipeline, etc.) | `getDashboardSummary().system_status` (live health checks: API Server, Database, Redis Queue, OpenAI) |
 | Quick Actions | 6 action buttons (New Alert, Report, Analyze, Sources, Settings, Help) | `quickActions` mock |
 
 #### 📡 Signals (`/signals`)
 | Widget | Detail | Data Source |
 |--------|--------|-------------|
-| AI Summary + KPIs | Executive summary, signal metrics, investigation health | Inline/static page data |
-| Follow-up Panel | Recommended next response and ownership context | Inline/static page data |
-| Filter Row | Source/severity/status filters | Local state |
-| Signals Table | Main table with source, narrative, severity, confidence, status | Wired to `getSignals()` with search, 24h/7d/30d params, pagination, and preview fallback |
-| Recommendations | AI action suggestions beside the table | Inline/static page data |
-| Source Donut | Source distribution donut | Inline SVG/CSS |
-| Timeline + Queue | Investigation timeline and queue cards | Inline/static page data |
+| AI Summary + KPIs | Executive summary, signal metrics, investigation health | `getSignals()` pagination total plus `getSignalsMeta().timeline` and `getSignalsMeta().totalSignals` |
+| Follow-up Panel | Recommended next response and ownership context | `getSignalsMeta().followUps` with translated preview fallback only when API unavailable; empty state when no data |
+| Filter Row | Source/severity/status filters — fully bilingual (EN/ID) | Local state; filter labels, search placeholder, sort button all use `next-intl` |
+| Signals Table | Main table with source, narrative, severity, confidence, status — all 9 column headers bilingual | Wired to `getSignals()` with search, 24h/7d/30d params (bilingual labels), pagination, and translated preview fallback |
+| Recommendations | AI action suggestions beside the table | `getSignalsMeta().recommendations` with translated preview fallback only when API unavailable; empty state when no data |
+| Source Donut | Source distribution donut — bilingual title, labels, empty state | `getSignalsMeta().sourceDistribution` and `totalSignals`; dynamic conic gradient from API data; center total is live |
+| Timeline + Queue | Investigation timeline (interactive hover tooltip, loading skeleton) and queue cards — fully bilingual | `getSignalsMeta().timeline`, `timelineLabels`, and `investigationQueue`; TimelineChart has hover tooltip with bilingual value labels; InvestigationQueue links to `/cases` via redirect page |
+| Create Investigation Modal | Modal form for creating cases — fully bilingual | Wired to `createCase()` API |
+| Mutation Safety | Create investigation only shows success after `createCase()` returns a record | `createCase()` null result shows localized error and keeps the modal open |
+| Bilingual Coverage | All UI text (titles, descriptions, filters, headers, footers, error states, empty states, mock fallback data) translated to EN/ID | `next-intl` via `useTranslations("Signals.*")`; 80+ translation keys |
 
 #### 🔔 Alerts (`/alerts`)
 | Widget | Detail | Data Source |
 |--------|--------|-------------|
-| Metric Cards | Alert volume, SLA, severity, confidence KPIs | Inline/static page data |
+| Metric Cards | Alert volume, SLA, severity, confidence KPIs | `getAlertsSummary()` total/severity/status counts plus live timeline sparklines |
 | AI Summary | AI assistant panel using `/mainapp/alerts-ai-agent.png` | Static asset |
 | Quick Filters | Severity/status/source filters | Local state |
 | Alert Table | Main alert list with source, confidence, owner, status | Wired to `getAlerts()` with pagination and preview fallback |
-| Action Panels | Response playbook, source mix, timeline, investigation status | Inline SVG/CSS + static data |
+| Action Panels | Response playbook, source mix, timeline, investigation status | Source distribution and timeline consume `getAlertsSummary().by_type`, `timeline`, and `timeline_labels`; response/AI recommendation panels remain preview until dedicated backend contracts exist |
 | Alert Detail | Drill-down page at `/alerts/[id]` | Wired to `getAlertById()` with preview/error state handling |
 | Status Actions | `updateAlertStatus()` and `updateAlertAssignment()` wired | Status dropdown menu on alert list, editable assignment fields on detail page |
 
 #### 🔍 AI Visibility (`/visibility`)
 | Widget | Detail | Data Source |
 |--------|--------|-------------|
-| KPI Cards (5x) | Total AI Mentions, Brand Mentions, Share of Voice, Average Position, AI Sentiment | Partially wired to `getVisibility()` with static sections retained where backend fields are missing |
-| AI Platform Distribution | Bar chart: ChatGPT, Gemini, Copilot, Perplexity, Claude | Inline/static data with SVGL icons |
-| Executive Summary | AI-generated summary text with "See all" button | Local dict |
-| Prompt Test Table | Table: Prompt, Engine, Brand Response, Competitor Response, Tone comparison | Inline/static data; backend `prompts[]` contract exists |
-| Competitor Share | Horizontal bars comparing brand vs competitors | Inline/static data |
-| AI Mention Examples | Cards showing actual AI platform responses mentioning Narriv | Inline/static data |
-| Trending Topics Table | Topic, Mentions, Direction, Type | Inline/static data |
+| KPI Cards (5x) | Total AI Mentions, Brand Mentions, Share of Voice, Average Position, AI Sentiment | `getVisibility()` plus `getVisibilitySummary()` / `getVisibilityTrends()` for live metric sparklines; preview fallback remains for empty data |
+| AI Platform Distribution | Bar chart: ChatGPT, Gemini, Copilot, Perplexity, Claude | `getVisibilitySummary().engine_breakdown` with SVGL icons and sample fallback |
+| Executive Summary | AI-generated summary text with "See all" button | Live brand/competitor rates from `getVisibility()` / `getVisibilitySummary()` plus localized copy |
+| Prompt Test Table | Table: Prompt, Engine, Brand Response, Competitor Response, Tone comparison | `getVisibility().prompts[]` mapped into trending prompt/topic rows |
+| Competitor Share | Horizontal bars comparing brand vs competitors | `getVisibilityTrends()` brand vs competitor rates and `getVisibility()` latest rates; sample fallback remains for empty data |
+| AI Mention Examples | Cards showing actual AI platform responses mentioning Narriv | `getVisibility().prompts[]` mapped to latest prompt-test cards; sample fallback remains for empty data |
+| Trending Topics Table | Topic, Mentions, Direction, Type | `getVisibility().prompts[]` with engine and tone mapping; sample fallback remains for empty data |
 | AI Agent Card | Avatar image, brand personality description | Static content using `/mainapp/ai-avatar.png` |
 | Global Map | Indonesia-focused map with geo-distributed data points | SVG/CSS map |
-| Geo Actions | Localized action recommendations per region | Inline/static data; backend `geoActions[]` contract exists |
+| Geo Actions | Localized action recommendations per region | `getVisibility().geoActions[]` with localized fallback |
 
 #### 🧠 Intelligence (`/intelligence`)
 | Widget | Detail | Data Source |
 |--------|--------|-------------|
-| Topic Map | Interactive bubble map showing narrative clusters | Partially wired to `getNarratives()` with preview cluster fallback; map/detail UI still needs fuller backend field coverage |
-| Cluster Bubbles | Sized by signal count, colored by sentiment | Position: x/y coordinates in mock |
+| Topic Map | Interactive bubble map showing narrative clusters | Wired to `getNarratives()` with live data; mock-data fallbacks removed |
+| Cluster Bubbles | Sized by signal count, colored by sentiment | Position: x/y derived from `mapSpecks` (static decoration array); size determined by `record.signalCount` |
 | Cluster Detail Panel | Selected cluster: title, description, signal count, priority, AI recommendation | Click interaction |
 | Related Topics | Tags showing related clusters with growth deltas | `related[]` in cluster data |
 | Cluster List | Sidebar list of all clusters with signal counts | Same data source |
 | Time Filter | 24h, 7 days, 30 days dropdown | Local state |
+| Competitor Donut | "Pangsa Narasi Kompetitor" share breakdown | Live-derived from `getNarratives()` cluster signal share; shows empty-data segment when no signals exist |
+| Lifecycle Metrics | Emerging / Accelerating / Peaking / Declining / Dormant counts and trends | Live-derived from `getNarratives()` cluster velocity, impact, and signal counts with sparkline fallbacks for empty phases |
 
 #### 📊 Reports (`/reports`)
 | Widget | Detail | Data Source |
@@ -242,12 +239,13 @@
 #### 🎯 Action Center (`/action-plans`)
 | Widget | Detail | Data Source |
 |--------|--------|-------------|
-| KPI Row | Open actions, SLA, auto-resolved, response velocity | Inline/static page data |
-| Filters | Queue/status filters | Local state |
-| Kanban Board | 4-column action workflow with avatars and priority | Inline/static page data |
-| Action Detail | Selected action detail with evidence and plan steps | Inline/static page data |
-| Performance + AI Learning | Performance metrics and feedback learning panels | Inline/static page data |
-| API Functions | Action-plan/feedback/assignment functions exist in `api-service.ts` | `getActionPlans()`, `getActionQueue()`, and `submitActionPlanFeedback()` are wired; accept/reject buttons on detail |
+| KPI Row | Active, in-progress, done, needs-attention, and resolution/current-state metrics | `getActionPlansMetrics()` / `GET /api/action-plans/metrics`; no mock fallback |
+| Filters | Search, priority/status filter dropdown, lane filtering, time range toggle | Local state applied to `getActionQueue()` data |
+| Kanban Board | 4-column action workflow with priority/status cards, View All/Show Less controls | `getActionQueue()` / `GET /api/actions`; empty API results show empty state |
+| Create Action Plan Modal | Bilingual strategy selector for PR/content/influencer/crisis plans | `createActionPlan()` / `POST /api/actions`; successful create invalidates queue, metrics, and latest-plan queries |
+| Action Detail | Selected action detail with evidence and execution plan steps | `getActionPlanById()` / `GET /api/action-plans/:id`; backend supports multi-step `option.steps`; no fallback plan text |
+| Performance + AI Learning | AI accuracy score, acceptance rate, rejection rate, per-category accuracy, learning insights/templates | `getFeedbackAccuracy()` / `GET /api/feedback/accuracy` and `getActionPlanLearning()` / `GET /api/action-plans/:id/learning` |
+| API Functions | Action-plan/feedback/assignment functions exist in `api-service.ts` | `getActionPlans()`, `getActionPlanById()`, `getActionPlansMetrics()`, `getActionQueue()`, `createActionPlan()`, `getActionPlanLearning()`, and `submitActionPlanFeedback()` are wired |
 
 ---
 
@@ -263,6 +261,7 @@
 | Language | Dropdown (Bahasa Indonesia, English) | Local state/UI control |
 | Notification Email | Text input | Loaded/saved via workspace settings API with local fallback |
 | WhatsApp PIC | Text input | Loaded/saved via workspace settings API with local fallback |
+| Global Source Configuration | Sync frequency, source language, dedupe policy, retention controls | Future Settings-page scope; currently not implemented/persisted and should not be treated as complete from the Sources page |
 | Team Members Table | Name, Role, Email, Status, Actions | Loaded via `getWorkspaceMembers()` with preview fallback |
 | Invite Member | Add member form | Wired to `createWorkspaceMember()` API with validation |
 | Remove Member | Delete action | Wired to `deleteWorkspaceMember()` API with confirmation dialog |
@@ -273,13 +272,19 @@
 #### 📊 Sources (`/workspace/sources`)
 | Widget | Detail | Data Source |
 |--------|--------|-------------|
-| KPI Row | Connected sources, ingestion volume, health, latency | Inline/static page data |
-| Connector Grid | Connector tiles: Instagram, YouTube, X, Blogger, Discourse, etc. | Wired to `getSources()` with preview connector fallback; toggle/sync/delete mutations wired |
-| Health Sidebar | Pipeline health and recent incidents | Inline/static page data |
+| KPI Row | Connected sources, ingestion volume, health, latency — fully bilingual labels | `getSourceHealth()` and `getSourceCoverage()` live summaries; all metric card labels, helpers, and health status labels use `next-intl` |
+| Connector Grid | Connector tiles: Instagram, YouTube, X, Blogger, Discourse, etc. | Wired to `getSources()`; connector identity, keys, toggle, and delete actions use source IDs to handle duplicate names |
+| Individual Sync | Sync button per source (hover on card/list row) | `runSourceIngestion()` → `POST /ingestion/run/:sourceId` |
+| Search | Filter sources by name or category | Local state filtering on `liveConnectors` array |
+| Empty States | VolumeBars, DistributionDonut, HealthDonut show contextual empty views when no data — bilingual | Inline components with icons and descriptive text using `next-intl` |
+| Add Source / Connect | Adds default Apify actor presets, including blog/news domains via `apify/web-scraper` | `bootstrapDefaultSources()` → `POST /sources/bootstrap-defaults` |
+| Sync All | Batch syncs all active sources while respecting backend batch limit | `runBatchSourceIngestion()` chunks source IDs into 25-item `POST /ingestion/run` requests and aggregates queued/failed counts |
+| Health Sidebar | Pipeline health and recent incidents — bilingual labels (Sehat/Peringatan/Bermasalah/Perlu perhatian) | Inline data with `next-intl` translations |
 | Recent Activity | Source sync/activity list | Inline/static page data |
-| Global Settings | Sync frequency, language, dedupe, retention controls | UI-only |
-| Charts | Volume chart and source distribution donut | Inline SVG/CSS |
-| API Functions | Source CRUD/ingestion functions exist in `api-service.ts` | `getSources()`, `updateSource()` (toggle), `deleteSource()`, and `runSourceIngestion()` (sync) are wired |
+| Global Settings | Sync frequency, language, dedupe, retention controls — not part of completed Data Sources scope | Deferred to Settings page because these controls are workspace-wide configuration, not source-list CRUD |
+| Charts | Volume chart and source distribution donut | Inline SVG/CSS with empty state fallbacks |
+| Distribution Panel | Source type distribution — bilingual title, empty state | `next-intl` translations for title, description, empty state |
+| API Functions | Source CRUD/ingestion functions exist in `api-service.ts` | `getSources()`, `getSourcePresets()`, `bootstrapDefaultSources()`, `updateSource()` (toggle), `deleteSource()`, `runSourceIngestion()` (single sync), and `runBatchSourceIngestion()` (chunked Sync All) are wired. Delete failures no longer show success toasts. |
 
 #### 🧾 Activity Log (`/workspace/activity`)
 | Widget | Detail | Data Source |
@@ -305,11 +310,13 @@
 #### 🗂️ Cases & Investigations (`/workspace/cases`)
 | Widget | Detail | Data Source |
 |--------|--------|-------------|
-| Header | Title and "Buat Case Baru" button | Static UI |
+| Header | Title and "Create Case" button | Static UI |
 | Filters | Status (Open, In Progress, Resolved, Closed) & Priority filters | Local state driving API `status`/`priority` queries |
 | Cases Table | List of cases with Title, Status dropdown, Priority badge, Assignee, Actions | Wired to `getCases()` with pagination and error/empty states |
 | Status Actions | Inline dropdown to change status | Wired to `updateCase()` mutation |
 | Delete Action | Trash icon with confirmation dialog | Wired to `deleteCase()` mutation |
+| Sidebar Navigation | Listed under "Action" group in sidebar | `navGroups` in `mock-data.ts` includes `/workspace/cases` with `FileText` icon |
+| Redirect Page | `/cases` → `/workspace/cases` | `app/(dashboard)/cases/page.tsx` redirects via `next/navigation` |
 
 ---
 
@@ -338,7 +345,7 @@
 | Switch | `switch.tsx` | Toggle switches |
 | Table | `table.tsx` | Data tables |
 | Tabs | `tabs.tsx` | Tab navigation |
-| Toast | `toast.tsx` | Shared success/error/info notification provider |
+| Toast | `toast.tsx` | Shared success/error/info notification provider with localized default titles and close label |
 | ConfirmationDialog | `confirmation-dialog.tsx` | Reusable confirmation modal for destructive actions |
 
 ### 4.2 Dashboard Components (`components/dashboard/`)
@@ -374,7 +381,7 @@
 | AuthInput | `auth-shell.tsx` | Styled form input with icon |
 | PasswordInput | `auth-shell.tsx` | Password field with visibility toggle |
 | PrimaryButton | `auth-shell.tsx` | Gradient submit button |
-| SocialButtons | `auth-shell.tsx` | Apple/Google/Microsoft login buttons |
+| SocialButtons | `auth-shell.tsx` | Google login button (Microsoft removed 2026-06-12) |
 | OTPInput | `auth-shell.tsx` | 6-digit verification code input |
 
 ---
@@ -428,14 +435,14 @@ All frontend-to-backend calls should go through the Ky-backed `apiClient.ts`/`ap
 | `getCurrentUser()` | `GET /auth/me` | Yes | No |
 | `getActivityLogs()` | `GET /api/workspace/activity` | Yes | Yes — `/workspace/activity` page uses filters, table rendering, and pagination |
 | `getDashboardSummary()` | `GET /api/dashboard/summary` | Yes | Yes — dashboard home uses KPI/trend/sentiment/latest signal fields, fully unmocked |
-| `getSignals()` / `getSignalsMeta()` | `GET /signals`, `GET /signals/meta` | Yes | `getSignals()` yes on `/signals`; `getSignalsMeta()` yes for signals sidebar |
+| `getSignals()` / `getSignalsMeta()` | `GET /signals`, `GET /signals/meta` | Yes | Yes — `/signals` maps table, summary metrics, follow-ups, recommendations, source donut, timeline labels/peak, and investigation queue |
 | `getAlerts()` / `getAlertById()` | `GET /api/alerts`, `GET /api/alerts/:id` | Yes | Yes — list page and detail page use React Query |
 | Alert status/assignment functions | `PATCH /api/alerts/:id/status`, `PATCH /api/alerts/:id/assign` | Yes | Yes — alerts page dropdown for status change, alert detail page editable assignment fields |
-| `getVisibility()` | `GET /api/visibility` | Yes | Yes — partially mapped with static fallback sections |
-| Action-plan functions | `/api/action-plans`, `/api/actions` | Yes | Yes — `getActionPlans()`, `getActionQueue()`, and `submitActionPlanFeedback()` are wired; accept/reject buttons on action detail |
+| `getVisibility()` / `getVisibilitySummary()` / `getVisibilityTrends()` | `GET /api/visibility`, `GET /api/visibility/summary`, `GET /api/visibility/trends` | Yes | Yes — `/visibility` maps KPIs, prompt rows, platform distribution, trend charts, competitor share, latest mentions, and geo actions with empty-data fallback |
+| Action-plan functions | `/api/action-plans`, `/api/action-plans/:id`, `/api/action-plans/metrics`, `/api/action-plans/:id/learning`, `/api/actions`, `/api/feedback/accuracy` | Yes | Yes — `getActionPlans()`, `getActionPlanById()`, `getActionPlansMetrics()`, `getActionQueue()`, `createActionPlan()`, `getActionPlanLearning()`, `getFeedbackAccuracy()`, and `submitActionPlanFeedback()` are wired; create invalidates affected queries and accept/reject buttons update feedback |
 | Report/export functions | `/api/reports`, `/api/reports/:id/export`, `/api/reports/exports/:jobId` | Yes | Yes — `getReports()` and `createReportExport()` with polling via `getReportExportStatus()` wired to PDF download |
-| `getNarratives()` | `GET /api/narratives` | Yes | Yes — partially mapped to intelligence UI with preview fallback |
-| Source/ingestion functions | `/sources`, `/ingestion/run/:sourceId`, `/ingestion/status/:jobId` | Yes | Yes — `getSources()`, `updateSource()` (toggle), `deleteSource()`, and `runSourceIngestion()` (sync) are wired |
+| `getNarratives()` | `GET /api/narratives` | Yes | Yes — `/intelligence` maps topic map, cluster list/detail, narrative share donut, lifecycle counts, and metric cards |
+| Source/ingestion functions | `/sources`, `/sources/presets`, `/sources/bootstrap-defaults`, `/sources/health`, `/sources/coverage`, `/ingestion/run`, `/ingestion/run/:sourceId`, `/ingestion/status/:jobId` | Yes | Yes — `getSources()`, `getSourcePresets()`, `bootstrapDefaultSources()`, `updateSource()` (toggle), `deleteSource()`, `runSourceIngestion()` (single sync), `runBatchSourceIngestion()` (chunked Sync All), `getSourceHealth()`, and `getSourceCoverage()` are wired |
 | Workspace settings/member functions | `/api/workspace/settings`, `/api/workspace/members` | Yes | Yes — `getWorkspaceSettings()`, `updateWorkspaceSettings()`, `getWorkspaceMembers()`, `createWorkspaceMember()` by registered-user email, and `deleteWorkspaceMember()` are wired |
 | Workspace logo upload | `POST /api/workspace/logo` | Yes — Ky-backed `uploadWorkspaceLogo()` | Yes — settings logo picker validates image type/size and uploads base64 JSON to backend |
 | Integrations functions | `GET/POST/PATCH/DELETE /api/workspace/integrations` | Yes | Yes — `/workspace/integrations` page supports create, filter, inline status update, and disconnect |
@@ -451,6 +458,7 @@ All frontend-to-backend calls should go through the Ky-backed `apiClient.ts`/`ap
 | Page Wiring | Primary dashboard reads are now wired to `api-service.ts`, but many secondary cards/actions still use preview/static data until backend coverage is complete. |
 | Token Refresh | Implemented in `apiClient.ts` and exercised by dashboard pages through React Query + `api-service.ts`. |
 | Workspace Member Invite | Backend accepts registered-user `email` or `userId`; full pending-user invite tokens and email delivery are not implemented yet. |
+| Endpoint Alignment | OAuth exchange, source bootstrap, and Sync All source ingestion paths are aligned with backend routes: `/auth/oauth/exchange`, `/sources/bootstrap-defaults`, and `/ingestion/run`. |
 
 ---
 
@@ -460,11 +468,11 @@ All frontend-to-backend calls should go through the Ky-backed `apiClient.ts`/`ap
 |--------|--------|
 | Library | `next-intl` (client-side only) |
 | Languages | English (`en`), Indonesian (`id`) |
-| Message Files | `frontend/messages/en.json` (54KB), `frontend/messages/id.json` (55KB) |
+| Message Files | `frontend/messages/en.json` (58KB+), `frontend/messages/id.json` (59KB+) |
 | Provider | `IntlProvider` wraps all pages |
 | Toggle | `useUiStore.toggleLanguage()` |
-| Namespaces | `AuthDesign`, `DemoApp` (topbar, sidebar, dashboard, settings, etc.) |
-| Some pages | Use inline `dictionary` objects or static copy instead of `next-intl` (visibility, intelligence, signals, alerts, reports, action-plans, workspace pages) |
+| Namespaces | `AuthDesign`, `DemoApp` (topbar, sidebar nav, dashboard, settings, etc.), `Signals.*`, `Sources.*`, `Alerts.*`, `Visibility.*`, `Intelligence.*`, `Reports.*`, `ActionPlans.*`, `Workspace.*`, `Cases.*`, `Integrations.*`, `DashboardStates.*` |
+| Coverage | All pages now use `next-intl` message files; no remaining inline dictionaries or hardcoded UI text. Sidebar nav labels, metric card labels, filter tabs, table headers, footer text, empty states, error states, and mock fallback data all translated. |
 
 ---
 
@@ -479,6 +487,7 @@ All frontend-to-backend calls should go through the Ky-backed `apiClient.ts`/`ap
 - API client/service layer for all backend endpoints with React Query integration
 - Zustand stores with persistence (auth + UI settings)
 - All CRUD mutations wired: alerts, sources, reports, action plans, settings
+- Mutation result handling fixed for investigation creation, case delete/status update, and source delete so `null`/`false` API helper results no longer show success toasts
 - Auth guard via `proxy.ts` (Next.js 16), logout with refresh token revocation
 - Form validation on invite member, workspace settings, and change password
 - Dashboard quick actions wired to slide-over drawer
@@ -488,13 +497,14 @@ All frontend-to-backend calls should go through the Ky-backed `apiClient.ts`/`ap
 - Mock data cleanup: 16 unused exports removed from `mock-data.ts`
 
 ### ⚠️ Known Issues & Gaps
-1. **Static/Mock Data Dependency**: All primary and secondary dashboard widgets (topics, sources, system status, signals sidebar) are now fully un-mocked and use API data. Some empty-state or fallback mocks remain solely for preview when live data is completely empty.
+1. **Static/Mock Data Dependency**: All primary and secondary dashboard widgets are now fully un-mocked and use API data. Empty arrays are used as fallbacks. Some empty-state or fallback mocks remain solely for preview when live data is completely empty.
 2. **Onboarding Flow**: UI wired to backend API using `OnboardingContext` state and `api-service.ts` functions. Submits default initial configuration and redirects to dashboard.
-3. **Social Login**: Apple/Google/Microsoft buttons show "unavailable" toast.
+3. **Social Login**: Google OAuth2 button functional (requires `GOOGLE_CLIENT_ID` in `.env`). Microsoft OAuth removed — only Google supported.
 4. **Workspace Logo Upload**: Settings page is wired to the backend logo upload API using base64 JSON. Backend currently stores uploads locally; S3/Supabase Storage remains a future production storage upgrade.
 5. **Notification Channels**: Push/dispatch for email/whatsapp not fully implemented (settings exist). However, **In-App Notification Bell** is fully wired and functional using SSE.
-6. **Real-time Updates**: SSE is now active for `/api/notifications/stream` replacing polling for notification updates.
+6. **Real-time Updates**: SSE is now active for `/api/notifications/stream` replacing polling for notification updates. Live dashboard KPI updates also wired via `dashboard_update` event.
 7. **Reset Password Email Delivery**: Reset flow calls backend endpoints, but production email/SMS delivery provider is still future integration; non-production exposes dev reset code for local testing.
+8. **Global Configuration & Settings**: Data Sources global configuration controls are intentionally not complete. They are tightly coupled to the main Settings page and should be implemented there as workspace-wide settings, then optionally surfaced in Data Sources as a read-only shortcut or deep link.
 
 ---
 
@@ -513,6 +523,7 @@ These replace the removed frontend checklist/guidelines and should be treated as
 | i18n | Prefer `next-intl` messages for stable UI copy; inline dictionaries/static text should be migrated gradually. |
 | Validation | After frontend code edits, run `rtk lint` and `rtk npm run build`. |
 | Deployment Target | Frontend production target is DigitalOcean VPS behind Hostinger-managed DNS, not Vercel. |
+| Production Runbook | Use `process/general-plans/references/production-readiness-runbook.md` for DNS, Nginx, SSL, env, storage, backup, monitoring, and final QA gates. |
 
 ---
 
@@ -526,23 +537,24 @@ These replace the removed frontend checklist/guidelines and should be treated as
 > These tasks convert pages from mock data to real backend API data.
 
 - [x] **API Contract Cleanup** — Fixed `getReports()`, `getNarratives()`, `getSources()`, and pagination typings to match backend response shapes. Completed 2026-05-30.
-- [x] **Dashboard Home** — Wired to `getDashboardSummary()` for KPIs, trends, sentiment donut, latest signals, and date filters. Quick actions wired to slide-over drawer. Secondary widgets (topics, sources, system status) still use mock fallback. Completed 2026-05-31.
-- [x] **Signals Page** — Wired the main table to `getSignals()` with API field mapping, search, 24h/7d/30d params, pagination, loading/error/empty states, and preview fallback. Completed 2026-05-31.
-- [x] **Alerts Page** — Main list wired to `getAlerts()` with pagination. Status/assignment mutations wired via dropdown menu and editable assignment fields on detail page. Completed 2026-05-31.
-- [x] **Alert Detail Page** — Replaced mock lookup with `getAlertById()` and React Query state handling. Completed 2026-05-30.
-- [x] **Visibility Page** — Wired to `getVisibility()` with fallback handling. Completed 2026-05-31.
-- [x] **Intelligence Page** — Wired to `getNarratives()` with `buildNarrativeClusters` mapping and fallback. Completed 2026-05-31.
+- [x] **Dashboard Home** — Wired to `getDashboardSummary()` for KPIs, trends, sentiment donut, latest signals, trending topics, sources health, system status, and date filters. Quick actions wired to slide-over drawer. All secondary widgets (topics, sources, system status) now consume live data; empty arrays used as fallback. Mock fallbacks (`activitySeries`, `miniTopics`, `alerts`, `dashboardMetrics`) removed from `mock-data.ts` 2026-06-05. Completed 2026-05-31; mock fallbacks removed 2026-06-05.
+- [x] **Signals Page** — Wired the main table to `getSignals()` with API field mapping, search, 24h/7d/30d params, pagination, loading/error/empty states, and preview fallback. Expanded `getSignalsMeta()` usage for live sidebar panels, source donut total, timeline labels, and peak tooltip; backend `/signals/meta` timeline now uses 24h Signal data. Completed 2026-05-31; expanded 2026-06-06. Fully bilingual 2026-06-13: all panels (SummaryPanel, FollowUpPanel, RecommendationPanel, SourceDonut, TimelineChart, InvestigationQueue), filter tabs, time range options, table headers, search placeholder, footer text, error states, and mock fallback data translated via 80+ `next-intl` keys. Mock fallback functions (getSignalRows, getFollowUps, getRecommendations) removed 2026-06-13 (100% API-driven). TimelineChart has interactive hover tooltip with bilingual labels. SourceDonut builds dynamic conic gradient from API data. InvestigationQueue links to `/cases` via redirect page.
+- [x] **Alerts Page** — Main list wired to `getAlerts()` with pagination. Status/assignment mutations wired via dropdown menu and editable assignment fields on detail page. Expanded `getAlertsSummary()` usage for live severity/status metric cards, source distribution donut, and 24h timeline/peak tooltip on 2026-06-06. Completed 2026-05-31; expanded 2026-06-06.
+- [x] **Alert Detail Page** — Replaced mock lookup with `getAlertById()` and React Query state handling. Mock fallbacks removed 2026-06-05. Completed 2026-05-30.
+- [x] **Visibility Page** — Wired to `getVisibility()` with fallback handling. Added live summary/trend coverage via `getVisibilitySummary()` and `getVisibilityTrends()` for platform distribution, chart series, competitor share, latest prompt mentions, and metric sparklines on 2026-06-06. Completed 2026-05-31; expanded 2026-06-06.
+- [x] **Intelligence Page** — Wired to `getNarratives()` with `buildNarrativeClusters` mapping. Competitor narrative share donut and lifecycle cards are now live-derived from narrative cluster signal counts, velocity, and impact. All mock-data fallbacks (`intelligenceClusters` array) removed from `lib/mock-data.ts`. Completed 2026-05-31; mock fallbacks removed 2026-06-05; secondary panels expanded 2026-06-07.
 - [x] **Reports Page** — `getReports()` with pagination wired. PDF export via `createReportExport()` with polling and auto-download wired. Completed 2026-05-31.
-- [x] **Action Plans Page** — `getActionPlans()`, `getActionQueue()`, and `submitActionPlanFeedback()` wired. Accept/reject buttons on action detail. Completed 2026-05-31.
-- [x] **Sources Page** — `getSources()` with toggle, sync all, and delete mutations wired. Completed 2026-05-31.
-- [x] **Settings Page** — `getWorkspaceSettings()`, `updateWorkspaceSettings()`, `getWorkspaceMembers()`, `createWorkspaceMember()`, `deleteWorkspaceMember()`, and `changePassword()` wired with validation. Completed 2026-05-31.
+- [x] **Action Plans Page** — `getActionPlans()`, `getActionPlanById()`, `getActionPlansMetrics()`, `getActionQueue()`, `createActionPlan()`, `getActionPlanLearning()`, and `submitActionPlanFeedback()` wired. Accept/reject buttons on action detail. Removed `mockActions` and static fallback UI logic making it 100% API-driven. Fixed i18n translation keys 2026-06-13. Create modal invalidates queue/metrics/latest plan after successful create; backend multi-step `option.steps` rendering fixed. Completed 2026-05-31; finalized 2026-06-17.
+- [x] **Sources Page** — `getSources()` with toggle, sync all, and delete mutations wired. Add/connect controls now call `bootstrapDefaultSources()` to create Apify actor presets only; blog/news domains use `apify/web-scraper`. Completed 2026-05-31; preset bootstrap wired 2026-06-07; RSS presets removed 2026-06-07; Fixed "Sync All" POST body/error handling and switched Sync All to batch endpoint plus source-ID identity for duplicate names 2026-06-08. Individual sync per-source added 2026-06-12. Search by name/category added 2026-06-12. Empty states for VolumeBars, DistributionDonut, HealthDonut added 2026-06-12. All hardcoded Indonesian/English strings translated to bilingual (metric cards, health labels, distribution panel, empty states, settings labels) 2026-06-13. Endpoint alignment and chunked Sync All for 25-source backend batch limit finalized 2026-06-17. Global configuration/settings controls are explicitly excluded from this completed scope and deferred to Settings page work.
+- [x] **Settings Page** — `getWorkspaceSettings()`, `updateWorkspaceSettings()`, `getWorkspaceMembers()`, `createWorkspaceMember()`, `deleteWorkspaceMember()`, and `changePassword()` wired with validation. UI polished including icon-only logo upload button. Completed 2026-05-31.
+- [ ] **Settings Page — Global Source Configuration** — Implement workspace-wide source defaults such as sync frequency, source language, dedupe policy, and retention controls. This should own the persistence/API contract before Data Sources links to or reflects these settings.
 
 ### Phase 2: Missing Features (High Priority)
 
 - [x] **Onboarding API** — Connect onboarding steps to workspace setup endpoints. Flow processes and saves dummy default configuration, then redirects to dashboard. Completed 2026-06-04.
 - [ ] **File Upload** — Settings logo upload is wired to the backend local upload API. Remaining scope: migrate storage to cloud storage (S3/Supabase Storage) before production-scale deployment.
-- [x] **Activity Log** — Created `/workspace/activity` page and wired it to `getActivityLogs()` / `GET /api/workspace/activity` with filters, metrics, table states, sidebar navigation, and pagination. Completed 2026-06-05.
-- [x] **Cases Page** — Create `/workspace/cases` page and wire it to the cases API endpoints. Completed 2026-06-04.
+- [x] **Activity Log** — Created `/workspace/activity` page and wired it to `getActivityLogs()` / `GET /api/workspace/activity` with filters, metrics, table states, sidebar navigation, and pagination. Completed 2026-06-05. Fully translated to bilingual (metric cards, headers, event badge names, relative time format using `numeric: "always"`) 2026-06-13.
+- [x] **Cases Page** — Create `/workspace/cases` page and wire it to the cases API endpoints. Added sidebar navigation entry under "Action" group. Added `/cases` → `/workspace/cases` redirect page. Completed 2026-06-04.
 - [x] **Integrations Page** — Created `/workspace/integrations` page and wired it to integration CRUD endpoints with create form, filters, inline status update, disconnect confirmation, sidebar navigation, and table states. Completed 2026-06-05.
 - [x] **Real-time Notifications** — Added SSE (`/api/notifications/stream`) to automatically push new notifications to the frontend bell icon without polling. Completed 2026-06-04.
 - [x] **Export Downloads** — PDF export via `createReportExport()` with polling via `getReportExportStatus()` and auto-download on completion. Completed 2026-05-31.
@@ -554,14 +566,14 @@ These replace the removed frontend checklist/guidelines and should be treated as
 - [x] **Reusable State Components** — Added `components/dashboard/dashboard-states.tsx` with dashboard empty/error/loading states and metric/table/panel skeletons. Completed 2026-05-30.
 - [x] **Loading States** — Ensure all pages show skeleton loaders during API fetch. All dashboard pages now use skeletons/loading states while API data loads.
 - [x] **Error States** — Show meaningful error messages when API fails (not just empty state). All dashboard pages show reusable error states and fall back to preview data when live data is unavailable.
-- [x] **Empty States** — Design and implement empty states for all data tables/lists. All dashboard pages show reusable empty states for successful empty API responses.
-- [x] **Toast Notifications** — Added shared `ToastProvider`/`useToast` and replaced the settings page local toast with standardized success, error, and info feedback for existing mutation/action flows. Completed 2026-05-31.
+- [x] **Empty States** — Design and implement empty states for all data tables/lists. All dashboard pages show reusable empty states for successful empty API responses. Sources page VolumeBars, DistributionDonut, and HealthDonut now show contextual empty views with icons and descriptive text when no data is available. Completed 2026-05-30; Sources page empty states added 2026-06-12.
+- [x] **Toast Notifications** — Added shared `ToastProvider`/`useToast` and replaced the settings page local toast with standardized success, error, and info feedback for existing mutation/action flows. Default toast titles/close labels and Action Plans feedback toasts now use `next-intl` so EN/ID follows the active user language. Completed 2026-05-31; localization tightened 2026-06-08.
 - [x] **Confirmation Dialogs** — Added reusable `ConfirmationDialog` and wired existing destructive settings actions: pause/reset/delete workspace and remove member. Completed 2026-05-31.
-- [x] **Search Functionality** — Implemented topbar global search across alerts, narratives/clusters, and navigation pages with debounced input, dropdown results, type badges, empty state, and keyboard support. Completed 2026-05-31.
+- [x] **Search Functionality** — Implemented topbar global search across alerts, narratives/clusters, and navigation pages with debounced input, dropdown results, type badges, empty state, and keyboard support. Search now consumes live `getAlerts()` and `getNarratives()` data; mock-data fallbacks removed. Sources page also has per-page search by name/category. Completed 2026-05-31; live data 2026-06-05; Sources page search added 2026-06-12.
 - [x] **Pagination** — Added shared dashboard pagination controls and wired Signals, Alerts, and Reports tables to API `page`/`pagination` data with Prev/Next navigation. Completed 2026-05-31.
 - [x] **Date Filters** — Wired 24h/7d/30d filters to API query params for dashboard summary and signals. Added shared date-range option builder and backend dashboard `startDate`/`endDate` support. Completed 2026-05-31.
 - [x] **Chart Animations** — Added reusable chart entry/draw/donut animation utilities with reduced-motion support, then applied them to Recharts components and inline SVG/CSS charts across dashboard pages. Completed 2026-05-31.
-- [x] **i18n Consistency** — Migrate all inline `dictionary` objects to `next-intl` message files. Extracted `ActionPlans`, `Sources`, and `Visibility` dictionaries to `messages/*.json`.
+- [x] **i18n Consistency** — Migrate all inline `dictionary` objects to `next-intl` message files. Extracted `ActionPlans`, `Sources`, and `Visibility` dictionaries to `messages/*.json`. Completed final migration for `Cases`, `Integrations`, `Alerts`, `Reports`, `Settings`, and `Intelligence` pages 2026-06-08, removing all remaining hardcoded UI text and inline dictionaries. Sidebar nav labels (DemoApp.nav + OnboardingDesign.sidebar) fully translated to Indonesian 2026-06-13. Signals page 80+ keys added for filters, headers, footers, error states, mock data 2026-06-13. Sources page metric cards, health labels, distribution panel, empty states, settings labels translated 2026-06-13.
 
 ### Phase 4: Production Readiness (Before Launch)
 
@@ -572,7 +584,9 @@ These replace the removed frontend checklist/guidelines and should be treated as
 - [x] **Performance** — Audited chart/map bundle hotspots and lazy-loaded dashboard chart components with `next/dynamic`. Split `WorldActivityMap` into its own `react-simple-maps` module so map code is not bundled with Recharts charts. Completed 2026-05-31.
 - [x] **Accessibility** — Completed targeted code-level audit for updated dashboard controls. Added dialog focus management/trapping, pagination navigation labels/live status, and labels for icon-only source view toggles. Completed 2026-05-31. Manual screen-reader/browser QA is still recommended before launch.
 - [x] **E2E Tests** — Added Playwright setup, npm scripts, smoke coverage for auth redirects/login controls, and workspace coverage for Activity Log, Integrations CRUD/status/disconnect, and Settings logo upload. Completed 2026-05-31; expanded workspace coverage 2026-06-05.
-- [ ] **VPS Deployment** — Prepare DigitalOcean VPS + Hostinger DNS deployment readiness: production env docs, PM2/systemd process notes, Nginx reverse proxy, SSL, and frontend/backend domain mapping
+- [ ] **VPS Deployment** — Prepare DigitalOcean VPS + Hostinger DNS deployment readiness. Production runbook created 2026-06-06 with env docs, PM2/systemd guidance, Nginx reverse proxy shape, SSL, storage/backup, monitoring, and frontend/backend domain mapping. Remaining scope: execute on real VPS and complete final production QA.
 - [x] **Remove Mock Data** — All primary and secondary dashboard widgets (topics, sources, system status, signals sidebar panels) now use live API endpoints (`getDashboardSummary` and `getSignalsMeta`). Some mock arrays remain only as fallback data when the DB is entirely empty or API fails.
 - [x] **Console Cleanup** — Remove all `console.log` debug statements. Frontend was already clean. Backend: replaced 45+ raw `console.log` calls across 13 files with structured `logStructured()` from shared logger. Only `logger.js` itself retains `console.log` as the centralized output.
 - [x] **NPM Audit Security Fix** — Upgraded `next` to `16.2.7` and added `postcss` override in `package.json` to resolve high/moderate vulnerabilities.
+- [x] **Remove Microsoft OAuth** — Removed Microsoft login button from auth pages, `MicrosoftLogo` component, and `microsoft` from `AuthUser.provider` type. Only Google OAuth2 remains for social login. Completed 2026-06-12.
+- [x] **Invite Member Modal Fix** — Fixed backdrop blur not covering Topbar by wrapping modal in `createPortal` to escape `z-10` stacking context in `dashboard-shell.tsx`. Completed 2026-06-12.

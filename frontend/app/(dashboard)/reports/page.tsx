@@ -26,7 +26,7 @@ import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton, formatPaginationSummary } from "@/components/dashboard/dashboard-states";
-import { getReports, createReportExport, getReportExportStatus, type PaginationInfo, type ReportRecord } from "@/lib/api-service";
+import { getReports, getReportTemplates, getReportsAnalytics, createReportExport, getReportExportStatus, type PaginationInfo, type ReportRecord, type ReportsAnalyticsResponse } from "@/lib/api-service";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type ReportStatus = "SIAP" | "REVIEW" | "DRAFT" | "SCHEDULED";
@@ -51,10 +51,10 @@ const toneStyles: Record<Tone, ToneStyle> = {
 };
 
 const metricCards = [
-  { label: "Templates", value: "8", helper: "3 ready", icon: FileText, tone: "purple" },
-  { label: "Ready", value: "4", helper: "Executive review", icon: Download, tone: "green" },
-  { label: "Scheduled", value: "7", helper: "Weekly cadence", icon: Calendar, tone: "purple" },
-  { label: "Generated (30 Hari)", value: "24", helper: "▲ 6 vs periode sebelumnya", icon: FileText, tone: "blue" },
+  { key: "templates", value: "8", icon: FileText, tone: "purple" },
+  { key: "ready", value: "4", icon: Download, tone: "green" },
+  { key: "scheduled", value: "7", icon: Calendar, tone: "purple" },
+  { key: "generated30", value: "24", icon: FileText, tone: "blue" },
 ] as const;
 
 type ReportRow = {
@@ -136,26 +136,19 @@ const reportRows: ReportRow[] = [
 ];
 
 const quickActions = [
-  { title: "Bagikan ke Stakeholder", desc: "Kirim laporan ke email atau channel", icon: Share2, color: "text-[#465FFF] bg-[#465FFF]/10" },
-  { title: "Jadwalkan Laporan", desc: "Atur pengiriman otomatis", icon: CalendarClock, color: "text-[#10B981] bg-[#10B981]/10" },
-  { title: "Buat Laporan Kustom", desc: "Pilih data & template sendiri", icon: Plus, color: "text-[#8B5CFF] bg-[#8B5CFF]/10" },
-  { title: "Lihat Riwayat Laporan", desc: "Akses semua laporan sebelumnya", icon: Clock, color: "text-[#F59E0B] bg-[#F59E0B]/10" },
+  { key: "shareStakeholder", descKey: "shareDesc", icon: Share2, color: "text-[#465FFF] bg-[#465FFF]/10" },
+  { key: "scheduleReport", descKey: "scheduleDesc", icon: CalendarClock, color: "text-[#10B981] bg-[#10B981]/10" },
+  { key: "customReport", descKey: "customDesc", icon: Plus, color: "text-[#8B5CFF] bg-[#8B5CFF]/10" },
+  { key: "viewHistory", descKey: "historyDesc", icon: Clock, color: "text-[#F59E0B] bg-[#F59E0B]/10" },
 ];
 
-const formatDistribution = [
-  { name: "PDF", value: "50% (12)", color: "#465FFF" },
-  { name: "Slides", value: "25% (6)", color: "#8B5CFF" },
-  { name: "CSV", value: "17% (4)", color: "#EF4444" },
-  { name: "Docs", value: "8% (2)", color: "#10B981" },
-];
+type FormatDistributionItem = { name: string; value: string; color: string };
+const formatDistributionColors: Record<string, string> = {
+  PDF: "#465FFF",
+  JSON: "#8B5CFF",
+};
 
-const popularReports = [
-  { title: "Executive Narrative Brief", views: "128 akses" },
-  { title: "AI Visibility Weekly", views: "96 akses" },
-  { title: "Crisis Response Pack", views: "74 akses" },
-];
-
-const trendTimeline = [12, 19, 15, 22, 17, 24, 20, 26, 22, 28, 24, 30, 26];
+type PopularReportItem = { title: string; views: string };
 
 function statusFromApi(status: string): ReportStatus {
   const value = status.toLowerCase();
@@ -172,18 +165,21 @@ function toneFromStatus(status: ReportStatus): Tone {
   return "purple";
 }
 
-function buildApiReportRows(reports: ReportRecord[]): ReportRow[] {
+function buildApiReportRows(
+  reports: ReportRecord[],
+  fallbacks: { description: string; type: string; period: string; created: string },
+): ReportRow[] {
   return reports.map((report) => {
     const status = statusFromApi(report.status);
     return {
       id: report.id,
       title: report.title,
-      description: report.sections || "Laporan intelligence dari backend Narriv.",
-      type: "Report · Live API",
-      period: "Periode aktif",
+      description: report.sections || fallbacks.description,
+      type: fallbacks.type,
+      period: fallbacks.period,
       status,
       progress: report.readiness,
-      created: "Data live",
+      created: fallbacks.created,
       createdTime: "API",
       tone: toneFromStatus(status),
     };
@@ -220,9 +216,10 @@ function MetricCard({ label, value, helper, icon: Icon, tone }: { label: string;
 }
 
 function SentimentChart() {
+  const tr = useTranslations("Reports");
   return (
     <div className="flex flex-col justify-between h-full min-h-[160px] border-l border-[#D8DEEF] pl-5">
-      <h4 className="text-[11px] font-extrabold text-[#101334]">Sentimen 7 Hari Terakhir</h4>
+      <h4 className="text-[11px] font-extrabold text-[#101334]">{tr("sentimentChart.title")}</h4>
       
       <div className="relative flex-1 mt-2 min-h-[90px]">
         {/* Y Axis Grid/Labels */}
@@ -267,20 +264,21 @@ function SentimentChart() {
 
       {/* Legend */}
       <div className="flex items-center gap-3 text-[8.5px] font-black text-[#58648C] mt-2">
-        <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />Positif</span>
-        <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-[#465FFF]" />Netral</span>
-        <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-[#EF4444]" />Negatif</span>
+        <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />{tr("sentimentChart.positive")}</span>
+        <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-[#465FFF]" />{tr("sentimentChart.neutral")}</span>
+        <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-[#EF4444]" />{tr("sentimentChart.negative")}</span>
       </div>
     </div>
   );
 }
 
 function ReportAgentImage() {
+  const tr = useTranslations("Reports");
   return (
     <div className="relative flex h-[96px] w-[96px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#465FFF]/10 bg-linear-to-b from-[#EEF0FF] via-white to-[#F1EEFF] shadow-[inset_0_0_24px_rgba(70,95,255,0.10)]">
       <Image
         src={aiAgentImage}
-        alt="AI reports assistant illustration"
+        alt={tr("preview.imageAlt")}
         width={96}
         height={96}
         sizes="96px"
@@ -293,6 +291,7 @@ function ReportAgentImage() {
 }
 
 function AIReportSummary() {
+  const tr = useTranslations("Reports");
   return (
     <Panel className="p-5">
       <div className="grid gap-5 md:grid-cols-[1fr_190px] lg:grid-cols-[96px_1fr_214px]">
@@ -301,19 +300,19 @@ function AIReportSummary() {
         </div>
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">AI Report Summary</h2>
+            <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{tr("aiSummary.title")}</h2>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black text-[#8B5CFF]">
-              <Sparkles size={12} /> AI Generated
+              <Sparkles size={12} /> {tr("aiSummary.generated")}
             </span>
           </div>
           <p className="mt-3 max-w-[660px] text-[13.5px] font-black leading-relaxed text-[#101334]">
-            Dalam 7 hari terakhir, sentimen negatif meningkat 18% didorong oleh keluhan pembayaran dan stabilitas aplikasi di wilayah Jabodetabek.
+            {tr("aiSummary.body")}
           </p>
           <div className="mt-5 grid gap-x-4 gap-y-3 lg:grid-cols-4">
-            <SummaryPoint color="#465FFF" title="Insight Utama" text="Payment delay menjadi top issue dengan volume tertinggi." />
-            <SummaryPoint color="#EF4444" title="Risiko Tertinggi" text="Potensi eskalasi reputasi jika tidak ada komunikasi publik." />
-            <SummaryPoint color="#F59E0B" title="Pergerakan Signifikan" text="Percakapan negatif di X/Twitter naik +248% dalam 2 jam terakhir." />
-            <SummaryPoint color="#10B981" title="Rekomendasi AI" text="Publikasikan klarifikasi dan perbarui status sistem pembayaran." />
+            <SummaryPoint color="#465FFF" title={tr("aiSummary.insightTitle")} text={tr("aiSummary.insightText")} />
+            <SummaryPoint color="#EF4444" title={tr("aiSummary.riskTitle")} text={tr("aiSummary.riskText")} />
+            <SummaryPoint color="#F59E0B" title={tr("aiSummary.movementTitle")} text={tr("aiSummary.movementText")} />
+            <SummaryPoint color="#10B981" title={tr("aiSummary.recommendationTitle")} text={tr("aiSummary.recommendationText")} />
           </div>
         </div>
         <div className="w-full pt-4 border-t md:pt-0 md:border-t-0">
@@ -337,19 +336,26 @@ function SummaryPoint({ color, title, text }: { color: string; title: string; te
 }
 
 function ReportPreviewSidebar({ onExportPdf }: { onExportPdf?: () => void }) {
+  const tr = useTranslations("Reports");
+  const previewSections = [
+    { key: "execSummary" },
+    { key: "riskMovement" },
+    { key: "keyInsights" },
+    { key: "recommendedActions" },
+  ];
   return (
     <Panel className="p-4">
-      <h3 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">Pratinjau Laporan</h3>
-      <p className="mt-1 text-[11.5px] font-bold text-[#68739F]">Lihat ringkasan sebelum dibagikan ke stakeholder.</p>
+      <h3 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{tr("preview.title")}</h3>
+      <p className="mt-1 text-[11.5px] font-bold text-[#68739F]">{tr("preview.desc")}</p>
       
       <div className="mt-4 rounded-[12px] border border-[#DDE3EF] bg-[#F8FAFF] p-4">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[#465FFF]/10 text-[#465FFF]"><FileText size={18} /></span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-black text-[#101334]">Executive Narrative Brief</p>
-            <p className="mt-0.5 text-[10px] font-bold text-[#68739F]">PDF · Harian</p>
+            <p className="truncate text-[13px] font-black text-[#101334]">{tr("preview.executiveBrief")}</p>
+            <p className="mt-0.5 text-[10px] font-bold text-[#68739F]">{tr("preview.pdfDaily")}</p>
           </div>
-          <span className="rounded-full bg-[#10B981]/10 px-2 py-1 text-[9px] font-black text-[#10B981]">SIAP</span>
+          <span className="rounded-full bg-[#10B981]/10 px-2 py-1 text-[9px] font-black text-[#10B981]">{tr("statusBadge.SIAP")}</span>
         </div>
 
         <div className="mt-4 grid grid-cols-[82px_1fr] gap-4">
@@ -374,10 +380,10 @@ function ReportPreviewSidebar({ onExportPdf }: { onExportPdf?: () => void }) {
           </div>
 
           <div className="min-w-0 space-y-2.5 self-center">
-            {["Executive Summary", "Risk Movement", "Key Insights", "Recommended Actions"].map((item) => (
-              <div key={item} className="flex items-center justify-between gap-2 text-[9.5px] font-black text-[#31406B]">
-                <span className="flex min-w-0 items-center gap-2"><CheckCircle2 size={13} className="shrink-0 text-[#10B981]" /> <span className="truncate">{item}</span></span>
-                <span className="text-[#10B981]">Siap</span>
+            {previewSections.map((section) => (
+              <div key={section.key} className="flex items-center justify-between gap-2 text-[9.5px] font-black text-[#31406B]">
+                <span className="flex min-w-0 items-center gap-2"><CheckCircle2 size={13} className="shrink-0 text-[#10B981]" /> <span className="truncate">{tr(`previewSections.${section.key}`)}</span></span>
+                <span className="text-[#10B981]">{tr("preview.ready")}</span>
               </div>
             ))}
           </div>
@@ -386,10 +392,10 @@ function ReportPreviewSidebar({ onExportPdf }: { onExportPdf?: () => void }) {
 
       <div className="mt-4 grid gap-2.5">
         <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[9px] bg-[#465FFF] text-[12px] font-black text-white shadow-[0_8px_20px_rgba(70,95,255,0.18)] transition hover:bg-[#3B20EA]">
-          <Eye size={15} /> Lihat Preview
+          <Eye size={15} /> {tr("preview.viewPreview")}
         </button>
         <button type="button" onClick={onExportPdf} className="flex h-10 w-full items-center justify-center gap-2 rounded-[9px] border border-[#E6EAF2] bg-white text-[12px] font-black text-[#101334] transition hover:bg-[#F8FAFF]">
-          <Download size={15} /> Unduh PDF
+          <Download size={15} /> {tr("preview.downloadPdf")}
         </button>
       </div>
     </Panel>
@@ -397,15 +403,16 @@ function ReportPreviewSidebar({ onExportPdf }: { onExportPdf?: () => void }) {
 }
 
 function QuickActions() {
+  const tr = useTranslations("Reports");
   return (
     <Panel className="p-4">
-      <h3 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">Aksi Cepat</h3>
+      <h3 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{tr("quickActions.title")}</h3>
       <div className="mt-4 space-y-2">
         {quickActions.map((action) => {
           const Icon = action.icon;
           return (
             <button
-              key={action.title}
+              key={action.key}
               type="button"
               className="flex w-full items-center justify-between gap-3 rounded-[12px] border border-[#EDF1F7] bg-[#FBFCFF] p-3 text-left transition hover:border-[#DDE3EF] hover:bg-[#F8FAFF]"
             >
@@ -414,8 +421,8 @@ function QuickActions() {
                   <Icon size={15} />
                 </span>
                 <div className="min-w-0">
-                  <span className="block truncate text-[12px] font-black text-[#101334]">{action.title}</span>
-                  <span className="mt-0.5 block truncate text-[9.5px] font-bold text-[#58648C]">{action.desc}</span>
+                  <span className="block truncate text-[12px] font-black text-[#101334]">{tr(`quickActions.${action.key}`)}</span>
+                  <span className="mt-0.5 block truncate text-[9.5px] font-bold text-[#58648C]">{tr(`quickActions.${action.descKey}`)}</span>
                 </div>
               </div>
               <ArrowRight size={13} className="text-[#8B95B8] shrink-0" />
@@ -428,13 +435,14 @@ function QuickActions() {
 }
 
 function StatusBadge({ status }: { status: ReportStatus }) {
+  const tr = useTranslations("Reports");
   const styles: Record<ReportStatus, string> = {
     SIAP: "bg-[#10B981]/10 text-[#10B981]",
     REVIEW: "bg-[#F59E0B]/10 text-[#F59E0B]",
     DRAFT: "bg-[#8B5CFF]/10 text-[#8B5CFF]",
     SCHEDULED: "bg-[#465FFF]/10 text-[#465FFF]",
   };
-  return <span className={cn("rounded-[7px] px-2 py-0.5 text-[9.5px] font-black tracking-[0.05em]", styles[status])}>{status}</span>;
+  return <span className={cn("rounded-[7px] px-2 py-0.5 text-[9.5px] font-black tracking-[0.05em]", styles[status])}>{tr(`statusBadge.${status}`)}</span>;
 }
 
 function ProgressBar({ value, tone }: { value: number; tone: Tone }) {
@@ -454,31 +462,40 @@ function ProgressBar({ value, tone }: { value: number; tone: Tone }) {
 }
 
 function ReportsTable({ rows, footerText, pagination, onPageChange, isFetching }: { rows: ReportRow[]; footerText: string; pagination?: PaginationInfo | null; onPageChange: (page: number) => void; isFetching?: boolean }) {
-  const [activeTab, setActiveTab] = useState("Semua");
-  const tabs = ["Semua", "Siap", "Review", "Draft", "Scheduled", "Archived"];
-  const filteredRows = rows.filter((report) => activeTab === "Semua" || report.status.toLowerCase() === activeTab.toLowerCase());
+  const tr = useTranslations("Reports");
+  type TabValue = "all" | ReportStatus;
+  const [activeTab, setActiveTab] = useState<TabValue>("all");
+  const tabs: Array<{ key: string; value: TabValue }> = [
+    { key: "all", value: "all" },
+    { key: "ready", value: "SIAP" },
+    { key: "review", value: "REVIEW" },
+    { key: "draft", value: "DRAFT" },
+    { key: "scheduled", value: "SCHEDULED" },
+    { key: "archived", value: "ARCHIVED" as ReportStatus },
+  ];
+  const filteredRows = rows.filter((report) => activeTab === "all" || report.status === activeTab);
 
   return (
     <Panel className="p-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">Dokumen Laporan</h2>
-          <p className="mt-1 text-[11px] font-bold text-[#68739F]">Kelola semua laporan harian, mingguan, dan laporan khusus.</p>
+          <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{tr("table.title")}</h2>
+          <p className="mt-1 text-[11px] font-bold text-[#68739F]">{tr("table.desc")}</p>
         </div>
         <div className="flex w-full flex-wrap gap-2 sm:w-auto">
           <label className="relative block w-full sm:w-[180px]">
             <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-[#8B95B8]" />
             <input
               type="search"
-              placeholder="Cari laporan..."
+              placeholder={tr("filter.search")}
               className="h-8 w-full rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] pl-8 pr-3 text-[10px] font-bold text-[#101334] outline-none transition placeholder:text-[#8B95B8] focus:border-[#465FFF] focus:bg-white"
             />
           </label>
           <button type="button" className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-2.5 text-[10px] font-black text-[#58648C] transition hover:bg-white sm:flex-none">
-            <SlidersHorizontal size={12} /> Filter
+            <SlidersHorizontal size={12} /> {tr("filter.title")}
           </button>
           <button type="button" className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-2.5 text-[10px] font-black text-[#58648C] transition hover:bg-white sm:flex-none">
-            Terbaru <ChevronDown size={12} />
+            {tr("filter.latest")} <ChevronDown size={12} />
           </button>
         </div>
       </div>
@@ -487,17 +504,17 @@ function ReportsTable({ rows, footerText, pagination, onPageChange, isFetching }
       <div className="mt-4 flex flex-wrap gap-2 border-b border-[#EDF1F7] pb-3">
         {tabs.map((tab) => (
           <button
-            key={tab}
+            key={tab.key}
             type="button"
-            onClick={() => setActiveTab(tab)}
+            onClick={() => setActiveTab(tab.value)}
             className={cn(
               "h-7 rounded-[7px] px-3 text-[10.5px] font-black transition",
-              activeTab === tab
+              activeTab === tab.value
                 ? "bg-[#465FFF] text-white shadow-[0_4px_12px_rgba(70,95,255,0.18)]"
                 : "border border-[#DDE3EF] bg-[#F8FAFF] text-[#58648C] hover:bg-white"
             )}
           >
-            {tab}
+            {tr(`filter.${tab.key}`)}
           </button>
         ))}
       </div>
@@ -507,13 +524,13 @@ function ReportsTable({ rows, footerText, pagination, onPageChange, isFetching }
         <table className="w-full min-w-[780px] border-collapse text-left">
           <thead>
             <tr className="border-b border-[#E6EAF2] text-[9.5px] font-black uppercase tracking-[0.15em] text-[#68739F]">
-              <th className="px-3 py-3 w-[280px]">Laporan</th>
-              <th className="px-3 py-3">Jenis</th>
-              <th className="px-3 py-3">Periode</th>
-              <th className="px-3 py-3">Status</th>
-              <th className="px-3 py-3">Progress</th>
-              <th className="px-3 py-3">Dibuat</th>
-              <th className="px-3 py-3 text-right">Aksi</th>
+              <th className="px-3 py-3 w-[280px]">{tr("table.report")}</th>
+              <th className="px-3 py-3">{tr("table.type")}</th>
+              <th className="px-3 py-3">{tr("table.period")}</th>
+              <th className="px-3 py-3">{tr("table.status")}</th>
+              <th className="px-3 py-3">{tr("table.progress")}</th>
+              <th className="px-3 py-3">{tr("table.created")}</th>
+              <th className="px-3 py-3 text-right">{tr("table.action")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#EDF1F7]">
@@ -569,21 +586,26 @@ function ReportsTable({ rows, footerText, pagination, onPageChange, isFetching }
   );
 }
 
-function FormatDonut() {
+function FormatDonut({ distribution, total }: { distribution: Array<{ name: string; value: string; color: string }>; total: number }) {
+  const tr = useTranslations("Reports");
+  const totalForPercent = distribution.reduce((acc, item) => {
+    const num = parseInt(item.value.split(" ")[0], 10);
+    return acc + (isNaN(num) ? 0 : num);
+  }, 0) || total;
   return (
     <Panel className="p-4">
-      <h3 className="text-[15px] font-black text-[#101334]">Distribusi Format</h3>
-      <p className="mt-1 text-[11px] font-bold text-[#68739F]">Perbandingan format laporan yang dibuat.</p>
+      <h3 className="text-[15px] font-black text-[#101334]">{tr("formatDonut.title")}</h3>
+      <p className="mt-1 text-[11px] font-bold text-[#68739F]">{tr("formatDonut.desc")}</p>
       <div className="mt-5 grid gap-5 sm:grid-cols-[136px_1fr] md:grid-cols-1 xl:grid-cols-[136px_1fr]">
         <div className="chart-donut-enter relative mx-auto flex h-[136px] w-[136px] items-center justify-center rounded-full bg-[conic-gradient(#465FFF_0_50%,#8B5CFF_50%_75%,#EF4444_75%_92%,#10B981_92%_100%)]">
           <span className="absolute h-[88px] w-[88px] rounded-full bg-white" />
           <span className="relative text-center">
-            <b className="block text-[22px] font-black text-[#101334]">24</b>
-            <span className="text-[10px] font-bold text-[#68739F]">Total Laporan</span>
+            <b className="block text-[22px] font-black text-[#101334]">{totalForPercent}</b>
+            <span className="text-[10px] font-bold text-[#68739F]">{tr("formatDonut.total")}</span>
           </span>
         </div>
         <div className="space-y-2.5 self-center">
-          {formatDistribution.map((item) => (
+          {distribution.length > 0 ? distribution.map((item) => (
             <div key={item.name} className="flex items-center justify-between gap-3 text-[11px] font-bold">
               <span className="flex items-center gap-2 text-[#31406B]">
                 <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
@@ -591,34 +613,49 @@ function FormatDonut() {
               </span>
               <span className="text-[#68739F]">{item.value}</span>
             </div>
-          ))}
+          )) : (
+            <p className="text-center text-[11px] font-bold text-[#8A94B8]">{tr("formatDonut.noData")}</p>
+          )}
         </div>
       </div>
     </Panel>
   );
 }
 
-function TimelineChart() {
+function formatChartDate(date: string) {
+  return new Date(date).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+}
+
+function TimelineChart({ data }: { data: ReportsAnalyticsResponse["trend_timeline"] }) {
+  const tr = useTranslations("Reports");
+  const series = data.map((item) => item.count);
   // Sparkline/timeline line plotting
-  const max = Math.max(...trendTimeline);
-  const min = Math.min(...trendTimeline);
+  const max = series.length > 0 ? Math.max(...series) : 1;
+  const min = series.length > 0 ? Math.min(...series) : 0;
   const range = max - min || 1;
   const width = 520;
   const height = 170;
   const padding = 14;
 
-  const path = trendTimeline.map((value, index) => {
-    const x = padding + (index / (trendTimeline.length - 1)) * (width - padding * 2);
+  const path = series.length > 0 ? series.map((value, index) => {
+    const x = padding + (index / (series.length - 1)) * (width - padding * 2);
     const y = padding + (1 - (value - min) / range) * (height - padding * 2 - 20);
     return `${index === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
-  }).join(" ");
+  }).join(" ") : "";
 
-  const area = `${path} L ${width - padding} ${height - 22} L ${padding} ${height - 22} Z`;
+  const area = path ? `${path} L ${width - padding} ${height - 22} L ${padding} ${height - 22} Z` : "";
+  const peakIndex = series.length > 0 ? series.indexOf(max) : -1;
+  const peakDate = peakIndex >= 0 ? formatChartDate(data[peakIndex].date) : "-";
+  const xLabels = data.length > 0
+    ? [0, Math.floor((data.length - 1) / 3), Math.floor(((data.length - 1) * 2) / 3), data.length - 1]
+        .filter((value, index, arr) => arr.indexOf(value) === index)
+        .map((index) => formatChartDate(data[index].date))
+    : [];
 
   return (
     <Panel className="p-4">
-      <h3 className="text-[15px] font-black text-[#101334]">Tren Pembuatan Laporan <span className="text-[11px] font-bold text-[#68739F]">(30 Hari Terakhir)</span></h3>
-      <p className="mt-1 text-[11px] font-bold text-[#68739F]">Jumlah laporan yang dibuat per hari.</p>
+      <h3 className="text-[15px] font-black text-[#101334]">{tr("timeline.title")} <span className="text-[11px] font-bold text-[#68739F]">{tr("timeline.period")}</span></h3>
+      <p className="mt-1 text-[11px] font-bold text-[#68739F]">{tr("timeline.desc")}</p>
       
       <div className="relative mt-5 h-[190px] rounded-[12px] bg-linear-to-b from-white to-[#F8FAFF]">
         {/* Y Axis */}
@@ -637,43 +674,39 @@ function TimelineChart() {
             </defs>
             {/* Gridlines */}
             {[34, 70, 106, 142].map((y) => <line key={y} x1="0" x2="520" y1={y} y2={y} stroke="#EDF1F7" strokeWidth="1" />)}
-            <path d={area} fill="url(#reports-timeline-grad)" />
-            <path d={path} fill="none" stroke="#465FFF" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" vectorEffect="non-scaling-stroke" />
+            {area ? <path d={area} fill="url(#reports-timeline-grad)" /> : null}
+            {path ? <path d={path} fill="none" stroke="#465FFF" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" vectorEffect="non-scaling-stroke" /> : null}
           </svg>
 
-          {/* interactive dot / tooltip on 10 Mei (around 75% point) */}
-          <div className="absolute left-[77%] top-[34px] flex -translate-x-1/2 flex-col items-center">
+          {peakIndex >= 0 ? <div className="absolute left-[77%] top-[34px] flex -translate-x-1/2 flex-col items-center">
             <span className="rounded-[8px] bg-[#101334] px-2.5 py-1.5 text-center shadow-lg whitespace-nowrap">
-              <b className="block text-[8px] font-black text-white">10 Mei</b>
-              <span className="text-[9.5px] font-black text-white">24 laporan</span>
+              <b className="block text-[8px] font-black text-white">{peakDate}</b>
+              <span className="text-[9.5px] font-black text-white">{tr("timeline.peak", { count: max })}</span>
             </span>
             <span className="h-8 border-l border-dashed border-[#8B95B8]" />
             <span className="h-2.5 w-2.5 rounded-full border-2 border-white bg-[#465FFF] ring-4 ring-[#465FFF]/15" />
-          </div>
+          </div> : null}
         </div>
 
         {/* X Axis Labels */}
         <div className="absolute inset-x-0 bottom-0 flex justify-between pl-[40px] text-[9px] font-bold text-[#68739F]">
-          <span>13 Apr</span>
-          <span>20 Apr</span>
-          <span>27 Apr</span>
-          <span>4 Mei</span>
-          <span>11 Mei</span>
+          {xLabels.length > 0 ? xLabels.map((label) => <span key={label}>{label}</span>) : <span>{tr("timeline.noData")}</span>}
         </div>
       </div>
     </Panel>
   );
 }
 
-function PopularReports() {
+function PopularReports({ reports }: { reports: PopularReportItem[] }) {
+  const tr = useTranslations("Reports");
   return (
     <Panel className="p-4 flex flex-col justify-between">
       <div>
-        <h3 className="text-[15px] font-black text-[#101334]">Laporan Terpopuler</h3>
-        <p className="mt-1 text-[11px] font-bold text-[#68739F]">Berdasarkan jumlah akses dalam 30 hari.</p>
+        <h3 className="text-[15px] font-black text-[#101334]">{tr("popular.title")}</h3>
+        <p className="mt-1 text-[11px] font-bold text-[#68739F]">{tr("popular.desc")}</p>
         
         <div className="mt-5 space-y-3">
-          {popularReports.map((report, idx) => (
+          {reports.length > 0 ? reports.map((report, idx) => (
             <div key={report.title} className="flex items-center gap-3">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[11px] font-black text-[#465FFF]">
                 {idx + 1}
@@ -683,13 +716,15 @@ function PopularReports() {
               </div>
               <span className="text-[11px] font-bold text-[#68739F] shrink-0">{report.views}</span>
             </div>
-          ))}
+          )) : (
+            <p className="text-center text-[11px] font-bold text-[#8A94B8]">{tr("popular.noData")}</p>
+          )}
         </div>
       </div>
 
       <div className="mt-6 border-t border-[#EDF1F7] pt-4">
         <Link href="/reports" className="flex items-center justify-between text-[11px] font-black text-[#465FFF] hover:text-[#3B20EA] transition-colors">
-          <span>Lihat Semua Laporan</span>
+          <span>{tr("popular.viewAll")}</span>
           <ArrowRight size={14} />
         </Link>
       </div>
@@ -699,6 +734,7 @@ function PopularReports() {
 
 export default function ReportsPage() {
   const t = useTranslations("DemoApp");
+  const tr = useTranslations("Reports");
   const toastHook = useToast();
   const [page, setPage] = useState(1);
 
@@ -712,43 +748,85 @@ export default function ReportsPage() {
     mutationFn: ({ reportId, format }: { reportId: string; format: "json" | "pdf" }) => createReportExport(reportId, format),
     onSuccess: async (result) => {
       if (result?.jobId) {
-        showToast("Export dimulai. Memeriksa status...");
+        showToast(tr("toast.exportStarted"));
         const pollStatus = async () => {
           for (let i = 0; i < 10; i++) {
             await new Promise((r) => setTimeout(r, 2000));
             const status = await getReportExportStatus(result.jobId);
             if (status?.status === "completed" && status.signedUrl) {
               window.open(status.signedUrl, "_blank");
-              showToast("Export berhasil. File siap diunduh.");
+              showToast(tr("toast.exportSuccess"));
               return;
             }
             if (status?.status === "failed") {
-              showToast("Export gagal. Coba lagi.", "error");
+              showToast(tr("toast.exportFailed"), "error");
               return;
             }
           }
-          showToast("Export masih diproses. Coba lagi nanti.", "info");
+          showToast(tr("toast.exportProcessing"), "info");
         };
         pollStatus();
       } else {
-        showToast("Export belum bisa dimulai. Coba lagi.", "error");
+        showToast(tr("toast.exportInitFailed"), "error");
       }
     },
-    onError: () => showToast("Export belum bisa dimulai. Coba lagi.", "error"),
+    onError: () => showToast(tr("toast.exportInitFailed"), "error"),
   });
   const reportsQuery = useQuery({
     queryKey: ["reports", { page, limit: reportsApiLimit }],
     queryFn: () => getReports({ page, limit: reportsApiLimit }),
     staleTime: 30 * 1000,
   });
-  const liveRows = reportsQuery.data?.data ? buildApiReportRows(reportsQuery.data.data) : [];
+  const templatesQuery = useQuery({
+    queryKey: ["report-templates"],
+    queryFn: getReportTemplates,
+    staleTime: 5 * 60 * 1000,
+  });
+  const analyticsQuery = useQuery({
+    queryKey: ["report-analytics"],
+    queryFn: () => getReportsAnalytics(),
+    staleTime: 60 * 1000,
+  });
+  const liveRows = reportsQuery.data?.data
+    ? buildApiReportRows(reportsQuery.data.data, {
+        description: tr("preview.liveFallback"),
+        type: tr("preview.liveType"),
+        period: tr("preview.activePeriod"),
+        created: tr("preview.liveCreated"),
+      })
+    : [];
   const isLiveUnavailable = reportsQuery.data === null;
   const rows = liveRows.length > 0 || reportsQuery.data ? liveRows : reportRows;
+  const liveMetricCards = templatesQuery.data
+    ? [
+        { key: "templates", value: String(templatesQuery.data.data.length), icon: FileText, tone: "purple" as const },
+        { key: "reportsCreated", value: String(reportsQuery.data?.pagination.total ?? 0), icon: Download, tone: "green" as const },
+        { key: "inProgress", value: String(rows.filter((r) => r.status === "REVIEW" || r.status === "DRAFT").length), icon: Calendar, tone: "purple" as const },
+        { key: "ready", value: String(rows.filter((r) => r.status === "SIAP").length), icon: FileText, tone: "blue" as const },
+      ]
+    : metricCards;
+
+  // Derive live chart data from analytics endpoint
+  const analytics = analyticsQuery.data;
+  const liveFormatDistribution: FormatDistributionItem[] = analytics
+    ? [
+        ...(analytics.format_distribution.pdf > 0
+          ? [{ name: "PDF", value: `${analytics.format_distribution.pdf} laporan`, color: formatDistributionColors.PDF }]
+          : []),
+        ...(analytics.format_distribution.json > 0
+          ? [{ name: "JSON", value: `${analytics.format_distribution.json} laporan`, color: formatDistributionColors.JSON }]
+          : []),
+      ]
+    : [];
+  const livePopularReports: PopularReportItem[] = analytics
+    ? analytics.popular_templates.map((t) => ({ title: t.name, views: `${t.count} dibuat` }))
+    : [];
+  const liveTrendTimeline = analytics?.trend_timeline ?? [];
   const footerText = reportsQuery.data?.pagination
-    ? formatPaginationSummary(reportsQuery.data.pagination, "laporan live")
+    ? formatPaginationSummary(reportsQuery.data.pagination, tr("paginationExtended.labelLive"))
     : isLiveUnavailable
-      ? "Data live belum bisa dimuat. Menampilkan data contoh."
-      : "Menampilkan 1-5 dari 24 laporan";
+      ? tr("liveData.fallback")
+      : tr("paginationExtended.sampleSummary");
 
   return (
     <div className="mx-auto flex max-w-[1600px] flex-col gap-4 pb-6 text-[#101334]">
@@ -760,13 +838,13 @@ export default function ReportsPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:bg-[#F8FAFF] sm:w-auto">
-            <FileText size={14} /> Kelola Template
+            <FileText size={14} /> {tr("buttons.manageTemplates")}
           </button>
           <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:bg-[#F8FAFF] sm:w-auto">
-            <CalendarClock size={14} /> Pengaturan Jadwal
+            <CalendarClock size={14} /> {tr("buttons.scheduleSettings")}
           </button>
           <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] transition hover:opacity-90 sm:w-auto">
-            <Plus size={15} /> Buat Laporan Baru
+            <Plus size={15} /> {tr("buttons.createNew")}
           </button>
         </div>
       </header>
@@ -776,17 +854,29 @@ export default function ReportsPage() {
         <div className="min-w-0 space-y-4">
           <AIReportSummary />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {metricCards.map((metric) => (
-              <MetricCard key={metric.label} {...metric} />
-            ))}
+            {liveMetricCards.map((metric) => {
+              const isLive = templatesQuery.data;
+              const labelKey = isLive ? `liveMetrics.${metric.key}` : `metricsCard.${metric.key}`;
+              const helperKey = isLive ? `liveMetrics.${metric.key}Helper` : `metricsCard.${metric.key}Helper`;
+              return (
+                <MetricCard
+                  key={metric.key}
+                  label={tr(labelKey)}
+                  helper={tr(helperKey)}
+                  value={metric.value}
+                  icon={metric.icon}
+                  tone={metric.tone}
+                />
+              );
+            })}
           </div>
           {reportsQuery.isPending ? (
             <TableSkeleton rows={6} columns={7} />
           ) : reportsQuery.data && liveRows.length === 0 ? (
-            <DashboardEmptyState title="Belum ada laporan live" description="Backend berhasil dihubungi, tetapi belum ada laporan yang tersedia." icon="search" minHeight="min-h-[420px]" />
+            <DashboardEmptyState title={tr("empty.title")} description={tr("empty.desc")} icon="search" minHeight="min-h-[420px]" />
           ) : (
             <>
-              {isLiveUnavailable ? <DashboardErrorState title="Data laporan belum bisa dimuat" description="API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan data contoh." onRetry={() => void reportsQuery.refetch()} minHeight="min-h-[150px]" /> : null}
+              {isLiveUnavailable ? <DashboardErrorState title={tr("error.title")} description={tr("error.desc")} onRetry={() => void reportsQuery.refetch()} minHeight="min-h-[150px]" /> : null}
               <ReportsTable rows={rows} footerText={footerText} pagination={reportsQuery.data?.pagination} onPageChange={setPage} isFetching={reportsQuery.isFetching} />
             </>
           )}
@@ -799,9 +889,9 @@ export default function ReportsPage() {
 
       {/* Bottom Distribution charts */}
       <div className="grid gap-4 lg:grid-cols-[0.95fr_1.15fr_0.9fr]">
-        <FormatDonut />
-        <TimelineChart />
-        <PopularReports />
+        <FormatDonut distribution={liveFormatDistribution} total={reportsQuery.data?.pagination.total ?? 0} />
+        <TimelineChart data={liveTrendTimeline} />
+        <PopularReports reports={livePopularReports} />
       </div>
 
       {/* Screen Reader AI image slot */}

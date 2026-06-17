@@ -1,11 +1,13 @@
 import express from "express";
-import { createSource, deleteSource, getSources, updateSource } from "./sources.controller.js";
+import { bootstrapDefaultSources, createSource, deleteSource, getSourcePresets, getSources, updateSource } from "./sources.controller.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { getWorkspaceSourceHealth, getSourceCoverage } from "../../lib/source-health.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
 import {
     createSourceBodySchema,
+    bootstrapDefaultsBodySchema,
+    sourcePresetsQuerySchema,
     updateSourceBodySchema,
     updateSourceParamsSchema,
 } from "./sources.schema.js";
@@ -15,6 +17,8 @@ router.use(verifyToken);
 
 router.get("/", getSources);
 router.post("/", validateRequest({ body: createSourceBodySchema }), createSource);
+router.get("/presets", validateRequest({ query: sourcePresetsQuerySchema }), getSourcePresets);
+router.post("/bootstrap-defaults", validateRequest({ body: bootstrapDefaultsBodySchema }), bootstrapDefaultSources);
 router.patch(
     "/:sourceId",
     validateRequest({ params: updateSourceParamsSchema, body: updateSourceBodySchema }),

@@ -52,6 +52,10 @@ function resetState() {
 function matchesWhere(record, where = {}) {
   return Object.entries(where).every(([key, value]) => {
     if (value === undefined) return true;
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      if (Array.isArray(value.in)) return value.in.includes(record[key]);
+      if (value.not !== undefined) return record[key] !== value.not;
+    }
     if (key === 'workspaceId' && value && typeof value === 'object' && Array.isArray(value.in)) {
       return value.in.includes(record.workspaceId);
     }
@@ -99,7 +103,9 @@ const mockPrisma = {
   refreshToken: {
     create: jest.fn(async ({ data }) => ({ id: 'refresh-token-1', ...data })),
     findFirst: jest.fn(async () => null),
+    findUnique: jest.fn(async () => null),
     update: jest.fn(async () => ({})),
+    updateMany: jest.fn(async () => ({ count: 0 })),
     deleteMany: jest.fn(async () => ({ count: 0 })),
   },
   source: {

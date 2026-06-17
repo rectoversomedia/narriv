@@ -1,6 +1,6 @@
 Berikut aktor apify yang akan aku gunakan dalam project kali ini serta format JSONnya
 
-* Tier 1 - Wajib
+
 
 - **apidojo/twitter-scraper-lite** - Twitter/X
 
@@ -104,7 +104,6 @@ Berikut aktor apify yang akan aku gunakan dalam project kali ini serta format JS
 ```
 
 
-* Tier 2 - Penting
 
 - **streamers/youtube-scraper** - YouTube
 
@@ -195,7 +194,6 @@ Berikut aktor apify yang akan aku gunakan dalam project kali ini serta format JS
 ```
 
 
-* Tier 3 - Opsional
 
 - **apify/web-scraper** - Kaskus & forum lokal
 
@@ -410,46 +408,3 @@ Berikut aktor apify yang akan aku gunakan dalam project kali ini serta format JS
     "maxItems": 50
 }
 ```
-
-
-
-
-
-Berikut link blogs yang akan kita gunakan di project kali ini
-
-Oke, berikut RSS feed URL-nya:
-
----
-
-**Teknologi & Startup**
-- `https://teknologi.id`
-- `https://dailysocial.id`
-- `https://id.techinasia.com`
-- `https://hybrid.co.id`
-
-**Politik & Sosial**
-- `https://tirto.id`
-- `https://indoprogress.com`
-- `https://geotimes.id`
-- `https://remotivi.or.id`
-
-**Bisnis & Ekonomi**
-- `https://katadata.co.id`
-- `https://bisnis.com`
-- `https://cnbcindonesia.com`
-
-**Lifestyle & Budaya**
-- `https://mojok.co`
-- `https://magdalene.co`
-- `https://vice.com/id`
-
-**Kesehatan**
-- `https://www.alodokter.com`
-- `https://hellosehat.com`
-
-**Agama & Komunitas**
-- `https://nu.or.id`
-- `https://muhammadiyah.or.id`
-
-
-Link tersebut sudah aku cek satu-persatu dan hasilnya valid ya

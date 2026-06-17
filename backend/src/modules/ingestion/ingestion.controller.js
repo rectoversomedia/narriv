@@ -2,6 +2,27 @@ import prisma from "../../prisma.js";
 import { addIngestionJob, cancelIngestionQueueJob } from "../../lib/queue.js";
 import { getUserWorkspaceIds } from "../../lib/workspace-access.js";
 import { recordAuditLog } from "../../lib/audit.js";
+import { logStructured } from "../../lib/logger.js";
+
+async function createAndQueueIngestionJob(source, userId) {
+  const job = await prisma.ingestionJob.create({
+    data: {
+      workspaceId: source.workspaceId,
+      sourceId: source.id,
+      status: "queued",
+    },
+  });
+
+  await recordAuditLog({
+    userId,
+    event: "ingestion_job_queued",
+    workspaceId: source.workspaceId,
+    metadata: { ingestionJobId: job.id, sourceId: source.id },
+  });
+
+  await addIngestionJob(job.id, source.id);
+  return job;
+}
 
 export const triggerIngestion = async (req, res) => {
   try {
@@ -9,36 +30,63 @@ export const triggerIngestion = async (req, res) => {
     const workspaceIds = await getUserWorkspaceIds(req.user.id);
 
     const source = await prisma.source.findFirst({
-      where: { id: sourceId, workspaceId: { in: workspaceIds } },
+      where: { id: sourceId, workspaceId: { in: workspaceIds }, isActive: true, type: { not: "deleted" } },
     });
 
     if (!source) {
       return res.status(404).json({ error: "Source not found" });
     }
 
-    // 1. Create IngestionJob
-    const job = await prisma.ingestionJob.create({
-      data: {
-        workspaceId: source.workspaceId,
-        sourceId: source.id,
-        status: "queued",
-      },
-    });
+    const job = await createAndQueueIngestionJob(source, req.user.id);
 
-    // Respond immediately, processing continues in background
     res.status(202).json({ message: "Ingestion started", jobId: job.id });
-
-    await recordAuditLog({
-      userId: req.user.id,
-      event: "ingestion_job_queued",
-      workspaceId: source.workspaceId,
-      metadata: { ingestionJobId: job.id, sourceId: source.id },
-    });
-
-    // --- BACKGROUND PROCESSING ---
-    await addIngestionJob(job.id, source.id);
   } catch (error) {
     logStructured("error", "Error triggering ingestion:", { error: error?.message || error, stack: error?.stack });
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const triggerBatchIngestion = async (req, res) => {
+  try {
+    const requestedSourceIds = Array.from(new Set(req.body.sourceIds));
+    const workspaceIds = await getUserWorkspaceIds(req.user.id);
+
+    const sources = await prisma.source.findMany({
+      where: {
+        id: { in: requestedSourceIds },
+        workspaceId: { in: workspaceIds },
+        isActive: true,
+        type: { not: "deleted" },
+      },
+    });
+    const sourcesById = new Map(sources.map((source) => [source.id, source]));
+    const jobs = [];
+    const failures = [];
+
+    for (const sourceId of requestedSourceIds) {
+      const source = sourcesById.get(sourceId);
+      if (!source) {
+        failures.push({ sourceId, reason: "Source not found, inactive, or deleted." });
+        continue;
+      }
+
+      try {
+        const job = await createAndQueueIngestionJob(source, req.user.id);
+        jobs.push({ sourceId, jobId: job.id });
+      } catch (error) {
+        failures.push({ sourceId, reason: error?.message || "Failed to queue ingestion." });
+      }
+    }
+
+    res.status(202).json({
+      total: requestedSourceIds.length,
+      queued: jobs.length,
+      failed: failures.length,
+      failures,
+      jobs,
+    });
+  } catch (error) {
+    logStructured("error", "Error triggering batch ingestion:", { error: error?.message || error, stack: error?.stack });
     res.status(500).json({ error: "Internal server error" });
   }
 };

@@ -53,3 +53,17 @@ export const updateSourceBodySchema = z
         path: [],
     });
 
+export const sourcePresetsQuerySchema = z.object({
+    keyword: z.string().trim().min(1).max(120).optional(),
+});
+
+export const bootstrapDefaultsBodySchema = z.object({
+    workspaceId: workspaceIdSchema.optional(),
+    keyword: z.string().trim().min(1).max(120).optional(),
+    includeActors: z.boolean().optional(),
+    includeWebScrapers: z.boolean().optional(),
+    tiers: z.array(z.number().int().min(1).max(3)).optional(),
+    presetKeys: z.array(z.string().trim().min(1).max(80)).optional(),
+    maxWebItems: z.number().int().min(1).max(100).optional(),
+});
+

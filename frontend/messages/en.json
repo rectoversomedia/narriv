@@ -1,4 +1,10 @@
 {
+  "Toast": {
+    "success": "Success",
+    "error": "Failed",
+    "info": "Info",
+    "close": "Close notification"
+  },
   "Auth": {
     "shared": {
       "liveBadge": "Live Intelligence System",
@@ -135,8 +141,7 @@
       "contact": "Contact us"
     },
     "social": {
-      "google": "Sign in with Google",
-      "microsoft": "Sign in with Microsoft"
+      "google": "Sign in with Google"
     },
     "passwordReq": {
       "length": "Minimum 10 characters",
@@ -256,8 +261,29 @@
       "expiresIn": "Code expires in",
       "infoTitle": "Didn't receive the code?",
       "infoText": "Check your spam or junk email folder.",
+      "resending": "Sending...",
       "resendCode": "Resend code",
       "backToSignup": "Back to sign up"
+    },
+    "verifyEmail": {
+      "title": "Verify Your Email",
+      "subtitle": "We have sent a 6-digit code to your email. Enter the code below to confirm your account.",
+      "email": "Email",
+      "devCode": "Dev verify code:",
+      "verifying": "Verifying...",
+      "verifyButton": "Verify account",
+      "expiresIn": "Expires in",
+      "infoTitle": "Didn't receive the email?",
+      "infoText": "Check your Spam or Promotions folder. If it's still not there, please request a resend.",
+      "resending": "Sending...",
+      "resendCode": "Resend code",
+      "backToSignup": "Back to sign up",
+      "errors": {
+        "emailNotFound": "Email not found. Please restart the registration process.",
+        "invalidCode": "Please enter a 6-digit code.",
+        "verifyFailed": "Verification code is invalid or has expired.",
+        "resendFailed": "Verification code could not be resent at this time."
+      }
     }
   },
   "OnboardingDesign": {
@@ -275,6 +301,7 @@
       "intelligence": "Intelligence",
       "reports": "Reports",
       "actionCenter": "Action Center",
+      "cases": "Cases",
       "dataSources": "Data Sources",
       "integrations": "Integrations",
       "activity": "Activity Log",
@@ -619,6 +646,82 @@
     "typeWeb": "Web"
   },
   "Signals": {
+    "emptyState": {
+      "title": "No live signals yet",
+      "desc": "Data sources are connected, but no signals match the current filters."
+    },
+    "summary": {
+      "title": "AI Signal Summary",
+      "aiGenerated": "AI Generated",
+      "noData": "No data available",
+      "noDataDesc": "No signals have been captured in the last 24 hours to generate a summary.",
+      "total": "Total Signals (24h)",
+      "negative": "Negative Signals",
+      "critical": "Critical Alerts",
+      "trendLabel": "24h trend"
+    },
+    "followUp": {
+      "title": "Needs Follow-up",
+      "desc": "Signals requiring immediate attention.",
+      "action": "Follow up in Action Center",
+      "emptyTitle": "No follow-ups needed",
+      "emptyDesc": "You're all caught up! No urgent signals detected."
+    },
+    "recommendations": {
+      "title": "Action Recommendations",
+      "desc": "Suggested by Narriv AI.",
+      "action": "Create Action Plan",
+      "emptyTitle": "No recommendations yet",
+      "emptyDesc": "Narriv AI will generate suggestions when significant patterns are detected."
+    },
+    "sourceDonut": {
+      "title": "Signal Sources",
+      "desc": "Distribution by data source.",
+      "timeframe": "Last 24 Hours",
+      "totalLabel": "Total Signals",
+      "emptyTitle": "No source data",
+      "emptyDesc": "Connect data sources to view distribution."
+    },
+    "timeline": {
+      "title": "Signal Timeline",
+      "period": "(Last 24 Hours)",
+      "desc": "Signal volume per hour.",
+      "signalsLabel": "signals",
+      "emptyTitle": "No timeline data",
+      "emptyDesc": "Signal activity will appear here as data is collected."
+    },
+    "investigationQueue": {
+      "title": "Investigation Queue",
+      "desc": "Signals currently being processed.",
+      "viewAll": "View all",
+      "emptyTitle": "No investigations in queue",
+      "emptyDesc": "All clear! No signals pending investigation."
+    },
+    "createInvestigation": "Create Investigation",
+    "modal": {
+      "defaultTitle": "Investigation: {title}",
+      "title": "Create Investigation",
+      "desc": "Initiate a new case from this signal.",
+      "titleLabel": "Title",
+      "titlePlaceholder": "e.g. Unusual login spikes in APAC",
+      "priorityLabel": "Priority",
+      "priority": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "critical": "Critical"
+      },
+      "descriptionLabel": "Description (Optional)",
+      "descriptionPlaceholder": "Add context or observations...",
+      "cancel": "Cancel",
+      "submit": "Create Case",
+      "toast": {
+        "successTitle": "Investigation created",
+        "successDesc": "The case has been successfully created.",
+        "errorTitle": "Failed to create",
+        "errorDesc": "An error occurred while creating the investigation."
+      }
+    },
     "eyebrow": "Narrative Signals",
     "title": "Signals Intelligence",
     "subtitle": "Triage raw signals and convert high-confidence analysis into action.",
@@ -662,62 +765,157 @@
     "processing": "AI analysis is still processing",
     "noAnalysis": "AI summary is not available yet. The original source content is still shown in full below.",
     "recommended": "Recommended action",
-    "cta": "Create Action Plan"
+    "cta": "Create Action Plan",
+    "timeRange24h": "24 Hours",
+    "timeRange7d": "7 Days",
+    "timeRange30d": "30 Days",
+    "filterAll": "All",
+    "filterNegative": "Negative",
+    "filterPositive": "Positive",
+    "filterMixed": "Mixed",
+    "filterCritical": "Critical",
+    "sortLatest": "Latest",
+    "headerSignal": "Signal",
+    "headerTrend": "Trend",
+    "headerSource": "Source",
+    "headerSentiment": "Sentiment",
+    "headerVelocity": "Velocity",
+    "headerMentions": "Mentions",
+    "headerConfidence": "Confidence",
+    "headerTime": "Time",
+    "footerLive": "{from}-{to} of {total} signals",
+    "footerUnavailable": "Live data unavailable. Showing sample data.",
+    "footerFallback": "Showing 1-4 of 24 signals",
+    "errorTitle": "Live data unavailable",
+    "errorDesc": "API client attempted token refresh. Showing sample data for now.",
+    "mockSignal1Title": "Payment delay complaints are rising",
+    "mockSignal1Desc": "Payment delay complaints increased significantly on X/Twitter in the Jabodetabek area since 08:00 WIB.",
+    "mockSignal2Title": "Mobile app stability disruption",
+    "mockSignal2Desc": "Users report frequent app crashes during transactions.",
+    "mockSignal3Title": "New promo receives positive response",
+    "mockSignal3Desc": "Latest cashback promo receives positive response, many users share their experiences.",
+    "mockSignal4Title": "FAQ confusion around credit terms",
+    "mockSignal4Desc": "Many users confused by new credit terms in the payment feature.",
+    "mockTagReputation": "Reputation Risk",
+    "mockTagCustomer": "Customer Experience",
+    "mockTagOperational": "Operational Risk",
+    "mockTagMarketing": "Marketing Opportunity",
+    "mockSourceSocial": "Social Media",
+    "mockSourceApp": "App Reviews",
+    "mockSourceTicket": "Support Tickets",
+    "mockVelocityPeriod2h": "in 2 hours",
+    "mockVelocityPeriod4h": "in 4 hours",
+    "mockVelocityPeriod5h": "in 5 hours",
+    "mockVelocityPeriod6h": "in 6 hours",
+    "mockTimeAgoJust": "Just now",
+    "mockTimeAgo38m": "38m ago",
+    "mockTimeAgo1h": "1h ago",
+    "mockFollowUpMeta1": "1,248 mentions • Confidence 94%",
+    "mockFollowUpMeta2": "842 mentions • Confidence 89%",
+    "mockFollowUpMeta3": "621 mentions • Confidence 87%",
+    "mockRec1Title": "Investigate payment delay complaints",
+    "mockRec1Desc": "Check SLA and payment system",
+    "mockRec2Title": "Create proactive public clarification",
+    "mockRec2Desc": "Prevent negative sentiment escalation",
+    "mockRec3Title": "Escalate to Ops Team",
+    "mockRec3Desc": "App stability issues increasing",
+    "mockRec4Title": "Monitor credit terms topic",
+    "mockRec4Desc": "Consider updating FAQ",
+    "mockRecBadgeHigh": "High Priority",
+    "mockRecBadgeMedium": "Medium",
+    "mockRecBadgeLow": "Low",
+    "fallbackUntitled": "Untitled signal",
+    "fallbackNoContent": "No content summary available.",
+    "fallbackUnknownSource": "Unknown Source",
+    "fallbackNeedsReview": "Needs Review",
+    "fallbackMonitoring": "Monitoring",
+    "fallbackLiveSource": "Live Source",
+    "fallbackDataLive": "Live data"
   },
   "Visibility": {
+    "breadcrumb": "Dashboard / AI Visibility",
     "title": "AI Visibility",
-    "subtitle": "See how AI tools like ChatGPT, Gemini, and Perplexity mention your brand, which sources they use, and where competitors appear.",
-    "generateAction": "Create Action",
-    "creatingAction": "Creating...",
-    "createActionFailed": "Could not create an action plan. AI generation may be unavailable or missing configuration.",
-    "assignmentTitle": "Owner and escalation",
-    "assignmentDesc": "Assign the response owner, team, deadline, and escalation level so the plan moves from recommendation to execution.",
-    "quickEdit": "Quick edit",
-    "closeAssignment": "Close editor",
-    "cancel": "Cancel",
-    "unassigned": "Unassigned",
-    "noDeadline": "No deadline",
-    "assignedTo": "PIC / Owner",
-    "assignedToPlaceholder": "Person responsible",
-    "assignedTeam": "Team",
-    "assignedTeamPlaceholder": "Comms, PR, Growth...",
-    "deadline": "Deadline",
-    "escalationLevel": "Escalation level",
-    "saveAssignment": "Save assignment",
-    "savingAssignment": "Saving...",
-    "assignmentSaved": "Assignment saved",
-    "assignmentSavedDesc": "The action owner and escalation details were saved.",
-    "assignmentFailed": "Could not save assignment",
-    "assignmentFailedDesc": "Check the assignment fields and try again.",
-    "escalation": {
-      "low": "Low",
-      "medium": "Medium",
-      "high": "High",
-      "critical": "Critical"
+    "subtitle": "Monitor how your brand, topics, and competitors appear on generative AI platforms.",
+    "last7Days": "7 May 2025 - 14 May 2025",
+    "export": "Export",
+    "metrics": {
+      "totalMentions": {
+        "label": "Total AI Mentions",
+        "value": "2,451",
+        "helper": "+18.7% vs last 7 days"
+      },
+      "brandMentions": {
+        "label": "Brand Mentions",
+        "value": "1,289",
+        "helper": "+22.1% vs last 7 days"
+      },
+      "sov": {
+        "label": "Share of Voice",
+        "value": "24.3%",
+        "helper": "+4.6 p.p."
+      },
+      "avgPos": {
+        "label": "Average Position (All AI)",
+        "value": "2.8",
+        "helper": "-0.4"
+      }
     },
-    "retry": "Retry",
-    "emptyTitle": "No AI Visibility Data Yet",
-    "emptyDesc": "We are collecting AI answer data to measure how often your brand appears. Please check again later.",
-    "score": "AI Visibility Score",
-    "scoreDesc": "A simple score based on how often your brand appears, source quality, competitor mentions, and tested questions.",
-    "presence": "Brand Appearance Rate",
-    "presenceDescPrefix": "Brand appeared in",
-    "presenceDescSuffix": "priority questions.",
-    "competitor": "Competitor Appearance Rate",
-    "competitorDesc": "Competitors appear more often in AI answers for crisis and monitoring questions.",
-    "prompts": "Results by Question",
-    "prompt": "Question",
-    "engine": "AI Tool",
-    "brand": "Brand",
-    "competitorColumn": "Competitor",
-    "noPrompts": "No questions analyzed yet.",
-    "geoAction": "AI Visibility Actions",
-    "geoDesc": "Suggested actions are based on weak answers and competitor-heavy results.",
-    "visibilityGapAction": "Create plan for visibility gap",
-    "noActions": "No suggested actions yet.",
-    "footer": "Note: AI visibility data, tested questions, citations, competitor tracking, and actions should all flow into the same action and reporting system."
+    "execSummary": {
+      "title": "AI Executive Summary",
+      "aiGenerated": "A.I Generated",
+      "heading": "Your brand visibility increased +18.7% this week.",
+      "body": "The increase is driven by AI monitoring topics, cybersecurity discussions, and recommendations of ChatGPT for enterprise monitoring tools. However, competitors are leading on the 'cloud security' keyword in Google Gemini and Perplexity.",
+      "opportunity": "Top Opportunity",
+      "opportunityVal": "AI monitoring & enterprise intelligence tools",
+      "risk": "Top Risk",
+      "riskVal": "Cloud security (competitor dominated)",
+      "recActions": "AI Recommended Actions",
+      "rec1": "Push thought leadership content",
+      "rec2": "Optimize landing page (enterprise intel)",
+      "rec3": "Increase authority in cloud security",
+      "viewAll": "See all"
+    },
+    "mentionsTrend": {
+      "title": "AI Mentions Trend",
+      "desc": "Growth in the number of mentions of your brand on AI platforms.",
+      "days7": "7 Days",
+      "days30": "30 Days"
+    },
+    "topTopics": {
+      "title": "Top Topics Mentioned by AI",
+      "headers": {
+        "topic": "Topic",
+        "mentions": "Mentions",
+        "direction": "Direction",
+        "type": "Type"
+      },
+      "viewAll": "See all topics"
+    },
+    "sandbox": {
+      "title": "AI Search Sandbox",
+      "desc": "Simulate how AI responds to queries and mentions the Narriv brand.",
+      "queryPlaceholder": "Search for signals, topics, issues, or cases...",
+      "simulateBtn": "Simulate",
+      "responseTitle": "AI Response (ChatGPT)",
+      "citations": "Key Sources (Citations)",
+      "confidence": "Confidence"
+    },
+    "competitorVs": {
+      "title": "Visibility vs Competitors (All AI Platforms)"
+    },
+    "topPlatforms": {
+      "title": "Top AI Platforms"
+    },
+    "competitorShare": {
+      "title": "Competitor Share of Voice",
+      "totalShare": "Total SOV"
+    },
+    "latestMentions": {
+      "title": "Latest Mention Examples",
+      "viewAll": "View all"
+    }
   },
-  "ActionPlans": {
+  "ActionPlansLegacy": {
     "title": "Action Plans",
     "subtitle": "Turn analysis into clear next steps, such as PR response, content updates, or crisis handling.",
     "generateAction": "Create Action",
@@ -829,9 +1027,127 @@
       "betterTitle": "5. Better alerts",
       "betterDesc": "The next suggestions become more useful."
     },
-    "footer": "Note: each warning should explain why it matters, such as speed, source strength, sentiment, topic spread, impact timing, and confidence. Feedback should use clear categories."
+    "footer": "Note: each warning should explain why it matters, such as speed, source strength, sentiment, topic spread, impact timing, and confidence. Feedback should use clear categories.",
+    "toast": {
+      "statusUpdated": "Alert status updated.",
+      "statusUpdateFailed": "Could not update alert status.",
+      "assignmentSaved": "Assignment saved.",
+      "assignmentFailed": "Could not save assignment."
+    },
+    "filter": {
+      "allStatus": "All Status",
+      "allSource": "All Sources",
+      "allSentiment": "All Sentiments",
+      "search": "Search alerts...",
+      "createAlert": "Create Alert"
+    },
+    "summary": {
+      "title": "AI Alert Summary",
+      "generated": "AI Generated",
+      "riskHighest": "Highest Risk",
+      "significantIncrease": "Significant Increase",
+      "aiRecommendation": "AI Recommendation"
+    },
+    "table": {
+      "title": "Alert List",
+      "desc": "Showing alerts with the highest priority.",
+      "alert": "Alert",
+      "source": "Source",
+      "sentiment": "Sentiment",
+      "velocity": "Velocity",
+      "mentions": "Mentions",
+      "confidence": "Confidence",
+      "impact": "Impact",
+      "status": "Status",
+      "time": "Time",
+      "actions": "Actions",
+      "changeStatus": "Change status",
+      "statusNew": "Mark as New",
+      "statusInvestigating": "Mark as Investigating",
+      "statusResolved": "Mark as Resolved",
+      "assign": "Assign",
+      "assignToMe": "Assign to me"
+    },
+    "status": {
+      "new": "New",
+      "investigating": "Investigating",
+      "escalated": "Escalated",
+      "resolved": "Resolved"
+    },
+    "quickFilter": {
+      "title": "Quick Filter",
+      "all": "All",
+      "critical": "Critical",
+      "warning": "Warning",
+      "info": "Info",
+      "latest": "Latest",
+      "search": "Search alerts..."
+    },
+    "metrics": {
+      "totalAlert": "Total Alerts",
+      "criticalHigh": "Critical & High",
+      "mediumLow": "Medium & Low",
+      "info": "Info",
+      "liveData": "Live data",
+      "needsAttention": "Needs attention",
+      "monitor": "Monitor",
+      "infoOnly": "Info only",
+      "resolved": "Resolved",
+      "closed": "Closed"
+    },
+    "actionable": {
+      "title": "Needs Action",
+      "desc": "Alerts that require immediate attention.",
+      "viewAll": "View all alerts"
+    },
+    "recommendations": {
+      "title": "AI Action Recommendations",
+      "desc": "Suggested based on priority and impact.",
+      "createPlan": "Create Action Plan"
+    },
+    "sourceDonut": {
+      "title": "Alert Sources",
+      "desc": "Alert distribution by data source.",
+      "last24h": "Last 24 Hours",
+      "total": "Total Alerts"
+    },
+    "timeline": {
+      "title": "Alert Timeline",
+      "period": "(Last 24 Hours)",
+      "desc": "Alert volume per hour."
+    },
+    "investigation": {
+      "title": "Investigation Status",
+      "desc": "Alert resolution monitoring.",
+      "avgResponse": "Average response time",
+      "avgResolution": "Average resolution time"
+    },
+    "buttons": {
+      "manageContacts": "Manage Contacts",
+      "notificationSettings": "Notification Settings",
+      "createNew": "Create New Alert",
+      "viewAll": "View All"
+    },
+    "impact": {
+      "high": "High",
+      "medium": "Medium"
+    },
+    "empty": {
+      "title": "No live alerts yet",
+      "desc": "Backend connected successfully, but no alerts to display yet.",
+      "noLiveAlerts": "No live alerts to display",
+      "noAlertsDesc": "There are currently no live alerts matching the active filter.",
+      "dataUnavailable": "Live data unavailable",
+      "dataUnavailableDesc": "Could not fetch live alerts. Showing fallback data for now."
+    },
+    "error": {
+      "title": "Live data unavailable",
+      "desc": "API client attempted token refresh. Showing sample data for now."
+    }
   },
   "Intelligence": {
+    "pageTitle": "Intelligence",
+    "pageSubtitle": "Understand topic clusters, narrative growth, and strategic context.",
     "title": "Topic Map",
     "subtitle": "Understand which topics are growing, who is involved, their impact, and the risks behind them.",
     "createAction": "Create Action",
@@ -848,12 +1164,117 @@
     "source": "TOPIC #04 · 41 findings · High impact",
     "clusterTitle": "Accountability topic is growing beyond outage complaints",
     "clusterDesc": "This topic connects customer trust, disclosure timing, and regulator attention. News citations are the strongest driver.",
-    "metrics": "TOPIC METRICS",
+    "metrics": {
+      "clusters": {
+        "label": "Clusters Identified",
+        "value": "28",
+        "helper": "6 accelerating"
+      },
+      "confidence": {
+        "label": "Narrative Confidence",
+        "value": "89%",
+        "helper": "Evidence weighted"
+      },
+      "emerging": {
+        "label": "Emerging Narratives",
+        "value": "7",
+        "helper": "2 new this week"
+      },
+      "opportunities": {
+        "label": "Opportunities Detected",
+        "value": "5",
+        "helper": "2 high potential"
+      }
+    },
     "velocity": "Speed",
     "confidence": "Confidence",
     "focus": "Suggested focus",
     "focusDesc": "Prepare leadership response points and monitor regulator-related stakeholders.",
-    "open": "Open Topic"
+    "open": "Open Topic",
+    "last7Days": "Last 7 days (May 12 - May 18, 2025)",
+    "topicMap": {
+      "title": "Topic Map",
+      "desc": "Visualize how narratives connect and influence each other.",
+      "allTopics": "All Topics",
+      "filter": "Filter",
+      "intensity": "Intensity",
+      "sentiment": "Sentiment",
+      "connStrength": "Connection Strength",
+      "pos": "Positive",
+      "neu": "Neutral",
+      "neg": "Negative",
+      "weak": "Weak",
+      "strong": "Strong",
+      "tip": "Tip: Click on any cluster to explore detailed insights and related narratives."
+    },
+    "growingClusters": {
+      "title": "Growing Narrative Clusters",
+      "viewAll": "View all"
+    },
+    "selectedNarrative": {
+      "title": "Selected Narrative",
+      "related": "Top Related Narratives",
+      "aiRec": "AI Recommendation",
+      "btnAnalysis": "See Full Analysis",
+      "highImpact": "High Impact",
+      "emerging": "Emerging"
+    },
+    "competitorShare": {
+      "title": "Competitor Narrative Share",
+      "totalShare": "Total Narrative Share",
+      "viewLandscape": "View Competitive Landscape"
+    },
+    "aiSummary": {
+      "title": "Narrative Insights (AI Summary)",
+      "box": "The main narrative this week is dominated by operational and customer service issues, with a high potential reputational impact if not addressed immediately.",
+      "bullets": {
+        "1": "Payment delay is the fastest growing issue.",
+        "2": "Refund complaints are beginning to connect with trust issues.",
+        "3": "Increased discussions in forums and social media.",
+        "4": "No significant spike in regulatory issues."
+      },
+      "btn": "View Full Insight Report"
+    },
+    "lifecycle": {
+      "title": "Narrative Lifecycle",
+      "phases": {
+        "emerging": {
+          "title": "Emerging",
+          "desc": "Newly emerging and starting to grow"
+        },
+        "accelerating": {
+          "title": "Accelerating",
+          "desc": "Fast growth and spreading"
+        },
+        "peaking": {
+          "title": "Peaking",
+          "desc": "Reaching peak public attention"
+        },
+        "declining": {
+          "title": "Declining",
+          "desc": "Starting to decline and stabilize"
+        },
+        "dormant": {
+          "title": "Dormant",
+          "desc": "Minimal activity, needs monitoring"
+        }
+      }
+    },
+    "footer": {
+      "dataCoverage": "Data Coverage",
+      "sourcesActive": "62 / 72 Sources Active",
+      "coveragePercent": "86% Coverage",
+      "updateFreq": "Update Frequency",
+      "realtime": "Real-time",
+      "autoUpdated": "Auto-updated 30 seconds ago",
+      "aiStatus": "AI Model Status",
+      "operational": "Operational",
+      "systemsNormal": "All systems normal",
+      "analysisDepth": "Analysis Depth",
+      "deep": "Deep Analysis",
+      "multilingual": "Cross-platform & multilingual",
+      "btnSettings": "Configure Intelligence Settings"
+    }
   },
   "Reports": {
     "eyebrow": "Reports",
@@ -873,7 +1294,17 @@
     "queueTitle": "Report queue",
     "queueDesc": "Track readiness, missing inputs, and export status for stakeholder reports.",
     "search": "Search reports",
-    "filter": "Filter",
+    "filter": {
+      "all": "All",
+      "ready": "Ready",
+      "review": "Review",
+      "draft": "Draft",
+      "scheduled": "Scheduled",
+      "archived": "Archived",
+      "search": "Search reports...",
+      "latest": "Latest",
+      "title": "Filter"
+    },
     "readinessStatus": "Readiness status",
     "clear": "Clear",
     "filters": {
@@ -890,11 +1321,16 @@
     "noMatch": "No reports match your filters",
     "noMatchDesc": "Try another search term or status filter.",
     "table": {
+      "title": "Report Documents",
+      "desc": "Manage all daily, weekly, and special reports.",
       "report": "Report",
-      "sections": "Sections",
-      "readiness": "Readiness",
+      "type": "Type",
+      "period": "Period",
       "status": "Status",
-      "export": "Export"
+      "progress": "Progress",
+      "created": "Created",
+      "action": "Action",
+      "readyLabel": "Ready"
     },
     "updatedSnapshot": "Updated from latest intelligence snapshot",
     "exportAria": "Export {title}",
@@ -953,6 +1389,134 @@
       "readyStatus": "Ready for exec review",
       "geoStatus": "Needs AI visibility notes",
       "feedbackStatus": "Awaiting team feedback"
+    },
+    "toast": {
+      "exportStarted": "Export started. Checking status...",
+      "exportSuccess": "Export successful. File ready for download.",
+      "exportFailed": "Export failed. Please try again.",
+      "exportProcessing": "Export still processing. Try again later.",
+      "exportInitFailed": "Export could not be started. Please try again."
+    },
+    "statusBadge": {
+      "SIAP": "Ready",
+      "REVIEW": "Review",
+      "DRAFT": "Draft",
+      "SCHEDULED": "Scheduled"
+    },
+    "quickActions": {
+      "title": "Quick Actions",
+      "shareStakeholder": "Share to Stakeholder",
+      "shareDesc": "Send report to email or channel",
+      "scheduleReport": "Schedule Report",
+      "scheduleDesc": "Set up automatic delivery",
+      "customReport": "Create Custom Report",
+      "customDesc": "Choose your own data & template",
+      "viewHistory": "View Report History",
+      "historyDesc": "Access all previous reports"
+    },
+    "preview": {
+      "title": "Report Preview",
+      "desc": "Review summary before sharing to stakeholders.",
+      "viewPreview": "View Preview",
+      "downloadPdf": "Download PDF",
+      "executiveBrief": "Executive Narrative Brief",
+      "pdfDaily": "PDF · Daily",
+      "ready": "Ready",
+      "imageAlt": "AI reports assistant illustration",
+      "liveFallback": "Intelligence report from Narriv backend.",
+      "liveType": "Report · Live API",
+      "activePeriod": "Active period",
+      "liveCreated": "Live data"
+    },
+    "sentimentChart": {
+      "title": "Sentiment Last 7 Days",
+      "positive": "Positive",
+      "neutral": "Neutral",
+      "negative": "Negative"
+    },
+    "aiSummary": {
+      "title": "AI Report Summary",
+      "generated": "AI Generated",
+      "insightTitle": "Key Insight",
+      "insightText": "Payment delay is the top issue with the highest volume.",
+      "riskTitle": "Highest Risk",
+      "riskText": "Potential reputational escalation without public communication.",
+      "movementTitle": "Significant Movement",
+      "movementText": "Negative conversations on X/Twitter up +248% in the last 2 hours.",
+      "recommendationTitle": "AI Recommendation",
+      "recommendationText": "Publish clarification and update payment system status.",
+      "body": "In the last 7 days, negative sentiment increased 18% driven by payment complaints and application stability in the Jabodetabek area."
+    },
+    "formatDonut": {
+      "title": "Format Distribution",
+      "desc": "Comparison of generated report formats.",
+      "total": "Total Reports",
+      "noData": "No format data yet."
+    },
+    "timeline": {
+      "title": "Report Creation Trend",
+      "period": "(Last 14 Days)",
+      "desc": "Number of reports created per day.",
+      "peak": "{count} reports",
+      "noData": "No data yet"
+    },
+    "popular": {
+      "title": "Popular Reports",
+      "desc": "Based on most frequently created report titles.",
+      "viewAll": "View All Reports",
+      "noData": "No popular report data yet.",
+      "created": "{count} created"
+    },
+    "empty": {
+      "title": "No live reports yet",
+      "desc": "Backend connected successfully, but no reports available yet."
+    },
+    "error": {
+      "title": "Report data unavailable",
+      "desc": "API client attempted token refresh. Showing sample data for now."
+    },
+    "buttons": {
+      "manageTemplates": "Manage Templates",
+      "scheduleSettings": "Schedule Settings",
+      "createNew": "Create New Report"
+    },
+    "previewSections": {
+      "execSummary": "Executive Summary",
+      "riskMovement": "Risk Movement",
+      "keyInsights": "Key Insights",
+      "recommendedActions": "Recommended Actions"
+    },
+    "metricsCard": {
+      "templates": "Templates",
+      "templatesHelper": "3 ready",
+      "ready": "Ready",
+      "readyHelper": "Executive review",
+      "scheduled": "Scheduled",
+      "scheduledHelper": "Weekly cadence",
+      "generated30": "Generated (30 Days)",
+      "generatedHelper": "▲ 6 vs previous period",
+      "generated30Helper": "▲ 6 vs previous period"
+    },
+    "liveMetrics": {
+      "templates": "Templates",
+      "templatesHelper": "from backend",
+      "reportsCreated": "Reports Created",
+      "totalLive": "total live",
+      "reportsCreatedHelper": "total live",
+      "inProgress": "In Progress",
+      "inProgressHelper": "in progress",
+      "ready": "Ready",
+      "readyHelper": "ready"
+    },
+    "liveData": {
+      "fallback": "Live data unavailable. Showing sample data."
+    },
+    "paginationExtended": {
+      "labelLive": "live reports",
+      "sampleSummary": "Showing 1-5 of 24 reports"
+    },
+    "sidebar": {
+      "footerText": "Note: each suggestion should include evidence, action type, reason, owner, approval status, and a measurable outcome."
     }
   },
   "Sidebar": {
@@ -1021,7 +1585,43 @@
     "createAction": "Create Action",
     "creatingAction": "Creating...",
     "createActionFailed": "Could not create an action plan for this alert. AI generation may be unavailable or missing configuration.",
-    "routeTo": "Create an action plan with accept, edit, or reject feedback."
+    "routeTo": "Create an action plan with accept, edit, or reject feedback.",
+    "toast": {
+      "statusUpdated": "Alert status updated.",
+      "statusUpdateFailed": "Could not update alert status. Please try again.",
+      "assignmentSaved": "Alert assignment saved.",
+      "assignmentFailed": "Could not save alert assignment. Please try again."
+    },
+    "status": {
+      "new": "New",
+      "investigating": "Investigating",
+      "resolved": "Resolved"
+    },
+    "section": {
+      "whatHappened": "What happened",
+      "whyItMatters": "Why it matters",
+      "whatToDo": "What to do"
+    },
+    "nav": {
+      "back": "Back"
+    },
+    "issue": {
+      "description": "Issue: {issue}"
+    },
+    "assignment": {
+      "title": "Assignment",
+      "save": "Save",
+      "saving": "Saving...",
+      "back": "Back"
+    },
+    "recommendation": {
+      "title": "Recommended step",
+      "desc": "Route this alert to Action Center and assign an owner."
+    },
+    "empty": {
+      "title": "Alert details unavailable",
+      "desc": "API client attempted token refresh. Showing sample data for now."
+    }
   },
   "Workspace": {
     "activity": {
@@ -1061,6 +1661,56 @@
         "trustTitle": "Procurement trust concern",
         "trustStatus": "Monitoring",
         "trustOwner": "PR"
+      },
+      "toast": {
+        "deleteSuccess": "Case deleted successfully.",
+        "deleteFailed": "Could not delete case.",
+        "statusUpdated": "Status updated.",
+        "statusUpdateFailed": "Could not update status."
+      },
+      "status": {
+        "open": "Open",
+        "in_progress": "In Progress",
+        "resolved": "Resolved",
+        "closed": "Closed",
+        "critical": "Critical",
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low"
+      },
+      "filter": {
+        "allStatus": "All Status",
+        "allPriority": "All Priority",
+        "search": "Search cases..."
+      },
+      "table": {
+        "case": "Case",
+        "status": "Status",
+        "priority": "Priority",
+        "assignee": "Assignee",
+        "action": "Action",
+        "unassigned": "Unassigned"
+      },
+      "header": {
+        "title": "Cases & Investigations",
+        "desc": "Manage and monitor your team's investigation queue.",
+        "newCase": "New Case"
+      },
+      "empty": {
+        "title": "No cases",
+        "desc": "No investigation cases match your filter yet."
+      },
+      "delete": {
+        "title": "Delete Case",
+        "description": "Are you sure you want to delete this case? Deleted data cannot be recovered.",
+        "confirm": "Delete Case",
+        "cancel": "Cancel"
+      },
+      "pagination": {
+        "previous": "Previous",
+        "next": "Next",
+        "pageInfo": "Page {page} of {totalPages}",
+        "total": "{total} cases found"
       }
     },
     "integrations": {
@@ -1072,7 +1722,12 @@
       "connected": "Connected",
       "notConnected": "Not connected",
       "records": "live records",
-      "status": {},
+      "status": {
+        "all": "All Status",
+        "active": "Active",
+        "inactive": "Inactive",
+        "error": "Error"
+      },
       "items": {
         "googleNewsName": "Google News",
         "googleNewsDesc": "News coverage source",
@@ -1082,6 +1737,72 @@
         "benchmarksDesc": "Questions used to test brand visibility in AI answers",
         "slackName": "Slack Handoff",
         "slackDesc": "Notify action owners in Slack"
+      },
+      "toast": {
+        "createSuccess": "Integration saved.",
+        "createFailed": "Could not save integration. Please try again.",
+        "deleteSuccess": "Integration disconnected.",
+        "deleteFailed": "Could not delete integration.",
+        "updateSuccess": "Integration status updated.",
+        "updateFailed": "Could not update integration status.",
+        "configInvalid": "Invalid config JSON."
+      },
+      "platforms": {
+        "slack": "Slack",
+        "teams": "Microsoft Teams",
+        "webhook": "Webhook",
+        "email": "Email",
+        "whatsapp": "WhatsApp",
+        "bigquery": "BigQuery",
+        "postgres": "Postgres"
+      },
+      "form": {
+        "title": "Connect Integration",
+        "desc": "Add a new connection. Config is optional and must be a JSON object.",
+        "name": "Integration Name",
+        "namePlaceholder": "Example: Slack Crisis Room",
+        "platform": "Platform",
+        "configJson": "Config JSON",
+        "connect": "Connect Integration",
+        "connecting": "Connecting..."
+      },
+      "filter": {
+        "allPlatform": "All Platform",
+        "allStatus": "All Status",
+        "filterTitle": "Filter Integrations",
+        "platform": "Platform",
+        "status": "Status",
+        "reset": "Reset"
+      },
+      "table": {
+        "integration": "Integration",
+        "status": "Status",
+        "config": "Config",
+        "lastSync": "Last Sync",
+        "action": "Action",
+        "neverSynced": "Never synced",
+        "created": "Created {date}",
+        "noConfig": "No additional config"
+      },
+      "metrics": {
+        "total": "Total Integrations",
+        "totalDesc": "Workspace connections",
+        "active": "Active",
+        "activeDesc": "Ready to use",
+        "platforms": "Platforms",
+        "platformsDesc": "Unique connection types",
+        "needsAttention": "Needs Attention",
+        "needsAttentionDesc": "Error status"
+      },
+      "empty": {
+        "title": "No integrations yet",
+        "desc": "Connect Slack, Teams, webhook, or database export to automate response workflows."
+      },
+      "delete": {
+        "title": "Disconnect Integration",
+        "description": "Disconnect {name}? This connection will be removed from the workspace.",
+        "confirm": "Disconnect",
+        "cancel": "Cancel"
       }
     },
     "settings": {
@@ -1148,7 +1869,325 @@
       "session": "Session",
       "connected": "Connected",
       "notConnected": "Not connected",
-      "readinessItems": {}
+      "readinessItems": {},
+      "pageHeaderTitle": "Settings",
+      "pageHeaderSubtitle": "Manage your workspace settings, integrations, and system preferences.",
+      "loadFailedTitle": "Live settings could not be loaded",
+      "loadFailedDesc": "The API client already attempted a token refresh. The form is still usable with temporary values.",
+      "membersLoadFailedTitle": "Live member list could not be loaded",
+      "membersLoadFailedDesc": "The API client already attempted a token refresh. The table is showing sample members for now.",
+      "table": {
+        "user": "User",
+        "role": "Role",
+        "permission": "Permission",
+        "lastActive": "Last Active",
+        "status": "Status",
+        "action": "Action"
+      },
+      "membersEmptyTitle": "No live members yet",
+      "membersEmptyDesc": "This workspace has no members returned by the backend yet.",
+      "deactivateUser": "Deactivate user",
+      "activateUser": "Activate user",
+      "removeUser": "Remove user",
+      "memberStatusChanged": "Status of {name} changed to {action}.",
+      "memberRemovedFromOverride": "{name} removed from workspace.",
+      "memberStatusActive": "Active",
+      "memberStatusInactive": "Inactive",
+      "timeActiveNow": "Active now",
+      "timeActiveYesterday": "Active yesterday",
+      "time2HoursAgo": "2 hours ago",
+      "time1DayAgo": "1 day ago",
+      "timeLive": "Live data",
+      "permissionFullAccess": "Full Access",
+      "permissionReadWrite": "Read & Write",
+      "permissionReadOnly": "Read Only",
+      "defaultMemberName": "Workspace Member",
+      "defaultMemberEmail": "unknown@narriv.ai",
+      "defaultInitials": "NA",
+      "quietHoursTime": "22:00 - 07:00 >",
+      "sensitivityLow": "Low",
+      "sensitivityMedium": "Medium",
+      "sensitivityHigh": "High",
+      "summaryExecutive": "Executive",
+      "summaryDetailed": "Detailed",
+      "summaryShort": "Short",
+      "connectedPlatformsBadge": "12",
+      "sessionTimeout15": "15 minutes",
+      "sessionTimeout30": "30 minutes",
+      "sessionTimeout1h": "1 hour",
+      "sessionTimeout12h": "12 hours",
+      "retention30": "30 days",
+      "retention90": "90 days",
+      "retention365": "365 days",
+      "retentionForever": "Forever",
+      "retentionTitle": "Data Retention",
+      "retentionDesc": "Log archive retention period",
+      "workspaceInfo": {
+        "title": "Workspace Information",
+        "description": "Basic information about your workspace.",
+        "logoUploading": "Uploading",
+        "logoAlt": "Workspace Logo",
+        "logoInvalidFormat": "Logo format must be PNG, JPG, WEBP, or SVG.",
+        "logoTooLarge": "Logo size is limited to 2MB.",
+        "logoReadError": "Logo file could not be read. Please pick another file.",
+        "sectionPassword": "Change Password",
+        "passwordCurrentPlaceholder": "Current password",
+        "passwordNewPlaceholder": "New password (min 10 characters, uppercase, number, symbol)",
+        "labelName": "Workspace Name",
+        "labelIndustry": "Industry",
+        "labelTimezone": "Time Zone",
+        "labelLanguage": "Language",
+        "labelUrl": "Workspace URL",
+        "copyUrl": "Copy workspace URL",
+        "urlPrefix": "narriv.ai/workspace/",
+        "industryTechnology": "Technology",
+        "industryFinance": "Finance",
+        "industryHealthcare": "Healthcare",
+        "industryRetail": "Retail & E-Commerce",
+        "industryGovernment": "Government & Non-Profit",
+        "languageId": "Bahasa Indonesia",
+        "languageEnUs": "English (US)",
+        "languageEnUk": "English (UK)"
+      },
+      "membersCard": {
+        "title": "User & Access Management",
+        "desc": "Manage your workspace members and their access."
+      },
+      "billingCard": {
+        "title": "Billing & Usage",
+        "desc": "Information about your workspace plan and usage.",
+        "planEnterprise": "Enterprise",
+        "planDesc": "Active professional plan for large scale teams.",
+        "managePlan": "Manage Plan",
+        "statusLabel": "Status",
+        "nextBilling": "Next Billing",
+        "billingDateFormat": "12 June 2025",
+        "billingDaysLeft": "(30 days left)",
+        "usageTitle": "Signal Usage (Last 30 Days)",
+        "usageTotalSignals": "Total Signals",
+        "usageChange": "▲ 18.6% vs previous period",
+        "period30": "Last 30 Days",
+        "period60": "Last 60 Days",
+        "metricSignalVolume": "Signal Volume",
+        "metricConnectedSources": "Connected Sources",
+        "metricUsersLimit": "Users limit",
+        "metricAiCredits": "AI Credits",
+        "signalsUnit": "signals",
+        "chartDates": [
+          "May 13",
+          "May 18",
+          "May 25",
+          "May 28",
+          "Jun 2",
+          "Jun 7",
+          "Jun 12",
+          "Jun 18",
+          "Jun 24"
+        ]
+      },
+      "danger": {
+        "title": "Danger Zone",
+        "desc": "Risky actions that may affect your workspace.",
+        "pauseTitle": "Pause Workspace",
+        "pauseDesc": "Temporarily stop all monitoring and data ingestion.",
+        "pauseButton": "Pause Workspace",
+        "resetTitle": "Reset Signals Cache",
+        "resetDesc": "Clear local cache and reprocess all signals.",
+        "resetButton": "Reset Cache",
+        "deleteTitle": "Delete Workspace",
+        "deleteDesc": "Permanently delete this workspace and all its data.",
+        "deleteButton": "Delete Workspace"
+      },
+      "confirm": {
+        "title": "Confirm Action",
+        "confirm": "Yes, continue",
+        "pauseDesc": "Are you sure you want to pause this workspace temporarily? New signal collection, automated sentiment analysis, and notifications will be stopped.",
+        "resetDesc": "Are you sure you want to clear the local cache? All signals will be re-fetched from the original monitoring platforms. This may take several minutes.",
+        "deleteDesc": "Are you sure you want to delete this workspace permanently? All analysis history, integrations, user data, and visualizations will be erased forever. This action cannot be undone."
+      },
+      "deleteMemberDialog": {
+        "title": "Remove Member",
+        "description": "Remove {name} from the workspace? This user's access to the dashboard and workspace data will be revoked.",
+        "confirm": "Yes, remove"
+      },
+      "toast": {
+        "saveSuccess": "Workspace settings saved successfully.",
+        "saveFailed": "Could not save settings. Please try again.",
+        "inviteSuccess": "Invitation sent to {email}.",
+        "inviteFailed": "Could not send invitation. Please try again.",
+        "removeSuccess": "Member removed from workspace.",
+        "removeFailed": "Could not remove member. Please try again.",
+        "passwordSuccess": "Password changed successfully.",
+        "passwordFailed": "Could not change password. Please try again.",
+        "passwordMismatch": "Passwords do not match.",
+        "passwordMinLength": "Password must be at least 8 characters.",
+        "logoSuccess": "Workspace logo uploaded.",
+        "logoFailed": "Could not upload logo. Please try again.",
+        "logoTooLarge": "Image size exceeds 2MB.",
+        "logoInvalidFormat": "Unsupported logo format.",
+        "logoReadFailed": "Could not read logo file.",
+        "logoUploadError": "Logo could not be uploaded. Please try again in a moment.",
+        "twoFaSuccess": "Two-factor authentication enabled.",
+        "twoFaInvalid": "Invalid code. Please try again.",
+        "2faSuccess": "Two-factor authentication enabled.",
+        "2faInvalid": "Invalid code. Please try again.",
+        "auditExport": "Security audit log is being exported.",
+        "statusChanged": "Member status updated.",
+        "confirmPause": "Workspace paused temporarily.",
+        "confirmReset": "Signal cache cleared and reprocessed.",
+        "confirmDelete": "Workspace deletion procedure initiated.",
+        "rolePermissionsInfo": "Role & Permissions manager will open.",
+        "quietHoursInfo": "Quiet Hours editor will open.",
+        "managementInfo": "Management panel for {label} will open."
+      },
+      "invite": {
+        "title": "Invite Member",
+        "modalTitle": "Invite New Member",
+        "subtitle": "Add a new collaborator to your workspace.",
+        "email": "Email",
+        "emailLabel": "Work Email",
+        "emailPlaceholder": "Example: aldi@narriv.ai",
+        "emailInvalid": "Invalid email format.",
+        "nameRequired": "Name is required.",
+        "nameMinLength": "Name must be at least 2 characters.",
+        "nameLabel": "Full Name",
+        "namePlaceholder": "Example: Aldi Pratama",
+        "role": "Role",
+        "roleLabel": "Choose Access Role",
+        "roleOptionAdmin": "Admin (Full Management Access)",
+        "roleOptionAnalyst": "Analyst (Read & Write Reports)",
+        "roleOptionViewer": "Viewer (Read Only)",
+        "cancel": "Cancel",
+        "submit": "Send Invitation",
+        "submitting": "Sending..."
+      },
+      "memberForm": {
+        "name": "Name",
+        "email": "Email",
+        "role": "Role",
+        "cancel": "Cancel",
+        "writer": "Writer",
+        "viewer": "Viewer"
+      },
+      "deleteMember": {
+        "title": "Remove Member",
+        "description": "Are you sure you want to remove this member from the workspace?",
+        "cancel": "Cancel",
+        "confirm": "Remove"
+      },
+      "logo": {
+        "uploadTitle": "Upload Logo",
+        "changeLogo": "Edit",
+        "formatHint": "PNG, JPG, WEBP, SVG max 2MB",
+        "currentLogo": "Current logo",
+        "uploadNew": "Upload New Logo",
+        "removeLogo": "Remove Logo",
+        "uploading": "Uploading..."
+      },
+      "notifications": {
+        "title": "Notifications",
+        "desc": "Your notification route preferences.",
+        "emailAlerts": "Email Alerts",
+        "emailAlertsDesc": "Report alerts to email",
+        "slackAlerts": "Slack Alerts",
+        "slackAlertsDesc": "Automatic escalation to Slack",
+        "whatsappAlerts": "WhatsApp Alerts",
+        "whatsappAlertsDesc": "Real-time alerts to registered number",
+        "dailySummary": "Daily Summary",
+        "dailySummaryDesc": "Daily narrative analysis summary",
+        "criticalOnly": "Critical Alert Only",
+        "criticalOnlyDesc": "Critical-level notifications only",
+        "quietHours": "Quiet Hours",
+        "quietHoursDesc": "Notification pause outside work hours"
+      },
+      "aiPrefs": {
+        "title": "AI Preferences",
+        "desc": "Customize how the AI agent works.",
+        "sensitivity": "AI Sensitivity",
+        "autoCategorization": "Auto Categorization",
+        "autoCategorizationDesc": "Automatically group tag clusters",
+        "autoSentiment": "Auto Sentiment Analysis",
+        "autoSentimentDesc": "Determine news sentiment polarity",
+        "summaryStyle": "AI Summary Style",
+        "enableRecs": "Enable AI Recommendations",
+        "enableRecsDesc": "Show follow-up suggestions",
+        "enablePredictive": "Enable Predictive Signals",
+        "enablePredictiveDesc": "Detect growing trend signs"
+      },
+      "integrationsApi": {
+        "title": "Integrations & API",
+        "desc": "Manage integrations and API access.",
+        "connectedPlatforms": "Connected Platforms",
+        "connectedPlatformsDesc": "Media & monitoring integrations",
+        "apiKeys": "API Keys",
+        "apiKeysDesc": "Create & delete access tokens",
+        "webhooks": "Webhooks",
+        "webhooksDesc": "External event notifications",
+        "dbExport": "Database Export",
+        "dbExportDesc": "Postgres/BigQuery sync",
+        "slackSettings": "Slack App Settings",
+        "slackSettingsDesc": "Connect escalation channel"
+      },
+      "security": {
+        "title": "Security",
+        "desc": "Workspace security and encryption.",
+        "twoFa": "Two-Factor Auth (2FA)",
+        "twoFaDesc": "MFA required for all members",
+        "active": "Active",
+        "inactive": "Inactive",
+        "sessionTimeout": "Session Timeout",
+        "sessionTimeoutDesc": "Active login expiry",
+        "otpDuration": "OTP Duration",
+        "otpDurationDesc": "OTP code validity",
+        "ipRestriction": "IP Restriction",
+        "ipRestrictionDesc": "Restrict login to office IP only",
+        "auditLog": "Audit Log",
+        "auditLogDesc": "Security and login activity",
+        "exportAudit": "Export audit log"
+      },
+      "billing": {
+        "currentPlan": "Current plan: {name} ({price}/month)",
+        "status": "Status: {status}",
+        "subscribe": "Subscribe",
+        "renew": "Renew",
+        "upgrade": "Upgrade",
+        "cancelSubscription": "Cancel Subscription",
+        "noActiveSubscription": "No active subscription",
+        "confirmCancelTitle": "Confirm Subscription Cancellation",
+        "confirmCancelDesc": "Are you sure you want to cancel your subscription?",
+        "cancelConfirm": "Yes, Cancel",
+        "upgradeUnavailable": "Upgrade to the next plan is not available yet."
+      },
+      "validation": {
+        "workspaceNameRequired": "Workspace name is required.",
+        "workspaceNameMinLength": "Workspace name must be at least 3 characters.",
+        "currentPasswordRequired": "Current password is required.",
+        "newPasswordRequired": "New password is required.",
+        "passwordMinLength": "Password must be at least 10 characters.",
+        "passwordUppercase": "Password must contain an uppercase letter.",
+        "passwordNumber": "Password must contain a number.",
+        "passwordSymbol": "Password must contain a symbol.",
+        "nameRequired": "Name is required.",
+        "nameMinLength": "Name must be at least 2 characters.",
+        "emailRequired": "Email is required.",
+        "emailInvalid": "Invalid email format."
+      },
+      "roles": {
+        "owner": "Workspace Owner",
+        "admin": "Admin",
+        "analyst": "Analyst",
+        "viewer": "Viewer"
+      },
+      "common": {
+        "saveChanges": "Save Changes",
+        "saving": "Saving...",
+        "changesSaved": "Changes Saved",
+        "close": "Close",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "inviteMember": "Invite Member",
+        "manageRoles": "Manage Roles & Permissions"
+      }
     }
   },
   "DemoApp": {
@@ -1166,6 +2205,7 @@
       "intelligence": "Intelligence",
       "reports": "Reports",
       "actionCenter": "Action Center",
+      "cases": "Cases",
       "dataSources": "Data Sources",
       "integrations": "Integrations",
       "activity": "Activity Log",
@@ -1191,6 +2231,14 @@
       "latest": "Latest",
       "newAction": "Create New Action"
     },
+    "metrics": {
+      "totalSignals": "Total Signals",
+      "analyzedSignals": "Analyzed Signals",
+      "positiveSent": "Positive Sent.",
+      "negativeSent": "Negative Sent.",
+      "neutralSent": "Neutral Sent.",
+      "mixedSent": "Mixed Sent."
+    },
     "pages": {
       "command": {
         "title": "Command Center",
@@ -1206,7 +2254,70 @@
         "sources": "Signal Sources",
         "visibility": "AI Visibility Snapshot",
         "quick": "Quick Actions",
-        "status": "System Status"
+        "status": "System Status",
+        "timeRange24h": "Last 24 Hours",
+        "timeRange7d": "7 Days",
+        "timeRange30d": "30 Days",
+        "alertsDesc": "View alerts that need attention.",
+        "topicsDesc": "Most discussed topics.",
+        "sourcesDesc": "Status and performance of data sources.",
+        "visibilityDesc": "AI visibility performance.",
+        "quickDesc": "Take quick actions.",
+        "viewStatus": "View full status",
+        "positive": "Positive",
+        "neutral": "Neutral",
+        "negative": "Negative",
+        "totalMentions": "Total Mentions",
+        "errorTitle": "Dashboard live data unavailable",
+        "errorDesc": "API client attempted token refresh. Showing sample metrics for now.",
+        "openRelated": "Open related page",
+        "close": "Close"
+      },
+      "quickActions": {
+        "newAlert": "New Alert",
+        "report": "Report",
+        "analyze": "Analyze",
+        "sources": "Sources",
+        "settings": "Settings",
+        "help": "Help"
+      },
+      "quickActionContent": {
+        "newAlertTitle": "Create New Alert",
+        "newAlertDesc": "Create a manual alert to monitor specific issues not yet auto-detected.",
+        "newAlertItem1Label": "Monitor Competitor",
+        "newAlertItem1Desc": "Monitor competitor activity and sentiment in real-time.",
+        "newAlertItem2Label": "Track Campaign",
+        "newAlertItem2Desc": "Track marketing campaign performance across all channels.",
+        "newAlertItem3Label": "Watch Issue",
+        "newAlertItem3Desc": "Watch specific issues that need immediate attention.",
+        "reportTitle": "Create New Report",
+        "reportDesc": "Generate sentiment analysis and AI visibility reports automatically.",
+        "reportItem1Label": "Executive Summary",
+        "reportItem1Desc": "Concise report for senior stakeholders.",
+        "reportItem2Label": "Weekly Brief",
+        "reportItem2Desc": "Weekly brand performance summary.",
+        "reportItem3Label": "Crisis Report",
+        "reportItem3Desc": "In-depth report for crisis situations.",
+        "analyzeTitle": "Analyze Data",
+        "analyzeDesc": "Run in-depth analysis on collected signals and narratives.",
+        "analyzeItem1Label": "Sentiment Analysis",
+        "analyzeItem1Desc": "Comprehensive sentiment analysis from all sources.",
+        "analyzeItem2Label": "Trend Detection",
+        "analyzeItem2Desc": "Detect emerging trends and patterns.",
+        "analyzeItem3Label": "Competitor Benchmark",
+        "analyzeItem3Desc": "Compare performance against competitors.",
+        "sourcesTitle": "Manage Data Sources",
+        "sourcesDesc": "Access and configure data sources connected to the platform.",
+        "settingsTitle": "Workspace Settings",
+        "settingsDesc": "Manage workspace settings, integrations, and system preferences.",
+        "helpTitle": "Help & Support",
+        "helpDesc": "Get help from the support team or access documentation.",
+        "helpItem1Label": "Documentation",
+        "helpItem1Desc": "Access the complete platform usage guide.",
+        "helpItem2Label": "Contact Support",
+        "helpItem2Desc": "Contact the support team for technical assistance.",
+        "helpItem3Label": "Video Tutorials",
+        "helpItem3Desc": "Watch step-by-step video tutorials."
       },
       "visibility": {
         "title": "AI Visibility",
@@ -1281,8 +2392,34 @@
     "newAction": "Create New Action",
     "search": "Search actions...",
     "filter": "Filter",
+    "filterHint": "Advanced filters coming soon.",
     "sort": "Sort: Priority",
-    "tabs": ["All Actions", "Active", "In Progress", "Completed", "Needs Attention", "Delayed", "Created By Me"],
+    "sortHint": "Sort options coming soon.",
+    "defaultSLA": "4 hours",
+    "filterModal": {
+      "title": "Filter Actions",
+      "clearAll": "Clear all",
+      "priority": "Priority",
+      "status": "Status",
+      "allPriorities": "All",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low",
+      "allStatuses": "All",
+      "active": "Active",
+      "inProgress": "In Progress",
+      "done": "Done",
+      "apply": "Apply Filters"
+    },
+    "tabs": [
+      "All Actions",
+      "Active",
+      "In Progress",
+      "Completed",
+      "Needs Attention",
+      "Delayed",
+      "Created By Me"
+    ],
     "lanes": {
       "high": "High Priority",
       "medium": "Medium Priority",
@@ -1290,6 +2427,7 @@
       "done": "Completed"
     },
     "viewAll": "View all",
+    "showLess": "Show less",
     "detail": "Action Detail",
     "detailDesc": "Detailed AI recommendation for selected action.",
     "performance": "Action Performance",
@@ -1300,6 +2438,104 @@
       "active": "Active",
       "inProgress": "In Progress",
       "done": "Done"
+    },
+    "toast": {
+      "feedbackSent": "Feedback sent successfully.",
+      "feedbackFailed": "Feedback could not be sent.",
+      "feedbackRetry": "Feedback could not be sent. Please try again."
+    },
+    "metricActiveActions": "Active Actions",
+    "metricActiveHelper": "{count} active right now",
+    "metricTrendHelper": "{trend}% vs last 7 days",
+    "metricInProgress": "In Progress",
+    "metricInProgressHelper": "{count} being worked on",
+    "metricCompleted": "Completed",
+    "metricCompletedHelper": "{count} total completed",
+    "metricNeedsAttention": "Needs Attention",
+    "metricNeedsAttentionHelper": "{count} high priority items",
+    "metricAvgResolution": "Total Actions",
+    "metricAvgResolutionHelper": "{count} actions in queue",
+    "statusActive": "ACTIVE",
+    "statusInProgress": "IN PROGRESS",
+    "statusDone": "DONE",
+    "impactLabel": "Impact:",
+    "categoryLabel": "Category",
+    "impactFieldLabel": "Impact",
+    "slaLabel": "SLA",
+    "dueDateLabel": "Due Date",
+    "aiStepsTitle": "AI Recommended Steps",
+    "viewFullPlan": "View Full Plan",
+    "approve": "Approve",
+    "reject": "Reject",
+    "last7Days": "Last 7 Days",
+    "last30Days": "Last 30 Days",
+    "aiAccuracy": "AI Accuracy",
+    "aiAccuracyHelper": "based on feedback",
+    "acceptanceRate": "Acceptance Rate",
+    "acceptanceRateHelper": "of total feedback",
+    "rejectionRate": "Rejection Rate",
+    "rejectionRateHelper": "needs review",
+    "accuracyPerCategory": "AI Accuracy per Category",
+    "total": "Total",
+    "accuracy": "Accuracy",
+    "noFeedback": "No feedback to analyze yet.",
+    "noFeedbackDesc": "Feedback will appear here once actions are reviewed.",
+    "detailEmptyTitle": "No action selected",
+    "detailEmptyDesc": "Select an action from the list to view full details, status, and history.",
+    "detailNoPlanTitle": "No plan data yet",
+    "detailNoPlanDesc": "AI analysis will appear here once the action plan is generated.",
+    "performanceEmptyTitle": "No action selected",
+    "performanceEmptyDesc": "Select an action to view its performance.",
+    "learningEmptyTitle": "No action selected",
+    "learningEmptyDesc": "Select an action to view its insights and learning.",
+    "viewFullAnalytics": "View Full Analytics",
+    "keyInsights": "Key Insights",
+    "insight1Title": "Payment delay topics have the longest resolution",
+    "insight1Value": "Avg 4h 12m",
+    "insight2Title": "Actions with templates have higher success rate",
+    "insight2Value": "+28% more effective",
+    "insight3Title": "Fast communication in first hour reduces negative sentiment",
+    "insight3Value": "-32% negative sentiment",
+    "popularTemplates": "Popular Action Templates",
+    "template1": "Crisis Response Template",
+    "template2": "Customer Issue Response",
+    "template3": "Promo Communication Plan",
+    "templateUsed": "Used {count}",
+    "manageAllTemplates": "Manage All Templates",
+    "queueErrorTitle": "Live action list could not be loaded",
+    "queueErrorDesc": "API client attempted token refresh. Showing sample actions for now.",
+    "planErrorTitle": "Live action detail could not be loaded",
+    "planErrorDesc": "Detail panel still uses sample data until backend is available.",
+    "emptyTitle": "No live actions yet",
+    "emptyDesc": "Backend connected successfully, but no action plans have been created.",
+    "filterAll": "All Actions",
+    "livePlanLabel": "Live API Plan",
+    "liveOwnerLabel": "Narriv Team",
+    "liveRoleLabel": "Action Owner",
+    "liveReviewLabel": "Review",
+    "modal": {
+      "title": "Create Action Plan",
+      "desc": "Generate an AI-powered action plan for your workspace.",
+      "strategyLabel": "Strategy Type",
+      "strategy": {
+        "pr_response": "PR Response",
+        "content_strategy": "Content Strategy",
+        "influencer_strategy": "Influencer Strategy",
+        "crisis_response": "Crisis Response"
+      },
+      "prDesc": "Focus on public and media communication",
+      "csDesc": "Long-term content and narrative planning",
+      "isDesc": "Collaboration with Key Opinion Leaders",
+      "crDesc": "Rapid risk mitigation and management",
+      "hint": "AI will analyze your workspace data and generate a tailored action plan.",
+      "cancel": "Cancel",
+      "submit": "Generate Plan",
+      "toast": {
+        "successTitle": "Action plan created",
+        "successDesc": "The action plan has been generated successfully.",
+        "errorTitle": "Failed to create",
+        "errorDesc": "An error occurred while generating the action plan."
+      }
     }
   },
   "Sources": {
@@ -1311,6 +2547,7 @@
     "gridDesc": "Connection status and performance for every data source.",
     "syncAll": "Sync All",
     "allCategories": "All Categories",
+    "searchPlaceholder": "Search sources...",
     "healthTitle": "Source Health Overview",
     "healthDesc": "Summary of all source health.",
     "optimal": "System is running optimally",
@@ -1326,68 +2563,172 @@
     "volumeDesc": "Comparison of signal volume from every source.",
     "distribution": "Source Type Distribution",
     "distributionDesc": "Composition by source category.",
-    "last7": "Last 7 Days"
+    "last7": "Last 7 Days",
+    "metricConnectedSources": "Connected Sources",
+    "metricActive": "{count} active",
+    "metricLiveMonitoring": "Live Monitoring",
+    "metricTotalDocuments": "Total Documents",
+    "metricCoverage": "{count}% coverage",
+    "metricHealthWarning": "Health Warning",
+    "metricCritical": "{count} critical",
+    "metricLastSync": "Last Sync",
+    "metricFromHealthApi": "from health API",
+    "settingsKeyword": "Global Keyword Target",
+    "settingsKeywordDesc": "Manage main keywords for all sources.",
+    "settingsDedup": "Deduplication Rules",
+    "settingsDedupDesc": "Rules to avoid duplicate data.",
+    "settingsRateLimit": "Rate Limit & Throttling",
+    "settingsRateLimitDesc": "Set request limits and sync speed.",
+    "settingsRetention": "Data Retention Policy",
+    "settingsRetentionDesc": "Data storage and retention policy.",
+    "settingsWebhooks": "Webhooks & Integrations",
+    "settingsWebhooksDesc": "Advanced integrations with external systems.",
+    "common": {
+      "errors": {
+        "title": "This page could not be opened",
+        "fallback": "A part of the dashboard could not be displayed.",
+        "digest": "Issue code: {digest}",
+        "retry": "Try reload"
+      },
+      "dialog": {
+        "close": "Close dialog",
+        "notice": "This action requires your confirmation.",
+        "confirm": "Yes, continue",
+        "cancel": "Cancel"
+      }
+    },
+    "modal": {
+      "title": "Connect Data Sources",
+      "desc": "Configure monitoring parameters for new sources.",
+      "keyword": "Target Keyword",
+      "keywordPlaceholder": "Example: Narriv or Brand Name",
+      "keywordHint": "Used as the search input across platforms.",
+      "categoryTitle": "Select Monitoring Sources",
+      "categoryDesc": "The system will monitor activity on the following platforms.",
+      "socialTitle": "Main Social Media & Search",
+      "socialDesc": "Monitor conversations on X (Twitter), TikTok, Instagram, Threads, and Google Search results.",
+      "videoTitle": "Video & Public Communities",
+      "videoDesc": "Monitor video trends on YouTube and public posts on Facebook.",
+      "ecommerceTitle": "E-Commerce, Forums & Podcasts",
+      "ecommerceDesc": "Monitor product reviews on Tokopedia & Shopee, Kaskus discussions, and podcasts on Spotify & YT Music.",
+      "cancel": "Cancel",
+      "deploy": "Deploy Sources",
+      "deploying": "Deploying..."
+    },
+    "toasts": {
+      "statusUpdated": "Source status updated.",
+      "statusUpdateFailed": "Source status could not be updated.",
+      "statusUpdateRetry": "Could not update the source status. Please try again.",
+      "syncAllNone": "No sources available to sync.",
+      "syncAllNoneActive": "No active sources available to sync.",
+      "syncAllScheduled": "Sync started for {count} sources.",
+      "syncAllPartial": "{queued} sources scheduled, {failed} failed.",
+      "syncAllAllFailed": "All {failed} sources failed to sync. See console for details.",
+      "syncAllError": "Sync could not be started. Please try again.",
+      "bootstrapCreated": "{created} sources added, {skipped} skipped.",
+      "bootstrapFailed": "Default sources could not be added. Please try again.",
+      "deleted": "Data source deleted successfully.",
+      "deleteFailed": "Could not delete the data source.",
+      "liveApiRefreshing": "Refreshing signal data from the API...",
+      "activityLogMissing": "Full sync logs are not available yet.",
+      "activity": {
+        "emptyTitle": "No recent activity yet",
+        "emptyDesc": "Sync logs will appear here once a source finishes an ingestion run."
+      },
+      "settingsUnavailable": "The \"{title}\" settings are not configurable yet. Contact the platform team for this module.",
+      "syncAllStarted": "Sync started for all sources.",
+      "syncAllInProgress": "Syncing...",
+      "bootstrapInProgress": "Adding presets...",
+      "delete": {
+        "title": "Delete Data Source",
+        "description": "Are you sure you want to delete the data source {name}? This will stop syncing and remove the source from your monitoring list.",
+        "confirm": "Delete Source",
+        "deleting": "Deleting..."
+      }
+    },
+    "noSourcesYet": "No sources yet",
+    "noSourcesYetDesc": "Connect data sources to start monitoring.",
+    "emptyDistribution": "No source data",
+    "emptyDistributionDesc": "Add sources to see distribution.",
+    "noCategoryMatch": "No sources in this category",
+    "noCategoryMatchDesc": "Try selecting another category or add a new source.",
+    "noLiveSources": "No live sources yet",
+    "noLiveSourcesDesc": "Backend connected successfully, but no sources have been created yet.",
+    "liveUnavailable": "Live sources could not be loaded",
+    "liveUnavailableDesc": "API client attempted token refresh. Showing sample data for now.",
+    "healthHealthy": "Healthy",
+    "healthWarning": "Warning",
+    "healthCritical": "Critical",
+    "healthNeedsAttention": "Needs attention",
+    "healthHealthyCount": "{healthy}/{total} healthy",
+    "noSourcesLegend": "No sources"
   },
-  "Visibility": {
-    "breadcrumb": "Dashboard / AI Visibility",
-    "title": "AI Visibility",
-    "subtitle": "Monitor how your brand, topics, and competitors appear on generative AI platforms.",
-    "last7Days": "7 May 2025 - 14 May 2025",
-    "export": "Export",
-    "metrics": {
-      "totalMentions": { "label": "Total AI Mentions", "value": "2,451", "helper": "+18.7% vs last 7 days" },
-      "brandMentions": { "label": "Brand Mentions", "value": "1,289", "helper": "+22.1% vs last 7 days" },
-      "sov": { "label": "Share of Voice", "value": "24.3%", "helper": "+4.6 p.p." },
-      "avgPos": { "label": "Average Position (All AI)", "value": "2.8", "helper": "-0.4" }
+  "DashboardStates": {
+    "empty": {
+      "title": "No data available yet",
+      "desc": "Once data is available, it will appear here with the same layout and controls."
     },
-    "execSummary": {
-      "title": "AI Executive Summary",
-      "aiGenerated": "A.I Generated",
-      "heading": "Your brand visibility increased +18.7% this week.",
-      "body": "The increase is driven by AI monitoring topics, cybersecurity discussions, and recommendations of ChatGPT for enterprise monitoring tools. However, competitors are leading on the 'cloud security' keyword in Google Gemini and Perplexity.",
-      "opportunity": "Top Opportunity",
-      "opportunityVal": "AI monitoring & enterprise intelligence tools",
-      "risk": "Top Risk",
-      "riskVal": "Cloud security (competitor dominated)",
-      "recActions": "AI Recommended Actions",
-      "rec1": "Push thought leadership content",
-      "rec2": "Optimize landing page (enterprise intel)",
-      "rec3": "Increase authority in cloud security",
-      "viewAll": "See all"
+    "error": {
+      "title": "Unable to load data",
+      "desc": "The request failed. Try again, or check the backend connection if this keeps happening."
     },
-    "mentionsTrend": {
-      "title": "AI Mentions Trend",
-      "desc": "Growth in the number of mentions of your brand on AI platforms.",
-      "days7": "7 Days",
-      "days30": "30 Days"
+    "loading": {
+      "title": "Loading dashboard data",
+      "desc": "Preparing the latest signals, alerts, and recommendations."
     },
-    "topTopics": {
-      "title": "Top Topics Mentioned by AI",
-      "headers": { "topic": "Topic", "mentions": "Mentions", "direction": "Direction", "type": "Type" },
-      "viewAll": "See all topics"
-    },
-    "sandbox": {
-      "title": "AI Search Sandbox",
-      "desc": "Simulate how AI responds to queries and mentions the Narriv brand.",
-      "queryPlaceholder": "Search for signals, topics, issues, or cases...",
-      "simulateBtn": "Simulate",
-      "responseTitle": "AI Response (ChatGPT)",
-      "citations": "Key Sources (Citations)",
-      "confidence": "Confidence"
-    },
-    "competitorVs": {
-      "title": "Visibility vs Competitors (All AI Platforms)"
-    },
-    "topPlatforms": {
-      "title": "Top AI Platforms"
-    },
-    "competitorShare": {
-      "title": "Competitor Share of Voice",
-      "totalShare": "Total SOV"
-    },
-    "latestMentions": {
-      "title": "Latest Mention Examples",
-      "viewAll": "View all"
+    "retry": "Retry",
+    "pagination": {
+      "pageInfo": "Page {page} of {totalPages}",
+      "prev": "Prev",
+      "next": "Next",
+      "summary": "Showing {start}-{end} of {total} {label}"
     }
+  },
+  "ActivityLog": {
+    "title": "Activity Log",
+    "subtitle": "Workspace Audit Trail",
+    "desc": "Monitor important workspace changes: authentication, members, data sources, cases, integrations, and settings.",
+    "refresh": "Refresh",
+    "allEvents": "All Events",
+    "metricsTotal": "Total Logs",
+    "metricsTotalHelper": "Recorded audit events",
+    "metricsActors": "Active Actors",
+    "metricsActorsHelper": "Users/systems on this page",
+    "metricsToday": "Today",
+    "metricsTodayHelper": "Events on local date",
+    "metricsTypes": "Event Types",
+    "metricsTypesHelper": "Shown event categories",
+    "filterTitle": "Audit Filter",
+    "filterEvent": "Event",
+    "filterFrom": "From Date",
+    "filterTo": "To Date",
+    "filterReset": "Reset",
+    "errorTitle": "Failed to load activity log",
+    "errorDesc": "Audit logs could not be retrieved from the backend. Try refreshing or check API connection.",
+    "emptyTitle": "No activity logs yet",
+    "emptyDesc": "Audit events will appear here once there are workspace changes or user activities.",
+    "colEvent": "Event",
+    "colActor": "Actor",
+    "colMeta": "Metadata",
+    "colTime": "Time",
+    "systemGenerated": "System generated",
+    "justNow": "just now",
+    "noMetadata": "No additional metadata",
+    "recordedMetadata": "Workspace metadata recorded",
+    "event_login": "Login",
+    "event_logout": "Logout",
+    "event_register_success": "Register Success",
+    "event_password_change": "Password Changed",
+    "event_workspace_settings_updated": "Workspace Updated",
+    "event_workspace_logo_uploaded": "Logo Uploaded",
+    "event_workspace_member_created": "Member Added",
+    "event_workspace_member_deleted": "Member Removed",
+    "event_source_created": "Source Created",
+    "event_source_updated": "Source Updated",
+    "event_source_deleted": "Source Deleted",
+    "event_case_created": "Case Created",
+    "event_case_updated": "Case Updated",
+    "event_integration_created": "Integration Created",
+    "event_integration_updated": "Integration Updated"
   }
 }
