@@ -297,7 +297,7 @@
       "command": "Beranda",
       "signals": "Temuan",
       "alerts": "Peringatan",
-      "visibility": "Kemunculan AI",
+      "visibility": "Visibilitas AI",
       "intelligence": "Intelijen",
       "reports": "Laporan",
       "actionCenter": "Pusat Aksi",
@@ -531,7 +531,7 @@
       "mixed": "campuran"
     },
     "metrics": {
-      "aiVisibility": "Skor Kemunculan AI",
+      "aiVisibility": "Skor Visibilitas AI",
       "aiVisibilityDelta": "+7 poin dari minggu lalu",
       "narrativesDetected": "Topik Ditemukan",
       "narrativesDelta": "8 topik baru ditemukan",
@@ -833,56 +833,62 @@
     "fallbackDataLive": "Data live"
   },
   "Visibility": {
-    "breadcrumb": "Dashboard / AI Visibility",
-    "title": "AI Visibility",
+    "breadcrumb": "Dashboard / Visibilitas AI",
+    "title": "Visibilitas AI",
     "subtitle": "Pantau bagaimana brand, topik, dan kompetitor Anda muncul di platform generative AI.",
     "last7Days": "7 Mei 2025 - 14 Mei 2025",
     "export": "Ekspor",
+    "dateRange": {
+      "7d": "7 hari terakhir",
+      "14d": "14 hari terakhir",
+      "30d": "30 hari terakhir",
+      "90d": "90 hari terakhir"
+    },
     "metrics": {
       "totalMentions": {
-        "label": "Total AI Mentions",
-        "value": "2.451",
-        "helper": "+18,7% vs 7 hari terakhir"
+        "label": "Total Penyebutan AI",
+        "value": "-",
+        "helper": "-"
       },
       "brandMentions": {
-        "label": "Brand Mentions",
-        "value": "1.289",
-        "helper": "+22,1% vs 7 hari terakhir"
+        "label": "Penyebutan Brand",
+        "value": "-",
+        "helper": "-"
       },
       "sov": {
-        "label": "Share of Voice",
-        "value": "24,3%",
-        "helper": "+4,6 p.p."
+        "label": "Porsi Suara",
+        "value": "-",
+        "helper": "-"
       },
       "avgPos": {
-        "label": "Rata-rata Posisi (Semua AI)",
-        "value": "2,8",
-        "helper": "-0,4"
+        "label": "Rata-rata Posisi",
+        "value": "-",
+        "helper": "-"
       }
     },
     "execSummary": {
-      "title": "AI Executive Summary",
-      "aiGenerated": "A.I Generated",
+      "title": "Ringkasan Eksekutif AI",
+      "aiGenerated": "Dibuat oleh AI",
       "heading": "Visibility merek Anda meningkat +18,7% minggu ini.",
       "body": "Peningkatan dipicu oleh topik AI monitoring, diskusi cybersecurity, dan rekomendasi ChatGPT terhadap tools monitoring enterprise. Namun, kompetitor mulai unggul pada keyword \"cloud security\" di Google Gemini dan Perplexity.",
-      "opportunity": "Top Opportunity",
+      "opportunity": "Peluang Terbaik",
       "opportunityVal": "AI monitoring & enterprise intelligence tools",
-      "risk": "Top Risk",
+      "risk": "Risiko Utama",
       "riskVal": "Cloud security (competitor dominated)",
-      "recActions": "AI Recommended Actions",
+      "recActions": "Rekomendasi AI",
       "rec1": "Dorong konten thought leadership",
       "rec2": "Optimasi landing page (enterprise intel)",
       "rec3": "Tingkatkan authority di cloud security",
       "viewAll": "Lihat semua"
     },
     "mentionsTrend": {
-      "title": "AI Mentions Trend",
+      "title": "Tren Penyebutan AI",
       "desc": "Perkembangan jumlah penyebutan brand Anda di platform AI.",
       "days7": "7 Hari",
       "days30": "30 Hari"
     },
     "topTopics": {
-      "title": "Top Topics Mentioned by AI",
+      "title": "Topik Teratas yang Disebutkan oleh AI",
       "headers": {
         "topic": "Topik",
         "mentions": "Penyebutan",
@@ -892,27 +898,65 @@
       "viewAll": "Lihat semua topik"
     },
     "sandbox": {
-      "title": "AI Search Sandbox",
+      "title": "Pencarian AI",
       "desc": "Simulasi bagaimana AI merespons pertanyaan tentang brand Anda.",
       "queryPlaceholder": "Cari sinyal, topik, isu, atau kasus...",
       "simulateBtn": "Simulasi",
-      "responseTitle": "AI Response (ChatGPT)",
-      "citations": "Key Sources (Citations)",
-      "confidence": "Confidence"
+      "responseTitle": "Respon AI",
+      "citations": "Sumber Utama",
+      "confidence": "Keyakinan"
     },
     "competitorVs": {
-      "title": "Visibility vs Competitors (All AI Platforms)"
+      "title": "Visibilitas Dibandingkan dengan Pesaing (Semua Platform AI)"
     },
     "topPlatforms": {
-      "title": "Top AI Platforms"
+      "title": "Platform AI Terbaik"
     },
     "competitorShare": {
-      "title": "Competitor Share of Voice",
-      "totalShare": "Total SOV"
+      "title": "Porsi Suara Kompetitor",
+      "totalShare": "Total Porsi Suara"
     },
     "latestMentions": {
-      "title": "Latest Mention Examples",
+      "title": "Contoh Penyebutan Terbaru",
       "viewAll": "Lihat semua"
+    },
+    "error": {
+      "title": "Data visibility belum tersedia",
+      "desc": "API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan data contoh."
+    },
+    "empty": {
+      "title": "Belum ada data visibility live",
+      "desc": "Backend berhasil dihubungi, tetapi belum ada hasil AI visibility. Data contoh ditampilkan sebagai preview."
+    },
+    "topicType": {
+      "opportunity": "Peluang",
+      "alert": "Peringatan",
+      "informational": "Informasi",
+      "risk": "Risiko",
+      "neutral": "Netral"
+    },
+    "mentionQuote": {
+      "brand": "Brand: {value}",
+      "competitor": "Kompetitor: {value}",
+      "brandFallback": "Respons brand terekam",
+      "competitorFallback": "Respons kompetitor terekam"
+    },
+    "ariaLabels": {
+      "dateFilter": "Filter berdasarkan rentang tanggal",
+      "export": "Ekspor data visibility",
+      "simulate": "Jalankan simulasi AI"
+    },
+    "fallbackDates": ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"],
+    "empty": {
+      "noTrendData": "Data tren belum tersedia",
+      "noCompetitorData": "Data kompetitor belum tersedia",
+      "noTopicData": "Data topik belum tersedia",
+      "noPlatformData": "Data platform belum tersedia",
+      "noSovData": "Data share of voice belum tersedia",
+      "noMentionData": "Data penyebutan belum tersedia",
+      "noActionData": "Belum ada rekomendasi aksi",
+      "noResponse": "Tidak ada respons dari AI engine. Silakan coba lagi.",
+      "fetchFailed": "Gagal mendapatkan respons. Silakan coba lagi."
     }
   },
   "ActionPlansLegacy": {
@@ -1043,7 +1087,7 @@
     },
     "summary": {
       "title": "AI Alert Summary",
-      "generated": "AI Generated",
+      "generated": "Dibuat oleh AI",
       "riskHighest": "Risiko Tertinggi",
       "significantIncrease": "Peningkatan Signifikan",
       "aiRecommendation": "Rekomendasi AI"
@@ -1143,6 +1187,130 @@
     "error": {
       "title": "Data live belum bisa dimuat",
       "desc": "API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan data contoh."
+    },
+    "v2": {
+      "header": {
+        "title": "Alerts",
+        "desc": "Tinjau peringatan yang membutuhkan perhatian sebelum tereskalasi.",
+        "notificationRules": "Aturan Notifikasi",
+        "escalationMatrix": "Matriks Eskalasi",
+        "createAlert": "Buat Alert"
+      },
+      "metrics": {
+        "totalAlerts": "Total Alert",
+        "criticalAlerts": "Alert Kritis",
+        "warningAlerts": "Alert Peringatan",
+        "infoAlerts": "Alert Informasi",
+        "deliveredAlerts": "Alert Terkirim",
+        "acknowledgedAlerts": "Alert Dikonfirmasi",
+        "escalated": "Dieskalasi",
+        "resolved": "Diselesaikan",
+        "avgResponseTime": "Rata-rata Waktu Respons",
+        "vs30Days": "▲ {val} vs 30 hari lalu",
+        "successRate": "Tingkat Keberhasilan {val}",
+        "of": "{val1} dari {val2}",
+        "criticalIncidents": "Insiden Kritis",
+        "target": "Target: {val}"
+      },
+      "incident": {
+        "title": "Insiden Kritis",
+        "viewDetails": "Lihat Detail",
+        "critical": "KRITIS",
+        "alertTitle": "Keluhan keterlambatan pembayaran meningkat",
+        "alertDesc": "Lonjakan keluhan keterlambatan pembayaran di media sosial dan berita.",
+        "mentions": "Sebutan",
+        "velocity": "Kecepatan",
+        "sentiment": "Sentimen",
+        "impact": "Dampak",
+        "confidence": "Tingkat Keyakinan",
+        "high": "Tinggi",
+        "in2hours": "dalam 2 jam",
+        "negative": "Negatif",
+        "reputationRisk": "Risiko Reputasi",
+        "veryHigh": "Sangat Tinggi",
+        "source": "Sumber",
+        "channels": "{count} Saluran",
+        "owner": "Pemilik",
+        "corporateAffairs": "Corporate Affairs",
+        "status": "Status",
+        "investigating": "Sedang Diselidiki",
+        "since": "Sejak {time}"
+      },
+      "delivery": {
+        "title": "Status Pengiriman",
+        "thisAlert": "(Alert Ini)",
+        "whatsapp": "WhatsApp",
+        "email": "Email",
+        "msTeams": "Microsoft Teams",
+        "slack": "Slack",
+        "delivered": "Terkirim",
+        "recipients": "{count} penerima",
+        "execChannel": "Saluran Eksekutif",
+        "corpAffairsChannel": "#corporate-affairs",
+        "viewAllChannels": "Lihat semua saluran"
+      },
+      "stakeholder": {
+        "title": "Keterlibatan Pemangku Kepentingan",
+        "recipients": "Penerima",
+        "opened": "Dibuka",
+        "acknowledged": "Dikonfirmasi",
+        "actionStarted": "Tindakan Dimulai"
+      },
+      "criticalStatus": {
+        "title": "Status Pengiriman Kritis",
+        "viewAll": "Lihat Semua",
+        "inProgress": "Sedang Berjalan",
+        "resolved": "Selesai",
+        "firstSent": "Pertama dikirim: {time}",
+        "lastUpdate": "Update terakhir: {time}"
+      },
+      "escalationMatrix": {
+        "title": "Matriks Eskalasi",
+        "l1": "L1",
+        "teamLead": "Ketua Tim",
+        "sla": "SLA: {time}",
+        "l2": "L2",
+        "deptHead": "Kepala Departemen",
+        "l3": "L3",
+        "execTeam": "Tim Eksekutif"
+      },
+      "journey": {
+        "title": "Perjalanan Alert",
+        "viewFull": "Lihat Timeline Lengkap",
+        "step1Title": "Alert Dihasilkan",
+        "step1Desc": "AI mendeteksi lonjakan keluhan yang tidak biasa",
+        "step2Title": "Dikirim melalui WhatsApp",
+        "step2Desc": "{count} penerima",
+        "step3Title": "Dikirim melalui Email",
+        "step3Desc": "{count} penerima",
+        "step4Title": "Dikirim melalui Microsoft Teams",
+        "step4Desc": "Saluran Eksekutif",
+        "step5Title": "Pertama Dibuka",
+        "step5Desc": "dibuka oleh {count} penerima",
+        "step6Title": "Pertama Dikonfirmasi",
+        "step6Desc": "Ketua Tim Corporate Affairs",
+        "step7Title": "Investigasi Dimulai",
+        "step7Desc": "Analisis akar penyebab sedang berlangsung"
+      },
+      "flow": {
+        "title": "Alur Eskalasi",
+        "desc": "(Bagaimana Narriv Mengirimkan Intelijen Kritis)",
+        "step1Title": "Sinyal Terdeteksi",
+        "step1Desc": "AI mendeteksi anomali",
+        "step2Title": "Alert Dihasilkan",
+        "step2Desc": "Tingkat keparahan diklasifikasikan",
+        "step3Title": "Dikirim ke Saluran",
+        "step3Desc": "Pengiriman multi-saluran",
+        "step4Title": "Dikonfirmasi",
+        "step4Desc": "Oleh orang yang tepat",
+        "step5Title": "Tindakan Dimulai",
+        "step5Desc": "Investigasi sedang berlangsung",
+        "step6Title": "Diselesaikan",
+        "step6Desc": "Masalah ditutup"
+      },
+      "list": {
+        "allSeverity": "Semua Severity"
+      }
     }
   },
   "Intelligence": {
@@ -1168,7 +1336,8 @@
       "clusters": {
         "label": "Clusters Identified",
         "value": "28",
-        "helper": "6 mempercepat"
+        "helper": "6 mempercepat",
+        "accelerating": "{count} mempercepat"
       },
       "confidence": {
         "label": "Narrative Confidence",
@@ -1178,12 +1347,14 @@
       "emerging": {
         "label": "Emerging Narratives",
         "value": "7",
-        "helper": "2 baru minggu ini"
+        "helper": "2 baru minggu ini",
+        "liveNarratives": "{count} narasi live"
       },
       "opportunities": {
         "label": "Opportunities Detected",
         "value": "5",
-        "helper": "2 potensi tinggi"
+        "helper": "2 potensi tinggi",
+        "highImpact": "{count} dampak tinggi"
       }
     },
     "velocity": "Kecepatan",
@@ -1192,24 +1363,61 @@
     "focusDesc": "Siapkan poin respons pimpinan dan pantau stakeholder yang terkait regulator.",
     "open": "Buka Topik",
     "last7Days": "7 hari terakhir (12 Mei - 18 Mei 2025)",
+    "periods": {
+      "last24h": "24 jam terakhir",
+      "last7d": "7 hari terakhir",
+      "last30d": "30 hari terakhir",
+      "last90d": "90 hari terakhir"
+    },
     "topicMap": {
       "title": "Peta Topik",
       "desc": "Visualisasikan bagaimana narasi saling terhubung dan memengaruhi satu sama lain.",
       "allTopics": "Semua Topik",
       "filter": "Filter",
+      "filterAll": "Semua Sentimen",
       "intensity": "Intensitas",
-      "sentiment": "Sentimen",
+      "sentimentLabel": "Sentimen",
+      "sentiment": {
+        "positive": "Positif",
+        "neutral": "Netral",
+        "negative": "Negatif"
+      },
+      "impact": {
+        "critical": "Dampak Kritis",
+        "high": "Dampak Tinggi",
+        "medium": "Dampak Sedang",
+        "low": "Dampak Rendah"
+      },
       "connStrength": "Kekuatan Koneksi",
       "pos": "Positif",
       "neu": "Netral",
       "neg": "Negatif",
       "weak": "Lemah",
       "strong": "Kuat",
-      "tip": "Klik pada cluster untuk mengeksplorasi insight detail dan narasi terkait."
+      "tip": "Klik pada cluster untuk mengeksplorasi insight detail dan narasi terkait.",
+      "high": "Tinggi",
+      "expandMap": "Perbesar peta",
+      "mapControl": "Kontrol peta",
+      "zoomIn": "Perbesar",
+      "zoomOut": "Perkecil",
+      "resetZoom": "Reset"
     },
     "growingClusters": {
       "title": "Cluster Narasi Berkembang",
-      "viewAll": "Lihat semua"
+      "viewAll": "Lihat semua",
+      "viewLess": "Lihat lebih sedikit",
+      "modalTitle": "Semua Cluster Berkembang",
+      "modalSubtitle": "Jelajahi semua cluster narasi yang diurutkan berdasarkan jumlah sinyal dan kecepatan pertumbuhan."
+    },
+    "actions": {
+      "viewDetails": "Lihat detail lengkap",
+      "copyId": "Salin ID narasi"
+    },
+    "analysisModal": {
+      "subtitle": "Analisis narasi terperinci dan perincian sentimen.",
+      "sentimentBreakdown": "Perincian Sentimen",
+      "relatedSignals": "Sinyal Terkait",
+      "noData": "Tidak ada data detail yang tersedia untuk narasi ini."
     },
     "selectedNarrative": {
       "title": "Narasi Terpilih",
@@ -1217,23 +1425,25 @@
       "aiRec": "Rekomendasi AI",
       "btnAnalysis": "Lihat Analisis Lengkap",
       "highImpact": "Dampak Tinggi",
-      "emerging": "Emerging"
+      "emerging": "Emerging",
+      "moreActions": "Aksi narasi terpilih lainnya"
     },
     "competitorShare": {
-      "title": "Pangsa Narasi Kompetitor",
-      "totalShare": "Total Pangsa Narasi",
+      "title": "Porsi Narasi Kompetitor",
+      "totalShare": "Total Porsi Narasi",
       "viewLandscape": "Lihat Lanskap Kompetitif"
     },
     "aiSummary": {
       "title": "Insight Narasi (Ringkasan AI)",
-      "box": "Narrative utama minggu ini didominasi oleh isu operasional dan layanan pelanggan, dengan potensi dampak reputasi yang tinggi jika tidak ditangani segera.",
-      "bullets": {
-        "1": "Payment delay menjadi isu paling cepat berkembang.",
-        "2": "Keluhan refund mulai terkoneksi dengan isu kepercayaan.",
-        "3": "Peningkatan pembahasan di forum dan social media.",
-        "4": "Tidak ada lonjakan signifikan pada isu regulasi."
-      },
       "btn": "Lihat Laporan Insight Lengkap"
+    },
+    "aiSummaryDynamic": {
+      "box": "Narasi utama pada periode ini didominasi oleh \"{topic}\", yang saat ini memiliki {signals} sinyal dan memerlukan perhatian karena dampaknya yang {impact}.",
+      "boxEmpty": "Tidak ada aktivitas narasi signifikan yang terdeteksi pada periode ini.",
+      "bulletFastest": "Isu paling cepat berkembang: \"{topic}\" dengan pertumbuhan {growth}.",
+      "bulletRisk": "\"{topic}\" menunjukkan tren sentimen {sentiment} yang kuat.",
+      "bulletRec": "Rekomendasi: {rec}",
+      "bulletEmerging": "{count} narasi baru (emerging) memerlukan pemantauan."
     },
     "lifecycle": {
       "title": "Siklus Hidup Narasi",
@@ -1274,6 +1484,30 @@
       "deep": "Analisis Mendalam",
       "multilingual": "Lintas platform & multibahasa",
       "btnSettings": "Konfigurasi Pengaturan Intelijen"
+    },
+    "labels": {
+      "signals": "{count} sinyal",
+      "sources": "{count} sumber",
+      "noData": "Tidak ada data",
+      "others": "Lainnya",
+      "total": "Total",
+      "sourcesActive": "Sumber Aktif",
+      "coverage": "Cakupan"
+    },
+    "emptyCluster": {
+      "topic": "Belum ada narasi terpilih",
+      "priority": "Tidak ada data",
+      "description": "Data narasi live belum tersedia.",
+      "aiRec": "Tambahkan sinyal atau coba muat ulang data live untuk mengisi panel ini."
+    },
+    "mediumPriorityFallback": "Prioritas Sedang",
+    "empty": {
+      "title": "Belum ada narasi live",
+      "desc": "Backend berhasil dihubungi, tetapi cluster narasi belum tersedia."
+    },
+    "error": {
+      "title": "Narasi live belum bisa dimuat",
+      "desc": "API client sudah mencoba token refresh. Coba muat ulang data narasi live."
     }
   },
   "Reports": {
@@ -1390,18 +1624,41 @@
       "geoStatus": "Butuh catatan jawaban AI",
       "feedbackStatus": "Menunggu masukan tim"
     },
-    "toast": {
-      "exportStarted": "Export dimulai. Memeriksa status...",
-      "exportSuccess": "Export berhasil. File siap diunduh.",
-      "exportFailed": "Export gagal. Coba lagi.",
-      "exportProcessing": "Export masih diproses. Coba lagi nanti.",
-      "exportInitFailed": "Export belum bisa dimulai. Coba lagi."
-    },
-    "statusBadge": {
-      "SIAP": "Siap",
+  "toast": {
+    "exportStarted": "Ekspor dimulai. Memeriksa status...",
+    "exportSuccess": "Ekspor berhasil. File siap diunduh.",
+    "exportFailed": "Ekspor gagal. Silakan coba lagi.",
+    "exportProcessing": "Ekspor masih diproses. Coba lagi nanti.",
+    "exportInitFailed": "Ekspor tidak dapat dimulai. Silakan coba lagi.",
+    "templateSaved": "Template berhasil disimpan.",
+    "templateSaveFailed": "Gagal menyimpan template.",
+    "templateUpdated": "Template berhasil diperbarui.",
+    "templateUpdateFailed": "Gagal memperbarui template.",
+    "templateDeleted": "Template berhasil dihapus.",
+    "templateDeleteFailed": "Gagal menghapus template."
+  },
+  "templateForm": {
+    "addCustom": "Buat Kustom",
+    "editCustom": "Edit Template",
+    "nameLabel": "Nama Template",
+    "namePlaceholder": "Cth: Audit Media Sosial Bulanan",
+    "descLabel": "Deskripsi",
+    "descPlaceholder": "Penjelasan singkat mengenai template ini",
+    "formatLabel": "Format",
+    "cadenceLabel": "Jadwal Pengiriman",
+    "cancel": "Batal",
+    "save": "Simpan Template",
+    "saving": "Menyimpan...",
+    "onDemand": "Sesuai Permintaan",
+    "daily": "Harian",
+    "weekly": "Mingguan",
+    "monthly": "Bulanan"
+  },
+  "statusBadge": {
+      "READY": "Siap",
       "REVIEW": "Review",
-      "DRAFT": "Draft",
-      "SCHEDULED": "Dijadwalkan"
+      "DRAFT": "Draf",
+      "SCHEDULED": "Terjadwal"
     },
     "quickActions": {
       "title": "Aksi Cepat",
@@ -1414,20 +1671,24 @@
       "viewHistory": "Lihat Riwayat Laporan",
       "historyDesc": "Akses semua laporan sebelumnya"
     },
-    "preview": {
-      "title": "Pratinjau Laporan",
-      "desc": "Lihat ringkasan sebelum dibagikan ke stakeholder.",
-      "viewPreview": "Lihat Preview",
-      "downloadPdf": "Unduh PDF",
-      "executiveBrief": "Executive Narrative Brief",
-      "pdfDaily": "PDF · Harian",
-      "ready": "Siap",
-      "imageAlt": "Ilustrasi asisten AI untuk laporan",
-      "liveFallback": "Laporan intelligence dari backend Narriv.",
-      "liveType": "Report · Live API",
-      "activePeriod": "Periode aktif",
-      "liveCreated": "Data live"
-    },
+  "preview": {
+    "title": "Pratinjau Laporan",
+    "desc": "Tinjau ringkasan sebelum dibagikan ke stakeholder.",
+    "viewPreview": "Lihat Pratinjau",
+    "downloadPdf": "Unduh PDF",
+    "executiveBrief": "Ringkasan Eksekutif Narasi",
+    "pdfDaily": "PDF · Harian",
+    "ready": "Siap",
+    "imageAlt": "Ilustrasi asisten laporan AI",
+    "liveFallback": "Laporan intelligence dari backend Narriv.",
+    "liveType": "Laporan · Live API",
+    "activePeriod": "Periode aktif",
+    "liveCreated": "Data langsung",
+    "latestReport": "Laporan terbaru",
+    "noSections": "Belum ada bagian yang didefinisikan untuk laporan ini.",
+    "emptyTitle": "Belum ada laporan untuk dipratinjau",
+    "emptyDesc": "Buat laporan terlebih dahulu untuk melihat pratinjau di sini."
+  },
     "sentimentChart": {
       "title": "Sentimen 7 Hari Terakhir",
       "positive": "Positif",
@@ -1435,8 +1696,8 @@
       "negative": "Negatif"
     },
     "aiSummary": {
-      "title": "AI Report Summary",
-      "generated": "AI Generated",
+      "title": "Ringkasan Laporan AI",
+      "generated": "Dibuat oleh AI",
       "insightTitle": "Insight Utama",
       "insightText": "Payment delay menjadi top issue dengan volume tertinggi.",
       "riskTitle": "Risiko Tertinggi",
@@ -1447,19 +1708,34 @@
       "recommendationText": "Publikasikan klarifikasi dan perbarui status sistem pembayaran.",
       "body": "Dalam 7 hari terakhir, sentimen negatif meningkat 18% didorong oleh keluhan pembayaran dan stabilitas aplikasi di wilayah Jabodetabek."
     },
-    "formatDonut": {
-      "title": "Distribusi Format",
-      "desc": "Perbandingan format laporan yang dibuat.",
-      "total": "Total Laporan",
-      "noData": "Belum ada data format."
-    },
-    "timeline": {
-      "title": "Tren Pembuatan Laporan",
-      "period": "(14 Hari Terakhir)",
-      "desc": "Jumlah laporan yang dibuat per hari.",
-      "peak": "{count} laporan",
-      "noData": "Belum ada data"
-    },
+    "aiSummaryDynamic": {
+    "insightText": "{title} adalah isu utama dengan volume tertinggi ({count} sinyal).",
+    "riskText": "Potensi eskalasi reputasi terkait {title}.",
+    "noRiskText": "Tidak ada isu negatif kritis yang terdeteksi.",
+    "movementText": "Percakapan terkait {title} naik {velocity} baru-baru ini.",
+    "recommendationText": "{rec}",
+    "body": "Dalam periode terakhir, sistem menangkap pergerakan narasi yang signifikan didorong oleh {title} dan {otherCount} topik aktif lainnya.",
+    "emptyInsight": "Belum ada data untuk menghasilkan wawasan.",
+    "emptyRisk": "Belum ada data untuk menilai risiko.",
+    "emptyMovement": "Belum ada pergerakan narasi.",
+    "emptyRec": "Mengumpulkan data untuk rekomendasi.",
+    "emptyBody": "Mesin AI sedang menunggu cukupnya sinyal narasi untuk dapat menghasilkan ringkasan laporan yang komprehensif."
+  },
+  "formatDonut": {
+    "title": "Distribusi Format",
+    "desc": "Perbandingan format laporan yang dihasilkan.",
+    "total": "Total Laporan",
+    "noData": "Belum ada data format.",
+    "noDataDesc": "Data format laporan akan muncul di sini setelah laporan dihasilkan."
+  },
+  "timeline": {
+    "title": "Tren Pembuatan Laporan",
+    "period": "(14 Hari Terakhir)",
+    "desc": "Jumlah laporan yang dibuat per hari.",
+    "peak": "{count} laporan",
+    "noData": "Belum ada data",
+    "noDataDesc": "Grafik tren pembuatan laporan akan muncul di sini setelah laporan dihasilkan."
+  },
     "popular": {
       "title": "Laporan Terpopuler",
       "desc": "Berdasarkan judul laporan yang paling sering dibuat.",
@@ -1475,18 +1751,89 @@
       "title": "Data laporan belum bisa dimuat",
       "desc": "API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan data contoh."
     },
-    "buttons": {
-      "manageTemplates": "Kelola Template",
-      "scheduleSettings": "Pengaturan Jadwal",
-      "createNew": "Buat Laporan Baru"
-    },
-    "previewSections": {
-      "execSummary": "Executive Summary",
-      "riskMovement": "Risk Movement",
-      "keyInsights": "Key Insights",
-      "recommendedActions": "Recommended Actions"
-    },
-    "metricsCard": {
+  "buttons": {
+    "manageTemplates": "Kelola Template",
+    "scheduleSettings": "Pengaturan Jadwal",
+    "createNew": "Buat Laporan Baru",
+    "systemTemplate": "Template Sistem",
+    "closeTemp": "Tutup Sementara"
+  },
+  "createModal": {
+    "title": "Buat Laporan Baru",
+    "desc": "Hasilkan laporan intelligence baru dari template.",
+    "templateLabel": "Template Laporan",
+    "templatePlaceholder": "Pilih template",
+    "titleLabel": "Judul Laporan",
+    "titlePlaceholder": "Cth: Ringkasan Narasi Mingguan",
+    "dateRangeLabel": "Rentang Tanggal",
+    "startLabel": "Tanggal Mulai",
+    "endLabel": "Tanggal Akhir",
+    "cancel": "Batal",
+    "generate": "Hasilkan Laporan",
+    "generating": "Menghasilkan...",
+    "success": "Laporan berhasil dihasilkan.",
+    "failed": "Gagal menghasilkan laporan. Silakan coba lagi.",
+    "noTemplates": "Belum ada template yang tersedia."
+  },
+  "scheduleModal": {
+    "title": "Jadwal Laporan",
+    "desc": "Kelola jadwal pembuatan laporan berulang secara otomatis.",
+    "empty": "Belum ada jadwal yang dikonfigurasi.",
+    "emptyDesc": "Buat jadwal untuk mengotomasi pembuatan laporan.",
+    "addSchedule": "Tambah Jadwal",
+    "editSchedule": "Edit Jadwal",
+    "nameLabel": "Nama Jadwal",
+    "namePlaceholder": "Cth: Ringkasan Eksekutif Mingguan",
+    "templateLabel": "Template Laporan",
+    "templatePlaceholder": "Pilih template",
+    "cadenceLabel": "Frekuensi",
+    "dayLabel": "Hari",
+    "timeLabel": "Waktu",
+    "daily": "Harian",
+    "weekly": "Mingguan",
+    "monthly": "Bulanan",
+    "monday": "Senin",
+    "tuesday": "Selasa",
+    "wednesday": "Rabu",
+    "thursday": "Kamis",
+    "friday": "Jumat",
+    "saturday": "Sabtu",
+    "sunday": "Minggu",
+    "enabled": "Aktif",
+    "disabled": "Dijeda",
+    "lastRun": "Terakhir dijalankan",
+    "nextRun": "Jalankan berikutnya",
+    "never": "Belum pernah",
+    "cancel": "Batal",
+    "save": "Simpan Jadwal",
+    "saving": "Menyimpan...",
+    "systemTemplate": "Template Sistem",
+    "customTemplate": "Template Kustom"
+  },
+  "scheduleToast": {
+    "saved": "Jadwal berhasil disimpan.",
+    "saveFailed": "Gagal menyimpan jadwal.",
+    "updated": "Jadwal berhasil diperbarui.",
+    "updateFailed": "Gagal memperbarui jadwal.",
+    "deleted": "Jadwal berhasil dihapus.",
+    "deleteFailed": "Gagal menghapus jadwal.",
+    "toggled": "Status jadwal berhasil diperbarui."
+  },
+  "shareModal": {
+    "title": "Bagikan Laporan",
+    "desc": "Kirim laporan ini ke stakeholder via email.",
+    "emailLabel": "Email Penerima",
+    "emailPlaceholder": "stakeholder@perusahaan.com",
+    "subjectLabel": "Subjek (opsional)",
+    "subjectPlaceholder": "Laporan Intelligence Mingguan",
+    "cancel": "Batal",
+    "send": "Kirim Laporan",
+    "sending": "Mengirim...",
+    "success": "Laporan berhasil dikirim.",
+    "failed": "Gagal mengirim laporan. Silakan coba lagi.",
+    "noReport": "Belum ada laporan untuk dibagikan. Buat laporan terlebih dahulu."
+  },
+  "metricsCard": {
       "templates": "Templates",
       "templatesHelper": "3 siap",
       "ready": "Siap",
@@ -1495,7 +1842,11 @@
       "scheduledHelper": "Kadens mingguan",
       "generated30": "Dibuat (30 Hari)",
       "generatedHelper": "▲ 6 vs periode sebelumnya",
-      "generated30Helper": "▲ 6 vs periode sebelumnya"
+      "generated30Helper": "▲ 6 vs periode sebelumnya",
+      "reportsCreated": "Laporan Dibuat",
+      "reportsCreatedHelper": "▲ 6 vs periode sebelumnya",
+      "inProgress": "Sedang Diproses",
+      "inProgressHelper": "Kadens mingguan"
     },
     "liveMetrics": {
       "templates": "Templates",
@@ -2201,7 +2552,7 @@
       "command": "Beranda",
       "signals": "Temuan",
       "alerts": "Peringatan",
-      "visibility": "Kemunculan AI",
+      "visibility": "Visibilitas AI",
       "intelligence": "Intelijen",
       "reports": "Laporan",
       "actionCenter": "Pusat Tindakan",
@@ -2292,7 +2643,7 @@
         "newAlertItem3Desc": "Awasi isu spesifik yang perlu perhatian segera.",
         "reportTitle": "Buat Laporan Baru",
         "reportDesc": "Generate laporan analisis sentimen dan visibilitas AI secara otomatis.",
-        "reportItem1Label": "Executive Summary",
+        "reportItem1Label": "Ringkasan Eksekutif",
         "reportItem1Desc": "Laporan ringkas untuk stakeholder senior.",
         "reportItem2Label": "Weekly Brief",
         "reportItem2Desc": "Ringkasan mingguan performa brand.",
@@ -2320,7 +2671,7 @@
         "helpItem3Desc": "Tonton tutorial video langkah demi langkah."
       },
       "visibility": {
-        "title": "AI Visibility",
+    "title": "Visibilitas AI",
         "desc": "Pantau bagaimana brand, topik, dan kompetitor Anda muncul di platform AI generatif.",
         "trend": "Tren AI Mentions",
         "platform": "Top Platform AI",
@@ -2346,7 +2697,7 @@
         "clusters": "Cluster Narasi Berkembang"
       },
       "reports": {
-        "title": "Reports",
+        "title": "Laporan",
         "desc": "Buat dan tinjau laporan intelligence yang siap dibagikan ke stakeholder.",
         "queue": "Daftar Laporan"
       },

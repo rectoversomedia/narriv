@@ -118,6 +118,8 @@
 | **NarrativeClusterSignal** | Cluster-Signal join | → NarrativeCluster, Signal |
 | **Report** | Generated reports | → Workspace, ReportExport |
 | **ReportExport** | Export job tracking | → Report |
+| **ReportTemplate** | Custom report templates | → Workspace |
+| **ReportSchedule** | Recurring report schedules | → Workspace |
 | **ActionPlan** | AI-generated action plans | → Workspace, Alert, NarrativeCluster, GeneratedAsset |
 | **GeneratedAsset** | AI-generated content assets | → Workspace, ActionPlan |
 | **AIVisibilityResult** | AI platform visibility data | → Workspace, PromptTestRun |
@@ -221,8 +223,16 @@ Report ──1:N──▶ ReportExport
 | `POST` | `/api/visibility/analyze` | Visibility | Trigger new visibility analysis |
 | `POST` | `/api/reports` | Reports | Generate a new report |
 | `GET` | `/api/reports` | Reports | List reports |
-| `GET` | `/api/reports/templates` | Reports | List available report templates |
+| `GET` | `/api/reports/templates` | Reports | List available report templates (system + custom) |
+| `POST` | `/api/reports/templates` | Reports | Create custom report template |
+| `PATCH` | `/api/reports/templates/:id` | Reports | Update custom report template |
+| `DELETE` | `/api/reports/templates/:id` | Reports | Delete custom report template |
 | `GET` | `/api/reports/analytics` | Reports | Aggregate metrics: export format distribution (PDF/JSON), popular report titles, 14-day trend timeline |
+| `GET` | `/api/reports/schedules` | Reports | List report schedules for workspace |
+| `POST` | `/api/reports/schedules` | Reports | Create report schedule |
+| `PATCH` | `/api/reports/schedules/:id` | Reports | Update report schedule |
+| `DELETE` | `/api/reports/schedules/:id` | Reports | Delete report schedule |
+| `PATCH` | `/api/reports/schedules/:id/toggle` | Reports | Toggle schedule enabled/disabled |
 | `POST` | `/api/reports/generate` | Reports | Generate report from template |
 | `POST` | `/api/reports/:id/send-email` | Reports | Send report via email |
 | `GET` | `/api/reports/:id` | Reports | Full report detail |
@@ -368,9 +378,9 @@ Report ──1:N──▶ ReportExport
 | **Signals** (`/signals`) | `GET /signals`, `GET /signals/meta` | ✅ Wired — `useQuery` with pagination & `getSignalsMeta`; metadata now includes live `totalSignals`, `sourceDistribution` (with percentage-based values), `timeline` (24h data), `timelineLabels`, `followUps`, `recommendations`, `investigationQueue`, `metrics` (totalSignals24h, negativeSignals24h, criticalSignals24h), and bilingual `aiSummary` (en/id). Frontend now passes `totalSignals` to SourceDonut for live center total and dynamic conic gradient. TimelineChart uses `timelineLabels` for x-axis. InvestigationQueue links to Cases page via `/cases` redirect. All panels fully bilingual with 80+ translation keys. |
 | **Alerts** (`/alerts`) | `GET /api/alerts`, `PATCH /api/alerts/:id/status`, `GET /api/alerts/summary` | ✅ Wired — `useQuery` + `useMutation` for status change + assignment dropdown; metric cards, source distribution, and timeline now consume `getAlertsSummary()` live aggregates |
 | **Alert Detail** (`/alerts/[id]`) | `GET /api/alerts/:id`, `PATCH /api/alerts/:id/status`, `PATCH /api/alerts/:id/assign` | ✅ Wired — `useQuery` + editable assignment fields + status buttons |
-| **Visibility** (`/visibility`) | `GET /api/visibility`, `GET /api/visibility/summary`, `GET /api/visibility/trends` | ✅ Wired — `useQuery` maps latest visibility, prompts, geo actions, per-engine summary, and trend series with empty-data fallback |
-| **Intelligence** (`/intelligence`) | `GET /api/narratives` | ✅ Wired — `useQuery` with `buildNarrativeClusters` mapping; narrative share donut and lifecycle cards are live-derived from cluster signal counts, velocity, and impact |
-| **Reports** (`/reports`) | `GET /api/reports`, `GET /api/reports/templates`, `GET /api/reports/analytics`, `POST /api/reports/:id/export` | ✅ Wired — `useQuery` + `useMutation` for PDF export with polling; metric cards consume `getReportTemplates()`; format donut, popular templates list, and timeline chart now consume `getReportsAnalytics()` |
+| **Visibility** (`/visibility`) | `GET /api/visibility`, `GET /api/visibility/summary`, `GET /api/visibility/trends`, `POST /api/visibility/analyze` | ✅ Wired — 100% API-driven with empty states; date filter (7/14/30/90d), CSV export, dynamic executive summary, AI Search Sandbox with real API call, bilingual AI responses (EN/ID), SVG charts, modals for mentions and actions |
+| **Intelligence** (`/intelligence`) | `GET /api/narratives`, `GET /api/narratives/:id` | ✅ Wired — `useQuery` with `buildNarrativeClusters` mapping; narrative share donut and lifecycle cards are live-derived; AI Summary is generated dynamically on the frontend; React Portal modals handle detail drilling via `getNarrativeById()` |
+| **Reports** (`/reports`) | `GET /api/reports`, `GET /api/reports/templates`, `POST /api/reports/templates`, `PATCH /api/reports/templates/:id`, `DELETE /api/reports/templates/:id`, `GET /api/reports/analytics`, `POST /api/reports/generate`, `POST /api/reports/:id/send-email`, `GET /api/reports/schedules`, `POST /api/reports/schedules`, `PATCH /api/reports/schedules/:id`, `DELETE /api/reports/schedules/:id`, `PATCH /api/reports/schedules/:id/toggle`, `POST /api/reports/:id/export` | ✅ Wired — `useQuery` + `useMutation` for PDF export with polling; metric cards consume `getReportTemplates()`; format donut, popular templates list, and timeline chart consume `getReportsAnalytics()`; Manage Templates modal with full CRUD (system read-only + custom); Schedule Settings modal with full CRUD and enable/disable; Create New Report form with template selector and date range via `generateReportFromTemplate()`; Share to Stakeholder modal via `sendReportEmail()`; all components 100% i18n with empty/loading states |
 | **Action Plans** (`/action-plans`) | `GET /api/action-plans`, `GET /api/action-plans/:id`, `GET /api/action-plans/metrics`, `GET /api/actions`, `POST /api/actions`, `POST /api/action-plans/:id/feedback`, `GET /api/action-plans/:id/learning`, `GET /api/feedback/accuracy` | ✅ Wired — `useQuery` + `useMutation` for create, queue, detail, metrics, feedback, learning, and performance panels. Static fallback mock logic removed; successful create now invalidates action queue/metrics/latest plan queries. Multi-step plans now render `option.steps` correctly. |
 | **Sources** (`/workspace/sources`) | `GET /sources`, `GET /sources/presets`, `POST /sources/bootstrap-defaults`, `PATCH /sources/:sourceId`, `DELETE /sources/:sourceId`, `GET /sources/health`, `GET /sources/coverage`, `POST /ingestion/run`, `POST /ingestion/run/:sourceId` | ✅ Wired — `useQuery` for sources/health/coverage + toggle/sync/delete mutations + individual sync per source + search by name/category + empty states for charts. Sync All uses `POST /ingestion/run` and frontend chunks batches into 25-source requests to match backend validation. |
 | **Settings** (`/workspace/settings`) | `GET/PATCH /api/workspace/settings`, `GET/POST/DELETE /api/workspace/members`, `POST /auth/change-password` | ✅ Wired — `useMutation` for settings, invite (API), delete member (API), change password |
@@ -597,6 +607,7 @@ Optional RLS notes:
 - [x] Track visibility score trends over time
 - [x] Add competitor mention tracking
 - [x] Implement AI response sentiment analysis
+- [x] Bilingual AI responses — system prompt now requests JSON `{ en, id }` format; responses stored with `response` (EN) and `responseId` (ID) fields; `response_format: json_object` enabled for structured output
 
 #### Action Generation
 - [x] Add new strategy types beyond the current 4 (Social Response, Stakeholder Update, Data-Driven)
@@ -626,6 +637,8 @@ Optional RLS notes:
 - [x] Add scheduled report generation (daily, weekly)
 - [x] Implement report email delivery (Using Resend API)
 - [x] Add report customization (sections, date range, branding)
+- [x] Add Zod validation for `POST /generate` and `POST /:id/send-email` endpoints; `.strict()` on all report schemas to prevent mass-assignment
+- [x] Replace hardcoded Indonesian in email defaults with i18n-ready English text
 
 ---
 
@@ -704,7 +717,7 @@ Optional RLS notes:
 
 ## Appendix: Frontend Development Status
 
-> Last updated: 2026-06-12
+> Last updated: 2026-06-19
 
 ### ✅ Completed Frontend Work
 
@@ -714,8 +727,8 @@ Optional RLS notes:
 - [x] Alerts — `getAlerts` with pagination + `updateAlertStatus` mutation + `getAlertsSummary` live metrics/source distribution/timeline
 - [x] Alert Detail — `getAlertById` + editable assignment fields + `updateAlertAssignment` mutation
 - [x] Visibility — `getVisibility`, `getVisibilitySummary`, and `getVisibilityTrends` with fallback
-- [x] Intelligence — `getNarratives` with `buildNarrativeClusters` mapping
-- [x] Reports — `getReports` + `createReportExport` with polling via `getReportExportStatus`
+- [x] Intelligence — `getNarratives` + `getNarrativeById` with dynamic UI generation for AI summaries, live derived metrics (donuts/lifecycles), and fully wired React Portal modals (Analysis/Landscape/Clusters)
+- [x] Reports — `getReports` + `createReportExport` with polling via `getReportExportStatus` + `getReportTemplates` CRUD + `getReportSchedules` CRUD + `generateReportFromTemplate` + `sendReportEmail` + `getReportsAnalytics` for dynamic charts; mock fallbacks strictly removed from frontend; added ReportTemplate and ReportSchedule Prisma models; added POST/PATCH/DELETE for custom templates; added POST/PATCH/DELETE/toggle for schedules; GET /templates merges system + custom templates
 - [x] Action Plans — `getActionPlans` + `getActionQueue` + `submitActionPlanFeedback` mutation
 - [x] Sources — `getSources` + `updateSource` (toggle) + `deleteSource` + `runSourceIngestion` (sync) + `runBatchSourceIngestion` (Sync All) + `getSourceHealth` + `getSourceCoverage` + individual sync + search + empty states; all metric cards, health labels, distribution panel, settings labels translated to bilingual
 - [x] Settings — `updateWorkspaceSettings` + `createWorkspaceMember` (invite) + `deleteWorkspaceMember` + `changePassword`
@@ -736,7 +749,7 @@ Optional RLS notes:
 - [x] Alerts page — status dropdown menu (Baru/Investigating/Resolved) + "Tugaskan ke Saya"
 - [x] Alert Detail — status change buttons + editable assignment fields with save
 - [x] Sources — interactive toggle, sync all, delete via API, individual sync per source, search by name/category, empty states for VolumeBars/DistributionDonut/HealthDonut
-- [x] Reports — PDF export with polling and auto-download
+- [x] Reports — PDF export with polling and auto-download; Manage Templates full CRUD; Schedule Settings full CRUD; Create New Report form; Share to Stakeholder email modal; all 100% i18n
 - [x] Action Plans — accept/reject feedback buttons
 - [x] Settings — invite/delete member via API, change password form
 
@@ -756,7 +769,7 @@ Optional RLS notes:
 #### Low Priority Cleanup
 - [ ] Remove unused `LineChartMock` / `DonutMock` from `dashboard-kit.tsx`
 - [ ] Move `navGroups` from `mock-data.ts` to constants file
-- [x] Intelligence page — competitor donut and lifecycle metrics are live-derived from `GET /api/narratives` cluster data
+- [x] Intelligence page — competitor donut, lifecycle metrics, and AI summary are all generated dynamically from live data; no mock data fallbacks remain.
 
 ---
 

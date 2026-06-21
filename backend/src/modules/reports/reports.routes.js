@@ -10,7 +10,7 @@ import { incrementExportFailure } from "../../lib/metrics.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
-import { createReportBodySchema, createReportExportBodySchema, reportIdParamsSchema } from "./reports.schema.js";
+import { createReportBodySchema, createReportExportBodySchema, reportIdParamsSchema, createReportTemplateSchema, updateReportTemplateSchema, createReportScheduleSchema, updateReportScheduleSchema, generateReportBodySchema, sendReportEmailBodySchema } from "./reports.schema.js";
 import { generateReport as generateFromTemplate, sendReportEmail } from "./report-generation.js";
 import { getAllReportTemplates } from "./report-templates.js";
 import { recordAuditLog } from "../../lib/audit.js";
@@ -211,9 +211,263 @@ router.get("/", async (req, res) => {
 });
 
 // GET /api/reports/templates — List available report templates
-router.get("/templates", (req, res) => {
-    const templates = getAllReportTemplates();
-    return res.json({ data: templates });
+router.get("/templates", async (req, res) => {
+    try {
+        const { workspaceId } = req.query;
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
+        
+        const systemTemplates = getAllReportTemplates().map(t => ({...t, isSystem: true}));
+        
+        let customTemplates = [];
+        if (scopedWorkspaceIds.length > 0) {
+            const dbTemplates = await prisma.reportTemplate.findMany({
+                where: { workspaceId: { in: scopedWorkspaceIds } },
+                orderBy: { createdAt: "desc" }
+            });
+            customTemplates = dbTemplates.map(t => ({
+                key: t.id,
+                name: t.name,
+                description: t.description || "",
+                format: t.format,
+                cadence: t.cadence,
+                sectionCount: t.sectionCount,
+                isSystem: false
+            }));
+        }
+
+        return res.json({ data: [...systemTemplates, ...customTemplates] });
+    } catch (error) {
+        logStructured("error", "Error fetching templates:", { error: error?.message || error, stack: error?.stack });
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// POST /api/reports/templates — Create custom template
+router.post("/templates", validateRequest(createReportTemplateSchema), async (req, res) => {
+    try {
+        const { name, description, format, cadence, sectionCount } = req.body;
+        const { workspaceId } = req.query;
+        
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
+        if (!scopedWorkspaceId) {
+            return res.status(403).json({ error: "Workspace access denied" });
+        }
+
+        const template = await prisma.reportTemplate.create({
+            data: {
+                workspaceId: scopedWorkspaceId,
+                name,
+                description,
+                format: format || "PDF",
+                cadence: cadence || "On-demand",
+                sectionCount: sectionCount || 3
+            }
+        });
+
+        return res.status(201).json(template);
+    } catch (error) {
+        logStructured("error", "Error creating template:", { error: error?.message || error, stack: error?.stack });
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// PATCH /api/reports/templates/:id — Update custom template
+router.patch("/templates/:id", validateRequest(updateReportTemplateSchema), async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const template = await prisma.reportTemplate.findUnique({ where: { id } });
+        if (!template) {
+            return res.status(404).json({ error: "Template not found" });
+        }
+
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, template.workspaceId);
+        if (!scopedWorkspaceId) {
+            return res.status(403).json({ error: "Access denied" });
+        }
+
+        const { name, description, format, cadence, sectionCount } = req.body;
+
+        const updated = await prisma.reportTemplate.update({
+            where: { id },
+            data: {
+                ...(name !== undefined && { name }),
+                ...(description !== undefined && { description }),
+                ...(format !== undefined && { format }),
+                ...(cadence !== undefined && { cadence }),
+                ...(sectionCount !== undefined && { sectionCount }),
+            }
+        });
+
+        return res.json(updated);
+    } catch (error) {
+        logStructured("error", "Error updating template:", { error: error?.message || error, stack: error?.stack });
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// DELETE /api/reports/templates/:id — Delete custom template
+router.delete("/templates/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const template = await prisma.reportTemplate.findUnique({ where: { id } });
+        if (!template) {
+            return res.status(404).json({ error: "Template not found" });
+        }
+
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, template.workspaceId);
+        if (!scopedWorkspaceId) {
+            return res.status(403).json({ error: "Access denied" });
+        }
+
+        await prisma.reportTemplate.delete({ where: { id } });
+        return res.json({ success: true });
+    } catch (error) {
+        logStructured("error", "Error deleting template:", { error: error?.message || error, stack: error?.stack });
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// ============================================================
+// REPORT SCHEDULES CRUD
+// ============================================================
+
+// GET /api/reports/schedules — List schedules for workspace
+router.get("/schedules", async (req, res) => {
+    try {
+        const { workspaceId } = req.query;
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
+        if (scopedWorkspaceIds.length === 0) {
+            return res.json({ data: [] });
+        }
+
+        const schedules = await prisma.reportSchedule.findMany({
+            where: { workspaceId: { in: scopedWorkspaceIds } },
+            orderBy: { createdAt: "desc" }
+        });
+
+        return res.json({ data: schedules });
+    } catch (error) {
+        logStructured("error", "Error fetching schedules:", { error: error?.message || error, stack: error?.stack });
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// POST /api/reports/schedules — Create schedule
+router.post("/schedules", validateRequest(createReportScheduleSchema), async (req, res) => {
+    try {
+        const { templateKey, name, cadence, dayOfWeek, timeOfDay, enabled } = req.body;
+        const { workspaceId } = req.query;
+
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
+        if (!scopedWorkspaceId) {
+            return res.status(403).json({ error: "Workspace access denied" });
+        }
+
+        const schedule = await prisma.reportSchedule.create({
+            data: {
+                workspaceId: scopedWorkspaceId,
+                templateKey,
+                name,
+                cadence: cadence || "weekly",
+                dayOfWeek: dayOfWeek || null,
+                timeOfDay: timeOfDay || "09:00",
+                enabled: enabled !== false
+            }
+        });
+
+        return res.status(201).json(schedule);
+    } catch (error) {
+        logStructured("error", "Error creating schedule:", { error: error?.message || error, stack: error?.stack });
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// PATCH /api/reports/schedules/:id — Update schedule
+router.patch("/schedules/:id", validateRequest(updateReportScheduleSchema), async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const schedule = await prisma.reportSchedule.findUnique({ where: { id } });
+        if (!schedule) {
+            return res.status(404).json({ error: "Schedule not found" });
+        }
+
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, schedule.workspaceId);
+        if (!scopedWorkspaceId) {
+            return res.status(403).json({ error: "Access denied" });
+        }
+
+        const { templateKey, name, cadence, dayOfWeek, timeOfDay, enabled } = req.body;
+
+        const updated = await prisma.reportSchedule.update({
+            where: { id },
+            data: {
+                ...(templateKey !== undefined && { templateKey }),
+                ...(name !== undefined && { name }),
+                ...(cadence !== undefined && { cadence }),
+                ...(dayOfWeek !== undefined && { dayOfWeek }),
+                ...(timeOfDay !== undefined && { timeOfDay }),
+                ...(enabled !== undefined && { enabled }),
+            }
+        });
+
+        return res.json(updated);
+    } catch (error) {
+        logStructured("error", "Error updating schedule:", { error: error?.message || error, stack: error?.stack });
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// DELETE /api/reports/schedules/:id — Delete schedule
+router.delete("/schedules/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const schedule = await prisma.reportSchedule.findUnique({ where: { id } });
+        if (!schedule) {
+            return res.status(404).json({ error: "Schedule not found" });
+        }
+
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, schedule.workspaceId);
+        if (!scopedWorkspaceId) {
+            return res.status(403).json({ error: "Access denied" });
+        }
+
+        await prisma.reportSchedule.delete({ where: { id } });
+        return res.json({ success: true });
+    } catch (error) {
+        logStructured("error", "Error deleting schedule:", { error: error?.message || error, stack: error?.stack });
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// PATCH /api/reports/schedules/:id/toggle — Toggle schedule enabled/disabled
+router.patch("/schedules/:id/toggle", async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const schedule = await prisma.reportSchedule.findUnique({ where: { id } });
+        if (!schedule) {
+            return res.status(404).json({ error: "Schedule not found" });
+        }
+
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, schedule.workspaceId);
+        if (!scopedWorkspaceId) {
+            return res.status(403).json({ error: "Access denied" });
+        }
+
+        const updated = await prisma.reportSchedule.update({
+            where: { id },
+            data: { enabled: !schedule.enabled }
+        });
+
+        return res.json(updated);
+    } catch (error) {
+        logStructured("error", "Error toggling schedule:", { error: error?.message || error, stack: error?.stack });
+        res.status(500).json({ error: "Internal server error" });
+    }
 });
 
 // GET /api/reports/analytics — Aggregate metrics: format distribution, top templates, trend timeline
@@ -289,16 +543,12 @@ router.get("/analytics", async (req, res) => {
 });
 
 // POST /api/reports/generate — Generate a report from a template
-router.post("/generate", async (req, res) => {
+router.post("/generate", validateRequest({ body: generateReportBodySchema }), async (req, res) => {
     try {
         const { templateKey, dateRange } = req.body;
         const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, req.body.workspaceId);
         if (!scopedWorkspaceId) {
             return res.status(403).json({ error: "Workspace access denied" });
-        }
-
-        if (!templateKey) {
-            return res.status(400).json({ error: "templateKey is required" });
         }
 
         const report = await generateFromTemplate({
@@ -543,7 +793,7 @@ router.get("/:id/export/pdf", async (req, res) => {
 });
 
 // POST /api/reports/:id/send-email — Send report via email
-router.post("/:id/send-email", async (req, res) => {
+router.post("/:id/send-email", validateRequest({ params: reportIdParamsSchema, body: sendReportEmailBodySchema }), async (req, res) => {
     try {
         const { id } = req.params;
         const { recipientEmail, subject, body } = req.body;
@@ -558,8 +808,8 @@ router.post("/:id/send-email", async (req, res) => {
             workspaceId: report.workspaceId,
             reportId: report.id,
             recipientEmail,
-            subject: subject || `Laporan: ${report.title}`,
-            body: body || `Laporan ${report.title} sudah tersedia.`,
+            subject: subject || `Report: ${report.title}`,
+            body: body || `The report "${report.title}" is now available for review.`,
         });
 
         return res.json(result);

@@ -49,6 +49,7 @@ router.get("/", async (req, res) => {
         const { sentiment, impact, workspaceId } = req.query;
         const page = parseInt(req.query.page, 10) || 1;
         const limit = parseInt(req.query.limit, 10) || 10;
+        const days = parseInt(req.query.days, 10);
         const safePage = Math.max(1, page);
         const safeLimit = Math.max(1, limit);
         const skip = (safePage - 1) * safeLimit;
@@ -63,6 +64,9 @@ router.get("/", async (req, res) => {
         const whereClause = {};
         if (sentiment) whereClause.sentiment = sentiment;
         if (impact) whereClause.impact = String(impact).toUpperCase();
+        if (Number.isFinite(days) && days > 0) {
+            whereClause.updatedAt = { gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000) };
+        }
         whereClause.workspaceId = { in: scopedWorkspaceIds };
 
         const [data, total] = await Promise.all([

@@ -203,38 +203,56 @@
 #### 🔍 AI Visibility (`/visibility`)
 | Widget | Detail | Data Source |
 |--------|--------|-------------|
-| KPI Cards (5x) | Total AI Mentions, Brand Mentions, Share of Voice, Average Position, AI Sentiment | `getVisibility()` plus `getVisibilitySummary()` / `getVisibilityTrends()` for live metric sparklines; preview fallback remains for empty data |
-| AI Platform Distribution | Bar chart: ChatGPT, Gemini, Copilot, Perplexity, Claude | `getVisibilitySummary().engine_breakdown` with SVGL icons and sample fallback |
-| Executive Summary | AI-generated summary text with "See all" button | Live brand/competitor rates from `getVisibility()` / `getVisibilitySummary()` plus localized copy |
-| Prompt Test Table | Table: Prompt, Engine, Brand Response, Competitor Response, Tone comparison | `getVisibility().prompts[]` mapped into trending prompt/topic rows |
-| Competitor Share | Horizontal bars comparing brand vs competitors | `getVisibilityTrends()` brand vs competitor rates and `getVisibility()` latest rates; sample fallback remains for empty data |
-| AI Mention Examples | Cards showing actual AI platform responses mentioning Narriv | `getVisibility().prompts[]` mapped to latest prompt-test cards; sample fallback remains for empty data |
-| Trending Topics Table | Topic, Mentions, Direction, Type | `getVisibility().prompts[]` with engine and tone mapping; sample fallback remains for empty data |
-| AI Agent Card | Avatar image, brand personality description | Static content using `/mainapp/ai-avatar.png` |
-| Global Map | Indonesia-focused map with geo-distributed data points | SVG/CSS map |
-| Geo Actions | Localized action recommendations per region | `getVisibility().geoActions[]` with localized fallback |
+| KPI Cards (4x) | Total Penyebutan AI, Penyebutan Brand, Pangsa Suara, Rata-rata Posisi — computed deltas from trend data | `getVisibility()` + `getVisibilitySummary()` + `getVisibilityTrends()` — 100% API-driven, no mock fallback; empty state shows `"-"` |
+| Date Filter | Dropdown 7/14/30/90 days + quick toggle buttons (7d/30d) | `selectedDays` state → `getVisibilityTrends(days)` refetch |
+| Export Button | CSV export with summary metrics, trend data, topics, platforms, mentions | Client-side CSV generation from API data |
+| Executive Summary | Dynamic heading/body from trend deltas + top prompt; "Dibuat oleh AI" badge; opportunity/risk/actions from live data | `getVisibility()` + `getVisibilitySummary()` + `getVisibilityTrends()` — computed from real data |
+| AI Recommended Actions | GeoActions from visibility analysis; "See all" opens modal | `getVisibility().geoActions[]` — empty state when no data |
+| AI Mentions Trend Chart | SVG line chart per engine or brand/competitor; 7d/30d toggle; dynamic Y-axis | `getVisibilityTrends().engine_trends` or `brand/competitor_trend` — empty state when no data |
+| Top Topics Table | Topic, Mentions, Direction, Type (5 rows max); "See all topics" → `/intelligence` | `getVisibility().prompts[]` — empty state when no data |
+| AI Search Sandbox | Search input → real API call `POST /api/visibility/analyze`; loading spinner; bilingual response parsing | `triggerVisibilityAnalysis()` — displays response in active language (EN/ID) |
+| Visibility vs Competitors Chart | SVG line chart: Narriv vs Competitors trend | `getVisibilityTrends()` brand/competitor rates — empty state when no data |
+| Top AI Platforms | Bar chart with logos (ChatGPT, Gemini, Copilot, Perplexity, Claude); sorted by score | `getVisibilitySummary().engine_breakdown` — empty state when no data |
+| Competitor Share of Voice | Donut chart + legend: Narriv, Competitors, Others | Computed from `visibilityData.presence` + `competitor` rates — empty state when no data |
+| Latest Mention Examples | Top 3 prompt-test cards with engine logo, quote; "View all" opens modal (all mentions) | `getVisibility().prompts[]` — empty state when no data |
+| AI Search Sandbox Modal | Full list of all prompt-test mentions | `visibilityData.prompts[]` — all items |
+| i18n Coverage | All labels, empty states, error messages, date ranges, AI badge, metric labels bilingual (EN/ID) | `next-intl` via `useTranslations("Visibility.*")` — 60+ keys including `empty.*`, `dateRange.*`, `ariaLabels.*`, `mentionQuote.*` |
+| Bilingual AI Responses | Backend returns `{ en, id }` JSON; frontend parses per active language | `response` (EN) / `responseId` (ID) from `rawResponse[]` |
 
 #### 🧠 Intelligence (`/intelligence`)
 | Widget | Detail | Data Source |
 |--------|--------|-------------|
-| Topic Map | Interactive bubble map showing narrative clusters | Wired to `getNarratives()` with live data; mock-data fallbacks removed |
+| Topic Map | Interactive bubble map showing narrative clusters with zoom/expand controls and impact/sentiment filters | Wired to `getNarratives()` with live data; mock-data fallbacks removed |
 | Cluster Bubbles | Sized by signal count, colored by sentiment | Position: x/y derived from `mapSpecks` (static decoration array); size determined by `record.signalCount` |
-| Cluster Detail Panel | Selected cluster: title, description, signal count, priority, AI recommendation | Click interaction |
+| Cluster Detail Panel | Selected cluster: title, description, signal count, priority, AI recommendation, full analysis modal, and action dropdown | Click interaction on map or cluster list; "See Full Analysis" triggers `getNarrativeById()` and opens a React Portal modal |
 | Related Topics | Tags showing related clusters with growth deltas | `related[]` in cluster data |
-| Cluster List | Sidebar list of all clusters with signal counts | Same data source |
-| Time Filter | 24h, 7 days, 30 days dropdown | Local state |
-| Competitor Donut | "Pangsa Narasi Kompetitor" share breakdown | Live-derived from `getNarratives()` cluster signal share; shows empty-data segment when no signals exist |
+| Cluster List | Sidebar list of growing clusters with signal counts; "View All" opens a full scrollable React Portal modal | Same data source |
+| Time Filter | 24h, 7 days, 30 days dropdown | Local state triggering API refetch |
+| Competitor Donut | "Pangsa Narasi Kompetitor" share breakdown; "View Landscape" opens a React Portal modal | Live-derived from `getNarratives()` cluster signal share; shows empty-data segment when no signals exist |
 | Lifecycle Metrics | Emerging / Accelerating / Peaking / Declining / Dormant counts and trends | Live-derived from `getNarratives()` cluster velocity, impact, and signal counts with sparkline fallbacks for empty phases |
+| AI Summary | Executive summary box and bullet points | Dynamically generated in frontend based on top signals, velocity, and sentiment trends from live narrative data |
+| Footer Metrics | Data Coverage, Update Frequency, AI Model Status | Wired to `getSources()` to calculate active vs total source coverage and reflect real-time API health |
 
 #### 📊 Reports (`/reports`)
 | Widget | Detail | Data Source |
 |--------|--------|-------------|
-| AI Report Summary | AI assistant panel using `/mainapp/reports-ai-agent.png` | Static asset |
-| Preview + Metrics | Report preview, KPI cards, readiness indicators | Inline/static page data |
-| Report Table | Report vault table with owner, cadence, readiness, status | Wired to `getReports()` with pagination and preview fallback |
-| Quick Actions | Generate, export, schedule, share actions | Export wired via `createReportExport()` with polling |
-| Bottom Cards | Format mix, trend chart, popular templates | Inline SVG/CSS + static data |
-| Export API | Backend/API service functions exist | Export wired: `createReportExport()` + `getReportExportStatus()` with polling and auto-download |
+| AI Report Summary | Executive summary box with dynamic insight, risk, movement, recommendation | `getNarratives()` + `getDashboardSummary()` — dynamically generated from live cluster data; empty state text when no data |
+| Sentiment Chart | 3-line sentiment trend chart (positive/neutral/negative) | `getDashboardSummary().trends` + `sentiment_distribution` — dynamic SVG path generation; flat line empty state |
+| Metric Cards (4x) | Templates, Reports Created, In Progress, Ready | `getReportTemplates()` + `getReports()` — loading state `"..."`, no mock fallback |
+| Reports Table | Report vault with title, type, period, status, progress, created | `getReports()` with pagination, filter tabs (All/Ready/Review/Draft/Scheduled), empty state, loading skeleton |
+| Report Preview Sidebar | Latest report preview with title, status badge, sections list, View Preview link, Download PDF button | `reportsQuery.data.data[0]` — shows actual report data; View Preview navigates to `/reports/{id}`; empty state when no reports |
+| Format Donut | Dynamic conic-gradient donut showing PDF vs JSON distribution | `getReportsAnalytics().format_distribution` — gradient calculated from actual proportions; empty state with icon |
+| Timeline Chart | Report creation trend line chart with dynamic Y-axis and peak tooltip | `getReportsAnalytics().trend_timeline` — Y-axis calculated from data max; peak position from actual index; empty state with icon |
+| Popular Reports | Top 5 most-created report titles with View All modal | `getReportsAnalytics().popular_templates` — View All opens full list modal; empty state |
+| Quick Actions | 4 buttons: Share, Schedule, Create, History | Share → email modal; Schedule → schedule settings modal; Create → create report modal; History → `/workspace/activity` |
+| Manage Templates | Full CRUD modal with system templates (read-only) and custom templates | `getReportTemplates()` + `createReportTemplate()` + `updateReportTemplate()` + `deleteReportTemplate()` — form with name, cadence; system templates show badge |
+| Schedule Settings | Full CRUD modal for recurring report schedules | `getReportSchedules()` + `createReportSchedule()` + `updateReportSchedule()` + `deleteReportSchedule()` + `toggleReportSchedule()` — form with template, cadence, day, time |
+| Create New Report | Form modal to generate report from template | `generateReportFromTemplate()` — template selector, title, date range; generates via `POST /api/reports/generate` |
+| Share to Stakeholder | Email sharing modal | `sendReportEmail()` — recipient email, subject; empty state when no reports |
+| PDF Export | Export with polling and auto-download | `createReportExport()` + `getReportExportStatus()` with polling |
+| Pagination | Prev/Next with page info | `DashboardPagination` component |
+| Empty States | All panels show contextual empty views when no data | Icons, titles, descriptions via `next-intl` |
+| Bilingual Coverage | All UI text translated to EN/ID | `next-intl` via `useTranslations("Reports.*")` — 100+ translation keys including `scheduleModal.*`, `shareModal.*`, `createModal.*`, `templateForm.*` |
 
 #### 🎯 Action Center (`/action-plans`)
 | Widget | Detail | Data Source |
@@ -438,9 +456,15 @@ All frontend-to-backend calls should go through the Ky-backed `apiClient.ts`/`ap
 | `getSignals()` / `getSignalsMeta()` | `GET /signals`, `GET /signals/meta` | Yes | Yes — `/signals` maps table, summary metrics, follow-ups, recommendations, source donut, timeline labels/peak, and investigation queue |
 | `getAlerts()` / `getAlertById()` | `GET /api/alerts`, `GET /api/alerts/:id` | Yes | Yes — list page and detail page use React Query |
 | Alert status/assignment functions | `PATCH /api/alerts/:id/status`, `PATCH /api/alerts/:id/assign` | Yes | Yes — alerts page dropdown for status change, alert detail page editable assignment fields |
-| `getVisibility()` / `getVisibilitySummary()` / `getVisibilityTrends()` | `GET /api/visibility`, `GET /api/visibility/summary`, `GET /api/visibility/trends` | Yes | Yes — `/visibility` maps KPIs, prompt rows, platform distribution, trend charts, competitor share, latest mentions, and geo actions with empty-data fallback |
+| `getVisibility()` / `getVisibilitySummary()` / `getVisibilityTrends()` | `GET /api/visibility`, `GET /api/visibility/summary`, `GET /api/visibility/trends` | Yes | Yes — `/visibility` maps all KPIs, prompt rows, platform distribution, trend charts, competitor share, latest mentions, and geo actions; 100% API-driven with empty states; no mock fallback |
+| `triggerVisibilityAnalysis()` | `POST /api/visibility/analyze` | Yes | Yes — AI Search Sandbox calls this for real-time query simulation with bilingual response parsing |
 | Action-plan functions | `/api/action-plans`, `/api/action-plans/:id`, `/api/action-plans/metrics`, `/api/action-plans/:id/learning`, `/api/actions`, `/api/feedback/accuracy` | Yes | Yes — `getActionPlans()`, `getActionPlanById()`, `getActionPlansMetrics()`, `getActionQueue()`, `createActionPlan()`, `getActionPlanLearning()`, `getFeedbackAccuracy()`, and `submitActionPlanFeedback()` are wired; create invalidates affected queries and accept/reject buttons update feedback |
 | Report/export functions | `/api/reports`, `/api/reports/:id/export`, `/api/reports/exports/:jobId` | Yes | Yes — `getReports()` and `createReportExport()` with polling via `getReportExportStatus()` wired to PDF download |
+| Report templates | `/api/reports/templates` | Yes | Yes — `getReportTemplates()` + `createReportTemplate()` + `updateReportTemplate()` + `deleteReportTemplate()` — full CRUD for custom templates |
+| Report schedules | `/api/reports/schedules` | Yes | Yes — `getReportSchedules()` + `createReportSchedule()` + `updateReportSchedule()` + `deleteReportSchedule()` + `toggleReportSchedule()` — full CRUD with enable/disable |
+| Report generation | `/api/reports/generate` | Yes | Yes — `generateReportFromTemplate()` — form modal with template selector, title, date range |
+| Report email | `/api/reports/:id/send-email` | Yes | Yes — `sendReportEmail()` — share modal with recipient email and subject |
+| Report analytics | `/api/reports/analytics` | Yes | Yes — `getReportsAnalytics()` — format donut, popular templates, timeline chart |
 | `getNarratives()` | `GET /api/narratives` | Yes | Yes — `/intelligence` maps topic map, cluster list/detail, narrative share donut, lifecycle counts, and metric cards |
 | Source/ingestion functions | `/sources`, `/sources/presets`, `/sources/bootstrap-defaults`, `/sources/health`, `/sources/coverage`, `/ingestion/run`, `/ingestion/run/:sourceId`, `/ingestion/status/:jobId` | Yes | Yes — `getSources()`, `getSourcePresets()`, `bootstrapDefaultSources()`, `updateSource()` (toggle), `deleteSource()`, `runSourceIngestion()` (single sync), `runBatchSourceIngestion()` (chunked Sync All), `getSourceHealth()`, and `getSourceCoverage()` are wired |
 | Workspace settings/member functions | `/api/workspace/settings`, `/api/workspace/members` | Yes | Yes — `getWorkspaceSettings()`, `updateWorkspaceSettings()`, `getWorkspaceMembers()`, `createWorkspaceMember()` by registered-user email, and `deleteWorkspaceMember()` are wired |
@@ -497,7 +521,7 @@ All frontend-to-backend calls should go through the Ky-backed `apiClient.ts`/`ap
 - Mock data cleanup: 16 unused exports removed from `mock-data.ts`
 
 ### ⚠️ Known Issues & Gaps
-1. **Static/Mock Data Dependency**: All primary and secondary dashboard widgets are now fully un-mocked and use API data. Empty arrays are used as fallbacks. Some empty-state or fallback mocks remain solely for preview when live data is completely empty.
+1. **Static/Mock Data Dependency**: All primary and secondary dashboard widgets are now fully un-mocked and use API data. Empty arrays are used as fallbacks. Visibility page is 100% production-ready with no mock data remaining.
 2. **Onboarding Flow**: UI wired to backend API using `OnboardingContext` state and `api-service.ts` functions. Submits default initial configuration and redirects to dashboard.
 3. **Social Login**: Google OAuth2 button functional (requires `GOOGLE_CLIENT_ID` in `.env`). Microsoft OAuth removed — only Google supported.
 4. **Workspace Logo Upload**: Settings page is wired to the backend logo upload API using base64 JSON. Backend currently stores uploads locally; S3/Supabase Storage remains a future production storage upgrade.
@@ -541,9 +565,9 @@ These replace the removed frontend checklist/guidelines and should be treated as
 - [x] **Signals Page** — Wired the main table to `getSignals()` with API field mapping, search, 24h/7d/30d params, pagination, loading/error/empty states, and preview fallback. Expanded `getSignalsMeta()` usage for live sidebar panels, source donut total, timeline labels, and peak tooltip; backend `/signals/meta` timeline now uses 24h Signal data. Completed 2026-05-31; expanded 2026-06-06. Fully bilingual 2026-06-13: all panels (SummaryPanel, FollowUpPanel, RecommendationPanel, SourceDonut, TimelineChart, InvestigationQueue), filter tabs, time range options, table headers, search placeholder, footer text, error states, and mock fallback data translated via 80+ `next-intl` keys. Mock fallback functions (getSignalRows, getFollowUps, getRecommendations) removed 2026-06-13 (100% API-driven). TimelineChart has interactive hover tooltip with bilingual labels. SourceDonut builds dynamic conic gradient from API data. InvestigationQueue links to `/cases` via redirect page.
 - [x] **Alerts Page** — Main list wired to `getAlerts()` with pagination. Status/assignment mutations wired via dropdown menu and editable assignment fields on detail page. Expanded `getAlertsSummary()` usage for live severity/status metric cards, source distribution donut, and 24h timeline/peak tooltip on 2026-06-06. Completed 2026-05-31; expanded 2026-06-06.
 - [x] **Alert Detail Page** — Replaced mock lookup with `getAlertById()` and React Query state handling. Mock fallbacks removed 2026-06-05. Completed 2026-05-30.
-- [x] **Visibility Page** — Wired to `getVisibility()` with fallback handling. Added live summary/trend coverage via `getVisibilitySummary()` and `getVisibilityTrends()` for platform distribution, chart series, competitor share, latest prompt mentions, and metric sparklines on 2026-06-06. Completed 2026-05-31; expanded 2026-06-06.
-- [x] **Intelligence Page** — Wired to `getNarratives()` with `buildNarrativeClusters` mapping. Competitor narrative share donut and lifecycle cards are now live-derived from narrative cluster signal counts, velocity, and impact. All mock-data fallbacks (`intelligenceClusters` array) removed from `lib/mock-data.ts`. Completed 2026-05-31; mock fallbacks removed 2026-06-05; secondary panels expanded 2026-06-07.
-- [x] **Reports Page** — `getReports()` with pagination wired. PDF export via `createReportExport()` with polling and auto-download wired. Completed 2026-05-31.
+- [x] **Visibility Page** — Complete production-ready overhaul. Removed all mock/fallback data. 100% API-driven: `getVisibility()`, `getVisibilitySummary()`, `getVisibilityTrends()`. Features: date filter (7/14/30/90 days) with quick toggle; CSV export; dynamic executive summary from trend deltas; AI Search Sandbox with real `triggerVisibilityAnalysis()` API call and bilingual response parsing; SVG line charts (Mentions Trend, Competitor vs); donut chart (Share of Voice); Top Platforms bar chart; Top Topics table with link to Intelligence page; Latest Mentions with "View all" modal; AI Actions with "See all" modal; all empty states; all i18n (EN/ID) with 60+ translation keys; bilingual AI responses (EN/ID). Completed 2026-05-31; expanded 2026-06-06; production-ready 2026-06-21.
+- [x] **Intelligence Page** — Wired to `getNarratives()` with `buildNarrativeClusters` mapping. Competitor narrative share donut and lifecycle cards are live-derived from cluster signal counts, velocity, and impact. AI Summary is generated dynamically from live cluster data. Footer metrics wired to `getSources()`. Interactive panels (Analysis, Landscape, All Clusters) wired to React Portal modals. Completed 2026-05-31; mock fallbacks removed 2026-06-05; secondary panels and dynamic interactions expanded 2026-06-19.
+- [x] **Reports Page** — `getReports()` with pagination wired. PDF export via `createReportExport()` with polling and auto-download wired. Removed all residual `mockRows` fallback logic and aligned internal enum tags to English (`READY`) for dynamic translations on 2026-06-19. AI Report Summary dynamic from `getNarratives()` + `getDashboardSummary()`. Format Donut dynamic gradient from `getReportsAnalytics()`. Timeline Chart with dynamic Y-axis and peak tooltip. Popular Reports with View All modal. Report Preview Sidebar connected to real data with View Preview navigation. Quick Actions all 4 buttons wired (Share, Schedule, Create, History). Manage Templates full CRUD (system read-only + custom). Schedule Settings full CRUD with enable/disable. Create New Report form with template selector and date range via `generateReportFromTemplate()`. Share to Stakeholder email modal via `sendReportEmail()`. All components 100% i18n with empty/loading states. Completed 2026-05-31; modernized 2026-06-19; full production readiness 2026-06-19.
 - [x] **Action Plans Page** — `getActionPlans()`, `getActionPlanById()`, `getActionPlansMetrics()`, `getActionQueue()`, `createActionPlan()`, `getActionPlanLearning()`, and `submitActionPlanFeedback()` wired. Accept/reject buttons on action detail. Removed `mockActions` and static fallback UI logic making it 100% API-driven. Fixed i18n translation keys 2026-06-13. Create modal invalidates queue/metrics/latest plan after successful create; backend multi-step `option.steps` rendering fixed. Completed 2026-05-31; finalized 2026-06-17.
 - [x] **Sources Page** — `getSources()` with toggle, sync all, and delete mutations wired. Add/connect controls now call `bootstrapDefaultSources()` to create Apify actor presets only; blog/news domains use `apify/web-scraper`. Completed 2026-05-31; preset bootstrap wired 2026-06-07; RSS presets removed 2026-06-07; Fixed "Sync All" POST body/error handling and switched Sync All to batch endpoint plus source-ID identity for duplicate names 2026-06-08. Individual sync per-source added 2026-06-12. Search by name/category added 2026-06-12. Empty states for VolumeBars, DistributionDonut, HealthDonut added 2026-06-12. All hardcoded Indonesian/English strings translated to bilingual (metric cards, health labels, distribution panel, empty states, settings labels) 2026-06-13. Endpoint alignment and chunked Sync All for 25-source backend batch limit finalized 2026-06-17. Global configuration/settings controls are explicitly excluded from this completed scope and deferred to Settings page work.
 - [x] **Settings Page** — `getWorkspaceSettings()`, `updateWorkspaceSettings()`, `getWorkspaceMembers()`, `createWorkspaceMember()`, `deleteWorkspaceMember()`, and `changePassword()` wired with validation. UI polished including icon-only logo upload button. Completed 2026-05-31.

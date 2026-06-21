@@ -139,17 +139,39 @@ async function queryAIEngine(engineName, queries) {
                 messages: [
                     {
                         role: "system",
-                        content: "You are a helpful assistant. Answer the user's question thoroughly and mention specific brands, products, or companies when relevant."
+                        content: `You are a helpful assistant that provides bilingual responses. When answering, ALWAYS respond in this exact JSON format:
+{
+  "en": "English response here...",
+  "id": "Indonesian response here (Bahasa Indonesia)..."
+}
+
+Rules:
+- Both responses must convey the same information
+- Answer thoroughly and mention specific brands, products, or companies when relevant
+- The English version should be natural English
+- The Indonesian version should be natural Bahasa Indonesia (not a literal translation)
+- Keep responses concise but informative (150-300 words each)
+- ONLY return valid JSON, no markdown or extra text`
                     },
                     { role: "user", content: query }
                 ],
                 temperature: 0.7,
-                max_tokens: 512
+                max_tokens: 1024,
+                response_format: { type: "json_object" }
             });
+
+            const rawContent = response.choices[0]?.message?.content || "{}";
+            let parsed;
+            try {
+                parsed = JSON.parse(rawContent);
+            } catch {
+                parsed = { en: rawContent, id: rawContent };
+            }
 
             results.push({
                 query,
-                response: response.choices[0]?.message?.content || ""
+                response: parsed.en || rawContent,
+                responseId: parsed.id || parsed.en || rawContent
             });
             logStructured("info", "ai_provider_call_succeeded", {
                 provider: "openai",
@@ -164,7 +186,7 @@ async function queryAIEngine(engineName, queries) {
                 engineName,
                 error: error.message,
             });
-            results.push({ query, response: "" });
+            results.push({ query, response: "", responseId: "" });
         }
     }
 

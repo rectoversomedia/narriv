@@ -1059,11 +1059,109 @@ export interface ReportTemplate {
   format: string;
   cadence: string;
   sectionCount: number;
+  isSystem?: boolean;
 }
 
 export async function getReportTemplates(): Promise<{ data: ReportTemplate[] } | null> {
   try {
     return await apiClient<{ data: ReportTemplate[] }>("/api/reports/templates");
+  } catch {
+    return null;
+  }
+}
+
+export async function createReportTemplate(input: Partial<ReportTemplate>): Promise<ReportTemplate | null> {
+  try {
+    return await apiClient<ReportTemplate>("/api/reports/templates", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function updateReportTemplate(id: string, input: Partial<ReportTemplate>): Promise<ReportTemplate | null> {
+  try {
+    return await apiClient<ReportTemplate>(`/api/reports/templates/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteReportTemplate(id: string): Promise<boolean> {
+  try {
+    await apiClient<{ success: boolean }>(`/api/reports/templates/${id}`, { method: "DELETE" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Report Schedules
+// ---------------------------------------------------------------------------
+
+export interface ReportScheduleRecord {
+  id: string;
+  workspaceId: string;
+  templateKey: string;
+  name: string;
+  cadence: string;
+  dayOfWeek: string | null;
+  timeOfDay: string;
+  enabled: boolean;
+  lastRunAt: string | null;
+  nextRunAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getReportSchedules(): Promise<{ data: ReportScheduleRecord[] } | null> {
+  try {
+    return await apiClient<{ data: ReportScheduleRecord[] }>("/api/reports/schedules");
+  } catch {
+    return null;
+  }
+}
+
+export async function createReportSchedule(input: Partial<ReportScheduleRecord>): Promise<ReportScheduleRecord | null> {
+  try {
+    return await apiClient<ReportScheduleRecord>("/api/reports/schedules", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function updateReportSchedule(id: string, input: Partial<ReportScheduleRecord>): Promise<ReportScheduleRecord | null> {
+  try {
+    return await apiClient<ReportScheduleRecord>(`/api/reports/schedules/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteReportSchedule(id: string): Promise<boolean> {
+  try {
+    await apiClient<{ success: boolean }>(`/api/reports/schedules/${id}`, { method: "DELETE" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function toggleReportSchedule(id: string): Promise<ReportScheduleRecord | null> {
+  try {
+    return await apiClient<ReportScheduleRecord>(`/api/reports/schedules/${id}/toggle`, { method: "PATCH" });
   } catch {
     return null;
   }
@@ -1125,13 +1223,30 @@ export interface NarrativeRecord {
   sentiment: string;
 }
 
+export interface NarrativeDetailRecord extends NarrativeRecord {
+  trends: Array<{ date: string; count: number }>;
+  sentimentBreakdown: Record<string, number>;
+  relatedSignals: Array<{
+    id: string;
+    title: string;
+    content?: string | null;
+    platform?: string | null;
+    url?: string | null;
+    sentiment: string;
+    impact?: string | null;
+    capturedAt?: string | null;
+    publishedAt?: string | null;
+  }>;
+}
+
 export async function getNarratives(
-  options: { page?: number; limit?: number; sentiment?: string; impact?: string } = {}
+  options: { page?: number; limit?: number; sentiment?: string; impact?: string; days?: number } = {}
 ): Promise<PaginatedResponse<NarrativeRecord> | null> {
-  const { page = 1, limit = 10, sentiment, impact } = options;
+  const { page = 1, limit = 10, sentiment, impact, days } = options;
   const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (sentiment) params.set("sentiment", sentiment);
   if (impact) params.set("impact", impact);
+  if (typeof days === "number") params.set("days", String(days));
 
   try {
     return await apiClient<PaginatedResponse<NarrativeRecord>>(`/api/narratives?${params.toString()}`);
@@ -1344,22 +1459,6 @@ export async function markAllNotificationsAsRead(): Promise<boolean> {
 // Visibility
 // ---------------------------------------------------------------------------
 
-export interface VisibilityResponse {
-  score?: number | string;
-  presence?: number | string;
-  presenceMentions?: number | string;
-  competitor?: number | string;
-  prompts?: {
-    prompt: string;
-    engine: string;
-    brand: string;
-    competitor: string;
-    brandTone?: string;
-    compTone?: string;
-  }[];
-  geoActions?: { title: string; tag: string; highlighted?: boolean }[];
-}
-
 export interface VisibilitySummaryResponse {
   kpis: {
     avg_visibility_score: number;
@@ -1469,6 +1568,14 @@ export async function getFeedbackAccuracy(options: Record<string, string | numbe
   try {
     const params = new URLSearchParams(options as Record<string, string>);
     return await apiClient<FeedbackAccuracyResponse>(`/api/feedback/accuracy?${params.toString()}`);
+  } catch {
+    return null;
+  }
+}
+
+export async function getNarrativeById(id: string): Promise<NarrativeDetailRecord | null> {
+  try {
+    return await apiClient<NarrativeDetailRecord>(`/api/narratives/${id}`);
   } catch {
     return null;
   }

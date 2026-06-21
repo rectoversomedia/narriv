@@ -838,6 +838,12 @@
     "subtitle": "Monitor how your brand, topics, and competitors appear on generative AI platforms.",
     "last7Days": "7 May 2025 - 14 May 2025",
     "export": "Export",
+    "dateRange": {
+      "7d": "Last 7 days",
+      "14d": "Last 14 days",
+      "30d": "Last 30 days",
+      "90d": "Last 90 days"
+    },
     "metrics": {
       "totalMentions": {
         "label": "Total AI Mentions",
@@ -855,14 +861,14 @@
         "helper": "+4.6 p.p."
       },
       "avgPos": {
-        "label": "Average Position (All AI)",
+        "label": "Average Position",
         "value": "2.8",
         "helper": "-0.4"
       }
     },
     "execSummary": {
       "title": "AI Executive Summary",
-      "aiGenerated": "A.I Generated",
+      "aiGenerated": "AI Generated",
       "heading": "Your brand visibility increased +18.7% this week.",
       "body": "The increase is driven by AI monitoring topics, cybersecurity discussions, and recommendations of ChatGPT for enterprise monitoring tools. However, competitors are leading on the 'cloud security' keyword in Google Gemini and Perplexity.",
       "opportunity": "Top Opportunity",
@@ -893,11 +899,11 @@
     },
     "sandbox": {
       "title": "AI Search Sandbox",
-      "desc": "Simulate how AI responds to queries and mentions the Narriv brand.",
+      "desc": "Simulate how AI responds to queries.",
       "queryPlaceholder": "Search for signals, topics, issues, or cases...",
       "simulateBtn": "Simulate",
-      "responseTitle": "AI Response (ChatGPT)",
-      "citations": "Key Sources (Citations)",
+      "responseTitle": "AI Response",
+      "citations": "Key Sources",
       "confidence": "Confidence"
     },
     "competitorVs": {
@@ -913,6 +919,44 @@
     "latestMentions": {
       "title": "Latest Mention Examples",
       "viewAll": "View all"
+    },
+    "error": {
+      "title": "Visibility data unavailable",
+      "desc": "API client attempted token refresh. Showing sample data for now."
+    },
+    "empty": {
+      "title": "No live visibility data yet",
+      "desc": "Backend connected successfully, but no AI visibility results available. Sample data is shown as a preview."
+    },
+    "topicType": {
+      "opportunity": "Opportunity",
+      "alert": "Alert",
+      "informational": "Informational",
+      "risk": "Risk",
+      "neutral": "Neutral"
+    },
+    "mentionQuote": {
+      "brand": "Brand: {value}",
+      "competitor": "Competitor: {value}",
+      "brandFallback": "Brand response captured",
+      "competitorFallback": "Competitor response captured"
+    },
+    "ariaLabels": {
+      "dateFilter": "Filter by date range",
+      "export": "Export visibility data",
+      "simulate": "Run AI simulation"
+    },
+    "fallbackDates": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    "empty": {
+      "noTrendData": "No trend data available",
+      "noCompetitorData": "No competitor data available",
+      "noTopicData": "No topic data available",
+      "noPlatformData": "No platform data available",
+      "noSovData": "No share of voice data available",
+      "noMentionData": "No mention data available",
+      "noActionData": "No recommended actions available",
+      "noResponse": "No response received from the AI engine. Please try again.",
+      "fetchFailed": "Failed to get response. Please try again."
     }
   },
   "ActionPlansLegacy": {
@@ -1143,6 +1187,130 @@
     "error": {
       "title": "Live data unavailable",
       "desc": "API client attempted token refresh. Showing sample data for now."
+    },
+    "v2": {
+      "criticalStatus": {
+        "firstSent": "First sent: {time}",
+        "inProgress": "In Progress",
+        "lastUpdate": "Last update: {time}",
+        "resolved": "Resolved",
+        "title": "Critical Delivery Status",
+        "viewAll": "View All"
+      },
+      "delivery": {
+        "corpAffairsChannel": "#corporate-affairs",
+        "delivered": "Delivered",
+        "email": "Email",
+        "execChannel": "Executive Channel",
+        "msTeams": "Microsoft Teams",
+        "recipients": "{count} recipients",
+        "slack": "Slack",
+        "thisAlert": "(This Alert)",
+        "title": "Delivery Status",
+        "viewAllChannels": "View all channels",
+        "whatsapp": "WhatsApp"
+      },
+      "escalationMatrix": {
+        "deptHead": "Department Head",
+        "execTeam": "Executive Team",
+        "l1": "L1",
+        "l2": "L2",
+        "l3": "L3",
+        "sla": "SLA: {time}",
+        "teamLead": "Team Lead",
+        "title": "Escalation Matrix"
+      },
+      "flow": {
+        "desc": "(How Narriv Delivers Critical Intelligence)",
+        "step1Desc": "AI detects anomaly",
+        "step1Title": "Signal Detected",
+        "step2Desc": "Severity classified",
+        "step2Title": "Alert Generated",
+        "step3Desc": "Multi-channel delivery",
+        "step3Title": "Delivered to Channels",
+        "step4Desc": "By the right person",
+        "step4Title": "Acknowledged",
+        "step5Desc": "Investigation in progress",
+        "step5Title": "Action Started",
+        "step6Desc": "Issue closed",
+        "step6Title": "Resolved",
+        "title": "Escalation Flow"
+      },
+      "header": {
+        "createAlert": "Create Alert",
+        "desc": "Review warnings that require attention before they escalate.",
+        "escalationMatrix": "Escalation Matrix",
+        "notificationRules": "Notification Rules",
+        "title": "Alerts"
+      },
+      "incident": {
+        "alertDesc": "Spike in payment delay complaints across social media and news.",
+        "alertTitle": "Payment delay complaints are rising",
+        "channels": "{count} Channels",
+        "confidence": "Confidence",
+        "corporateAffairs": "Corporate Affairs",
+        "critical": "CRITICAL",
+        "high": "High",
+        "impact": "Impact",
+        "in2hours": "in 2 hours",
+        "investigating": "Investigating",
+        "mentions": "Mentions",
+        "negative": "Negative",
+        "owner": "Owner",
+        "reputationRisk": "Reputation Risk",
+        "sentiment": "Sentiment",
+        "since": "Since {time}",
+        "source": "Source",
+        "status": "Status",
+        "title": "Critical Incident",
+        "velocity": "Velocity",
+        "veryHigh": "Very High",
+        "viewDetails": "View Details"
+      },
+      "journey": {
+        "step1Desc": "AI detected unusual spike in complaints",
+        "step1Title": "Alert Generated",
+        "step2Desc": "{count} recipients",
+        "step2Title": "Delivered via WhatsApp",
+        "step3Desc": "{count} recipients",
+        "step3Title": "Delivered via Email",
+        "step4Desc": "Executive Channel",
+        "step4Title": "Delivered via Microsoft Teams",
+        "step5Desc": "{count} recipients opened",
+        "step5Title": "First Opened",
+        "step6Desc": "Corporate Affairs Team Lead",
+        "step6Title": "First Acknowledged",
+        "step7Desc": "Root cause analysis in progress",
+        "step7Title": "Investigation Started",
+        "title": "Alert Journey",
+        "viewFull": "View Full Timeline"
+      },
+      "list": {
+        "allSeverity": "All Severity"
+      },
+      "metrics": {
+        "acknowledgedAlerts": "Acknowledged Alerts",
+        "avgResponseTime": "Avg Response Time",
+        "criticalAlerts": "Critical Alerts",
+        "criticalIncidents": "Critical Incidents",
+        "deliveredAlerts": "Delivered Alerts",
+        "escalated": "Escalated",
+        "infoAlerts": "Information Alerts",
+        "of": "{val1} of {val2}",
+        "resolved": "Resolved",
+        "successRate": "{val} Success Rate",
+        "target": "Target: {val}",
+        "totalAlerts": "Total Alerts",
+        "vs30Days": "▲ {val} vs last 30 days",
+        "warningAlerts": "Warning Alerts"
+      },
+      "stakeholder": {
+        "acknowledged": "Acknowledged",
+        "actionStarted": "Action Started",
+        "opened": "Opened",
+        "recipients": "Recipients",
+        "title": "Stakeholder Engagement"
+      }
     }
   },
   "Intelligence": {
@@ -1168,7 +1336,8 @@
       "clusters": {
         "label": "Clusters Identified",
         "value": "28",
-        "helper": "6 accelerating"
+        "helper": "6 accelerating",
+        "accelerating": "{count} accelerating"
       },
       "confidence": {
         "label": "Narrative Confidence",
@@ -1178,12 +1347,14 @@
       "emerging": {
         "label": "Emerging Narratives",
         "value": "7",
-        "helper": "2 new this week"
+        "helper": "2 new this week",
+        "liveNarratives": "{count} live narratives"
       },
       "opportunities": {
         "label": "Opportunities Detected",
         "value": "5",
-        "helper": "2 high potential"
+        "helper": "2 high potential",
+        "highImpact": "{count} high impact"
       }
     },
     "velocity": "Speed",
@@ -1198,18 +1369,39 @@
       "allTopics": "All Topics",
       "filter": "Filter",
       "intensity": "Intensity",
-      "sentiment": "Sentiment",
+      "sentiment": {
+        "negative": "Negative",
+        "neutral": "Neutral",
+        "positive": "Positive"
+      },
       "connStrength": "Connection Strength",
       "pos": "Positive",
       "neu": "Neutral",
       "neg": "Negative",
       "weak": "Weak",
       "strong": "Strong",
-      "tip": "Tip: Click on any cluster to explore detailed insights and related narratives."
+      "tip": "Tip: Click on any cluster to explore detailed insights and related narratives.",
+      "expandMap": "Expand map",
+      "filterAll": "All Sentiments",
+      "high": "High",
+      "impact": {
+        "critical": "Critical Impact",
+        "high": "High Impact",
+        "low": "Low Impact",
+        "medium": "Medium Impact"
+      },
+      "mapControl": "Map control",
+      "resetZoom": "Reset Zoom",
+      "sentimentLabel": "Sentiment",
+      "zoomIn": "Zoom In",
+      "zoomOut": "Zoom Out"
     },
     "growingClusters": {
       "title": "Growing Narrative Clusters",
-      "viewAll": "View all"
+      "viewAll": "View all",
+      "modalSubtitle": "Explore all narrative clusters sorted by signal count and growth velocity.",
+      "modalTitle": "All Growing Clusters",
+      "viewLess": "View less"
     },
     "selectedNarrative": {
       "title": "Selected Narrative",
@@ -1217,7 +1409,8 @@
       "aiRec": "AI Recommendation",
       "btnAnalysis": "See Full Analysis",
       "highImpact": "High Impact",
-      "emerging": "Emerging"
+      "emerging": "Emerging",
+      "moreActions": "More selected narrative actions"
     },
     "competitorShare": {
       "title": "Competitor Narrative Share",
@@ -1226,13 +1419,6 @@
     },
     "aiSummary": {
       "title": "Narrative Insights (AI Summary)",
-      "box": "The main narrative this week is dominated by operational and customer service issues, with a high potential reputational impact if not addressed immediately.",
-      "bullets": {
-        "1": "Payment delay is the fastest growing issue.",
-        "2": "Refund complaints are beginning to connect with trust issues.",
-        "3": "Increased discussions in forums and social media.",
-        "4": "No significant spike in regulatory issues."
-      },
       "btn": "View Full Insight Report"
     },
     "lifecycle": {
@@ -1274,6 +1460,54 @@
       "deep": "Deep Analysis",
       "multilingual": "Cross-platform & multilingual",
       "btnSettings": "Configure Intelligence Settings"
+    },
+    "actions": {
+      "copyId": "Copy narrative ID",
+      "viewDetails": "View full details"
+    },
+    "aiSummaryDynamic": {
+      "box": "The main narrative this period is dominated by \"{topic}\", which currently has {signals} signals and requires attention due to its {impact} impact.",
+      "boxEmpty": "No significant narrative activity detected in this period.",
+      "bulletEmerging": "{count} new emerging narratives require monitoring.",
+      "bulletFastest": "Fastest growing issue: \"{topic}\" at {growth} growth.",
+      "bulletRec": "Recommendation: {rec}",
+      "bulletRisk": "\"{topic}\" shows a strong {sentiment} sentiment trend."
+    },
+    "analysisModal": {
+      "noData": "No detailed data available for this narrative.",
+      "relatedSignals": "Related Signals",
+      "sentimentBreakdown": "Sentiment Breakdown",
+      "subtitle": "Detailed narrative analysis and sentiment breakdown."
+    },
+    "empty": {
+      "desc": "Backend connected successfully, but no narrative clusters are available yet.",
+      "title": "No live narratives yet"
+    },
+    "emptyCluster": {
+      "aiRec": "Add signals or retry loading live data to populate this panel.",
+      "description": "Live narrative data is not available yet.",
+      "priority": "No data",
+      "topic": "No narrative selected"
+    },
+    "mediumPriorityFallback": "Medium Priority",
+    "error": {
+      "desc": "The API client attempted token refresh. Retry loading live narrative data.",
+      "title": "Live narratives unavailable"
+    },
+    "labels": {
+      "coverage": "Coverage",
+      "noData": "No data",
+      "others": "Others",
+      "signals": "{count} signals",
+      "sources": "{count} sources",
+      "sourcesActive": "Sources Active",
+      "total": "Total"
+    },
+    "periods": {
+      "last24h": "Last 24 hours",
+      "last30d": "Last 30 days",
+      "last7d": "Last 7 days",
+      "last90d": "Last 90 days"
     }
   },
   "Reports": {
@@ -1390,18 +1624,41 @@
       "geoStatus": "Needs AI visibility notes",
       "feedbackStatus": "Awaiting team feedback"
     },
-    "toast": {
-      "exportStarted": "Export started. Checking status...",
-      "exportSuccess": "Export successful. File ready for download.",
-      "exportFailed": "Export failed. Please try again.",
-      "exportProcessing": "Export still processing. Try again later.",
-      "exportInitFailed": "Export could not be started. Please try again."
-    },
-    "statusBadge": {
-      "SIAP": "Ready",
+  "toast": {
+    "exportStarted": "Export started. Checking status...",
+    "exportSuccess": "Export successful. File ready for download.",
+    "exportFailed": "Export failed. Please try again.",
+    "exportProcessing": "Export still processing. Try again later.",
+    "exportInitFailed": "Export could not be started. Please try again.",
+    "templateSaved": "Template saved successfully.",
+    "templateSaveFailed": "Failed to save template.",
+    "templateUpdated": "Template updated successfully.",
+    "templateUpdateFailed": "Failed to update template.",
+    "templateDeleted": "Template deleted successfully.",
+    "templateDeleteFailed": "Failed to delete template."
+  },
+  "templateForm": {
+    "addCustom": "Add Custom",
+    "editCustom": "Edit Template",
+    "nameLabel": "Template Name",
+    "namePlaceholder": "E.g. Monthly Social Media Audit",
+    "descLabel": "Description",
+    "descPlaceholder": "Brief explanation of this template",
+    "formatLabel": "Format",
+    "cadenceLabel": "Cadence",
+    "cancel": "Cancel",
+    "save": "Save Template",
+    "saving": "Saving...",
+    "onDemand": "On-demand",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly"
+  },
+  "statusBadge": {
       "REVIEW": "Review",
       "DRAFT": "Draft",
-      "SCHEDULED": "Scheduled"
+      "SCHEDULED": "Scheduled",
+      "READY": "Ready"
     },
     "quickActions": {
       "title": "Quick Actions",
@@ -1414,20 +1671,24 @@
       "viewHistory": "View Report History",
       "historyDesc": "Access all previous reports"
     },
-    "preview": {
-      "title": "Report Preview",
-      "desc": "Review summary before sharing to stakeholders.",
-      "viewPreview": "View Preview",
-      "downloadPdf": "Download PDF",
-      "executiveBrief": "Executive Narrative Brief",
-      "pdfDaily": "PDF · Daily",
-      "ready": "Ready",
-      "imageAlt": "AI reports assistant illustration",
-      "liveFallback": "Intelligence report from Narriv backend.",
-      "liveType": "Report · Live API",
-      "activePeriod": "Active period",
-      "liveCreated": "Live data"
-    },
+  "preview": {
+    "title": "Report Preview",
+    "desc": "Review summary before sharing to stakeholders.",
+    "viewPreview": "View Preview",
+    "downloadPdf": "Download PDF",
+    "executiveBrief": "Executive Narrative Brief",
+    "pdfDaily": "PDF · Daily",
+    "ready": "Ready",
+    "imageAlt": "AI reports assistant illustration",
+    "liveFallback": "Intelligence report from Narriv backend.",
+    "liveType": "Report · Live API",
+    "activePeriod": "Active period",
+    "liveCreated": "Live data",
+    "latestReport": "Latest report",
+    "noSections": "No sections defined for this report.",
+    "emptyTitle": "No report to preview",
+    "emptyDesc": "Create a report first to see its preview here."
+  },
     "sentimentChart": {
       "title": "Sentiment Last 7 Days",
       "positive": "Positive",
@@ -1447,19 +1708,34 @@
       "recommendationText": "Publish clarification and update payment system status.",
       "body": "In the last 7 days, negative sentiment increased 18% driven by payment complaints and application stability in the Jabodetabek area."
     },
-    "formatDonut": {
-      "title": "Format Distribution",
-      "desc": "Comparison of generated report formats.",
-      "total": "Total Reports",
-      "noData": "No format data yet."
-    },
-    "timeline": {
-      "title": "Report Creation Trend",
-      "period": "(Last 14 Days)",
-      "desc": "Number of reports created per day.",
-      "peak": "{count} reports",
-      "noData": "No data yet"
-    },
+    "aiSummaryDynamic": {
+    "insightText": "{title} is the top issue with the highest volume ({count} signals).",
+    "riskText": "Potential reputational escalation regarding {title}.",
+    "noRiskText": "No critical negative issues detected.",
+    "movementText": "Conversations around {title} up {velocity} recently.",
+    "recommendationText": "{rec}",
+    "body": "In the recent period, the system captured significant narrative movement driven by {title} and {otherCount} other active topics.",
+    "emptyInsight": "No data available to generate insights.",
+    "emptyRisk": "No data to assess risk.",
+    "emptyMovement": "No movement data.",
+    "emptyRec": "Gathering data for recommendations.",
+    "emptyBody": "The AI engine is waiting for enough narrative signals to generate a comprehensive report summary."
+  },
+  "formatDonut": {
+    "title": "Format Distribution",
+    "desc": "Comparison of generated report formats.",
+    "total": "Total Reports",
+    "noData": "No format data yet.",
+    "noDataDesc": "Report format data will appear here once reports are generated."
+  },
+  "timeline": {
+    "title": "Report Creation Trend",
+    "period": "(Last 14 Days)",
+    "desc": "Number of reports created per day.",
+    "peak": "{count} reports",
+    "noData": "No data yet",
+    "noDataDesc": "Report creation timeline will appear here once reports are generated."
+  },
     "popular": {
       "title": "Popular Reports",
       "desc": "Based on most frequently created report titles.",
@@ -1475,18 +1751,89 @@
       "title": "Report data unavailable",
       "desc": "API client attempted token refresh. Showing sample data for now."
     },
-    "buttons": {
-      "manageTemplates": "Manage Templates",
-      "scheduleSettings": "Schedule Settings",
-      "createNew": "Create New Report"
-    },
-    "previewSections": {
-      "execSummary": "Executive Summary",
-      "riskMovement": "Risk Movement",
-      "keyInsights": "Key Insights",
-      "recommendedActions": "Recommended Actions"
-    },
-    "metricsCard": {
+  "buttons": {
+    "manageTemplates": "Manage Templates",
+    "scheduleSettings": "Schedule Settings",
+    "createNew": "Create New Report",
+    "systemTemplate": "System Template",
+    "closeTemp": "Close"
+  },
+  "createModal": {
+    "title": "Create New Report",
+    "desc": "Generate a new intelligence report from a template.",
+    "templateLabel": "Report Template",
+    "templatePlaceholder": "Select a template",
+    "titleLabel": "Report Title",
+    "titlePlaceholder": "E.g. Weekly Narrative Brief",
+    "dateRangeLabel": "Date Range",
+    "startLabel": "Start Date",
+    "endLabel": "End Date",
+    "cancel": "Cancel",
+    "generate": "Generate Report",
+    "generating": "Generating...",
+    "success": "Report generated successfully.",
+    "failed": "Failed to generate report. Please try again.",
+    "noTemplates": "No templates available."
+  },
+  "scheduleModal": {
+    "title": "Report Schedules",
+    "desc": "Manage recurring report generation schedules.",
+    "empty": "No schedules configured yet.",
+    "emptyDesc": "Create a schedule to automate report generation.",
+    "addSchedule": "Add Schedule",
+    "editSchedule": "Edit Schedule",
+    "nameLabel": "Schedule Name",
+    "namePlaceholder": "E.g. Weekly Executive Brief",
+    "templateLabel": "Report Template",
+    "templatePlaceholder": "Select a template",
+    "cadenceLabel": "Cadence",
+    "dayLabel": "Day of Week",
+    "timeLabel": "Time",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday",
+    "sunday": "Sunday",
+    "enabled": "Active",
+    "disabled": "Paused",
+    "lastRun": "Last run",
+    "nextRun": "Next run",
+    "never": "Never",
+    "cancel": "Cancel",
+    "save": "Save Schedule",
+    "saving": "Saving...",
+    "systemTemplate": "System Template",
+    "customTemplate": "Custom Template"
+  },
+  "scheduleToast": {
+    "saved": "Schedule saved successfully.",
+    "saveFailed": "Failed to save schedule.",
+    "updated": "Schedule updated successfully.",
+    "updateFailed": "Failed to update schedule.",
+    "deleted": "Schedule deleted successfully.",
+    "deleteFailed": "Failed to delete schedule.",
+    "toggled": "Schedule status updated."
+  },
+  "shareModal": {
+    "title": "Share Report",
+    "desc": "Send this report to stakeholders via email.",
+    "emailLabel": "Recipient Email",
+    "emailPlaceholder": "stakeholder@company.com",
+    "subjectLabel": "Subject (optional)",
+    "subjectPlaceholder": "Weekly Intelligence Report",
+    "cancel": "Cancel",
+    "send": "Send Report",
+    "sending": "Sending...",
+    "success": "Report sent successfully.",
+    "failed": "Failed to send report. Please try again.",
+    "noReport": "No report available to share. Create a report first."
+  },
+  "metricsCard": {
       "templates": "Templates",
       "templatesHelper": "3 ready",
       "ready": "Ready",
@@ -1495,7 +1842,11 @@
       "scheduledHelper": "Weekly cadence",
       "generated30": "Generated (30 Days)",
       "generatedHelper": "▲ 6 vs previous period",
-      "generated30Helper": "▲ 6 vs previous period"
+      "generated30Helper": "▲ 6 vs previous period",
+      "reportsCreated": "Reports Created",
+      "reportsCreatedHelper": "▲ 6 vs previous period",
+      "inProgress": "In Progress",
+      "inProgressHelper": "Weekly cadence"
     },
     "liveMetrics": {
       "templates": "Templates",

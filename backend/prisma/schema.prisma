@@ -11,20 +11,20 @@ datasource db {
 }
 
 model User {
-  id                  String               @id @default(uuid())
-  name                String?
-  email               String               @unique
-  password            String // the summary.md uses password_hash, but we'll stick to 'password' or use password_hash. Let's use password to be simple.
-  failedLoginAttempts Int                  @default(0)
-  lockedUntil         DateTime?
-  refreshTokens       RefreshToken[]
-  passwordResetTokens PasswordResetToken[]
+  id                      String                   @id @default(uuid())
+  name                    String?
+  email                   String                   @unique
+  password                String // the summary.md uses password_hash, but we'll stick to 'password' or use password_hash. Let's use password to be simple.
+  failedLoginAttempts     Int                      @default(0)
+  lockedUntil             DateTime?
+  refreshTokens           RefreshToken[]
+  passwordResetTokens     PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
   oauthAccounts           OAuthAccount[]
-  auditLogs           AuditLog[]
-  emailVerified       DateTime?
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
+  auditLogs               AuditLog[]
+  emailVerified           DateTime?
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
 
   memberships      WorkspaceMember[]
   appNotifications AppNotification[]
@@ -50,6 +50,8 @@ model Workspace {
   alerts                Alert[]
   narrativeClusters     NarrativeCluster[]
   reports               Report[]
+  reportTemplates       ReportTemplate[]
+  reportSchedules       ReportSchedule[]
   actionPlans           ActionPlan[]
   generatedAssets       GeneratedAsset[]
   aiVisibilityResults   AIVisibilityResult[]
@@ -573,14 +575,13 @@ model AppNotification {
   @@index([createdAt])
 }
 
-
 model EmailVerificationToken {
-  id         String    @id @default(uuid())
-  userId     String
-  codeHash   String
-  expiresAt  DateTime
-  usedAt     DateTime?
-  createdAt  DateTime  @default(now())
+  id        String    @id @default(uuid())
+  userId    String
+  codeHash  String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -589,12 +590,11 @@ model EmailVerificationToken {
   @@index([usedAt])
 }
 
-
 model OAuthAccount {
   id                String   @id @default(uuid())
   userId            String
-  provider          String   // e.g. "google", "microsoft"
-  providerAccountId String   // ID from the provider
+  provider          String // e.g. "google", "microsoft"
+  providerAccountId String // ID from the provider
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -602,4 +602,39 @@ model OAuthAccount {
 
   @@unique([provider, providerAccountId])
   @@index([userId])
+}
+
+model ReportTemplate {
+  id           String   @id @default(uuid())
+  workspaceId  String
+  name         String
+  description  String?
+  format       String   @default("PDF")
+  cadence      String   @default("On-demand")
+  sectionCount Int      @default(3)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+}
+
+model ReportSchedule {
+  id           String   @id @default(uuid())
+  workspaceId  String
+  templateKey  String
+  name         String
+  cadence      String   @default("weekly")
+  dayOfWeek    String?
+  timeOfDay    String   @default("09:00")
+  enabled      Boolean  @default(true)
+  lastRunAt    DateTime?
+  nextRunAt    DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
 }

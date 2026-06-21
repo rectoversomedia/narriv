@@ -1,7 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useState, type ComponentType, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef, type ComponentType, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
@@ -18,12 +20,14 @@ import {
   ChevronRight,
   CheckCircle,
   AlertCircle,
+  RefreshCcw,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardEmptyState, DashboardErrorState, MetricRowSkeleton } from "@/components/dashboard/dashboard-states";
-import { getVisibility, getVisibilitySummary, getVisibilityTrends, type VisibilityResponse } from "@/lib/api-service";
+import { getVisibility, getVisibilitySummary, getVisibilityTrends, triggerVisibilityAnalysis, type VisibilityResponse } from "@/lib/api-service";
 import { useUiStore } from "@/store/useUiStore";
 import {
   OpenAILight,
@@ -84,7 +88,7 @@ function IconHalo({ icon: Icon, tone }: { icon: LucideIcon; tone: Tone }) {
 }
 
 function Sparkline({ values, color }: { values: number[]; color: string }) {
-  if (values.length === 0) return null;
+  if (values.length < 2) return null;
   const width = 100;
   const height = 24;
   const max = Math.max(...values);
@@ -122,23 +126,14 @@ function MetricCard({ label, value, helper, icon, tone, sparklineValues }: { lab
           </div>
         </div>
         <div className="absolute right-4 bottom-3 w-24 h-6 opacity-70">
-          <Sparkline values={sparklineValues} color={styles.color} />
+          {sparklineValues.length >= 2 && <Sparkline values={sparklineValues} color={styles.color} />}
         </div>
       </CardContent>
     </Panel>
   );
 }
 
-const fallbackMentionTrendDates = ["8 Mei", "9 Mei", "10 Mei", "11 Mei", "12 Mei", "13 Mei", "14 Mei"];
-const fallbackMentionTrendDatasets: ChartDataset[] = [
-  { name: "ChatGPT", color: "#8B5CFF", values: [650, 840, 950, 1100, 1200, 1150, 1248] },
-  { name: "Google Gemini", color: "#465FFF", values: [420, 480, 520, 560, 590, 610, 643] },
-  { name: "Microsoft Copilot", color: "#F59E0B", values: [210, 240, 260, 270, 290, 310, 321] },
-  { name: "Perplexity", color: "#10B981", values: [80, 110, 130, 120, 140, 150, 156] },
-  { name: "Claude", color: "#64748B", values: [40, 50, 60, 55, 70, 75, 83] },
-];
-
-function MentionsTrendChart({ datasets = fallbackMentionTrendDatasets, dates = fallbackMentionTrendDates, maxValue, formatTick = (value) => (value === 0 ? "0" : value >= 1000 ? `${(value / 1000).toFixed(1)}K` : value.toString()) }: { datasets?: ChartDataset[]; dates?: string[]; maxValue?: number; formatTick?: (value: number) => string }) {
+function MentionsTrendChart({ datasets, dates, fallbackDates, maxValue, emptyText, formatTick = (value) => (value === 0 ? "0" : value >= 1000 ? `${(value / 1000).toFixed(1)}K` : value.toString()) }: { datasets: ChartDataset[]; dates?: string[]; fallbackDates: string[]; maxValue?: number; emptyText: string; formatTick?: (value: number) => string }) {
   const width = 600;
   const height = 180;
   const paddingLeft = 35;
@@ -146,7 +141,17 @@ function MentionsTrendChart({ datasets = fallbackMentionTrendDatasets, dates = f
   const paddingTop = 20;
   const paddingBottom = 25;
 
-  const chartDates = dates.length > 0 ? dates : fallbackMentionTrendDates;
+  const chartDates = dates && dates.length > 0 ? dates : fallbackDates;
+  const hasData = datasets.length > 0 && datasets.some((d) => d.values.some((v) => v > 0));
+
+  if (!hasData) {
+    return (
+      <div className="flex h-[180px] items-center justify-center rounded-[10px] border border-dashed border-[#D9DEEA] bg-[#F8FAFF]">
+        <p className="text-[12px] font-bold text-[#8A94B8]">{emptyText}</p>
+      </div>
+    );
+  }
+
   const maxVal = Math.max(1, maxValue ?? Math.ceil(Math.max(...datasets.flatMap((dataset) => dataset.values), 1) / 10) * 10);
   const tickValues = [0, Math.round(maxVal / 2), maxVal];
 
@@ -202,14 +207,7 @@ function MentionsTrendChart({ datasets = fallbackMentionTrendDatasets, dates = f
   );
 }
 
-const fallbackCompetitorTrendDatasets: ChartDataset[] = [
-  { name: "Narriv (You)", color: "#8B5CFF", values: [24.3, 25.1, 23.8, 26.2, 28.0, 25.5, 24.3] },
-  { name: "Competitor A", color: "#EF4444", values: [20.1, 22.4, 21.0, 24.8, 30.2, 29.8, 31.2] },
-  { name: "Competitor B", color: "#F59E0B", values: [15.2, 17.5, 14.8, 18.0, 20.1, 18.5, 16.8] },
-  { name: "Competitor C", color: "#10B981", values: [10.1, 11.2, 10.5, 12.0, 13.5, 12.8, 14.5] },
-];
-
-function CompetitorVsChart({ datasets = fallbackCompetitorTrendDatasets, dates = fallbackMentionTrendDates }: { datasets?: ChartDataset[]; dates?: string[] }) {
+function CompetitorVsChart({ datasets, dates, fallbackDates, emptyText }: { datasets: ChartDataset[]; dates?: string[]; fallbackDates: string[]; emptyText: string }) {
   const width = 600;
   const height = 180;
   const paddingLeft = 35;
@@ -217,7 +215,16 @@ function CompetitorVsChart({ datasets = fallbackCompetitorTrendDatasets, dates =
   const paddingTop = 20;
   const paddingBottom = 25;
 
-  const chartDates = dates.length > 0 ? dates : fallbackMentionTrendDates;
+  const chartDates = dates && dates.length > 0 ? dates : fallbackDates;
+  const hasData = datasets.length > 0 && datasets.some((d) => d.values.some((v) => v > 0));
+
+  if (!hasData) {
+    return (
+      <div className="flex h-[180px] items-center justify-center rounded-[10px] border border-dashed border-[#D9DEEA] bg-[#F8FAFF]">
+        <p className="text-[12px] font-bold text-[#8A94B8]">{emptyText}</p>
+      </div>
+    );
+  }
   const maxVal = Math.max(40, Math.ceil(Math.max(...datasets.flatMap((dataset) => dataset.values), 1) / 10) * 10);
 
   const getX = (index: number) => paddingLeft + (index / Math.max(chartDates.length - 1, 1)) * (width - paddingLeft - paddingRight);
@@ -287,12 +294,13 @@ function CompetitorVsChart({ datasets = fallbackCompetitorTrendDatasets, dates =
   );
 }
 
-function TopicTypeBadge({ type }: { type: string }) {
+function TopicTypeBadge({ type, language }: { type: string; language: string }) {
+  const normalizedType = type.toLowerCase();
   let badgeVariant: "default" | "green" | "amber" | "red" | "purple" | "slate" = "slate";
-  if (type === "Opportunity" || type === "Peluang") badgeVariant = "green";
-  else if (type === "Alert" || type === "Peringatan") badgeVariant = "amber";
-  else if (type === "Informational" || type === "Informasi") badgeVariant = "default";
-  else if (type === "Risk" || type === "Risiko") badgeVariant = "red";
+  if (normalizedType.includes("opportunity") || normalizedType.includes("peluang")) badgeVariant = "green";
+  else if (normalizedType.includes("alert") || normalizedType.includes("peringatan")) badgeVariant = "amber";
+  else if (normalizedType.includes("informational") || normalizedType.includes("informasi")) badgeVariant = "default";
+  else if (normalizedType.includes("risk") || normalizedType.includes("risiko")) badgeVariant = "red";
   return (
     <Badge variant={badgeVariant} className="px-2 py-0.5 text-[9px] font-bold">
       {type}
@@ -317,7 +325,7 @@ function DonutChartVisibility({ center, label, segments }: { center: string; lab
       acc.cursor = next;
       return acc;
     }, { stops: [], cursor: 0 }).stops.join(",")})`
-    : "conic-gradient(#8B5CFF_0_24.3%,#EF4444_24.3%_55.5%,#F59E0B_55.5%_72.3%,#10B981_72.3%_86.8%,#64748B_86.8%_100%)";
+    : "conic-gradient(#E8ECF5_0_100%)";
 
   return (
     <div className="chart-donut-enter relative mx-auto flex size-[150px] items-center justify-center rounded-full shadow-[0_0_20px_rgba(70,95,255,0.08)]" style={{ background: gradient }}>
@@ -389,15 +397,105 @@ function formatChartDate(date: string, language: string) {
   }).format(new Date(date));
 }
 
-function buildLatestMentionQuote(prompt: NonNullable<VisibilityResponse["prompts"]>[number]) {
-  const brand = prompt.brand ? `Brand: ${prompt.brand}` : "Brand response captured";
-  const competitor = prompt.competitor ? `Competitor: ${prompt.competitor}` : "Competitor response captured";
+function buildLatestMentionQuote(prompt: NonNullable<VisibilityResponse["prompts"]>[number], t: ReturnType<typeof useTranslations<"Visibility">>) {
+  const brand = prompt.brand ? t("mentionQuote.brand", { value: prompt.brand }) : t("mentionQuote.brandFallback");
+  const competitor = prompt.competitor ? t("mentionQuote.competitor", { value: prompt.competitor }) : t("mentionQuote.competitorFallback");
   return `"${prompt.prompt}" - ${brand}; ${competitor}.`;
+}
+
+function escapeCsv(value: string): string {
+  if (value.includes(",") || value.includes('"') || value.includes("\n")) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+function downloadCsv(filename: string, rows: string[][]) {
+  const csv = rows.map((row) => row.map(escapeCsv).join(",")).join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportVisibilityCsv(data: {
+  language: string;
+  totalMentions: string;
+  brandPresence: string;
+  competitorPresence: string;
+  visibilityScore: string;
+  trendPoints: Array<{ date: string; brandPresence: number; competitorPresence: number; score: number }>;
+  topTopics: Array<{ topic: string; mentions: string; direction: string; type: string }>;
+  platformBreakdown: Array<{ name: string; score: number; presenceRate: number }>;
+  latestMentions: Array<{ platform: string; quote: string }>;
+}) {
+  const now = new Date().toISOString().split("T")[0];
+  const rows: string[][] = [];
+
+  rows.push(["AI Visibility Report", now]);
+  rows.push([]);
+
+  rows.push(["Summary Metrics", "Value"]);
+  rows.push(["Total Mentions", data.totalMentions]);
+  rows.push(["Brand Presence", data.brandPresence]);
+  rows.push(["Competitor Presence", data.competitorPresence]);
+  rows.push(["Visibility Score", data.visibilityScore]);
+  rows.push([]);
+
+  rows.push(["Trend Data"]);
+  rows.push(["Date", "Brand Presence %", "Competitor Presence %", "Visibility Score"]);
+  for (const point of data.trendPoints) {
+    rows.push([point.date, String(point.brandPresence), String(point.competitorPresence), String(point.score)]);
+  }
+  rows.push([]);
+
+  rows.push(["Top Topics"]);
+  rows.push(["Topic", "Mentions", "Direction", "Type"]);
+  for (const topic of data.topTopics) {
+    rows.push([topic.topic, topic.mentions, topic.direction, topic.type]);
+  }
+  rows.push([]);
+
+  rows.push(["Platform Breakdown"]);
+  rows.push(["Platform", "Visibility Score", "Brand Presence Rate %"]);
+  for (const platform of data.platformBreakdown) {
+    rows.push([platform.name, String(platform.score), String(platform.presenceRate)]);
+  }
+  rows.push([]);
+
+  rows.push(["Latest Mentions"]);
+  rows.push(["Platform", "Quote"]);
+  for (const mention of data.latestMentions) {
+    rows.push([mention.platform, mention.quote]);
+  }
+
+  downloadCsv(`visibility-report-${now}.csv`, rows);
 }
 
 export default function VisibilityPage() {
   const t = useTranslations("Visibility");
+  const tEmpty = useTranslations("Visibility.empty");
   const language = useUiStore((state) => state.language);
+  const router = useRouter();
+  const [selectedDays, setSelectedDays] = useState(30);
+  const [isDateMenuOpen, setIsDateMenuOpen] = useState(false);
+  const [isMentionsModalOpen, setIsMentionsModalOpen] = useState(false);
+  const [isActionsModalOpen, setIsActionsModalOpen] = useState(false);
+  const dateMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dateMenuRef.current && !dateMenuRef.current.contains(e.target as Node)) setIsDateMenuOpen(false);
+    }
+    if (isDateMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [isDateMenuOpen]);
+
   const visibilityQuery = useQuery({
     queryKey: ["visibility"],
     queryFn: () => getVisibility(),
@@ -409,8 +507,8 @@ export default function VisibilityPage() {
     staleTime: 60 * 1000,
   });
   const visibilityTrendsQuery = useQuery({
-    queryKey: ["visibility-trends"],
-    queryFn: () => getVisibilityTrends(),
+    queryKey: ["visibility-trends", selectedDays],
+    queryFn: () => getVisibilityTrends(undefined, undefined, selectedDays),
     staleTime: 60 * 1000,
   });
   const visibilityData = visibilityQuery.data;
@@ -420,39 +518,43 @@ export default function VisibilityPage() {
   const hasLiveVisibility = Boolean(visibilityData && (asNumber(visibilityData.score, 0) > 0 || (visibilityData.prompts?.length ?? 0) > 0));
   const hasLiveSummary = Boolean(visibilitySummary?.engine_breakdown.length || visibilitySummary?.kpis.total_analyses);
 
-  const [sandboxQuery, setSandboxQuery] = useState("Best AI monitoring platform for enterprise");
-  const [confidence, setConfidence] = useState(82);
-  const [simulatedResponse, setSimulatedResponse] = useState(
-    "Narriv is an enterprise AI narrative intelligence platform that helps organizations monitor signals, analyze data in real-time, and make smarter decisions."
-  );
-  const [citations, setCitations] = useState([
-    { text: "narriv.ai/blog/ai-monitoring-enterprise", url: "#" },
-    { text: "TechInAsia: Top AI monitoring tools 2025", url: "#" },
-    { text: "LinkedIn Discussion: AI monitoring trends", url: "#" }
-  ]);
+  const [sandboxQuery, setSandboxQuery] = useState("");
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [simulatedResponse, setSimulatedResponse] = useState("");
+  const [confidence, setConfidence] = useState(0);
+  const [citations, setCitations] = useState<Array<{ text: string; url: string }>>([]);
 
-  const handleSimulate = () => {
-    const textQuery = sandboxQuery.toLowerCase();
-    if (textQuery.includes("security") || textQuery.includes("risk") || textQuery.includes("aman")) {
-      setSimulatedResponse(
-        "For cloud security intelligence, competitors currently hold higher visibility rankings. Narriv is noted for general monitoring but lacks authority in specific cybersecurity namespaces."
-      );
-      setConfidence(64);
-      setCitations([
-        { text: "techradar.com/news/cloud-security-leaders", url: "#" },
-        { text: "Gemini Search: Enterprise security references", url: "#" },
-        { text: "Perplexity citation: Competitor A Cloud Authority", url: "#" }
-      ]);
-    } else {
-      setSimulatedResponse(
-        "Narriv is an enterprise AI narrative intelligence platform that helps organizations monitor signals, analyze data in real-time, and make smarter decisions."
-      );
-      setConfidence(82);
-      setCitations([
-        { text: "narriv.ai/blog/ai-monitoring-enterprise", url: "#" },
-        { text: "TechInAsia: Top AI monitoring tools 2025", url: "#" },
-        { text: "LinkedIn Discussion: AI monitoring trends", url: "#" }
-      ]);
+  const handleSimulate = async () => {
+    if (!sandboxQuery.trim()) return;
+    setIsSimulating(true);
+    setSimulatedResponse("");
+    setConfidence(0);
+    setCitations([]);
+    try {
+      const result = await triggerVisibilityAnalysis({
+        brandName: "Narriv",
+        queries: [sandboxQuery],
+      }) as { rawResponse?: Array<{ query: string; response: string; responseId?: string }>; visibilityScore?: number } | null;
+      if (result?.rawResponse?.[0]) {
+        const raw = result.rawResponse[0];
+        const displayResponse = language === "id" ? (raw.responseId || raw.response) : raw.response;
+        setSimulatedResponse(displayResponse);
+        setConfidence(result.visibilityScore ?? 0);
+        const lines = displayResponse.split("\n").filter((l: string) => l.includes("http") || l.includes(".com") || l.includes(".org"));
+        setCitations(lines.slice(0, 3).map((line: string) => ({ text: line.trim().substring(0, 80), url: "#" })));
+        if (lines.length === 0) {
+          setCitations([
+            { text: `Query: "${sandboxQuery}"`, url: "#" },
+            { text: language === "id" ? "Sumber: Respons AI engine" : "Source: AI engine response", url: "#" },
+          ]);
+        }
+      } else {
+        setSimulatedResponse(tEmpty("noResponse"));
+      }
+    } catch {
+      setSimulatedResponse(tEmpty("fetchFailed"));
+    } finally {
+      setIsSimulating(false);
     }
   };
 
@@ -462,13 +564,80 @@ export default function VisibilityPage() {
   const competitorTrendValues = trendPoints.map((point) => normalizePercent(point.avg_competitor_mention_rate));
   const scoreTrendValues = trendPoints.map((point) => point.avg_visibility_score);
 
-  const fallbackTopTopicsData = [
-    { topic: "AI monitoring", mentions: "1.248", direction: "↑ 24,5%", type: language === "id" ? "Peluang" : "Opportunity" },
-    { topic: "Service disruption", mentions: "842", direction: "↑ 18,3%", type: language === "id" ? "Peringatan" : "Alert" },
-    { topic: "App update", mentions: "621", direction: "↑ 12,7%", type: language === "id" ? "Informasi" : "Informational" },
-    { topic: "Cloud security", mentions: "498", direction: "↓ 16,2%", type: language === "id" ? "Risiko" : "Risk" },
-    { topic: "Privacy policy", mentions: "368", direction: "↓ 6,2%", type: language === "id" ? "Netral" : "Neutral" }
-  ];
+  const chartFallbackDates = (() => {
+    const now = new Date();
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(now);
+      d.setDate(d.getDate() - (6 - i));
+      return formatChartDate(d.toISOString(), language);
+    });
+  })();
+
+  function computeDelta(current: number, previous: number, isPercentage = true): string {
+    if (previous === 0) return current > 0 ? "+∞" : "0";
+    const change = ((current - previous) / Math.abs(previous)) * 100;
+    const sign = change >= 0 ? "+" : "";
+    if (isPercentage) {
+      return `${sign}${change.toFixed(1)}%`;
+    }
+    const absChange = current - previous;
+    return `${sign}${absChange.toFixed(1)}`;
+  }
+
+  function formatPeriodLabel(days: number): string {
+    if (language === "id") {
+      if (days <= 1) return "vs kemarin";
+      if (days <= 7) return `vs ${days} hari terakhir`;
+      return `vs ${Math.ceil(days / 7)} minggu terakhir`;
+    }
+    if (days <= 1) return "vs yesterday";
+    if (days <= 7) return `vs last ${days} days`;
+    return `vs last ${Math.ceil(days / 7)} weeks`;
+  }
+
+  const trendPeriodDays = visibilityTrends?.period?.days ?? 7;
+
+  const deltaTotalMentions = (() => {
+    if (trendPoints.length < 2) return null;
+    const last = trendPoints[trendPoints.length - 1];
+    const prev = trendPoints[trendPoints.length - 2];
+    const lastTotal = normalizePercent(last.avg_brand_presence_rate) + normalizePercent(last.avg_competitor_mention_rate);
+    const prevTotal = normalizePercent(prev.avg_brand_presence_rate) + normalizePercent(prev.avg_competitor_mention_rate);
+    return computeDelta(lastTotal, prevTotal);
+  })();
+
+  const deltaBrandPresence = (() => {
+    if (brandTrendValues.length < 2) return null;
+    return computeDelta(brandTrendValues[brandTrendValues.length - 1], brandTrendValues[brandTrendValues.length - 2]);
+  })();
+
+  const deltaSov = (() => {
+    if (competitorTrendValues.length < 2) return null;
+    const last = competitorTrendValues[competitorTrendValues.length - 1];
+    const prev = competitorTrendValues[competitorTrendValues.length - 2];
+    return computeDelta(last, prev);
+  })();
+
+  const deltaScore = (() => {
+    if (scoreTrendValues.length < 2) return null;
+    return computeDelta(scoreTrendValues[scoreTrendValues.length - 1], scoreTrendValues[scoreTrendValues.length - 2], false);
+  })();
+
+  const totalMentions = (() => {
+    if (!visibilityData?.presenceMentions) return "-";
+    const raw = String(visibilityData.presenceMentions);
+    if (language === "id") {
+      return raw.replace(/(\d+) of (\d+)/, "$1 dari $2");
+    }
+    return raw;
+  })();
+  const brandPresencePercent = normalizePercent(visibilityData?.presence, normalizePercent(visibilitySummary?.kpis.avg_brand_presence_rate));
+  const competitorPresencePercent = normalizePercent(visibilityData?.competitor, normalizePercent(visibilitySummary?.kpis.avg_competitor_mention_rate));
+  const visibilityScoreValue = asNumber(visibilityData?.score, visibilitySummary?.kpis.avg_visibility_score ?? 0);
+  const brandPresence = hasLiveVisibility || hasLiveSummary ? formatPercent(brandPresencePercent, language) : "-";
+  const competitorPresence = hasLiveVisibility || hasLiveSummary ? formatPercent(competitorPresencePercent, language) : "-";
+  const visibilityScore = hasLiveVisibility || hasLiveSummary ? new Intl.NumberFormat(language === "id" ? "id-ID" : "en-US", { maximumFractionDigits: 1 }).format(visibilityScoreValue) : "-";
+
   const topTopicsData = visibilityData?.prompts?.length
     ? visibilityData.prompts.slice(0, 5).map((prompt) => ({
       topic: prompt.prompt,
@@ -476,17 +645,11 @@ export default function VisibilityPage() {
       direction: prompt.brandTone || "Live",
       type: formatEngineName(prompt.engine),
     }))
-    : fallbackTopTopicsData;
-  const totalMentions = visibilityData?.presenceMentions ? String(visibilityData.presenceMentions) : t("metrics.totalMentions.value");
-  const brandPresencePercent = normalizePercent(visibilityData?.presence, normalizePercent(visibilitySummary?.kpis.avg_brand_presence_rate, 24.3));
-  const competitorPresencePercent = normalizePercent(visibilityData?.competitor, normalizePercent(visibilitySummary?.kpis.avg_competitor_mention_rate, 31.2));
-  const visibilityScoreValue = asNumber(visibilityData?.score, visibilitySummary?.kpis.avg_visibility_score ?? 2.8);
-  const brandPresence = formatPercent(brandPresencePercent, language);
-  const competitorPresence = formatPercent(competitorPresencePercent, language);
-  const visibilityScore = new Intl.NumberFormat(language === "id" ? "id-ID" : "en-US", { maximumFractionDigits: 1 }).format(visibilityScoreValue);
+    : [];
+
   const geoActions = visibilityData?.geoActions?.length
     ? visibilityData.geoActions.slice(0, 3).map((action) => action.title)
-    : [t("execSummary.rec1"), t("execSummary.rec2"), t("execSummary.rec3")];
+    : [];
 
   const mentionTrendDatasets = (() => {
     const engineEntries = Object.entries(visibilityTrends?.engine_trends ?? {})
@@ -505,7 +668,7 @@ export default function VisibilityPage() {
         { name: language === "id" ? "Kompetitor" : "Competitors", color: "#EF4444", values: competitorTrendValues },
       ];
     }
-    return fallbackMentionTrendDatasets;
+    return [];
   })();
 
   const competitorTrendDatasets = (() => {
@@ -515,18 +678,12 @@ export default function VisibilityPage() {
         { name: language === "id" ? "Kompetitor" : "Competitors", color: "#EF4444", values: competitorTrendValues },
       ];
     }
-    return fallbackCompetitorTrendDatasets;
+    return [];
   })();
 
   const topPlatforms = (() => {
     if (!visibilitySummary?.engine_breakdown.length) {
-      return [
-        { name: "ChatGPT", logo: OpenAILight, mentions: "1.248", pct: "50,9%", width: "50.9%" },
-        { name: "Google Gemini", logo: Gemini, mentions: "643", pct: "26,2%", width: "26.2%" },
-        { name: "Microsoft Copilot", logo: MicrosoftCopilot, mentions: "321", pct: "13,1%", width: "13.1%" },
-        { name: "Perplexity", logo: PerplexityAI, mentions: "156", pct: "6,4%", width: "6.4%" },
-        { name: "Claude", logo: ClaudeAI, mentions: "83", pct: "3,4%", width: "3.4%" },
-      ];
+      return [];
     }
 
     return visibilitySummary.engine_breakdown
@@ -537,7 +694,7 @@ export default function VisibilityPage() {
         return {
           name: formatEngineName(engine.engineName),
           logo: getEngineLogo(engine.engineName),
-          mentions: `${new Intl.NumberFormat(language === "id" ? "id-ID" : "en-US", { maximumFractionDigits: 1 }).format(engine.visibilityScore)} score`,
+          mentions: `${new Intl.NumberFormat(language === "id" ? "id-ID" : "en-US", { maximumFractionDigits: 1 }).format(engine.visibilityScore)} ${language === "id" ? "skor" : "score"}`,
           pct: formatPercent(presence, language),
           width: `${Math.max(4, clampPercent(presence))}%`,
         };
@@ -551,55 +708,121 @@ export default function VisibilityPage() {
       { name: language === "id" ? "Kompetitor" : "Competitors", val: competitorPresence, tone: "red" as Tone },
       { name: "Others", val: formatPercent(otherSharePercent, language), tone: "slate" as Tone },
     ]
-    : [
-      { name: language === "id" ? "Narriv (Anda)" : "Narriv (You)", val: "24.3%", tone: "purple" as Tone },
-      { name: "Competitor A", val: "31.2%", tone: "red" as Tone },
-      { name: "Competitor B", val: "16.8%", tone: "amber" as Tone },
-      { name: "Competitor C", val: "14.5%", tone: "green" as Tone },
-      { name: "Others", val: "13.2%", tone: "slate" as Tone }
-    ];
+    : [];
   const donutSegments = hasLiveVisibility || hasLiveSummary
     ? [
       { color: toneStyles.purple.color, value: brandPresencePercent },
       { color: toneStyles.red.color, value: competitorPresencePercent },
       { color: toneStyles.slate.color, value: otherSharePercent },
     ]
-    : shareOfVoiceLeg.map((item) => ({ color: toneStyles[item.tone].color, value: normalizePercent(item.val) }));
+    : [];
   const latestMentions = visibilityData?.prompts?.length
     ? visibilityData.prompts.slice(0, 3).map((prompt) => ({
       logo: getEngineLogo(prompt.engine),
       platform: formatEngineName(prompt.engine),
       time: language === "id" ? "Uji prompt terbaru" : "Latest prompt test",
-      quote: buildLatestMentionQuote(prompt),
+      quote: buildLatestMentionQuote(prompt, t),
     }))
-    : [
-      { logo: OpenAILight, platform: "ChatGPT", time: "14 Mei 2025 • 10:23", quote: "“Narriv adalah platform AI intelligence yang membantu organisasi memantau sinyal dan menganalisis data reputasi...”" },
-      { logo: Gemini, platform: "Google Gemini", time: "14 Mei 2025 • 09:48", quote: "“Untuk kebutuhan monitoring sinyal dan analisis data real-time, Narriv bisa menjadi solusi yang tepat...”" },
-      { logo: PerplexityAI, platform: "Perplexity", time: "14 Mei 2025 • 08:15", quote: "“Narriv menyediakan dashboard intelligence yang powerful untuk pengambilan keputusan berbasis data...”" },
-    ];
+    : [];
+  const allMentions = visibilityData?.prompts?.map((prompt) => ({
+    logo: getEngineLogo(prompt.engine),
+    platform: formatEngineName(prompt.engine),
+    time: language === "id" ? "Uji prompt terbaru" : "Latest prompt test",
+    quote: buildLatestMentionQuote(prompt, t),
+  })) ?? [];
   const execOpportunityValue = hasLiveVisibility || hasLiveSummary
     ? `${brandPresence} ${language === "id" ? "kehadiran brand" : "brand presence"}`
-    : t("execSummary.opportunityVal");
+    : "-";
   const execRiskValue = hasLiveVisibility || hasLiveSummary
     ? `${competitorPresence} ${language === "id" ? "sebutan kompetitor" : "competitor mention rate"}`
-    : t("execSummary.riskVal");
+    : "-";
+
+  const execHeading = (() => {
+    if (!hasLiveVisibility && !hasLiveSummary) return "-";
+    const pct = deltaBrandPresence ? ` ${deltaBrandPresence}` : "";
+    return language === "id"
+      ? `Visibility brand Anda${pct} minggu ini.`
+      : `Your brand visibility changed${pct} this week.`;
+  })();
+
+  const execBody = (() => {
+    if (!hasLiveVisibility && !hasLiveSummary) return "-";
+    const topPrompt = visibilityData?.prompts?.[0];
+    if (topPrompt) {
+      const engine = formatEngineName(topPrompt.engine);
+      return language === "id"
+        ? `Topik teratas "${topPrompt.prompt}" muncul di ${engine} dengan brand "${topPrompt.brand || "-"}". Kompetitor: "${topPrompt.competitor || "-"}".`
+        : `Top topic "${topPrompt.prompt}" appears on ${engine} with brand "${topPrompt.brand || "-"}". Competitor: "${topPrompt.competitor || "-"}".`;
+    }
+    return language === "id"
+      ? `Brand Anda memiliki ${brandPresence} kehadiran di ${visibilitySummary?.kpis.engines_tracked ?? 0} platform AI.`
+      : `Your brand has ${brandPresence} presence across ${visibilitySummary?.kpis.engines_tracked ?? 0} AI platforms.`;
+  })();
 
   return (
     <div className="mx-auto flex max-w-[1600px] flex-col gap-4 pb-6 text-[#101334]">
       {/* Header section */}
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#8A94B8]">{t("breadcrumb")}</p>
-          <h1 className="mt-1 text-[28px] font-black leading-none tracking-[-0.03em] text-[#101334]">{t("title")}</h1>
+          <h1 className="text-[28px] font-black leading-none tracking-[-0.03em] text-[#101334]">{t("title")}</h1>
           <p className="mt-2 text-[13px] font-bold text-[#53608C]">{t("subtitle")}</p>
         </div>
         <div className="flex w-full flex-wrap gap-2.5 md:w-auto">
-          <button type="button" className="flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#D9DEEA] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:bg-[#F8FAFF] sm:flex-none">
-            <CalendarDays size={14} className="text-[#8A94B8]" />
-            {t("last7Days")}
-            <ChevronDown size={12} className="text-[#8A94B8]" />
-          </button>
-          <button type="button" className="flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#D9DEEA] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:bg-[#F8FAFF] sm:flex-none">
+          <div className="relative" ref={dateMenuRef}>
+            <button type="button" aria-label={t("ariaLabels.dateFilter")} onClick={() => setIsDateMenuOpen((open) => !open)} className="flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#D9DEEA] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:bg-[#F8FAFF] sm:flex-none">
+              <CalendarDays size={14} className="text-[#8A94B8]" />
+              {visibilityTrends?.period
+                ? `${formatChartDate(visibilityTrends.period.from, language)} - ${formatChartDate(visibilityTrends.period.to, language)}`
+                : t("last7Days")
+              }
+              <ChevronDown size={12} className={cn("text-[#8A94B8] transition", isDateMenuOpen && "rotate-180")} />
+            </button>
+            {isDateMenuOpen ? (
+              <div className="absolute right-0 top-full z-50 mt-1 w-44 rounded-[10px] border border-[#E6EAF2] bg-white py-1 shadow-[0_12px_36px_rgba(16,24,40,0.12)]">
+                {([7, 14, 30, 90] as const).map((days) => (
+                  <button
+                    key={days}
+                    type="button"
+                    onClick={() => { setSelectedDays(days); setIsDateMenuOpen(false); }}
+                    className={cn(
+                      "flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold transition hover:bg-[#F8FAFF]",
+                      selectedDays === days ? "text-[#465FFF]" : "text-[#31406B]"
+                    )}
+                  >
+                    {selectedDays === days ? <CheckCircle size={13} className="text-[#465FFF]" /> : <span className="size-[13px]" />}
+                    {t(`dateRange.${days}d`)}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            aria-label={t("ariaLabels.export")}
+            onClick={() => {
+              exportVisibilityCsv({
+                language,
+                totalMentions,
+                brandPresence,
+                competitorPresence,
+                visibilityScore,
+                trendPoints: trendPoints.map((p) => ({
+                  date: p.date,
+                  brandPresence: normalizePercent(p.avg_brand_presence_rate),
+                  competitorPresence: normalizePercent(p.avg_competitor_mention_rate),
+                  score: p.avg_visibility_score,
+                })),
+                topTopics: topTopicsData,
+                platformBreakdown: visibilitySummary?.engine_breakdown.map((e) => ({
+                  name: formatEngineName(e.engineName),
+                  score: e.visibilityScore,
+                  presenceRate: normalizePercent(e.brandPresenceRate),
+                })) ?? [],
+                latestMentions: latestMentions.map((m) => ({ platform: m.platform, quote: m.quote })),
+              });
+            }}
+            className="flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#D9DEEA] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:bg-[#F8FAFF] sm:flex-none"
+          >
             <Download size={14} className="text-[#8A94B8]" />
             {t("export")}
           </button>
@@ -612,21 +835,20 @@ export default function VisibilityPage() {
             <MetricRowSkeleton count={4} />
           ) : (
             <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
-              <MetricCard label={t("metrics.totalMentions.label")} value={totalMentions} helper={hasLiveVisibility ? "Live API" : t("metrics.totalMentions.helper")} icon={MessageCircle} tone="purple" sparklineValues={brandTrendValues.length > 1 ? brandTrendValues : [260, 330, 310, 500, 470, 520, 680]} />
-              <MetricCard label={t("metrics.brandMentions.label")} value={brandPresence} helper={hasLiveVisibility ? "Brand presence" : t("metrics.brandMentions.helper")} icon={Target} tone="blue" sparklineValues={brandTrendValues.length > 1 ? brandTrendValues : [150, 180, 170, 220, 210, 240, 289]} />
-              <MetricCard label={t("metrics.sov.label")} value={competitorPresence} helper={hasLiveVisibility ? "Competitor presence" : t("metrics.sov.helper")} icon={Shield} tone="green" sparklineValues={competitorTrendValues.length > 1 ? competitorTrendValues : [22.5, 23.1, 22.8, 24.0, 23.5, 24.1, 24.3]} />
-              <MetricCard label={t("metrics.avgPos.label")} value={visibilityScore} helper={hasLiveVisibility ? "Visibility score" : t("metrics.avgPos.helper")} icon={TrendingUp} tone="amber" sparklineValues={scoreTrendValues.length > 1 ? scoreTrendValues : [3.2, 3.1, 3.0, 2.9, 2.8, 2.8, 2.8]} />
+              <MetricCard label={t("metrics.totalMentions.label")} value={totalMentions} helper={deltaTotalMentions ? `${deltaTotalMentions} ${formatPeriodLabel(trendPeriodDays)}` : "-"} icon={MessageCircle} tone="purple" sparklineValues={brandTrendValues.length > 1 ? brandTrendValues : []} />
+              <MetricCard label={t("metrics.brandMentions.label")} value={brandPresence} helper={deltaBrandPresence ? `${deltaBrandPresence} ${formatPeriodLabel(trendPeriodDays)}` : "-"} icon={Target} tone="blue" sparklineValues={brandTrendValues.length > 1 ? brandTrendValues : []} />
+              <MetricCard label={t("metrics.sov.label")} value={competitorPresence} helper={deltaSov ? `${deltaSov} ${formatPeriodLabel(trendPeriodDays)}` : "-"} icon={Shield} tone="green" sparklineValues={competitorTrendValues.length > 1 ? competitorTrendValues : []} />
+              <MetricCard label={t("metrics.avgPos.label")} value={visibilityScore} helper={deltaScore ? `${deltaScore} ${formatPeriodLabel(trendPeriodDays)}` : "-"} icon={TrendingUp} tone="amber" sparklineValues={scoreTrendValues.length > 1 ? scoreTrendValues : []} />
             </div>
           )}
 
-          {isLiveUnavailable ? <DashboardErrorState title="Visibility live belum bisa dimuat" description="API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan data contoh." onRetry={() => void visibilityQuery.refetch()} minHeight="min-h-[150px]" /> : null}
-          {visibilityData && !hasLiveVisibility ? <DashboardEmptyState title="Belum ada visibility live" description="Backend berhasil dihubungi, tetapi belum ada hasil AI visibility. Data contoh tetap ditampilkan sebagai preview." icon="search" minHeight="min-h-[180px]" /> : null}
+          {isLiveUnavailable ? <DashboardErrorState title={t("error.title")} description={t("error.desc")} onRetry={() => void visibilityQuery.refetch()} minHeight="min-h-[150px]" /> : null}
 
           <Panel className="border-[#D6DEFF] bg-gradient-to-r from-[#F6F8FF] to-[#F1F3FF]">
             <CardContent className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_230px_260px] lg:items-center">
               <div className="flex items-start gap-4">
                 <div className="relative flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-purple-200 bg-[#F3ECFF] shadow-md sm:size-20">
-                  <Image src="/mainapp/ai-avatar.png" alt="AI Agent avatar" fill sizes="80px" className="object-cover" />
+                  <Image src="/mainapp/ai-avatar.png" alt="AI Agent avatar" fill sizes="80px" loading="lazy" className="object-cover" />
                 </div>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -635,8 +857,8 @@ export default function VisibilityPage() {
                       {t("execSummary.aiGenerated")}
                     </Badge>
                   </div>
-                  <h2 className="mt-1.5 text-[17px] font-black tracking-[-0.02em] text-[#101334]">{t("execSummary.heading")}</h2>
-                  <p className="mt-2 max-w-[620px] text-[12px] font-semibold leading-relaxed text-[#53608C]">{t("execSummary.body")}</p>
+                  <h2 className="mt-1.5 text-[17px] font-black tracking-[-0.02em] text-[#101334]">{execHeading}</h2>
+                  <p className="mt-2 max-w-[620px] text-[12px] font-semibold leading-relaxed text-[#53608C]">{execBody}</p>
                 </div>
               </div>
 
@@ -660,14 +882,16 @@ export default function VisibilityPage() {
               <div className="border-t border-[#D9DDF2] pt-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
                 <p className="text-[10px] font-black uppercase tracking-[0.04em] text-[#8A94B8]">{t("execSummary.recActions")}</p>
                 <div className="mt-2.5 flex flex-col gap-2">
-                  {geoActions.map((action, idx) => (
+                  {geoActions.length === 0 ? (
+                    <p className="text-[11px] font-bold text-[#8A94B8]">{tEmpty("noActionData")}</p>
+                  ) : geoActions.map((action, idx) => (
                     <div key={idx} className="flex items-start gap-2 text-[11px] font-semibold text-[#53608C]">
                       <CheckCircle size={13} className="mt-0.5 shrink-0 text-[#8B5CFF]" />
                       <span>{action}</span>
                     </div>
                   ))}
                 </div>
-                <button type="button" className="mt-3 flex min-h-9 w-full items-center justify-center gap-1 rounded-[8px] bg-white px-3 py-2 text-center text-[11px] font-black leading-tight text-[#8B5CFF] shadow-sm transition hover:bg-[#F8FAFF]">
+                <button type="button" onClick={() => setIsActionsModalOpen(true)} className="mt-3 flex min-h-9 w-full items-center justify-center gap-1 rounded-[8px] bg-white px-3 py-2 text-center text-[11px] font-black leading-tight text-[#8B5CFF] shadow-sm transition hover:bg-[#F8FAFF]">
                   <span className="min-w-0 break-words">{t("execSummary.viewAll")}</span>
                   <ChevronRight size={13} />
                 </button>
@@ -685,15 +909,15 @@ export default function VisibilityPage() {
                     <p className="text-[11px] font-bold text-[#8A94B8]">{t("mentionsTrend.desc")}</p>
                   </div>
                   <div className="flex rounded-lg bg-[#F5F7FC] p-0.5">
-                    <button type="button" className="rounded-md bg-white px-2.5 py-1 text-[10px] font-black text-[#101334] shadow-sm">
+                    <button type="button" onClick={() => setSelectedDays(7)} className={cn("rounded-md px-2.5 py-1 text-[10px] font-black transition", selectedDays === 7 ? "bg-white text-[#101334] shadow-sm" : "text-[#8A94B8] hover:text-[#101334]")}>
                       {t("mentionsTrend.days7")}
                     </button>
-                    <button type="button" className="px-2.5 py-1 text-[10px] font-bold text-[#8A94B8] hover:text-[#101334]">
+                    <button type="button" onClick={() => setSelectedDays(30)} className={cn("rounded-md px-2.5 py-1 text-[10px] font-black transition", selectedDays === 30 ? "bg-white text-[#101334] shadow-sm" : "text-[#8A94B8] hover:text-[#101334]")}>
                       {t("mentionsTrend.days30")}
                     </button>
                   </div>
                 </div>
-                <MentionsTrendChart datasets={mentionTrendDatasets} dates={trendDates.length > 1 ? trendDates : undefined} maxValue={(hasLiveVisibility || hasLiveSummary) ? 100 : undefined} formatTick={(value) => (hasLiveVisibility || hasLiveSummary) ? `${value}%` : value === 0 ? "0" : value >= 1000 ? `${(value / 1000).toFixed(1)}K` : value.toString()} />
+                <MentionsTrendChart datasets={mentionTrendDatasets} dates={trendDates.length > 1 ? trendDates : undefined} fallbackDates={chartFallbackDates} maxValue={(hasLiveVisibility || hasLiveSummary) ? 100 : undefined} emptyText={tEmpty("noTrendData")} formatTick={(value) => (hasLiveVisibility || hasLiveSummary) ? `${value}%` : value === 0 ? "0" : value >= 1000 ? `${(value / 1000).toFixed(1)}K` : value.toString()} />
                 <div className="mt-4 flex flex-wrap justify-center gap-4 text-[10px] font-bold text-[#53608C]">
                   {mentionTrendDatasets.map((dataset) => (
                     <span key={dataset.name} className="flex items-center gap-1.5"><span className="size-2 rounded-full" style={{ backgroundColor: dataset.color }} />{dataset.name}</span>
@@ -717,19 +941,23 @@ export default function VisibilityPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {topTopicsData.map((item) => (
-                          <tr key={item.topic} className="border-b border-[#F5F7FC] last:border-0 hover:bg-[#FDFEFF]">
+                        {topTopicsData.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="py-6 text-center text-[12px] font-bold text-[#8A94B8]">{tEmpty("noTopicData")}</td>
+                          </tr>
+                        ) : topTopicsData.map((item, idx) => (
+                          <tr key={`${item.topic}-${idx}`} className="border-b border-[#F5F7FC] last:border-0 hover:bg-[#FDFEFF]">
                             <td className="py-3 font-black text-[#101334]">{item.topic}</td>
                             <td className="py-3 text-right text-[#53608C]">{item.mentions}</td>
                             <td className="py-3 text-center"><TopicDirection val={item.direction} /></td>
-                            <td className="py-3 text-center"><TopicTypeBadge type={item.type} /></td>
+                            <td className="py-3 text-center"><TopicTypeBadge type={item.type} language={language} /></td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
                 </div>
-                <button type="button" className="mt-4 flex items-center justify-center gap-1 text-[11px] font-black text-[#8B5CFF] hover:underline">
+                <button type="button" onClick={() => router.push("/intelligence")} className="mt-4 flex items-center justify-center gap-1 text-[11px] font-black text-[#8B5CFF] hover:underline">
                   {t("topTopics.viewAll")}
                   <ChevronRight size={13} />
                 </button>
@@ -757,9 +985,16 @@ export default function VisibilityPage() {
                   <button
                     type="button"
                     onClick={handleSimulate}
-                    className="h-10 rounded-[8px] bg-[#8B5CFF] px-4 text-[12px] font-black text-white transition hover:bg-[#764ee6] shadow-sm"
+                    disabled={isSimulating || !sandboxQuery.trim()}
+                    aria-label={t("ariaLabels.simulate")}
+                    className="h-10 rounded-[8px] bg-[#8B5CFF] px-4 text-[12px] font-black text-white transition hover:bg-[#764ee6] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {t("sandbox.simulateBtn")}
+                    {isSimulating ? (
+                      <span className="flex items-center gap-2">
+                        <RefreshCcw size={13} className="animate-spin" />
+                        {language === "id" ? "Menganalisis..." : "Analyzing..."}
+                      </span>
+                    ) : t("sandbox.simulateBtn")}
                   </button>
                 </div>
 
@@ -796,7 +1031,7 @@ export default function VisibilityPage() {
             <Panel>
               <CardContent className="p-5">
                 <h3 className="mb-4 text-[15px] font-black tracking-[-0.02em] text-[#101334]">{t("competitorVs.title")}</h3>
-                <CompetitorVsChart datasets={competitorTrendDatasets} dates={trendDates.length > 1 ? trendDates : undefined} />
+                <CompetitorVsChart datasets={competitorTrendDatasets} dates={trendDates.length > 1 ? trendDates : undefined} fallbackDates={chartFallbackDates} emptyText={tEmpty("noCompetitorData")} />
                 <div className="mt-4 flex flex-wrap justify-center gap-4 text-[10px] font-bold text-[#53608C]">
                   {competitorTrendDatasets.map((dataset) => (
                     <span key={dataset.name} className="flex items-center gap-1.5"><span className="size-2.5 rounded-full" style={{ backgroundColor: dataset.color }} />{dataset.name}</span>
@@ -816,7 +1051,9 @@ export default function VisibilityPage() {
                 <Info size={13} className="text-[#98A2B3]" />
               </h3>
               <div className="space-y-4">
-                {topPlatforms.map((plat) => (
+                {topPlatforms.length === 0 ? (
+                  <p className="text-[12px] font-bold text-[#8A94B8] text-center py-4">{tEmpty("noPlatformData")}</p>
+                ) : topPlatforms.map((plat) => (
                   <div key={plat.name} className="space-y-1.5">
                     <div className="flex items-center justify-between gap-3 text-[12px] font-bold text-[#53608C]">
                       <span className="flex items-center gap-2 text-[#101334] min-w-0">
@@ -841,21 +1078,27 @@ export default function VisibilityPage() {
                 <Info size={13} className="text-[#98A2B3]" />
               </h3>
               <div className="grid items-center gap-4 sm:grid-cols-[150px_minmax(0,1fr)] xl:grid-cols-[150px_minmax(0,1fr)]">
-                <DonutChartVisibility center={shareOfVoiceLeg[0]?.val ?? brandPresence} label={t("competitorShare.totalShare")} segments={donutSegments} />
-                <div className="flex w-full min-w-0 flex-col gap-2.5 text-[11px] font-bold text-[#53608C]">
-                  {shareOfVoiceLeg.map((item) => {
-                    const style = toneStyles[item.tone];
-                    return (
-                      <div key={item.name} className="flex items-center justify-between gap-3">
-                        <span className="flex min-w-0 items-center gap-2">
-                          <span className="size-2.5 rounded-full shrink-0" style={{ backgroundColor: style.color }} />
-                          <span className="truncate">{item.name}</span>
-                        </span>
-                        <span className="font-black text-[#101334]">{item.val}</span>
-                      </div>
-                    );
-                  })}
-                </div>
+                {shareOfVoiceLeg.length > 0 ? (
+                  <>
+                    <DonutChartVisibility center={shareOfVoiceLeg[0]?.val ?? brandPresence} label={t("competitorShare.totalShare")} segments={donutSegments} />
+                    <div className="flex w-full min-w-0 flex-col gap-2.5 text-[11px] font-bold text-[#53608C]">
+                      {shareOfVoiceLeg.map((item) => {
+                        const style = toneStyles[item.tone];
+                        return (
+                          <div key={item.name} className="flex items-center justify-between gap-3">
+                            <span className="flex min-w-0 items-center gap-2">
+                              <span className="size-2.5 rounded-full shrink-0" style={{ backgroundColor: style.color }} />
+                              <span className="truncate">{item.name}</span>
+                            </span>
+                            <span className="font-black text-[#101334]">{item.val}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-[12px] font-bold text-[#8A94B8] text-center py-4 sm:col-span-2">{tEmpty("noSovData")}</p>
+                )}
               </div>
             </CardContent>
           </Panel>
@@ -868,12 +1111,14 @@ export default function VisibilityPage() {
                     {t("latestMentions.title")}
                     <Info size={13} className="text-[#98A2B3]" />
                   </h3>
-                  <button type="button" className="text-[11px] font-black text-[#8B5CFF] hover:underline">
+                  <button type="button" onClick={() => setIsMentionsModalOpen(true)} className="whitespace-nowrap text-[10px] font-black text-[#8B5CFF] hover:underline">
                     {t("latestMentions.viewAll")}
                   </button>
                 </div>
                 <div className="space-y-4">
-                  {latestMentions.map((item, idx) => (
+                  {latestMentions.length === 0 ? (
+                    <p className="text-[12px] font-bold text-[#8A94B8] text-center py-4">{tEmpty("noMentionData")}</p>
+                  ) : latestMentions.map((item, idx) => (
                     <div key={idx} className="flex gap-3 border-b border-[#F0F2F7] pb-3 last:border-0 last:pb-0">
                       <span className="flex size-8 shrink-0 items-center justify-center rounded-[8px] border border-[#EEF1F7] bg-white">
                         <item.logo className="size-4" />
@@ -891,6 +1136,86 @@ export default function VisibilityPage() {
           </Panel>
         </aside>
       </section>
+
+      {/* Actions Modal */}
+      {isActionsModalOpen && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsActionsModalOpen(false)}>
+          <div className="flex w-full max-w-lg flex-col max-h-[85vh] rounded-[14px] border border-[#E8ECF5] bg-white text-[#101334] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
+              <div>
+                <h2 className="text-lg font-black text-[#101334]">{t("execSummary.recActions")}</h2>
+                <p className="mt-1 text-[11px] font-bold text-[#68739F]">{geoActions.length} {language === "id" ? "rekomendasi" : "recommendations"}</p>
+              </div>
+              <button type="button" onClick={() => setIsActionsModalOpen(false)} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              {geoActions.length > 0 ? (
+                <div className="space-y-3">
+                  {geoActions.map((action, idx) => (
+                    <div key={idx} className="flex items-start gap-3 rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-4 hover:border-[#DCE2F0] hover:bg-white transition">
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#8B5CFF]/10 text-[#8B5CFF]">
+                        <CheckCircle size={15} />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-[12px] font-black text-[#101334]">{action}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-10 text-center">
+                  <Info size={28} className="text-[#DDE3EF] mb-3" />
+                  <p className="text-[13px] font-bold text-[#53608C]">{tEmpty("noActionData")}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* All Mentions Modal */}
+      {isMentionsModalOpen && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsMentionsModalOpen(false)}>
+          <div className="flex w-full max-w-2xl flex-col max-h-[85vh] rounded-[14px] border border-[#E8ECF5] bg-white text-[#101334] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
+              <div>
+                <h2 className="text-lg font-black text-[#101334]">{t("latestMentions.title")}</h2>
+                <p className="mt-1 text-[11px] font-bold text-[#68739F]">{allMentions.length} {language === "id" ? "prompt tercatat" : "prompts recorded"}</p>
+              </div>
+              <button type="button" onClick={() => setIsMentionsModalOpen(false)} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              {allMentions.length > 0 ? (
+                <div className="space-y-4">
+                  {allMentions.map((item, idx) => (
+                    <div key={idx} className="flex gap-3 rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-4 hover:border-[#DCE2F0] hover:bg-white transition">
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-[8px] border border-[#EEF1F7] bg-white">
+                        <item.logo className="size-4" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-black text-[#101334]">{item.platform}</p>
+                        <p className="text-[9px] font-semibold text-[#8A94B8] mt-0.5">{item.time}</p>
+                        <p className="text-[11px] font-semibold leading-relaxed text-[#53608C] mt-1.5 italic">{item.quote}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-10 text-center">
+                  <Info size={28} className="text-[#DDE3EF] mb-3" />
+                  <p className="text-[13px] font-bold text-[#53608C]">{tEmpty("noMentionData")}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

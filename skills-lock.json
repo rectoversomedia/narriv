@@ -85,6 +85,12 @@
       "skillPath": "SKILL.md",
       "computedHash": "2a7d4e034f3f4aa67a60ce58c3afc919dda77665716ed48053c6f5fb11a97288"
     },
+    "ponytail": {
+      "source": "dietrichgebert/ponytail",
+      "sourceType": "github",
+      "skillPath": "skills/ponytail/SKILL.md",
+      "computedHash": "e51ac73040c3ccb635cbd4728f4e3497a1b732362b812a92badf758ea9e0696f"
+    },
     "prompt-master": {
       "source": "nidhinjs/prompt-master",
       "sourceType": "github",

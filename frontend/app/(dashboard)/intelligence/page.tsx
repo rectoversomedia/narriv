@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, type CSSProperties, type ReactNode } from "react";
+import { useState, useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import {
   Bot,
   Brain,
@@ -9,18 +11,23 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  ClipboardCopy,
   Database,
+  FileText,
   Filter,
   Info,
   Layers3,
   Maximize2,
+  Minimize2,
   MoreHorizontal,
   Network,
   RefreshCcw,
+  RotateCcw,
   Settings,
   Sparkles,
   Target,
   TrendingUp,
+  X,
   ZoomIn,
   ZoomOut,
   type LucideIcon,
@@ -28,15 +35,18 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
-import { getNarratives, type NarrativeRecord } from "@/lib/api-service";
+import { getNarrativeById, getNarratives, getSources, type NarrativeRecord } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
-import { text, type Tone } from "@/lib/mock-data";
 import { useTranslations } from "next-intl";
 import { useUiStore } from "@/store/useUiStore";
+import { useToast } from "@/components/ui/toast";
+
+type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
+type LocalizedText = { en: string; id: string };
 
 type Cluster = {
   id: string;
-  topic: { en: string; id: string };
+  topic: LocalizedText;
   signals: number;
   growth: string;
   tone: Tone;
@@ -45,14 +55,30 @@ type Cluster = {
   y: number;
   color: string;
   size?: "high" | "large" | "medium" | "small";
-  priority: { en: string; id: string };
+  priority: LocalizedText;
   priorityTone: Tone;
-  description: { en: string; id: string };
-  related: Array<{ topic: { en: string; id: string }; growth: string }>;
-  aiRec: { en: string; id: string };
+  description: LocalizedText;
+  related: Array<{ topic: LocalizedText; growth: string }>;
+  aiRec: LocalizedText;
 };
 
+type NarrativeConnection = { from: string; to: string; strength: "weak" | "strong" };
+type ImpactFilter = "all" | "critical" | "high" | "medium" | "low";
+type SentimentFilter = "all" | "positive" | "negative" | "neutral";
+
 const narrativeApiLimit = 10;
+
+const periodOptions = [
+  { key: "last24h", days: 1 },
+  { key: "last7d", days: 7 },
+  { key: "last30d", days: 30 },
+  { key: "last90d", days: 90 },
+] as const;
+
+type PeriodOption = (typeof periodOptions)[number];
+
+const impactOptions: ImpactFilter[] = ["all", "critical", "high", "medium", "low"];
+const sentimentOptions: SentimentFilter[] = ["all", "positive", "negative", "neutral"];
 
 type ToneStyle = {
   color: string;
@@ -68,24 +94,6 @@ const toneStyles: Record<Tone, ToneStyle> = {
   amber: { color: "#F59E0B", rgb: "245,158,11", badge: "amber" },
   slate: { color: "#64748B", rgb: "100,116,139", badge: "slate" },
 };
-
-const connections: Array<{ from: string; to: string; strength: "weak" | "strong" }> = [
-  { from: "payment_delay", to: "customer_education", strength: "strong" },
-  { from: "payment_delay", to: "service_quality", strength: "strong" },
-  { from: "payment_delay", to: "mobile_app_stability", strength: "strong" },
-  { from: "payment_delay", to: "refund_complaints", strength: "strong" },
-  { from: "payment_delay", to: "pricing_transparency", strength: "weak" },
-  { from: "payment_delay", to: "privacy_policy", strength: "strong" },
-  { from: "payment_delay", to: "security_concerns", strength: "weak" },
-  { from: "payment_delay", to: "kyc_process", strength: "weak" },
-  { from: "mobile_app_stability", to: "customer_education", strength: "weak" },
-  { from: "pricing_transparency", to: "privacy_policy", strength: "weak" },
-  { from: "refund_complaints", to: "pricing_transparency", strength: "weak" },
-  { from: "customer_education", to: "service_quality", strength: "weak" },
-  { from: "security_concerns", to: "service_quality", strength: "weak" },
-  { from: "security_concerns", to: "kyc_process", strength: "weak" },
-  { from: "privacy_policy", to: "kyc_process", strength: "weak" },
-];
 
 const mapSpecks: Array<{ x: number; y: number; tone: Tone; size: number; opacity: number }> = [
   { x: 18, y: 26, tone: "blue", size: 12, opacity: 0.42 },
@@ -141,29 +149,29 @@ const fallbackLifecycleSeries: LifecycleSeries = {
   dormant: [8, 8, 7, 7, 6, 6, 5],
 };
 
-const emptyCluster: Cluster = {
-  id: "empty",
-  topic: { en: "No narrative selected", id: "Belum ada narasi" },
-  signals: 0,
-  growth: "0%",
-  tone: "slate",
-  sentiment: "neutral",
-  x: 50,
-  y: 50,
-  color: "#94A3B8",
-  size: "medium",
-  priority: { en: "No data", id: "Tidak ada data" },
-  priorityTone: "slate",
-  description: {
-    en: "Live narrative data is not available yet.",
-    id: "Data narasi live belum tersedia.",
-  },
-  related: [],
-  aiRec: {
-    en: "Add signals or retry loading live data to populate this panel.",
-    id: "Tambahkan sinyal atau muat ulang data live untuk mengisi panel ini.",
-  },
-};
+function text(value: LocalizedText, language: "en" | "id") {
+  return value[language] || value.en;
+}
+
+function buildEmptyCluster(t: ReturnType<typeof useTranslations<"Intelligence">>): Cluster {
+  return {
+    id: "empty",
+    topic: { en: t("emptyCluster.topic"), id: t("emptyCluster.topic") },
+    signals: 0,
+    growth: "0%",
+    tone: "slate",
+    sentiment: "neutral",
+    x: 50,
+    y: 50,
+    color: "#94A3B8",
+    size: "medium",
+    priority: { en: t("emptyCluster.priority"), id: t("emptyCluster.priority") },
+    priorityTone: "slate",
+    description: { en: t("emptyCluster.description"), id: t("emptyCluster.description") },
+    related: [],
+    aiRec: { en: t("emptyCluster.aiRec"), id: t("emptyCluster.aiRec") },
+  };
+}
 
 function formatSignals(value: number) {
   return value.toLocaleString("en-US");
@@ -184,7 +192,7 @@ function impactToPriorityTone(impact: string): Tone {
   return "amber";
 }
 
-function buildNarrativeClusters(records: NarrativeRecord[]): Cluster[] {
+function buildNarrativeClusters(records: NarrativeRecord[], labels: { sources: (count: number) => string; mediumPriority: string }): Cluster[] {
   return records.map((record, index) => {
     const tone = sentimentToTone(record.sentiment);
     const priorityTone = impactToPriorityTone(record.impact);
@@ -199,8 +207,8 @@ function buildNarrativeClusters(records: NarrativeRecord[]): Cluster[] {
       tone,
       sentiment: tone === "green" ? "positive" : tone === "red" ? "negative" : "neutral",
       priority: {
-        en: record.impact || "Medium Priority",
-        id: record.impact || "Prioritas Sedang",
+        en: record.impact || labels.mediumPriority,
+        id: record.impact || labels.mediumPriority,
       },
       priorityTone,
       description: {
@@ -208,7 +216,7 @@ function buildNarrativeClusters(records: NarrativeRecord[]): Cluster[] {
         id: record.description || record.recommendedFocus,
       },
       related: [
-        { topic: { en: `${record.sourceCount} sources`, id: `${record.sourceCount} sumber` }, growth: `${record.confidence}%` },
+        { topic: { en: labels.sources(record.sourceCount), id: labels.sources(record.sourceCount) }, growth: `${record.confidence}%` },
       ],
       aiRec: {
         en: record.recommendedFocus,
@@ -222,14 +230,33 @@ function buildNarrativeClusters(records: NarrativeRecord[]): Cluster[] {
   }) as Cluster[];
 }
 
+function buildNarrativeConnections(clusters: Cluster[]): NarrativeConnection[] {
+  if (clusters.length < 2) return [];
+
+  const ranked = clusters.slice().sort((a, b) => b.signals - a.signals);
+  const hub = ranked[0];
+  const hubConnections = ranked.slice(1, 8).map((cluster, index) => ({
+    from: hub.id,
+    to: cluster.id,
+    strength: index < 4 || Math.abs(parseGrowthPercent(cluster.growth)) >= 25 ? "strong" : "weak",
+  } satisfies NarrativeConnection));
+
+  const lateralConnections: NarrativeConnection[] = [];
+  for (let index = 1; index < Math.min(ranked.length - 1, 6); index += 2) {
+    lateralConnections.push({ from: ranked[index].id, to: ranked[index + 1].id, strength: "weak" });
+  }
+
+  return [...hubConnections, ...lateralConnections];
+}
+
 function parseGrowthPercent(value: string) {
   const parsed = Number.parseFloat(value.replace(/[^0-9.-]/g, ""));
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function buildNarrativeShareData(clusters: Cluster[]): DonutDatum[] {
+function buildNarrativeShareData(clusters: Cluster[], labels: { noData: string; others: string }): DonutDatum[] {
   const totalSignals = clusters.reduce((sum, cluster) => sum + cluster.signals, 0);
-  if (totalSignals <= 0) return [{ name: "No data", value: 100, tone: "slate" }];
+  if (totalSignals <= 0) return [{ name: labels.noData, value: 100, tone: "slate" }];
 
   const topClusters = clusters
     .slice()
@@ -243,7 +270,7 @@ function buildNarrativeShareData(clusters: Cluster[]): DonutDatum[] {
   }));
   const remaining = Math.max(0, totalSignals - topTotal);
   if (remaining > 0) {
-    rows.push({ name: "Others", value: Math.max(1, Math.round((remaining / totalSignals) * 100)), tone: "slate" });
+    rows.push({ name: labels.others, value: Math.max(1, Math.round((remaining / totalSignals) * 100)), tone: "slate" });
   }
   return rows;
 }
@@ -281,6 +308,37 @@ function buildLifecycleFromClusters(clusters: Cluster[]) {
   return { counts, series };
 }
 
+function buildDynamicAiSummary(clusters: Cluster[], lifecycleCounts: Record<LifecycleKey, number>, ti: ReturnType<typeof useTranslations<"Intelligence">>, language: "en" | "id") {
+  if (clusters.length === 0 || clusters[0].id === "empty") {
+    return {
+      box: ti("aiSummaryDynamic.boxEmpty"),
+      bullets: [],
+    };
+  }
+
+  const topCluster = clusters[0];
+  const sortedByGrowth = [...clusters].sort((a, b) => parseGrowthPercent(b.growth) - parseGrowthPercent(a.growth));
+  const fastest = sortedByGrowth[0];
+  const negativeClusters = clusters.filter(c => c.sentiment === "negative");
+  const highestRisk = negativeClusters.length > 0 ? negativeClusters[0] : (clusters[1] || topCluster);
+
+  const bullets = [
+    ti("aiSummaryDynamic.bulletFastest", { topic: text(fastest.topic, language), growth: fastest.growth }),
+    ti("aiSummaryDynamic.bulletRisk", { topic: text(highestRisk.topic, language), sentiment: ti(`topicMap.${highestRisk.sentiment === "negative" ? "neg" : highestRisk.sentiment === "positive" ? "pos" : "neu"}`) }),
+    ti("aiSummaryDynamic.bulletRec", { rec: text(topCluster.aiRec, language) }),
+    ti("aiSummaryDynamic.bulletEmerging", { count: lifecycleCounts.emerging })
+  ];
+
+  return {
+    box: ti("aiSummaryDynamic.box", { 
+      topic: text(topCluster.topic, language), 
+      signals: formatSignals(topCluster.signals),
+      impact: text(topCluster.priority, language).toLowerCase()
+    }),
+    bullets
+  };
+}
+
 function buildDonutGradient(items: DonutDatum[]) {
   let cursor = 0;
   const stops = items.map((item) => {
@@ -294,9 +352,9 @@ function buildDonutGradient(items: DonutDatum[]) {
   return `conic-gradient(${stops.join(",")})`;
 }
 
-function Panel({ children, className }: { children: ReactNode; className?: string }) {
+function Panel({ children, className, onClick }: { children: ReactNode; className?: string; onClick?: (e: React.MouseEvent) => void }) {
   return (
-    <Card className={cn("rounded-[14px] border-[#E6EAF2] bg-white text-[#101334] shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)}>
+    <Card className={cn("rounded-[14px] border-[#E6EAF2] bg-white text-[#101334] shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)} onClick={onClick}>
       {children}
     </Card>
   );
@@ -385,19 +443,19 @@ function TrendBadge({ value, tone, className }: { value: string; tone: Tone; cla
   );
 }
 
-function CompetitorDonut({ label, gradient }: { label: string; gradient: string }) {
+function CompetitorDonut({ label, gradient, totalLabel }: { label: string; gradient: string; totalLabel: string }) {
   return (
     <div className="chart-donut-enter relative flex size-[150px] shrink-0 items-center justify-center rounded-full shadow-[0_12px_24px_rgba(70,95,255,0.10)]" style={{ background: gradient }}>
       <div className="absolute size-[102px] rounded-full bg-white" />
       <div className="relative max-w-[86px] text-center">
-        <p className="text-[12px] font-black leading-tight text-[#101334]">Total</p>
+        <p className="text-[12px] font-black leading-tight text-[#101334]">{totalLabel}</p>
         <p className="mt-0.5 text-[10px] font-bold leading-tight text-[#737D9F]">{label}</p>
       </div>
     </div>
   );
 }
 
-function MapNode({ cluster, selected, language, onSelect }: { cluster: Cluster; selected: boolean; language: "en" | "id"; onSelect: (cluster: Cluster) => void }) {
+function MapNode({ cluster, selected, language, signalLabel, onSelect }: { cluster: Cluster; selected: boolean; language: "en" | "id"; signalLabel: string; onSelect: (cluster: Cluster) => void }) {
   const toneStyle = toneStyles[cluster.tone];
   const style = {
     left: `${cluster.x}%`,
@@ -424,7 +482,7 @@ function MapNode({ cluster, selected, language, onSelect }: { cluster: Cluster; 
         style={{ backgroundColor: sentimentColor[cluster.sentiment === "mixed" ? "neutral" : cluster.sentiment] }}
       />
       <span className="relative px-2 font-black leading-tight text-[#101334]">{text(cluster.topic, language)}</span>
-      <span className="relative mt-1 text-[9px] font-bold text-[#8A94B8]">{formatSignals(cluster.signals)} signals</span>
+      <span className="relative mt-1 text-[9px] font-bold text-[#8A94B8]">{signalLabel}</span>
       <span className="relative mt-1.5 rounded-full px-2 py-0.5 text-[8px] font-black" style={{ backgroundColor: `rgba(${toneStyle.rgb}, .1)`, color: toneStyle.color }}>
         {cluster.growth}
       </span>
@@ -434,58 +492,130 @@ function MapNode({ cluster, selected, language, onSelect }: { cluster: Cluster; 
 
 export default function IntelligencePage() {
   const ti = useTranslations("Intelligence");
+  const toastHook = useToast();
+  const router = useRouter();
   const language = useUiStore((state) => state.language);
   const [selectedClusterId, setSelectedClusterId] = useState<string | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodOption>(periodOptions[1]);
+  const [isPeriodMenuOpen, setIsPeriodMenuOpen] = useState(false);
+  const [impactFilter, setImpactFilter] = useState<ImpactFilter>("all");
+  const [sentimentFilter, setSentimentFilter] = useState<SentimentFilter>("all");
+  const [isImpactMenuOpen, setIsImpactMenuOpen] = useState(false);
+  const [isSentimentMenuOpen, setIsSentimentMenuOpen] = useState(false);
+  const [isMapExpanded, setIsMapExpanded] = useState(false);
+  const [mapZoom, setMapZoom] = useState(1);
+  const [isAllClustersModalOpen, setIsAllClustersModalOpen] = useState(false);
+  const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
+  const [isLandscapeOpen, setIsLandscapeOpen] = useState(false);
+  const [isSelectedActionsOpen, setIsSelectedActionsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  const periodMenuRef = useRef<HTMLDivElement | null>(null);
+  const impactMenuRef = useRef<HTMLDivElement | null>(null);
+  const sentimentMenuRef = useRef<HTMLDivElement | null>(null);
+  const actionsMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+    
+    function handleClickOutside(e: MouseEvent) {
+      const target = e.target as Node;
+      if (isPeriodMenuOpen && periodMenuRef.current && !periodMenuRef.current.contains(target)) setIsPeriodMenuOpen(false);
+      if (isImpactMenuOpen && impactMenuRef.current && !impactMenuRef.current.contains(target)) setIsImpactMenuOpen(false);
+      if (isSentimentMenuOpen && sentimentMenuRef.current && !sentimentMenuRef.current.contains(target)) setIsSentimentMenuOpen(false);
+      if (isSelectedActionsOpen && actionsMenuRef.current && !actionsMenuRef.current.contains(target)) setIsSelectedActionsOpen(false);
+    }
+    
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setIsAnalysisOpen(false);
+        setIsLandscapeOpen(false);
+        setIsAllClustersModalOpen(false);
+      }
+    }
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isPeriodMenuOpen, isImpactMenuOpen, isSentimentMenuOpen, isSelectedActionsOpen]);
+
   const narrativesQuery = useQuery({
-    queryKey: ["narratives", { limit: narrativeApiLimit }],
-    queryFn: () => getNarratives({ limit: narrativeApiLimit }),
+    queryKey: ["narratives", { limit: narrativeApiLimit, days: selectedPeriod.days, impact: impactFilter, sentiment: sentimentFilter }],
+    queryFn: () => getNarratives({
+      limit: narrativeApiLimit,
+      days: selectedPeriod.days,
+      impact: impactFilter === "all" ? undefined : impactFilter,
+      sentiment: sentimentFilter === "all" ? undefined : sentimentFilter,
+    }),
     staleTime: 30 * 1000,
   });
-  const liveClusters = narrativesQuery.data?.data ? buildNarrativeClusters(narrativesQuery.data.data) : [];
+  const liveNarrativeRecords = narrativesQuery.data?.data ?? [];
+  const liveClusters = liveNarrativeRecords.length > 0 ? buildNarrativeClusters(liveNarrativeRecords, { sources: (count) => ti("labels.sources", { count }), mediumPriority: ti("mediumPriorityFallback") }) : [];
   const isLiveUnavailable = narrativesQuery.data === null;
   const clusters = liveClusters;
+  const emptyCluster = buildEmptyCluster(ti);
   const selectedCluster = clusters.find((cluster) => cluster.id === selectedClusterId) ?? clusters[0] ?? emptyCluster;
+  const selectedNarrativeId = selectedCluster.id === "empty" ? null : selectedCluster.id;
+  const narrativeConnections = buildNarrativeConnections(clusters);
+  const narrativeDetailQuery = useQuery({
+    queryKey: ["narrative-detail", selectedNarrativeId],
+    queryFn: () => selectedNarrativeId ? getNarrativeById(selectedNarrativeId) : null,
+    enabled: Boolean(selectedNarrativeId && (isAnalysisOpen || isSelectedActionsOpen)),
+    staleTime: 30 * 1000,
+  });
+  const sourcesQuery = useQuery({
+    queryKey: ["sources-intelligence-stats"],
+    queryFn: () => getSources({ limit: 100 }),
+    staleTime: 60 * 1000,
+  });
+
+  const totalSourcesCount = sourcesQuery.data?.pagination.total ?? 0;
+  const activeSourcesCount = sourcesQuery.data?.data.filter(s => s.isActive !== false).length ?? 0;
+  const coveragePercent = totalSourcesCount > 0 ? Math.round((activeSourcesCount / totalSourcesCount) * 100) : 0;
+  
+  const isApiHealthy = !isLiveUnavailable && !sourcesQuery.isError;
 
   const selectedTone = toneStyles[selectedCluster.tone];
-  const narrativeShareData = buildNarrativeShareData(clusters);
-  const aiSummaryBullets = [1, 2, 3, 4].map((i) => ti(`aiSummary.bullets.${i}`));
-  const narrativeShareGradient = buildDonutGradient(narrativeShareData);
+  const narrativeShareData = buildNarrativeShareData(clusters, { noData: ti("labels.noData"), others: ti("labels.others") });
   const lifecycle = buildLifecycleFromClusters(clusters);
-  const averageConfidence = liveClusters.length > 0
-    ? Math.round(liveClusters.reduce((sum, cluster) => {
-      const confidence = Number.parseFloat(cluster.related[0]?.growth.replace(/[^0-9.-]/g, "") ?? "0");
-      return sum + (Number.isFinite(confidence) ? confidence : 0);
-    }, 0) / liveClusters.length)
+  const aiSummaryData = buildDynamicAiSummary(clusters, lifecycle.counts, ti, language);
+  const narrativeShareGradient = buildDonutGradient(narrativeShareData);
+  const totalNarratives = narrativesQuery.data?.pagination.total ?? liveNarrativeRecords.length;
+  const averageConfidence = liveNarrativeRecords.length > 0
+    ? Math.round(liveNarrativeRecords.reduce((sum, record) => sum + (Number.isFinite(record.confidence) ? record.confidence : 0), 0) / liveNarrativeRecords.length)
     : null;
   const acceleratingCount = lifecycle.counts.accelerating;
-  const highPotentialCount = liveClusters.filter((cluster) => text(cluster.priority, "en").toLowerCase().includes("high")).length;
+  const highPotentialCount = liveNarrativeRecords.filter((record) => record.impact.toLowerCase().includes("high")).length;
 
   const metrics = [
     {
       label: ti("metrics.clusters.label"),
-      value: String(narrativesQuery.data?.pagination.total ?? ti("metrics.clusters.value")),
-      helper: liveClusters.length > 0 ? `${acceleratingCount} accelerating` : ti("metrics.clusters.helper"),
+      value: narrativesQuery.isPending ? "..." : String(totalNarratives),
+      helper: liveClusters.length > 0 ? ti("metrics.clusters.accelerating", { count: acceleratingCount }) : ti("labels.noData"),
       icon: Network,
       tone: "purple" as Tone,
     },
     {
       label: ti("metrics.confidence.label"),
-      value: averageConfidence === null ? ti("metrics.confidence.value") : `${averageConfidence}%`,
-      helper: ti("metrics.confidence.helper"),
+      value: narrativesQuery.isPending ? "..." : averageConfidence === null ? "-" : `${averageConfidence}%`,
+      helper: liveNarrativeRecords.length > 0 ? ti("metrics.confidence.helper") : ti("labels.noData"),
       icon: Brain,
       tone: "blue" as Tone,
     },
     {
       label: ti("metrics.emerging.label"),
-      value: liveClusters.length > 0 ? String(lifecycle.counts.emerging) : ti("metrics.emerging.value"),
-      helper: liveClusters.length > 0 ? `${liveClusters.length} live narratives` : ti("metrics.emerging.helper"),
+      value: narrativesQuery.isPending ? "..." : String(lifecycle.counts.emerging),
+      helper: liveClusters.length > 0 ? ti("metrics.emerging.liveNarratives", { count: liveClusters.length }) : ti("labels.noData"),
       icon: TrendingUp,
       tone: "amber" as Tone,
     },
     {
       label: ti("metrics.opportunities.label"),
-      value: liveClusters.length > 0 ? String(highPotentialCount) : ti("metrics.opportunities.value"),
-      helper: liveClusters.length > 0 ? `${highPotentialCount} high impact` : ti("metrics.opportunities.helper"),
+      value: narrativesQuery.isPending ? "..." : String(highPotentialCount),
+      helper: liveNarrativeRecords.length > 0 ? ti("metrics.opportunities.highImpact", { count: highPotentialCount }) : ti("labels.noData"),
       icon: Target,
       tone: "green" as Tone,
     },
@@ -503,10 +633,11 @@ export default function IntelligencePage() {
     {
       icon: Database,
       title: ti("footer.dataCoverage"),
-      value: ti("footer.sourcesActive"),
-      detail: ti("footer.coveragePercent"),
+      value: sourcesQuery.isPending ? "..." : `${activeSourcesCount} / ${totalSourcesCount} ${ti("labels.sourcesActive") || "Sources Active"}`,
+      detail: sourcesQuery.isPending ? "..." : `${coveragePercent}% ${ti("labels.coverage") || "Coverage"}`,
       tone: "purple" as Tone,
       progress: true,
+      progressValue: coveragePercent,
     },
     {
       icon: RefreshCcw,
@@ -518,9 +649,9 @@ export default function IntelligencePage() {
     {
       icon: Bot,
       title: ti("footer.aiStatus"),
-      value: ti("footer.operational"),
-      detail: ti("footer.systemsNormal"),
-      tone: "green" as Tone,
+      value: isApiHealthy ? ti("footer.operational") : "Degraded",
+      detail: isApiHealthy ? ti("footer.systemsNormal") : "API connection issues",
+      tone: (isApiHealthy ? "green" : "red") as Tone,
     },
     {
       icon: Layers3,
@@ -538,11 +669,35 @@ export default function IntelligencePage() {
           <h1 className="text-[32px] font-black tracking-[-0.045em] text-[#060A23]">{ti("pageTitle")}</h1>
           <p className="mt-2 text-[14px] font-semibold text-[#737D9F]">{ti("pageSubtitle")}</p>
         </div>
-        <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[10px] border border-[#E5E9F3] bg-white px-4 text-xs font-extrabold text-[#475070] shadow-sm transition hover:bg-[#F8FAFF] sm:w-fit">
-          <Calendar size={15} className="text-[#8A94B8]" />
-          {ti("last7Days")}
-          <ChevronDown size={14} className="text-[#8A94B8]" />
-        </button>
+        <div className="relative w-full sm:w-fit" ref={periodMenuRef}>
+          <button type="button" onClick={() => setIsPeriodMenuOpen((open) => !open)} aria-expanded={isPeriodMenuOpen} className="flex h-10 w-full items-center justify-center gap-2 rounded-[10px] border border-[#E5E9F3] bg-white px-4 text-xs font-extrabold text-[#475070] shadow-sm transition hover:bg-[#F8FAFF] sm:w-fit">
+            <Calendar size={15} className="text-[#8A94B8]" />
+            {ti(`periods.${selectedPeriod.key}`)}
+            <ChevronDown size={14} className={cn("text-[#8A94B8] transition", isPeriodMenuOpen && "rotate-180")} />
+          </button>
+          {isPeriodMenuOpen ? (
+            <div className="absolute right-0 top-full z-50 mt-2 w-full min-w-[190px] overflow-hidden rounded-[12px] border border-[#E5E9F3] bg-white p-1.5 shadow-[0_16px_40px_rgba(16,24,40,0.12)] sm:w-[210px]">
+              {periodOptions.map((option) => (
+                <button
+                  key={option.key}
+                  type="button"
+                  onClick={() => {
+                    setSelectedPeriod(option);
+                    setSelectedClusterId(null);
+                    setIsPeriodMenuOpen(false);
+                  }}
+                  className={cn(
+                    "flex w-full items-center justify-between rounded-[9px] px-3 py-2.5 text-left text-[12px] font-black transition",
+                    selectedPeriod.key === option.key ? "bg-[#465FFF]/10 text-[#465FFF]" : "text-[#475070] hover:bg-[#F8FAFF]"
+                  )}
+                >
+                  {ti(`periods.${option.key}`)}
+                  {selectedPeriod.key === option.key ? <Check size={14} /> : null}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
       </header>
 
       <section className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
@@ -552,8 +707,8 @@ export default function IntelligencePage() {
       </section>
 
       {narrativesQuery.isPending ? <PanelSkeleton /> : null}
-      {isLiveUnavailable ? <DashboardErrorState title="Narasi live belum bisa dimuat" description="API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan peta narasi contoh." onRetry={() => void narrativesQuery.refetch()} minHeight="min-h-[150px]" /> : null}
-      {narrativesQuery.data && liveClusters.length === 0 ? <DashboardEmptyState title="Belum ada narasi live" description="Backend berhasil dihubungi, tetapi belum ada cluster narasi. Peta contoh tetap ditampilkan sebagai preview." icon="search" minHeight="min-h-[180px]" /> : null}
+      {isLiveUnavailable ? <DashboardErrorState title={ti("error.title")} description={ti("error.desc")} onRetry={() => void narrativesQuery.refetch()} minHeight="min-h-[150px]" /> : null}
+      {narrativesQuery.data && liveClusters.length === 0 ? <DashboardEmptyState title={ti("empty.title")} description={ti("empty.desc")} icon="search" minHeight="min-h-[180px]" /> : null}
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_408px]">
         <div className="flex min-w-0 flex-col gap-4">
@@ -568,78 +723,113 @@ export default function IntelligencePage() {
                   <p className="mt-1 text-[12px] font-semibold text-[#737D9F]">{ti("topicMap.desc")}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <button type="button" className="flex h-9 items-center gap-2 rounded-[9px] border border-[#E5E9F3] bg-white px-3 text-[11px] font-extrabold text-[#4F5877] shadow-sm transition hover:bg-[#F8FAFF]">
-                    {ti("topicMap.allTopics")}
-                    <ChevronDown size={13} className="text-[#8A94B8]" />
-                  </button>
-                  <button type="button" className="flex h-9 items-center gap-2 rounded-[9px] border border-[#E5E9F3] bg-white px-3 text-[11px] font-extrabold text-[#4F5877] shadow-sm transition hover:bg-[#F8FAFF]">
-                    <Filter size={13} className="text-[#8A94B8]" />
-                    {ti("topicMap.filter")}
-                  </button>
-                  <button type="button" aria-label="Expand map" className="flex size-9 items-center justify-center rounded-[9px] border border-[#E5E9F3] bg-white text-[#4F5877] shadow-sm transition hover:bg-[#F8FAFF]">
-                    <Maximize2 size={13} />
+                  {/* Impact filter (All Topics) */}
+                  <div className="relative" ref={impactMenuRef}>
+                    <button type="button" onClick={() => { setIsImpactMenuOpen((o) => !o); setIsSentimentMenuOpen(false); }} aria-expanded={isImpactMenuOpen} className={cn("flex h-9 items-center gap-2 rounded-[9px] border bg-white px-3 text-[11px] font-extrabold shadow-sm transition hover:bg-[#F8FAFF]", impactFilter !== "all" ? "border-[#465FFF]/30 text-[#465FFF]" : "border-[#E5E9F3] text-[#4F5877]")}>
+                      {impactFilter === "all" ? ti("topicMap.allTopics") : ti(`topicMap.impact.${impactFilter}`)}
+                      <ChevronDown size={13} className={cn("text-[#8A94B8] transition", isImpactMenuOpen && "rotate-180")} />
+                    </button>
+                    {isImpactMenuOpen ? (
+                      <div className="absolute left-0 top-full z-50 mt-2 min-w-[170px] overflow-hidden rounded-[12px] border border-[#E5E9F3] bg-white p-1.5 shadow-[0_16px_40px_rgba(16,24,40,0.12)]">
+                        {impactOptions.map((opt) => (
+                          <button key={opt} type="button" onClick={() => { setImpactFilter(opt); setSelectedClusterId(null); setIsImpactMenuOpen(false); }} className={cn("flex w-full items-center justify-between rounded-[9px] px-3 py-2.5 text-left text-[12px] font-black transition", impactFilter === opt ? "bg-[#465FFF]/10 text-[#465FFF]" : "text-[#475070] hover:bg-[#F8FAFF]")}>
+                            {opt === "all" ? ti("topicMap.allTopics") : ti(`topicMap.impact.${opt}`)}
+                            {impactFilter === opt ? <Check size={14} /> : null}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                  {/* Sentiment filter */}
+                  <div className="relative" ref={sentimentMenuRef}>
+                    <button type="button" onClick={() => { setIsSentimentMenuOpen((o) => !o); setIsImpactMenuOpen(false); }} aria-expanded={isSentimentMenuOpen} className={cn("flex h-9 items-center gap-2 rounded-[9px] border bg-white px-3 text-[11px] font-extrabold shadow-sm transition hover:bg-[#F8FAFF]", sentimentFilter !== "all" ? "border-[#465FFF]/30 text-[#465FFF]" : "border-[#E5E9F3] text-[#4F5877]")}>
+                      <Filter size={13} className="text-[#8A94B8]" />
+                      {sentimentFilter === "all" ? ti("topicMap.filter") : ti(`topicMap.sentiment.${sentimentFilter}`)}
+                      <ChevronDown size={13} className={cn("text-[#8A94B8] transition", isSentimentMenuOpen && "rotate-180")} />
+                    </button>
+                    {isSentimentMenuOpen ? (
+                      <div className="absolute left-0 top-full z-50 mt-2 min-w-[170px] overflow-hidden rounded-[12px] border border-[#E5E9F3] bg-white p-1.5 shadow-[0_16px_40px_rgba(16,24,40,0.12)]">
+                        {sentimentOptions.map((opt) => (
+                          <button key={opt} type="button" onClick={() => { setSentimentFilter(opt); setSelectedClusterId(null); setIsSentimentMenuOpen(false); }} className={cn("flex w-full items-center justify-between rounded-[9px] px-3 py-2.5 text-left text-[12px] font-black transition", sentimentFilter === opt ? "bg-[#465FFF]/10 text-[#465FFF]" : "text-[#475070] hover:bg-[#F8FAFF]")}>
+                            {opt === "all" ? ti("topicMap.filterAll") : ti(`topicMap.sentiment.${opt}`)}
+                            {sentimentFilter === opt ? <Check size={14} /> : null}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                  {/* Expand map toggle */}
+                  <button type="button" onClick={() => setIsMapExpanded((v) => !v)} aria-label={ti("topicMap.expandMap")} className="flex size-9 items-center justify-center rounded-[9px] border border-[#E5E9F3] bg-white text-[#4F5877] shadow-sm transition hover:bg-[#F8FAFF]">
+                    {isMapExpanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
                   </button>
                 </div>
               </div>
 
-              <div className="relative min-h-[350px] overflow-hidden rounded-[12px] bg-[#FEFEFF] sm:min-h-[382px] xl:min-h-[559px]">
+              <div className={cn("relative overflow-hidden rounded-[12px] bg-[#FEFEFF] transition-all duration-300", isMapExpanded ? "min-h-[600px] sm:min-h-[700px] xl:min-h-[850px]" : "min-h-[350px] sm:min-h-[382px] xl:min-h-[559px]")}>
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_48%,rgba(139,92,255,0.08),transparent_28%),radial-gradient(circle_at_24%_40%,rgba(16,185,129,0.05),transparent_18%),radial-gradient(circle_at_72%_28%,rgba(245,158,11,0.06),transparent_18%)]" />
-                <div className="absolute left-1/2 top-1/2 size-[380px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-[#E8ECF5]" />
-                <div className="absolute left-1/2 top-1/2 size-[210px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-[#EDF0F7]" />
+                
+                <div className="absolute inset-0 transition-transform duration-300 origin-center" style={{ transform: `scale(${mapZoom})` }}>
+                  <div className="absolute left-1/2 top-1/2 size-[380px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-[#E8ECF5]" />
+                  <div className="absolute left-1/2 top-1/2 size-[210px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-[#EDF0F7]" />
 
-                {mapSpecks.map((speck, index) => {
-                  const toneStyle = toneStyles[speck.tone];
-                  return (
-                    <span
-                      key={`${speck.x}-${speck.y}-${index}`}
-                      className="absolute rounded-full border"
-                      style={{
-                        left: `${speck.x}%`,
-                        top: `${speck.y}%`,
-                        width: speck.size,
-                        height: speck.size,
-                        opacity: speck.opacity,
-                        borderColor: toneStyle.color,
-                        backgroundColor: `rgba(${toneStyle.rgb}, .08)`,
-                      }}
-                    />
-                  );
-                })}
-
-                <svg className="chart-enter chart-line-draw absolute inset-0 size-full" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-                  {connections.map((connection, index) => {
-                    const from = clusters.find((cluster) => cluster.id === connection.from);
-                    const to = clusters.find((cluster) => cluster.id === connection.to);
-                    if (!from || !to) return null;
-
-                    const highlighted = selectedCluster.id === connection.from || selectedCluster.id === connection.to;
+                  {mapSpecks.map((speck, index) => {
+                    const toneStyle = toneStyles[speck.tone];
                     return (
-                      <line
-                        key={`${connection.from}-${connection.to}-${index}`}
-                        x1={from.x}
-                        y1={from.y}
-                        x2={to.x}
-                        y2={to.y}
-                        stroke={highlighted ? selectedTone.color : "#E6EAF4"}
-                        strokeDasharray={connection.strength === "weak" ? "1.1 1.2" : undefined}
-                        strokeLinecap="round"
-                        strokeWidth={highlighted ? 0.34 : 0.2}
-                        opacity={highlighted ? 0.68 : 0.76}
+                      <span
+                        key={`${speck.x}-${speck.y}-${index}`}
+                        className="absolute rounded-full border"
+                        style={{
+                          left: `${speck.x}%`,
+                          top: `${speck.y}%`,
+                          width: speck.size,
+                          height: speck.size,
+                          opacity: speck.opacity,
+                          borderColor: toneStyle.color,
+                          backgroundColor: `rgba(${toneStyle.rgb}, .08)`,
+                        }}
                       />
                     );
                   })}
-                </svg>
 
-                {clusters.map((cluster) => (
-                  <MapNode key={cluster.id} cluster={cluster} selected={selectedCluster.id === cluster.id} language={language} onSelect={(item) => setSelectedClusterId(item.id)} />
-                ))}
+                  <svg className="chart-enter chart-line-draw absolute inset-0 size-full" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                    {narrativeConnections.map((connection, index) => {
+                      const from = clusters.find((cluster) => cluster.id === connection.from);
+                      const to = clusters.find((cluster) => cluster.id === connection.to);
+                      if (!from || !to) return null;
+
+                      const highlighted = selectedCluster.id === connection.from || selectedCluster.id === connection.to;
+                      return (
+                        <line
+                          key={`${connection.from}-${connection.to}-${index}`}
+                          x1={from.x}
+                          y1={from.y}
+                          x2={to.x}
+                          y2={to.y}
+                          stroke={highlighted ? selectedTone.color : "#E6EAF4"}
+                          strokeDasharray={connection.strength === "weak" ? "1.1 1.2" : undefined}
+                          strokeLinecap="round"
+                          strokeWidth={highlighted ? 0.34 : 0.2}
+                          opacity={highlighted ? 0.68 : 0.76}
+                        />
+                      );
+                    })}
+                  </svg>
+
+                  {clusters.map((cluster) => (
+                    <MapNode key={cluster.id} cluster={cluster} selected={selectedCluster.id === cluster.id} language={language} signalLabel={ti("labels.signals", { count: formatSignals(cluster.signals) })} onSelect={(item) => setSelectedClusterId(item.id)} />
+                  ))}
+                </div>
 
                 <div className="absolute bottom-5 left-5 z-30 flex flex-col gap-1 rounded-[9px] border border-[#E7EBF4] bg-white p-1 shadow-[0_10px_24px_rgba(16,24,40,0.08)]">
-                  {[ZoomIn, ZoomOut, Maximize2].map((Icon, index) => (
-                    <button key={index} type="button" className="flex size-7 items-center justify-center rounded-[6px] text-[#53608C] transition hover:bg-[#F5F7FC]" aria-label="Map control">
-                      <Icon size={14} />
-                    </button>
-                  ))}
+                  <button type="button" onClick={() => setMapZoom((z) => Math.min(2, +(z + 0.25).toFixed(2)))} className="flex size-7 items-center justify-center rounded-[6px] text-[#53608C] transition hover:bg-[#F5F7FC]" aria-label={ti("topicMap.zoomIn")}>
+                    <ZoomIn size={14} />
+                  </button>
+                  <button type="button" onClick={() => setMapZoom((z) => Math.max(0.5, +(z - 0.25).toFixed(2)))} className="flex size-7 items-center justify-center rounded-[6px] text-[#53608C] transition hover:bg-[#F5F7FC]" aria-label={ti("topicMap.zoomOut")}>
+                    <ZoomOut size={14} />
+                  </button>
+                  <button type="button" onClick={() => setMapZoom(1)} className="flex size-7 items-center justify-center rounded-[6px] text-[#53608C] transition hover:bg-[#F5F7FC]" aria-label={ti("topicMap.resetZoom")}>
+                    <RotateCcw size={14} />
+                  </button>
                 </div>
               </div>
 
@@ -650,10 +840,10 @@ export default function IntelligencePage() {
                   <span className="size-2 rounded-full bg-[#B3BDD4]" />
                   <span className="size-2.5 rounded-full bg-[#98A2B8]" />
                   <span className="size-3.5 rounded-full border border-[#9AA4BE] bg-white" />
-                  <span className="text-[#8A94B8]">High</span>
+                  <span className="text-[#8A94B8]">{ti("topicMap.high")}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-[#8A94B8]">{ti("topicMap.sentiment")}</span>
+                  <span className="text-[#8A94B8]">{ti("topicMap.sentimentLabel")}</span>
                   <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#10B981]" />{ti("topicMap.pos")}</span>
                   <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#CBD5E1]" />{ti("topicMap.neu")}</span>
                   <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#EF4444]" />{ti("topicMap.neg")}</span>
@@ -677,18 +867,18 @@ export default function IntelligencePage() {
                     {ti("aiSummary.title")}
                   </h3>
                   <div className="mt-4 rounded-[11px] border border-[#8B5CFF]/10 bg-[#8B5CFF]/7 p-3 text-[11px] font-bold leading-relaxed text-[#7654E7]">
-                    {ti("aiSummary.box")}
+                    {aiSummaryData.box}
                   </div>
                   <ul className="mt-4 flex flex-col gap-2.5">
-                    {aiSummaryBullets.map((item) => (
-                      <li key={item} className="flex items-start gap-2.5 text-[12px] font-semibold leading-snug text-[#53608C]">
+                    {aiSummaryData.bullets.map((item, index) => (
+                      <li key={index} className="flex items-start gap-2.5 text-[12px] font-semibold leading-snug text-[#53608C]">
                         <Check size={14} className="mt-0.5 shrink-0 text-[#53608C]" strokeWidth={2.6} />
                         {item}
                       </li>
                     ))}
                   </ul>
                 </div>
-                <button type="button" className="mt-5 flex h-9 w-full items-center justify-center gap-2 rounded-[8px] border border-[#D9DEEA] bg-white text-[11px] font-extrabold text-[#53608C] transition hover:bg-[#F8FAFF]">
+                <button type="button" onClick={() => router.push("/reports")} className="mt-5 flex h-9 w-full items-center justify-center gap-2 rounded-[8px] border border-[#D9DEEA] bg-white text-[11px] font-extrabold text-[#53608C] transition hover:bg-[#F8FAFF]">
                   {ti("aiSummary.btn")}
                   <ChevronRight size={13} />
                 </button>
@@ -726,7 +916,9 @@ export default function IntelligencePage() {
             <CardContent className="p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h3 className="text-[15px] font-black tracking-[-0.02em] text-[#101334]">{ti("growingClusters.title")}</h3>
-                <button type="button" className="text-[11px] font-black text-[#465FFF] transition hover:text-[#351EFF]">{ti("growingClusters.viewAll")}</button>
+                <button type="button" onClick={() => setIsAllClustersModalOpen(true)} className="text-[11px] font-black text-[#465FFF] transition hover:text-[#351EFF]">
+                  {ti("growingClusters.viewAll")}
+                </button>
               </div>
               <div className="flex flex-col gap-2">
                 {clusters.slice(0, 5).map((cluster) => {
@@ -747,7 +939,7 @@ export default function IntelligencePage() {
                         <ClusterIcon tone={cluster.tone} />
                         <span className="min-w-0">
                           <span className="block truncate text-[12px] font-black text-[#101334]">{text(cluster.topic, language)}</span>
-                          <span className="mt-1 block text-[10px] font-bold text-[#8A94B8]">{formatSignals(cluster.signals)} signals</span>
+                          <span className="mt-1 block text-[10px] font-bold text-[#8A94B8]">{ti("labels.signals", { count: formatSignals(cluster.signals) })}</span>
                         </span>
                       </span>
                       <TrendBadge value={cluster.growth} tone={cluster.tone} className="shrink-0 px-2 py-0.5 text-[10px]" />
@@ -760,11 +952,28 @@ export default function IntelligencePage() {
 
           <Panel className="border-[#D9D6FF]">
             <CardContent className="p-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="mb-3 flex items-center justify-between gap-3 relative" ref={actionsMenuRef}>
                 <p className="text-[11px] font-black text-[#53608C]">{ti("selectedNarrative.title")}</p>
-                <button type="button" aria-label="More selected narrative actions" className="rounded-full p-1 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+                <button type="button" onClick={() => setIsSelectedActionsOpen((v) => !v)} aria-label={ti("selectedNarrative.moreActions")} aria-expanded={isSelectedActionsOpen} className="rounded-full p-1 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
                   <MoreHorizontal size={16} />
                 </button>
+                {isSelectedActionsOpen ? (
+                  <div className="absolute right-0 top-full z-50 mt-1 w-[160px] overflow-hidden rounded-[12px] border border-[#E5E9F3] bg-white p-1.5 shadow-[0_16px_40px_rgba(16,24,40,0.12)]">
+                    <button type="button" onClick={() => { setIsSelectedActionsOpen(false); setIsAnalysisOpen(true); }} className="flex w-full items-center gap-2 rounded-[9px] px-3 py-2.5 text-left text-[11px] font-extrabold text-[#475070] transition hover:bg-[#F8FAFF]">
+                      <FileText size={13} />
+                      {ti("actions.viewDetails")}
+                    </button>
+                    <button type="button" onClick={() => { 
+                      setIsSelectedActionsOpen(false); 
+                      navigator.clipboard.writeText(selectedCluster.id)
+                        .then(() => toastHook.success("Narrative ID copied to clipboard"))
+                        .catch(() => toastHook.error("Failed to copy ID")); 
+                    }} className="flex w-full items-center gap-2 rounded-[9px] px-3 py-2.5 text-left text-[11px] font-extrabold text-[#475070] transition hover:bg-[#F8FAFF]">
+                      <ClipboardCopy size={13} />
+                      {ti("actions.copyId")}
+                    </button>
+                  </div>
+                ) : null}
               </div>
               <div className="flex items-start gap-3">
                 <ClusterIcon tone={selectedCluster.tone} />
@@ -800,7 +1009,7 @@ export default function IntelligencePage() {
                   </div>
                 </div>
               </div>
-              <button type="button" className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-[9px] bg-gradient-to-r from-[#465FFF] to-[#8B5CFF] text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.22)] transition hover:brightness-105">
+              <button type="button" onClick={() => setIsAnalysisOpen(true)} className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-[9px] bg-gradient-to-r from-[#465FFF] to-[#8B5CFF] text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.22)] transition hover:brightness-105">
                 {ti("selectedNarrative.btnAnalysis")}
                 <ChevronRight size={14} />
               </button>
@@ -814,7 +1023,7 @@ export default function IntelligencePage() {
                 <Info size={13} className="text-[#98A2B3]" />
               </h3>
               <div className="grid items-center justify-items-center gap-4 sm:grid-cols-[156px_minmax(0,1fr)] sm:justify-items-stretch xl:grid-cols-[156px_minmax(0,1fr)]">
-                <CompetitorDonut label={ti("competitorShare.totalShare")} gradient={narrativeShareGradient} />
+                <CompetitorDonut label={ti("competitorShare.totalShare")} gradient={narrativeShareGradient} totalLabel={ti("labels.total")} />
                 <div className="flex w-full min-w-0 flex-col gap-2 text-[12px] font-bold text-[#53608C]">
                   {narrativeShareData.map((item) => {
                     const toneStyle = toneStyles[item.tone];
@@ -830,7 +1039,7 @@ export default function IntelligencePage() {
                   })}
                 </div>
               </div>
-              <button type="button" className="mt-3 flex w-full items-center justify-center gap-1.5 text-[11px] font-extrabold text-[#465FFF] transition hover:text-[#351EFF]">
+              <button type="button" onClick={() => setIsLandscapeOpen(true)} className="mt-3 flex w-full items-center justify-center gap-1.5 text-[11px] font-extrabold text-[#465FFF] transition hover:text-[#351EFF]">
                 {ti("competitorShare.viewLandscape")}
                 <ChevronRight size={13} />
               </button>
@@ -854,7 +1063,9 @@ export default function IntelligencePage() {
                   <p className="mt-1 text-[12px] font-black text-[#101334]">{item.value}</p>
                   {item.progress ? (
                     <div className="mt-2 flex items-center gap-2">
-                      <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#EEF1F7]"><span className="block h-full w-[86%] rounded-full bg-[#10B981]" /></span>
+                      <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#EEF1F7]">
+                        <span className="block h-full rounded-full bg-[#10B981] transition-all duration-500" style={{ width: `${item.progressValue ?? 0}%` }} />
+                      </span>
                       <span className="text-[10px] font-bold text-[#8A94B8]">{item.detail}</span>
                     </div>
                   ) : (
@@ -865,11 +1076,151 @@ export default function IntelligencePage() {
             );
           })}
         </div>
-        <button type="button" className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#C9C6F8] bg-white px-5 text-[12px] font-black text-[#6B4DE6] shadow-sm transition hover:bg-[#F8F6FF]">
+        <button type="button" onClick={() => router.push("/settings")} className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#C9C6F8] bg-white px-5 text-[12px] font-black text-[#6B4DE6] shadow-sm transition hover:bg-[#F8F6FF]">
           <Settings size={14} />
           {ti("footer.btnSettings")}
         </button>
       </footer>
+
+      {mounted && isAnalysisOpen ? createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsAnalysisOpen(false)}>
+          <Panel className="flex w-full max-w-3xl flex-col max-h-[90vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
+              <div>
+                <h2 className="text-lg font-black text-[#101334]">{text(selectedCluster.topic, language)}</h2>
+                <p className="mt-1 text-xs font-bold text-[#737D9F]">{ti("analysisModal.subtitle")}</p>
+              </div>
+              <button type="button" onClick={() => setIsAnalysisOpen(false)} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              {narrativeDetailQuery.isPending ? (
+                <div className="flex h-40 items-center justify-center">
+                  <RefreshCcw className="animate-spin text-[#8A94B8]" size={24} />
+                </div>
+              ) : narrativeDetailQuery.data ? (
+                <div className="grid gap-6">
+                  <div>
+                    <h3 className="text-sm font-black text-[#53608C]">{ti("analysisModal.sentimentBreakdown")}</h3>
+                    <div className="mt-3 flex gap-2">
+                      {Object.entries(narrativeDetailQuery.data.sentimentBreakdown).map(([key, value]) => {
+                        const data = narrativeDetailQuery.data!;
+                        const total = Object.values(data.sentimentBreakdown).reduce((sum, v) => sum + v, 0);
+                        const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                        return (
+                          <div key={key} className="flex-1 rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3 text-center">
+                            <p className="text-xs font-bold uppercase text-[#8A94B8]">{key}</p>
+                            <p className="mt-1 text-lg font-black text-[#101334]">{percentage}%</p>
+                            <p className="mt-0.5 text-[10px] font-semibold text-[#8A94B8]">{value} {ti("labels.signals", { count: "" }).trim()}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-[#53608C]">{ti("analysisModal.relatedSignals")}</h3>
+                    <div className="mt-3 flex flex-col gap-2">
+                      {narrativeDetailQuery.data.relatedSignals.slice(0, 5).map((sig) => (
+                        <div key={sig.id} className="rounded-lg border border-[#EEF1F7] p-3">
+                          <p className="text-sm font-bold text-[#101334]">{sig.title}</p>
+                          <p className="mt-1 text-xs font-medium text-[#737D9F] line-clamp-2">{sig.content || "No content"}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex h-40 flex-col items-center justify-center text-center">
+                  <Info size={24} className="text-[#8A94B8]" />
+                  <p className="mt-2 text-sm font-bold text-[#53608C]">{ti("analysisModal.noData")}</p>
+                </div>
+              )}
+            </div>
+          </Panel>
+        </div>,
+        document.body
+      ) : null}
+
+      {mounted && isLandscapeOpen ? createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsLandscapeOpen(false)}>
+          <Panel className="flex w-full max-w-2xl flex-col shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
+              <h2 className="text-lg font-black text-[#101334]">{ti("competitorShare.title")}</h2>
+              <button type="button" onClick={() => setIsLandscapeOpen(false)} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-5">
+              <div className="flex flex-col gap-3">
+                {narrativeShareData.map((item) => {
+                  const toneStyle = toneStyles[item.tone];
+                  return (
+                    <div key={item.name} className="flex items-center justify-between rounded-lg border border-[#EEF1F7] p-3">
+                      <div className="flex items-center gap-3">
+                        <span className="size-3 rounded-full" style={{ backgroundColor: toneStyle.color }} />
+                        <span className="text-sm font-bold text-[#101334]">{item.name}</span>
+                      </div>
+                      <span className="text-sm font-black text-[#53608C]">{item.value}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </Panel>
+        </div>,
+        document.body
+      ) : null}
+
+      {mounted && isAllClustersModalOpen ? createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsAllClustersModalOpen(false)}>
+          <Panel className="flex w-full max-w-2xl flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
+              <div>
+                <h2 className="text-lg font-black text-[#101334]">{ti("growingClusters.modalTitle")}</h2>
+                <p className="mt-1 text-xs font-bold text-[#737D9F]">{ti("growingClusters.modalSubtitle")}</p>
+              </div>
+              <button type="button" onClick={() => setIsAllClustersModalOpen(false)} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {clusters.map((cluster) => {
+                  const selected = selectedCluster.id === cluster.id;
+                  const toneStyle = toneStyles[cluster.tone];
+                  return (
+                    <button
+                      key={`modal-${cluster.id}`}
+                      type="button"
+                      onClick={() => {
+                        setSelectedClusterId(cluster.id);
+                        setIsAllClustersModalOpen(false);
+                      }}
+                      className="flex items-center justify-between gap-3 rounded-[10px] border px-3 py-2.5 text-left transition hover:border-[#DCE2F0]"
+                      style={{
+                        borderColor: selected ? `rgba(${toneStyle.rgb}, .18)` : "#EEF1F7",
+                        backgroundColor: selected ? `rgba(${toneStyle.rgb}, .075)` : "#FFFFFF",
+                      }}
+                    >
+                      <span className="flex min-w-0 items-center gap-3">
+                        <ClusterIcon tone={cluster.tone} />
+                        <span className="min-w-0">
+                          <span className="block truncate text-[12px] font-black text-[#101334]">{text(cluster.topic, language)}</span>
+                          <span className="mt-1 block text-[10px] font-bold text-[#8A94B8]">{ti("labels.signals", { count: formatSignals(cluster.signals) })}</span>
+                        </span>
+                      </span>
+                      <TrendBadge value={cluster.growth} tone={cluster.tone} className="shrink-0 px-2 py-0.5 text-[10px]" />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </Panel>
+        </div>,
+        document.body
+      ) : null}
+
     </div>
   );
 }

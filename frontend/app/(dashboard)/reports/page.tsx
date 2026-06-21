@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
@@ -16,20 +18,24 @@ import {
   FileText,
   MoreVertical,
   Plus,
+  RefreshCcw,
   Search,
   Share2,
+  Trash2,
+  Edit2,
   SlidersHorizontal,
   Sparkles,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton, formatPaginationSummary } from "@/components/dashboard/dashboard-states";
-import { getReports, getReportTemplates, getReportsAnalytics, createReportExport, getReportExportStatus, type PaginationInfo, type ReportRecord, type ReportsAnalyticsResponse } from "@/lib/api-service";
+import { getReports, getReportTemplates, createReportTemplate, updateReportTemplate, deleteReportTemplate, getReportsAnalytics, createReportExport, getReportExportStatus, getNarratives, getDashboardSummary, getReportSchedules, createReportSchedule, updateReportSchedule, deleteReportSchedule, toggleReportSchedule, generateReportFromTemplate, sendReportEmail, type PaginationInfo, type ReportRecord, type ReportsAnalyticsResponse, type NarrativeRecord, type DashboardSummary, type ReportTemplate, type ReportScheduleRecord } from "@/lib/api-service";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
-type ReportStatus = "SIAP" | "REVIEW" | "DRAFT" | "SCHEDULED";
+type ReportStatus = "READY" | "REVIEW" | "DRAFT" | "SCHEDULED";
 
 type ToneStyle = {
   color: string;
@@ -50,13 +56,6 @@ const toneStyles: Record<Tone, ToneStyle> = {
   slate: { color: "#64748B", rgb: "100,116,139", soft: "bg-slate-100", text: "text-slate-500", border: "border-slate-200" },
 };
 
-const metricCards = [
-  { key: "templates", value: "8", icon: FileText, tone: "purple" },
-  { key: "ready", value: "4", icon: Download, tone: "green" },
-  { key: "scheduled", value: "7", icon: Calendar, tone: "purple" },
-  { key: "generated30", value: "24", icon: FileText, tone: "blue" },
-] as const;
-
 type ReportRow = {
   id: number | string;
   title: string;
@@ -71,69 +70,6 @@ type ReportRow = {
 };
 
 const reportsApiLimit = 10;
-
-const reportRows: ReportRow[] = [
-  {
-    id: 1,
-    title: "Executive Narrative Brief",
-    description: "Ringkasan eksekutif mingguan",
-    type: "PDF · Harian",
-    period: "12 Mei 2025",
-    status: "SIAP",
-    progress: 96,
-    created: "10 Mei 2025",
-    createdTime: "10:23 WIB",
-    tone: "green",
-  },
-  {
-    id: 2,
-    title: "AI Visibility Weekly",
-    description: "Performa AI visibility dan mention",
-    type: "Slides · Mingguan",
-    period: "5 - 11 Mei 2025",
-    status: "REVIEW",
-    progress: 84,
-    created: "10 Mei 2025",
-    createdTime: "09:15 WIB",
-    tone: "amber",
-  },
-  {
-    id: 3,
-    title: "Crisis Response Pack",
-    description: "Kompilasi isu kritis dan respon",
-    type: "PDF · On-demand",
-    period: "12 Mei 2025",
-    status: "DRAFT",
-    progress: 72,
-    created: "10 Mei 2025",
-    createdTime: "08:40 WIB",
-    tone: "purple",
-  },
-  {
-    id: 4,
-    title: "Source Health Audit",
-    description: "Audit kualitas sumber data",
-    type: "CSV · Mingguan",
-    period: "5 - 11 Mei 2025",
-    status: "SIAP",
-    progress: 91,
-    created: "10 Mei 2025",
-    createdTime: "07:30 WIB",
-    tone: "blue",
-  },
-  {
-    id: 5,
-    title: "Isu Viral & Tren Harian",
-    description: "Monitoring tren dan isu viral",
-    type: "PDF · Harian",
-    period: "12 Mei 2025",
-    status: "SCHEDULED",
-    progress: null,
-    created: "10 Mei 2025",
-    createdTime: "07:00 WIB",
-    tone: "slate",
-  },
-];
 
 const quickActions = [
   { key: "shareStakeholder", descKey: "shareDesc", icon: Share2, color: "text-[#465FFF] bg-[#465FFF]/10" },
@@ -152,14 +88,14 @@ type PopularReportItem = { title: string; views: string };
 
 function statusFromApi(status: string): ReportStatus {
   const value = status.toLowerCase();
-  if (value.includes("ready") || value.includes("siap")) return "SIAP";
+  if (value.includes("ready") || value.includes("siap")) return "READY";
   if (value.includes("review")) return "REVIEW";
   if (value.includes("scheduled")) return "SCHEDULED";
   return "DRAFT";
 }
 
 function toneFromStatus(status: ReportStatus): Tone {
-  if (status === "SIAP") return "green";
+  if (status === "READY") return "green";
   if (status === "REVIEW") return "amber";
   if (status === "SCHEDULED") return "blue";
   return "purple";
@@ -186,9 +122,9 @@ function buildApiReportRows(
   });
 }
 
-function Panel({ children, className }: { children: ReactNode; className?: string }) {
+function Panel({ children, className, onClick }: { children: ReactNode; className?: string; onClick?: (e: React.MouseEvent) => void }) {
   return (
-    <section className={cn("rounded-[14px] border border-[#DDE3EF] bg-white shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)}>
+    <section className={cn("rounded-[14px] border border-[#DDE3EF] bg-white shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)} onClick={onClick}>
       {children}
     </section>
   );
@@ -215,8 +151,58 @@ function MetricCard({ label, value, helper, icon: Icon, tone }: { label: string;
   );
 }
 
-function SentimentChart() {
+function SentimentChart({ dashboard }: { dashboard?: DashboardSummary | null }) {
   const tr = useTranslations("Reports");
+  
+  // Straight flat lines for empty state instead of fake curves
+  let posPath = "M 10 70 L 150 70";
+  let neuPath = "M 10 70 L 150 70";
+  let negPath = "M 10 70 L 150 70";
+  let posEnd = 70, neuEnd = 70, negEnd = 70;
+  
+  const labels = ["-", "-", "-", "-"];
+
+  if (dashboard?.trends && dashboard.trends.length > 0) {
+    const totalPos = dashboard.sentiment_distribution.positive || 1;
+    const totalNeu = dashboard.sentiment_distribution.neutral || 1;
+    const totalNeg = dashboard.sentiment_distribution.negative || 1;
+    const total = totalPos + totalNeu + totalNeg || 1;
+    
+    // Use last 4 points max
+    const points = dashboard.trends.slice(-4);
+    if (points.length > 1) {
+      const maxVal = Math.max(...points.map(t => t.count), 1);
+      const w = 140, h = 80;
+      
+      // Calculate variance and scale lines
+      const generatePath = (ratio: number, offset: number) => {
+         const mapped = points.map((p, i) => {
+           const x = 10 + (i * (w / Math.max(1, points.length - 1)));
+           const scaled = Math.min(1, Math.max(0.1, ((p.count / maxVal) * ratio) + offset));
+           const y = h - 10 - (scaled * (h - 20));
+           return { x, y };
+         });
+         
+         const pathStr = mapped.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+         return { path: pathStr, endY: mapped[mapped.length - 1].y, endX: mapped[mapped.length - 1].x };
+      };
+      
+      const pos = generatePath(totalPos / total, 0.4);
+      const neu = generatePath(totalNeu / total, 0.2);
+      const neg = generatePath(totalNeg / total, 0.6);
+      
+      posPath = pos.path; posEnd = pos.endY;
+      neuPath = neu.path; neuEnd = neu.endY;
+      negPath = neg.path; negEnd = neg.endY;
+      
+      labels.length = 0;
+      points.forEach(p => {
+        labels.push(new Date(p.date).toLocaleDateString("id-ID", { day: "numeric", month: "short" }));
+      });
+      while (labels.length < 4) labels.unshift("");
+    }
+  }
+
   return (
     <div className="flex flex-col justify-between h-full min-h-[160px] border-l border-[#D8DEEF] pl-5">
       <h4 className="text-[11px] font-extrabold text-[#101334]">{tr("sentimentChart.title")}</h4>
@@ -241,25 +227,22 @@ function SentimentChart() {
         {/* SVG Lines */}
         <svg className="chart-enter chart-line-draw absolute inset-0 w-full h-full" viewBox="0 0 160 80" preserveAspectRatio="none">
           {/* Positif (Green) */}
-          <path d="M 10 60 L 50 68 L 90 60 L 130 50 L 150 42" fill="none" stroke="#10B981" strokeWidth="2.2" strokeLinecap="round" />
-          <circle cx="150" cy="42" r="3" fill="#10B981" />
+          <path d={posPath} fill="none" stroke="#10B981" strokeWidth="2.2" strokeLinecap="round" />
+          <circle cx="150" cy={posEnd} r="3" fill="#10B981" />
 
           {/* Netral (Blue) */}
-          <path d="M 10 70 L 50 66 L 90 70 L 130 58 L 150 60" fill="none" stroke="#465FFF" strokeWidth="2.2" strokeLinecap="round" />
-          <circle cx="150" cy="60" r="3" fill="#465FFF" />
+          <path d={neuPath} fill="none" stroke="#465FFF" strokeWidth="2.2" strokeLinecap="round" />
+          <circle cx="150" cy={neuEnd} r="3" fill="#465FFF" />
 
           {/* Negatif (Red) */}
-          <path d="M 10 32 L 50 30 L 90 24 L 130 35 L 150 38" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round" />
-          <circle cx="150" cy="38" r="3" fill="#EF4444" />
+          <path d={negPath} fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round" />
+          <circle cx="150" cy={negEnd} r="3" fill="#EF4444" />
         </svg>
       </div>
 
       {/* X Axis Labels */}
       <div className="flex justify-between text-[8px] font-bold text-[#8B95B8] mt-1.5">
-        <span>6 Mei</span>
-        <span>8 Mei</span>
-        <span>10 Mei</span>
-        <span>12 Mei</span>
+        {labels.map((label, i) => <span key={i}>{label}</span>)}
       </div>
 
       {/* Legend */}
@@ -290,8 +273,28 @@ function ReportAgentImage() {
   );
 }
 
-function AIReportSummary() {
+function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeRecord[] | null, dashboard?: DashboardSummary | null }) {
   const tr = useTranslations("Reports");
+  
+  let insightText = tr("aiSummaryDynamic.emptyInsight");
+  let riskText = tr("aiSummaryDynamic.emptyRisk");
+  let movementText = tr("aiSummaryDynamic.emptyMovement");
+  let recommendationText = tr("aiSummaryDynamic.emptyRec");
+  let bodyText = tr("aiSummaryDynamic.emptyBody");
+
+  if (narratives && narratives.length > 0) {
+    const top = narratives[0];
+    const negative = narratives.filter(n => n.sentiment === "negative" || n.sentiment === "negatif")[0];
+    const sortedGrowth = [...narratives].sort((a,b) => parseFloat(b.velocity) - parseFloat(a.velocity));
+    const fastest = sortedGrowth[0];
+
+    insightText = tr("aiSummaryDynamic.insightText", { title: top.title, count: top.signalCount.toLocaleString() });
+    riskText = negative ? tr("aiSummaryDynamic.riskText", { title: negative.title }) : tr("aiSummaryDynamic.noRiskText");
+    movementText = tr("aiSummaryDynamic.movementText", { title: fastest.title, velocity: fastest.velocity });
+    recommendationText = tr("aiSummaryDynamic.recommendationText", { rec: top.recommendedFocus || "-" });
+    bodyText = tr("aiSummaryDynamic.body", { title: top.title, otherCount: Math.max(0, narratives.length - 1) });
+  }
+
   return (
     <Panel className="p-5">
       <div className="grid gap-5 md:grid-cols-[1fr_190px] lg:grid-cols-[96px_1fr_214px]">
@@ -306,17 +309,17 @@ function AIReportSummary() {
             </span>
           </div>
           <p className="mt-3 max-w-[660px] text-[13.5px] font-black leading-relaxed text-[#101334]">
-            {tr("aiSummary.body")}
+            {bodyText}
           </p>
           <div className="mt-5 grid gap-x-4 gap-y-3 lg:grid-cols-4">
-            <SummaryPoint color="#465FFF" title={tr("aiSummary.insightTitle")} text={tr("aiSummary.insightText")} />
-            <SummaryPoint color="#EF4444" title={tr("aiSummary.riskTitle")} text={tr("aiSummary.riskText")} />
-            <SummaryPoint color="#F59E0B" title={tr("aiSummary.movementTitle")} text={tr("aiSummary.movementText")} />
-            <SummaryPoint color="#10B981" title={tr("aiSummary.recommendationTitle")} text={tr("aiSummary.recommendationText")} />
+            <SummaryPoint color="#465FFF" title={tr("aiSummary.insightTitle")} text={insightText} />
+            <SummaryPoint color="#EF4444" title={tr("aiSummary.riskTitle")} text={riskText} />
+            <SummaryPoint color="#F59E0B" title={tr("aiSummary.movementTitle")} text={movementText} />
+            <SummaryPoint color="#10B981" title={tr("aiSummary.recommendationTitle")} text={recommendationText} />
           </div>
         </div>
         <div className="w-full pt-4 border-t md:pt-0 md:border-t-0">
-          <SentimentChart />
+          <SentimentChart dashboard={dashboard} />
         </div>
       </div>
     </Panel>
@@ -335,75 +338,101 @@ function SummaryPoint({ color, title, text }: { color: string; title: string; te
   );
 }
 
-function ReportPreviewSidebar({ onExportPdf }: { onExportPdf?: () => void }) {
+function ReportPreviewSidebar({ latestReport, onExportPdf, isPending }: { latestReport: ReportRecord | null | undefined; onExportPdf?: () => void; isPending?: boolean }) {
   const tr = useTranslations("Reports");
-  const previewSections = [
-    { key: "execSummary" },
-    { key: "riskMovement" },
-    { key: "keyInsights" },
-    { key: "recommendedActions" },
-  ];
+
+  const reportTitle = latestReport?.title || tr("preview.executiveBrief");
+  const reportStatus = latestReport ? statusFromApi(latestReport.status) : null;
+  const reportSections = latestReport?.sections
+    ? latestReport.sections.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+
   return (
     <Panel className="p-4">
       <h3 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{tr("preview.title")}</h3>
       <p className="mt-1 text-[11.5px] font-bold text-[#68739F]">{tr("preview.desc")}</p>
       
-      <div className="mt-4 rounded-[12px] border border-[#DDE3EF] bg-[#F8FAFF] p-4">
-        <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[#465FFF]/10 text-[#465FFF]"><FileText size={18} /></span>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-black text-[#101334]">{tr("preview.executiveBrief")}</p>
-            <p className="mt-0.5 text-[10px] font-bold text-[#68739F]">{tr("preview.pdfDaily")}</p>
-          </div>
-          <span className="rounded-full bg-[#10B981]/10 px-2 py-1 text-[9px] font-black text-[#10B981]">{tr("statusBadge.SIAP")}</span>
+      {isPending ? (
+        <div className="mt-4 flex h-[200px] items-center justify-center">
+          <RefreshCcw className="animate-spin text-[#8A94B8]" size={20} />
         </div>
-
-        <div className="mt-4 grid grid-cols-[82px_1fr] gap-4">
-          <div className="relative h-[108px] w-[82px] shrink-0 select-none overflow-hidden rounded-[6px] border border-[#E6EAF2] bg-white p-1.5 shadow-[0_4px_12px_rgba(15,23,42,0.04)]">
-            <div className="flex items-center gap-1 border-b border-[#EDF1F7] pb-1">
-              <span className="h-2 w-2 rounded-full bg-[#465FFF]" />
-              <span className="h-1 w-8 rounded-full bg-[#D8DEEF]" />
-            </div>
-            <div className="grid grid-cols-2 gap-1 py-2">
-              <span className="h-10 rounded-[4px] bg-[#EEF0FF]" />
-              <span className="space-y-1.5">
-                <span className="block h-1 w-full rounded-full bg-[#D8DEEF]" />
-                <span className="block h-1 w-5/6 rounded-full bg-[#EDF1F7]" />
-                <span className="block h-1 w-4/6 rounded-full bg-[#EDF1F7]" />
-              </span>
-            </div>
-            <div className="space-y-1.5">
-              <span className="block h-1 w-full rounded-full bg-[#EDF1F7]" />
-              <span className="block h-1 w-5/6 rounded-full bg-[#EDF1F7]" />
-              <span className="block h-1 w-4/6 rounded-full bg-[#EDF1F7]" />
-            </div>
-          </div>
-
-          <div className="min-w-0 space-y-2.5 self-center">
-            {previewSections.map((section) => (
-              <div key={section.key} className="flex items-center justify-between gap-2 text-[9.5px] font-black text-[#31406B]">
-                <span className="flex min-w-0 items-center gap-2"><CheckCircle2 size={13} className="shrink-0 text-[#10B981]" /> <span className="truncate">{tr(`previewSections.${section.key}`)}</span></span>
-                <span className="text-[#10B981]">{tr("preview.ready")}</span>
+      ) : latestReport ? (
+        <>
+          <div className="mt-4 rounded-[12px] border border-[#DDE3EF] bg-[#F8FAFF] p-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[#465FFF]/10 text-[#465FFF]"><FileText size={18} /></span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13px] font-black text-[#101334]">{reportTitle}</p>
+                <p className="mt-0.5 text-[10px] font-bold text-[#68739F]">{tr("preview.latestReport")}</p>
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
+              {reportStatus && <StatusBadge status={reportStatus} />}
+            </div>
 
-      <div className="mt-4 grid gap-2.5">
-        <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[9px] bg-[#465FFF] text-[12px] font-black text-white shadow-[0_8px_20px_rgba(70,95,255,0.18)] transition hover:bg-[#3B20EA]">
-          <Eye size={15} /> {tr("preview.viewPreview")}
-        </button>
-        <button type="button" onClick={onExportPdf} className="flex h-10 w-full items-center justify-center gap-2 rounded-[9px] border border-[#E6EAF2] bg-white text-[12px] font-black text-[#101334] transition hover:bg-[#F8FAFF]">
-          <Download size={15} /> {tr("preview.downloadPdf")}
-        </button>
-      </div>
+            {reportSections.length > 0 ? (
+              <div className="mt-4 grid grid-cols-[82px_1fr] gap-4">
+                <div className="relative h-[108px] w-[82px] shrink-0 select-none overflow-hidden rounded-[6px] border border-[#E6EAF2] bg-white p-1.5 shadow-[0_4px_12px_rgba(15,23,42,0.04)]">
+                  <div className="flex items-center gap-1 border-b border-[#EDF1F7] pb-1">
+                    <span className="h-2 w-2 rounded-full bg-[#465FFF]" />
+                    <span className="h-1 w-8 rounded-full bg-[#D8DEEF]" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-1 py-2">
+                    <span className="h-10 rounded-[4px] bg-[#EEF0FF]" />
+                    <span className="space-y-1.5">
+                      <span className="block h-1 w-full rounded-full bg-[#D8DEEF]" />
+                      <span className="block h-1 w-5/6 rounded-full bg-[#EDF1F7]" />
+                      <span className="block h-1 w-4/6 rounded-full bg-[#EDF1F7]" />
+                    </span>
+                  </div>
+                  <div className="space-y-1.5">
+                    <span className="block h-1 w-full rounded-full bg-[#EDF1F7]" />
+                    <span className="block h-1 w-5/6 rounded-full bg-[#EDF1F7]" />
+                  </div>
+                </div>
+
+                <div className="min-w-0 space-y-2.5 self-center">
+                  {reportSections.slice(0, 4).map((section) => (
+                    <div key={section} className="flex items-center justify-between gap-2 text-[9.5px] font-black text-[#31406B]">
+                      <span className="flex min-w-0 items-center gap-2"><CheckCircle2 size={13} className="shrink-0 text-[#10B981]" /> <span className="truncate">{section}</span></span>
+                      <span className="text-[#10B981]">{tr("preview.ready")}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="mt-3 text-[10px] font-bold text-[#8A94B8]">{tr("preview.noSections")}</div>
+            )}
+          </div>
+
+          <div className="mt-4 grid gap-2.5">
+            <Link href={`/reports/${latestReport.id}`} className="flex h-10 w-full items-center justify-center gap-2 rounded-[9px] bg-[#465FFF] text-[12px] font-black text-white shadow-[0_8px_20px_rgba(70,95,255,0.18)] transition hover:bg-[#3B20EA]">
+              <Eye size={15} /> {tr("preview.viewPreview")}
+            </Link>
+            <button type="button" onClick={onExportPdf} className="flex h-10 w-full items-center justify-center gap-2 rounded-[9px] border border-[#E6EAF2] bg-white text-[12px] font-black text-[#101334] transition hover:bg-[#F8FAFF]">
+              <Download size={15} /> {tr("preview.downloadPdf")}
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="mt-4 flex flex-col items-center justify-center py-8 text-center">
+          <div className="mb-3 flex h-[80px] w-full items-center justify-center rounded-[12px] bg-[#F5F7FC]">
+            <FileText size={28} className="text-[#DDE3EF]" />
+          </div>
+          <p className="text-[12px] font-bold text-[#53608C]">{tr("preview.emptyTitle")}</p>
+          <p className="mt-1 text-[10px] font-bold text-[#8A94B8]">{tr("preview.emptyDesc")}</p>
+        </div>
+      )}
     </Panel>
   );
 }
 
-function QuickActions() {
+function QuickActions({ onShare, onSchedule, onCreate, onViewHistory }: { onShare: () => void; onSchedule: () => void; onCreate: () => void; onViewHistory: () => void }) {
   const tr = useTranslations("Reports");
+  const actionHandlers: Record<string, () => void> = {
+    shareStakeholder: onShare,
+    scheduleReport: onSchedule,
+    customReport: onCreate,
+    viewHistory: onViewHistory,
+  };
   return (
     <Panel className="p-4">
       <h3 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{tr("quickActions.title")}</h3>
@@ -414,6 +443,7 @@ function QuickActions() {
             <button
               key={action.key}
               type="button"
+              onClick={actionHandlers[action.key]}
               className="flex w-full items-center justify-between gap-3 rounded-[12px] border border-[#EDF1F7] bg-[#FBFCFF] p-3 text-left transition hover:border-[#DDE3EF] hover:bg-[#F8FAFF]"
             >
               <div className="flex items-center gap-3 min-w-0">
@@ -437,7 +467,7 @@ function QuickActions() {
 function StatusBadge({ status }: { status: ReportStatus }) {
   const tr = useTranslations("Reports");
   const styles: Record<ReportStatus, string> = {
-    SIAP: "bg-[#10B981]/10 text-[#10B981]",
+    READY: "bg-[#10B981]/10 text-[#10B981]",
     REVIEW: "bg-[#F59E0B]/10 text-[#F59E0B]",
     DRAFT: "bg-[#8B5CFF]/10 text-[#8B5CFF]",
     SCHEDULED: "bg-[#465FFF]/10 text-[#465FFF]",
@@ -467,7 +497,7 @@ function ReportsTable({ rows, footerText, pagination, onPageChange, isFetching }
   const [activeTab, setActiveTab] = useState<TabValue>("all");
   const tabs: Array<{ key: string; value: TabValue }> = [
     { key: "all", value: "all" },
-    { key: "ready", value: "SIAP" },
+    { key: "ready", value: "READY" },
     { key: "review", value: "REVIEW" },
     { key: "draft", value: "DRAFT" },
     { key: "scheduled", value: "SCHEDULED" },
@@ -588,35 +618,69 @@ function ReportsTable({ rows, footerText, pagination, onPageChange, isFetching }
 
 function FormatDonut({ distribution, total }: { distribution: Array<{ name: string; value: string; color: string }>; total: number }) {
   const tr = useTranslations("Reports");
+  
   const totalForPercent = distribution.reduce((acc, item) => {
-    const num = parseInt(item.value.split(" ")[0], 10);
+    const num = parseInt(item.value, 10);
     return acc + (isNaN(num) ? 0 : num);
-  }, 0) || total;
+  }, 0);
+
+  const hasData = distribution.length > 0 && totalForPercent > 0;
+
+  // Build dynamic conic-gradient
+  let gradient = "conic-gradient(#E6EAF2 0 100%)";
+  if (hasData) {
+    let cursor = 0;
+    const stops = distribution.map((item) => {
+      const num = parseInt(item.value, 10);
+      const pct = totalForPercent > 0 ? (num / totalForPercent) * 100 : 0;
+      const next = Math.min(100, cursor + pct);
+      const stop = `${item.color} ${cursor}% ${next}%`;
+      cursor = next;
+      return stop;
+    });
+    if (cursor < 100) stops.push(`#E6EAF2 ${cursor}% 100%`);
+    gradient = `conic-gradient(${stops.join(", ")})`;
+  }
+
   return (
     <Panel className="p-4">
       <h3 className="text-[15px] font-black text-[#101334]">{tr("formatDonut.title")}</h3>
       <p className="mt-1 text-[11px] font-bold text-[#68739F]">{tr("formatDonut.desc")}</p>
       <div className="mt-5 grid gap-5 sm:grid-cols-[136px_1fr] md:grid-cols-1 xl:grid-cols-[136px_1fr]">
-        <div className="chart-donut-enter relative mx-auto flex h-[136px] w-[136px] items-center justify-center rounded-full bg-[conic-gradient(#465FFF_0_50%,#8B5CFF_50%_75%,#EF4444_75%_92%,#10B981_92%_100%)]">
-          <span className="absolute h-[88px] w-[88px] rounded-full bg-white" />
-          <span className="relative text-center">
-            <b className="block text-[22px] font-black text-[#101334]">{totalForPercent}</b>
-            <span className="text-[10px] font-bold text-[#68739F]">{tr("formatDonut.total")}</span>
-          </span>
-        </div>
-        <div className="space-y-2.5 self-center">
-          {distribution.length > 0 ? distribution.map((item) => (
-            <div key={item.name} className="flex items-center justify-between gap-3 text-[11px] font-bold">
-              <span className="flex items-center gap-2 text-[#31406B]">
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
-                {item.name}
+        {hasData ? (
+          <>
+            <div className="chart-donut-enter relative mx-auto flex h-[136px] w-[136px] items-center justify-center rounded-full" style={{ background: gradient }}>
+              <span className="absolute h-[88px] w-[88px] rounded-full bg-white" />
+              <span className="relative text-center">
+                <b className="block text-[22px] font-black text-[#101334]">{totalForPercent}</b>
+                <span className="text-[10px] font-bold text-[#68739F]">{tr("formatDonut.total")}</span>
               </span>
-              <span className="text-[#68739F]">{item.value}</span>
             </div>
-          )) : (
-            <p className="text-center text-[11px] font-bold text-[#8A94B8]">{tr("formatDonut.noData")}</p>
-          )}
-        </div>
+            <div className="space-y-2.5 self-center">
+              {distribution.map((item) => {
+                const num = parseInt(item.value, 10);
+                const pct = totalForPercent > 0 ? Math.round((num / totalForPercent) * 100) : 0;
+                return (
+                  <div key={item.name} className="flex items-center justify-between gap-3 text-[11px] font-bold">
+                    <span className="flex items-center gap-2 text-[#31406B]">
+                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
+                      {item.name}
+                    </span>
+                    <span className="text-[#68739F]">{num} ({pct}%)</span>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-8 text-center sm:col-span-2 xl:col-span-2">
+            <div className="relative mx-auto mb-4 flex h-[136px] w-[136px] items-center justify-center rounded-full bg-[#F5F7FC]">
+              <FileText size={32} className="text-[#DDE3EF]" />
+            </div>
+            <p className="text-[13px] font-bold text-[#53608C]">{tr("formatDonut.noData")}</p>
+            <p className="mt-1 text-[11px] font-bold text-[#8A94B8]">{tr("formatDonut.noDataDesc")}</p>
+          </div>
+        )}
       </div>
     </Panel>
   );
@@ -629,75 +693,101 @@ function formatChartDate(date: string) {
 function TimelineChart({ data }: { data: ReportsAnalyticsResponse["trend_timeline"] }) {
   const tr = useTranslations("Reports");
   const series = data.map((item) => item.count);
-  // Sparkline/timeline line plotting
-  const max = series.length > 0 ? Math.max(...series) : 1;
-  const min = series.length > 0 ? Math.min(...series) : 0;
-  const range = max - min || 1;
+  const hasData = series.length > 0 && series.some((v) => v > 0);
+
   const width = 520;
   const height = 170;
   const padding = 14;
+  const chartHeight = height - padding * 2 - 20;
 
-  const path = series.length > 0 ? series.map((value, index) => {
+  // Dynamic Y-axis
+  const max = hasData ? Math.max(...series) : 1;
+  const yMax = Math.ceil(max / 5) * 5 || 5;
+  const yTicks = [0, Math.round(yMax * 0.25), Math.round(yMax * 0.5), Math.round(yMax * 0.75), yMax];
+  const yPositions = yTicks.map((tick) => padding + (1 - tick / yMax) * chartHeight);
+
+  // Build path
+  const path = hasData ? series.map((value, index) => {
     const x = padding + (index / (series.length - 1)) * (width - padding * 2);
-    const y = padding + (1 - (value - min) / range) * (height - padding * 2 - 20);
+    const y = padding + (1 - value / yMax) * chartHeight;
     return `${index === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
   }).join(" ") : "";
 
   const area = path ? `${path} L ${width - padding} ${height - 22} L ${padding} ${height - 22} Z` : "";
-  const peakIndex = series.length > 0 ? series.indexOf(max) : -1;
-  const peakDate = peakIndex >= 0 ? formatChartDate(data[peakIndex].date) : "-";
+
+  // Peak position
+  const peakIndex = hasData ? series.indexOf(max) : -1;
+  const peakDate = peakIndex >= 0 ? formatChartDate(data[peakIndex].date) : "";
+  const peakX = peakIndex >= 0 ? padding + (peakIndex / (series.length - 1)) * (width - padding * 2) : 0;
+  const peakY = peakIndex >= 0 ? padding + (1 - max / yMax) * chartHeight : 0;
+  const peakXPct = ((peakX / width) * 100).toFixed(1);
+
+  // X-axis labels (up to 5 evenly spaced)
   const xLabels = data.length > 0
-    ? [0, Math.floor((data.length - 1) / 3), Math.floor(((data.length - 1) * 2) / 3), data.length - 1]
+    ? [0, Math.floor((data.length - 1) / 4), Math.floor((data.length - 1) / 2), Math.floor(((data.length - 1) * 3) / 4), data.length - 1]
         .filter((value, index, arr) => arr.indexOf(value) === index)
-        .map((index) => formatChartDate(data[index].date))
+        .map((index) => ({ label: formatChartDate(data[index].date), index }))
     : [];
 
   return (
     <Panel className="p-4">
       <h3 className="text-[15px] font-black text-[#101334]">{tr("timeline.title")} <span className="text-[11px] font-bold text-[#68739F]">{tr("timeline.period")}</span></h3>
       <p className="mt-1 text-[11px] font-bold text-[#68739F]">{tr("timeline.desc")}</p>
-      
-      <div className="relative mt-5 h-[190px] rounded-[12px] bg-linear-to-b from-white to-[#F8FAFF]">
-        {/* Y Axis */}
-        <div className="absolute left-0 top-0 bottom-[22px] flex w-[38px] flex-col justify-between py-1 text-right text-[9px] font-bold text-[#8B95B8] pointer-events-none">
-          <span>30</span><span>20</span><span>10</span><span>0</span>
-        </div>
 
-        {/* Chart plot */}
-        <div className="absolute inset-0 left-[40px] bottom-[22px] overflow-hidden">
-          <svg className="chart-enter chart-line-draw h-full w-full" viewBox="0 0 520 170" preserveAspectRatio="none" aria-hidden="true">
-            <defs>
-              <linearGradient id="reports-timeline-grad" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stopColor="#465FFF" stopOpacity="0.22" />
-                <stop offset="100%" stopColor="#465FFF" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            {/* Gridlines */}
-            {[34, 70, 106, 142].map((y) => <line key={y} x1="0" x2="520" y1={y} y2={y} stroke="#EDF1F7" strokeWidth="1" />)}
-            {area ? <path d={area} fill="url(#reports-timeline-grad)" /> : null}
-            {path ? <path d={path} fill="none" stroke="#465FFF" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" vectorEffect="non-scaling-stroke" /> : null}
-          </svg>
+      {hasData ? (
+        <div className="relative mt-5 h-[190px] rounded-[12px] bg-linear-to-b from-white to-[#F8FAFF]">
+          {/* Y Axis */}
+          <div className="absolute left-0 top-0 bottom-[22px] flex w-[38px] flex-col justify-between py-1 text-right text-[9px] font-bold text-[#8B95B8] pointer-events-none">
+            {yTicks.slice().reverse().map((tick) => <span key={tick}>{tick}</span>)}
+          </div>
 
-          {peakIndex >= 0 ? <div className="absolute left-[77%] top-[34px] flex -translate-x-1/2 flex-col items-center">
-            <span className="rounded-[8px] bg-[#101334] px-2.5 py-1.5 text-center shadow-lg whitespace-nowrap">
-              <b className="block text-[8px] font-black text-white">{peakDate}</b>
-              <span className="text-[9.5px] font-black text-white">{tr("timeline.peak", { count: max })}</span>
-            </span>
-            <span className="h-8 border-l border-dashed border-[#8B95B8]" />
-            <span className="h-2.5 w-2.5 rounded-full border-2 border-white bg-[#465FFF] ring-4 ring-[#465FFF]/15" />
-          </div> : null}
-        </div>
+          {/* Chart plot */}
+          <div className="absolute inset-0 left-[40px] bottom-[22px] overflow-hidden">
+            <svg className="chart-enter chart-line-draw h-full w-full" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
+              <defs>
+                <linearGradient id="reports-timeline-grad" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stopColor="#465FFF" stopOpacity="0.22" />
+                  <stop offset="100%" stopColor="#465FFF" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {/* Dynamic Gridlines */}
+              {yPositions.slice(1).map((y) => <line key={y} x1="0" x2={width} y1={y} y2={y} stroke="#EDF1F7" strokeWidth="1" />)}
+              {area ? <path d={area} fill="url(#reports-timeline-grad)" /> : null}
+              {path ? <path d={path} fill="none" stroke="#465FFF" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" vectorEffect="non-scaling-stroke" /> : null}
+            </svg>
 
-        {/* X Axis Labels */}
-        <div className="absolute inset-x-0 bottom-0 flex justify-between pl-[40px] text-[9px] font-bold text-[#68739F]">
-          {xLabels.length > 0 ? xLabels.map((label) => <span key={label}>{label}</span>) : <span>{tr("timeline.noData")}</span>}
+            {/* Peak tooltip */}
+            {peakIndex >= 0 ? (
+              <div className="absolute top-[12px] flex flex-col items-center" style={{ left: `${peakXPct}%`, transform: "translateX(-50%)" }}>
+                <span className="rounded-[8px] bg-[#101334] px-2.5 py-1.5 text-center shadow-lg whitespace-nowrap">
+                  <b className="block text-[8px] font-black text-white">{peakDate}</b>
+                  <span className="text-[9.5px] font-black text-white">{tr("timeline.peak", { count: max })}</span>
+                </span>
+                <span className="h-8 border-l border-dashed border-[#8B95B8]" />
+                <span className="h-2.5 w-2.5 rounded-full border-2 border-white bg-[#465FFF] ring-4 ring-[#465FFF]/15" />
+              </div>
+            ) : null}
+          </div>
+
+          {/* X Axis Labels */}
+          <div className="absolute inset-x-0 bottom-0 flex justify-between pl-[40px] text-[9px] font-bold text-[#68739F]">
+            {xLabels.map((item) => <span key={item.index}>{item.label}</span>)}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-10 text-center">
+          <div className="mb-4 flex h-[100px] w-full max-w-[300px] items-center justify-center rounded-[12px] bg-[#F5F7FC]">
+            <RefreshCcw size={28} className="text-[#DDE3EF]" />
+          </div>
+          <p className="text-[13px] font-bold text-[#53608C]">{tr("timeline.noData")}</p>
+          <p className="mt-1 text-[11px] font-bold text-[#8A94B8]">{tr("timeline.noDataDesc")}</p>
+        </div>
+      )}
     </Panel>
   );
 }
 
-function PopularReports({ reports }: { reports: PopularReportItem[] }) {
+function PopularReports({ reports, onViewAll }: { reports: PopularReportItem[]; onViewAll: () => void }) {
   const tr = useTranslations("Reports");
   return (
     <Panel className="p-4 flex flex-col justify-between">
@@ -706,7 +796,7 @@ function PopularReports({ reports }: { reports: PopularReportItem[] }) {
         <p className="mt-1 text-[11px] font-bold text-[#68739F]">{tr("popular.desc")}</p>
         
         <div className="mt-5 space-y-3">
-          {reports.length > 0 ? reports.map((report, idx) => (
+          {reports.length > 0 ? reports.slice(0, 5).map((report, idx) => (
             <div key={report.title} className="flex items-center gap-3">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[11px] font-black text-[#465FFF]">
                 {idx + 1}
@@ -717,17 +807,22 @@ function PopularReports({ reports }: { reports: PopularReportItem[] }) {
               <span className="text-[11px] font-bold text-[#68739F] shrink-0">{report.views}</span>
             </div>
           )) : (
-            <p className="text-center text-[11px] font-bold text-[#8A94B8]">{tr("popular.noData")}</p>
+            <div className="flex flex-col items-center justify-center py-6 text-center">
+              <FileText size={24} className="text-[#DDE3EF] mb-2" />
+              <p className="text-[11px] font-bold text-[#8A94B8]">{tr("popular.noData")}</p>
+            </div>
           )}
         </div>
       </div>
 
-      <div className="mt-6 border-t border-[#EDF1F7] pt-4">
-        <Link href="/reports" className="flex items-center justify-between text-[11px] font-black text-[#465FFF] hover:text-[#3B20EA] transition-colors">
-          <span>{tr("popular.viewAll")}</span>
-          <ArrowRight size={14} />
-        </Link>
-      </div>
+      {reports.length > 0 ? (
+        <div className="mt-6 border-t border-[#EDF1F7] pt-4">
+          <button type="button" onClick={onViewAll} className="flex w-full items-center justify-between text-[11px] font-black text-[#465FFF] hover:text-[#3B20EA] transition-colors">
+            <span>{tr("popular.viewAll")}</span>
+            <ArrowRight size={14} />
+          </button>
+        </div>
+      ) : null}
     </Panel>
   );
 }
@@ -736,7 +831,42 @@ export default function ReportsPage() {
   const t = useTranslations("DemoApp");
   const tr = useTranslations("Reports");
   const toastHook = useToast();
+  const router = useRouter();
   const [page, setPage] = useState(1);
+  const [isTemplatesModalOpen, setIsTemplatesModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  
+  // Custom Template State
+  const [editingTemplate, setEditingTemplate] = useState<Partial<ReportTemplate> | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  
+  // Schedule State
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isScheduleFormOpen, setIsScheduleFormOpen] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState<Partial<ReportScheduleRecord> | null>(null);
+  
+  // Popular Reports Modal
+  const [isPopularModalOpen, setIsPopularModalOpen] = useState(false);
+  
+  // Share Modal
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsTemplatesModalOpen(false);
+        setIsCreateModalOpen(false);
+        setIsScheduleModalOpen(false);
+        setIsScheduleFormOpen(false);
+        setIsPopularModalOpen(false);
+        setIsShareModalOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
     if (type === "error") { toastHook.error(message); return; }
@@ -787,7 +917,178 @@ export default function ReportsPage() {
     queryFn: () => getReportsAnalytics(),
     staleTime: 60 * 1000,
   });
-  const liveRows = reportsQuery.data?.data
+  
+  // Custom Template Mutations
+  const { refetch: refetchTemplates } = templatesQuery;
+  const createTemplateMutation = useMutation({
+    mutationFn: (data: Partial<ReportTemplate>) => createReportTemplate(data),
+    onSuccess: () => {
+      showToast(tr("toast.templateSaved"));
+      setIsFormOpen(false);
+      refetchTemplates();
+    },
+    onError: () => showToast(tr("toast.templateSaveFailed"), "error")
+  });
+  const updateTemplateMutation = useMutation({
+    mutationFn: (data: { id: string, payload: Partial<ReportTemplate> }) => updateReportTemplate(data.id, data.payload),
+    onSuccess: () => {
+      showToast(tr("toast.templateUpdated"));
+      setIsFormOpen(false);
+      refetchTemplates();
+    },
+    onError: () => showToast(tr("toast.templateUpdateFailed"), "error")
+  });
+  const deleteTemplateMutation = useMutation({
+    mutationFn: (id: string) => deleteReportTemplate(id),
+    onSuccess: () => {
+      showToast(tr("toast.templateDeleted"));
+      refetchTemplates();
+    },
+    onError: () => showToast(tr("toast.templateDeleteFailed"), "error")
+  });
+  
+  const handleSaveTemplate = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const payload = {
+      name: formData.get("name") as string,
+      description: formData.get("description") as string,
+      format: formData.get("format") as string,
+      cadence: formData.get("cadence") as string,
+    };
+    if (editingTemplate?.key) {
+      updateTemplateMutation.mutate({ id: editingTemplate.key, payload });
+    } else {
+      createTemplateMutation.mutate(payload);
+    }
+  };
+
+  // Schedule Queries & Mutations
+  const schedulesQuery = useQuery({
+    queryKey: ["report-schedules"],
+    queryFn: getReportSchedules,
+    staleTime: 30 * 1000,
+  });
+  const { refetch: refetchSchedules } = schedulesQuery;
+  const createScheduleMutation = useMutation({
+    mutationFn: (data: Partial<ReportScheduleRecord>) => createReportSchedule(data),
+    onSuccess: () => {
+      showToast(tr("scheduleToast.saved"));
+      setIsScheduleFormOpen(false);
+      setEditingSchedule(null);
+      refetchSchedules();
+    },
+    onError: () => showToast(tr("scheduleToast.saveFailed"), "error")
+  });
+  const updateScheduleMutation = useMutation({
+    mutationFn: (data: { id: string, payload: Partial<ReportScheduleRecord> }) => updateReportSchedule(data.id, data.payload),
+    onSuccess: () => {
+      showToast(tr("scheduleToast.updated"));
+      setIsScheduleFormOpen(false);
+      setEditingSchedule(null);
+      refetchSchedules();
+    },
+    onError: () => showToast(tr("scheduleToast.updateFailed"), "error")
+  });
+  const deleteScheduleMutation = useMutation({
+    mutationFn: (id: string) => deleteReportSchedule(id),
+    onSuccess: () => {
+      showToast(tr("scheduleToast.deleted"));
+      refetchSchedules();
+    },
+    onError: () => showToast(tr("scheduleToast.deleteFailed"), "error")
+  });
+  const toggleScheduleMutation = useMutation({
+    mutationFn: (id: string) => toggleReportSchedule(id),
+    onSuccess: () => {
+      showToast(tr("scheduleToast.toggled"));
+      refetchSchedules();
+    }
+  });
+
+  const handleSaveSchedule = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const payload = {
+      templateKey: formData.get("templateKey") as string,
+      name: formData.get("name") as string,
+      cadence: formData.get("cadence") as string,
+      dayOfWeek: formData.get("dayOfWeek") as string || null,
+      timeOfDay: formData.get("timeOfDay") as string,
+    };
+    if (editingSchedule?.id) {
+      updateScheduleMutation.mutate({ id: editingSchedule.id, payload });
+    } else {
+      createScheduleMutation.mutate(payload);
+    }
+  };
+
+  // Generate Report Mutation
+  const generateReportMutation = useMutation({
+    mutationFn: (data: { templateKey: string; title: string; dateRange?: { start: string; end: string } }) =>
+      generateReportFromTemplate({ templateKey: data.templateKey, dateRange: data.dateRange }),
+    onSuccess: () => {
+      showToast(tr("createModal.success"));
+      setIsCreateModalOpen(false);
+      reportsQuery.refetch();
+    },
+    onError: () => showToast(tr("createModal.failed"), "error")
+  });
+
+  const handleGenerateReport = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const templateKey = formData.get("templateKey") as string;
+    const title = formData.get("title") as string;
+    const startDate = formData.get("startDate") as string;
+    const endDate = formData.get("endDate") as string;
+
+    if (!templateKey) return;
+
+    const dateRange = (startDate && endDate)
+      ? { start: new Date(startDate).toISOString(), end: new Date(endDate).toISOString() }
+      : undefined;
+
+    generateReportMutation.mutate({ templateKey, title: title || "Untitled Report", dateRange });
+  };
+
+  // Share Report Mutation
+  const shareReportMutation = useMutation({
+    mutationFn: (data: { reportId: string; recipientEmail: string; subject?: string }) =>
+      sendReportEmail({ reportId: data.reportId, recipientEmail: data.recipientEmail, subject: data.subject }),
+    onSuccess: (result) => {
+      if (result?.sent) {
+        showToast(tr("shareModal.success"));
+        setIsShareModalOpen(false);
+      } else {
+        showToast(tr("shareModal.failed"), "error");
+      }
+    },
+    onError: () => showToast(tr("shareModal.failed"), "error")
+  });
+
+  const handleShareReport = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get("email") as string;
+    const subject = formData.get("subject") as string;
+    const firstRow = rows[0];
+    if (!email || !firstRow) return;
+    shareReportMutation.mutate({ reportId: String(firstRow.id), recipientEmail: email, subject: subject || undefined });
+  };
+  const narrativesQuery = useQuery({
+    queryKey: ["reports-narratives-summary"],
+    queryFn: () => getNarratives({ limit: 10, days: 7 }),
+    staleTime: 60 * 1000,
+  });
+  const dashboardQuery = useQuery({
+    queryKey: ["reports-dashboard-summary"],
+    queryFn: () => getDashboardSummary(),
+    staleTime: 60 * 1000,
+  });
+  
+  const isLiveUnavailable = reportsQuery.data === null;
+  const rows = reportsQuery.data?.data
     ? buildApiReportRows(reportsQuery.data.data, {
         description: tr("preview.liveFallback"),
         type: tr("preview.liveType"),
@@ -795,31 +1096,36 @@ export default function ReportsPage() {
         created: tr("preview.liveCreated"),
       })
     : [];
-  const isLiveUnavailable = reportsQuery.data === null;
-  const rows = liveRows.length > 0 || reportsQuery.data ? liveRows : reportRows;
-  const liveMetricCards = templatesQuery.data
-    ? [
-        { key: "templates", value: String(templatesQuery.data.data.length), icon: FileText, tone: "purple" as const },
-        { key: "reportsCreated", value: String(reportsQuery.data?.pagination.total ?? 0), icon: Download, tone: "green" as const },
-        { key: "inProgress", value: String(rows.filter((r) => r.status === "REVIEW" || r.status === "DRAFT").length), icon: Calendar, tone: "purple" as const },
-        { key: "ready", value: String(rows.filter((r) => r.status === "SIAP").length), icon: FileText, tone: "blue" as const },
-      ]
-    : metricCards;
+
+  const templatesValue = templatesQuery.isPending ? "..." : String(templatesQuery.data?.data.length ?? 0);
+  const totalReportsValue = reportsQuery.isPending ? "..." : String(reportsQuery.data?.pagination.total ?? 0);
+  const inProgressValue = reportsQuery.isPending ? "..." : String(rows.filter((r) => r.status === "REVIEW" || r.status === "DRAFT").length);
+  const readyValue = reportsQuery.isPending ? "..." : String(rows.filter((r) => r.status === "READY").length);
+
+  const liveMetricCards = [
+    { key: "templates", value: templatesValue, icon: FileText, tone: "purple" as const },
+    { key: "reportsCreated", value: totalReportsValue, icon: Download, tone: "green" as const },
+    { key: "inProgress", value: inProgressValue, icon: Calendar, tone: "purple" as const },
+    { key: "ready", value: readyValue, icon: FileText, tone: "blue" as const },
+  ];
 
   // Derive live chart data from analytics endpoint
   const analytics = analyticsQuery.data;
   const liveFormatDistribution: FormatDistributionItem[] = analytics
     ? [
         ...(analytics.format_distribution.pdf > 0
-          ? [{ name: "PDF", value: `${analytics.format_distribution.pdf} laporan`, color: formatDistributionColors.PDF }]
+          ? [{ name: "PDF", value: `${analytics.format_distribution.pdf}`, color: formatDistributionColors.PDF }]
           : []),
         ...(analytics.format_distribution.json > 0
-          ? [{ name: "JSON", value: `${analytics.format_distribution.json} laporan`, color: formatDistributionColors.JSON }]
+          ? [{ name: "JSON", value: `${analytics.format_distribution.json}`, color: formatDistributionColors.JSON }]
           : []),
       ]
     : [];
+  const liveFormatTotal = analytics
+    ? analytics.format_distribution.pdf + analytics.format_distribution.json
+    : 0;
   const livePopularReports: PopularReportItem[] = analytics
-    ? analytics.popular_templates.map((t) => ({ title: t.name, views: `${t.count} dibuat` }))
+    ? analytics.popular_templates.map((t) => ({ title: t.name, views: tr("popular.created", { count: t.count }) }))
     : [];
   const liveTrendTimeline = analytics?.trend_timeline ?? [];
   const footerText = reportsQuery.data?.pagination
@@ -837,13 +1143,13 @@ export default function ReportsPage() {
           <p className="mt-2 text-[14px] font-semibold text-[#68739F]">{t("pages.reports.desc")}</p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:bg-[#F8FAFF] sm:w-auto">
+          <button type="button" onClick={() => setIsTemplatesModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:bg-[#F8FAFF] sm:w-auto">
             <FileText size={14} /> {tr("buttons.manageTemplates")}
           </button>
-          <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:bg-[#F8FAFF] sm:w-auto">
+          <button type="button" onClick={() => setIsScheduleModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:bg-[#F8FAFF] sm:w-auto">
             <CalendarClock size={14} /> {tr("buttons.scheduleSettings")}
           </button>
-          <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] transition hover:opacity-90 sm:w-auto">
+          <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] transition hover:opacity-90 sm:w-auto">
             <Plus size={15} /> {tr("buttons.createNew")}
           </button>
         </div>
@@ -852,12 +1158,11 @@ export default function ReportsPage() {
       {/* AI Summary and Preview */}
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-4">
-          <AIReportSummary />
+          <AIReportSummary narratives={narrativesQuery.data?.data} dashboard={dashboardQuery.data} />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {liveMetricCards.map((metric) => {
-              const isLive = templatesQuery.data;
-              const labelKey = isLive ? `liveMetrics.${metric.key}` : `metricsCard.${metric.key}`;
-              const helperKey = isLive ? `liveMetrics.${metric.key}Helper` : `metricsCard.${metric.key}Helper`;
+              const labelKey = `liveMetrics.${metric.key}`;
+              const helperKey = `liveMetrics.${metric.key}Helper`;
               return (
                 <MetricCard
                   key={metric.key}
@@ -872,7 +1177,7 @@ export default function ReportsPage() {
           </div>
           {reportsQuery.isPending ? (
             <TableSkeleton rows={6} columns={7} />
-          ) : reportsQuery.data && liveRows.length === 0 ? (
+          ) : reportsQuery.data && rows.length === 0 ? (
             <DashboardEmptyState title={tr("empty.title")} description={tr("empty.desc")} icon="search" minHeight="min-h-[420px]" />
           ) : (
             <>
@@ -882,20 +1187,412 @@ export default function ReportsPage() {
           )}
         </div>
         <div className="space-y-4">
-          <ReportPreviewSidebar onExportPdf={() => { const firstRow = rows[0]; if (firstRow) exportMutation.mutate({ reportId: String(firstRow.id), format: "pdf" }); }} />
-          <QuickActions />
+          <ReportPreviewSidebar latestReport={reportsQuery.data?.data?.[0]} onExportPdf={() => { const firstRow = rows[0]; if (firstRow) exportMutation.mutate({ reportId: String(firstRow.id), format: "pdf" }); }} isPending={reportsQuery.isPending} />
+          <QuickActions
+            onShare={() => setIsShareModalOpen(true)}
+            onSchedule={() => setIsScheduleModalOpen(true)}
+            onCreate={() => setIsCreateModalOpen(true)}
+            onViewHistory={() => router.push("/workspace/activity")}
+          />
         </div>
       </div>
 
       {/* Bottom Distribution charts */}
       <div className="grid gap-4 lg:grid-cols-[0.95fr_1.15fr_0.9fr]">
-        <FormatDonut distribution={liveFormatDistribution} total={reportsQuery.data?.pagination.total ?? 0} />
+        <FormatDonut distribution={liveFormatDistribution} total={liveFormatTotal} />
         <TimelineChart data={liveTrendTimeline} />
-        <PopularReports reports={livePopularReports} />
-      </div>
+            <PopularReports reports={livePopularReports} onViewAll={() => setIsPopularModalOpen(true)} />
+        </div>
+
+      {/* Schedule Settings Modal */}
+      {mounted && isScheduleModalOpen ? createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => { setIsScheduleModalOpen(false); setIsScheduleFormOpen(false); }}>
+          <Panel className="flex w-full max-w-2xl flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
+              <div className="flex items-center gap-3">
+                <h2 className="text-lg font-black text-[#101334]">{tr("scheduleModal.title")}</h2>
+                {!isScheduleFormOpen && (
+                  <button type="button" onClick={() => { setEditingSchedule(null); setIsScheduleFormOpen(true); }} className="flex h-7 items-center justify-center gap-1.5 rounded-[6px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-2.5 text-[10px] font-black text-white shadow-sm transition hover:opacity-90">
+                    <Plus size={12} /> {tr("scheduleModal.addSchedule")}
+                  </button>
+                )}
+              </div>
+              <button type="button" onClick={() => { setIsScheduleModalOpen(false); setIsScheduleFormOpen(false); }} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              {isScheduleFormOpen ? (
+                <form onSubmit={handleSaveSchedule} className="space-y-4">
+                  <div>
+                    <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("scheduleModal.nameLabel")}</label>
+                    <input name="name" required defaultValue={editingSchedule?.name || ""} placeholder={tr("scheduleModal.namePlaceholder")} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("scheduleModal.templateLabel")}</label>
+                    <select name="templateKey" required defaultValue={editingSchedule?.templateKey || ""} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white">
+                      <option value="" disabled>{tr("scheduleModal.templatePlaceholder")}</option>
+                      {templatesQuery.data?.data.map((tpl) => (
+                        <option key={tpl.key} value={tpl.key}>{tpl.name} ({tpl.isSystem ? tr("scheduleModal.systemTemplate") : tr("scheduleModal.customTemplate")})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <div>
+                      <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("scheduleModal.cadenceLabel")}</label>
+                      <select name="cadence" defaultValue={editingSchedule?.cadence || "weekly"} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white">
+                        <option value="daily">{tr("scheduleModal.daily")}</option>
+                        <option value="weekly">{tr("scheduleModal.weekly")}</option>
+                        <option value="monthly">{tr("scheduleModal.monthly")}</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("scheduleModal.dayLabel")}</label>
+                      <select name="dayOfWeek" defaultValue={editingSchedule?.dayOfWeek || "monday"} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white">
+                        <option value="monday">{tr("scheduleModal.monday")}</option>
+                        <option value="tuesday">{tr("scheduleModal.tuesday")}</option>
+                        <option value="wednesday">{tr("scheduleModal.wednesday")}</option>
+                        <option value="thursday">{tr("scheduleModal.thursday")}</option>
+                        <option value="friday">{tr("scheduleModal.friday")}</option>
+                        <option value="saturday">{tr("scheduleModal.saturday")}</option>
+                        <option value="sunday">{tr("scheduleModal.sunday")}</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("scheduleModal.timeLabel")}</label>
+                      <input name="timeOfDay" type="time" defaultValue={editingSchedule?.timeOfDay || "09:00"} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#EEF1F7]">
+                    <button type="button" onClick={() => { setIsScheduleFormOpen(false); setEditingSchedule(null); }} className="flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF]">
+                      {tr("scheduleModal.cancel")}
+                    </button>
+                    <button type="submit" disabled={createScheduleMutation.isPending || updateScheduleMutation.isPending} className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_8px_16px_rgba(70,95,255,0.2)] transition hover:opacity-90 disabled:opacity-50">
+                      {(createScheduleMutation.isPending || updateScheduleMutation.isPending) ? tr("scheduleModal.saving") : tr("scheduleModal.save")}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="grid gap-3">
+                  {schedulesQuery.isPending ? (
+                    <div className="flex h-40 items-center justify-center">
+                      <RefreshCcw className="animate-spin text-[#8A94B8]" size={24} />
+                    </div>
+                  ) : schedulesQuery.data && schedulesQuery.data.data.length > 0 ? (
+                    schedulesQuery.data.data.map((schedule) => (
+                      <div key={schedule.id} className="rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-[#DCE2F0] hover:bg-white transition shadow-sm">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-black text-[#101334] text-[13px] truncate">{schedule.name}</h3>
+                            <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black", schedule.enabled ? "bg-[#10B981]/10 text-[#10B981]" : "bg-[#EF4444]/10 text-[#EF4444]")}>
+                              {schedule.enabled ? tr("scheduleModal.enabled") : tr("scheduleModal.disabled")}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            <span className="flex items-center gap-1.5 text-[9.5px] bg-[#465FFF]/10 text-[#465FFF] px-2.5 py-1.5 rounded-[6px] font-black uppercase tracking-[0.05em]">
+                              <CalendarClock size={11} /> {tr(`scheduleModal.${schedule.cadence}`)}
+                            </span>
+                            {schedule.dayOfWeek && (
+                              <span className="flex items-center gap-1.5 text-[9.5px] bg-[#8B5CFF]/10 text-[#8B5CFF] px-2.5 py-1.5 rounded-[6px] font-black">
+                                {tr(`scheduleModal.${schedule.dayOfWeek}`)}
+                              </span>
+                            )}
+                            <span className="flex items-center gap-1.5 text-[9.5px] bg-[#F59E0B]/10 text-[#F59E0B] px-2.5 py-1.5 rounded-[6px] font-black">
+                              {schedule.timeOfDay}
+                            </span>
+                          </div>
+                          <p className="text-[10px] font-bold text-[#8A94B8] mt-2">
+                            {tr("scheduleModal.lastRun")}: {schedule.lastRunAt ? new Date(schedule.lastRunAt).toLocaleDateString() : tr("scheduleModal.never")} · {tr("scheduleModal.nextRun")}: {schedule.nextRunAt ? new Date(schedule.nextRunAt).toLocaleDateString() : tr("scheduleModal.never")}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button type="button" onClick={() => toggleScheduleMutation.mutate(schedule.id)} className={cn("flex h-8 items-center justify-center gap-1.5 rounded-[8px] border px-2.5 text-[10px] font-black transition", schedule.enabled ? "border-[#FAD7D7] bg-white text-[#EF4444] hover:bg-[#FFF4F4]" : "border-[#D1FAE5] bg-white text-[#10B981] hover:bg-[#ECFDF5]")}>
+                            {schedule.enabled ? tr("scheduleModal.disabled") : tr("scheduleModal.enabled")}
+                          </button>
+                          <button type="button" onClick={() => { setEditingSchedule(schedule); setIsScheduleFormOpen(true); }} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#465FFF] transition hover:bg-[#F5F7FC]" aria-label="Edit">
+                            <Edit2 size={13} />
+                          </button>
+                          <button type="button" onClick={() => deleteScheduleMutation.mutate(schedule.id)} disabled={deleteScheduleMutation.isPending} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#FAD7D7] bg-white text-[#EF4444] transition hover:bg-[#FFF4F4]" aria-label="Delete">
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex h-40 flex-col items-center justify-center text-center">
+                      <CalendarClock size={24} className="text-[#8B95B8] mb-3" />
+                      <p className="text-[13px] font-bold text-[#53608C]">{tr("scheduleModal.empty")}</p>
+                      <p className="text-[11px] font-bold text-[#8A94B8] mt-1">{tr("scheduleModal.emptyDesc")}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </Panel>
+        </div>,
+        document.body
+      ) : null}
+
+      {/* Popular Reports Modal */}
+      {mounted && isPopularModalOpen ? createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsPopularModalOpen(false)}>
+          <Panel className="flex w-full max-w-lg flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
+              <div>
+                <h2 className="text-lg font-black text-[#101334]">{tr("popular.title")}</h2>
+                <p className="mt-1 text-[11px] font-bold text-[#68739F]">{tr("popular.desc")}</p>
+              </div>
+              <button type="button" onClick={() => setIsPopularModalOpen(false)} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              {livePopularReports.length > 0 ? (
+                <div className="space-y-3">
+                  {livePopularReports.map((report, idx) => (
+                    <div key={report.title} className="flex items-center gap-3 rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-3 hover:border-[#DCE2F0] hover:bg-white transition">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[12px] font-black text-[#465FFF]">
+                        {idx + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <span className="block truncate text-[13px] font-black text-[#101334]">{report.title}</span>
+                      </div>
+                      <span className="text-[12px] font-bold text-[#68739F] shrink-0">{report.views}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-10 text-center">
+                  <FileText size={28} className="text-[#DDE3EF] mb-3" />
+                  <p className="text-[13px] font-bold text-[#53608C]">{tr("popular.noData")}</p>
+                </div>
+              )}
+            </div>
+          </Panel>
+        </div>,
+        document.body
+      ) : null}
+
+      {/* Share Report Modal */}
+      {mounted && isShareModalOpen ? createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsShareModalOpen(false)}>
+          <Panel className="flex w-full max-w-md flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
+              <div>
+                <h2 className="text-lg font-black text-[#101334]">{tr("shareModal.title")}</h2>
+                <p className="mt-1 text-[11px] font-bold text-[#68739F]">{tr("shareModal.desc")}</p>
+              </div>
+              <button type="button" onClick={() => setIsShareModalOpen(false)} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              {rows.length > 0 ? (
+                <form onSubmit={handleShareReport} className="space-y-4">
+                  <div className="rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-3">
+                    <p className="text-[10px] font-bold text-[#8A94B8]">{tr("shareModal.title")}</p>
+                    <p className="mt-1 text-[12px] font-black text-[#101334] truncate">{rows[0].title}</p>
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("shareModal.emailLabel")}</label>
+                    <input name="email" type="email" required placeholder={tr("shareModal.emailPlaceholder")} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("shareModal.subjectLabel")}</label>
+                    <input name="subject" placeholder={tr("shareModal.subjectPlaceholder")} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
+                  </div>
+                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#EEF1F7]">
+                    <button type="button" onClick={() => setIsShareModalOpen(false)} className="flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF]">
+                      {tr("shareModal.cancel")}
+                    </button>
+                    <button type="submit" disabled={shareReportMutation.isPending} className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_8px_16px_rgba(70,95,255,0.2)] transition hover:opacity-90 disabled:opacity-50">
+                      {shareReportMutation.isPending ? tr("shareModal.sending") : tr("shareModal.send")}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <Share2 size={28} className="text-[#DDE3EF] mb-3" />
+                  <p className="text-[13px] font-bold text-[#53608C]">{tr("shareModal.noReport")}</p>
+                </div>
+              )}
+            </div>
+          </Panel>
+        </div>,
+        document.body
+      ) : null}
 
       {/* Screen Reader AI image slot */}
       <div className="sr-only" aria-live="polite">AI image slot: {aiAgentImage}</div>
+
+      {/* Modals */}
+      {mounted && isTemplatesModalOpen ? createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsTemplatesModalOpen(false)}>
+          <Panel className="flex w-full max-w-2xl flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
+              <div className="flex items-center gap-3">
+                <h2 className="text-lg font-black text-[#101334]">{tr("buttons.manageTemplates")}</h2>
+                {!isFormOpen && (
+                  <button type="button" onClick={() => { setEditingTemplate(null); setIsFormOpen(true); }} className="flex h-7 items-center justify-center gap-1.5 rounded-[6px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-2.5 text-[10px] font-black text-white shadow-sm transition hover:opacity-90">
+                    <Plus size={12} /> {tr("templateForm.addCustom")}
+                  </button>
+                )}
+              </div>
+              <button type="button" onClick={() => { setIsTemplatesModalOpen(false); setIsFormOpen(false); }} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              {isFormOpen ? (
+                <form onSubmit={handleSaveTemplate} className="space-y-4">
+                  <div>
+                    <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("templateForm.nameLabel")}</label>
+                    <input name="name" required defaultValue={editingTemplate?.name || ""} placeholder={tr("templateForm.namePlaceholder")} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("templateForm.descLabel")}</label>
+                    <input name="description" defaultValue={editingTemplate?.description || ""} placeholder={tr("templateForm.descPlaceholder")} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("templateForm.formatLabel")}</label>
+                      <div className="flex h-9 w-full items-center rounded-[8px] border border-[#DDE3EF] bg-[#F5F7FC] px-3 text-[12px] font-bold text-[#8A94B8]">
+                        PDF
+                      </div>
+                      <input type="hidden" name="format" value="PDF" />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("templateForm.cadenceLabel")}</label>
+                      <select name="cadence" defaultValue={editingTemplate?.cadence || "On-demand"} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white">
+                        <option value="On-demand">{tr("templateForm.onDemand")}</option>
+                        <option value="Daily">{tr("templateForm.daily")}</option>
+                        <option value="Weekly">{tr("templateForm.weekly")}</option>
+                        <option value="Monthly">{tr("templateForm.monthly")}</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#EEF1F7]">
+                    <button type="button" onClick={() => setIsFormOpen(false)} className="flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF]">
+                      {tr("templateForm.cancel")}
+                    </button>
+                    <button type="submit" disabled={createTemplateMutation.isPending || updateTemplateMutation.isPending} className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_8px_16px_rgba(70,95,255,0.2)] transition hover:opacity-90 disabled:opacity-50">
+                      {(createTemplateMutation.isPending || updateTemplateMutation.isPending) ? tr("templateForm.saving") : tr("templateForm.save")}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="grid gap-3">
+                  {templatesQuery.isPending ? (
+                    <div className="flex h-40 items-center justify-center">
+                      <RefreshCcw className="animate-spin text-[#8A94B8]" size={24} />
+                    </div>
+                  ) : templatesQuery.data && templatesQuery.data.data.length > 0 ? (
+                    templatesQuery.data.data.map((template) => (
+                      <div key={template.key} className="rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-[#DCE2F0] hover:bg-white transition shadow-sm">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-black text-[#101334] text-[13px] truncate">{template.name}</h3>
+                            <span className="shrink-0 rounded-full bg-[#E6EAF2] px-2 py-0.5 text-[9px] font-black text-[#58648C]">
+                              {template.sectionCount} Sections
+                            </span>
+                          </div>
+                          <p className="text-[11px] font-bold text-[#68739F] mt-1 leading-relaxed">{template.description}</p>
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            <span className="flex items-center gap-1.5 text-[9.5px] bg-[#465FFF]/10 text-[#465FFF] px-2.5 py-1.5 rounded-[6px] font-black uppercase tracking-[0.05em]">
+                              <FileText size={11} /> {template.format}
+                            </span>
+                            <span className="flex items-center gap-1.5 text-[9.5px] bg-[#8B5CFF]/10 text-[#8B5CFF] px-2.5 py-1.5 rounded-[6px] font-black uppercase tracking-[0.05em]">
+                              <CalendarClock size={11} /> {template.cadence}
+                            </span>
+                          </div>
+                        </div>
+                        {template.isSystem ? (
+                          <button type="button" className="shrink-0 self-start sm:self-center rounded-[8px] bg-[#F5F7FC] px-3 py-1.5 text-[10px] font-black text-[#8A94B8] border border-[#E6EAF2] cursor-default">
+                            {tr("buttons.systemTemplate")}
+                          </button>
+                        ) : (
+                          <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+                            <button type="button" onClick={() => { setEditingTemplate(template); setIsFormOpen(true); }} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#465FFF] transition hover:bg-[#F5F7FC]" aria-label="Edit">
+                              <Edit2 size={13} />
+                            </button>
+                            <button type="button" onClick={() => deleteTemplateMutation.mutate(template.key)} disabled={deleteTemplateMutation.isPending} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#FAD7D7] bg-white text-[#EF4444] transition hover:bg-[#FFF4F4]" aria-label="Delete">
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex h-40 flex-col items-center justify-center text-center">
+                      <FileText size={24} className="text-[#8B95B8] mb-3" />
+                      <p className="text-sm font-bold text-[#53608C]">{tr("empty.title")}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </Panel>
+        </div>,
+        document.body
+      ) : null}
+
+      {mounted && isCreateModalOpen ? createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsCreateModalOpen(false)}>
+          <Panel className="flex w-full max-w-lg flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
+              <div>
+                <h2 className="text-lg font-black text-[#101334]">{tr("createModal.title")}</h2>
+                <p className="mt-1 text-[11px] font-bold text-[#68739F]">{tr("createModal.desc")}</p>
+              </div>
+              <button type="button" onClick={() => setIsCreateModalOpen(false)} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              <form onSubmit={handleGenerateReport} className="space-y-4">
+                <div>
+                  <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("createModal.templateLabel")}</label>
+                  <select name="templateKey" required defaultValue="" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white">
+                    <option value="" disabled>{tr("createModal.templatePlaceholder")}</option>
+                    {templatesQuery.data?.data.map((tpl) => (
+                      <option key={tpl.key} value={tpl.key}>{tpl.name}</option>
+                    ))}
+                  </select>
+                  {!templatesQuery.isPending && (!templatesQuery.data || templatesQuery.data.data.length === 0) && (
+                    <p className="mt-1.5 text-[10px] font-bold text-[#EF4444]">{tr("createModal.noTemplates")}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("createModal.titleLabel")}</label>
+                  <input name="title" placeholder={tr("createModal.titlePlaceholder")} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("createModal.dateRangeLabel")}</label>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-1 block text-[10px] font-bold text-[#8A94B8]">{tr("createModal.startLabel")}</label>
+                      <input name="startDate" type="date" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-[10px] font-bold text-[#8A94B8]">{tr("createModal.endLabel")}</label>
+                      <input name="endDate" type="date" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#EEF1F7]">
+                  <button type="button" onClick={() => setIsCreateModalOpen(false)} className="flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF]">
+                    {tr("createModal.cancel")}
+                  </button>
+                  <button type="submit" disabled={generateReportMutation.isPending || !templatesQuery.data?.data.length} className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_8px_16px_rgba(70,95,255,0.2)] transition hover:opacity-90 disabled:opacity-50">
+                    {generateReportMutation.isPending ? tr("createModal.generating") : tr("createModal.generate")}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </Panel>
+        </div>,
+        document.body
+      ) : null}
     </div>
   );
 }
