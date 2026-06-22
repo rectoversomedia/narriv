@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { DashboardEmptyState, DashboardErrorState, MetricRowSkeleton } from "@/components/dashboard/dashboard-states";
+import { DashboardErrorState, MetricRowSkeleton } from "@/components/dashboard/dashboard-states";
 import { getVisibility, getVisibilitySummary, getVisibilityTrends, triggerVisibilityAnalysis, type VisibilityResponse } from "@/lib/api-service";
 import { useUiStore } from "@/store/useUiStore";
 import {
@@ -433,41 +433,42 @@ function exportVisibilityCsv(data: {
   latestMentions: Array<{ platform: string; quote: string }>;
 }) {
   const now = new Date().toISOString().split("T")[0];
+  const isId = data.language === "id";
   const rows: string[][] = [];
 
-  rows.push(["AI Visibility Report", now]);
+  rows.push([isId ? "Laporan Visibilitas AI" : "AI Visibility Report", now]);
   rows.push([]);
 
-  rows.push(["Summary Metrics", "Value"]);
-  rows.push(["Total Mentions", data.totalMentions]);
-  rows.push(["Brand Presence", data.brandPresence]);
-  rows.push(["Competitor Presence", data.competitorPresence]);
-  rows.push(["Visibility Score", data.visibilityScore]);
+  rows.push([isId ? "Metrik Ringkasan" : "Summary Metrics", isId ? "Nilai" : "Value"]);
+  rows.push([isId ? "Total Penyebutan" : "Total Mentions", data.totalMentions]);
+  rows.push([isId ? "Kehadiran Brand" : "Brand Presence", data.brandPresence]);
+  rows.push([isId ? "Kehadiran Kompetitor" : "Competitor Presence", data.competitorPresence]);
+  rows.push([isId ? "Skor Visibilitas" : "Visibility Score", data.visibilityScore]);
   rows.push([]);
 
-  rows.push(["Trend Data"]);
-  rows.push(["Date", "Brand Presence %", "Competitor Presence %", "Visibility Score"]);
+  rows.push([isId ? "Data Tren" : "Trend Data"]);
+  rows.push([isId ? "Tanggal" : "Date", isId ? "Kehadiran Brand %" : "Brand Presence %", isId ? "Kehadiran Kompetitor %" : "Competitor Presence %", isId ? "Skor Visibilitas" : "Visibility Score"]);
   for (const point of data.trendPoints) {
     rows.push([point.date, String(point.brandPresence), String(point.competitorPresence), String(point.score)]);
   }
   rows.push([]);
 
-  rows.push(["Top Topics"]);
-  rows.push(["Topic", "Mentions", "Direction", "Type"]);
+  rows.push([isId ? "Topik Teratas" : "Top Topics"]);
+  rows.push([isId ? "Topik" : "Topic", isId ? "Penyebutan" : "Mentions", isId ? "Arah" : "Direction", isId ? "Tipe" : "Type"]);
   for (const topic of data.topTopics) {
     rows.push([topic.topic, topic.mentions, topic.direction, topic.type]);
   }
   rows.push([]);
 
-  rows.push(["Platform Breakdown"]);
-  rows.push(["Platform", "Visibility Score", "Brand Presence Rate %"]);
+  rows.push([isId ? "Breakdown Platform" : "Platform Breakdown"]);
+  rows.push([isId ? "Platform" : "Platform", isId ? "Skor Visibilitas" : "Visibility Score", isId ? "Tingkat Kehadiran Brand %" : "Brand Presence Rate %"]);
   for (const platform of data.platformBreakdown) {
     rows.push([platform.name, String(platform.score), String(platform.presenceRate)]);
   }
   rows.push([]);
 
-  rows.push(["Latest Mentions"]);
-  rows.push(["Platform", "Quote"]);
+  rows.push([isId ? "Penyebutan Terbaru" : "Latest Mentions"]);
+  rows.push([isId ? "Platform" : "Platform", isId ? "Kutipan" : "Quote"]);
   for (const mention of data.latestMentions) {
     rows.push([mention.platform, mention.quote]);
   }

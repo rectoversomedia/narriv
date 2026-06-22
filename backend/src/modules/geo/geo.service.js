@@ -120,7 +120,8 @@ async function queryAIEngine(engineName, queries) {
         logStructured("warn", "[GEO] No OPENAI_API_KEY set. Returning mock responses.");
         return queries.map(q => ({
             query: q,
-            response: `Mock response for: ${q}. This is placeholder text for development.`
+            response: `Mock response for: ${q}. This is placeholder text for development.`,
+            responseId: `Respons mock untuk: ${q}. Ini adalah teks placeholder untuk development.`
         }));
     }
 
