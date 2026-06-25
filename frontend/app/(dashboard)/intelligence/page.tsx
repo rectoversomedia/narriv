@@ -516,7 +516,7 @@ export default function IntelligencePage() {
   const actionsMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    setMounted(true);
+    const mountedId = window.setTimeout(() => setMounted(true), 0);
     
     function handleClickOutside(e: MouseEvent) {
       const target = e.target as Node;
@@ -537,6 +537,7 @@ export default function IntelligencePage() {
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleKeyDown);
     return () => {
+      window.clearTimeout(mountedId);
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
     };

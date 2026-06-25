@@ -1,7 +1,7 @@
 import express from "express";
 import prisma from "../../prisma.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
-import { resolveScopedWorkspaceIds } from "../../lib/workspace-access.js";
+import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
 import { z } from "zod";
 import { alertIdParamsSchema, updateAlertStatusBodySchema } from "./alerts.schema.js";
@@ -42,6 +42,67 @@ function buildHourlyAlertTimeline(alerts, now = new Date()) {
 
     return { timeline, timelineLabels };
 }
+
+// POST /api/alerts - Create a new alert
+const createAlertBodySchema = z.object({
+    title: z.string().trim().min(1, "title is required").max(200, "title is too long"),
+    type: z.enum(["risk", "opportunity", "positioning"]).default("risk"),
+    severity: z.enum(["low", "medium", "high", "critical"]).default("medium"),
+    whatHappened: z.string().trim().max(2000).optional().nullable(),
+    whyItMatters: z.string().trim().max(2000).optional().nullable(),
+    whatToDo: z.string().trim().max(2000).optional().nullable(),
+    assignedTo: z.string().trim().max(120).optional().nullable(),
+    assignedTeam: z.string().trim().max(120).optional().nullable(),
+    deadline: z.string().datetime().optional().nullable(),
+    sources: z.array(z.string()).optional().default([]),
+    workspaceId: z.string().uuid().optional(),
+}).strict();
+
+router.post("/", validateRequest({ body: createAlertBodySchema }), async (req, res) => {
+    try {
+        const { title, type, severity, whatHappened, whyItMatters, whatToDo, assignedTo, assignedTeam, deadline, sources, workspaceId } = req.body;
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
+        if (!scopedWorkspaceId) {
+            return res.status(403).json({ error: "Workspace access denied" });
+        }
+
+        const alert = await prisma.alert.create({
+            data: {
+                workspaceId: scopedWorkspaceId,
+                title,
+                type,
+                severity,
+                whatHappened: whatHappened || null,
+                whyItMatters: whyItMatters || null,
+                whatToDo: whatToDo || null,
+                assignedTo: assignedTo || null,
+                assignedTeam: assignedTeam || null,
+                deadline: deadline ? new Date(deadline) : null,
+                status: "open",
+                sources: sources || [],
+            }
+        });
+
+        await prisma.auditLog.create({
+            data: {
+                userId: req.user.id,
+                event: "alert_created",
+                metadata: {
+                    targetType: "alert",
+                    alertId: alert.id,
+                    workspaceId: alert.workspaceId,
+                    title: alert.title,
+                    severity: alert.severity,
+                }
+            }
+        });
+
+        res.status(201).json(alert);
+    } catch (error) {
+        logStructured("error", "Error creating alert:", { error: error?.message || error, stack: error?.stack });
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
 
 // GET /api/alerts - Get list of alerts with filtering and pagination
 router.get("/", async (req, res) => {

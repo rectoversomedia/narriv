@@ -216,6 +216,7 @@ export interface Alert {
   deadline?: string | null;
   escalationLevel?: EscalationLevel | null;
   workflowStatus?: string | null;
+  sources?: string[];
   createdAt: string;
 }
 
@@ -359,6 +360,74 @@ export async function updateAlertStatus(
       method: "PATCH",
       body: JSON.stringify({ status }),
     });
+  } catch {
+    return null;
+  }
+}
+
+export interface CreateAlertInput {
+  title: string;
+  type?: "risk" | "opportunity" | "positioning";
+  severity?: "low" | "medium" | "high" | "critical";
+  whatHappened?: string;
+  whyItMatters?: string;
+  whatToDo?: string;
+  assignedTo?: string;
+  assignedTeam?: string;
+  deadline?: string;
+  sources?: string[];
+  workspaceId?: string;
+}
+
+export async function createAlert(input: CreateAlertInput): Promise<Alert | null> {
+  return apiClient<Alert>("/api/alerts", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Escalation Matrix
+// ---------------------------------------------------------------------------
+
+export interface EscalationMatrixRecord {
+  id: string;
+  workspaceId: string;
+  level: string;
+  roleName: string;
+  slaMinutes: number;
+  isActive: boolean;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type NotificationRuleTrigger = "severity" | "sentiment" | "sla" | "keyword";
+
+export interface NotificationRuleRecord {
+  id: string;
+  trigger: NotificationRuleTrigger;
+  condition: string;
+  channels: string[];
+  enabled: boolean;
+}
+
+export async function getEscalationMatrix(): Promise<EscalationMatrixRecord[] | null> {
+  try {
+    const response = await apiClient<{ data: EscalationMatrixRecord[] }>("/api/alerts/escalation-matrix");
+    return response.data;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateEscalationMatrix(levels: Array<{ level: string; roleName: string; slaMinutes: number; isActive?: boolean; order: number }>): Promise<EscalationMatrixRecord[] | null> {
+  try {
+    const response = await apiClient<{ data: EscalationMatrixRecord[] }>("/api/alerts/escalation-matrix", {
+      method: "POST",
+      body: JSON.stringify({ levels }),
+    });
+    return response.data;
   } catch {
     return null;
   }
@@ -675,6 +744,7 @@ export interface NotificationSettings {
   whatsappEnabled: boolean;
   escalationNotifications: boolean;
   reminderNotifications: boolean;
+  customRules?: NotificationRuleRecord[];
 }
 
 export async function getNotificationSettings(): Promise<NotificationSettings | null> {
@@ -685,15 +755,11 @@ export async function getNotificationSettings(): Promise<NotificationSettings | 
   }
 }
 
-export async function updateNotificationSettings(input: Partial<Pick<NotificationSettings, "emailEnabled" | "whatsappEnabled" | "escalationNotifications" | "reminderNotifications">>): Promise<NotificationSettings | null> {
-  try {
-    return await apiClient<NotificationSettings>("/api/workspace/notification-settings", {
-      method: "PATCH",
-      body: JSON.stringify(input),
-    });
-  } catch {
-    return null;
-  }
+export async function updateNotificationSettings(input: Partial<Pick<NotificationSettings, "emailEnabled" | "whatsappEnabled" | "escalationNotifications" | "reminderNotifications" | "customRules">>): Promise<NotificationSettings | null> {
+  return apiClient<NotificationSettings>("/api/workspace/notification-settings", {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -863,14 +929,10 @@ export async function getCaseById(id: string): Promise<CaseRecord | null> {
 }
 
 export async function createCase(input: { title: string; description?: string; priority?: string; sourceType?: string; sourceId?: string; assignedTo?: string; assignedTeam?: string; deadline?: string; workspaceId?: string }): Promise<CaseRecord | null> {
-  try {
-    return await apiClient<CaseRecord>("/api/workspace/cases", {
-      method: "POST",
-      body: JSON.stringify(input),
-    });
-  } catch {
-    return null;
-  }
+  return apiClient<CaseRecord>("/api/workspace/cases", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
 export async function updateCase(id: string, input: Partial<Pick<CaseRecord, "title" | "description" | "status" | "priority" | "assignedTo" | "assignedTeam" | "deadline" | "resolution">>): Promise<CaseRecord | null> {

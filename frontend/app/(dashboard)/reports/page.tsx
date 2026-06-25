@@ -616,7 +616,7 @@ function ReportsTable({ rows, footerText, pagination, onPageChange, isFetching }
   );
 }
 
-function FormatDonut({ distribution, total }: { distribution: Array<{ name: string; value: string; color: string }>; total: number }) {
+function FormatDonut({ distribution }: { distribution: Array<{ name: string; value: string; color: string }> }) {
   const tr = useTranslations("Reports");
   
   const totalForPercent = distribution.reduce((acc, item) => {
@@ -719,7 +719,6 @@ function TimelineChart({ data }: { data: ReportsAnalyticsResponse["trend_timelin
   const peakIndex = hasData ? series.indexOf(max) : -1;
   const peakDate = peakIndex >= 0 ? formatChartDate(data[peakIndex].date) : "";
   const peakX = peakIndex >= 0 ? padding + (peakIndex / (series.length - 1)) * (width - padding * 2) : 0;
-  const peakY = peakIndex >= 0 ? padding + (1 - max / yMax) * chartHeight : 0;
   const peakXPct = ((peakX / width) * 100).toFixed(1);
 
   // X-axis labels (up to 5 evenly spaced)
@@ -853,7 +852,7 @@ export default function ReportsPage() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const mountedId = window.setTimeout(() => setMounted(true), 0);
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setIsTemplatesModalOpen(false);
@@ -865,7 +864,10 @@ export default function ReportsPage() {
       }
     };
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      window.clearTimeout(mountedId);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
@@ -1121,9 +1123,6 @@ export default function ReportsPage() {
           : []),
       ]
     : [];
-  const liveFormatTotal = analytics
-    ? analytics.format_distribution.pdf + analytics.format_distribution.json
-    : 0;
   const livePopularReports: PopularReportItem[] = analytics
     ? analytics.popular_templates.map((t) => ({ title: t.name, views: tr("popular.created", { count: t.count }) }))
     : [];
@@ -1199,7 +1198,7 @@ export default function ReportsPage() {
 
       {/* Bottom Distribution charts */}
       <div className="grid gap-4 lg:grid-cols-[0.95fr_1.15fr_0.9fr]">
-        <FormatDonut distribution={liveFormatDistribution} total={liveFormatTotal} />
+        <FormatDonut distribution={liveFormatDistribution} />
         <TimelineChart data={liveTrendTimeline} />
             <PopularReports reports={livePopularReports} onViewAll={() => setIsPopularModalOpen(true)} />
         </div>

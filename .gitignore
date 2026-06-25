@@ -5,6 +5,7 @@ opencode.json
 .claude 
 .playwright-mcp
 .codex
+.commandcode
 process
 !process/
 process/*

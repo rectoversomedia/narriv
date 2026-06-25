@@ -294,7 +294,7 @@ function CompetitorVsChart({ datasets, dates, fallbackDates, emptyText }: { data
   );
 }
 
-function TopicTypeBadge({ type, language }: { type: string; language: string }) {
+function TopicTypeBadge({ type }: { type: string }) {
   const normalizedType = type.toLowerCase();
   let badgeVariant: "default" | "green" | "amber" | "red" | "purple" | "slate" = "slate";
   if (normalizedType.includes("opportunity") || normalizedType.includes("peluang")) badgeVariant = "green";
@@ -951,7 +951,7 @@ export default function VisibilityPage() {
                             <td className="py-3 font-black text-[#101334]">{item.topic}</td>
                             <td className="py-3 text-right text-[#53608C]">{item.mentions}</td>
                             <td className="py-3 text-center"><TopicDirection val={item.direction} /></td>
-                            <td className="py-3 text-center"><TopicTypeBadge type={item.type} language={language} /></td>
+                            <td className="py-3 text-center"><TopicTypeBadge type={item.type} /></td>
                           </tr>
                         ))}
                       </tbody>

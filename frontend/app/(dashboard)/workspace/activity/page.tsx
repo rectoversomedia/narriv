@@ -11,8 +11,9 @@ import { getActivityLogs, type ActivityLogEntry } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
 
 const emptyActivityRows: ActivityLogEntry[] = [];
+type ActivityTranslator = ReturnType<typeof useTranslations<"ActivityLog">>;
 
-const getEventOptions = (t: any) => [
+const getEventOptions = (t: ActivityTranslator) => [
   { value: "", label: t("allEvents") },
   { value: "login", label: t("event_login") },
   { value: "logout", label: t("event_logout") },
@@ -38,7 +39,7 @@ const knownEvents = [
   "case_created", "case_updated", "integration_created", "integration_updated"
 ];
 
-function formatEventName(event: string, t?: any) {
+function formatEventName(event: string, t?: ActivityTranslator) {
   if (t && knownEvents.includes(event)) {
     return t(`event_${event}`);
   }
@@ -65,7 +66,7 @@ function formatDateTime(value: string, locale: string) {
   }).format(new Date(value));
 }
 
-function formatRelativeTime(value: string, locale: string, t: any) {
+function formatRelativeTime(value: string, locale: string, t: ActivityTranslator) {
   const deltaSeconds = Math.round((new Date(value).getTime() - Date.now()) / 1000);
   const ranges: Array<[Intl.RelativeTimeFormatUnit, number]> = [
     ["year", 60 * 60 * 24 * 365],
@@ -84,7 +85,7 @@ function formatRelativeTime(value: string, locale: string, t: any) {
   return t("justNow");
 }
 
-function metadataSummary(metadata: ActivityLogEntry["metadata"], t: any) {
+function metadataSummary(metadata: ActivityLogEntry["metadata"], t: ActivityTranslator) {
   if (!metadata) return t("noMetadata");
 
   const visibleEntries = Object.entries(metadata)

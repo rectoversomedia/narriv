@@ -295,7 +295,7 @@
       "action": "Aksi",
       "system": "Sistem",
       "command": "Beranda",
-      "signals": "Temuan",
+      "signals": "Sinyal",
       "alerts": "Peringatan",
       "visibility": "Visibilitas AI",
       "intelligence": "Intelijen",
@@ -722,17 +722,17 @@
         "errorDesc": "Terjadi kesalahan saat membuat investigasi."
       }
     },
-    "eyebrow": "Temuan",
-    "title": "Intelijen Temuan",
+    "eyebrow": "Sinyal",
+    "title": "Sinyal Intelijen",
     "subtitle": "Tinjau temuan yang masuk dan ubah hasil penting menjadi langkah yang jelas.",
     "createAction": "Buat Aksi",
     "creatingAction": "Membuat...",
     "createActionFailed": "Rencana aksi belum bisa dibuat. Pembuatan AI mungkin belum tersedia atau konfigurasinya belum lengkap.",
-    "search": "Cari temuan...",
+    "search": "Cari sinyal...",
     "filter": "Filter",
-    "tableTitle": "Daftar Temuan",
-    "tableDesc": "Pantau temuan masuk, pilih satu baris untuk melihat konteks dan rekomendasi.",
-    "signal": "Temuan",
+    "tableTitle": "Daftar Sinyal",
+    "tableDesc": "Pantau sinyal masuk, pilih satu baris untuk melihat konteks dan rekomendasi.",
+    "signal": "Sinyal",
     "source": "Sumber",
     "sentiment": "Sentimen",
     "confidence": "Keyakinan",
@@ -1182,7 +1182,9 @@
       "noLiveAlerts": "Tidak ada alert live untuk ditampilkan",
       "noAlertsDesc": "Saat ini tidak ada alert live yang cocok dengan filter aktif.",
       "dataUnavailable": "Data live belum bisa dimuat",
-      "dataUnavailableDesc": "Gagal mengambil alert live. Untuk sementara, menampilkan data fallback."
+      "dataUnavailableDesc": "Gagal mengambil alert live. Untuk sementara, menampilkan data fallback.",
+      "noIncident": "Belum ada insiden kritis",
+      "noIncidentDesc": "Ketika ada alert kritis, alert tersebut akan ditampilkan di sini."
     },
     "error": {
       "title": "Data live belum bisa dimuat",
@@ -1190,11 +1192,83 @@
     },
     "v2": {
       "header": {
-        "title": "Alerts",
+        "title": "Peringatan",
         "desc": "Tinjau peringatan yang membutuhkan perhatian sebelum tereskalasi.",
         "notificationRules": "Aturan Notifikasi",
         "escalationMatrix": "Matriks Eskalasi",
-        "createAlert": "Buat Alert"
+        "createAlert": "Buat Peringatan"
+      },
+      "notificationRulesModal": {
+        "title": "Aturan Notifikasi",
+        "desc": "Pilih kapan dan bagaimana tim Anda menerima notifikasi.",
+        "addRule": "+ Tambah Aturan",
+        "presets": "Atur Cepat",
+        "presetCritical": "Hanya Alert Penting",
+        "presetCriticalDesc": "Hanya diberitahu untuk alert terpenting",
+        "presetAll": "Semua Alert",
+        "presetAllDesc": "Diberitahu untuk setiap alert",
+        "presetQuiet": "Mode Senyap",
+        "presetQuietDesc": "Hanya ringkasan harian, tanpa notifikasi real-time",
+        "triggerLabel": "Kapan",
+        "actionLabel": "Kirim ke",
+        "triggers": {
+          "severity": "Tingkat alert",
+          "sentiment": "Sentimen negatif naik",
+          "sla": "Deadline hampir habis (dalam",
+          "keyword": "Ada yang menyebut"
+        },
+        "severityValues": {
+          "low": "Rendah",
+          "medium": "Sedang",
+          "high": "Tinggi",
+          "critical": "Kritis"
+        },
+        "slaValues": {
+          "1 min": "1 menit",
+          "5 min": "5 menit",
+          "15 min": "15 menit",
+          "30 min": "30 menit",
+          "1 hour": "1 jam"
+        },
+        "channels": {
+          "instant": "Instan (WhatsApp, Telegram, dll)",
+          "standard": "Email",
+          "all": "Semua Saluran",
+          "none": "Pilih platform..."
+        },
+        "save": "Simpan",
+        "saving": "Menyimpan...",
+        "cancel": "Batal",
+        "success": "Aturan berhasil disimpan",
+        "error": "Gagal menyimpan aturan"
+      },
+      "createForm": {
+        "title": "Buat Alert Baru",
+        "desc": "Buat alert baru untuk melacak masalah atau peluang.",
+        "titleLabel": "Judul Alert",
+        "titlePlaceholder": "Masukkan judul alert...",
+        "typeLabel": "Tipe",
+        "typeRisk": "Risiko",
+        "typeOpportunity": "Peluang",
+        "typePositioning": "Posisi",
+        "severityLabel": "Tingkat Keparahan",
+        "severityLow": "Rendah",
+        "severityMedium": "Sedang",
+        "severityHigh": "Tinggi",
+        "severityCritical": "Kritis",
+        "whatHappenedLabel": "Apa Yang Terjadi",
+        "whatHappenedPlaceholder": "Jelaskan apa yang terjadi...",
+        "whyItMattersLabel": "Mengapa Ini Penting",
+        "whyItMattersPlaceholder": "Jelaskan mengapa ini penting...",
+        "whatToDoLabel": "Yang Perlu Dilakukan",
+        "whatToDoPlaceholder": "Tindakan yang disarankan...",
+        "assignedToLabel": "Ditugaskan Ke",
+        "assignedToPlaceholder": "Pilih orang",
+        "assignedTeamLabel": "Tim",
+        "assignedTeamPlaceholder": "Pilih tim",
+        "deadlineLabel": "Batas Waktu",
+        "submit": "Buat Alert",
+        "cancel": "Batal"
       },
       "metrics": {
         "totalAlerts": "Total Alert",
@@ -1233,7 +1307,9 @@
         "owner": "Pemilik",
         "corporateAffairs": "Corporate Affairs",
         "status": "Status",
+        "new": "Baru",
         "investigating": "Sedang Diselidiki",
+        "resolved": "Selesai",
         "since": "Sejak {time}"
       },
       "delivery": {
@@ -1247,7 +1323,10 @@
         "recipients": "{count} penerima",
         "execChannel": "Saluran Eksekutif",
         "corpAffairsChannel": "#corporate-affairs",
-        "viewAllChannels": "Lihat semua saluran"
+        "viewAllChannels": "Lihat semua saluran",
+        "noChannels": "Belum ada saluran terhubung",
+        "noChannelsDesc": "Hubungkan platform di Integrasi untuk menerima notifikasi",
+        "moreChannels": "saluran lainnya"
       },
       "stakeholder": {
         "title": "Keterlibatan Pemangku Kepentingan",
@@ -1265,18 +1344,32 @@
         "lastUpdate": "Update terakhir: {time}"
       },
       "escalationMatrix": {
-        "title": "Matriks Eskalasi",
-        "l1": "L1",
+        "title": "Alur Eskalasi",
+        "desc": "Siapa yang menangani alert dan kapan mereka terlibat",
+        "presets": "Atur Cepat",
+        "presetBasic": "Sederhana (3 Level)",
+        "presetBasicDesc": "Ketua Tim → Kepala → Eksekutif",
+        "presetAdvanced": "Lanjutan (5 Level)",
+        "presetAdvancedDesc": "Hierarki lengkap dengan peran detail",
+        "levelLabel": "Level",
+        "ownerLabel": "Penanggung Jawab",
+        "timeLabel": "Waktu Respons",
+        "activeLabel": "Aktif",
+        "standbyLabel": "Siaga",
+        "addLevel": "+ Tambah Level",
         "teamLead": "Ketua Tim",
-        "sla": "SLA: {time}",
-        "l2": "L2",
         "deptHead": "Kepala Departemen",
-        "l3": "L3",
-        "execTeam": "Tim Eksekutif"
+        "execTeam": "Tim Eksekutif",
+        "l1": "Level 1",
+        "l2": "Level 2",
+        "l3": "Level 3",
+        "sla": "Respons dalam {time}",
+        "roleGroup": "Berdasarkan Role / Tim",
+        "memberGroup": "Berdasarkan Orang Spesifik"
       },
       "journey": {
         "title": "Perjalanan Alert",
-        "viewFull": "Lihat Timeline Lengkap",
+        "viewFull": "Lihat Timeline",
         "step1Title": "Alert Dihasilkan",
         "step1Desc": "AI mendeteksi lonjakan keluhan yang tidak biasa",
         "step2Title": "Dikirim melalui WhatsApp",
@@ -1314,7 +1407,7 @@
     }
   },
   "Intelligence": {
-    "pageTitle": "Intelligence",
+    "pageTitle": "Intelijen",
     "pageSubtitle": "Pahami cluster topik, pertumbuhan narasi, dan konteks strategis.",
     "title": "Peta Topik",
     "subtitle": "Pahami topik yang sedang naik, siapa yang terlibat, dampaknya, dan risiko di baliknya.",
@@ -1334,24 +1427,24 @@
     "clusterDesc": "Topik ini menghubungkan kepercayaan pelanggan, waktu pengungkapan, dan perhatian regulator. Kutipan berita menjadi pendorong terkuat.",
     "metrics": {
       "clusters": {
-        "label": "Clusters Identified",
+        "label": "Kelompok yang Teridentifikasi",
         "value": "28",
         "helper": "6 mempercepat",
         "accelerating": "{count} mempercepat"
       },
       "confidence": {
-        "label": "Narrative Confidence",
+        "label": "Keyakinan Narasi",
         "value": "89%",
         "helper": "Evidence weighted"
       },
       "emerging": {
-        "label": "Emerging Narratives",
+        "label": "Narasi yang Muncul",
         "value": "7",
         "helper": "2 baru minggu ini",
         "liveNarratives": "{count} narasi live"
       },
       "opportunities": {
-        "label": "Opportunities Detected",
+        "label": "Peluang Terdeteksi",
         "value": "5",
         "helper": "2 potensi tinggi",
         "highImpact": "{count} dampak tinggi"
@@ -1429,9 +1522,9 @@
       "moreActions": "Aksi narasi terpilih lainnya"
     },
     "competitorShare": {
-      "title": "Porsi Narasi Kompetitor",
-      "totalShare": "Total Porsi Narasi",
-      "viewLandscape": "Lihat Lanskap Kompetitif"
+      "title": "Popularitas Obrolan Kompetitor",
+      "totalShare": "Total Obrolan",
+      "viewLandscape": "Lihat Peta Persaingan"
     },
     "aiSummary": {
       "title": "Insight Narasi (Ringkasan AI)",
@@ -1449,23 +1542,23 @@
       "title": "Siklus Hidup Narasi",
       "phases": {
         "emerging": {
-          "title": "Emerging",
+          "title": "Muncul",
           "desc": "Baru muncul dan mulai berkembang"
         },
         "accelerating": {
-          "title": "Accelerating",
+          "title": "Meningkat",
           "desc": "Pertumbuhan cepat dan meluas"
         },
         "peaking": {
-          "title": "Peaking",
+          "title": "Puncak",
           "desc": "Mencapai puncak perhatian publik"
         },
         "declining": {
-          "title": "Declining",
+          "title": "Menurun",
           "desc": "Mulai menurun dan stabil"
         },
         "dormant": {
-          "title": "Dormant",
+          "title": "Pasif",
           "desc": "Minim aktivitas, perlu monitoring"
         }
       }
@@ -1475,7 +1568,7 @@
       "sourcesActive": "62 / 72 Sumber Aktif",
       "coveragePercent": "86% Cakupan",
       "updateFreq": "Frekuensi Pembaruan",
-      "realtime": "Real-time",
+      "realtime": "Waktu Nyata",
       "autoUpdated": "Diperbarui otomatis 30 detik lalu",
       "aiStatus": "Status Model AI",
       "operational": "Operasional",
@@ -2020,14 +2113,14 @@
         "statusUpdateFailed": "Gagal memperbarui status."
       },
       "status": {
-        "open": "Open",
-        "in_progress": "In Progress",
-        "resolved": "Resolved",
-        "closed": "Closed",
-        "critical": "Critical",
-        "high": "High",
-        "medium": "Medium",
-        "low": "Low"
+        "open": "Terbuka",
+        "in_progress": "Sedang Dikerjakan",
+        "resolved": "Selesai",
+        "closed": "Ditutup",
+        "critical": "Kritis",
+        "high": "Tinggi",
+        "medium": "Sedang",
+        "low": "Rendah"
       },
       "filter": {
         "allStatus": "Semua Status",
@@ -2043,7 +2136,7 @@
         "unassigned": "Unassigned"
       },
       "header": {
-        "title": "Cases & Investigations",
+        "title": "Kasus & Penyelidikan",
         "desc": "Kelola dan pantau antrean investigasi tim Anda.",
         "newCase": "Buat Case Baru"
       },
@@ -2055,6 +2148,22 @@
         "title": "Hapus Kasus",
         "description": "Apakah Anda yakin ingin menghapus kasus ini? Data yang dihapus tidak dapat dikembalikan.",
         "confirm": "Hapus Kasus",
+        "cancel": "Batal"
+      },
+      "create": {
+        "title": "Buat Kasus Baru",
+        "desc": "Buat kasus investigasi baru dari alert, rencana aksi, atau input manual.",
+        "titleLabel": "Judul Kasus",
+        "titlePlaceholder": "Masukkan judul kasus...",
+        "descLabel": "Deskripsi",
+        "descPlaceholder": "Jelaskan kasus secara singkat...",
+        "priorityLabel": "Prioritas",
+        "assignedToLabel": "Ditugaskan Ke",
+        "assignedToPlaceholder": "Orang yang bertanggung jawab",
+        "assignedTeamLabel": "Tim",
+        "assignedTeamPlaceholder": "Comms, PR, Growth...",
+        "deadlineLabel": "Batas Waktu",
+        "submit": "Buat Kasus",
         "cancel": "Batal"
       },
       "pagination": {
@@ -2550,7 +2659,7 @@
     },
     "nav": {
       "command": "Beranda",
-      "signals": "Temuan",
+      "signals": "Sinyal",
       "alerts": "Peringatan",
       "visibility": "Visibilitas AI",
       "intelligence": "Intelijen",

@@ -10,7 +10,6 @@ import {
   AlertTriangle,
   ArrowRight,
   Briefcase,
-  ChevronDown,
   FileText,
   Flag,
   HelpCircle,
@@ -21,7 +20,6 @@ import {
   Sparkles,
   Star,
   Zap,
-  type LucideIcon,
 } from "lucide-react";
 import {
   AppStore,
@@ -33,7 +31,7 @@ import {
 import { cn } from "@/lib/utils";
 import { CreateInvestigationModal } from "./components/create-investigation-modal";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton } from "@/components/dashboard/dashboard-states";
-import { getDateRangeOptions, getSignals, type DateRangeKey, type PaginationInfo, type Signal, getSignalsMeta, type SignalsMeta } from "@/lib/api-service";
+import { getDateRangeOptions, getSignals, type PaginationInfo, type Signal, getSignalsMeta, type SignalsMeta } from "@/lib/api-service";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Severity = "CRITICAL" | "HIGH" | "MEDIUM";
@@ -296,7 +294,7 @@ function SourceIconList({ row }: { row: SignalRow }) {
   );
 }
 
-function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, footerText, timeRange, setTimeRange, pagination, onPageChange, isFetching, className, tTimeRange, tSignals }: { activeFilter: string; setActiveFilter: (value: string) => void; query: string; setQuery: (value: string) => void; rows: SignalRow[]; footerText: string; timeRange: DateRangeKey; setTimeRange: (value: DateRangeKey) => void; pagination?: PaginationInfo | null; onPageChange: (page: number) => void; isFetching?: boolean; className?: string; tTimeRange: (key: string) => string; tSignals: (key: string) => string }) {
+function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, footerText, pagination, onPageChange, isFetching, className, tTimeRange, tSignals }: { activeFilter: string; setActiveFilter: (value: string) => void; query: string; setQuery: (value: string) => void; rows: SignalRow[]; footerText: string; pagination?: PaginationInfo | null; onPageChange: (page: number) => void; isFetching?: boolean; className?: string; tTimeRange: (key: string) => string; tSignals: (key: string) => string }) {
   const tabs = [tSignals("filterAll"), tSignals("filterNegative"), tSignals("filterPositive"), tSignals("filterMixed"), tSignals("filterCritical")];
   const filterMap: Record<string, string> = {
     [tSignals("filterAll")]: "Semua",
@@ -305,11 +303,6 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
     [tSignals("filterMixed")]: "Campuran",
     [tSignals("filterCritical")]: "Kritis",
   };
-  const timeRangeOptions: Array<{ label: string; value: DateRangeKey }> = [
-    { label: tTimeRange("timeRange24h"), value: "24h" },
-    { label: tTimeRange("timeRange7d"), value: "7d" },
-    { label: tTimeRange("timeRange30d"), value: "30d" },
-  ];
 
   return (
     <div className={cn("flex flex-col gap-3", className)}>
@@ -319,25 +312,30 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
             <button key={tab} type="button" onClick={() => setActiveFilter(filterMap[tab] ?? tab)} className={cn("h-9 rounded-full px-4 text-[12px] font-black transition", (filterMap[activeFilter] ?? activeFilter) === (filterMap[tab] ?? tab) ? "bg-[#465FFF] text-white shadow-[0_10px_22px_rgba(70,95,255,0.22)]" : "border border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B] hover:bg-white")}>{tab}</button>
           ))}
         </div>
-        <div className="flex flex-wrap gap-2">
-          <div className="flex rounded-[8px] border border-[#DDE3EF] bg-white p-0.5">
-            {timeRangeOptions.map((range) => (
-              <button
-                key={range.value}
-                type="button"
-                onClick={() => setTimeRange(range.value)}
-                className={cn("h-8 rounded-[6px] px-2.5 text-[10px] font-black transition", timeRange === range.value ? "bg-[#465FFF] text-white" : "text-[#31406B] hover:bg-[#F8FAFF]")}
-              >
-                {range.label}
-              </button>
-            ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#D1FAE5] bg-[#ECFDF5] px-3 py-1.5">
+            <span className="relative flex size-2">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#10B981] opacity-75" />
+              <span className="relative inline-flex size-2 rounded-full bg-[#10B981]" />
+            </span>
+            <span className="text-[10px] font-black text-[#065F46]">{tTimeRange("timeRange24h")}</span>
           </div>
           <label className="relative block w-full sm:w-[220px]">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#8B95B8]" />
             <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder={tSignals("search")} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] pl-9 pr-3 text-[11px] font-bold text-[#101334] outline-none transition placeholder:text-[#8B95B8] focus:border-[#465FFF] focus:bg-white" />
           </label>
-          <button type="button" className="inline-flex h-9 items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#31406B]"><SlidersHorizontal size={13} />{tSignals("filter")}</button>
-          <button type="button" className="inline-flex h-9 items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#31406B]">{tSignals("sortLatest")}<ChevronDown size={13} /></button>
+          <button type="button" className="inline-flex h-9 items-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-gradient-to-r from-white to-[#FAFBFF] px-3 text-[11px] font-black text-[#31406B] shadow-[0_1px_4px_rgba(16,24,40,0.04)] transition-all hover:border-[#465FFF]/30 hover:shadow-[0_2px_8px_rgba(70,95,255,0.1)]">
+            <span className="flex size-5 items-center justify-center rounded-[5px] bg-[#465FFF]/10">
+              <SlidersHorizontal size={11} className="text-[#465FFF]" />
+            </span>
+            {tSignals("filter")}
+          </button>
+          <button type="button" className="inline-flex h-9 items-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-gradient-to-r from-white to-[#FAFBFF] px-3 text-[11px] font-black text-[#31406B] shadow-[0_1px_4px_rgba(16,24,40,0.04)] transition-all hover:border-[#465FFF]/30 hover:shadow-[0_2px_8px_rgba(70,95,255,0.1)]">
+            <span className="flex size-5 items-center justify-center rounded-[5px] bg-[#465FFF]/10">
+              <SlidersHorizontal size={11} className="text-[#465FFF]" />
+            </span>
+            {tSignals("sortLatest")}
+          </button>
         </div>
       </div>
 
@@ -487,7 +485,13 @@ function SourceDonut({ data, totalSignals }: { data?: SignalsMeta["sourceDistrib
           <h3 className="text-[15px] font-black text-[#101334]">{t("title")}</h3>
           <p className="mt-1 text-[11px] font-bold text-[#68739F]">{t("desc")}</p>
         </div>
-        <button type="button" className="inline-flex h-8 shrink-0 whitespace-nowrap items-center gap-1.5 rounded-[8px] border border-[#DDE3EF] px-2.5 text-[9px] font-black text-[#31406B]">{t("timeframe")} <ChevronDown size={12} /></button>
+        <button type="button" className="inline-flex h-8 shrink-0 whitespace-nowrap items-center gap-1.5 rounded-full border border-[#D1FAE5] bg-[#ECFDF5] px-3 text-[9px] font-black text-[#065F46] shadow-[0_1px_3px_rgba(16,185,129,0.1)]">
+          <span className="relative flex size-1.5">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#10B981] opacity-75" />
+            <span className="relative inline-flex size-1.5 rounded-full bg-[#10B981]" />
+          </span>
+          {t("timeframe")}
+        </button>
       </div>
 
       {!hasData ? (
@@ -696,10 +700,9 @@ export default function SignalsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState("Semua");
   const [query, setQuery] = useState("");
-  const [timeRange, setTimeRange] = useState<DateRangeKey>("24h");
   const [page, setPage] = useState(1);
   const deferredQuery = useDeferredValue(query);
-  const dateRange = getDateRangeOptions(timeRange);
+  const dateRange = getDateRangeOptions("24h");
   
   const metaQuery = useQuery({
     queryKey: ["signalsMeta"],
@@ -714,7 +717,7 @@ export default function SignalsPage() {
     activeFilter === "Campuran" ? "MIXED" : undefined;
 
   const signalsQuery = useQuery({
-    queryKey: ["signals", { keyword: deferredQuery, page, timeRange, sentiment: apiSentimentFilter }],
+    queryKey: ["signals", { keyword: deferredQuery, page, sentiment: apiSentimentFilter }],
     queryFn: () => getSignals({ page, limit: signalApiLimit, keyword: deferredQuery.trim() || undefined, sentiment: apiSentimentFilter, ...dateRange }),
     staleTime: 30 * 1000,
   });
@@ -726,11 +729,6 @@ export default function SignalsPage() {
 
   const handleFilterChange = (value: string) => {
     setActiveFilter(value);
-    setPage(1);
-  };
-
-  const handleTimeRangeChange = (value: DateRangeKey) => {
-    setTimeRange(value);
     setPage(1);
   };
 
@@ -775,7 +773,7 @@ export default function SignalsPage() {
           ) : (
             <>
               {isLiveUnavailable ? <DashboardErrorState title={tSignals("errorTitle")} description={tSignals("errorDesc")} onRetry={() => void signalsQuery.refetch()} minHeight="min-h-[150px]" /> : null}
-              <SignalsTable activeFilter={activeFilter} setActiveFilter={handleFilterChange} query={query} setQuery={handleQueryChange} rows={rows} footerText={footerText} timeRange={timeRange} setTimeRange={handleTimeRangeChange} pagination={signalsQuery.data?.pagination} onPageChange={setPage} isFetching={signalsQuery.isFetching} className="flex-1" tTimeRange={tTimeRange} tSignals={tSignals} />
+              <SignalsTable activeFilter={activeFilter} setActiveFilter={handleFilterChange} query={query} setQuery={handleQueryChange} rows={rows} footerText={footerText} pagination={signalsQuery.data?.pagination} onPageChange={setPage} isFetching={signalsQuery.isFetching} className="flex-1" tTimeRange={tTimeRange} tSignals={tSignals} />
             </>
           )}
         </div>

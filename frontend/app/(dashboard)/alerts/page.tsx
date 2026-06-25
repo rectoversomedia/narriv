@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
   ArrowDown,
@@ -26,6 +28,7 @@ import {
   Star,
   UserRound,
   Users,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -43,6 +46,7 @@ import {
 } from "@ridemountainpig/svgl-react";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
+import { getAlertsSummary } from "@/lib/api-service";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Sentiment = "NEGATIF" | "POSITIF" | "CAMPURAN";
@@ -254,19 +258,34 @@ function Sparkline({ values, tone, id, className = "h-8" }: { values: number[]; 
   );
 }
 
-function buildMetricCards(ta: ReturnType<typeof useTranslations<"Alerts">>): Metric[] {
-  const spark = [18, 21, 20, 26, 24, 31, 25, 35, 30, 38, 34, 42];
+function buildMetricCards(ta: ReturnType<typeof useTranslations<"Alerts">>, summary: Awaited<ReturnType<typeof getAlertsSummary>>): Metric[] {
+  const total = summary?.total ?? 0;
+  const critical = summary?.by_severity?.critical ?? 0;
+  const high = summary?.by_severity?.high ?? 0;
+  const medium = summary?.by_severity?.medium ?? 0;
+  const low = summary?.by_severity?.low ?? 0;
+  const info = summary?.by_severity?.info ?? 0;
+  const inProgress = summary?.by_status?.in_progress ?? 0;
+  const resolved = summary?.by_status?.resolved ?? 0;
+  const last7 = summary?.last_7_days ?? 0;
+  const prev7 = summary?.previous_7_days ?? 0;
+  const trendDelta = summary?.trend_delta ?? 0;
+  const spark = summary?.timeline?.slice(-12) ?? [];
+
+  const delta = prev7 > 0 ? `${((last7 - prev7) / prev7 * 100).toFixed(1)}%` : "0%";
+  const deltaSign = trendDelta >= 0 ? "+" : "";
+  const deltaLabel = trendDelta >= 0 ? ta("v2.metrics.vs30Days", { val: `${deltaSign}${delta}` }) : ta("v2.metrics.vs30Days", { val: delta });
 
   return [
-    { label: ta("v2.metrics.totalAlerts"), value: "1.248", helper: ta("v2.metrics.vs30Days", { val: "18,7%" }), helperTone: "green", icon: Bell, tone: "purple", spark },
-    { label: ta("v2.metrics.criticalAlerts"), value: "32", helper: ta("v2.metrics.vs30Days", { val: "12,1%" }), helperTone: "red", icon: AlertTriangle, tone: "red", spark: spark.slice().reverse() },
-    { label: ta("v2.metrics.warningAlerts"), value: "156", helper: ta("v2.metrics.vs30Days", { val: "9,3%" }), helperTone: "green", icon: AlertTriangle, tone: "amber", spark },
-    { label: ta("v2.metrics.infoAlerts"), value: "1.060", helper: ta("v2.metrics.vs30Days", { val: "21,4%" }), helperTone: "blue", icon: HelpCircle, tone: "blue", spark },
-    { label: ta("v2.metrics.deliveredAlerts"), value: "3.482", helper: ta("v2.metrics.successRate", { val: "97,8%" }), helperTone: "green", icon: Shield, tone: "green", spark },
-    { label: ta("v2.metrics.acknowledgedAlerts"), value: "81%", helper: ta("v2.metrics.of", { val1: "2.168", val2: "2.620" }), helperTone: "blue", icon: Users, tone: "purple", spark },
-    { label: ta("v2.metrics.escalated"), value: "42", helper: ta("v2.metrics.criticalIncidents"), helperTone: "red", icon: AlertTriangle, tone: "red", spark: spark.slice().reverse() },
-    { label: ta("v2.metrics.resolved"), value: "1.216", helper: ta("v2.metrics.vs30Days", { val: "24,8%" }), helperTone: "green", icon: CircleCheck, tone: "green", spark },
-    { label: ta("v2.metrics.avgResponseTime"), value: "17m", helper: ta("v2.metrics.target", { val: "15m" }), helperTone: "blue", icon: HelpCircle, tone: "blue", spark },
+    { label: ta("v2.metrics.totalAlerts"), value: String(total), helper: deltaLabel, helperTone: trendDelta >= 0 ? "green" : "red", icon: Bell, tone: "purple", spark },
+    { label: ta("v2.metrics.criticalAlerts"), value: String(critical), helper: ta("v2.metrics.vs30Days", { val: `${critical}` }), helperTone: "red", icon: AlertTriangle, tone: "red", spark: spark.slice().reverse() },
+    { label: ta("v2.metrics.warningAlerts"), value: String(high + medium), helper: ta("v2.metrics.vs30Days", { val: `${high + medium}` }), helperTone: "green", icon: AlertTriangle, tone: "amber", spark },
+    { label: ta("v2.metrics.infoAlerts"), value: String(info + low), helper: ta("v2.metrics.vs30Days", { val: `${info + low}` }), helperTone: "blue", icon: HelpCircle, tone: "blue", spark },
+    { label: ta("v2.metrics.deliveredAlerts"), value: String(total), helper: ta("v2.metrics.successRate", { val: total > 0 ? "100" : "0" }), helperTone: "green", icon: Shield, tone: "green", spark },
+    { label: ta("v2.metrics.acknowledgedAlerts"), value: String(inProgress), helper: ta("v2.metrics.of", { val1: String(inProgress), val2: String(total) }), helperTone: "blue", icon: Users, tone: "purple", spark },
+    { label: ta("v2.metrics.escalated"), value: String(critical), helper: ta("v2.metrics.criticalIncidents"), helperTone: "red", icon: AlertTriangle, tone: "red", spark: spark.slice().reverse() },
+    { label: ta("v2.metrics.resolved"), value: String(resolved), helper: ta("v2.metrics.vs30Days", { val: `${resolved}` }), helperTone: "green", icon: CircleCheck, tone: "green", spark },
+    { label: ta("v2.metrics.avgResponseTime"), value: total > 0 ? `${Math.round(last7 / Math.max(1, 7))}m` : "-", helper: ta("v2.metrics.target", { val: "15m" }), helperTone: "blue", icon: HelpCircle, tone: "blue", spark },
   ];
 }
 
@@ -281,9 +300,9 @@ function MetricCard({ metric }: { metric: Metric }) {
           <metric.icon size={19} strokeWidth={2.4} />
         </span>
         <div className="min-w-0">
-          <p className="truncate text-[9px] font-black text-[#31406B]">{metric.label}</p>
+          <p className="truncate text-[9px] font-black text-[#31406B]" title={metric.label}>{metric.label}</p>
           <p className="mt-1 text-[24px] font-black leading-none tracking-[-0.045em] text-[#070B28]">{metric.value}</p>
-          <p className={cn("mt-1.5 truncate text-[9px] font-black", helperStyle.text)}>{metric.helper}</p>
+          <p className={cn("mt-1.5 truncate text-[9px] font-black", helperStyle.text)} title={metric.helper}>{metric.helper}</p>
         </div>
       </div>
       <div className="absolute inset-x-3 bottom-0">
@@ -686,11 +705,20 @@ function AlertsTable({ ta, rows, page, footerText, onPageChange, onStatusChange,
 
 export default function AlertsPage() {
   const ta = useTranslations("Alerts");
+  const taCreate = useTranslations("Alerts.v2.createForm");
   const toastHook = useToast();
   const [rows, setRows] = useState<AlertRow[]>(mockRows);
   const [page, setPage] = useState(1);
   const [openMenuId, setOpenMenuId] = useState<string | number | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+
+  const summaryQuery = useQuery({
+    queryKey: ["alerts-summary"],
+    queryFn: () => getAlertsSummary(),
+    staleTime: 60 * 1000,
+  });
+  const summary = summaryQuery.data ?? null;
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -709,7 +737,7 @@ export default function AlertsPage() {
   }
 
   const primaryAlert = rows[0] ?? mockRows[0];
-  const metrics = buildMetricCards(ta);
+  const metrics = buildMetricCards(ta, summary);
   const td = useTranslations("DashboardStates");
   const footerText = td("pagination.summary", { start: 1, end: Math.min(5, rows.length), total: 24, label: "alert" });
 
@@ -723,7 +751,7 @@ export default function AlertsPage() {
         <div className="flex flex-wrap gap-3">
           <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] sm:w-auto"><Settings size={14} />{ta("v2.header.notificationRules")}</button>
           <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] sm:w-auto"><Users size={14} />{ta("v2.header.escalationMatrix")}</button>
-          <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#4B2BFF] px-4 text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] sm:w-auto"><Plus size={15} />{ta("v2.header.createAlert")}</button>
+          <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#4B2BFF] px-4 text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] sm:w-auto"><Plus size={15} />{ta("v2.header.createAlert")}</button>
         </div>
       </header>
 
@@ -750,6 +778,83 @@ export default function AlertsPage() {
           <AlertJourney alert={primaryAlert} ta={ta} />
         </aside>
       </section>
+
+      {/* Create Alert Modal */}
+      {isCreateModalOpen && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsCreateModalOpen(false)}>
+          <div className="flex w-full max-w-lg flex-col max-h-[85vh] rounded-[14px] border border-[#E8ECF5] bg-white text-[#101334] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
+              <div>
+                <h2 className="text-lg font-black text-[#101334]">{ta("v2.header.createAlert")}</h2>
+                <p className="mt-1 text-[11px] font-bold text-[#68739F]">Create a new alert</p>
+              </div>
+              <button type="button" onClick={() => setIsCreateModalOpen(false)} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const { createAlert: createAlertFn } = require("@/lib/api-service");
+                createAlertFn({
+                  title: formData.get("title") as string,
+                  type: formData.get("type") as "risk" | "opportunity" | "positioning",
+                  severity: formData.get("severity") as "low" | "medium" | "high" | "critical",
+                  whatHappened: formData.get("whatHappened") as string || undefined,
+                  whyItMatters: formData.get("whyItMatters") as string || undefined,
+                  whatToDo: formData.get("whatToDo") as string || undefined,
+                  assignedTo: formData.get("assignedTo") as string || undefined,
+                  assignedTeam: formData.get("assignedTeam") as string || undefined,
+                  deadline: formData.get("deadline") as string || undefined,
+                }).then(() => {
+                  toastHook.success(ta("toast.statusUpdated"));
+                  setIsCreateModalOpen(false);
+                }).catch(() => {
+                  toastHook.error(ta("toast.statusUpdateFailed"));
+                });
+              }} className="space-y-4">
+                <div>
+                  <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("titleLabel")}</label>
+                  <input name="title" required placeholder={taCreate("titlePlaceholder")} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("typeLabel")}</label>
+                    <select name="type" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white">
+                      <option value="risk">{taCreate("typeRisk")}</option>
+                      <option value="opportunity">{taCreate("typeOpportunity")}</option>
+                      <option value="positioning">{taCreate("typePositioning")}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("severityLabel")}</label>
+                    <select name="severity" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white">
+                      <option value="low">{taCreate("severityLow")}</option>
+                      <option value="medium">{taCreate("severityMedium")}</option>
+                      <option value="high">{taCreate("severityHigh")}</option>
+                      <option value="critical">{taCreate("severityCritical")}</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("whatHappenedLabel")}</label>
+                  <textarea name="whatHappened" rows={2} placeholder={taCreate("whatHappenedPlaceholder")} className="w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] p-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white resize-none" />
+                </div>
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#EEF1F7]">
+                  <button type="button" onClick={() => setIsCreateModalOpen(false)} className="flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF]">
+                    {taCreate("cancel")}
+                  </button>
+                  <button type="submit" className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_8px_16px_rgba(70,95,255,0.2)] transition hover:opacity-90">
+                    {taCreate("submit")}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

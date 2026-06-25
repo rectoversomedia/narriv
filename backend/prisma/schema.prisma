@@ -60,6 +60,7 @@ model Workspace {
   cases                 Case[]
   integrations          Integration[]
   AppNotification       AppNotification[]
+  escalationMatrices    EscalationMatrix[]
 }
 
 model WorkspaceSettings {
@@ -86,6 +87,7 @@ model WorkspaceNotificationSettings {
   whatsappEnabled         Boolean  @default(false)
   escalationNotifications Boolean  @default(true)
   reminderNotifications   Boolean  @default(true)
+  customRules             Json?    @default("[]")
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
 
@@ -241,6 +243,7 @@ model Alert {
   escalationLevel EscalationLevel @default(medium)
   workflowStatus  String? // (todo, in_progress, blocked, done)
   status          String          @default("open") // (open, acknowledged, in_progress, resolved)
+  sources         Json?           @default("[]")
   createdAt       DateTime        @default(now())
 
   workspace   Workspace    @relation(fields: [workspaceId], references: [id])
@@ -249,6 +252,23 @@ model Alert {
   @@index([workspaceId, status, createdAt])
   @@index([workspaceId, severity, createdAt])
   @@index([workspaceId, type, createdAt])
+}
+
+model EscalationMatrix {
+  id          String   @id @default(uuid())
+  workspaceId String
+  level       String   // (L1, L2, L3)
+  roleName    String   // (Team Lead, Department Head, etc.)
+  slaMinutes  Int      // SLA in minutes
+  isActive    Boolean  @default(true)
+  order       Int      // display order
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@unique([workspaceId, level])
+  @@index([workspaceId])
 }
 
 model NarrativeCluster {

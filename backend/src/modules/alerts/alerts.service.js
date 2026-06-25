@@ -159,6 +159,8 @@ export async function detectAlerts(workspaceId) {
             .map((s) => `[${(s.analyses[0]?.sentiment || s.sentiment || "unknown").toUpperCase()}] ${s.title || "No Title"}\n${s.content.substring(0, 150)}...`)
             .join("\n\n");
 
+        const sources = [...new Set(signals.map((s) => s.platform).filter(Boolean))];
+
         const alertDataObj = {
             type,
             severity,
@@ -178,6 +180,7 @@ export async function detectAlerts(workspaceId) {
                 whyItMatters: enhanced?.whyItMatters || `Narrative momentum is increasing for topic '${topicKey}'.`,
                 whatToDo: enhanced?.whatToDo || "Assign an owner, prepare response copy, and monitor the next 24h signal curve.",
                 status: "open",
+                sources,
             }
         });
 
@@ -193,6 +196,18 @@ export async function escalateAlertsForWorkspace(workspaceId) {
     let overdueEscalated = 0;
     let criticalRiskEscalated = 0;
 
+    // Fetch escalation matrix for this workspace
+    const escalationLevels = await prisma.escalationMatrix.findMany({
+        where: { workspaceId, isActive: true },
+        orderBy: { order: "asc" }
+    });
+
+    // Build role lookup: level -> { roleName, slaMinutes }
+    const levelRoleMap = {};
+    for (const level of escalationLevels) {
+        levelRoleMap[level.level] = { roleName: level.roleName, slaMinutes: level.slaMinutes };
+    }
+
     const overdueAlerts = await prisma.alert.findMany({
         where: {
             workspaceId,
@@ -204,6 +219,8 @@ export async function escalateAlertsForWorkspace(workspaceId) {
             escalationLevel: true,
             status: true,
             deadline: true,
+            assignedTo: true,
+            assignedTeam: true,
         }
     });
 
@@ -211,11 +228,15 @@ export async function escalateAlertsForWorkspace(workspaceId) {
         const nextLevel = nextEscalationLevel(alert.escalationLevel);
         if (nextLevel === alert.escalationLevel) continue;
 
+        // Find the role for the next level from Escalation Matrix
+        const nextRole = levelRoleMap[nextLevel] || levelRoleMap["high"] || { roleName: "Department Head", slaMinutes: 15 };
+
         const updated = await prisma.alert.update({
             where: { id: alert.id },
             data: {
                 escalationLevel: nextLevel,
                 workflowStatus: "blocked",
+                assignedTeam: nextRole.roleName,
             }
         });
 
@@ -228,6 +249,7 @@ export async function escalateAlertsForWorkspace(workspaceId) {
                     workspaceId: updated.workspaceId,
                     previousEscalationLevel: alert.escalationLevel,
                     escalationLevel: updated.escalationLevel,
+                    assignedTeam: nextRole.roleName,
                     deadline: alert.deadline,
                     status: alert.status,
                 }
@@ -242,6 +264,7 @@ export async function escalateAlertsForWorkspace(workspaceId) {
                     workspaceId: updated.workspaceId,
                     previousEscalationLevel: alert.escalationLevel,
                     escalationLevel: updated.escalationLevel,
+                    assignedTeam: nextRole.roleName,
                     reason: "overdue_alert",
                 }
             }
@@ -263,12 +286,18 @@ export async function escalateAlertsForWorkspace(workspaceId) {
         }
     });
 
+    // Find the highest level role for critical alerts
+    const criticalRole = escalationLevels.length > 0 
+        ? escalationLevels[escalationLevels.length - 1] 
+        : { roleName: "Executive Team", slaMinutes: 30 };
+
     for (const alert of unresolvedCriticalRisks) {
         const updated = await prisma.alert.update({
             where: { id: alert.id },
             data: {
                 escalationLevel: "critical",
                 workflowStatus: "blocked",
+                assignedTeam: criticalRole.roleName,
             }
         });
         criticalRiskEscalated += 1;
@@ -281,6 +310,7 @@ export async function escalateAlertsForWorkspace(workspaceId) {
                     workspaceId: updated.workspaceId,
                     previousEscalationLevel: alert.escalationLevel,
                     escalationLevel: updated.escalationLevel,
+                    assignedTeam: criticalRole.roleName,
                     status: alert.status,
                     severity: "critical",
                     type: "risk",
@@ -296,6 +326,7 @@ export async function escalateAlertsForWorkspace(workspaceId) {
                     workspaceId: updated.workspaceId,
                     previousEscalationLevel: alert.escalationLevel,
                     escalationLevel: updated.escalationLevel,
+                    assignedTeam: criticalRole.roleName,
                     reason: "unresolved_critical_risk",
                 }
             }

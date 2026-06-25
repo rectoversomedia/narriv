@@ -1182,7 +1182,9 @@
       "noLiveAlerts": "No live alerts to display",
       "noAlertsDesc": "There are currently no live alerts matching the active filter.",
       "dataUnavailable": "Live data unavailable",
-      "dataUnavailableDesc": "Could not fetch live alerts. Showing fallback data for now."
+      "dataUnavailableDesc": "Could not fetch live alerts. Showing fallback data for now.",
+      "noIncident": "No critical incident yet",
+      "noIncidentDesc": "When a critical alert appears, it will be displayed here."
     },
     "error": {
       "title": "Live data unavailable",
@@ -1197,6 +1199,34 @@
         "title": "Critical Delivery Status",
         "viewAll": "View All"
       },
+      "createForm": {
+        "title": "Create New Alert",
+        "desc": "Create a new alert to track an issue or opportunity.",
+        "titleLabel": "Alert Title",
+        "titlePlaceholder": "Enter alert title...",
+        "typeLabel": "Type",
+        "typeRisk": "Risk",
+        "typeOpportunity": "Opportunity",
+        "typePositioning": "Positioning",
+        "severityLabel": "Severity",
+        "severityLow": "Low",
+        "severityMedium": "Medium",
+        "severityHigh": "High",
+        "severityCritical": "Critical",
+        "whatHappenedLabel": "What Happened",
+        "whatHappenedPlaceholder": "Describe what happened...",
+        "whyItMattersLabel": "Why It Matters",
+        "whyItMattersPlaceholder": "Explain why this matters...",
+        "whatToDoLabel": "What To Do",
+        "whatToDoPlaceholder": "Recommended actions...",
+        "assignedToLabel": "Assigned To",
+        "assignedToPlaceholder": "Select person",
+        "assignedTeamLabel": "Assigned Team",
+        "assignedTeamPlaceholder": "Select team",
+        "deadlineLabel": "Deadline",
+        "submit": "Create Alert",
+        "cancel": "Cancel"
+      },
       "delivery": {
         "corpAffairsChannel": "#corporate-affairs",
         "delivered": "Delivered",
@@ -1208,17 +1238,34 @@
         "thisAlert": "(This Alert)",
         "title": "Delivery Status",
         "viewAllChannels": "View all channels",
-        "whatsapp": "WhatsApp"
+        "whatsapp": "WhatsApp",
+        "noChannels": "No channels configured",
+        "noChannelsDesc": "Connect platforms in Integrations to receive alerts",
+        "moreChannels": "more channels"
       },
       "escalationMatrix": {
+        "title": "Escalation Flow",
+        "desc": "Who handles alerts and when they get involved",
+        "presets": "Quick Setup",
+        "presetBasic": "Basic (3 Levels)",
+        "presetBasicDesc": "Team Lead → Head → Executive",
+        "presetAdvanced": "Advanced (5 Levels)",
+        "presetAdvancedDesc": "Full hierarchy with detailed roles",
+        "levelLabel": "Level",
+        "ownerLabel": "Owner / Role",
+        "timeLabel": "Response Time",
+        "activeLabel": "Active",
+        "standbyLabel": "Standby",
+        "addLevel": "+ Add Level",
+        "teamLead": "Team Lead",
         "deptHead": "Department Head",
         "execTeam": "Executive Team",
-        "l1": "L1",
-        "l2": "L2",
-        "l3": "L3",
-        "sla": "SLA: {time}",
-        "teamLead": "Team Lead",
-        "title": "Escalation Matrix"
+        "l1": "Level 1",
+        "l2": "Level 2",
+        "l3": "Level 3",
+        "sla": "Respond within {time}",
+        "roleGroup": "By Role / Team",
+        "memberGroup": "By Specific Person"
       },
       "flow": {
         "desc": "(How Narriv Delivers Critical Intelligence)",
@@ -1243,6 +1290,78 @@
         "notificationRules": "Notification Rules",
         "title": "Alerts"
       },
+      "notificationRulesModal": {
+        "title": "Notification Rules",
+        "desc": "Choose when and how your team gets notified about alerts.",
+        "addRule": "+ Add Rule",
+        "presets": "Quick Setup",
+        "presetCritical": "Critical Alerts Only",
+        "presetCriticalDesc": "Get notified only for the most important alerts",
+        "presetAll": "All Alerts",
+        "presetAllDesc": "Get notified for every alert",
+        "presetQuiet": "Quiet Mode",
+        "presetQuietDesc": "Only daily summary, no real-time alerts",
+        "triggerLabel": "When",
+        "actionLabel": "Send to",
+        "triggers": {
+          "severity": "Alert level is",
+          "sentiment": "Negative sentiment rises by",
+          "sla": "Deadline is near (within",
+          "keyword": "Someone mentions"
+        },
+        "severityValues": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High",
+          "critical": "Critical"
+        },
+        "slaValues": {
+          "1 min": "1 minute",
+          "5 min": "5 minutes",
+          "15 min": "15 minutes",
+          "30 min": "30 minutes",
+          "1 hour": "1 hour"
+        },
+        "channels": {
+          "instant": "Instant (WhatsApp, Telegram, etc.)",
+          "standard": "Email",
+          "all": "All Channels",
+          "none": "Select platforms..."
+        },
+        "save": "Save Rules",
+        "saving": "Saving...",
+        "cancel": "Cancel",
+        "success": "Rules saved successfully",
+        "error": "Failed to save rules"
+      },
+      "createForm": {
+        "title": "Create New Alert",
+        "desc": "Create a new alert to track an issue or opportunity.",
+        "titleLabel": "Alert Title",
+        "titlePlaceholder": "Enter alert title...",
+        "typeLabel": "Type",
+        "typeRisk": "Risk",
+        "typeOpportunity": "Opportunity",
+        "typePositioning": "Positioning",
+        "severityLabel": "Severity",
+        "severityLow": "Low",
+        "severityMedium": "Medium",
+        "severityHigh": "High",
+        "severityCritical": "Critical",
+        "whatHappenedLabel": "What Happened",
+        "whatHappenedPlaceholder": "Describe what happened...",
+        "whyItMattersLabel": "Why It Matters",
+        "whyItMattersPlaceholder": "Explain why this matters...",
+        "whatToDoLabel": "What To Do",
+        "whatToDoPlaceholder": "Recommended actions...",
+        "assignedToLabel": "Assigned To",
+        "assignedToPlaceholder": "Select person",
+        "assignedTeamLabel": "Assigned Team",
+        "assignedTeamPlaceholder": "Select team",
+        "deadlineLabel": "Deadline",
+        "submit": "Create Alert",
+        "cancel": "Cancel"
+      },
       "incident": {
         "alertDesc": "Spike in payment delay complaints across social media and news.",
         "alertTitle": "Payment delay complaints are rising",
@@ -1253,7 +1372,9 @@
         "high": "High",
         "impact": "Impact",
         "in2hours": "in 2 hours",
+        "new": "New",
         "investigating": "Investigating",
+        "resolved": "Resolved",
         "mentions": "Mentions",
         "negative": "Negative",
         "owner": "Owner",
@@ -1283,7 +1404,7 @@
         "step7Desc": "Root cause analysis in progress",
         "step7Title": "Investigation Started",
         "title": "Alert Journey",
-        "viewFull": "View Full Timeline"
+        "viewFull": "View Timeline"
       },
       "list": {
         "allSeverity": "All Severity"
@@ -2055,6 +2176,22 @@
         "title": "Delete Case",
         "description": "Are you sure you want to delete this case? Deleted data cannot be recovered.",
         "confirm": "Delete Case",
+        "cancel": "Cancel"
+      },
+      "create": {
+        "title": "Create New Case",
+        "desc": "Create a new investigation case from alerts, action plans, or manual input.",
+        "titleLabel": "Case Title",
+        "titlePlaceholder": "Enter case title...",
+        "descLabel": "Description",
+        "descPlaceholder": "Describe the case briefly...",
+        "priorityLabel": "Priority",
+        "assignedToLabel": "Assigned To",
+        "assignedToPlaceholder": "Person responsible",
+        "assignedTeamLabel": "Team",
+        "assignedTeamPlaceholder": "Comms, PR, Growth...",
+        "deadlineLabel": "Deadline",
+        "submit": "Create Case",
         "cancel": "Cancel"
       },
       "pagination": {

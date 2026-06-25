@@ -259,7 +259,6 @@ export default function ActionPlansPage() {
   const [selectedActionId, setSelectedActionId] = useState<string>("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [perfTimeRange, setPerfTimeRange] = useState<"7d" | "30d">("7d");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -500,16 +499,13 @@ export default function ActionPlansPage() {
 
         <Panel>
           <CardContent className="p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3">
+               <div className="flex items-start gap-3">
                 <BarChart3 size={20} className="mt-0.5 text-[#465FFF]" />
                 <div>
                   <h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{t("performance")}</h2>
                   <p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("performanceDesc")}</p>
                 </div>
               </div>
-              <button type="button" onClick={() => setPerfTimeRange(perfTimeRange === "7d" ? "30d" : "7d")} className="flex h-9 items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#53608C] transition hover:bg-[#F8FAFF]">{perfTimeRange === "7d" ? t("last7Days") : t("last30Days")} <ChevronDown size={12} /></button>
-            </div>
             {!selectedAction ? (
               <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDF1F7]">

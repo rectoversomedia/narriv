@@ -37,7 +37,7 @@ export async function getNotificationSettings(req, res) {
 
 export async function updateNotificationSettings(req, res) {
     try {
-        const { workspaceId, emailEnabled, whatsappEnabled, escalationNotifications, reminderNotifications } = req.body;
+        const { workspaceId, emailEnabled, whatsappEnabled, escalationNotifications, reminderNotifications, customRules } = req.body;
 
         const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
         if (!scopedWorkspaceId) {
@@ -51,6 +51,7 @@ export async function updateNotificationSettings(req, res) {
                 ...(whatsappEnabled !== undefined && { whatsappEnabled }),
                 ...(escalationNotifications !== undefined && { escalationNotifications }),
                 ...(reminderNotifications !== undefined && { reminderNotifications }),
+                ...(customRules !== undefined && { customRules }),
             },
             create: {
                 workspaceId: scopedWorkspaceId,
@@ -58,7 +59,8 @@ export async function updateNotificationSettings(req, res) {
                 whatsappEnabled: whatsappEnabled ?? false,
                 escalationNotifications: escalationNotifications ?? true,
                 reminderNotifications: reminderNotifications ?? true,
-            },
+                customRules: customRules ?? [],
+            }
         });
 
         await prisma.auditLog.create({
