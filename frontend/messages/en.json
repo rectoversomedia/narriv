@@ -926,7 +926,16 @@
     },
     "empty": {
       "title": "No live visibility data yet",
-      "desc": "Backend connected successfully, but no AI visibility results available. Sample data is shown as a preview."
+      "desc": "Backend connected successfully, but no AI visibility results available. Sample data is shown as a preview.",
+      "noTrendData": "No trend data available",
+      "noCompetitorData": "No competitor data available",
+      "noTopicData": "No topic data available",
+      "noPlatformData": "No platform data available",
+      "noSovData": "No share of voice data available",
+      "noMentionData": "No mention data available",
+      "noActionData": "No recommended actions available",
+      "noResponse": "No response received from the AI engine. Please try again.",
+      "fetchFailed": "Failed to get response. Please try again."
     },
     "topicType": {
       "opportunity": "Opportunity",
@@ -946,18 +955,7 @@
       "export": "Export visibility data",
       "simulate": "Run AI simulation"
     },
-    "fallbackDates": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-    "empty": {
-      "noTrendData": "No trend data available",
-      "noCompetitorData": "No competitor data available",
-      "noTopicData": "No topic data available",
-      "noPlatformData": "No platform data available",
-      "noSovData": "No share of voice data available",
-      "noMentionData": "No mention data available",
-      "noActionData": "No recommended actions available",
-      "noResponse": "No response received from the AI engine. Please try again.",
-      "fetchFailed": "Failed to get response. Please try again."
-    }
+    "fallbackDates": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
   },
   "ActionPlansLegacy": {
     "title": "Action Plans",
@@ -1079,11 +1077,14 @@
       "assignmentFailed": "Could not save assignment."
     },
     "filter": {
+      "title": "Filter",
       "allStatus": "All Status",
       "allSource": "All Sources",
       "allSentiment": "All Sentiments",
       "search": "Search alerts...",
-      "createAlert": "Create Alert"
+      "createAlert": "Create Alert",
+      "clearFilter": "Clear Filter",
+      "apply": "Apply"
     },
     "summary": {
       "title": "AI Alert Summary",
@@ -1179,8 +1180,10 @@
     "empty": {
       "title": "No live alerts yet",
       "desc": "Backend connected successfully, but no alerts to display yet.",
+      "noAlerts": "No alerts found",
+      "noAlertsDesc": "No alerts match your filter.",
       "noLiveAlerts": "No live alerts to display",
-      "noAlertsDesc": "There are currently no live alerts matching the active filter.",
+      "noAlertsDescOld": "There are currently no live alerts matching the active filter.",
       "dataUnavailable": "Live data unavailable",
       "dataUnavailableDesc": "Could not fetch live alerts. Showing fallback data for now.",
       "noIncident": "No critical incident yet",
@@ -1199,34 +1202,7 @@
         "title": "Critical Delivery Status",
         "viewAll": "View All"
       },
-      "createForm": {
-        "title": "Create New Alert",
-        "desc": "Create a new alert to track an issue or opportunity.",
-        "titleLabel": "Alert Title",
-        "titlePlaceholder": "Enter alert title...",
-        "typeLabel": "Type",
-        "typeRisk": "Risk",
-        "typeOpportunity": "Opportunity",
-        "typePositioning": "Positioning",
-        "severityLabel": "Severity",
-        "severityLow": "Low",
-        "severityMedium": "Medium",
-        "severityHigh": "High",
-        "severityCritical": "Critical",
-        "whatHappenedLabel": "What Happened",
-        "whatHappenedPlaceholder": "Describe what happened...",
-        "whyItMattersLabel": "Why It Matters",
-        "whyItMattersPlaceholder": "Explain why this matters...",
-        "whatToDoLabel": "What To Do",
-        "whatToDoPlaceholder": "Recommended actions...",
-        "assignedToLabel": "Assigned To",
-        "assignedToPlaceholder": "Select person",
-        "assignedTeamLabel": "Assigned Team",
-        "assignedTeamPlaceholder": "Select team",
-        "deadlineLabel": "Deadline",
-        "submit": "Create Alert",
-        "cancel": "Cancel"
-      },
+
       "delivery": {
         "corpAffairsChannel": "#corporate-affairs",
         "delivered": "Delivered",

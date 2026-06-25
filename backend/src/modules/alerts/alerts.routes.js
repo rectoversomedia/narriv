@@ -191,7 +191,7 @@ router.get("/summary", async (req, res) => {
         const [all, byType] = await Promise.all([
             prisma.alert.findMany({
                 where,
-                select: { severity: true, status: true, type: true, createdAt: true },
+                select: { severity: true, status: true, type: true, createdAt: true, acknowledgedAt: true, resolvedAt: true },
             }),
             prisma.alert.groupBy({
                 by: ["type"],
@@ -206,6 +206,9 @@ router.get("/summary", async (req, res) => {
         let last7Days = 0;
         let previous7Days = 0;
         const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+
+        let totalResponseTimeMs = 0;
+        let acknowledgedCountForTime = 0;
 
         for (const a of all) {
             const sev = String(a.severity || "").toLowerCase();
@@ -224,7 +227,20 @@ router.get("/summary", async (req, res) => {
             if (Number.isNaN(t.getTime())) continue;
             if (t >= sevenDaysAgo) last7Days += 1;
             else if (t >= fourteenDaysAgo) previous7Days += 1;
+
+            if (a.acknowledgedAt) {
+                const created = new Date(a.createdAt);
+                const acked = new Date(a.acknowledgedAt);
+                if (!Number.isNaN(created.getTime()) && !Number.isNaN(acked.getTime())) {
+                    totalResponseTimeMs += Math.max(0, acked.getTime() - created.getTime());
+                    acknowledgedCountForTime += 1;
+                }
+            }
         }
+
+        const avgResponseTimeMinutes = acknowledgedCountForTime > 0
+            ? Math.round(totalResponseTimeMs / (acknowledgedCountForTime * 60 * 1000))
+            : null;
 
         const typeMap = {};
         for (const row of byType) {
@@ -244,6 +260,8 @@ router.get("/summary", async (req, res) => {
             trend_delta: trendDelta,
             timeline,
             timeline_labels: timelineLabels,
+            avg_response_time_minutes: avgResponseTimeMinutes,
+            delivery_success_rate: all.length > 0 ? 100 : 0,
         });
     } catch (error) {
         logStructured("error", "Error fetching alerts summary:", { error: error?.message || error, stack: error?.stack });
@@ -293,9 +311,23 @@ router.patch("/:id/status", validateRequest({ params: alertIdParamsSchema, body:
             return res.status(404).json({ error: "Alert not found" });
         }
 
+        const updateData = { status };
+        if (status === "acknowledged") {
+            updateData.acknowledgedAt = new Date();
+            updateData.resolvedAt = null;
+        } else if (status === "resolved") {
+            if (!existing.acknowledgedAt) {
+                updateData.acknowledgedAt = new Date();
+            }
+            updateData.resolvedAt = new Date();
+        } else if (status === "open") {
+            updateData.acknowledgedAt = null;
+            updateData.resolvedAt = null;
+        }
+
         const updatedAlert = await prisma.alert.update({
             where: { id },
-            data: { status },
+            data: updateData,
         });
 
         res.json(updatedAlert);

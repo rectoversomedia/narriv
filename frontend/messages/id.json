@@ -926,7 +926,16 @@
     },
     "empty": {
       "title": "Belum ada data visibility live",
-      "desc": "Backend berhasil dihubungi, tetapi belum ada hasil AI visibility. Data contoh ditampilkan sebagai preview."
+      "desc": "Backend berhasil dihubungi, tetapi belum ada hasil AI visibility. Data contoh ditampilkan sebagai preview.",
+      "noTrendData": "Data tren belum tersedia",
+      "noCompetitorData": "Data kompetitor belum tersedia",
+      "noTopicData": "Data topik belum tersedia",
+      "noPlatformData": "Data platform belum tersedia",
+      "noSovData": "Data share of voice belum tersedia",
+      "noMentionData": "Data penyebutan belum tersedia",
+      "noActionData": "Belum ada rekomendasi aksi",
+      "noResponse": "Tidak ada respons dari AI engine. Silakan coba lagi.",
+      "fetchFailed": "Gagal mendapatkan respons. Silakan coba lagi."
     },
     "topicType": {
       "opportunity": "Peluang",
@@ -946,18 +955,7 @@
       "export": "Ekspor data visibility",
       "simulate": "Jalankan simulasi AI"
     },
-    "fallbackDates": ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"],
-    "empty": {
-      "noTrendData": "Data tren belum tersedia",
-      "noCompetitorData": "Data kompetitor belum tersedia",
-      "noTopicData": "Data topik belum tersedia",
-      "noPlatformData": "Data platform belum tersedia",
-      "noSovData": "Data share of voice belum tersedia",
-      "noMentionData": "Data penyebutan belum tersedia",
-      "noActionData": "Belum ada rekomendasi aksi",
-      "noResponse": "Tidak ada respons dari AI engine. Silakan coba lagi.",
-      "fetchFailed": "Gagal mendapatkan respons. Silakan coba lagi."
-    }
+    "fallbackDates": ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"]
   },
   "ActionPlansLegacy": {
     "title": "Rencana Aksi",
@@ -1079,11 +1077,14 @@
       "assignmentFailed": "Penugasan alert belum bisa disimpan. Coba lagi."
     },
     "filter": {
+      "title": "Filter",
       "allStatus": "Semua Status",
       "allSource": "Semua Sumber",
       "allSentiment": "Semua Sentimen",
       "search": "Cari alert...",
-      "createAlert": "Buat Alert Baru"
+      "createAlert": "Buat Alert Baru",
+      "clearFilter": "Hapus Filter",
+      "apply": "Terapkan"
     },
     "summary": {
       "title": "AI Alert Summary",
@@ -1179,8 +1180,10 @@
     "empty": {
       "title": "Belum ada alert live",
       "desc": "Backend berhasil dihubungi, tetapi belum ada alert yang perlu ditampilkan.",
+      "noAlerts": "Tidak ada alert",
+      "noAlertsDesc": "Tidak ada alert yang cocok dengan filter.",
       "noLiveAlerts": "Tidak ada alert live untuk ditampilkan",
-      "noAlertsDesc": "Saat ini tidak ada alert live yang cocok dengan filter aktif.",
+      "noAlertsDescOld": "Saat ini tidak ada alert live yang cocok dengan filter aktif.",
       "dataUnavailable": "Data live belum bisa dimuat",
       "dataUnavailableDesc": "Gagal mengambil alert live. Untuk sementara, menampilkan data fallback.",
       "noIncident": "Belum ada insiden kritis",

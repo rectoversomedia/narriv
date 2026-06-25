@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   ArrowDown,
@@ -46,7 +46,7 @@ import {
 } from "@ridemountainpig/svgl-react";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
-import { getAlertsSummary } from "@/lib/api-service";
+import { getAlertsSummary, createAlert, getAlerts, updateAlertStatus } from "@/lib/api-service";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Sentiment = "NEGATIF" | "POSITIF" | "CAMPURAN";
@@ -271,6 +271,8 @@ function buildMetricCards(ta: ReturnType<typeof useTranslations<"Alerts">>, summ
   const prev7 = summary?.previous_7_days ?? 0;
   const trendDelta = summary?.trend_delta ?? 0;
   const spark = summary?.timeline?.slice(-12) ?? [];
+  const avgResponseMinutes = summary?.avg_response_time_minutes ?? null;
+  const deliverySuccessRate = summary?.delivery_success_rate ?? (total > 0 ? 100 : 0);
 
   const delta = prev7 > 0 ? `${((last7 - prev7) / prev7 * 100).toFixed(1)}%` : "0%";
   const deltaSign = trendDelta >= 0 ? "+" : "";
@@ -281,11 +283,11 @@ function buildMetricCards(ta: ReturnType<typeof useTranslations<"Alerts">>, summ
     { label: ta("v2.metrics.criticalAlerts"), value: String(critical), helper: ta("v2.metrics.vs30Days", { val: `${critical}` }), helperTone: "red", icon: AlertTriangle, tone: "red", spark: spark.slice().reverse() },
     { label: ta("v2.metrics.warningAlerts"), value: String(high + medium), helper: ta("v2.metrics.vs30Days", { val: `${high + medium}` }), helperTone: "green", icon: AlertTriangle, tone: "amber", spark },
     { label: ta("v2.metrics.infoAlerts"), value: String(info + low), helper: ta("v2.metrics.vs30Days", { val: `${info + low}` }), helperTone: "blue", icon: HelpCircle, tone: "blue", spark },
-    { label: ta("v2.metrics.deliveredAlerts"), value: String(total), helper: ta("v2.metrics.successRate", { val: total > 0 ? "100" : "0" }), helperTone: "green", icon: Shield, tone: "green", spark },
+    { label: ta("v2.metrics.deliveredAlerts"), value: String(total), helper: ta("v2.metrics.successRate", { val: String(deliverySuccessRate) }), helperTone: "green", icon: Shield, tone: "green", spark },
     { label: ta("v2.metrics.acknowledgedAlerts"), value: String(inProgress), helper: ta("v2.metrics.of", { val1: String(inProgress), val2: String(total) }), helperTone: "blue", icon: Users, tone: "purple", spark },
     { label: ta("v2.metrics.escalated"), value: String(critical), helper: ta("v2.metrics.criticalIncidents"), helperTone: "red", icon: AlertTriangle, tone: "red", spark: spark.slice().reverse() },
     { label: ta("v2.metrics.resolved"), value: String(resolved), helper: ta("v2.metrics.vs30Days", { val: `${resolved}` }), helperTone: "green", icon: CircleCheck, tone: "green", spark },
-    { label: ta("v2.metrics.avgResponseTime"), value: total > 0 ? `${Math.round(last7 / Math.max(1, 7))}m` : "-", helper: ta("v2.metrics.target", { val: "15m" }), helperTone: "blue", icon: HelpCircle, tone: "blue", spark },
+    { label: ta("v2.metrics.avgResponseTime"), value: avgResponseMinutes !== null ? `${avgResponseMinutes}m` : "-", helper: ta("v2.metrics.target", { val: "15m" }), helperTone: "blue", icon: HelpCircle, tone: "blue", spark },
   ];
 }
 
@@ -624,7 +626,7 @@ function MockPagination({ page, onPageChange }: { page: number; onPageChange: (p
   );
 }
 
-function AlertsTable({ ta, rows, page, footerText, onPageChange, onStatusChange, openMenuId, setOpenMenuId, menuRef }: { ta: ReturnType<typeof useTranslations<"Alerts">>; rows: AlertRow[]; page: number; footerText: string; onPageChange: (page: number) => void; onStatusChange: (id: string | number, status: "open" | "acknowledged" | "resolved") => void; openMenuId: string | number | null; setOpenMenuId: (id: string | number | null) => void; menuRef: React.RefObject<HTMLDivElement | null> }) {
+function AlertsTable({ ta, rows, page, footerText, onPageChange, onStatusChange, openMenuId, setOpenMenuId, menuRef, searchQuery, onSearchChange, severityFilter, onSeverityChange, statusFilter, onStatusFilterChange, onOpenFilterModal }: { ta: ReturnType<typeof useTranslations<"Alerts">>; rows: AlertRow[]; page: number; footerText: string; onPageChange: (page: number) => void; onStatusChange: (id: string | number, status: "open" | "acknowledged" | "resolved") => void; openMenuId: string | number | null; setOpenMenuId: (id: string | number | null) => void; menuRef: React.RefObject<HTMLDivElement | null>; searchQuery: string; onSearchChange: (value: string) => void; severityFilter: string; onSeverityChange: (value: string) => void; statusFilter: string; onStatusFilterChange: (value: string) => void; onOpenFilterModal: () => void }) {
   return (
     <Panel className="p-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -635,11 +637,17 @@ function AlertsTable({ ta, rows, page, footerText, onPageChange, onStatusChange,
         <div className="flex flex-wrap gap-2">
           <label className="relative block">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#68739F]" />
-            <input type="search" placeholder={ta("filter.search")} className="h-10 w-full min-w-[220px] rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-10 text-[13px] font-bold text-[#101334] outline-none transition placeholder:text-[#8B95B8] focus:border-[#465FFF] focus:bg-white" />
+            <input type="search" value={searchQuery ?? ""} onChange={(e) => onSearchChange(e.target.value)} placeholder={ta("filter.search")} className="h-10 w-full min-w-[220px] rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-10 text-[13px] font-bold text-[#101334] outline-none transition placeholder:text-[#8B95B8] focus:border-[#465FFF] focus:bg-white" />
           </label>
-          <button type="button" className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-4 text-[11px] font-black text-[#31406B]">{ta("v2.list.allSeverity")} <ChevronDown size={13} /></button>
-          <button type="button" className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-4 text-[11px] font-black text-[#31406B]">{ta("filter.allStatus")} <ChevronDown size={13} /></button>
-          <button type="button" aria-label="Filter alerts" className="flex size-10 items-center justify-center rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B]"><SlidersHorizontal size={16} /></button>
+          {(severityFilter || statusFilter) && (
+            <button type="button" onClick={() => { onSeverityChange(""); onStatusFilterChange(""); }} className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[#EF4444]/30 bg-[#EF4444]/5 px-4 text-[11px] font-black text-[#EF4444]">
+              {ta("filter.clearFilter")}
+            </button>
+          )}
+          <button type="button" onClick={onOpenFilterModal} className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-4 text-[11px] font-black text-[#31406B]">
+            <SlidersHorizontal size={14} />
+            {ta("filter.title")}
+          </button>
         </div>
       </div>
       <div className="mt-4 overflow-x-auto">
@@ -652,7 +660,19 @@ function AlertsTable({ ta, rows, page, footerText, onPageChange, onStatusChange,
             </tr>
           </thead>
           <tbody className="divide-y divide-[#EDF1F7]">
-            {rows.map((alert) => (
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={13} className="px-6 py-12 text-center">
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="flex size-12 items-center justify-center rounded-full bg-[#F5F7FC]">
+                      <AlertTriangle size={24} className="text-[#DDE3EF]" />
+                    </div>
+                    <p className="mt-3 text-[13px] font-bold text-[#68739F]">{ta("empty.noAlerts")}</p>
+                    <p className="mt-1 text-[11px] font-semibold text-[#8A94B8]">{ta("empty.noAlertsDesc")}</p>
+                  </div>
+                </td>
+              </tr>
+            ) : rows.map((alert) => (
               <tr key={alert.id} className="transition hover:bg-[#F8FAFF]">
                 <td className="min-w-[250px] max-w-[310px] px-3 py-3">
                   <div className="flex items-start gap-3">
@@ -707,10 +727,15 @@ export default function AlertsPage() {
   const ta = useTranslations("Alerts");
   const taCreate = useTranslations("Alerts.v2.createForm");
   const toastHook = useToast();
-  const [rows, setRows] = useState<AlertRow[]>(mockRows);
+  const queryClient = useQueryClient();
+  const [optimisticStatuses, setOptimisticStatuses] = useState<Record<string | number, AlertStatus>>({});
   const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [severityFilter, setSeverityFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [openMenuId, setOpenMenuId] = useState<string | number | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   const summaryQuery = useQuery({
@@ -719,6 +744,44 @@ export default function AlertsPage() {
     staleTime: 60 * 1000,
   });
   const summary = summaryQuery.data ?? null;
+
+  const alertsQuery = useQuery({
+    queryKey: ["alerts", { page, severity: severityFilter, status: statusFilter }],
+    queryFn: () => getAlerts({ page, limit: 10, severity: severityFilter || undefined, status: statusFilter || undefined }),
+    staleTime: 30 * 1000,
+  });
+  const alertsData = alertsQuery.data;
+
+  // Map API data to AlertRow type dynamically in render
+  const rows: AlertRow[] = alertsData?.data
+    ? alertsData.data.map((alert) => {
+        const mappedStatus = alert.status === "open" ? "New" : alert.status === "acknowledged" ? "Investigating" : "Resolved" as AlertStatus;
+        return {
+          id: alert.id,
+          title: alert.title,
+          description: alert.whatHappened || "",
+          tags: [alert.severity || "info"],
+          sourceLabel: alert.type || "Unknown",
+          sources: ["x", "instagram"], // Hardcoded mock sources
+          extraSources: 0,
+          sentiment: "NEGATIF" as Sentiment,
+          velocity: "+0%",
+          velocityPeriod: "in 24h",
+          velocityTrend: [0, 0, 0, 0, 0, 0, 0],
+          mentions: "0",
+          confidence: "-",
+          ack: "-",
+          notificationChannels: ["email"] as Array<"whatsapp" | "email" | "teams" | "slack">,
+          impact: "Medium" as "High" | "Medium",
+          status: optimisticStatuses[alert.id] ?? mappedStatus,
+          time: new Date(alert.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+          tone: alert.severity === "critical" ? "red" : alert.severity === "high" ? "amber" : "green" as Exclude<Tone, "purple" | "slate">,
+        };
+      })
+    : mockRows.map((row) => ({
+        ...row,
+        status: optimisticStatuses[row.id] ?? row.status
+      }));
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -732,14 +795,37 @@ export default function AlertsPage() {
 
   function handleStatusChange(id: string | number, status: "open" | "acknowledged" | "resolved") {
     const nextStatus: AlertStatus = status === "resolved" ? "Resolved" : status === "acknowledged" ? "Investigating" : "New";
-    setRows((currentRows) => currentRows.map((row) => (row.id === id ? { ...row, status: nextStatus } : row)));
-    toastHook.success(ta("toast.statusUpdated"));
+    setOptimisticStatuses((prev) => ({ ...prev, [id]: nextStatus }));
+
+    updateAlertStatus(id.toString(), status)
+      .then((updated) => {
+        if (updated) {
+          toastHook.success(ta("toast.statusUpdated"));
+          queryClient.invalidateQueries({ queryKey: ["alerts"] });
+          queryClient.invalidateQueries({ queryKey: ["alerts-summary"] });
+        } else {
+          toastHook.error(ta("toast.statusUpdateFailed"));
+          setOptimisticStatuses((prev) => {
+            const next = { ...prev };
+            delete next[id];
+            return next;
+          });
+        }
+      })
+      .catch(() => {
+        toastHook.error(ta("toast.statusUpdateFailed"));
+        setOptimisticStatuses((prev) => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
+      });
   }
 
   const primaryAlert = rows[0] ?? mockRows[0];
   const metrics = buildMetricCards(ta, summary);
   const td = useTranslations("DashboardStates");
-  const footerText = td("pagination.summary", { start: 1, end: Math.min(5, rows.length), total: 24, label: "alert" });
+  const footerText = td("pagination.summary", { start: alertsData?.pagination ? (alertsData.pagination.page - 1) * alertsData.pagination.limit + 1 : 1, end: alertsData?.pagination ? Math.min(alertsData.pagination.page * alertsData.pagination.limit, alertsData.pagination.total) : 0, total: alertsData?.pagination?.total ?? 0, label: "alert" });
 
   return (
     <div className="mx-auto flex max-w-[1600px] flex-col gap-4 pb-6 text-[#101334]">
@@ -771,7 +857,7 @@ export default function AlertsPage() {
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_336px]">
         <div className="min-w-0 space-y-4">
           <EscalationFlow ta={ta} />
-          <AlertsTable ta={ta} rows={rows} page={page} footerText={footerText} onPageChange={setPage} onStatusChange={handleStatusChange} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} menuRef={menuRef} />
+          <AlertsTable ta={ta} rows={rows} page={page} footerText={footerText} onPageChange={setPage} onStatusChange={handleStatusChange} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} menuRef={menuRef} searchQuery={searchQuery} onSearchChange={setSearchQuery} severityFilter={severityFilter} onSeverityChange={setSeverityFilter} statusFilter={statusFilter} onStatusFilterChange={setStatusFilter} onOpenFilterModal={() => setIsFilterModalOpen(true)} />
         </div>
         <aside className="space-y-4">
           <EscalationMatrix ta={ta} />
@@ -781,7 +867,7 @@ export default function AlertsPage() {
 
       {/* Create Alert Modal */}
       {isCreateModalOpen && createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsCreateModalOpen(false)}>
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsCreateModalOpen(false)}>
           <div className="flex w-full max-w-lg flex-col max-h-[85vh] rounded-[14px] border border-[#E8ECF5] bg-white text-[#101334] shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div>
@@ -796,8 +882,7 @@ export default function AlertsPage() {
               <form onSubmit={(e) => {
                 e.preventDefault();
                 const formData = new FormData(e.currentTarget);
-                const { createAlert: createAlertFn } = require("@/lib/api-service");
-                createAlertFn({
+                createAlert({
                   title: formData.get("title") as string,
                   type: formData.get("type") as "risk" | "opportunity" | "positioning",
                   severity: formData.get("severity") as "low" | "medium" | "high" | "critical",
@@ -807,9 +892,15 @@ export default function AlertsPage() {
                   assignedTo: formData.get("assignedTo") as string || undefined,
                   assignedTeam: formData.get("assignedTeam") as string || undefined,
                   deadline: formData.get("deadline") as string || undefined,
-                }).then(() => {
-                  toastHook.success(ta("toast.statusUpdated"));
-                  setIsCreateModalOpen(false);
+                }).then((newAlert) => {
+                  if (newAlert) {
+                    toastHook.success(ta("toast.statusUpdated"));
+                    queryClient.invalidateQueries({ queryKey: ["alerts"] });
+                    queryClient.invalidateQueries({ queryKey: ["alerts-summary"] });
+                    setIsCreateModalOpen(false);
+                  } else {
+                    toastHook.error(ta("toast.statusUpdateFailed"));
+                  }
                 }).catch(() => {
                   toastHook.error(ta("toast.statusUpdateFailed"));
                 });
@@ -845,11 +936,74 @@ export default function AlertsPage() {
                   <button type="button" onClick={() => setIsCreateModalOpen(false)} className="flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF]">
                     {taCreate("cancel")}
                   </button>
-                  <button type="submit" className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_8px_16px_rgba(70,95,255,0.2)] transition hover:opacity-90">
+                  <button type="submit" className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_8px_16px_rgba(70,95,255,0.2)] transition hover:opacity-90">
                     {taCreate("submit")}
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Filter Modal */}
+      {isFilterModalOpen && createPortal(
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsFilterModalOpen(false)}>
+          <div className="flex w-full max-w-sm flex-col rounded-[14px] border border-[#E8ECF5] bg-white text-[#101334] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
+              <h2 className="text-lg font-black text-[#101334]">{ta("filter.title")}</h2>
+              <button type="button" onClick={() => setIsFilterModalOpen(false)} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div>
+                <p className="mb-2 text-[11px] font-black text-[#68739F]">{ta("v2.list.allSeverity")}</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { value: "", label: ta("v2.list.allSeverity") },
+                    { value: "critical", label: ta("v2.incident.critical") },
+                    { value: "high", label: ta("v2.incident.high") },
+                    { value: "medium", label: ta("v2.incident.high").replace("High", "Medium") },
+                    { value: "low", label: ta("v2.incident.high").replace("High", "Low") },
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setSeverityFilter(option.value)}
+                      className={cn("rounded-[8px] px-3 py-1.5 text-[11px] font-bold transition", severityFilter === option.value ? "bg-[#465FFF] text-white" : "border border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B] hover:bg-[#F8FAFF]")}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-2 text-[11px] font-black text-[#68739F]">{ta("filter.allStatus")}</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { value: "", label: ta("filter.allStatus") },
+                    { value: "open", label: ta("table.statusNew") },
+                    { value: "acknowledged", label: ta("table.statusInvestigating") },
+                    { value: "resolved", label: ta("table.statusResolved") },
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setStatusFilter(option.value)}
+                      className={cn("rounded-[8px] px-3 py-1.5 text-[11px] font-bold transition", statusFilter === option.value ? "bg-[#465FFF] text-white" : "border border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B] hover:bg-[#F8FAFF]")}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="pt-3 border-t border-[#EEF1F7]">
+                <button type="button" onClick={() => setIsFilterModalOpen(false)} className="w-full rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 py-2.5 text-[12px] font-black text-white transition hover:opacity-90">
+                  {ta("filter.apply")}
+                </button>
+              </div>
             </div>
           </div>
         </div>,

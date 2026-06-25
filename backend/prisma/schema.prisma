@@ -245,6 +245,8 @@ model Alert {
   status          String          @default("open") // (open, acknowledged, in_progress, resolved)
   sources         Json?           @default("[]")
   createdAt       DateTime        @default(now())
+  acknowledgedAt  DateTime?
+  resolvedAt      DateTime?
 
   workspace   Workspace    @relation(fields: [workspaceId], references: [id])
   actionPlans ActionPlan[]

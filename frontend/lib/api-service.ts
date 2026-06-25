@@ -1605,6 +1605,8 @@ export interface AlertsSummaryResponse {
   trend_delta: number;
   timeline: number[];
   timeline_labels: string[];
+  avg_response_time_minutes: number | null;
+  delivery_success_rate: number;
 }
 
 // ---------------------------------------------------------------------------
