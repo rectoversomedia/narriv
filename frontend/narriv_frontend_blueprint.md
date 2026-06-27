@@ -196,7 +196,8 @@
 | AI Summary | AI assistant panel using `/mainapp/alerts-ai-agent.png` | Static asset |
 | Quick Filters | Severity/status/source filters | Local state |
 | Alert Table | Main alert list with source, confidence, owner, status | Wired to `getAlerts()` with pagination and preview fallback |
-| Action Panels | Response playbook, source mix, timeline, investigation status | Source distribution and timeline consume `getAlertsSummary().by_type`, `timeline`, and `timeline_labels`; response/AI recommendation panels remain preview until dedicated backend contracts exist |
+| Action Panels | Response playbook, source mix, timeline, investigation status | Source distribution and timeline consume `getAlertsSummary().by_type`, `timeline`, and `timeline_labels`; escalation flow and matrix now consume `/api/alerts/escalation-matrix`; response/AI recommendation panels remain preview until dedicated backend contracts exist |
+| Escalation Matrix | Editable escalation levels with owner/role, SLA minutes, active toggle, and order | `getEscalationMatrix()` + `updateEscalationMatrix()`; shared live data feeds the sidebar, escalation flow, and create-alert assigned team selector; bilingual EN/ID modal copy |
 | Alert Detail | Drill-down page at `/alerts/[id]` | Wired to `getAlertById()` with preview/error state handling |
 | Status Actions | `updateAlertStatus()` and `updateAlertAssignment()` wired | Status dropdown menu on alert list, editable assignment fields on detail page |
 

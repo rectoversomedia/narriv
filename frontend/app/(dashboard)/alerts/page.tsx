@@ -46,7 +46,17 @@ import {
 } from "@ridemountainpig/svgl-react";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
-import { getAlertsSummary, createAlert, getAlerts, updateAlertStatus } from "@/lib/api-service";
+import {
+  createAlert,
+  getAlerts,
+  getAlertsSummary,
+  getEscalationMatrix,
+  getSources,
+  getWorkspaceMembers,
+  updateAlertStatus,
+  updateEscalationMatrix,
+  type EscalationMatrixRecord,
+} from "@/lib/api-service";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Sentiment = "NEGATIF" | "POSITIF" | "CAMPURAN";
@@ -91,6 +101,14 @@ type Metric = {
   icon: LucideIcon;
   tone: Tone;
   spark: number[];
+};
+
+type EscalationDraft = {
+  level: string;
+  roleName: string;
+  slaMinutes: string;
+  isActive: boolean;
+  order: number;
 };
 
 const toneStyles: Record<Tone, ToneStyle> = {
@@ -362,6 +380,49 @@ function StatusBadge({ status }: { status: AlertStatus }) {
   return <span className={cn("rounded-[8px] px-2.5 py-1 text-[10px] font-black", styles[status])}>{status}</span>;
 }
 
+function sourceNameToIconKey(source: string): SourceKey {
+  const normalized = source.toLowerCase();
+  if (normalized.includes("instagram")) return "instagram";
+  if (normalized.includes("tiktok")) return "tiktok";
+  if (normalized.includes("facebook")) return "facebook";
+  if (normalized.includes("app store") || normalized.includes("appstore")) return "appstore";
+  if (normalized.includes("google play") || normalized.includes("googleplay")) return "googleplay";
+  if (normalized.includes("support")) return "support";
+  if (normalized.includes("discourse") || normalized.includes("forum")) return "discourse";
+  return "x";
+}
+
+function defaultEscalationRecords(ta: ReturnType<typeof useTranslations<"Alerts">>): EscalationMatrixRecord[] {
+  const now = new Date(0).toISOString();
+  return [
+    { id: "default-l1", workspaceId: "default", level: "L1", roleName: ta("v2.escalationMatrix.teamLead"), slaMinutes: 5, isActive: true, order: 0, createdAt: now, updatedAt: now },
+    { id: "default-l2", workspaceId: "default", level: "L2", roleName: ta("v2.escalationMatrix.deptHead"), slaMinutes: 15, isActive: true, order: 1, createdAt: now, updatedAt: now },
+    { id: "default-l3", workspaceId: "default", level: "L3", roleName: ta("v2.escalationMatrix.execTeam"), slaMinutes: 30, isActive: false, order: 2, createdAt: now, updatedAt: now },
+  ];
+}
+
+function getDisplayEscalationRecords(records: EscalationMatrixRecord[] | null | undefined, ta: ReturnType<typeof useTranslations<"Alerts">>) {
+  const source = records?.length ? records : defaultEscalationRecords(ta);
+  return [...source].sort((a, b) => a.order - b.order || a.level.localeCompare(b.level));
+}
+
+function formatSlaMinutes(minutes: number, ta: ReturnType<typeof useTranslations<"Alerts">>) {
+  if (minutes >= 60 && minutes % 60 === 0) {
+    return ta("v2.escalationMatrix.hoursShort", { count: minutes / 60 });
+  }
+  return ta("v2.escalationMatrix.minutesShort", { count: minutes });
+}
+
+function matrixRecordsToDraft(records: EscalationMatrixRecord[] | null | undefined, ta: ReturnType<typeof useTranslations<"Alerts">>): EscalationDraft[] {
+  return getDisplayEscalationRecords(records, ta).slice(0, 5).map((record, index) => ({
+    level: record.level,
+    roleName: record.roleName,
+    slaMinutes: String(record.slaMinutes),
+    isActive: record.isActive,
+    order: index,
+  }));
+}
+
 function ChannelIcon({ children, tone = "blue" }: { children: ReactNode; tone?: Tone }) {
   const style = toneStyles[tone];
   return <span className={cn("flex size-8 items-center justify-center rounded-[8px]", style.soft, style.text)}>{children}</span>;
@@ -507,23 +568,29 @@ function CriticalDeliveryStatus({ alert, ta }: { alert: AlertRow; ta: ReturnType
   );
 }
 
-function EscalationMatrix({ ta }: { ta: ReturnType<typeof useTranslations<"Alerts">> }) {
-  const levels = [
-    [ta("v2.escalationMatrix.l1"), ta("v2.escalationMatrix.teamLead"), ta("v2.escalationMatrix.sla", { time: "5m" }), true],
-    [ta("v2.escalationMatrix.l2"), ta("v2.escalationMatrix.deptHead"), ta("v2.escalationMatrix.sla", { time: "15m" }), true],
-    [ta("v2.escalationMatrix.l3"), ta("v2.escalationMatrix.execTeam"), ta("v2.escalationMatrix.sla", { time: "30m" }), false],
-  ] as const;
-
+function EscalationMatrix({ ta, levels, isLoading }: { ta: ReturnType<typeof useTranslations<"Alerts">>; levels: EscalationMatrixRecord[]; isLoading: boolean }) {
   return (
     <Panel className="p-4">
-      <h3 className="text-[15px] font-black text-[#101334]">{ta("v2.escalationMatrix.title")}</h3>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-[15px] font-black text-[#101334]">{ta("v2.escalationMatrix.panelTitle")}</h3>
+          <p className="mt-1 text-[10px] font-bold text-[#68739F]">{ta("v2.escalationMatrix.desc")}</p>
+        </div>
+        {isLoading ? <span className="size-3.5 rounded-full border-2 border-[#465FFF] border-r-transparent" /> : null}
+      </div>
       <div className="mt-4 space-y-2">
-        {levels.map(([level, title, sla, done], index) => (
-          <div key={level}>
-            <div className="grid grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-3 rounded-[9px] bg-[#F8FAFF] px-3 py-2">
-              <span className="rounded-[6px] bg-[#EEEAFE] px-2 py-1 text-center text-[10px] font-black text-[#6B4DE6]">{level}</span>
-              <p className="text-[11px] font-black text-[#101334]">{title}</p>
-              <p className="flex items-center gap-2 text-[10px] font-bold text-[#31406B]">{sla} {done ? <CircleCheck size={14} className="text-[#10B981]" /> : <span className="size-3.5 rounded-full border-2 border-[#465FFF] border-r-transparent" />}</p>
+        {levels.map((item, index) => (
+          <div key={`${item.id}-${item.level}`}>
+            <div className={cn("grid grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-3 rounded-[9px] px-3 py-2", item.isActive ? "bg-[#F8FAFF]" : "bg-[#F8FAFF]/55 opacity-70")}>
+              <span className={cn("rounded-[6px] px-2 py-1 text-center text-[10px] font-black", item.isActive ? "bg-[#EEEAFE] text-[#6B4DE6]" : "bg-slate-100 text-slate-500")}>{item.level}</span>
+              <div className="min-w-0">
+                <p className="truncate text-[11px] font-black text-[#101334]">{item.roleName}</p>
+                <p className="mt-0.5 text-[9px] font-bold text-[#68739F]">{item.isActive ? ta("v2.escalationMatrix.activeLabel") : ta("v2.escalationMatrix.standbyLabel")}</p>
+              </div>
+              <p className="flex items-center gap-2 text-[10px] font-bold text-[#31406B]">
+                {ta("v2.escalationMatrix.sla", { time: formatSlaMinutes(item.slaMinutes, ta) })}
+                {item.isActive ? <CircleCheck size={14} className="text-[#10B981]" /> : <span className="size-3.5 rounded-full border-2 border-[#C7D0E5]" />}
+              </p>
             </div>
             {index < levels.length - 1 ? <ArrowDown size={14} className="mx-14 my-1 text-[#465FFF]" /> : null}
           </div>
@@ -566,12 +633,16 @@ function AlertJourney({ alert, ta }: { alert: AlertRow; ta: ReturnType<typeof us
   );
 }
 
-function EscalationFlow({ ta }: { ta: ReturnType<typeof useTranslations<"Alerts">> }) {
+function EscalationFlow({ ta, levels }: { ta: ReturnType<typeof useTranslations<"Alerts">>; levels: EscalationMatrixRecord[] }) {
+  const activeLevels = levels.filter((item) => item.isActive);
+  const assignmentLabel = activeLevels.length > 0
+    ? activeLevels.map((item) => `${item.level}: ${item.roleName}`).join(" -> ")
+    : ta("v2.escalationMatrix.noActiveLevels");
   const steps = [
     [Bell, ta("v2.flow.step1Title"), ta("v2.flow.step1Desc"), "purple"],
     [AlertTriangle, ta("v2.flow.step2Title"), ta("v2.flow.step2Desc"), "blue"],
     [Mail, ta("v2.flow.step3Title"), ta("v2.flow.step3Desc"), "green"],
-    [Shield, ta("v2.flow.step4Title"), ta("v2.flow.step4Desc"), "purple"],
+    [Shield, ta("v2.flow.step4Title"), assignmentLabel, "purple"],
     [Play, ta("v2.flow.step5Title"), ta("v2.flow.step5Desc"), "blue"],
     [CircleCheck, ta("v2.flow.step6Title"), ta("v2.flow.step6Desc"), "purple"],
   ] as const;
@@ -736,7 +807,38 @@ export default function AlertsPage() {
   const [openMenuId, setOpenMenuId] = useState<string | number | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [isEscalationModalOpen, setIsEscalationModalOpen] = useState(false);
+  const [isCreateAdvancedOpen, setIsCreateAdvancedOpen] = useState(false);
+  const [isCreatingAlert, setIsCreatingAlert] = useState(false);
+  const [isSavingEscalation, setIsSavingEscalation] = useState(false);
+  const [selectedSources, setSelectedSources] = useState<string[]>([]);
+  const [escalationDraft, setEscalationDraft] = useState<EscalationDraft[]>([]);
   const menuRef = useRef<HTMLDivElement | null>(null);
+
+  function closeCreateModal() {
+    setIsCreateModalOpen(false);
+    setIsCreateAdvancedOpen(false);
+    setSelectedSources([]);
+  }
+
+  // Dropdown data is lazy, while escalation matrix stays live for the flow and sidebar.
+  const membersQuery = useQuery({
+    queryKey: ["workspace-members"],
+    queryFn: () => getWorkspaceMembers(),
+    enabled: isCreateModalOpen || isEscalationModalOpen,
+    staleTime: 5 * 60 * 1000,
+  });
+  const escalationQuery = useQuery({
+    queryKey: ["escalation-matrix"],
+    queryFn: () => getEscalationMatrix(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const sourcesQuery = useQuery({
+    queryKey: ["platform-sources"],
+    queryFn: () => getSources({ limit: 100, isActive: true }),
+    enabled: isCreateModalOpen,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const summaryQuery = useQuery({
     queryKey: ["alerts-summary"],
@@ -751,19 +853,96 @@ export default function AlertsPage() {
     staleTime: 30 * 1000,
   });
   const alertsData = alertsQuery.data;
+  const escalationLevels = getDisplayEscalationRecords(escalationQuery.data, ta);
+  const ownerOptions = (membersQuery.data ?? [])
+    .map((member) => {
+      const displayName = member.user?.name || member.user?.email || member.userId;
+      const roleLabel = member.role ? ` (${member.role})` : "";
+      return {
+        id: member.id,
+        value: `${displayName}${roleLabel}`,
+        label: `${displayName}${roleLabel}`,
+      };
+    })
+    .filter((option) => option.value.trim().length > 0);
+
+  function openEscalationModal() {
+    setEscalationDraft(matrixRecordsToDraft(escalationQuery.data, ta));
+    setIsEscalationModalOpen(true);
+  }
+
+  function updateEscalationDraft(index: number, patch: Partial<EscalationDraft>) {
+    setEscalationDraft((prev) => prev.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item));
+  }
+
+  function addEscalationLevel() {
+    setEscalationDraft((prev) => {
+      if (prev.length >= 5) return prev;
+      const nextIndex = prev.length;
+      return [
+        ...prev,
+        { level: `L${nextIndex + 1}`, roleName: "", slaMinutes: "15", isActive: true, order: nextIndex },
+      ];
+    });
+  }
+
+  function removeEscalationLevel(index: number) {
+    setEscalationDraft((prev) => prev.filter((_, itemIndex) => itemIndex !== index).map((item, itemIndex) => ({ ...item, order: itemIndex })));
+  }
+
+  function closeEscalationModal() {
+    if (isSavingEscalation) return;
+    setIsEscalationModalOpen(false);
+  }
+
+  function handleSaveEscalationMatrix() {
+    if (isSavingEscalation) return;
+    const levels = escalationDraft.map((item, index) => ({
+      level: item.level.trim(),
+      roleName: item.roleName.trim(),
+      slaMinutes: Number(item.slaMinutes),
+      isActive: item.isActive,
+      order: index,
+    }));
+    const hasInvalid = levels.some((item) => !item.level || !item.roleName || !Number.isInteger(item.slaMinutes) || item.slaMinutes < 1);
+    if (levels.length === 0 || levels.length > 5 || hasInvalid) {
+      toastHook.error(ta("v2.escalationMatrix.validationError"));
+      return;
+    }
+
+    setIsSavingEscalation(true);
+    updateEscalationMatrix(levels)
+      .then((updated) => {
+        if (updated) {
+          toastHook.success(ta("v2.escalationMatrix.success"));
+          queryClient.invalidateQueries({ queryKey: ["escalation-matrix"] });
+          setIsEscalationModalOpen(false);
+        } else {
+          toastHook.error(ta("v2.escalationMatrix.error"));
+        }
+      })
+      .catch(() => {
+        toastHook.error(ta("v2.escalationMatrix.error"));
+      })
+      .finally(() => {
+        setIsSavingEscalation(false);
+      });
+  }
 
   // Map API data to AlertRow type dynamically in render
   const rows: AlertRow[] = alertsData?.data
     ? alertsData.data.map((alert) => {
         const mappedStatus = alert.status === "open" ? "New" : alert.status === "acknowledged" ? "Investigating" : "Resolved" as AlertStatus;
+        const alertSources = alert.sources?.filter(Boolean) ?? [];
+        const shownSources = alertSources.slice(0, 3).map(sourceNameToIconKey);
         return {
           id: alert.id,
           title: alert.title,
           description: alert.whatHappened || "",
           tags: [alert.severity || "info"],
-          sourceLabel: alert.type || "Unknown",
-          sources: ["x", "instagram"], // Hardcoded mock sources
-          extraSources: 0,
+          sourceLabel: alert.assignedTeam || alert.assignedTo || alert.type || "Unknown",
+          sources: shownSources.length > 0 ? shownSources : ["x"],
+          extraSources: Math.max(0, alertSources.length - shownSources.length),
           sentiment: "NEGATIF" as Sentiment,
           velocity: "+0%",
           velocityPeriod: "in 24h",
@@ -836,7 +1015,7 @@ export default function AlertsPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] sm:w-auto"><Settings size={14} />{ta("v2.header.notificationRules")}</button>
-          <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] sm:w-auto"><Users size={14} />{ta("v2.header.escalationMatrix")}</button>
+          <button type="button" onClick={openEscalationModal} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF] sm:w-auto"><Users size={14} />{ta("v2.header.escalationMatrix")}</button>
           <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#4B2BFF] px-4 text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] sm:w-auto"><Plus size={15} />{ta("v2.header.createAlert")}</button>
         </div>
       </header>
@@ -856,32 +1035,140 @@ export default function AlertsPage() {
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_336px]">
         <div className="min-w-0 space-y-4">
-          <EscalationFlow ta={ta} />
+          <EscalationFlow ta={ta} levels={escalationLevels} />
           <AlertsTable ta={ta} rows={rows} page={page} footerText={footerText} onPageChange={setPage} onStatusChange={handleStatusChange} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} menuRef={menuRef} searchQuery={searchQuery} onSearchChange={setSearchQuery} severityFilter={severityFilter} onSeverityChange={setSeverityFilter} statusFilter={statusFilter} onStatusFilterChange={setStatusFilter} onOpenFilterModal={() => setIsFilterModalOpen(true)} />
         </div>
         <aside className="space-y-4">
-          <EscalationMatrix ta={ta} />
+          <EscalationMatrix ta={ta} levels={escalationLevels} isLoading={escalationQuery.isLoading} />
           <AlertJourney alert={primaryAlert} ta={ta} />
         </aside>
       </section>
 
+      {isEscalationModalOpen && createPortal(
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={closeEscalationModal}>
+          <div className="flex max-h-[88vh] w-full max-w-3xl flex-col rounded-[14px] border border-[#E8ECF5] bg-white text-[#101334] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-4 border-b border-[#EEF1F7] p-5">
+              <div>
+                <h2 className="text-lg font-black text-[#101334]">{ta("v2.escalationMatrix.modalTitle")}</h2>
+                <p className="mt-1 text-[11px] font-bold text-[#68739F]">{ta("v2.escalationMatrix.modalDesc")}</p>
+              </div>
+              <button type="button" onClick={closeEscalationModal} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]" aria-label={ta("v2.escalationMatrix.cancel")}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              <div className="mb-3 grid grid-cols-[78px_minmax(0,1fr)_120px_86px_36px] gap-2 px-2 text-[9px] font-black uppercase tracking-[0.16em] text-[#68739F] max-md:hidden">
+                <span>{ta("v2.escalationMatrix.levelLabel")}</span>
+                <span>{ta("v2.escalationMatrix.ownerLabel")}</span>
+                <span>{ta("v2.escalationMatrix.timeLabel")}</span>
+                <span>{ta("v2.escalationMatrix.activeLabel")}</span>
+                <span />
+              </div>
+              <div className="space-y-2.5">
+                {escalationDraft.map((item, index) => (
+                  <div key={`${item.order}-${index}`} className="grid gap-2 rounded-[10px] border border-[#E6EAF2] bg-[#FBFCFF] p-2.5 md:grid-cols-[78px_minmax(0,1fr)_120px_86px_36px] md:items-center">
+                    <label className="block">
+                      <span className="mb-1 block text-[10px] font-black text-[#68739F] md:hidden">{ta("v2.escalationMatrix.levelLabel")}</span>
+                      <input
+                        value={item.level}
+                        maxLength={10}
+                        onChange={(event) => updateEscalationDraft(index, { level: event.target.value })}
+                        className="h-10 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[16px] font-black text-[#101334] outline-none transition focus:border-[#465FFF] md:text-[12px]"
+                        placeholder="L1"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 block text-[10px] font-black text-[#68739F] md:hidden">{ta("v2.escalationMatrix.ownerLabel")}</span>
+                      <select
+                        value={item.roleName}
+                        onChange={(event) => updateEscalationDraft(index, { roleName: event.target.value })}
+                        className="h-10 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[16px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] md:text-[12px]"
+                      >
+                        <option value="">{membersQuery.isLoading ? ta("v2.escalationMatrix.loadingOwners") : ta("v2.escalationMatrix.ownerPlaceholder")}</option>
+                        {item.roleName && !ownerOptions.some((option) => option.value === item.roleName) ? (
+                          <option value={item.roleName}>{item.roleName}</option>
+                        ) : null}
+                        {ownerOptions.map((option) => (
+                          <option key={option.id} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                      {!membersQuery.isLoading && ownerOptions.length === 0 ? (
+                        <p className="mt-1 text-[9px] font-bold text-[#EF4444]">{ta("v2.escalationMatrix.noOwners")}</p>
+                      ) : null}
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 block text-[10px] font-black text-[#68739F] md:hidden">{ta("v2.escalationMatrix.timeLabel")}</span>
+                      <input
+                        value={item.slaMinutes}
+                        min={1}
+                        type="number"
+                        inputMode="numeric"
+                        onChange={(event) => updateEscalationDraft(index, { slaMinutes: event.target.value })}
+                        className="h-10 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[16px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] md:text-[12px]"
+                        placeholder="15"
+                      />
+                    </label>
+                    <label className="flex h-10 items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#31406B]">
+                      <input
+                        type="checkbox"
+                        checked={item.isActive}
+                        onChange={(event) => updateEscalationDraft(index, { isActive: event.target.checked })}
+                        className="size-3.5 accent-[#465FFF]"
+                      />
+                      {item.isActive ? ta("v2.escalationMatrix.activeLabel") : ta("v2.escalationMatrix.standbyLabel")}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => removeEscalationLevel(index)}
+                      disabled={escalationDraft.length <= 1}
+                      className="flex h-10 items-center justify-center rounded-[8px] border border-[#F3D4D4] bg-white text-[#EF4444] transition hover:bg-[#FFF5F5] disabled:cursor-not-allowed disabled:opacity-40"
+                      aria-label={ta("v2.escalationMatrix.removeLevel")}
+                    >
+                      <X size={15} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] p-3">
+                <p className="text-[11px] font-bold text-[#68739F]">{ta("v2.escalationMatrix.limitHint")}</p>
+                <button type="button" onClick={addEscalationLevel} disabled={escalationDraft.length >= 5} className="inline-flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#465FFF] transition hover:border-[#C9D4F6] disabled:cursor-not-allowed disabled:opacity-50">
+                  <Plus size={14} /> {ta("v2.escalationMatrix.addLevel")}
+                </button>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-3 border-t border-[#EEF1F7] p-5">
+              <button type="button" onClick={closeEscalationModal} disabled={isSavingEscalation} className="flex h-9 items-center justify-center rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-60">
+                {ta("v2.escalationMatrix.cancel")}
+              </button>
+              <button type="button" onClick={handleSaveEscalationMatrix} disabled={isSavingEscalation} className="flex h-9 items-center justify-center rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_8px_16px_rgba(70,95,255,0.2)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
+                {isSavingEscalation ? ta("v2.escalationMatrix.saving") : ta("v2.escalationMatrix.save")}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {/* Create Alert Modal */}
       {isCreateModalOpen && createPortal(
-        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsCreateModalOpen(false)}>
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={closeCreateModal}>
           <div className="flex w-full max-w-lg flex-col max-h-[85vh] rounded-[14px] border border-[#E8ECF5] bg-white text-[#101334] shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div>
                 <h2 className="text-lg font-black text-[#101334]">{ta("v2.header.createAlert")}</h2>
-                <p className="mt-1 text-[11px] font-bold text-[#68739F]">Create a new alert</p>
+                <p className="mt-1 text-[11px] font-bold text-[#68739F]">{taCreate("desc")}</p>
               </div>
-              <button type="button" onClick={() => setIsCreateModalOpen(false)} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+              <button type="button" onClick={closeCreateModal} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
                 <X size={20} />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-5">
               <form onSubmit={(e) => {
                 e.preventDefault();
+                if (isCreatingAlert) return;
                 const formData = new FormData(e.currentTarget);
+                const deadlineRaw = formData.get("deadline") as string || "";
+                setIsCreatingAlert(true);
                 createAlert({
                   title: formData.get("title") as string,
                   type: formData.get("type") as "risk" | "opportunity" | "positioning",
@@ -891,20 +1178,24 @@ export default function AlertsPage() {
                   whatToDo: formData.get("whatToDo") as string || undefined,
                   assignedTo: formData.get("assignedTo") as string || undefined,
                   assignedTeam: formData.get("assignedTeam") as string || undefined,
-                  deadline: formData.get("deadline") as string || undefined,
+                  deadline: deadlineRaw ? new Date(deadlineRaw).toISOString() : undefined,
+                  sources: selectedSources.length > 0 ? selectedSources : undefined,
                 }).then((newAlert) => {
                   if (newAlert) {
                     toastHook.success(ta("toast.statusUpdated"));
                     queryClient.invalidateQueries({ queryKey: ["alerts"] });
                     queryClient.invalidateQueries({ queryKey: ["alerts-summary"] });
-                    setIsCreateModalOpen(false);
+                    closeCreateModal();
                   } else {
                     toastHook.error(ta("toast.statusUpdateFailed"));
                   }
                 }).catch(() => {
                   toastHook.error(ta("toast.statusUpdateFailed"));
+                }).finally(() => {
+                  setIsCreatingAlert(false);
                 });
               }} className="space-y-4">
+                {/* ── Core Info ── */}
                 <div>
                   <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("titleLabel")}</label>
                   <input name="title" required placeholder={taCreate("titlePlaceholder")} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
@@ -928,16 +1219,109 @@ export default function AlertsPage() {
                     </select>
                   </div>
                 </div>
+
+                {/* ── Context ── */}
                 <div>
                   <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("whatHappenedLabel")}</label>
                   <textarea name="whatHappened" rows={2} placeholder={taCreate("whatHappenedPlaceholder")} className="w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] p-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white resize-none" />
                 </div>
+                <div>
+                  <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("whyItMattersLabel")}</label>
+                  <textarea name="whyItMatters" rows={2} placeholder={taCreate("whyItMattersPlaceholder")} className="w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] p-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white resize-none" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("whatToDoLabel")}</label>
+                  <textarea name="whatToDo" rows={2} placeholder={taCreate("whatToDoPlaceholder")} className="w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] p-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white resize-none" />
+                </div>
+
+                {/* ── Assignment & Sources ── */}
+                <div className="rounded-[10px] border border-[#E6EAF2] bg-[#FBFCFF]">
+                  <button type="button" onClick={() => setIsCreateAdvancedOpen((open) => !open)} className="flex w-full items-center justify-between px-3.5 py-2.5 text-[11px] font-black text-[#31406B]">
+                    <span className="flex items-center gap-2"><Settings size={13} className="text-[#465FFF]" />{ta("v2.header.escalationMatrix").replace("Escalation Matrix", "Assignment & Sources").replace("Matriks Eskalasi", "Penugasan & Sumber")}</span>
+                    <ChevronRight size={14} className={cn("text-[#8B95B8] transition-transform", isCreateAdvancedOpen && "rotate-90")} />
+                  </button>
+                  {isCreateAdvancedOpen && (
+                  <div className="space-y-3 border-t border-[#E6EAF2] px-3.5 pb-3.5 pt-3">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("assignedToLabel")}</label>
+                        <select name="assignedTo" defaultValue="" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF]">
+                          <option value="">{taCreate("assignedToPlaceholder")}</option>
+                          {(membersQuery.data ?? []).map((m) => (
+                            <option key={m.id} value={m.user?.name || m.user?.email || m.userId}>
+                              {m.user?.name || m.user?.email || m.userId}{m.role ? ` (${m.role})` : ""}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("assignedTeamLabel")}</label>
+                        <select name="assignedTeam" defaultValue="" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF]">
+                          <option value="">{taCreate("assignedTeamPlaceholder")}</option>
+                          {escalationLevels.filter((e) => e.isActive).map((e) => (
+                            <option key={e.id} value={e.roleName}>
+                              {e.roleName} ({e.level})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("deadlineLabel")}</label>
+                      <input name="deadline" type="datetime-local" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF]" />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{ta("v2.incident.source")}</label>
+                      {(sourcesQuery.data?.data ?? []).length > 0 ? (
+                        <div className="grid grid-cols-2 gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white p-2.5 max-h-[140px] overflow-y-auto">
+                          {(sourcesQuery.data?.data ?? []).map((src) => (
+                            <label key={src.id} className="flex items-center gap-2 rounded-[6px] px-2 py-1.5 text-[11px] font-bold text-[#31406B] transition hover:bg-[#F5F7FC] cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={selectedSources.includes(src.name)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedSources((prev) => [...prev, src.name]);
+                                  } else {
+                                    setSelectedSources((prev) => prev.filter((s) => s !== src.name));
+                                  }
+                                }}
+                                className="size-3.5 rounded border-[#DDE3EF] text-[#465FFF] accent-[#465FFF]"
+                              />
+                              <span className="truncate">{src.name}</span>
+                              <span className="ml-auto shrink-0 rounded-full bg-[#F1F4FB] px-1.5 py-0.5 text-[9px] font-black text-[#68739F]">{src.type}</span>
+                            </label>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="rounded-[8px] border border-dashed border-[#DDE3EF] bg-[#FBFCFF] px-3 py-2.5 text-[11px] font-semibold text-[#8B95B8]">
+                          No sources configured yet. Add sources in the Sources page.
+                        </p>
+                      )}
+                      {selectedSources.length > 0 && (
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          {selectedSources.map((s) => (
+                            <span key={s} className="inline-flex items-center gap-1 rounded-full bg-[#465FFF]/10 px-2 py-0.5 text-[10px] font-black text-[#465FFF]">
+                              {s}
+                              <button type="button" onClick={() => setSelectedSources((prev) => prev.filter((x) => x !== s))} className="ml-0.5 text-[#465FFF]/60 hover:text-[#465FFF]">
+                                <X size={10} />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  )}
+                </div>
+
+                {/* ── Footer ── */}
                 <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#EEF1F7]">
-                  <button type="button" onClick={() => setIsCreateModalOpen(false)} className="flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF]">
+                  <button type="button" onClick={closeCreateModal} className="flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF]">
                     {taCreate("cancel")}
                   </button>
-                  <button type="submit" className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_8px_16px_rgba(70,95,255,0.2)] transition hover:opacity-90">
-                    {taCreate("submit")}
+                  <button type="submit" disabled={isCreatingAlert} className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_8px_16px_rgba(70,95,255,0.2)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
+                    {isCreatingAlert ? `${taCreate("submit")}...` : taCreate("submit")}
                   </button>
                 </div>
               </form>

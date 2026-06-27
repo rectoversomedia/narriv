@@ -17,6 +17,31 @@ import { recordAuditLog } from "../../lib/audit.js";
 import { logStructured } from "../../lib/logger.js";
 
 const router = express.Router();
+
+// Signed export URLs are opened directly by the browser, so they cannot rely on
+// the frontend API client injecting an Authorization header.
+router.get("/exports/:jobId/download", async (req, res) => {
+    try {
+        await cleanupExpiredReportExports();
+        const { jobId } = req.params;
+        const { token } = req.query;
+        if (!token) return res.status(400).json({ error: "token is required" });
+
+        const resolved = await resolveSignedReportDownload({ exportId: jobId, token: String(token) });
+        if (!resolved.ok) {
+            return res.status(resolved.status).json({ error: resolved.error });
+        }
+
+        const { job, payload } = resolved;
+        res.setHeader("Content-Type", "application/json");
+        res.setHeader("Content-Disposition", `attachment; filename="${job.fileName || `report-export-${job.id}.${job.format}`}"`);
+        return res.json(payload);
+    } catch (error) {
+        logStructured("error", "Error downloading export file:", { error: error?.message || error, stack: error?.stack });
+        return res.status(500).json({ error: "Internal server error" });
+    }
+});
+
 router.use(verifyToken);
 
 const REPORT_TEMPLATES = {
@@ -243,7 +268,7 @@ router.get("/templates", async (req, res) => {
 });
 
 // POST /api/reports/templates — Create custom template
-router.post("/templates", validateRequest(createReportTemplateSchema), async (req, res) => {
+router.post("/templates", validateRequest({ body: createReportTemplateSchema }), async (req, res) => {
     try {
         const { name, description, format, cadence, sectionCount } = req.body;
         const { workspaceId } = req.query;
@@ -272,7 +297,7 @@ router.post("/templates", validateRequest(createReportTemplateSchema), async (re
 });
 
 // PATCH /api/reports/templates/:id — Update custom template
-router.patch("/templates/:id", validateRequest(updateReportTemplateSchema), async (req, res) => {
+router.patch("/templates/:id", validateRequest({ body: updateReportTemplateSchema }), async (req, res) => {
     try {
         const { id } = req.params;
         
@@ -355,7 +380,7 @@ router.get("/schedules", async (req, res) => {
 });
 
 // POST /api/reports/schedules — Create schedule
-router.post("/schedules", validateRequest(createReportScheduleSchema), async (req, res) => {
+router.post("/schedules", validateRequest({ body: createReportScheduleSchema }), async (req, res) => {
     try {
         const { templateKey, name, cadence, dayOfWeek, timeOfDay, enabled } = req.body;
         const { workspaceId } = req.query;
@@ -385,7 +410,7 @@ router.post("/schedules", validateRequest(createReportScheduleSchema), async (re
 });
 
 // PATCH /api/reports/schedules/:id — Update schedule
-router.patch("/schedules/:id", validateRequest(updateReportScheduleSchema), async (req, res) => {
+router.patch("/schedules/:id", validateRequest({ body: updateReportScheduleSchema }), async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -672,37 +697,6 @@ router.get("/exports/:jobId", async (req, res) => {
         });
     } catch (error) {
         logStructured("error", "Error fetching export job:", { error: error?.message || error, stack: error?.stack });
-        return res.status(500).json({ error: "Internal server error" });
-    }
-});
-
-// GET /api/reports/exports/:jobId/download?token=... - Signed download URL endpoint
-router.get("/exports/:jobId/download", async (req, res) => {
-    try {
-        await cleanupExpiredReportExports();
-        const { jobId } = req.params;
-        const { token } = req.query;
-        if (!token) return res.status(400).json({ error: "token is required" });
-
-        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
-        const job = await prisma.reportExport.findUnique({
-            where: { id: jobId },
-            include: { report: true },
-        });
-
-        if (!job || !scopedWorkspaceIds.includes(job.report.workspaceId)) {
-            return res.status(404).json({ error: "Export job not found" });
-        }
-        const resolved = await resolveSignedReportDownload({ exportId: jobId, token: String(token) });
-        if (!resolved.ok) {
-            return res.status(resolved.status).json({ error: resolved.error });
-        }
-
-        res.setHeader("Content-Type", "application/json");
-        res.setHeader("Content-Disposition", `attachment; filename="${job.fileName || `report-export-${job.id}.${job.format}`}"`);
-        return res.json(resolved.payload);
-    } catch (error) {
-        logStructured("error", "Error downloading export file:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
     }
 });

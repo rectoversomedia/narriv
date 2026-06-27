@@ -449,11 +449,30 @@ describe('Report and Export Endpoints', () => {
 
     const token = reportExports.find((job) => job.id === EXPORT_ID).signedToken;
     const downloadRes = await request(app)
-      .get(`/api/reports/exports/${EXPORT_ID}/download?token=${token}`)
-      .set(authHeader());
+      .get(`/api/reports/exports/${EXPORT_ID}/download?token=${token}`);
 
     expect(downloadRes.status).toBe(200);
     expect(downloadRes.body).toMatchObject({ id: REPORT_ID, title: 'Weekly Narrative Intelligence Brief' });
+  });
+
+  it('validates report template and schedule payloads', async () => {
+    const invalidTemplateRes = await request(app)
+      .post('/api/reports/templates')
+      .set(authHeader())
+      .send({ name: '', unexpected: true });
+
+    expect(invalidTemplateRes.status).toBe(400);
+    expect(invalidTemplateRes.body.code).toBe('VALIDATION_ERROR');
+    expect(invalidTemplateRes.body.details[0].target).toBe('body');
+
+    const invalidScheduleRes = await request(app)
+      .post('/api/reports/schedules')
+      .set(authHeader())
+      .send({ templateKey: 'weekly', name: 'Weekly', cadence: 'hourly' });
+
+    expect(invalidScheduleRes.status).toBe(400);
+    expect(invalidScheduleRes.body.code).toBe('VALIDATION_ERROR');
+    expect(invalidScheduleRes.body.details[0].target).toBe('body');
   });
 
   it('returns workspace-scoped report analytics including export format distribution', async () => {
