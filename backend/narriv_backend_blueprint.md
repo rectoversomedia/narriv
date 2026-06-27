@@ -189,7 +189,7 @@ Report ──1:N──▶ ReportExport
 | Method | Path | Module | Purpose |
 |--------|------|--------|---------|
 | `GET` | `/api/dashboard/summary` | Dashboard | Aggregated KPIs and trends |
-| `GET` | `/signals` | Signals | List signals (paginated) |
+| `GET` | `/signals` | Signals | List workspace-scoped signals with pagination, keyword/platform/date/sentiment filters, newest-first ordering, and limit capped at 100 |
 | `GET` | `/signals/meta` | Signals | Signal metadata for sidebar (follow-ups, recommendations, timeline, sources, queue) |
 | `POST` | `/signals` | Signals | Create signal |
 | `GET` | `/signals/:id` | Signals | Signal detail + analysis |
@@ -210,8 +210,8 @@ Report ──1:N──▶ ReportExport
 | `GET` | `/ingestion/status/:jobId` | Ingestion | Check ingestion job status |
 | `POST` | `/ingestion/cancel/:jobId` | Ingestion | Cancel ingestion job |
 | `POST` | `/ingestion/webhook/:sourceId` | Ingestion | Receive webhook payload |
-| `GET` | `/api/alerts` | Alerts | List alerts (paginated, filtered) |
-| `GET` | `/api/alerts/summary` | Alerts | Aggregate metrics: total, by_severity, by_status, by_type, 7-day trend delta, and 24h timeline labels/data |
+| `GET` | `/api/alerts` | Alerts | List alerts with workspace scope, pagination, type/severity/status filters, server-side text search, and limit capped at 100 |
+| `GET` | `/api/alerts/summary` | Alerts | Aggregate metrics: total, by_severity, by_status, by_type, 7-day trend delta, 24h timeline labels/data, acknowledged/resolved/escalated/overdue counts, acknowledgment/delivery rates, average response time, and SLA target minutes |
 | `GET` | `/api/alerts/:id` | Alerts | Alert detail |
 | `PATCH` | `/api/alerts/:id/status` | Alerts | Update alert status |
 | `PATCH` | `/api/alerts/:id/assign` | Alerts | Assign alert to PIC/team |
@@ -260,8 +260,8 @@ Report ──1:N──▶ ReportExport
 | `GET` | `/api/workspace/members` | Workspace | List workspace members |
 | `POST` | `/api/workspace/members` | Workspace | Add member by `userId` or registered user `email` |
 | `DELETE` | `/api/workspace/members/:id` | Workspace | Remove member |
-| `GET` | `/api/workspace/notification-settings` | Workspace | Get notification preferences |
-| `PATCH` | `/api/workspace/notification-settings` | Workspace | Update notification preferences |
+| `GET` | `/api/workspace/notification-settings` | Workspace | Get notification preferences and custom notification rules |
+| `PATCH` | `/api/workspace/notification-settings` | Workspace | Update notification preferences and `customRules` trigger/condition/channel/enabled rows |
 | `GET` | `/api/workspace/activity` | Workspace | List audit log entries (filtered, paginated) |
 | `POST` | `/api/onboarding/workspace` | Onboarding | Create workspace with initial settings |
 | `POST` | `/api/onboarding/sources` | Onboarding | Bulk-create initial data sources |
@@ -375,7 +375,7 @@ Report ──1:N──▶ ReportExport
 | **Login** (`/login`) | `POST /auth/login` | ✅ Wired — fully integrated |
 | **Signup** (`/signup`, `/verify-email`) | `POST /auth/register`, `POST /auth/verify-email`, `POST /auth/resend-verification` | ✅ Wired — Ky-backed registration, email verification, and code resend |
 | **Dashboard Home** (`/`) | `GET /api/dashboard/summary` | ✅ Wired — `useQuery` with time range, fully unmocked (KPIs, trends, sentiment, latest signals, top topics from `narrativeCluster`, sources health, system status) |
-| **Signals** (`/signals`) | `GET /signals`, `GET /signals/meta` | ✅ Wired — `useQuery` with pagination & `getSignalsMeta`; metadata now includes live `totalSignals`, `sourceDistribution` (with percentage-based values), `timeline` (24h data), `timelineLabels`, `followUps`, `recommendations`, `investigationQueue`, `metrics` (totalSignals24h, negativeSignals24h, criticalSignals24h), and bilingual `aiSummary` (en/id). Frontend now passes `totalSignals` to SourceDonut for live center total and dynamic conic gradient. TimelineChart uses `timelineLabels` for x-axis. InvestigationQueue links to Cases page via `/cases` redirect. All panels fully bilingual with 80+ translation keys. |
+| **Signals** (`/signals`) | `GET /signals`, `GET /signals/meta` | ✅ Wired — `GET /signals` supports page, capped limit, keyword, platform, date range, and sentiment filters used by the production Signals table. Metadata includes live `totalSignals`, `sourceDistribution` (with percentage-based values), `timeline` (24h data), `timelineLabels`, `followUps`, `recommendations`, `investigationQueue`, `metrics` (totalSignals24h, negativeSignals24h, criticalSignals24h), and bilingual `aiSummary` (en/id). Frontend renders only API-backed signal/source/sentiment/time fields, opens case creation from selected signal rows, and shows no sample fallback rows. |
 | **Alerts** (`/alerts`) | `GET /api/alerts`, `PATCH /api/alerts/:id/status`, `GET /api/alerts/summary` | ✅ Wired — `useQuery` + `useMutation` for status change + assignment dropdown; metric cards, source distribution, and timeline now consume `getAlertsSummary()` live aggregates |
 | **Alert Detail** (`/alerts/[id]`) | `GET /api/alerts/:id`, `PATCH /api/alerts/:id/status`, `PATCH /api/alerts/:id/assign` | ✅ Wired — `useQuery` + editable assignment fields + status buttons |
 | **Visibility** (`/visibility`) | `GET /api/visibility`, `GET /api/visibility/summary`, `GET /api/visibility/trends`, `POST /api/visibility/analyze` | ✅ Wired — 100% API-driven with empty states; date filter (7/14/30/90d), CSV export, dynamic executive summary, AI Search Sandbox with real API call, bilingual AI responses (EN/ID), SVG charts, modals for mentions and actions |
@@ -574,6 +574,7 @@ Optional RLS notes:
 - [x] Acceptance: Settings page logo upload works end-to-end
 
 #### Notification Settings API
+- [x] Alerts page Notification Rules modal now uses this API for delivery toggles, presets, and customRules[] rows (id, trigger, condition, channels, enabled)
 - [x] Implement `GET /api/workspace/notification-settings` — Get notification preferences
 - [x] Implement `PATCH /api/workspace/notification-settings` — Update preferences
 - [x] Return: `{ emailEnabled, whatsappEnabled, escalationNotifications, reminderNotifications }`
@@ -723,9 +724,9 @@ Optional RLS notes:
 
 #### API Wiring (All pages now use `useQuery`/`useMutation` with real API endpoints)
 - [x] Dashboard Home — `getDashboardSummary` with time range filtering
-- [x] Signals — `getSignals` with pagination and `getSignalsMeta` for live sidebar/source/timeline panels; `totalSignals` field added to `SignalsMeta` type; `timelineLabels` exposed for x-axis; all panels fully bilingual with empty states; mock fallback data translated
-- [x] Alerts — `getAlerts` with pagination + `updateAlertStatus` mutation + `getAlertsSummary` live metrics/source distribution/timeline
-- [x] Alert Detail — `getAlertById` + editable assignment fields + `updateAlertAssignment` mutation
+- [x] Signals — `getSignals` with pagination, capped limit, keyword/date/sentiment filtering, and `getSignalsMeta` for live sidebar/source/timeline panels; `totalSignals` field added to `SignalsMeta` type; `timelineLabels` exposed for x-axis; all panels fully bilingual with empty/error states; frontend sample fallback rows removed
+- [x] Alerts - getAlerts with pagination/search/filtering + updateAlertStatus mutation + getAlertsSummary live metrics/source distribution/timeline/lifecycle KPIs + escalation matrix + notification settings custom rules
+- [x] Alert Detail - getAlertById + updateAlertAssignment mutation with workspace member and escalation role dropdowns
 - [x] Visibility — `getVisibility`, `getVisibilitySummary`, and `getVisibilityTrends` with fallback
 - [x] Intelligence — `getNarratives` + `getNarrativeById` with dynamic UI generation for AI summaries, live derived metrics (donuts/lifecycles), and fully wired React Portal modals (Analysis/Landscape/Clusters)
 - [x] Reports — `getReports` + `createReportExport` with polling via `getReportExportStatus` + `getReportTemplates` CRUD + `getReportSchedules` CRUD + `generateReportFromTemplate` + `sendReportEmail` + `getReportsAnalytics` for dynamic charts; mock fallbacks strictly removed from frontend; added ReportTemplate and ReportSchedule Prisma models; added POST/PATCH/DELETE for custom templates; added POST/PATCH/DELETE/toggle for schedules; GET /templates merges system + custom templates
@@ -764,7 +765,7 @@ Optional RLS notes:
 - [x] Reset Password flow — backend endpoint and frontend wiring complete; production email provider delivery remains future integration
 - [ ] Notification bell — currently uses mock alerts, needs real notification API
 - [ ] Dashboard widgets — `miniTopics`, `topTopics`, `sources`, `systemStatus` are still mock
-- [x] Signals sidebar panels — `followUps`, `recommendations`, `sourceDistribution`, 24h `timeline`, labels, totals, and investigation queue consume `/signals/meta`; preview fallbacks remain only when API is unavailable
+- [x] Signals sidebar panels — `followUps`, `recommendations`, `sourceDistribution`, 24h `timeline`, labels, totals, and investigation queue consume `/signals/meta`; API failures now surface explicit error/empty states rather than preview sample data
 
 #### Low Priority Cleanup
 - [ ] Remove unused `LineChartMock` / `DonutMock` from `dashboard-kit.tsx`

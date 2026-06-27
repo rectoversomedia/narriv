@@ -22,7 +22,7 @@ router.get("/", async (req, res) => {
         const { keyword, platform, startDate, endDate, sentiment } = req.query;
         
         const safePage = Math.max(1, page);
-        const safeLimit = Math.max(1, limit);
+        const safeLimit = Math.min(100, Math.max(1, limit));
         const skip = (safePage - 1) * safeLimit;
 
         // Build dynamic where clause

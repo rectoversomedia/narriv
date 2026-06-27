@@ -110,10 +110,10 @@ router.get("/", async (req, res) => {
         const page = parseInt(req.query.page, 10) || 1;
         const limit = parseInt(req.query.limit, 10) || 10;
         
-        const { type, severity, status, workspaceId } = req.query;
+        const { type, severity, status, workspaceId, search } = req.query;
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
         if (scopedWorkspaceIds.length === 0) {
-            const safeLimit = Math.max(1, limit);
+            const safeLimit = Math.min(Math.max(1, limit), 100);
             return res.json({
                 data: [],
                 pagination: { page: 1, limit: safeLimit, total: 0, totalPages: 0 }
@@ -121,10 +121,9 @@ router.get("/", async (req, res) => {
         }
         
         const safePage = Math.max(1, page);
-        const safeLimit = Math.max(1, limit);
+        const safeLimit = Math.min(Math.max(1, limit), 100);
         const skip = (safePage - 1) * safeLimit;
 
-        // Build dynamic where clause
         const whereClause = {};
 
         if (type) {
@@ -137,6 +136,19 @@ router.get("/", async (req, res) => {
 
         if (status) {
             whereClause.status = status;
+        }
+
+        if (typeof search === "string" && search.trim()) {
+            const query = search.trim();
+            whereClause.OR = [
+                { title: { contains: query, mode: "insensitive" } },
+                { whatHappened: { contains: query, mode: "insensitive" } },
+                { whyItMatters: { contains: query, mode: "insensitive" } },
+                { whatToDo: { contains: query, mode: "insensitive" } },
+                { assignedTo: { contains: query, mode: "insensitive" } },
+                { assignedTeam: { contains: query, mode: "insensitive" } },
+                { type: { contains: query, mode: "insensitive" } },
+            ];
         }
         
         whereClause.workspaceId = { in: scopedWorkspaceIds };
@@ -183,20 +195,36 @@ router.get("/summary", async (req, res) => {
                 by_type: {},
                 timeline: [],
                 timeline_labels: [],
+                last_7_days: 0,
+                previous_7_days: 0,
+                trend_delta: 0,
+                acknowledged_count: 0,
+                resolved_count: 0,
+                escalated_count: 0,
+                overdue_count: 0,
+                avg_response_time_minutes: null,
+                delivery_success_rate: 0,
+                acknowledgment_rate: 0,
+                sla_target_minutes: null,
             });
         }
 
         const where = { workspaceId: { in: scopedWorkspaceIds } };
 
-        const [all, byType] = await Promise.all([
+        const [all, byType, escalationLevels] = await Promise.all([
             prisma.alert.findMany({
                 where,
-                select: { severity: true, status: true, type: true, createdAt: true, acknowledgedAt: true, resolvedAt: true },
+                select: { severity: true, status: true, type: true, createdAt: true, acknowledgedAt: true, resolvedAt: true, escalationLevel: true, deadline: true },
             }),
             prisma.alert.groupBy({
                 by: ["type"],
                 where,
                 _count: { _all: true },
+            }),
+            prisma.escalationMatrix.findMany({
+                where: { workspaceId: { in: scopedWorkspaceIds }, isActive: true },
+                select: { slaMinutes: true, order: true },
+                orderBy: { order: "asc" },
             }),
         ]);
 
@@ -209,6 +237,11 @@ router.get("/summary", async (req, res) => {
 
         let totalResponseTimeMs = 0;
         let acknowledgedCountForTime = 0;
+        let acknowledgedCount = 0;
+        let resolvedCount = 0;
+        let escalatedCount = 0;
+        let overdueCount = 0;
+        const now = Date.now();
 
         for (const a of all) {
             const sev = String(a.severity || "").toLowerCase();
@@ -222,6 +255,13 @@ router.get("/summary", async (req, res) => {
             if (stt === "open") byStatus.open += 1;
             else if (stt === "in_progress" || stt === "in-progress" || stt === "acknowledged") byStatus.in_progress += 1;
             else if (stt === "resolved") byStatus.resolved += 1;
+            if (a.acknowledgedAt) acknowledgedCount += 1;
+            if (a.resolvedAt || stt === "resolved") resolvedCount += 1;
+            if (["high", "critical"].includes(String(a.escalationLevel || "").toLowerCase())) escalatedCount += 1;
+            if (a.deadline && stt !== "resolved") {
+                const deadline = new Date(a.deadline);
+                if (!Number.isNaN(deadline.getTime()) && deadline.getTime() < now) overdueCount += 1;
+            }
 
             const t = new Date(a.createdAt);
             if (Number.isNaN(t.getTime())) continue;
@@ -240,6 +280,11 @@ router.get("/summary", async (req, res) => {
 
         const avgResponseTimeMinutes = acknowledgedCountForTime > 0
             ? Math.round(totalResponseTimeMs / (acknowledgedCountForTime * 60 * 1000))
+            : null;
+        const deliverySuccessRate = all.length > 0 ? Math.round(((acknowledgedCount + resolvedCount) / (all.length * 2)) * 100) : 0;
+        const acknowledgmentRate = all.length > 0 ? Math.round((acknowledgedCount / all.length) * 100) : 0;
+        const slaTargetMinutes = escalationLevels.length > 0
+            ? Math.min(...escalationLevels.map((level) => level.slaMinutes).filter((value) => Number.isFinite(value) && value > 0))
             : null;
 
         const typeMap = {};
@@ -260,8 +305,14 @@ router.get("/summary", async (req, res) => {
             trend_delta: trendDelta,
             timeline,
             timeline_labels: timelineLabels,
+            acknowledged_count: acknowledgedCount,
+            resolved_count: resolvedCount,
+            escalated_count: escalatedCount,
+            overdue_count: overdueCount,
             avg_response_time_minutes: avgResponseTimeMinutes,
-            delivery_success_rate: all.length > 0 ? 100 : 0,
+            delivery_success_rate: deliverySuccessRate,
+            acknowledgment_rate: acknowledgmentRate,
+            sla_target_minutes: slaTargetMinutes,
         });
     } catch (error) {
         logStructured("error", "Error fetching alerts summary:", { error: error?.message || error, stack: error?.stack });

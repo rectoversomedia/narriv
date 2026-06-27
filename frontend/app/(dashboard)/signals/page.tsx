@@ -12,11 +12,8 @@ import {
   Briefcase,
   FileText,
   Flag,
-  HelpCircle,
-  MoreVertical,
   Search,
   ShieldCheck,
-  SlidersHorizontal,
   Sparkles,
   Star,
   Zap,
@@ -34,28 +31,21 @@ import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSke
 import { getDateRangeOptions, getSignals, type PaginationInfo, type Signal, getSignalsMeta, type SignalsMeta } from "@/lib/api-service";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
-type Severity = "CRITICAL" | "HIGH" | "MEDIUM";
-type Sentiment = "NEGATIVE" | "POSITIVE" | "MIXED";
+type Sentiment = "NEGATIVE" | "POSITIVE" | "NEUTRAL" | "MIXED";
+type SignalFilter = "all" | "negative" | "positive" | "neutral" | "mixed";
 type SourceKey = keyof typeof sourceIcons;
 
 type SignalRow = {
   id: string;
   title: string;
-  severity: Severity;
-  severityTone: Exclude<Tone, "blue" | "slate">;
+  sentimentTone: Exclude<Tone, "blue">;
   desc: string;
   tags: string[];
   sourceType: string;
   sources: SourceKey[];
-  sourceCount: number;
   sentiment: Sentiment;
-  velocity: string;
-  velocityPeriod: string;
-  mentions: string;
-  confidence: string;
   time: string;
-  timeAgo: string;
-  trend: number[];
+  captured: string;
 };
 
 const signalApiLimit = 20;
@@ -96,11 +86,6 @@ function compactTime(value: string | null | undefined) {
   return `${String(parsed.getHours()).padStart(2, "0")}:${String(parsed.getMinutes()).padStart(2, "0")}`;
 }
 
-function stableTrend(seed: string) {
-  const base = seed.split("").reduce((total, char) => total + char.charCodeAt(0), 0) || 41;
-  return Array.from({ length: 8 }, (_, index) => 8 + ((base + index * 9) % 34));
-}
-
 function sourceFromPlatform(platform: string | null): SourceKey {
   const value = platform?.toLowerCase() ?? "";
   if (value.includes("tiktok")) return "tiktok";
@@ -115,75 +100,35 @@ function sourceFromPlatform(platform: string | null): SourceKey {
 function sentimentFromApi(sentiment: string | null): Sentiment {
   const value = sentiment?.toLowerCase() ?? "";
   if (value.includes("positive")) return "POSITIVE";
-  if (value.includes("mixed") || value.includes("neutral")) return "MIXED";
+  if (value.includes("mixed")) return "MIXED";
+  if (value.includes("neutral")) return "NEUTRAL";
   return "NEGATIVE";
 }
 
 function buildApiSignalRows(apiSignals: Signal[], t: (key: string) => string): SignalRow[] {
-  return apiSignals.map((signal, index) => {
+  return apiSignals.map((signal) => {
     const sentiment = sentimentFromApi(signal.sentiment);
     const source = sourceFromPlatform(signal.platform);
-    const severity = sentiment === "NEGATIVE" && index < 2 ? (index === 0 ? "CRITICAL" : "HIGH") : "MEDIUM";
-    const severityTone = severity === "CRITICAL" ? "red" : severity === "HIGH" ? "amber" : sentiment === "POSITIVE" ? "green" : "purple";
+    const sentimentTone = sentiment === "NEGATIVE" ? "red" : sentiment === "POSITIVE" ? "green" : sentiment === "NEUTRAL" ? "slate" : "purple";
     const title = signal.title || signal.content.slice(0, 72) || t("fallbackUntitled");
 
     return {
       id: signal.id,
       title,
-      severity,
-      severityTone,
+      sentimentTone,
       desc: signal.content || t("fallbackNoContent"),
-      tags: [signal.platform || t("fallbackUnknownSource"), sentiment === "NEGATIVE" ? t("fallbackNeedsReview") : t("fallbackMonitoring")],
+      tags: [signal.platform || t("fallbackUnknownSource")],
       sourceType: signal.platform || t("fallbackLiveSource"),
       sources: [source],
-      sourceCount: 0,
       sentiment,
-      velocity: "Live",
-      velocityPeriod: "from API",
-      mentions: "1",
-      confidence: "-",
       time: compactTime(signal.publishedAt || signal.capturedAt),
-      timeAgo: t("fallbackDataLive"),
-      trend: stableTrend(signal.id),
+      captured: compactTime(signal.capturedAt),
     };
   });
 }
 
 function Panel({ children, className }: { children: ReactNode; className?: string }) {
   return <section className={cn("rounded-[14px] border border-[#DDE3EF] bg-white shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)}>{children}</section>;
-}
-
-function makeLinePath(values: number[], width: number, height: number, padding: number) {
-  const max = Math.max(...values);
-  const min = Math.min(...values);
-  const range = max - min || 1;
-
-  return values.map((value, index) => {
-    const x = padding + (index / (values.length - 1)) * (width - padding * 2);
-    const y = padding + (1 - (value - min) / range) * (height - padding * 2);
-    return `${index === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
-  }).join(" ");
-}
-
-function Sparkline({ values, tone, id, className = "h-8 w-[88px]" }: { values: number[]; tone: Tone; id: string; className?: string }) {
-  const style = toneStyles[tone];
-  const width = 120;
-  const height = 42;
-  const path = makeLinePath(values, width, height, 4);
-  const areaPath = `${path} L ${width - 4} ${height} L 4 ${height} Z`;
-
-  return (
-    <svg className={cn("chart-line-draw overflow-visible", className)} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
-      <defs>
-        <linearGradient id={id} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor={style.color} stopOpacity="0.22" />
-          <stop offset="100%" stopColor={style.color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={areaPath} fill={`url(#${id})`} />
-      <path d={path} fill="none" stroke={style.color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.3" />
-    </svg>
-  );
 }
 
 function SignalAgentImage() {
@@ -206,9 +151,9 @@ function SummaryPanel({ meta }: { meta?: SignalsMeta }) {
   const aiSummary = meta?.aiSummary;
 
   const metricCards = [
-    { label: t("total"), value: total.toLocaleString(uiLanguage), helper: t("trendLabel"), tone: "blue" as Tone, trend: stableTrend("total") },
-    { label: t("negative"), value: negative.toLocaleString(uiLanguage), helper: t("trendLabel"), tone: "red" as Tone, trend: stableTrend("neg") },
-    { label: t("critical"), value: critical.toLocaleString(uiLanguage), helper: t("trendLabel"), tone: "amber" as Tone, trend: stableTrend("crit") },
+    { label: t("total"), value: total.toLocaleString(uiLanguage), helper: t("trendLabel"), tone: "blue" as Tone },
+    { label: t("negative"), value: negative.toLocaleString(uiLanguage), helper: t("trendLabel"), tone: "red" as Tone },
+    { label: t("critical"), value: critical.toLocaleString(uiLanguage), helper: t("alertBackedLabel"), tone: "amber" as Tone },
   ];
 
   return (
@@ -240,32 +185,28 @@ function SummaryPanel({ meta }: { meta?: SignalsMeta }) {
   );
 }
 
-function MetricBlock({ label, value, helper, tone, trend }: { label: string; value: string; helper: string; tone: Tone; trend: number[] }) {
+function MetricBlock({ label, value, helper, tone }: { label: string; value: string; helper: string; tone: Tone }) {
+  const style = toneStyles[tone];
   return (
-    <div className="min-w-0">
+    <div className={cn("min-w-0 rounded-[12px] border p-3", style.border, style.soft)}>
       <p className="text-[11px] font-extrabold text-[#68739F]">{label}</p>
       <p className="mt-2 text-[25px] font-black leading-none tracking-[-0.045em] text-[#101334]">{value}</p>
-      <p className={cn("mt-2 text-[10px] font-black", tone === "blue" ? "text-[#10B981]" : "text-[#EF4444]")}>{helper}</p>
-      <div className="mt-3"><Sparkline values={trend} tone={tone} id={`metric-${tone}`} className="h-8 w-full" /></div>
+      <p className={cn("mt-2 text-[10px] font-black", style.text)}>{helper}</p>
     </div>
   );
 }
 
-function SeverityIcon({ severity, tone }: { severity: Severity; tone: SignalRow["severityTone"] }) {
+function SentimentIcon({ sentiment, tone }: { sentiment: Sentiment; tone: SignalRow["sentimentTone"] }) {
   const style = toneStyles[tone];
-  const Icon = severity === "MEDIUM" && tone === "green" ? Star : severity === "MEDIUM" && tone === "purple" ? HelpCircle : AlertTriangle;
-  return <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full border", style.soft, style.text, style.border)}><Icon size={17} fill={tone === "green" ? style.color : "none"} /></span>;
-}
-
-function SeverityBadge({ severity, tone }: { severity: Severity; tone: SignalRow["severityTone"] }) {
-  const style = toneStyles[tone];
-  return <span className={cn("rounded-full px-2 py-0.5 text-[9px] font-black tracking-[0.12em]", style.soft, style.text)}>{severity}</span>;
+  const Icon = sentiment === "NEGATIVE" ? AlertTriangle : sentiment === "POSITIVE" ? ShieldCheck : Sparkles;
+  return <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full border", style.soft, style.text, style.border)}><Icon size={17} /></span>;
 }
 
 function SentimentBadge({ sentiment }: { sentiment: Sentiment }) {
   const styles: Record<Sentiment, string> = {
     NEGATIVE: "bg-[#EF4444]/10 text-[#EF4444]",
     POSITIVE: "bg-[#10B981]/10 text-[#0C9B69]",
+    NEUTRAL: "bg-slate-100 text-slate-600",
     MIXED: "bg-[#8B5CFF]/10 text-[#8B5CFF]",
   };
   return <span className={cn("rounded-full px-2 py-1 text-[9.5px] font-black tracking-[0.12em]", styles[sentiment])}>{sentiment}</span>;
@@ -288,28 +229,26 @@ function SourceIconList({ row }: { row: SignalRow }) {
       <p className="mb-2 text-[10px] font-black text-[#68739F]">{row.sourceType}</p>
       <div className="flex items-center gap-1.5">
         {row.sources.map((source) => <span key={source} className="flex size-5 items-center justify-center rounded-[6px] border border-[#E6EAF2] bg-white">{sourceIcons[source]}</span>)}
-        {row.sourceCount > 0 ? <span className="rounded-full bg-[#F1F4FB] px-1.5 py-0.5 text-[9px] font-black text-[#68739F]">+{row.sourceCount}</span> : null}
       </div>
     </div>
   );
 }
 
-function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, footerText, pagination, onPageChange, isFetching, className, tTimeRange, tSignals }: { activeFilter: string; setActiveFilter: (value: string) => void; query: string; setQuery: (value: string) => void; rows: SignalRow[]; footerText: string; pagination?: PaginationInfo | null; onPageChange: (page: number) => void; isFetching?: boolean; className?: string; tTimeRange: (key: string) => string; tSignals: (key: string) => string }) {
-  const tabs = [tSignals("filterAll"), tSignals("filterNegative"), tSignals("filterPositive"), tSignals("filterMixed"), tSignals("filterCritical")];
-  const filterMap: Record<string, string> = {
-    [tSignals("filterAll")]: "Semua",
-    [tSignals("filterNegative")]: "Negatif",
-    [tSignals("filterPositive")]: "Positif",
-    [tSignals("filterMixed")]: "Campuran",
-    [tSignals("filterCritical")]: "Kritis",
-  };
+function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, footerText, pagination, onPageChange, isFetching, className, tTimeRange, tSignals, onInvestigate }: { activeFilter: SignalFilter; setActiveFilter: (value: SignalFilter) => void; query: string; setQuery: (value: string) => void; rows: SignalRow[]; footerText: string; pagination?: PaginationInfo | null; onPageChange: (page: number) => void; isFetching?: boolean; className?: string; tTimeRange: (key: string) => string; tSignals: (key: string) => string; onInvestigate: (row: SignalRow) => void }) {
+  const tabs: Array<{ value: SignalFilter; label: string }> = [
+    { value: "all", label: tSignals("filterAll") },
+    { value: "negative", label: tSignals("filterNegative") },
+    { value: "positive", label: tSignals("filterPositive") },
+    { value: "neutral", label: tSignals("filterNeutral") },
+    { value: "mixed", label: tSignals("filterMixed") },
+  ];
 
   return (
     <div className={cn("flex flex-col gap-3", className)}>
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-wrap gap-2">
           {tabs.map((tab) => (
-            <button key={tab} type="button" onClick={() => setActiveFilter(filterMap[tab] ?? tab)} className={cn("h-9 rounded-full px-4 text-[12px] font-black transition", (filterMap[activeFilter] ?? activeFilter) === (filterMap[tab] ?? tab) ? "bg-[#465FFF] text-white shadow-[0_10px_22px_rgba(70,95,255,0.22)]" : "border border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B] hover:bg-white")}>{tab}</button>
+            <button key={tab.value} type="button" onClick={() => setActiveFilter(tab.value)} className={cn("h-9 rounded-full px-4 text-[12px] font-black transition", activeFilter === tab.value ? "bg-[#465FFF] text-white shadow-[0_10px_22px_rgba(70,95,255,0.22)]" : "border border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B] hover:bg-white")}>{tab.label}</button>
           ))}
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -324,27 +263,18 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#8B95B8]" />
             <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder={tSignals("search")} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] pl-9 pr-3 text-[11px] font-bold text-[#101334] outline-none transition placeholder:text-[#8B95B8] focus:border-[#465FFF] focus:bg-white" />
           </label>
-          <button type="button" className="inline-flex h-9 items-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-gradient-to-r from-white to-[#FAFBFF] px-3 text-[11px] font-black text-[#31406B] shadow-[0_1px_4px_rgba(16,24,40,0.04)] transition-all hover:border-[#465FFF]/30 hover:shadow-[0_2px_8px_rgba(70,95,255,0.1)]">
-            <span className="flex size-5 items-center justify-center rounded-[5px] bg-[#465FFF]/10">
-              <SlidersHorizontal size={11} className="text-[#465FFF]" />
-            </span>
-            {tSignals("filter")}
-          </button>
-          <button type="button" className="inline-flex h-9 items-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-gradient-to-r from-white to-[#FAFBFF] px-3 text-[11px] font-black text-[#31406B] shadow-[0_1px_4px_rgba(16,24,40,0.04)] transition-all hover:border-[#465FFF]/30 hover:shadow-[0_2px_8px_rgba(70,95,255,0.1)]">
-            <span className="flex size-5 items-center justify-center rounded-[5px] bg-[#465FFF]/10">
-              <SlidersHorizontal size={11} className="text-[#465FFF]" />
-            </span>
+          <span className="inline-flex h-9 items-center rounded-[8px] border border-[#DDE3EF] bg-gradient-to-r from-white to-[#FAFBFF] px-3 text-[11px] font-black text-[#31406B] shadow-[0_1px_4px_rgba(16,24,40,0.04)]">
             {tSignals("sortLatest")}
-          </button>
+          </span>
         </div>
       </div>
 
       <Panel className="overflow-hidden p-0 xl:min-h-[610px] flex flex-col">
         <div className="overflow-x-auto flex-1 flex flex-col">
-          <table className="w-full min-w-[980px] border-collapse text-left flex-1 h-full">
+          <table className="w-full min-w-[780px] border-collapse text-left flex-1 h-full">
             <thead>
               <tr className="border-b border-[#E6EAF2] bg-[#FBFCFF] text-[10px] font-black uppercase tracking-[0.17em] text-[#68739F]">
-                {[tSignals("headerSignal"), tSignals("headerTrend"), tSignals("headerSource"), tSignals("headerSentiment"), tSignals("headerVelocity"), tSignals("headerMentions"), tSignals("headerConfidence"), tSignals("headerTime"), ''].map((header) => <th key={header || 'actions'} className="px-3.5 py-3">{header}</th>)}
+                {[tSignals("headerSignal"), tSignals("headerSource"), tSignals("headerSentiment"), tSignals("headerPublished"), tSignals("headerCaptured"), tSignals("headerAction")].map((header) => <th key={header} className="px-3.5 py-3">{header}</th>)}
               </tr>
             </thead>
             <tbody className="divide-y divide-[#EDF1F7]">
@@ -352,22 +282,19 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                 <tr key={row.id} className="transition hover:bg-[#F8FAFF]">
                   <td className="max-w-[380px] px-3.5 py-4">
                     <div className="flex items-start gap-3">
-                      <SeverityIcon severity={row.severity} tone={row.severityTone} />
+                      <SentimentIcon sentiment={row.sentiment} tone={row.sentimentTone} />
                       <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2"><span className="text-[12.5px] font-black leading-snug text-[#101334]">{row.title}</span><SeverityBadge severity={row.severity} tone={row.severityTone} /></div>
+                        <div className="flex flex-wrap items-center gap-2"><span className="text-[12.5px] font-black leading-snug text-[#101334]">{row.title}</span></div>
                         <p className="mt-1 text-[11px] font-bold leading-snug text-[#68739F]">{row.desc}</p>
                         <div className="mt-2 flex flex-wrap gap-1.5">{row.tags.map((tag) => <TagBadge key={tag} tag={tag} />)}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-3.5 py-4 align-middle"><Sparkline values={row.trend} tone={row.severityTone} id={`row-${row.id}`} className="h-8 w-[72px]" /></td>
                   <td className="px-3.5 py-4 align-middle"><SourceIconList row={row} /></td>
                   <td className="px-3.5 py-4 align-middle"><SentimentBadge sentiment={row.sentiment} /></td>
-                  <td className="px-3.5 py-4 align-middle"><span className={cn("block text-[12px] font-black", row.sentiment === "POSITIVE" ? "text-[#10B981]" : "text-[#EF4444]")}>{row.velocity}</span><span className="mt-1 block text-[10px] font-bold text-[#68739F]">{row.velocityPeriod}</span></td>
-                  <td className="px-3.5 py-4 align-middle text-[12px] font-black text-[#101334]">{row.mentions}</td>
-                  <td className="px-3.5 py-4 align-middle text-[12px] font-black text-[#10B981]">{row.confidence}</td>
-                  <td className="px-3.5 py-4 align-middle"><span className="block text-[11px] font-black text-[#31406B]">{row.time}</span><span className="mt-1 block text-[10px] font-bold text-[#68739F]">{row.timeAgo}</span></td>
-                  <td className="px-3.5 py-4 text-right align-middle"><button type="button" aria-label={`Open actions for ${row.title}`} className="rounded-md p-1 text-[#68739F] transition hover:bg-[#EEF2FF] hover:text-[#465FFF]"><MoreVertical size={16} /></button></td>
+                  <td className="px-3.5 py-4 align-middle"><span className="block text-[11px] font-black text-[#31406B]">{row.time}</span></td>
+                  <td className="px-3.5 py-4 align-middle"><span className="block text-[11px] font-black text-[#31406B]">{row.captured}</span></td>
+                  <td className="px-3.5 py-4 text-right align-middle"><button type="button" onClick={() => onInvestigate(row)} className="inline-flex h-8 items-center justify-center gap-1.5 rounded-[8px] bg-[#465FFF] px-3 text-[10.5px] font-black text-white shadow-[0_8px_18px_rgba(70,95,255,0.18)] transition hover:bg-[#3147E8]"><Flag size={12} />{tSignals("investigate")}</button></td>
                 </tr>
               ))}
             </tbody>
@@ -698,7 +625,8 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
 export default function SignalsPage() {
   const t = useTranslations("Signals");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [activeFilter, setActiveFilter] = useState("Semua");
+  const [selectedSignal, setSelectedSignal] = useState<SignalRow | null>(null);
+  const [activeFilter, setActiveFilter] = useState<SignalFilter>("all");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const deferredQuery = useDeferredValue(query);
@@ -710,11 +638,13 @@ export default function SignalsPage() {
     staleTime: 60 * 1000,
   });
   const meta = metaQuery.data || undefined;
+  const isMetaUnavailable = metaQuery.data === null || metaQuery.isError;
 
   const apiSentimentFilter =
-    activeFilter === "Negatif" || activeFilter === "Kritis" ? "NEGATIVE" :
-    activeFilter === "Positif" ? "POSITIVE" :
-    activeFilter === "Campuran" ? "MIXED" : undefined;
+    activeFilter === "negative" ? "negative" :
+    activeFilter === "positive" ? "positive" :
+    activeFilter === "neutral" ? "neutral" :
+    activeFilter === "mixed" ? "mixed" : undefined;
 
   const signalsQuery = useQuery({
     queryKey: ["signals", { keyword: deferredQuery, page, sentiment: apiSentimentFilter }],
@@ -727,9 +657,19 @@ export default function SignalsPage() {
     setPage(1);
   };
 
-  const handleFilterChange = (value: string) => {
+  const handleFilterChange = (value: SignalFilter) => {
     setActiveFilter(value);
     setPage(1);
+  };
+
+  const handleInvestigate = (row: SignalRow) => {
+    setSelectedSignal(row);
+    setIsCreateModalOpen(true);
+  };
+
+  const handleCreateModalChange = (open: boolean) => {
+    setIsCreateModalOpen(open);
+    if (!open) setSelectedSignal(null);
   };
 
   const tTimeRange = useTranslations("Signals");
@@ -742,17 +682,17 @@ export default function SignalsPage() {
   const rows = sourceRows.filter((row) => {
     const matchesQuery = query.trim() === "" || row.title.toLowerCase().includes(query.toLowerCase()) || row.desc.toLowerCase().includes(query.toLowerCase());
     if (!matchesQuery) return false;
-    if (activeFilter === "Negatif") return row.sentiment === "NEGATIVE";
-    if (activeFilter === "Positif") return row.sentiment === "POSITIVE";
-    if (activeFilter === "Campuran") return row.sentiment === "MIXED";
-    if (activeFilter === "Kritis") return row.severity === "CRITICAL";
+    if (activeFilter === "negative") return row.sentiment === "NEGATIVE";
+    if (activeFilter === "positive") return row.sentiment === "POSITIVE";
+    if (activeFilter === "neutral") return row.sentiment === "NEUTRAL";
+    if (activeFilter === "mixed") return row.sentiment === "MIXED";
     return true;
   });
   const footerText = signalsQuery.data?.pagination
     ? tSignals("footerLive", { from: String(signalsQuery.data.pagination.page), to: String(Math.min(signalsQuery.data.pagination.page * signalsQuery.data.pagination.limit, signalsQuery.data.pagination.total)), total: String(signalsQuery.data.pagination.total) })
     : isLiveUnavailable
       ? tSignals("footerUnavailable")
-      : tSignals("footerFallback");
+      : "";
 
   return (
     <div className="mx-auto flex max-w-[1600px] flex-col gap-4 pb-6 text-[#101334]">
@@ -761,23 +701,24 @@ export default function SignalsPage() {
         <button onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] sm:w-fit"><Flag size={15} />{t("createInvestigation")}</button>
       </header>
 
-      <CreateInvestigationModal open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen} />
+      <CreateInvestigationModal open={isCreateModalOpen} onOpenChange={handleCreateModalChange} signalId={selectedSignal?.id} signalTitle={selectedSignal?.title} />
 
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_336px]">
         <div className="flex min-w-0 flex-col gap-4">
           <SummaryPanel meta={meta} />
           {signalsQuery.isPending ? (
-            <TableSkeleton rows={6} columns={8} className="xl:min-h-[610px]" />
+            <TableSkeleton rows={6} columns={6} className="xl:min-h-[610px]" />
           ) : signalsQuery.data && liveRows.length === 0 ? (
             <DashboardEmptyState title={t("emptyState.title")} description={t("emptyState.desc")} icon="search" minHeight="min-h-[420px]" />
           ) : (
             <>
               {isLiveUnavailable ? <DashboardErrorState title={tSignals("errorTitle")} description={tSignals("errorDesc")} onRetry={() => void signalsQuery.refetch()} minHeight="min-h-[150px]" /> : null}
-              <SignalsTable activeFilter={activeFilter} setActiveFilter={handleFilterChange} query={query} setQuery={handleQueryChange} rows={rows} footerText={footerText} pagination={signalsQuery.data?.pagination} onPageChange={setPage} isFetching={signalsQuery.isFetching} className="flex-1" tTimeRange={tTimeRange} tSignals={tSignals} />
+              <SignalsTable activeFilter={activeFilter} setActiveFilter={handleFilterChange} query={query} setQuery={handleQueryChange} rows={rows} footerText={footerText} pagination={signalsQuery.data?.pagination} onPageChange={setPage} isFetching={signalsQuery.isFetching} className="flex-1" tTimeRange={tTimeRange} tSignals={tSignals} onInvestigate={handleInvestigate} />
             </>
           )}
         </div>
         <div className="flex flex-col gap-4">
+            {isMetaUnavailable ? <DashboardErrorState title={tSignals("metaErrorTitle")} description={tSignals("metaErrorDesc")} onRetry={() => void metaQuery.refetch()} minHeight="min-h-[150px]" /> : null}
             <FollowUpPanel data={meta?.followUps} />
             <RecommendationPanel data={meta?.recommendations} />
         </div>

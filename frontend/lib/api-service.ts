@@ -291,12 +291,13 @@ export async function getSignalsMeta(): Promise<SignalsMeta | null> {
 export async function getSignals(
   options: GetSignalsOptions = {}
 ): Promise<PaginatedResponse<Signal> | null> {
-  const { page = 1, limit = 20, keyword, platform, startDate, endDate } = options;
+  const { page = 1, limit = 20, keyword, platform, startDate, endDate, sentiment } = options;
   const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (keyword) params.set("keyword", keyword);
   if (platform) params.set("platform", platform);
   if (startDate) params.set("startDate", startDate);
   if (endDate) params.set("endDate", endDate);
+  if (sentiment) params.set("sentiment", sentiment);
 
   try {
     return await apiClient<PaginatedResponse<Signal>>(`/signals?${params.toString()}`);
@@ -326,15 +327,17 @@ export interface GetAlertsOptions {
   limit?: number;
   status?: string;
   severity?: string;
+  search?: string;
 }
 
 export async function getAlerts(
   options: GetAlertsOptions = {}
 ): Promise<PaginatedResponse<Alert> | null> {
-  const { page = 1, limit = 20, status, severity } = options;
+  const { page = 1, limit = 20, status, severity, search } = options;
   const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (status) params.set("status", status);
   if (severity) params.set("severity", severity);
+  if (search) params.set("search", search);
 
   try {
     return await apiClient<PaginatedResponse<Alert>>(`/api/alerts?${params.toString()}`);
@@ -1605,8 +1608,14 @@ export interface AlertsSummaryResponse {
   trend_delta: number;
   timeline: number[];
   timeline_labels: string[];
+  acknowledged_count?: number;
+  resolved_count?: number;
+  escalated_count?: number;
+  overdue_count?: number;
   avg_response_time_minutes: number | null;
   delivery_success_rate: number;
+  acknowledgment_rate?: number;
+  sla_target_minutes?: number | null;
 }
 
 // ---------------------------------------------------------------------------

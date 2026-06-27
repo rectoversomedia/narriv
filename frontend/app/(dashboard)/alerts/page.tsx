@@ -26,7 +26,6 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Star,
-  UserRound,
   Users,
   X,
   type LucideIcon,
@@ -38,7 +37,6 @@ import {
   Facebook,
   GooglePlay,
   Instagram,
-  MicrosoftTeams,
   Slack,
   TikTokDark,
   WhatsApp,
@@ -51,15 +49,21 @@ import {
   getAlerts,
   getAlertsSummary,
   getEscalationMatrix,
+  getIntegrations,
+  getNotificationSettings,
   getSources,
   getWorkspaceMembers,
   updateAlertStatus,
   updateEscalationMatrix,
+  updateNotificationSettings,
+  type Alert,
   type EscalationMatrixRecord,
+  type IntegrationRecord,
+  type NotificationRuleRecord,
+  type NotificationRuleTrigger,
 } from "@/lib/api-service";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
-type Sentiment = "NEGATIF" | "POSITIF" | "CAMPURAN";
 type AlertStatus = "New" | "Investigating" | "Escalated" | "Resolved";
 type SourceKey = keyof typeof sourceIcons;
 
@@ -79,14 +83,9 @@ type AlertRow = {
   sourceLabel: string;
   sources: SourceKey[];
   extraSources: number;
-  sentiment: Sentiment;
-  velocity: string;
-  velocityPeriod: string;
-  velocityTrend: number[];
-  mentions: string;
-  confidence: string;
+  escalationLevel: string;
+  deadline: string;
   ack: string;
-  notificationChannels: Array<"whatsapp" | "email" | "teams" | "slack">;
   impact: "High" | "Medium";
   status: AlertStatus;
   time: string;
@@ -111,6 +110,14 @@ type EscalationDraft = {
   order: number;
 };
 
+type NotificationRuleDraft = {
+  id: string;
+  trigger: NotificationRuleTrigger;
+  condition: string;
+  channels: string[];
+  enabled: boolean;
+};
+
 const toneStyles: Record<Tone, ToneStyle> = {
   blue: { color: "#465FFF", rgb: "70,95,255", soft: "bg-[#465FFF]/10", text: "text-[#465FFF]", border: "border-[#465FFF]/15" },
   purple: { color: "#8B5CFF", rgb: "139,92,255", soft: "bg-[#8B5CFF]/10", text: "text-[#8B5CFF]", border: "border-[#8B5CFF]/15" },
@@ -130,114 +137,6 @@ const sourceIcons = {
   support: <Headphones className="size-3.5 text-[#465FFF]" strokeWidth={2.4} />,
   discourse: <Discourse className="size-3.5" />,
 };
-
-const mockRows: AlertRow[] = [
-  {
-    id: 1,
-    title: "Payment delay complaints are rising",
-    description: "Spike in payment delay complaints across social media and news.",
-    tags: ["Critical"],
-    sourceLabel: "Corporate Affairs",
-    sources: ["x", "instagram", "tiktok"],
-    extraSources: 2,
-    sentiment: "NEGATIF",
-    velocity: "+248%",
-    velocityPeriod: "in 2 hours",
-    velocityTrend: [8, 13, 10, 22, 18, 29, 35, 31, 44],
-    mentions: "1.248",
-    confidence: "94%",
-    ack: "8/12",
-    notificationChannels: ["whatsapp", "email", "teams", "slack"],
-    impact: "High",
-    status: "Investigating",
-    time: "10:23 WIB",
-    tone: "red",
-  },
-  {
-    id: 2,
-    title: "Mobile app stability disruption",
-    description: "Users report repeated crashes during transactions.",
-    tags: ["High"],
-    sourceLabel: "IT Operations",
-    sources: ["appstore", "googleplay"],
-    extraSources: 1,
-    sentiment: "NEGATIF",
-    velocity: "+89%",
-    velocityPeriod: "in 4 hours",
-    velocityTrend: [7, 9, 8, 13, 11, 18, 16, 23, 28],
-    mentions: "842",
-    confidence: "89%",
-    ack: "4/5",
-    notificationChannels: ["email", "teams", "slack"],
-    impact: "High",
-    status: "Escalated",
-    time: "09:45 WIB",
-    tone: "amber",
-  },
-  {
-    id: 3,
-    title: "New promo receives positive response",
-    description: "Recent cashback campaign is getting positive customer response.",
-    tags: ["Info"],
-    sourceLabel: "Marketing",
-    sources: ["instagram", "facebook", "tiktok"],
-    extraSources: 2,
-    sentiment: "POSITIF",
-    velocity: "+67%",
-    velocityPeriod: "in 6 hours",
-    velocityTrend: [6, 8, 10, 12, 15, 18, 16, 22, 29],
-    mentions: "621",
-    confidence: "87%",
-    ack: "11/12",
-    notificationChannels: ["email"],
-    impact: "Medium",
-    status: "Resolved",
-    time: "08:15 WIB",
-    tone: "green",
-  },
-  {
-    id: 4,
-    title: "FAQ confusion around credit terms",
-    description: "Customers are confused by the updated credit payment terms.",
-    tags: ["Warning"],
-    sourceLabel: "Customer Care",
-    sources: ["support"],
-    extraSources: 1,
-    sentiment: "CAMPURAN",
-    velocity: "+23%",
-    velocityPeriod: "in 5 hours",
-    velocityTrend: [9, 11, 10, 13, 12, 16, 18, 21, 24],
-    mentions: "338",
-    confidence: "81%",
-    ack: "6/8",
-    notificationChannels: ["email", "teams"],
-    impact: "Medium",
-    status: "Resolved",
-    time: "08:20 WIB",
-    tone: "blue",
-  },
-  {
-    id: 5,
-    title: "Data security issue",
-    description: "Account data protection questions are increasing in community forums.",
-    tags: ["High"],
-    sourceLabel: "IT Security",
-    sources: ["discourse"],
-    extraSources: 2,
-    sentiment: "NEGATIF",
-    velocity: "+16%",
-    velocityPeriod: "in 7 hours",
-    velocityTrend: [5, 7, 6, 9, 8, 10, 9, 12, 10],
-    mentions: "276",
-    confidence: "78%",
-    ack: "3/5",
-    notificationChannels: ["whatsapp", "email", "teams", "slack"],
-    impact: "High",
-    status: "Investigating",
-    time: "07:50 WIB",
-    tone: "amber",
-  },
-];
 
 function makeLinePath(values: number[], width: number, height: number, padding: number) {
   const max = Math.max(...values);
@@ -285,27 +184,32 @@ function buildMetricCards(ta: ReturnType<typeof useTranslations<"Alerts">>, summ
   const info = summary?.by_severity?.info ?? 0;
   const inProgress = summary?.by_status?.in_progress ?? 0;
   const resolved = summary?.by_status?.resolved ?? 0;
+  const acknowledgedCount = summary?.acknowledged_count ?? inProgress + resolved;
+  const escalatedCount = summary?.escalated_count ?? critical;
+  const overdueCount = summary?.overdue_count ?? 0;
   const last7 = summary?.last_7_days ?? 0;
   const prev7 = summary?.previous_7_days ?? 0;
   const trendDelta = summary?.trend_delta ?? 0;
   const spark = summary?.timeline?.slice(-12) ?? [];
   const avgResponseMinutes = summary?.avg_response_time_minutes ?? null;
-  const deliverySuccessRate = summary?.delivery_success_rate ?? (total > 0 ? 100 : 0);
+  const deliverySuccessRate = summary?.delivery_success_rate ?? 0;
+  const acknowledgmentRate = summary?.acknowledgment_rate ?? (total > 0 ? Math.round((acknowledgedCount / total) * 100) : 0);
+  const slaTargetMinutes = summary?.sla_target_minutes ?? null;
 
   const delta = prev7 > 0 ? `${((last7 - prev7) / prev7 * 100).toFixed(1)}%` : "0%";
   const deltaSign = trendDelta >= 0 ? "+" : "";
-  const deltaLabel = trendDelta >= 0 ? ta("v2.metrics.vs30Days", { val: `${deltaSign}${delta}` }) : ta("v2.metrics.vs30Days", { val: delta });
+  const deltaLabel = trendDelta >= 0 ? ta("v2.metrics.vsPrevious7Days", { val: `${deltaSign}${delta}` }) : ta("v2.metrics.vsPrevious7Days", { val: delta });
 
   return [
     { label: ta("v2.metrics.totalAlerts"), value: String(total), helper: deltaLabel, helperTone: trendDelta >= 0 ? "green" : "red", icon: Bell, tone: "purple", spark },
-    { label: ta("v2.metrics.criticalAlerts"), value: String(critical), helper: ta("v2.metrics.vs30Days", { val: `${critical}` }), helperTone: "red", icon: AlertTriangle, tone: "red", spark: spark.slice().reverse() },
-    { label: ta("v2.metrics.warningAlerts"), value: String(high + medium), helper: ta("v2.metrics.vs30Days", { val: `${high + medium}` }), helperTone: "green", icon: AlertTriangle, tone: "amber", spark },
-    { label: ta("v2.metrics.infoAlerts"), value: String(info + low), helper: ta("v2.metrics.vs30Days", { val: `${info + low}` }), helperTone: "blue", icon: HelpCircle, tone: "blue", spark },
-    { label: ta("v2.metrics.deliveredAlerts"), value: String(total), helper: ta("v2.metrics.successRate", { val: String(deliverySuccessRate) }), helperTone: "green", icon: Shield, tone: "green", spark },
-    { label: ta("v2.metrics.acknowledgedAlerts"), value: String(inProgress), helper: ta("v2.metrics.of", { val1: String(inProgress), val2: String(total) }), helperTone: "blue", icon: Users, tone: "purple", spark },
-    { label: ta("v2.metrics.escalated"), value: String(critical), helper: ta("v2.metrics.criticalIncidents"), helperTone: "red", icon: AlertTriangle, tone: "red", spark: spark.slice().reverse() },
-    { label: ta("v2.metrics.resolved"), value: String(resolved), helper: ta("v2.metrics.vs30Days", { val: `${resolved}` }), helperTone: "green", icon: CircleCheck, tone: "green", spark },
-    { label: ta("v2.metrics.avgResponseTime"), value: avgResponseMinutes !== null ? `${avgResponseMinutes}m` : "-", helper: ta("v2.metrics.target", { val: "15m" }), helperTone: "blue", icon: HelpCircle, tone: "blue", spark },
+    { label: ta("v2.metrics.criticalAlerts"), value: String(critical), helper: ta("v2.metrics.severityBreakdown", { val: `${critical}/${total}` }), helperTone: critical > 0 ? "red" : "green", icon: AlertTriangle, tone: "red", spark: spark.slice().reverse() },
+    { label: ta("v2.metrics.warningAlerts"), value: String(high + medium), helper: ta("v2.metrics.severityBreakdown", { val: `${high + medium}/${total}` }), helperTone: high + medium > 0 ? "amber" : "green", icon: AlertTriangle, tone: "amber", spark },
+    { label: ta("v2.metrics.infoAlerts"), value: String(info + low), helper: ta("v2.metrics.severityBreakdown", { val: `${info + low}/${total}` }), helperTone: "blue", icon: HelpCircle, tone: "blue", spark },
+    { label: ta("v2.metrics.deliveredAlerts"), value: `${deliverySuccessRate}%`, helper: ta("v2.metrics.lifecycleCoverage"), helperTone: deliverySuccessRate >= 80 ? "green" : deliverySuccessRate >= 50 ? "amber" : "red", icon: Shield, tone: "green", spark },
+    { label: ta("v2.metrics.acknowledgedAlerts"), value: String(acknowledgedCount), helper: ta("v2.metrics.ackRate", { val: String(acknowledgmentRate) }), helperTone: acknowledgmentRate >= 80 ? "green" : "blue", icon: Users, tone: "purple", spark },
+    { label: ta("v2.metrics.escalated"), value: String(escalatedCount), helper: ta("v2.metrics.overdue", { val: String(overdueCount) }), helperTone: overdueCount > 0 ? "red" : "green", icon: AlertTriangle, tone: "red", spark: spark.slice().reverse() },
+    { label: ta("v2.metrics.resolved"), value: String(resolved), helper: ta("v2.metrics.of", { val1: String(resolved), val2: String(total) }), helperTone: "green", icon: CircleCheck, tone: "green", spark },
+    { label: ta("v2.metrics.avgResponseTime"), value: avgResponseMinutes !== null ? `${avgResponseMinutes}m` : "-", helper: ta("v2.metrics.target", { val: slaTargetMinutes !== null ? `${slaTargetMinutes}m` : "-" }), helperTone: avgResponseMinutes !== null && slaTargetMinutes !== null && avgResponseMinutes > slaTargetMinutes ? "red" : "blue", icon: HelpCircle, tone: "blue", spark },
   ];
 }
 
@@ -328,6 +232,22 @@ function MetricCard({ metric }: { metric: Metric }) {
       <div className="absolute inset-x-3 bottom-0">
         <Sparkline values={metric.spark} tone={metric.tone} id={`metric-${metric.label.replace(/\W/g, "")}`} className="h-7" />
       </div>
+    </Panel>
+  );
+}
+
+function MetricCardSkeleton() {
+  return (
+    <Panel className="relative min-h-[104px] overflow-hidden p-3.5">
+      <div className="flex items-center gap-3">
+        <span className="size-10 shrink-0 animate-pulse rounded-full bg-[#EEF2FF]" />
+        <div className="min-w-0 flex-1">
+          <p className="h-3 w-24 animate-pulse rounded bg-[#EEF2FF]" />
+          <p className="mt-2 h-7 w-14 animate-pulse rounded bg-[#E6EAF8]" />
+          <p className="mt-2 h-3 w-28 animate-pulse rounded bg-[#EEF2FF]" />
+        </div>
+      </div>
+      <div className="absolute inset-x-3 bottom-3 h-5 animate-pulse rounded bg-[#F1F4FB]" />
     </Panel>
   );
 }
@@ -357,16 +277,6 @@ function AlertIcon({ tone }: { tone: AlertRow["tone"] }) {
       <Icon size={16} fill={tone === "green" ? style.color : "none"} strokeWidth={2.3} />
     </span>
   );
-}
-
-function SentimentBadge({ sentiment }: { sentiment: Sentiment }) {
-  const styles: Record<Sentiment, string> = {
-    NEGATIF: "bg-[#EF4444]/10 text-[#EF4444]",
-    POSITIF: "bg-[#10B981]/10 text-[#0C9B69]",
-    CAMPURAN: "bg-[#8B5CFF]/10 text-[#8B5CFF]",
-  };
-
-  return <span className={cn("rounded-[7px] px-2 py-1 text-[9px] font-black tracking-[0.14em]", styles[sentiment])}>{sentiment}</span>;
 }
 
 function StatusBadge({ status }: { status: AlertStatus }) {
@@ -423,107 +333,275 @@ function matrixRecordsToDraft(records: EscalationMatrixRecord[] | null | undefin
   }));
 }
 
+function createNotificationRuleDraft(trigger: NotificationRuleTrigger = "severity"): NotificationRuleDraft {
+  const id = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `rule-${Date.now()}`;
+  return {
+    id,
+    trigger,
+    condition: trigger === "severity" ? "critical" : trigger === "sla" ? "15 min" : "",
+    channels: ["standard"],
+    enabled: true,
+  };
+}
+
+function notificationRulesToDraft(rules: NotificationRuleRecord[] | undefined | null): NotificationRuleDraft[] {
+  return (rules?.length ? rules : [createNotificationRuleDraft("severity")]).slice(0, 20).map((rule) => ({
+    id: rule.id,
+    trigger: rule.trigger,
+    condition: rule.condition,
+    channels: rule.channels.length > 0 ? rule.channels : ["standard"],
+    enabled: rule.enabled,
+  }));
+}
+
+function getNotificationPreset(preset: "critical" | "all" | "quiet"): NotificationRuleDraft[] {
+  if (preset === "quiet") {
+    return [
+      { ...createNotificationRuleDraft("severity"), condition: "critical", channels: ["standard"], enabled: false },
+    ];
+  }
+  if (preset === "all") {
+    return [
+      { ...createNotificationRuleDraft("severity"), condition: "medium", channels: ["all"], enabled: true },
+      { ...createNotificationRuleDraft("sla"), condition: "30 min", channels: ["standard"], enabled: true },
+    ];
+  }
+  return [
+    { ...createNotificationRuleDraft("severity"), condition: "critical", channels: ["instant"], enabled: true },
+    { ...createNotificationRuleDraft("sla"), condition: "15 min", channels: ["standard"], enabled: true },
+  ];
+}
+
+function getRuleConditionOptions(trigger: NotificationRuleTrigger, ta: ReturnType<typeof useTranslations<"Alerts">>) {
+  if (trigger === "severity") {
+    return ["low", "medium", "high", "critical"].map((value) => ({ value, label: ta(`v2.notificationRulesModal.severityValues.${value}`) }));
+  }
+  if (trigger === "sla") {
+    return ["1 min", "5 min", "15 min", "30 min", "1 hour"].map((value) => ({ value, label: ta(`v2.notificationRulesModal.slaValues.${value}`) }));
+  }
+  if (trigger === "sentiment") {
+    return ["10%", "20%", "30%", "50%"].map((value) => ({ value, label: value }));
+  }
+  return ["brand", "complaint", "legal", "outage", "payment"].map((value) => ({ value, label: value }));
+}
+
+function channelLabel(channel: string, ta: ReturnType<typeof useTranslations<"Alerts">>) {
+  if (channel === "instant" || channel === "standard" || channel === "all" || channel === "none") {
+    return ta(`v2.notificationRulesModal.channels.${channel}`);
+  }
+  return channel;
+}
+
+function mapAlertRecordToRow(alert: Alert, ta: ReturnType<typeof useTranslations<"Alerts">>, optimisticStatuses: Record<string | number, AlertStatus>): AlertRow {
+  const normalizedStatus = String(alert.status || "").toLowerCase();
+  const mappedStatus = normalizedStatus === "open"
+    ? "New"
+    : normalizedStatus === "acknowledged" || normalizedStatus === "in_progress" || normalizedStatus === "in-progress"
+      ? "Investigating"
+      : normalizedStatus === "resolved"
+        ? "Resolved"
+        : "Escalated";
+  const alertSources = alert.sources?.filter(Boolean) ?? [];
+  const shownSources = alertSources.slice(0, 3).map(sourceNameToIconKey);
+  const createdAt = new Date(alert.createdAt);
+  const deadline = alert.deadline ? new Date(alert.deadline) : null;
+
+  return {
+    id: alert.id,
+    title: alert.title,
+    description: alert.whatHappened || alert.whyItMatters || alert.whatToDo || "-",
+    tags: [alert.severity || "info"],
+    sourceLabel: alert.assignedTeam || alert.assignedTo || alert.type || ta("table.unassigned"),
+    sources: shownSources.length > 0 ? shownSources : ["x"],
+    extraSources: Math.max(0, alertSources.length - shownSources.length),
+    escalationLevel: alert.escalationLevel || "-",
+    deadline: deadline && !Number.isNaN(deadline.getTime()) ? deadline.toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "-",
+    ack: normalizedStatus === "open" ? ta("table.notAcknowledged") : ta("table.acknowledged"),
+    impact: alert.severity === "critical" || alert.severity === "high" ? "High" : "Medium",
+    status: optimisticStatuses[alert.id] ?? mappedStatus,
+    time: Number.isNaN(createdAt.getTime()) ? "-" : createdAt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+    tone: alert.severity === "critical" ? "red" : alert.severity === "high" ? "amber" : "green",
+  };
+}
+
 function ChannelIcon({ children, tone = "blue" }: { children: ReactNode; tone?: Tone }) {
   const style = toneStyles[tone];
   return <span className={cn("flex size-8 items-center justify-center rounded-[8px]", style.soft, style.text)}>{children}</span>;
 }
 
-function CriticalIncident({ alert, ta }: { alert: AlertRow; ta: ReturnType<typeof useTranslations<"Alerts">> }) {
+function CriticalIncident({
+  alert,
+  totalCritical,
+  isLoading,
+  ta,
+}: {
+  alert: AlertRow | null;
+  totalCritical: number;
+  isLoading: boolean;
+  ta: ReturnType<typeof useTranslations<"Alerts">>;
+}) {
+  const stats: Array<[string, string, string, Tone]> = alert
+    ? [
+      [ta("v2.incident.severity"), alert.tags[0] ?? "-", ta("v2.incident.liveSignal"), "red" as Tone],
+      [ta("v2.incident.owner"), alert.sourceLabel || ta("table.unassigned"), ta("v2.incident.currentOwner"), "blue" as Tone],
+      [ta("v2.incident.escalation"), alert.escalationLevel, ta("v2.incident.currentLevel"), "amber" as Tone],
+      [ta("v2.incident.deadline"), alert.deadline, ta("v2.incident.responseWindow"), "red" as Tone],
+      [ta("v2.incident.ack"), alert.ack, ta("v2.incident.lifecycleState"), "green" as Tone],
+    ]
+    : [];
+
   return (
     <Panel className="overflow-hidden border-[#FAD7D7] bg-linear-to-br from-[#FFF4F4] via-white to-white p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="flex size-8 items-center justify-center rounded-full bg-[#EF4444]/10 text-[#EF4444] ring-4 ring-[#EF4444]/5"><AlertTriangle size={17} fill="#EF4444" /></span>
-          <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{ta("v2.incident.title")}</h2>
-        </div>
-        <Link href={`/alerts/${alert.id}`} className="inline-flex items-center gap-1 text-[11px] font-black text-[#465FFF] hover:underline">
-          {ta("v2.incident.viewDetails")} <ArrowRight size={13} />
-        </Link>
-      </div>
-      <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3 className="text-[22px] font-black leading-tight tracking-[-0.04em] text-[#070B28]">{alert.title}</h3>
-          <p className="mt-2 text-[12px] font-semibold text-[#31406B]">{alert.description}</p>
-        </div>
-        <span className="rounded-[7px] bg-[#EF4444]/10 px-3 py-1 text-[10px] font-black tracking-[0.12em] text-[#EF4444]">{ta("v2.incident.critical")}</span>
-      </div>
-      <div className="mt-5 grid grid-cols-2 divide-x divide-[#E9EDF5] sm:grid-cols-5">
-        {[
-          [ta("v2.incident.mentions"), alert.mentions, alert.velocity],
-          [ta("v2.incident.velocity"), alert.impact, alert.velocityPeriod],
-          [ta("v2.incident.sentiment"), "-0,68", ta("v2.incident.negative")],
-          [ta("v2.incident.impact"), alert.impact, ta("v2.incident.reputationRisk")],
-          [ta("v2.incident.confidence"), alert.confidence, ta("v2.incident.veryHigh")],
-        ].map(([label, value, helper], index) => (
-          <div key={label} className={cn("px-4 first:pl-0", index >= 2 && "mt-4 sm:mt-0")}>
-            <p className="text-[10px] font-black text-[#68739F]">{label}</p>
-            <p className={cn("mt-2 text-[22px] font-black leading-none tracking-[-0.04em]", index === 4 ? "text-[#10B981]" : "text-[#101334]")}>{value}</p>
-            <p className={cn("mt-2 text-[10px] font-black", index === 0 || index === 2 || index === 3 ? "text-[#EF4444]" : index === 4 ? "text-[#0C9B69]" : "text-[#31406B]")}>{helper}</p>
+          <div>
+            <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{ta("v2.incident.title")}</h2>
+            <p className="mt-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#EF4444]">{ta("v2.incident.totalCritical", { count: totalCritical })}</p>
           </div>
-        ))}
-      </div>
-      <div className="mt-6 grid gap-3 border-t border-[#F2DCDC] pt-4 sm:grid-cols-3">
-        <SourceIconList label={ta("v2.incident.source")} sources={alert.sources} extraSources={alert.extraSources} />
-        <div className="sm:-translate-x-5">
-          <p className="mb-2 text-[9px] font-black text-[#68739F]">{ta("v2.incident.owner")}</p>
-          <button type="button" className="inline-flex h-[30px] items-center gap-1.5 rounded-[7px] border border-[#E6EAF2] bg-white px-2 text-[8.5px] font-black leading-none text-[#101334] whitespace-nowrap">
-            <span className="flex size-5 items-center justify-center rounded-full bg-[#465FFF]/10 text-[#465FFF]">CA</span>
-            {alert.sourceLabel || ta("v2.incident.corporateAffairs")}
-            <ChevronDown size={12} className="text-[#68739F]" />
-          </button>
         </div>
-        <div>
-          <p className="mb-2 text-[9px] font-black text-[#68739F]">{ta("v2.incident.status")}</p>
-          <div className="flex flex-wrap items-center gap-2"><StatusBadge status={alert.status} /><span className="text-[9px] font-black text-[#31406B]">{ta("v2.incident.since", { time: alert.time })}</span></div>
-        </div>
+        {alert ? (
+          <Link href={`/alerts/${alert.id}`} className="inline-flex items-center gap-1 rounded-full border border-[#F4D8D8] bg-white px-3 py-1.5 text-[11px] font-black text-[#465FFF] shadow-sm transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF]">
+            {ta("v2.incident.viewDetails")} <ArrowRight size={13} />
+          </Link>
+        ) : (
+          <span className="inline-flex items-center gap-1 rounded-full border border-[#F4D8D8] bg-white/70 px-3 py-1.5 text-[11px] font-black text-[#A8B0C7]">
+            {ta("v2.incident.viewDetails")} <ArrowRight size={13} />
+          </span>
+        )}
       </div>
+      {isLoading ? (
+        <div className="mt-5 space-y-4">
+          <div className="h-7 w-2/3 animate-pulse rounded bg-[#F8DADA]" />
+          <div className="h-4 w-full animate-pulse rounded bg-[#FCEAEA]" />
+          <div className="grid gap-2 sm:grid-cols-5">
+            {Array.from({ length: 5 }, (_, index) => <div key={index} className="h-20 animate-pulse rounded-[12px] bg-white/80" />)}
+          </div>
+        </div>
+      ) : alert ? (
+        <>
+          <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="text-[22px] font-black leading-tight tracking-[-0.04em] text-[#070B28]">{alert.title}</h3>
+              <p className="mt-2 line-clamp-2 text-[12px] font-semibold leading-5 text-[#31406B]">{alert.description}</p>
+            </div>
+            <span className="rounded-[7px] bg-[#EF4444]/10 px-3 py-1 text-[10px] font-black tracking-[0.12em] text-[#EF4444]">{ta("v2.incident.critical")}</span>
+          </div>
+          <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-5">
+            {stats.map(([label, value, helper, tone]) => (
+              <div key={label} className="rounded-[12px] border border-[#F4D8D8] bg-white/75 p-3 shadow-[0_1px_3px_rgba(16,24,40,0.03)]">
+                <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#8A94B8]">{label}</p>
+                <p className={cn("mt-2 truncate text-[15px] font-black leading-none tracking-[-0.02em]", toneStyles[tone].text)} title={value}>{value}</p>
+                <p className="mt-2 truncate text-[9px] font-bold text-[#68739F]" title={helper}>{helper}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-6 grid gap-3 border-t border-[#F2DCDC] pt-4 sm:grid-cols-3">
+            <SourceIconList label={ta("v2.incident.source")} sources={alert.sources} extraSources={alert.extraSources} />
+            <div>
+              <p className="mb-2 text-[9px] font-black text-[#68739F]">{ta("v2.incident.owner")}</p>
+              <div className="inline-flex min-h-[30px] max-w-full items-center gap-1.5 rounded-[7px] border border-[#E6EAF2] bg-white px-2 text-[9px] font-black leading-none text-[#101334]">
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[#465FFF]">O</span>
+                <span className="truncate">{alert.sourceLabel || ta("table.unassigned")}</span>
+              </div>
+            </div>
+            <div>
+              <p className="mb-2 text-[9px] font-black text-[#68739F]">{ta("v2.incident.status")}</p>
+              <div className="flex flex-wrap items-center gap-2"><StatusBadge status={alert.status} /><span className="text-[9px] font-black text-[#31406B]">{ta("v2.incident.since", { time: alert.time })}</span></div>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="mt-5 rounded-[14px] border border-dashed border-[#F4D8D8] bg-white/70 p-6">
+          <p className="text-[15px] font-black text-[#101334]">{ta("v2.incident.noCriticalTitle")}</p>
+          <p className="mt-2 max-w-xl text-[12px] font-semibold leading-5 text-[#68739F]">{ta("v2.incident.noCriticalDesc")}</p>
+        </div>
+      )}
     </Panel>
   );
 }
 
-function DeliveryStatus({ ta }: { ta: ReturnType<typeof useTranslations<"Alerts">> }) {
-  const channels = [
-    { icon: <WhatsApp className="size-4" />, title: ta("v2.delivery.whatsapp"), meta: ta("v2.delivery.recipients", { count: 8 }), tone: "green" as Tone },
-    { icon: <Mail size={16} />, title: ta("v2.delivery.email"), meta: ta("v2.delivery.recipients", { count: 23 }), tone: "blue" as Tone },
-    { icon: <Users size={16} />, title: ta("v2.delivery.msTeams"), meta: ta("v2.delivery.execChannel"), tone: "purple" as Tone },
-    { icon: <Slack className="size-4" />, title: ta("v2.delivery.slack"), meta: ta("v2.delivery.corpAffairsChannel"), tone: "amber" as Tone },
-  ];
+function getIntegrationVisual(integration: IntegrationRecord): { icon: ReactNode; tone: Tone } {
+  const value = `${integration.platform} ${integration.name}`.toLowerCase();
+  if (value.includes("whatsapp")) return { icon: <WhatsApp className="size-4" />, tone: "green" };
+  if (value.includes("slack")) return { icon: <Slack className="size-4" />, tone: "amber" };
+  if (value.includes("team")) return { icon: <Users size={16} />, tone: "purple" };
+  if (value.includes("email") || value.includes("mail")) return { icon: <Mail size={16} />, tone: "blue" };
+  return { icon: <Shield size={16} />, tone: "slate" };
+}
+
+function DeliveryStatus({ ta, integrations, isLoading }: { ta: ReturnType<typeof useTranslations<"Alerts">>; integrations: IntegrationRecord[]; isLoading: boolean }) {
+  const activeChannels = integrations.filter((item) => item.status === "active");
+  const shownChannels = activeChannels.slice(0, 4).map((integration) => ({
+    ...integration,
+    visual: getIntegrationVisual(integration),
+  }));
+  const extraCount = Math.max(0, activeChannels.length - shownChannels.length);
 
   return (
-    <Panel className="p-4">
+    <Panel className="flex min-h-[252px] flex-col p-4">
       <h3 className="text-[15px] font-black text-[#101334]">{ta("v2.delivery.title")} <span className="text-[11px] font-bold text-[#53608C]">{ta("v2.delivery.thisAlert")}</span></h3>
-      <div className="mt-4 space-y-4">
-        {channels.map((channel) => (
-          <div key={channel.title} className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3">
-            <ChannelIcon tone={channel.tone}>{channel.icon}</ChannelIcon>
-            <div className="min-w-0"><p className="text-[12px] font-black text-[#101334]">{channel.title}</p></div>
-            <div className="text-right"><p className="text-[10px] font-black text-[#0C9B69]">✓ {ta("v2.delivery.delivered")}</p><p className="text-[9px] font-bold text-[#31406B]">{channel.meta}</p></div>
+      <div className="mt-4 flex-1 space-y-4">
+        {isLoading ? (
+          Array.from({ length: 4 }, (_, index) => <div key={index} className="h-8 animate-pulse rounded-[8px] bg-[#F1F4FB]" />)
+        ) : shownChannels.length > 0 ? (
+          shownChannels.map((channel) => (
+            <div key={channel.id} className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3">
+              <ChannelIcon tone={channel.visual.tone}>{channel.visual.icon}</ChannelIcon>
+              <div className="min-w-0">
+                <p className="truncate text-[12px] font-black text-[#101334]">{channel.name}</p>
+                <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-[#8A94B8]">{channel.platform}</p>
+              </div>
+              <div className="text-right"><p className="text-[10px] font-black text-[#0C9B69]">✓ {ta("v2.delivery.active")}</p><p className="text-[9px] font-bold text-[#31406B]">{channel.lastSyncAt ? new Date(channel.lastSyncAt).toLocaleDateString("id-ID", { day: "2-digit", month: "short" }) : ta("v2.delivery.ready")}</p></div>
+            </div>
+          ))
+        ) : (
+          <div className="rounded-[10px] border border-dashed border-[#DDE3EF] bg-[#FBFCFF] p-4">
+            <p className="text-[12px] font-black text-[#101334]">{ta("v2.delivery.noChannels")}</p>
+            <p className="mt-1 text-[10px] font-bold text-[#8A94B8]">{ta("v2.delivery.noChannelsDesc")}</p>
           </div>
-        ))}
+        )}
+        {extraCount > 0 ? <p className="text-[10px] font-black text-[#53608C]">+{extraCount} {ta("v2.delivery.moreChannels")}</p> : null}
       </div>
-      <button type="button" className="mt-5 inline-flex items-center gap-1 text-[11px] font-black text-[#465FFF] hover:underline">{ta("v2.delivery.viewAllChannels")} <ArrowRight size={13} /></button>
+      <Link href="/workspace/integrations" className="mt-5 inline-flex items-center gap-1 self-start text-[11px] font-black text-[#465FFF] hover:underline">{ta("v2.delivery.viewAllChannels")} <ArrowRight size={13} /></Link>
     </Panel>
   );
 }
 
-function StakeholderEngagement({ ta }: { ta: ReturnType<typeof useTranslations<"Alerts">> }) {
+function StakeholderEngagement({ ta, summary, memberCount, isLoading }: { ta: ReturnType<typeof useTranslations<"Alerts">>; summary: Awaited<ReturnType<typeof getAlertsSummary>> | null; memberCount: number | null; isLoading: boolean }) {
+  const total = summary?.total ?? 0;
+  const pct = (value: number) => (total > 0 ? `${Math.round((value / total) * 100)}%` : "-");
+  const acknowledged = summary?.acknowledged_count ?? 0;
+  const resolved = summary?.resolved_count ?? 0;
+  const escalated = summary?.escalated_count ?? 0;
   const items = [
-    { label: ta("v2.stakeholder.recipients"), value: "12", pct: "", icon: Users, tone: "purple" as Tone },
-    { label: ta("v2.stakeholder.opened"), value: "10", pct: "83%", icon: Eye, tone: "blue" as Tone },
-    { label: ta("v2.stakeholder.acknowledged"), value: "8", pct: "67%", icon: CircleCheck, tone: "green" as Tone },
-    { label: ta("v2.stakeholder.actionStarted"), value: "5", pct: "42%", icon: Play, tone: "amber" as Tone },
+    { label: ta("v2.stakeholder.recipients"), value: memberCount === null ? "-" : String(memberCount), pct: ta("v2.stakeholder.registered"), icon: Users, tone: "purple" as Tone, progress: memberCount === null ? 0 : 100 },
+    { label: ta("v2.stakeholder.acknowledged"), value: String(acknowledged), pct: pct(acknowledged), icon: Eye, tone: "blue" as Tone, progress: total > 0 ? acknowledged / total * 100 : 0 },
+    { label: ta("v2.stakeholder.resolved"), value: String(resolved), pct: pct(resolved), icon: CircleCheck, tone: "green" as Tone, progress: total > 0 ? resolved / total * 100 : 0 },
+    { label: ta("v2.stakeholder.escalated"), value: String(escalated), pct: pct(escalated), icon: Play, tone: "amber" as Tone, progress: total > 0 ? escalated / total * 100 : 0 },
   ];
 
   return (
     <Panel className="p-4">
-      <h3 className="text-[15px] font-black text-[#101334]">{ta("v2.stakeholder.title")}</h3>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-[15px] font-black text-[#101334]">{ta("v2.stakeholder.title")}</h3>
+          <p className="mt-1 text-[10px] font-bold text-[#68739F]">{ta("v2.stakeholder.desc")}</p>
+        </div>
+        {isLoading ? <span className="size-3.5 rounded-full border-2 border-[#465FFF] border-r-transparent" /> : null}
+      </div>
       <div className="mt-4 divide-y divide-[#EDF1F7]">
         {items.map((item) => {
           const Icon = item.icon;
           return (
             <div key={item.label} className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 py-3 first:pt-0 last:pb-0">
               <ChannelIcon tone={item.tone}><Icon size={15} /></ChannelIcon>
-              <p className="text-[12px] font-black text-[#101334]">{item.label}</p>
+              <div className="min-w-0">
+                <p className="text-[12px] font-black text-[#101334]">{item.label}</p>
+                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[#EEF2F7]">
+                  <div className="h-full rounded-full bg-[#465FFF]" style={{ width: `${Math.min(100, Math.max(0, item.progress))}%` }} />
+                </div>
+              </div>
               <p className="text-right text-[12px] font-black text-[#101334]">{item.value} <span className="ml-3 text-[10px] font-bold text-[#53608C]">{item.pct}</span></p>
             </div>
           );
@@ -533,24 +611,27 @@ function StakeholderEngagement({ ta }: { ta: ReturnType<typeof useTranslations<"
   );
 }
 
-function CriticalDeliveryStatus({ alert, ta }: { alert: AlertRow; ta: ReturnType<typeof useTranslations<"Alerts">> }) {
+function CriticalDeliveryStatus({ alerts, total, ta, onViewAll, isLoading }: { alerts: AlertRow[]; total: number; ta: ReturnType<typeof useTranslations<"Alerts">>; onViewAll: () => void; isLoading: boolean }) {
+  const alert = alerts[0] ?? null;
+  const acknowledged = alerts.filter((item) => item.ack === ta("table.acknowledged")).length;
+  const active = alerts.filter((item) => item.status !== "Resolved").length;
+  const resolved = alerts.filter((item) => item.status === "Resolved").length;
   const rows = [
-    [ta("v2.stakeholder.recipients"), "12", Users, "purple"],
-    [ta("v2.stakeholder.opened"), "10 (83%)", Eye, "blue"],
-    [ta("v2.stakeholder.acknowledged"), "8 (67%)", CircleCheck, "green"],
-    [ta("v2.criticalStatus.inProgress"), "5 (42%)", Play, "amber"],
-    [ta("v2.criticalStatus.resolved"), "2 (17%)", CircleCheck, "green"],
+    [ta("v2.criticalStatus.criticalAlerts"), String(total), AlertTriangle, "red"],
+    [ta("v2.criticalStatus.inProgress"), String(active), Play, "amber"],
+    [ta("v2.criticalStatus.acknowledged"), String(acknowledged), Eye, "blue"],
+    [ta("v2.criticalStatus.resolved"), String(resolved), CircleCheck, "green"],
   ] as const;
 
   return (
     <Panel className="p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
         <h3 className="text-[15px] font-black text-[#101334]">{ta("v2.criticalStatus.title")}</h3>
-        <button type="button" className="inline-flex items-center gap-1 text-[8.5px] font-black leading-none text-[#465FFF] whitespace-nowrap hover:underline">{ta("v2.criticalStatus.viewAll")} <ArrowRight size={11} /></button>
+        <button type="button" onClick={onViewAll} className="inline-flex items-center gap-1 text-[8.5px] font-black leading-none text-[#465FFF] whitespace-nowrap hover:underline">{ta("v2.criticalStatus.viewAll")} <ArrowRight size={11} /></button>
       </div>
       <div className="overflow-hidden rounded-[10px] border border-[#F4D8D8]">
         <div className="flex items-center justify-between gap-3 bg-[#FFF2F2] px-3 py-2">
-          <p className="truncate text-[12px] font-black text-[#101334]">{alert.title}</p>
+          <p className="truncate text-[12px] font-black text-[#101334]">{isLoading ? ta("v2.criticalStatus.loading") : alert?.title ?? ta("v2.criticalStatus.noCritical")}</p>
           <span className="rounded-[6px] bg-[#EF4444]/10 px-2 py-0.5 text-[9px] font-black text-[#EF4444]">{ta("v2.incident.critical")}</span>
         </div>
         <div className="divide-y divide-[#F1E5E5]">
@@ -563,7 +644,7 @@ function CriticalDeliveryStatus({ alert, ta }: { alert: AlertRow; ta: ReturnType
           ))}
         </div>
       </div>
-      <div className="mt-3 flex items-center justify-between gap-3 text-[10px] font-black text-[#31406B]"><span>{ta("v2.criticalStatus.firstSent", { time: "10:23 WIB" })}</span><span>{ta("v2.criticalStatus.lastUpdate", { time: "10:35 WIB" })}</span></div>
+      <div className="mt-3 flex items-center justify-between gap-3 text-[10px] font-black text-[#31406B]"><span>{ta("v2.criticalStatus.firstSent", { time: alert?.time ?? "-" })}</span><span>{ta("v2.criticalStatus.lastUpdate", { time: alert?.deadline ?? "-" })}</span></div>
     </Panel>
   );
 }
@@ -600,22 +681,36 @@ function EscalationMatrix({ ta, levels, isLoading }: { ta: ReturnType<typeof use
   );
 }
 
-function AlertJourney({ alert, ta }: { alert: AlertRow; ta: ReturnType<typeof useTranslations<"Alerts">> }) {
+function buildAlertJourneySteps(alert: AlertRow, ta: ReturnType<typeof useTranslations<"Alerts">>) {
   const steps = [
-    ["10:23:15", ta("v2.journey.step1Title"), ta("v2.journey.step1Desc"), AlertTriangle, "red"],
-    ["10:23:21", ta("v2.journey.step2Title"), ta("v2.journey.step2Desc", { count: 8 }), WhatsApp, "green"],
-    ["10:23:22", ta("v2.journey.step3Title"), ta("v2.journey.step3Desc", { count: 23 }), Mail, "blue"],
-    ["10:23:24", ta("v2.journey.step4Title"), ta("v2.journey.step4Desc"), Users, "purple"],
-    ["10:24:10", ta("v2.journey.step5Title"), ta("v2.journey.step5Desc", { count: 10 }), Eye, "green"],
-    ["10:25:05", ta("v2.journey.step6Title"), ta("v2.journey.step6Desc"), CircleCheck, "green"],
-    ["10:31:42", ta("v2.journey.step7Title"), ta("v2.journey.step7Desc"), UserRound, "purple"],
-  ] as const;
+    [alert.time, ta("v2.journey.createdTitle"), ta("v2.journey.createdDesc", { severity: alert.tags[0] }), AlertTriangle, alert.tone],
+    [alert.time, ta("v2.journey.ownerTitle"), ta("v2.journey.ownerDesc", { owner: alert.sourceLabel }), Users, "purple"],
+    [alert.time, ta("v2.journey.escalationTitle"), ta("v2.journey.escalationDesc", { level: alert.escalationLevel }), Shield, "blue"],
+  ] as Array<[string, string, string, LucideIcon, Tone]>;
+
+  if (alert.status !== "New") {
+    steps.push([alert.time, ta("v2.journey.ackTitle"), ta("v2.journey.ackDesc"), CircleCheck, "green"]);
+  }
+  if (alert.status === "Resolved") {
+    steps.push([alert.time, ta("v2.journey.resolvedTitle"), ta("v2.journey.resolvedDesc"), ShieldCheck, "green"]);
+  }
+  if (alert.deadline !== "-") {
+    steps.push([alert.deadline, ta("v2.journey.deadlineTitle"), ta("v2.journey.deadlineDesc"), Play, "amber"]);
+  }
+  return steps;
+}
+
+function AlertJourney({ alert, ta, onViewTimeline }: { alert: AlertRow; ta: ReturnType<typeof useTranslations<"Alerts">>; onViewTimeline: () => void }) {
+  const steps = buildAlertJourneySteps(alert, ta).slice(0, 4);
 
   return (
     <Panel className="p-4">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h3 className="text-[15px] font-black text-[#101334]">{ta("v2.journey.title")} <span className="text-[10px] font-bold text-[#53608C]">({alert.title})</span></h3>
-        <button type="button" className="inline-flex items-center gap-1 text-[8.5px] font-black leading-none text-[#465FFF] whitespace-nowrap hover:underline">{ta("v2.journey.viewFull")} <ArrowRight size={11} /></button>
+      <div className="mb-4 flex items-start justify-between gap-5">
+        <div className="min-w-0">
+          <h3 className="text-[15px] font-black text-[#101334]">{ta("v2.journey.title")}</h3>
+          <p className="mt-1 truncate text-[10px] font-bold text-[#53608C]">{alert.title}</p>
+        </div>
+        <button type="button" onClick={onViewTimeline} className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#DDE3EF] bg-[#F8FAFF] px-3 py-1.5 text-[9px] font-black leading-none text-[#465FFF] transition hover:border-[#C9D4F6] hover:bg-white">{ta("v2.journey.viewFull")} <ArrowRight size={11} /></button>
       </div>
       <div className="relative space-y-4 pl-1 before:absolute before:left-[70px] before:top-2 before:h-[calc(100%-16px)] before:border-l before:border-[#DDE5F4]">
         {steps.map(([time, title, desc, Icon, tone]) => (
@@ -665,39 +760,33 @@ function EscalationFlow({ ta, levels }: { ta: ReturnType<typeof useTranslations<
   );
 }
 
-function NotificationIcons({ channels }: { channels: AlertRow["notificationChannels"] }) {
-  const shown = channels.slice(0, 3);
-  const extra = channels.length - shown.length;
-  return (
-    <div className="flex items-center gap-1.5">
-      {shown.map((channel) => {
-        if (channel === "whatsapp") return <WhatsApp key={channel} className="size-3.5" />;
-        if (channel === "email") return <Mail key={channel} size={14} className="text-[#465FFF]" />;
-        if (channel === "teams") return <MicrosoftTeams key={channel} className="size-3.5" />;
-        return <Slack key={channel} className="size-3.5" />;
-      })}
-      {extra > 0 ? <span className="rounded-full bg-[#EEF2FF] px-1.5 py-0.5 text-[9px] font-black text-[#53608C]">+{extra}</span> : null}
-    </div>
-  );
-}
-
-function MockPagination({ page, onPageChange }: { page: number; onPageChange: (page: number) => void }) {
+function AlertPagination({ page, totalPages, onPageChange, ta }: { page: number; totalPages: number; onPageChange: (page: number) => void; ta: ReturnType<typeof useTranslations<"Alerts">> }) {
+  const safeTotal = Math.max(1, totalPages);
+  const pages = Array.from({ length: safeTotal }, (_, index) => index + 1).filter((item) => {
+    if (safeTotal <= 5) return true;
+    return item === 1 || item === safeTotal || Math.abs(item - page) <= 1;
+  });
   return (
     <div className="flex items-center gap-2">
-      <button type="button" onClick={() => onPageChange(Math.max(1, page - 1))} className="flex size-9 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#8B95B8] transition hover:text-[#465FFF]" aria-label="Previous page">
+      <button type="button" disabled={page <= 1} onClick={() => onPageChange(Math.max(1, page - 1))} className="flex size-9 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#8B95B8] transition hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-40" aria-label={ta("pagination.previous")}>
         <ChevronDown size={14} className="rotate-90" />
       </button>
-      {[1, 2, 3, 4, 5].map((item) => (
+      {pages.map((item, index) => (
+        <div key={item} className="contents">
+          {index > 0 && item - pages[index - 1] > 1 ? <span className="px-1 text-[11px] font-black text-[#8B95B8]">...</span> : null}
         <button key={item} type="button" onClick={() => onPageChange(item)} className={cn("flex size-9 items-center justify-center rounded-[8px] border text-[12px] font-black transition", page === item ? "border-[#465FFF] bg-white text-[#465FFF] shadow-[0_8px_18px_rgba(70,95,255,0.12)]" : "border-[#E6EAF2] bg-white text-[#31406B] hover:border-[#C9D4F6]")}>{item}</button>
+        </div>
       ))}
-      <button type="button" onClick={() => onPageChange(Math.min(5, page + 1))} className="flex size-9 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#31406B] transition hover:text-[#465FFF]" aria-label="Next page">
+      <button type="button" disabled={page >= safeTotal} onClick={() => onPageChange(Math.min(safeTotal, page + 1))} className="flex size-9 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#31406B] transition hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-40" aria-label={ta("pagination.next")}>
         <ChevronDown size={14} className="-rotate-90" />
       </button>
     </div>
   );
 }
 
-function AlertsTable({ ta, rows, page, footerText, onPageChange, onStatusChange, openMenuId, setOpenMenuId, menuRef, searchQuery, onSearchChange, severityFilter, onSeverityChange, statusFilter, onStatusFilterChange, onOpenFilterModal }: { ta: ReturnType<typeof useTranslations<"Alerts">>; rows: AlertRow[]; page: number; footerText: string; onPageChange: (page: number) => void; onStatusChange: (id: string | number, status: "open" | "acknowledged" | "resolved") => void; openMenuId: string | number | null; setOpenMenuId: (id: string | number | null) => void; menuRef: React.RefObject<HTMLDivElement | null>; searchQuery: string; onSearchChange: (value: string) => void; severityFilter: string; onSeverityChange: (value: string) => void; statusFilter: string; onStatusFilterChange: (value: string) => void; onOpenFilterModal: () => void }) {
+function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isError, onPageChange, onStatusChange, openMenuId, setOpenMenuId, menuRef, searchQuery, onSearchChange, severityFilter, statusFilter, onOpenFilterModal }: { ta: ReturnType<typeof useTranslations<"Alerts">>; rows: AlertRow[]; page: number; totalPages: number; footerText: string; isLoading: boolean; isError: boolean; onPageChange: (page: number) => void; onStatusChange: (id: string | number, status: "open" | "acknowledged" | "resolved") => void; openMenuId: string | number | null; setOpenMenuId: (id: string | number | null) => void; menuRef: React.RefObject<HTMLDivElement | null>; searchQuery: string; onSearchChange: (value: string) => void; severityFilter: string; statusFilter: string; onOpenFilterModal: () => void }) {
+  const headers = [ta("table.alert"), ta("table.severity"), ta("table.owner"), ta("table.source"), ta("table.escalation"), ta("table.deadline"), ta("table.ack"), ta("table.status"), ta("table.time"), ""];
+  const activeFilterCount = [searchQuery, severityFilter, statusFilter].filter(Boolean).length;
   return (
     <Panel className="p-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -710,30 +799,46 @@ function AlertsTable({ ta, rows, page, footerText, onPageChange, onStatusChange,
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#68739F]" />
             <input type="search" value={searchQuery ?? ""} onChange={(e) => onSearchChange(e.target.value)} placeholder={ta("filter.search")} className="h-10 w-full min-w-[220px] rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-10 text-[13px] font-bold text-[#101334] outline-none transition placeholder:text-[#8B95B8] focus:border-[#465FFF] focus:bg-white" />
           </label>
-          {(severityFilter || statusFilter) && (
-            <button type="button" onClick={() => { onSeverityChange(""); onStatusFilterChange(""); }} className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[#EF4444]/30 bg-[#EF4444]/5 px-4 text-[11px] font-black text-[#EF4444]">
-              {ta("filter.clearFilter")}
-            </button>
-          )}
-          <button type="button" onClick={onOpenFilterModal} className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-4 text-[11px] font-black text-[#31406B]">
+          <button type="button" onClick={onOpenFilterModal} className={cn("inline-flex h-10 items-center gap-2 rounded-[8px] border px-4 text-[11px] font-black transition", activeFilterCount > 0 ? "border-[#465FFF]/30 bg-[#EEF2FF] text-[#465FFF]" : "border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B] hover:border-[#C9D4F6]")}>
             <SlidersHorizontal size={14} />
             {ta("filter.title")}
+            {activeFilterCount > 0 ? <span className="rounded-full bg-[#465FFF] px-1.5 py-0.5 text-[9px] leading-none text-white">{activeFilterCount}</span> : null}
           </button>
         </div>
       </div>
       <div className="mt-4 overflow-x-auto">
-        <table className="w-full min-w-[1120px] border-collapse text-left">
+        <table className="w-full min-w-[980px] border-collapse text-left">
           <thead>
             <tr className="border-b border-[#E6EAF2] text-[9px] font-black uppercase tracking-[0.18em] text-[#68739F]">
-              {[ta("table.alert"), "Severity", "Owner", ta("table.source"), ta("table.sentiment"), ta("table.velocity"), ta("table.mentions"), ta("table.confidence"), "Notification", "Ack.", ta("table.status"), ta("table.time"), ""].map((header) => (
+              {headers.map((header) => (
                 <th key={header || "actions"} className="px-3 py-3">{header}</th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-[#EDF1F7]">
-            {rows.length === 0 ? (
+            {isLoading ? (
+              Array.from({ length: 5 }, (_, index) => (
+                <tr key={index}>
+                  <td colSpan={10} className="px-3 py-3">
+                    <div className="h-10 animate-pulse rounded-[8px] bg-[#F1F4FB]" />
+                  </td>
+                </tr>
+              ))
+            ) : isError ? (
               <tr>
-                <td colSpan={13} className="px-6 py-12 text-center">
+                <td colSpan={10} className="px-6 py-12 text-center">
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="flex size-12 items-center justify-center rounded-full bg-[#FFF2F2]">
+                      <AlertTriangle size={24} className="text-[#EF4444]" />
+                    </div>
+                    <p className="mt-3 text-[13px] font-bold text-[#B42318]">{ta("table.errorTitle")}</p>
+                    <p className="mt-1 text-[11px] font-semibold text-[#8A94B8]">{ta("table.errorDesc")}</p>
+                  </div>
+                </td>
+              </tr>
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={10} className="px-6 py-12 text-center">
                   <div className="flex flex-col items-center justify-center">
                     <div className="flex size-12 items-center justify-center rounded-full bg-[#F5F7FC]">
                       <AlertTriangle size={24} className="text-[#DDE3EF]" />
@@ -757,16 +862,8 @@ function AlertsTable({ ta, rows, page, footerText, onPageChange, onStatusChange,
                 <td className="px-3 py-3 align-middle"><span className={cn("rounded-[6px] px-2 py-1 text-[9px] font-black", alert.tone === "red" ? "bg-[#EF4444]/10 text-[#EF4444]" : alert.tone === "amber" ? "bg-[#F59E0B]/12 text-[#D97706]" : "bg-[#10B981]/10 text-[#0C9B69]")}>{alert.tags[0]}</span></td>
                 <td className="px-3 py-3 align-middle"><div className="flex items-center gap-1.5"><span className="flex size-6 items-center justify-center rounded-full bg-[#465FFF]/10 text-[9px] font-black text-[#465FFF]">{alert.sourceLabel.slice(0, 2).toUpperCase()}</span><span className="text-[10px] font-black text-[#31406B]">{alert.sourceLabel}</span></div></td>
                 <td className="px-3 py-3 align-middle"><SourceIconList label="" sources={alert.sources} extraSources={alert.extraSources} /></td>
-                <td className="px-3 py-3 align-middle"><SentimentBadge sentiment={alert.sentiment} /></td>
-                <td className="px-3 py-3 align-middle">
-                  <div className="flex items-center gap-2">
-                    <span><span className={cn("block text-[11px] font-black", alert.sentiment === "POSITIF" ? "text-[#10B981]" : "text-[#EF4444]")}>{alert.velocity}</span><span className="mt-1 block whitespace-nowrap text-[9px] font-bold text-[#68739F]">{alert.velocityPeriod}</span></span>
-                    <Sparkline values={alert.velocityTrend} tone={alert.tone} id={`row-${alert.id}`} className="h-7 w-[56px]" />
-                  </div>
-                </td>
-                <td className="px-3 py-3 align-middle text-[12px] font-black text-[#101334]">{alert.mentions}</td>
-                <td className="px-3 py-3 align-middle text-[12px] font-black text-[#0C9B69]">{alert.confidence}</td>
-                <td className="px-3 py-3 align-middle"><NotificationIcons channels={alert.notificationChannels} /></td>
+                <td className="px-3 py-3 align-middle text-[11px] font-black text-[#31406B]">{alert.escalationLevel}</td>
+                <td className="px-3 py-3 align-middle text-[10px] font-black text-[#31406B]">{alert.deadline}</td>
                 <td className="px-3 py-3 align-middle text-[11px] font-black text-[#101334]">{alert.ack}</td>
                 <td className="px-3 py-3 align-middle"><StatusBadge status={alert.status} /></td>
                 <td className="px-3 py-3 align-middle text-[10px] font-black text-[#31406B]">{alert.time}</td>
@@ -788,7 +885,7 @@ function AlertsTable({ ta, rows, page, footerText, onPageChange, onStatusChange,
       </div>
       <div className="mt-3 flex flex-col items-center justify-between gap-3 border-t border-[#EDF1F7] pt-3 sm:flex-row">
         <p className="text-[11px] font-bold text-[#68739F]">{footerText}</p>
-        <MockPagination page={page} onPageChange={onPageChange} />
+        <AlertPagination page={page} totalPages={totalPages} onPageChange={onPageChange} ta={ta} />
       </div>
     </Panel>
   );
@@ -807,11 +904,24 @@ export default function AlertsPage() {
   const [openMenuId, setOpenMenuId] = useState<string | number | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [isNotificationRulesModalOpen, setIsNotificationRulesModalOpen] = useState(false);
   const [isEscalationModalOpen, setIsEscalationModalOpen] = useState(false);
+  const [isCriticalStatusModalOpen, setIsCriticalStatusModalOpen] = useState(false);
+  const [isJourneyModalOpen, setIsJourneyModalOpen] = useState(false);
   const [isCreateAdvancedOpen, setIsCreateAdvancedOpen] = useState(false);
   const [isCreatingAlert, setIsCreatingAlert] = useState(false);
+  const [isLoadingNotificationRules, setIsLoadingNotificationRules] = useState(false);
+  const [isSavingNotificationRules, setIsSavingNotificationRules] = useState(false);
+  const [notificationRulesLoadFailed, setNotificationRulesLoadFailed] = useState(false);
   const [isSavingEscalation, setIsSavingEscalation] = useState(false);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
+  const [notificationToggles, setNotificationToggles] = useState({
+    emailEnabled: true,
+    whatsappEnabled: false,
+    escalationNotifications: true,
+    reminderNotifications: true,
+  });
+  const [notificationRuleDraft, setNotificationRuleDraft] = useState<NotificationRuleDraft[]>([]);
   const [escalationDraft, setEscalationDraft] = useState<EscalationDraft[]>([]);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -821,11 +931,10 @@ export default function AlertsPage() {
     setSelectedSources([]);
   }
 
-  // Dropdown data is lazy, while escalation matrix stays live for the flow and sidebar.
+  // Members and escalation data feed live alert panels plus create/edit dropdowns.
   const membersQuery = useQuery({
     queryKey: ["workspace-members"],
     queryFn: () => getWorkspaceMembers(),
-    enabled: isCreateModalOpen || isEscalationModalOpen,
     staleTime: 5 * 60 * 1000,
   });
   const escalationQuery = useQuery({
@@ -839,6 +948,11 @@ export default function AlertsPage() {
     enabled: isCreateModalOpen,
     staleTime: 5 * 60 * 1000,
   });
+  const integrationsQuery = useQuery({
+    queryKey: ["workspace-integrations"],
+    queryFn: () => getIntegrations(),
+    staleTime: 5 * 60 * 1000,
+  });
 
   const summaryQuery = useQuery({
     queryKey: ["alerts-summary"],
@@ -848,8 +962,13 @@ export default function AlertsPage() {
   const summary = summaryQuery.data ?? null;
 
   const alertsQuery = useQuery({
-    queryKey: ["alerts", { page, severity: severityFilter, status: statusFilter }],
-    queryFn: () => getAlerts({ page, limit: 10, severity: severityFilter || undefined, status: statusFilter || undefined }),
+    queryKey: ["alerts", { page, severity: severityFilter, status: statusFilter, search: searchQuery.trim() }],
+    queryFn: () => getAlerts({ page, limit: 10, severity: severityFilter || undefined, status: statusFilter || undefined, search: searchQuery.trim() || undefined }),
+    staleTime: 30 * 1000,
+  });
+  const criticalAlertsQuery = useQuery({
+    queryKey: ["alerts", "critical-delivery"],
+    queryFn: () => getAlerts({ page: 1, limit: 100, severity: "critical" }),
     staleTime: 30 * 1000,
   });
   const alertsData = alertsQuery.data;
@@ -869,6 +988,109 @@ export default function AlertsPage() {
   function openEscalationModal() {
     setEscalationDraft(matrixRecordsToDraft(escalationQuery.data, ta));
     setIsEscalationModalOpen(true);
+  }
+
+  function openNotificationRulesModal() {
+    const settings = queryClient.getQueryData<Awaited<ReturnType<typeof getNotificationSettings>>>(["notification-settings"]);
+    setNotificationToggles({
+      emailEnabled: settings?.emailEnabled ?? true,
+      whatsappEnabled: settings?.whatsappEnabled ?? false,
+      escalationNotifications: settings?.escalationNotifications ?? true,
+      reminderNotifications: settings?.reminderNotifications ?? true,
+    });
+    setNotificationRuleDraft(notificationRulesToDraft(settings?.customRules));
+    setIsNotificationRulesModalOpen(true);
+    setNotificationRulesLoadFailed(false);
+    setIsLoadingNotificationRules(!settings);
+    queryClient.fetchQuery({
+      queryKey: ["notification-settings"],
+      queryFn: () => getNotificationSettings(),
+      staleTime: 5 * 60 * 1000,
+    }).then((freshSettings) => {
+      if (!freshSettings) {
+        setNotificationRulesLoadFailed(true);
+        return;
+      }
+      setNotificationToggles({
+        emailEnabled: freshSettings.emailEnabled,
+        whatsappEnabled: freshSettings.whatsappEnabled,
+        escalationNotifications: freshSettings.escalationNotifications,
+        reminderNotifications: freshSettings.reminderNotifications,
+      });
+      setNotificationRuleDraft(notificationRulesToDraft(freshSettings.customRules));
+    }).catch(() => {
+      setNotificationRulesLoadFailed(true);
+    }).finally(() => {
+      setIsLoadingNotificationRules(false);
+    });
+  }
+
+  function updateNotificationRuleDraft(index: number, patch: Partial<NotificationRuleDraft>) {
+    setNotificationRuleDraft((prev) => prev.map((item, itemIndex) => {
+      if (itemIndex !== index) return item;
+      const next = { ...item, ...patch };
+      if (patch.trigger && patch.trigger !== item.trigger) {
+        next.condition = patch.trigger === "severity" ? "critical" : patch.trigger === "sla" ? "15 min" : "";
+      }
+      return next;
+    }));
+  }
+
+  function addNotificationRule() {
+    setNotificationRuleDraft((prev) => prev.length >= 20 ? prev : [...prev, createNotificationRuleDraft("severity")]);
+  }
+
+  function removeNotificationRule(index: number) {
+    setNotificationRuleDraft((prev) => prev.filter((_, itemIndex) => itemIndex !== index));
+  }
+
+  function applyNotificationPreset(preset: "critical" | "all" | "quiet") {
+    setNotificationRuleDraft(getNotificationPreset(preset));
+    setNotificationToggles({
+      emailEnabled: true,
+      whatsappEnabled: preset !== "quiet",
+      escalationNotifications: preset !== "quiet",
+      reminderNotifications: preset === "quiet" || preset === "critical",
+    });
+  }
+
+  function closeNotificationRulesModal() {
+    if (isSavingNotificationRules) return;
+    setIsNotificationRulesModalOpen(false);
+  }
+
+  function handleSaveNotificationRules() {
+    if (isSavingNotificationRules) return;
+    const customRules: NotificationRuleRecord[] = notificationRuleDraft.map((rule) => ({
+      id: rule.id.trim(),
+      trigger: rule.trigger,
+      condition: rule.condition.trim(),
+      channels: rule.channels.filter((channel) => channel.trim().length > 0),
+      enabled: rule.enabled,
+    }));
+    const hasInvalid = customRules.some((rule) => !rule.id || !rule.condition || rule.channels.length === 0);
+    if (customRules.length > 20 || hasInvalid) {
+      toastHook.error(ta("v2.notificationRulesModal.validationError"));
+      return;
+    }
+
+    setIsSavingNotificationRules(true);
+    updateNotificationSettings({ ...notificationToggles, customRules })
+      .then((updated) => {
+        if (updated) {
+          toastHook.success(ta("v2.notificationRulesModal.success"));
+          queryClient.invalidateQueries({ queryKey: ["notification-settings"] });
+          setIsNotificationRulesModalOpen(false);
+        } else {
+          toastHook.error(ta("v2.notificationRulesModal.error"));
+        }
+      })
+      .catch(() => {
+        toastHook.error(ta("v2.notificationRulesModal.error"));
+      })
+      .finally(() => {
+        setIsSavingNotificationRules(false);
+      });
   }
 
   function updateEscalationDraft(index: number, patch: Partial<EscalationDraft>) {
@@ -929,38 +1151,10 @@ export default function AlertsPage() {
       });
   }
 
-  // Map API data to AlertRow type dynamically in render
   const rows: AlertRow[] = alertsData?.data
-    ? alertsData.data.map((alert) => {
-        const mappedStatus = alert.status === "open" ? "New" : alert.status === "acknowledged" ? "Investigating" : "Resolved" as AlertStatus;
-        const alertSources = alert.sources?.filter(Boolean) ?? [];
-        const shownSources = alertSources.slice(0, 3).map(sourceNameToIconKey);
-        return {
-          id: alert.id,
-          title: alert.title,
-          description: alert.whatHappened || "",
-          tags: [alert.severity || "info"],
-          sourceLabel: alert.assignedTeam || alert.assignedTo || alert.type || "Unknown",
-          sources: shownSources.length > 0 ? shownSources : ["x"],
-          extraSources: Math.max(0, alertSources.length - shownSources.length),
-          sentiment: "NEGATIF" as Sentiment,
-          velocity: "+0%",
-          velocityPeriod: "in 24h",
-          velocityTrend: [0, 0, 0, 0, 0, 0, 0],
-          mentions: "0",
-          confidence: "-",
-          ack: "-",
-          notificationChannels: ["email"] as Array<"whatsapp" | "email" | "teams" | "slack">,
-          impact: "Medium" as "High" | "Medium",
-          status: optimisticStatuses[alert.id] ?? mappedStatus,
-          time: new Date(alert.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
-          tone: alert.severity === "critical" ? "red" : alert.severity === "high" ? "amber" : "green" as Exclude<Tone, "purple" | "slate">,
-        };
-      })
-    : mockRows.map((row) => ({
-        ...row,
-        status: optimisticStatuses[row.id] ?? row.status
-      }));
+    ? alertsData.data.map((alert) => mapAlertRecordToRow(alert, ta, optimisticStatuses))
+    : [];
+  const criticalRows = (criticalAlertsQuery.data?.data ?? []).map((alert) => mapAlertRecordToRow(alert, ta, optimisticStatuses));
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -1001,10 +1195,28 @@ export default function AlertsPage() {
       });
   }
 
-  const primaryAlert = rows[0] ?? mockRows[0];
+  const primaryAlert = rows[0] ?? {
+    id: "empty",
+    title: ta("empty.noIncident"),
+    description: ta("empty.noIncidentDesc"),
+    tags: [ta("table.statusNew")],
+    sourceLabel: ta("table.unassigned"),
+    sources: ["x"],
+    extraSources: 0,
+    escalationLevel: "-",
+    deadline: "-",
+    ack: ta("table.notAcknowledged"),
+    impact: "Medium" as const,
+    status: "New" as const,
+    time: "-",
+    tone: "green" as const,
+  };
+  const highlightedCriticalAlert = criticalRows[0] ?? null;
+  const totalCriticalAlerts = criticalAlertsQuery.data?.pagination?.total ?? summary?.by_severity?.critical ?? 0;
   const metrics = buildMetricCards(ta, summary);
   const td = useTranslations("DashboardStates");
-  const footerText = td("pagination.summary", { start: alertsData?.pagination ? (alertsData.pagination.page - 1) * alertsData.pagination.limit + 1 : 1, end: alertsData?.pagination ? Math.min(alertsData.pagination.page * alertsData.pagination.limit, alertsData.pagination.total) : 0, total: alertsData?.pagination?.total ?? 0, label: "alert" });
+  const totalPages = alertsData?.pagination?.totalPages ?? 1;
+  const footerText = td("pagination.summary", { start: alertsData?.pagination && alertsData.pagination.total > 0 ? (alertsData.pagination.page - 1) * alertsData.pagination.limit + 1 : 0, end: alertsData?.pagination ? Math.min(alertsData.pagination.page * alertsData.pagination.limit, alertsData.pagination.total) : 0, total: alertsData?.pagination?.total ?? 0, label: ta("table.alertsLabel") });
 
   return (
     <div className="mx-auto flex max-w-[1600px] flex-col gap-4 pb-6 text-[#101334]">
@@ -1014,35 +1226,294 @@ export default function AlertsPage() {
           <p className="mt-2 text-[14px] font-semibold text-[#31406B]">{ta("v2.header.desc")}</p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <button type="button" className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] sm:w-auto"><Settings size={14} />{ta("v2.header.notificationRules")}</button>
+          <button type="button" onClick={openNotificationRulesModal} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF] sm:w-auto"><Settings size={14} />{ta("v2.header.notificationRules")}</button>
           <button type="button" onClick={openEscalationModal} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF] sm:w-auto"><Users size={14} />{ta("v2.header.escalationMatrix")}</button>
           <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#4B2BFF] px-4 text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] sm:w-auto"><Plus size={15} />{ta("v2.header.createAlert")}</button>
         </div>
       </header>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-9">
-        {metrics.map((metric) => <MetricCard key={metric.label} metric={metric} />)}
+        {summaryQuery.isLoading ? (
+          Array.from({ length: 9 }, (_, index) => <MetricCardSkeleton key={index} />)
+        ) : (
+          metrics.map((metric) => <MetricCard key={metric.label} metric={metric} />)
+        )}
       </section>
+      {summaryQuery.isError || (!summaryQuery.isLoading && !summaryQuery.data) ? (
+        <div className="rounded-[10px] border border-[#FAD7D7] bg-[#FFF6F6] px-4 py-3 text-[12px] font-bold text-[#B42318]">
+          {ta("v2.metrics.summaryUnavailable")}
+        </div>
+      ) : null}
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_336px]">
         <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(250px,0.7fr)_minmax(250px,0.7fr)]">
-          <CriticalIncident alert={primaryAlert} ta={ta} />
-          <DeliveryStatus ta={ta} />
-          <StakeholderEngagement ta={ta} />
+          <CriticalIncident alert={highlightedCriticalAlert} totalCritical={totalCriticalAlerts} isLoading={criticalAlertsQuery.isLoading} ta={ta} />
+          <DeliveryStatus ta={ta} integrations={integrationsQuery.data?.data ?? []} isLoading={integrationsQuery.isLoading} />
+          <StakeholderEngagement ta={ta} summary={summary} memberCount={membersQuery.data ? membersQuery.data.length : null} isLoading={summaryQuery.isLoading || membersQuery.isLoading} />
         </div>
-        <div className="min-w-0"><CriticalDeliveryStatus alert={primaryAlert} ta={ta} /></div>
+        <div className="min-w-0"><CriticalDeliveryStatus alerts={criticalRows} total={totalCriticalAlerts} ta={ta} onViewAll={() => setIsCriticalStatusModalOpen(true)} isLoading={criticalAlertsQuery.isLoading} /></div>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_336px]">
         <div className="min-w-0 space-y-4">
           <EscalationFlow ta={ta} levels={escalationLevels} />
-          <AlertsTable ta={ta} rows={rows} page={page} footerText={footerText} onPageChange={setPage} onStatusChange={handleStatusChange} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} menuRef={menuRef} searchQuery={searchQuery} onSearchChange={setSearchQuery} severityFilter={severityFilter} onSeverityChange={setSeverityFilter} statusFilter={statusFilter} onStatusFilterChange={setStatusFilter} onOpenFilterModal={() => setIsFilterModalOpen(true)} />
+          <AlertsTable ta={ta} rows={rows} page={page} totalPages={totalPages} footerText={footerText} isLoading={alertsQuery.isLoading} isError={alertsQuery.isError || (!alertsQuery.isLoading && !alertsData)} onPageChange={setPage} onStatusChange={handleStatusChange} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} menuRef={menuRef} searchQuery={searchQuery} onSearchChange={(value) => { setSearchQuery(value); setPage(1); }} severityFilter={severityFilter} statusFilter={statusFilter} onOpenFilterModal={() => setIsFilterModalOpen(true)} />
         </div>
         <aside className="space-y-4">
           <EscalationMatrix ta={ta} levels={escalationLevels} isLoading={escalationQuery.isLoading} />
-          <AlertJourney alert={primaryAlert} ta={ta} />
+          <AlertJourney alert={primaryAlert} ta={ta} onViewTimeline={() => setIsJourneyModalOpen(true)} />
         </aside>
       </section>
+
+      {isCriticalStatusModalOpen && createPortal(
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-[#101334]/35 p-4 backdrop-blur-md" onClick={() => setIsCriticalStatusModalOpen(false)}>
+          <div className="flex max-h-[86vh] w-full max-w-2xl flex-col overflow-hidden rounded-[18px] border border-[#F4D8D8] bg-white text-[#101334] shadow-[0_24px_70px_rgba(16,24,40,0.22)]" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-start justify-between gap-4 border-b border-[#F4D8D8] bg-[#FFF6F6] p-5">
+              <div>
+                <h2 className="text-lg font-black text-[#101334]">{ta("v2.criticalStatus.modalTitle")}</h2>
+                <p className="mt-1 text-[11px] font-bold text-[#8A4B4B]">{ta("v2.criticalStatus.modalDesc")}</p>
+              </div>
+              <button type="button" onClick={() => setIsCriticalStatusModalOpen(false)} className="rounded-full bg-white p-2 text-[#98A2B3] shadow-sm transition hover:text-[#53608C]">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              {criticalAlertsQuery.isLoading ? (
+                <div className="space-y-2">
+                  {Array.from({ length: 4 }, (_, index) => <div key={index} className="h-14 animate-pulse rounded-[10px] bg-[#F8EDED]" />)}
+                </div>
+              ) : criticalRows.length === 0 ? (
+                <div className="rounded-[12px] border border-dashed border-[#F4D8D8] bg-[#FFFDFD] p-8 text-center">
+                  <p className="text-[13px] font-black text-[#101334]">{ta("v2.criticalStatus.noCritical")}</p>
+                  <p className="mt-1 text-[11px] font-bold text-[#8A94B8]">{ta("v2.criticalStatus.noCriticalDesc")}</p>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {criticalRows.map((item) => (
+                    <div key={item.id} className="grid gap-3 rounded-[12px] border border-[#F4D8D8] bg-[#FFFDFD] p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                      <div className="min-w-0">
+                        <Link href={`/alerts/${item.id}`} className="text-[12px] font-black text-[#101334] hover:text-[#465FFF]">{item.title}</Link>
+                        <p className="mt-1 line-clamp-2 text-[10px] font-bold text-[#68739F]">{item.description}</p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                        <StatusBadge status={item.status} />
+                        <span className="rounded-[8px] bg-[#EEF2FF] px-2 py-1 text-[9px] font-black text-[#465FFF]">{item.sourceLabel}</span>
+                        <span className="text-[10px] font-black text-[#31406B]">{item.time}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {isJourneyModalOpen && createPortal(
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-[#101334]/35 p-4 backdrop-blur-md" onClick={() => setIsJourneyModalOpen(false)}>
+          <div className="flex max-h-[86vh] w-full max-w-2xl flex-col overflow-hidden rounded-[18px] border border-[#DDE5F4] bg-white text-[#101334] shadow-[0_24px_70px_rgba(16,24,40,0.22)]" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-start justify-between gap-4 border-b border-[#EEF1F7] bg-[#F8FAFF] p-5">
+              <div className="min-w-0">
+                <h2 className="text-lg font-black text-[#101334]">{ta("v2.journey.modalTitle")}</h2>
+                <p className="mt-1 truncate text-[11px] font-bold text-[#68739F]">{primaryAlert.title}</p>
+              </div>
+              <button type="button" onClick={() => setIsJourneyModalOpen(false)} className="rounded-full bg-white p-2 text-[#98A2B3] shadow-sm transition hover:text-[#53608C]">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              <div className="relative space-y-5 pl-1 before:absolute before:left-[78px] before:top-2 before:h-[calc(100%-16px)] before:border-l before:border-[#DDE5F4]">
+                {buildAlertJourneySteps(primaryAlert, ta).map(([time, title, desc, Icon, tone]) => (
+                  <div key={`${time}-${title}`} className="relative grid grid-cols-[64px_32px_minmax(0,1fr)] items-start gap-3">
+                    <p className="pt-2 text-[9px] font-black text-[#31406B]">{time}</p>
+                    <ChannelIcon tone={tone}><Icon className="size-4" /></ChannelIcon>
+                    <div className="rounded-[10px] border border-[#E6EAF2] bg-[#FBFCFF] p-3">
+                      <p className="text-[12px] font-black text-[#101334]">{title}</p>
+                      <p className="mt-1 text-[10px] font-bold leading-snug text-[#53608C]">{desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {isNotificationRulesModalOpen && createPortal(
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-[#101334]/35 p-4 backdrop-blur-md" onClick={closeNotificationRulesModal}>
+          <div className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-[18px] border border-[#DDE5F4] bg-white text-[#101334] shadow-[0_24px_70px_rgba(16,24,40,0.22)]" onClick={(event) => event.stopPropagation()}>
+            <div className="relative overflow-hidden border-b border-[#E7ECF6] bg-linear-to-br from-[#F8FAFF] via-white to-[#EEF2FF] p-5">
+              <div className="absolute right-8 top-3 size-28 rounded-full bg-[#465FFF]/10 blur-2xl" />
+              <div className="relative flex items-start justify-between gap-4">
+                <div>
+                  <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#DDE3EF] bg-white/80 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-[#465FFF]">
+                    <Bell size={12} /> {ta("v2.notificationRulesModal.badge")}
+                  </div>
+                  <h2 className="text-lg font-black tracking-[-0.03em] text-[#101334]">{ta("v2.notificationRulesModal.title")}</h2>
+                  <p className="mt-1 text-[11px] font-bold text-[#68739F]">{ta("v2.notificationRulesModal.desc")}</p>
+                </div>
+                <button type="button" onClick={closeNotificationRulesModal} disabled={isSavingNotificationRules} className="rounded-full bg-white/80 p-2 text-[#98A2B3] shadow-sm transition hover:bg-white hover:text-[#53608C] disabled:cursor-not-allowed disabled:opacity-60">
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-5">
+              {isLoadingNotificationRules ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 5 }, (_, index) => <div key={index} className="h-16 animate-pulse rounded-[12px] bg-[#F1F4FB]" />)}
+                </div>
+              ) : (
+                <div className="grid gap-5 lg:grid-cols-[270px_minmax(0,1fr)]">
+                  <aside className="space-y-3">
+                    <div className="rounded-[14px] border border-[#E6EAF2] bg-[#FBFCFF] p-4">
+                      <p className="text-[12px] font-black text-[#101334]">{ta("v2.notificationRulesModal.deliveryTitle")}</p>
+                      <p className="mt-1 text-[10px] font-bold leading-snug text-[#8A94B8]">{ta("v2.notificationRulesModal.deliveryDesc")}</p>
+                      <div className="mt-4 space-y-2">
+                        {([
+                          ["emailEnabled", "emailEnabled"],
+                          ["whatsappEnabled", "whatsappEnabled"],
+                          ["escalationNotifications", "escalationNotifications"],
+                          ["reminderNotifications", "reminderNotifications"],
+                        ] as const).map(([key, labelKey]) => (
+                          <label key={key} className="flex items-center justify-between gap-3 rounded-[10px] border border-[#E6EAF2] bg-white px-3 py-2.5">
+                            <span>
+                              <span className="block text-[11px] font-black text-[#101334]">{ta(`v2.notificationRulesModal.toggles.${labelKey}`)}</span>
+                              <span className="mt-0.5 block text-[9px] font-bold text-[#8A94B8]">{ta(`v2.notificationRulesModal.toggleDesc.${labelKey}`)}</span>
+                            </span>
+                            <input
+                              type="checkbox"
+                              checked={notificationToggles[key]}
+                              onChange={(event) => setNotificationToggles((prev) => ({ ...prev, [key]: event.target.checked }))}
+                              className="size-4 shrink-0 accent-[#465FFF]"
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="rounded-[14px] border border-[#E6EAF2] bg-white p-4">
+                      <p className="text-[12px] font-black text-[#101334]">{ta("v2.notificationRulesModal.presets")}</p>
+                      <div className="mt-3 space-y-2">
+                        {([
+                          ["critical", "presetCritical", "presetCriticalDesc"],
+                          ["all", "presetAll", "presetAllDesc"],
+                          ["quiet", "presetQuiet", "presetQuietDesc"],
+                        ] as const).map(([preset, titleKey, descKey]) => (
+                          <button key={preset} type="button" onClick={() => applyNotificationPreset(preset)} className="w-full rounded-[11px] border border-[#DDE3EF] bg-[#FBFCFF] p-3 text-left transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF]">
+                            <span className="block text-[11px] font-black text-[#101334]">{ta(`v2.notificationRulesModal.${titleKey}`)}</span>
+                            <span className="mt-1 block text-[9px] font-bold leading-snug text-[#8A94B8]">{ta(`v2.notificationRulesModal.${descKey}`)}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </aside>
+
+                  <section className="min-w-0 rounded-[14px] border border-[#E6EAF2] bg-white">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EEF1F7] p-4">
+                      <div>
+                        <p className="text-[13px] font-black text-[#101334]">{ta("v2.notificationRulesModal.rulesTitle")}</p>
+                        <p className="mt-0.5 text-[10px] font-bold text-[#8A94B8]">{ta("v2.notificationRulesModal.rulesDesc")}</p>
+                      </div>
+                      <button type="button" onClick={addNotificationRule} disabled={notificationRuleDraft.length >= 20} className="inline-flex h-9 items-center justify-center gap-2 rounded-[9px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#465FFF] transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-50">
+                        <Plus size={14} /> {ta("v2.notificationRulesModal.addRule")}
+                      </button>
+                    </div>
+
+                    {notificationRulesLoadFailed ? (
+                      <div className="m-4 rounded-[10px] border border-[#FAD7D7] bg-[#FFF6F6] px-4 py-3 text-[11px] font-bold text-[#B42318]">
+                        {ta("v2.notificationRulesModal.loadWarning")}
+                      </div>
+                    ) : null}
+
+                    <div className="space-y-3 p-4">
+                      {notificationRuleDraft.length === 0 ? (
+                        <div className="rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#FBFCFF] p-8 text-center">
+                          <p className="text-[13px] font-black text-[#101334]">{ta("v2.notificationRulesModal.noRules")}</p>
+                          <p className="mt-1 text-[10px] font-bold text-[#8A94B8]">{ta("v2.notificationRulesModal.noRulesDesc")}</p>
+                        </div>
+                      ) : notificationRuleDraft.map((rule, index) => (
+                        <div key={rule.id} className="rounded-[12px] border border-[#E6EAF2] bg-[#FBFCFF] p-3">
+                          <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_76px_36px] md:items-end">
+                            <label className="block">
+                              <span className="mb-1.5 block text-[10px] font-black text-[#68739F]">{ta("v2.notificationRulesModal.triggerLabel")}</span>
+                              <select
+                                value={rule.trigger}
+                                onChange={(event) => updateNotificationRuleDraft(index, { trigger: event.target.value as NotificationRuleTrigger })}
+                                className="h-10 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[16px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] md:text-[12px]"
+                              >
+                                {(["severity", "sentiment", "sla", "keyword"] as NotificationRuleTrigger[]).map((trigger) => (
+                                  <option key={trigger} value={trigger}>{ta(`v2.notificationRulesModal.triggers.${trigger}`)}</option>
+                                ))}
+                              </select>
+                            </label>
+                            <label className="block">
+                              <span className="mb-1.5 block text-[10px] font-black text-[#68739F]">{ta("v2.notificationRulesModal.conditionLabel")}</span>
+                              <select
+                                value={rule.condition}
+                                onChange={(event) => updateNotificationRuleDraft(index, { condition: event.target.value })}
+                                className="h-10 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[16px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] md:text-[12px]"
+                              >
+                                {getRuleConditionOptions(rule.trigger, ta).map((option) => (
+                                  <option key={option.value} value={option.value}>{option.label}</option>
+                                ))}
+                              </select>
+                            </label>
+                            <label className="block">
+                              <span className="mb-1.5 block text-[10px] font-black text-[#68739F]">{ta("v2.notificationRulesModal.actionLabel")}</span>
+                              <select
+                                value={rule.channels[0] ?? "standard"}
+                                onChange={(event) => updateNotificationRuleDraft(index, { channels: [event.target.value] })}
+                                className="h-10 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[16px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] md:text-[12px]"
+                              >
+                                {["instant", "standard", "all"].map((channel) => (
+                                  <option key={channel} value={channel}>{channelLabel(channel, ta)}</option>
+                                ))}
+                              </select>
+                            </label>
+                            <label className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#31406B]">
+                              <input
+                                type="checkbox"
+                                checked={rule.enabled}
+                                onChange={(event) => updateNotificationRuleDraft(index, { enabled: event.target.checked })}
+                                className="size-3.5 accent-[#465FFF]"
+                              />
+                              {rule.enabled ? ta("v2.notificationRulesModal.enabled") : ta("v2.notificationRulesModal.disabled")}
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => removeNotificationRule(index)}
+                              className="flex h-10 items-center justify-center rounded-[8px] border border-[#F3D4D4] bg-white text-[#EF4444] transition hover:bg-[#FFF5F5]"
+                              aria-label={ta("v2.notificationRulesModal.removeRule")}
+                            >
+                              <X size={15} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col-reverse gap-2 border-t border-[#EEF1F7] bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-[10px] font-bold text-[#8A94B8]">{ta("v2.notificationRulesModal.limitHint")}</p>
+              <div className="flex gap-2">
+                <button type="button" onClick={closeNotificationRulesModal} disabled={isSavingNotificationRules} className="h-10 rounded-[10px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-60">
+                  {ta("v2.notificationRulesModal.cancel")}
+                </button>
+                <button type="button" onClick={handleSaveNotificationRules} disabled={isSavingNotificationRules || isLoadingNotificationRules} className="h-10 rounded-[10px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-5 text-[12px] font-black text-white shadow-[0_12px_22px_rgba(70,95,255,0.22)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
+                  {isSavingNotificationRules ? ta("v2.notificationRulesModal.saving") : ta("v2.notificationRulesModal.save")}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {isEscalationModalOpen && createPortal(
         <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={closeEscalationModal}>
@@ -1333,39 +1804,60 @@ export default function AlertsPage() {
 
       {/* Filter Modal */}
       {isFilterModalOpen && createPortal(
-        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsFilterModalOpen(false)}>
-          <div className="flex w-full max-w-sm flex-col rounded-[14px] border border-[#E8ECF5] bg-white text-[#101334] shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
-              <h2 className="text-lg font-black text-[#101334]">{ta("filter.title")}</h2>
-              <button type="button" onClick={() => setIsFilterModalOpen(false)} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-[#101334]/35 p-4 backdrop-blur-md" onClick={() => setIsFilterModalOpen(false)}>
+          <div className="flex w-full max-w-xl flex-col overflow-hidden rounded-[18px] border border-[#DDE5F4] bg-white text-[#101334] shadow-[0_24px_70px_rgba(16,24,40,0.22)]" onClick={(e) => e.stopPropagation()}>
+            <div className="relative overflow-hidden border-b border-[#E7ECF6] bg-linear-to-br from-[#F8FAFF] via-white to-[#EEF2FF] p-5">
+              <div className="absolute right-6 top-4 size-24 rounded-full bg-[#465FFF]/10 blur-2xl" />
+              <div className="relative flex items-start justify-between gap-4">
+                <div>
+                  <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#DDE3EF] bg-white/80 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-[#465FFF]">
+                    <SlidersHorizontal size={12} /> {ta("filter.badge")}
+                  </div>
+                  <h2 className="text-lg font-black tracking-[-0.03em] text-[#101334]">{ta("filter.title")}</h2>
+                  <p className="mt-1 text-[11px] font-bold text-[#68739F]">{ta("filter.desc")}</p>
+                </div>
+                <button type="button" onClick={() => setIsFilterModalOpen(false)} className="rounded-full bg-white/80 p-2 text-[#98A2B3] shadow-sm transition hover:bg-white hover:text-[#53608C]">
                 <X size={20} />
               </button>
+              </div>
             </div>
-            <div className="p-5 space-y-4">
-              <div>
-                <p className="mb-2 text-[11px] font-black text-[#68739F]">{ta("v2.list.allSeverity")}</p>
-                <div className="flex flex-wrap gap-2">
+            <div className="space-y-4 p-5">
+              <div className="rounded-[14px] border border-[#E6EAF2] bg-[#FBFCFF] p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[12px] font-black text-[#101334]">{ta("table.severity")}</p>
+                    <p className="mt-0.5 text-[10px] font-bold text-[#8A94B8]">{ta("filter.severityDesc")}</p>
+                  </div>
+                  {severityFilter ? <span className="rounded-full bg-[#465FFF]/10 px-2 py-1 text-[9px] font-black text-[#465FFF]">{severityFilter}</span> : null}
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                   {[
                     { value: "", label: ta("v2.list.allSeverity") },
                     { value: "critical", label: ta("v2.incident.critical") },
-                    { value: "high", label: ta("v2.incident.high") },
-                    { value: "medium", label: ta("v2.incident.high").replace("High", "Medium") },
-                    { value: "low", label: ta("v2.incident.high").replace("High", "Low") },
+                    { value: "high", label: ta("v2.createForm.severityHigh") },
+                    { value: "medium", label: ta("v2.createForm.severityMedium") },
+                    { value: "low", label: ta("v2.createForm.severityLow") },
                   ].map((option) => (
                     <button
                       key={option.value}
                       type="button"
-                      onClick={() => setSeverityFilter(option.value)}
-                      className={cn("rounded-[8px] px-3 py-1.5 text-[11px] font-bold transition", severityFilter === option.value ? "bg-[#465FFF] text-white" : "border border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B] hover:bg-[#F8FAFF]")}
+                      onClick={() => { setSeverityFilter(option.value); setPage(1); }}
+                      className={cn("rounded-[10px] px-3 py-2 text-[11px] font-black transition", severityFilter === option.value ? "bg-[#465FFF] text-white shadow-[0_10px_20px_rgba(70,95,255,0.18)]" : "border border-[#DDE3EF] bg-white text-[#31406B] hover:border-[#C9D4F6] hover:bg-[#F8FAFF]")}
                     >
                       {option.label}
                     </button>
                   ))}
                 </div>
               </div>
-              <div>
-                <p className="mb-2 text-[11px] font-black text-[#68739F]">{ta("filter.allStatus")}</p>
-                <div className="flex flex-wrap gap-2">
+              <div className="rounded-[14px] border border-[#E6EAF2] bg-[#FBFCFF] p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[12px] font-black text-[#101334]">{ta("table.status")}</p>
+                    <p className="mt-0.5 text-[10px] font-bold text-[#8A94B8]">{ta("filter.statusDesc")}</p>
+                  </div>
+                  {statusFilter ? <span className="rounded-full bg-[#465FFF]/10 px-2 py-1 text-[9px] font-black text-[#465FFF]">{statusFilter}</span> : null}
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {[
                     { value: "", label: ta("filter.allStatus") },
                     { value: "open", label: ta("table.statusNew") },
@@ -1375,16 +1867,24 @@ export default function AlertsPage() {
                     <button
                       key={option.value}
                       type="button"
-                      onClick={() => setStatusFilter(option.value)}
-                      className={cn("rounded-[8px] px-3 py-1.5 text-[11px] font-bold transition", statusFilter === option.value ? "bg-[#465FFF] text-white" : "border border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B] hover:bg-[#F8FAFF]")}
+                      onClick={() => { setStatusFilter(option.value); setPage(1); }}
+                      className={cn("rounded-[10px] px-3 py-2 text-[11px] font-black transition", statusFilter === option.value ? "bg-[#465FFF] text-white shadow-[0_10px_20px_rgba(70,95,255,0.18)]" : "border border-[#DDE3EF] bg-white text-[#31406B] hover:border-[#C9D4F6] hover:bg-[#F8FAFF]")}
                     >
                       {option.label}
                     </button>
                   ))}
                 </div>
               </div>
-              <div className="pt-3 border-t border-[#EEF1F7]">
-                <button type="button" onClick={() => setIsFilterModalOpen(false)} className="w-full rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 py-2.5 text-[12px] font-black text-white transition hover:opacity-90">
+            </div>
+            <div className="flex flex-col-reverse gap-2 border-t border-[#EEF1F7] bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+              <button type="button" onClick={() => { setSearchQuery(""); setSeverityFilter(""); setStatusFilter(""); setPage(1); }} className="inline-flex h-10 items-center justify-center rounded-[10px] border border-[#E6EAF2] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:border-[#F3B4B4] hover:bg-[#FFF7F7] hover:text-[#EF4444]">
+                {ta("filter.clearFilter")}
+              </button>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setIsFilterModalOpen(false)} className="h-10 rounded-[10px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:bg-[#F8FAFF]">
+                  {ta("filter.cancel")}
+                </button>
+                <button type="button" onClick={() => setIsFilterModalOpen(false)} className="h-10 rounded-[10px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-5 text-[12px] font-black text-white shadow-[0_12px_22px_rgba(70,95,255,0.22)] transition hover:opacity-90">
                   {ta("filter.apply")}
                 </button>
               </div>

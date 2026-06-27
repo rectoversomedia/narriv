@@ -141,13 +141,7 @@ type DonutDatum = { name: string; value: number; tone: Tone };
 type LifecycleKey = "emerging" | "accelerating" | "peaking" | "declining" | "dormant";
 type LifecycleSeries = Record<LifecycleKey, number[]>;
 
-const fallbackLifecycleSeries: LifecycleSeries = {
-  emerging: [1, 2, 2, 3, 4, 5, 7],
-  accelerating: [2, 3, 3, 4, 5, 5, 6],
-  peaking: [1, 1, 2, 2, 3, 3, 3],
-  declining: [7, 6, 6, 5, 5, 4, 3],
-  dormant: [8, 8, 7, 7, 6, 6, 5],
-};
+const emptyLifecycleSeries = [0, 0, 0, 0, 0, 0, 0];
 
 function text(value: LocalizedText, language: "en" | "id") {
   return value[language] || value.en;
@@ -301,7 +295,7 @@ function buildLifecycleFromClusters(clusters: Cluster[]) {
   const series = Object.fromEntries(
     (Object.keys(counts) as LifecycleKey[]).map((key) => {
       const count = counts[key];
-      return [key, count > 0 ? [Math.max(0, count - 2), Math.max(0, count - 1), count, count + 1, count, count + 2, count] : fallbackLifecycleSeries[key]];
+      return [key, count > 0 ? [Math.max(0, count - 2), Math.max(0, count - 1), count, count + 1, count, count + 2, count] : emptyLifecycleSeries];
     })
   ) as LifecycleSeries;
 
@@ -555,16 +549,17 @@ export default function IntelligencePage() {
   });
   const liveNarrativeRecords = narrativesQuery.data?.data ?? [];
   const liveClusters = liveNarrativeRecords.length > 0 ? buildNarrativeClusters(liveNarrativeRecords, { sources: (count) => ti("labels.sources", { count }), mediumPriority: ti("mediumPriorityFallback") }) : [];
-  const isLiveUnavailable = narrativesQuery.data === null;
+  const isLiveUnavailable = narrativesQuery.data === null || narrativesQuery.isError;
   const clusters = liveClusters;
   const emptyCluster = buildEmptyCluster(ti);
   const selectedCluster = clusters.find((cluster) => cluster.id === selectedClusterId) ?? clusters[0] ?? emptyCluster;
   const selectedNarrativeId = selectedCluster.id === "empty" ? null : selectedCluster.id;
+  const selectedLifecycleKey = selectedNarrativeId ? classifyLifecycle(selectedCluster) : null;
   const narrativeConnections = buildNarrativeConnections(clusters);
   const narrativeDetailQuery = useQuery({
     queryKey: ["narrative-detail", selectedNarrativeId],
     queryFn: () => selectedNarrativeId ? getNarrativeById(selectedNarrativeId) : null,
-    enabled: Boolean(selectedNarrativeId && (isAnalysisOpen || isSelectedActionsOpen)),
+    enabled: Boolean(selectedNarrativeId && isAnalysisOpen),
     staleTime: 30 * 1000,
   });
   const sourcesQuery = useQuery({
@@ -576,8 +571,9 @@ export default function IntelligencePage() {
   const totalSourcesCount = sourcesQuery.data?.pagination.total ?? 0;
   const activeSourcesCount = sourcesQuery.data?.data.filter(s => s.isActive !== false).length ?? 0;
   const coveragePercent = totalSourcesCount > 0 ? Math.round((activeSourcesCount / totalSourcesCount) * 100) : 0;
+  const isSourcesUnavailable = sourcesQuery.data === null || sourcesQuery.isError;
   
-  const isApiHealthy = !isLiveUnavailable && !sourcesQuery.isError;
+  const isApiHealthy = !isLiveUnavailable && !isSourcesUnavailable;
 
   const selectedTone = toneStyles[selectedCluster.tone];
   const narrativeShareData = buildNarrativeShareData(clusters, { noData: ti("labels.noData"), others: ti("labels.others") });
@@ -650,8 +646,8 @@ export default function IntelligencePage() {
     {
       icon: Bot,
       title: ti("footer.aiStatus"),
-      value: isApiHealthy ? ti("footer.operational") : "Degraded",
-      detail: isApiHealthy ? ti("footer.systemsNormal") : "API connection issues",
+      value: isApiHealthy ? ti("footer.operational") : ti("footer.degraded"),
+      detail: isApiHealthy ? ti("footer.systemsNormal") : ti("footer.apiIssues"),
       tone: (isApiHealthy ? "green" : "red") as Tone,
     },
     {
@@ -709,7 +705,7 @@ export default function IntelligencePage() {
 
       {narrativesQuery.isPending ? <PanelSkeleton /> : null}
       {isLiveUnavailable ? <DashboardErrorState title={ti("error.title")} description={ti("error.desc")} onRetry={() => void narrativesQuery.refetch()} minHeight="min-h-[150px]" /> : null}
-      {narrativesQuery.data && liveClusters.length === 0 ? <DashboardEmptyState title={ti("empty.title")} description={ti("empty.desc")} icon="search" minHeight="min-h-[180px]" /> : null}
+      {!isLiveUnavailable && narrativesQuery.data && liveClusters.length === 0 ? <DashboardEmptyState title={ti("empty.title")} description={ti("empty.desc")} icon="search" minHeight="min-h-[180px]" /> : null}
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_408px]">
         <div className="flex min-w-0 flex-col gap-4">
@@ -955,10 +951,10 @@ export default function IntelligencePage() {
             <CardContent className="p-4">
               <div className="mb-3 flex items-center justify-between gap-3 relative" ref={actionsMenuRef}>
                 <p className="text-[11px] font-black text-[#53608C]">{ti("selectedNarrative.title")}</p>
-                <button type="button" onClick={() => setIsSelectedActionsOpen((v) => !v)} aria-label={ti("selectedNarrative.moreActions")} aria-expanded={isSelectedActionsOpen} className="rounded-full p-1 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+                <button type="button" onClick={() => setIsSelectedActionsOpen((v) => !v)} disabled={!selectedNarrativeId} aria-label={ti("selectedNarrative.moreActions")} aria-expanded={isSelectedActionsOpen} className="rounded-full p-1 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C] disabled:cursor-not-allowed disabled:opacity-40">
                   <MoreHorizontal size={16} />
                 </button>
-                {isSelectedActionsOpen ? (
+                {isSelectedActionsOpen && selectedNarrativeId ? (
                   <div className="absolute right-0 top-full z-50 mt-1 w-[160px] overflow-hidden rounded-[12px] border border-[#E5E9F3] bg-white p-1.5 shadow-[0_16px_40px_rgba(16,24,40,0.12)]">
                     <button type="button" onClick={() => { setIsSelectedActionsOpen(false); setIsAnalysisOpen(true); }} className="flex w-full items-center gap-2 rounded-[9px] px-3 py-2.5 text-left text-[11px] font-extrabold text-[#475070] transition hover:bg-[#F8FAFF]">
                       <FileText size={13} />
@@ -966,9 +962,9 @@ export default function IntelligencePage() {
                     </button>
                     <button type="button" onClick={() => { 
                       setIsSelectedActionsOpen(false); 
-                      navigator.clipboard.writeText(selectedCluster.id)
-                        .then(() => toastHook.success("Narrative ID copied to clipboard"))
-                        .catch(() => toastHook.error("Failed to copy ID")); 
+                      navigator.clipboard.writeText(selectedNarrativeId)
+                        .then(() => toastHook.success(ti("toast.copySuccess")))
+                        .catch(() => toastHook.error(ti("toast.copyFailed"))); 
                     }} className="flex w-full items-center gap-2 rounded-[9px] px-3 py-2.5 text-left text-[11px] font-extrabold text-[#475070] transition hover:bg-[#F8FAFF]">
                       <ClipboardCopy size={13} />
                       {ti("actions.copyId")}
@@ -988,8 +984,12 @@ export default function IntelligencePage() {
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 <TrendBadge value={selectedCluster.growth} tone={selectedCluster.tone} className="px-2.5 py-1 text-[10px]" />
-                <Badge variant="default" className="normal-case tracking-normal px-2.5 py-1 text-[10px]">{ti("selectedNarrative.highImpact")}</Badge>
-                <Badge variant="purple" className="normal-case tracking-normal px-2.5 py-1 text-[10px]">{ti("selectedNarrative.emerging")}</Badge>
+                <TrendBadge value={text(selectedCluster.priority, language)} tone={selectedCluster.priorityTone} className="px-2.5 py-1 text-[10px]" />
+                {selectedLifecycleKey ? (
+                  <Badge variant={toneStyles[selectedCluster.tone].badge} className="normal-case tracking-normal px-2.5 py-1 text-[10px]">
+                    {ti(`lifecycle.phases.${selectedLifecycleKey}.title`)}
+                  </Badge>
+                ) : null}
               </div>
               <div className="mt-3 border-t border-[#EEF1F7] pt-3">
                 <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#53608C]">{ti("selectedNarrative.related")}</p>
@@ -1010,7 +1010,7 @@ export default function IntelligencePage() {
                   </div>
                 </div>
               </div>
-              <button type="button" onClick={() => setIsAnalysisOpen(true)} className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-[9px] bg-gradient-to-r from-[#465FFF] to-[#8B5CFF] text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.22)] transition hover:brightness-105">
+              <button type="button" onClick={() => setIsAnalysisOpen(true)} disabled={!selectedNarrativeId} className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-[9px] bg-gradient-to-r from-[#465FFF] to-[#8B5CFF] text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.22)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50">
                 {ti("selectedNarrative.btnAnalysis")}
                 <ChevronRight size={14} />
               </button>
@@ -1100,6 +1100,15 @@ export default function IntelligencePage() {
                 <div className="flex h-40 items-center justify-center">
                   <RefreshCcw className="animate-spin text-[#8A94B8]" size={24} />
                 </div>
+              ) : narrativeDetailQuery.data === null || narrativeDetailQuery.isError ? (
+                <div className="flex h-48 flex-col items-center justify-center text-center">
+                  <Info size={24} className="text-[#8A94B8]" />
+                  <p className="mt-2 text-sm font-black text-[#53608C]">{ti("analysisModal.errorTitle")}</p>
+                  <p className="mt-1 max-w-sm text-xs font-semibold leading-relaxed text-[#8A94B8]">{ti("analysisModal.errorDesc")}</p>
+                  <button type="button" onClick={() => void narrativeDetailQuery.refetch()} className="mt-4 rounded-[8px] border border-[#D9DEEA] bg-white px-4 py-2 text-[11px] font-black text-[#53608C] transition hover:bg-[#F8FAFF]">
+                    {ti("retry")}
+                  </button>
+                </div>
               ) : narrativeDetailQuery.data ? (
                 <div className="grid gap-6">
                   <div>
@@ -1125,7 +1134,7 @@ export default function IntelligencePage() {
                       {narrativeDetailQuery.data.relatedSignals.slice(0, 5).map((sig) => (
                         <div key={sig.id} className="rounded-lg border border-[#EEF1F7] p-3">
                           <p className="text-sm font-bold text-[#101334]">{sig.title}</p>
-                          <p className="mt-1 text-xs font-medium text-[#737D9F] line-clamp-2">{sig.content || "No content"}</p>
+                          <p className="mt-1 text-xs font-medium text-[#737D9F] line-clamp-2">{sig.content || ti("analysisModal.noContent")}</p>
                         </div>
                       ))}
                     </div>

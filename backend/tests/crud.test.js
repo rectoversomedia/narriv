@@ -48,11 +48,28 @@ function resetState() {
 function matchesWhere(record, where = {}) {
   return Object.entries(where).every(([key, value]) => {
     if (value === undefined) return true;
+    if (key === 'OR' && Array.isArray(value)) {
+      return value.some((condition) => matchesWhere(record, condition));
+    }
     if (value && typeof value === 'object' && !Array.isArray(value)) {
       if (Array.isArray(value.in)) return value.in.includes(record[key]);
       if (value.not !== undefined) return record[key] !== value.not;
+      if (value.equals !== undefined) {
+        const actual = String(record[key] ?? '');
+        const expected = String(value.equals);
+        return value.mode === 'insensitive'
+          ? actual.toLowerCase() === expected.toLowerCase()
+          : actual === expected;
+      }
       if (value.gte !== undefined) return new Date(record[key]).getTime() >= new Date(value.gte).getTime();
       if (value.lte !== undefined) return new Date(record[key]).getTime() <= new Date(value.lte).getTime();
+      if (value.contains !== undefined) {
+        const actual = String(record[key] ?? '');
+        const expected = String(value.contains);
+        return value.mode === 'insensitive'
+          ? actual.toLowerCase().includes(expected.toLowerCase())
+          : actual.includes(expected);
+      }
     }
     if (key === 'workspaceId' && value && typeof value === 'object' && Array.isArray(value.in)) {
       return value.in.includes(record.workspaceId);
@@ -155,6 +172,12 @@ const mockPrisma = {
       return alerts[index];
     }),
     countMany: jest.fn(async () => 0),
+  },
+  escalationMatrix: {
+    findMany: jest.fn(async () => [
+      { slaMinutes: 5, order: 0 },
+      { slaMinutes: 15, order: 1 },
+    ]),
   },
   workspaceSettings: {
     findUnique: jest.fn(async ({ where }) => (workspaceSettings?.workspaceId === where.workspaceId ? workspaceSettings : null)),
@@ -392,6 +415,14 @@ describe('CRUD Integration Endpoints', () => {
       expect(listRes.status).toBe(200);
       expect(listRes.body.data).toHaveLength(1);
 
+      const searchRes = await request(app)
+        .get('/api/alerts?search=spike&limit=500')
+        .set(authHeader());
+
+      expect(searchRes.status).toBe(200);
+      expect(searchRes.body.data).toHaveLength(1);
+      expect(searchRes.body.pagination.limit).toBe(100);
+
       const detailRes = await request(app)
         .get(`/api/alerts/${ALERT_ID}`)
         .set(authHeader());
@@ -435,6 +466,7 @@ describe('CRUD Integration Endpoints', () => {
           status: 'acknowledged',
           escalationLevel: 'high',
           createdAt: now.toISOString(),
+          acknowledgedAt: now.toISOString(),
         },
         {
           id: '00000000-0000-4000-8000-000000000403',
@@ -445,6 +477,8 @@ describe('CRUD Integration Endpoints', () => {
           status: 'resolved',
           escalationLevel: 'medium',
           createdAt: new Date(now.getTime() - 26 * 60 * 60 * 1000).toISOString(),
+          acknowledgedAt: new Date(now.getTime() - 25 * 60 * 60 * 1000).toISOString(),
+          resolvedAt: new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString(),
         },
       );
 
@@ -462,6 +496,12 @@ describe('CRUD Integration Endpoints', () => {
       expect(res.body.timeline).toHaveLength(24);
       expect(res.body.timeline_labels).toHaveLength(24);
       expect(res.body.timeline.reduce((sum, value) => sum + value, 0)).toBe(2);
+      expect(res.body.acknowledged_count).toBe(2);
+      expect(res.body.resolved_count).toBe(1);
+      expect(res.body.escalated_count).toBe(1);
+      expect(res.body.delivery_success_rate).toBe(50);
+      expect(res.body.acknowledgment_rate).toBe(67);
+      expect(res.body.sla_target_minutes).toBe(5);
     });
 
     it('hides alerts outside the user workspace scope', async () => {
@@ -556,6 +596,40 @@ describe('CRUD Integration Endpoints', () => {
   });
 
   describe('Signals', () => {
+    it('lists workspace signals with sentiment filtering and capped pagination limit', async () => {
+      const now = new Date();
+      signals.push(
+        {
+          id: 'signal-negative',
+          workspaceId: WORKSPACE_ID,
+          title: 'Negative payment mention',
+          content: 'Payment issue',
+          platform: 'x',
+          sentiment: 'negative',
+          capturedAt: now.toISOString(),
+        },
+        {
+          id: 'signal-positive',
+          workspaceId: WORKSPACE_ID,
+          title: 'Positive promo mention',
+          content: 'Promo works well',
+          platform: 'instagram',
+          sentiment: 'positive',
+          capturedAt: now.toISOString(),
+        },
+      );
+
+      const res = await request(app)
+        .get('/signals?sentiment=negative&limit=500')
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toHaveLength(1);
+      expect(res.body.data[0]).toMatchObject({ id: 'signal-negative', sentiment: 'negative' });
+      expect(res.body.pagination.limit).toBe(100);
+      expect(res.body.pagination.total).toBe(1);
+    });
+
     it('returns live signal metadata with hourly timeline and total signal count', async () => {
       const now = new Date();
       signals.push(

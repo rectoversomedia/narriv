@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef, type ComponentType, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   CalendarDays,
@@ -16,7 +16,6 @@ import {
   MessageCircle,
   Info,
   ChevronDown,
-  ExternalLink,
   ChevronRight,
   CheckCircle,
   AlertCircle,
@@ -27,7 +26,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardErrorState, MetricRowSkeleton } from "@/components/dashboard/dashboard-states";
-import { getVisibility, getVisibilitySummary, getVisibilityTrends, triggerVisibilityAnalysis, type VisibilityResponse } from "@/lib/api-service";
+import { getVisibility, getVisibilitySummary, getVisibilityTrends, getWorkspaceSettings, triggerVisibilityAnalysis, type VisibilityResponse } from "@/lib/api-service";
 import { useUiStore } from "@/store/useUiStore";
 import {
   OpenAILight,
@@ -481,6 +480,7 @@ export default function VisibilityPage() {
   const tEmpty = useTranslations("Visibility.empty");
   const language = useUiStore((state) => state.language);
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [selectedDays, setSelectedDays] = useState(30);
   const [isDateMenuOpen, setIsDateMenuOpen] = useState(false);
   const [isMentionsModalOpen, setIsMentionsModalOpen] = useState(false);
@@ -512,43 +512,60 @@ export default function VisibilityPage() {
     queryFn: () => getVisibilityTrends(undefined, undefined, selectedDays),
     staleTime: 60 * 1000,
   });
+  const workspaceSettingsQuery = useQuery({
+    queryKey: ["workspace-settings"],
+    queryFn: () => getWorkspaceSettings(),
+    staleTime: 60 * 1000,
+  });
   const visibilityData = visibilityQuery.data;
   const visibilitySummary = visibilitySummaryQuery.data;
   const visibilityTrends = visibilityTrendsQuery.data;
-  const isLiveUnavailable = visibilityData === null;
+  const workspaceSettings = workspaceSettingsQuery.data;
+  const isVisibilityUnavailable = visibilityData === null || visibilityQuery.isError;
+  const isSummaryUnavailable = visibilitySummary === null || visibilitySummaryQuery.isError;
+  const isTrendsUnavailable = visibilityTrends === null || visibilityTrendsQuery.isError;
+  const hasAnyVisibilityError = isVisibilityUnavailable || isSummaryUnavailable || isTrendsUnavailable;
   const hasLiveVisibility = Boolean(visibilityData && (asNumber(visibilityData.score, 0) > 0 || (visibilityData.prompts?.length ?? 0) > 0));
   const hasLiveSummary = Boolean(visibilitySummary?.engine_breakdown.length || visibilitySummary?.kpis.total_analyses);
+  const sandboxBrandName = workspaceSettings?.brandName?.trim() ?? "";
 
   const [sandboxQuery, setSandboxQuery] = useState("");
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulatedResponse, setSimulatedResponse] = useState("");
   const [confidence, setConfidence] = useState(0);
-  const [citations, setCitations] = useState<Array<{ text: string; url: string }>>([]);
+  const [sandboxMeta, setSandboxMeta] = useState<Array<{ label: string; value: string }>>([]);
 
   const handleSimulate = async () => {
-    if (!sandboxQuery.trim()) return;
+    const trimmedQuery = sandboxQuery.trim();
+    if (!trimmedQuery) return;
+    if (!sandboxBrandName) {
+      setSimulatedResponse(t("sandbox.brandMissing"));
+      return;
+    }
     setIsSimulating(true);
     setSimulatedResponse("");
     setConfidence(0);
-    setCitations([]);
+    setSandboxMeta([]);
     try {
       const result = await triggerVisibilityAnalysis({
-        brandName: "Narriv",
-        queries: [sandboxQuery],
+        brandName: sandboxBrandName,
+        queries: [trimmedQuery],
       }) as { rawResponse?: Array<{ query: string; response: string; responseId?: string }>; visibilityScore?: number } | null;
       if (result?.rawResponse?.[0]) {
         const raw = result.rawResponse[0];
         const displayResponse = language === "id" ? (raw.responseId || raw.response) : raw.response;
         setSimulatedResponse(displayResponse);
         setConfidence(result.visibilityScore ?? 0);
-        const lines = displayResponse.split("\n").filter((l: string) => l.includes("http") || l.includes(".com") || l.includes(".org"));
-        setCitations(lines.slice(0, 3).map((line: string) => ({ text: line.trim().substring(0, 80), url: "#" })));
-        if (lines.length === 0) {
-          setCitations([
-            { text: `Query: "${sandboxQuery}"`, url: "#" },
-            { text: language === "id" ? "Sumber: Respons AI engine" : "Source: AI engine response", url: "#" },
-          ]);
-        }
+        setSandboxMeta([
+          { label: t("sandbox.analyzedBrand"), value: sandboxBrandName },
+          { label: t("sandbox.engine"), value: "ChatGPT" },
+          { label: t("sandbox.query"), value: raw.query || trimmedQuery },
+        ]);
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["visibility"] }),
+          queryClient.invalidateQueries({ queryKey: ["visibility-summary"] }),
+          queryClient.invalidateQueries({ queryKey: ["visibility-trends"] }),
+        ]);
       } else {
         setSimulatedResponse(tEmpty("noResponse"));
       }
@@ -843,7 +860,18 @@ export default function VisibilityPage() {
             </div>
           )}
 
-          {isLiveUnavailable ? <DashboardErrorState title={t("error.title")} description={t("error.desc")} onRetry={() => void visibilityQuery.refetch()} minHeight="min-h-[150px]" /> : null}
+          {hasAnyVisibilityError ? (
+            <DashboardErrorState
+              title={t("error.title")}
+              description={t("error.desc")}
+              onRetry={() => {
+                void visibilityQuery.refetch();
+                void visibilitySummaryQuery.refetch();
+                void visibilityTrendsQuery.refetch();
+              }}
+              minHeight="min-h-[150px]"
+            />
+          ) : null}
 
           <Panel className="border-[#D6DEFF] bg-gradient-to-r from-[#F6F8FF] to-[#F1F3FF]">
             <CardContent className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_230px_260px] lg:items-center">
@@ -980,13 +1008,13 @@ export default function VisibilityPage() {
                       value={sandboxQuery}
                       onChange={(e) => setSandboxQuery(e.target.value)}
                       placeholder={t("sandbox.queryPlaceholder")}
-                      className="h-10 w-full rounded-[8px] border border-[#D9DEEA] pl-10 pr-4 text-[12px] font-semibold text-[#101334] outline-none focus:border-[#8B5CFF]"
+                      className="h-10 w-full rounded-[8px] border border-[#D9DEEA] pl-10 pr-4 text-[16px] font-semibold text-[#101334] outline-none focus:border-[#8B5CFF] sm:text-[12px]"
                     />
                   </div>
                   <button
                     type="button"
                     onClick={handleSimulate}
-                    disabled={isSimulating || !sandboxQuery.trim()}
+                    disabled={isSimulating || !sandboxQuery.trim() || workspaceSettingsQuery.isPending || !sandboxBrandName}
                     aria-label={t("ariaLabels.simulate")}
                     className="h-10 rounded-[8px] bg-[#8B5CFF] px-4 text-[12px] font-black text-white transition hover:bg-[#764ee6] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -998,6 +1026,11 @@ export default function VisibilityPage() {
                     ) : t("sandbox.simulateBtn")}
                   </button>
                 </div>
+                {workspaceSettingsQuery.isPending || !sandboxBrandName ? (
+                  <p className="mt-2 text-[11px] font-semibold text-[#8A94B8]">
+                    {workspaceSettingsQuery.isPending ? t("sandbox.brandLoading") : t("sandbox.brandMissing")}
+                  </p>
+                ) : null}
 
                 <div className="mt-4 grid gap-4 sm:grid-cols-[1.2fr_1fr]">
                   <div className="rounded-[10px] bg-[#F6F8FF] border border-[#D9E1FC] p-4">
@@ -1014,15 +1047,19 @@ export default function VisibilityPage() {
 
                   <div className="flex flex-col justify-between">
                     <div>
-                      <p className="text-[10px] font-black uppercase text-[#8A94B8] tracking-[0.04em]">{t("sandbox.citations")}</p>
-                      <div className="mt-2.5 space-y-2">
-                        {citations.map((cite, idx) => (
-                          <a key={idx} href={cite.url} className="flex items-center justify-between gap-3 text-[11px] font-semibold text-[#53608C] hover:text-[#8B5CFF] transition pb-2 border-b border-[#F0F2F7] last:border-0 last:pb-0">
-                            <span className="truncate">{cite.text}</span>
-                            <ExternalLink size={12} className="shrink-0 text-[#8A94B8]" />
-                          </a>
-                        ))}
-                      </div>
+                      <p className="text-[10px] font-black uppercase text-[#8A94B8] tracking-[0.04em]">{t("sandbox.analysisMeta")}</p>
+                      {sandboxMeta.length === 0 ? (
+                        <p className="mt-2.5 rounded-[10px] border border-dashed border-[#D9DEEA] bg-[#F8FAFF] p-3 text-[11px] font-semibold leading-relaxed text-[#8A94B8]">{t("sandbox.metaEmpty")}</p>
+                      ) : (
+                        <div className="mt-2.5 space-y-2">
+                          {sandboxMeta.map((item) => (
+                            <div key={item.label} className="rounded-[9px] border border-[#F0F2F7] bg-white px-3 py-2">
+                              <p className="text-[9px] font-black uppercase tracking-[0.04em] text-[#8A94B8]">{item.label}</p>
+                              <p className="mt-1 break-words text-[11px] font-bold text-[#53608C]">{item.value}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
