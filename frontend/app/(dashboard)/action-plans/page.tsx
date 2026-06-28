@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
@@ -67,24 +67,51 @@ const toneStyles: Record<Tone, ToneStyle> = {
   slate: { color: "#64748B", rgb: "100,116,139", soft: "bg-slate-100 text-slate-500" },
 };
 
+function normalizePriority(record: ActionQueueRecord): Exclude<Priority, "done"> {
+  const severity = (record.escalationLevel || record.alert?.severity || "medium").toLowerCase();
+  if (severity === "critical" || severity === "high") return "high";
+  if (severity === "low") return "low";
+  return "medium";
+}
+
+function normalizeStatus(status?: string | null): ActionStatus {
+  if (status === "done") return "done";
+  if (status === "in_progress" || status === "in-progress" || status === "blocked") return "in-progress";
+  return "active";
+}
+
+function formatActionDate(value?: string | null) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function formatWorkflowStatus(status: ActionStatus, t: (key: string) => string) {
+  if (status === "done") return t("statusDone");
+  if (status === "in-progress") return t("statusInProgress");
+  return t("statusActive");
+}
+
 function buildActionItems(records: ActionQueueRecord[], t: (key: string) => string): ActionItem[] {
-  return records.map((record, index) => {
-    const severity = record.alert?.severity?.toLowerCase() ?? "medium";
-    const priority: Exclude<Priority, "done"> = severity.includes("critical") || severity.includes("high") ? "high" : index % 3 === 0 ? "low" : "medium";
-    const tone: Tone = priority === "high" ? "red" : priority === "medium" ? "amber" : "green";
+  return records.map((record) => {
+    const priority = normalizePriority(record);
+    const status = normalizeStatus(record.workflowStatus);
+    const tone: Tone = status === "done" ? "green" : priority === "high" ? "red" : priority === "medium" ? "amber" : "green";
+    const progress = status === "done" ? 100 : status === "in-progress" ? 55 : 20;
 
     return {
       id: record.id,
       title: record.title,
       issue: record.alert?.title || record.cluster?.title || t("livePlanLabel"),
-      impact: record.alert?.severity || record.cluster?.sentiment || t("liveReviewLabel"),
+      impact: record.escalationLevel || record.alert?.severity || record.cluster?.sentiment || t("liveReviewLabel"),
       response: t("livePlanLabel"),
-      owner: t("liveOwnerLabel"),
-      role: t("liveRoleLabel"),
-      due: new Date(record.createdAt).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }),
-      progress: priority === "high" ? 35 : priority === "medium" ? 55 : 75,
+      owner: record.assignedTo || t("unassignedOwner"),
+      role: record.assignedTeam || t("liveRoleLabel"),
+      due: formatActionDate(record.deadline || record.createdAt),
+      progress,
       priority,
-      status: priority === "high" ? "active" : "in-progress",
+      status,
       tone,
     };
   });
@@ -137,13 +164,19 @@ function StatusPill({ status, t }: { status: ActionStatus; t: (key: string) => s
 }
 
 function Avatar({ name }: { name: string }) {
-  const url = `https://i.pravatar.cc/80?u=${encodeURIComponent(name)}`;
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "NA";
   return (
     <span
       aria-label={name}
-      className="size-7 shrink-0 rounded-full border-2 border-white bg-cover bg-center shadow-sm"
-      style={{ backgroundImage: `url(${url})` }}
-    />
+      className="flex size-7 shrink-0 items-center justify-center rounded-full border-2 border-white bg-[#EEF1FF] text-[9px] font-black text-[#465FFF] shadow-sm"
+    >
+      {initials}
+    </span>
   );
 }
 
@@ -205,6 +238,24 @@ function FilterDropdown({ isOpen, onClose, filterPriority, setFilterPriority, fi
   setFilterStatus: (v: string) => void;
   t: (key: string) => string;
 }) {
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    const handlePointerDown = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
   const priorities = [
     { value: "all", label: t("filterModal.allPriorities") },
@@ -220,7 +271,7 @@ function FilterDropdown({ isOpen, onClose, filterPriority, setFilterPriority, fi
   ];
   const activeCount = (filterPriority !== "all" ? 1 : 0) + (filterStatus !== "all" ? 1 : 0);
   return (
-    <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-[12px] border border-[#E6EAF2] bg-white p-4 shadow-[0_12px_40px_rgba(16,24,40,0.12)]">
+    <div id="action-filter-menu" ref={dropdownRef} role="dialog" aria-modal="false" aria-label={t("filterModal.title")} className="absolute right-0 top-full z-50 mt-2 w-72 rounded-[12px] border border-[#E6EAF2] bg-white p-4 shadow-[0_12px_40px_rgba(16,24,40,0.12)]">
       <div className="flex items-center justify-between">
         <h3 className="text-[13px] font-black text-[#101334]">{t("filterModal.title")}</h3>
         {activeCount > 0 && (
@@ -263,6 +314,10 @@ export default function ActionPlansPage() {
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterPriority, filterStatus, searchQuery]);
+
   const showToast = (message: string, type: "success" | "error" = "success") => {
     if (type === "error") { toastHook.error(message); return; }
     toastHook.success(message);
@@ -271,14 +326,20 @@ export default function ActionPlansPage() {
   const feedbackMutation = useMutation({
     mutationFn: ({ actionPlanId, action, reason }: { actionPlanId: string; action: "accepted" | "edited" | "rejected"; reason?: string }) => submitActionPlanFeedback(actionPlanId, action, reason),
     onSuccess: async (result) => {
-      await queryClient.invalidateQueries({ queryKey: ["action-plans-latest"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["action-queue"] }),
+        queryClient.invalidateQueries({ queryKey: ["action-plan", selectedActionId] }),
+        queryClient.invalidateQueries({ queryKey: ["action-plans-metrics"] }),
+        queryClient.invalidateQueries({ queryKey: ["feedback-accuracy"] }),
+        queryClient.invalidateQueries({ queryKey: ["actionPlanLearning", selectedActionId] }),
+      ]);
       showToast(result ? t("toast.feedbackSent") : t("toast.feedbackFailed"), result ? "success" : "error");
     },
     onError: () => showToast(t("toast.feedbackRetry"), "error"),
   });
   const actionQueueQuery = useQuery({
-    queryKey: ["action-queue", { limit: 20 }],
-    queryFn: () => getActionQueue({ limit: 20 }),
+    queryKey: ["action-queue", { page: currentPage, limit: 8, search: searchQuery.trim(), priority: filterPriority, status: filterStatus }],
+    queryFn: () => getActionQueue({ page: currentPage, limit: 8, search: searchQuery.trim(), priority: filterPriority, status: filterStatus }),
     staleTime: 30 * 1000,
   });
   const actionPlanQuery = useQuery({
@@ -308,31 +369,35 @@ export default function ActionPlansPage() {
   const isPlanUnavailable = actionPlanQuery.data === null;
   const actionItems = liveActions;
 
-  const filteredItems = actionItems.filter((action) => {
-    const matchesSearch = searchQuery.trim() === "" || action.title.toLowerCase().includes(searchQuery.toLowerCase()) || action.issue.toLowerCase().includes(searchQuery.toLowerCase());
-    if (!matchesSearch) return false;
-    if (filterPriority !== "all" && action.priority !== filterPriority) return false;
-    if (filterStatus !== "all" && action.status !== filterStatus) return false;
-    return true;
-  });
-
-  const pageSize = 8;
-  const totalFilteredItems = filteredItems.length;
+  const pageSize = actionQueueQuery.data?.meta.limit ?? 8;
+  const totalFilteredItems = actionQueueQuery.data?.meta.total ?? actionItems.length;
   const totalPages = Math.max(1, Math.ceil(totalFilteredItems / pageSize));
-  const validPage = Math.min(Math.max(1, currentPage), totalPages > 0 ? totalPages : 1);
-  const paginatedItems = filteredItems.slice((validPage - 1) * pageSize, validPage * pageSize);
+  const validPage = actionQueueQuery.data?.meta.page ?? currentPage;
+  const paginatedItems = actionItems;
 
-  const selectedAction = selectedActionId ? filteredItems.find((action) => action.id === selectedActionId) || null : null;
+  const selectedAction = selectedActionId ? actionItems.find((action) => action.id === selectedActionId) || null : null;
+  const latestPlan = actionPlanQuery.data;
+  const selectedPriority = selectedAction?.priority ?? normalizePriority({
+    id: latestPlan?.id ?? selectedActionId,
+    title: "",
+    escalationLevel: latestPlan?.escalationLevel,
+    createdAt: "",
+  });
+  const selectedStatus = selectedAction?.status ?? normalizeStatus(latestPlan?.workflowStatus);
+  const selectedIssue = selectedAction?.issue ?? t("livePlanLabel");
+  const selectedImpact = selectedAction?.impact ?? latestPlan?.escalationLevel ?? t("liveReviewLabel");
+  const selectedDue = selectedAction?.due ?? formatActionDate(latestPlan?.deadline);
+  const selectedStatusLabel = formatWorkflowStatus(selectedStatus, t);
   
   const actionPlanLearningQuery = useQuery({
-    queryKey: ["actionPlanLearning", selectedAction?.id],
-    queryFn: () => selectedAction ? getActionPlanLearning(selectedAction.id) : null,
-    enabled: !!selectedAction?.id,
+    queryKey: ["actionPlanLearning", selectedActionId],
+    queryFn: () => selectedActionId ? getActionPlanLearning(selectedActionId) : null,
+    enabled: !!selectedActionId,
   });
-  const latestPlan = actionPlanQuery.data;
+  const hasLearningData = Boolean(actionPlanLearningQuery.data?.insights?.length || actionPlanLearningQuery.data?.templates?.length);
   const detailSteps = hasActionPlanData(latestPlan) && latestPlan?.plan?.length ? latestPlan.plan : null;
 
-  const highActions = filteredItems.filter((action) => action.status !== "done" && action.priority === "high");
+  const highActions = actionItems.filter((action) => action.status !== "done" && action.priority === "high");
   const activeCount = actionItems.filter((a) => a.status === "active").length;
   const inProgressCount = actionItems.filter((a) => a.status === "in-progress").length;
   const completedCount = actionItems.filter((a) => a.status === "done").length;
@@ -371,10 +436,10 @@ export default function ActionPlansPage() {
             <div className="flex w-full flex-wrap gap-3 xl:w-auto">
               <label className="flex h-10 w-full min-w-[240px] items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-[#FBFCFF] px-3 text-[#8A94B8] sm:w-[260px]">
                 <Search size={15} />
-                <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="min-w-0 flex-1 bg-transparent text-[12px] font-semibold outline-none placeholder:text-[#8A94B8]" placeholder={t("search")} />
+                <input aria-label={t("search")} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="min-w-0 flex-1 bg-transparent text-[12px] font-semibold outline-none placeholder:text-[#8A94B8]" placeholder={t("search")} />
               </label>
               <div className="relative">
-                <button type="button" onClick={() => setIsFilterOpen(!isFilterOpen)} className={cn("flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border px-4 text-[12px] font-black sm:flex-none", isFilterOpen || filterPriority !== "all" || filterStatus !== "all" ? "border-[#465FFF] bg-[#465FFF]/5 text-[#465FFF]" : "border-[#DDE3EF] bg-white text-[#101334]")}><Funnel size={14} />{t("filter")}{(filterPriority !== "all" || filterStatus !== "all") ? <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#465FFF] text-[8px] text-white">{(filterPriority !== "all" ? 1 : 0) + (filterStatus !== "all" ? 1 : 0)}</span> : null}</button>
+                <button type="button" aria-expanded={isFilterOpen} aria-controls="action-filter-menu" onClick={() => setIsFilterOpen(!isFilterOpen)} className={cn("flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border px-4 text-[12px] font-black sm:flex-none", isFilterOpen || filterPriority !== "all" || filterStatus !== "all" ? "border-[#465FFF] bg-[#465FFF]/5 text-[#465FFF]" : "border-[#DDE3EF] bg-white text-[#101334]")}><Funnel size={14} />{t("filter")}{(filterPriority !== "all" || filterStatus !== "all") ? <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#465FFF] text-[8px] text-white">{(filterPriority !== "all" ? 1 : 0) + (filterStatus !== "all" ? 1 : 0)}</span> : null}</button>
                 <FilterDropdown isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} filterPriority={filterPriority} setFilterPriority={setFilterPriority} filterStatus={filterStatus} setFilterStatus={setFilterStatus} t={t} />
               </div>
             </div>
@@ -383,7 +448,7 @@ export default function ActionPlansPage() {
           {actionQueueQuery.isPending ? (
             <PanelSkeleton className="mt-3" />
           ) : actionQueueQuery.data && liveActions.length === 0 ? (
-            <DashboardEmptyState title={t("emptyTitle")} description={t("emptyDesc")} icon="inbox" minHeight="min-h-[360px]" />
+            <DashboardEmptyState title={searchQuery || filterPriority !== "all" || filterStatus !== "all" ? t("noMatchTitle") : t("emptyTitle")} description={searchQuery || filterPriority !== "all" || filterStatus !== "all" ? t("noMatchDesc") : t("emptyDesc")} icon="inbox" minHeight="min-h-[360px]" />
           ) : (
             <>
               <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -439,7 +504,7 @@ export default function ActionPlansPage() {
                 <p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("detailDesc")}</p>
               </div>
             </div>
-            {!selectedAction ? (
+            {!selectedActionId ? (
               <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDF1F7]">
                   <Sparkles size={18} className="text-[#8B95B8]" />
@@ -463,16 +528,16 @@ export default function ActionPlansPage() {
               </div>
             ) : (<>
             <div className="mt-5 flex flex-wrap gap-2">
-              <span className={cn("rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em]", selectedAction.priority === "high" ? "bg-[#EF4444]/10 text-[#EF4444]" : selectedAction.priority === "medium" ? "bg-[#F59E0B]/12 text-[#F59E0B]" : "bg-[#10B981]/12 text-[#0C9B69]")}>{t(`lanes.${selectedAction.priority}`)}</span>
-              <span className={cn("rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em]", selectedAction.status === "active" ? "bg-[#EF4444]/10 text-[#EF4444]" : selectedAction.status === "in-progress" ? "bg-[#F59E0B]/12 text-[#F59E0B]" : "bg-[#10B981]/12 text-[#0C9B69]")}>{selectedAction.status === "active" ? t("statusActive") : selectedAction.status === "in-progress" ? t("statusInProgress") : t("statusDone")}</span>
-              <span className="rounded-full bg-[#EEF1F7] px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-[#53608C]">{selectedAction.due}</span>
+              <span className={cn("rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em]", selectedPriority === "high" ? "bg-[#EF4444]/10 text-[#EF4444]" : selectedPriority === "medium" ? "bg-[#F59E0B]/12 text-[#F59E0B]" : "bg-[#10B981]/12 text-[#0C9B69]")}>{t(`lanes.${selectedPriority}`)}</span>
+              <span className={cn("rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em]", selectedStatus === "active" ? "bg-[#EF4444]/10 text-[#EF4444]" : selectedStatus === "in-progress" ? "bg-[#F59E0B]/12 text-[#F59E0B]" : "bg-[#10B981]/12 text-[#0C9B69]")}>{selectedStatusLabel}</span>
+              <span className="rounded-full bg-[#EEF1F7] px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-[#53608C]">{selectedDue}</span>
             </div>
-            <h3 className="mt-4 text-[18px] font-black text-[#101334]">{selectedAction.title}</h3>
+            <h3 className="mt-4 text-[18px] font-black text-[#101334]">{selectedAction?.title ?? latestPlan?.id ?? t("detail")}</h3>
             <p className="mt-3 text-[12px] font-semibold leading-relaxed text-[#53608C]">{latestPlan?.inputNarrative}</p>
             <div className="mt-5 grid gap-3 sm:grid-cols-4">
-              {[selectedAction.issue, selectedAction.impact, latestPlan?.workflowStatus, selectedAction.due].map((item, index) => (
+              {[selectedIssue, selectedImpact, selectedStatusLabel, selectedDue].map((item, index) => (
                 <div key={index} className="rounded-[10px] bg-[#FBFCFF] p-3">
-                  <p className="text-[10px] font-black text-[#8A94B8]">{[t("categoryLabel"), t("impactFieldLabel"), t("slaLabel"), t("dueDateLabel")][index]}</p>
+                  <p className="text-[10px] font-black text-[#8A94B8]">{[t("categoryLabel"), t("impactFieldLabel"), t("statusFieldLabel"), t("dueDateLabel")][index]}</p>
                   <p className="mt-1 text-[11px] font-black text-[#465FFF]">{item}</p>
                 </div>
               ))}
@@ -488,7 +553,7 @@ export default function ActionPlansPage() {
                 ))}
               </div>
             </div>
-            <button type="button" onClick={() => { if (latestPlan?.id) feedbackMutation.mutate({ actionPlanId: latestPlan.id, action: "accepted" }); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#F8FAFF] text-[12px] font-black text-[#465FFF] disabled:opacity-50 transition hover:bg-[#465FFF]/5">{t("viewFullPlan")} <ChevronRight size={14} /></button>
+            <button type="button" onClick={() => setSelectedActionId("")} className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#F8FAFF] text-[12px] font-black text-[#465FFF] transition hover:bg-[#465FFF]/5">{t("backToQueue")} <ChevronRight size={14} /></button>
             <div className="mt-3 flex gap-2">
               <button type="button" onClick={() => { if (latestPlan?.id) feedbackMutation.mutate({ actionPlanId: latestPlan.id, action: "accepted" }); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[#10B981]/10 text-[11px] font-black text-[#0C9B69] transition hover:bg-[#10B981]/20 disabled:opacity-50"><Check size={14} /> {t("approve")}</button>
               <button type="button" onClick={() => { if (latestPlan?.id) feedbackMutation.mutate({ actionPlanId: latestPlan.id, action: "rejected" }); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[#EF4444]/10 text-[11px] font-black text-[#EF4444] transition hover:bg-[#EF4444]/20 disabled:opacity-50"><X size={14} /> {t("reject")}</button>
@@ -506,7 +571,7 @@ export default function ActionPlansPage() {
                   <p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("performanceDesc")}</p>
                 </div>
               </div>
-            {!selectedAction ? (
+            {!selectedActionId ? (
               <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDF1F7]">
                   <BarChart3 size={18} className="text-[#8B95B8]" />
@@ -518,6 +583,16 @@ export default function ActionPlansPage() {
               </div>
             ) : feedbackAccuracyQuery.isPending ? (
               <PanelSkeleton className="mt-5" />
+            ) : !hasLearningData ? (
+              <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDF1F7]">
+                  <Lightbulb size={18} className="text-[#8B95B8]" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-[#58648C]">{t("learningNoDataTitle")}</p>
+                  <p className="mt-1 text-[10px] font-semibold text-[#8B95B8]">{t("learningNoDataDesc")}</p>
+                </div>
+              </div>
             ) : (
               <>
                 <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -559,7 +634,7 @@ export default function ActionPlansPage() {
                 <p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("learningDesc")}</p>
               </div>
             </div>
-            {!selectedAction ? (
+            {!selectedActionId ? (
               <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDF1F7]">
                   <Lightbulb size={18} className="text-[#8B95B8]" />

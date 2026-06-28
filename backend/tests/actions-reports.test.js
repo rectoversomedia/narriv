@@ -39,8 +39,26 @@ function resetState() {
 function matchesWhere(record, where = {}) {
   return Object.entries(where).every(([key, value]) => {
     if (value === undefined) return true;
+    if (key === 'AND' && Array.isArray(value)) {
+      return value.every((condition) => matchesWhere(record, condition));
+    }
+    if (key === 'OR' && Array.isArray(value)) {
+      return value.some((condition) => matchesWhere(record, condition));
+    }
     if (key === 'workspaceId' && value && typeof value === 'object' && Array.isArray(value.in)) {
       return value.in.includes(record.workspaceId);
+    }
+    if (key === 'workflowStatus' && value && typeof value === 'object' && Array.isArray(value.in)) {
+      return value.in.includes(record.workflowStatus);
+    }
+    if (value === null) {
+      return record[key] == null;
+    }
+    if (value && typeof value === 'object' && value.contains) {
+      return String(record[key] || '').toLowerCase().includes(String(value.contains).toLowerCase());
+    }
+    if ((key === 'alert' || key === 'cluster') && value?.is?.title?.contains) {
+      return String(record[key]?.title || '').toLowerCase().includes(String(value.is.title.contains).toLowerCase());
     }
     if (key === 'report' && value?.workspaceId?.in) {
       const report = reports.find((item) => item.id === record.reportId);
@@ -55,7 +73,7 @@ function matchesWhere(record, where = {}) {
     if (key === 'createdAt' && value?.gte) {
       return record.createdAt && new Date(record.createdAt) >= new Date(value.gte);
     }
-    if (key === 'id' || key === 'workspaceId' || key === 'userId' || key === 'targetType' || key === 'targetId' || key === 'action' || key === 'status') {
+    if (key === 'id' || key === 'workspaceId' || key === 'userId' || key === 'targetType' || key === 'targetId' || key === 'action' || key === 'status' || key === 'workflowStatus' || key === 'escalationLevel') {
       return record[key] === value;
     }
     return true;
@@ -353,6 +371,36 @@ describe('Action Plans and Feedback Endpoints', () => {
 
     expect(feedbackRes.status).toBe(201);
     expect(feedbackRes.body).toMatchObject({ id: FEEDBACK_ID, action: 'edited', targetType: 'action_plan', targetId: ACTION_PLAN_ID });
+  });
+
+  it('filters listed action plans by search, priority, and workflow status', async () => {
+    actionPlans.push(
+      buildActionPlan({ id: ACTION_PLAN_ID, title: 'Crisis response plan', escalationLevel: 'high', workflowStatus: 'todo' }),
+      buildActionPlan({ id: OTHER_ACTION_PLAN_ID, title: 'Routine publishing plan', escalationLevel: 'low', workflowStatus: 'done' }),
+      buildActionPlan({
+        id: '00000000-0000-4000-8000-000000000803',
+        title: 'Stakeholder briefing plan',
+        escalationLevel: 'medium',
+        workflowStatus: 'blocked',
+        alert: { title: 'Vendor trust issue', severity: 'medium', status: 'open', whatHappened: 'Concern increased.' },
+      }),
+    );
+
+    const activeRes = await request(app)
+      .get(`/api/actions?workspaceId=${WORKSPACE_ID}&status=active&priority=high`)
+      .set(authHeader());
+
+    expect(activeRes.status).toBe(200);
+    expect(activeRes.body.data).toHaveLength(1);
+    expect(activeRes.body.data[0]).toMatchObject({ id: ACTION_PLAN_ID, escalationLevel: 'high', workflowStatus: 'todo' });
+
+    const searchRes = await request(app)
+      .get(`/api/actions?workspaceId=${WORKSPACE_ID}&search=vendor&status=in-progress`)
+      .set(authHeader());
+
+    expect(searchRes.status).toBe(200);
+    expect(searchRes.body.data).toHaveLength(1);
+    expect(searchRes.body.data[0]).toMatchObject({ title: 'Stakeholder briefing plan', workflowStatus: 'blocked' });
   });
 
   it('hides action plans outside the user workspace scope', async () => {

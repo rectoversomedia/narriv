@@ -566,6 +566,11 @@ export interface ActionQueueRecord {
   title: string;
   alert?: { title: string; severity: string | null } | null;
   cluster?: { title: string; sentiment: string | null } | null;
+  assignedTo?: string | null;
+  assignedTeam?: string | null;
+  deadline?: string | null;
+  escalationLevel?: EscalationLevel | null;
+  workflowStatus?: string | null;
   createdAt: string;
 }
 
@@ -609,10 +614,13 @@ export async function updateActionPlanAssignment(id: string, input: AssignmentIn
 }
 
 export async function getActionQueue(
-  options: { page?: number; limit?: number } = {}
+  options: { page?: number; limit?: number; search?: string; priority?: string; status?: string } = {}
 ): Promise<MetaPaginatedResponse<ActionQueueRecord> | null> {
-  const { page = 1, limit = 10 } = options;
+  const { page = 1, limit = 10, search, priority, status } = options;
   const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (search) params.set("search", search);
+  if (priority && priority !== "all") params.set("priority", priority);
+  if (status && status !== "all") params.set("status", status);
 
   try {
     return await apiClient<MetaPaginatedResponse<ActionQueueRecord>>(`/api/actions?${params.toString()}`);
@@ -1135,35 +1143,23 @@ export async function getReportTemplates(): Promise<{ data: ReportTemplate[] } |
   }
 }
 
-export async function createReportTemplate(input: Partial<ReportTemplate>): Promise<ReportTemplate | null> {
-  try {
-    return await apiClient<ReportTemplate>("/api/reports/templates", {
-      method: "POST",
-      body: JSON.stringify(input),
-    });
-  } catch {
-    return null;
-  }
+export async function createReportTemplate(input: Partial<ReportTemplate>): Promise<ReportTemplate> {
+  return await apiClient<ReportTemplate>("/api/reports/templates", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
-export async function updateReportTemplate(id: string, input: Partial<ReportTemplate>): Promise<ReportTemplate | null> {
-  try {
-    return await apiClient<ReportTemplate>(`/api/reports/templates/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify(input),
-    });
-  } catch {
-    return null;
-  }
+export async function updateReportTemplate(id: string, input: Partial<ReportTemplate>): Promise<ReportTemplate> {
+  return await apiClient<ReportTemplate>(`/api/reports/templates/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
 }
 
 export async function deleteReportTemplate(id: string): Promise<boolean> {
-  try {
-    await apiClient<{ success: boolean }>(`/api/reports/templates/${id}`, { method: "DELETE" });
-    return true;
-  } catch {
-    return false;
-  }
+  await apiClient<{ success: boolean }>(`/api/reports/templates/${id}`, { method: "DELETE" });
+  return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -1193,65 +1189,49 @@ export async function getReportSchedules(): Promise<{ data: ReportScheduleRecord
   }
 }
 
-export async function createReportSchedule(input: Partial<ReportScheduleRecord>): Promise<ReportScheduleRecord | null> {
-  try {
-    return await apiClient<ReportScheduleRecord>("/api/reports/schedules", {
-      method: "POST",
-      body: JSON.stringify(input),
-    });
-  } catch {
-    return null;
-  }
+export async function createReportSchedule(input: Partial<ReportScheduleRecord>): Promise<ReportScheduleRecord> {
+  return await apiClient<ReportScheduleRecord>("/api/reports/schedules", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
-export async function updateReportSchedule(id: string, input: Partial<ReportScheduleRecord>): Promise<ReportScheduleRecord | null> {
-  try {
-    return await apiClient<ReportScheduleRecord>(`/api/reports/schedules/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify(input),
-    });
-  } catch {
-    return null;
-  }
+export async function updateReportSchedule(id: string, input: Partial<ReportScheduleRecord>): Promise<ReportScheduleRecord> {
+  return await apiClient<ReportScheduleRecord>(`/api/reports/schedules/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
 }
 
 export async function deleteReportSchedule(id: string): Promise<boolean> {
-  try {
-    await apiClient<{ success: boolean }>(`/api/reports/schedules/${id}`, { method: "DELETE" });
-    return true;
-  } catch {
-    return false;
-  }
+  await apiClient<{ success: boolean }>(`/api/reports/schedules/${id}`, { method: "DELETE" });
+  return true;
 }
 
-export async function toggleReportSchedule(id: string): Promise<ReportScheduleRecord | null> {
-  try {
-    return await apiClient<ReportScheduleRecord>(`/api/reports/schedules/${id}/toggle`, { method: "PATCH" });
-  } catch {
-    return null;
-  }
+export async function toggleReportSchedule(id: string): Promise<ReportScheduleRecord> {
+  return await apiClient<ReportScheduleRecord>(`/api/reports/schedules/${id}/toggle`, { method: "PATCH" });
 }
 
-export async function generateReportFromTemplate(input: { templateKey: string; dateRange?: { start: string; end: string } }): Promise<{ id: string; title: string; template: string; sections: Array<{ id: string; title: string; data: unknown }>; createdAt: string } | null> {
-  try {
-    return await apiClient("/api/reports/generate", {
-      method: "POST",
-      body: JSON.stringify(input),
-    });
-  } catch {
-    return null;
-  }
+export interface GeneratedReportResponse {
+  id: string;
+  title: string;
+  template: string;
+  sections: Array<{ id: string; title: string; data: unknown }>;
+  createdAt: string;
 }
 
-export async function sendReportEmail(input: { reportId: string; recipientEmail?: string; subject?: string; body?: string }): Promise<{ sent: boolean; to?: string; reason?: string } | null> {
-  try {
-    return await apiClient(`/api/reports/${input.reportId}/send-email`, {
-      method: "POST",
-      body: JSON.stringify({ recipientEmail: input.recipientEmail, subject: input.subject, body: input.body }),
-    });
-  } catch {
-    return null;
-  }
+export async function generateReportFromTemplate(input: { templateKey: string; dateRange?: { start: string; end: string } }): Promise<GeneratedReportResponse> {
+  return await apiClient<GeneratedReportResponse>("/api/reports/generate", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function sendReportEmail(input: { reportId: string; recipientEmail: string; subject?: string; body?: string }): Promise<{ sent: boolean; to?: string; reason?: string }> {
+  return await apiClient(`/api/reports/${input.reportId}/send-email`, {
+    method: "POST",
+    body: JSON.stringify({ recipientEmail: input.recipientEmail, subject: input.subject, body: input.body }),
+  });
 }
 
 export interface ReportRecord {
@@ -1262,6 +1242,28 @@ export interface ReportRecord {
   status: string;
 }
 
+export interface ReportDetailSection {
+  id?: string;
+  title: string;
+  data?: unknown;
+  content?: unknown;
+  summary?: string;
+}
+
+export interface ReportDetailRecord {
+  id: string;
+  title: string;
+  template?: string;
+  createdAt?: string;
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  sections?: ReportDetailSection[];
+  summary?: string;
+  recommendations?: unknown;
+  keyFindings?: unknown;
+  [key: string]: unknown;
+}
+
 export async function getReports(
   options: { page?: number; limit?: number } = {}
 ): Promise<PaginatedResponse<ReportRecord> | null> {
@@ -1270,6 +1272,14 @@ export async function getReports(
 
   try {
     return await apiClient<PaginatedResponse<ReportRecord>>(`/api/reports?${params.toString()}`);
+  } catch {
+    return null;
+  }
+}
+
+export async function getReportById(id: string): Promise<ReportDetailRecord | null> {
+  try {
+    return await apiClient<ReportDetailRecord>(`/api/reports/${id}`);
   } catch {
     return null;
   }
@@ -1443,23 +1453,15 @@ export async function logoutSession(refreshToken: string): Promise<boolean> {
   }
 }
 
-export async function createReportExport(reportId: string, format: "json" | "pdf" = "json"): Promise<{ message: string; jobId: string } | null> {
-  try {
-    return await apiClient<{ message: string; jobId: string }>(`/api/reports/${reportId}/export`, {
-      method: "POST",
-      body: JSON.stringify({ format }),
-    });
-  } catch {
-    return null;
-  }
+export async function createReportExport(reportId: string, format: "json" | "pdf" = "json"): Promise<{ message: string; jobId: string }> {
+  return await apiClient<{ message: string; jobId: string }>(`/api/reports/${reportId}/export`, {
+    method: "POST",
+    body: JSON.stringify({ format }),
+  });
 }
 
-export async function getReportExportStatus(jobId: string): Promise<{ jobId: string; reportId: string; format: string; status: string; errorMessage?: string | null; signedUrl?: string | null } | null> {
-  try {
-    return await apiClient<{ jobId: string; reportId: string; format: string; status: string; errorMessage?: string | null; signedUrl?: string | null }>(`/api/reports/exports/${jobId}`);
-  } catch {
-    return null;
-  }
+export async function getReportExportStatus(jobId: string): Promise<{ jobId: string; reportId: string; format: string; status: string; errorMessage?: string | null; signedUrl?: string | null }> {
+  return await apiClient<{ jobId: string; reportId: string; format: string; status: string; errorMessage?: string | null; signedUrl?: string | null }>(`/api/reports/exports/${jobId}`);
 }
 
 export async function downloadReportExport(signedUrl: string): Promise<unknown | null> {

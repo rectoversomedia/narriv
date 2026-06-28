@@ -2,10 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { type ReactNode, useState, useEffect } from "react";
+import { type ComponentPropsWithoutRef, type ReactNode, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowRight,
   Calendar,
@@ -16,7 +16,6 @@ import {
   Download,
   Eye,
   FileText,
-  MoreVertical,
   Plus,
   RefreshCcw,
   Search,
@@ -35,7 +34,7 @@ import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSke
 import { getReports, getReportTemplates, createReportTemplate, updateReportTemplate, deleteReportTemplate, getReportsAnalytics, createReportExport, getReportExportStatus, getNarratives, getDashboardSummary, getReportSchedules, createReportSchedule, updateReportSchedule, deleteReportSchedule, toggleReportSchedule, generateReportFromTemplate, sendReportEmail, type PaginationInfo, type ReportRecord, type ReportsAnalyticsResponse, type NarrativeRecord, type DashboardSummary, type ReportTemplate, type ReportScheduleRecord } from "@/lib/api-service";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
-type ReportStatus = "READY" | "REVIEW" | "DRAFT" | "SCHEDULED";
+type ReportStatus = "READY" | "REVIEW" | "DRAFT" | "SCHEDULED" | "ARCHIVED";
 
 type ToneStyle = {
   color: string;
@@ -91,6 +90,7 @@ function statusFromApi(status: string): ReportStatus {
   if (value.includes("ready") || value.includes("siap")) return "READY";
   if (value.includes("review")) return "REVIEW";
   if (value.includes("scheduled")) return "SCHEDULED";
+  if (value.includes("archived")) return "ARCHIVED";
   return "DRAFT";
 }
 
@@ -98,6 +98,7 @@ function toneFromStatus(status: ReportStatus): Tone {
   if (status === "READY") return "green";
   if (status === "REVIEW") return "amber";
   if (status === "SCHEDULED") return "blue";
+  if (status === "ARCHIVED") return "slate";
   return "purple";
 }
 
@@ -122,9 +123,9 @@ function buildApiReportRows(
   });
 }
 
-function Panel({ children, className, onClick }: { children: ReactNode; className?: string; onClick?: (e: React.MouseEvent) => void }) {
+function Panel({ children, className, ...props }: ComponentPropsWithoutRef<"section"> & { children: ReactNode }) {
   return (
-    <section className={cn("rounded-[14px] border border-[#DDE3EF] bg-white shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)} onClick={onClick}>
+    <section className={cn("rounded-[14px] border border-[#DDE3EF] bg-white shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)} {...props}>
       {children}
     </section>
   );
@@ -471,6 +472,7 @@ function StatusBadge({ status }: { status: ReportStatus }) {
     REVIEW: "bg-[#F59E0B]/10 text-[#F59E0B]",
     DRAFT: "bg-[#8B5CFF]/10 text-[#8B5CFF]",
     SCHEDULED: "bg-[#465FFF]/10 text-[#465FFF]",
+    ARCHIVED: "bg-slate-100 text-slate-600",
   };
   return <span className={cn("rounded-[7px] px-2 py-0.5 text-[9.5px] font-black tracking-[0.05em]", styles[status])}>{tr(`statusBadge.${status}`)}</span>;
 }
@@ -491,19 +493,29 @@ function ProgressBar({ value, tone }: { value: number; tone: Tone }) {
   );
 }
 
-function ReportsTable({ rows, footerText, pagination, onPageChange, isFetching }: { rows: ReportRow[]; footerText: string; pagination?: PaginationInfo | null; onPageChange: (page: number) => void; isFetching?: boolean }) {
+function ReportsTable({ rows, footerText, pagination, onPageChange, isFetching, onExport }: { rows: ReportRow[]; footerText: string; pagination?: PaginationInfo | null; onPageChange: (page: number) => void; isFetching?: boolean; onExport: (reportId: string) => void }) {
   const tr = useTranslations("Reports");
   type TabValue = "all" | ReportStatus;
   const [activeTab, setActiveTab] = useState<TabValue>("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
   const tabs: Array<{ key: string; value: TabValue }> = [
     { key: "all", value: "all" },
     { key: "ready", value: "READY" },
     { key: "review", value: "REVIEW" },
     { key: "draft", value: "DRAFT" },
     { key: "scheduled", value: "SCHEDULED" },
-    { key: "archived", value: "ARCHIVED" as ReportStatus },
+    { key: "archived", value: "ARCHIVED" },
   ];
-  const filteredRows = rows.filter((report) => activeTab === "all" || report.status === activeTab);
+  const filteredRows = rows
+    .filter((report) => activeTab === "all" || report.status === activeTab)
+    .filter((report) => {
+      const term = searchTerm.trim().toLowerCase();
+      if (!term) return true;
+      return [report.title, report.description, report.type, report.period, report.created].some((value) => value.toLowerCase().includes(term));
+    });
+  const visibleRows = sortDirection === "desc" ? filteredRows : [...filteredRows].reverse();
+  const hasLocalFilters = activeTab !== "all" || searchTerm.trim().length > 0;
 
   return (
     <Panel className="p-4">
@@ -517,15 +529,17 @@ function ReportsTable({ rows, footerText, pagination, onPageChange, isFetching }
             <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-[#8B95B8]" />
             <input
               type="search"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
               placeholder={tr("filter.search")}
               className="h-8 w-full rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] pl-8 pr-3 text-[10px] font-bold text-[#101334] outline-none transition placeholder:text-[#8B95B8] focus:border-[#465FFF] focus:bg-white"
             />
           </label>
-          <button type="button" className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-2.5 text-[10px] font-black text-[#58648C] transition hover:bg-white sm:flex-none">
-            <SlidersHorizontal size={12} /> {tr("filter.title")}
+          <button type="button" onClick={() => { setActiveTab("all"); setSearchTerm(""); }} disabled={!hasLocalFilters} className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-2.5 text-[10px] font-black text-[#58648C] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-45 sm:flex-none">
+            <SlidersHorizontal size={12} /> {hasLocalFilters ? tr("clear") : tr("filter.title")}
           </button>
-          <button type="button" className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-2.5 text-[10px] font-black text-[#58648C] transition hover:bg-white sm:flex-none">
-            {tr("filter.latest")} <ChevronDown size={12} />
+          <button type="button" onClick={() => setSortDirection((value) => value === "desc" ? "asc" : "desc")} className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-2.5 text-[10px] font-black text-[#58648C] transition hover:bg-white sm:flex-none">
+            {sortDirection === "desc" ? tr("filter.latest") : tr("filter.oldest")} <ChevronDown size={12} className={cn("transition", sortDirection === "asc" && "rotate-180")} />
           </button>
         </div>
       </div>
@@ -564,7 +578,7 @@ function ReportsTable({ rows, footerText, pagination, onPageChange, isFetching }
             </tr>
           </thead>
           <tbody className="divide-y divide-[#EDF1F7]">
-            {filteredRows.map((report) => (
+            {visibleRows.length > 0 ? visibleRows.map((report) => (
               <tr key={report.id} className="transition hover:bg-[#F8FAFF]">
                 <td className="px-3 py-3.5">
                   <div className="flex items-start gap-3">
@@ -597,12 +611,19 @@ function ReportsTable({ rows, footerText, pagination, onPageChange, isFetching }
                   <span className="mt-0.5 block text-[9.5px] font-bold text-[#8B95B8]">{report.createdTime}</span>
                 </td>
                 <td className="px-3 py-3.5 text-right align-middle">
-                  <button type="button" className="rounded-md p-1.5 text-[#68739F] transition hover:bg-[#EEF2FF] hover:text-[#465FFF]">
-                    <MoreVertical size={16} />
+                  <button type="button" onClick={() => onExport(String(report.id))} disabled={isFetching} className="inline-flex items-center gap-1.5 rounded-md border border-[#DDE3EF] bg-white px-2 py-1.5 text-[10px] font-black text-[#68739F] transition hover:bg-[#EEF2FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50" aria-label={tr("exportAria", { title: report.title })}>
+                    <Download size={13} /> {tr("downloadReady")}
                   </button>
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr>
+                <td colSpan={7} className="px-3 py-10 text-center">
+                  <p className="text-[13px] font-black text-[#101334]">{tr("noMatch")}</p>
+                  <p className="mt-1 text-[11px] font-bold text-[#68739F]">{tr("noMatchDesc")}</p>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -831,6 +852,7 @@ export default function ReportsPage() {
   const tr = useTranslations("Reports");
   const toastHook = useToast();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [isTemplatesModalOpen, setIsTemplatesModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -885,12 +907,12 @@ export default function ReportsPage() {
           for (let i = 0; i < 10; i++) {
             await new Promise((r) => setTimeout(r, 2000));
             const status = await getReportExportStatus(result.jobId);
-            if (status?.status === "completed" && status.signedUrl) {
+            if (status.status === "completed" && status.signedUrl) {
               window.open(status.signedUrl, "_blank");
               showToast(tr("toast.exportSuccess"));
               return;
             }
-            if (status?.status === "failed") {
+            if (status.status === "failed") {
               showToast(tr("toast.exportFailed"), "error");
               return;
             }
@@ -927,7 +949,8 @@ export default function ReportsPage() {
     onSuccess: () => {
       showToast(tr("toast.templateSaved"));
       setIsFormOpen(false);
-      refetchTemplates();
+      void refetchTemplates();
+      void queryClient.invalidateQueries({ queryKey: ["report-analytics"] });
     },
     onError: () => showToast(tr("toast.templateSaveFailed"), "error")
   });
@@ -936,7 +959,7 @@ export default function ReportsPage() {
     onSuccess: () => {
       showToast(tr("toast.templateUpdated"));
       setIsFormOpen(false);
-      refetchTemplates();
+      void refetchTemplates();
     },
     onError: () => showToast(tr("toast.templateUpdateFailed"), "error")
   });
@@ -944,7 +967,7 @@ export default function ReportsPage() {
     mutationFn: (id: string) => deleteReportTemplate(id),
     onSuccess: () => {
       showToast(tr("toast.templateDeleted"));
-      refetchTemplates();
+      void refetchTemplates();
     },
     onError: () => showToast(tr("toast.templateDeleteFailed"), "error")
   });
@@ -978,7 +1001,7 @@ export default function ReportsPage() {
       showToast(tr("scheduleToast.saved"));
       setIsScheduleFormOpen(false);
       setEditingSchedule(null);
-      refetchSchedules();
+      void refetchSchedules();
     },
     onError: () => showToast(tr("scheduleToast.saveFailed"), "error")
   });
@@ -988,7 +1011,7 @@ export default function ReportsPage() {
       showToast(tr("scheduleToast.updated"));
       setIsScheduleFormOpen(false);
       setEditingSchedule(null);
-      refetchSchedules();
+      void refetchSchedules();
     },
     onError: () => showToast(tr("scheduleToast.updateFailed"), "error")
   });
@@ -996,7 +1019,7 @@ export default function ReportsPage() {
     mutationFn: (id: string) => deleteReportSchedule(id),
     onSuccess: () => {
       showToast(tr("scheduleToast.deleted"));
-      refetchSchedules();
+      void refetchSchedules();
     },
     onError: () => showToast(tr("scheduleToast.deleteFailed"), "error")
   });
@@ -1004,8 +1027,9 @@ export default function ReportsPage() {
     mutationFn: (id: string) => toggleReportSchedule(id),
     onSuccess: () => {
       showToast(tr("scheduleToast.toggled"));
-      refetchSchedules();
-    }
+      void refetchSchedules();
+    },
+    onError: () => showToast(tr("scheduleToast.toggleFailed"), "error")
   });
 
   const handleSaveSchedule = (e: React.FormEvent<HTMLFormElement>) => {
@@ -1027,12 +1051,13 @@ export default function ReportsPage() {
 
   // Generate Report Mutation
   const generateReportMutation = useMutation({
-    mutationFn: (data: { templateKey: string; title: string; dateRange?: { start: string; end: string } }) =>
+    mutationFn: (data: { templateKey: string; dateRange?: { start: string; end: string } }) =>
       generateReportFromTemplate({ templateKey: data.templateKey, dateRange: data.dateRange }),
     onSuccess: () => {
       showToast(tr("createModal.success"));
       setIsCreateModalOpen(false);
-      reportsQuery.refetch();
+      void reportsQuery.refetch();
+      void queryClient.invalidateQueries({ queryKey: ["report-analytics"] });
     },
     onError: () => showToast(tr("createModal.failed"), "error")
   });
@@ -1041,17 +1066,24 @@ export default function ReportsPage() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const templateKey = formData.get("templateKey") as string;
-    const title = formData.get("title") as string;
     const startDate = formData.get("startDate") as string;
     const endDate = formData.get("endDate") as string;
 
     if (!templateKey) return;
+    if ((startDate && !endDate) || (!startDate && endDate)) {
+      showToast(tr("createModal.dateRangeInvalid"), "error");
+      return;
+    }
 
     const dateRange = (startDate && endDate)
       ? { start: new Date(startDate).toISOString(), end: new Date(endDate).toISOString() }
       : undefined;
+    if (dateRange && new Date(dateRange.start).getTime() > new Date(dateRange.end).getTime()) {
+      showToast(tr("createModal.dateRangeInvalid"), "error");
+      return;
+    }
 
-    generateReportMutation.mutate({ templateKey, title: title || "Untitled Report", dateRange });
+    generateReportMutation.mutate({ templateKey, dateRange });
   };
 
   // Share Report Mutation
@@ -1181,7 +1213,7 @@ export default function ReportsPage() {
           ) : (
             <>
               {isLiveUnavailable ? <DashboardErrorState title={tr("error.title")} description={tr("error.desc")} onRetry={() => void reportsQuery.refetch()} minHeight="min-h-[150px]" /> : null}
-              <ReportsTable rows={rows} footerText={footerText} pagination={reportsQuery.data?.pagination} onPageChange={setPage} isFetching={reportsQuery.isFetching} />
+              <ReportsTable rows={rows} footerText={footerText} pagination={reportsQuery.data?.pagination} onPageChange={setPage} isFetching={reportsQuery.isFetching || exportMutation.isPending} onExport={(reportId) => exportMutation.mutate({ reportId, format: "pdf" })} />
             </>
           )}
         </div>
@@ -1206,10 +1238,10 @@ export default function ReportsPage() {
       {/* Schedule Settings Modal */}
       {mounted && isScheduleModalOpen ? createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => { setIsScheduleModalOpen(false); setIsScheduleFormOpen(false); }}>
-          <Panel className="flex w-full max-w-2xl flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+          <Panel role="dialog" aria-modal="true" aria-labelledby="reports-schedule-dialog-title" tabIndex={-1} className="flex w-full max-w-2xl flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div className="flex items-center gap-3">
-                <h2 className="text-lg font-black text-[#101334]">{tr("scheduleModal.title")}</h2>
+                <h2 id="reports-schedule-dialog-title" className="text-lg font-black text-[#101334]">{tr("scheduleModal.title")}</h2>
                 {!isScheduleFormOpen && (
                   <button type="button" onClick={() => { setEditingSchedule(null); setIsScheduleFormOpen(true); }} className="flex h-7 items-center justify-center gap-1.5 rounded-[6px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-2.5 text-[10px] font-black text-white shadow-sm transition hover:opacity-90">
                     <Plus size={12} /> {tr("scheduleModal.addSchedule")}
@@ -1308,10 +1340,10 @@ export default function ReportsPage() {
                           <button type="button" onClick={() => toggleScheduleMutation.mutate(schedule.id)} className={cn("flex h-8 items-center justify-center gap-1.5 rounded-[8px] border px-2.5 text-[10px] font-black transition", schedule.enabled ? "border-[#FAD7D7] bg-white text-[#EF4444] hover:bg-[#FFF4F4]" : "border-[#D1FAE5] bg-white text-[#10B981] hover:bg-[#ECFDF5]")}>
                             {schedule.enabled ? tr("scheduleModal.disabled") : tr("scheduleModal.enabled")}
                           </button>
-                          <button type="button" onClick={() => { setEditingSchedule(schedule); setIsScheduleFormOpen(true); }} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#465FFF] transition hover:bg-[#F5F7FC]" aria-label="Edit">
+                          <button type="button" onClick={() => { setEditingSchedule(schedule); setIsScheduleFormOpen(true); }} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#465FFF] transition hover:bg-[#F5F7FC]" aria-label={tr("actions.editSchedule")}>
                             <Edit2 size={13} />
                           </button>
-                          <button type="button" onClick={() => deleteScheduleMutation.mutate(schedule.id)} disabled={deleteScheduleMutation.isPending} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#FAD7D7] bg-white text-[#EF4444] transition hover:bg-[#FFF4F4]" aria-label="Delete">
+                          <button type="button" onClick={() => { if (window.confirm(tr("confirm.deleteSchedule"))) deleteScheduleMutation.mutate(schedule.id); }} disabled={deleteScheduleMutation.isPending} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#FAD7D7] bg-white text-[#EF4444] transition hover:bg-[#FFF4F4]" aria-label={tr("actions.deleteSchedule")}>
                             <Trash2 size={13} />
                           </button>
                         </div>
@@ -1335,10 +1367,10 @@ export default function ReportsPage() {
       {/* Popular Reports Modal */}
       {mounted && isPopularModalOpen ? createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsPopularModalOpen(false)}>
-          <Panel className="flex w-full max-w-lg flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+          <Panel role="dialog" aria-modal="true" aria-labelledby="reports-popular-dialog-title" tabIndex={-1} className="flex w-full max-w-lg flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div>
-                <h2 className="text-lg font-black text-[#101334]">{tr("popular.title")}</h2>
+                <h2 id="reports-popular-dialog-title" className="text-lg font-black text-[#101334]">{tr("popular.title")}</h2>
                 <p className="mt-1 text-[11px] font-bold text-[#68739F]">{tr("popular.desc")}</p>
               </div>
               <button type="button" onClick={() => setIsPopularModalOpen(false)} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
@@ -1375,10 +1407,10 @@ export default function ReportsPage() {
       {/* Share Report Modal */}
       {mounted && isShareModalOpen ? createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsShareModalOpen(false)}>
-          <Panel className="flex w-full max-w-md flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+          <Panel role="dialog" aria-modal="true" aria-labelledby="reports-share-dialog-title" tabIndex={-1} className="flex w-full max-w-md flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div>
-                <h2 className="text-lg font-black text-[#101334]">{tr("shareModal.title")}</h2>
+                <h2 id="reports-share-dialog-title" className="text-lg font-black text-[#101334]">{tr("shareModal.title")}</h2>
                 <p className="mt-1 text-[11px] font-bold text-[#68739F]">{tr("shareModal.desc")}</p>
               </div>
               <button type="button" onClick={() => setIsShareModalOpen(false)} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
@@ -1427,10 +1459,10 @@ export default function ReportsPage() {
       {/* Modals */}
       {mounted && isTemplatesModalOpen ? createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsTemplatesModalOpen(false)}>
-          <Panel className="flex w-full max-w-2xl flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+          <Panel role="dialog" aria-modal="true" aria-labelledby="reports-templates-dialog-title" tabIndex={-1} className="flex w-full max-w-2xl flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div className="flex items-center gap-3">
-                <h2 className="text-lg font-black text-[#101334]">{tr("buttons.manageTemplates")}</h2>
+                <h2 id="reports-templates-dialog-title" className="text-lg font-black text-[#101334]">{tr("buttons.manageTemplates")}</h2>
                 {!isFormOpen && (
                   <button type="button" onClick={() => { setEditingTemplate(null); setIsFormOpen(true); }} className="flex h-7 items-center justify-center gap-1.5 rounded-[6px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-2.5 text-[10px] font-black text-white shadow-sm transition hover:opacity-90">
                     <Plus size={12} /> {tr("templateForm.addCustom")}
@@ -1511,10 +1543,10 @@ export default function ReportsPage() {
                           </button>
                         ) : (
                           <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
-                            <button type="button" onClick={() => { setEditingTemplate(template); setIsFormOpen(true); }} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#465FFF] transition hover:bg-[#F5F7FC]" aria-label="Edit">
+                            <button type="button" onClick={() => { setEditingTemplate(template); setIsFormOpen(true); }} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#465FFF] transition hover:bg-[#F5F7FC]" aria-label={tr("actions.editTemplate")}>
                               <Edit2 size={13} />
                             </button>
-                            <button type="button" onClick={() => deleteTemplateMutation.mutate(template.key)} disabled={deleteTemplateMutation.isPending} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#FAD7D7] bg-white text-[#EF4444] transition hover:bg-[#FFF4F4]" aria-label="Delete">
+                            <button type="button" onClick={() => { if (window.confirm(tr("confirm.deleteTemplate"))) deleteTemplateMutation.mutate(template.key); }} disabled={deleteTemplateMutation.isPending} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#FAD7D7] bg-white text-[#EF4444] transition hover:bg-[#FFF4F4]" aria-label={tr("actions.deleteTemplate")}>
                               <Trash2 size={13} />
                             </button>
                           </div>
@@ -1537,10 +1569,10 @@ export default function ReportsPage() {
 
       {mounted && isCreateModalOpen ? createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsCreateModalOpen(false)}>
-          <Panel className="flex w-full max-w-lg flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+          <Panel role="dialog" aria-modal="true" aria-labelledby="reports-create-dialog-title" tabIndex={-1} className="flex w-full max-w-lg flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div>
-                <h2 className="text-lg font-black text-[#101334]">{tr("createModal.title")}</h2>
+                <h2 id="reports-create-dialog-title" className="text-lg font-black text-[#101334]">{tr("createModal.title")}</h2>
                 <p className="mt-1 text-[11px] font-bold text-[#68739F]">{tr("createModal.desc")}</p>
               </div>
               <button type="button" onClick={() => setIsCreateModalOpen(false)} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
@@ -1560,10 +1592,6 @@ export default function ReportsPage() {
                   {!templatesQuery.isPending && (!templatesQuery.data || templatesQuery.data.data.length === 0) && (
                     <p className="mt-1.5 text-[10px] font-bold text-[#EF4444]">{tr("createModal.noTemplates")}</p>
                   )}
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("createModal.titleLabel")}</label>
-                  <input name="title" placeholder={tr("createModal.titlePlaceholder")} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("createModal.dateRangeLabel")}</label>

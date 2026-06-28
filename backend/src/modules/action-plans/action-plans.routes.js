@@ -180,7 +180,7 @@ router.get("/metrics", async (req, res) => {
             const isCurrent = plan.createdAt >= sevenDaysAgo;
             const isPrevious = plan.createdAt >= fourteenDaysAgo && plan.createdAt < sevenDaysAgo;
             const isActive = plan.workflowStatus !== "done";
-            const isInProgress = plan.workflowStatus === "in_progress";
+            const isInProgress = ["in_progress", "blocked"].includes(plan.workflowStatus);
             const isDone = plan.workflowStatus === "done";
             const isNeedsAttention = isActive && ["high", "critical"].includes(plan.escalationLevel);
 

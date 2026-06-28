@@ -65,7 +65,7 @@ router.post("/", validateRequest({ body: createActionPlanBodySchema }), async (r
 // GET /api/actions — List action plans
 router.get("/", async (req, res) => {
     try {
-        const { workspaceId } = req.query;
+        const { workspaceId, search, priority, status } = req.query;
         const page = parseInt(req.query.page, 10) || 1;
         const limit = parseInt(req.query.limit, 10) || 10;
         const safePage = Math.max(1, page);
@@ -76,8 +76,41 @@ router.get("/", async (req, res) => {
         }
         const skip = (safePage - 1) * safeLimit;
 
-        const whereClause = {};
+        const whereClause = { AND: [] };
         whereClause.workspaceId = { in: scopedWorkspaceIds };
+        if (search && String(search).trim()) {
+            const term = String(search).trim();
+            whereClause.AND.push({ OR: [
+                { title: { contains: term, mode: "insensitive" } },
+                { assignedTo: { contains: term, mode: "insensitive" } },
+                { assignedTeam: { contains: term, mode: "insensitive" } },
+                { alert: { is: { title: { contains: term, mode: "insensitive" } } } },
+                { cluster: { is: { title: { contains: term, mode: "insensitive" } } } }
+            ] });
+        }
+        if (priority && priority !== "all") {
+            const priorityValue = String(priority).toLowerCase();
+            if (["low", "medium", "high", "critical"].includes(priorityValue)) {
+                whereClause.escalationLevel = priorityValue;
+            }
+        }
+        if (status && status !== "all") {
+            const normalizedStatus = String(status);
+            if (normalizedStatus === "active") {
+                whereClause.AND.push({ OR: [
+                    { workflowStatus: null },
+                    { workflowStatus: "todo" },
+                    { workflowStatus: "active" }
+                ] });
+            } else if (normalizedStatus === "in-progress") {
+                whereClause.workflowStatus = { in: ["in_progress", "blocked"] };
+            } else {
+                whereClause.workflowStatus = normalizedStatus;
+            }
+        }
+        if (whereClause.AND.length === 0) {
+            delete whereClause.AND;
+        }
 
         const [data, total] = await Promise.all([
             prisma.actionPlan.findMany({
@@ -99,6 +132,11 @@ router.get("/", async (req, res) => {
                 title: plan.title,
                 alert: plan.alert,
                 cluster: plan.cluster,
+                assignedTo: plan.assignedTo,
+                assignedTeam: plan.assignedTeam,
+                deadline: plan.deadline,
+                escalationLevel: plan.escalationLevel,
+                workflowStatus: plan.workflowStatus,
                 createdAt: plan.createdAt
             })),
             meta: { page: safePage, limit: safeLimit, total }

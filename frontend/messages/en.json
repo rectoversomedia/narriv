@@ -1719,6 +1719,7 @@
       "archived": "Archived",
       "search": "Search reports...",
       "latest": "Latest",
+      "oldest": "Oldest",
       "title": "Filter"
     },
     "readinessStatus": "Readiness status",
@@ -1819,6 +1820,16 @@
     "templateDeleted": "Template deleted successfully.",
     "templateDeleteFailed": "Failed to delete template."
   },
+  "actions": {
+    "editTemplate": "Edit template",
+    "deleteTemplate": "Delete template",
+    "editSchedule": "Edit schedule",
+    "deleteSchedule": "Delete schedule"
+  },
+  "confirm": {
+    "deleteTemplate": "Delete this custom report template?",
+    "deleteSchedule": "Delete this report schedule?"
+  },
   "templateForm": {
     "addCustom": "Add Custom",
     "editCustom": "Edit Template",
@@ -1840,7 +1851,8 @@
       "REVIEW": "Review",
       "DRAFT": "Draft",
       "SCHEDULED": "Scheduled",
-      "READY": "Ready"
+      "READY": "Ready",
+      "ARCHIVED": "Archived"
     },
     "quickActions": {
       "title": "Quick Actions",
@@ -1955,6 +1967,7 @@
     "generating": "Generating...",
     "success": "Report generated successfully.",
     "failed": "Failed to generate report. Please try again.",
+    "dateRangeInvalid": "Select a valid start and end date.",
     "noTemplates": "No templates available."
   },
   "scheduleModal": {
@@ -1999,7 +2012,8 @@
     "updateFailed": "Failed to update schedule.",
     "deleted": "Schedule deleted successfully.",
     "deleteFailed": "Failed to delete schedule.",
-    "toggled": "Schedule status updated."
+    "toggled": "Schedule status updated.",
+    "toggleFailed": "Failed to update schedule status."
   },
   "shareModal": {
     "title": "Share Report",
@@ -2014,6 +2028,18 @@
     "success": "Report sent successfully.",
     "failed": "Failed to send report. Please try again.",
     "noReport": "No report available to share. Create a report first."
+  },
+  "detail": {
+    "back": "Back to reports",
+    "liveReport": "Live report",
+    "defaultSummary": "This report is generated from the latest Narriv intelligence data.",
+    "reportId": "Report ID",
+    "createdAt": "Created at",
+    "sections": "Sections",
+    "unavailableTitle": "Report unavailable",
+    "unavailableDesc": "The report could not be loaded or you may not have access to it.",
+    "emptySectionsTitle": "No sections returned",
+    "emptySectionsDesc": "The backend returned the report shell, but no detailed sections were available."
   },
   "metricsCard": {
       "templates": "Templates",
@@ -3012,10 +3038,12 @@
     "impactLabel": "Impact:",
     "categoryLabel": "Category",
     "impactFieldLabel": "Impact",
+    "statusFieldLabel": "Status",
     "slaLabel": "SLA",
     "dueDateLabel": "Due Date",
     "aiStepsTitle": "AI Recommended Steps",
     "viewFullPlan": "View Full Plan",
+    "backToQueue": "Back to queue",
     "approve": "Approve",
     "reject": "Reject",
     "last7Days": "Last 7 Days",
@@ -3039,6 +3067,8 @@
     "performanceEmptyDesc": "Select an action to view its performance.",
     "learningEmptyTitle": "No action selected",
     "learningEmptyDesc": "Select an action to view its insights and learning.",
+    "learningNoDataTitle": "No learning data yet",
+    "learningNoDataDesc": "Insights will appear after this action receives feedback or follow-up activity.",
     "viewFullAnalytics": "View Full Analytics",
     "keyInsights": "Key Insights",
     "insight1Title": "Payment delay topics have the longest resolution",
@@ -3059,9 +3089,12 @@
     "planErrorDesc": "Detail panel still uses sample data until backend is available.",
     "emptyTitle": "No live actions yet",
     "emptyDesc": "Backend connected successfully, but no action plans have been created.",
+    "noMatchTitle": "No actions match your filters",
+    "noMatchDesc": "Try another search term, priority, or status filter.",
     "filterAll": "All Actions",
     "livePlanLabel": "Live API Plan",
     "liveOwnerLabel": "Narriv Team",
+    "unassignedOwner": "Unassigned",
     "liveRoleLabel": "Action Owner",
     "liveReviewLabel": "Review",
     "modal": {

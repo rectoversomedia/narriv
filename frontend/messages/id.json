@@ -1718,6 +1718,7 @@
       "archived": "Archived",
       "search": "Cari laporan...",
       "latest": "Terbaru",
+      "oldest": "Terlama",
       "title": "Filter"
     },
     "readinessStatus": "Status kesiapan",
@@ -1818,6 +1819,16 @@
     "templateDeleted": "Template berhasil dihapus.",
     "templateDeleteFailed": "Gagal menghapus template."
   },
+  "actions": {
+    "editTemplate": "Edit template",
+    "deleteTemplate": "Hapus template",
+    "editSchedule": "Edit jadwal",
+    "deleteSchedule": "Hapus jadwal"
+  },
+  "confirm": {
+    "deleteTemplate": "Hapus template laporan kustom ini?",
+    "deleteSchedule": "Hapus jadwal laporan ini?"
+  },
   "templateForm": {
     "addCustom": "Buat Kustom",
     "editCustom": "Edit Template",
@@ -1839,7 +1850,8 @@
       "READY": "Siap",
       "REVIEW": "Review",
       "DRAFT": "Draf",
-      "SCHEDULED": "Terjadwal"
+      "SCHEDULED": "Terjadwal",
+      "ARCHIVED": "Diarsipkan"
     },
     "quickActions": {
       "title": "Aksi Cepat",
@@ -1954,6 +1966,7 @@
     "generating": "Menghasilkan...",
     "success": "Laporan berhasil dihasilkan.",
     "failed": "Gagal menghasilkan laporan. Silakan coba lagi.",
+    "dateRangeInvalid": "Pilih tanggal mulai dan akhir yang valid.",
     "noTemplates": "Belum ada template yang tersedia."
   },
   "scheduleModal": {
@@ -1998,7 +2011,8 @@
     "updateFailed": "Gagal memperbarui jadwal.",
     "deleted": "Jadwal berhasil dihapus.",
     "deleteFailed": "Gagal menghapus jadwal.",
-    "toggled": "Status jadwal berhasil diperbarui."
+    "toggled": "Status jadwal berhasil diperbarui.",
+    "toggleFailed": "Gagal memperbarui status jadwal."
   },
   "shareModal": {
     "title": "Bagikan Laporan",
@@ -2013,6 +2027,18 @@
     "success": "Laporan berhasil dikirim.",
     "failed": "Gagal mengirim laporan. Silakan coba lagi.",
     "noReport": "Belum ada laporan untuk dibagikan. Buat laporan terlebih dahulu."
+  },
+  "detail": {
+    "back": "Kembali ke laporan",
+    "liveReport": "Laporan live",
+    "defaultSummary": "Laporan ini dibuat dari data intelligence Narriv terbaru.",
+    "reportId": "ID laporan",
+    "createdAt": "Dibuat pada",
+    "sections": "Bagian",
+    "unavailableTitle": "Laporan tidak tersedia",
+    "unavailableDesc": "Laporan tidak dapat dimuat atau kamu tidak memiliki akses.",
+    "emptySectionsTitle": "Belum ada bagian laporan",
+    "emptySectionsDesc": "Backend mengembalikan data laporan, tetapi detail bagian belum tersedia."
   },
   "metricsCard": {
       "templates": "Templates",
@@ -3011,10 +3037,12 @@
     "impactLabel": "Dampak:",
     "categoryLabel": "Kategori",
     "impactFieldLabel": "Dampak",
+    "statusFieldLabel": "Status",
     "slaLabel": "SLA",
     "dueDateLabel": "Jatuh Tempo",
     "aiStepsTitle": "Rekomendasi Langkah AI",
     "viewFullPlan": "Lihat Rencana Lengkap",
+    "backToQueue": "Kembali ke antrean",
     "approve": "Setuju",
     "reject": "Tolak",
     "last7Days": "7 Hari Terakhir",
@@ -3038,6 +3066,8 @@
     "performanceEmptyDesc": "Pilih tindakan terlebih dahulu untuk melihat performa.",
     "learningEmptyTitle": "Belum ada tindakan dipilih",
     "learningEmptyDesc": "Pilih tindakan terlebih dahulu untuk melihat wawasan dan pembelajaran.",
+    "learningNoDataTitle": "Belum ada data pembelajaran",
+    "learningNoDataDesc": "Insight akan muncul setelah tindakan ini mendapat feedback atau aktivitas lanjutan.",
     "viewFullAnalytics": "Lihat Analytics Lengkap",
     "keyInsights": "Insight Utama",
     "insight1Title": "Topik payment delay memiliki resolusi paling lama",
@@ -3058,9 +3088,12 @@
     "planErrorDesc": "Panel detail tetap memakai data contoh sampai backend tersedia.",
     "emptyTitle": "Belum ada tindakan live",
     "emptyDesc": "Backend berhasil dihubungi, tetapi belum ada action plan yang dibuat.",
+    "noMatchTitle": "Tidak ada tindakan yang cocok",
+    "noMatchDesc": "Coba kata kunci, prioritas, atau status lain.",
     "filterAll": "Semua Tindakan",
     "livePlanLabel": "Rencana Live API",
     "liveOwnerLabel": "Tim Narriv",
+    "unassignedOwner": "Belum ditugaskan",
     "liveRoleLabel": "Pemilik Aksi",
     "liveReviewLabel": "Tinjau",
     "modal": {
