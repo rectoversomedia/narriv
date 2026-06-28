@@ -10,10 +10,18 @@ export async function listCases(req, res) {
             return forbidden(res, "Workspace access denied", "WORKSPACE_ACCESS_DENIED");
         }
 
-        const { status, priority, page, limit } = req.query;
+        const { search, status, priority, page, limit } = req.query;
         const skip = (page - 1) * limit;
 
         const where = { workspaceId: scopedWorkspaceId };
+        if (search) {
+            where.OR = [
+                { title: { contains: search, mode: "insensitive" } },
+                { description: { contains: search, mode: "insensitive" } },
+                { assignedTo: { contains: search, mode: "insensitive" } },
+                { assignedTeam: { contains: search, mode: "insensitive" } },
+            ];
+        }
         if (status) where.status = status;
         if (priority) where.priority = priority;
 

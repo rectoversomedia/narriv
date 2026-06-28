@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const casesQuerySchema = z.object({
     workspaceId: z.string().uuid("workspaceId must be a valid UUID.").optional(),
+    search: z.string().trim().max(200, "search is too long.").optional(),
     status: z.enum(["open", "in_progress", "resolved", "closed"]).optional(),
     priority: z.enum(["low", "medium", "high", "critical"]).optional(),
     page: z.coerce.number().int().min(1).default(1),

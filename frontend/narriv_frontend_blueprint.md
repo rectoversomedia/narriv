@@ -335,13 +335,19 @@
 #### 🗂️ Cases & Investigations (`/workspace/cases`)
 | Widget | Detail | Data Source |
 |--------|--------|-------------|
-| Header | Title and "Create Case" button | Static UI |
-| Filters | Status (Open, In Progress, Resolved, Closed) & Priority filters | Local state driving API `status`/`priority` queries |
-| Cases Table | List of cases with Title, Status dropdown, Priority badge, Assignee, Actions | Wired to `getCases()` with pagination and error/empty states |
-| Status Actions | Inline dropdown to change status | Wired to `updateCase()` mutation |
-| Delete Action | Trash icon with confirmation dialog | Wired to `deleteCase()` mutation |
-| Sidebar Navigation | Listed under "Action" group in sidebar | `navGroups` in `mock-data.ts` includes `/workspace/cases` with `FileText` icon |
+| Header | Eyebrow badge, title, description, Refresh + New Case buttons — fully bilingual | Static UI with `next-intl` |
+| KPI Metric Cards (4x) | Total Cases, Open, In Progress, Resolved — with icons and helper text | Per-status `getCases({ status })` meta.total counts; `MetricRowSkeleton` loading state |
+| Filters | Search with debounce, Status dropdown (Open/In Progress/Resolved/Closed), Priority dropdown (Critical/High/Medium/Low) | Local state driving server-side `getCases()` search/status/priority query params |
+| Cases Table | Title+description, Status dropdown+badge, Priority dropdown+badge, Assignee avatar, Deadline with overdue indicator, Created (relative+absolute time), View+Delete actions | Wired to `getCases()` with pagination, `TableSkeleton` loading, error/empty states, and "Create first case" CTA in empty state |
+| Status Actions | Inline dropdown to change status with badge below | Wired to `updateCase()` mutation with query invalidation across cases/metrics |
+| Priority Actions | Inline dropdown to change priority with badge below | Wired to `updateCase()` mutation |
+| Case Detail Sidebar | Slide-in panel showing full case info: title, description, status/priority badges, assignee, deadline, created/updated timestamps, source info, and resolution textarea with save | `getCaseById()` with loading/error states; `updateCase()` for resolution; focus management and Escape close |
+| Delete Action | Eye (view) + Trash (delete) icons; confirmation dialog | Wired to `deleteCase()` mutation with metric count invalidation |
+| Footer | Total count + pagination | `DashboardPagination` from `meta` with total label |
+| Sidebar Navigation | Listed under "Action" group in sidebar | `navGroups` includes `/workspace/cases` with `FileText` icon |
 | Redirect Page | `/cases` → `/workspace/cases` | `app/(dashboard)/cases/page.tsx` redirects via `next/navigation` |
+| Bilingual Coverage | All UI text (header, metrics, filters, table headers, statuses, priorities, empty/error states, toasts, detail labels, resolution) translated to EN/ID | `next-intl` via `useTranslations("Workspace.cases.*")` — 80+ translation keys including `metrics.*`, `detail.*`, `table.*` |
+
 
 ---
 
@@ -585,7 +591,7 @@ These replace the removed frontend checklist/guidelines and should be treated as
 - [x] **Onboarding API** — Connect onboarding steps to workspace setup endpoints. Flow processes and saves dummy default configuration, then redirects to dashboard. Completed 2026-06-04.
 - [ ] **File Upload** — Settings logo upload is wired to the backend local upload API. Remaining scope: migrate storage to cloud storage (S3/Supabase Storage) before production-scale deployment.
 - [x] **Activity Log** — Created `/workspace/activity` page and wired it to `getActivityLogs()` / `GET /api/workspace/activity` with filters, metrics, table states, sidebar navigation, and pagination. Completed 2026-06-05. Fully translated to bilingual (metric cards, headers, event badge names, relative time format using `numeric: "always"`) 2026-06-13.
-- [x] **Cases Page** — Create `/workspace/cases` page and wire it to the cases API endpoints. Added sidebar navigation entry under "Action" group. Added `/cases` → `/workspace/cases` redirect page. Completed 2026-06-04.
+- [x] **Cases Page** — Create `/workspace/cases` page and wire it to the cases API endpoints. Added sidebar navigation entry under "Action" group. Added `/cases` → `/workspace/cases` redirect page. Completed 2026-06-04. Production-ready pass 2026-06-28: added KPI metric cards (Total/Open/In Progress/Resolved from per-status API counts), `TableSkeleton` loading state, case detail slide-in sidebar with `getCaseById()` and resolution editing, inline priority dropdown editing, deadline column with overdue indicator, created column with relative+absolute time, refresh button, assignee avatar, "Create first case" CTA in empty state, and 80+ bilingual translation keys covering metrics, detail panel, and all new UI elements.
 - [x] **Integrations Page** — Created `/workspace/integrations` page and wired it to integration CRUD endpoints with create form, filters, inline status update, disconnect confirmation, sidebar navigation, and table states. Completed 2026-06-05.
 - [x] **Real-time Notifications** — Added SSE (`/api/notifications/stream`) to automatically push new notifications to the frontend bell icon without polling. Completed 2026-06-04.
 - [x] **Export Downloads** — PDF export via `createReportExport()` with polling via `getReportExportStatus()` and auto-download on completion. Completed 2026-05-31.

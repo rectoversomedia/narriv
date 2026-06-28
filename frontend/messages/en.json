@@ -768,31 +768,31 @@
     "recommended": "Recommended action",
     "cta": "Create Action Plan",
     "timeRange24h": "24 Hours",
-  "timeRange7d": "7 Days",
-  "timeRange30d": "30 Days",
-  "filterAll": "All",
-  "filterNegative": "Negative",
-  "filterPositive": "Positive",
-  "filterNeutral": "Neutral",
-  "filterMixed": "Mixed",
-  "sortLatest": "Latest first",
-  "headerSignal": "Signal",
-  "headerSource": "Source",
-  "headerSentiment": "Sentiment",
-  "headerPublished": "Published",
-  "headerCaptured": "Captured",
-  "headerAction": "Action",
-  "investigate": "Investigate",
-  "footerLive": "{from}-{to} of {total} signals",
-  "footerUnavailable": "Live data unavailable. No fallback rows are shown.",
-  "errorTitle": "Live data unavailable",
-  "errorDesc": "API client attempted token refresh. No fallback rows are shown so the table stays accurate.",
-  "metaErrorTitle": "Signal metadata unavailable",
-  "metaErrorDesc": "Summary panels could not load from the API. The signal list remains available if the list endpoint responds.",
-  "fallbackUntitled": "Untitled signal",
-  "fallbackNoContent": "No content summary available.",
-  "fallbackUnknownSource": "Unknown Source",
-  "fallbackLiveSource": "Live Source"
+    "timeRange7d": "7 Days",
+    "timeRange30d": "30 Days",
+    "filterAll": "All",
+    "filterNegative": "Negative",
+    "filterPositive": "Positive",
+    "filterNeutral": "Neutral",
+    "filterMixed": "Mixed",
+    "sortLatest": "Latest first",
+    "headerSignal": "Signal",
+    "headerSource": "Source",
+    "headerSentiment": "Sentiment",
+    "headerPublished": "Published",
+    "headerCaptured": "Captured",
+    "headerAction": "Action",
+    "investigate": "Investigate",
+    "footerLive": "{from}-{to} of {total} signals",
+    "footerUnavailable": "Live data unavailable. No fallback rows are shown.",
+    "errorTitle": "Live data unavailable",
+    "errorDesc": "API client attempted token refresh. No fallback rows are shown so the table stays accurate.",
+    "metaErrorTitle": "Signal metadata unavailable",
+    "metaErrorDesc": "Summary panels could not load from the API. The signal list remains available if the list endpoint responds.",
+    "fallbackUntitled": "Untitled signal",
+    "fallbackNoContent": "No content summary available.",
+    "fallbackUnknownSource": "Unknown Source",
+    "fallbackLiveSource": "Live Source"
   },
   "Visibility": {
     "breadcrumb": "Dashboard / AI Visibility",
@@ -923,7 +923,15 @@
       "export": "Export visibility data",
       "simulate": "Run AI simulation"
     },
-    "fallbackDates": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    "fallbackDates": [
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat",
+      "Sun"
+    ]
   },
   "ActionPlansLegacy": {
     "title": "Action Plans",
@@ -1198,7 +1206,6 @@
         "title": "Critical Delivery Status",
         "viewAll": "View All"
       },
-
       "delivery": {
         "active": "Active",
         "corpAffairsChannel": "#corporate-affairs",
@@ -1807,47 +1814,47 @@
       "geoStatus": "Needs AI visibility notes",
       "feedbackStatus": "Awaiting team feedback"
     },
-  "toast": {
-    "exportStarted": "Export started. Checking status...",
-    "exportSuccess": "Export successful. File ready for download.",
-    "exportFailed": "Export failed. Please try again.",
-    "exportProcessing": "Export still processing. Try again later.",
-    "exportInitFailed": "Export could not be started. Please try again.",
-    "templateSaved": "Template saved successfully.",
-    "templateSaveFailed": "Failed to save template.",
-    "templateUpdated": "Template updated successfully.",
-    "templateUpdateFailed": "Failed to update template.",
-    "templateDeleted": "Template deleted successfully.",
-    "templateDeleteFailed": "Failed to delete template."
-  },
-  "actions": {
-    "editTemplate": "Edit template",
-    "deleteTemplate": "Delete template",
-    "editSchedule": "Edit schedule",
-    "deleteSchedule": "Delete schedule"
-  },
-  "confirm": {
-    "deleteTemplate": "Delete this custom report template?",
-    "deleteSchedule": "Delete this report schedule?"
-  },
-  "templateForm": {
-    "addCustom": "Add Custom",
-    "editCustom": "Edit Template",
-    "nameLabel": "Template Name",
-    "namePlaceholder": "E.g. Monthly Social Media Audit",
-    "descLabel": "Description",
-    "descPlaceholder": "Brief explanation of this template",
-    "formatLabel": "Format",
-    "cadenceLabel": "Cadence",
-    "cancel": "Cancel",
-    "save": "Save Template",
-    "saving": "Saving...",
-    "onDemand": "On-demand",
-    "daily": "Daily",
-    "weekly": "Weekly",
-    "monthly": "Monthly"
-  },
-  "statusBadge": {
+    "toast": {
+      "exportStarted": "Export started. Checking status...",
+      "exportSuccess": "Export successful. File ready for download.",
+      "exportFailed": "Export failed. Please try again.",
+      "exportProcessing": "Export still processing. Try again later.",
+      "exportInitFailed": "Export could not be started. Please try again.",
+      "templateSaved": "Template saved successfully.",
+      "templateSaveFailed": "Failed to save template.",
+      "templateUpdated": "Template updated successfully.",
+      "templateUpdateFailed": "Failed to update template.",
+      "templateDeleted": "Template deleted successfully.",
+      "templateDeleteFailed": "Failed to delete template."
+    },
+    "actions": {
+      "editTemplate": "Edit template",
+      "deleteTemplate": "Delete template",
+      "editSchedule": "Edit schedule",
+      "deleteSchedule": "Delete schedule"
+    },
+    "confirm": {
+      "deleteTemplate": "Delete this custom report template?",
+      "deleteSchedule": "Delete this report schedule?"
+    },
+    "templateForm": {
+      "addCustom": "Add Custom",
+      "editCustom": "Edit Template",
+      "nameLabel": "Template Name",
+      "namePlaceholder": "E.g. Monthly Social Media Audit",
+      "descLabel": "Description",
+      "descPlaceholder": "Brief explanation of this template",
+      "formatLabel": "Format",
+      "cadenceLabel": "Cadence",
+      "cancel": "Cancel",
+      "save": "Save Template",
+      "saving": "Saving...",
+      "onDemand": "On-demand",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly"
+    },
+    "statusBadge": {
       "REVIEW": "Review",
       "DRAFT": "Draft",
       "SCHEDULED": "Scheduled",
@@ -1865,24 +1872,24 @@
       "viewHistory": "View Report History",
       "historyDesc": "Access all previous reports"
     },
-  "preview": {
-    "title": "Report Preview",
-    "desc": "Review summary before sharing to stakeholders.",
-    "viewPreview": "View Preview",
-    "downloadPdf": "Download PDF",
-    "executiveBrief": "Executive Narrative Brief",
-    "pdfDaily": "PDF · Daily",
-    "ready": "Ready",
-    "imageAlt": "AI reports assistant illustration",
-    "liveFallback": "Intelligence report from Narriv backend.",
-    "liveType": "Report · Live API",
-    "activePeriod": "Active period",
-    "liveCreated": "Live data",
-    "latestReport": "Latest report",
-    "noSections": "No sections defined for this report.",
-    "emptyTitle": "No report to preview",
-    "emptyDesc": "Create a report first to see its preview here."
-  },
+    "preview": {
+      "title": "Report Preview",
+      "desc": "Review summary before sharing to stakeholders.",
+      "viewPreview": "View Preview",
+      "downloadPdf": "Download PDF",
+      "executiveBrief": "Executive Narrative Brief",
+      "pdfDaily": "PDF · Daily",
+      "ready": "Ready",
+      "imageAlt": "AI reports assistant illustration",
+      "liveFallback": "Intelligence report from Narriv backend.",
+      "liveType": "Report · Live API",
+      "activePeriod": "Active period",
+      "liveCreated": "Live data",
+      "latestReport": "Latest report",
+      "noSections": "No sections defined for this report.",
+      "emptyTitle": "No report to preview",
+      "emptyDesc": "Create a report first to see its preview here."
+    },
     "sentimentChart": {
       "title": "Sentiment Last 7 Days",
       "positive": "Positive",
@@ -1903,33 +1910,33 @@
       "body": "In the last 7 days, negative sentiment increased 18% driven by payment complaints and application stability in the Jabodetabek area."
     },
     "aiSummaryDynamic": {
-    "insightText": "{title} is the top issue with the highest volume ({count} signals).",
-    "riskText": "Potential reputational escalation regarding {title}.",
-    "noRiskText": "No critical negative issues detected.",
-    "movementText": "Conversations around {title} up {velocity} recently.",
-    "recommendationText": "{rec}",
-    "body": "In the recent period, the system captured significant narrative movement driven by {title} and {otherCount} other active topics.",
-    "emptyInsight": "No data available to generate insights.",
-    "emptyRisk": "No data to assess risk.",
-    "emptyMovement": "No movement data.",
-    "emptyRec": "Gathering data for recommendations.",
-    "emptyBody": "The AI engine is waiting for enough narrative signals to generate a comprehensive report summary."
-  },
-  "formatDonut": {
-    "title": "Format Distribution",
-    "desc": "Comparison of generated report formats.",
-    "total": "Total Reports",
-    "noData": "No format data yet.",
-    "noDataDesc": "Report format data will appear here once reports are generated."
-  },
-  "timeline": {
-    "title": "Report Creation Trend",
-    "period": "(Last 14 Days)",
-    "desc": "Number of reports created per day.",
-    "peak": "{count} reports",
-    "noData": "No data yet",
-    "noDataDesc": "Report creation timeline will appear here once reports are generated."
-  },
+      "insightText": "{title} is the top issue with the highest volume ({count} signals).",
+      "riskText": "Potential reputational escalation regarding {title}.",
+      "noRiskText": "No critical negative issues detected.",
+      "movementText": "Conversations around {title} up {velocity} recently.",
+      "recommendationText": "{rec}",
+      "body": "In the recent period, the system captured significant narrative movement driven by {title} and {otherCount} other active topics.",
+      "emptyInsight": "No data available to generate insights.",
+      "emptyRisk": "No data to assess risk.",
+      "emptyMovement": "No movement data.",
+      "emptyRec": "Gathering data for recommendations.",
+      "emptyBody": "The AI engine is waiting for enough narrative signals to generate a comprehensive report summary."
+    },
+    "formatDonut": {
+      "title": "Format Distribution",
+      "desc": "Comparison of generated report formats.",
+      "total": "Total Reports",
+      "noData": "No format data yet.",
+      "noDataDesc": "Report format data will appear here once reports are generated."
+    },
+    "timeline": {
+      "title": "Report Creation Trend",
+      "period": "(Last 14 Days)",
+      "desc": "Number of reports created per day.",
+      "peak": "{count} reports",
+      "noData": "No data yet",
+      "noDataDesc": "Report creation timeline will appear here once reports are generated."
+    },
     "popular": {
       "title": "Popular Reports",
       "desc": "Based on most frequently created report titles.",
@@ -1945,103 +1952,103 @@
       "title": "Report data unavailable",
       "desc": "API client attempted token refresh. Showing sample data for now."
     },
-  "buttons": {
-    "manageTemplates": "Manage Templates",
-    "scheduleSettings": "Schedule Settings",
-    "createNew": "Create New Report",
-    "systemTemplate": "System Template",
-    "closeTemp": "Close"
-  },
-  "createModal": {
-    "title": "Create New Report",
-    "desc": "Generate a new intelligence report from a template.",
-    "templateLabel": "Report Template",
-    "templatePlaceholder": "Select a template",
-    "titleLabel": "Report Title",
-    "titlePlaceholder": "E.g. Weekly Narrative Brief",
-    "dateRangeLabel": "Date Range",
-    "startLabel": "Start Date",
-    "endLabel": "End Date",
-    "cancel": "Cancel",
-    "generate": "Generate Report",
-    "generating": "Generating...",
-    "success": "Report generated successfully.",
-    "failed": "Failed to generate report. Please try again.",
-    "dateRangeInvalid": "Select a valid start and end date.",
-    "noTemplates": "No templates available."
-  },
-  "scheduleModal": {
-    "title": "Report Schedules",
-    "desc": "Manage recurring report generation schedules.",
-    "empty": "No schedules configured yet.",
-    "emptyDesc": "Create a schedule to automate report generation.",
-    "addSchedule": "Add Schedule",
-    "editSchedule": "Edit Schedule",
-    "nameLabel": "Schedule Name",
-    "namePlaceholder": "E.g. Weekly Executive Brief",
-    "templateLabel": "Report Template",
-    "templatePlaceholder": "Select a template",
-    "cadenceLabel": "Cadence",
-    "dayLabel": "Day of Week",
-    "timeLabel": "Time",
-    "daily": "Daily",
-    "weekly": "Weekly",
-    "monthly": "Monthly",
-    "monday": "Monday",
-    "tuesday": "Tuesday",
-    "wednesday": "Wednesday",
-    "thursday": "Thursday",
-    "friday": "Friday",
-    "saturday": "Saturday",
-    "sunday": "Sunday",
-    "enabled": "Active",
-    "disabled": "Paused",
-    "lastRun": "Last run",
-    "nextRun": "Next run",
-    "never": "Never",
-    "cancel": "Cancel",
-    "save": "Save Schedule",
-    "saving": "Saving...",
-    "systemTemplate": "System Template",
-    "customTemplate": "Custom Template"
-  },
-  "scheduleToast": {
-    "saved": "Schedule saved successfully.",
-    "saveFailed": "Failed to save schedule.",
-    "updated": "Schedule updated successfully.",
-    "updateFailed": "Failed to update schedule.",
-    "deleted": "Schedule deleted successfully.",
-    "deleteFailed": "Failed to delete schedule.",
-    "toggled": "Schedule status updated.",
-    "toggleFailed": "Failed to update schedule status."
-  },
-  "shareModal": {
-    "title": "Share Report",
-    "desc": "Send this report to stakeholders via email.",
-    "emailLabel": "Recipient Email",
-    "emailPlaceholder": "stakeholder@company.com",
-    "subjectLabel": "Subject (optional)",
-    "subjectPlaceholder": "Weekly Intelligence Report",
-    "cancel": "Cancel",
-    "send": "Send Report",
-    "sending": "Sending...",
-    "success": "Report sent successfully.",
-    "failed": "Failed to send report. Please try again.",
-    "noReport": "No report available to share. Create a report first."
-  },
-  "detail": {
-    "back": "Back to reports",
-    "liveReport": "Live report",
-    "defaultSummary": "This report is generated from the latest Narriv intelligence data.",
-    "reportId": "Report ID",
-    "createdAt": "Created at",
-    "sections": "Sections",
-    "unavailableTitle": "Report unavailable",
-    "unavailableDesc": "The report could not be loaded or you may not have access to it.",
-    "emptySectionsTitle": "No sections returned",
-    "emptySectionsDesc": "The backend returned the report shell, but no detailed sections were available."
-  },
-  "metricsCard": {
+    "buttons": {
+      "manageTemplates": "Manage Templates",
+      "scheduleSettings": "Schedule Settings",
+      "createNew": "Create New Report",
+      "systemTemplate": "System Template",
+      "closeTemp": "Close"
+    },
+    "createModal": {
+      "title": "Create New Report",
+      "desc": "Generate a new intelligence report from a template.",
+      "templateLabel": "Report Template",
+      "templatePlaceholder": "Select a template",
+      "titleLabel": "Report Title",
+      "titlePlaceholder": "E.g. Weekly Narrative Brief",
+      "dateRangeLabel": "Date Range",
+      "startLabel": "Start Date",
+      "endLabel": "End Date",
+      "cancel": "Cancel",
+      "generate": "Generate Report",
+      "generating": "Generating...",
+      "success": "Report generated successfully.",
+      "failed": "Failed to generate report. Please try again.",
+      "dateRangeInvalid": "Select a valid start and end date.",
+      "noTemplates": "No templates available."
+    },
+    "scheduleModal": {
+      "title": "Report Schedules",
+      "desc": "Manage recurring report generation schedules.",
+      "empty": "No schedules configured yet.",
+      "emptyDesc": "Create a schedule to automate report generation.",
+      "addSchedule": "Add Schedule",
+      "editSchedule": "Edit Schedule",
+      "nameLabel": "Schedule Name",
+      "namePlaceholder": "E.g. Weekly Executive Brief",
+      "templateLabel": "Report Template",
+      "templatePlaceholder": "Select a template",
+      "cadenceLabel": "Cadence",
+      "dayLabel": "Day of Week",
+      "timeLabel": "Time",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday",
+      "enabled": "Active",
+      "disabled": "Paused",
+      "lastRun": "Last run",
+      "nextRun": "Next run",
+      "never": "Never",
+      "cancel": "Cancel",
+      "save": "Save Schedule",
+      "saving": "Saving...",
+      "systemTemplate": "System Template",
+      "customTemplate": "Custom Template"
+    },
+    "scheduleToast": {
+      "saved": "Schedule saved successfully.",
+      "saveFailed": "Failed to save schedule.",
+      "updated": "Schedule updated successfully.",
+      "updateFailed": "Failed to update schedule.",
+      "deleted": "Schedule deleted successfully.",
+      "deleteFailed": "Failed to delete schedule.",
+      "toggled": "Schedule status updated.",
+      "toggleFailed": "Failed to update schedule status."
+    },
+    "shareModal": {
+      "title": "Share Report",
+      "desc": "Send this report to stakeholders via email.",
+      "emailLabel": "Recipient Email",
+      "emailPlaceholder": "stakeholder@company.com",
+      "subjectLabel": "Subject (optional)",
+      "subjectPlaceholder": "Weekly Intelligence Report",
+      "cancel": "Cancel",
+      "send": "Send Report",
+      "sending": "Sending...",
+      "success": "Report sent successfully.",
+      "failed": "Failed to send report. Please try again.",
+      "noReport": "No report available to share. Create a report first."
+    },
+    "detail": {
+      "back": "Back to reports",
+      "liveReport": "Live report",
+      "defaultSummary": "This report is generated from the latest Narriv intelligence data.",
+      "reportId": "Report ID",
+      "createdAt": "Created at",
+      "sections": "Sections",
+      "unavailableTitle": "Report unavailable",
+      "unavailableDesc": "The report could not be loaded or you may not have access to it.",
+      "emptySectionsTitle": "No sections returned",
+      "emptySectionsDesc": "The backend returned the report shell, but no detailed sections were available."
+    },
+    "metricsCard": {
       "templates": "Templates",
       "templatesHelper": "3 ready",
       "ready": "Ready",
@@ -2224,10 +2231,14 @@
         "trustOwner": "PR"
       },
       "toast": {
+        "createSuccess": "Case created successfully.",
+        "createFailed": "Could not create case.",
         "deleteSuccess": "Case deleted successfully.",
         "deleteFailed": "Could not delete case.",
         "statusUpdated": "Status updated.",
-        "statusUpdateFailed": "Could not update status."
+        "statusUpdateFailed": "Could not update status.",
+        "priorityUpdated": "Priority updated.",
+        "priorityUpdateFailed": "Could not update priority."
       },
       "status": {
         "open": "Open",
@@ -2249,17 +2260,26 @@
         "status": "Status",
         "priority": "Priority",
         "assignee": "Assignee",
-        "action": "Action",
-        "unassigned": "Unassigned"
+        "deadline": "Deadline",
+        "created": "Created",
+        "action": "Actions",
+        "unassigned": "Unassigned",
+        "noDeadline": "No deadline",
+        "updateStatus": "Update status for {title}",
+        "updatePriority": "Update priority for {title}",
+        "deleteCase": "Delete case: {title}",
+        "viewCase": "View case: {title}"
       },
       "header": {
         "title": "Cases & Investigations",
         "desc": "Manage and monitor your team's investigation queue.",
-        "newCase": "New Case"
+        "newCase": "New Case",
+        "refresh": "Refresh"
       },
       "empty": {
         "title": "No cases",
-        "desc": "No investigation cases match your filter yet."
+        "desc": "No investigation cases match your filter yet.",
+        "cta": "Create your first case to start tracking investigations."
       },
       "delete": {
         "title": "Delete Case",
@@ -2281,13 +2301,48 @@
         "assignedTeamPlaceholder": "Comms, PR, Growth...",
         "deadlineLabel": "Deadline",
         "submit": "Create Case",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "close": "Close"
       },
       "pagination": {
         "previous": "Previous",
         "next": "Next",
         "pageInfo": "Page {page} of {totalPages}",
         "total": "{total} cases found"
+      },
+      "metrics": {
+        "total": "Total Cases",
+        "totalHelper": "All investigation cases in your workspace",
+        "open": "Open",
+        "openHelper": "Cases awaiting investigation",
+        "inProgress": "In Progress",
+        "inProgressHelper": "Cases currently being worked on",
+        "resolved": "Resolved",
+        "resolvedHelper": "Cases successfully resolved",
+        "closed": "Closed",
+        "closedHelper": "Archived closed cases"
+      },
+      "error": {
+        "title": "Could not load cases",
+        "desc": "Something went wrong while loading your cases. Please try again."
+      },
+      "detail": {
+        "title": "Case Detail",
+        "resolution": "Resolution",
+        "resolutionPlaceholder": "Enter resolution notes...",
+        "noResolution": "No resolution yet",
+        "source": "Source",
+        "linkedSignal": "Linked Signal",
+        "noSource": "No linked source",
+        "created": "Created",
+        "updated": "Last Updated",
+        "close": "Close",
+        "editResolution": "Save Resolution",
+        "resolutionSaved": "Resolution saved.",
+        "resolutionFailed": "Could not save resolution."
+      },
+      "timeAgo": {
+        "justNow": "just now"
       }
     },
     "integrations": {
@@ -3105,12 +3160,18 @@
         "pr_response": "PR Response",
         "content_strategy": "Content Strategy",
         "influencer_strategy": "Influencer Strategy",
-        "crisis_response": "Crisis Response"
+        "crisis_response": "Crisis Response",
+        "social_response": "Social Response",
+        "stakeholder_update": "Stakeholder Update",
+        "data_driven": "Data-Driven Analysis"
       },
       "prDesc": "Focus on public and media communication",
       "csDesc": "Long-term content and narrative planning",
       "isDesc": "Collaboration with Key Opinion Leaders",
       "crDesc": "Rapid risk mitigation and management",
+      "srDesc": "Channel-ready replies for social conversations",
+      "suDesc": "Clear updates for internal and external stakeholders",
+      "ddDesc": "Evidence-led actions based on signals and metrics",
       "hint": "AI will analyze your workspace data and generate a tailored action plan.",
       "cancel": "Cancel",
       "submit": "Generate Plan",

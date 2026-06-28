@@ -545,7 +545,10 @@ export type ActionStrategyType =
   | "pr_response"
   | "content_strategy"
   | "influencer_strategy"
-  | "crisis_response";
+  | "crisis_response"
+  | "social_response"
+  | "stakeholder_update"
+  | "data_driven";
 
 export interface CreateActionPlanInput {
   workspaceId?: string;
@@ -909,6 +912,7 @@ export interface CaseRecord {
 
 export interface CaseFilters {
   workspaceId?: string;
+  search?: string;
   status?: string;
   priority?: string;
   page?: number;
@@ -918,6 +922,7 @@ export interface CaseFilters {
 export async function getCases(filters: CaseFilters = {}): Promise<{ data: CaseRecord[]; meta: { page: number; limit: number; total: number; totalPages: number } } | null> {
   const params = new URLSearchParams();
   if (filters.workspaceId) params.set("workspaceId", filters.workspaceId);
+  if (filters.search) params.set("search", filters.search);
   if (filters.status) params.set("status", filters.status);
   if (filters.priority) params.set("priority", filters.priority);
   if (filters.page) params.set("page", String(filters.page));

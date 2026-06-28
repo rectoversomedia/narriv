@@ -3,7 +3,7 @@
 import { useId, useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { X, Sparkles, Loader2, Megaphone, FileText, Users, ShieldAlert } from "lucide-react";
+import { X, Sparkles, Loader2, Megaphone, FileText, Users, ShieldAlert, MessageCircle, Handshake, BarChart3 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { createActionPlan, type ActionStrategyType } from "@/lib/api-service";
 import { useToast } from "@/components/ui/toast";
@@ -15,10 +15,13 @@ interface CreateActionPlanModalProps {
 }
 
 const strategyTypes: Array<{ value: ActionStrategyType; icon: React.ElementType; descriptionKey: string }> = [
+  { value: "crisis_response", icon: ShieldAlert, descriptionKey: "crDesc" },
+  { value: "stakeholder_update", icon: Handshake, descriptionKey: "suDesc" },
+  { value: "social_response", icon: MessageCircle, descriptionKey: "srDesc" },
   { value: "pr_response", icon: Megaphone, descriptionKey: "prDesc" },
   { value: "content_strategy", icon: FileText, descriptionKey: "csDesc" },
   { value: "influencer_strategy", icon: Users, descriptionKey: "isDesc" },
-  { value: "crisis_response", icon: ShieldAlert, descriptionKey: "crDesc" },
+  { value: "data_driven", icon: BarChart3, descriptionKey: "ddDesc" },
 ];
 
 export function CreateActionPlanModal({ open, onOpenChange }: CreateActionPlanModalProps) {
@@ -29,12 +32,12 @@ export function CreateActionPlanModal({ open, onOpenChange }: CreateActionPlanMo
   const queryClient = useQueryClient();
   const toast = useToast();
 
-  const [strategyType, setStrategyType] = useState<ActionStrategyType>("pr_response");
+  const [strategyType, setStrategyType] = useState<ActionStrategyType>("crisis_response");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (open) {
-      setStrategyType("pr_response");
+      setStrategyType("crisis_response");
     }
   }, [open]);
 

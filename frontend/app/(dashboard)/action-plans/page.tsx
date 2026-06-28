@@ -7,7 +7,6 @@ import { useTranslations } from "next-intl";
 import {
   BarChart3,
   Check,
-  ChevronDown,
   ChevronRight,
   CircleCheck,
   Clock3,
@@ -413,7 +412,6 @@ export default function ActionPlansPage() {
         <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#3345F5] px-4 text-[13px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] transition hover:brightness-105 sm:w-fit">
           <Plus size={15} />
           {t("newAction")}
-          <ChevronDown size={13} />
         </button>
       </header>
 
