@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useRef, useState } from "react";
-import { Bell, ChevronDown, Languages, LogOut, Search, X } from "lucide-react";
+import { Bell, CheckCheck, Inbox, Languages, LogOut, RotateCw, Search, WifiOff, X } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useUiStore } from "@/store/useUiStore";
-import { logoutSession, getNotifications, getAlerts, getNarratives, markNotificationAsRead, markAllNotificationsAsRead, type AppNotification, type Alert as ApiAlert, type NarrativeRecord } from "@/lib/api-service";
+import { logoutSession, getNotifications, getAlerts, getNarratives, markNotificationAsRead, markAllNotificationsAsRead, type AppNotification, type Alert as ApiAlert, type NarrativeRecord, type NotificationsResponse } from "@/lib/api-service";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 
@@ -21,6 +22,8 @@ const notificationToneClass = {
   blue: "bg-[#465FFF] text-white",
   slate: "bg-slate-500 text-white",
 };
+
+type NotificationTone = keyof typeof notificationToneClass;
 
 type SearchResult = {
   type: "alert" | "narrative" | "nav";
@@ -55,12 +58,43 @@ const typeColor: Record<string, string> = {
   nav: "bg-[#465FFF]/10 text-[#465FFF]",
 };
 
+const notificationsQueryKey = ["notifications"] as const;
+
 function formatNotificationTime(createdAt: string, nowMs: number, locale: string) {
   if (!nowMs) return "";
+  const timestamp = new Date(createdAt).getTime();
+  if (Number.isNaN(timestamp)) return "";
 
-  return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(
-    Math.round((new Date(createdAt).getTime() - nowMs) / (1000 * 60 * 60)),
-    "hour"
+  const diffMs = timestamp - nowMs;
+  const absMs = Math.abs(diffMs);
+  const formatter = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+
+  if (absMs < 60 * 1000) return formatter.format(Math.round(diffMs / 1000), "second");
+  if (absMs < 60 * 60 * 1000) return formatter.format(Math.round(diffMs / (60 * 1000)), "minute");
+  if (absMs < 24 * 60 * 60 * 1000) return formatter.format(Math.round(diffMs / (60 * 60 * 1000)), "hour");
+  if (absMs < 7 * 24 * 60 * 60 * 1000) return formatter.format(Math.round(diffMs / (24 * 60 * 60 * 1000)), "day");
+
+  return new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short" }).format(timestamp);
+}
+
+function getNotificationMeta(type: string) {
+  if (type.includes("alert")) return { dotTone: "red" as NotificationTone, badgeVariant: "red" as const, label: "Alert" };
+  if (type.includes("report")) return { dotTone: "green" as NotificationTone, badgeVariant: "green" as const, label: "Report" };
+  if (type.includes("action")) return { dotTone: "purple" as NotificationTone, badgeVariant: "purple" as const, label: "Action" };
+  if (type.includes("system")) return { dotTone: "amber" as NotificationTone, badgeVariant: "amber" as const, label: "System" };
+  return { dotTone: "blue" as NotificationTone, badgeVariant: "default" as const, label: "Info" };
+}
+
+function NotificationState({ icon: Icon, title, description, action }: { icon: LucideIcon; title: string; description: string; action?: React.ReactNode }) {
+  return (
+    <div className="flex flex-col items-center justify-center px-6 py-10 text-center">
+      <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-400">
+        <Icon size={20} />
+      </span>
+      <p className="mt-3 text-sm font-black text-slate-800">{title}</p>
+      <p className="mt-1 max-w-[260px] text-xs font-semibold leading-relaxed text-slate-400">{description}</p>
+      {action}
+    </div>
   );
 }
 
@@ -72,40 +106,89 @@ export function Topbar() {
   const logout = useAuthStore((state) => state.logout);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notificationNow, setNotificationNow] = useState(0);
+  const [notificationStreamStatus, setNotificationStreamStatus] = useState<"idle" | "connected" | "degraded">("idle");
   
   const queryClient = useQueryClient();
   const token = useAuthStore((s) => s.token);
   
   const notificationsQuery = useQuery({
-    queryKey: ["notifications"],
+    queryKey: notificationsQueryKey,
     queryFn: () => getNotifications(1, 50),
+    enabled: !!token,
     staleTime: 60 * 1000,
+    refetchInterval: 60 * 1000,
+    refetchIntervalInBackground: false,
   });
 
   const markAllRead = useMutation({
     mutationFn: () => markAllNotificationsAsRead(),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] })
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: notificationsQueryKey });
+      const previous = queryClient.getQueryData<NotificationsResponse | null>(notificationsQueryKey);
+      queryClient.setQueryData<NotificationsResponse | null>(notificationsQueryKey, (current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          data: current.data.map((notification) => ({ ...notification, isRead: true })),
+          meta: { ...current.meta, unreadCount: 0 },
+        };
+      });
+      return { previous };
+    },
+    onError: (_error, _variables, context) => {
+      queryClient.setQueryData(notificationsQueryKey, context?.previous ?? null);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: notificationsQueryKey })
   });
 
   const markRead = useMutation({
     mutationFn: (id: string) => markNotificationAsRead(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] })
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: notificationsQueryKey });
+      const previous = queryClient.getQueryData<NotificationsResponse | null>(notificationsQueryKey);
+      queryClient.setQueryData<NotificationsResponse | null>(notificationsQueryKey, (current) => {
+        if (!current) return current;
+        const target = current.data.find((notification) => notification.id === id);
+        const unreadCount = target && !target.isRead ? Math.max(0, current.meta.unreadCount - 1) : current.meta.unreadCount;
+        return {
+          ...current,
+          data: current.data.map((notification) => notification.id === id ? { ...notification, isRead: true } : notification),
+          meta: { ...current.meta, unreadCount },
+        };
+      });
+      return { previous };
+    },
+    onError: (_error, _variables, context) => {
+      queryClient.setQueryData(notificationsQueryKey, context?.previous ?? null);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: notificationsQueryKey })
   });
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      setNotificationStreamStatus("idle");
+      return;
+    }
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const sse = new EventSource(`${baseUrl}/api/notifications/stream?token=${token}`);
+    const sse = new EventSource(`${baseUrl.replace(/\/$/, "")}/api/notifications/stream?token=${encodeURIComponent(token)}`);
     
     sse.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        if (data.type === "connected") {
+          setNotificationStreamStatus("connected");
+          return;
+        }
         if (data.type === "new_notification") {
-          queryClient.invalidateQueries({ queryKey: ["notifications"] });
+          queryClient.invalidateQueries({ queryKey: notificationsQueryKey });
         } else if (data.type === "dashboard_update") {
           queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
         }
       } catch {}
+    };
+
+    sse.onerror = () => {
+      setNotificationStreamStatus("degraded");
     };
 
     return () => {
@@ -115,6 +198,9 @@ export function Topbar() {
 
   const notifData = notificationsQuery.data?.data || [];
   const unreadCount = notificationsQuery.data?.meta?.unreadCount || 0;
+  const unreadBadge = unreadCount > 99 ? "99+" : String(unreadCount);
+  const notificationsUnavailable = !!token && notificationsQuery.isFetched && notificationsQuery.data === null;
+  const isNotificationsLoading = !!token && notificationsQuery.isPending;
 
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -285,64 +371,112 @@ export function Topbar() {
             aria-label={t("notifications")}
           >
             <Bell size={24} />
-              <span className="absolute right-1 top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#465FFF] px-1 text-[11px] font-bold text-white shadow-[0_0_8px_rgba(70,95,255,0.4)]">{unreadCount > 0 ? unreadCount : ""}</span>
+            {unreadCount > 0 ? (
+              <span className="absolute right-0.5 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#EF4444] px-1 text-[10px] font-black text-white shadow-[0_0_8px_rgba(239,68,68,0.35)] ring-2 ring-white">
+                {unreadBadge}
+              </span>
+            ) : null}
           </PopoverTrigger>
           <PopoverContent align="end" sideOffset={12} className="w-[min(390px,calc(100vw-2rem))] gap-0 overflow-hidden rounded-[18px] border border-slate-200 bg-white p-0 text-slate-900 shadow-[0_24px_70px_rgba(15,23,42,0.16)] ring-0">
             <PopoverHeader className="border-b border-slate-100 px-4 py-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <PopoverTitle className="text-[15px] font-black text-slate-950">Notifikasi</PopoverTitle>
+                  <div className="flex items-center gap-2">
+                    <PopoverTitle className="text-[15px] font-black text-slate-950">{t("notificationsTitle")}</PopoverTitle>
+                    {notificationStreamStatus === "degraded" ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-black text-amber-700">
+                        <WifiOff size={11} />
+                        {t("notificationsPolling")}
+                      </span>
+                    ) : null}
+                  </div>
                   <PopoverDescription className="mt-1 text-xs font-semibold text-slate-500">
-                    {unreadCount} notifikasi baru.
+                    {unreadCount > 0 ? t("notificationsUnread", { count: unreadCount }) : t("notificationsAllCaughtUp")}
                   </PopoverDescription>
                 </div>
-                <button onClick={() => markAllRead.mutate()} className="text-[11px] font-bold text-[#465FFF] hover:underline">Tandai semua dibaca</button>
+                <button
+                  type="button"
+                  onClick={() => markAllRead.mutate()}
+                  disabled={unreadCount === 0 || markAllRead.isPending}
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold text-[#465FFF] transition hover:bg-[#465FFF]/5 disabled:cursor-not-allowed disabled:text-slate-300"
+                >
+                  <CheckCheck size={13} />
+                  {markAllRead.isPending ? t("notificationsMarking") : t("notificationsMarkAll")}
+                </button>
               </div>
             </PopoverHeader>
 
             <div className="max-h-[330px] overflow-y-auto p-2">
-              
-                {notifData.length === 0 ? (
-                  <div className="py-8 text-center text-sm font-semibold text-slate-400">Belum ada notifikasi</div>
-                ) : notifData.map((notification: AppNotification) => {
-                  const dotTone = notification.type === "alert_created" ? "red" : notification.type === "report_ready" ? "green" : "blue";
-                  const badgeVariant = notification.type === "alert_created" ? "red" : notification.type === "report_ready" ? "green" : "default";
-                  const badgeText = notification.type === "alert_created" ? "Alert" : "Info";
-                  return (
+              {!token ? (
+                <NotificationState icon={Bell} title={t("notificationsAuthTitle")} description={t("notificationsAuthDesc")} />
+              ) : isNotificationsLoading ? (
+                <div className="space-y-2 p-2">
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <div key={index} className="grid grid-cols-[10px_1fr_56px] gap-3 rounded-[14px] p-3">
+                      <span className="mt-2 h-2.5 w-2.5 rounded-full bg-slate-200" />
+                      <span className="space-y-2">
+                        <span className="block h-3 w-3/4 rounded-full bg-slate-100" />
+                        <span className="block h-3 w-full rounded-full bg-slate-100" />
+                      </span>
+                      <span className="h-5 rounded-full bg-slate-100" />
+                    </div>
+                  ))}
+                </div>
+              ) : notificationsUnavailable ? (
+                <NotificationState
+                  icon={WifiOff}
+                  title={t("notificationsErrorTitle")}
+                  description={t("notificationsErrorDesc")}
+                  action={
+                    <button
+                      type="button"
+                      onClick={() => notificationsQuery.refetch()}
+                      className="mt-4 inline-flex h-9 items-center justify-center gap-2 rounded-[10px] border border-slate-200 bg-white px-3 text-[12px] font-black text-[#465FFF] transition hover:bg-[#465FFF]/5"
+                    >
+                      <RotateCw size={13} />
+                      {t("notificationsRetry")}
+                    </button>
+                  }
+                />
+              ) : notifData.length === 0 ? (
+                <NotificationState icon={Inbox} title={t("notificationsEmptyTitle")} description={t("notificationsEmptyDesc")} />
+              ) : notifData.map((notification: AppNotification) => {
+                const meta = getNotificationMeta(notification.type);
+                const href = notification.link && notification.link.startsWith("/") ? notification.link : "/alerts";
+                return (
                   <Link
                     key={notification.id}
-                    href={notification.link || "#"}
+                    href={href}
                     onClick={() => {
                       if (!notification.isRead) markRead.mutate(notification.id);
                       setNotificationsOpen(false);
                     }}
-                    className={`group grid grid-cols-[10px_1fr_auto] gap-3 rounded-[14px] p-3 transition hover:bg-slate-50 ${notification.isRead ? 'opacity-60' : ''}`}
+                    className={`group grid grid-cols-[10px_1fr_auto] gap-3 rounded-[14px] p-3 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/30 ${notification.isRead ? "opacity-65" : "bg-[#F8FAFF]"}`}
                   >
-                    <span className={`mt-2 h-2.5 w-2.5 rounded-full ${notificationToneClass[dotTone]}`} />
+                    <span className={`mt-2 h-2.5 w-2.5 rounded-full ${notification.isRead ? "bg-slate-300" : notificationToneClass[meta.dotTone]}`} />
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-black text-slate-950 group-hover:text-[#465FFF]">{notification.title}</span>
                       <span className="mt-1 block text-xs font-semibold text-slate-500 line-clamp-2">{notification.message}</span>
                     </span>
                     <span className="shrink-0 text-right">
-                      <Badge variant={badgeVariant} className="rounded-full text-[10px] font-black">
-                        {badgeText}
+                      <Badge variant={meta.badgeVariant} className="rounded-full text-[10px] font-black">
+                        {meta.label}
                       </Badge>
-                        <span className="mt-2 block text-[11px] font-bold text-slate-400">
-                          {formatNotificationTime(notification.createdAt, notificationNow, language === "id" ? "id" : "en")}
-                        </span>
+                      <span className="mt-2 block text-[11px] font-bold text-slate-400">
+                        {formatNotificationTime(notification.createdAt, notificationNow || Date.now(), language === "id" ? "id" : "en")}
+                      </span>
                     </span>
                   </Link>
                 )})}
-
             </div>
 
             <div className="border-t border-slate-100 bg-slate-50/80 p-3">
               <Link
-                href="/alerts"
+                href="/workspace/activity"
                 onClick={() => setNotificationsOpen(false)}
                 className="flex h-10 w-full items-center justify-center rounded-[10px] border border-slate-200 bg-white text-xs font-black text-[#465FFF] transition hover:bg-[#465FFF]/5"
               >
-                Lihat semua notifikasi
+                {t("notificationsViewAll")}
               </Link>
             </div>
           </PopoverContent>
@@ -354,7 +488,6 @@ export function Topbar() {
             <p className="text-[15px] font-bold text-(--text)">Testing User</p>
             <p className="mt-1 text-[13px] font-semibold text-(--text-muted)">User Workspace</p>
           </div>
-          <ChevronDown size={18} className="hidden sm:block text-(--text-muted)" />
         </div>
         <button type="button" onClick={handleLogout} className="rounded-xl p-2 text-(--text-muted) hover:bg-slate-100 hover:text-[#EF4444] transition-colors" aria-label={t("logout")} title={t("logout")}>
           <LogOut size={18} />

@@ -1330,7 +1330,7 @@
         "triggers": {
           "severity": "Alert level is",
           "sentiment": "Negative sentiment rises by",
-          "sla": "Deadline is near (within",
+          "sla": "Deadline is near (within)",
           "keyword": "Someone mentions"
         },
         "severityValues": {
@@ -2851,7 +2851,21 @@
     "topbar": {
       "search": "Search signals, topics, issues, or cases...",
       "notifications": "Notifications",
-      "logout": "Logout"
+      "logout": "Logout",
+      "notificationsTitle": "Notifications",
+      "notificationsUnread": "{count} unread notification(s)",
+      "notificationsAllCaughtUp": "All notifications are read.",
+      "notificationsPolling": "Polling",
+      "notificationsMarkAll": "Mark all read",
+      "notificationsMarking": "Marking...",
+      "notificationsAuthTitle": "Sign in required",
+      "notificationsAuthDesc": "Notifications appear here after your session is active.",
+      "notificationsErrorTitle": "Notifications unavailable",
+      "notificationsErrorDesc": "The live notification feed could not be loaded.",
+      "notificationsRetry": "Retry",
+      "notificationsEmptyTitle": "No notifications yet",
+      "notificationsEmptyDesc": "Important alerts, reports, and system updates will appear here.",
+      "notificationsViewAll": "View notification activity"
     },
     "common": {
       "viewAll": "View all",
@@ -2901,9 +2915,15 @@
         "negative": "Negative",
         "totalMentions": "Total Mentions",
         "errorTitle": "Dashboard live data unavailable",
-        "errorDesc": "API client attempted token refresh. Showing sample metrics for now.",
+        "errorDesc": "API client attempted token refresh. Retry or check the dashboard API connection.",
         "openRelated": "Open related page",
-        "close": "Close"
+        "close": "Close",
+        "emptyTrends": "No signal trend data for this period",
+        "emptySignals": "No latest signals yet",
+        "emptyTopics": "No topics detected yet",
+        "emptySources": "No source health data yet",
+        "emptySentiment": "No analyzed sentiment yet",
+        "emptyStatus": "No system status data yet"
       },
       "quickActions": {
         "newAlert": "New Alert",

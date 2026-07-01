@@ -147,21 +147,34 @@ function AssignmentCard({
         <div className="grid gap-4 md:grid-cols-2">
           <label className="block">
             <span className="mb-1.5 block text-[11px] font-black text-[#31406B]">{td("assignedTo")}</span>
-            <select value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)} disabled={isLoadingOptions} className="h-11 w-full rounded-[10px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white disabled:opacity-60">
-              <option value="">{td("assignedToPlaceholder")}</option>
+            <select
+              value={assignedTo}
+              onChange={(e) => setAssignedTo(e.target.value)}
+              disabled={isLoadingOptions}
+              title={assignedTo || td("assignedToPlaceholder")}
+              className="h-11 w-full rounded-[10px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white disabled:opacity-60"
+            >
+              <option value="" title={td("assignedToPlaceholder")}>{td("assignedToPlaceholder")}</option>
               {members.map((member) => {
                 const label = memberLabel(member);
-                return <option key={member.id} value={label}>{label}</option>;
+                return <option key={member.id} value={label} title={label}>{label}</option>;
               })}
             </select>
           </label>
           <label className="block">
             <span className="mb-1.5 block text-[11px] font-black text-[#31406B]">{td("assignedTeam")}</span>
-            <select value={assignedTeam} onChange={(e) => setAssignedTeam(e.target.value)} disabled={isLoadingOptions} className="h-11 w-full rounded-[10px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white disabled:opacity-60">
-              <option value="">{td("assignedTeamPlaceholder")}</option>
-              {activeEscalationRecords.map((record) => (
-                <option key={record.id} value={record.roleName}>{record.roleName} ({record.level})</option>
-              ))}
+            <select
+              value={assignedTeam}
+              onChange={(e) => setAssignedTeam(e.target.value)}
+              disabled={isLoadingOptions}
+              title={assignedTeam || td("assignedTeamPlaceholder")}
+              className="h-11 w-full rounded-[10px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white disabled:opacity-60"
+            >
+              <option value="" title={td("assignedTeamPlaceholder")}>{td("assignedTeamPlaceholder")}</option>
+              {activeEscalationRecords.map((record) => {
+                const label = `${record.roleName} (${record.level})`;
+                return <option key={record.id} value={record.roleName} title={label}>{label}</option>;
+              })}
             </select>
           </label>
           <label className="block">
@@ -170,10 +183,16 @@ function AssignmentCard({
           </label>
           <label className="block">
             <span className="mb-1.5 block text-[11px] font-black text-[#31406B]">{td("escalationLevel")}</span>
-            <select value={escalationLevel} onChange={(e) => setEscalationLevel(e.target.value as EscalationLevel)} className="h-11 w-full rounded-[10px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white">
-              {(["low", "medium", "high", "critical"] as EscalationLevel[]).map((level) => (
-                <option key={level} value={level}>{td(`escalation.${level}`)}</option>
-              ))}
+            <select
+              value={escalationLevel}
+              onChange={(e) => setEscalationLevel(e.target.value as EscalationLevel)}
+              title={td(`escalation.${escalationLevel}`)}
+              className="h-11 w-full rounded-[10px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white"
+            >
+              {(["low", "medium", "high", "critical"] as EscalationLevel[]).map((level) => {
+                const label = td(`escalation.${level}`);
+                return <option key={level} value={level} title={label}>{label}</option>;
+              })}
             </select>
           </label>
         </div>

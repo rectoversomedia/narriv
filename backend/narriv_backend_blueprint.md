@@ -296,7 +296,7 @@ Report ──1:N──▶ ReportExport
 | Auth | `src/modules/auth/` | `auth.routes.js`, `auth.controller.js`, `auth.service.js` |
 | Signals | `src/modules/signals/` | `signals.routes.js`, `signals.controller.js`, `signals.service.js` |
 | Sources | `src/modules/sources/` | `sources.routes.js`, `sources.controller.js` |
-| Ingestion | `src/modules/ingestion/` | `ingestion.routes.js`, `ingestion.controller.js`, `custom-sources.service.js`, `actor-presets.js` |
+| Ingestion | `src/modules/ingestion/` | `ingestion.routes.js`, `ingestion.controller.js`, `custom-sources.service.js`, `actor-presets.js`, `apify-normalizer.js` |
 | AI | `src/modules/ai/` | `ai.routes.js`, `ai.service.js` |
 | Dashboard | `src/modules/dashboard/` | `dashboard.routes.js`, `dashboard.controller.js` |
 | Alerts | `src/modules/alerts/` | `alerts.routes.js`, `alerts.controller.js`, `alerts.service.js` |
@@ -423,6 +423,7 @@ Report ──1:N──▶ ReportExport
 - Custom webhook source ingestion
 - Incremental ingestion support
 - Apify actor documentation
+- Apify actor output normalization now preserves actor-specific language, location, media, engagement, search query, and source URL metadata into `RawDocument.metadata`; language and location hints are promoted into `Signal.language` and `Signal.region` when available.
 - Production readiness runbook created at `process/general-plans/references/production-readiness-runbook.md`
 - Backend package scripts include `start`, `prisma:generate`, `prisma:status`, and `prisma:deploy` for VPS/CI operations
 - Apify runtime now accepts both `APIFY_TOKEN` and legacy `APIFY_API_TOKEN`; Docker Compose passes both names, with runtime preferring `APIFY_TOKEN`.
@@ -631,6 +632,7 @@ Optional RLS notes:
 - [x] Support custom webhook sources beyond Apify
 - [x] Guard ingestion trigger/webhook/worker paths against inactive or soft-deleted sources; podcast sources without explicit actor IDs now default to podcast presets
 - [x] Cap batch ingestion requests at 25 source IDs and keep frontend Sync All compatible through request chunking
+- [x] Normalize researched Apify actor output fields into raw document metadata and signal language/region hints without requiring a schema migration
 
 #### Report Generation
 - [x] Implement actual PDF report generation (not just JSON export)
@@ -701,6 +703,7 @@ Optional RLS notes:
 
 #### Worker Tests
 - [x] Test ingestion worker with mock Apify responses
+- [x] Test Apify actor output normalizer and worker persistence of language/location hints
 - [x] Test AI analysis worker with mock OpenAI responses
 - [x] Test alert detection/escalation worker dispatch across workspaces
 - [x] Test notification worker dispatch by event type

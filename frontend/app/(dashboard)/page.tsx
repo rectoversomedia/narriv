@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { ArrowRight, BarChart3, Bell, CheckCircle2, ChevronDown, Database, FileText, Headphones, RefreshCcw, Send, Settings, X, Zap } from "lucide-react";
+import { ArrowRight, BarChart3, Bell, CheckCircle2, Database, FileText, Headphones, RefreshCcw, Send, Settings, X, Zap } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { AppCard, IconBubble, MetricTile, SectionHeader } from "@/components/dashboard/dashboard-kit";
 import { CardContent } from "@/components/ui/card";
 import { quickActions, text, type Tone } from "@/lib/mock-data";
@@ -113,35 +113,74 @@ function getQuickActionContent(t: (key: string) => string): Record<QuickActionKe
   };
 }
 
+
+function EmptyPanel({ label, compact = false }: { label: string; compact?: boolean }) {
+  return (
+    <div className={`flex items-center justify-center rounded-[10px] border border-dashed border-slate-200 bg-slate-50/70 px-4 text-center text-[12px] font-bold text-slate-400 ${compact ? "min-h-16 py-4" : "min-h-24 py-6"}`}>
+      {label}
+    </div>
+  );
+}
+
 function QuickActionDrawer({ actionKey, onClose, quickActionContent, tDrawer }: { actionKey: QuickActionKey; onClose: () => void; quickActionContent: ReturnType<typeof getQuickActionContent>; tDrawer: (key: string) => string }) {
   const content = quickActionContent[actionKey];
   const Icon = content.icon;
+  const titleId = useId();
+  const descriptionId = useId();
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const drawerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeButtonRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab" || !drawerRef.current) return;
+
+      const focusable = drawerRef.current.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])');
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) return;
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previouslyFocused?.focus();
+    };
   }, [onClose]);
 
   return (
     <>
-      <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs transition-opacity" onClick={onClose} />
-      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl animate-in slide-in-from-right duration-200">
+      <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs transition-opacity" role="presentation" onMouseDown={onClose} />
+      <div ref={drawerRef} role="dialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={descriptionId} className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl animate-in slide-in-from-right duration-200">
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
             <div className="flex items-center gap-3">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#465FFF]/10 text-[#465FFF]">
                 <Icon size={18} />
               </span>
-              <h2 className="text-[15px] font-black text-slate-900">{content.title}</h2>
+              <h2 id={titleId} className="text-[15px] font-black text-slate-900">{content.title}</h2>
             </div>
-            <button type="button" onClick={onClose} className="rounded-lg border border-slate-100 p-1.5 text-slate-400 transition hover:bg-slate-50 hover:text-slate-700">
+            <button ref={closeButtonRef} type="button" aria-label={tDrawer("pages.command.close")} onClick={onClose} className="rounded-lg border border-slate-100 p-1.5 text-slate-400 transition hover:bg-slate-50 hover:text-slate-700">
               <X size={15} />
             </button>
           </div>
 
           <div className="flex-1 overflow-y-auto px-6 py-5">
-            <p className="text-[13px] font-semibold leading-relaxed text-slate-500">{content.description}</p>
+            <p id={descriptionId} className="text-[13px] font-semibold leading-relaxed text-slate-500">{content.description}</p>
 
             {content.href && (
               <Link href={content.href} onClick={onClose} className="mt-6 flex items-center justify-between rounded-xl border border-[#465FFF]/15 bg-[#465FFF]/5 px-4 py-3 text-[13px] font-bold text-[#465FFF] transition hover:bg-[#465FFF]/10">
@@ -153,7 +192,7 @@ function QuickActionDrawer({ actionKey, onClose, quickActionContent, tDrawer }: 
             {content.items && (
               <div className="mt-6 space-y-3">
                 {content.items.map((item) => (
-                  <button key={item.label} type="button" className="flex w-full items-start gap-3 rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-3.5 text-left transition hover:border-[#465FFF]/20 hover:bg-[#465FFF]/5">
+                  <button key={item.label} type="button" onClick={onClose} className="flex w-full items-start gap-3 rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-3.5 text-left transition hover:border-[#465FFF]/20 hover:bg-[#465FFF]/5">
                     <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#465FFF]/10 text-[#465FFF]">
                       <Send size={13} />
                     </span>
@@ -177,13 +216,12 @@ function QuickActionDrawer({ actionKey, onClose, quickActionContent, tDrawer }: 
     </>
   );
 }
-
 export default function DashboardPage() {
   const t = useTranslations("DemoApp");
   const tDrawer = useTranslations("DemoApp");
   const language = useUiStore((state) => state.language);
   const [timeRange, setTimeRange] = useState<DateRangeKey>("24h");
-  const [selectedAction, setSelectedAction] = useState<string | null>(null);
+  const [selectedAction, setSelectedAction] = useState<QuickActionKey | null>(null);
   const dateRange = getDateRangeOptions(timeRange);
   const quickActionContent = getQuickActionContent((key) => tDrawer(key));
 
@@ -197,6 +235,8 @@ export default function DashboardPage() {
     queryKey: ["dashboard-summary", timeRange],
     queryFn: () => getDashboardSummary(dateRange),
     staleTime: 30 * 1000,
+    refetchInterval: 30 * 1000,
+    refetchIntervalInBackground: false,
   });
   
   const isLiveUnavailable = dashboardQuery.data === null;
@@ -244,7 +284,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8 pb-6">
       {/* Header Section */}
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between mb-2">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between mb-2 rounded-[12px] border border-slate-100 bg-[linear-gradient(135deg,#ffffff_0%,#f8fbff_52%,#fff7ed_100%)] p-5 shadow-[0_14px_38px_rgba(16,24,40,0.04)]">
         <div>
           <h1 className="text-[34px] font-black tracking-tight text-slate-900 flex items-center gap-2">
             {t("pages.command.title")}
@@ -252,20 +292,21 @@ export default function DashboardPage() {
           <p className="mt-3 text-[15px] font-medium text-slate-400">{t("pages.command.desc")}</p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <button 
-            type="button" 
-            className="inline-flex h-[42px] w-full items-center justify-center gap-2 rounded-[8px] border border-slate-200 bg-slate-50 px-4 text-[14px] font-bold text-slate-900 hover:bg-slate-100 hover:border-slate-300 transition-all active:scale-[0.98] sm:w-auto"
+          <Link 
+            href="/workspace/settings"
+            className="inline-flex h-[42px] w-full items-center justify-center gap-2 rounded-[8px] border border-slate-200 bg-white/80 px-4 text-[14px] font-bold text-slate-900 shadow-sm transition-all hover:border-slate-300 hover:bg-white active:scale-[0.98] sm:w-auto"
           >
             <Settings size={16} className="text-slate-500" />
             {t("pages.command.customize")}
-          </button>
+          </Link>
           <button 
-            type="button" 
-            className="inline-flex h-[42px] w-full items-center justify-center gap-2 rounded-[8px] border border-slate-200 bg-slate-50 px-4 text-[14px] font-bold text-slate-900 hover:bg-slate-100 hover:border-slate-300 transition-all active:scale-[0.98] sm:w-auto"
+            type="button"
+            onClick={() => void dashboardQuery.refetch()}
+            disabled={dashboardQuery.isFetching}
+            className="inline-flex h-[42px] w-full items-center justify-center gap-2 rounded-[8px] border border-[#465FFF]/20 bg-[#465FFF] px-4 text-[14px] font-bold text-white shadow-[0_10px_24px_rgba(70,95,255,0.18)] transition-all hover:bg-[#3b50d8] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
           >
-            <RefreshCcw size={16} className="text-slate-500 animate-spin-slow" />
+            <RefreshCcw size={16} className={dashboardQuery.isFetching ? "animate-spin" : ""} />
             {t("pages.command.refresh")}
-            <ChevronDown size={16} className="text-slate-400" />
           </button>
         </div>
       </div>
@@ -300,10 +341,11 @@ export default function DashboardPage() {
             <SectionHeader 
               title={t("pages.command.activity")} 
               description={t("pages.command.activityDesc")} 
+              actionPlacement="below"
               action={
-                <div className="flex flex-wrap gap-2">
+                <div className="grid w-full grid-cols-3 gap-1 rounded-[10px] border border-slate-200 bg-slate-100/70 p-1">
                   {timeRangeOptions.map((range) => (
-                    <button key={range.value} type="button" onClick={() => setTimeRange(range.value)} className={`rounded-[8px] border px-3 py-2 text-xs font-bold transition-all ${timeRange === range.value ? "border-[#465FFF] bg-[#465FFF] text-white" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"}`}>
+                    <button key={range.value} type="button" onClick={() => setTimeRange(range.value)} className={`h-8 rounded-[7px] px-3 text-[11px] font-extrabold whitespace-nowrap transition ${timeRange === range.value ? "bg-white text-[#465FFF] shadow-sm ring-1 ring-slate-200" : "text-slate-500 hover:bg-white/70 hover:text-slate-800"}`}>
                       {range.label}
                     </button>
                   ))}
@@ -311,14 +353,21 @@ export default function DashboardPage() {
               } 
             />
             <ActivityAreaChart data={activityData} />
+            {activityData.length === 0 ? (
+              <EmptyPanel label={t("pages.command.emptyTrends")} />
+            ) : null}
             <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
-              {miniTrends.map((topic) => (
+              {miniTrends.length > 0 ? miniTrends.map((topic) => (
                 <div key={topic.label} className="rounded-[8px] border border-slate-100 bg-slate-50 p-3 transition hover:border-[#465FFF]/20">
                   <p className="text-xs font-bold text-slate-400 truncate">{topic.label}</p>
                   <p className="mt-2 text-lg font-black text-slate-900">{topic.value}</p>
                   <MiniSparkline tone={topic.tone as Tone} />
                 </div>
-              ))}
+              )) : (
+                <div className="sm:col-span-2 xl:col-span-6">
+                  <EmptyPanel label={t("pages.command.emptyTopics")} compact />
+                </div>
+              )}
             </div>
           </CardContent>
         </AppCard>
@@ -330,9 +379,9 @@ export default function DashboardPage() {
               title={t("pages.command.map")} 
               description={t("pages.command.mapDesc")} 
               action={
-                <button className="rounded-[8px] border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-all">
-                  Indonesia <ChevronDown size={14} className="inline ml-1 text-slate-400" />
-                </button>
+                <span className="inline-flex h-8 items-center rounded-[8px] border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-700">
+                  Indonesia
+                </span>
               }
             />
             <WorldActivityMap />
@@ -340,15 +389,15 @@ export default function DashboardPage() {
         </AppCard>
 
         {/* Predictive Alerts */}
-        <AppCard>
-          <CardContent className="p-5">
+        <AppCard className="h-full">
+          <CardContent className="flex h-full flex-col p-5">
             <SectionHeader 
               title={t("pages.command.alerts")} 
               description={t("pages.command.alertsDesc")} 
               action={<Link href="/alerts" className="whitespace-nowrap text-[11px] font-bold text-[#465FFF] transition-all hover:text-[#8B5CFF] hover:underline">{t("common.viewAll")}</Link>} 
             />
-            <div className="space-y-4">
-              {alertsRow.map((alert) => (
+            <div className="min-h-[180px] flex-1 space-y-4">
+              {alertsRow.length > 0 ? alertsRow.map((alert) => (
                 <div key={alert.id} className="flex gap-3 border-b border-slate-100 pb-3.5 last:border-0 last:pb-0">
                   <IconBubble icon={Zap} tone={alert.tone as Tone} className="h-9 w-9 rounded-[8px]" />
                   <div className="min-w-0 flex-1">
@@ -357,12 +406,14 @@ export default function DashboardPage() {
                   </div>
                   <span className="text-[11px] font-semibold text-slate-400">{alert.time}</span>
                 </div>
-              ))}
+              )) : (
+                <EmptyPanel label={t("pages.command.emptySignals")} />
+              )}
             </div>
-            <button className="mt-6 flex w-full items-center justify-center gap-2 text-sm font-bold text-[#465FFF] hover:text-[#465FFF] transition-all group">
+            <Link href="/signals" className="group mt-auto flex w-full items-center justify-center gap-2 border-t border-slate-100 pt-4 text-sm font-bold text-[#465FFF] transition-all hover:text-[#465FFF]">
               {t("common.viewAll")} 
               <ArrowRight size={16} className="transform transition-transform group-hover:translate-x-1" />
-            </button>
+            </Link>
           </CardContent>
         </AppCard>
       </div>
@@ -374,7 +425,7 @@ export default function DashboardPage() {
           <CardContent className="p-5">
             <SectionHeader title={t("pages.command.topics")} description={t("pages.command.topicsDesc")} />
             <div className="space-y-2 mt-4">
-              {hotTopics.map((topic, index) => (
+              {hotTopics.length > 0 ? hotTopics.map((topic, index) => (
                 <div key={text(topic.name, language)} className="flex items-center gap-3 py-2.5 border-b border-slate-100 last:border-0 last:pb-0">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#8B5CFF]/15 text-xs font-bold text-[#8B5CFF] border border-[#8B5CFF]/20">
                     {index + 1}
@@ -385,7 +436,9 @@ export default function DashboardPage() {
                     {topic.delta}
                   </p>
                 </div>
-              ))}
+              )) : (
+                <EmptyPanel label={t("pages.command.emptyTopics")} />
+              )}
             </div>
           </CardContent>
         </AppCard>
@@ -395,7 +448,7 @@ export default function DashboardPage() {
           <CardContent className="p-5">
             <SectionHeader title={t("pages.command.sources")} description={t("pages.command.sourcesDesc")} />
             <div className="space-y-2 mt-4">
-              {sourcesData.map((source, index) => (
+              {sourcesData.length > 0 ? sourcesData.map((source, index) => (
                 <div key={`${source.name}-${index}`} className="grid grid-cols-[1fr_75px_60px] items-center gap-2 py-3 border-b border-slate-100 last:border-0 last:pb-0 text-sm">
                   <p className="font-bold text-slate-800 truncate">{source.name}</p>
                   <p className="text-xs font-extrabold text-[#10B981] flex items-center gap-1">
@@ -404,7 +457,9 @@ export default function DashboardPage() {
                   </p>
                   <p className="text-right text-xs font-bold text-slate-500">{source.signals}</p>
                 </div>
-              ))}
+              )) : (
+                <EmptyPanel label={t("pages.command.emptySources")} />
+              )}
             </div>
           </CardContent>
         </AppCard>
@@ -413,28 +468,34 @@ export default function DashboardPage() {
         <AppCard>
           <CardContent className="p-5">
             <SectionHeader title={t("pages.command.visibility")} description={t("pages.command.visibilityDesc")} />
-            <DonutChart center={String(summary?.kpis?.analyzed_signals ?? "2.451")} label={t("pages.command.totalMentions")} data={sentimentData} />
+            {sentimentData.some((item) => item.value > 0) ? (
+              <DonutChart center={String(summary?.kpis?.analyzed_signals ?? 0)} label={t("pages.command.totalMentions")} data={sentimentData} />
+            ) : (
+              <div className="mx-auto flex h-[188px] w-[188px] items-center justify-center rounded-full border border-dashed border-slate-200 bg-slate-50 text-center text-[12px] font-bold text-slate-400">
+                {t("pages.command.emptySentiment")}
+              </div>
+            )}
             <div className="mt-6 grid gap-2.5 text-sm">
               <div className="flex justify-between py-1 border-b border-slate-100">
                 <span className="text-slate-500 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-[#12B76A]" />
                   {t("pages.command.positive")}
                 </span>
-                <b className="text-slate-900">{summary?.sentiment_distribution?.positive ?? 1248}</b>
+                <b className="text-slate-900">{summary?.sentiment_distribution?.positive ?? 0}</b>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-100">
                 <span className="text-slate-500 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-[#465FFF]" />
                   {t("pages.command.neutral")}
                 </span>
-                <b className="text-slate-900">{summary?.sentiment_distribution?.neutral ?? 842}</b>
+                <b className="text-slate-900">{summary?.sentiment_distribution?.neutral ?? 0}</b>
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-slate-500 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-[#F04438]" />
                   {t("pages.command.negative")}
                 </span>
-                <b className="text-slate-900">{summary?.sentiment_distribution?.negative ?? 361}</b>
+                <b className="text-slate-900">{summary?.sentiment_distribution?.negative ?? 0}</b>
               </div>
             </div>
           </CardContent>
@@ -450,7 +511,8 @@ export default function DashboardPage() {
                 return (
                     <button 
                       key={action.key} 
-                      onClick={() => setSelectedAction(action.key)}
+                      type="button"
+                      onClick={() => setSelectedAction(action.key as QuickActionKey)}
                       className={`flex min-h-[82px] flex-col items-center justify-center gap-2.5 rounded-[8px] border transition-all text-center text-xs font-bold active:scale-[0.96] ${selectedAction === action.key ? "border-[#465FFF] bg-[#465FFF]/5 text-[#465FFF]" : "border-slate-100 bg-slate-50 text-slate-800 hover:bg-slate-100 hover:border-[#465FFF]/35"}`}
                     >
                     <Icon size={22} className="text-[#465FFF] drop-shadow-[0_0_8px_rgba(70,95,255,0.4)]" />
@@ -460,7 +522,7 @@ export default function DashboardPage() {
               })}
             </div>
             {selectedAction ? (
-              <QuickActionDrawer actionKey={selectedAction as QuickActionKey} onClose={() => setSelectedAction(null)} quickActionContent={quickActionContent} tDrawer={(key) => tDrawer(key)} />
+              <QuickActionDrawer actionKey={selectedAction} onClose={() => setSelectedAction(null)} quickActionContent={quickActionContent} tDrawer={(key) => tDrawer(key)} />
             ) : null}
           </CardContent>
         </AppCard>
@@ -472,13 +534,13 @@ export default function DashboardPage() {
           <SectionHeader 
             title={t("pages.command.status")} 
             action={
-              <a className="text-sm font-bold text-[#465FFF] hover:underline flex items-center gap-1">
+              <Link href="/workspace/activity" className="flex items-center gap-1 text-sm font-bold text-[#465FFF] hover:underline">
                 {t("pages.command.viewStatus")} <ArrowRight size={16} className="inline ml-1" />
-              </a>
+              </Link>
             } 
           />
           <div className="grid gap-3 md:grid-cols-5 mt-4">
-            {sysStatusData.map((item) => (
+            {sysStatusData.length > 0 ? sysStatusData.map((item) => (
               <div key={item} className="flex items-center gap-3 rounded-[10px] bg-slate-50 border border-slate-100 p-4 transition hover:border-[#10B981]/25">
                 <IconBubble icon={CheckCircle2} tone="green" className="h-8 w-8 rounded-full shrink-0" />
                 <div>
@@ -486,10 +548,20 @@ export default function DashboardPage() {
                   <p className="text-xs font-semibold text-[#10B981]">{t("common.operational")}</p>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="md:col-span-5">
+                <EmptyPanel label={t("pages.command.emptyStatus")} />
+              </div>
+            )}
           </div>
         </CardContent>
       </AppCard>
     </div>
   );
 }
+
+
+
+
+
+

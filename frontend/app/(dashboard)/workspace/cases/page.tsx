@@ -59,11 +59,31 @@ const priorityStyles: Record<CasePriority, string> = {
 };
 
 const toneMap: Record<string, { bg: string; text: string; ring: string }> = {
-  blue: { bg: "bg-[#465FFF]/10", text: "text-[#465FFF]", ring: "ring-[#465FFF]/15" },
-  purple: { bg: "bg-[#8B5CFF]/10", text: "text-[#8B5CFF]", ring: "ring-[#8B5CFF]/15" },
-  green: { bg: "bg-[#10B981]/10", text: "text-[#10B981]", ring: "ring-[#10B981]/15" },
-  amber: { bg: "bg-[#F59E0B]/10", text: "text-[#F59E0B]", ring: "ring-[#F59E0B]/15" },
-  red: { bg: "bg-[#EF4444]/10", text: "text-[#EF4444]", ring: "ring-[#EF4444]/15" },
+  blue: {
+    bg: "bg-[#465FFF]/10",
+    text: "text-[#465FFF]",
+    ring: "ring-[#465FFF]/15",
+  },
+  purple: {
+    bg: "bg-[#8B5CFF]/10",
+    text: "text-[#8B5CFF]",
+    ring: "ring-[#8B5CFF]/15",
+  },
+  green: {
+    bg: "bg-[#10B981]/10",
+    text: "text-[#10B981]",
+    ring: "ring-[#10B981]/15",
+  },
+  amber: {
+    bg: "bg-[#F59E0B]/10",
+    text: "text-[#F59E0B]",
+    ring: "ring-[#F59E0B]/15",
+  },
+  red: {
+    bg: "bg-[#EF4444]/10",
+    text: "text-[#EF4444]",
+    ring: "ring-[#EF4444]/15",
+  },
   slate: { bg: "bg-slate-100", text: "text-slate-500", ring: "ring-slate-200" },
 };
 
@@ -75,7 +95,7 @@ function dateInputToIsoDateTime(value: FormDataEntryValue | null) {
 
 function formatRelativeTime(value: string, locale: string) {
   const deltaSeconds = Math.round(
-    (new Date(value).getTime() - Date.now()) / 1000
+    (new Date(value).getTime() - Date.now()) / 1000,
   );
   const ranges: Array<[Intl.RelativeTimeFormatUnit, number]> = [
     ["year", 60 * 60 * 24 * 365],
@@ -87,10 +107,9 @@ function formatRelativeTime(value: string, locale: string) {
 
   for (const [unit, seconds] of ranges) {
     if (Math.abs(deltaSeconds) >= seconds || unit === "minute") {
-      return new Intl.RelativeTimeFormat(
-        locale === "id" ? "id-ID" : "en-US",
-        { numeric: "always" }
-      ).format(Math.round(deltaSeconds / seconds), unit);
+      return new Intl.RelativeTimeFormat(locale === "id" ? "id-ID" : "en-US", {
+        numeric: "always",
+      }).format(Math.round(deltaSeconds / seconds), unit);
     }
   }
 
@@ -112,7 +131,7 @@ function formatDeadline(value: string | null, locale: string) {
   const isPast = date < now;
   const formatted = new Intl.DateTimeFormat(
     locale === "id" ? "id-ID" : "en-US",
-    { day: "2-digit", month: "short", year: "numeric" }
+    { day: "2-digit", month: "short", year: "numeric" },
   ).format(date);
   return { formatted, isPast };
 }
@@ -141,7 +160,7 @@ function MetricCard({
           className={cn(
             "flex h-10 w-10 items-center justify-center rounded-xl",
             style.bg,
-            style.text
+            style.text,
           )}
         >
           <Icon size={18} />
@@ -238,10 +257,7 @@ function CaseDetailSidebar({
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
-          <h2
-            id={dialogTitleId}
-            className="text-lg font-black text-[#101334]"
-          >
+          <h2 id={dialogTitleId} className="text-lg font-black text-[#101334]">
             {tDetail("title")}
           </h2>
           <button
@@ -264,7 +280,10 @@ function CaseDetailSidebar({
               <div className="h-4 w-2/3 animate-pulse rounded bg-[#F1F4FB]" />
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 {Array.from({ length: 4 }, (_, i) => (
-                  <div key={i} className="h-16 animate-pulse rounded-[10px] bg-[#F8FAFF]" />
+                  <div
+                    key={i}
+                    className="h-16 animate-pulse rounded-[10px] bg-[#F8FAFF]"
+                  />
                 ))}
               </div>
             </div>
@@ -294,7 +313,8 @@ function CaseDetailSidebar({
                 <span
                   className={cn(
                     "rounded-full px-3 py-1 text-[10px] font-black",
-                    statusStyles[record.status as CaseStatus] || statusStyles.open
+                    statusStyles[record.status as CaseStatus] ||
+                      statusStyles.open,
                   )}
                 >
                   {tStatus(record.status as CaseStatus)}
@@ -302,7 +322,9 @@ function CaseDetailSidebar({
                 <span
                   className={cn(
                     "rounded-full px-3 py-1 text-[10px] font-black",
-                    priorityStyles[(record.priority as CasePriority) || "medium"]
+                    priorityStyles[
+                      (record.priority as CasePriority) || "medium"
+                    ],
                   )}
                 >
                   {tStatus((record.priority as CasePriority) || "medium")}
@@ -316,7 +338,9 @@ function CaseDetailSidebar({
                     {t("table.assignee")}
                   </p>
                   <p className="mt-2 text-[13px] font-black text-[#101334]">
-                    {record.assignedTo || record.assignedTeam || t("table.unassigned")}
+                    {record.assignedTo ||
+                      record.assignedTeam ||
+                      t("table.unassigned")}
                   </p>
                 </div>
                 <div className="rounded-[10px] bg-[#F8FAFF] p-3">
@@ -325,7 +349,8 @@ function CaseDetailSidebar({
                   </p>
                   <p className="mt-2 text-[13px] font-black text-[#101334]">
                     {record.deadline
-                      ? formatDeadline(record.deadline, locale)?.formatted || t("table.noDeadline")
+                      ? formatDeadline(record.deadline, locale)?.formatted ||
+                        t("table.noDeadline")
                       : t("table.noDeadline")}
                   </p>
                 </div>
@@ -383,7 +408,10 @@ function CaseDetailSidebar({
                 />
                 <button
                   type="button"
-                  disabled={resolutionMutation.isPending || resolution === (record.resolution || "")}
+                  disabled={
+                    resolutionMutation.isPending ||
+                    resolution === (record.resolution || "")
+                  }
                   onClick={() => resolutionMutation.mutate()}
                   className="mt-2 flex h-9 items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_8px_16px_rgba(70,95,255,0.2)] transition hover:opacity-90 disabled:opacity-50"
                 >
@@ -398,7 +426,7 @@ function CaseDetailSidebar({
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }
 
@@ -451,7 +479,7 @@ export default function CasesPage() {
       if (event.key !== "Tab" || !createFormRef.current) return;
 
       const focusable = createFormRef.current.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
       );
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
@@ -576,7 +604,7 @@ export default function CasesPage() {
       inProgressCasesQuery.data,
       resolvedCasesQuery.data,
       tMetrics,
-    ]
+    ],
   );
 
   /* ─── Mutations ─── */
@@ -685,9 +713,6 @@ export default function CasesPage() {
       {/* ─── Header ─── */}
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <span className="inline-flex rounded-full border-[#465FFF]/15 bg-[#465FFF]/8 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-[#465FFF]">
-            {t("eyebrow")}
-          </span>
           <h1 className="mt-3 text-[28px] font-black tracking-tight text-slate-900">
             {t("header.title")}
           </h1>
@@ -887,7 +912,7 @@ export default function CasesPage() {
                             className={cn(
                               "rounded-full px-2 py-0.5 text-[9px] font-black",
                               statusStyles[item.status as CaseStatus] ||
-                                statusStyles.open
+                                statusStyles.open,
                             )}
                           >
                             {tStatus(item.status as CaseStatus)}
@@ -924,11 +949,11 @@ export default function CasesPage() {
                               "rounded-full px-2 py-0.5 text-[9px] font-black",
                               priorityStyles[
                                 (item.priority as CasePriority) || "medium"
-                              ]
+                              ],
                             )}
                           >
                             {tStatus(
-                              (item.priority as CasePriority) || "medium"
+                              (item.priority as CasePriority) || "medium",
                             )}
                           </span>
                         </div>
@@ -938,11 +963,9 @@ export default function CasesPage() {
                       <td className="px-4 py-4 align-top">
                         <div className="flex items-center gap-2">
                           <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#8B5CFF]/10 text-[10px] font-black text-[#8B5CFF]">
-                            {(
-                              item.assignedTo ||
+                            {(item.assignedTo ||
                               item.assignedTeam ||
-                              "?"
-                            )[0].toUpperCase()}
+                              "?")[0].toUpperCase()}
                           </span>
                           <p className="text-[11px] font-bold text-[#31406B]">
                             {item.assignedTo ||
@@ -969,7 +992,7 @@ export default function CasesPage() {
                                 "text-[11px] font-bold",
                                 deadlineInfo.isPast
                                   ? "text-[#EF4444]"
-                                  : "text-[#31406B]"
+                                  : "text-[#31406B]",
                               )}
                             >
                               {deadlineInfo.formatted}
@@ -1197,7 +1220,7 @@ export default function CasesPage() {
               </div>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
 
       {/* ─── Delete Confirmation ─── */}

@@ -259,6 +259,55 @@ describe('Backend workers', () => {
     expect(ingestionJobs[0].status).toBe('completed');
   });
 
+  it('persists Apify actor language and location hints into raw documents and signals', async () => {
+    Object.assign(sourceRecord, {
+      name: 'Narriv Social',
+      type: 'social',
+      actorId: 'test/twitter-actor',
+    });
+    apifyService.runActorAndFetchDataset.mockResolvedValueOnce([{
+      type: 'tweet',
+      id: 'tweet-1',
+      twitterUrl: 'https://twitter.com/example/status/tweet-1',
+      text: 'Jakarta public conversation signal.',
+      createdAt: 'Fri Nov 24 17:49:36 +0000 2023',
+      lang: 'id',
+      place: {
+        name: 'Jakarta',
+        full_name: 'Jakarta, Indonesia',
+        country: 'Indonesia',
+      },
+      author: { name: 'Example User', userName: 'example' },
+      likeCount: 10,
+    }]);
+    ingestionJobs.push({ id: INGESTION_JOB_ID, sourceId: SOURCE_ID, status: 'queued', errorMessage: null });
+    const processor = workerProcessors.get('ingestion');
+
+    await processor({
+      id: 'bull-ingestion-actor-metadata',
+      data: { jobId: INGESTION_JOB_ID, sourceId: SOURCE_ID },
+      opts: { attempts: 1 },
+      attemptsMade: 0,
+    });
+
+    expect(rawDocuments[0].metadata).toMatchObject({
+      language: 'id',
+      locationHint: {
+        label: 'Jakarta',
+        country: 'Indonesia',
+        source: 'platform_place',
+      },
+      actorMetadata: {
+        engagement: { likes: 10 },
+      },
+    });
+    expect(signals[0]).toMatchObject({
+      platform: 'tweet',
+      region: 'Jakarta',
+      language: 'id',
+    });
+  });
+
   it('returns cancelled ingestion result without processing data when job is cancelled', async () => {
     ingestionJobs.push({ id: INGESTION_JOB_ID, sourceId: SOURCE_ID, status: 'cancelled', errorMessage: 'Cancelled: user request' });
     const processor = workerProcessors.get('ingestion');

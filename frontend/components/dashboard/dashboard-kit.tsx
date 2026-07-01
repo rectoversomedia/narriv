@@ -90,14 +90,26 @@ export function MetricTile({ label, value, helper, icon: Icon, tone }: { label: 
   );
 }
 
-export function SectionHeader({ title, description, action }: { title: string; description?: string; action?: ReactNode }) {
+export function SectionHeader({ title, description, action, actionPlacement = "side" }: { title: string; description?: string; action?: ReactNode; actionPlacement?: "side" | "below" }) {
+  if (actionPlacement === "below") {
+    return (
+      <div className="mb-6 flex flex-col gap-4">
+        <div className="min-w-0">
+          <h2 className="text-[20px] font-bold tracking-[-0.02em] text-slate-900">{title}</h2>
+          {description ? <p className="mt-1 text-[13px] font-semibold text-slate-400">{description}</p> : null}
+        </div>
+        {action ? <div className="flex w-full items-center">{action}</div> : null}
+      </div>
+    );
+  }
+
   return (
-    <div className="mb-6 flex items-start justify-between gap-4">
-      <div>
+    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="min-w-0">
         <h2 className="text-[20px] font-bold tracking-[-0.02em] text-slate-900">{title}</h2>
         {description ? <p className="mt-1 text-[13px] font-semibold text-slate-400">{description}</p> : null}
       </div>
-      {action}
+      {action ? <div className="flex w-full shrink-0 items-center sm:w-auto sm:justify-end">{action}</div> : null}
     </div>
   );
 }

@@ -923,12 +923,20 @@ export default function AlertsPage() {
   });
   const [notificationRuleDraft, setNotificationRuleDraft] = useState<NotificationRuleDraft[]>([]);
   const [escalationDraft, setEscalationDraft] = useState<EscalationDraft[]>([]);
+  const [createType, setCreateType] = useState("risk");
+  const [createSeverity, setCreateSeverity] = useState("low");
+  const [createAssignedTo, setCreateAssignedTo] = useState("");
+  const [createAssignedTeam, setCreateAssignedTeam] = useState("");
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   function closeCreateModal() {
     setIsCreateModalOpen(false);
     setIsCreateAdvancedOpen(false);
     setSelectedSources([]);
+    setCreateType("risk");
+    setCreateSeverity("low");
+    setCreateAssignedTo("");
+    setCreateAssignedTeam("");
   }
 
   // Members and escalation data feed live alert panels plus create/edit dropdowns.
@@ -1218,6 +1226,20 @@ export default function AlertsPage() {
   const totalPages = alertsData?.pagination?.totalPages ?? 1;
   const footerText = td("pagination.summary", { start: alertsData?.pagination && alertsData.pagination.total > 0 ? (alertsData.pagination.page - 1) * alertsData.pagination.limit + 1 : 0, end: alertsData?.pagination ? Math.min(alertsData.pagination.page * alertsData.pagination.limit, alertsData.pagination.total) : 0, total: alertsData?.pagination?.total ?? 0, label: ta("table.alertsLabel") });
 
+  const selectedMember = (membersQuery.data ?? []).find(
+    (m) => (m.user?.name || m.user?.email || m.userId) === createAssignedTo
+  );
+  const assignedToHoverTitle = selectedMember
+    ? `${selectedMember.user?.name || selectedMember.user?.email || selectedMember.userId}${
+        selectedMember.role ? ` (${selectedMember.role})` : ""
+      }`
+    : taCreate("assignedToPlaceholder");
+
+  const selectedTeam = escalationLevels.find((e) => e.roleName === createAssignedTeam);
+  const assignedTeamHoverTitle = selectedTeam
+    ? `${selectedTeam.roleName} (${selectedTeam.level})`
+    : taCreate("assignedTeamPlaceholder");
+
   return (
     <div className="mx-auto flex max-w-[1600px] flex-col gap-4 pb-6 text-[#101334]">
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -1443,10 +1465,16 @@ export default function AlertsPage() {
                                 value={rule.trigger}
                                 onChange={(event) => updateNotificationRuleDraft(index, { trigger: event.target.value as NotificationRuleTrigger })}
                                 className="h-10 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[16px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] md:text-[12px]"
+                                title={ta(`v2.notificationRulesModal.triggers.${rule.trigger}`)}
                               >
-                                {(["severity", "sentiment", "sla", "keyword"] as NotificationRuleTrigger[]).map((trigger) => (
-                                  <option key={trigger} value={trigger}>{ta(`v2.notificationRulesModal.triggers.${trigger}`)}</option>
-                                ))}
+                                {(["severity", "sentiment", "sla", "keyword"] as NotificationRuleTrigger[]).map((trigger) => {
+                                  const text = ta(`v2.notificationRulesModal.triggers.${trigger}`);
+                                  return (
+                                    <option key={trigger} value={trigger} title={text}>
+                                      {text}
+                                    </option>
+                                  );
+                                })}
                               </select>
                             </label>
                             <label className="block">
@@ -1455,9 +1483,12 @@ export default function AlertsPage() {
                                 value={rule.condition}
                                 onChange={(event) => updateNotificationRuleDraft(index, { condition: event.target.value })}
                                 className="h-10 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[16px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] md:text-[12px]"
+                                title={getRuleConditionOptions(rule.trigger, ta).find((opt) => opt.value === rule.condition)?.label || rule.condition}
                               >
                                 {getRuleConditionOptions(rule.trigger, ta).map((option) => (
-                                  <option key={option.value} value={option.value}>{option.label}</option>
+                                  <option key={option.value} value={option.value} title={option.label}>
+                                    {option.label}
+                                  </option>
                                 ))}
                               </select>
                             </label>
@@ -1467,10 +1498,16 @@ export default function AlertsPage() {
                                 value={rule.channels[0] ?? "standard"}
                                 onChange={(event) => updateNotificationRuleDraft(index, { channels: [event.target.value] })}
                                 className="h-10 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[16px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] md:text-[12px]"
+                                title={channelLabel(rule.channels[0] ?? "standard", ta)}
                               >
-                                {["instant", "standard", "all"].map((channel) => (
-                                  <option key={channel} value={channel}>{channelLabel(channel, ta)}</option>
-                                ))}
+                                {["instant", "standard", "all"].map((channel) => {
+                                  const text = channelLabel(channel, ta);
+                                  return (
+                                    <option key={channel} value={channel} title={text}>
+                                      {text}
+                                    </option>
+                                  );
+                                })}
                               </select>
                             </label>
                             <label className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#31406B]">
@@ -1554,13 +1591,16 @@ export default function AlertsPage() {
                         value={item.roleName}
                         onChange={(event) => updateEscalationDraft(index, { roleName: event.target.value })}
                         className="h-10 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[16px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] md:text-[12px]"
+                        title={ownerOptions.find((opt) => opt.value === item.roleName)?.label || item.roleName || (membersQuery.isLoading ? ta("v2.escalationMatrix.loadingOwners") : ta("v2.escalationMatrix.ownerPlaceholder"))}
                       >
-                        <option value="">{membersQuery.isLoading ? ta("v2.escalationMatrix.loadingOwners") : ta("v2.escalationMatrix.ownerPlaceholder")}</option>
+                        <option value="" title={membersQuery.isLoading ? ta("v2.escalationMatrix.loadingOwners") : ta("v2.escalationMatrix.ownerPlaceholder")}>
+                          {membersQuery.isLoading ? ta("v2.escalationMatrix.loadingOwners") : ta("v2.escalationMatrix.ownerPlaceholder")}
+                        </option>
                         {item.roleName && !ownerOptions.some((option) => option.value === item.roleName) ? (
-                          <option value={item.roleName}>{item.roleName}</option>
+                          <option value={item.roleName} title={item.roleName}>{item.roleName}</option>
                         ) : null}
                         {ownerOptions.map((option) => (
-                          <option key={option.id} value={option.value}>{option.label}</option>
+                          <option key={option.id} value={option.value} title={option.label}>{option.label}</option>
                         ))}
                       </select>
                       {!membersQuery.isLoading && ownerOptions.length === 0 ? (
@@ -1674,19 +1714,49 @@ export default function AlertsPage() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("typeLabel")}</label>
-                    <select name="type" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white">
-                      <option value="risk">{taCreate("typeRisk")}</option>
-                      <option value="opportunity">{taCreate("typeOpportunity")}</option>
-                      <option value="positioning">{taCreate("typePositioning")}</option>
+                    <select
+                      name="type"
+                      value={createType}
+                      onChange={(e) => setCreateType(e.target.value)}
+                      title={
+                        createType === "risk"
+                          ? taCreate("typeRisk")
+                          : createType === "opportunity"
+                          ? taCreate("typeOpportunity")
+                          : createType === "positioning"
+                          ? taCreate("typePositioning")
+                          : ""
+                      }
+                      className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white"
+                    >
+                      <option value="risk" title={taCreate("typeRisk")}>{taCreate("typeRisk")}</option>
+                      <option value="opportunity" title={taCreate("typeOpportunity")}>{taCreate("typeOpportunity")}</option>
+                      <option value="positioning" title={taCreate("typePositioning")}>{taCreate("typePositioning")}</option>
                     </select>
                   </div>
                   <div>
                     <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("severityLabel")}</label>
-                    <select name="severity" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white">
-                      <option value="low">{taCreate("severityLow")}</option>
-                      <option value="medium">{taCreate("severityMedium")}</option>
-                      <option value="high">{taCreate("severityHigh")}</option>
-                      <option value="critical">{taCreate("severityCritical")}</option>
+                    <select
+                      name="severity"
+                      value={createSeverity}
+                      onChange={(e) => setCreateSeverity(e.target.value)}
+                      title={
+                        createSeverity === "low"
+                          ? taCreate("severityLow")
+                          : createSeverity === "medium"
+                          ? taCreate("severityMedium")
+                          : createSeverity === "high"
+                          ? taCreate("severityHigh")
+                          : createSeverity === "critical"
+                          ? taCreate("severityCritical")
+                          : ""
+                      }
+                      className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white"
+                    >
+                      <option value="low" title={taCreate("severityLow")}>{taCreate("severityLow")}</option>
+                      <option value="medium" title={taCreate("severityMedium")}>{taCreate("severityMedium")}</option>
+                      <option value="high" title={taCreate("severityHigh")}>{taCreate("severityHigh")}</option>
+                      <option value="critical" title={taCreate("severityCritical")}>{taCreate("severityCritical")}</option>
                     </select>
                   </div>
                 </div>
@@ -1712,77 +1782,96 @@ export default function AlertsPage() {
                     <ChevronRight size={14} className={cn("text-[#8B95B8] transition-transform", isCreateAdvancedOpen && "rotate-90")} />
                   </button>
                   {isCreateAdvancedOpen && (
-                  <div className="space-y-3 border-t border-[#E6EAF2] px-3.5 pb-3.5 pt-3">
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("assignedToLabel")}</label>
-                        <select name="assignedTo" defaultValue="" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF]">
-                          <option value="">{taCreate("assignedToPlaceholder")}</option>
-                          {(membersQuery.data ?? []).map((m) => (
-                            <option key={m.id} value={m.user?.name || m.user?.email || m.userId}>
-                              {m.user?.name || m.user?.email || m.userId}{m.role ? ` (${m.role})` : ""}
-                            </option>
-                          ))}
-                        </select>
+                    <div className="space-y-3 border-t border-[#E6EAF2] px-3.5 pb-3.5 pt-3">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("assignedToLabel")}</label>
+                          <select
+                            name="assignedTo"
+                            value={createAssignedTo}
+                            onChange={(e) => setCreateAssignedTo(e.target.value)}
+                            title={assignedToHoverTitle}
+                            className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF]"
+                          >
+                            <option value="" title={taCreate("assignedToPlaceholder")}>{taCreate("assignedToPlaceholder")}</option>
+                            {(membersQuery.data ?? []).map((m) => {
+                              const val = m.user?.name || m.user?.email || m.userId;
+                              const label = `${val}${m.role ? ` (${m.role})` : ""}`;
+                              return (
+                                <option key={m.id} value={val} title={label}>
+                                  {label}
+                                </option>
+                              );
+                            })}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("assignedTeamLabel")}</label>
+                          <select
+                            name="assignedTeam"
+                            value={createAssignedTeam}
+                            onChange={(e) => setCreateAssignedTeam(e.target.value)}
+                            title={assignedTeamHoverTitle}
+                            className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF]"
+                          >
+                            <option value="" title={taCreate("assignedTeamPlaceholder")}>{taCreate("assignedTeamPlaceholder")}</option>
+                            {escalationLevels.filter((e) => e.isActive).map((e) => {
+                              const label = `${e.roleName} (${e.level})`;
+                              return (
+                                <option key={e.id} value={e.roleName} title={label}>
+                                  {label}
+                                </option>
+                              );
+                            })}
+                          </select>
+                        </div>
                       </div>
                       <div>
-                        <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("assignedTeamLabel")}</label>
-                        <select name="assignedTeam" defaultValue="" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF]">
-                          <option value="">{taCreate("assignedTeamPlaceholder")}</option>
-                          {escalationLevels.filter((e) => e.isActive).map((e) => (
-                            <option key={e.id} value={e.roleName}>
-                              {e.roleName} ({e.level})
-                            </option>
-                          ))}
-                        </select>
+                        <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("deadlineLabel")}</label>
+                        <input name="deadline" type="datetime-local" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF]" />
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{ta("v2.incident.source")}</label>
+                        {(sourcesQuery.data?.data ?? []).length > 0 ? (
+                          <div className="grid grid-cols-2 gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white p-2.5 max-h-[140px] overflow-y-auto">
+                            {(sourcesQuery.data?.data ?? []).map((src) => (
+                              <label key={src.id} className="flex items-center gap-2 rounded-[6px] px-2 py-1.5 text-[11px] font-bold text-[#31406B] transition hover:bg-[#F5F7FC] cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedSources.includes(src.name)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedSources((prev) => [...prev, src.name]);
+                                    } else {
+                                      setSelectedSources((prev) => prev.filter((s) => s !== src.name));
+                                    }
+                                  }}
+                                  className="size-3.5 rounded border-[#DDE3EF] text-[#465FFF] accent-[#465FFF]"
+                                />
+                                <span className="truncate">{src.name}</span>
+                                <span className="ml-auto shrink-0 rounded-full bg-[#F1F4FB] px-1.5 py-0.5 text-[9px] font-black text-[#68739F]">{src.type}</span>
+                              </label>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="rounded-[8px] border border-dashed border-[#DDE3EF] bg-[#FBFCFF] px-3 py-2.5 text-[11px] font-semibold text-[#8B95B8]">
+                            No sources configured yet. Add sources in the Sources page.
+                          </p>
+                        )}
+                        {selectedSources.length > 0 && (
+                          <div className="mt-1.5 flex flex-wrap gap-1">
+                            {selectedSources.map((s) => (
+                              <span key={s} className="inline-flex items-center gap-1 rounded-full bg-[#465FFF]/10 px-2 py-0.5 text-[10px] font-black text-[#465FFF]">
+                                {s}
+                                <button type="button" onClick={() => setSelectedSources((prev) => prev.filter((x) => x !== s))} className="ml-0.5 text-[#465FFF]/60 hover:text-[#465FFF]">
+                                  <X size={10} />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <div>
-                      <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{taCreate("deadlineLabel")}</label>
-                      <input name="deadline" type="datetime-local" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF]" />
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{ta("v2.incident.source")}</label>
-                      {(sourcesQuery.data?.data ?? []).length > 0 ? (
-                        <div className="grid grid-cols-2 gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white p-2.5 max-h-[140px] overflow-y-auto">
-                          {(sourcesQuery.data?.data ?? []).map((src) => (
-                            <label key={src.id} className="flex items-center gap-2 rounded-[6px] px-2 py-1.5 text-[11px] font-bold text-[#31406B] transition hover:bg-[#F5F7FC] cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={selectedSources.includes(src.name)}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedSources((prev) => [...prev, src.name]);
-                                  } else {
-                                    setSelectedSources((prev) => prev.filter((s) => s !== src.name));
-                                  }
-                                }}
-                                className="size-3.5 rounded border-[#DDE3EF] text-[#465FFF] accent-[#465FFF]"
-                              />
-                              <span className="truncate">{src.name}</span>
-                              <span className="ml-auto shrink-0 rounded-full bg-[#F1F4FB] px-1.5 py-0.5 text-[9px] font-black text-[#68739F]">{src.type}</span>
-                            </label>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="rounded-[8px] border border-dashed border-[#DDE3EF] bg-[#FBFCFF] px-3 py-2.5 text-[11px] font-semibold text-[#8B95B8]">
-                          No sources configured yet. Add sources in the Sources page.
-                        </p>
-                      )}
-                      {selectedSources.length > 0 && (
-                        <div className="mt-1.5 flex flex-wrap gap-1">
-                          {selectedSources.map((s) => (
-                            <span key={s} className="inline-flex items-center gap-1 rounded-full bg-[#465FFF]/10 px-2 py-0.5 text-[10px] font-black text-[#465FFF]">
-                              {s}
-                              <button type="button" onClick={() => setSelectedSources((prev) => prev.filter((x) => x !== s))} className="ml-0.5 text-[#465FFF]/60 hover:text-[#465FFF]">
-                                <X size={10} />
-                              </button>
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
                   )}
                 </div>
 

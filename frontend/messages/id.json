@@ -2851,7 +2851,21 @@
     "topbar": {
       "search": "Cari sinyal, topik, isu, atau kasus...",
       "notifications": "Notifikasi",
-      "logout": "Keluar"
+      "logout": "Keluar",
+      "notificationsTitle": "Notifikasi",
+      "notificationsUnread": "{count} notifikasi belum dibaca",
+      "notificationsAllCaughtUp": "Semua notifikasi sudah dibaca.",
+      "notificationsPolling": "Polling",
+      "notificationsMarkAll": "Tandai semua dibaca",
+      "notificationsMarking": "Menandai...",
+      "notificationsAuthTitle": "Perlu masuk",
+      "notificationsAuthDesc": "Notifikasi akan muncul setelah sesi aktif.",
+      "notificationsErrorTitle": "Notifikasi belum bisa dimuat",
+      "notificationsErrorDesc": "Feed notifikasi live belum bisa diambil.",
+      "notificationsRetry": "Coba lagi",
+      "notificationsEmptyTitle": "Belum ada notifikasi",
+      "notificationsEmptyDesc": "Alert penting, laporan, dan pembaruan sistem akan muncul di sini.",
+      "notificationsViewAll": "Lihat aktivitas notifikasi"
     },
     "common": {
       "viewAll": "Lihat semua",
@@ -2901,9 +2915,15 @@
         "negative": "Negatif",
         "totalMentions": "Total Mentions",
         "errorTitle": "Data live dashboard belum bisa dimuat",
-        "errorDesc": "API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan metrik contoh.",
+        "errorDesc": "API client sudah mencoba token refresh. Coba lagi atau periksa koneksi API dashboard.",
         "openRelated": "Buka halaman terkait",
-        "close": "Tutup"
+        "close": "Tutup",
+        "emptyTrends": "Belum ada data tren sinyal untuk periode ini",
+        "emptySignals": "Belum ada sinyal terbaru",
+        "emptyTopics": "Belum ada topik yang terdeteksi",
+        "emptySources": "Belum ada data kesehatan sumber",
+        "emptySentiment": "Belum ada sentimen yang dianalisis",
+        "emptyStatus": "Belum ada data status sistem"
       },
       "quickActions": {
         "newAlert": "Alert Baru",

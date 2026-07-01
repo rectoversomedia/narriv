@@ -173,9 +173,6 @@ export default function IntegrationsPage() {
     <div className="space-y-6 pb-6">
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <span className="inline-flex rounded-full border border-[#465FFF]/15 bg-[#465FFF]/8 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-[#465FFF]">
-            Workspace Connections
-          </span>
           <h1 className="mt-3 text-[28px] font-black tracking-tight text-slate-900">Integrations</h1>
           <p className="mt-1 max-w-2xl text-sm font-medium leading-6 text-slate-500">
             Hubungkan workspace ke channel eskalasi, webhook, database export, dan sistem operasi tim.

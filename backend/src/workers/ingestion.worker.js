@@ -4,6 +4,7 @@ import connection from "../lib/redis.js";
 import prisma from "../prisma.js";
 import { runActorAndFetchDataset } from "../modules/apify/apify.service.js";
 import { APIFY_ACTOR_PRESETS } from "../modules/ingestion/actor-presets.js";
+import { buildDeterministicDocHash, normalizeDatasetItem, parseDateOrNull } from "../modules/ingestion/apify-normalizer.js";
 import { addAnalysisJob } from "../lib/queue.js";
 import { incrementIngestionFailure } from "../lib/metrics.js";
 import { logStructured } from "../lib/logger.js";
@@ -23,77 +24,6 @@ async function assertNotCancelled(ingestionJobId) {
     if (row?.status === "cancelled") {
         throw new IngestionCancelledError(row.errorMessage || "Cancelled by user");
     }
-}
-
-function normalizeText(value) {
-    return String(value || "")
-        .toLowerCase()
-        .replace(/\s+/g, " ")
-        .trim();
-}
-
-function buildDeterministicDocHash({ workspaceId, sourceId, sourceType, item }) {
-    const canonical = {
-        workspaceId: normalizeText(workspaceId),
-        sourceId: normalizeText(sourceId),
-        sourceType: normalizeText(sourceType),
-        url: normalizeText(item.url),
-        title: normalizeText(item.title),
-        content: normalizeText(item.text || item.description || item.snippet || item.title),
-        author: normalizeText(item.author),
-        publishedDate: normalizeText(item.publishedDate),
-    };
-
-    const raw = JSON.stringify(canonical);
-    return crypto.createHash("sha256").update(raw).digest("hex");
-}
-
-function firstValue(...values) {
-    return values.find((value) => value !== undefined && value !== null && String(value).trim() !== "");
-}
-
-function normalizeDatasetItem(item) {
-    if (Array.isArray(item.organicResults) && item.organicResults.length > 0) {
-        return item.organicResults.map((result) => ({
-            id: result.id || result.position || result.url,
-            title: result.title,
-            url: result.url,
-            text: result.description || result.snippet || result.title,
-            description: result.description || result.snippet,
-            author: result.source || null,
-            publishedDate: result.date || null,
-            platform: "google-search",
-            _searchQuery: item.searchQuery?.query || item.query || "",
-        }));
-    }
-
-    const title = firstValue(item.title, item.pageTitle, item.name, item.fullName, item.videoTitle, item.caption, item.text);
-    const text = firstValue(
-        item.text,
-        item.full_text,
-        item.caption,
-        item.description,
-        item.snippet,
-        item.content,
-        item.body,
-        item.transcript,
-        item.title
-    );
-    const url = firstValue(item.url, item.link, item.permalink, item.postUrl, item.videoUrl, item.displayUrl, item.inputUrl);
-    const author = firstValue(item.author, item.username, item.ownerUsername, item.userName, item.channelName, item.profileName);
-    const publishedDate = firstValue(item.publishedDate, item.timestamp, item.date, item.createdAt, item.takenAt, item.creationDate, item.publishedAt);
-    const id = firstValue(item.id, item.postId, item.tweetId, item.videoId, item.shortCode, url);
-
-    return [{
-        ...item,
-        id,
-        title,
-        text,
-        url,
-        author,
-        publishedDate,
-        platform: firstValue(item.platform, item.source, item.type),
-    }];
 }
 
 function defaultActorConfigsForSource(source) {
@@ -284,9 +214,12 @@ const ingestionWorker = new Worker(
                         sourceName: source.name,
                         sourceType: source.type,
                         platform: item.platform || source.type || null,
-                        publishedAt: item.publishedDate ? new Date(item.publishedDate) : null,
+                        publishedAt: parseDateOrNull(item.publishedDate),
                         metadata: {
                             ...item,
+                            actorMetadata: item.actorMetadata || null,
+                            language: item.language || null,
+                            locationHint: item.actorMetadata?.locationHint || null,
                             dedupeHash: deterministicDocHash,
                         },
                     },
@@ -316,9 +249,11 @@ const ingestionWorker = new Worker(
                         content: createdDoc.content,
                         sourceName: createdDoc.sourceName,
                         sourceType: createdDoc.sourceType,
-                        platform: createdDoc.sourceType || source.type || null,
+                        platform: createdDoc.platform || createdDoc.sourceType || source.type || null,
                         url: createdDoc.url,
                         publishedAt: createdDoc.publishedAt,
+                        region: item.region || null,
+                        language: item.language || null,
                         dedupeHash: dedupeHash,
                         sentiment: "neutral",
                     },
