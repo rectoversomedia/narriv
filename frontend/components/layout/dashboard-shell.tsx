@@ -35,12 +35,12 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background text-foreground selection:bg-[#465FFF]/30">
+    <div className="relative min-h-screen overflow-x-hidden bg-background text-foreground selection:bg-[#465FFF]/30">
       <Particles particleCount={150} particleBaseSize={6} speed={0.08} particleColors={["#465FFF", "#8B5CFF", "#00F0FF"]} />
       <Sidebar />
-      <div className={`flex min-h-screen min-w-0 flex-col transition-[padding] duration-300 ${sidebarCollapsed ? "lg:pl-[92px]" : "lg:pl-[292px]"}`}>
+      <div className={`flex min-h-screen flex-col transition-[padding] duration-300 ${sidebarCollapsed ? "lg:pl-[92px]" : "lg:pl-[292px]"}`}>
         <Topbar />
-        <main className="flex-1 overflow-x-hidden px-4 pb-32 pt-6 sm:px-8 lg:px-10 xl:px-12 lg:pb-10">
+        <main className="flex-1 px-4 pb-32 pt-6 sm:px-6 lg:px-8 lg:pb-10">
           <div className="relative z-10 w-full">{children}</div>
         </main>
       </div>
