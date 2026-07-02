@@ -18,25 +18,64 @@ const getEventOptions = (t: ActivityTranslator) => [
   { value: "login", label: t("event_login") },
   { value: "logout", label: t("event_logout") },
   { value: "register_success", label: t("event_register_success") },
+  { value: "failed_login", label: t("event_failed_login") },
+  { value: "password_reset_requested", label: t("event_password_reset_requested") },
+  { value: "password_reset_completed", label: t("event_password_reset_completed") },
   { value: "password_change", label: t("event_password_change") },
   { value: "workspace_settings_updated", label: t("event_workspace_settings_updated") },
   { value: "workspace_logo_uploaded", label: t("event_workspace_logo_uploaded") },
-  { value: "workspace_member_created", label: t("event_workspace_member_created") },
+  { value: "workspace_member_added", label: t("event_workspace_member_added") },
   { value: "workspace_member_deleted", label: t("event_workspace_member_deleted") },
+  { value: "workspace_delete_restricted", label: t("event_workspace_delete_restricted") },
+  { value: "workspace_deleted", label: t("event_workspace_deleted") },
   { value: "source_created", label: t("event_source_created") },
   { value: "source_updated", label: t("event_source_updated") },
+  { value: "source_deleted", label: t("event_source_deleted") },
+  { value: "default_sources_bootstrapped", label: t("event_default_sources_bootstrapped") },
+  { value: "ingestion_job_queued", label: t("event_ingestion_job_queued") },
+  { value: "ingestion_job_cancelled", label: t("event_ingestion_job_cancelled") },
+  { value: "alert_created", label: t("event_alert_created") },
+  { value: "assignment_change", label: t("event_assignment_change") },
+  { value: "escalation_change", label: t("event_escalation_change") },
+  { value: "alert_escalated_overdue", label: t("event_alert_escalated_overdue") },
+  { value: "alert_escalated_unresolved_critical_risk", label: t("event_alert_escalated_unresolved_critical_risk") },
   { value: "case_created", label: t("event_case_created") },
   { value: "case_updated", label: t("event_case_updated") },
+  { value: "case_deleted", label: t("event_case_deleted") },
   { value: "integration_created", label: t("event_integration_created") },
   { value: "integration_updated", label: t("event_integration_updated") },
+  { value: "integration_deleted", label: t("event_integration_deleted") },
+  { value: "action_generated", label: t("event_action_generated") },
+  { value: "action_status_updated", label: t("event_action_status_updated") },
+  { value: "action_plan_generated", label: t("event_action_plan_generated") },
+  { value: "multi_step_action_plan_generated", label: t("event_multi_step_action_plan_generated") },
+  { value: "ai_feedback_submitted", label: t("event_ai_feedback_submitted") },
+  { value: "report_created", label: t("event_report_created") },
+  { value: "report_generated_from_template", label: t("event_report_generated_from_template") },
+  { value: "report_export_created", label: t("event_report_export_created") },
+  { value: "report_email_sent", label: t("event_report_email_sent") },
+  { value: "notification_settings_updated", label: t("event_notification_settings_updated") },
+  { value: "onboarding_workspace_created", label: t("event_onboarding_workspace_created") },
+  { value: "onboarding_sources_created", label: t("event_onboarding_sources_created") },
+  { value: "onboarding_team_invited", label: t("event_onboarding_team_invited") },
 ];
 
 const knownEvents = [
-  "login", "logout", "register_success", "password_change",
+  "login", "logout", "register_success", "failed_login",
+  "password_reset_requested", "password_reset_completed", "password_change",
   "workspace_settings_updated", "workspace_logo_uploaded",
-  "workspace_member_created", "workspace_member_deleted",
-  "source_created", "source_updated", "source_deleted",
-  "case_created", "case_updated", "integration_created", "integration_updated"
+  "workspace_member_added", "workspace_member_deleted",
+  "workspace_delete_restricted", "workspace_deleted",
+  "source_created", "source_updated", "source_deleted", "default_sources_bootstrapped",
+  "ingestion_job_queued", "ingestion_job_cancelled",
+  "alert_created", "assignment_change", "escalation_change",
+  "alert_escalated_overdue", "alert_escalated_unresolved_critical_risk",
+  "case_created", "case_updated", "case_deleted",
+  "integration_created", "integration_updated", "integration_deleted",
+  "action_generated", "action_status_updated", "action_plan_generated",
+  "multi_step_action_plan_generated", "ai_feedback_submitted",
+  "report_created", "report_generated_from_template", "report_export_created", "report_email_sent",
+  "notification_settings_updated", "onboarding_workspace_created", "onboarding_sources_created", "onboarding_team_invited"
 ];
 
 function formatEventName(event: string, t?: ActivityTranslator) {
@@ -129,17 +168,17 @@ export default function ActivityPage() {
 
   const metrics = useMemo(() => {
     const today = new Date().toDateString();
-    const uniqueActors = new Set(rows.map((row) => row.userId || actorName(row))).size;
-    const todayCount = rows.filter((row) => new Date(row.createdAt).toDateString() === today).length;
-    const eventCount = new Set(rows.map((row) => row.event)).size;
+    const fallbackActors = new Set(rows.map((row) => row.userId || actorName(row))).size;
+    const fallbackToday = rows.filter((row) => new Date(row.createdAt).toDateString() === today).length;
+    const fallbackEventTypes = new Set(rows.map((row) => row.event)).size;
 
     return [
       { label: t("metricsTotal"), value: meta?.total ?? rows.length, helper: t("metricsTotalHelper"), tone: "blue", icon: Activity },
-      { label: t("metricsActors"), value: uniqueActors, helper: t("metricsActorsHelper"), tone: "purple", icon: UserRound },
-      { label: t("metricsToday"), value: todayCount, helper: t("metricsTodayHelper"), tone: "green", icon: CalendarDays },
-      { label: t("metricsTypes"), value: eventCount, helper: t("metricsTypesHelper"), tone: "amber", icon: ShieldCheck },
+      { label: t("metricsActors"), value: meta?.summary?.actors ?? fallbackActors, helper: t("metricsActorsHelper"), tone: "purple", icon: UserRound },
+      { label: t("metricsToday"), value: meta?.summary?.today ?? fallbackToday, helper: t("metricsTodayHelper"), tone: "green", icon: CalendarDays },
+      { label: t("metricsTypes"), value: meta?.summary?.eventTypes ?? fallbackEventTypes, helper: t("metricsTypesHelper"), tone: "amber", icon: ShieldCheck },
     ];
-  }, [meta?.total, rows, t]);
+  }, [meta?.summary?.actors, meta?.summary?.eventTypes, meta?.summary?.today, meta?.total, rows, t]);
 
   const resetFilters = () => {
     setEventType("");
@@ -205,7 +244,7 @@ export default function ActivityPage() {
             <select
               value={eventType}
               onChange={(event) => { setEventType(event.target.value); setPage(1); }}
-              className="h-10 rounded-[8px] border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#465FFF] focus:ring-2 focus:ring-[#465FFF]/15"
+              className="h-10 rounded-[8px] border border-slate-200 bg-slate-50 px-3 text-[16px] font-bold text-slate-700 outline-none transition focus:border-[#465FFF] focus:ring-2 focus:ring-[#465FFF]/15 md:text-sm"
             >
               {eventOptions.map((option) => <option key={option.value || "all"} value={option.value}>{option.label}</option>)}
             </select>
@@ -216,7 +255,7 @@ export default function ActivityPage() {
               type="date"
               value={dateFrom}
               onChange={(event) => { setDateFrom(event.target.value); setPage(1); }}
-              className="h-10 rounded-[8px] border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#465FFF] focus:ring-2 focus:ring-[#465FFF]/15"
+              className="h-10 rounded-[8px] border border-slate-200 bg-slate-50 px-3 text-[16px] font-bold text-slate-700 outline-none transition focus:border-[#465FFF] focus:ring-2 focus:ring-[#465FFF]/15 md:text-sm"
             />
           </label>
           <label className="grid gap-1.5">
@@ -225,7 +264,7 @@ export default function ActivityPage() {
               type="date"
               value={dateTo}
               onChange={(event) => { setDateTo(event.target.value); setPage(1); }}
-              className="h-10 rounded-[8px] border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#465FFF] focus:ring-2 focus:ring-[#465FFF]/15"
+              className="h-10 rounded-[8px] border border-slate-200 bg-slate-50 px-3 text-[16px] font-bold text-slate-700 outline-none transition focus:border-[#465FFF] focus:ring-2 focus:ring-[#465FFF]/15 md:text-sm"
             />
           </label>
           <button

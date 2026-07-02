@@ -36,7 +36,7 @@ jest.unstable_mockModule('../src/lib/cache.js', () => ({
     tokenUsage: (workspaceId, days) => `ws:${workspaceId}:token:${days}`,
   },
   CACHE_TTL: {
-    dashboard: 60,
+    dashboard: 15,
     visibility: 300,
     narratives: 120,
     alerts: 60,

@@ -70,6 +70,7 @@ export async function updateWorkspaceSettings(req, res) {
         await prisma.auditLog.create({
             data: {
                 userId: req.user.id,
+                workspaceId: scopedWorkspaceId,
                 event: "workspace_settings_updated",
                 metadata: {
                     workspaceId: scopedWorkspaceId,
@@ -226,6 +227,7 @@ export async function deleteWorkspace(req, res) {
             await prisma.auditLog.create({
                 data: {
                     userId: req.user.id,
+                    workspaceId: scopedWorkspaceId,
                     event: "workspace_delete_restricted",
                     metadata: {
                         workspaceId: scopedWorkspaceId,
@@ -268,6 +270,7 @@ export async function deleteWorkspace(req, res) {
         await prisma.auditLog.create({
             data: {
                 userId: req.user.id,
+                workspaceId: scopedWorkspaceId,
                 event: "workspace_deleted",
                 metadata: {
                     workspaceId: scopedWorkspaceId,

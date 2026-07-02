@@ -66,6 +66,7 @@ export async function uploadWorkspaceLogo(req, res) {
         await prisma.auditLog.create({
             data: {
                 userId: req.user.id,
+                workspaceId: scopedWorkspaceId,
                 event: "workspace_logo_uploaded",
                 metadata: {
                     workspaceId: scopedWorkspaceId,

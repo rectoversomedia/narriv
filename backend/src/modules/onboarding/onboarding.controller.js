@@ -34,6 +34,7 @@ export async function createOnboardingWorkspace(req, res) {
         await prisma.auditLog.create({
             data: {
                 userId: req.user.id,
+                workspaceId: workspace.id,
                 event: "onboarding_workspace_created",
                 metadata: { workspaceId: workspace.id, brandName, industry },
             },
@@ -76,6 +77,7 @@ export async function createOnboardingSources(req, res) {
         await prisma.auditLog.create({
             data: {
                 userId: req.user.id,
+                workspaceId,
                 event: "onboarding_sources_created",
                 metadata: { workspaceId, count: created.count },
             },
@@ -177,6 +179,7 @@ export async function createOnboardingTeam(req, res) {
         await prisma.auditLog.create({
             data: {
                 userId: req.user.id,
+                workspaceId,
                 event: "onboarding_team_invited",
                 metadata: { workspaceId, memberCount: members.length, results },
             },

@@ -81,6 +81,7 @@ export async function sendReportEmail({ workspaceId, reportId, recipientEmail, s
         await prisma.auditLog.create({
             data: {
                 userId: null,
+                workspaceId,
                 event: "report_email_sent",
                 metadata: {
                     workspaceId,

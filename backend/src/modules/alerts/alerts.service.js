@@ -243,6 +243,7 @@ export async function escalateAlertsForWorkspace(workspaceId) {
         overdueEscalated += 1;
         await prisma.auditLog.create({
             data: {
+                workspaceId: updated.workspaceId,
                 event: "alert_escalated_overdue",
                 metadata: {
                     alertId: updated.id,
@@ -257,6 +258,7 @@ export async function escalateAlertsForWorkspace(workspaceId) {
         });
         await prisma.auditLog.create({
             data: {
+                workspaceId: updated.workspaceId,
                 event: "escalation_change",
                 metadata: {
                     targetType: "alert",
@@ -304,6 +306,7 @@ export async function escalateAlertsForWorkspace(workspaceId) {
 
         await prisma.auditLog.create({
             data: {
+                workspaceId: updated.workspaceId,
                 event: "alert_escalated_unresolved_critical_risk",
                 metadata: {
                     alertId: updated.id,
@@ -319,6 +322,7 @@ export async function escalateAlertsForWorkspace(workspaceId) {
         });
         await prisma.auditLog.create({
             data: {
+                workspaceId: updated.workspaceId,
                 event: "escalation_change",
                 metadata: {
                     targetType: "alert",

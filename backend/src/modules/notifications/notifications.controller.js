@@ -66,6 +66,7 @@ export async function updateNotificationSettings(req, res) {
         await prisma.auditLog.create({
             data: {
                 userId: req.user.id,
+                workspaceId: scopedWorkspaceId,
                 event: "notification_settings_updated",
                 metadata: {
                     workspaceId: scopedWorkspaceId,

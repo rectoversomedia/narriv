@@ -4,6 +4,97 @@ import { cachedQuery, CACHE_KEYS, CACHE_TTL } from "../../lib/cache.js";
 import redis from "../../lib/redis.js";
 import { logStructured } from "../../lib/logger.js";
 
+const ACTIVITY_LOCATIONS = [
+    { aliases: ["indonesia", "id", "jakarta", "surabaya", "bandung", "yogyakarta", "jogja", "medan", "makassar", "bali", "denpasar", "semarang"], countryId: "360", countryName: "Indonesia", markerName: "Jakarta", coordinates: [106.8456, -6.2088] },
+    { aliases: ["united states", "usa", "us", "america", "amerika serikat", "new york", "california", "san francisco", "los angeles"], countryId: "840", countryName: "United States", markerName: "New York", coordinates: [-74.006, 40.7128] },
+    { aliases: ["japan", "jp", "jepang", "tokyo", "osaka"], countryId: "392", countryName: "Japan", markerName: "Tokyo", coordinates: [139.6917, 35.6895] },
+    { aliases: ["united kingdom", "uk", "gb", "britain", "britania raya", "england", "london"], countryId: "826", countryName: "United Kingdom", markerName: "London", coordinates: [-0.1276, 51.5072] },
+    { aliases: ["australia", "au", "sydney", "melbourne"], countryId: "036", countryName: "Australia", markerName: "Sydney", coordinates: [151.2093, -33.8688] },
+    { aliases: ["singapore", "sg", "singapura"], countryId: "702", countryName: "Singapore", markerName: "Singapore", coordinates: [103.8198, 1.3521] },
+    { aliases: ["malaysia", "my", "kuala lumpur", "selangor"], countryId: "458", countryName: "Malaysia", markerName: "Kuala Lumpur", coordinates: [101.6869, 3.139] },
+    { aliases: ["philippines", "ph", "filipina", "manila"], countryId: "608", countryName: "Philippines", markerName: "Manila", coordinates: [120.9842, 14.5995] },
+    { aliases: ["vietnam", "vn", "ho chi minh", "hanoi"], countryId: "704", countryName: "Vietnam", markerName: "Ho Chi Minh City", coordinates: [106.6297, 10.8231] },
+    { aliases: ["thailand", "th", "bangkok"], countryId: "764", countryName: "Thailand", markerName: "Bangkok", coordinates: [100.5018, 13.7563] },
+    { aliases: ["india", "in", "new delhi", "mumbai"], countryId: "356", countryName: "India", markerName: "New Delhi", coordinates: [77.209, 28.6139] },
+    { aliases: ["china", "cn", "tiongkok", "beijing", "shanghai"], countryId: "156", countryName: "China", markerName: "Beijing", coordinates: [116.4074, 39.9042] },
+    { aliases: ["south korea", "korea", "kr", "korea selatan", "seoul"], countryId: "410", countryName: "South Korea", markerName: "Seoul", coordinates: [126.978, 37.5665] },
+    { aliases: ["germany", "de", "jerman", "berlin"], countryId: "276", countryName: "Germany", markerName: "Berlin", coordinates: [13.405, 52.52] },
+    { aliases: ["france", "fr", "prancis", "paris"], countryId: "250", countryName: "France", markerName: "Paris", coordinates: [2.3522, 48.8566] },
+    { aliases: ["brazil", "br", "brasil", "sao paulo", "rio de janeiro"], countryId: "076", countryName: "Brazil", markerName: "Sao Paulo", coordinates: [-46.6333, -23.5505] },
+];
+
+function normalizeLocationText(value) {
+    return String(value || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9\s,.-]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function resolveActivityLocation(region) {
+    const normalized = normalizeLocationText(region);
+    if (!normalized) return null;
+    return ACTIVITY_LOCATIONS.find((location) =>
+        location.aliases.some((alias) => normalized === alias || normalized.includes(alias))
+    ) || null;
+}
+
+function activityLevel(count, maxCount) {
+    if (maxCount <= 0) return "low";
+    if (count >= Math.max(3, Math.ceil(maxCount * 0.66))) return "high";
+    if (count >= Math.max(2, Math.ceil(maxCount * 0.33))) return "medium";
+    return "low";
+}
+
+function buildGlobalActivity(signals) {
+    const countryMap = new Map();
+    const markerMap = new Map();
+
+    signals.forEach((signal) => {
+        const location = resolveActivityLocation(signal.region);
+        if (!location) return;
+
+        const country = countryMap.get(location.countryId) || {
+            id: location.countryId,
+            name: location.countryName,
+            signals: 0,
+            latest_at: null,
+        };
+        country.signals += 1;
+        if (!country.latest_at || new Date(signal.capturedAt) > new Date(country.latest_at)) {
+            country.latest_at = signal.capturedAt;
+        }
+        countryMap.set(location.countryId, country);
+
+        const markerKey = `${location.countryId}:${location.markerName}`;
+        const marker = markerMap.get(markerKey) || {
+            name: location.markerName,
+            countryId: location.countryId,
+            coordinates: location.coordinates,
+            signals: 0,
+            latest_at: null,
+        };
+        marker.signals += 1;
+        if (!marker.latest_at || new Date(signal.capturedAt) > new Date(marker.latest_at)) {
+            marker.latest_at = signal.capturedAt;
+        }
+        markerMap.set(markerKey, marker);
+    });
+
+    const countries = Array.from(countryMap.values()).sort((a, b) => b.signals - a.signals);
+    const markers = Array.from(markerMap.values()).sort((a, b) => b.signals - a.signals).slice(0, 12);
+    const maxCount = countries[0]?.signals || 0;
+
+    return {
+        updated_at: new Date().toISOString(),
+        total_signals: countries.reduce((sum, country) => sum + country.signals, 0),
+        countries: countries.map((country) => ({ ...country, level: activityLevel(country.signals, maxCount) })),
+        markers: markers.map((marker) => ({ ...marker, level: activityLevel(marker.signals, maxCount) })),
+    };
+}
+
 export const getSummary = async (req, res) => {
     try {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
@@ -66,6 +157,8 @@ export const getSummary = async (req, res) => {
             const platform_distribution = Object.keys(platformsMap)
                 .map(platform => ({ platform, count: platformsMap[platform] }))
                 .sort((a, b) => b.count - a.count);
+
+            const global_activity = buildGlobalActivity(signals.filter((signal) => signal.region));
 
             const latest_signals = signals.slice(0, 10).map(signal => ({
                 id: signal.id,
@@ -154,7 +247,8 @@ export const getSummary = async (req, res) => {
                 top_topics,
                 mini_topics,
                 sources_health,
-                system_status
+                system_status,
+                global_activity
             };
         });
 

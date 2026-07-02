@@ -86,6 +86,7 @@ router.post("/", validateRequest({ body: createAlertBodySchema }), async (req, r
         await prisma.auditLog.create({
             data: {
                 userId: req.user.id,
+                workspaceId: alert.workspaceId,
                 event: "alert_created",
                 metadata: {
                     targetType: "alert",
@@ -416,6 +417,7 @@ router.patch("/:id/assign", validateRequest({ params: assignAlertParamsSchema, b
         await prisma.auditLog.create({
             data: {
                 userId: req.user.id,
+                workspaceId: updated.workspaceId,
                 event: "assignment_change",
                 metadata: {
                     targetType: "alert",
@@ -433,6 +435,7 @@ router.patch("/:id/assign", validateRequest({ params: assignAlertParamsSchema, b
             await prisma.auditLog.create({
                 data: {
                     userId: req.user.id,
+                    workspaceId: updated.workspaceId,
                     event: "escalation_change",
                     metadata: {
                         targetType: "alert",

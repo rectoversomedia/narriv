@@ -95,6 +95,7 @@ export async function createCase(req, res) {
         await prisma.auditLog.create({
             data: {
                 userId: req.user.id,
+                workspaceId: scopedWorkspaceId,
                 event: "case_created",
                 metadata: { workspaceId: scopedWorkspaceId, caseId: caseRecord.id, title },
             },
@@ -133,6 +134,7 @@ export async function updateCase(req, res) {
         await prisma.auditLog.create({
             data: {
                 userId: req.user.id,
+                workspaceId: scopedWorkspaceId,
                 event: "case_updated",
                 metadata: { workspaceId: scopedWorkspaceId, caseId: updated.id, changes: updateData },
             },
@@ -165,6 +167,7 @@ export async function deleteCase(req, res) {
         await prisma.auditLog.create({
             data: {
                 userId: req.user.id,
+                workspaceId: scopedWorkspaceId,
                 event: "case_deleted",
                 metadata: { workspaceId: scopedWorkspaceId, caseId: req.params.id },
             },

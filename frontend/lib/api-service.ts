@@ -44,12 +44,37 @@ export interface LatestSignal {
   published_at: string;
 }
 
+export interface GlobalActivityCountry {
+  id: string;
+  name: string;
+  signals: number;
+  level: "low" | "medium" | "high" | string;
+  latest_at: string | null;
+}
+
+export interface GlobalActivityMarker {
+  name: string;
+  countryId: string;
+  coordinates: [number, number];
+  signals: number;
+  level: "low" | "medium" | "high" | string;
+  latest_at: string | null;
+}
+
+export interface GlobalActivitySummary {
+  updated_at: string;
+  total_signals: number;
+  countries: GlobalActivityCountry[];
+  markers: GlobalActivityMarker[];
+}
+
 export interface DashboardSummary {
   kpis: DashboardKPIs;
   trends: TrendPoint[];
   sentiment_distribution: { positive: number; negative: number; neutral: number; mixed: number };
   platform_distribution: PlatformCount[];
   latest_signals: LatestSignal[];
+  global_activity?: GlobalActivitySummary;
   top_topics?: Array<{ name: { en: string; id: string }; mentions: string; delta: string; tone: string }>;
   mini_topics?: Array<{ label: string; value: string; tone: string }>;
   sources_health?: Array<{ name: string; status: { en: string; id: string }; health: { en: string; id: string }; signals: string; tone: string }>;
@@ -799,7 +824,19 @@ export interface ActivityLogFilters {
   limit?: number;
 }
 
-export async function getActivityLogs(filters: ActivityLogFilters = {}): Promise<{ data: ActivityLogEntry[]; meta: { page: number; limit: number; total: number; totalPages: number } } | null> {
+export interface ActivityLogMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  summary?: {
+    actors: number;
+    today: number;
+    eventTypes: number;
+  };
+}
+
+export async function getActivityLogs(filters: ActivityLogFilters = {}): Promise<{ data: ActivityLogEntry[]; meta: ActivityLogMeta } | null> {
   const params = new URLSearchParams();
   if (filters.workspaceId) params.set("workspaceId", filters.workspaceId);
   if (filters.eventType) params.set("eventType", filters.eventType);
@@ -811,7 +848,7 @@ export async function getActivityLogs(filters: ActivityLogFilters = {}): Promise
 
   const query = params.toString();
   try {
-    return await apiClient<{ data: ActivityLogEntry[]; meta: { page: number; limit: number; total: number; totalPages: number } }>(`/api/workspace/activity${query ? `?${query}` : ""}`);
+    return await apiClient<{ data: ActivityLogEntry[]; meta: ActivityLogMeta }>(`/api/workspace/activity${query ? `?${query}` : ""}`);
   } catch {
     return null;
   }

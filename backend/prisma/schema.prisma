@@ -489,16 +489,19 @@ model PasswordResetToken {
 }
 
 model AuditLog {
-  id        String   @id @default(uuid())
-  userId    String?
-  event     String
-  metadata  Json?
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid())
+  userId      String?
+  workspaceId String?
+  event       String
+  metadata    Json?
+  createdAt   DateTime @default(now())
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId, createdAt])
   @@index([event, createdAt])
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, event, createdAt])
 }
 
 model ReportExport {

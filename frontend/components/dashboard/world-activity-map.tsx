@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type MouseEvent, type ReactNode } from "react";
 import {
   ComposableMap,
   Geographies,
@@ -10,59 +10,74 @@ import {
   type Coordinates,
   type GeographiesProps,
 } from "@vnedyalk0v/react19-simple-maps";
+import type { GlobalActivitySummary } from "@/lib/api-service";
 
 const geoUrl = "/maps/world-110m.json";
 type GeographyInput = GeographiesProps["geography"];
 
-const countryData: Record<string, { name: string; signals: number; level: string; color: string }> = {
-  "360": { name: "Indonesia", signals: 1842, level: "Tinggi", color: "#351EFF" },
-  "840": { name: "Amerika Serikat", signals: 1425, level: "Tinggi", color: "#465FFF" },
-  "392": { name: "Jepang", signals: 928, level: "Sedang", color: "#8B5CFF" },
-  "826": { name: "Britania Raya", signals: 754, level: "Sedang", color: "#38A7FF" },
-  "036": { name: "Australia", signals: 618, level: "Sedang", color: "#8B5CFF" },
-  "702": { name: "Singapura", signals: 412, level: "Rendah", color: "#12B76A" },
-};
-
 const countryNames: Record<string, string> = {
   "360": "Indonesia",
-  "840": "Amerika Serikat",
-  "392": "Jepang",
-  "826": "Britania Raya",
+  "840": "United States",
+  "392": "Japan",
+  "826": "United Kingdom",
   "036": "Australia",
-  "702": "Singapura",
-  "124": "Kanada",
-  "250": "Prancis",
-  "276": "Jerman",
-  "380": "Italia",
-  "578": "Norwegia",
-  "752": "Swedia",
-  "756": "Swiss",
-  "156": "Tiongkok",
+  "702": "Singapore",
+  "124": "Canada",
+  "250": "France",
+  "276": "Germany",
+  "380": "Italy",
+  "578": "Norway",
+  "752": "Sweden",
+  "756": "Switzerland",
+  "156": "China",
   "356": "India",
-  "643": "Rusia",
-  "076": "Brasil",
-  "710": "Afrika Selatan",
-  "484": "Meksiko",
+  "643": "Russia",
+  "076": "Brazil",
+  "710": "South Africa",
+  "484": "Mexico",
   "764": "Thailand",
   "458": "Malaysia",
-  "608": "Filipina",
+  "608": "Philippines",
   "704": "Vietnam",
-  "410": "Korea Selatan",
-  "554": "Selandia Baru",
+  "410": "South Korea",
+  "554": "New Zealand",
 };
 
 const mapCenter = createCoordinates(118, -2);
 
-const markers: Array<{ name: string; coordinates: Coordinates; signals: number; color: string }> = [
-  { name: "Jakarta", coordinates: createCoordinates(106.8456, -6.2088), signals: 1842, color: "#351EFF" },
-  { name: "Surabaya", coordinates: createCoordinates(112.7521, -7.2575), signals: 928, color: "#465FFF" },
-  { name: "Medan", coordinates: createCoordinates(98.6722, 3.5952), signals: 618, color: "#8B5CFF" },
-  { name: "Makassar", coordinates: createCoordinates(119.4173, -5.1476), signals: 412, color: "#12B76A" },
-  { name: "Bandung", coordinates: createCoordinates(107.6191, -6.9175), signals: 754, color: "#38A7FF" },
-  { name: "Yogyakarta", coordinates: createCoordinates(110.3695, -7.7956), signals: 485, color: "#F79009" },
-];
+const levelStyles: Record<string, { color: string; label: string }> = {
+  high: { color: "#EF4444", label: "High" },
+  medium: { color: "#F79009", label: "Medium" },
+  low: { color: "#12B76A", label: "Low" },
+};
 
-export function WorldActivityMap() {
+function getLevelStyle(level?: string) {
+  return levelStyles[level || ""] || { color: "#465FFF", label: "Active" };
+}
+
+function formatTime(value?: string | null) {
+  if (!value) return "-";
+  return new Intl.DateTimeFormat(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+    day: "2-digit",
+    month: "short",
+  }).format(new Date(value));
+}
+
+export function WorldActivityMap({
+  activity,
+  emptyLabel = "No mapped signal activity yet",
+  mapErrorLabel = "World map could not be loaded",
+  lowLabel = "Low",
+  highLabel = "High",
+}: {
+  activity?: GlobalActivitySummary | null;
+  emptyLabel?: string;
+  mapErrorLabel?: string;
+  lowLabel?: string;
+  highLabel?: string;
+}) {
   const [tooltipContent, setTooltipContent] = useState<ReactNode | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
   const [geography, setGeography] = useState<GeographyInput | null>(null);
@@ -91,11 +106,26 @@ export function WorldActivityMap() {
     };
   }, []);
 
+  const countriesById = useMemo(() => {
+    return Object.fromEntries((activity?.countries || []).map((country) => [country.id, country]));
+  }, [activity?.countries]);
+
+  const markers = useMemo(() => {
+    return (activity?.markers || [])
+      .filter((marker) => Array.isArray(marker.coordinates) && marker.coordinates.length === 2)
+      .map((marker) => ({
+        ...marker,
+        coordinates: createCoordinates(marker.coordinates[0], marker.coordinates[1]) as Coordinates,
+      }));
+  }, [activity?.markers]);
+
+  const hasActivity = Boolean(activity?.total_signals && activity.total_signals > 0);
+
   const handleMouseMove = (event: MouseEvent<HTMLDivElement>) => {
     const bounds = event.currentTarget.getBoundingClientRect();
     setTooltipPos({
-      x: event.clientX - bounds.left + 15,
-      y: event.clientY - bounds.top - 15,
+      x: Math.min(event.clientX - bounds.left + 15, bounds.width - 180),
+      y: Math.max(event.clientY - bounds.top - 15, 12),
     });
   };
 
@@ -106,13 +136,13 @@ export function WorldActivityMap() {
 
   return (
     <div
-      className="relative h-[300px] w-full overflow-hidden rounded-[10px] border border-slate-100 bg-[#FBFCFF]"
+      className="relative h-[300px] w-full overflow-hidden rounded-[14px] border border-[#E7ECF5] bg-[radial-gradient(circle_at_30%_10%,#EEF4FF_0%,transparent_35%),linear-gradient(135deg,#FAFCFF_0%,#F7F9FE_100%)]"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
       {mapLoadFailed ? (
         <div className="flex h-full items-center justify-center text-xs font-bold text-slate-400">
-          Peta dunia belum bisa dimuat
+          {mapErrorLabel}
         </div>
       ) : geography ? (
         <ComposableMap
@@ -125,9 +155,9 @@ export function WorldActivityMap() {
             {({ geographies }) =>
               geographies.map((geo, index) => {
                 const geoId = String(geo.id);
-                const hasData = countryData[geoId];
-                const name = countryNames[geoId] || (geo.properties as { name?: string }).name || "Unknown";
-                const fill = hasData ? hasData.color : "#E8EDF8";
+                const data = countriesById[geoId];
+                const name = data?.name || countryNames[geoId] || (geo.properties as { name?: string }).name || "Unknown";
+                const style = getLevelStyle(data?.level);
 
                 return (
                   <Geography
@@ -136,19 +166,18 @@ export function WorldActivityMap() {
                     onMouseEnter={() => {
                       setTooltipContent(
                         <div className="flex flex-col gap-1">
-                          <span className="text-[13px] font-bold text-[#111536]">{name}</span>
-                          {hasData ? (
+                          <span className="text-[13px] font-black text-[#101334]">{name}</span>
+                          {data ? (
                             <>
-                              <span className="text-xs font-bold text-[#351EFF]">Signals: {hasData.signals.toLocaleString()}</span>
-                              <span className="text-[11px] text-slate-500">
-                                Level Aktivitas:{" "}
-                                <b className={hasData.level === "Tinggi" ? "text-[#F04438]" : "text-[#8B5CFF]"}>
-                                  {hasData.level}
-                                </b>
+                              <span className="text-xs font-black" style={{ color: style.color }}>
+                                {data.signals.toLocaleString()} signals
+                              </span>
+                              <span className="text-[11px] font-semibold text-slate-500">
+                                {style.label} activity · {formatTime(data.latest_at)}
                               </span>
                             </>
                           ) : (
-                            <span className="text-[11px] text-slate-400">Tidak ada aktivitas narrative</span>
+                            <span className="text-[11px] font-semibold text-slate-400">{emptyLabel}</span>
                           )}
                         </div>
                       );
@@ -156,22 +185,24 @@ export function WorldActivityMap() {
                     onMouseLeave={() => setTooltipContent(null)}
                     style={{
                       default: {
-                        fill,
+                        fill: data ? style.color : "#E8EDF8",
+                        fillOpacity: data ? 0.82 : 1,
                         stroke: "#FFFFFF",
                         strokeWidth: 0.6,
                         outline: "none",
                       },
                       hover: {
-                        fill: hasData ? "#2F20FF" : "#D1D9F0",
+                        fill: data ? style.color : "#D1D9F0",
+                        fillOpacity: 1,
                         stroke: "#FFFFFF",
-                        strokeWidth: 0.6,
+                        strokeWidth: 0.7,
                         outline: "none",
                         cursor: "pointer",
                       },
                       pressed: {
-                        fill: "#2F20FF",
+                        fill: style.color,
                         stroke: "#FFFFFF",
-                        strokeWidth: 0.6,
+                        strokeWidth: 0.7,
                         outline: "none",
                       },
                     }}
@@ -181,57 +212,65 @@ export function WorldActivityMap() {
             }
           </Geographies>
 
-          {markers.map(({ name, coordinates, signals, color }) => (
-            <Marker key={name} coordinates={coordinates}>
-              <g
-                onMouseEnter={() => {
-                  setTooltipContent(
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[13px] font-bold text-[#111536]">{name}</span>
-                      <span className="text-xs font-bold text-[#351EFF]">Signals: {signals.toLocaleString()}</span>
-                      <span className="text-[11px] text-slate-500">Lokasi Pemantauan Aktif</span>
-                    </div>
-                  );
-                }}
-                onMouseLeave={() => setTooltipContent(null)}
-                style={{ cursor: "pointer" }}
-              >
-                <circle cx={0} cy={0} r={7} fill={color} opacity={0.25} />
-                <circle cx={0} cy={0} r={4} fill={color} stroke="#FFFFFF" strokeWidth={1.5} />
-              </g>
-            </Marker>
-          ))}
+          {markers.map((marker) => {
+            const style = getLevelStyle(marker.level);
+            return (
+              <Marker key={`${marker.countryId}-${marker.name}`} coordinates={marker.coordinates}>
+                <g
+                  onMouseEnter={() => {
+                    setTooltipContent(
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[13px] font-black text-[#101334]">{marker.name}</span>
+                        <span className="text-xs font-black" style={{ color: style.color }}>
+                          {marker.signals.toLocaleString()} signals
+                        </span>
+                        <span className="text-[11px] font-semibold text-slate-500">{formatTime(marker.latest_at)}</span>
+                      </div>
+                    );
+                  }}
+                  onMouseLeave={() => setTooltipContent(null)}
+                  style={{ cursor: "pointer" }}
+                >
+                  <circle cx={0} cy={0} r={10} fill={style.color} opacity={0.16}>
+                    <animate attributeName="r" values="8;14;8" dur="2.6s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.24;0.06;0.24" dur="2.6s" repeatCount="indefinite" />
+                  </circle>
+                  <circle cx={0} cy={0} r={4.2} fill={style.color} stroke="#FFFFFF" strokeWidth={1.5} />
+                </g>
+              </Marker>
+            );
+          })}
         </ComposableMap>
       ) : (
         <div className="h-full w-full animate-pulse bg-linear-to-br from-slate-50 via-white to-[#EEF2FF]" />
       )}
 
+      {!hasActivity && geography && !mapLoadFailed ? (
+        <div className="absolute inset-x-4 top-4 rounded-[12px] border border-dashed border-[#CBD5E1] bg-white/85 px-4 py-3 text-center text-[12px] font-bold text-slate-500 shadow-sm backdrop-blur">
+          {emptyLabel}
+        </div>
+      ) : null}
+
       {tooltipContent && tooltipPos ? (
         <div
-          className="pointer-events-none absolute z-30 rounded-[8px] border border-slate-200 bg-white/95 px-3.5 py-2.5 shadow-[0_12px_30px_rgba(0,0,0,0.08)] backdrop-blur-md"
+          className="pointer-events-none absolute z-30 rounded-[10px] border border-slate-200 bg-white/95 px-3.5 py-2.5 shadow-[0_12px_30px_rgba(15,23,42,0.10)] backdrop-blur-md"
           style={{ left: tooltipPos.x, top: tooltipPos.y }}
         >
           {tooltipContent}
         </div>
       ) : null}
 
-      <div className="absolute bottom-4 left-4 flex items-center gap-3 rounded-full border border-slate-100 bg-white/90 px-3.5 py-2 text-xs font-bold text-slate-600 shadow-sm">
-        Rendah
-        <span className="h-2 w-20 rounded-full bg-gradient-to-r from-[#E2E8F0] via-[#8B5CFF] to-[#351EFF]" />
-        Tinggi
+      <div className="absolute bottom-4 left-4 flex items-center gap-3 rounded-full border border-slate-100 bg-white/90 px-3.5 py-2 text-xs font-black text-slate-600 shadow-sm">
+        {lowLabel}
+        <span className="h-2 w-20 rounded-full bg-gradient-to-r from-[#12B76A] via-[#F79009] to-[#EF4444]" />
+        {highLabel}
       </div>
 
-      <div className="absolute right-4 top-1/2 grid -translate-y-1/2 gap-1.5">
-        {["+", "-", "reset"].map((item) => (
-          <button
-            key={item}
-            className="flex h-7 w-7 items-center justify-center rounded-[6px] border border-slate-200 bg-white text-xs font-bold text-slate-600 shadow-sm transition-colors hover:bg-slate-50"
-            type="button"
-          >
-            {item === "reset" ? "R" : item}
-          </button>
-        ))}
-      </div>
+      {activity?.updated_at ? (
+        <div className="absolute right-4 top-4 rounded-full border border-slate-100 bg-white/90 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 shadow-sm">
+          Live · {formatTime(activity.updated_at)}
+        </div>
+      ) : null}
     </div>
   );
 }

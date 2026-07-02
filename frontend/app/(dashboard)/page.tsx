@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -234,8 +234,8 @@ export default function DashboardPage() {
   const dashboardQuery = useQuery({
     queryKey: ["dashboard-summary", timeRange],
     queryFn: () => getDashboardSummary(dateRange),
-    staleTime: 30 * 1000,
-    refetchInterval: 30 * 1000,
+    staleTime: 15 * 1000,
+    refetchInterval: 15 * 1000,
     refetchIntervalInBackground: false,
   });
   
@@ -280,6 +280,9 @@ export default function DashboardPage() {
   const hotTopics = summary?.top_topics ?? [];
   const miniTrends = summary?.mini_topics ?? [];
   const sourcesData = summary?.sources_health ?? [];
+  const globalActivity = summary?.global_activity ?? null;
+  const mappedSignalCount = globalActivity?.total_signals ?? 0;
+  const mappedRegionCount = globalActivity?.countries?.length ?? 0;
 
   return (
     <div className="space-y-8 pb-6">
@@ -379,12 +382,28 @@ export default function DashboardPage() {
               title={t("pages.command.map")} 
               description={t("pages.command.mapDesc")} 
               action={
-                <span className="inline-flex h-8 items-center rounded-[8px] border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-700">
-                  Indonesia
+                <span className="inline-flex h-8 items-center rounded-[8px] border border-[#12B76A]/20 bg-[#12B76A]/10 px-3 text-xs font-black text-[#027A48]">
+                  {t("pages.command.mapLive")}
                 </span>
               }
             />
-            <WorldActivityMap />
+            <WorldActivityMap
+              activity={globalActivity}
+              emptyLabel={t("pages.command.emptyMap")}
+              mapErrorLabel={t("pages.command.mapError")}
+              lowLabel={t("pages.command.mapLow")}
+              highLabel={t("pages.command.mapHigh")}
+            />
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="rounded-[10px] border border-slate-100 bg-slate-50 px-3 py-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">{t("pages.command.mapSignals")}</p>
+                <p className="mt-1 text-lg font-black text-slate-900">{mappedSignalCount.toLocaleString()}</p>
+              </div>
+              <div className="rounded-[10px] border border-slate-100 bg-slate-50 px-3 py-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">{t("pages.command.mapRegions")}</p>
+                <p className="mt-1 text-lg font-black text-slate-900">{mappedRegionCount.toLocaleString()}</p>
+              </div>
+            </div>
           </CardContent>
         </AppCard>
 

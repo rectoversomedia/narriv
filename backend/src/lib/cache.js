@@ -186,7 +186,7 @@ export const CACHE_KEYS = {
 
 // Cache TTLs (in seconds)
 export const CACHE_TTL = {
-    dashboard: 60,        // 1 minute
+    dashboard: 15,        // near-real-time dashboard widgets
     visibility: 300,      // 5 minutes
     narratives: 120,      // 2 minutes
     alerts: 60,           // 1 minute

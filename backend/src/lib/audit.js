@@ -8,6 +8,7 @@ export async function recordAuditLog({ userId = null, event, workspaceId = null,
         await prisma.auditLog.create({
             data: {
                 userId,
+                workspaceId,
                 event,
                 metadata: {
                     ...metadata,

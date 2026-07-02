@@ -167,8 +167,9 @@
 | Widget | Detail | Data Source |
 |--------|--------|-------------|
 | KPI Cards (6x) | Total Signals, Critical Signals, Active Signals, AI Visibility Mentions, Avg Response, Active Sources | `getDashboardSummary()` for live KPI subset; preview fallback remains. Real-time updates via SSE (`dashboard_update` event) |
-| Activity Chart | Area chart showing signal volume over time (15 data points) | `getDashboardSummary().trends` with `activitySeries` fallback; 24h/7d/30d query params wired. Real-time updates via SSE |
+| Activity Chart | Area chart showing signal volume over time (15 data points) | `getDashboardSummary().trends` with `activitySeries` fallback; 24h/7d/30d query params wired. Dashboard summary refetches every 15s for near-real-time updates |
 | Signal Category Donut | Pie chart: Reputasi, Operasional, Produk, Keamanan, Regulasi, Lainnya | `getDashboardSummary().sentiment_distribution` for sentiment donut; topic breakdown remains preview/static |
+| Global Activity Map | World map with country shading, live city markers, mapped-signal count, active-region count, and empty/error states | `getDashboardSummary().global_activity`, derived from live `Signal.region` and refreshed every 15s |
 | Latest Alerts | List of 5 alert items with severity colors, source, time | `getDashboardSummary().latest_signals` with `alerts` fallback |
 | Trending Topics | Top 5 topics with mention counts and trend deltas | `getDashboardSummary().top_topics` (live data from `narrativeCluster` table) |
 | Active Sources | Table with source name, icon, status, health, signal count | `getDashboardSummary().sources_health` (live data from `source` + `rawDocument` count) |
@@ -314,8 +315,8 @@
 #### 🧾 Activity Log (`/workspace/activity`)
 | Widget | Detail | Data Source |
 |--------|--------|-------------|
-| Header + Metrics | Audit trail summary, actor count, event count, today count | Derived from `getActivityLogs()` response and pagination meta |
-| Filters | Event type, date from, date to, reset action | Local state driving API query params |
+| Header + Metrics | Audit trail summary, actor count, event count, today count | Derived from `getActivityLogs()` response meta summary; falls back to visible rows only if older API response omits summary |
+| Filters | Event type, date from, date to, reset action | Local state driving API query params; event list covers backend audit events for auth, sources, ingestion, alerts, action plans, reports, cases, integrations, onboarding, and notification settings |
 | Activity Table | Event badge, actor, metadata summary, relative/absolute timestamp | Wired to `getActivityLogs()` with pagination and error/empty states |
 | Navigation | Sidebar System menu entry | `navGroups` includes `/workspace/activity` |
 

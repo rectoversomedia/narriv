@@ -71,6 +71,7 @@ export async function createIntegration(req, res) {
         await prisma.auditLog.create({
             data: {
                 userId: req.user.id,
+                workspaceId: scopedWorkspaceId,
                 event: "integration_created",
                 metadata: { workspaceId: scopedWorkspaceId, integrationId: integration.id, name, platform },
             },
@@ -108,6 +109,7 @@ export async function updateIntegration(req, res) {
         await prisma.auditLog.create({
             data: {
                 userId: req.user.id,
+                workspaceId: scopedWorkspaceId,
                 event: "integration_updated",
                 metadata: { workspaceId: scopedWorkspaceId, integrationId: updated.id, changes: updateData },
             },
@@ -140,6 +142,7 @@ export async function deleteIntegration(req, res) {
         await prisma.auditLog.create({
             data: {
                 userId: req.user.id,
+                workspaceId: scopedWorkspaceId,
                 event: "integration_deleted",
                 metadata: { workspaceId: scopedWorkspaceId, integrationId: req.params.id },
             },

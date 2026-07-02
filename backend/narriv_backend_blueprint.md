@@ -188,7 +188,7 @@ Report ──1:N──▶ ReportExport
 
 | Method | Path | Module | Purpose |
 |--------|------|--------|---------|
-| `GET` | `/api/dashboard/summary` | Dashboard | Aggregated KPIs and trends |
+| `GET` | `/api/dashboard/summary` | Dashboard | Aggregated KPIs, trends, live global activity map data from `Signal.region`, topics, source health, and system status |
 | `GET` | `/signals` | Signals | List workspace-scoped signals with pagination, keyword/platform/date/sentiment filters, newest-first ordering, and limit capped at 100 |
 | `GET` | `/signals/meta` | Signals | Signal metadata for sidebar (follow-ups, recommendations, timeline, sources, queue) |
 | `POST` | `/signals` | Signals | Create signal |
@@ -262,7 +262,7 @@ Report ──1:N──▶ ReportExport
 | `DELETE` | `/api/workspace/members/:id` | Workspace | Remove member |
 | `GET` | `/api/workspace/notification-settings` | Workspace | Get notification preferences and custom notification rules |
 | `PATCH` | `/api/workspace/notification-settings` | Workspace | Update notification preferences and `customRules` trigger/condition/channel/enabled rows |
-| `GET` | `/api/workspace/activity` | Workspace | List audit log entries (filtered, paginated) |
+| `GET` | `/api/workspace/activity` | Workspace | List workspace-scoped audit log entries with indexed `workspaceId` filtering, legacy metadata fallback, date/event/user filters, pagination, and summary metrics |
 | `POST` | `/api/onboarding/workspace` | Onboarding | Create workspace with initial settings |
 | `POST` | `/api/onboarding/sources` | Onboarding | Bulk-create initial data sources |
 | `POST` | `/api/onboarding/notifications` | Onboarding | Set notification preferences |
@@ -428,6 +428,7 @@ Report ──1:N──▶ ReportExport
 - Backend package scripts include `start`, `prisma:generate`, `prisma:status`, and `prisma:deploy` for VPS/CI operations
 - Apify runtime now accepts both `APIFY_TOKEN` and legacy `APIFY_API_TOKEN`; Docker Compose passes both names, with runtime preferring `APIFY_TOKEN`.
 - Ingestion batch trigger is capped at 25 sources per request to reduce queue flood risk; frontend Sync All chunks larger source lists.
+- Dashboard summary now includes `global_activity` for the Command Center map, derived from live `Signal.region` values and cached for 15 seconds for near-real-time refresh.
 - Action Plans response builder handles both legacy strategy arrays and multi-step `option.steps` objects; structured error logging is imported in action-plan routes.
 
 ### ✅ Completed API Endpoints

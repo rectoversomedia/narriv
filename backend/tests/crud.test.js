@@ -20,6 +20,7 @@ const alerts = [];
 const cases = [];
 const integrations = [];
 const signals = [];
+const auditLogs = [];
 let workspaceSettings = null;
 
 function resetState() {
@@ -30,6 +31,7 @@ function resetState() {
   cases.length = 0;
   integrations.length = 0;
   signals.length = 0;
+  auditLogs.length = 0;
   workspaceSettings = null;
 
   users.push(
@@ -51,9 +53,19 @@ function matchesWhere(record, where = {}) {
     if (key === 'OR' && Array.isArray(value)) {
       return value.some((condition) => matchesWhere(record, condition));
     }
+    if (key === 'metadata' && value && typeof value === 'object' && Array.isArray(value.path) && value.equals !== undefined) {
+      const actual = value.path.reduce((current, part) => current?.[part], record.metadata);
+      return actual === value.equals;
+    }
     if (value && typeof value === 'object' && !Array.isArray(value)) {
       if (Array.isArray(value.in)) return value.in.includes(record[key]);
       if (value.not !== undefined) return record[key] !== value.not;
+      if (value.gte !== undefined || value.lte !== undefined) {
+        const actual = new Date(record[key]).getTime();
+        if (value.gte !== undefined && actual < new Date(value.gte).getTime()) return false;
+        if (value.lte !== undefined && actual > new Date(value.lte).getTime()) return false;
+        return true;
+      }
       if (value.equals !== undefined) {
         const actual = String(record[key] ?? '');
         const expected = String(value.equals);
@@ -61,8 +73,6 @@ function matchesWhere(record, where = {}) {
           ? actual.toLowerCase() === expected.toLowerCase()
           : actual === expected;
       }
-      if (value.gte !== undefined) return new Date(record[key]).getTime() >= new Date(value.gte).getTime();
-      if (value.lte !== undefined) return new Date(record[key]).getTime() <= new Date(value.lte).getTime();
       if (value.contains !== undefined) {
         const actual = String(record[key] ?? '');
         const expected = String(value.contains);
@@ -74,7 +84,7 @@ function matchesWhere(record, where = {}) {
     if (key === 'workspaceId' && value && typeof value === 'object' && Array.isArray(value.in)) {
       return value.in.includes(record.workspaceId);
     }
-    if (key === 'id' || key === 'workspaceId' || key === 'userId' || key === 'type' || key === 'status' || key === 'severity' || key === 'priority' || key === 'platform') {
+    if (key === 'id' || key === 'workspaceId' || key === 'userId' || key === 'event' || key === 'type' || key === 'status' || key === 'severity' || key === 'priority' || key === 'platform') {
       return record[key] === value;
     }
     return true;
@@ -241,7 +251,48 @@ const mockPrisma = {
     }),
   },
   auditLog: {
-    create: jest.fn(async ({ data }) => ({ id: `audit-${Date.now()}`, ...data })),
+    create: jest.fn(async ({ data }) => {
+      const auditLog = {
+        id: `audit-${auditLogs.length + 1}`,
+        createdAt: new Date().toISOString(),
+        ...data,
+        workspaceId: data.workspaceId ?? data.metadata?.workspaceId ?? null,
+      };
+      auditLogs.push(auditLog);
+      return auditLog;
+    }),
+    count: jest.fn(async ({ where = {} } = {}) => auditLogs.filter((log) => matchesWhere(log, where)).length),
+    findMany: jest.fn(async ({ where = {}, skip = 0, take, include, orderBy } = {}) => {
+      const records = auditLogs
+        .filter((log) => matchesWhere(log, where))
+        .sort((a, b) => {
+          if (orderBy?.createdAt === 'desc') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          if (orderBy?.createdAt === 'asc') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          return 0;
+        });
+      const page = paginate(records, { skip, take });
+      if (include?.user) {
+        return page.map((log) => ({
+          ...log,
+          user: users.find((user) => user.id === log.userId) || null,
+        }));
+      }
+      return page;
+    }),
+    groupBy: jest.fn(async ({ by = [], where = {} } = {}) => {
+      const field = by[0];
+      if (!field) return [];
+      const groups = new Map();
+      auditLogs.filter((log) => matchesWhere(log, where)).forEach((log) => {
+        const key = log[field] ?? null;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(log);
+      });
+      return Array.from(groups.entries()).map(([key, grouped]) => ({
+        [field]: key,
+        _count: { _all: grouped.length },
+      }));
+    }),
   },
   ingestionJob: { count: jest.fn(async () => 0) },
   rawDocument: { count: jest.fn(async () => 0) },
@@ -270,7 +321,10 @@ const mockPrisma = {
       }));
     }),
   },
-  narrativeCluster: { count: jest.fn(async () => 0) },
+  narrativeCluster: {
+    count: jest.fn(async () => 0),
+    findMany: jest.fn(async () => []),
+  },
   report: { count: jest.fn(async () => 0) },
   actionPlan: {
     count: jest.fn(async () => 0),
@@ -596,6 +650,63 @@ describe('CRUD Integration Endpoints', () => {
   });
 
   describe('Signals', () => {
+    it('returns dashboard global activity from signal regions', async () => {
+      const now = new Date();
+      signals.push(
+        {
+          id: 'signal-jakarta',
+          workspaceId: WORKSPACE_ID,
+          title: 'Jakarta mention',
+          content: 'Jakarta public conversation signal',
+          platform: 'x',
+          sentiment: 'negative',
+          region: 'Jakarta',
+          capturedAt: now.toISOString(),
+          analyses: [],
+        },
+        {
+          id: 'signal-singapore',
+          workspaceId: WORKSPACE_ID,
+          title: 'Singapore mention',
+          content: 'Singapore public conversation signal',
+          platform: 'news',
+          sentiment: 'neutral',
+          region: 'Singapore',
+          capturedAt: new Date(now.getTime() - 10 * 60 * 1000).toISOString(),
+          analyses: [],
+        },
+        {
+          id: 'signal-unmapped',
+          workspaceId: WORKSPACE_ID,
+          title: 'Unknown region mention',
+          content: 'Unknown region signal',
+          platform: 'forum',
+          sentiment: 'neutral',
+          region: 'Atlantis',
+          capturedAt: now.toISOString(),
+          analyses: [],
+        },
+      );
+
+      const res = await request(app)
+        .get('/api/dashboard/summary')
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(res.body.global_activity).toMatchObject({
+        total_signals: 2,
+        countries: expect.arrayContaining([
+          expect.objectContaining({ id: '360', name: 'Indonesia', signals: 1 }),
+          expect.objectContaining({ id: '702', name: 'Singapore', signals: 1 }),
+        ]),
+        markers: expect.arrayContaining([
+          expect.objectContaining({ name: 'Jakarta', countryId: '360', signals: 1 }),
+          expect.objectContaining({ name: 'Singapore', countryId: '702', signals: 1 }),
+        ]),
+      });
+      expect(res.body.global_activity.updated_at).toEqual(expect.any(String));
+    });
+
     it('lists workspace signals with sentiment filtering and capped pagination limit', async () => {
       const now = new Date();
       signals.push(
@@ -673,6 +784,68 @@ describe('CRUD Integration Endpoints', () => {
       expect(res.body.timeline).toHaveLength(24);
       expect(res.body.timelineLabels).toHaveLength(24);
       expect(res.body.timeline.reduce((sum, value) => sum + value, 0)).toBe(2);
+    });
+  });
+
+  describe('Activity log', () => {
+    beforeEach(() => {
+      auditLogs.push(
+        {
+          id: 'audit-direct-workspace',
+          userId: USER_ID,
+          workspaceId: WORKSPACE_ID,
+          event: 'case_created',
+          metadata: { workspaceId: WORKSPACE_ID, caseId: CASE_ID },
+          createdAt: '2026-07-01T12:30:00.000Z',
+        },
+        {
+          id: 'audit-legacy-metadata',
+          userId: OTHER_USER_ID,
+          workspaceId: null,
+          event: 'source_created',
+          metadata: { workspaceId: WORKSPACE_ID, sourceId: SOURCE_ID },
+          createdAt: '2026-07-01T09:00:00.000Z',
+        },
+        {
+          id: 'audit-other-workspace',
+          userId: OTHER_USER_ID,
+          workspaceId: OTHER_WORKSPACE_ID,
+          event: 'integration_created',
+          metadata: { workspaceId: OTHER_WORKSPACE_ID, integrationId: INTEGRATION_ID },
+          createdAt: '2026-07-01T10:00:00.000Z',
+        },
+      );
+    });
+
+    it('returns workspace-scoped logs with legacy metadata fallback and full-day dateTo', async () => {
+      const res = await request(app)
+        .get(`/api/workspace/activity?workspaceId=${WORKSPACE_ID}&dateTo=2026-07-01&limit=10`)
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.map((log) => log.id)).toEqual(['audit-direct-workspace', 'audit-legacy-metadata']);
+      expect(res.body.meta).toMatchObject({
+        page: 1,
+        limit: 10,
+        total: 2,
+        totalPages: 1,
+        summary: {
+          actors: 2,
+          eventTypes: 2,
+        },
+      });
+      expect(res.body.data[0].user).toMatchObject({ id: USER_ID, email: 'owner@example.com' });
+    });
+
+    it('filters activity logs by event type inside the workspace scope', async () => {
+      const res = await request(app)
+        .get(`/api/workspace/activity?workspaceId=${WORKSPACE_ID}&eventType=source_created&limit=10`)
+        .set(authHeader());
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toHaveLength(1);
+      expect(res.body.data[0]).toMatchObject({ id: 'audit-legacy-metadata', event: 'source_created' });
+      expect(res.body.meta.summary.eventTypes).toBe(1);
     });
   });
 
