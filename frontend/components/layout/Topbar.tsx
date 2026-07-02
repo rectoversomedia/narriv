@@ -104,6 +104,7 @@ export function Topbar() {
   const language = useUiStore((state) => state.language);
   const toggleLanguage = useUiStore((state) => state.toggleLanguage);
   const logout = useAuthStore((state) => state.logout);
+  const user = useAuthStore((state) => state.user);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notificationNow, setNotificationNow] = useState(0);
   const [notificationStreamStatus, setNotificationStreamStatus] = useState<"idle" | "connected" | "degraded">("idle");
@@ -483,10 +484,12 @@ export function Topbar() {
         </Popover>
         <div className="hidden h-8 w-px bg-border sm:block" />
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-tr from-[#465FFF] to-[#8B5CFF] text-[16px] font-bold text-white shadow-[0_0_12px_rgba(70,95,255,0.3)]">TU</div>
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-linear-to-tr from-[#465FFF] to-[#8B5CFF] text-[16px] font-bold text-white shadow-[0_0_12px_rgba(70,95,255,0.3)]">
+            {user?.name ? user.name.slice(0, 2).toUpperCase() : "TU"}
+          </div>
           <div className="hidden sm:block">
-            <p className="text-[15px] font-bold text-(--text)">Testing User</p>
-            <p className="mt-1 text-[13px] font-semibold text-(--text-muted)">User Workspace</p>
+            <p className="text-[15px] font-bold text-(--text)">{user?.name || "User"}</p>
+            <p className="mt-1 text-[13px] font-semibold text-(--text-muted)">{user?.workspace || "Workspace"}</p>
           </div>
         </div>
         <button type="button" onClick={handleLogout} className="rounded-xl p-2 text-(--text-muted) hover:bg-slate-100 hover:text-[#EF4444] transition-colors" aria-label={t("logout")} title={t("logout")}>

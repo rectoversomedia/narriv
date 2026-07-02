@@ -105,7 +105,7 @@ export function Sidebar() {
           </div>
         </div>}
 
-        {sidebarCollapsed ? null : <p className="mt-8 px-2 text-[13px] text-white/40">© 2025 Narriv</p>}
+        {sidebarCollapsed ? null : <p className="mt-8 px-2 text-[13px] text-white/40">© 2026 Narriv</p>}
         {sidebarCollapsed ? null : <p className="mt-3 px-2 text-[13px] text-white/40">All rights reserved.</p>}
       </aside>
 
