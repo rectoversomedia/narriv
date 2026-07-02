@@ -308,7 +308,47 @@ export function SocialButtons() {
   return (
     <div className="grid gap-4">
       <SocialButton icon={<GoogleLogo />} label={t("social.google")} href={`${apiUrl}/auth/google`} />
+      <DemoButton />
     </div>
+  );
+}
+
+function DemoButton() {
+  const t = useTranslations("AuthDesign");
+
+  const handleDemoLogin = async () => {
+    // Demo mode - bypass backend and set session directly
+    const demoUser = {
+      name: "Demo User",
+      email: "demo@narriv.ai",
+      provider: "demo",
+      workspace: "Demo Workspace",
+    };
+
+    // Store in localStorage for persistence
+    localStorage.setItem("narriv_demo_user", JSON.stringify(demoUser));
+    localStorage.setItem("narriv_demo_token", "demo-token-" + Date.now());
+
+    // Dispatch custom event for auth store to pick up
+    window.dispatchEvent(new CustomEvent("narriv_demo_login", { detail: demoUser }));
+
+    // Redirect to dashboard
+    window.location.href = "/";
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleDemoLogin}
+      className="relative flex h-[58px] w-full items-center justify-center gap-3 rounded-[8px] border border-[#D6DDEC] bg-gradient-to-r from-[#10B981]/10 to-[#059669]/10 text-[18px] font-semibold text-[#059669] transition hover:border-[#10B981] hover:from-[#10B981]/20 hover:to-[#059669]/20"
+    >
+      <span className="absolute left-9 flex h-6 w-6 items-center justify-center">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+        </svg>
+      </span>
+      {t("social.demo") || "Try Demo"}
+    </button>
   );
 }
 

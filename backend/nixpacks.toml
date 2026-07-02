@@ -1,0 +1,21 @@
+[nixpacks]
+# Node.js app in the backend directory
+dir = "backend"
+
+[nodejs]
+version = "22"
+
+[phases.setup]
+npmConfigSet = ["production"]
+
+[phases.install]
+# Generate Prisma client after npm install
+cmds = ["npm install --ignore-scripts", "npx prisma generate"]
+
+[runtime]
+# Expose port for the app
+port = 3000
+
+[start]
+# Start command for the backend
+cmd = "npm start"

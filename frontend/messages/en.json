@@ -141,7 +141,8 @@
       "contact": "Contact us"
     },
     "social": {
-      "google": "Sign in with Google"
+      "google": "Sign in with Google",
+      "demo": "Try Demo Mode"
     },
     "passwordReq": {
       "length": "Minimum 10 characters",

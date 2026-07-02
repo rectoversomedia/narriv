@@ -14,3 +14,5 @@ process/general-plans/*
 !process/general-plans/references/
 process/general-plans/references/*
 !process/general-plans/references/production-readiness-runbook.md
+.vercel
+.env*

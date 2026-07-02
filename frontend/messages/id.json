@@ -141,7 +141,8 @@
       "contact": "Hubungi kami"
     },
     "social": {
-      "google": "Masuk dengan Google"
+      "google": "Masuk dengan Google",
+      "demo": "Coba Demo"
     },
     "passwordReq": {
       "length": "Minimal 10 karakter",
