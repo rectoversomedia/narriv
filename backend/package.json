@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "prebuild": "npx prisma generate",
+    "build": "npx prisma generate",
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "prisma:generate": "prisma generate",
@@ -21,6 +23,7 @@
   "type": "module",
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "@vercel/express": "^0.1.112",
     "apify-client": "^2.23.0",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.75.2",

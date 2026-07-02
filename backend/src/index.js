@@ -120,11 +120,5 @@ app.use(notFoundHandler);
 // Global error handler (must be last)
 app.use(globalErrorHandler);
 
-if (process.env.NODE_ENV !== "test" && !process.env.JEST_WORKER_ID) {
-    const port = Number(process.env.PORT || 3000);
-    app.listen(port, () => {
-        logStructured("info", "server_started", { port, url: `http://localhost:${port}` });
-    });
-}
-
+// Vercel serverless handler - export app
 export default app;
