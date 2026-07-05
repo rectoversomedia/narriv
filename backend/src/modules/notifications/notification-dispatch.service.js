@@ -1,34 +1,40 @@
-import prisma from "../../prisma.js";
+import supabase from "../../lib/supabase.js";
 import { createNotificationProviders } from "./notification-providers.js";
 import { logStructured } from "../../lib/logger.js";
 
 const providers = createNotificationProviders();
 
 async function getWorkspaceNotificationContext(workspaceId) {
-    const [notificationSettings, workspaceSettings] = await Promise.all([
-        prisma.workspaceNotificationSettings.findUnique({
-            where: { workspaceId },
-        }),
-        prisma.workspaceSettings.findUnique({
-            where: { workspaceId },
-            select: {
-                notificationEmail: true,
-                whatsappPIC: true,
-                brandName: true,
-            }
-        })
+    const [{ data: notificationSettings, error: nsError }, { data: workspaceSettings, error: wsError }] = await Promise.all([
+        supabase
+            .from("workspace_notification_settings")
+            .select("*")
+            .eq("workspace_id", workspaceId)
+            .maybeSingle(),
+        supabase
+            .from("workspace_settings")
+            .select("notification_email, whatsapp_pic, brand_name")
+            .eq("workspace_id", workspaceId)
+            .maybeSingle(),
     ]);
+
+    if (nsError) {
+        logStructured("error", "Error fetching notification settings:", { error: nsError?.message || nsError });
+    }
+    if (wsError) {
+        logStructured("error", "Error fetching workspace settings:", { error: wsError?.message || wsError });
+    }
 
     return {
         workspaceId,
-        brandName: workspaceSettings?.brandName || "Your Workspace",
-        emailTo: workspaceSettings?.notificationEmail || null,
-        whatsappTo: workspaceSettings?.whatsappPIC || null,
+        brandName: workspaceSettings?.brand_name || "Your Workspace",
+        emailTo: workspaceSettings?.notification_email || null,
+        whatsappTo: workspaceSettings?.whatsapp_pic || null,
         settings: {
-            emailEnabled: notificationSettings?.emailEnabled ?? true,
-            whatsappEnabled: notificationSettings?.whatsappEnabled ?? false,
-            escalationNotifications: notificationSettings?.escalationNotifications ?? true,
-            reminderNotifications: notificationSettings?.reminderNotifications ?? true,
+            emailEnabled: notificationSettings?.email_enabled ?? true,
+            whatsappEnabled: notificationSettings?.whatsapp_enabled ?? false,
+            escalationNotifications: notificationSettings?.escalation_notifications ?? true,
+            reminderNotifications: notificationSettings?.reminder_notifications ?? true,
         }
     };
 }

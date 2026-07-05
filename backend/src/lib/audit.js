@@ -1,21 +1,25 @@
-import prisma from "../prisma.js";
+import supabase from "./supabase.js";
 import { logStructured } from "./logger.js";
 
 export async function recordAuditLog({ userId = null, event, workspaceId = null, metadata = {} }) {
     if (!event) return;
 
     try {
-        await prisma.auditLog.create({
-            data: {
-                userId,
-                workspaceId,
-                event,
+        const { error } = await supabase
+            .from("audit_logs")
+            .insert({
+                user_id: userId,
+                workspace_id: workspaceId,
+                event: event,
                 metadata: {
                     ...metadata,
-                    ...(workspaceId ? { workspaceId } : {}),
+                    ...(workspaceId ? { workspace_id: workspaceId } : {}),
                 },
-            },
-        });
+            });
+
+        if (error) {
+            throw error;
+        }
     } catch (error) {
         logStructured("warn", "audit_log_write_failed", {
             event,

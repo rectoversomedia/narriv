@@ -1,5 +1,5 @@
 import express from "express";
-import prisma from "../../prisma.js";
+import supabase from "../../lib/supabase.js";
 import { analyzeSignal } from "../ai/ai.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { getUserWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
@@ -18,70 +18,62 @@ router.get("/", async (req, res) => {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
         const page = parseInt(req.query.page, 10) || 1;
         const limit = parseInt(req.query.limit, 10) || 10;
-        
+
         const { keyword, platform, startDate, endDate, sentiment } = req.query;
-        
+
         const safePage = Math.max(1, page);
         const safeLimit = Math.min(100, Math.max(1, limit));
         const skip = (safePage - 1) * safeLimit;
 
-        // Build dynamic where clause
-        const whereClause = { workspaceId: { in: workspaceIds } };
+        // Build dynamic query using Supabase
+        let query = supabase
+            .from('signals')
+            .select('*', { count: 'exact' })
+            .in('workspace_id', workspaceIds);
 
         if (keyword) {
-            whereClause.OR = [
-                { title: { contains: keyword, mode: 'insensitive' } },
-                { content: { contains: keyword, mode: 'insensitive' } }
-            ];
+            // Supabase uses ilike for case-insensitive contains
+            query = query.or(`title.ilike.%${keyword}%,content.ilike.%${keyword}%`);
         }
 
         if (platform) {
-            whereClause.platform = platform;
+            query = query.eq('platform', platform);
         }
 
         if (sentiment) {
-            whereClause.sentiment = { equals: sentiment, mode: 'insensitive' };
+            query = query.ilike('sentiment', sentiment);
         }
 
         if (startDate || endDate) {
-            whereClause.capturedAt = {};
             if (startDate) {
                 const dateStart = new Date(startDate);
                 if (isNaN(dateStart.getTime())) {
                     return res.status(400).json({ error: "Invalid startDate format. Use ISO-8601 or YYYY-MM-DD." });
                 }
-                whereClause.capturedAt.gte = dateStart;
+                query = query.gte('captured_at', dateStart.toISOString());
             }
             if (endDate) {
                 const dateEnd = new Date(endDate);
                 if (isNaN(dateEnd.getTime())) {
                     return res.status(400).json({ error: "Invalid endDate format. Use ISO-8601 or YYYY-MM-DD." });
                 }
-                whereClause.capturedAt.lte = dateEnd;
+                query = query.lte('captured_at', dateEnd.toISOString());
             }
         }
 
-        const [data, total] = await Promise.all([
-            prisma.signal.findMany({
-                where: whereClause,
-                skip,
-                take: safeLimit,
-                orderBy: {
-                    capturedAt: 'desc'
-                }
-            }),
-            prisma.signal.count({
-                where: whereClause
-            })
-        ]);
+        const { data: signalsData, error: signalsError, count } = await query
+            .order('captured_at', { ascending: false })
+            .range(skip, skip + safeLimit - 1);
+
+        if (signalsError) throw signalsError;
 
         res.json({
-            data: data || [],
+            data: signalsData || [],
             pagination: {
                 page: safePage,
                 limit: safeLimit,
-                total: total || 0,
-                totalPages: Math.ceil((total || 0) / safeLimit)
+                total: count || 0,
+                totalPages: Math.ceil((count || 0) / safeLimit)
             }
         });
     } catch (error) {
@@ -112,9 +104,13 @@ router.post("/", validateRequest({ body: createSignalBodySchema }), async (req, 
             return res.status(403).json({ error: "Workspace access denied" });
         }
 
-        const newSignal = await prisma.signal.create({
-            data: { workspaceId: targetWorkspaceId, content, sentiment },
-        });
+        const { data: newSignal, error: createError } = await supabase
+            .from('signals')
+            .insert({ workspace_id: targetWorkspaceId, content, sentiment })
+            .select()
+            .single();
+
+        if (createError) throw createError;
 
         res.json(newSignal);
     } catch (error) {
@@ -128,106 +124,158 @@ router.post("/", validateRequest({ body: createSignalBodySchema }), async (req, 
 router.get("/meta", async (req, res) => {
     try {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
-        const whereClause = { workspaceId: { in: workspaceIds } };
+        const inClause = workspaceIds.map(id => `'${id}'`).join(',');
 
-        const rawAlerts = await prisma.alert.findMany({
-            where: { workspaceId: { in: workspaceIds }, status: { not: 'resolved' } },
-            orderBy: { createdAt: 'desc' },
-            take: 3
-        });
-        const followUps = rawAlerts.map(a => ({
+        // Fetch alerts
+        const { data: rawAlerts, error: alertsError } = await supabase
+            .from('alerts')
+            .select('title, severity, created_at')
+            .in('workspace_id', workspaceIds)
+            .neq('status', 'resolved')
+            .order('created_at', { ascending: false })
+            .limit(3);
+
+        if (alertsError) throw alertsError;
+
+        const followUps = (rawAlerts || []).map(a => ({
             title: a.title,
             badge: (a.severity || 'info').toUpperCase(),
             meta: 'Latest updates pending',
-            time: new Date(a.createdAt).toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' }) + ' WIB',
+            time: new Date(a.created_at).toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' }) + ' WIB',
             tone: a.severity === 'critical' ? 'red' : 'amber'
         }));
 
-        const rawActionPlans = await prisma.actionPlan.findMany({
-            where: { workspaceId: { in: workspaceIds } },
-            orderBy: { createdAt: 'desc' },
-            take: 4
-        });
-        const recommendations = rawActionPlans.map(ap => ({
+        // Fetch action plans
+        const { data: rawActionPlans, error: actionPlansError } = await supabase
+            .from('action_plans')
+            .select('title, description, priority')
+            .in('workspace_id', workspaceIds)
+            .order('created_at', { ascending: false })
+            .limit(4);
+
+        if (actionPlansError) throw actionPlansError;
+
+        const recommendations = (rawActionPlans || []).map(ap => ({
             title: ap.title,
             desc: ap.description,
             badge: ap.priority,
             tone: 'purple'
         }));
 
-        const platformCounts = await prisma.signal.groupBy({
-            by: ['platform'],
-            where: whereClause,
-            _count: { _all: true }
+        // Platform counts - fetch all signals grouped by platform
+        const { data: allSignals, error: signalsError } = await supabase
+            .from('signals')
+            .select('platform')
+            .in('workspace_id', workspaceIds);
+
+        if (signalsError) throw signalsError;
+
+        // Group by platform manually
+        const platformCountsMap = {};
+        (allSignals || []).forEach(sig => {
+            const platform = sig.platform || 'Unknown';
+            platformCountsMap[platform] = (platformCountsMap[platform] || 0) + 1;
         });
-        const totalSignals = platformCounts.reduce((acc, curr) => acc + curr._count._all, 0);
+
+        const totalSignals = Object.values(platformCountsMap).reduce((acc, curr) => acc + curr, 0);
         const predefinedColors = ['#465FFF', '#EF3F6B', '#10B981', '#8B5CFF', '#94A3B8'];
-        const sourceDistribution = platformCounts.map((pc, idx) => {
-            const percentage = totalSignals ? Math.round((pc._count._all / totalSignals) * 100) : 0;
+        const platformEntries = Object.entries(platformCountsMap);
+        const sourceDistribution = platformEntries.map(([platform, count], idx) => {
+            const percentage = totalSignals ? Math.round((count / totalSignals) * 100) : 0;
             return {
-                name: pc.platform || 'Unknown',
-                value: `${percentage}% (${pc._count._all})`,
+                name: platform,
+                value: `${percentage}% (${count})`,
                 color: predefinedColors[idx % predefinedColors.length]
             };
         });
 
-        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        const timelineData = await prisma.signal.findMany({
-            where: { ...whereClause, capturedAt: { gte: twentyFourHoursAgo } },
-            select: { capturedAt: true }
-        });
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const { data: timelineData, error: timelineError } = await supabase
+            .from('signals')
+            .select('captured_at')
+            .in('workspace_id', workspaceIds)
+            .gte('captured_at', twentyFourHoursAgo);
+
+        if (timelineError) throw timelineError;
 
         const timeline = Array(24).fill(0);
         const timelineLabels = Array(24).fill('');
-        
+
         const now = new Date();
         for (let i = 23; i >= 0; i--) {
             const date = new Date(now.getTime() - i * 60 * 60 * 1000);
             timelineLabels[23 - i] = `${date.getHours().toString().padStart(2, '0')}:00`;
         }
 
-        timelineData.forEach(sig => {
-            const hDiff = Math.floor((now.getTime() - new Date(sig.capturedAt).getTime()) / (60 * 60 * 1000));
+        (timelineData || []).forEach(sig => {
+            const hDiff = Math.floor((now.getTime() - new Date(sig.captured_at).getTime()) / (60 * 60 * 1000));
             if (hDiff >= 0 && hDiff < 24) {
                 timeline[23 - hDiff]++;
             }
         });
 
-        const totalSignals24h = timelineData.length;
+        const totalSignals24h = (timelineData || []).length;
 
-        let rawCases = await prisma.case.findMany({
-            where: { workspaceId: { in: workspaceIds } },
-            orderBy: { createdAt: 'desc' },
-            take: 3
-        });
+        // Fetch cases
+        const { data: rawCases, error: casesError } = await supabase
+            .from('cases')
+            .select('title, assigned_team, status')
+            .in('workspace_id', workspaceIds)
+            .order('created_at', { ascending: false })
+            .limit(3);
+
+        if (casesError) throw casesError;
+
         let investigationQueue = [];
-        
-        if (rawCases.length > 0) {
+
+        if (rawCases && rawCases.length > 0) {
             investigationQueue = rawCases.map(c => ({
                 title: c.title,
-                meta: 'Assigned to ' + (c.assignedTeam || 'Ops Team'),
+                meta: 'Assigned to ' + (c.assigned_team || 'Ops Team'),
                 badge: c.status,
                 tone: c.status === 'open' ? 'amber' : 'blue'
             }));
         } else {
-            const fallbackAlerts = await prisma.alert.findMany({
-                where: { workspaceId: { in: workspaceIds } },
-                orderBy: { createdAt: 'desc' },
-                take: 3
-            });
-            investigationQueue = fallbackAlerts.map(a => ({
+            // Fallback to alerts if no cases
+            const { data: fallbackAlerts, error: fallbackError } = await supabase
+                .from('alerts')
+                .select('title, status')
+                .in('workspace_id', workspaceIds)
+                .order('created_at', { ascending: false })
+                .limit(3);
+
+            if (fallbackError) throw fallbackError;
+
+            investigationQueue = (fallbackAlerts || []).map(a => ({
                 title: a.title,
                 meta: 'Assigned to Ops Team',
                 badge: a.status,
                 tone: a.status === 'open' ? 'amber' : 'blue'
             }));
         }
-        const negativeSignals24h = await prisma.signal.count({
-            where: { ...whereClause, sentiment: { equals: 'NEGATIVE', mode: 'insensitive' }, capturedAt: { gte: twentyFourHoursAgo } }
-        });
-        const criticalAlerts24h = await prisma.alert.count({
-            where: { workspaceId: { in: workspaceIds }, severity: { in: ['critical', 'high'] }, createdAt: { gte: twentyFourHoursAgo } }
-        });
+
+        // Count negative signals in 24h
+        const { count: negativeCount, error: negativeError } = await supabase
+            .from('signals')
+            .select('*', { count: 'exact', head: true })
+            .in('workspace_id', workspaceIds)
+            .ilike('sentiment', 'NEGATIVE')
+            .gte('captured_at', twentyFourHoursAgo);
+
+        if (negativeError) throw negativeError;
+
+        // Count critical alerts in 24h
+        const { count: criticalCount, error: criticalError } = await supabase
+            .from('alerts')
+            .select('*', { count: 'exact', head: true })
+            .in('workspace_id', workspaceIds)
+            .in('severity', ['critical', 'high'])
+            .gte('created_at', twentyFourHoursAgo);
+
+        if (criticalError) throw criticalError;
+
+        const negativeSignals24h = negativeCount || 0;
+        const criticalAlerts24h = criticalCount || 0;
 
         const metrics = {
             totalSignals24h,
@@ -235,8 +283,8 @@ router.get("/meta", async (req, res) => {
             criticalSignals24h: criticalAlerts24h
         };
 
-        const aiSummary = totalSignals24h === 0 
-            ? null 
+        const aiSummary = totalSignals24h === 0
+            ? null
             : {
                 title: "AI Signal Summary",
                 content: {
@@ -273,26 +321,33 @@ router.get("/:id", async (req, res) => {
         const { id } = req.params;
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
 
-        const signal = await prisma.signal.findUnique({
-            where: { id },
-            include: {
-                rawDocument: {
-                    select: {
-                        metadata: true
-                    }
-                }
-            }
-        });
+        // Fetch signal with raw document metadata
+        const { data: signal, error: signalError } = await supabase
+            .from('signals')
+            .select('*, raw_documents(metadata)')
+            .eq('id', id)
+            .single();
 
-        if (!signal || !workspaceIds.includes(signal.workspaceId)) {
+        if (signalError && signalError.code !== 'PGRST116') {
+            throw signalError;
+        }
+
+        if (!signal || !workspaceIds.includes(signal.workspace_id)) {
             return res.status(404).json({ error: "Signal not found" });
         }
 
         // Fetch the most recent analysis for this signal
-        const latestAnalysis = await prisma.signalAnalysis.findFirst({
-            where: { signalId: id },
-            orderBy: { createdAt: "desc" },
-        });
+        const { data: latestAnalysis, error: analysisError } = await supabase
+            .from('signal_analyses')
+            .select('*')
+            .eq('signal_id', id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (analysisError && analysisError.code !== 'PGRST116') {
+            throw analysisError;
+        }
 
         return res.json({
             signal,
@@ -313,15 +368,31 @@ router.post("/:id/analyze", validateRequest({ params: signalIdParamsSchema }), a
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
 
         // 1. Fetch the signal
-        const signal = await prisma.signal.findUnique({ where: { id } });
-        if (!signal || !workspaceIds.includes(signal.workspaceId)) {
+        const { data: signal, error: signalError } = await supabase
+            .from('signals')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (signalError && signalError.code !== 'PGRST116') {
+            throw signalError;
+        }
+
+        if (!signal || !workspaceIds.includes(signal.workspace_id)) {
             return res.status(404).json({ error: "Signal not found" });
         }
 
         // 2. Check for existing analysis — prevent duplicate inserts
-        const existing = await prisma.signalAnalysis.findFirst({
-            where: { signalId: id }
-        });
+        const { data: existing, error: existingError } = await supabase
+            .from('signal_analyses')
+            .select('*')
+            .eq('signal_id', id)
+            .limit(1)
+            .maybeSingle();
+
+        if (existingError && existingError.code !== 'PGRST116') {
+            throw existingError;
+        }
 
         if (existing) {
             return res.status(200).json({
@@ -336,24 +407,30 @@ router.post("/:id/analyze", validateRequest({ params: signalIdParamsSchema }), a
         const result = await analyzeSignal(signal.title, signal.content);
 
         // 4. Save result to SignalAnalysis
-        const analysis = await prisma.signalAnalysis.create({
-            data: {
-                signalId: id,
+        const { data: analysis, error: analysisError } = await supabase
+            .from('signal_analyses')
+            .insert({
+                signal_id: id,
                 sentiment: result.sentiment,
-                narrativeType: result.narrative_type,
+                narrative_type: result.narrative_type,
                 stakeholder: result.stakeholder,
                 impact: result.impact,
                 summary: result.summary,
-                recommendedAction: result.recommended_action,
-                confidenceScore: result.confidence_score
-            }
-        });
+                recommended_action: result.recommended_action,
+                confidence_score: result.confidence_score
+            })
+            .select()
+            .single();
+
+        if (analysisError) throw analysisError;
 
         // 5. Also update the signal's own sentiment field for quick access
-        await prisma.signal.update({
-            where: { id },
-            data: { sentiment: result.sentiment }
-        });
+        const { error: updateError } = await supabase
+            .from('signals')
+            .update({ sentiment: result.sentiment })
+            .eq('id', id);
+
+        if (updateError) throw updateError;
 
         logStructured("info", "signal_analyze_saved", { signalId: id });
 
@@ -387,22 +464,24 @@ router.post("/batch-analyze", async (req, res) => {
             return res.status(403).json({ error: "Workspace access denied" });
         }
 
-        const signals = await prisma.signal.findMany({
-            where: {
-                id: { in: signalIds },
-                workspaceId: scopedWorkspaceId,
-            },
-        });
+        const { data: signals, error: signalsError } = await supabase
+            .from('signals')
+            .select('*')
+            .in('id', signalIds)
+            .eq('workspace_id', scopedWorkspaceId);
+
+        if (signalsError) throw signalsError;
 
         // Filter out signals that already have analysis
-        const analyzedIds = new Set(
-            (await prisma.signalAnalysis.findMany({
-                where: { signalId: { in: signalIds } },
-                select: { signalId: true },
-            })).map((a) => a.signalId)
-        );
+        const { data: existingAnalyses, error: analysesError } = await supabase
+            .from('signal_analyses')
+            .select('signal_id')
+            .in('signal_id', signalIds);
 
-        const unanalyzed = signals.filter((s) => !analyzedIds.has(s.id));
+        if (analysesError) throw analysesError;
+
+        const analyzedIds = new Set((existingAnalyses || []).map((a) => a.signal_id));
+        const unanalyzed = (signals || []).filter((s) => !analyzedIds.has(s.id));
 
         if (unanalyzed.length === 0) {
             return res.json({
@@ -418,23 +497,29 @@ router.post("/batch-analyze", async (req, res) => {
             try {
                 const result = await analyzeSignal(signal.title, signal.content);
 
-                const analysis = await prisma.signalAnalysis.create({
-                    data: {
-                        signalId: signal.id,
+                const { data: analysis, error: createError } = await supabase
+                    .from('signal_analyses')
+                    .insert({
+                        signal_id: signal.id,
                         sentiment: result.sentiment,
-                        narrativeType: result.narrative_type,
+                        narrative_type: result.narrative_type,
                         stakeholder: result.stakeholder,
                         impact: result.impact,
                         summary: result.summary,
-                        recommendedAction: result.recommended_action,
-                        confidenceScore: result.confidence_score,
-                    },
-                });
+                        recommended_action: result.recommended_action,
+                        confidence_score: result.confidence_score,
+                    })
+                    .select()
+                    .single();
 
-                await prisma.signal.update({
-                    where: { id: signal.id },
-                    data: { sentiment: result.sentiment },
-                });
+                if (createError) throw createError;
+
+                const { error: updateError } = await supabase
+                    .from('signals')
+                    .update({ sentiment: result.sentiment })
+                    .eq('id', signal.id);
+
+                if (updateError) throw updateError;
 
                 results.push({ signalId: signal.id, status: "analyzed", analysis });
             } catch (error) {

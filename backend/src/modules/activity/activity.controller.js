@@ -1,4 +1,4 @@
-import prisma from "../../prisma.js";
+import supabase from "../../lib/supabase.js";
 import { forbidden, internalError } from "../../lib/api-error.js";
 import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { logStructured } from "../../lib/logger.js";
@@ -17,12 +17,12 @@ function endOfDay(value) {
 
 function workspaceAuditScope(scopedWorkspaceId) {
     return {
-        OR: [
-            { workspaceId: scopedWorkspaceId },
+        or: [
+            { workspace_id: scopedWorkspaceId },
             {
                 metadata: {
-                    path: ["workspaceId"],
-                    equals: scopedWorkspaceId,
+                    path: ["workspace_id"],
+                    value: scopedWorkspaceId,
                 },
             },
         ],
@@ -56,53 +56,49 @@ export async function listActivityLogs(req, res) {
         }
 
         if (userId) {
-            where.userId = userId;
+            where.user_id = userId;
         }
 
         if (dateFrom || dateTo) {
-            where.createdAt = {};
-            if (dateFrom) where.createdAt.gte = startOfDay(dateFrom);
-            if (dateTo) where.createdAt.lte = endOfDay(dateTo);
+            where.created_at = {};
+            if (dateFrom) where.created_at.gte = startOfDay(dateFrom);
+            if (dateTo) where.created_at.lte = endOfDay(dateTo);
         }
 
-        const todayRange = mergeTodayRange(where.createdAt);
+        const todayRange = mergeTodayRange(where.created_at);
 
-        const [logs, total, actors, events, today] = await Promise.all([
-            prisma.auditLog.findMany({
-                where,
-                orderBy: { createdAt: "desc" },
-                skip,
-                take: limit,
-                include: {
-                    user: {
-                        select: { id: true, name: true, email: true },
-                    },
-                },
-            }),
-            prisma.auditLog.count({ where }),
-            prisma.auditLog.groupBy({
-                by: ["userId"],
-                where,
-                _count: { _all: true },
-            }),
-            prisma.auditLog.groupBy({
-                by: ["event"],
-                where,
-                _count: { _all: true },
-            }),
-            todayRange ? prisma.auditLog.count({ where: { ...where, createdAt: todayRange } }) : Promise.resolve(0),
+        const [logsResult, totalResult, actorsResult, eventsResult, todayCount] = await Promise.all([
+            supabase
+                .from("audit_logs")
+                .select("*, user:users(id, name, email)")
+                .setHeader("Prefer", "count=exact")
+                .match(where)
+                .order("created_at", { ascending: false })
+                .range(skip, skip + limit - 1),
+            supabase.from("audit_logs").select("id", { count: "exact", head: true }).setHeader("Prefer", "count=exact").match(where),
+            supabase.rpc("group_by_audit_logs_user_id", { p_where: where }),
+            supabase.rpc("group_by_audit_logs_event", { p_where: where }),
+            todayRange
+                ? supabase.from("audit_logs").select("id", { count: "exact", head: true }).setHeader("Prefer", "count=exact").match({ ...where, created_at: todayRange })
+                : Promise.resolve({ count: 0 }),
         ]);
+
+        const logs = logsResult.data || [];
+        const total = totalResult.count || 0;
+        const actors = actorsResult.data || [];
+        const events = eventsResult.data || [];
+        const today = todayCount.count || 0;
 
         const totalPages = Math.ceil(total / limit);
 
         return res.json({
             data: logs.map((log) => ({
                 id: log.id,
-                userId: log.userId,
+                user_id: log.user_id,
                 user: log.user,
                 event: log.event,
                 metadata: log.metadata,
-                createdAt: log.createdAt,
+                created_at: log.created_at,
             })),
             meta: {
                 page,

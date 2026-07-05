@@ -1,4 +1,4 @@
-import prisma from "../../prisma.js";
+import supabase from "../../lib/supabase.js";
 import { badRequest, forbidden, internalError, notFound } from "../../lib/api-error.js";
 import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { logStructured } from "../../lib/logger.js";
@@ -12,16 +12,23 @@ export async function listIntegrations(req, res) {
 
         const { platform, status } = req.query;
 
-        const where = { workspaceId: scopedWorkspaceId };
-        if (platform) where.platform = platform;
-        if (status) where.status = status;
+        let query = supabase
+            .from("integrations")
+            .select("*")
+            .eq("workspace_id", scopedWorkspaceId)
+            .order("created_at", { ascending: false });
 
-        const integrations = await prisma.integration.findMany({
-            where,
-            orderBy: { createdAt: "desc" },
-        });
+        if (platform) query = query.eq("platform", platform);
+        if (status) query = query.eq("status", status);
 
-        return res.json({ data: integrations });
+        const { data: integrations, error } = await query;
+
+        if (error) {
+            logStructured("error", "Error listing integrations:", { error: error.message || error });
+            return internalError(res);
+        }
+
+        return res.json({ data: integrations || [] });
     } catch (error) {
         logStructured("error", "Error listing integrations:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
@@ -35,9 +42,17 @@ export async function getIntegration(req, res) {
             return forbidden(res, "Workspace access denied", "WORKSPACE_ACCESS_DENIED");
         }
 
-        const integration = await prisma.integration.findFirst({
-            where: { id: req.params.id, workspaceId: scopedWorkspaceId },
-        });
+        const { data: integration, error } = await supabase
+            .from("integrations")
+            .select("*")
+            .eq("id", req.params.id)
+            .eq("workspace_id", scopedWorkspaceId)
+            .maybeSingle();
+
+        if (error) {
+            logStructured("error", "Error getting integration:", { error: error.message || error });
+            return internalError(res);
+        }
 
         if (!integration) {
             return notFound(res, "Integration not found", "INTEGRATION_NOT_FOUND");
@@ -59,22 +74,27 @@ export async function createIntegration(req, res) {
             return forbidden(res, "Workspace access denied", "WORKSPACE_ACCESS_DENIED");
         }
 
-        const integration = await prisma.integration.create({
-            data: {
-                workspaceId: scopedWorkspaceId,
+        const { data: integration, error } = await supabase
+            .from("integrations")
+            .insert({
+                workspace_id: scopedWorkspaceId,
                 name,
                 platform,
                 config: config || {},
-            },
-        });
+            })
+            .select()
+            .single();
 
-        await prisma.auditLog.create({
-            data: {
-                userId: req.user.id,
-                workspaceId: scopedWorkspaceId,
-                event: "integration_created",
-                metadata: { workspaceId: scopedWorkspaceId, integrationId: integration.id, name, platform },
-            },
+        if (error) {
+            logStructured("error", "Error creating integration:", { error: error.message || error });
+            return internalError(res);
+        }
+
+        await supabase.from("audit_logs").insert({
+            user_id: req.user.id,
+            workspace_id: scopedWorkspaceId,
+            event: "integration_created",
+            metadata: { workspace_id: scopedWorkspaceId, integration_id: integration.id, name, platform },
         });
 
         return res.status(201).json(integration);
@@ -91,9 +111,17 @@ export async function updateIntegration(req, res) {
             return forbidden(res, "Workspace access denied", "WORKSPACE_ACCESS_DENIED");
         }
 
-        const existing = await prisma.integration.findFirst({
-            where: { id: req.params.id, workspaceId: scopedWorkspaceId },
-        });
+        const { data: existing, error: findError } = await supabase
+            .from("integrations")
+            .select("*")
+            .eq("id", req.params.id)
+            .eq("workspace_id", scopedWorkspaceId)
+            .maybeSingle();
+
+        if (findError) {
+            logStructured("error", "Error finding integration:", { error: findError.message || findError });
+            return internalError(res);
+        }
 
         if (!existing) {
             return notFound(res, "Integration not found", "INTEGRATION_NOT_FOUND");
@@ -101,18 +129,23 @@ export async function updateIntegration(req, res) {
 
         const { workspaceId, ...updateData } = req.body;
 
-        const updated = await prisma.integration.update({
-            where: { id: req.params.id },
-            data: updateData,
-        });
+        const { data: updated, error: updateError } = await supabase
+            .from("integrations")
+            .update(updateData)
+            .eq("id", req.params.id)
+            .select()
+            .single();
 
-        await prisma.auditLog.create({
-            data: {
-                userId: req.user.id,
-                workspaceId: scopedWorkspaceId,
-                event: "integration_updated",
-                metadata: { workspaceId: scopedWorkspaceId, integrationId: updated.id, changes: updateData },
-            },
+        if (updateError) {
+            logStructured("error", "Error updating integration:", { error: updateError.message || updateError });
+            return internalError(res);
+        }
+
+        await supabase.from("audit_logs").insert({
+            user_id: req.user.id,
+            workspace_id: scopedWorkspaceId,
+            event: "integration_updated",
+            metadata: { workspace_id: scopedWorkspaceId, integration_id: updated.id, changes: updateData },
         });
 
         return res.json(updated);
@@ -129,23 +162,37 @@ export async function deleteIntegration(req, res) {
             return forbidden(res, "Workspace access denied", "WORKSPACE_ACCESS_DENIED");
         }
 
-        const existing = await prisma.integration.findFirst({
-            where: { id: req.params.id, workspaceId: scopedWorkspaceId },
-        });
+        const { data: existing, error: findError } = await supabase
+            .from("integrations")
+            .select("*")
+            .eq("id", req.params.id)
+            .eq("workspace_id", scopedWorkspaceId)
+            .maybeSingle();
+
+        if (findError) {
+            logStructured("error", "Error finding integration:", { error: findError.message || findError });
+            return internalError(res);
+        }
 
         if (!existing) {
             return notFound(res, "Integration not found", "INTEGRATION_NOT_FOUND");
         }
 
-        await prisma.integration.delete({ where: { id: req.params.id } });
+        const { error: deleteError } = await supabase
+            .from("integrations")
+            .delete()
+            .eq("id", req.params.id);
 
-        await prisma.auditLog.create({
-            data: {
-                userId: req.user.id,
-                workspaceId: scopedWorkspaceId,
-                event: "integration_deleted",
-                metadata: { workspaceId: scopedWorkspaceId, integrationId: req.params.id },
-            },
+        if (deleteError) {
+            logStructured("error", "Error deleting integration:", { error: deleteError.message || deleteError });
+            return internalError(res);
+        }
+
+        await supabase.from("audit_logs").insert({
+            user_id: req.user.id,
+            workspace_id: scopedWorkspaceId,
+            event: "integration_deleted",
+            metadata: { workspace_id: scopedWorkspaceId, integration_id: req.params.id },
         });
 
         return res.json({ success: true });

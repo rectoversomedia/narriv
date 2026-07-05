@@ -1,5 +1,5 @@
 import express from "express";
-import prisma from "../../prisma.js";
+import supabase from "../../lib/supabase.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { compareClusterPeriods } from "../clustering/clustering.service.js";
@@ -9,10 +9,10 @@ const router = express.Router();
 router.use(verifyToken);
 
 function toNarrativeItem(cluster) {
-    const signals = cluster.narrativeClusterSignals.map((ncs) => ncs.signal);
+    const signals = cluster.narrative_cluster_signals?.map((ncs) => ncs.signal) || [];
     const uniquePlatforms = new Set(signals.map((signal) => signal.platform).filter(Boolean));
     const confidenceValues = signals
-        .flatMap((signal) => signal.analyses.map((analysis) => analysis.confidenceScore))
+        .flatMap((signal) => (signal.analyses || []).map((analysis) => analysis.confidence_score))
         .filter((value) => typeof value === "number");
 
     const avgConfidence = confidenceValues.length > 0
@@ -21,24 +21,24 @@ function toNarrativeItem(cluster) {
 
     const now = Date.now();
     const last24hCount = signals.filter((signal) => {
-        if (!signal.capturedAt) return false;
-        return now - new Date(signal.capturedAt).getTime() <= 24 * 60 * 60 * 1000;
+        if (!signal.captured_at) return false;
+        return now - new Date(signal.captured_at).getTime() <= 24 * 60 * 60 * 1000;
     }).length;
 
-    const velocity = cluster.signalCount > 0
-        ? `+${Math.round((last24hCount / cluster.signalCount) * 100)}%`
+    const velocity = cluster.signal_count > 0
+        ? `+${Math.round((last24hCount / cluster.signal_count) * 100)}%`
         : "+0%";
 
     return {
         id: cluster.id,
         title: cluster.title,
-        description: cluster.description || cluster.mainNarrative || "",
+        description: cluster.description || cluster.main_narrative || "",
         sourceCount: uniquePlatforms.size || 0,
         confidence: avgConfidence,
         impact: (cluster.impact || "MEDIUM").toString(),
         velocity,
-        recommendedFocus: cluster.mainNarrative || cluster.description || "Prioritize stakeholder messaging and monitor escalation.",
-        signalCount: cluster.signalCount,
+        recommendedFocus: cluster.main_narrative || cluster.description || "Prioritize stakeholder messaging and monitor escalation.",
+        signalCount: cluster.signal_count,
         sentiment: cluster.sentiment || "neutral",
     };
 }
@@ -61,53 +61,49 @@ router.get("/", async (req, res) => {
             });
         }
 
-        const whereClause = {};
-        if (sentiment) whereClause.sentiment = sentiment;
-        if (impact) whereClause.impact = String(impact).toUpperCase();
-        if (Number.isFinite(days) && days > 0) {
-            whereClause.updatedAt = { gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000) };
-        }
-        whereClause.workspaceId = { in: scopedWorkspaceIds };
+        // Build where conditions for Supabase
+        let query = supabase
+            .from("narrative_clusters")
+            .select(`
+                *,
+                narrative_cluster_signals (
+                    signal:signals (
+                        id,
+                        title,
+                        platform,
+                        sentiment,
+                        captured_at,
+                        analyses (
+                            confidence_score
+                        )
+                    )
+                )
+            `, { count: "exact" })
+            .in("workspace_id", scopedWorkspaceIds)
+            .order("updated_at", { ascending: false })
+            .range(skip, skip + safeLimit - 1);
 
-        const [data, total] = await Promise.all([
-            prisma.narrativeCluster.findMany({
-                where: whereClause,
-                skip,
-                take: safeLimit,
-                orderBy: { updatedAt: "desc" },
-                include: {
-                    narrativeClusterSignals: {
-                        include: {
-                            signal: {
-                                select: {
-                                    id: true,
-                                    title: true,
-                                    platform: true,
-                                    sentiment: true,
-                                    capturedAt: true,
-                                    analyses: {
-                                        orderBy: { createdAt: "desc" },
-                                        take: 1,
-                                        select: {
-                                            confidenceScore: true,
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }),
-            prisma.narrativeCluster.count({ where: whereClause })
-        ]);
+        if (sentiment) query = query.eq("sentiment", sentiment);
+        if (impact) query = query.eq("impact", String(impact).toUpperCase());
+        if (Number.isFinite(days) && days > 0) {
+            const minDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+            query = query.gte("updated_at", minDate);
+        }
+
+        const { data: data, error, count } = await query;
+
+        if (error) {
+            logStructured("error", "Error fetching narratives:", { error: error.message || error });
+            return res.status(500).json({ error: "Internal server error" });
+        }
 
         return res.json({
-            data: data.map(toNarrativeItem),
+            data: (data || []).map(toNarrativeItem),
             pagination: {
                 page: safePage,
                 limit: safeLimit,
-                total,
-                totalPages: Math.ceil(total / safeLimit)
+                total: count || 0,
+                totalPages: Math.ceil((count || 0) / safeLimit)
             }
         });
     } catch (error) {
@@ -151,40 +147,60 @@ router.get("/:id", async (req, res) => {
         const { id } = req.params;
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
-        const cluster = await prisma.narrativeCluster.findUnique({
-            where: { id },
-            include: {
-                narrativeClusterSignals: {
-                    orderBy: { createdAt: "desc" },
-                    include: {
-                        signal: {
-                            include: {
-                                analyses: {
-                                    orderBy: { createdAt: "desc" },
-                                    take: 1
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        });
+        const { data: cluster, error } = await supabase
+            .from("narrative_clusters")
+            .select(`
+                *,
+                narrative_cluster_signals (
+                    created_at,
+                    signal:signals (
+                        id,
+                        title,
+                        content,
+                        platform,
+                        url,
+                        sentiment,
+                        captured_at,
+                        published_at,
+                        analyses (
+                            sentiment,
+                            impact,
+                            created_at
+                        )
+                    )
+                )
+            `)
+            .eq("id", id)
+            .maybeSingle();
 
-        if (!cluster || !scopedWorkspaceIds.includes(cluster.workspaceId)) {
+        if (error) {
+            logStructured("error", "Error fetching narrative:", { error: error.message || error });
+            return res.status(500).json({ error: "Internal server error" });
+        }
+
+        if (!cluster || !scopedWorkspaceIds.includes(cluster.workspace_id)) {
             return res.status(404).json({ error: "Narrative cluster not found" });
         }
 
-        const relatedSignals = cluster.narrativeClusterSignals.map((ncs) => ({
-            id: ncs.signal.id,
-            title: ncs.signal.title,
-            content: ncs.signal.content,
-            platform: ncs.signal.platform,
-            url: ncs.signal.url,
-            sentiment: ncs.signal.analyses[0]?.sentiment || ncs.signal.sentiment || "unanalyzed",
-            impact: ncs.signal.analyses[0]?.impact || null,
-            capturedAt: ncs.signal.capturedAt,
-            publishedAt: ncs.signal.publishedAt
-        }));
+        const relatedSignals = (cluster.narrative_cluster_signals || [])
+            .filter((ncs) => ncs.signal)
+            .map((ncs) => {
+                const analyses = ncs.signal.analyses || [];
+                const latestAnalysis = analyses.sort((a, b) =>
+                    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                )[0];
+                return {
+                    id: ncs.signal.id,
+                    title: ncs.signal.title,
+                    content: ncs.signal.content,
+                    platform: ncs.signal.platform,
+                    url: ncs.signal.url,
+                    sentiment: latestAnalysis?.sentiment || ncs.signal.sentiment || "unanalyzed",
+                    impact: latestAnalysis?.impact || null,
+                    capturedAt: ncs.signal.captured_at,
+                    publishedAt: ncs.signal.published_at
+                };
+            });
 
         const trendMap = {};
         relatedSignals.forEach((signal) => {

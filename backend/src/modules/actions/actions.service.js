@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import prisma from "../../prisma.js";
+import supabase from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
 import { buildTemplateContext } from "./action-templates.js";
 
@@ -419,50 +419,61 @@ async function buildContext({ alertId, clusterId, workspaceId }) {
     const lines = [];
 
     if (alertId) {
-        const alert = await prisma.alert.findFirst({ where: { id: alertId, workspaceId } });
+        const { data: alert } = await supabase
+            .from("alerts")
+            .select("*")
+            .eq("id", alertId)
+            .eq("workspace_id", workspaceId)
+            .maybeSingle();
         if (alert) {
             lines.push(`ALERT: [${(alert.severity || "medium").toUpperCase()}] ${alert.title}`);
-            if (alert.whatHappened) lines.push(`What Happened: ${alert.whatHappened}`);
-            if (alert.whyItMatters) lines.push(`Why It Matters: ${alert.whyItMatters}`);
+            if (alert.what_happened) lines.push(`What Happened: ${alert.what_happened}`);
+            if (alert.why_it_matters) lines.push(`Why It Matters: ${alert.why_it_matters}`);
         }
     }
 
     if (clusterId) {
-        const cluster = await prisma.narrativeCluster.findFirst({
-            where: { id: clusterId, workspaceId },
-            include: {
-                narrativeClusterSignals: {
-                    take: 5,
-                    include: { signal: { select: { title: true, content: true, sentiment: true, platform: true } } }
-                }
-            }
-        });
+        const { data: cluster } = await supabase
+            .from("narrative_clusters")
+            .select(`
+                *,
+                narrative_cluster_signals (
+                    signal:signals (title, content, sentiment, platform)
+                )
+            `)
+            .eq("id", clusterId)
+            .eq("workspace_id", workspaceId)
+            .maybeSingle();
         if (cluster) {
             lines.push(`NARRATIVE: ${cluster.title}`);
             if (cluster.description) lines.push(`Description: ${cluster.description}`);
             if (cluster.sentiment) lines.push(`Dominant Sentiment: ${cluster.sentiment}`);
-            lines.push(`Signal Count: ${cluster.signalCount}`);
+            lines.push(`Signal Count: ${cluster.signal_count}`);
             lines.push("");
             lines.push("SAMPLE SIGNALS:");
-            cluster.narrativeClusterSignals.forEach(ncs => {
-                lines.push(`- [${ncs.signal.sentiment || "unknown"}] ${ncs.signal.title || "Untitled"}: ${ncs.signal.content.substring(0, 120)}...`);
+            const ncsList = cluster.narrative_cluster_signals || [];
+            ncsList.slice(0, 5).forEach(ncs => {
+                const signal = ncs.signal;
+                lines.push(`- [${signal?.sentiment || "unknown"}] ${signal?.title || "Untitled"}: ${(signal?.content || "").substring(0, 120)}...`);
             });
         }
     }
 
     // Also pull latest signals from the workspace for broader context
     if (workspaceId && lines.length < 5) {
-        const recentSignals = await prisma.signal.findMany({
-            where: { workspaceId },
-            orderBy: { capturedAt: "desc" },
-            take: 5,
-            select: { title: true, content: true, sentiment: true, platform: true }
-        });
-        lines.push("");
-        lines.push("RECENT SIGNALS:");
-        recentSignals.forEach(s => {
-            lines.push(`- [${s.sentiment || "unknown"}] [${s.platform || "unknown"}] ${s.title || "Untitled"}: ${s.content.substring(0, 120)}...`);
-        });
+        const { data: recentSignals } = await supabase
+            .from("signals")
+            .select("title, content, sentiment, platform")
+            .eq("workspace_id", workspaceId)
+            .order("captured_at", { ascending: false })
+            .limit(5);
+        if (recentSignals && recentSignals.length > 0) {
+            lines.push("");
+            lines.push("RECENT SIGNALS:");
+            recentSignals.forEach(s => {
+                lines.push(`- [${s.sentiment || "unknown"}] [${s.platform || "unknown"}] ${s.title || "Untitled"}: ${(s.content || "").substring(0, 120)}...`);
+            });
+        }
     }
 
     return lines.join("\n");
@@ -496,19 +507,23 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
 
     const scopedAlertId = alertId || null;
     if (scopedAlertId) {
-        const alert = await prisma.alert.findFirst({
-            where: { id: scopedAlertId, workspaceId },
-            select: { id: true }
-        });
+        const { data: alert } = await supabase
+            .from("alerts")
+            .select("id")
+            .eq("id", scopedAlertId)
+            .eq("workspace_id", workspaceId)
+            .maybeSingle();
         if (!alert) throw new Error("Alert not found");
     }
 
     const scopedClusterId = clusterId || null;
     if (scopedClusterId) {
-        const cluster = await prisma.narrativeCluster.findFirst({
-            where: { id: scopedClusterId, workspaceId },
-            select: { id: true }
-        });
+        const { data: cluster } = await supabase
+            .from("narrative_clusters")
+            .select("id")
+            .eq("id", scopedClusterId)
+            .eq("workspace_id", workspaceId)
+            .maybeSingle();
         if (!cluster) throw new Error("Narrative cluster not found");
     }
 
@@ -519,10 +534,11 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
     const feedbackContext = await buildFeedbackContext(workspaceId, strategyType);
 
     // 3. Build industry template context
-    const workspaceSettings = await prisma.workspaceSettings.findUnique({
-        where: { workspaceId },
-        select: { industry: true },
-    });
+    const { data: workspaceSettings } = await supabase
+        .from("workspace_settings")
+        .select("industry")
+        .eq("workspace_id", workspaceId)
+        .maybeSingle();
     const templateContext = buildTemplateContext(workspaceSettings?.industry, strategyType);
 
     // 4. Combine all contexts
@@ -539,17 +555,21 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
     ]);
 
     // 3. Save to database
-    const actionPlan = await prisma.actionPlan.create({
-        data: {
-            workspaceId,
-            alertId: scopedAlertId,
-            clusterId: scopedClusterId,
+    const { data: actionPlan, error } = await supabase
+        .from("action_plans")
+        .insert({
+            workspace_id: workspaceId,
+            alert_id: scopedAlertId,
+            cluster_id: scopedClusterId,
             title: `${formatStrategyName(strategyType)} Action Plan`,
             option1: JSON.stringify(options[0]),
             option2: JSON.stringify(options[1]),
             option3: JSON.stringify(options[2])
-        }
-    });
+        })
+        .select()
+        .single();
+
+    if (error) throw error;
 
     logStructured("info", "action_plan_saved", { actionPlanId: actionPlan.id });
 
@@ -557,7 +577,7 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
         id: actionPlan.id,
         title: actionPlan.title,
         strategyType,
-        createdAt: actionPlan.createdAt,
+        created_at: actionPlan.created_at,
         options: {
             conservative: options[0],
             balanced: options[1],
@@ -623,17 +643,15 @@ function formatStrategyName(type) {
  */
 export async function buildFeedbackContext(workspaceId, strategyType) {
     try {
-        const feedback = await prisma.aIFeedback.findMany({
-            where: {
-                workspaceId,
-                targetType: "action_plan",
-            },
-            select: { action: true, reason: true, editedOutput: true },
-            orderBy: { createdAt: "desc" },
-            take: 10,
-        });
+        const { data: feedback } = await supabase
+            .from("ai_feedback")
+            .select("action, reason, edited_output")
+            .eq("workspace_id", workspaceId)
+            .eq("target_type", "action_plan")
+            .order("created_at", { ascending: false })
+            .limit(10);
 
-        if (feedback.length === 0) return "";
+        if (!feedback || feedback.length === 0) return "";
 
         const accepted = feedback.filter((f) => f.action === "accepted");
         const rejected = feedback.filter((f) => f.action === "rejected");
@@ -687,10 +705,11 @@ export async function generateMultiStepPlan({ workspaceId, strategyType, alertId
     // Build context
     const context = await buildContext({ alertId, clusterId, workspaceId });
     const feedbackContext = await buildFeedbackContext(workspaceId, strategyType);
-    const workspaceSettings = await prisma.workspaceSettings.findUnique({
-        where: { workspaceId },
-        select: { industry: true },
-    });
+    const { data: workspaceSettings } = await supabase
+        .from("workspace_settings")
+        .select("industry")
+        .eq("workspace_id", workspaceId)
+        .maybeSingle();
     const templateContext = buildTemplateContext(workspaceSettings?.industry, strategyType);
 
     const contextParts = [context];
@@ -753,17 +772,21 @@ Return ONLY a raw JSON object with these fields:
     };
 
     // Save to database
-    const actionPlan = await prisma.actionPlan.create({
-        data: {
-            workspaceId,
-            alertId: alertId || null,
-            clusterId: clusterId || null,
+    const { data: actionPlan, error } = await supabase
+        .from("action_plans")
+        .insert({
+            workspace_id: workspaceId,
+            alert_id: alertId || null,
+            cluster_id: clusterId || null,
             title: plan.title,
             option1: JSON.stringify(plan),
             option2: null,
             option3: null,
-        },
-    });
+        })
+        .select()
+        .single();
+
+    if (error) throw error;
 
     logStructured("info", "multi_step_plan_saved", { actionPlanId: actionPlan.id, stepsCount: steps.length });
 

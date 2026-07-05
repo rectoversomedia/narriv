@@ -1,4 +1,4 @@
-import prisma from "../../prisma.js";
+import supabase from "../../lib/supabase.js";
 import { getUserWorkspaceIds } from "../../lib/workspace-access.js";
 import { cachedQuery, CACHE_KEYS, CACHE_TTL } from "../../lib/cache.js";
 import redis from "../../lib/redis.js";
@@ -27,7 +27,7 @@ function normalizeLocationText(value) {
     return String(value || "")
         .toLowerCase()
         .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[̀-ͯ]/g, "")
         .replace(/[^a-z0-9\s,.-]/g, " ")
         .replace(/\s+/g, " ")
         .trim();
@@ -63,8 +63,8 @@ function buildGlobalActivity(signals) {
             latest_at: null,
         };
         country.signals += 1;
-        if (!country.latest_at || new Date(signal.capturedAt) > new Date(country.latest_at)) {
-            country.latest_at = signal.capturedAt;
+        if (!country.latest_at || new Date(signal.captured_at) > new Date(country.latest_at)) {
+            country.latest_at = signal.captured_at;
         }
         countryMap.set(location.countryId, country);
 
@@ -77,8 +77,8 @@ function buildGlobalActivity(signals) {
             latest_at: null,
         };
         marker.signals += 1;
-        if (!marker.latest_at || new Date(signal.capturedAt) > new Date(marker.latest_at)) {
-            marker.latest_at = signal.capturedAt;
+        if (!marker.latest_at || new Date(signal.captured_at) > new Date(marker.latest_at)) {
+            marker.latest_at = signal.captured_at;
         }
         markerMap.set(markerKey, marker);
     });
@@ -105,42 +105,61 @@ export const getSummary = async (req, res) => {
         const cacheKey = CACHE_KEYS.dashboard(workspaceId, rangeKey);
 
         const response = await cachedQuery(cacheKey, CACHE_TTL.dashboard, async () => {
-            const where = { workspaceId: { in: workspaceIds } };
-
+            // Build date filters
+            let dateFilter = {};
             if (startDate || endDate) {
-                where.capturedAt = {};
                 if (startDate) {
                     const dateStart = new Date(startDate);
                     if (!isNaN(dateStart.getTime())) {
-                        where.capturedAt.gte = dateStart;
+                        dateFilter.gte = dateStart;
                     }
                 }
                 if (endDate) {
                     const dateEnd = new Date(endDate);
                     if (!isNaN(dateEnd.getTime())) {
-                        where.capturedAt.lte = dateEnd;
+                        dateFilter.lte = dateEnd;
                     }
                 }
             }
 
-            const signals = await prisma.signal.findMany({
-                where,
-                include: {
-                    analyses: {
-                        orderBy: { createdAt: 'desc' },
-                        take: 1
-                    }
-                },
-                orderBy: { capturedAt: 'desc' }
-            });
+            // Fetch signals with analyses
+            let signalsQuery = supabase
+                .from("signals")
+                .select(`
+                    id,
+                    title,
+                    content,
+                    platform,
+                    sentiment,
+                    region,
+                    captured_at,
+                    published_at,
+                    analyses (sentiment)
+                `)
+                .in("workspace_id", workspaceIds)
+                .order("captured_at", { ascending: false });
 
-            const totalSignals = signals.length;
+            if (Object.keys(dateFilter).length > 0) {
+                signalsQuery = signalsQuery.filter("captured_at", Object.keys(dateFilter)[0], dateFilter[Object.keys(dateFilter)[0]]);
+                if (dateFilter.gte && dateFilter.lte) {
+                    signalsQuery = signalsQuery.gte("captured_at", dateFilter.gte).lte("captured_at", dateFilter.lte);
+                } else if (dateFilter.gte) {
+                    signalsQuery = signalsQuery.gte("captured_at", dateFilter.gte);
+                } else if (dateFilter.lte) {
+                    signalsQuery = signalsQuery.lte("captured_at", dateFilter.lte);
+                }
+            }
+
+            const { data: signals, error: signalsError } = await signalsQuery;
+            if (signalsError) throw signalsError;
+
+            const totalSignals = signals?.length || 0;
 
             let positive = 0, negative = 0, neutral = 0, mixed = 0, analyzedCount = 0;
             const platformsMap = {};
 
-            signals.forEach(signal => {
-                const sentiment = signal.analyses[0]?.sentiment || signal.sentiment;
+            signals?.forEach(signal => {
+                const sentiment = signal.analyses?.[0]?.sentiment || signal.sentiment;
                 if (sentiment) {
                     analyzedCount++;
                     const s = sentiment.toLowerCase();
@@ -158,20 +177,20 @@ export const getSummary = async (req, res) => {
                 .map(platform => ({ platform, count: platformsMap[platform] }))
                 .sort((a, b) => b.count - a.count);
 
-            const global_activity = buildGlobalActivity(signals.filter((signal) => signal.region));
+            const global_activity = buildGlobalActivity((signals || []).filter((signal) => signal.region));
 
-            const latest_signals = signals.slice(0, 10).map(signal => ({
+            const latest_signals = (signals || []).slice(0, 10).map(signal => ({
                 id: signal.id,
                 title: signal.title || "Untitled Signal",
                 platform: signal.platform || "unknown",
-                sentiment: signal.analyses[0]?.sentiment || signal.sentiment || "unanalyzed",
-                published_at: signal.publishedAt || signal.capturedAt
+                sentiment: signal.analyses?.[0]?.sentiment || signal.sentiment || "unanalyzed",
+                published_at: signal.published_at || signal.captured_at
             }));
 
             const trendMap = {};
-            signals.forEach((signal) => {
-                if (!signal.capturedAt) return;
-                const date = new Date(signal.capturedAt).toISOString().split("T")[0];
+            signals?.forEach((signal) => {
+                if (!signal.captured_at) return;
+                const date = new Date(signal.captured_at).toISOString().split("T")[0];
                 trendMap[date] = (trendMap[date] || 0) + 1;
             });
             const trends = Object.entries(trendMap)
@@ -179,56 +198,65 @@ export const getSummary = async (req, res) => {
                 .sort((a, b) => a.date.localeCompare(b.date));
 
             // Fetch narrative clusters for topics
-            const clusters = await prisma.narrativeCluster.findMany({
-                where: { workspaceId: { in: workspaceIds } },
-                orderBy: { signalCount: 'desc' },
-                take: 10
-            });
+            const { data: clusters, error: clustersError } = await supabase
+                .from("narrative_clusters")
+                .select("title, signal_count, sentiment")
+                .in("workspace_id", workspaceIds)
+                .order("signal_count", { ascending: false })
+                .limit(10);
 
-            const top_topics = clusters.slice(0, 5).map(c => ({
+            if (clustersError) throw clustersError;
+
+            const top_topics = (clusters || []).slice(0, 5).map(c => ({
                 name: { en: c.title, id: c.title },
-                mentions: String(c.signalCount),
+                mentions: String(c.signal_count),
                 delta: c.sentiment?.toLowerCase() === 'negative' ? "+12%" : "+5%", // Mock delta
                 tone: c.sentiment?.toLowerCase() === 'negative' ? "red" : "green"
             }));
 
-            const mini_topics = clusters.slice(0, 6).map((c, index) => {
+            const mini_topics = (clusters || []).slice(0, 6).map((c, index) => {
                 const tones = ["purple", "blue", "green", "amber", "red", "slate"];
                 return {
                     label: c.title,
-                    value: String(c.signalCount),
+                    value: String(c.signal_count),
                     tone: tones[index % tones.length]
                 };
             });
 
             // Fetch sources for health
-            const sourceList = await prisma.source.findMany({
-                where: { workspaceId: { in: workspaceIds } },
-                take: 5
-            });
+            const { data: sourceList, error: sourcesError } = await supabase
+                .from("sources")
+                .select("id, name, is_active, health_status")
+                .in("workspace_id", workspaceIds)
+                .limit(5);
 
-            const sources_health = await Promise.all(sourceList.map(async (src) => {
-                const signalCount = await prisma.rawDocument.count({ where: { sourceId: src.id } });
+            if (sourcesError) throw sourcesError;
+
+            const sources_health = await Promise.all((sourceList || []).map(async (src) => {
+                const { count: signalCount } = await supabase
+                    .from("raw_documents")
+                    .select("id", { count: "exact", head: true })
+                    .eq("source_id", src.id);
                 return {
                     name: src.name,
-                    status: src.isActive ? { en: "Active", id: "Aktif" } : { en: "Inactive", id: "Tidak Aktif" },
-                    health: src.healthStatus === "unhealthy" ? { en: "Issue", id: "Bermasalah" } : { en: "Good", id: "Baik" },
-                    signals: String(signalCount),
-                    tone: src.isActive ? "green" : "slate"
+                    status: src.is_active ? { en: "Active", id: "Aktif" } : { en: "Inactive", id: "Tidak Aktif" },
+                    health: src.health_status === "unhealthy" ? { en: "Issue", id: "Bermasalah" } : { en: "Good", id: "Baik" },
+                    signals: String(signalCount || 0),
+                    tone: src.is_active ? "green" : "slate"
                 };
             }));
 
             // Check system status
             const system_status = ["API Server"];
             try {
-                await prisma.$queryRaw`SELECT 1`;
-                system_status.push("Database");
+                const { error: dbError } = await supabase.from("users").select("id").limit(1);
+                if (!dbError) system_status.push("Database");
             } catch (e) {}
 
             try {
                 if (redis.status === "ready") system_status.push("Redis Queue");
             } catch (e) {}
-            
+
             system_status.push("OpenAI Integration");
 
             return {

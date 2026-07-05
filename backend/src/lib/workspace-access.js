@@ -1,45 +1,82 @@
-import prisma from "../prisma.js";
+import supabase from "./supabase.js";
 
 export const getUserWorkspaceIds = async (userId) => {
-  const memberships = await prisma.workspaceMember.findMany({
-    where: { userId },
-    select: { workspaceId: true },
-  });
+  const { data: memberships, error } = await supabase
+    .from("workspace_members")
+    .select("workspace_id")
+    .eq("user_id", userId);
 
-  return memberships.map((membership) => membership.workspaceId);
+  if (error) {
+    console.error("Error fetching workspace memberships:", error);
+    return [];
+  }
+
+  return memberships.map((membership) => membership.workspace_id);
 };
 
 export const resolveWorkspaceIdForUser = async (userId, requestedWorkspaceId) => {
   if (requestedWorkspaceId) {
-    const membership = await prisma.workspaceMember.findFirst({
-      where: { userId, workspaceId: requestedWorkspaceId },
-      select: { workspaceId: true },
-    });
+    const { data: membership, error } = await supabase
+      .from("workspace_members")
+      .select("workspace_id")
+      .eq("user_id", userId)
+      .eq("workspace_id", requestedWorkspaceId)
+      .limit(1)
+      .single();
 
-    return membership?.workspaceId || null;
+    if (error && error.code !== 'PGRST116') {
+      console.error("Error checking workspace membership:", error);
+    }
+
+    return membership?.workspace_id || null;
   }
 
-  const membership = await prisma.workspaceMember.findFirst({
-    where: { userId },
-    select: { workspaceId: true },
-  });
+  // Get the first workspace the user is a member of
+  const { data: membership, error } = await supabase
+    .from("workspace_members")
+    .select("workspace_id")
+    .eq("user_id", userId)
+    .limit(1)
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    console.error("Error fetching user workspace:", error);
+  }
 
   if (membership) {
-    return membership.workspaceId;
+    return membership.workspace_id;
   }
 
-  const workspace = await prisma.workspace.create({
-    data: {
-      name: "My Workspace",
-      slug: `workspace-${userId}-${Date.now()}`,
-      members: {
-        create: {
-          userId,
-          role: "admin",
-        },
-      },
-    },
-  });
+  // Create a new workspace for the user
+  const workspaceName = "My Workspace";
+  const workspaceSlug = `workspace-${userId}-${Date.now()}`;
+
+  const { data: workspace, error: workspaceError } = await supabase
+    .from("workspaces")
+    .insert({
+      name: workspaceName,
+      slug: workspaceSlug,
+    })
+    .select()
+    .single();
+
+  if (workspaceError) {
+    console.error("Error creating workspace:", workspaceError);
+    return null;
+  }
+
+  // Create the workspace membership for the user
+  const { error: memberError } = await supabase
+    .from("workspace_members")
+    .insert({
+      user_id: userId,
+      workspace_id: workspace.id,
+      role: "admin",
+    });
+
+  if (memberError) {
+    console.error("Error creating workspace membership:", memberError);
+  }
 
   return workspace.id;
 };

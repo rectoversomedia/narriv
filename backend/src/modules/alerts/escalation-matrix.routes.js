@@ -1,5 +1,5 @@
 import express from "express";
-import prisma from "../../prisma.js";
+import supabase from "../../lib/supabase.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
@@ -33,10 +33,16 @@ router.get("/escalation-matrix", async (req, res) => {
             return res.status(403).json({ error: "Workspace access denied" });
         }
 
-        const levels = await prisma.escalationMatrix.findMany({
-            where: { workspaceId: scopedWorkspaceId },
-            orderBy: { order: "asc" }
-        });
+        const { data: levels, error } = await supabase
+            .from('escalation_matrices')
+            .select('*')
+            .eq('workspace_id', scopedWorkspaceId)
+            .order('order', { ascending: true });
+
+        if (error) {
+            logStructured("error", "Error fetching escalation matrix:", { error: error?.message || error, stack: error?.stack });
+            return res.status(500).json({ error: "Internal server error" });
+        }
 
         return res.json({ data: levels });
     } catch (error) {
@@ -57,40 +63,66 @@ router.post("/escalation-matrix", validateRequest({ body: z.object({ levels: z.a
 
         // Delete levels that are no longer in the payload
         const incomingLevels = levels.map((l) => l.level);
-        await prisma.escalationMatrix.deleteMany({
-            where: {
-                workspaceId: scopedWorkspaceId,
-                level: { notIn: incomingLevels }
-            }
-        });
+
+        const { error: deleteError } = await supabase
+            .from('escalation_matrices')
+            .delete()
+            .eq('workspace_id', scopedWorkspaceId)
+            .not('level', 'in', `(${incomingLevels.map(l => `'${l}'`).join(',')})`);
+
+        if (deleteError) {
+            logStructured("error", "Error deleting old escalation levels:", { error: deleteError?.message || deleteError });
+        }
 
         // Upsert each level
-        const results = await Promise.all(
-            levels.map((level) =>
-                prisma.escalationMatrix.upsert({
-                    where: {
-                        workspaceId_level: {
-                            workspaceId: scopedWorkspaceId,
-                            level: level.level,
-                        }
-                    },
-                    update: {
-                        roleName: level.roleName,
-                        slaMinutes: level.slaMinutes,
-                        isActive: level.isActive,
+        const results = [];
+        for (const level of levels) {
+            // First try to update existing
+            const { data: existing } = await supabase
+                .from('escalation_matrices')
+                .select('id')
+                .eq('workspace_id', scopedWorkspaceId)
+                .eq('level', level.level)
+                .single();
+
+            if (existing) {
+                // Update existing
+                const { data: updated, error: updateError } = await supabase
+                    .from('escalation_matrices')
+                    .update({
+                        role_name: level.roleName,
+                        sla_minutes: level.slaMinutes,
+                        is_active: level.isActive,
                         order: level.order,
-                    },
-                    create: {
-                        workspaceId: scopedWorkspaceId,
+                    })
+                    .eq('workspace_id', scopedWorkspaceId)
+                    .eq('level', level.level)
+                    .select()
+                    .single();
+
+                if (!updateError && updated) {
+                    results.push(updated);
+                }
+            } else {
+                // Insert new
+                const { data: created, error: insertError } = await supabase
+                    .from('escalation_matrices')
+                    .insert({
+                        workspace_id: scopedWorkspaceId,
                         level: level.level,
-                        roleName: level.roleName,
-                        slaMinutes: level.slaMinutes,
-                        isActive: level.isActive,
+                        role_name: level.roleName,
+                        sla_minutes: level.slaMinutes,
+                        is_active: level.isActive,
                         order: level.order,
-                    }
-                })
-            )
-        );
+                    })
+                    .select()
+                    .single();
+
+                if (!insertError && created) {
+                    results.push(created);
+                }
+            }
+        }
 
         return res.json({ data: results });
     } catch (error) {
@@ -100,9 +132,9 @@ router.post("/escalation-matrix", validateRequest({ body: z.object({ levels: z.a
 });
 
 // PATCH /api/alerts/escalation-matrix/:level - Update single level
-router.patch("/escalation-matrix/:level", validateRequest({ 
+router.patch("/escalation-matrix/:level", validateRequest({
     params: z.object({ level: z.string() }),
-    body: updateEscalationLevelSchema 
+    body: updateEscalationLevelSchema
 }), async (req, res) => {
     try {
         const { level } = req.params;
@@ -113,22 +145,35 @@ router.patch("/escalation-matrix/:level", validateRequest({
             return res.status(403).json({ error: "Workspace access denied" });
         }
 
-        const existing = await prisma.escalationMatrix.findUnique({
-            where: { workspaceId_level: { workspaceId: scopedWorkspaceId, level } }
-        });
-        if (!existing) {
+        const { data: existing, error: existingError } = await supabase
+            .from('escalation_matrices')
+            .select('id')
+            .eq('workspace_id', scopedWorkspaceId)
+            .eq('level', level)
+            .single();
+
+        if (existingError || !existing) {
             return res.status(404).json({ error: "Level not found" });
         }
 
-        const updated = await prisma.escalationMatrix.update({
-            where: { workspaceId_level: { workspaceId: scopedWorkspaceId, level } },
-            data: {
-                ...(roleName !== undefined && { roleName }),
-                ...(slaMinutes !== undefined && { slaMinutes }),
-                ...(isActive !== undefined && { isActive }),
-                ...(order !== undefined && { order }),
-            }
-        });
+        const updateData = {};
+        if (roleName !== undefined) updateData.role_name = roleName;
+        if (slaMinutes !== undefined) updateData.sla_minutes = slaMinutes;
+        if (isActive !== undefined) updateData.is_active = isActive;
+        if (order !== undefined) updateData.order = order;
+
+        const { data: updated, error: updateError } = await supabase
+            .from('escalation_matrices')
+            .update(updateData)
+            .eq('workspace_id', scopedWorkspaceId)
+            .eq('level', level)
+            .select()
+            .single();
+
+        if (updateError) {
+            logStructured("error", "Error updating escalation level:", { error: updateError?.message || updateError, stack: updateError?.stack });
+            return res.status(500).json({ error: "Internal server error" });
+        }
 
         return res.json(updated);
     } catch (error) {
@@ -147,9 +192,16 @@ router.delete("/escalation-matrix/:level", async (req, res) => {
             return res.status(403).json({ error: "Workspace access denied" });
         }
 
-        await prisma.escalationMatrix.delete({
-            where: { workspaceId_level: { workspaceId: scopedWorkspaceId, level } }
-        });
+        const { error: deleteError } = await supabase
+            .from('escalation_matrices')
+            .delete()
+            .eq('workspace_id', scopedWorkspaceId)
+            .eq('level', level);
+
+        if (deleteError) {
+            logStructured("error", "Error deleting escalation level:", { error: deleteError?.message || deleteError, stack: deleteError?.stack });
+            return res.status(500).json({ error: "Internal server error" });
+        }
 
         return res.json({ success: true });
     } catch (error) {

@@ -1,4 +1,4 @@
-import prisma from "../prisma.js";
+import supabase from "./supabase.js";
 import { logStructured } from "../lib/logger.js";
 
 /**
@@ -10,14 +10,18 @@ import { logStructured } from "../lib/logger.js";
  */
 export async function getSourceHealth(sourceId) {
     try {
-        const recentJobs = await prisma.ingestionJob.findMany({
-            where: { sourceId },
-            orderBy: { createdAt: "desc" },
-            take: 20,
-            select: { status: true, createdAt: true },
-        });
+        const { data: recentJobs, error } = await supabase
+            .from('ingestion_jobs')
+            .select('status, created_at')
+            .eq('source_id', sourceId)
+            .order('created_at', { ascending: false })
+            .limit(20);
 
-        if (recentJobs.length === 0) {
+        if (error) {
+            throw error;
+        }
+
+        if (!recentJobs || recentJobs.length === 0) {
             return {
                 health: "unknown",
                 score: 0,
@@ -29,7 +33,7 @@ export async function getSourceHealth(sourceId) {
 
         const successful = recentJobs.filter((j) => j.status === "completed").length;
         const successRate = Math.round((successful / recentJobs.length) * 100);
-        const lastSyncAt = recentJobs[0]?.createdAt?.toISOString() || null;
+        const lastSyncAt = recentJobs[0]?.created_at || null;
 
         let health;
         if (successRate >= 90) health = "healthy";
@@ -54,21 +58,28 @@ export async function getSourceHealth(sourceId) {
  */
 export async function getWorkspaceSourceHealth(workspaceId) {
     try {
-        const sources = await prisma.source.findMany({
-            where: { workspaceId, type: { not: "deleted" } },
-            select: { id: true, name: true, isActive: true },
-        });
+        const { data: sources, error } = await supabase
+            .from('sources')
+            .select('id, name, is_active')
+            .eq('workspace_id', workspaceId)
+            .neq('type', 'deleted');
+
+        if (error || !sources) {
+            throw error || new Error('No sources found');
+        }
 
         const healthResults = await Promise.all(
             sources.map(async (source) => ({
-                ...source,
+                id: source.id,
+                name: source.name,
+                is_active: source.is_active,
                 health: await getSourceHealth(source.id),
             }))
         );
 
         const summary = {
             total: sources.length,
-            active: sources.filter((s) => s.isActive).length,
+            active: sources.filter((s) => s.is_active).length,
             healthy: healthResults.filter((s) => s.health.health === "healthy").length,
             warning: healthResults.filter((s) => s.health.health === "warning").length,
             critical: healthResults.filter((s) => s.health.health === "critical").length,
@@ -88,29 +99,53 @@ export async function getWorkspaceSourceHealth(workspaceId) {
  */
 export async function getSourceCoverage(workspaceId) {
     try {
-        const sources = await prisma.source.findMany({
-            where: { workspaceId, type: { not: "deleted" } },
-            include: {
-                rawDocuments: {
-                    select: { id: true },
-                },
-            },
+        // Fetch sources with their document counts
+        const { data: sources, error } = await supabase
+            .from('sources')
+            .select('id, name, type, is_active')
+            .eq('workspace_id', workspaceId)
+            .neq('type', 'deleted');
+
+        if (error || !sources) {
+            throw error || new Error('No sources found');
+        }
+
+        // Get document counts per source
+        const { data: docCounts, error: countError } = await supabase
+            .from('raw_documents')
+            .select('source_id')
+            .in('source_id', sources.map(s => s.id));
+
+        if (countError) {
+            throw countError;
+        }
+
+        // Group counts by source_id
+        const countsBySource = {};
+        docCounts.forEach(doc => {
+            countsBySource[doc.source_id] = (countsBySource[doc.source_id] || 0) + 1;
         });
 
-        const totalSources = sources.length;
-        const activeSources = sources.filter((s) => s.isActive).length;
-        const totalDocuments = sources.reduce((sum, s) => sum + s.rawDocuments.length, 0);
+        // Merge sources with their counts
+        const sourcesWithCounts = sources.map(s => ({
+            ...s,
+            documentCount: countsBySource[s.id] || 0,
+        }));
+
+        const totalSources = sourcesWithCounts.length;
+        const activeSources = sourcesWithCounts.filter((s) => s.is_active).length;
+        const totalDocuments = sourcesWithCounts.reduce((sum, s) => sum + s.documentCount, 0);
 
         // Calculate coverage per source type
         const typeCoverage = {};
-        sources.forEach((source) => {
+        sourcesWithCounts.forEach((source) => {
             const type = source.type || "unknown";
             if (!typeCoverage[type]) {
                 typeCoverage[type] = { sources: 0, active: 0, documents: 0 };
             }
             typeCoverage[type].sources++;
-            if (source.isActive) typeCoverage[type].active++;
-            typeCoverage[type].documents += source.rawDocuments.length;
+            if (source.is_active) typeCoverage[type].active++;
+            typeCoverage[type].documents += source.documentCount;
         });
 
         return {

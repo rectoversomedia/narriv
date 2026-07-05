@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import prisma from "../prisma.js";
+import supabase from "./supabase.js";
 import { logStructured } from "../lib/logger.js";
 
 /**
@@ -17,18 +17,21 @@ export function generateDedupeHash(title, content, sourceId) {
  */
 export async function checkForDuplicate(workspaceId, sourceId, dedupeHash) {
     try {
-        const existing = await prisma.rawDocument.findFirst({
-            where: {
-                workspaceId,
-                sourceId,
-                dedupeHash,
-            },
-            select: { id: true },
-        });
+        const { data, error } = await supabase
+            .from('raw_documents')
+            .select('id')
+            .eq('workspace_id', workspaceId)
+            .eq('source_id', sourceId)
+            .eq('dedupe_hash', dedupeHash)
+            .limit(1);
+
+        if (error) {
+            throw error;
+        }
 
         return {
-            isDuplicate: !!existing,
-            existingDocumentId: existing?.id || null,
+            isDuplicate: data && data.length > 0,
+            existingDocumentId: data && data.length > 0 ? data[0].id : null,
         };
     } catch (error) {
         // If check fails, allow the insert (best-effort dedup)
@@ -41,23 +44,43 @@ export async function checkForDuplicate(workspaceId, sourceId, dedupeHash) {
  */
 export async function getDeduplicationStats(workspaceId) {
     try {
-        const totalDocs = await prisma.rawDocument.count({
-            where: { workspaceId },
+        // Get total document count
+        const { count: totalDocs, error: countError } = await supabase
+            .from('raw_documents')
+            .select('id', { count: 'exact', head: true })
+            .eq('workspace_id', workspaceId);
+
+        if (countError || totalDocs === null) {
+            throw countError || new Error('Failed to count documents');
+        }
+
+        // Fetch all dedupe hashes for this workspace (Supabase doesn't have groupBy in client)
+        const { data: documents, error: docsError } = await supabase
+            .from('raw_documents')
+            .select('dedupe_hash')
+            .eq('workspace_id', workspaceId)
+            .not('dedupe_hash', 'is', null);
+
+        if (docsError) {
+            throw docsError;
+        }
+
+        // Group by dedupe_hash in JavaScript
+        const hashCounts = {};
+        documents.forEach(doc => {
+            if (doc.dedupe_hash) {
+                hashCounts[doc.dedupe_hash] = (hashCounts[doc.dedupe_hash] || 0) + 1;
+            }
         });
 
-        // Count unique hashes
-        const uniqueHashes = await prisma.rawDocument.groupBy({
-            by: ["dedupeHash"],
-            where: { workspaceId, dedupeHash: { not: null } },
-            _count: { dedupeHash: true },
-        });
-
-        const duplicateGroups = uniqueHashes.filter((g) => g._count.dedupeHash > 1);
-        const duplicateCount = duplicateGroups.reduce((sum, g) => sum + g._count.dedupeHash - 1, 0);
+        // Count duplicates
+        const duplicateGroups = Object.values(hashCounts).filter(count => count > 1);
+        const duplicateCount = duplicateGroups.reduce((sum, count) => sum + count - 1, 0);
+        const uniqueDocuments = totalDocs - duplicateCount;
 
         return {
             totalDocuments: totalDocs,
-            uniqueDocuments: totalDocs - duplicateCount,
+            uniqueDocuments,
             duplicateDocuments: duplicateCount,
             deduplicationRate: totalDocs > 0 ? Math.round((duplicateCount / totalDocs) * 100) : 0,
             duplicateGroups: duplicateGroups.length,

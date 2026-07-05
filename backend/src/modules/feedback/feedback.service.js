@@ -1,4 +1,4 @@
-import prisma from "../../prisma.js";
+import supabase from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -37,35 +37,45 @@ export async function submitFeedback({ workspaceId, targetType, targetId, action
     // If editing a signal analysis, also update the analysis record in-place
     if (targetType === "signal_analysis" && action === "edited" && editedOutput) {
         try {
-            await prisma.signalAnalysis.update({
-                where: { id: targetId },
-                data: {
-                    sentiment: editedOutput.sentiment || undefined,
-                    narrativeType: editedOutput.narrative_type || undefined,
-                    stakeholder: editedOutput.stakeholder || undefined,
-                    impact: editedOutput.impact || undefined,
-                    summary: editedOutput.summary || undefined,
-                    recommendedAction: editedOutput.recommended_action || undefined
-                }
-            });
+            const { error } = await supabase
+                .from("signal_analyses")
+                .update({
+                    sentiment: editedOutput.sentiment || null,
+                    narrative_type: editedOutput.narrative_type || null,
+                    stakeholder: editedOutput.stakeholder || null,
+                    impact: editedOutput.impact || null,
+                    summary: editedOutput.summary || null,
+                    recommended_action: editedOutput.recommended_action || null,
+                })
+                .eq("id", targetId);
+
+            if (error) {
+                throw error;
+            }
             logStructured("info", "feedback_signal_analysis_updated", { targetId });
         } catch (err) {
-            logStructured("warn", `[FEEDBACK] Could not update SignalAnalysis ${targetId}:`, { details: err.message?.message || err.message });
+            logStructured("warn", `[FEEDBACK] Could not update SignalAnalysis ${targetId}:`, { details: err.message || err });
         }
     }
 
-    const feedback = await prisma.aIFeedback.create({
-        data: {
-            workspaceId,
-            targetType,
-            targetId,
-            action,
-            originalOutput: originalOutput || undefined,
-            editedOutput: editedOutput || undefined,
-            reason: reason || undefined,
-            userId: userId || undefined
-        }
-    });
+    const { data: feedback, error } = await supabase
+        .from("ai_feedback")
+        .insert({
+            workspace_id: workspaceId,
+            target_type: targetType,
+            target_id: targetId,
+            action: action,
+            original_output: originalOutput || null,
+            edited_output: editedOutput || null,
+            reason: reason || null,
+            user_id: userId || null,
+        })
+        .select()
+        .single();
+
+    if (error) {
+        throw error;
+    }
 
     logStructured("info", "feedback_recorded", { action, targetType, targetId });
     return feedback;
@@ -79,11 +89,17 @@ export async function submitFeedback({ workspaceId, targetType, targetId, action
  * @returns {Promise<object>}
  */
 export async function getActionPlanPromptScoring(workspaceId) {
-    const rows = await prisma.aIFeedback.findMany({
-        where: { workspaceId, targetType: "action_plan" },
-        orderBy: { createdAt: "desc" },
-        take: 200,
-    });
+    const { data: rows, error } = await supabase
+        .from("ai_feedback")
+        .select("*")
+        .eq("workspace_id", workspaceId)
+        .eq("target_type", "action_plan")
+        .order("created_at", { ascending: false })
+        .limit(200);
+
+    if (error) {
+        throw error;
+    }
 
     const total = rows.length;
     if (total === 0) {
@@ -140,10 +156,15 @@ export async function getActionPlanPromptScoring(workspaceId) {
  */
 export async function getAccuracyMetrics(workspaceId) {
     const workspaceIds = Array.isArray(workspaceId) ? workspaceId : [workspaceId];
-    const allFeedback = await prisma.aIFeedback.findMany({
-        where: { workspaceId: { in: workspaceIds } },
-        orderBy: { createdAt: "desc" }
-    });
+    const { data: allFeedback, error } = await supabase
+        .from("ai_feedback")
+        .select("*")
+        .in("workspace_id", workspaceIds)
+        .order("created_at", { ascending: false });
+
+    if (error) {
+        throw error;
+    }
 
     const total = allFeedback.length;
     if (total === 0) {
@@ -169,7 +190,7 @@ export async function getAccuracyMetrics(workspaceId) {
     const byType = {};
     const validTypes = ["signal_analysis", "alert", "action_plan", "cluster"];
     validTypes.forEach(type => {
-        const typeFeedback = allFeedback.filter(f => f.targetType === type);
+        const typeFeedback = allFeedback.filter(f => f.target_type === type);
         const typeTotal = typeFeedback.length;
         if (typeTotal > 0) {
             const typeAccepted = typeFeedback.filter(f => f.action === "accepted").length;
@@ -191,7 +212,7 @@ export async function getAccuracyMetrics(workspaceId) {
         const weekStart = new Date(Date.now() - (i + 1) * 7 * 24 * 60 * 60 * 1000);
         const weekEnd = new Date(Date.now() - i * 7 * 24 * 60 * 60 * 1000);
         const weekFeedback = allFeedback.filter(f => {
-            const d = new Date(f.createdAt);
+            const d = new Date(f.created_at);
             return d >= weekStart && d < weekEnd;
         });
         const wTotal = weekFeedback.length;
@@ -224,24 +245,27 @@ export async function getAccuracyMetrics(workspaceId) {
  * @returns {Promise<Array>}
  */
 export async function getRejectionInsights(workspaceId) {
-    const rejections = await prisma.aIFeedback.findMany({
-        where: {
-            workspaceId,
-            action: "rejected",
-            reason: { not: null }
-        },
-        orderBy: { createdAt: "desc" },
-        take: 50
-    });
+    const { data: rejections, error } = await supabase
+        .from("ai_feedback")
+        .select("*")
+        .eq("workspace_id", workspaceId)
+        .eq("action", "rejected")
+        .not("reason", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+    if (error) {
+        throw error;
+    }
 
     // Group by targetType
     const grouped = {};
     rejections.forEach(r => {
-        if (!grouped[r.targetType]) grouped[r.targetType] = [];
-        grouped[r.targetType].push({
-            targetId: r.targetId,
+        if (!grouped[r.target_type]) grouped[r.target_type] = [];
+        grouped[r.target_type].push({
+            target_id: r.target_id,
             reason: r.reason,
-            createdAt: r.createdAt
+            created_at: r.created_at
         });
     });
 

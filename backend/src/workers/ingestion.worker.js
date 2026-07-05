@@ -1,7 +1,7 @@
 import { Worker } from "bullmq";
 import crypto from "crypto";
 import connection from "../lib/redis.js";
-import prisma from "../prisma.js";
+import supabase from "../lib/supabase.js";
 import { runActorAndFetchDataset } from "../modules/apify/apify.service.js";
 import { APIFY_ACTOR_PRESETS } from "../modules/ingestion/actor-presets.js";
 import { buildDeterministicDocHash, normalizeDatasetItem, parseDateOrNull } from "../modules/ingestion/apify-normalizer.js";
@@ -17,12 +17,18 @@ class IngestionCancelledError extends Error {
 }
 
 async function assertNotCancelled(ingestionJobId) {
-    const row = await prisma.ingestionJob.findUnique({
-        where: { id: ingestionJobId },
-        select: { status: true, errorMessage: true }
-    });
+    const { data: row, error } = await supabase
+        .from("ingestion_jobs")
+        .select("status, error_message")
+        .eq("id", ingestionJobId)
+        .maybeSingle();
+
+    if (error) {
+        throw new Error(`Failed to check ingestion job status: ${error.message}`);
+    }
+
     if (row?.status === "cancelled") {
-        throw new IngestionCancelledError(row.errorMessage || "Cancelled by user");
+        throw new IngestionCancelledError(row.error_message || "Cancelled by user");
     }
 }
 
@@ -70,14 +76,27 @@ const ingestionWorker = new Worker(
             }
             throw error;
         }
-        await prisma.ingestionJob.update({
-            where: { id: jobId },
-            data: { status: "running" },
-        });
 
-        const source = await prisma.source.findFirst({
-            where: { id: sourceId, isActive: true, type: { not: "deleted" } },
-        });
+        const { error: updateError } = await supabase
+            .from("ingestion_jobs")
+            .update({ status: "running" })
+            .eq("id", jobId);
+
+        if (updateError) {
+            throw new Error(`Failed to update ingestion job status: ${updateError.message}`);
+        }
+
+        const { data: source, error: sourceError } = await supabase
+            .from("sources")
+            .select("*")
+            .eq("id", sourceId)
+            .eq("is_active", true)
+            .neq("type", "deleted")
+            .maybeSingle();
+
+        if (sourceError) {
+            throw new Error(`Failed to fetch source: ${sourceError.message}`);
+        }
 
         if (!source) {
             throw new Error(`Source not found, inactive, or deleted: ${sourceId}`);
@@ -86,16 +105,17 @@ const ingestionWorker = new Worker(
         // Check for incremental ingestion — find last successful ingestion time
         let lastIngestionAt = null;
         try {
-            const lastJob = await prisma.ingestionJob.findFirst({
-                where: {
-                    sourceId,
-                    status: "completed",
-                    id: { not: jobId },
-                },
-                orderBy: { createdAt: "desc" },
-                select: { createdAt: true },
-            });
-            lastIngestionAt = lastJob?.createdAt || null;
+            const { data: lastJob } = await supabase
+                .from("ingestion_jobs")
+                .select("created_at")
+                .eq("source_id", sourceId)
+                .eq("status", "completed")
+                .neq("id", jobId)
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            lastIngestionAt = lastJob?.created_at ? new Date(lastJob.created_at) : null;
         } catch {
             // Ignore — full ingestion if we can't determine last run
         }
@@ -105,11 +125,11 @@ const ingestionWorker = new Worker(
             let actorConfigs = [];
 
             // Map Apify actors and specific configs based on source type chosen in frontend.
-            if (source.actorId) {
+            if (source.actor_id) {
                 // If a specific actorId was provided, use just that one
                 actorConfigs.push({
-                    actorTarget: source.actorId,
-                    apifyInput: { ...(source.inputConfig || {}) },
+                    actorTarget: source.actor_id,
+                    apifyInput: { ...(source.input_config || {}) },
                 });
             } else {
                 actorConfigs = defaultActorConfigsForSource(source);
@@ -183,7 +203,7 @@ const ingestionWorker = new Worker(
                 if (!content) continue;
 
                 const deterministicDocHash = buildDeterministicDocHash({
-                    workspaceId: source.workspaceId,
+                    workspaceId: source.workspace_id,
                     sourceId: source.id,
                     sourceType: source.type,
                     item,
@@ -192,29 +212,30 @@ const ingestionWorker = new Worker(
                     ? `ext_${String(item.id).trim()}`
                     : `hash_${deterministicDocHash}`;
 
-                const existingDoc = await prisma.rawDocument.findFirst({
-                    where: {
-                        workspaceId: source.workspaceId,
-                        sourceId: source.id,
-                        externalId: externalId,
-                    },
-                });
+                const { data: existingDoc } = await supabase
+                    .from("raw_documents")
+                    .select("id")
+                    .eq("workspace_id", source.workspace_id)
+                    .eq("source_id", source.id)
+                    .eq("external_id", externalId)
+                    .maybeSingle();
 
                 if (existingDoc) continue;
 
-                const createdDoc = await prisma.rawDocument.create({
-                    data: {
-                        workspaceId: source.workspaceId,
-                        sourceId: source.id,
-                        externalId: externalId,
+                const { data: createdDoc, error: docError } = await supabase
+                    .from("raw_documents")
+                    .insert({
+                        workspace_id: source.workspace_id,
+                        source_id: source.id,
+                        external_id: externalId,
                         title: item.title || null,
                         content: content,
                         url: item.url || null,
                         author: item.author || null,
-                        sourceName: source.name,
-                        sourceType: source.type,
+                        source_name: source.name,
+                        source_type: source.type,
                         platform: item.platform || source.type || null,
-                        publishedAt: parseDateOrNull(item.publishedDate),
+                        published_at: parseDateOrNull(item.publishedDate),
                         metadata: {
                             ...item,
                             actorMetadata: item.actorMetadata || null,
@@ -222,51 +243,84 @@ const ingestionWorker = new Worker(
                             locationHint: item.actorMetadata?.locationHint || null,
                             dedupeHash: deterministicDocHash,
                         },
-                    },
-                });
+                    })
+                    .select()
+                    .single();
+
+                if (docError) {
+                    logStructured("error", "raw_document_create_failed", {
+                        queueJobId: job.id,
+                        ingestionJobId: jobId,
+                        sourceId,
+                        externalId,
+                        error: docError.message,
+                    });
+                    continue;
+                }
 
                 const dedupeHash = crypto
                     .createHash("sha256")
-                    .update(`${source.workspaceId}:${source.id}:${externalId}`)
+                    .update(`${source.workspace_id}:${source.id}:${externalId}`)
                     .digest("hex");
 
-                const existingSignal = await prisma.signal.findFirst({
-                    where: {
-                        workspaceId: source.workspaceId,
-                        dedupeHash,
-                    },
-                    select: { id: true },
-                });
+                const { data: existingSignal } = await supabase
+                    .from("signals")
+                    .select("id")
+                    .eq("workspace_id", source.workspace_id)
+                    .eq("dedupe_hash", dedupeHash)
+                    .maybeSingle();
+
                 if (existingSignal) {
                     continue;
                 }
 
-                const createdSignal = await prisma.signal.create({
-                    data: {
-                        workspaceId: createdDoc.workspaceId,
-                        rawDocumentId: createdDoc.id,
+                const { data: createdSignal, error: signalError } = await supabase
+                    .from("signals")
+                    .insert({
+                        workspace_id: createdDoc.workspace_id,
+                        raw_document_id: createdDoc.id,
                         title: createdDoc.title,
                         content: createdDoc.content,
-                        sourceName: createdDoc.sourceName,
-                        sourceType: createdDoc.sourceType,
-                        platform: createdDoc.platform || createdDoc.sourceType || source.type || null,
+                        source_name: createdDoc.source_name,
+                        source_type: createdDoc.source_type,
+                        platform: createdDoc.platform || createdDoc.source_type || source.type || null,
                         url: createdDoc.url,
-                        publishedAt: createdDoc.publishedAt,
+                        published_at: createdDoc.published_at,
                         region: item.region || null,
                         language: item.language || null,
-                        dedupeHash: dedupeHash,
+                        dedupe_hash: dedupeHash,
                         sentiment: "neutral",
-                    },
-                });
+                    })
+                    .select()
+                    .single();
+
+                if (signalError) {
+                    logStructured("error", "signal_create_failed", {
+                        queueJobId: job.id,
+                        ingestionJobId: jobId,
+                        sourceId,
+                        externalId,
+                        error: signalError.message,
+                    });
+                    continue;
+                }
 
                 await addAnalysisJob(createdSignal.id);
                 processedCount++;
             }
 
-            await prisma.ingestionJob.update({
-                where: { id: jobId },
-                data: { status: "completed", errorMessage: null, finishedAt: new Date() },
-            });
+            const { error: completionError } = await supabase
+                .from("ingestion_jobs")
+                .update({ status: "completed", error_message: null, finished_at: new Date().toISOString() })
+                .eq("id", jobId);
+
+            if (completionError) {
+                logStructured("warn", "ingestion_completion_update_failed", {
+                    queueJobId: job.id,
+                    ingestionJobId: jobId,
+                    error: completionError.message,
+                });
+            }
 
             logStructured("info", "ingestion_job_completed", {
                 queueJobId: job.id,
@@ -302,19 +356,28 @@ const ingestionWorker = new Worker(
                 error: backgroundError.message || String(backgroundError),
             });
 
-            await prisma.ingestionJob.update({
-                where: { id: jobId },
-                data: willRetry
+            const { error: failureUpdateError } = await supabase
+                .from("ingestion_jobs")
+                .update(willRetry
                     ? {
                         status: "queued",
-                        errorMessage: backgroundError.message || "Ingestion retry scheduled",
+                        error_message: backgroundError.message || "Ingestion retry scheduled",
                     }
                     : {
                         status: "failed",
-                        errorMessage: backgroundError.message,
-                        finishedAt: new Date(),
-                    },
-            });
+                        error_message: backgroundError.message,
+                        finished_at: new Date().toISOString(),
+                    })
+                .eq("id", jobId);
+
+            if (failureUpdateError) {
+                logStructured("error", "ingestion_failure_update_failed", {
+                    queueJobId: job.id,
+                    ingestionJobId: jobId,
+                    error: failureUpdateError.message,
+                });
+            }
+
             throw backgroundError;
         }
     },
@@ -341,10 +404,12 @@ ingestionWorker.on("failed", async (job, err) => {
         const ingestionJobId = job?.data?.jobId;
         if (!ingestionJobId) return;
 
-        const existing = await prisma.ingestionJob.findUnique({
-            where: { id: ingestionJobId },
-            select: { status: true }
-        });
+        const { data: existing } = await supabase
+            .from("ingestion_jobs")
+            .select("status")
+            .eq("id", ingestionJobId)
+            .maybeSingle();
+
         if (!existing || existing.status === "cancelled" || existing.status === "completed") return;
 
         const normalizedReason = String(err?.message || "Ingestion failed");
@@ -352,14 +417,22 @@ ingestionWorker.on("failed", async (job, err) => {
             ? `Timed out: ${normalizedReason}`
             : normalizedReason;
 
-        await prisma.ingestionJob.update({
-            where: { id: ingestionJobId },
-            data: {
+        const { error: persistError } = await supabase
+            .from("ingestion_jobs")
+            .update({
                 status: "failed",
-                errorMessage: timeoutReason,
-                finishedAt: new Date(),
-            }
-        });
+                error_message: timeoutReason,
+                finished_at: new Date().toISOString(),
+            })
+            .eq("id", ingestionJobId);
+
+        if (persistError) {
+            logStructured("error", "ingestion_failure_persist_error", {
+                queueJobId: job?.id,
+                ingestionJobId: job?.data?.jobId,
+                error: persistError.message,
+            });
+        }
     } catch (persistError) {
         logStructured("error", "ingestion_failure_persist_error", {
             queueJobId: job?.id,

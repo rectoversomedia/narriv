@@ -1,4 +1,4 @@
-import prisma from "../../prisma.js";
+import supabase from "../../lib/supabase.js";
 import { getUserWorkspaceIds } from "../../lib/workspace-access.js";
 import { notificationEvents, globalEvents } from "./app-notifications.events.js";
 import { logStructured } from "../../lib/logger.js";
@@ -14,16 +14,27 @@ export const getNotifications = async (req, res) => {
         const limit = parseInt(req.query.limit, 10) || 20;
         const skip = (Math.max(1, page) - 1) * Math.max(1, limit);
 
-        const [data, total, unreadCount] = await Promise.all([
-            prisma.appNotification.findMany({
-                where: { workspaceId },
-                orderBy: { createdAt: "desc" },
-                skip,
-                take: limit,
-            }),
-            prisma.appNotification.count({ where: { workspaceId } }),
-            prisma.appNotification.count({ where: { workspaceId, isRead: false } })
+        const [dataResult, totalResult, unreadResult] = await Promise.all([
+            supabase
+                .from("app_notifications")
+                .select("*")
+                .eq("workspace_id", workspaceId)
+                .order("created_at", { ascending: false })
+                .range(skip, skip + limit - 1),
+            supabase
+                .from("app_notifications")
+                .select("id", { count: "exact", head: true })
+                .eq("workspace_id", workspaceId),
+            supabase
+                .from("app_notifications")
+                .select("id", { count: "exact", head: true })
+                .eq("workspace_id", workspaceId)
+                .eq("is_read", false),
         ]);
+
+        const data = dataResult.data || [];
+        const total = totalResult.count || 0;
+        const unreadCount = unreadResult.count || 0;
 
         res.json({
             data,
@@ -46,16 +57,26 @@ export const markAsRead = async (req, res) => {
     try {
         const { id } = req.params;
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
-        
-        const notification = await prisma.appNotification.findUnique({ where: { id } });
-        if (!notification || !workspaceIds.includes(notification.workspaceId)) {
+
+        const { data: notification, error: findError } = await supabase
+            .from("app_notifications")
+            .select("workspace_id")
+            .eq("id", id)
+            .single();
+
+        if (findError || !notification || !workspaceIds.includes(notification.workspace_id)) {
             return res.status(404).json({ error: "Notification not found" });
         }
 
-        await prisma.appNotification.update({
-            where: { id },
-            data: { isRead: true }
-        });
+        const { error: updateError } = await supabase
+            .from("app_notifications")
+            .update({ is_read: true })
+            .eq("id", id);
+
+        if (updateError) {
+            logStructured("error", "Error marking notification read:", { error: updateError.message });
+            return res.status(500).json({ error: "Internal server error" });
+        }
 
         res.json({ success: true });
     } catch (error) {
@@ -71,10 +92,16 @@ export const markAllAsRead = async (req, res) => {
         const workspaceId = workspaceIds[0];
         if (!workspaceId) return res.status(403).json({ error: "No workspace access" });
 
-        await prisma.appNotification.updateMany({
-            where: { workspaceId, isRead: false },
-            data: { isRead: true }
-        });
+        const { error } = await supabase
+            .from("app_notifications")
+            .update({ is_read: true })
+            .eq("workspace_id", workspaceId)
+            .eq("is_read", false);
+
+        if (error) {
+            logStructured("error", "Error marking all notifications read:", { error: error.message });
+            return res.status(500).json({ error: "Internal server error" });
+        }
 
         res.json({ success: true });
     } catch (error) {
@@ -100,7 +127,7 @@ export const streamNotifications = async (req, res) => {
         res.write(`data: ${JSON.stringify({ type: "connected" })}\n\n`);
 
         const listener = (notification) => {
-            if (notification.workspaceId === workspaceId) {
+            if (notification.workspace_id === workspaceId) {
                 res.write(`data: ${JSON.stringify({ type: "new_notification", notification })}\n\n`);
             }
         };
@@ -135,10 +162,24 @@ export const streamNotifications = async (req, res) => {
 // Utility function to create and emit a notification (used internally by other modules)
 export const createNotification = async ({ workspaceId, userId = null, type, title, message, link = null }) => {
     try {
-        const notification = await prisma.appNotification.create({
-            data: { workspaceId, userId, type, title, message, link }
-        });
-        
+        const { data: notification, error } = await supabase
+            .from("app_notifications")
+            .insert({
+                workspace_id: workspaceId,
+                user_id: userId,
+                type: type,
+                title: title,
+                message: message,
+                link: link
+            })
+            .select()
+            .single();
+
+        if (error) {
+            logStructured("error", "Error creating notification:", { error: error.message });
+            return null;
+        }
+
         // Emit to SSE listeners
         notificationEvents.emit("new", notification);
         return notification;

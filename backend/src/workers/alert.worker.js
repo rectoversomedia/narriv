@@ -1,6 +1,6 @@
 import { Worker } from "bullmq";
 import connection from "../lib/redis.js";
-import prisma from "../prisma.js";
+import supabase from "../lib/supabase.js";
 import { detectAlerts, escalateAlertsForWorkspace } from "../modules/alerts/alerts.service.js";
 import { logStructured } from "../lib/logger.js";
 
@@ -11,17 +11,21 @@ const alertWorker = new Worker(
 
         try {
             // 1. Fetch all active workspaces
-            const workspaces = await prisma.workspace.findMany({
-                select: { id: true, name: true }
-            });
+            const { data: workspaces, error: workspacesError } = await supabase
+                .from("workspaces")
+                .select("id, name");
 
-            logStructured("info", "workspaces_loaded", { jobId: job.id, count: workspaces.length, jobName: job.name });
+            if (workspacesError) {
+                throw new Error(`Failed to fetch workspaces: ${workspacesError.message}`);
+            }
+
+            logStructured("info", "workspaces_loaded", { jobId: job.id, count: workspaces?.length || 0, jobName: job.name });
 
             let totalAlertsFound = 0;
             let totalEscalated = 0;
 
             // 2. Evaluate rules for each workspace
-            for (const workspace of workspaces) {
+            for (const workspace of workspaces || []) {
                 try {
                     if (job.name === "escalate-alerts") {
                         const summary = await escalateAlertsForWorkspace(workspace.id);

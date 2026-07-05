@@ -1,4 +1,4 @@
-import prisma from "../prisma.js";
+import supabase from "./supabase.js";
 import { logStructured } from "./logger.js";
 
 /**
@@ -13,17 +13,25 @@ import { logStructured } from "./logger.js";
  */
 export async function calibrateConfidence(workspaceId, narrativeType, rawConfidence) {
     try {
-        // Get feedback for this narrative type in this workspace
-        const feedback = await prisma.aIFeedback.findMany({
-            where: {
-                workspaceId,
-                targetType: "signal_analysis",
-                narrativeType: narrativeType || undefined,
-            },
-            select: { action: true },
-            orderBy: { createdAt: "desc" },
-            take: 50,
-        });
+        // Build query for feedback in this workspace
+        let query = supabase
+            .from('ai_feedback')
+            .select('action')
+            .eq('workspace_id', workspaceId)
+            .eq('target_type', 'signal_analysis')
+            .order('created_at', { ascending: false })
+            .limit(50);
+
+        // Add narrative type filter if provided
+        if (narrativeType) {
+            query = query.eq('narrative_type', narrativeType);
+        }
+
+        const { data: feedback, error } = await query;
+
+        if (error || !feedback) {
+            throw error || new Error('No feedback data');
+        }
 
         if (feedback.length < 5) {
             // Not enough feedback data, return raw confidence
@@ -65,12 +73,17 @@ export async function calibrateConfidence(workspaceId, narrativeType, rawConfide
  */
 export async function getConfidenceStats(workspaceId) {
     try {
-        const feedback = await prisma.aIFeedback.findMany({
-            where: { workspaceId, targetType: "signal_analysis" },
-            select: { action: true, createdAt: true },
-            orderBy: { createdAt: "desc" },
-            take: 200,
-        });
+        const { data: feedback, error } = await supabase
+            .from('ai_feedback')
+            .select('action, created_at')
+            .eq('workspace_id', workspaceId)
+            .eq('target_type', 'signal_analysis')
+            .order('created_at', { ascending: false })
+            .limit(200);
+
+        if (error || !feedback) {
+            throw error || new Error('No feedback data');
+        }
 
         const total = feedback.length;
         const accepted = feedback.filter((f) => f.action === "accepted").length;

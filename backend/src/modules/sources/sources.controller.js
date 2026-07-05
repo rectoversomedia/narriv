@@ -1,4 +1,4 @@
-import prisma from "../../prisma.js";
+import supabase from "../../lib/supabase.js";
 import { getUserWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { invalidateWorkspaceCache } from "../../lib/cache.js";
 import { recordAuditLog } from "../../lib/audit.js";
@@ -22,40 +22,50 @@ export const getSources = async (req, res) => {
         const isActive = req.query.isActive !== undefined ? String(req.query.isActive).toLowerCase() === "true" : null;
         const search = req.query.search ? String(req.query.search).trim() : null;
 
-        const where = { workspaceId: { in: workspaceIds } };
+        // Build query conditions
+        let query = supabase.from('sources').select('*', { count: 'exact' });
+
+        // Filter by workspace_ids (Supabase array contains)
+        query = query.overlaps('workspace_id', workspaceIds);
+
+        // Filter by type
         if (type === "deleted") {
             return res.json({
                 data: [],
                 pagination: { page, limit, total: 0, totalPages: 0 }
             });
         }
-        if (type) where.type = type;
-        else where.type = { not: "deleted" };
-        if (isActive !== null) where.isActive = isActive;
-        if (search) {
-            where.OR = [
-                { name: { contains: search, mode: "insensitive" } },
-                { actorId: { contains: search, mode: "insensitive" } },
-            ];
+        if (type) {
+            query = query.eq('type', type);
+        } else {
+            query = query.neq('type', 'deleted');
         }
 
-        const [sources, total] = await Promise.all([
-            prisma.source.findMany({
-                where,
-                skip,
-                take: limit,
-                orderBy: { createdAt: "desc" }
-            }),
-            prisma.source.count({ where })
-        ]);
+        if (isActive !== null) {
+            query = query.eq('is_active', isActive);
+        }
+
+        if (search) {
+            query = query.or(`name.ilike.%${search}%,actor_id.ilike.%${search}%`);
+        }
+
+        // Apply pagination and ordering
+        query = query.order('created_at', { ascending: false }).range(skip, skip + limit - 1);
+
+        const { data: sources, count: total, error } = await query;
+
+        if (error) {
+            logStructured("error", "Error fetching sources from Supabase:", { error: error?.message || error });
+            return res.status(500).json({ error: "Internal server error" });
+        }
 
         res.json({
-            data: sources,
+            data: sources || [],
             pagination: {
                 page,
                 limit,
-                total,
-                totalPages: Math.ceil(total / limit)
+                total: total || 0,
+                totalPages: Math.ceil((total || 0) / limit)
             }
         });
     } catch (error) {
@@ -96,15 +106,23 @@ export const createSource = async (req, res) => {
             return res.status(403).json({ error: "Workspace access denied" });
         }
 
-        const source = await prisma.source.create({
-            data: {
-                workspaceId: targetWorkspaceId,
+        const { data: source, error } = await supabase
+            .from('sources')
+            .insert({
+                workspace_id: targetWorkspaceId,
                 name: normalizedName,
                 type: normalizedType,
-                actorId: actorId ? String(actorId).trim() : null,
-                inputConfig: inputConfig || {}
-            }
-        });
+                actor_id: actorId ? String(actorId).trim() : null,
+                input_config: inputConfig || {},
+                is_active: true
+            })
+            .select()
+            .single();
+
+        if (error) {
+            logStructured("error", "Error creating source in Supabase:", { error: error?.message || error });
+            return res.status(500).json({ error: "Internal server error" });
+        }
 
         await invalidateWorkspaceCache(targetWorkspaceId);
         await recordAuditLog({
@@ -126,9 +144,19 @@ export const createSource = async (req, res) => {
         const { name, type, actorId, inputConfig, isActive } = req.body;
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
 
-        const existingSource = await prisma.source.findFirst({
-            where: { id: sourceId, workspaceId: { in: workspaceIds }, type: { not: "deleted" } }
-        });
+        // Find existing source - check workspace_id in array and type != deleted
+        const { data: existingSource, error: findError } = await supabase
+            .from('sources')
+            .select('*')
+            .overlaps('workspace_id', workspaceIds)
+            .neq('type', 'deleted')
+            .eq('id', sourceId)
+            .maybeSingle();
+
+        if (findError) {
+            logStructured("error", "Error finding source:", { error: findError?.message || findError });
+            return res.status(500).json({ error: "Internal server error" });
+        }
 
         if (!existingSource) {
             return res.status(404).json({ error: "Source not found" });
@@ -137,9 +165,9 @@ export const createSource = async (req, res) => {
         const data = {};
         if (name !== undefined) data.name = name;
         if (type !== undefined) data.type = String(type).toLowerCase().trim();
-        if (actorId !== undefined) data.actorId = actorId || null;
-        if (inputConfig !== undefined) data.inputConfig = inputConfig || {};
-        if (isActive !== undefined) data.isActive = Boolean(isActive);
+        if (actorId !== undefined) data.actor_id = actorId || null;
+        if (inputConfig !== undefined) data.input_config = inputConfig || {};
+        if (isActive !== undefined) data.is_active = Boolean(isActive);
 
         if (Object.keys(data).length === 0) {
             return res.status(400).json({ error: "No source fields provided" });
@@ -157,16 +185,23 @@ export const createSource = async (req, res) => {
             return res.status(400).json({ error: "inputConfig must be an object" });
         }
 
-        const source = await prisma.source.update({
-            where: { id: sourceId },
-            data
-        });
+        const { data: source, error } = await supabase
+            .from('sources')
+            .update(data)
+            .eq('id', sourceId)
+            .select()
+            .single();
 
-        await invalidateWorkspaceCache(existingSource.workspaceId);
+        if (error) {
+            logStructured("error", "Error updating source in Supabase:", { error: error?.message || error });
+            return res.status(500).json({ error: "Internal server error" });
+        }
+
+        await invalidateWorkspaceCache(existingSource.workspace_id);
         await recordAuditLog({
             userId: req.user.id,
             event: "source_updated",
-            workspaceId: existingSource.workspaceId,
+            workspaceId: existingSource.workspace_id,
             metadata: { sourceId, changes: Object.keys(data) },
         });
         res.json(source);
@@ -181,24 +216,42 @@ export const deleteSource = async (req, res) => {
         const { sourceId } = req.params;
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
 
-        const existingSource = await prisma.source.findFirst({
-            where: { id: sourceId, workspaceId: { in: workspaceIds }, type: { not: "deleted" } }
-        });
+        // Find existing source - check workspace_id in array and type != deleted
+        const { data: existingSource, error: findError } = await supabase
+            .from('sources')
+            .select('*')
+            .overlaps('workspace_id', workspaceIds)
+            .neq('type', 'deleted')
+            .eq('id', sourceId)
+            .maybeSingle();
+
+        if (findError) {
+            logStructured("error", "Error finding source:", { error: findError?.message || findError });
+            return res.status(500).json({ error: "Internal server error" });
+        }
 
         if (!existingSource) {
             return res.status(404).json({ error: "Source not found" });
         }
 
-        const source = await prisma.source.update({
-            where: { id: sourceId },
-            data: { isActive: false, type: "deleted" }
-        });
+        // Soft delete: set is_active = false and type = 'deleted'
+        const { data: source, error } = await supabase
+            .from('sources')
+            .update({ is_active: false, type: 'deleted' })
+            .eq('id', sourceId)
+            .select()
+            .single();
 
-        await invalidateWorkspaceCache(existingSource.workspaceId);
+        if (error) {
+            logStructured("error", "Error deleting source in Supabase:", { error: error?.message || error });
+            return res.status(500).json({ error: "Internal server error" });
+        }
+
+        await invalidateWorkspaceCache(existingSource.workspace_id);
         await recordAuditLog({
             userId: req.user.id,
             event: "source_deleted",
-            workspaceId: existingSource.workspaceId,
+            workspaceId: existingSource.workspace_id,
             metadata: { sourceId },
         });
         res.json(source);
@@ -245,16 +298,21 @@ export const bootstrapDefaultSources = async (req, res) => {
         const skipped = [];
 
         for (const seed of seeds) {
-            const existings = await prisma.source.findMany({
-                where: {
-                    workspaceId: targetWorkspaceId,
-                    name: seed.name,
-                    type: { not: "deleted" },
-                },
-            });
-            
-            const isDuplicate = existings.some((existing) => {
-                return JSON.stringify(existing.inputConfig) === JSON.stringify(seed.inputConfig);
+            // Check for existing sources with same name and input_config
+            const { data: existings, error: findError } = await supabase
+                .from('sources')
+                .select('*')
+                .eq('workspace_id', targetWorkspaceId)
+                .eq('name', seed.name)
+                .neq('type', 'deleted');
+
+            if (findError) {
+                logStructured("error", "Error checking existing sources:", { error: findError?.message || findError });
+                continue;
+            }
+
+            const isDuplicate = existings?.some((existing) => {
+                return JSON.stringify(existing.input_config) === JSON.stringify(seed.inputConfig);
             });
 
             if (isDuplicate) {
@@ -262,15 +320,23 @@ export const bootstrapDefaultSources = async (req, res) => {
                 continue;
             }
 
-            const source = await prisma.source.create({
-                data: {
-                    workspaceId: targetWorkspaceId,
+            const { data: source, error } = await supabase
+                .from('sources')
+                .insert({
+                    workspace_id: targetWorkspaceId,
                     name: seed.name,
                     type: seed.type,
-                    actorId: seed.actorId,
-                    inputConfig: seed.inputConfig,
-                },
-            });
+                    actor_id: seed.actorId,
+                    input_config: seed.inputConfig,
+                    is_active: true
+                })
+                .select()
+                .single();
+
+            if (error) {
+                logStructured("error", "Error creating source in bootstrap:", { error: error?.message || error });
+                continue;
+            }
             created.push(source);
         }
 

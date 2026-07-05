@@ -1,4 +1,5 @@
-import prisma from "../prisma.js";
+import supabase from "./supabase.js";
+import { v4 as uuidv4 } from "uuid";
 
 // Pricing per 1K tokens (USD) — gpt-4o-mini
 const PRICING = {
@@ -21,16 +22,42 @@ export async function trackTokenUsage(workspaceId, model, tokensUsed, latencyMs)
     try {
         const today = new Date().toISOString().split("T")[0];
 
-        await prisma.$executeRaw`
-            INSERT INTO "TokenUsage" ("id", "workspaceId", "date", "model", "totalTokens", "callCount", "totalLatencyMs", "createdAt", "updatedAt")
-            VALUES (gen_random_uuid(), ${workspaceId}, ${today}::date, ${model}, ${tokensUsed}, 1, ${latencyMs}, NOW(), NOW())
-            ON CONFLICT ("workspaceId", "date", "model")
-            DO UPDATE SET
-                "totalTokens" = "TokenUsage"."totalTokens" + ${tokensUsed},
-                "callCount" = "TokenUsage"."callCount" + 1,
-                "totalLatencyMs" = "TokenUsage"."totalLatencyMs" + ${latencyMs},
-                "updatedAt" = NOW()
-        `;
+        // First try to find existing record for this workspace/date/model
+        const { data: existing } = await supabase
+            .from('token_usage')
+            .select('id, total_tokens, call_count, total_latency_ms')
+            .eq('workspace_id', workspaceId)
+            .eq('date', today)
+            .eq('model', model)
+            .single();
+
+        if (existing) {
+            // Update existing record
+            await supabase
+                .from('token_usage')
+                .update({
+                    total_tokens: existing.total_tokens + tokensUsed,
+                    call_count: existing.call_count + 1,
+                    total_latency_ms: existing.total_latency_ms + latencyMs,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq('id', existing.id);
+        } else {
+            // Insert new record
+            await supabase
+                .from('token_usage')
+                .insert({
+                    id: uuidv4(),
+                    workspace_id: workspaceId,
+                    date: today,
+                    model: model,
+                    total_tokens: tokensUsed,
+                    call_count: 1,
+                    total_latency_ms: latencyMs,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                });
+        }
     } catch (error) {
         // Token tracking is best-effort, don't fail the analysis
     }
@@ -44,25 +71,34 @@ export async function getTokenUsageSummary(workspaceId, days = 30) {
         const since = new Date();
         since.setDate(since.getDate() - days);
 
-        const usage = await prisma.tokenUsage.findMany({
-            where: {
-                workspaceId,
-                date: { gte: since },
-            },
-            orderBy: { date: "desc" },
-        });
+        const { data: usage, error } = await supabase
+            .from('token_usage')
+            .select('date, model, total_tokens, call_count, total_latency_ms')
+            .eq('workspace_id', workspaceId)
+            .gte('date', since.toISOString().split('T')[0])
+            .order('date', { ascending: false });
 
-        const totalTokens = usage.reduce((sum, u) => sum + u.totalTokens, 0);
-        const totalCalls = usage.reduce((sum, u) => sum + u.callCount, 0);
-        const totalLatency = usage.reduce((sum, u) => sum + u.totalLatencyMs, 0);
-        const estimatedCost = usage.reduce((sum, u) => sum + calculateCost(u.model, u.totalTokens, 0), 0);
+        if (error || !usage) {
+            return { totalTokens: 0, totalCalls: 0, averageLatencyMs: 0, estimatedCost: 0, daily: [] };
+        }
+
+        const totalTokens = usage.reduce((sum, u) => sum + u.total_tokens, 0);
+        const totalCalls = usage.reduce((sum, u) => sum + u.call_count, 0);
+        const totalLatency = usage.reduce((sum, u) => sum + u.total_latency_ms, 0);
+        const estimatedCost = usage.reduce((sum, u) => sum + calculateCost(u.model, u.total_tokens, 0), 0);
 
         return {
             totalTokens,
             totalCalls,
             averageLatencyMs: totalCalls > 0 ? Math.round(totalLatency / totalCalls) : 0,
             estimatedCost: Number(estimatedCost.toFixed(4)),
-            daily: usage,
+            daily: usage.map(u => ({
+                date: u.date,
+                model: u.model,
+                totalTokens: u.total_tokens,
+                callCount: u.call_count,
+                totalLatencyMs: u.total_latency_ms,
+            })),
         };
     } catch (error) {
         return { totalTokens: 0, totalCalls: 0, averageLatencyMs: 0, estimatedCost: 0, daily: [] };

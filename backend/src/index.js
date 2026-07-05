@@ -118,3 +118,12 @@ app.use(globalErrorHandler);
 
 // Vercel serverless handler - export app
 export default app;
+
+// Start server locally if run directly
+const PORT = process.env.PORT || 3000;
+if (process.env.NODE_ENV !== 'test') {
+    app.listen(PORT, () => {
+        logStructured("info", "server_started", { port: PORT, env: process.env.NODE_ENV });
+        console.log(`🚀 Server running on http://localhost:${PORT}`);
+    });
+}

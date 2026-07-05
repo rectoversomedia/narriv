@@ -1,6 +1,6 @@
 import { Worker } from "bullmq";
 import connection from "../lib/redis.js";
-import prisma from "../prisma.js";
+import supabase from "../lib/supabase.js";
 import { analyzeSignal } from "../modules/ai/ai.service.js";
 import { logStructured } from "../lib/logger.js";
 import { calibrateConfidence } from "../lib/confidence-calibration.js";
@@ -48,11 +48,13 @@ const worker = new Worker(
             signalId,
         });
 
-        const signal = await prisma.signal.findUnique({
-            where: { id: signalId },
-        });
+        const { data: signal, error: signalError } = await supabase
+            .from("signals")
+            .select("*")
+            .eq("id", signalId)
+            .single();
 
-        if (!signal) {
+        if (signalError || !signal) {
             logStructured("warn", "worker_signal_not_found", {
                 worker: "ai-analysis-worker",
                 jobId: job.id,
@@ -96,7 +98,7 @@ const worker = new Worker(
 
             // Calibrate confidence based on historical feedback
             const calibratedConfidence = await calibrateConfidence(
-                signal.workspaceId,
+                signal.workspace_id,
                 analysisResult.narrative_type,
                 analysisResult.confidence_score
             );
@@ -114,40 +116,55 @@ const worker = new Worker(
         }
 
         try {
-            const tx = [
-                prisma.signalAnalysis.create({
-                    data: {
-                        signalId: signal.id,
-                        sentiment: analysisResult.sentiment,
-                        narrativeType: analysisResult.narrative_type,
-                        stakeholder: analysisResult.stakeholder,
-                        impact: analysisResult.impact,
-                        summary: analysisResult.summary,
-                        recommendedAction: analysisResult.recommended_action,
-                        confidenceScore: analysisResult.confidence_score,
-                    },
-                }),
-                prisma.signal.update({
-                    where: { id: signal.id },
-                    data: { sentiment: analysisResult.sentiment },
-                })
-            ];
+            // Create signal analysis record
+            const { error: analysisError } = await supabase
+                .from("signal_analyses")
+                .insert({
+                    signal_id: signal.id,
+                    sentiment: analysisResult.sentiment,
+                    narrative_type: analysisResult.narrative_type,
+                    stakeholder: analysisResult.stakeholder,
+                    impact: analysisResult.impact,
+                    summary: analysisResult.summary,
+                    recommended_action: analysisResult.recommended_action,
+                    confidence_score: analysisResult.confidence_score,
+                });
 
-            if (failureError) {
-                tx.push(
-                    prisma.aiAnalysisFailureLog.create({
-                        data: {
-                            workspaceId: signal.workspaceId,
-                            signalId: signal.id,
-                            errorMessage: failureError.message || "AI analysis failed",
-                            rawAttempt1: failureError.details?.rawAttempt1 || null,
-                            rawAttempt2: failureError.details?.rawAttempt2 || null,
-                        }
-                    })
-                );
+            if (analysisError) {
+                throw new Error(`Failed to create signal analysis: ${analysisError.message}`);
             }
 
-            await prisma.$transaction(tx);
+            // Update signal with sentiment
+            const { error: signalUpdateError } = await supabase
+                .from("signals")
+                .update({ sentiment: analysisResult.sentiment })
+                .eq("id", signal.id);
+
+            if (signalUpdateError) {
+                throw new Error(`Failed to update signal: ${signalUpdateError.message}`);
+            }
+
+            // Log failure if there was one
+            if (failureError) {
+                const { error: failureLogError } = await supabase
+                    .from("ai_analysis_failure_logs")
+                    .insert({
+                        workspace_id: signal.workspace_id,
+                        signal_id: signal.id,
+                        error_message: failureError.message || "AI analysis failed",
+                        raw_attempt_1: failureError.details?.rawAttempt1 || null,
+                        raw_attempt_2: failureError.details?.rawAttempt2 || null,
+                    });
+
+                if (failureLogError) {
+                    logStructured("warn", "worker_failure_log_failed", {
+                        worker: "ai-analysis-worker",
+                        signalId,
+                        error: failureLogError.message,
+                    });
+                }
+            }
+
             logStructured("info", "worker_job_completed", {
                 worker: "ai-analysis-worker",
                 queue: "ai-analysis",

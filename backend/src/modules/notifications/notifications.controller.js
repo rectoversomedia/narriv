@@ -1,15 +1,16 @@
-import prisma from "../../prisma.js";
+import supabase from "../../lib/supabase.js";
 import { forbidden, internalError } from "../../lib/api-error.js";
 import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { logStructured } from "../../lib/logger.js";
+import { recordAuditLog } from "../../lib/audit.js";
 
-function toSafeDefaults(workspaceId) {
+function toSafeDefaults(workspace_id) {
     return {
-        workspaceId,
-        emailEnabled: true,
-        whatsappEnabled: false,
-        escalationNotifications: true,
-        reminderNotifications: true,
+        workspace_id,
+        email_enabled: true,
+        whatsapp_enabled: false,
+        escalation_notifications: true,
+        reminder_notifications: true,
     };
 }
 
@@ -20,9 +21,16 @@ export async function getNotificationSettings(req, res) {
             return forbidden(res, "Workspace access denied", "WORKSPACE_ACCESS_DENIED");
         }
 
-        const settings = await prisma.workspaceNotificationSettings.findUnique({
-            where: { workspaceId: scopedWorkspaceId },
-        });
+        const { data: settings, error } = await supabase
+            .from("workspace_notification_settings")
+            .select("*")
+            .eq("workspace_id", scopedWorkspaceId)
+            .maybeSingle();
+
+        if (error) {
+            logStructured("error", "Error fetching notification settings:", { error: error?.message || error });
+            return internalError(res);
+        }
 
         if (!settings) {
             return res.json(toSafeDefaults(scopedWorkspaceId));
@@ -44,37 +52,67 @@ export async function updateNotificationSettings(req, res) {
             return forbidden(res, "Workspace access denied", "WORKSPACE_ACCESS_DENIED");
         }
 
-        const updated = await prisma.workspaceNotificationSettings.upsert({
-            where: { workspaceId: scopedWorkspaceId },
-            update: {
-                ...(emailEnabled !== undefined && { emailEnabled }),
-                ...(whatsappEnabled !== undefined && { whatsappEnabled }),
-                ...(escalationNotifications !== undefined && { escalationNotifications }),
-                ...(reminderNotifications !== undefined && { reminderNotifications }),
-                ...(customRules !== undefined && { customRules }),
-            },
-            create: {
-                workspaceId: scopedWorkspaceId,
-                emailEnabled: emailEnabled ?? true,
-                whatsappEnabled: whatsappEnabled ?? false,
-                escalationNotifications: escalationNotifications ?? true,
-                reminderNotifications: reminderNotifications ?? true,
-                customRules: customRules ?? [],
-            }
-        });
+        // Check if settings exist
+        const { data: existing } = await supabase
+            .from("workspace_notification_settings")
+            .select("id")
+            .eq("workspace_id", scopedWorkspaceId)
+            .maybeSingle();
 
-        await prisma.auditLog.create({
-            data: {
-                userId: req.user.id,
-                workspaceId: scopedWorkspaceId,
-                event: "notification_settings_updated",
-                metadata: {
-                    workspaceId: scopedWorkspaceId,
-                    emailEnabled: updated.emailEnabled,
-                    whatsappEnabled: updated.whatsappEnabled,
-                    escalationNotifications: updated.escalationNotifications,
-                    reminderNotifications: updated.reminderNotifications,
-                }
+        let updated;
+        if (existing) {
+            // Update existing
+            const updates = {};
+            if (emailEnabled !== undefined) updates.email_enabled = emailEnabled;
+            if (whatsappEnabled !== undefined) updates.whatsapp_enabled = whatsappEnabled;
+            if (escalationNotifications !== undefined) updates.escalation_notifications = escalationNotifications;
+            if (reminderNotifications !== undefined) updates.reminder_notifications = reminderNotifications;
+            if (customRules !== undefined) updates.custom_rules = customRules;
+
+            const { data, error } = await supabase
+                .from("workspace_notification_settings")
+                .update(updates)
+                .eq("workspace_id", scopedWorkspaceId)
+                .select()
+                .single();
+
+            if (error) {
+                logStructured("error", "Error updating notification settings:", { error: error?.message || error });
+                return internalError(res);
+            }
+            updated = data;
+        } else {
+            // Insert new
+            const { data, error } = await supabase
+                .from("workspace_notification_settings")
+                .insert({
+                    workspace_id: scopedWorkspaceId,
+                    email_enabled: emailEnabled ?? true,
+                    whatsapp_enabled: whatsappEnabled ?? false,
+                    escalation_notifications: escalationNotifications ?? true,
+                    reminder_notifications: reminderNotifications ?? true,
+                    custom_rules: customRules ?? [],
+                })
+                .select()
+                .single();
+
+            if (error) {
+                logStructured("error", "Error creating notification settings:", { error: error?.message || error });
+                return internalError(res);
+            }
+            updated = data;
+        }
+
+        await recordAuditLog({
+            userId: req.user.id,
+            workspaceId: scopedWorkspaceId,
+            event: "notification_settings_updated",
+            metadata: {
+                workspace_id: scopedWorkspaceId,
+                email_enabled: updated.email_enabled,
+                whatsapp_enabled: updated.whatsapp_enabled,
+                escalation_notifications: updated.escalation_notifications,
+                reminder_notifications: updated.reminder_notifications,
             }
         });
 

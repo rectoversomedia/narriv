@@ -1,4 +1,4 @@
-import prisma from "../../prisma.js";
+import supabase from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
 
 /**
@@ -16,29 +16,32 @@ import { logStructured } from "../../lib/logger.js";
 export async function sendReportEmail({ workspaceId, reportId, recipientEmail, subject, body }) {
     try {
         // Get workspace notification settings
-        const settings = await prisma.workspaceNotificationSettings.findUnique({
-            where: { workspaceId },
-        });
+        const { data: settings } = await supabase
+            .from("workspace_notification_settings")
+            .select("*")
+            .eq("workspace_id", workspaceId)
+            .single();
 
-        if (!settings?.emailEnabled) {
+        if (!settings?.email_enabled) {
             logStructured("info", "report_email_skipped", { reason: "email_disabled", workspaceId, reportId });
             return { sent: false, reason: "email_disabled" };
         }
 
         // Get workspace settings for recipient
-        const workspaceSettings = await prisma.workspaceSettings.findUnique({
-            where: { workspaceId },
-            select: { notificationEmail: true, brandName: true },
-        });
+        const { data: workspaceSettings } = await supabase
+            .from("workspace_settings")
+            .select("notification_email, brand_name")
+            .eq("workspace_id", workspaceId)
+            .single();
 
-        const to = recipientEmail || workspaceSettings?.notificationEmail;
+        const to = recipientEmail || workspaceSettings?.notification_email;
         if (!to) {
             logStructured("info", "report_email_skipped", { reason: "no_recipient", workspaceId, reportId });
             return { sent: false, reason: "no_recipient" };
         }
 
         const { sendEmail, isEmailConfigured } = await import("../../lib/email.js");
-        
+
         if (!isEmailConfigured()) {
             logStructured("info", "report_email_skipped", { reason: "email_provider_not_configured", workspaceId, reportId });
             return { sent: false, reason: "email_provider_not_configured" };
@@ -74,21 +77,19 @@ export async function sendReportEmail({ workspaceId, reportId, recipientEmail, s
             subject,
             messageId: result.id,
             bodyLength: body?.length || 0,
-            brandName: workspaceSettings?.brandName,
+            brandName: workspaceSettings?.brand_name,
         });
 
         // Create audit log
-        await prisma.auditLog.create({
-            data: {
-                userId: null,
+        await supabase.from("audit_logs").insert({
+            user_id: null,
+            workspace_id: workspaceId,
+            event: "report_email_sent",
+            metadata: {
                 workspaceId,
-                event: "report_email_sent",
-                metadata: {
-                    workspaceId,
-                    reportId,
-                    to,
-                    subject,
-                },
+                reportId,
+                to,
+                subject,
             },
         });
 
@@ -131,32 +132,36 @@ export async function generateReport({ workspaceId, templateKey, options = {} })
                 case "alerts_list":
                 case "alerts_filtered":
                 case "alerts_stats":
-                    const alertWhere = { workspaceId };
+                    let alertQuery = supabase
+                        .from("alerts")
+                        .select("*")
+                        .eq("workspace_id", workspaceId)
+                        .order("created_at", { ascending: false })
+                        .limit(section.limit || 50);
+
                     if (section.filter?.severity) {
-                        alertWhere.severity = { in: section.filter.severity };
+                        alertQuery = alertQuery.in("severity", section.filter.severity);
                     }
-                    const alerts = await prisma.alert.findMany({
-                        where: alertWhere,
-                        take: section.limit || 50,
-                        orderBy: { createdAt: "desc" },
-                    });
-                    data = { alerts, count: alerts.length };
+                    const { data: alerts } = await alertQuery;
+                    data = { alerts: alerts || [], count: (alerts || []).length };
                     break;
                 case "narrative_clusters":
-                    const clusters = await prisma.narrativeCluster.findMany({
-                        where: { workspaceId },
-                        take: section.limit || 20,
-                        orderBy: { signalCount: "desc" },
-                    });
-                    data = { clusters, count: clusters.length };
+                    const { data: clusters } = await supabase
+                        .from("narrative_clusters")
+                        .select("*")
+                        .eq("workspace_id", workspaceId)
+                        .order("signal_count", { ascending: false })
+                        .limit(section.limit || 20);
+                    data = { clusters: clusters || [], count: (clusters || []).length };
                     break;
                 case "action_plans":
-                    const plans = await prisma.actionPlan.findMany({
-                        where: { workspaceId },
-                        take: section.limit || 10,
-                        orderBy: { createdAt: "desc" },
-                    });
-                    data = { plans, count: plans.length };
+                    const { data: plans } = await supabase
+                        .from("action_plans")
+                        .select("*")
+                        .eq("workspace_id", workspaceId)
+                        .order("created_at", { ascending: false })
+                        .limit(section.limit || 10);
+                    data = { plans: plans || [], count: (plans || []).length };
                     break;
                 default:
                     data = { message: `Data source '${section.dataSource}' not implemented` };
@@ -170,15 +175,21 @@ export async function generateReport({ workspaceId, templateKey, options = {} })
         }
 
         // Create report record
-        const report = await prisma.report.create({
-            data: {
-                workspaceId,
+        const { data: report, error: reportError } = await supabase
+            .from("reports")
+            .insert({
+                workspace_id: workspaceId,
                 title: `${template.name} - ${new Date().toLocaleDateString("id-ID")}`,
                 summary: `Generated from ${template.name} template`,
-                periodStart: options.dateRange?.start || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-                periodEnd: options.dateRange?.end || new Date(),
-            },
-        });
+                period_start: options.dateRange?.start || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+                period_end: options.dateRange?.end || new Date().toISOString(),
+            })
+            .select()
+            .single();
+
+        if (reportError || !report) {
+            throw reportError || new Error("Failed to create report");
+        }
 
         logStructured("info", "report_generated", {
             reportId: report.id,
@@ -191,7 +202,7 @@ export async function generateReport({ workspaceId, templateKey, options = {} })
             title: report.title,
             template: template.name,
             sections: generatedSections,
-            createdAt: report.createdAt,
+            createdAt: report.created_at,
         };
     } catch (error) {
         logStructured("error", "report_generation_failed", { workspaceId, templateKey, error: error.message });

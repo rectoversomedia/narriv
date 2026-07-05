@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import prisma from "../../prisma.js";
+import supabase from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
@@ -224,23 +224,27 @@ export async function runVisibilityAnalysis({ workspaceId, brandName, competitor
     logStructured("info", "geo_analysis_results", { visibilityScore, brandPresence: `${(brandPresenceRate * 100).toFixed(1)}%`, competitorMention: `${(competitorMentionRate * 100).toFixed(1)}%` });
 
     // 3. Save to database
-    const result = await prisma.aIVisibilityResult.create({
-        data: {
-            workspaceId,
-            engineName,
-            visibilityScore,
-            brandPresenceRate: Math.round(brandPresenceRate * 1000) / 1000,
-            competitorMentionRate: Math.round(competitorMentionRate * 1000) / 1000,
-            queryUsed: JSON.stringify(queries),
-            rawResponse: queryResults,
+    const { data: result, error } = await supabase
+        .from("ai_visibility_results")
+        .insert({
+            workspace_id: workspaceId,
+            engine_name: engineName,
+            visibility_score: visibilityScore,
+            brand_presence_rate: Math.round(brandPresenceRate * 1000) / 1000,
+            competitor_mention_rate: Math.round(competitorMentionRate * 1000) / 1000,
+            query_used: JSON.stringify(queries),
+            raw_response: queryResults,
             metadata: {
-                brandName,
+                brand_name: brandName,
                 competitors,
-                totalQueries: queries.length,
-                totalResponses: responses.filter(r => r.length > 0).length
+                total_queries: queries.length,
+                total_responses: responses.filter(r => r.length > 0).length
             }
-        }
-    });
+        })
+        .select()
+        .single();
+
+    if (error) throw error;
 
     logStructured("info", "geo_analysis_saved", { resultId: result.id });
     return result;

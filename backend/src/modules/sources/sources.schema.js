@@ -66,4 +66,3 @@ export const bootstrapDefaultsBodySchema = z.object({
     presetKeys: z.array(z.string().trim().min(1).max(80)).optional(),
     maxWebItems: z.number().int().min(1).max(100).optional(),
 });
-

@@ -1,5 +1,5 @@
 import express from "express";
-import prisma from "../../prisma.js";
+import supabase from "../../lib/supabase.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { runVisibilityAnalysis } from "./geo.service.js";
@@ -51,26 +51,27 @@ router.get("/", async (req, res) => {
         if (scopedWorkspaceIds.length === 0) {
             return res.json({ score: 0, presence: 0, presenceMentions: "0 of 0", competitor: 0, prompts: [], geoActions: [] });
         }
-        const whereClause = { workspaceId: { in: scopedWorkspaceIds } };
 
-        const latest = await prisma.aIVisibilityResult.findFirst({
-            where: whereClause,
-            orderBy: { createdAt: "desc" },
-            include: {
-                promptTestRuns: {
-                    orderBy: { createdAt: "asc" },
-                    select: {
-                        prompt: true,
-                        engine: true,
-                        brand: true,
-                        competitor: true,
-                        brandTone: true,
-                        compTone: true,
-                        highlighted: true,
-                    }
-                }
-            }
-        });
+        const { data: latest, error } = await supabase
+            .from("ai_visibility_results")
+            .select(`
+                *,
+                prompt_test_runs (
+                    prompt,
+                    engine,
+                    brand,
+                    competitor,
+                    brand_tone,
+                    comp_tone,
+                    highlighted
+                )
+            `)
+            .in("workspace_id", scopedWorkspaceIds)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (error) throw error;
 
         if (!latest) {
             return res.json({
@@ -83,29 +84,30 @@ router.get("/", async (req, res) => {
             });
         }
 
-        const prompts = latest.promptTestRuns.map((row) => ({
+        const prompts = (latest.prompt_test_runs || []).map((row) => ({
             prompt: row.prompt,
             engine: row.engine,
             brand: row.brand,
             competitor: row.competitor,
-            brandTone: row.brandTone,
-            compTone: row.compTone,
+            brandTone: row.brand_tone,
+            compTone: row.comp_tone,
         }));
 
-        const mentionedCount = latest.promptTestRuns.filter((row) => row.brand.toLowerCase() === "mentioned").length;
-        const presence = Math.round(latest.brandPresenceRate * 100);
-        const competitor = Math.round(latest.competitorMentionRate * 100);
+        const mentionedCount = (latest.prompt_test_runs || []).filter((row) => row.brand?.toLowerCase() === "mentioned").length;
+        const presence = Math.round(latest.brand_presence_rate * 100);
+        const competitor = Math.round(latest.competitor_mention_rate * 100);
+        const totalPrompts = (latest.prompt_test_runs || []).length;
 
         res.json({
-            score: Number(latest.visibilityScore),
+            score: Number(latest.visibility_score),
             presence,
-            presenceMentions: `${mentionedCount} of ${latest.promptTestRuns.length}`,
+            presenceMentions: `${mentionedCount} of ${totalPrompts}`,
             competitor,
             prompts,
             geoActions: buildGeoActions({
-                score: Number(latest.visibilityScore),
+                score: Number(latest.visibility_score),
                 competitor,
-                hasWeakPrompts: mentionedCount < latest.promptTestRuns.length,
+                hasWeakPrompts: mentionedCount < totalPrompts,
             }),
         });
     } catch (error) {
@@ -123,19 +125,20 @@ router.get("/summary", async (req, res) => {
             return res.json({ kpis: { avg_visibility_score: 0, avg_brand_presence_rate: 0, avg_competitor_mention_rate: 0, engines_tracked: 0, total_analyses: 0 }, engine_breakdown: [] });
         }
 
-        const whereClause = { workspaceId: { in: scopedWorkspaceIds } };
-
         // Fetch the most recent result for each engine
-        const allResults = await prisma.aIVisibilityResult.findMany({
-            where: whereClause,
-            orderBy: { createdAt: "desc" }
-        });
+        const { data: allResults, error } = await supabase
+            .from("ai_visibility_results")
+            .select("*")
+            .in("workspace_id", scopedWorkspaceIds)
+            .order("created_at", { ascending: false });
+
+        if (error) throw error;
 
         // Group by engine, keep only the latest per engine
         const latestByEngine = {};
-        allResults.forEach(result => {
-            if (!latestByEngine[result.engineName]) {
-                latestByEngine[result.engineName] = result;
+        (allResults || []).forEach(result => {
+            if (!latestByEngine[result.engine_name]) {
+                latestByEngine[result.engine_name] = result;
             }
         });
 
@@ -144,22 +147,22 @@ router.get("/summary", async (req, res) => {
         // Calculate aggregate KPIs across all engines
         const totalEngines = engines.length;
         const avgVisibility = totalEngines > 0
-            ? Math.round((engines.reduce((sum, e) => sum + e.visibilityScore, 0) / totalEngines) * 100) / 100
+            ? Math.round((engines.reduce((sum, e) => sum + e.visibility_score, 0) / totalEngines) * 100) / 100
             : 0;
         const avgBrandPresence = totalEngines > 0
-            ? Math.round((engines.reduce((sum, e) => sum + e.brandPresenceRate, 0) / totalEngines) * 1000) / 1000
+            ? Math.round((engines.reduce((sum, e) => sum + e.brand_presence_rate, 0) / totalEngines) * 1000) / 1000
             : 0;
         const avgCompetitorMention = totalEngines > 0
-            ? Math.round((engines.reduce((sum, e) => sum + e.competitorMentionRate, 0) / totalEngines) * 1000) / 1000
+            ? Math.round((engines.reduce((sum, e) => sum + e.competitor_mention_rate, 0) / totalEngines) * 1000) / 1000
             : 0;
 
         // Per-engine breakdown
         const engineBreakdown = engines.map(e => ({
-            engineName: e.engineName,
-            visibilityScore: e.visibilityScore,
-            brandPresenceRate: e.brandPresenceRate,
-            competitorMentionRate: e.competitorMentionRate,
-            lastChecked: e.createdAt,
+            engineName: e.engine_name,
+            visibilityScore: e.visibility_score,
+            brandPresenceRate: e.brand_presence_rate,
+            competitorMentionRate: e.competitor_mention_rate,
+            lastChecked: e.created_at,
             metadata: e.metadata
         }));
 
@@ -169,7 +172,7 @@ router.get("/summary", async (req, res) => {
                 avg_brand_presence_rate: avgBrandPresence,
                 avg_competitor_mention_rate: avgCompetitorMention,
                 engines_tracked: totalEngines,
-                total_analyses: allResults.length
+                total_analyses: (allResults || []).length
             },
             engine_breakdown: engineBreakdown
         });
@@ -191,30 +194,25 @@ router.get("/trends", async (req, res) => {
         const lookbackDays = parseInt(days, 10) || 30;
         const since = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000);
 
-        const whereClause = {
-            createdAt: { gte: since }
-        };
-        whereClause.workspaceId = { in: scopedWorkspaceIds };
-        if (engineName) whereClause.engineName = engineName;
+        let query = supabase
+            .from("ai_visibility_results")
+            .select("id, engine_name, visibility_score, brand_presence_rate, competitor_mention_rate, created_at, metadata")
+            .in("workspace_id", scopedWorkspaceIds)
+            .gte("created_at", since.toISOString())
+            .order("created_at", { ascending: true });
 
-        const results = await prisma.aIVisibilityResult.findMany({
-            where: whereClause,
-            orderBy: { createdAt: "asc" },
-            select: {
-                id: true,
-                engineName: true,
-                visibilityScore: true,
-                brandPresenceRate: true,
-                competitorMentionRate: true,
-                createdAt: true,
-                metadata: true
-            }
-        });
+        if (engineName) {
+            query = query.eq("engine_name", engineName);
+        }
+
+        const { data: results, error } = await query;
+
+        if (error) throw error;
 
         // Group by date for charting
         const trendMap = {};
-        results.forEach(r => {
-            const dateKey = new Date(r.createdAt).toISOString().split("T")[0];
+        (results || []).forEach(r => {
+            const dateKey = new Date(r.created_at).toISOString().split("T")[0];
             if (!trendMap[dateKey]) {
                 trendMap[dateKey] = {
                     date: dateKey,
@@ -232,22 +230,22 @@ router.get("/trends", async (req, res) => {
             const count = day.entries.length;
             return {
                 date: day.date,
-                avg_visibility_score: Math.round((day.entries.reduce((s, e) => s + e.visibilityScore, 0) / count) * 100) / 100,
-                avg_brand_presence_rate: Math.round((day.entries.reduce((s, e) => s + e.brandPresenceRate, 0) / count) * 1000) / 1000,
-                avg_competitor_mention_rate: Math.round((day.entries.reduce((s, e) => s + e.competitorMentionRate, 0) / count) * 1000) / 1000,
+                avg_visibility_score: Math.round((day.entries.reduce((s, e) => s + e.visibility_score, 0) / count) * 100) / 100,
+                avg_brand_presence_rate: Math.round((day.entries.reduce((s, e) => s + e.brand_presence_rate, 0) / count) * 1000) / 1000,
+                avg_competitor_mention_rate: Math.round((day.entries.reduce((s, e) => s + e.competitor_mention_rate, 0) / count) * 1000) / 1000,
                 data_points: count
             };
         }).sort((a, b) => a.date.localeCompare(b.date));
 
         // Per-engine trend lines (for multi-line charts)
         const engineTrends = {};
-        results.forEach(r => {
-            if (!engineTrends[r.engineName]) engineTrends[r.engineName] = [];
-            engineTrends[r.engineName].push({
-                date: new Date(r.createdAt).toISOString().split("T")[0],
-                visibilityScore: r.visibilityScore,
-                brandPresenceRate: r.brandPresenceRate,
-                competitorMentionRate: r.competitorMentionRate
+        (results || []).forEach(r => {
+            if (!engineTrends[r.engine_name]) engineTrends[r.engine_name] = [];
+            engineTrends[r.engine_name].push({
+                date: new Date(r.created_at).toISOString().split("T")[0],
+                visibilityScore: r.visibility_score,
+                brandPresenceRate: r.brand_presence_rate,
+                competitorMentionRate: r.competitor_mention_rate
             });
         });
 

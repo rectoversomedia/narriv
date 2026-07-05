@@ -1,4 +1,4 @@
-import prisma from "../../prisma.js";
+import supabase from "../../lib/supabase.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
@@ -141,9 +141,14 @@ async function issueRefreshToken(userId) {
     const tokenHash = hashRefreshToken(rawToken);
     const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000);
 
-    await prisma.refreshToken.create({
-        data: { userId, tokenHash, expiresAt },
+    const { error } = await supabase.from("refreshTokens").insert({
+        id: crypto.randomUUID(),
+        userId: userId,
+        tokenHash: tokenHash,
+        expiresAt: expiresAt.toISOString(),
     });
+
+    if (error) throw error;
 
     return { refreshToken: rawToken, expiresAt };
 }
@@ -153,42 +158,66 @@ async function storeOAuthExchange({ userId, provider }) {
     const tokenHash = hashOAuthExchangeCode(code);
     const expiresAt = new Date(Date.now() + OAUTH_EXCHANGE_TTL_MS);
 
-    await prisma.refreshToken.create({
-        data: { userId, tokenHash, expiresAt },
+    const { error } = await supabase.from("refreshTokens").insert({
+        id: crypto.randomUUID(),
+        userId: userId,
+        tokenHash: tokenHash,
+        expiresAt: expiresAt.toISOString(),
     });
+
+    if (error) throw error;
 
     return code;
 }
 
 async function consumeOAuthExchange(code) {
     const tokenHash = hashOAuthExchangeCode(code);
-    const now = new Date();
-    const revoked = await prisma.refreshToken.updateMany({
-        where: { tokenHash, revokedAt: null, expiresAt: { gt: now } },
-        data: { revokedAt: now },
-    });
+    const now = new Date().toISOString();
 
-    if (revoked.count !== 1) return null;
+    // First, find and revoke the token
+    const { data: tokens, error: findError } = await supabase
+        .from("refreshTokens")
+        .select("*")
+        .eq("tokenHash", tokenHash)
+        .is("revokedAt", null)
+        .gt("expiresAt", now);
 
-    const tokenRow = await prisma.refreshToken.findUnique({
-        where: { tokenHash },
-        include: { user: true },
-    });
+    if (findError || !tokens || tokens.length === 0) return null;
 
-    if (!tokenRow?.user) return null;
+    const tokenRow = tokens[0];
+
+    const { error: updateError } = await supabase
+        .from("refreshTokens")
+        .update({ revokedAt: now })
+        .eq("id", tokenRow.id);
+
+    if (updateError) return null;
+
+    // Fetch the user separately
+    const { data: user, error: userError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", tokenRow.userId)
+        .single();
+
+    if (userError || !user) return null;
+
     const provider = code.includes(".") ? code.split(".", 1)[0] : "oauth";
-    return { user: tokenRow.user, provider };
+    return { user, provider };
 }
 
 async function writeAuditLog(userId, event, metadata = {}) {
     try {
-        await prisma.auditLog.create({
-            data: {
-                userId: userId || null,
-                event,
-                metadata,
-            }
+        const { error } = await supabase.from("audit_logs").insert({
+            id: crypto.randomUUID(),
+            userId: userId || null,
+            event,
+            metadata,
         });
+
+        if (error) {
+            logStructured("warn", "[AUTH] Failed to write audit log:", { details: error.message });
+        }
     } catch (err) {
         logStructured("warn", "[AUTH] Failed to write audit log:", { details: err.message?.message || err.message });
     }
@@ -214,7 +243,17 @@ export const register = async (req, res) => {
             return res.status(400).json({ error: passwordError });
         }
 
-        const existingUser = await prisma.user.findUnique({ where: { email } });
+        // Check if user exists
+        const { data: existingUser, error: existingError } = await supabase
+            .from("users")
+            .select("*")
+            .eq("email", email.toLowerCase())
+            .single();
+
+        if (existingError && existingError.code !== "PGRST116") {
+            throw existingError;
+        }
+
         if (existingUser) {
             await writeAuditLog(existingUser.id, "register_failed_email_exists", { email });
             return res.status(400).json({ error: "Email already in use." });
@@ -222,27 +261,35 @@ export const register = async (req, res) => {
 
         const hashed = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
 
-        const user = await prisma.user.create({
-            data: {
-                email,
+        const { data: user, error: createError } = await supabase
+            .from("users")
+            .insert({
+                id: crypto.randomUUID(),
+                email: email.toLowerCase(),
                 password: hashed,
                 name,
-            },
-        });
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            })
+            .select()
+            .single();
+
+        if (createError) throw createError;
 
         await writeAuditLog(user.id, "register_success", { email: user.email });
 
         // Generate email verification code
         const verificationCode = createResetCode();
         const expiresAt = new Date(Date.now() + PASSWORD_RESET_TTL_MINUTES * 60 * 1000);
-        
-        await prisma.emailVerificationToken.create({
-            data: {
-                userId: user.id,
-                codeHash: hashResetSecret(verificationCode),
-                expiresAt,
-            },
+
+        const { error: verifyError } = await supabase.from("email_verification_tokens").insert({
+            id: crypto.randomUUID(),
+            userId: user.id,
+            codeHash: hashResetSecret(verificationCode),
+            expiresAt: expiresAt.toISOString(),
         });
+
+        if (verifyError) throw verifyError;
 
         // Send verification email
         const emailTemplate = emailVerificationCode({
@@ -252,8 +299,8 @@ export const register = async (req, res) => {
         });
         sendEmail({ to: user.email, ...emailTemplate }).catch(() => {});
 
-        res.status(201).json({ 
-            requireVerification: true, 
+        res.status(201).json({
+            requireVerification: true,
             email: user.email,
             ...(shouldExposeResetSecrets() ? { verificationCode, expiresAt: expiresAt.toISOString() } : {})
         });
@@ -278,7 +325,16 @@ export const login = async (req, res) => {
             return res.status(429).json({ error: "Too many login attempts. Try again later." });
         }
 
-        const user = await prisma.user.findUnique({ where: { email } });
+        const { data: user, error } = await supabase
+            .from("users")
+            .select("*")
+            .eq("email", email.toLowerCase())
+            .single();
+
+        if (error && error.code !== "PGRST116") {
+            throw error;
+        }
+
         if (!user) {
             await writeAuditLog(null, "failed_login", { email });
             return res.status(401).json({ error: "Invalid credentials." });
@@ -288,8 +344,8 @@ export const login = async (req, res) => {
             return res.status(403).json({ error: "Email is not verified.", code: "EMAIL_NOT_VERIFIED", requireVerification: true, email: user.email });
         }
 
-        if (user.lockedUntil && user.lockedUntil > new Date()) {
-            await writeAuditLog(user.id, "failed_login", { reason: "account_locked", lockedUntil: user.lockedUntil.toISOString() });
+        if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
+            await writeAuditLog(user.id, "failed_login", { reason: "account_locked", lockedUntil: user.lockedUntil });
             return res.status(429).json({ error: "Account temporarily locked. Try again later." });
         }
 
@@ -297,21 +353,28 @@ export const login = async (req, res) => {
         if (!match) {
             const nextAttempts = (user.failedLoginAttempts || 0) + 1;
             const shouldLock = nextAttempts >= 5;
-            await prisma.user.update({
-                where: { id: user.id },
-                data: {
+            const lockUntil = shouldLock ? new Date(Date.now() + 15 * 60 * 1000).toISOString() : null;
+
+            const { error: updateError } = await supabase
+                .from("users")
+                .update({
                     failedLoginAttempts: shouldLock ? 0 : nextAttempts,
-                    lockedUntil: shouldLock ? new Date(Date.now() + 15 * 60 * 1000) : null,
-                }
-            });
+                    lockedUntil: lockUntil,
+                })
+                .eq("id", user.id);
+
+            if (updateError) throw updateError;
+
             await writeAuditLog(user.id, "failed_login", { attempts: nextAttempts, locked: shouldLock });
             return res.status(401).json({ error: "Invalid credentials." });
         }
 
-        await prisma.user.update({
-            where: { id: user.id },
-            data: { failedLoginAttempts: 0, lockedUntil: null },
-        });
+        const { error: updateError } = await supabase
+            .from("users")
+            .update({ failedLoginAttempts: 0, lockedUntil: null })
+            .eq("id", user.id);
+
+        if (updateError) throw updateError;
 
         const token = signAccessToken(user);
         const { refreshToken } = await issueRefreshToken(user.id);
@@ -335,27 +398,45 @@ export const refresh = async (req, res) => {
         }
 
         const tokenHash = hashRefreshToken(refreshToken);
-        const tokenRow = await prisma.refreshToken.findFirst({
-            where: {
-                tokenHash,
-                revokedAt: null,
-                expiresAt: { gt: new Date() },
-            },
-            include: { user: true }
-        });
+        const now = new Date().toISOString();
 
-        if (!tokenRow || !tokenRow.user) {
+        const { data: tokens, error: findError } = await supabase
+            .from("refreshTokens")
+            .select("*")
+            .eq("tokenHash", tokenHash)
+            .is("revokedAt", null)
+            .gt("expiresAt", now);
+
+        if (findError) throw findError;
+
+        if (!tokens || tokens.length === 0) {
             return res.status(401).json({ error: "Invalid refresh token." });
         }
 
-        await prisma.refreshToken.update({
-            where: { id: tokenRow.id },
-            data: { revokedAt: new Date() }
-        });
+        const tokenRow = tokens[0];
 
-        const token = signAccessToken(tokenRow.user);
-        const next = await issueRefreshToken(tokenRow.user.id);
-        await writeAuditLog(tokenRow.user.id, "refresh_success");
+        // Fetch user
+        const { data: user, error: userError } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", tokenRow.userId)
+            .single();
+
+        if (userError || !user) {
+            return res.status(401).json({ error: "Invalid refresh token." });
+        }
+
+        // Revoke current token
+        const { error: revokeError } = await supabase
+            .from("refreshTokens")
+            .update({ revokedAt: now })
+            .eq("id", tokenRow.id);
+
+        if (revokeError) throw revokeError;
+
+        const token = signAccessToken(user);
+        const next = await issueRefreshToken(user.id);
+        await writeAuditLog(user.id, "refresh_success");
 
         return res.json({ token, refreshToken: next.refreshToken });
     } catch (error) {
@@ -372,19 +453,29 @@ export const logout = async (req, res) => {
         }
 
         const tokenHash = hashRefreshToken(refreshToken);
-        const tokenRow = await prisma.refreshToken.findFirst({
-            where: { tokenHash, revokedAt: null },
-            select: { id: true, userId: true }
-        });
+
+        const { data: tokenRow, error } = await supabase
+            .from("refreshTokens")
+            .select("id, userId")
+            .eq("tokenHash", tokenHash)
+            .is("revokedAt", null)
+            .single();
+
+        if (error && error.code !== "PGRST116") {
+            throw error;
+        }
 
         if (!tokenRow) {
             return res.status(200).json({ success: true });
         }
 
-        await prisma.refreshToken.update({
-            where: { id: tokenRow.id },
-            data: { revokedAt: new Date() }
-        });
+        const now = new Date().toISOString();
+        const { error: updateError } = await supabase
+            .from("refreshTokens")
+            .update({ revokedAt: now })
+            .eq("id", tokenRow.id);
+
+        if (updateError) throw updateError;
 
         await writeAuditLog(tokenRow.userId, "logout");
         return res.json({ success: true });
@@ -407,7 +498,16 @@ export const forgotPassword = async (req, res) => {
             message: "If an account exists for this email, a reset code has been generated.",
         };
 
-        const user = await prisma.user.findUnique({ where: { email } });
+        const { data: user, error } = await supabase
+            .from("users")
+            .select("*")
+            .eq("email", email)
+            .single();
+
+        if (error && error.code !== "PGRST116") {
+            throw error;
+        }
+
         if (!user) {
             await writeAuditLog(null, "password_reset_requested_unknown_email", { email });
             return res.json(genericResponse);
@@ -417,19 +517,25 @@ export const forgotPassword = async (req, res) => {
         const resetToken = crypto.randomBytes(32).toString("hex");
         const expiresAt = new Date(Date.now() + PASSWORD_RESET_TTL_MINUTES * 60 * 1000);
 
-        await prisma.passwordResetToken.updateMany({
-            where: { userId: user.id, usedAt: null },
-            data: { usedAt: new Date() },
+        // Invalidate previous unused tokens
+        const now = new Date().toISOString();
+        const { error: invalidateError } = await supabase
+            .from("password_reset_tokens")
+            .update({ usedAt: now })
+            .eq("userId", user.id)
+            .is("usedAt", null);
+
+        if (invalidateError) throw invalidateError;
+
+        const { error: createError } = await supabase.from("password_reset_tokens").insert({
+            id: crypto.randomUUID(),
+            userId: user.id,
+            tokenHash: hashResetSecret(resetToken),
+            codeHash: hashResetSecret(resetCode),
+            expiresAt: expiresAt.toISOString(),
         });
 
-        await prisma.passwordResetToken.create({
-            data: {
-                userId: user.id,
-                tokenHash: hashResetSecret(resetToken),
-                codeHash: hashResetSecret(resetCode),
-                expiresAt,
-            },
-        });
+        if (createError) throw createError;
 
         await writeAuditLog(user.id, "password_reset_requested", { email: user.email });
 
@@ -455,16 +561,33 @@ export const verifyResetCode = async (req, res) => {
     try {
         const email = String(req.body.email || "").trim().toLowerCase();
         const code = String(req.body.code || "").trim();
-        const user = await prisma.user.findUnique({ where: { email } });
+
+        const { data: user, error } = await supabase
+            .from("users")
+            .select("*")
+            .eq("email", email)
+            .single();
+
+        if (error && error.code !== "PGRST116") {
+            throw error;
+        }
+
         if (!user) {
             return res.status(400).json({ error: "Invalid or expired reset code.", code: "INVALID_RESET_CODE" });
         }
 
-        const candidates = await prisma.passwordResetToken.findMany({
-            where: { userId: user.id, usedAt: null, expiresAt: { gt: new Date() } },
-            orderBy: { createdAt: "desc" },
-            take: 5,
-        });
+        const now = new Date().toISOString();
+        const { data: candidates, error: findError } = await supabase
+            .from("password_reset_tokens")
+            .select("*")
+            .eq("userId", user.id)
+            .is("usedAt", null)
+            .gt("expiresAt", now)
+            .order("createdAt", { ascending: false })
+            .limit(5);
+
+        if (findError) throw findError;
+
         const tokenRow = candidates.find((candidate) => compareResetSecret(code, candidate.codeHash));
         if (!tokenRow) {
             await writeAuditLog(user.id, "password_reset_code_failed", { email: user.email });
@@ -472,10 +595,15 @@ export const verifyResetCode = async (req, res) => {
         }
 
         const resetToken = crypto.randomBytes(32).toString("hex");
-        await prisma.passwordResetToken.update({
-            where: { id: tokenRow.id },
-            data: { tokenHash: hashResetSecret(resetToken), verifiedAt: new Date() },
-        });
+        const { error: updateError } = await supabase
+            .from("password_reset_tokens")
+            .update({
+                tokenHash: hashResetSecret(resetToken),
+                verifiedAt: now,
+            })
+            .eq("id", tokenRow.id);
+
+        if (updateError) throw updateError;
 
         await writeAuditLog(user.id, "password_reset_code_verified", { email: user.email });
 
@@ -491,8 +619,17 @@ export const verifyEmail = async (req, res) => {
     try {
         const email = String(req.body.email || "").trim().toLowerCase();
         const code = String(req.body.code || "").trim();
-        const user = await prisma.user.findUnique({ where: { email } });
-        
+
+        const { data: user, error } = await supabase
+            .from("users")
+            .select("*")
+            .eq("email", email)
+            .single();
+
+        if (error && error.code !== "PGRST116") {
+            throw error;
+        }
+
         if (!user) {
             return res.status(400).json({ error: "Invalid or expired verification code.", code: "INVALID_VERIFICATION_CODE" });
         }
@@ -501,35 +638,46 @@ export const verifyEmail = async (req, res) => {
             return res.status(400).json({ error: "Email is already verified." });
         }
 
-        const candidates = await prisma.emailVerificationToken.findMany({
-            where: { userId: user.id, usedAt: null, expiresAt: { gt: new Date() } },
-            orderBy: { createdAt: "desc" },
-            take: 5,
-        });
-        
+        const now = new Date().toISOString();
+        const { data: candidates, error: findError } = await supabase
+            .from("email_verification_tokens")
+            .select("*")
+            .eq("userId", user.id)
+            .is("usedAt", null)
+            .gt("expiresAt", now)
+            .order("createdAt", { ascending: false })
+            .limit(5);
+
+        if (findError) throw findError;
+
         const tokenRow = candidates.find((candidate) => compareResetSecret(code, candidate.codeHash));
         if (!tokenRow) {
             await writeAuditLog(user.id, "email_verification_failed", { email: user.email });
             return res.status(400).json({ error: "Invalid or expired verification code.", code: "INVALID_VERIFICATION_CODE" });
         }
 
-        await prisma.$transaction([
-            prisma.user.update({
-                where: { id: user.id },
-                data: { emailVerified: new Date() }
-            }),
-            prisma.emailVerificationToken.update({
-                where: { id: tokenRow.id },
-                data: { usedAt: new Date() }
-            })
-        ]);
+        // Update user email verified
+        const { error: userUpdateError } = await supabase
+            .from("users")
+            .update({ emailVerified: now })
+            .eq("id", user.id);
 
-        await writeAuditLog(user.id, "email_verified", { email: user.email });
+        if (userUpdateError) throw userUpdateError;
+
+        // Mark verification token as used
+        const { error: tokenUpdateError } = await supabase
+            .from("email_verification_tokens")
+            .update({ usedAt: now })
+            .eq("id", tokenRow.id);
+
+        if (tokenUpdateError) throw tokenUpdateError;
+
+        await writeAuditLog(user.id, "emailVerified", { email: user.email });
 
         // Issue tokens and log them in
         const token = signAccessToken(user);
         const { refreshToken } = await issueRefreshToken(user.id);
-        
+
         return res.json({ token, refreshToken, user: toSessionUser(user) });
     } catch (error) {
         logStructured("error", "Error verifying email:", { error: error?.message || error, stack: error?.stack });
@@ -540,18 +688,27 @@ export const verifyEmail = async (req, res) => {
 export const resendVerification = async (req, res) => {
     try {
         const email = String(req.body.email || "").trim().toLowerCase();
-        const user = await prisma.user.findUnique({ where: { email } });
-        
+
+        const { data: user, error } = await supabase
+            .from("users")
+            .select("*")
+            .eq("email", email)
+            .single();
+
         const genericResponse = { success: true, message: "If an account exists, a verification code has been sent." };
-        
+
+        if (error && error.code !== "PGRST116") {
+            throw error;
+        }
+
         if (!user) {
             return res.json(genericResponse);
         }
-        
+
         if (user.emailVerified) {
             return res.status(400).json({ error: "Email is already verified." });
         }
-        
+
         // Rate limiting for resend
         const rateKey = `resend-verification:${req.ip || "unknown"}::${email}`;
         if (checkRateLimit(passwordResetRateBucket, rateKey, PASSWORD_RESET_MAX_ATTEMPTS, PASSWORD_RESET_WINDOW_MS)) {
@@ -559,21 +716,26 @@ export const resendVerification = async (req, res) => {
         }
 
         // Invalidate previous unused tokens
-        await prisma.emailVerificationToken.updateMany({
-            where: { userId: user.id, usedAt: null },
-            data: { usedAt: new Date() },
-        });
+        const now = new Date().toISOString();
+        const { error: invalidateError } = await supabase
+            .from("email_verification_tokens")
+            .update({ usedAt: now })
+            .eq("userId", user.id)
+            .is("usedAt", null);
+
+        if (invalidateError) throw invalidateError;
 
         const verificationCode = createResetCode();
         const expiresAt = new Date(Date.now() + PASSWORD_RESET_TTL_MINUTES * 60 * 1000);
-        
-        await prisma.emailVerificationToken.create({
-            data: {
-                userId: user.id,
-                codeHash: hashResetSecret(verificationCode),
-                expiresAt,
-            },
+
+        const { error: createError } = await supabase.from("email_verification_tokens").insert({
+            id: crypto.randomUUID(),
+            userId: user.id,
+            codeHash: hashResetSecret(verificationCode),
+            expiresAt: expiresAt.toISOString(),
         });
+
+        if (createError) throw createError;
 
         const emailTemplate = emailVerificationCode({
             name: user.name,
@@ -581,10 +743,10 @@ export const resendVerification = async (req, res) => {
             expiresInMinutes: PASSWORD_RESET_TTL_MINUTES,
         });
         sendEmail({ to: user.email, ...emailTemplate }).catch(() => {});
-        
+
         await writeAuditLog(user.id, "email_verification_resent", { email: user.email });
 
-        return res.json({ 
+        return res.json({
             ...genericResponse,
             ...(shouldExposeResetSecrets() ? { verificationCode, expiresAt: expiresAt.toISOString() } : {})
         });
@@ -597,17 +759,32 @@ export const resendVerification = async (req, res) => {
 export const resetPassword = async (req, res) => {
     try {
         const { resetToken, newPassword } = req.body;
-        const tokenRow = await prisma.passwordResetToken.findFirst({
-            where: {
-                tokenHash: hashResetSecret(resetToken),
-                usedAt: null,
-                verifiedAt: { not: null },
-                expiresAt: { gt: new Date() },
-            },
-            include: { user: true },
-        });
+        const now = new Date().toISOString();
 
-        if (!tokenRow || !tokenRow.user) {
+        const { data: tokens, error: findError } = await supabase
+            .from("password_reset_tokens")
+            .select("*")
+            .eq("tokenHash", hashResetSecret(resetToken))
+            .is("usedAt", null)
+            .not("verifiedAt", "is", null)
+            .gt("expiresAt", now);
+
+        if (findError) throw findError;
+
+        if (!tokens || tokens.length === 0) {
+            return res.status(400).json({ error: "Invalid or expired reset token.", code: "INVALID_RESET_TOKEN" });
+        }
+
+        const tokenRow = tokens[0];
+
+        // Fetch user
+        const { data: user, error: userError } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", tokenRow.userId)
+            .single();
+
+        if (userError || !user) {
             return res.status(400).json({ error: "Invalid or expired reset token.", code: "INVALID_RESET_TOKEN" });
         }
 
@@ -617,26 +794,41 @@ export const resetPassword = async (req, res) => {
         }
 
         const hashed = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
-        await prisma.$transaction(async (tx) => {
-            await tx.user.update({
-                where: { id: tokenRow.userId },
-                data: { password: hashed, failedLoginAttempts: 0, lockedUntil: null },
-            });
-            await tx.passwordResetToken.update({
-                where: { id: tokenRow.id },
-                data: { usedAt: new Date() },
-            });
-            await tx.refreshToken.updateMany({
-                where: { userId: tokenRow.userId, revokedAt: null },
-                data: { revokedAt: new Date() },
-            });
-        });
 
-        await writeAuditLog(tokenRow.userId, "password_reset_completed", { email: tokenRow.user.email });
+        // Update user password
+        const { error: userUpdateError } = await supabase
+            .from("users")
+            .update({
+                password: hashed,
+                failedLoginAttempts: 0,
+                lockedUntil: null,
+            })
+            .eq("id", tokenRow.userId);
+
+        if (userUpdateError) throw userUpdateError;
+
+        // Mark reset token as used
+        const { error: tokenUpdateError } = await supabase
+            .from("password_reset_tokens")
+            .update({ usedAt: now })
+            .eq("id", tokenRow.id);
+
+        if (tokenUpdateError) throw tokenUpdateError;
+
+        // Revoke all refresh tokens for this user
+        const { error: revokeError } = await supabase
+            .from("refreshTokens")
+            .update({ revokedAt: now })
+            .eq("userId", tokenRow.userId)
+            .is("revokedAt", null);
+
+        if (revokeError) throw revokeError;
+
+        await writeAuditLog(tokenRow.userId, "password_reset_completed", { email: user.email });
 
         // Send confirmation email (best-effort, never blocks response)
-        const confirmTemplate = passwordResetConfirmation({ name: tokenRow.user.name });
-        sendEmail({ to: tokenRow.user.email, ...confirmTemplate }).catch(() => {});
+        const confirmTemplate = passwordResetConfirmation({ name: user.name });
+        sendEmail({ to: user.email, ...confirmTemplate }).catch(() => {});
 
         return res.json({ success: true });
     } catch (error) {
@@ -648,10 +840,16 @@ export const resetPassword = async (req, res) => {
 export const me = async (req, res) => {
     try {
         const userId = req.user.id;
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { id: true, email: true, name: true, createdAt: true }
-        });
+
+        const { data: user, error } = await supabase
+            .from("users")
+            .select("id, email, name, createdAt")
+            .eq("id", userId)
+            .single();
+
+        if (error && error.code !== "PGRST116") {
+            throw error;
+        }
 
         if (!user) return res.status(404).json({ error: "User not found." });
 
@@ -667,7 +865,16 @@ export const changePassword = async (req, res) => {
         const userId = req.user.id;
         const { currentPassword, newPassword } = req.body;
 
-        const user = await prisma.user.findUnique({ where: { id: userId } });
+        const { data: user, error } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", userId)
+            .single();
+
+        if (error && error.code !== "PGRST116") {
+            throw error;
+        }
+
         if (!user) {
             return res.status(404).json({ error: "User not found." });
         }
@@ -684,10 +891,13 @@ export const changePassword = async (req, res) => {
         }
 
         const hashed = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
-        await prisma.user.update({
-            where: { id: userId },
-            data: { password: hashed },
-        });
+
+        const { error: updateError } = await supabase
+            .from("users")
+            .update({ password: hashed })
+            .eq("id", userId);
+
+        if (updateError) throw updateError;
 
         await writeAuditLog(userId, "password_change", { email: user.email });
         return res.json({ success: true });
@@ -779,60 +989,104 @@ export const exchangeOAuthCode = async (req, res) => {
 // ==========================================
 async function handleOAuthLogin(res, { provider, providerAccountId, email, name }) {
     // 1. Check if OAuth account exists
-    let oauthAccount = await prisma.oAuthAccount.findUnique({
-        where: {
-            provider_providerAccountId: { provider, providerAccountId }
-        },
-        include: { user: true }
-    });
+    const { data: oauthAccount, error: oauthError } = await supabase
+        .from("oauth_accounts")
+        .select("*")
+        .eq("provider", provider)
+        .eq("providerAccountId", providerAccountId)
+        .single();
+
+    if (oauthError && oauthError.code !== "PGRST116") {
+        throw oauthError;
+    }
 
     let user;
 
     if (oauthAccount) {
-        user = oauthAccount.user;
+        // Fetch user from oauth account
+        const { data: userData, error: userError } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", oauthAccount.userId)
+            .single();
+
+        if (userError || !userData) {
+            throw new Error("OAuth account exists but user not found");
+        }
+        user = userData;
     } else {
         // 2. Look up user by email
-        user = await prisma.user.findUnique({ where: { email } });
-        
+        const { data: userByEmail, error: userByEmailError } = await supabase
+            .from("users")
+            .select("*")
+            .eq("email", email)
+            .single();
+
+        if (userByEmailError && userByEmailError.code !== "PGRST116") {
+            throw userByEmailError;
+        }
+
+        user = userByEmail;
+
         if (!user) {
             // 3. Create user if not exists
-            // We use a dummy password hash because password is required in DB
             const dummyPassword = crypto.randomBytes(32).toString('hex');
             const hashedPassword = await bcrypt.hash(dummyPassword, BCRYPT_SALT_ROUNDS);
-            
-            user = await prisma.user.create({
-                data: {
+
+            const { data: newUser, error: createError } = await supabase
+                .from("users")
+                .insert({
                     email,
                     name,
                     password: hashedPassword,
-                    emailVerified: new Date() // implicitly verified since it came from OAuth provider
-                }
-            });
+                    emailVerified: new Date().toISOString(), // implicitly verified since it came from OAuth provider
+                })
+                .select()
+                .single();
+
+            if (createError) throw createError;
+            user = newUser;
+
             await writeAuditLog(user.id, "register_success_oauth", { provider, email });
         } else if (!user.emailVerified) {
             // Auto-verify email if they log in with a matching OAuth account
-            await prisma.user.update({
-                where: { id: user.id },
-                data: { emailVerified: new Date() }
-            });
+            const { error: updateError } = await supabase
+                .from("users")
+                .update({ emailVerified: new Date().toISOString() })
+                .eq("id", user.id);
+
+            if (updateError) throw updateError;
+
+            // Re-fetch user with updated emailVerified
+            const { data: updatedUser, error: reFetchError } = await supabase
+                .from("users")
+                .select("*")
+                .eq("id", user.id)
+                .single();
+
+            if (reFetchError) throw reFetchError;
+            user = updatedUser;
         }
 
         // Link the new OAuth account
-        await prisma.oAuthAccount.create({
-            data: {
-                userId: user.id,
-                provider,
-                providerAccountId
-            }
+        const { error: linkError } = await supabase.from("oauth_accounts").insert({
+            id: crypto.randomUUID(),
+            userId: user.id,
+            provider,
+            providerAccountId: providerAccountId,
         });
+
+        if (linkError) throw linkError;
     }
 
     // Reset lockout if needed
     if (user.failedLoginAttempts > 0 || user.lockedUntil) {
-        await prisma.user.update({
-            where: { id: user.id },
-            data: { failedLoginAttempts: 0, lockedUntil: null }
-        });
+        const { error: lockoutError } = await supabase
+            .from("users")
+            .update({ failedLoginAttempts: 0, lockedUntil: null })
+            .eq("id", user.id);
+
+        if (lockoutError) throw lockoutError;
     }
 
     await writeAuditLog(user.id, "login_oauth", { provider, email });

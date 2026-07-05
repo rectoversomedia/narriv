@@ -1,10 +1,11 @@
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
-import prisma from "../../prisma.js";
+import supabase from "../../lib/supabase.js";
 import { badRequest, forbidden, internalError } from "../../lib/api-error.js";
 import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { logStructured } from "../../lib/logger.js";
+import { recordAuditLog } from "../../lib/audit.js";
 
 const UPLOAD_DIR = path.join(process.cwd(), "uploads", "logos");
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
@@ -51,34 +52,43 @@ export async function uploadWorkspaceLogo(req, res) {
         fs.writeFileSync(filePath, buffer);
 
         // Build URL (relative path for local storage)
-        const logoUrl = `/uploads/logos/${uniqueName}`;
+        const logo_url = `/uploads/logos/${uniqueName}`;
 
-        // Update workspace settings with logo URL
-        await prisma.workspaceSettings.upsert({
-            where: { workspaceId: scopedWorkspaceId },
-            update: { logoUrl },
-            create: {
-                workspaceId: scopedWorkspaceId,
-                logoUrl,
+        // Check if settings exist
+        const { data: existing } = await supabase
+            .from("workspace_settings")
+            .select("id")
+            .eq("workspace_id", scopedWorkspaceId)
+            .maybeSingle();
+
+        if (existing) {
+            await supabase
+                .from("workspace_settings")
+                .update({ logo_url })
+                .eq("workspace_id", scopedWorkspaceId);
+        } else {
+            await supabase
+                .from("workspace_settings")
+                .insert({
+                    workspace_id: scopedWorkspaceId,
+                    logo_url,
+                });
+        }
+
+        await recordAuditLog({
+            userId: req.user.id,
+            workspaceId: scopedWorkspaceId,
+            event: "workspace_logo_uploaded",
+            metadata: {
+                workspace_id: scopedWorkspaceId,
+                file_name: uniqueName,
+                original_name: fileName,
+                mime_type: mimeType,
+                size: buffer.length,
             },
         });
 
-        await prisma.auditLog.create({
-            data: {
-                userId: req.user.id,
-                workspaceId: scopedWorkspaceId,
-                event: "workspace_logo_uploaded",
-                metadata: {
-                    workspaceId: scopedWorkspaceId,
-                    fileName: uniqueName,
-                    originalName: fileName,
-                    mimeType,
-                    size: buffer.length,
-                },
-            },
-        });
-
-        return res.json({ url: logoUrl, fileName: uniqueName });
+        return res.json({ url: logo_url, fileName: uniqueName });
     } catch (error) {
         logStructured("error", "Error uploading workspace logo:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);

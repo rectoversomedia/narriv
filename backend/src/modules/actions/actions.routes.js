@@ -1,5 +1,5 @@
 import express from "express";
-import prisma from "../../prisma.js";
+import supabase from "../../lib/supabase.js";
 import { generateActionPlan, generateMultiStepPlan } from "./actions.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
@@ -76,70 +76,66 @@ router.get("/", async (req, res) => {
         }
         const skip = (safePage - 1) * safeLimit;
 
-        const whereClause = { AND: [] };
-        whereClause.workspaceId = { in: scopedWorkspaceIds };
+        // Build query filters
+        let query = supabase
+            .from("action_plans")
+            .select(`
+                id,
+                title,
+                assigned_to,
+                assigned_team,
+                deadline,
+                escalation_level,
+                workflow_status,
+                created_at,
+                alert:alerts(title, severity),
+                cluster:narrative_clusters(title, sentiment)
+            `, { count: "exact" })
+            .in("workspace_id", scopedWorkspaceIds)
+            .order("created_at", { ascending: false })
+            .range(skip, skip + safeLimit - 1);
+
         if (search && String(search).trim()) {
             const term = String(search).trim();
-            whereClause.AND.push({ OR: [
-                { title: { contains: term, mode: "insensitive" } },
-                { assignedTo: { contains: term, mode: "insensitive" } },
-                { assignedTeam: { contains: term, mode: "insensitive" } },
-                { alert: { is: { title: { contains: term, mode: "insensitive" } } } },
-                { cluster: { is: { title: { contains: term, mode: "insensitive" } } } }
-            ] });
+            query = query.or(`title.ilike.%${term}%,assigned_to.ilike.%${term}%,assigned_team.ilike.%${term}%`);
         }
+
         if (priority && priority !== "all") {
             const priorityValue = String(priority).toLowerCase();
             if (["low", "medium", "high", "critical"].includes(priorityValue)) {
-                whereClause.escalationLevel = priorityValue;
+                query = query.eq("escalation_level", priorityValue);
             }
         }
+
         if (status && status !== "all") {
             const normalizedStatus = String(status);
             if (normalizedStatus === "active") {
-                whereClause.AND.push({ OR: [
-                    { workflowStatus: null },
-                    { workflowStatus: "todo" },
-                    { workflowStatus: "active" }
-                ] });
+                query = query.or(`workflow_status.is.null,workflow_status.eq.todo,workflow_status.eq.active`);
             } else if (normalizedStatus === "in-progress") {
-                whereClause.workflowStatus = { in: ["in_progress", "blocked"] };
+                query = query.in("workflow_status", ["in_progress", "blocked"]);
             } else {
-                whereClause.workflowStatus = normalizedStatus;
+                query = query.eq("workflow_status", normalizedStatus);
             }
         }
-        if (whereClause.AND.length === 0) {
-            delete whereClause.AND;
-        }
 
-        const [data, total] = await Promise.all([
-            prisma.actionPlan.findMany({
-                where: whereClause,
-                skip,
-                take: safeLimit,
-                orderBy: { createdAt: "desc" },
-                include: {
-                    alert: { select: { title: true, severity: true } },
-                    cluster: { select: { title: true, sentiment: true } }
-                }
-            }),
-            prisma.actionPlan.count({ where: whereClause })
-        ]);
+        const { data, error, count } = await query;
+
+        if (error) throw error;
 
         res.json({
-            data: data.map(plan => ({
+            data: (data || []).map(plan => ({
                 id: plan.id,
                 title: plan.title,
                 alert: plan.alert,
                 cluster: plan.cluster,
-                assignedTo: plan.assignedTo,
-                assignedTeam: plan.assignedTeam,
+                assignedTo: plan.assigned_to,
+                assignedTeam: plan.assigned_team,
                 deadline: plan.deadline,
-                escalationLevel: plan.escalationLevel,
-                workflowStatus: plan.workflowStatus,
-                createdAt: plan.createdAt
+                escalationLevel: plan.escalation_level,
+                workflowStatus: plan.workflow_status,
+                createdAt: plan.created_at
             })),
-            meta: { page: safePage, limit: safeLimit, total }
+            meta: { page: safePage, limit: safeLimit, total: count || 0 }
         });
     } catch (error) {
         logStructured("error", "Error fetching action plans:", { error: error?.message || error, stack: error?.stack });
@@ -153,16 +149,20 @@ router.get("/:id", async (req, res) => {
         const { id } = req.params;
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
-        const plan = await prisma.actionPlan.findUnique({
-            where: { id },
-            include: {
-                alert: true,
-                cluster: true,
-                generatedAssets: true
-            }
-        });
+        const { data: plan, error } = await supabase
+            .from("action_plans")
+            .select(`
+                *,
+                alert:alerts(*),
+                cluster:narrative_clusters(*),
+                generated_assets:generated_assets(*)
+            `)
+            .eq("id", id)
+            .maybeSingle();
 
-        if (!plan || !scopedWorkspaceIds.includes(plan.workspaceId)) {
+        if (error) throw error;
+
+        if (!plan || !scopedWorkspaceIds.includes(plan.workspace_id)) {
             return res.status(404).json({ error: "Action plan not found" });
         }
 
@@ -174,7 +174,7 @@ router.get("/:id", async (req, res) => {
         res.json({
             id: plan.id,
             title: plan.title,
-            createdAt: plan.createdAt,
+            createdAt: plan.created_at,
             alert: plan.alert,
             cluster: plan.cluster,
             options: {
@@ -182,7 +182,7 @@ router.get("/:id", async (req, res) => {
                 balanced: parseOption(plan.option2),
                 bold: parseOption(plan.option3)
             },
-            generatedAssets: plan.generatedAssets
+            generatedAssets: plan.generated_assets
         });
     } catch (error) {
         logStructured("error", "Error fetching action plan:", { error: error?.message || error, stack: error?.stack });

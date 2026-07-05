@@ -1,5 +1,5 @@
 import express from "express";
-import prisma from "../../prisma.js";
+import supabase from "../../lib/supabase.js";
 import { submitFeedback } from "../feedback/feedback.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds } from "../../lib/workspace-access.js";
@@ -80,17 +80,17 @@ function buildActionPlanResponse(plan) {
 
     return {
         id: plan.id,
-        assignedTo: plan.assignedTo,
-        assignedTeam: plan.assignedTeam,
+        assignedTo: plan.assigned_to,
+        assignedTeam: plan.assigned_team,
         deadline: plan.deadline,
-        escalationLevel: plan.escalationLevel,
-        workflowStatus: plan.workflowStatus,
+        escalationLevel: plan.escalation_level,
+        workflowStatus: plan.workflow_status,
         inputNarrative: primaryOption.executive_summary
             || primaryOption.severity_assessment
-            || plan.alert?.whatHappened
+            || plan.alert?.what_happened
             || plan.cluster?.description
             || "",
-        evidenceSummary: `Evidence: ${plan.cluster?.signalCount || 0} related findings · Severity: ${plan.alert?.severity || "medium"} · Status: ${plan.alert?.status || "open"}`,
+        evidenceSummary: `Evidence: ${plan.cluster?.signal_count || 0} related findings · Severity: ${plan.alert?.severity || "medium"} · Status: ${plan.alert?.status || "open"}`,
         outputs: [
             ["Primary action", plan.title || "Action plan"],
             ["Channel", channel],
@@ -109,16 +109,20 @@ router.get("/", async (req, res) => {
         if (scopedWorkspaceIds.length === 0) {
             return res.json({ inputNarrative: "", evidenceSummary: "", outputs: [], plan: [] });
         }
-        const whereClause = { workspaceId: { in: scopedWorkspaceIds } };
 
-        const latestPlan = await prisma.actionPlan.findFirst({
-            where: whereClause,
-            orderBy: { createdAt: "desc" },
-            include: {
-                alert: true,
-                cluster: true,
-            },
-        });
+        const { data: latestPlan, error } = await supabase
+            .from("action_plans")
+            .select(`
+                *,
+                alert:alerts(*),
+                cluster:narrative_clusters(*)
+            `)
+            .in("workspace_id", scopedWorkspaceIds)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (error) throw error;
 
         if (!latestPlan) {
             return res.json({
@@ -142,7 +146,7 @@ router.get("/metrics", async (req, res) => {
     try {
         const { workspaceId } = req.query;
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
-        
+
         const fallback = {
             active: { value: 0, trend: 0 },
             inProgress: { value: 0, trend: 0 },
@@ -159,10 +163,12 @@ router.get("/metrics", async (req, res) => {
         const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-        const allPlans = await prisma.actionPlan.findMany({
-            where: { workspaceId: { in: scopedWorkspaceIds } },
-            select: { workflowStatus: true, escalationLevel: true, createdAt: true }
-        });
+        const { data: allPlans, error } = await supabase
+            .from("action_plans")
+            .select("workflow_status, escalation_level, created_at")
+            .in("workspace_id", scopedWorkspaceIds);
+
+        if (error) throw error;
 
         const calculateTrend = (current, previous) => {
             if (previous === 0) return current > 0 ? 100 : 0;
@@ -176,13 +182,13 @@ router.get("/metrics", async (req, res) => {
             needsAttention: { current: 0, previous: 0, total: 0 }
         };
 
-        for (const plan of allPlans) {
-            const isCurrent = plan.createdAt >= sevenDaysAgo;
-            const isPrevious = plan.createdAt >= fourteenDaysAgo && plan.createdAt < sevenDaysAgo;
-            const isActive = plan.workflowStatus !== "done";
-            const isInProgress = ["in_progress", "blocked"].includes(plan.workflowStatus);
-            const isDone = plan.workflowStatus === "done";
-            const isNeedsAttention = isActive && ["high", "critical"].includes(plan.escalationLevel);
+        for (const plan of (allPlans || [])) {
+            const isCurrent = new Date(plan.created_at) >= sevenDaysAgo;
+            const isPrevious = new Date(plan.created_at) >= fourteenDaysAgo && new Date(plan.created_at) < sevenDaysAgo;
+            const isActive = plan.workflow_status !== "done";
+            const isInProgress = ["in_progress", "blocked"].includes(plan.workflow_status);
+            const isDone = plan.workflow_status === "done";
+            const isNeedsAttention = isActive && ["high", "critical"].includes(plan.escalation_level);
 
             if (isActive) metrics.active.total++;
             if (isInProgress) metrics.inProgress.total++;
@@ -207,12 +213,12 @@ router.get("/metrics", async (req, res) => {
             inProgress: { value: metrics.inProgress.total, trend: calculateTrend(metrics.inProgress.current, metrics.inProgress.previous) },
             done: { value: metrics.done.total, trend: calculateTrend(metrics.done.current, metrics.done.previous) },
             needsAttention: { value: metrics.needsAttention.total, trend: calculateTrend(metrics.needsAttention.current, metrics.needsAttention.previous) },
-            resolution: { 
-                value: allPlans.length, 
+            resolution: {
+                value: (allPlans || []).length,
                 trend: calculateTrend(
-                    metrics.active.current + metrics.inProgress.current + metrics.done.current, 
+                    metrics.active.current + metrics.inProgress.current + metrics.done.current,
                     metrics.active.previous + metrics.inProgress.previous + metrics.done.previous
-                ) 
+                )
             }
         });
 
@@ -228,15 +234,19 @@ router.get("/:id", async (req, res) => {
         const { id } = req.params;
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
-        const plan = await prisma.actionPlan.findUnique({
-            where: { id },
-            include: {
-                alert: true,
-                cluster: true,
-            },
-        });
+        const { data: plan, error } = await supabase
+            .from("action_plans")
+            .select(`
+                *,
+                alert:alerts(*),
+                cluster:narrative_clusters(*)
+            `)
+            .eq("id", id)
+            .maybeSingle();
 
-        if (!plan || !scopedWorkspaceIds.includes(plan.workspaceId)) {
+        if (error) throw error;
+
+        if (!plan || !scopedWorkspaceIds.includes(plan.workspace_id)) {
             return res.json({
                 inputNarrative: "",
                 evidenceSummary: "",
@@ -260,12 +270,15 @@ router.get("/:id/learning", async (req, res) => {
         const { id } = req.params;
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
-        const plan = await prisma.actionPlan.findUnique({
-            where: { id },
-            select: { id: true, workspaceId: true },
-        });
+        const { data: plan, error } = await supabase
+            .from("action_plans")
+            .select("id, workspace_id")
+            .eq("id", id)
+            .maybeSingle();
 
-        if (!plan || !scopedWorkspaceIds.includes(plan.workspaceId)) {
+        if (error) throw error;
+
+        if (!plan || !scopedWorkspaceIds.includes(plan.workspace_id)) {
             return res.status(404).json({ error: "Action plan not found" });
         }
 
@@ -280,6 +293,7 @@ router.get("/:id/learning", async (req, res) => {
         return res.status(500).json({ error: "Internal server error" });
     }
 });
+
 // POST /api/action-plans/:id/feedback — Feedback endpoint for action suggestions
 router.post("/:id/feedback", validateRequest({ params: actionPlanIdParamsSchema, body: submitActionPlanFeedbackBodySchema }), async (req, res) => {
     try {
@@ -293,18 +307,22 @@ router.post("/:id/feedback", validateRequest({ params: actionPlanIdParamsSchema,
             });
         }
 
-        const plan = await prisma.actionPlan.findUnique({
-            where: { id },
-            select: { id: true, workspaceId: true },
-        });
+        const { data: plan, error: planError } = await supabase
+            .from("action_plans")
+            .select("id, workspace_id")
+            .eq("id", id)
+            .maybeSingle();
+
+        if (planError) throw planError;
+
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
-        if (!plan || !scopedWorkspaceIds.includes(plan.workspaceId)) {
+        if (!plan || !scopedWorkspaceIds.includes(plan.workspace_id)) {
             return res.status(404).json({ error: "Action plan not found" });
         }
 
         const feedback = await submitFeedback({
-            workspaceId: plan.workspaceId,
+            workspaceId: plan.workspace_id,
             targetType: "action_plan",
             targetId: plan.id,
             action,
@@ -317,10 +335,10 @@ router.post("/:id/feedback", validateRequest({ params: actionPlanIdParamsSchema,
         return res.status(201).json({
             id: feedback.id,
             action: feedback.action,
-            targetType: feedback.targetType,
-            targetId: feedback.targetId,
+            targetType: feedback.target_type,
+            targetId: feedback.target_id,
             reason: feedback.reason,
-            createdAt: feedback.createdAt,
+            createdAt: feedback.created_at,
         });
     } catch (error) {
         logStructured("error", "Error submitting action plan feedback:", { error: error?.message || error, stack: error?.stack });
@@ -335,55 +353,58 @@ router.patch("/:id/assign", validateRequest({ params: assignActionPlanParamsSche
         const { assignedTo, assignedTeam, deadline, escalationLevel } = req.body;
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
-        const existing = await prisma.actionPlan.findUnique({
-            where: { id },
-            select: { id: true, workspaceId: true, escalationLevel: true },
-        });
+        const { data: existing, error: existingError } = await supabase
+            .from("action_plans")
+            .select("id, workspace_id, escalation_level")
+            .eq("id", id)
+            .maybeSingle();
 
-        if (!existing || !scopedWorkspaceIds.includes(existing.workspaceId)) {
+        if (existingError) throw existingError;
+
+        if (!existing || !scopedWorkspaceIds.includes(existing.workspace_id)) {
             return res.status(404).json({ error: "Action plan not found" });
         }
 
-        const updated = await prisma.actionPlan.update({
-            where: { id },
-            data: {
-                assignedTo: assignedTo ?? null,
-                assignedTeam: assignedTeam ?? null,
+        const { data: updated, error: updateError } = await supabase
+            .from("action_plans")
+            .update({
+                assigned_to: assignedTo ?? null,
+                assigned_team: assignedTeam ?? null,
                 deadline: deadline ? new Date(deadline) : null,
-                escalationLevel: escalationLevel ?? existing.escalationLevel,
+                escalation_level: escalationLevel ?? existing.escalation_level,
+            })
+            .eq("id", id)
+            .select()
+            .single();
+
+        if (updateError) throw updateError;
+
+        await supabase.from("audit_logs").insert({
+            user_id: req.user.id,
+            workspace_id: updated.workspace_id,
+            event: "assignment_change",
+            metadata: {
+                target_type: "action_plan",
+                action_plan_id: updated.id,
+                workspace_id: updated.workspace_id,
+                assigned_to: updated.assigned_to,
+                assigned_team: updated.assigned_team,
+                deadline: updated.deadline,
+                escalation_level: updated.escalation_level,
             }
         });
 
-        await prisma.auditLog.create({
-            data: {
-                userId: req.user.id,
-                workspaceId: updated.workspaceId,
-                event: "assignment_change",
+        if (escalationLevel && escalationLevel !== existing.escalation_level) {
+            await supabase.from("audit_logs").insert({
+                user_id: req.user.id,
+                workspace_id: updated.workspace_id,
+                event: "escalation_change",
                 metadata: {
-                    targetType: "action_plan",
-                    actionPlanId: updated.id,
-                    workspaceId: updated.workspaceId,
-                    assignedTo: updated.assignedTo,
-                    assignedTeam: updated.assignedTeam,
-                    deadline: updated.deadline,
-                    escalationLevel: updated.escalationLevel,
-                }
-            }
-        });
-
-        if (escalationLevel && escalationLevel !== existing.escalationLevel) {
-            await prisma.auditLog.create({
-                data: {
-                    userId: req.user.id,
-                    workspaceId: updated.workspaceId,
-                    event: "escalation_change",
-                    metadata: {
-                        targetType: "action_plan",
-                        actionPlanId: updated.id,
-                        workspaceId: updated.workspaceId,
-                        previousEscalationLevel: existing.escalationLevel,
-                        escalationLevel: updated.escalationLevel,
-                    }
+                    target_type: "action_plan",
+                    action_plan_id: updated.id,
+                    workspace_id: updated.workspace_id,
+                    previous_escalation_level: existing.escalation_level,
+                    escalation_level: updated.escalation_level,
                 }
             });
         }

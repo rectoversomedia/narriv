@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import prisma from "../../prisma.js";
+import supabase from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
 
 const DEFAULT_SIGNED_URL_TTL_SECONDS = Number(process.env.REPORT_EXPORT_URL_TTL_SECONDS || 3600);
@@ -24,71 +24,80 @@ export async function storeReportExportPayload({
     const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
     const signedUrl = buildSignedUrl(baseUrl, exportId, signedToken);
 
-    await prisma.reportExport.update({
-        where: { id: exportId },
-        data: {
-            fileContent: payload,
-            fileName,
-            signedToken,
-            signedUrl,
-            expiresAt,
+    const { error } = await supabase
+        .from("report_exports")
+        .update({
+            file_content: payload,
+            file_name: fileName,
+            signed_token: signedToken,
+            signed_url: signedUrl,
+            expires_at: expiresAt.toISOString(),
             status: "completed",
-            errorMessage: null,
-        }
-    });
+            error_message: null,
+        })
+        .eq("id", exportId);
+
+    if (error) {
+        logStructured("error", "store_export_payload_failed", { exportId, error: error.message });
+        throw error;
+    }
 
     logStructured("info", "export_payload_stored", { exportId, provider, ttlSeconds });
     return { signedUrl, expiresAt, provider };
 }
 
 export async function resolveSignedReportDownload({ exportId, token }) {
-    const job = await prisma.reportExport.findUnique({
-        where: { id: exportId },
-        include: { report: true },
-    });
+    const { data: job, error } = await supabase
+        .from("report_exports")
+        .select("*, report:reports(*)")
+        .eq("id", exportId)
+        .single();
 
-    if (!job) {
+    if (error || !job) {
         return { ok: false, status: 404, error: "Export job not found" };
     }
-    if (job.status !== "completed" || !job.fileContent) {
+    if (job.status !== "completed" || !job.file_content) {
         return { ok: false, status: 409, error: "Export is not ready" };
     }
-    if (!job.signedToken || token !== job.signedToken) {
+    if (!job.signed_token || token !== job.signed_token) {
         return { ok: false, status: 401, error: "Invalid download token" };
     }
-    if (job.expiresAt && new Date(job.expiresAt) < new Date()) {
+    if (job.expires_at && new Date(job.expires_at) < new Date()) {
         return { ok: false, status: 410, error: "Signed URL has expired" };
     }
 
-    return { ok: true, job, payload: job.fileContent };
+    return { ok: true, job, payload: job.file_content };
 }
 
 export async function cleanupExpiredReportExports(limit = 100) {
     const now = new Date();
-    const expired = await prisma.reportExport.findMany({
-        where: {
-            status: "completed",
-            expiresAt: { lt: now },
-        },
-        select: { id: true },
-        take: limit,
-    });
+    const { data: expired, error } = await supabase
+        .from("report_exports")
+        .select("id")
+        .eq("status", "completed")
+        .lt("expires_at", now.toISOString())
+        .limit(limit);
 
-    if (expired.length === 0) return { cleaned: 0 };
+    if (error || !expired || expired.length === 0) {
+        return { cleaned: 0 };
+    }
 
     const ids = expired.map((item) => item.id);
-    await prisma.reportExport.updateMany({
-        where: { id: { in: ids } },
-        data: {
+    const { error: updateError } = await supabase
+        .from("report_exports")
+        .update({
             status: "expired",
-            fileContent: null,
-            signedToken: null,
-            signedUrl: null,
-            errorMessage: "Export expired and cleaned up",
-        }
-    });
+            file_content: null,
+            signed_token: null,
+            signed_url: null,
+            error_message: "Export expired and cleaned up",
+        })
+        .in("id", ids);
+
+    if (updateError) {
+        logStructured("error", "cleanup_expired_exports_failed", { error: updateError.message });
+    }
 
     logStructured("info", "expired_exports_cleaned", { cleaned: ids.length });
     return { cleaned: ids.length };
 }
-

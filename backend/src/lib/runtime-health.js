@@ -1,4 +1,4 @@
-import prisma from "../prisma.js";
+import supabase from "./supabase.js";
 import redisConnection from "./redis.js";
 import OpenAI from "openai";
 import { ApifyClient } from "apify-client";
@@ -13,7 +13,11 @@ function fail(service, error, details = {}) {
 
 export async function checkDatabaseHealth() {
     try {
-        await prisma.$queryRaw`SELECT 1`;
+        // Supabase equivalent: select 1 row to verify connection
+        const { error } = await supabase.from('users').select('id').limit(1);
+        if (error) {
+            throw error;
+        }
         return ok("database");
     } catch (error) {
         return fail("database", error);

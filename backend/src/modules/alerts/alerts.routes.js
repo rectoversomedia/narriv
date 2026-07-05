@@ -1,5 +1,5 @@
 import express from "express";
-import prisma from "../../prisma.js";
+import supabase from "../../lib/supabase.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
@@ -32,7 +32,7 @@ function buildHourlyAlertTimeline(alerts, now = new Date()) {
     });
 
     alerts.forEach((alert) => {
-        const createdAt = new Date(alert.createdAt);
+        const createdAt = new Date(alert.created_at);
         if (Number.isNaN(createdAt.getTime())) return;
         const hoursAgo = Math.floor((currentTime - createdAt.getTime()) / hourMs);
         const bucketIndex = bucketCount - 1 - hoursAgo;
@@ -66,35 +66,40 @@ router.post("/", validateRequest({ body: createAlertBodySchema }), async (req, r
             return res.status(403).json({ error: "Workspace access denied" });
         }
 
-        const alert = await prisma.alert.create({
-            data: {
-                workspaceId: scopedWorkspaceId,
+        const { data: alert, error: alertError } = await supabase
+            .from('alerts')
+            .insert({
+                workspace_id: scopedWorkspaceId,
                 title,
                 type,
                 severity,
-                whatHappened: whatHappened || null,
-                whyItMatters: whyItMatters || null,
-                whatToDo: whatToDo || null,
-                assignedTo: assignedTo || null,
-                assignedTeam: assignedTeam || null,
-                deadline: deadline ? new Date(deadline) : null,
+                what_happened: whatHappened || null,
+                why_it_matters: whyItMatters || null,
+                what_to_do: whatToDo || null,
+                assigned_to: assignedTo || null,
+                assigned_team: assignedTeam || null,
+                deadline: deadline ? new Date(deadline).toISOString() : null,
                 status: "open",
                 sources: sources || [],
-            }
-        });
+            })
+            .select()
+            .single();
 
-        await prisma.auditLog.create({
-            data: {
-                userId: req.user.id,
-                workspaceId: alert.workspaceId,
-                event: "alert_created",
-                metadata: {
-                    targetType: "alert",
-                    alertId: alert.id,
-                    workspaceId: alert.workspaceId,
-                    title: alert.title,
-                    severity: alert.severity,
-                }
+        if (alertError || !alert) {
+            logStructured("error", "Error creating alert:", { error: alertError?.message || alertError });
+            return res.status(500).json({ error: "Internal server error" });
+        }
+
+        await supabase.from('audit_logs').insert({
+            user_id: req.user.id,
+            workspace_id: alert.workspace_id,
+            event: "alert_created",
+            metadata: {
+                target_type: "alert",
+                alert_id: alert.id,
+                workspace_id: alert.workspace_id,
+                title: alert.title,
+                severity: alert.severity,
             }
         });
 
@@ -110,7 +115,7 @@ router.get("/", async (req, res) => {
     try {
         const page = parseInt(req.query.page, 10) || 1;
         const limit = parseInt(req.query.limit, 10) || 10;
-        
+
         const { type, severity, status, workspaceId, search } = req.query;
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
         if (scopedWorkspaceIds.length === 0) {
@@ -120,61 +125,50 @@ router.get("/", async (req, res) => {
                 pagination: { page: 1, limit: safeLimit, total: 0, totalPages: 0 }
             });
         }
-        
+
         const safePage = Math.max(1, page);
         const safeLimit = Math.min(Math.max(1, limit), 100);
         const skip = (safePage - 1) * safeLimit;
 
-        const whereClause = {};
+        // Build Supabase query
+        let query = supabase
+            .from('alerts')
+            .select('*', { count: 'exact' })
+            .in('workspace_id', scopedWorkspaceIds);
 
         if (type) {
-            whereClause.type = type;
+            query = query.eq('type', type);
         }
 
         if (severity) {
-            whereClause.severity = severity;
+            query = query.eq('severity', severity);
         }
 
         if (status) {
-            whereClause.status = status;
+            query = query.eq('status', status);
         }
 
         if (typeof search === "string" && search.trim()) {
-            const query = search.trim();
-            whereClause.OR = [
-                { title: { contains: query, mode: "insensitive" } },
-                { whatHappened: { contains: query, mode: "insensitive" } },
-                { whyItMatters: { contains: query, mode: "insensitive" } },
-                { whatToDo: { contains: query, mode: "insensitive" } },
-                { assignedTo: { contains: query, mode: "insensitive" } },
-                { assignedTeam: { contains: query, mode: "insensitive" } },
-                { type: { contains: query, mode: "insensitive" } },
-            ];
+            const searchTerm = search.trim();
+            query = query.or(`title.ilike.%${searchTerm}%,what_happened.ilike.%${searchTerm}%,why_it_matters.ilike.%${searchTerm}%,what_to_do.ilike.%${searchTerm}%,assigned_to.ilike.%${searchTerm}%,assigned_team.ilike.%${searchTerm}%,type.ilike.%${searchTerm}%`);
         }
-        
-        whereClause.workspaceId = { in: scopedWorkspaceIds };
 
-        const [data, total] = await Promise.all([
-            prisma.alert.findMany({
-                where: whereClause,
-                skip,
-                take: safeLimit,
-                orderBy: {
-                    createdAt: 'desc'
-                }
-            }),
-            prisma.alert.count({
-                where: whereClause
-            })
-        ]);
+        query = query.order('created_at', { ascending: false }).range(skip, skip + safeLimit - 1);
+
+        const { data: dataResult, error: dataError, count } = await query;
+
+        if (dataError) {
+            logStructured("error", "Error fetching alerts:", { error: dataError?.message || dataError, stack: dataError?.stack });
+            return res.status(500).json({ error: "Internal server error" });
+        }
 
         res.json({
-            data: data || [],
+            data: dataResult || [],
             pagination: {
                 page: safePage,
                 limit: safeLimit,
-                total: total || 0,
-                totalPages: Math.ceil((total || 0) / safeLimit)
+                total: count || 0,
+                totalPages: Math.ceil((count || 0) / safeLimit)
             }
         });
     } catch (error) {
@@ -210,24 +204,35 @@ router.get("/summary", async (req, res) => {
             });
         }
 
-        const where = { workspaceId: { in: scopedWorkspaceIds } };
+        // Fetch all alerts for the workspace
+        const { data: all, error: allError } = await supabase
+            .from('alerts')
+            .select('severity, status, type, created_at, acknowledged_at, resolved_at, escalation_level, deadline')
+            .in('workspace_id', scopedWorkspaceIds);
 
-        const [all, byType, escalationLevels] = await Promise.all([
-            prisma.alert.findMany({
-                where,
-                select: { severity: true, status: true, type: true, createdAt: true, acknowledgedAt: true, resolvedAt: true, escalationLevel: true, deadline: true },
-            }),
-            prisma.alert.groupBy({
-                by: ["type"],
-                where,
-                _count: { _all: true },
-            }),
-            prisma.escalationMatrix.findMany({
-                where: { workspaceId: { in: scopedWorkspaceIds }, isActive: true },
-                select: { slaMinutes: true, order: true },
-                orderBy: { order: "asc" },
-            }),
-        ]);
+        if (allError) {
+            logStructured("error", "Error fetching alerts summary:", { error: allError?.message || allError, stack: allError?.stack });
+            return res.status(500).json({ error: "Internal server error" });
+        }
+
+        // Fetch escalation matrices for SLA targets
+        const { data: escalationLevels, error: matrixError } = await supabase
+            .from('escalation_matrices')
+            .select('sla_minutes, "order"')
+            .in('workspace_id', scopedWorkspaceIds)
+            .eq('is_active', true)
+            .order('order', { ascending: true });
+
+        if (matrixError) {
+            logStructured("error", "Error fetching escalation matrices:", { error: matrixError?.message || matrixError, stack: matrixError?.stack });
+        }
+
+        // Group by type manually (Supabase doesn't support groupBy like Prisma)
+        const byTypeObj = {};
+        for (const alert of (all || [])) {
+            const t = alert.type || "unknown";
+            byTypeObj[t] = (byTypeObj[t] || 0) + 1;
+        }
 
         const bySeverity = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
         const byStatus = { open: 0, in_progress: 0, resolved: 0 };
@@ -244,7 +249,7 @@ router.get("/summary", async (req, res) => {
         let overdueCount = 0;
         const now = Date.now();
 
-        for (const a of all) {
+        for (const a of all || []) {
             const sev = String(a.severity || "").toLowerCase();
             if (sev === "critical") bySeverity.critical += 1;
             else if (sev === "high") bySeverity.high += 1;
@@ -256,22 +261,22 @@ router.get("/summary", async (req, res) => {
             if (stt === "open") byStatus.open += 1;
             else if (stt === "in_progress" || stt === "in-progress" || stt === "acknowledged") byStatus.in_progress += 1;
             else if (stt === "resolved") byStatus.resolved += 1;
-            if (a.acknowledgedAt) acknowledgedCount += 1;
-            if (a.resolvedAt || stt === "resolved") resolvedCount += 1;
-            if (["high", "critical"].includes(String(a.escalationLevel || "").toLowerCase())) escalatedCount += 1;
+            if (a.acknowledged_at) acknowledgedCount += 1;
+            if (a.resolved_at || stt === "resolved") resolvedCount += 1;
+            if (["high", "critical"].includes(String(a.escalation_level || "").toLowerCase())) escalatedCount += 1;
             if (a.deadline && stt !== "resolved") {
                 const deadline = new Date(a.deadline);
                 if (!Number.isNaN(deadline.getTime()) && deadline.getTime() < now) overdueCount += 1;
             }
 
-            const t = new Date(a.createdAt);
+            const t = new Date(a.created_at);
             if (Number.isNaN(t.getTime())) continue;
             if (t >= sevenDaysAgo) last7Days += 1;
             else if (t >= fourteenDaysAgo) previous7Days += 1;
 
-            if (a.acknowledgedAt) {
-                const created = new Date(a.createdAt);
-                const acked = new Date(a.acknowledgedAt);
+            if (a.acknowledged_at) {
+                const created = new Date(a.created_at);
+                const acked = new Date(a.acknowledged_at);
                 if (!Number.isNaN(created.getTime()) && !Number.isNaN(acked.getTime())) {
                     totalResponseTimeMs += Math.max(0, acked.getTime() - created.getTime());
                     acknowledgedCountForTime += 1;
@@ -282,25 +287,20 @@ router.get("/summary", async (req, res) => {
         const avgResponseTimeMinutes = acknowledgedCountForTime > 0
             ? Math.round(totalResponseTimeMs / (acknowledgedCountForTime * 60 * 1000))
             : null;
-        const deliverySuccessRate = all.length > 0 ? Math.round(((acknowledgedCount + resolvedCount) / (all.length * 2)) * 100) : 0;
-        const acknowledgmentRate = all.length > 0 ? Math.round((acknowledgedCount / all.length) * 100) : 0;
-        const slaTargetMinutes = escalationLevels.length > 0
-            ? Math.min(...escalationLevels.map((level) => level.slaMinutes).filter((value) => Number.isFinite(value) && value > 0))
+        const deliverySuccessRate = (all?.length || 0) > 0 ? Math.round(((acknowledgedCount + resolvedCount) / ((all?.length || 0) * 2)) * 100) : 0;
+        const acknowledgmentRate = (all?.length || 0) > 0 ? Math.round((acknowledgedCount / (all?.length || 0)) * 100) : 0;
+        const slaTargetMinutes = (escalationLevels?.length || 0) > 0
+            ? Math.min(...escalationLevels.map((level) => level.sla_minutes).filter((value) => Number.isFinite(value) && value > 0))
             : null;
 
-        const typeMap = {};
-        for (const row of byType) {
-            typeMap[row.type] = row._count._all;
-        }
-
         const trendDelta = previous7Days === 0 ? (last7Days > 0 ? 1 : 0) : (last7Days - previous7Days) / previous7Days;
-        const { timeline, timelineLabels } = buildHourlyAlertTimeline(all);
+        const { timeline, timelineLabels } = buildHourlyAlertTimeline(all || []);
 
         return res.json({
-            total: all.length,
+            total: all?.length || 0,
             by_severity: bySeverity,
             by_status: byStatus,
-            by_type: typeMap,
+            by_type: byTypeObj,
             last_7_days: last7Days,
             previous_7_days: previous7Days,
             trend_delta: trendDelta,
@@ -327,16 +327,20 @@ router.get("/:id", async (req, res) => {
         const { id } = req.params;
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
-        const alert = await prisma.alert.findUnique({
-            where: { id },
-        });
+        const { data: alert, error } = await supabase
+            .from('alerts')
+            .select('*')
+            .eq('id', id)
+            .single();
 
-        if (!alert || !scopedWorkspaceIds.includes(alert.workspaceId)) {
+        if (error || !alert) {
             return res.status(404).json({ error: "Alert not found" });
         }
 
-        // Prisma automatically includes all scalar fields, which covers:
-        // title, whatHappened, whyItMatters, whatToDo, severity, etc.
+        if (!scopedWorkspaceIds.includes(alert.workspace_id)) {
+            return res.status(404).json({ error: "Alert not found" });
+        }
+
         res.json(alert);
     } catch (error) {
         logStructured("error", "Error fetching alert:", { error: error?.message || error, stack: error?.stack });
@@ -353,40 +357,53 @@ router.patch("/:id/status", validateRequest({ params: alertIdParamsSchema, body:
 
         const validStatuses = ["open", "acknowledged", "resolved"];
         if (!validStatuses.includes(status)) {
-            return res.status(400).json({ 
-                error: `Invalid status. Must be one of: ${validStatuses.join(", ")}` 
+            return res.status(400).json({
+                error: `Invalid status. Must be one of: ${validStatuses.join(", ")}`
             });
         }
 
-        const existing = await prisma.alert.findUnique({ where: { id } });
-        if (!existing || !scopedWorkspaceIds.includes(existing.workspaceId)) {
+        const { data: existing, error: existingError } = await supabase
+            .from('alerts')
+            .select('id, workspace_id, acknowledged_at')
+            .eq('id', id)
+            .single();
+
+        if (existingError || !existing) {
+            return res.status(404).json({ error: "Alert not found" });
+        }
+
+        if (!scopedWorkspaceIds.includes(existing.workspace_id)) {
             return res.status(404).json({ error: "Alert not found" });
         }
 
         const updateData = { status };
         if (status === "acknowledged") {
-            updateData.acknowledgedAt = new Date();
-            updateData.resolvedAt = null;
+            updateData.acknowledged_at = new Date().toISOString();
+            updateData.resolved_at = null;
         } else if (status === "resolved") {
-            if (!existing.acknowledgedAt) {
-                updateData.acknowledgedAt = new Date();
+            if (!existing.acknowledged_at) {
+                updateData.acknowledged_at = new Date().toISOString();
             }
-            updateData.resolvedAt = new Date();
+            updateData.resolved_at = new Date().toISOString();
         } else if (status === "open") {
-            updateData.acknowledgedAt = null;
-            updateData.resolvedAt = null;
+            updateData.acknowledged_at = null;
+            updateData.resolved_at = null;
         }
 
-        const updatedAlert = await prisma.alert.update({
-            where: { id },
-            data: updateData,
-        });
+        const { data: updatedAlert, error: updateError } = await supabase
+            .from('alerts')
+            .update(updateData)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (updateError) {
+            logStructured("error", "Error updating alert status:", { error: updateError?.message || updateError, stack: updateError?.stack });
+            return res.status(500).json({ error: "Internal server error" });
+        }
 
         res.json(updatedAlert);
     } catch (error) {
-        if (error.code === 'P2025') {
-            return res.status(404).json({ error: "Alert not found" });
-        }
         logStructured("error", "Error updating alert status:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
@@ -399,51 +416,63 @@ router.patch("/:id/assign", validateRequest({ params: assignAlertParamsSchema, b
         const { assignedTo, assignedTeam, deadline, escalationLevel } = req.body;
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
-        const existing = await prisma.alert.findUnique({ where: { id } });
-        if (!existing || !scopedWorkspaceIds.includes(existing.workspaceId)) {
+        const { data: existing, error: existingError } = await supabase
+            .from('alerts')
+            .select('id, workspace_id, escalation_level')
+            .eq('id', id)
+            .single();
+
+        if (existingError || !existing) {
             return res.status(404).json({ error: "Alert not found" });
         }
 
-        const updated = await prisma.alert.update({
-            where: { id },
-            data: {
-                assignedTo: assignedTo ?? null,
-                assignedTeam: assignedTeam ?? null,
-                deadline: deadline ? new Date(deadline) : null,
-                escalationLevel: escalationLevel ?? existing.escalationLevel,
+        if (!scopedWorkspaceIds.includes(existing.workspace_id)) {
+            return res.status(404).json({ error: "Alert not found" });
+        }
+
+        const { data: updated, error: updateError } = await supabase
+            .from('alerts')
+            .update({
+                assigned_to: assignedTo ?? null,
+                assigned_team: assignedTeam ?? null,
+                deadline: deadline ? new Date(deadline).toISOString() : null,
+                escalation_level: escalationLevel ?? existing.escalation_level,
+            })
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (updateError) {
+            logStructured("error", "Error updating alert assignment:", { error: updateError?.message || updateError, stack: updateError?.stack });
+            return res.status(500).json({ error: "Internal server error" });
+        }
+
+        await supabase.from('audit_logs').insert({
+            user_id: req.user.id,
+            workspace_id: updated.workspace_id,
+            event: "assignment_change",
+            metadata: {
+                target_type: "alert",
+                alert_id: updated.id,
+                workspace_id: updated.workspace_id,
+                assigned_to: updated.assigned_to,
+                assigned_team: updated.assigned_team,
+                deadline: updated.deadline,
+                escalation_level: updated.escalation_level,
             }
         });
 
-        await prisma.auditLog.create({
-            data: {
-                userId: req.user.id,
-                workspaceId: updated.workspaceId,
-                event: "assignment_change",
+        if (escalationLevel && escalationLevel !== existing.escalation_level) {
+            await supabase.from('audit_logs').insert({
+                user_id: req.user.id,
+                workspace_id: updated.workspace_id,
+                event: "escalation_change",
                 metadata: {
-                    targetType: "alert",
-                    alertId: updated.id,
-                    workspaceId: updated.workspaceId,
-                    assignedTo: updated.assignedTo,
-                    assignedTeam: updated.assignedTeam,
-                    deadline: updated.deadline,
-                    escalationLevel: updated.escalationLevel,
-                }
-            }
-        });
-
-        if (escalationLevel && escalationLevel !== existing.escalationLevel) {
-            await prisma.auditLog.create({
-                data: {
-                    userId: req.user.id,
-                    workspaceId: updated.workspaceId,
-                    event: "escalation_change",
-                    metadata: {
-                        targetType: "alert",
-                        alertId: updated.id,
-                        workspaceId: updated.workspaceId,
-                        previousEscalationLevel: existing.escalationLevel,
-                        escalationLevel: updated.escalationLevel,
-                    }
+                    target_type: "alert",
+                    alert_id: updated.id,
+                    workspace_id: updated.workspace_id,
+                    previous_escalation_level: existing.escalation_level,
+                    escalation_level: updated.escalation_level,
                 }
             });
         }

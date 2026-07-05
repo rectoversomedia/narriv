@@ -3,7 +3,7 @@ import { triggerIngestion, triggerBatchIngestion, getIngestionStatus, cancelInge
 import { handleWebhook } from "./custom-sources.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
-import prisma from "../../prisma.js";
+import supabaseAdmin from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
 import { addAnalysisJob } from "../../lib/queue.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
@@ -43,10 +43,16 @@ router.post("/webhook/:sourceId", async (req, res) => {
             return res.status(403).json({ error: "Workspace access denied" });
         }
 
-        const source = await prisma.source.findFirst({
-            where: { id: sourceId, workspaceId: scopedWorkspaceId, isActive: true, type: { not: "deleted" } },
-        });
-        if (!source) {
+        const { data: source, error } = await supabaseAdmin
+            .from("sources")
+            .select()
+            .eq("id", sourceId)
+            .eq("workspace_id", scopedWorkspaceId)
+            .eq("is_active", true)
+            .neq("type", "deleted")
+            .maybeSingle();
+
+        if (error || !source) {
             return res.status(404).json({ error: "Source not found" });
         }
 
@@ -60,30 +66,42 @@ router.post("/webhook/:sourceId", async (req, res) => {
         let createdCount = 0;
         for (const item of items) {
             try {
-                const rawDoc = await prisma.rawDocument.create({
-                    data: {
-                        workspaceId: scopedWorkspaceId,
-                        sourceId,
-                        externalId: item.externalId || `webhook_${Date.now()}_${createdCount}`,
+                const { data: rawDoc, error: rawDocError } = await supabaseAdmin
+                    .from("raw_documents")
+                    .insert({
+                        workspace_id: scopedWorkspaceId,
+                        source_id: sourceId,
+                        external_id: item.externalId || `webhook_${Date.now()}_${createdCount}`,
                         title: item.title,
                         content: item.content,
                         url: item.url || null,
                         platform: "webhook",
                         author: item.author || null,
-                        publishedAt: item.publishedDate ? new Date(item.publishedDate) : null,
-                    },
-                });
+                        published_at: item.publishedDate ? new Date(item.publishedDate).toISOString() : null,
+                    })
+                    .select()
+                    .single();
 
-                const signal = await prisma.signal.create({
-                    data: {
-                        workspaceId: scopedWorkspaceId,
-                        rawDocumentId: rawDoc.id,
+                if (rawDocError || !rawDoc) {
+                    throw new Error(rawDocError?.message || "Failed to create raw document");
+                }
+
+                const { data: signal, error: signalError } = await supabaseAdmin
+                    .from("signals")
+                    .insert({
+                        workspace_id: scopedWorkspaceId,
+                        raw_document_id: rawDoc.id,
                         title: item.title,
                         content: item.content,
                         sentiment: "neutral",
                         platform: "webhook",
-                    },
-                });
+                    })
+                    .select()
+                    .single();
+
+                if (signalError || !signal) {
+                    throw new Error(signalError?.message || "Failed to create signal");
+                }
 
                 await addAnalysisJob(signal.id);
                 createdCount++;

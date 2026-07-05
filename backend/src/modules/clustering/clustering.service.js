@@ -1,4 +1,4 @@
-import prisma from "../../prisma.js";
+import supabase from "../../lib/supabase.js";
 import { analyzeCluster } from "../ai/ai.service.js";
 import { logStructured } from "../../lib/logger.js";
 
@@ -20,27 +20,37 @@ function calculateSimilarity(setA, setB) {
 
 export const runClustering = async (workspaceId) => {
     logStructured("info", "clustering_started", { workspaceId });
-    
+
     // 1. Fetch unclustered signals (or all recent signals)
     // For simplicity, let's fetch all signals in the last 7 days for the workspace
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    
-    const signals = await prisma.signal.findMany({
-        where: {
-            workspaceId,
-            capturedAt: { gte: sevenDaysAgo }
-        },
-        include: {
-            narrativeClusterSignals: true,
-            analyses: {
-                orderBy: { createdAt: 'desc' },
-                take: 1
-            }
-        }
-    });
 
-    // Filter out signals that are already fully clustered (optional, but let's re-cluster or only use unclustered)
-    const unclusteredSignals = signals.filter(s => s.narrativeClusterSignals.length === 0);
+    // Fetch signals with analyses
+    const { data: signals, error: signalsError } = await supabase
+        .from("signals")
+        .select(`
+            *,
+            analyses:signal_analyses(*)
+        `)
+        .eq("workspace_id", workspaceId)
+        .gte("captured_at", sevenDaysAgo.toISOString());
+
+    if (signalsError) {
+        logStructured("error", "clustering_fetch_signals_error", { error: signalsError.message });
+        throw signalsError;
+    }
+
+    // Fetch existing cluster signal links to identify already-clustered signals
+    const signalIds = signals.map(s => s.id);
+    const { data: existingLinks } = await supabase
+        .from("narrative_cluster_signals")
+        .select("signal_id")
+        .in("signal_id", signalIds);
+
+    const clusteredSignalIds = new Set(existingLinks?.map(l => l.signal_id) || []);
+
+    // Filter out signals that are already fully clustered
+    const unclusteredSignals = signals.filter(s => !clusteredSignalIds.has(s.id));
 
     if (unclusteredSignals.length === 0) {
         logStructured("info", "clustering_no_unclustered_signals", { workspaceId });
@@ -50,10 +60,14 @@ export const runClustering = async (workspaceId) => {
     // 2. Prepare data for clustering
     const signalData = unclusteredSignals.map(s => {
         const textToAnalyze = `${s.title || ""} ${s.content || ""}`;
+        // Get the most recent analysis
+        const latestAnalysis = Array.isArray(s.analyses) && s.analyses.length > 0
+            ? s.analyses.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
+            : null;
         return {
             ...s,
             keywords: extractKeywords(textToAnalyze),
-            sentiment: s.analyses[0]?.sentiment || s.sentiment || "neutral"
+            sentiment: latestAnalysis?.sentiment || s.sentiment || "neutral"
         };
     });
 
@@ -70,9 +84,9 @@ export const runClustering = async (workspaceId) => {
 
         for (let j = i + 1; j < signalData.length; j++) {
             if (clusteredIds.has(signalData[j].id)) continue;
-            
+
             const similarity = calculateSimilarity(signalData[i].keywords, signalData[j].keywords);
-            
+
             if (similarity >= threshold) {
                 currentCluster.push(signalData[j]);
                 clusteredIds.add(signalData[j].id);
@@ -93,7 +107,7 @@ export const runClustering = async (workspaceId) => {
         // Compile signals context for AI
         const signalsContext = cluster
             .slice(0, 10) // Limit to top 10 to fit in context window
-            .map(s => `[${s.sentiment || 'UNKNOWN'}] ${s.title || 'No Title'}\n${s.content.substring(0, 150)}...`)
+            .map(s => `[${s.sentiment || 'UNKNOWN'}] ${s.title || 'No Title'}\n${(s.content || "").substring(0, 150)}...`)
             .join("\n\n");
 
         logStructured("info", "clustering_analyzing_cluster", { signalCount: cluster.length });
@@ -110,7 +124,7 @@ export const runClustering = async (workspaceId) => {
             description = aiAnalysis.description || description;
             mainNarrative = aiAnalysis.description || mainNarrative;
             dominantSentiment = aiAnalysis.dominant_sentiment || dominantSentiment;
-            
+
             // Map AI string directly to uppercase enum values if valid
             const safeImpact = aiAnalysis.impact ? aiAnalysis.impact.toUpperCase() : "LOW";
             if (["LOW", "MEDIUM", "HIGH", "CRITICAL"].includes(safeImpact)) {
@@ -119,37 +133,47 @@ export const runClustering = async (workspaceId) => {
         }
 
         // Create the NarrativeCluster in the DB
-        const dbCluster = await prisma.narrativeCluster.create({
-            data: {
-                workspaceId,
+        const { data: dbCluster, error: clusterError } = await supabase
+            .from("narrative_clusters")
+            .insert({
+                workspace_id: workspaceId,
                 title: title,
                 description: description,
-                mainNarrative: mainNarrative,
+                main_narrative: mainNarrative,
                 sentiment: dominantSentiment,
                 impact: impact,
-                signalCount: cluster.length
-            }
-        });
+                signal_count: cluster.length
+            })
+            .select()
+            .single();
+
+        if (clusterError) {
+            logStructured("error", "clustering_create_cluster_error", { error: clusterError.message });
+            continue;
+        }
 
         // Link the signals to the cluster
         const signalLinks = cluster.map(s => ({
-            narrativeClusterId: dbCluster.id,
-            signalId: s.id
+            narrative_cluster_id: dbCluster.id,
+            signal_id: s.id
         }));
 
-        await prisma.narrativeClusterSignal.createMany({
-            data: signalLinks,
-            skipDuplicates: true
-        });
-        
+        const { error: linkError } = await supabase
+            .from("narrative_cluster_signals")
+            .upsert(signalLinks, { onConflict: "narrative_cluster_id,signal_id" });
+
+        if (linkError) {
+            logStructured("warn", "clustering_link_signals_error", { error: linkError.message });
+        }
+
         createdCount++;
     }
 
     logStructured("info", "clustering_completed", { createdCount });
-    return { 
-        message: "Clustering complete", 
-        clustersFound: clusters.length, 
-        clustersCreated: createdCount 
+    return {
+        message: "Clustering complete",
+        clustersFound: clusters.length,
+        clustersCreated: createdCount
     };
 };
 
@@ -161,24 +185,31 @@ export const runClustering = async (workspaceId) => {
  * - archived: no recent signals (> 60 days)
  */
 export async function updateClusterLifecycles(workspaceId) {
-    const clusters = await prisma.narrativeCluster.findMany({
-        where: { workspaceId },
-        include: {
-            signals: {
-                select: { signal: { select: { capturedAt: true } } },
-                orderBy: { signal: { capturedAt: "desc" } },
-            },
-        },
-    });
+    // Fetch clusters with their signals
+    const { data: clusters, error } = await supabase
+        .from("narrative_clusters")
+        .select(`
+            *,
+            signals:narrative_cluster_signals(
+                signal:signals(captured_at)
+            )
+        `)
+        .eq("workspace_id", workspaceId);
+
+    if (error) {
+        logStructured("error", "update_cluster_lifecycles_error", { error: error.message });
+        throw error;
+    }
 
     const now = new Date();
     let updated = 0;
 
     for (const cluster of clusters) {
+        // Extract captured_at dates from nested signals
         const signalDates = cluster.signals
-            .map((cs) => cs.signal?.capturedAt)
+            .map((cs) => cs.signal?.captured_at)
             .filter(Boolean)
-            .sort((a, b) => b - a);
+            .sort((a, b) => new Date(b) - new Date(a));
 
         if (signalDates.length === 0) continue;
 
@@ -190,8 +221,8 @@ export async function updateClusterLifecycles(workspaceId) {
         // Calculate velocity (signals per day in last 7 days vs previous 7 days)
         const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
         const fourteenDaysAgo = new Date(now - 14 * 24 * 60 * 60 * 1000);
-        const recentCount = signalDates.filter((d) => d >= sevenDaysAgo).length;
-        const previousCount = signalDates.filter((d) => d >= fourteenDaysAgo && d < sevenDaysAgo).length;
+        const recentCount = signalDates.filter((d) => new Date(d) >= sevenDaysAgo).length;
+        const previousCount = signalDates.filter((d) => new Date(d) >= fourteenDaysAgo && new Date(d) < sevenDaysAgo).length;
         const velocity = previousCount > 0
             ? ((recentCount - previousCount) / previousCount * 100).toFixed(1)
             : recentCount > 0 ? "100.0" : "0.0";
@@ -207,12 +238,12 @@ export async function updateClusterLifecycles(workspaceId) {
             lifecycle = "active";
         }
 
-        await prisma.narrativeCluster.update({
-            where: { id: cluster.id },
-            data: {
-                signalCount: cluster.signals.length,
-            },
-        });
+        await supabase
+            .from("narrative_clusters")
+            .update({
+                signal_count: cluster.signals.length,
+            })
+            .eq("id", cluster.id);
 
         updated++;
     }
@@ -225,14 +256,21 @@ export async function updateClusterLifecycles(workspaceId) {
  * Merge overlapping clusters with high keyword similarity.
  */
 export async function mergeOverlappingClusters(workspaceId, similarityThreshold = 0.5) {
-    const clusters = await prisma.narrativeCluster.findMany({
-        where: { workspaceId },
-        include: {
-            signals: {
-                select: { signal: { select: { title: true, content: true } } },
-            },
-        },
-    });
+    // Fetch clusters with their signals
+    const { data: clusters, error } = await supabase
+        .from("narrative_clusters")
+        .select(`
+            *,
+            signals:narrative_cluster_signals(
+                signal:signals(title, content)
+            )
+        `)
+        .eq("workspace_id", workspaceId);
+
+    if (error) {
+        logStructured("error", "merge_clusters_error", { error: error.message });
+        throw error;
+    }
 
     if (clusters.length < 2) return { merged: 0 };
 
@@ -268,33 +306,38 @@ export async function mergeOverlappingClusters(workspaceId, similarityThreshold 
     for (const { keepId, mergeId } of toMerge) {
         if (processed.has(mergeId)) continue;
 
-        // Move signals from mergeId to keepId
-        const mergeCluster = await prisma.narrativeCluster.findUnique({
-            where: { id: mergeId },
-            select: { signalCount: true },
-        });
+        // Get signal counts for both clusters
+        const { data: mergeCluster } = await supabase
+            .from("narrative_clusters")
+            .select("signal_count")
+            .eq("id", mergeId)
+            .single();
 
-        const keepCluster = await prisma.narrativeCluster.findUnique({
-            where: { id: keepId },
-            select: { signalCount: true },
-        });
+        const { data: keepCluster } = await supabase
+            .from("narrative_clusters")
+            .select("signal_count")
+            .eq("id", keepId)
+            .single();
 
         if (!mergeCluster || !keepCluster) continue;
 
-        // Update signal links
-        await prisma.narrativeClusterSignal.updateMany({
-            where: { narrativeClusterId: mergeId },
-            data: { narrativeClusterId: keepId },
-        });
+        // Update signal links - move signals from mergeId to keepId
+        await supabase
+            .from("narrative_cluster_signals")
+            .update({ narrative_cluster_id: keepId })
+            .eq("narrative_cluster_id", mergeId);
 
         // Update keep cluster signal count
-        await prisma.narrativeCluster.update({
-            where: { id: keepId },
-            data: { signalCount: keepCluster.signalCount + mergeCluster.signalCount },
-        });
+        await supabase
+            .from("narrative_clusters")
+            .update({ signal_count: keepCluster.signal_count + mergeCluster.signal_count })
+            .eq("id", keepId);
 
         // Delete the merged cluster
-        await prisma.narrativeCluster.delete({ where: { id: mergeId } });
+        await supabase
+            .from("narrative_clusters")
+            .delete()
+            .eq("id", mergeId);
 
         processed.add(mergeId);
         merged++;
@@ -310,19 +353,21 @@ export async function mergeOverlappingClusters(workspaceId, similarityThreshold 
  */
 export async function compareClusterPeriods(workspaceId, period1Start, period1End, period2Start, period2End) {
     async function getClusterStats(start, end) {
-        const clusters = await prisma.narrativeCluster.findMany({
-            where: {
-                workspaceId,
-                createdAt: { gte: start, lte: end },
-            },
-            include: {
-                signals: {
-                    select: {
-                        signal: { select: { sentiment: true, capturedAt: true } },
-                    },
-                },
-            },
-        });
+        const { data: clusters, error } = await supabase
+            .from("narrative_clusters")
+            .select(`
+                *,
+                signals:narrative_cluster_signals(
+                    signal:signals(sentiment, captured_at)
+                )
+            `)
+            .eq("workspace_id", workspaceId)
+            .gte("created_at", start)
+            .lte("created_at", end);
+
+        if (error) {
+            throw error;
+        }
 
         return clusters.map((cluster) => {
             const sentiments = cluster.signals.map((cs) => cs.signal?.sentiment).filter(Boolean);

@@ -1,5 +1,5 @@
 import express from "express";
-import prisma from "../../prisma.js";
+import supabase from "../../lib/supabase.js";
 import { generateReport } from "./reports.service.js";
 import {
     cleanupExpiredReportExports,
@@ -209,16 +209,21 @@ router.get("/", async (req, res) => {
             });
         }
 
-        const where = { workspaceId: { in: scopedWorkspaceIds } };
-        const [data, total] = await Promise.all([
-            prisma.report.findMany({
-                where,
-                skip,
-                take: safeLimit,
-                orderBy: { createdAt: "desc" },
-            }),
-            prisma.report.count({ where })
+        const [dataResult, countResult] = await Promise.all([
+            supabase
+                .from("reports")
+                .select("*")
+                .in("workspace_id", scopedWorkspaceIds)
+                .order("created_at", { ascending: false })
+                .range(skip, skip + safeLimit - 1),
+            supabase
+                .from("reports")
+                .select("id", { count: "exact", head: true })
+                .in("workspace_id", scopedWorkspaceIds)
         ]);
+
+        const data = dataResult.data || [];
+        const total = countResult.count || 0;
 
         return res.json({
             data: data.map(toFrontendReport),
@@ -240,22 +245,23 @@ router.get("/templates", async (req, res) => {
     try {
         const { workspaceId } = req.query;
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, workspaceId);
-        
-        const systemTemplates = getAllReportTemplates().map(t => ({...t, isSystem: true}));
-        
+
+        const systemTemplates = getAllReportTemplates().map(t => ({ ...t, isSystem: true }));
+
         let customTemplates = [];
         if (scopedWorkspaceIds.length > 0) {
-            const dbTemplates = await prisma.reportTemplate.findMany({
-                where: { workspaceId: { in: scopedWorkspaceIds } },
-                orderBy: { createdAt: "desc" }
-            });
-            customTemplates = dbTemplates.map(t => ({
+            const { data: dbTemplates } = await supabase
+                .from("report_templates")
+                .select("*")
+                .in("workspace_id", scopedWorkspaceIds)
+                .order("created_at", { ascending: false });
+            customTemplates = (dbTemplates || []).map(t => ({
                 key: t.id,
                 name: t.name,
                 description: t.description || "",
                 format: t.format,
                 cadence: t.cadence,
-                sectionCount: t.sectionCount,
+                sectionCount: t.section_count,
                 isSystem: false
             }));
         }
@@ -272,22 +278,28 @@ router.post("/templates", validateRequest({ body: createReportTemplateSchema }),
     try {
         const { name, description, format, cadence, sectionCount } = req.body;
         const { workspaceId } = req.query;
-        
+
         const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
         if (!scopedWorkspaceId) {
             return res.status(403).json({ error: "Workspace access denied" });
         }
 
-        const template = await prisma.reportTemplate.create({
-            data: {
-                workspaceId: scopedWorkspaceId,
+        const { data: template, error } = await supabase
+            .from("report_templates")
+            .insert({
+                workspace_id: scopedWorkspaceId,
                 name,
                 description,
                 format: format || "PDF",
                 cadence: cadence || "On-demand",
-                sectionCount: sectionCount || 3
-            }
-        });
+                section_count: sectionCount || 3
+            })
+            .select()
+            .single();
+
+        if (error) {
+            throw error;
+        }
 
         return res.status(201).json(template);
     } catch (error) {
@@ -300,29 +312,41 @@ router.post("/templates", validateRequest({ body: createReportTemplateSchema }),
 router.patch("/templates/:id", validateRequest({ body: updateReportTemplateSchema }), async (req, res) => {
     try {
         const { id } = req.params;
-        
-        const template = await prisma.reportTemplate.findUnique({ where: { id } });
-        if (!template) {
+
+        const { data: template, error: findError } = await supabase
+            .from("report_templates")
+            .select("*")
+            .eq("id", id)
+            .single();
+
+        if (findError || !template) {
             return res.status(404).json({ error: "Template not found" });
         }
 
-        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, template.workspaceId);
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, template.workspace_id);
         if (!scopedWorkspaceId) {
             return res.status(403).json({ error: "Access denied" });
         }
 
         const { name, description, format, cadence, sectionCount } = req.body;
 
-        const updated = await prisma.reportTemplate.update({
-            where: { id },
-            data: {
-                ...(name !== undefined && { name }),
-                ...(description !== undefined && { description }),
-                ...(format !== undefined && { format }),
-                ...(cadence !== undefined && { cadence }),
-                ...(sectionCount !== undefined && { sectionCount }),
-            }
-        });
+        const updateData = {};
+        if (name !== undefined) updateData.name = name;
+        if (description !== undefined) updateData.description = description;
+        if (format !== undefined) updateData.format = format;
+        if (cadence !== undefined) updateData.cadence = cadence;
+        if (sectionCount !== undefined) updateData.section_count = sectionCount;
+
+        const { data: updated, error: updateError } = await supabase
+            .from("report_templates")
+            .update(updateData)
+            .eq("id", id)
+            .select()
+            .single();
+
+        if (updateError) {
+            throw updateError;
+        }
 
         return res.json(updated);
     } catch (error) {
@@ -335,18 +359,31 @@ router.patch("/templates/:id", validateRequest({ body: updateReportTemplateSchem
 router.delete("/templates/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        
-        const template = await prisma.reportTemplate.findUnique({ where: { id } });
-        if (!template) {
+
+        const { data: template, error: findError } = await supabase
+            .from("report_templates")
+            .select("*")
+            .eq("id", id)
+            .single();
+
+        if (findError || !template) {
             return res.status(404).json({ error: "Template not found" });
         }
 
-        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, template.workspaceId);
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, template.workspace_id);
         if (!scopedWorkspaceId) {
             return res.status(403).json({ error: "Access denied" });
         }
 
-        await prisma.reportTemplate.delete({ where: { id } });
+        const { error: deleteError } = await supabase
+            .from("report_templates")
+            .delete()
+            .eq("id", id);
+
+        if (deleteError) {
+            throw deleteError;
+        }
+
         return res.json({ success: true });
     } catch (error) {
         logStructured("error", "Error deleting template:", { error: error?.message || error, stack: error?.stack });
@@ -367,12 +404,17 @@ router.get("/schedules", async (req, res) => {
             return res.json({ data: [] });
         }
 
-        const schedules = await prisma.reportSchedule.findMany({
-            where: { workspaceId: { in: scopedWorkspaceIds } },
-            orderBy: { createdAt: "desc" }
-        });
+        const { data: schedules, error } = await supabase
+            .from("report_schedules")
+            .select("*")
+            .in("workspace_id", scopedWorkspaceIds)
+            .order("created_at", { ascending: false });
 
-        return res.json({ data: schedules });
+        if (error) {
+            throw error;
+        }
+
+        return res.json({ data: schedules || [] });
     } catch (error) {
         logStructured("error", "Error fetching schedules:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
@@ -390,17 +432,23 @@ router.post("/schedules", validateRequest({ body: createReportScheduleSchema }),
             return res.status(403).json({ error: "Workspace access denied" });
         }
 
-        const schedule = await prisma.reportSchedule.create({
-            data: {
-                workspaceId: scopedWorkspaceId,
-                templateKey,
+        const { data: schedule, error } = await supabase
+            .from("report_schedules")
+            .insert({
+                workspace_id: scopedWorkspaceId,
+                template_key: templateKey,
                 name,
                 cadence: cadence || "weekly",
-                dayOfWeek: dayOfWeek || null,
-                timeOfDay: timeOfDay || "09:00",
+                day_of_week: dayOfWeek || null,
+                time_of_day: timeOfDay || "09:00",
                 enabled: enabled !== false
-            }
-        });
+            })
+            .select()
+            .single();
+
+        if (error) {
+            throw error;
+        }
 
         return res.status(201).json(schedule);
     } catch (error) {
@@ -414,29 +462,41 @@ router.patch("/schedules/:id", validateRequest({ body: updateReportScheduleSchem
     try {
         const { id } = req.params;
 
-        const schedule = await prisma.reportSchedule.findUnique({ where: { id } });
-        if (!schedule) {
+        const { data: schedule, error: findError } = await supabase
+            .from("report_schedules")
+            .select("*")
+            .eq("id", id)
+            .single();
+
+        if (findError || !schedule) {
             return res.status(404).json({ error: "Schedule not found" });
         }
 
-        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, schedule.workspaceId);
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, schedule.workspace_id);
         if (!scopedWorkspaceId) {
             return res.status(403).json({ error: "Access denied" });
         }
 
         const { templateKey, name, cadence, dayOfWeek, timeOfDay, enabled } = req.body;
 
-        const updated = await prisma.reportSchedule.update({
-            where: { id },
-            data: {
-                ...(templateKey !== undefined && { templateKey }),
-                ...(name !== undefined && { name }),
-                ...(cadence !== undefined && { cadence }),
-                ...(dayOfWeek !== undefined && { dayOfWeek }),
-                ...(timeOfDay !== undefined && { timeOfDay }),
-                ...(enabled !== undefined && { enabled }),
-            }
-        });
+        const updateData = {};
+        if (templateKey !== undefined) updateData.template_key = templateKey;
+        if (name !== undefined) updateData.name = name;
+        if (cadence !== undefined) updateData.cadence = cadence;
+        if (dayOfWeek !== undefined) updateData.day_of_week = dayOfWeek;
+        if (timeOfDay !== undefined) updateData.time_of_day = timeOfDay;
+        if (enabled !== undefined) updateData.enabled = enabled;
+
+        const { data: updated, error: updateError } = await supabase
+            .from("report_schedules")
+            .update(updateData)
+            .eq("id", id)
+            .select()
+            .single();
+
+        if (updateError) {
+            throw updateError;
+        }
 
         return res.json(updated);
     } catch (error) {
@@ -450,17 +510,30 @@ router.delete("/schedules/:id", async (req, res) => {
     try {
         const { id } = req.params;
 
-        const schedule = await prisma.reportSchedule.findUnique({ where: { id } });
-        if (!schedule) {
+        const { data: schedule, error: findError } = await supabase
+            .from("report_schedules")
+            .select("*")
+            .eq("id", id)
+            .single();
+
+        if (findError || !schedule) {
             return res.status(404).json({ error: "Schedule not found" });
         }
 
-        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, schedule.workspaceId);
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, schedule.workspace_id);
         if (!scopedWorkspaceId) {
             return res.status(403).json({ error: "Access denied" });
         }
 
-        await prisma.reportSchedule.delete({ where: { id } });
+        const { error: deleteError } = await supabase
+            .from("report_schedules")
+            .delete()
+            .eq("id", id);
+
+        if (deleteError) {
+            throw deleteError;
+        }
+
         return res.json({ success: true });
     } catch (error) {
         logStructured("error", "Error deleting schedule:", { error: error?.message || error, stack: error?.stack });
@@ -473,20 +546,31 @@ router.patch("/schedules/:id/toggle", async (req, res) => {
     try {
         const { id } = req.params;
 
-        const schedule = await prisma.reportSchedule.findUnique({ where: { id } });
-        if (!schedule) {
+        const { data: schedule, error: findError } = await supabase
+            .from("report_schedules")
+            .select("*")
+            .eq("id", id)
+            .single();
+
+        if (findError || !schedule) {
             return res.status(404).json({ error: "Schedule not found" });
         }
 
-        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, schedule.workspaceId);
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, schedule.workspace_id);
         if (!scopedWorkspaceId) {
             return res.status(403).json({ error: "Access denied" });
         }
 
-        const updated = await prisma.reportSchedule.update({
-            where: { id },
-            data: { enabled: !schedule.enabled }
-        });
+        const { data: updated, error: updateError } = await supabase
+            .from("report_schedules")
+            .update({ enabled: !schedule.enabled })
+            .eq("id", id)
+            .select()
+            .single();
+
+        if (updateError) {
+            throw updateError;
+        }
 
         return res.json(updated);
     } catch (error) {
@@ -508,50 +592,52 @@ router.get("/analytics", async (req, res) => {
             });
         }
 
-        const reportWhere = { workspaceId: { in: scopedWorkspaceIds } };
-        const exportWhere = { report: { workspaceId: { in: scopedWorkspaceIds } } };
-
         const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
 
-        const [formatGroups, popularGroups, trendReports] = await Promise.all([
-            prisma.reportExport.groupBy({
-                by: ["format"],
-                where: exportWhere,
-                _count: { _all: true },
-            }),
-            prisma.report.groupBy({
-                by: ["title"],
-                where: reportWhere,
-                _count: { _all: true },
-                orderBy: { _count: { title: "desc" } },
-                take: 5,
-            }),
-            prisma.report.findMany({
-                where: { ...reportWhere, createdAt: { gte: fourteenDaysAgo } },
-                select: { createdAt: true },
-            }),
-        ]);
+        // Get format distribution from report_exports
+        const { data: exportGroups } = await supabase
+            .from("report_exports")
+            .select("format")
+            .in("report_id", scopedWorkspaceIds.map(id => id));
 
-        // Format distribution
         const formatDistribution = { json: 0, pdf: 0 };
-        for (const row of formatGroups) {
+        for (const row of (exportGroups || [])) {
             const fmt = String(row.format || "").toLowerCase();
-            if (fmt === "json") formatDistribution.json = row._count._all;
-            else if (fmt === "pdf") formatDistribution.pdf = row._count._all;
+            if (fmt === "json") formatDistribution.json++;
+            else if (fmt === "pdf") formatDistribution.pdf++;
         }
 
-        // Popular reports - count by report title because Report has no template/type columns.
-        const popularTemplates = popularGroups.map((row) => ({ name: row.title || "Unknown", count: row._count._all }));
+        // Get popular reports by title
+        const { data: reportGroups } = await supabase
+            .from("reports")
+            .select("title")
+            .in("workspace_id", scopedWorkspaceIds);
 
-        // Trend timeline - reports generated per day for last 14 days
+        const titleCounts = {};
+        for (const row of (reportGroups || [])) {
+            const title = row.title || "Unknown";
+            titleCounts[title] = (titleCounts[title] || 0) + 1;
+        }
+        const popularTemplates = Object.entries(titleCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([name, count]) => ({ name, count }));
+
+        // Get trend timeline - reports generated per day for last 14 days
+        const { data: trendReports } = await supabase
+            .from("reports")
+            .select("created_at")
+            .in("workspace_id", scopedWorkspaceIds)
+            .gte("created_at", fourteenDaysAgo.toISOString());
+
         const dayBuckets = {};
         for (let i = 13; i >= 0; i--) {
             const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
             const key = d.toISOString().split("T")[0];
             dayBuckets[key] = 0;
         }
-        for (const r of trendReports) {
-            const key = new Date(r.createdAt).toISOString().split("T")[0];
+        for (const r of (trendReports || [])) {
+            const key = new Date(r.created_at).toISOString().split("T")[0];
             if (key in dayBuckets) dayBuckets[key] += 1;
         }
         const trendTimeline = Object.entries(dayBuckets).map(([date, count]) => ({ date, count }));
@@ -607,27 +693,42 @@ router.post("/:id/export", validateRequest({ params: reportIdParamsSchema, body:
         }
 
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
-        const report = await prisma.report.findUnique({ where: { id } });
-        if (!report || !scopedWorkspaceIds.includes(report.workspaceId)) {
+
+        const { data: report, error: reportError } = await supabase
+            .from("reports")
+            .select("*")
+            .eq("id", id)
+            .single();
+
+        if (reportError || !report || !scopedWorkspaceIds.includes(report.workspace_id)) {
             return res.status(404).json({ error: "Report not found" });
         }
 
-        const exportJob = await prisma.reportExport.create({
-            data: {
-                reportId: report.id,
+        const { data: exportJob, error: createError } = await supabase
+            .from("report_exports")
+            .insert({
+                report_id: report.id,
                 status: "queued",
                 format: normalizedFormat,
-            }
-        });
+            })
+            .select()
+            .single();
+
+        if (createError) {
+            throw createError;
+        }
 
         try {
-            await prisma.reportExport.update({ where: { id: exportJob.id }, data: { status: "running" } });
+            await supabase
+                .from("report_exports")
+                .update({ status: "running" })
+                .eq("id", exportJob.id);
 
             const fullReport = await generateReport({
-                workspaceId: report.workspaceId,
+                workspaceId: report.workspace_id,
                 title: report.title,
-                periodStart: report.periodStart,
-                periodEnd: report.periodEnd,
+                periodStart: report.period_start,
+                periodEnd: report.period_end,
             });
 
             const payload = normalizedFormat === "pdf"
@@ -635,7 +736,7 @@ router.post("/:id/export", validateRequest({ params: reportIdParamsSchema, body:
                 : {
                     ...fullReport,
                     id: report.id,
-                    createdAt: report.createdAt,
+                    createdAt: report.created_at,
                     exportedAt: new Date().toISOString(),
                 };
 
@@ -649,18 +750,18 @@ router.post("/:id/export", validateRequest({ params: reportIdParamsSchema, body:
             await recordAuditLog({
                 userId: req.user.id,
                 event: "report_export_created",
-                workspaceId: report.workspaceId,
+                workspaceId: report.workspace_id,
                 metadata: { reportId: report.id, exportId: exportJob.id, format: normalizedFormat },
             });
         } catch (jobError) {
             incrementExportFailure();
-            await prisma.reportExport.update({
-                where: { id: exportJob.id },
-                data: {
+            await supabase
+                .from("report_exports")
+                .update({
                     status: "failed",
-                    errorMessage: jobError.message || "Export failed",
-                }
-            });
+                    error_message: jobError.message || "Export failed",
+                })
+                .eq("id", exportJob.id);
         }
 
         return res.status(202).json({ message: "Export job created", jobId: exportJob.id });
@@ -677,23 +778,24 @@ router.get("/exports/:jobId", async (req, res) => {
         const { jobId } = req.params;
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
-        const job = await prisma.reportExport.findUnique({
-            where: { id: jobId },
-            include: { report: true },
-        });
+        const { data: job, error } = await supabase
+            .from("report_exports")
+            .select("*, report:reports(*)")
+            .eq("id", jobId)
+            .single();
 
-        if (!job || !scopedWorkspaceIds.includes(job.report.workspaceId)) {
+        if (error || !job || !scopedWorkspaceIds.includes(job.report?.workspace_id)) {
             return res.status(404).json({ error: "Export job not found" });
         }
 
         return res.json({
             jobId: job.id,
-            reportId: job.reportId,
+            reportId: job.report_id,
             format: job.format,
             status: job.status,
-            errorMessage: job.errorMessage,
-            signedUrl: job.status === "completed" ? job.signedUrl : null,
-            expiresAt: job.expiresAt,
+            errorMessage: job.error_message,
+            signedUrl: job.status === "completed" ? job.signed_url : null,
+            expiresAt: job.expires_at,
         });
     } catch (error) {
         logStructured("error", "Error fetching export job:", { error: error?.message || error, stack: error?.stack });
@@ -707,19 +809,24 @@ router.get("/:id", async (req, res) => {
         const { id } = req.params;
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
-        const report = await prisma.report.findUnique({ where: { id } });
-        if (!report || !scopedWorkspaceIds.includes(report.workspaceId)) {
+        const { data: report, error } = await supabase
+            .from("reports")
+            .select("*")
+            .eq("id", id)
+            .single();
+
+        if (error || !report || !scopedWorkspaceIds.includes(report.workspace_id)) {
             return res.status(404).json({ error: "Report not found" });
         }
 
         const fullReport = await generateReport({
-            workspaceId: report.workspaceId,
+            workspaceId: report.workspace_id,
             title: report.title,
-            periodStart: report.periodStart,
-            periodEnd: report.periodEnd,
+            periodStart: report.period_start,
+            periodEnd: report.period_end,
         });
 
-        return res.json({ ...fullReport, id: report.id, createdAt: report.createdAt });
+        return res.json({ ...fullReport, id: report.id, createdAt: report.created_at });
     } catch (error) {
         logStructured("error", "Error fetching report:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
@@ -732,22 +839,27 @@ router.get("/:id/export/json", async (req, res) => {
         const { id } = req.params;
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
-        const report = await prisma.report.findUnique({ where: { id } });
-        if (!report || !scopedWorkspaceIds.includes(report.workspaceId)) {
+        const { data: report, error } = await supabase
+            .from("reports")
+            .select("*")
+            .eq("id", id)
+            .single();
+
+        if (error || !report || !scopedWorkspaceIds.includes(report.workspace_id)) {
             return res.status(404).json({ error: "Report not found" });
         }
 
         const fullReport = await generateReport({
-            workspaceId: report.workspaceId,
+            workspaceId: report.workspace_id,
             title: report.title,
-            periodStart: report.periodStart,
-            periodEnd: report.periodEnd,
+            periodStart: report.period_start,
+            periodEnd: report.period_end,
         });
 
         const exportData = {
             ...fullReport,
             id: report.id,
-            createdAt: report.createdAt,
+            createdAt: report.created_at,
             exportedAt: new Date().toISOString(),
         };
 
@@ -767,16 +879,21 @@ router.get("/:id/export/pdf", async (req, res) => {
         const { id } = req.params;
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
-        const report = await prisma.report.findUnique({ where: { id } });
-        if (!report || !scopedWorkspaceIds.includes(report.workspaceId)) {
+        const { data: report, error } = await supabase
+            .from("reports")
+            .select("*")
+            .eq("id", id)
+            .single();
+
+        if (error || !report || !scopedWorkspaceIds.includes(report.workspace_id)) {
             return res.status(404).json({ error: "Report not found" });
         }
 
         const fullReport = await generateReport({
-            workspaceId: report.workspaceId,
+            workspaceId: report.workspace_id,
             title: report.title,
-            periodStart: report.periodStart,
-            periodEnd: report.periodEnd,
+            periodStart: report.period_start,
+            periodEnd: report.period_end,
         });
 
         return res.json(buildPdfData(fullReport, report.id));
@@ -793,13 +910,18 @@ router.post("/:id/send-email", validateRequest({ params: reportIdParamsSchema, b
         const { recipientEmail, subject, body } = req.body;
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
-        const report = await prisma.report.findUnique({ where: { id } });
-        if (!report || !scopedWorkspaceIds.includes(report.workspaceId)) {
+        const { data: report, error } = await supabase
+            .from("reports")
+            .select("*")
+            .eq("id", id)
+            .single();
+
+        if (error || !report || !scopedWorkspaceIds.includes(report.workspace_id)) {
             return res.status(404).json({ error: "Report not found" });
         }
 
         const result = await sendReportEmail({
-            workspaceId: report.workspaceId,
+            workspaceId: report.workspace_id,
             reportId: report.id,
             recipientEmail,
             subject: subject || `Report: ${report.title}`,

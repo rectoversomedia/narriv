@@ -1,4 +1,4 @@
-import prisma from "../../prisma.js";
+import supabase from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -23,28 +23,25 @@ export async function generateReport({ workspaceId, title, periodStart, periodEn
     logStructured("info", "report_generating", { workspaceId, periodStart: start.toISOString(), periodEnd: end.toISOString() });
 
     // ── 1. Dashboard Metrics ─────────────────────────────────────────────────
-    const signals = await prisma.signal.findMany({
-        where: {
-            workspaceId,
-            capturedAt: { gte: start, lte: end }
-        },
-        include: {
-            analyses: {
-                orderBy: { createdAt: "desc" },
-                take: 1
-            }
-        },
-        orderBy: { capturedAt: "desc" }
-    });
+    const { data: signals } = await supabase
+        .from("signals")
+        .select("*, analyses:signal_analyses(*)")
+        .eq("workspace_id", workspaceId)
+        .gte("captured_at", start.toISOString())
+        .lte("captured_at", end.toISOString())
+        .order("captured_at", { ascending: false });
 
-    const totalSignals = signals.length;
+    const signalsList = signals || [];
+    const totalSignals = signalsList.length;
 
     // Sentiment distribution
     let positive = 0, negative = 0, neutral = 0, mixed = 0, unanalyzed = 0;
     const platformsMap = {};
 
-    signals.forEach(signal => {
-        const sentiment = signal.analyses[0]?.sentiment || signal.sentiment;
+    signalsList.forEach(signal => {
+        const analyses = signal.analyses || [];
+        const latestAnalysis = analyses[0];
+        const sentiment = latestAnalysis?.sentiment || signal.sentiment;
         if (sentiment) {
             const s = sentiment.toLowerCase();
             if (s === "positive") positive++;
@@ -75,83 +72,90 @@ export async function generateReport({ workspaceId, title, periodStart, periodEn
         platform_distribution: Object.entries(platformsMap)
             .map(([platform, count]) => ({ platform, count }))
             .sort((a, b) => b.count - a.count),
-        top_signals: signals.slice(0, 5).map(s => ({
-            title: s.title || "Untitled",
-            platform: s.platform || "unknown",
-            sentiment: s.analyses[0]?.sentiment || s.sentiment || "unanalyzed",
-            url: s.url,
-            capturedAt: s.capturedAt
-        }))
+        top_signals: signalsList.slice(0, 5).map(s => {
+            const analyses = s.analyses || [];
+            const latestAnalysis = analyses[0];
+            return {
+                title: s.title || "Untitled",
+                platform: s.platform || "unknown",
+                sentiment: latestAnalysis?.sentiment || s.sentiment || "unanalyzed",
+                url: s.url,
+                capturedAt: s.captured_at
+            };
+        })
     };
 
     // ── 2. Alerts ────────────────────────────────────────────────────────────
-    const alerts = await prisma.alert.findMany({
-        where: {
-            workspaceId,
-            createdAt: { gte: start, lte: end }
-        },
-        orderBy: { createdAt: "desc" }
-    });
+    const { data: alerts } = await supabase
+        .from("alerts")
+        .select("*")
+        .eq("workspace_id", workspaceId)
+        .gte("created_at", start.toISOString())
+        .lte("created_at", end.toISOString())
+        .order("created_at", { ascending: false });
+
+    const alertsList = alerts || [];
 
     const alertsSummary = {
-        total: alerts.length,
+        total: alertsList.length,
         by_severity: {
-            critical: alerts.filter(a => a.severity === "critical").length,
-            high: alerts.filter(a => a.severity === "high").length,
-            medium: alerts.filter(a => a.severity === "medium").length,
-            low: alerts.filter(a => a.severity === "low").length
+            critical: alertsList.filter(a => a.severity === "critical").length,
+            high: alertsList.filter(a => a.severity === "high").length,
+            medium: alertsList.filter(a => a.severity === "medium").length,
+            low: alertsList.filter(a => a.severity === "low").length
         },
         by_status: {
-            open: alerts.filter(a => a.status === "open").length,
-            acknowledged: alerts.filter(a => a.status === "acknowledged").length,
-            resolved: alerts.filter(a => a.status === "resolved").length
+            open: alertsList.filter(a => a.status === "open").length,
+            acknowledged: alertsList.filter(a => a.status === "acknowledged").length,
+            resolved: alertsList.filter(a => a.status === "resolved").length
         },
-        items: alerts.map(a => ({
+        items: alertsList.map(a => ({
             title: a.title,
             type: a.type,
             severity: a.severity,
             status: a.status,
-            whatHappened: a.whatHappened,
-            whyItMatters: a.whyItMatters,
-            whatToDo: a.whatToDo,
-            createdAt: a.createdAt
+            whatHappened: a.what_happened,
+            whyItMatters: a.why_it_matters,
+            whatToDo: a.what_to_do,
+            createdAt: a.created_at
         }))
     };
 
     // ── 3. Narratives ────────────────────────────────────────────────────────
-    const clusters = await prisma.narrativeCluster.findMany({
-        where: {
-            workspaceId,
-            createdAt: { gte: start, lte: end }
-        },
-        orderBy: { signalCount: "desc" },
-        include: {
-            narrativeClusterSignals: {
-                take: 3,
-                include: {
-                    signal: {
-                        select: { title: true, platform: true, sentiment: true }
-                    }
-                }
-            }
-        }
-    });
+    const { data: clusters } = await supabase
+        .from("narrative_clusters")
+        .select(`
+            *,
+            narrative_cluster_signals:narrative_cluster_signals(
+                *,
+                signal:signals(title, platform, sentiment)
+            )
+        `)
+        .eq("workspace_id", workspaceId)
+        .gte("created_at", start.toISOString())
+        .lte("created_at", end.toISOString())
+        .order("signal_count", { ascending: false });
+
+    const clustersList = clusters || [];
 
     const narrativesSummary = {
-        total_clusters: clusters.length,
-        items: clusters.map(c => ({
-            title: c.title,
-            description: c.description,
-            mainNarrative: c.mainNarrative,
-            sentiment: c.sentiment,
-            impact: c.impact,
-            signalCount: c.signalCount,
-            sampleSignals: c.narrativeClusterSignals.map(ncs => ({
-                title: ncs.signal.title,
-                platform: ncs.signal.platform,
-                sentiment: ncs.signal.sentiment
-            }))
-        }))
+        total_clusters: clustersList.length,
+        items: clustersList.map(c => {
+            const clusterSignals = c.narrative_cluster_signals || [];
+            return {
+                title: c.title,
+                description: c.description,
+                mainNarrative: c.main_narrative,
+                sentiment: c.sentiment,
+                impact: c.impact,
+                signalCount: c.signal_count,
+                sampleSignals: clusterSignals.slice(0, 3).map(ncs => ({
+                    title: ncs.signal?.title,
+                    platform: ncs.signal?.platform,
+                    sentiment: ncs.signal?.sentiment
+                }))
+            };
+        })
     };
 
     // ── 4. Build Report Summary Text ─────────────────────────────────────────
@@ -163,38 +167,45 @@ export async function generateReport({ workspaceId, title, periodStart, periodEn
         summaryLines.push(`Sentiment: ${dashboardMetrics.sentiment_percentages.positive}% positive, ${dashboardMetrics.sentiment_percentages.negative}% negative, ${dashboardMetrics.sentiment_percentages.neutral}% neutral`);
     }
 
-    if (alerts.length > 0) {
+    if (alertsList.length > 0) {
         const criticalHigh = alertsSummary.by_severity.critical + alertsSummary.by_severity.high;
-        summaryLines.push(`Alerts: ${alerts.length} total (${criticalHigh} critical/high)`);
+        summaryLines.push(`Alerts: ${alertsList.length} total (${criticalHigh} critical/high)`);
     }
 
-    if (clusters.length > 0) {
-        summaryLines.push(`Narrative Clusters: ${clusters.length} identified`);
+    if (clustersList.length > 0) {
+        summaryLines.push(`Narrative Clusters: ${clustersList.length} identified`);
     }
 
     const reportSummary = summaryLines.join(". ") + ".";
     const reportTitle = title || `Intelligence Report — ${start.toISOString().split("T")[0]} to ${end.toISOString().split("T")[0]}`;
 
     // ── 5. Save Report ───────────────────────────────────────────────────────
-    const report = await prisma.report.create({
-        data: {
-            workspaceId,
+    const { data: report, error: reportError } = await supabase
+        .from("reports")
+        .insert({
+            workspace_id: workspaceId,
             title: reportTitle,
-            periodStart: start,
-            periodEnd: end,
+            period_start: start.toISOString(),
+            period_end: end.toISOString(),
             summary: reportSummary
-        }
-    });
+        })
+        .select()
+        .single();
+
+    if (reportError || !report) {
+        logStructured("error", "report_save_failed", { error: reportError?.message });
+        throw reportError || new Error("Failed to create report");
+    }
 
     logStructured("info", "report_saved", { reportId: report.id });
 
     return {
         id: report.id,
         title: report.title,
-        periodStart: report.periodStart,
-        periodEnd: report.periodEnd,
+        periodStart: report.period_start,
+        periodEnd: report.period_end,
         summary: report.summary,
-        createdAt: report.createdAt,
+        createdAt: report.created_at,
         sections: {
             dashboard_metrics: dashboardMetrics,
             alerts: alertsSummary,
