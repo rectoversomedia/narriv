@@ -37,6 +37,7 @@
   },
   "devDependencies": {
     "@parcel/watcher-linux-x64-glibc": "latest",
+    "@swc/core-linux-x64-gnu": "latest",
     "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
