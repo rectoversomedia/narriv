@@ -24,6 +24,7 @@ import onboardingRoutes from "./modules/onboarding/onboarding.routes.js";
 import casesRoutes from "./modules/cases/cases.routes.js";
 import integrationsRoutes from "./modules/integrations/integrations.routes.js";
 import appNotificationsRoutes from "./modules/app-notifications/app-notifications.routes.js";
+import costRoutes from "./modules/cost/cost.routes.js";
 
 // Import Libs
 import { scheduleAlertDetection, scheduleAlertEscalation, scheduleVisibilityScans } from "./lib/queue.js";
@@ -134,6 +135,7 @@ app.use("/api/onboarding", onboardingRoutes);
 app.use("/api/workspace/cases", casesRoutes);
 app.use("/api/workspace/integrations", integrationsRoutes);
 app.use("/api/notifications", appNotificationsRoutes);
+app.use("/api/workspace", costRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

@@ -8,6 +8,9 @@ import { buildDeterministicDocHash, normalizeDatasetItem, parseDateOrNull } from
 import { addAnalysisJob } from "../lib/queue.js";
 import { incrementIngestionFailure } from "../lib/metrics.js";
 import { logStructured } from "../lib/logger.js";
+import { canSyncSource } from "../lib/source-cost-controls.js";
+import { checkAutoThrottle } from "../lib/cost-management.js";
+import { SOURCE_LIMITS } from "../lib/source-cost-controls.js";
 
 class IngestionCancelledError extends Error {
     constructor(message) {
@@ -60,6 +63,39 @@ const ingestionWorker = new Worker(
             attemptNumber,
             maxAttempts,
         });
+
+        try {
+            // Check if source can be synced (frequency check)
+            const syncCheck = await canSyncSource(sourceId);
+            if (!syncCheck.allowed) {
+                logStructured("warn", "ingestion_skipped_rate_limit", {
+                    queueJobId: job.id,
+                    ingestionJobId: jobId,
+                    sourceId,
+                    reason: syncCheck.reason,
+                });
+
+                // Mark job as cancelled/skipped due to rate limit
+                await supabase
+                    .from("ingestion_jobs")
+                    .update({
+                        status: "cancelled",
+                        error_message: `Rate limited: ${syncCheck.reason}`,
+                        finished_at: new Date().toISOString(),
+                    })
+                    .eq("id", jobId);
+
+                return { processedCount: 0, skipped: true, reason: syncCheck.reason };
+            }
+        } catch (error) {
+            // Continue if frequency check fails (best effort)
+            logStructured("warn", "ingestion_frequency_check_failed", {
+                queueJobId: job.id,
+                ingestionJobId: jobId,
+                sourceId,
+                error: error.message,
+            });
+        }
 
         try {
             await assertNotCancelled(jobId);
@@ -167,13 +203,28 @@ const ingestionWorker = new Worker(
                     actorTarget: config.actorTarget,
                     attemptNumber,
                 });
+
+                // Apply max results limit from source config
+                const sourceConfig = SOURCE_LIMITS[source.type] || SOURCE_LIMITS.social;
+                const maxResults = source.max_results || sourceConfig.maxResults;
+
                 try {
                     const dataset = await runActorAndFetchDataset(
                         config.actorTarget,
                         config.apifyInput,
+                        maxResults, // Pass max results limit
                     );
                     if (dataset && dataset.length > 0) {
-                        allDatasets = allDatasets.concat(dataset);
+                        // Limit dataset to maxResults
+                        const limitedDataset = dataset.slice(0, maxResults);
+                        allDatasets = allDatasets.concat(limitedDataset);
+                        logStructured("info", "ingestion_actor_data_limited", {
+                            sourceId,
+                            actorTarget: config.actorTarget,
+                            totalReceived: dataset.length,
+                            limitedTo: limitedDataset.length,
+                            maxResults,
+                        });
                     }
                 } catch (err) {
                     logStructured("warn", "ingestion_actor_failed", {

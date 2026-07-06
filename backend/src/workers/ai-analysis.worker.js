@@ -6,6 +6,7 @@ import { logStructured } from "../lib/logger.js";
 import { calibrateConfidence } from "../lib/confidence-calibration.js";
 import { generateContentHash, getCachedAnalysis } from "../lib/analysis-cache.js";
 import { workerMetrics } from "../lib/worker-metrics.js";
+import { checkAutoThrottle, estimateBatchCost } from "../lib/cost-management.js";
 
 const RETRY_DELAY_MS = 3000;
 
@@ -61,6 +62,34 @@ const worker = new Worker(
                 signalId,
             });
             return;
+        }
+
+        // Check budget before processing
+        const estimatedCost = estimateBatchCost(1); // Single signal analysis
+        const budgetCheck = await checkAutoThrottle(signal.workspace_id);
+
+        if (!budgetCheck.allowed) {
+            logStructured("warn", "worker_budget_exceeded_skip", {
+                worker: "ai-analysis-worker",
+                jobId: job.id,
+                signalId,
+                workspaceId: signal.workspace_id,
+                reason: budgetCheck.reason,
+            });
+
+            // Create a deferred analysis record
+            await supabase
+                .from("signal_analyses")
+                .insert({
+                    signal_id: signal.id,
+                    sentiment: "neutral",
+                    summary: "Analysis pending - budget limit reached. Will resume when budget resets.",
+                    confidence_score: 0,
+                    deferred: true,
+                    deferred_reason: "budget_exceeded",
+                });
+
+            return { deferred: true, reason: budgetCheck.reason };
         }
 
         let analysisResult;
