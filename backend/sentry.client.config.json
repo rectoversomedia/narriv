@@ -1,0 +1,20 @@
+{
+  "instrumenter": "node",
+  "dsn": "${SENTRY_DSN}",
+  "release": "${npm_package_version}",
+  "environment": "${NODE_ENV}",
+  "tracesSampleRate": 0.1,
+  "sampleRate": 1.0,
+  "ignoreErrors": [
+    "NetworkError",
+    "FetchError",
+    "ECONNRESET",
+    "ETIMEDOUT",
+    "Socket hang up"
+  ],
+  "attachStacktrace": true,
+  "includeSourceMaps": true,
+  "tags": {
+    "service": "narriv-backend"
+  }
+}

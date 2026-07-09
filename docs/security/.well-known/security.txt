@@ -1,0 +1,12 @@
+# Security contact
+security@narriv.digital
+
+# Encryption
+TLS 1.2/1.3
+
+# Disclosure policy
+Please report vulnerabilities to security@narriv.digital
+We aim to respond within 48 hours and resolve critical issues within 24-48 hours.
+
+# PGP Key
+(Optional - add your PGP key here for encrypted communication)

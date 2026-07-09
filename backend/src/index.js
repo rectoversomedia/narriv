@@ -3,6 +3,10 @@ import cors from "cors";
 import compression from "compression";
 import dotenv from "dotenv";
 
+// Import Sentry for error tracking
+import Sentry from "./lib/sentry.js";
+import { flushSentry } from "./lib/sentry.js";
+
 // Import Routes
 import authRoutes from "./modules/auth/auth.routes.js";
 import signalsRoutes from "./modules/signals/signals.routes.js";
@@ -54,6 +58,15 @@ app.set("trust proxy", process.env.TRUST_PROXY || "loopback");
 
 // Security headers (apply early)
 app.use(securityHeaders);
+
+// Sentry request handler (must be before routes)
+if (process.env.SENTRY_DSN) {
+    app.use(Sentry.Handlers.requestHandler({
+        ip: true,
+        user: ["id", "email"],
+        serverName: "narriv-backend",
+    }));
+}
 
 // Compression (gzip) for responses > 1KB
 app.use(compression({
@@ -137,6 +150,16 @@ app.use("/api/workspace/integrations", integrationsRoutes);
 app.use("/api/notifications", appNotificationsRoutes);
 app.use("/api/workspace", costRoutes);
 
+// Sentry error handler (must be before error handler)
+if (process.env.SENTRY_DSN) {
+    app.use(Sentry.Handlers.errorHandler({
+        shouldHandleError(error) {
+            // Handle all errors
+            return true;
+        },
+    }));
+}
+
 // 404 handler
 app.use(notFoundHandler);
 
@@ -149,6 +172,9 @@ const gracefulShutdown = async (signal) => {
 
     // Flush pending audit logs
     await flushAllAuditLogs();
+
+    // Flush Sentry before exit
+    await flushSentry();
 
     logStructured("info", "graceful_shutdown_complete", { signal });
     process.exit(0);

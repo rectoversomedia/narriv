@@ -1,0 +1,139 @@
+name: Deploy Backend
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+env:
+  NODE_VERSION: '22'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/backend
+
+jobs:
+  deploy:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Run tests
+        working-directory: ./backend
+        run: npm test
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/narriv
+
+            # Pull latest image
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+            # Update docker-compose
+            cat > docker-compose.production.yml << 'EOF'
+            version: '3.8'
+
+            services:
+              backend:
+                image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+                restart: unless-stopped
+                ports:
+                  - "3000:3000"
+                environment:
+                  - NODE_ENV=production
+                  - PORT=3000
+                  - SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+                  - SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}
+                  - SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+                  - JWT_SECRET=${{ secrets.JWT_SECRET }}
+                  - JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
+                  - OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+                  - REDIS_URL=${{ secrets.REDIS_URL }}
+                depends_on:
+                  - redis
+
+              redis:
+                image: redis:7-alpine
+                restart: unless-stopped
+                ports:
+                  - "6379:6379"
+
+            networks:
+              default:
+                name: narriv-network
+            EOF
+
+            # Pull and restart
+            docker-compose pull backend
+            docker-compose up -d backend
+            docker image prune -f
+
+      - name: Health Check
+        run: |
+          sleep 10
+          curl -f https://api.${{ vars.DOMAIN }}/health || exit 1
+
+      - name: Notify Success
+        if: success()
+        run: |
+          echo "✅ Backend deployed successfully!"
+
+      - name: Notify Failure
+        if: failure()
+        run: |
+          echo "❌ Backend deployment failed!"

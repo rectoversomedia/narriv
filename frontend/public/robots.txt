@@ -1,0 +1,23 @@
+User-agent: *
+Allow: /
+
+# Disallow API endpoints
+Disallow: /api/*
+
+# Disallow auth endpoints
+Disallow: /auth/*
+
+# Disallow internal routes
+Disallow: /workspace/activity
+Disallow: /workspace/settings
+
+# Allow authenticated routes (for indexing)
+Allow: /signals
+Allow: /alerts
+Allow: /reports
+Allow: /visibility
+Allow: /intelligence
+Allow: /action-plans
+
+# Sitemap
+Sitemap: https://narriv.digital/sitemap.xml

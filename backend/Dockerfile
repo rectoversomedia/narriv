@@ -1,22 +1,22 @@
-FROM node:22-slim
+# ============================================
+# Narriv Backend Dockerfile
+# ============================================
+FROM node:22-alpine
 
 # Install dumb-init for proper signal handling
-RUN apt-get update && apt-get install -y --no-install-recommends dumb-init ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache dumb-init ca-certificates curl wget
 
 # Set working directory
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json ./
+COPY backend/package.json backend/package-lock.json* ./
 
 # Install production dependencies
 RUN npm ci --omit=dev
 
 # Copy application code
-COPY . .
-
-# Generate Prisma client
-RUN npx prisma generate
+COPY backend/ ./
 
 # Create uploads directory
 RUN mkdir -p uploads/logos
@@ -29,7 +29,7 @@ ENV PORT=3000
 EXPOSE 3000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
 
 # Start application
