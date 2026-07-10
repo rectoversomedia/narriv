@@ -3,7 +3,7 @@
  *
  * Production API service layer for Narriv.
  * Wraps apiClient with typed fetchers for each domain.
- * Returns null when the backend is unreachable so pages can show production empty/error states.
+ * Returns mock data when the backend is unreachable in demo mode.
  *
  * Usage:
  *   import { getDashboardSummary, getSignals, getAlerts } from "@/lib/api-service";
@@ -12,6 +12,7 @@
 import type { LucideIcon } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import type { AuthUser } from "@/store/useAuthStore";
+import { getMockDashboardSummary, isDemoMode } from "./demo-mock-data";
 
 // ---------------------------------------------------------------------------
 // Types — shaped to match actual backend responses
@@ -259,6 +260,11 @@ export interface AssignmentInput {
 // ---------------------------------------------------------------------------
 
 export async function getDashboardSummary(options: DateRangeOptions = {}): Promise<DashboardSummary | null> {
+  // In demo mode, return mock data instead of trying to fetch from API
+  if (isDemoMode()) {
+    return getMockDashboardSummary();
+  }
+
   const params = new URLSearchParams();
   if (options.startDate) params.set("startDate", options.startDate);
   if (options.endDate) params.set("endDate", options.endDate);

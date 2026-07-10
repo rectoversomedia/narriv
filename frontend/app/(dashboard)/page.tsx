@@ -2,18 +2,20 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { ArrowRight, BarChart3, Bell, CheckCircle2, Database, FileText, Headphones, RefreshCcw, Send, Settings, X, Zap } from "lucide-react";
+import { ArrowRight, BarChart3, Bell, CheckCircle2, Database, FileText, Headphones, RefreshCcw, Send, Settings, Sparkles, X, Zap } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState } from "react";
 import { AppCard, IconBubble, MetricTile, SectionHeader } from "@/components/dashboard/dashboard-kit";
 import { CardContent } from "@/components/ui/card";
 import { quickActions, text, type Tone } from "@/lib/mock-data";
 import { useUiStore } from "@/store/useUiStore";
+import { isDemoMode } from "@/lib/demo-mock-data";
 
 import { useQuery } from "@tanstack/react-query";
 import { getDashboardSummary, getDateRangeOptions, type DateRangeKey } from "@/lib/api-service";
 import { DashboardErrorState, MetricRowSkeleton } from "@/components/dashboard/dashboard-states";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { Badge } from "@/components/ui/badge";
 
 type SeriesPoint = {
   label: string;
@@ -222,8 +224,14 @@ export default function DashboardPage() {
   const language = useUiStore((state) => state.language);
   const [timeRange, setTimeRange] = useState<DateRangeKey>("24h");
   const [selectedAction, setSelectedAction] = useState<QuickActionKey | null>(null);
+  const [demoMode, setDemoMode] = useState(false);
   const dateRange = getDateRangeOptions(timeRange);
   const quickActionContent = getQuickActionContent((key) => tDrawer(key));
+
+  // Check demo mode on mount
+  useEffect(() => {
+    setDemoMode(isDemoMode());
+  }, []);
 
   const timeRangeOptions: Array<{ label: string; value: DateRangeKey }> = [
     { label: t("pages.command.timeRange24h"), value: "24h" },
@@ -239,7 +247,7 @@ export default function DashboardPage() {
     refetchIntervalInBackground: false,
   });
   
-  const isLiveUnavailable = dashboardQuery.data === null;
+  const isLiveUnavailable = dashboardQuery.data === null && !demoMode;
   const summary = dashboardQuery.data;
 
   const activityData = summary?.trends?.length 
@@ -286,6 +294,16 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8 pb-6">
+      {/* Demo Mode Banner */}
+      {demoMode && (
+        <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
+          <Sparkles size={16} className="text-[#8B5CFF]" />
+          <p className="text-[13px] font-bold text-[#8B5CFF]">
+            {t("pages.command.demoMode") || "Demo Mode"} — {t("pages.command.demoModeDesc") || "Showing sample data for demonstration purposes"}
+          </p>
+        </div>
+      )}
+
       {/* Header Section */}
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between mb-2 rounded-[12px] border border-slate-100 bg-[linear-gradient(135deg,#ffffff_0%,#f8fbff_52%,#fff7ed_100%)] p-5 shadow-[0_14px_38px_rgba(16,24,40,0.04)]">
         <div>
@@ -317,9 +335,7 @@ export default function DashboardPage() {
       {/* Metrics Row */}
       {isLiveUnavailable ? (
         <DashboardErrorState title={t("pages.command.errorTitle")} description={t("pages.command.errorDesc")} onRetry={() => void dashboardQuery.refetch()} minHeight="min-h-[150px]" />
-      ) : null}
-
-      {dashboardQuery.isPending ? (
+      ) : dashboardQuery.isPending ? (
         <MetricRowSkeleton count={6} />
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
