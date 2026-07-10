@@ -1,6 +1,5 @@
 import type { NextConfig } from "next";
 import nextIntl from "next-intl/plugin";
-import { withSentryConfig } from "@sentry/nextjs";
 
 const withNextIntl = nextIntl();
 
@@ -12,7 +11,7 @@ const nextConfig: NextConfig = {
   experimental: {
     // Enable server actions
     serverActions: {
-      allowedOrigins: ["localhost:3001"],
+      allowedOrigins: ["localhost:3001", "frontend-rho-ten-87.vercel.app"],
     },
   },
 
@@ -64,18 +63,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-// Sentry configuration
-const sentryConfig = withSentryConfig(nextConfig, {
-  // Auto-instrument server-side code
-  autoInstrumentServer: true,
-
-  // Silent mode for development
-  silent: process.env.NODE_ENV === "development",
-
-  // Source map upload options
-  widenClientFileUpload: true,
-  transpileClientSDK: true,
-  tunnelRoute: "/__monitoring",
-});
-
-export default withNextIntl(sentryConfig);
+export default withNextIntl(nextConfig);
