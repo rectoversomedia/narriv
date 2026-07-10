@@ -6,6 +6,9 @@
     "frontend",
     "backend"
   ],
+  "dependencies": {
+    "next": "^16.2.7"
+  },
   "scripts": {
     "dev": "npm run dev --workspace=frontend",
     "build": "npm run build --workspace=frontend",
