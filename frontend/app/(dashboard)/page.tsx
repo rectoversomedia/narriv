@@ -225,27 +225,31 @@ export default function DashboardPage() {
   const [timeRange, setTimeRange] = useState<DateRangeKey>("24h");
   const [selectedAction, setSelectedAction] = useState<QuickActionKey | null>(null);
   const [demoMode, setDemoMode] = useState(false);
+  const [hasCheckedDemoMode, setHasCheckedDemoMode] = useState(false);
   const dateRange = getDateRangeOptions(timeRange);
   const quickActionContent = getQuickActionContent((key) => tDrawer(key));
 
-  // Check demo mode on mount
+  // Check demo mode on mount and trigger refetch when detected
   useEffect(() => {
-    setDemoMode(isDemoMode());
+    const isDemo = isDemoMode();
+    setDemoMode(isDemo);
+    setHasCheckedDemoMode(true);
   }, []);
+
+  const dashboardQuery = useQuery({
+    queryKey: ["dashboard-summary", timeRange, demoMode],
+    queryFn: () => getDashboardSummary(dateRange),
+    staleTime: 15 * 1000,
+    refetchInterval: demoMode ? 60000 : 15 * 1000, // Longer interval in demo mode
+    refetchIntervalInBackground: false,
+    enabled: hasCheckedDemoMode, // Don't run until we've checked demo mode
+  });
 
   const timeRangeOptions: Array<{ label: string; value: DateRangeKey }> = [
     { label: t("pages.command.timeRange24h"), value: "24h" },
     { label: t("pages.command.timeRange7d"), value: "7d" },
     { label: t("pages.command.timeRange30d"), value: "30d" },
   ];
-
-  const dashboardQuery = useQuery({
-    queryKey: ["dashboard-summary", timeRange],
-    queryFn: () => getDashboardSummary(dateRange),
-    staleTime: 15 * 1000,
-    refetchInterval: 15 * 1000,
-    refetchIntervalInBackground: false,
-  });
   
   const isLiveUnavailable = dashboardQuery.data === null && !demoMode;
   const summary = dashboardQuery.data;
