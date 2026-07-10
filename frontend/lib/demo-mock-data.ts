@@ -176,42 +176,36 @@ export function isDemoMode(): boolean {
   if (typeof window === "undefined") return false;
 
   try {
-    // 1. Check Zustand persist store (narriv-auth)
-    const authStateStr = localStorage.getItem("narriv-auth");
-    if (authStateStr) {
-      const authState = JSON.parse(authStateStr);
-      // Zustand persist format: state.user.provider
-      if (authState?.state?.user?.provider === "demo") {
-        return true;
-      }
-      // Alternative format: directly user.provider
-      if (authState?.user?.provider === "demo") {
-        return true;
-      }
-    }
-
-    // 2. Check legacy demo token keys
-    const demoToken = localStorage.getItem("narriv_demo_token");
-    const demoUser = localStorage.getItem("narriv_demo_user");
-    if (demoToken && demoUser) {
-      const user = JSON.parse(demoUser);
-      if (user?.provider === "demo") {
-        return true;
-      }
-    }
-
-    // 3. Check URL search params for demo mode (useful during development)
+    // 1. Check URL search params first (most reliable for demo mode)
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("demo") === "true" || urlParams.get("mode") === "demo") {
       return true;
     }
 
-    // 4. Check if token starts with "demo-token-"
-    const storedToken = localStorage.getItem("narriv-auth");
-    if (storedToken) {
-      const parsed = JSON.parse(storedToken);
-      const token = parsed?.state?.token || parsed?.token;
+    // 2. Check Zustand persist store (narriv-auth)
+    const authStateStr = localStorage.getItem("narriv-auth");
+    if (authStateStr) {
+      const authState = JSON.parse(authStateStr);
+      const token = authState?.state?.token || authState?.token;
+      const userProvider = authState?.state?.user?.provider || authState?.user?.provider;
+
+      // Check if provider is "demo"
+      if (userProvider === "demo") {
+        return true;
+      }
+
+      // Check if token starts with "demo-token-"
       if (token && typeof token === "string" && token.startsWith("demo-token-")) {
+        return true;
+      }
+    }
+
+    // 3. Check legacy demo token keys for backwards compatibility
+    const legacyToken = localStorage.getItem("narriv_demo_token");
+    const legacyUser = localStorage.getItem("narriv_demo_user");
+    if (legacyToken && legacyUser) {
+      const user = JSON.parse(legacyUser);
+      if (user?.provider === "demo") {
         return true;
       }
     }
