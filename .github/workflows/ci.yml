@@ -40,11 +40,8 @@ jobs:
       - name: Frontend Lint
         run: cd frontend && npm run lint
 
-      - name: Type Check Backend
-        run: npx tsc --noEmit || true
-
       - name: Type Check Frontend
-        run: cd frontend && npx tsc --noEmit || true
+        run: cd frontend && npx tsc --noEmit
 
   # ============================================
   # BACKEND TESTS
