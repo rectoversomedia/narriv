@@ -1,8 +1,8 @@
 .trunk
-opencode.json 
+opencode.json
 .opencode
 .kilocode
-.claude 
+.claude
 .playwright-mcp
 .codex
 .commandcode
@@ -16,3 +16,12 @@ process/general-plans/references/*
 !process/general-plans/references/production-readiness-runbook.md
 .vercel
 .env*
+node_modules/
+*.log
+.DS_Store
+dist/
+build/
+.next/
+out/
+coverage/
+*.tsbuildinfo
