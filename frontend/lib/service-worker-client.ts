@@ -12,6 +12,8 @@ if ('serviceWorker' in navigator) {
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
 
+        if (!newWorker) return;
+
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
             // New content available
@@ -63,7 +65,7 @@ export async function requestNotificationPermission() {
 }
 
 // Show local notification
-export function showNotification(title, options = {}) {
+export function showNotification(title: string, options?: NotificationOptions) {
   if (Notification.permission === 'granted') {
     navigator.serviceWorker.ready.then((registration) => {
       registration.showNotification(title, {

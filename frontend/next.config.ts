@@ -11,7 +11,9 @@ const nextConfig: NextConfig = {
   experimental: {
     // Enable server actions
     serverActions: {
-      allowedOrigins: ["localhost:3001", "frontend-rho-ten-87.vercel.app"],
+      allowedOrigins: process.env.ALLOWED_ORIGINS
+        ? process.env.ALLOWED_ORIGINS.split(",")
+        : ["localhost:3001"],
     },
   },
 
@@ -28,9 +30,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-
-  // Logging for debugging
-  logPrefix: "[Narriv]",
 
   // Production source maps
   productionBrowserSourceMaps: false,
