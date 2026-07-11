@@ -66,7 +66,8 @@ type OnboardingContextValue = {
 
 const OnboardingContext = createContext<OnboardingContextValue | null>(null);
 
-export function useOnboarding() {
+// Internal hook for use within this page only (not exported to avoid Next.js page export error)
+function useOnboardingContext() {
   const ctx = useContext(OnboardingContext);
   if (!ctx) throw new Error("useOnboarding must be used within OnboardingContext");
   return ctx;
@@ -356,7 +357,7 @@ function SectionTitle({ icon: Icon, step, title, desc }: { icon: LucideIcon; ste
 }
 
 function ProfileStep() {
-  const { formData, updateForm } = useOnboarding();
+  const { formData, updateForm } = useOnboardingContext();
 
   const t = useTranslations("OnboardingDesign.profile");
   const goals = [
@@ -944,7 +945,7 @@ function PreviewSummary() {
 }
 
 function ProcessingScreen() {
-  const { submitOnboarding } = useOnboarding();
+  const { submitOnboarding } = useOnboardingContext();
   const didSubmitRef = useRef(false);
   useEffect(() => {
     if (didSubmitRef.current) return;

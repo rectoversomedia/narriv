@@ -329,11 +329,23 @@ function DemoButton() {
     localStorage.setItem("narriv_demo_user", JSON.stringify(demoUser));
     localStorage.setItem("narriv_demo_token", "demo-token-" + Date.now());
 
+    // Also store in Zustand persist format for compatibility
+    const zustandState = {
+      state: {
+        token: "demo-token-" + Date.now(),
+        refreshToken: null,
+        user: demoUser,
+        isAuthenticated: true,
+      },
+      version: 0,
+    };
+    localStorage.setItem("narriv-auth", JSON.stringify(zustandState));
+
     // Dispatch custom event for auth store to pick up
     window.dispatchEvent(new CustomEvent("narriv_demo_login", { detail: demoUser }));
 
-    // Redirect to dashboard
-    window.location.href = "/";
+    // Redirect to dashboard with demo URL parameter (most reliable detection method)
+    window.location.href = "/?demo=true";
   };
 
   return (
