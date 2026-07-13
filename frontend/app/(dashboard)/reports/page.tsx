@@ -105,19 +105,20 @@ function toneFromStatus(status: ReportStatus): Tone {
 }
 
 function buildApiReportRows(
-  reports: ReportRecord[],
+  reports: Array<{ id: string; title: string; status: string; sections?: unknown; readiness?: number }>,
   fallbacks: { description: string; type: string; period: string; created: string },
 ): ReportRow[] {
   return reports.map((report) => {
     const status = statusFromApi(report.status);
+    const sectionsStr = typeof report.sections === "string" ? report.sections : fallbacks.description;
     return {
       id: report.id,
       title: report.title,
-      description: report.sections || fallbacks.description,
+      description: sectionsStr,
       type: fallbacks.type,
       period: fallbacks.period,
       status,
-      progress: report.readiness,
+      progress: report.readiness ?? 0,
       created: fallbacks.created,
       createdTime: "API",
       tone: toneFromStatus(status),
@@ -341,13 +342,13 @@ function SummaryPoint({ color, title, text }: { color: string; title: string; te
   );
 }
 
-function ReportPreviewSidebar({ latestReport, onExportPdf, isPending }: { latestReport: ReportRecord | null | undefined; onExportPdf?: () => void; isPending?: boolean }) {
+function ReportPreviewSidebar({ latestReport, onExportPdf, isPending }: { latestReport?: { id: string; title: string; status: string; sections?: string }; onExportPdf?: () => void; isPending?: boolean }) {
   const tr = useTranslations("Reports");
 
   const reportTitle = latestReport?.title || tr("preview.executiveBrief");
   const reportStatus = latestReport ? statusFromApi(latestReport.status) : null;
   const reportSections = latestReport?.sections
-    ? latestReport.sections.split(",").map((s) => s.trim()).filter(Boolean)
+    ? String(latestReport.sections).split(",").map((s) => s.trim()).filter(Boolean)
     : [];
 
   return (
@@ -940,9 +941,12 @@ export default function ReportsPage() {
   });
   const reportsQuery = useQuery({
     queryKey: ["reports", { page, limit: reportsApiLimit, demoMode }],
-    queryFn: () => demoMode
-      ? Promise.resolve(getMockReports())
-      : getReports({ page, limit: reportsApiLimit }),
+    queryFn: async () => {
+      if (demoMode) {
+        return getMockReports();
+      }
+      return getReports({ page, limit: reportsApiLimit });
+    },
     staleTime: 30 * 1000,
     enabled: hasCheckedDemoMode,
   });
