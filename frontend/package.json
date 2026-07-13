@@ -46,5 +46,9 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.20",
     "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "@parcel/watcher-darwin-arm64": "^2.5.6",
+    "@parcel/watcher-linux-x64-glibc": "^2.5.6"
   }
 }
