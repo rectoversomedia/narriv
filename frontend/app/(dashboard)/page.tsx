@@ -250,11 +250,11 @@ export default function DashboardPage() {
     { label: t("pages.command.timeRange7d"), value: "7d" },
     { label: t("pages.command.timeRange30d"), value: "30d" },
   ];
-  
+
   const isLiveUnavailable = dashboardQuery.data === null && !demoMode;
   const summary = dashboardQuery.data;
 
-  const activityData = summary?.trends?.length 
+  const activityData = summary?.trends?.length
     ? summary.trends.map(t => ({ label: new Date(t.date).toLocaleDateString(), value: t.count }))
     : [];
 
@@ -266,14 +266,26 @@ export default function DashboardPage() {
       ]
     : [];
 
+  // Format number with thousand separators
+  const formatNumber = (num: number | undefined | null): string => {
+    if (num === undefined || num === null) return "0";
+    return num.toLocaleString("en-US");
+  };
+
+  // Format percentage with 1 decimal place
+  const formatPercent = (num: number | undefined | null): string => {
+    if (num === undefined || num === null) return "0%";
+    return `${num.toFixed(1)}%`;
+  };
+
   const metricsRow = summary?.kpis
     ? [
-        { label: t("metrics.totalSignals"), value: String(summary.kpis.total_signals), helper: "Live", icon: BarChart3, tone: "blue" as const },
-        { label: t("metrics.analyzedSignals"), value: String(summary.kpis.analyzed_signals), helper: "Live", icon: BarChart3, tone: "purple" as const },
-        { label: t("metrics.positiveSent"), value: `${summary.kpis.positive_percentage}%`, helper: "Live", icon: BarChart3, tone: "green" as const },
-        { label: t("metrics.negativeSent"), value: `${summary.kpis.negative_percentage}%`, helper: "Live", icon: BarChart3, tone: "red" as const },
-        { label: t("metrics.neutralSent"), value: `${summary.kpis.neutral_percentage}%`, helper: "Live", icon: BarChart3, tone: "slate" as const },
-        { label: t("metrics.mixedSent"), value: `${summary.kpis.mixed_percentage}%`, helper: "Live", icon: BarChart3, tone: "amber" as const },
+        { label: t("metrics.totalSignals"), value: formatNumber(summary.kpis.total_signals), helper: "Live", icon: BarChart3, tone: "blue" as const },
+        { label: t("metrics.analyzedSignals"), value: formatNumber(summary.kpis.analyzed_signals), helper: "Live", icon: BarChart3, tone: "purple" as const },
+        { label: t("metrics.positiveSent"), value: formatPercent(summary.kpis.positive_percentage), helper: "Live", icon: BarChart3, tone: "green" as const },
+        { label: t("metrics.negativeSent"), value: formatPercent(summary.kpis.negative_percentage), helper: "Live", icon: BarChart3, tone: "red" as const },
+        { label: t("metrics.neutralSent"), value: formatPercent(summary.kpis.neutral_percentage), helper: "Live", icon: BarChart3, tone: "slate" as const },
+        { label: t("metrics.mixedSent"), value: formatPercent(summary.kpis.mixed_percentage), helper: "Live", icon: BarChart3, tone: "amber" as const },
       ]
     : [];
 
@@ -342,22 +354,22 @@ export default function DashboardPage() {
       ) : dashboardQuery.isPending ? (
         <MetricRowSkeleton count={6} />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {metricsRow.map((metric) => (
-            <MetricTile 
-              key={metric.label} 
-              label={metric.label} 
+            <MetricTile
+              key={metric.label}
+              label={metric.label}
               value={metric.value}
-              helper={metric.helper} 
-              icon={metric.icon} 
-              tone={metric.tone} 
+              helper={metric.helper}
+              icon={metric.icon}
+              tone={metric.tone}
             />
           ))}
         </div>
       )}
 
       {/* Main Insights Grid */}
-      <div className="grid gap-6 xl:grid-cols-[1.25fr_1.05fr_0.8fr]">
+      <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr_0.8fr] xl:grid-cols-[1.4fr_1fr_0.7fr] 2xl:grid-cols-[1.3fr_1fr_0.65fr]">
         {/* Signal Volume Trends */}
         <AppCard>
           <CardContent className="p-5">
@@ -379,15 +391,15 @@ export default function DashboardPage() {
             {activityData.length === 0 ? (
               <EmptyPanel label={t("pages.command.emptyTrends")} />
             ) : null}
-            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 2xl:grid-cols-6">
               {miniTrends.length > 0 ? miniTrends.map((topic) => (
                 <div key={topic.label} className="rounded-[8px] border border-slate-100 bg-slate-50 p-3 transition hover:border-[#465FFF]/20">
                   <p className="text-xs font-bold text-slate-400 truncate">{topic.label}</p>
-                  <p className="mt-2 text-lg font-black text-slate-900">{topic.value}</p>
+                  <p className="mt-2 text-lg font-black text-slate-900">{formatNumber(parseInt(topic.value.replace(/[^0-9]/g, "")) || 0)}</p>
                   <MiniSparkline tone={topic.tone as Tone} />
                 </div>
               )) : (
-                <div className="sm:col-span-2 xl:col-span-6">
+                <div className="sm:col-span-2 2xl:col-span-6">
                   <EmptyPanel label={t("pages.command.emptyTopics")} compact />
                 </div>
               )}
@@ -458,7 +470,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Extra Details Grid */}
-      <div className="grid gap-6 xl:grid-cols-[1fr_1fr_1fr_0.8fr]">
+      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-4">
         {/* Hot Topics */}
         <AppCard>
           <CardContent className="p-5">
@@ -470,8 +482,8 @@ export default function DashboardPage() {
                     {index + 1}
                   </span>
                   <p className="flex-1 text-sm font-bold text-slate-900 truncate">{text(topic.name, language)}</p>
-                  <p className="text-xs font-semibold text-slate-400">{topic.mentions}</p>
-                  <p className={`text-xs font-extrabold ${topic.tone === "red" ? "text-[#EF4444]" : "text-[#10B981]"}`}>
+                  <p className="text-xs font-semibold text-slate-400 tabular-nums">{formatNumber(parseInt(topic.mentions.replace(/[^0-9]/g, "")))}</p>
+                  <p className={`text-xs font-extrabold tabular-nums ${topic.tone === "red" ? "text-[#EF4444]" : "text-[#10B981]"}`}>
                     {topic.delta}
                   </p>
                 </div>
@@ -494,7 +506,7 @@ export default function DashboardPage() {
                     <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
                     {text(source.status, language)}
                   </p>
-                  <p className="text-right text-xs font-bold text-slate-500">{source.signals}</p>
+                  <p className="text-right text-xs font-bold text-slate-500 tabular-nums">{formatNumber(parseInt(source.signals.replace(/[^0-9]/g, "")))}</p>
                 </div>
               )) : (
                 <EmptyPanel label={t("pages.command.emptySources")} />
@@ -520,21 +532,21 @@ export default function DashboardPage() {
                   <span className="h-2 w-2 rounded-full bg-[#12B76A]" />
                   {t("pages.command.positive")}
                 </span>
-                <b className="text-slate-900">{summary?.sentiment_distribution?.positive ?? 0}</b>
+                <b className="text-slate-900 font-semibold tabular-nums">{formatNumber(summary?.sentiment_distribution?.positive)}</b>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-100">
                 <span className="text-slate-500 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-[#465FFF]" />
                   {t("pages.command.neutral")}
                 </span>
-                <b className="text-slate-900">{summary?.sentiment_distribution?.neutral ?? 0}</b>
+                <b className="text-slate-900 font-semibold tabular-nums">{formatNumber(summary?.sentiment_distribution?.neutral)}</b>
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-slate-500 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-[#F04438]" />
                   {t("pages.command.negative")}
                 </span>
-                <b className="text-slate-900">{summary?.sentiment_distribution?.negative ?? 0}</b>
+                <b className="text-slate-900 font-semibold tabular-nums">{formatNumber(summary?.sentiment_distribution?.negative)}</b>
               </div>
             </div>
           </CardContent>

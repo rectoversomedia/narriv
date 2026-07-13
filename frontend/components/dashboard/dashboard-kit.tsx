@@ -77,10 +77,10 @@ export function MetricTile({ label, value, helper, icon: Icon, tone }: { label: 
         <div className={cn("flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-full border border-slate-100 shadow-[0_0_10px_rgba(0,0,0,0.2)]", styles.bg, styles.text)}>
           <Icon size={26} strokeWidth={2.1} />
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="text-[13px] font-bold text-slate-400">{label}</p>
-          <p className="mt-1.5 truncate text-[28px] font-extrabold leading-none tracking-[-0.04em] text-slate-900 drop-shadow-[0_0_8px_rgba(255,255,255,0.08)]">{value}</p>
-          <p className={cn("mt-2.5 text-[12px] font-bold flex items-center gap-1", isNegative ? "text-[#EF4444]" : "text-[#10B981]")}>
+          <p className="mt-1.5 truncate text-[32px] font-black leading-none tracking-[-0.03em] text-slate-900 drop-shadow-[0_0_8px_rgba(255,255,255,0.08)] tabular-nums">{value}</p>
+          <p className={cn("mt-2.5 text-[12px] font-bold flex items-center gap-1 tabular-nums", isNegative ? "text-[#EF4444]" : "text-[#10B981]")}>
             <span className={cn("inline-block h-1.5 w-1.5 rounded-full", isNegative ? "bg-[#EF4444]" : "bg-[#10B981]")} />
             {helper}
           </p>
