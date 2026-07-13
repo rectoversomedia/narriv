@@ -64,21 +64,7 @@ router.get("/", async (req, res) => {
         // Build where conditions for Supabase
         let query = supabase
             .from("narrative_clusters")
-            .select(`
-                *,
-                narrative_cluster_signals (
-                    signal:signals (
-                        id,
-                        title,
-                        platform,
-                        sentiment,
-                        captured_at,
-                        analyses (
-                            confidence_score
-                        )
-                    )
-                )
-            `, { count: "exact" })
+            .select("*", { count: "exact" })
             .in("workspace_id", scopedWorkspaceIds)
             .order("updated_at", { ascending: false })
             .range(skip, skip + safeLimit - 1);

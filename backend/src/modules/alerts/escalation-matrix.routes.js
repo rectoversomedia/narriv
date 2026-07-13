@@ -37,7 +37,7 @@ router.get("/escalation-matrix", async (req, res) => {
             .from('escalation_matrices')
             .select('*')
             .eq('workspace_id', scopedWorkspaceId)
-            .order('order', { ascending: true });
+            .order('sort_order', { ascending: true });
 
         if (error) {
             logStructured("error", "Error fetching escalation matrix:", { error: error?.message || error, stack: error?.stack });

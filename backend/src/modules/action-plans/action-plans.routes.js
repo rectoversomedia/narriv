@@ -65,11 +65,10 @@ function collectActionSteps(...options) {
 }
 
 function buildActionPlanResponse(plan) {
-    const conservative = parseOption(plan.option1) || {};
-    const balanced = parseOption(plan.option2) || {};
-    const bold = parseOption(plan.option3) || {};
-    const primaryOption = balanced.error ? (conservative.error ? bold : conservative) : balanced;
-    const steps = collectActionSteps(primaryOption, conservative, balanced, bold);
+    // Use strategy JSONB field instead of option1/2/3
+    const strategy = plan.strategy || {};
+    const primaryOption = typeof strategy === 'string' ? parseOption(strategy) || {} : strategy;
+    const steps = collectActionSteps(primaryOption);
 
     const channel = primaryOption.media_channels?.join(", ")
         || primaryOption.distribution_channels?.join(", ")
@@ -87,14 +86,13 @@ function buildActionPlanResponse(plan) {
         workflowStatus: plan.workflow_status,
         inputNarrative: primaryOption.executive_summary
             || primaryOption.severity_assessment
-            || plan.alert?.what_happened
-            || plan.cluster?.description
+            || plan.description
             || "",
-        evidenceSummary: `Evidence: ${plan.cluster?.signal_count || 0} related findings · Severity: ${plan.alert?.severity || "medium"} · Status: ${plan.alert?.status || "open"}`,
+        evidenceSummary: `Status: ${plan.status || "open"} · Priority: ${plan.priority || "medium"}`,
         outputs: [
             ["Primary action", plan.title || "Action plan"],
             ["Channel", channel],
-            ["Impact / effort", `${plan.alert?.severity === "high" ? "High" : "Medium"} impact · Medium effort`],
+            ["Impact / effort", `${plan.priority === "high" || plan.priority === "critical" ? "High" : "Medium"} impact · Medium effort`],
             ["Confidence", "82%"],
         ],
         plan: steps.slice(0, 4).map((step, index) => [step, timelineSlots[index] || "Later"]),
@@ -112,11 +110,7 @@ router.get("/", async (req, res) => {
 
         const { data: latestPlan, error } = await supabase
             .from("action_plans")
-            .select(`
-                *,
-                alert:alerts(*),
-                cluster:narrative_clusters(*)
-            `)
+            .select("*")
             .in("workspace_id", scopedWorkspaceIds)
             .order("created_at", { ascending: false })
             .limit(1)
