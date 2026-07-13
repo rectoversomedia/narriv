@@ -276,7 +276,32 @@ export const register = async (req, res) => {
 
         if (createError) throw createError;
 
-        await writeAuditLog(user.id, "register_success", { email: user.email });
+        // Auto-create workspace for new user
+        const workspaceId = crypto.randomUUID();
+        const workspaceSlug = user.email.split("@")[0].replace(/[^a-z0-9]/gi, "-").toLowerCase();
+        await supabase.from("workspaces").insert({
+            id: workspaceId,
+            name: `${user.name || "My"}'s Workspace`,
+            slug: workspaceSlug,
+            settings: { timezone: "Asia/Jakarta", language: "id" },
+        }).catch(err => logStructured("warn", "auto_workspace_create_failed", { error: err.message }));
+
+        // Link user to workspace as owner
+        await supabase.from("workspace_members").insert({
+            workspace_id: workspaceId,
+            user_id: user.id,
+            role: "owner",
+        }).catch(err => logStructured("warn", "auto_workspace_member_failed", { error: err.message }));
+
+        // Create workspace settings
+        await supabase.from("workspace_settings").insert({
+            workspace_id: workspaceId,
+            brand_name: user.name || "My Workspace",
+            timezone: "Asia/Jakarta",
+            language: "id",
+        }).catch(err => logStructured("warn", "auto_workspace_settings_failed", { error: err.message }));
+
+        await writeAuditLog(user.id, "register_success", { email: user.email, workspace_id: workspaceId });
 
         // Generate email verification code
         const verificationCode = createResetCode();
@@ -383,12 +408,31 @@ export const login = async (req, res) => {
 
         if (updateError) throw updateError;
 
+        // Get user's workspace
+        let workspace = "Narriv";
+        try {
+            const { data: membership } = await supabase
+                .from("workspace_members")
+                .select("workspace_id")
+                .eq("user_id", user.id)
+                .single();
+
+            if (membership) {
+                const { data: ws } = await supabase
+                    .from("workspaces")
+                    .select("name")
+                    .eq("id", membership.workspace_id)
+                    .single();
+                if (ws) workspace = ws.name;
+            }
+        } catch {}
+
         const token = signAccessToken(user);
         const { refresh_token } = await issueRefreshToken(user.id);
 
         await writeAuditLog(user.id, "login", { email: user.email });
 
-        res.json({ token, refresh_token, user: toSessionUser(user) });
+        res.json({ token, refresh_token, user: { ...toSessionUser(user), workspace } });
     } catch (error) {
         logStructured("error", "Error logging in:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
@@ -860,7 +904,29 @@ export const me = async (req, res) => {
 
         if (!user) return res.status(404).json({ error: "User not found." });
 
-        res.json(user);
+        // Get workspace info
+        let workspace = null;
+        try {
+            const { data: membership } = await supabase
+                .from("workspace_members")
+                .select("workspace_id, role")
+                .eq("user_id", user_id)
+                .single();
+
+            if (membership) {
+                const { data: ws } = await supabase
+                    .from("workspaces")
+                    .select("id, name, slug")
+                    .eq("id", membership.workspace_id)
+                    .single();
+
+                if (ws) {
+                    workspace = { ...ws, role: membership.role };
+                }
+            }
+        } catch {}
+
+        res.json({ ...user, workspace });
     } catch (error) {
         logStructured("error", "Error fetching me:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
@@ -1084,6 +1150,30 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
         });
 
         if (linkError) throw linkError;
+
+        // Auto-create workspace for new OAuth user if not already in one
+        const { data: existingMembership } = await supabase
+            .from("workspace_members")
+            .select("id")
+            .eq("user_id", user.id)
+            .single();
+
+        if (!existingMembership) {
+            const workspaceId = crypto.randomUUID();
+            const workspaceSlug = email.split("@")[0].replace(/[^a-z0-9]/gi, "-").toLowerCase();
+            await supabase.from("workspaces").insert({
+                id: workspaceId,
+                name: `${name || "My"}'s Workspace`,
+                slug: workspaceSlug,
+                settings: { timezone: "Asia/Jakarta", language: "id" },
+            }).catch(() => {});
+
+            await supabase.from("workspace_members").insert({
+                workspace_id: workspaceId,
+                user_id: user.id,
+                role: "owner",
+            }).catch(() => {});
+        }
     }
 
     // Reset lockout if needed

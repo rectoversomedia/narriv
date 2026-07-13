@@ -98,8 +98,8 @@ export interface UseSSEOptions {
   onNotification?: (data: NotificationData) => void;
 }
 
-const DEFAULT_RECONNECT_DELAY = 1000;
-const MAX_RECONNECT_ATTEMPTS = 5;
+const DEFAULT_RECONNECT_DELAY = 3000;
+const MAX_RECONNECT_ATTEMPTS = 3;
 
 /**
  * Hook for SSE real-time updates.

@@ -14,19 +14,25 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   const token = useAuthStore((state) => state.token);
   const sidebarCollapsed = useUiStore((state) => state.sidebarCollapsed);
   const [mounted, setMounted] = useState(false);
+  const [checked, setChecked] = useState(false);
 
+  // Mark as mounted after initial render (client-side only)
   useEffect(() => {
-    const id = window.setTimeout(() => setMounted(true), 0);
-    return () => window.clearTimeout(id);
+    setMounted(true);
   }, []);
 
+  // Check auth after mount and token changes
   useEffect(() => {
     if (mounted && !token) {
       router.replace("/login");
+      setChecked(false);
+    } else if (mounted && token) {
+      setChecked(true);
     }
   }, [mounted, token, router]);
 
-  if (!mounted || !token) {
+  // Show loading only if not checked yet (prevent flash)
+  if (!mounted || !checked) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-slate-200 border-[#465FFF] border-t-transparent" />

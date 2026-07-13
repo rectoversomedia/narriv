@@ -42,6 +42,7 @@ const connectionMetrics = {
 const TABLE_MAP = {
     // Auth & Users
     'users': 'user_profiles',
+    'user_profiles': 'user_profiles',
     'refresh_tokens': 'refresh_tokens',
     'password_reset_tokens': 'password_reset_tokens',
     'email_verification_tokens': 'email_verification_tokens',
