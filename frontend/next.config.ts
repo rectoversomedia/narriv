@@ -15,7 +15,18 @@ const nextConfig: NextConfig = {
         ? process.env.ALLOWED_ORIGINS.split(",")
         : ["localhost:3001"],
     },
+    // Disable turbopack watcher for production builds
+    turbo: {
+      experimentalPersistentCaching: false,
+    },
   },
+
+  // Disable filesystem watcher in production
+  ...(process.env.NODE_ENV === "production" ? {
+    watchOptions: {
+      ignored: ["**/node_modules/**", "**/.next/**"],
+    },
+  } : {}),
 
   // Image optimization
   images: {
