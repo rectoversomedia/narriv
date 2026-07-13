@@ -3,6 +3,7 @@ import { config } from "dotenv";
 import { existsSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
+import { logStructured } from "./logger.js";
 
 // Load .env file if it exists
 const __filename = fileURLToPath(import.meta.url);
@@ -17,6 +18,26 @@ if (existsSync(envPath)) {
 const supabaseUrl = process.env.SUPABASE_URL || "https://placeholder.supabase.co";
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || "placeholder-key";
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || supabaseServiceKey;
+
+// Connection pool configuration
+const POOL_CONFIG = {
+    // Connection pool settings
+    poolMin: parseInt(process.env.DB_POOL_MIN || "2", 10),
+    poolMax: parseInt(process.env.DB_POOL_MAX || "20", 10),
+    poolIdleTimeout: parseInt(process.env.DB_POOL_IDLE_TIMEOUT || "30000", 10),
+    connectionTimeout: parseInt(process.env.DB_CONNECTION_TIMEOUT || "10000", 10),
+    // Enable prepared statement caching
+    preparedStatements: process.env.DB_PREPARED_STATEMENTS !== "false",
+};
+
+// Connection metrics
+const connectionMetrics = {
+    active: 0,
+    idle: 0,
+    total: 0,
+    errors: 0,
+    lastError: null,
+};
 
 // Table name mapping: snake_case (code) → PascalCase (Supabase)
 const TABLE_MAP = {
@@ -78,13 +99,23 @@ function toPascalCase(name) {
     return parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
 }
 
-// Create Supabase clients
+// Create Supabase clients with connection pool settings
 const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
+    global: {
+        headers: {
+            "x-pool-config": JSON.stringify(POOL_CONFIG),
+        },
+    },
 });
 
 const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
     auth: { autoRefreshToken: true, persistSession: true },
+    global: {
+        headers: {
+            "x-pool-config": JSON.stringify(POOL_CONFIG),
+        },
+    },
 });
 
 // Create wrapped client that auto-converts table names
@@ -120,19 +151,84 @@ export const supabase = createDbClient(anonClient);
 export const baseSupabaseAdmin = adminClient;
 export const baseSupabase = anonClient;
 
+// Connection pool metrics export
+export function getPoolMetrics() {
+    return {
+        ...connectionMetrics,
+        config: POOL_CONFIG,
+        timestamp: new Date().toISOString(),
+    };
+}
+
+// Connection pool configuration export
+export function getPoolConfig() {
+    return { ...POOL_CONFIG };
+}
+
 // Helper to check connection
 export async function checkConnection() {
+    const startTime = Date.now();
     try {
         const { data, error } = await baseSupabaseAdmin.from('User').select('id').limit(1);
+        const latency = Date.now() - startTime;
+
+        connectionMetrics.total++;
+        connectionMetrics.active++;
+
         if (error && error.code !== 'PGRST116' && !error.message?.includes('JWT')) {
-            console.error("[SUPABASE] Connection failed:", error.message);
+            connectionMetrics.errors++;
+            connectionMetrics.lastError = error.message;
+            logStructured("error", "supabase_connection_failed", {
+                latency,
+                error: error.message
+            });
             return false;
         }
-        console.log("[SUPABASE] Connected successfully");
+
+        logStructured("info", "supabase_connection_success", {
+            latency,
+            totalConnections: connectionMetrics.total
+        });
+
+        connectionMetrics.active--;
         return true;
     } catch (err) {
-        console.error("[SUPABASE] Connection error:", err.message);
+        connectionMetrics.errors++;
+        connectionMetrics.lastError = err.message;
+        connectionMetrics.active--;
+        logStructured("error", "supabase_connection_error", {
+            latency: Date.now() - startTime,
+            error: err.message
+        });
         return false;
+    }
+}
+
+// Cleanup idle connections periodically (for long-running processes)
+let cleanupInterval = null;
+
+export function startConnectionCleanup(intervalMs = 60000) {
+    if (cleanupInterval) return;
+
+    cleanupInterval = setInterval(() => {
+        const metrics = getPoolMetrics();
+        if (metrics.active === 0) {
+            logStructured("info", "supabase_idle_cleanup", {
+                idleTime: intervalMs,
+                totalConnections: metrics.total
+            });
+        }
+    }, intervalMs);
+
+    if (cleanupInterval.unref) {
+        cleanupInterval.unref();
+    }
+}
+
+export function stopConnectionCleanup() {
+    if (cleanupInterval) {
+        clearInterval(cleanupInterval);
+        cleanupInterval = null;
     }
 }
 

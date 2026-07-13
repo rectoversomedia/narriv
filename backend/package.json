@@ -1,20 +1,32 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Narriv Backend API",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "scripts": {
-    "dev": "nodemon src/index.js",
-    "start": "node src/index.js",
+    "dev": "tsx watch src/index.ts",
+    "dev:js": "nodemon src/index.js",
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "build:watch": "tsc --watch",
     "test": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "load:smoke": "node tests/load/run-k6.js smoke",
     "load:baseline": "node tests/load/run-k6.js baseline",
-    "load:stress": "node tests/load/run-k6.js stress"
+    "load:stress": "node tests/load/run-k6.js stress",
+    "typecheck": "tsc --noEmit",
+    "typecheck:watch": "tsc --noEmit --watch"
   },
-  "keywords": [],
+  "keywords": ["narriv", "api", "narrative-intelligence"],
   "author": "",
   "license": "ISC",
-  "type": "module",
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
     "apify-client": "^2.23.0",
@@ -33,9 +45,18 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/compression": "^1.7.5",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/node": "^22.15.3",
+    "@types/uuid": "^10.0.0",
     "cross-env": "^10.1.0",
     "jest": "^30.4.2",
     "nodemon": "^3.1.14",
-    "supertest": "^7.2.2"
+    "supertest": "^7.2.2",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
   }
 }
