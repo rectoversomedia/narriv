@@ -21,9 +21,8 @@ export function sanitizeInput(req, res, next) {
     if (req.body) {
         req.body = sanitizeObject(req.body);
     }
-    if (req.query) {
-        req.query = sanitizeObject(req.query);
-    }
+    // Note: In Express 5, req.query is a getter-only property
+    // We sanitize individual query params at the route level if needed
     if (req.params) {
         req.params = sanitizeObject(req.params);
     }

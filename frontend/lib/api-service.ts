@@ -1222,6 +1222,10 @@ export interface ReportScheduleRecord {
   cadence: string;
   dayOfWeek: string | null;
   timeOfDay: string;
+  timezone: string;
+  recipients: string[];
+  ccRecipients?: string[];
+  bccRecipients?: string[];
   enabled: boolean;
   lastRunAt: string | null;
   nextRunAt: string | null;
@@ -1240,14 +1244,36 @@ export async function getReportSchedules(): Promise<{ data: ReportScheduleRecord
 export async function createReportSchedule(input: Partial<ReportScheduleRecord>): Promise<ReportScheduleRecord> {
   return await apiClient<ReportScheduleRecord>("/api/reports/schedules", {
     method: "POST",
-    body: JSON.stringify(input),
+    body: JSON.stringify({
+      templateKey: input.templateKey,
+      name: input.name,
+      cadence: input.cadence,
+      dayOfWeek: input.dayOfWeek,
+      timeOfDay: input.timeOfDay,
+      timezone: input.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      recipients: input.recipients || [],
+      ccRecipients: input.ccRecipients || [],
+      bccRecipients: input.bccRecipients || [],
+      enabled: input.enabled ?? true,
+    }),
   });
 }
 
 export async function updateReportSchedule(id: string, input: Partial<ReportScheduleRecord>): Promise<ReportScheduleRecord> {
   return await apiClient<ReportScheduleRecord>(`/api/reports/schedules/${id}`, {
     method: "PATCH",
-    body: JSON.stringify(input),
+    body: JSON.stringify({
+      templateKey: input.templateKey,
+      name: input.name,
+      cadence: input.cadence,
+      dayOfWeek: input.dayOfWeek,
+      timeOfDay: input.timeOfDay,
+      timezone: input.timezone,
+      recipients: input.recipients,
+      ccRecipients: input.ccRecipients,
+      bccRecipients: input.bccRecipients,
+      enabled: input.enabled,
+    }),
   });
 }
 
@@ -1258,6 +1284,22 @@ export async function deleteReportSchedule(id: string): Promise<boolean> {
 
 export async function toggleReportSchedule(id: string): Promise<ReportScheduleRecord> {
   return await apiClient<ReportScheduleRecord>(`/api/reports/schedules/${id}/toggle`, { method: "PATCH" });
+}
+
+export interface SendTestEmailResponse {
+  success: boolean;
+  message: string;
+  recipients?: string[];
+}
+
+export async function sendTestScheduleEmail(scheduleId: string): Promise<SendTestEmailResponse> {
+  try {
+    return await apiClient<SendTestEmailResponse>(`/api/reports/schedules/${scheduleId}/test-email`, {
+      method: "POST",
+    });
+  } catch {
+    return { success: false, message: "Failed to send test email" };
+  }
 }
 
 export interface GeneratedReportResponse {
@@ -1802,6 +1844,387 @@ export interface ActionPlanMetricsResponse {
 export async function getActionPlansMetrics(): Promise<ActionPlanMetricsResponse | null> {
   try {
     return await apiClient<ActionPlanMetricsResponse>("/api/action-plans/metrics");
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Bulk Operations
+// ---------------------------------------------------------------------------
+
+export interface BulkDeleteSignalsResponse {
+  deleted: number;
+  requested: number;
+}
+
+export interface BulkUpdateSignalsResponse {
+  updated: number;
+  requested: number;
+}
+
+export interface BulkAnalyzeSignalsResponse {
+  queued: number;
+  skipped: number;
+  total: number;
+}
+
+export interface BulkCreateAlertsResponse {
+  created: number;
+  alerts: Alert[];
+}
+
+export interface BulkUpdateAlertsResponse {
+  updated: number;
+  requested: number;
+}
+
+export interface BulkAssignAlertsResponse {
+  assigned: number;
+}
+
+export async function bulkDeleteSignals(signalIds: string[]): Promise<BulkDeleteSignalsResponse | null> {
+  try {
+    return await apiClient<BulkDeleteSignalsResponse>("/api/bulk/signals/delete", {
+      method: "POST",
+      body: JSON.stringify({ signalIds }),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function bulkUpdateSignals(signalIds: string[], updates: Record<string, unknown>): Promise<BulkUpdateSignalsResponse | null> {
+  try {
+    return await apiClient<BulkUpdateSignalsResponse>("/api/bulk/signals", {
+      method: "PATCH",
+      body: JSON.stringify({ signalIds, updates }),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function bulkAnalyzeSignals(signalIds: string[], options?: { maxConcurrent?: number; skipAnalyzed?: boolean }): Promise<BulkAnalyzeSignalsResponse | null> {
+  try {
+    return await apiClient<BulkAnalyzeSignalsResponse>("/api/bulk/signals/analyze", {
+      method: "POST",
+      body: JSON.stringify({ signalIds, options }),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function bulkCreateAlertsFromSignals(signalIds: string[], alertData?: { severity?: string }): Promise<BulkCreateAlertsResponse | null> {
+  try {
+    return await apiClient<BulkCreateAlertsResponse>("/api/bulk/signals/create-alerts", {
+      method: "POST",
+      body: JSON.stringify({ signalIds, alertData }),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function bulkUpdateAlerts(alertIds: string[], updates: Record<string, unknown>): Promise<BulkUpdateAlertsResponse | null> {
+  try {
+    return await apiClient<BulkUpdateAlertsResponse>("/api/bulk/alerts", {
+      method: "PATCH",
+      body: JSON.stringify({ alertIds, updates }),
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function bulkAssignAlerts(alertIds: string[], assignment: { assigned_to?: string; assigned_team?: string; deadline?: string }): Promise<BulkAssignAlertsResponse | null> {
+  try {
+    return await apiClient<BulkAssignAlertsResponse>("/api/bulk/alerts/assign", {
+      method: "POST",
+      body: JSON.stringify({ alertIds, assignment }),
+    });
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Advanced Search
+// ---------------------------------------------------------------------------
+
+export interface AdvancedSearchFilters {
+  platform?: string;
+  sentiment?: string;
+  severity?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  sourceId?: string;
+  topics?: string[];
+  language?: string;
+  status?: string;
+  type?: string;
+  assignedTo?: string;
+  escalationLevel?: string;
+  priority?: string;
+}
+
+export interface SearchSignalsResponse {
+  data: Array<Signal & { relevance_score?: number }>;
+  pagination: PaginationInfo;
+  meta: {
+    query?: string;
+    filters: AdvancedSearchFilters;
+    sort: string;
+  };
+}
+
+export interface SearchAlertsResponse {
+  data: Alert[];
+  pagination: PaginationInfo;
+}
+
+export interface GlobalSearchResponse {
+  signals: Array<{ id: string; title: string; platform: string; sentiment: string; captured_at: string }>;
+  alerts: Array<{ id: string; title: string; severity: string; status: string; created_at: string }>;
+  actionPlans: Array<{ id: string; title: string; status: string; priority: string; created_at: string }>;
+  meta: { query: string };
+}
+
+export interface SearchSuggestionsResponse {
+  suggestions: Array<{
+    type: "platform" | "topic" | "signal";
+    value: string;
+    id?: string;
+  }>;
+}
+
+export interface SearchFacetsResponse {
+  platforms: Array<{ value: string; count: number }>;
+  sentiments: Array<{ value: string; count: number }>;
+  severities: Array<{ value: string; count: number }>;
+  languages: Array<{ value: string; count: number }>;
+}
+
+export async function searchSignals(options: {
+  query?: string;
+  filters?: AdvancedSearchFilters;
+  page?: number;
+  limit?: number;
+  sort?: "relevance" | "recent" | "oldest" | "sentiment_score";
+}): Promise<SearchSignalsResponse | null> {
+  const { query, filters = {}, page = 1, limit = 20, sort = "relevance" } = options;
+  const params = new URLSearchParams({ page: String(page), limit: String(limit), sort });
+  if (query) params.set("query", query);
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      if (Array.isArray(value)) {
+        params.set(key, value.join(","));
+      } else {
+        params.set(key, String(value));
+      }
+    }
+  });
+
+  try {
+    return await apiClient<SearchSignalsResponse>(`/api/search/signals?${params.toString()}`);
+  } catch {
+    return null;
+  }
+}
+
+export async function searchAlerts(options: {
+  query?: string;
+  filters?: AdvancedSearchFilters;
+  page?: number;
+  limit?: number;
+  sort?: "recent" | "severity" | "deadline";
+}): Promise<SearchAlertsResponse | null> {
+  const { query, filters = {}, page = 1, limit = 20, sort = "recent" } = options;
+  const params = new URLSearchParams({ page: String(page), limit: String(limit), sort });
+  if (query) params.set("query", query);
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      if (Array.isArray(value)) {
+        params.set(key, value.join(","));
+      } else {
+        params.set(key, String(value));
+      }
+    }
+  });
+
+  try {
+    return await apiClient<SearchAlertsResponse>(`/api/search/alerts?${params.toString()}`);
+  } catch {
+    return null;
+  }
+}
+
+export async function globalSearch(query: string, limit = 5): Promise<GlobalSearchResponse | null> {
+  try {
+    return await apiClient<GlobalSearchResponse>(`/api/search/global?q=${encodeURIComponent(query)}&limit=${limit}`);
+  } catch {
+    return null;
+  }
+}
+
+export async function getSearchSuggestions(partial: string, type = "all"): Promise<SearchSuggestionsResponse | null> {
+  try {
+    return await apiClient<SearchSuggestionsResponse>(`/api/search/suggestions?q=${encodeURIComponent(partial)}&type=${type}`);
+  } catch {
+    return null;
+  }
+}
+
+export async function getSearchFacets(dateRange = "30d"): Promise<SearchFacetsResponse | null> {
+  try {
+    return await apiClient<SearchFacetsResponse>(`/api/search/facets?dateRange=${dateRange}`);
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Real-time SSE
+// ---------------------------------------------------------------------------
+
+export interface SSEStreamOptions {
+  onMessage?: (event: string, data: unknown) => void;
+  onConnected?: () => void;
+  onError?: (error: Error) => void;
+  onDisconnect?: () => void;
+}
+
+export class SSERealtimeClient {
+  private eventSource: EventSource | null = null;
+  private options: SSEStreamOptions;
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 5;
+  private reconnectDelay = 1000;
+
+  constructor(options: SSEStreamOptions) {
+    this.options = options;
+  }
+
+  connect(): void {
+    if (typeof window === "undefined") return; // SSR guard
+
+    const token = localStorage.getItem("narriv-auth");
+    if (!token) {
+      this.options.onError?.(new Error("No auth token found"));
+      return;
+    }
+
+    // For SSE, we typically use a separate endpoint with token in query param or header
+    // This is a simplified client - in production, you may need server-side token handling
+    const url = "/api/realtime/stream";
+
+    try {
+      this.eventSource = new EventSource(url);
+
+      this.eventSource.addEventListener("connected", () => {
+        this.reconnectAttempts = 0;
+        this.options.onConnected?.();
+      });
+
+      this.eventSource.addEventListener("heartbeat", () => {
+        // Heartbeat received
+      });
+
+      this.eventSource.addEventListener("dashboard_refresh", (e) => {
+        this.options.onMessage?.("dashboard_refresh", JSON.parse(e.data));
+      });
+
+      this.eventSource.addEventListener("dashboard_update", (e) => {
+        this.options.onMessage?.("dashboard_update", JSON.parse(e.data));
+      });
+
+      this.eventSource.addEventListener("signal.created", (e) => {
+        this.options.onMessage?.("signal.created", JSON.parse(e.data));
+      });
+
+      this.eventSource.addEventListener("signal.analyzed", (e) => {
+        this.options.onMessage?.("signal.analyzed", JSON.parse(e.data));
+      });
+
+      this.eventSource.addEventListener("signal.updated", (e) => {
+        this.options.onMessage?.("signal.updated", JSON.parse(e.data));
+      });
+
+      this.eventSource.addEventListener("alert.created", (e) => {
+        this.options.onMessage?.("alert.created", JSON.parse(e.data));
+      });
+
+      this.eventSource.addEventListener("alert.updated", (e) => {
+        this.options.onMessage?.("alert.updated", JSON.parse(e.data));
+      });
+
+      this.eventSource.addEventListener("alert.status_changed", (e) => {
+        this.options.onMessage?.("alert.status_changed", JSON.parse(e.data));
+      });
+
+      this.eventSource.addEventListener("alert.escalated", (e) => {
+        this.options.onMessage?.("alert.escalated", JSON.parse(e.data));
+      });
+
+      this.eventSource.addEventListener("action_plan.created", (e) => {
+        this.options.onMessage?.("action_plan.created", JSON.parse(e.data));
+      });
+
+      this.eventSource.addEventListener("action_plan.updated", (e) => {
+        this.options.onMessage?.("action_plan.updated", JSON.parse(e.data));
+      });
+
+      this.eventSource.addEventListener("report.generated", (e) => {
+        this.options.onMessage?.("report.generated", JSON.parse(e.data));
+      });
+
+      this.eventSource.addEventListener("report.exported", (e) => {
+        this.options.onMessage?.("report.exported", JSON.parse(e.data));
+      });
+
+      this.eventSource.addEventListener("notification", (e) => {
+        this.options.onMessage?.("notification", JSON.parse(e.data));
+      });
+
+      this.eventSource.addEventListener("timeout", () => {
+        this.disconnect();
+        this.options.onDisconnect?.();
+      });
+
+      this.eventSource.onerror = (error) => {
+        console.error("SSE Error:", error);
+        this.options.onError?.(new Error("SSE connection error"));
+
+        // Auto-reconnect logic
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+          this.reconnectAttempts++;
+          setTimeout(() => this.connect(), this.reconnectDelay * this.reconnectAttempts);
+        } else {
+          this.options.onError?.(new Error("Max reconnection attempts reached"));
+        }
+      };
+    } catch (error) {
+      this.options.onError?.(error as Error);
+    }
+  }
+
+  disconnect(): void {
+    if (this.eventSource) {
+      this.eventSource.close();
+      this.eventSource = null;
+    }
+    this.options.onDisconnect?.();
+  }
+
+  isConnected(): boolean {
+    return this.eventSource?.readyState === EventSource.OPEN;
+  }
+}
+
+export async function getRealtimeStatus(): Promise<{ connected: boolean; workspaceId: string; activeConnections: number; timestamp: number } | null> {
+  try {
+    return await apiClient("/api/realtime/status");
   } catch {
     return null;
   }

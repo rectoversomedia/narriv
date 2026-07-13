@@ -5,18 +5,24 @@ import Link from "next/link";
 import { useDeferredValue, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { useUiStore } from "@/store/useUiStore";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   ArrowRight,
   Briefcase,
+  Check,
   FileText,
   Flag,
+  Filter,
+  Loader2,
   Search,
   ShieldCheck,
   Sparkles,
   Star,
+  Trash2,
   Zap,
+  CheckCircle2,
+  X,
 } from "lucide-react";
 import {
   AppStore,
@@ -27,8 +33,9 @@ import {
 } from "@ridemountainpig/svgl-react";
 import { cn } from "@/lib/utils";
 import { CreateInvestigationModal } from "./components/create-investigation-modal";
+import { AdvancedSearchModal, ActiveFiltersChips } from "./components/advanced-search-modal";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton } from "@/components/dashboard/dashboard-states";
-import { getDateRangeOptions, getSignals, type PaginationInfo, type Signal, getSignalsMeta, type SignalsMeta } from "@/lib/api-service";
+import { getDateRangeOptions, getSignals, type PaginationInfo, type Signal, getSignalsMeta, type SignalsMeta, bulkDeleteSignals, bulkAnalyzeSignals, bulkCreateAlertsFromSignals, searchSignals, type AdvancedSearchFilters, type SearchSignalsResponse } from "@/lib/api-service";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Sentiment = "NEGATIVE" | "POSITIVE" | "NEUTRAL" | "MIXED";
@@ -234,7 +241,8 @@ function SourceIconList({ row }: { row: SignalRow }) {
   );
 }
 
-function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, footerText, pagination, onPageChange, isFetching, className, tTimeRange, tSignals, onInvestigate }: { activeFilter: SignalFilter; setActiveFilter: (value: SignalFilter) => void; query: string; setQuery: (value: string) => void; rows: SignalRow[]; footerText: string; pagination?: PaginationInfo | null; onPageChange: (page: number) => void; isFetching?: boolean; className?: string; tTimeRange: (key: string) => string; tSignals: (key: string) => string; onInvestigate: (row: SignalRow) => void }) {
+function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, footerText, pagination, onPageChange, isFetching, className, tTimeRange, tSignals, onInvestigate, selectedIds, onSelectionChange, onBulkAnalyze, onBulkDelete, onBulkCreateAlert, isBulkProcessing }: { activeFilter: SignalFilter; setActiveFilter: (value: SignalFilter) => void; query: string; setQuery: (value: string) => void; rows: SignalRow[]; footerText: string; pagination?: PaginationInfo | null; onPageChange: (page: number) => void; isFetching?: boolean; className?: string; tTimeRange: (key: string) => string; tSignals: (key: string) => string; onInvestigate: (row: SignalRow) => void; selectedIds: Set<string>; onSelectionChange: (ids: Set<string>) => void; onBulkAnalyze: () => void; onBulkDelete: () => void; onBulkCreateAlert: () => void; isBulkProcessing: boolean }) {
+  const t = useTranslations("Signals");
   const tabs: Array<{ value: SignalFilter; label: string }> = [
     { value: "all", label: tSignals("filterAll") },
     { value: "negative", label: tSignals("filterNegative") },
@@ -243,8 +251,72 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
     { value: "mixed", label: tSignals("filterMixed") },
   ];
 
+  const allSelected = rows.length > 0 && rows.every(row => selectedIds.has(row.id));
+  const someSelected = rows.some(row => selectedIds.has(row.id));
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      const newIds = new Set(selectedIds);
+      rows.forEach(row => newIds.delete(row.id));
+      onSelectionChange(newIds);
+    } else {
+      const newIds = new Set(selectedIds);
+      rows.forEach(row => newIds.add(row.id));
+      onSelectionChange(newIds);
+    }
+  };
+
+  const handleSelectRow = (id: string) => {
+    const newIds = new Set(selectedIds);
+    if (newIds.has(id)) {
+      newIds.delete(id);
+    } else {
+      newIds.add(id);
+    }
+    onSelectionChange(newIds);
+  };
+
   return (
     <div className={cn("flex flex-col gap-3", className)}>
+      {/* Bulk Actions Toolbar */}
+      {selectedIds.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-[10px] border border-[#465FFF]/20 bg-[#EEF2FF] px-4 py-2.5">
+          <span className="text-[12px] font-black text-[#465FFF]">{selectedIds.size} selected</span>
+          <div className="h-4 w-px bg-[#465FFF]/20" />
+          <button
+            onClick={onBulkAnalyze}
+            disabled={isBulkProcessing}
+            className="flex items-center gap-1.5 rounded-[6px] bg-[#465FFF] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#3147E8] disabled:opacity-50"
+          >
+            {isBulkProcessing ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+            Analyze
+          </button>
+          <button
+            onClick={onBulkCreateAlert}
+            disabled={isBulkProcessing}
+            className="flex items-center gap-1.5 rounded-[6px] bg-[#F59E0B] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#D97706] disabled:opacity-50"
+          >
+            {isBulkProcessing ? <Loader2 size={12} className="animate-spin" /> : <AlertTriangle size={12} />}
+            Create Alert
+          </button>
+          <button
+            onClick={onBulkDelete}
+            disabled={isBulkProcessing}
+            className="flex items-center gap-1.5 rounded-[6px] bg-[#EF4444] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#DC2626] disabled:opacity-50"
+          >
+            {isBulkProcessing ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+            Delete
+          </button>
+          <button
+            onClick={() => onSelectionChange(new Set())}
+            className="ml-auto flex items-center gap-1 rounded-[6px] px-2 py-1.5 text-[11px] font-bold text-[#68739F] transition hover:bg-[#465FFF]/10 hover:text-[#465FFF]"
+          >
+            <X size={12} />
+            Clear
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-wrap gap-2">
           {tabs.map((tab) => (
@@ -274,12 +346,39 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
           <table className="w-full min-w-[780px] border-collapse text-left flex-1 h-full">
             <thead>
               <tr className="border-b border-[#E6EAF2] bg-[#FBFCFF] text-[10px] font-black uppercase tracking-[0.17em] text-[#68739F]">
+                <th className="w-10 px-3.5 py-3">
+                  <button
+                    type="button"
+                    onClick={handleSelectAll}
+                    className={cn(
+                      "flex h-5 w-5 items-center justify-center rounded border transition",
+                      allSelected ? "border-[#465FFF] bg-[#465FFF] text-white" :
+                      someSelected ? "border-[#465FFF] bg-[#465FFF]/20" :
+                      "border-[#DDE3EF] bg-white hover:border-[#465FFF]"
+                    )}
+                  >
+                    {allSelected || someSelected ? <Check size={12} /> : null}
+                  </button>
+                </th>
                 {[tSignals("headerSignal"), tSignals("headerSource"), tSignals("headerSentiment"), tSignals("headerPublished"), tSignals("headerCaptured"), tSignals("headerAction")].map((header) => <th key={header} className="px-3.5 py-3">{header}</th>)}
               </tr>
             </thead>
             <tbody className="divide-y divide-[#EDF1F7]">
               {rows.map((row) => (
-                <tr key={row.id} className="transition hover:bg-[#F8FAFF]">
+                <tr key={row.id} className={cn("transition hover:bg-[#F8FAFF]", selectedIds.has(row.id) && "bg-[#EEF2FF]")}>
+                  <td className="px-3.5 py-4 align-middle">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectRow(row.id)}
+                      className={cn(
+                        "flex h-5 w-5 items-center justify-center rounded border transition",
+                        selectedIds.has(row.id) ? "border-[#465FFF] bg-[#465FFF] text-white" :
+                        "border-[#DDE3EF] bg-white hover:border-[#465FFF]"
+                      )}
+                    >
+                      {selectedIds.has(row.id) ? <Check size={12} /> : null}
+                    </button>
+                  </td>
                   <td className="max-w-[380px] px-3.5 py-4">
                     <div className="flex items-start gap-3">
                       <SentimentIcon sentiment={row.sentiment} tone={row.sentimentTone} />
@@ -625,12 +724,72 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
 export default function SignalsPage() {
   const t = useTranslations("Signals");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
   const [selectedSignal, setSelectedSignal] = useState<SignalRow | null>(null);
   const [activeFilter, setActiveFilter] = useState<SignalFilter>("all");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const deferredQuery = useDeferredValue(query);
   const dateRange = getDateRangeOptions("24h");
+  const queryClient = useQueryClient();
+
+  // Advanced search state
+  const [advancedSearchFilters, setAdvancedSearchFilters] = useState<AdvancedSearchFilters>({});
+  const [isAdvancedSearchActive, setIsAdvancedSearchActive] = useState(false);
+  const [advancedSearchResults, setAdvancedSearchResults] = useState<SearchSignalsResponse | null>(null);
+  const [isAdvancedSearchSearching, setIsAdvancedSearchSearching] = useState(false);
+
+  // Bulk action mutations
+  const bulkAnalyzeMutation = useMutation({
+    mutationFn: async (signalIds: string[]) => {
+      return bulkAnalyzeSignals(signalIds);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["signals"] });
+      setSelectedIds(new Set());
+    },
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (signalIds: string[]) => {
+      return bulkDeleteSignals(signalIds);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["signals"] });
+      queryClient.invalidateQueries({ queryKey: ["signalsMeta"] });
+      setSelectedIds(new Set());
+    },
+  });
+
+  const bulkCreateAlertMutation = useMutation({
+    mutationFn: async (signalIds: string[]) => {
+      return bulkCreateAlertsFromSignals(signalIds);
+    },
+    onSuccess: () => {
+      setSelectedIds(new Set());
+    },
+  });
+
+  const handleBulkAnalyze = () => {
+    if (selectedIds.size > 0) {
+      bulkAnalyzeMutation.mutate(Array.from(selectedIds));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedIds.size > 0 && confirm(`Delete ${selectedIds.size} selected signals?`)) {
+      bulkDeleteMutation.mutate(Array.from(selectedIds));
+    }
+  };
+
+  const handleBulkCreateAlert = () => {
+    if (selectedIds.size > 0) {
+      bulkCreateAlertMutation.mutate(Array.from(selectedIds));
+    }
+  };
+
+  const isBulkProcessing = bulkAnalyzeMutation.isPending || bulkDeleteMutation.isPending || bulkCreateAlertMutation.isPending;
   
   const metaQuery = useQuery({
     queryKey: ["signalsMeta"],
@@ -672,6 +831,49 @@ export default function SignalsPage() {
     if (!open) setSelectedSignal(null);
   };
 
+  const handleApplyAdvancedFilters = (filters: AdvancedSearchFilters, results: SearchSignalsResponse | null) => {
+    setAdvancedSearchFilters(filters);
+    setAdvancedSearchResults(results);
+    setIsAdvancedSearchActive(true);
+    setPage(1);
+    setSelectedIds(new Set());
+  };
+
+  const handleRemoveAdvancedFilter = (key: string) => {
+    const newFilters = { ...advancedSearchFilters };
+    if (key === "dateRange") {
+      delete newFilters.dateFrom;
+      delete newFilters.dateTo;
+    } else {
+      delete newFilters[key as keyof AdvancedSearchFilters];
+    }
+    setAdvancedSearchFilters(newFilters);
+
+    // If no filters left, clear advanced search
+    const remainingKeys = Object.keys(newFilters);
+    if (remainingKeys.length === 0) {
+      setIsAdvancedSearchActive(false);
+      setAdvancedSearchResults(null);
+    } else {
+      // Re-run search with updated filters
+      setIsAdvancedSearchSearching(true);
+      searchSignals({ filters: newFilters, limit: signalApiLimit, page: 1 })
+        .then((results) => {
+          setAdvancedSearchResults(results);
+        })
+        .finally(() => {
+          setIsAdvancedSearchSearching(false);
+        });
+    }
+  };
+
+  const handleClearAllAdvancedFilters = () => {
+    setAdvancedSearchFilters({});
+    setAdvancedSearchResults(null);
+    setIsAdvancedSearchActive(false);
+    setPage(1);
+  };
+
   const tTimeRange = useTranslations("Signals");
   const tSignals = useTranslations("Signals");
 
@@ -698,22 +900,87 @@ export default function SignalsPage() {
     <div className="mx-auto flex max-w-[1600px] flex-col gap-4 pb-6 text-[#101334]">
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div><h1 className="text-[31px] font-black tracking-[-0.045em] text-[#060A23]">{t("title")}</h1><p className="mt-2 text-[14px] font-semibold text-[#68739F]">{t("subtitle")}</p></div>
-        <button onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] sm:w-fit"><Flag size={15} />{t("createInvestigation")}</button>
+        <div className="flex gap-2">
+          <button onClick={() => setIsAdvancedSearchOpen(true)} className={cn("flex h-10 items-center justify-center gap-2 rounded-[8px] border px-4 text-[12px] font-black transition", isAdvancedSearchActive ? "border-[#465FFF] bg-[#465FFF]/10 text-[#465FFF]" : "border-[#DDE3EF] bg-white text-[#31406B] hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]")}>
+            <Filter size={15} />
+            {t("advancedSearch") || "Filters"}
+          </button>
+          <button onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] sm:w-fit"><Flag size={15} />{t("createInvestigation")}</button>
+        </div>
       </header>
 
       <CreateInvestigationModal open={isCreateModalOpen} onOpenChange={handleCreateModalChange} signalId={selectedSignal?.id} signalTitle={selectedSignal?.title} />
 
+      <AdvancedSearchModal
+        open={isAdvancedSearchOpen}
+        onOpenChange={setIsAdvancedSearchOpen}
+        onApplyFilters={handleApplyAdvancedFilters}
+        isSearching={isAdvancedSearchSearching}
+      />
+
+      {isAdvancedSearchActive && (
+        <div className="rounded-[12px] border border-[#EDF1F7] bg-[#FBFCFF] p-4">
+          <ActiveFiltersChips
+            filters={advancedSearchFilters}
+            onRemove={handleRemoveAdvancedFilter}
+            onClearAll={handleClearAllAdvancedFilters}
+          />
+        </div>
+      )}
+
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_336px]">
         <div className="flex min-w-0 flex-col gap-4">
           <SummaryPanel meta={meta} />
-          {signalsQuery.isPending ? (
+          {isAdvancedSearchActive ? (
+            isAdvancedSearchSearching ? (
+              <TableSkeleton rows={6} columns={6} className="xl:min-h-[610px]" />
+            ) : advancedSearchResults ? (
+              <>
+                {advancedSearchResults.data.length === 0 ? (
+                  <DashboardEmptyState title={t("emptyState.title")} description={t("emptyState.desc")} icon="search" minHeight="min-h-[420px]" />
+                ) : (
+                  <SignalsTable
+                    activeFilter={activeFilter}
+                    setActiveFilter={handleFilterChange}
+                    query={query}
+                    setQuery={handleQueryChange}
+                    rows={buildApiSignalRows(advancedSearchResults.data, t)}
+                    footerText={tSignals("footerSearch", { from: "1", to: String(Math.min(advancedSearchResults.pagination.page * advancedSearchResults.pagination.limit, advancedSearchResults.pagination.total)), total: String(advancedSearchResults.pagination.total) })}
+                    pagination={advancedSearchResults.pagination}
+                    onPageChange={(newPage) => {
+                      setIsAdvancedSearchSearching(true);
+                      setPage(newPage);
+                      searchSignals({ filters: advancedSearchFilters, page: newPage, limit: signalApiLimit })
+                        .then((results) => {
+                          if (results) setAdvancedSearchResults(results);
+                        })
+                        .finally(() => setIsAdvancedSearchSearching(false));
+                    }}
+                    isFetching={isAdvancedSearchSearching}
+                    className="flex-1"
+                    tTimeRange={tTimeRange}
+                    tSignals={tSignals}
+                    onInvestigate={handleInvestigate}
+                    selectedIds={selectedIds}
+                    onSelectionChange={setSelectedIds}
+                    onBulkAnalyze={handleBulkAnalyze}
+                    onBulkDelete={handleBulkDelete}
+                    onBulkCreateAlert={handleBulkCreateAlert}
+                    isBulkProcessing={isBulkProcessing}
+                  />
+                )}
+              </>
+            ) : (
+              <DashboardEmptyState title={t("emptyState.title")} description={t("emptyState.desc")} icon="search" minHeight="min-h-[420px]" />
+            )
+          ) : signalsQuery.isPending ? (
             <TableSkeleton rows={6} columns={6} className="xl:min-h-[610px]" />
           ) : signalsQuery.data && liveRows.length === 0 ? (
             <DashboardEmptyState title={t("emptyState.title")} description={t("emptyState.desc")} icon="search" minHeight="min-h-[420px]" />
           ) : (
             <>
               {isLiveUnavailable ? <DashboardErrorState title={tSignals("errorTitle")} description={tSignals("errorDesc")} onRetry={() => void signalsQuery.refetch()} minHeight="min-h-[150px]" /> : null}
-              <SignalsTable activeFilter={activeFilter} setActiveFilter={handleFilterChange} query={query} setQuery={handleQueryChange} rows={rows} footerText={footerText} pagination={signalsQuery.data?.pagination} onPageChange={setPage} isFetching={signalsQuery.isFetching} className="flex-1" tTimeRange={tTimeRange} tSignals={tSignals} onInvestigate={handleInvestigate} />
+              <SignalsTable activeFilter={activeFilter} setActiveFilter={handleFilterChange} query={query} setQuery={handleQueryChange} rows={rows} footerText={footerText} pagination={signalsQuery.data?.pagination} onPageChange={setPage} isFetching={signalsQuery.isFetching} className="flex-1" tTimeRange={tTimeRange} tSignals={tSignals} onInvestigate={handleInvestigate} selectedIds={selectedIds} onSelectionChange={setSelectedIds} onBulkAnalyze={handleBulkAnalyze} onBulkDelete={handleBulkDelete} onBulkCreateAlert={handleBulkCreateAlert} isBulkProcessing={isBulkProcessing} />
             </>
           )}
         </div>

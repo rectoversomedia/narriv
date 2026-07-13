@@ -29,6 +29,9 @@ import casesRoutes from "./modules/cases/cases.routes.js";
 import integrationsRoutes from "./modules/integrations/integrations.routes.js";
 import appNotificationsRoutes from "./modules/app-notifications/app-notifications.routes.js";
 import costRoutes from "./modules/cost/cost.routes.js";
+import bulkRoutes from "./modules/bulk/bulk.routes.js";
+import searchRoutes from "./modules/search/search.routes.js";
+import realtimeRoutes from "./modules/realtime/realtime.routes.js";
 
 // Import Libs
 import { scheduleAlertDetection, scheduleAlertEscalation, scheduleVisibilityScans } from "./lib/queue.js";
@@ -149,6 +152,9 @@ app.use("/api/workspace/cases", casesRoutes);
 app.use("/api/workspace/integrations", integrationsRoutes);
 app.use("/api/notifications", appNotificationsRoutes);
 app.use("/api/workspace", costRoutes);
+app.use("/api/bulk", bulkRoutes);
+app.use("/api/search", searchRoutes);
+app.use("/api/realtime", realtimeRoutes);
 
 // Sentry error handler (must be before error handler)
 if (process.env.SENTRY_DSN) {

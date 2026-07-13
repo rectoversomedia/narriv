@@ -16,6 +16,7 @@ import {
   Download,
   Eye,
   FileText,
+  Mail,
   Plus,
   RefreshCcw,
   Search,
@@ -31,7 +32,7 @@ import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton, formatPaginationSummary } from "@/components/dashboard/dashboard-states";
-import { getReports, getReportTemplates, createReportTemplate, updateReportTemplate, deleteReportTemplate, getReportsAnalytics, createReportExport, getReportExportStatus, getNarratives, getDashboardSummary, getReportSchedules, createReportSchedule, updateReportSchedule, deleteReportSchedule, toggleReportSchedule, generateReportFromTemplate, sendReportEmail, type PaginationInfo, type ReportRecord, type ReportsAnalyticsResponse, type NarrativeRecord, type DashboardSummary, type ReportTemplate, type ReportScheduleRecord } from "@/lib/api-service";
+import { getReports, getReportTemplates, createReportTemplate, updateReportTemplate, deleteReportTemplate, getReportsAnalytics, createReportExport, getReportExportStatus, getNarratives, getDashboardSummary, getReportSchedules, createReportSchedule, updateReportSchedule, deleteReportSchedule, toggleReportSchedule, generateReportFromTemplate, sendReportEmail, sendTestScheduleEmail, type PaginationInfo, type ReportRecord, type ReportsAnalyticsResponse, type NarrativeRecord, type DashboardSummary, type ReportTemplate, type ReportScheduleRecord } from "@/lib/api-service";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type ReportStatus = "READY" | "REVIEW" | "DRAFT" | "SCHEDULED" | "ARCHIVED";
@@ -1031,16 +1032,39 @@ export default function ReportsPage() {
     },
     onError: () => showToast(tr("scheduleToast.toggleFailed"), "error")
   });
+  const sendTestEmailMutation = useMutation({
+    mutationFn: (scheduleId: string) => sendTestScheduleEmail(scheduleId),
+    onSuccess: (result) => {
+      if (result.success) {
+        showToast(tr("scheduleToast.testEmailSent"));
+      } else {
+        showToast(result.message || tr("scheduleToast.testEmailFailed"), "error");
+      }
+    },
+    onError: () => showToast(tr("scheduleToast.testEmailFailed"), "error")
+  });
 
   const handleSaveSchedule = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const recipientsStr = formData.get("recipients") as string;
+    const ccRecipientsStr = formData.get("ccRecipients") as string;
+    const bccRecipientsStr = formData.get("bccRecipients") as string;
+
+    const parseEmails = (str: string): string[] => {
+      return str.split(",").map(e => e.trim()).filter(Boolean);
+    };
+
     const payload = {
       templateKey: formData.get("templateKey") as string,
       name: formData.get("name") as string,
       cadence: formData.get("cadence") as string,
       dayOfWeek: formData.get("dayOfWeek") as string || null,
       timeOfDay: formData.get("timeOfDay") as string,
+      timezone: formData.get("timezone") as string || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      recipients: parseEmails(recipientsStr),
+      ccRecipients: parseEmails(ccRecipientsStr),
+      bccRecipients: parseEmails(bccRecipientsStr),
     };
     if (editingSchedule?.id) {
       updateScheduleMutation.mutate({ id: editingSchedule.id, payload });
@@ -1294,6 +1318,64 @@ export default function ReportsPage() {
                       <input name="timeOfDay" type="time" defaultValue={editingSchedule?.timeOfDay || "09:00"} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
                     </div>
                   </div>
+                  <div>
+                    <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("scheduleModal.timezoneLabel")}</label>
+                    <select name="timezone" defaultValue={editingSchedule?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white">
+                      <option value="Asia/Jakarta">Asia/Jakarta (GMT+7)</option>
+                      <option value="Asia/Makassar">Asia/Makassar (GMT+8)</option>
+                      <option value="Asia/Jayapura">Asia/Jayapura (GMT+9)</option>
+                      <option value="Asia/Shanghai">Asia/Shanghai (GMT+8)</option>
+                      <option value="Asia/Tokyo">Asia/Tokyo (GMT+9)</option>
+                      <option value="Asia/Singapore">Asia/Singapore (GMT+8)</option>
+                      <option value="Asia/Hong_Kong">Asia/Hong_Kong (GMT+8)</option>
+                      <option value="Asia/Seoul">Asia/Seoul (GMT+9)</option>
+                      <option value="Europe/London">Europe/London (GMT+0)</option>
+                      <option value="Europe/Paris">Europe/Paris (GMT+1)</option>
+                      <option value="Europe/Berlin">Europe/Berlin (GMT+1)</option>
+                      <option value="America/New_York">America/New_York (GMT-5)</option>
+                      <option value="America/Los_Angeles">America/Los_Angeles (GMT-8)</option>
+                      <option value="America/Chicago">America/Chicago (GMT-6)</option>
+                      <option value="UTC">UTC (GMT+0)</option>
+                    </select>
+                  </div>
+                  {/* Email Recipients Section */}
+                  <div className="rounded-[10px] border border-[#EEF1F7] bg-[#FAFBFF] p-4 space-y-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Mail size={14} className="text-[#465FFF]" />
+                      <span className="text-[11px] font-black text-[#31406B]">{tr("scheduleModal.recipientsLabel")}</span>
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-[10px] font-bold text-[#8A94B8]">{tr("scheduleModal.toLabel")}</label>
+                      <input name="recipients" defaultValue={editingSchedule?.recipients?.join(", ") || ""} placeholder="email@example.com, email2@example.com" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF]" />
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-[10px] font-bold text-[#8A94B8]">{tr("scheduleModal.ccLabel")}</label>
+                        <input name="ccRecipients" defaultValue={editingSchedule?.ccRecipients?.join(", ") || ""} placeholder="cc@example.com" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF]" />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-[10px] font-bold text-[#8A94B8]">{tr("scheduleModal.bccLabel")}</label>
+                        <input name="bccRecipients" defaultValue={editingSchedule?.bccRecipients?.join(", ") || ""} placeholder="bcc@example.com" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF]" />
+                      </div>
+                    </div>
+                  </div>
+                  {editingSchedule?.id && (
+                    <div className="rounded-[8px] border border-[#10B981]/20 bg-[#10B981]/5 p-3">
+                      <button
+                        type="button"
+                        onClick={() => sendTestEmailMutation.mutate(editingSchedule.id!)}
+                        disabled={sendTestEmailMutation.isPending}
+                        className="flex w-full items-center justify-center gap-2 rounded-[6px] bg-white px-4 py-2 text-[11px] font-black text-[#10B981] border border-[#10B981]/30 transition hover:bg-[#10B981]/10 disabled:opacity-50"
+                      >
+                        {sendTestEmailMutation.isPending ? (
+                          <RefreshCcw size={13} className="animate-spin" />
+                        ) : (
+                          <Mail size={13} />
+                        )}
+                        {sendTestEmailMutation.isPending ? tr("scheduleModal.sendingTest") : tr("scheduleModal.sendTestEmail")}
+                      </button>
+                    </div>
+                  )}
                   <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#EEF1F7]">
                     <button type="button" onClick={() => { setIsScheduleFormOpen(false); setEditingSchedule(null); }} className="flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF]">
                       {tr("scheduleModal.cancel")}
@@ -1311,7 +1393,7 @@ export default function ReportsPage() {
                     </div>
                   ) : schedulesQuery.data && schedulesQuery.data.data.length > 0 ? (
                     schedulesQuery.data.data.map((schedule) => (
-                      <div key={schedule.id} className="rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-[#DCE2F0] hover:bg-white transition shadow-sm">
+                      <div key={schedule.id} className="rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-4 flex flex-col sm:flex-row sm:items-start justify-between gap-4 hover:border-[#DCE2F0] hover:bg-white transition shadow-sm">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <h3 className="font-black text-[#101334] text-[13px] truncate">{schedule.name}</h3>
@@ -1331,14 +1413,46 @@ export default function ReportsPage() {
                             <span className="flex items-center gap-1.5 text-[9.5px] bg-[#F59E0B]/10 text-[#F59E0B] px-2.5 py-1.5 rounded-[6px] font-black">
                               {schedule.timeOfDay}
                             </span>
+                            {schedule.timezone && (
+                              <span className="flex items-center gap-1.5 text-[9.5px] bg-[#64748B]/10 text-[#64748B] px-2.5 py-1.5 rounded-[6px] font-black">
+                                <Clock size={11} /> {schedule.timezone.split("/").pop()?.replace("_", " ")}
+                              </span>
+                            )}
                           </div>
-                          <p className="text-[10px] font-bold text-[#8A94B8] mt-2">
-                            {tr("scheduleModal.lastRun")}: {schedule.lastRunAt ? new Date(schedule.lastRunAt).toLocaleDateString() : tr("scheduleModal.never")} · {tr("scheduleModal.nextRun")}: {schedule.nextRunAt ? new Date(schedule.nextRunAt).toLocaleDateString() : tr("scheduleModal.never")}
-                          </p>
+                          {/* Recipients display */}
+                          {schedule.recipients && schedule.recipients.length > 0 && (
+                            <div className="flex items-center gap-1.5 mt-2">
+                              <Mail size={11} className="text-[#8B95B8] shrink-0" />
+                              <span className="text-[9.5px] font-bold text-[#8A94B8] truncate">
+                                {schedule.recipients.slice(0, 2).join(", ")}
+                                {schedule.recipients.length > 2 && ` +${schedule.recipients.length - 2}`}
+                              </span>
+                              {(schedule.ccRecipients?.length ?? 0) > 0 && (
+                                <span className="text-[9.5px] font-bold text-[#8B95B8]">
+                                  {" "}(CC: {schedule.ccRecipients!.length})
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          <div className="flex items-center gap-3 mt-2 text-[10px] font-bold text-[#8A94B8]">
+                            <span>{tr("scheduleModal.lastRun")}: {schedule.lastRunAt ? new Date(schedule.lastRunAt).toLocaleString() : tr("scheduleModal.never")}</span>
+                          </div>
+                          <div className="text-[10px] font-bold text-[#10B981] mt-0.5">
+                            {tr("scheduleModal.nextRun")}: {schedule.nextRunAt ? new Date(schedule.nextRunAt).toLocaleString() : tr("scheduleModal.never")}
+                          </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => sendTestEmailMutation.mutate(schedule.id)}
+                            disabled={sendTestEmailMutation.isPending}
+                            className="flex h-8 items-center justify-center gap-1.5 rounded-[8px] border border-[#10B981]/30 bg-white px-2.5 text-[10px] font-black text-[#10B981] transition hover:bg-[#ECFDF5] disabled:opacity-50"
+                            title={tr("scheduleModal.sendTestEmail")}
+                          >
+                            <Mail size={13} />
+                          </button>
                           <button type="button" onClick={() => toggleScheduleMutation.mutate(schedule.id)} className={cn("flex h-8 items-center justify-center gap-1.5 rounded-[8px] border px-2.5 text-[10px] font-black transition", schedule.enabled ? "border-[#FAD7D7] bg-white text-[#EF4444] hover:bg-[#FFF4F4]" : "border-[#D1FAE5] bg-white text-[#10B981] hover:bg-[#ECFDF5]")}>
-                            {schedule.enabled ? tr("scheduleModal.disabled") : tr("scheduleModal.enabled")}
+                            {schedule.enabled ? tr("scheduleModal.disable") : tr("scheduleModal.enable")}
                           </button>
                           <button type="button" onClick={() => { setEditingSchedule(schedule); setIsScheduleFormOpen(true); }} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#465FFF] transition hover:bg-[#F5F7FC]" aria-label={tr("actions.editSchedule")}>
                             <Edit2 size={13} />

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { SSERealtimeProvider } from "@/components/providers/SSEProvider";
 import { createPageMetadata } from "@/lib/metadata";
 
 export const metadata = createPageMetadata(
@@ -8,5 +9,9 @@ export const metadata = createPageMetadata(
 );
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
-  return <DashboardShell>{children}</DashboardShell>;
+  return (
+    <SSERealtimeProvider>
+      <DashboardShell>{children}</DashboardShell>
+    </SSERealtimeProvider>
+  );
 }

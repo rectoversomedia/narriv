@@ -362,4 +362,4 @@ export function getFrequencyOptions() {
     ];
 }
 
-export { SYNC_FREQUENCIES, SOURCE_LIMITS, ACTOR_COST_MULTIPLIERS };
+export { SOURCE_LIMITS, ACTOR_COST_MULTIPLIERS };

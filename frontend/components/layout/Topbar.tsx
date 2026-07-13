@@ -8,10 +8,12 @@ import type { LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
+import { LiveIndicator } from "@/components/ui/LiveIndicator";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useUiStore } from "@/store/useUiStore";
 import { logoutSession, getNotifications, getAlerts, getNarratives, markNotificationAsRead, markAllNotificationsAsRead, type AppNotification, type Alert as ApiAlert, type NarrativeRecord, type NotificationsResponse } from "@/lib/api-service";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSSEContext } from "@/components/providers/SSEProvider";
 
 
 const notificationToneClass = {
@@ -108,6 +110,9 @@ export function Topbar() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notificationNow, setNotificationNow] = useState(0);
   const [notificationStreamStatus, setNotificationStreamStatus] = useState<"idle" | "connected" | "degraded">("idle");
+
+  // SSE connection status for Live indicator
+  const { status: sseStatus } = useSSEContext();
   
   const queryClient = useQueryClient();
   const token = useAuthStore((s) => s.token);
@@ -359,6 +364,8 @@ export function Topbar() {
       </div>
 
       <div className="flex flex-1 items-center justify-end gap-5">
+        {/* Live connection status indicator */}
+        <LiveIndicator status={sseStatus} />
         <button type="button" onClick={() => startTransition(toggleLanguage)} className="hidden items-center gap-2 rounded-[8px] border border-border px-3 py-2 text-xs font-bold text-(--text-soft) transition-all duration-200 hover:border-[#465FFF] hover:text-(--text) hover:shadow-[0_0_8px_rgba(70,95,255,0.1)] active:scale-[0.98] sm:flex" aria-label="Switch language">
           <Languages size={15} />
           <span key={language} className="inline-block min-w-5 animate-in fade-in slide-in-from-bottom-1 duration-200">

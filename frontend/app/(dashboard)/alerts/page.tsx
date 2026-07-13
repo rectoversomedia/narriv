@@ -16,6 +16,7 @@ import {
   Eye,
   Headphones,
   HelpCircle,
+  Loader2,
   Mail,
   MoreVertical,
   Play,
@@ -26,8 +27,10 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Star,
+  Trash2,
   Users,
   X,
+  CheckCircle2,
   type LucideIcon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -56,6 +59,8 @@ import {
   updateAlertStatus,
   updateEscalationMatrix,
   updateNotificationSettings,
+  bulkUpdateAlerts,
+  bulkAssignAlerts,
   type Alert,
   type EscalationMatrixRecord,
   type IntegrationRecord,
@@ -784,11 +789,76 @@ function AlertPagination({ page, totalPages, onPageChange, ta }: { page: number;
   );
 }
 
-function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isError, onPageChange, onStatusChange, openMenuId, setOpenMenuId, menuRef, searchQuery, onSearchChange, severityFilter, statusFilter, onOpenFilterModal }: { ta: ReturnType<typeof useTranslations<"Alerts">>; rows: AlertRow[]; page: number; totalPages: number; footerText: string; isLoading: boolean; isError: boolean; onPageChange: (page: number) => void; onStatusChange: (id: string | number, status: "open" | "acknowledged" | "resolved") => void; openMenuId: string | number | null; setOpenMenuId: (id: string | number | null) => void; menuRef: React.RefObject<HTMLDivElement | null>; searchQuery: string; onSearchChange: (value: string) => void; severityFilter: string; statusFilter: string; onOpenFilterModal: () => void }) {
+function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isError, onPageChange, onStatusChange, openMenuId, setOpenMenuId, menuRef, searchQuery, onSearchChange, severityFilter, statusFilter, onOpenFilterModal, selectedAlerts, onSelectionChange, onBulkStatusChange, isBulkUpdating }: { ta: ReturnType<typeof useTranslations<"Alerts">>; rows: AlertRow[]; page: number; totalPages: number; footerText: string; isLoading: boolean; isError: boolean; onPageChange: (page: number) => void; onStatusChange: (id: string | number, status: "open" | "acknowledged" | "resolved") => void; openMenuId: string | number | null; setOpenMenuId: (id: string | number | null) => void; menuRef: React.RefObject<HTMLDivElement | null>; searchQuery: string; onSearchChange: (value: string) => void; severityFilter: string; statusFilter: string; onOpenFilterModal: () => void; selectedAlerts: Set<string | number>; onSelectionChange: (ids: Set<string | number>) => void; onBulkStatusChange: (status: "open" | "acknowledged" | "resolved") => void; isBulkUpdating: boolean }) {
   const headers = [ta("table.alert"), ta("table.severity"), ta("table.owner"), ta("table.source"), ta("table.escalation"), ta("table.deadline"), ta("table.ack"), ta("table.status"), ta("table.time"), ""];
   const activeFilterCount = [searchQuery, severityFilter, statusFilter].filter(Boolean).length;
+
+  const allSelected = rows.length > 0 && rows.every(row => selectedAlerts.has(row.id));
+  const someSelected = rows.some(row => selectedAlerts.has(row.id));
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      const newIds = new Set(selectedAlerts);
+      rows.forEach(row => newIds.delete(row.id));
+      onSelectionChange(newIds);
+    } else {
+      const newIds = new Set(selectedAlerts);
+      rows.forEach(row => newIds.add(row.id));
+      onSelectionChange(newIds);
+    }
+  };
+
+  const handleSelectRow = (id: string | number) => {
+    const newIds = new Set(selectedAlerts);
+    if (newIds.has(id)) {
+      newIds.delete(id);
+    } else {
+      newIds.add(id);
+    }
+    onSelectionChange(newIds);
+  };
+
   return (
     <Panel className="p-4">
+      {/* Bulk Actions Toolbar */}
+      {selectedAlerts.size > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-[10px] border border-[#465FFF]/20 bg-[#EEF2FF] px-4 py-2.5">
+          <span className="text-[12px] font-black text-[#465FFF]">{selectedAlerts.size} selected</span>
+          <div className="h-4 w-px bg-[#465FFF]/20" />
+          <button
+            onClick={() => onBulkStatusChange("open")}
+            disabled={isBulkUpdating}
+            className="flex items-center gap-1.5 rounded-[6px] bg-[#465FFF] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#3147E8] disabled:opacity-50"
+          >
+            {isBulkUpdating ? <Loader2 size={12} className="animate-spin" /> : <Bell size={12} />}
+            Mark as New
+          </button>
+          <button
+            onClick={() => onBulkStatusChange("acknowledged")}
+            disabled={isBulkUpdating}
+            className="flex items-center gap-1.5 rounded-[6px] bg-[#F59E0B] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#D97706] disabled:opacity-50"
+          >
+            {isBulkUpdating ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+            Acknowledge
+          </button>
+          <button
+            onClick={() => onBulkStatusChange("resolved")}
+            disabled={isBulkUpdating}
+            className="flex items-center gap-1.5 rounded-[6px] bg-[#10B981] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#0C9B69] disabled:opacity-50"
+          >
+            {isBulkUpdating ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
+            Resolve
+          </button>
+          <button
+            onClick={() => onSelectionChange(new Set())}
+            className="ml-auto flex items-center gap-1 rounded-[6px] px-2 py-1.5 text-[11px] font-bold text-[#68739F] transition hover:bg-[#465FFF]/10 hover:text-[#465FFF]"
+          >
+            <X size={12} />
+            Clear
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h2 className="text-[18px] font-black tracking-[-0.03em] text-[#101334]">{ta("table.title")}</h2>
@@ -810,6 +880,20 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
         <table className="w-full min-w-[980px] border-collapse text-left">
           <thead>
             <tr className="border-b border-[#E6EAF2] text-[9px] font-black uppercase tracking-[0.18em] text-[#68739F]">
+              <th className="w-10 px-3 py-3">
+                <button
+                  type="button"
+                  onClick={handleSelectAll}
+                  className={cn(
+                    "flex h-5 w-5 items-center justify-center rounded border transition",
+                    allSelected ? "border-[#465FFF] bg-[#465FFF] text-white" :
+                    someSelected ? "border-[#465FFF] bg-[#465FFF]/20" :
+                    "border-[#DDE3EF] bg-white hover:border-[#465FFF]"
+                  )}
+                >
+                  {allSelected || someSelected ? <Check size={12} /> : null}
+                </button>
+              </th>
               {headers.map((header) => (
                 <th key={header || "actions"} className="px-3 py-3">{header}</th>
               ))}
@@ -849,7 +933,20 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                 </td>
               </tr>
             ) : rows.map((alert) => (
-              <tr key={alert.id} className="transition hover:bg-[#F8FAFF]">
+              <tr key={alert.id} className={cn("transition hover:bg-[#F8FAFF]", selectedAlerts.has(alert.id) && "bg-[#EEF2FF]")}>
+                <td className="px-3 py-3 align-middle">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectRow(alert.id)}
+                    className={cn(
+                      "flex h-5 w-5 items-center justify-center rounded border transition",
+                      selectedAlerts.has(alert.id) ? "border-[#465FFF] bg-[#465FFF] text-white" :
+                      "border-[#DDE3EF] bg-white hover:border-[#465FFF]"
+                    )}
+                  >
+                    {selectedAlerts.has(alert.id) ? <Check size={12} /> : null}
+                  </button>
+                </td>
                 <td className="min-w-[250px] max-w-[310px] px-3 py-3">
                   <div className="flex items-start gap-3">
                     <AlertIcon tone={alert.tone} />
@@ -914,7 +1011,9 @@ export default function AlertsPage() {
   const [isSavingNotificationRules, setIsSavingNotificationRules] = useState(false);
   const [notificationRulesLoadFailed, setNotificationRulesLoadFailed] = useState(false);
   const [isSavingEscalation, setIsSavingEscalation] = useState(false);
+  const [selectedAlerts, setSelectedAlerts] = useState<Set<string | number>>(new Set());
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
   const [notificationToggles, setNotificationToggles] = useState({
     emailEnabled: true,
     whatsappEnabled: false,
@@ -1203,6 +1302,29 @@ export default function AlertsPage() {
       });
   }
 
+  async function handleBulkStatusChange(status: "open" | "acknowledged" | "resolved") {
+    if (selectedAlerts.size === 0) return;
+
+    setIsBulkUpdating(true);
+    const alertIds = Array.from(selectedAlerts).map(id => id.toString());
+
+    try {
+      const result = await bulkUpdateAlerts(alertIds, { status });
+      if (result) {
+        toastHook.success(ta("bulk.toast.success", { count: result.updated }));
+        queryClient.invalidateQueries({ queryKey: ["alerts"] });
+        queryClient.invalidateQueries({ queryKey: ["alerts-summary"] });
+        setSelectedAlerts(new Set());
+      } else {
+        toastHook.error(ta("bulk.toast.failed"));
+      }
+    } catch {
+      toastHook.error(ta("bulk.toast.failed"));
+    } finally {
+      setIsBulkUpdating(false);
+    }
+  }
+
   const primaryAlert = rows[0] ?? {
     id: "empty",
     title: ta("empty.noIncident"),
@@ -1279,7 +1401,7 @@ export default function AlertsPage() {
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_336px]">
         <div className="min-w-0 space-y-4">
           <EscalationFlow ta={ta} levels={escalationLevels} />
-          <AlertsTable ta={ta} rows={rows} page={page} totalPages={totalPages} footerText={footerText} isLoading={alertsQuery.isLoading} isError={alertsQuery.isError || (!alertsQuery.isLoading && !alertsData)} onPageChange={setPage} onStatusChange={handleStatusChange} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} menuRef={menuRef} searchQuery={searchQuery} onSearchChange={(value) => { setSearchQuery(value); setPage(1); }} severityFilter={severityFilter} statusFilter={statusFilter} onOpenFilterModal={() => setIsFilterModalOpen(true)} />
+          <AlertsTable ta={ta} rows={rows} page={page} totalPages={totalPages} footerText={footerText} isLoading={alertsQuery.isLoading} isError={alertsQuery.isError || (!alertsQuery.isLoading && !alertsData)} onPageChange={setPage} onStatusChange={handleStatusChange} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} menuRef={menuRef} searchQuery={searchQuery} onSearchChange={(value) => { setSearchQuery(value); setPage(1); }} severityFilter={severityFilter} statusFilter={statusFilter} onOpenFilterModal={() => setIsFilterModalOpen(true)} selectedAlerts={selectedAlerts} onSelectionChange={setSelectedAlerts} onBulkStatusChange={handleBulkStatusChange} isBulkUpdating={isBulkUpdating} />
         </div>
         <aside className="space-y-4">
           <EscalationMatrix ta={ta} levels={escalationLevels} isLoading={escalationQuery.isLoading} />
