@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { useState, useEffect, startTransition, useRef, type ChangeEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { createContext, useContext } from "react";
-import { createOnboardingWorkspace, createOnboardingSources, createOnboardingNotifications, createOnboardingTeam } from "@/lib/api-service";
+import { createOnboardingWorkspace, createOnboardingSources, createOnboardingNotifications, createOnboardingTeam, createOnboardingKeywords, getSourceTemplates, completeOnboarding } from "@/lib/api-service";
 
 import {
   Activity,
@@ -52,7 +52,8 @@ import { Particles } from "@/components/ui/particles";
 
 type OnboardingFormData = {
   profile: { brandName: string; industry: string; timezone: string };
-  sources: Array<{ name: string; type: string }>;
+  keywords: string[];
+  sources: Array<{ name: string; type: string; sourceTemplateId?: string }>;
   notifications: { emailEnabled: boolean; whatsappEnabled: boolean; escalationNotifications: boolean; reminderNotifications: boolean };
   team: Array<{ email: string; role: string }>;
 };
@@ -101,7 +102,8 @@ export default function OnboardingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<OnboardingFormData>({
     profile: { brandName: "Narriv Workspace", industry: "Technology", timezone: "Asia/Jakarta" },
-    sources: [{ name: "Twitter Official", type: "twitter" }],
+    keywords: [],
+    sources: [],
     notifications: { emailEnabled: true, whatsappEnabled: false, escalationNotifications: true, reminderNotifications: true },
     team: []
   });
@@ -113,20 +115,41 @@ export default function OnboardingPage() {
   const submitOnboarding = async () => {
     setIsSubmitting(true);
     try {
+      // Step 1: Create workspace
       const workspace = await createOnboardingWorkspace(formData.profile);
-      if (workspace && workspace.id) {
-        if (formData.sources.length > 0) {
-          await createOnboardingSources({ workspaceId: workspace.id, sources: formData.sources });
-        }
-        await createOnboardingNotifications({ workspaceId: workspace.id, ...formData.notifications });
-        if (formData.team.length > 0) {
-          await createOnboardingTeam({ workspaceId: workspace.id, members: formData.team });
-        }
+      if (!workspace || !workspace.id) {
+        setIsSubmitting(false);
+        setStep(5);
+        return;
+      }
+
+      // Step 2: Create keywords
+      if (formData.keywords.length > 0) {
+        await createOnboardingKeywords({ workspaceId: workspace.id, keywords: formData.keywords });
+      }
+
+      // Step 3: Create sources
+      if (formData.sources.length > 0) {
+        await createOnboardingSources({ workspaceId: workspace.id, sources: formData.sources });
+      }
+
+      // Step 4: Create notifications
+      await createOnboardingNotifications({ workspaceId: workspace.id, ...formData.notifications });
+
+      // Step 5: Create team (if any)
+      if (formData.team.length > 0) {
+        await createOnboardingTeam({ workspaceId: workspace.id, members: formData.team });
+      }
+
+      // Step 6: Complete onboarding & trigger ingestion
+      const result = await completeOnboarding({ workspaceId: workspace.id, triggerIngestion: true });
+
+      if (result && result.success) {
         // Redirect to dashboard
         router.push("/");
       } else {
         setIsSubmitting(false);
-        setStep(5); // Go back to preview if failed
+        setStep(5);
       }
     } catch (e) {
       console.error(e);
@@ -461,39 +484,112 @@ function PersonalizationCard() {
 }
 
 function KeywordsStep() {
+  const { formData, updateForm } = useOnboardingContext();
   const t = useTranslations("OnboardingDesign.keywords");
-  const keywords = ["FIFGROUP", "Leasing", "Motor", "Keluhan Kredit", "Customer Service", "Pembiayaan"];
+  const [inputValue, setInputValue] = useState("");
+  const [keywords, setKeywords] = useState<string[]>(formData.keywords.length > 0 ? formData.keywords : ["FIFGROUP", "Leasing", "Motor", "Keluhan Kredit", "Customer Service", "Pembiayaan"]);
+
+  // Default keywords based on Indonesia media
+  const defaultSuggestions = [
+    "Brand Indonesia",
+    "Product Launch",
+    "Customer Service",
+    "Viral",
+    "Trending",
+    "Kritik",
+    "Keluhan",
+    "Review",
+    "Competitor",
+    "Market News",
+  ];
+
+  const handleAddKeyword = () => {
+    const trimmed = inputValue.trim();
+    if (trimmed && !keywords.includes(trimmed) && keywords.length < 50) {
+      const newKeywords = [...keywords, trimmed];
+      setKeywords(newKeywords);
+      updateForm("keywords", newKeywords);
+      setInputValue("");
+    }
+  };
+
+  const handleRemoveKeyword = (keyword: string) => {
+    const newKeywords = keywords.filter(k => k !== keyword);
+    setKeywords(newKeywords);
+    updateForm("keywords", newKeywords);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddKeyword();
+    }
+  };
+
   return (
     <div>
       <SectionTitle icon={Hash} step={2} title={t("title")} desc={t("desc")} />
-      
+
       <div className="grid gap-10 xl:grid-cols-[1fr_520px]">
         <div>
           <h3 className="mb-4 text-[16px] font-bold text-slate-900">{t("inputLabel")}</h3>
           <div className="flex gap-4">
-            <input 
-              className="h-[56px] min-w-0 flex-1 rounded-[8px] border border-slate-200 bg-slate-50 px-5 text-[15px] font-semibold outline-none placeholder:text-slate-300 text-slate-900 focus:border-[#465FFF]/50" 
-              placeholder={t("placeholder")} 
+            <input
+              className="h-[56px] min-w-0 flex-1 rounded-[8px] border border-slate-200 bg-slate-50 px-5 text-[15px] font-semibold outline-none placeholder:text-slate-300 text-slate-900 focus:border-[#465FFF]/50"
+              placeholder={t("placeholder")}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
             />
-            <button 
-              className="flex h-[56px] items-center gap-3 rounded-[8px] border border-[#8B5CFF]/30 bg-[#8B5CFF]/15 px-7 text-[16px] font-bold text-[#8B5CFF] hover:bg-[#8B5CFF]/25 transition" 
+            <button
+              className="flex h-[56px] items-center gap-3 rounded-[8px] border border-[#8B5CFF]/30 bg-[#8B5CFF]/15 px-7 text-[16px] font-bold text-[#8B5CFF] hover:bg-[#8B5CFF]/25 transition"
               type="button"
+              onClick={handleAddKeyword}
             >
               <Plus size={21} />
               {t("add")}
             </button>
           </div>
-          
+
+          {/* Suggestions */}
           <div className="mt-5 flex flex-wrap items-center gap-3 text-[14px] font-semibold">
             <span className="text-slate-400">{t("examples")}</span>
-            {keywords.slice(1).map((item) => <Pill key={item}>{item}</Pill>)}
+            {defaultSuggestions.slice(0, 5).map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => {
+                  if (!keywords.includes(item) && keywords.length < 50) {
+                    const newKeywords = [...keywords, item];
+                    setKeywords(newKeywords);
+                    updateForm("keywords", newKeywords);
+                  }
+                }}
+                className="inline-flex items-center gap-2 rounded-full bg-slate-100 border border-slate-100 px-4 py-2 text-slate-600 hover:border-[#465FFF]/50 hover:text-[#465FFF] transition-all"
+              >
+                {item}
+              </button>
+            ))}
           </div>
-          
-          <h3 className="mb-4 mt-10 text-[16px] font-bold text-slate-900">{t("yourKeywords")}</h3>
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {keywords.map((item) => <KeywordCard key={item} label={item} />)}
-          </div>
-          
+
+          {/* Current keywords */}
+          <h3 className="mb-4 mt-10 text-[16px] font-bold text-slate-900">{t("yourKeywords")} ({keywords.length}/50)</h3>
+          {keywords.length === 0 ? (
+            <div className="rounded-[8px] border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
+              <p className="text-[15px] font-semibold text-slate-400">No keywords added yet. Add at least 1 keyword to continue.</p>
+            </div>
+          ) : (
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {keywords.map((keyword) => (
+                <KeywordCard
+                  key={keyword}
+                  label={keyword}
+                  onRemove={() => handleRemoveKeyword(keyword)}
+                />
+              ))}
+            </div>
+          )}
+
           <TipBox tone="purple" title={t("tipTitle")} text={t("tipText")} />
         </div>
         <TopicPreview />
@@ -511,7 +607,7 @@ function Pill({ children }: { children: string }) {
   );
 }
 
-function KeywordCard({ label }: { label: string }) {
+function KeywordCard({ label, onRemove }: { label: string; onRemove: () => void }) {
   const t = useTranslations("OnboardingDesign.keywords");
   return (
     <div className="flex h-[62px] items-center justify-between rounded-[8px] border border-slate-100 bg-slate-50 px-5 hover:border-slate-200 transition-all">
@@ -520,7 +616,9 @@ function KeywordCard({ label }: { label: string }) {
         <span className="h-1.5 w-1.5 rounded-full bg-[#10B981] animate-pulse" />
         {t("active")}
       </span>
-      <X size={18} className="text-slate-400 hover:text-[#465FFF] cursor-pointer" />
+      <button type="button" onClick={onRemove}>
+        <X size={18} className="text-slate-400 hover:text-[#465FFF] cursor-pointer" />
+      </button>
     </div>
   );
 }
@@ -556,34 +654,136 @@ function TopicPreview() {
 }
 
 function SourcesStep() {
+  const { formData, updateForm } = useOnboardingContext();
   const t = useTranslations("OnboardingDesign.sources");
-  const sources = [
-    { icon: Globe2, title: t("onlineNews"), desc: t("onlineNewsDesc"), checked: true },
-    { icon: Share2, title: t("socialMedia"), desc: t("socialMediaDesc"), checked: true },
-    { icon: Video, title: "YouTube", desc: t("youtubeDesc"), checked: true, red: true },
-    { icon: Video, title: "TikTok", desc: t("tiktokDesc"), checked: true, black: true },
-    { icon: MessageCircle, title: t("forum"), desc: t("forumDesc"), checked: true },
-    { icon: FileText, title: t("blog"), desc: t("blogDesc") },
-    { icon: Mic, title: t("podcast"), desc: t("podcastDesc") },
-    { icon: ShoppingCart, title: t("review"), desc: t("reviewDesc") },
-    { icon: Folder, title: t("publicDocs"), desc: t("publicDocsDesc") },
-  ];
+  const [sourceTemplates, setSourceTemplates] = useState<Record<string, Array<{ id: string; name: string; slug: string; description: string | null; category: string; default_keywords: string[] | null }>>>({});
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(["news", "social", "forum"]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchTemplates() {
+      try {
+        const result = await getSourceTemplates();
+        if (result && result.grouped) {
+          setSourceTemplates(result.grouped);
+        }
+      } catch (e) {
+        console.error("Error fetching source templates:", e);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchTemplates();
+  }, []);
+
+  const toggleCategory = (category: string) => {
+    const newCategories = selectedCategories.includes(category)
+      ? selectedCategories.filter(c => c !== category)
+      : [...selectedCategories, category];
+    setSelectedCategories(newCategories);
+
+    // Update selected sources based on categories
+    const selectedSources: Array<{ name: string; type: string; sourceTemplateId?: string }> = [];
+    Object.entries(sourceTemplates).forEach(([cat, templates]) => {
+      if (newCategories.includes(cat)) {
+        templates.forEach(template => {
+          selectedSources.push({
+            name: template.name,
+            type: template.category,
+            sourceTemplateId: template.id
+          });
+        });
+      }
+    });
+    updateForm("sources", selectedSources);
+  };
+
+  const allCategories = Object.keys(sourceTemplates);
+
+  const categoryIcons: Record<string, LucideIcon> = {
+    news: Globe2,
+    social: Share2,
+    forum: MessageCircle,
+    review: ShoppingCart,
+    blog: FileText,
+    podcast: Mic,
+  };
+
   return (
     <div>
       <div className="grid gap-9 xl:grid-cols-[1fr_470px]">
         <div>
           <SectionTitle icon={Database} step={3} title={t("title")} desc={t("desc")} />
-          <h3 className="mb-5 text-[16px] font-bold text-slate-900">{t("choose")}</h3>
-          <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
-            {sources.map((item) => <SourceCard key={item.title} {...item} />)}
+
+          {/* Indonesia Media Pack - Quick Select */}
+          <div className="mb-6 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/5 p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <ShieldCheck size={20} className="text-[#8B5CFF]" />
+              <span className="text-[16px] font-bold text-[#8B5CFF]">Indonesia Media Pack</span>
+            </div>
+            <p className="text-[14px] font-semibold text-slate-600 mb-4">
+              Pre-configured Indonesian news, social media, and forum sources
+            </p>
+            <div className="flex flex-wrap gap-3">
+              {allCategories.map((category) => {
+                const Icon = categoryIcons[category] || Globe2;
+                const isSelected = selectedCategories.includes(category);
+                return (
+                  <button
+                    key={category}
+                    type="button"
+                    onClick={() => toggleCategory(category)}
+                    className={`flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-bold transition-all ${
+                      isSelected
+                        ? "bg-[#8B5CFF] text-white shadow-[0_0_10px_rgba(139,92,255,0.3)]"
+                        : "bg-white border border-slate-200 text-slate-600 hover:border-[#8B5CFF]/50"
+                    }`}
+                  >
+                    <Icon size={16} />
+                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                    <span className="ml-1 opacity-70">({sourceTemplates[category]?.length || 0})</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
+
+          <h3 className="mb-5 text-[16px] font-bold text-slate-900">{t("choose")}</h3>
+
+          {isLoading ? (
+            <div className="grid gap-5 md:grid-cols-2">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-[112px] rounded-[8px] border border-slate-100 bg-slate-50 animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
+              {allCategories.flatMap((category) =>
+                (sourceTemplates[category] || []).map((template) => {
+                  const Icon = categoryIcons[category] || Globe2;
+                  const isSelected = selectedCategories.includes(category);
+                  return (
+                    <SourceCard
+                      key={template.id}
+                      icon={Icon}
+                      title={template.name}
+                      desc={template.description || `${template.category} source`}
+                      checked={isSelected}
+                      onToggle={() => toggleCategory(category)}
+                    />
+                  );
+                })
+              )}
+            </div>
+          )}
+
           <div className="mt-7 flex items-center gap-4 rounded-[8px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/5 p-5 text-[16px] font-semibold text-[#8B5CFF]">
             <ShieldCheck size={24} />
             {t("moreSources")}
           </div>
         </div>
         <aside className="grid content-start gap-5 border-l border-slate-100 pl-8">
-          <SelectedSourcesSummary />
+          <SelectedSourcesSummary selectedCount={formData.sources.length} />
           <TipBox tone="blue" title={t("qualityTitle")} text={t("qualityText")} icon={ShieldCheck} />
           <TipBox tone="amber" title={t("tipTitle")} text={t("tipText")} icon={Lightbulb} />
         </aside>
@@ -592,20 +792,24 @@ function SourcesStep() {
   );
 }
 
-function SourceCard({ icon: Icon, title, desc, checked, red, black }: { icon: LucideIcon; title: string; desc: string; checked?: boolean; red?: boolean; black?: boolean }) {
+function SourceCard({ icon: Icon, title, desc, checked, onToggle, red, black }: { icon: LucideIcon; title: string; desc: string; checked?: boolean; onToggle?: () => void; red?: boolean; black?: boolean }) {
   return (
-    <div className={`flex min-h-[112px] items-start gap-5 rounded-[8px] border p-5 transition-all duration-300 ${checked ? "border-[#465FFF] bg-[#465FFF]/5 shadow-[0_0_10px_rgba(70,95,255,0.1)]" : "border-slate-100 bg-slate-50 hover:border-slate-200"}`}>
+    <button
+      type="button"
+      onClick={onToggle}
+      className={`flex min-h-[112px] items-start gap-5 rounded-[8px] border p-5 text-left transition-all duration-300 ${checked ? "border-[#465FFF] bg-[#465FFF]/5 shadow-[0_0_10px_rgba(70,95,255,0.1)]" : "border-slate-100 bg-slate-50 hover:border-slate-200"}`}
+    >
       <Icon size={26} className={red ? "text-rose-500" : black ? "text-slate-900" : "text-[#465FFF]"} fill={red ? "currentColor" : undefined} />
       <div className="min-w-0 flex-1">
         <h3 className="text-[16px] font-bold text-slate-900">{title}</h3>
         <p className="mt-2 text-[14px] font-semibold leading-6 text-slate-400">{desc}</p>
       </div>
       <CheckBox checked={!!checked} />
-    </div>
+    </button>
   );
 }
 
-function SelectedSourcesSummary() {
+function SelectedSourcesSummary({ selectedCount }: { selectedCount: number }) {
   const t = useTranslations("OnboardingDesign.sources");
   const rows = [
     [t("onlineNews"), "1.248", Globe2],
@@ -619,7 +823,7 @@ function SelectedSourcesSummary() {
     <div className="rounded-[10px] border border-slate-100 bg-slate-50 p-6">
       <div className="flex items-center justify-between">
         <h3 className="text-[17px] font-bold text-slate-900">{t("summaryTitle")}</h3>
-        <span className="rounded-full bg-[#10B981]/15 border border-[#10B981]/25 px-4 py-2 text-[13px] font-bold text-[#10B981]">6 {t("active")}</span>
+        <span className="rounded-full bg-[#10B981]/15 border border-[#10B981]/25 px-4 py-2 text-[13px] font-bold text-[#10B981]">{selectedCount} {t("active")}</span>
       </div>
       <div className="mt-6 grid gap-5">
         {rows.map(([label, value, Icon]) => (

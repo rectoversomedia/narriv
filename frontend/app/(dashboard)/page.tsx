@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { ArrowRight, BarChart3, Bell, CheckCircle2, Database, FileText, Headphones, RefreshCcw, Send, Settings, Sparkles, X, Zap } from "lucide-react";
+import { ArrowRight, BarChart3, Bell, CheckCircle2, Database, FileText, Headphones, RefreshCcw, Send, Settings, Sparkles, X, Zap, Rocket, Lightbulb } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { AppCard, IconBubble, MetricTile, SectionHeader } from "@/components/dashboard/dashboard-kit";
 import { CardContent } from "@/components/ui/card";
@@ -12,7 +13,7 @@ import { useUiStore } from "@/store/useUiStore";
 import { isDemoMode } from "@/lib/demo-mock-data";
 
 import { useQuery } from "@tanstack/react-query";
-import { getDashboardSummary, getDateRangeOptions, type DateRangeKey } from "@/lib/api-service";
+import { getDashboardSummary, getDateRangeOptions, getWorkspaceSettings, type DateRangeKey } from "@/lib/api-service";
 import { DashboardErrorState, MetricRowSkeleton } from "@/components/dashboard/dashboard-states";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -236,6 +237,23 @@ export default function DashboardPage() {
     setHasCheckedDemoMode(true);
   }, []);
 
+  // Check onboarding status
+  const workspaceQuery = useQuery({
+    queryKey: ["workspace-settings"],
+    queryFn: () => getWorkspaceSettings(),
+    staleTime: 60 * 1000,
+    enabled: hasCheckedDemoMode && !demoMode,
+  });
+
+  // Redirect to onboarding if not set up
+  const router = useRouter();
+  useEffect(() => {
+    if (hasCheckedDemoMode && !demoMode && workspaceQuery.data === null && !workspaceQuery.isLoading) {
+      // No workspace settings yet, redirect to onboarding
+      router.push("/onboarding");
+    }
+  }, [hasCheckedDemoMode, demoMode, workspaceQuery.data, workspaceQuery.isLoading, router]);
+
   const dashboardQuery = useQuery({
     queryKey: ["dashboard-summary", timeRange, demoMode],
     queryFn: () => getDashboardSummary(dateRange),
@@ -307,6 +325,54 @@ export default function DashboardPage() {
   const globalActivity = summary?.global_activity ?? null;
   const mappedSignalCount = globalActivity?.total_signals ?? 0;
   const mappedRegionCount = globalActivity?.countries?.length ?? 0;
+
+  // Check if workspace needs onboarding
+  const needsOnboarding = hasCheckedDemoMode && !demoMode && workspaceQuery.data === null && !workspaceQuery.isLoading;
+  const isEmptyDashboard = summary?.kpis?.total_signals === 0 && !demoMode;
+
+  // Onboarding Empty State Component
+  if (needsOnboarding) {
+    return (
+      <div className="min-h-[calc(100vh-200px)] flex items-center justify-center">
+        <div className="max-w-xl text-center">
+          <div className="mx-auto w-20 h-20 rounded-full bg-gradient-to-tr from-[#465FFF] to-[#8B5CFF] flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(70,95,255,0.3)]">
+            <Rocket size={36} className="text-white" />
+          </div>
+          <h1 className="text-[32px] font-black text-slate-900 mb-3">
+            Welcome to Narriv!
+          </h1>
+          <p className="text-[16px] font-semibold text-slate-500 mb-8 max-w-md mx-auto">
+            Set up your monitoring workspace in just 3 steps. We&apos;ll help you configure sources and keywords to start tracking signals.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-[8px] border border-slate-100 bg-slate-50">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#465FFF] text-white text-[13px] font-bold">1</span>
+              <span className="text-[14px] font-bold text-slate-700">Configure Keywords</span>
+            </div>
+            <div className="flex items-center gap-3 px-4 py-3 rounded-[8px] border border-slate-100 bg-slate-50">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#465FFF] text-white text-[13px] font-bold">2</span>
+              <span className="text-[14px] font-bold text-slate-700">Select Sources</span>
+            </div>
+            <div className="flex items-center gap-3 px-4 py-3 rounded-[8px] border border-slate-100 bg-slate-50">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#465FFF] text-white text-[13px] font-bold">3</span>
+              <span className="text-[14px] font-bold text-slate-700">Start Monitoring</span>
+            </div>
+          </div>
+          <Link
+            href="/onboarding"
+            className="inline-flex h-[52px] items-center gap-3 rounded-[10px] bg-gradient-to-r from-[#465FFF] to-[#8B5CFF] px-8 text-[15px] font-bold text-white shadow-[0_10px_24px_rgba(70,95,255,0.35)] transition hover:from-[#3b52d9] hover:to-[#764ee6] active:scale-[0.98]"
+          >
+            <Rocket size={20} />
+            Start Setup Wizard
+            <ArrowRight size={18} />
+          </Link>
+          <p className="mt-6 text-[13px] font-semibold text-slate-400">
+            Takes about 7 minutes to complete
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 pb-6">

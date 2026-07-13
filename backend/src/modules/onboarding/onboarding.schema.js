@@ -30,3 +30,14 @@ export const onboardingTeamBodySchema = z.object({
         }),
     })).min(1, "At least one member is required.").max(10, "Maximum 10 members per onboarding."),
 });
+
+// Keywords onboarding schema
+export const onboardingKeywordsBodySchema = z.object({
+    keywords: z.array(z.string().trim().min(1).max(100)).min(1, "At least one keyword is required.").max(50, "Maximum 50 keywords."),
+});
+
+// Complete onboarding schema
+export const onboardingCompleteBodySchema = z.object({
+    workspaceId: z.string().uuid("Invalid workspace ID."),
+    triggerIngestion: z.boolean().optional().default(true),
+});

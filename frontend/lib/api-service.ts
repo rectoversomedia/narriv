@@ -917,6 +917,62 @@ export async function createOnboardingTeam(input: { workspaceId: string; members
   }
 }
 
+// Get pre-configured Indonesia media source templates
+export interface SourceTemplate {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  category: string;
+  default_keywords: string[] | null;
+  config: Record<string, unknown>;
+  is_active: boolean;
+}
+
+export async function getSourceTemplates(category?: string): Promise<{ templates: SourceTemplate[]; grouped: Record<string, SourceTemplate[]>; total: number } | null> {
+  try {
+    const query = category ? `?category=${category}` : "";
+    return await apiClient<{ templates: SourceTemplate[]; grouped: Record<string, SourceTemplate[]>; total: number }>(`/api/onboarding/source-templates${query}`);
+  } catch {
+    return null;
+  }
+}
+
+// Create monitoring keywords
+export async function createOnboardingKeywords(input: { workspaceId: string; keywords: string[] }): Promise<{ count: number; keywords: Array<{ id: string; keyword: string }> } | null> {
+  try {
+    return await apiClient<{ count: number; keywords: Array<{ id: string; keyword: string }> }>("/api/onboarding/keywords", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return null;
+  }
+}
+
+// Complete onboarding & trigger ingestion
+export interface OnboardingCompleteResponse {
+  success: boolean;
+  workspace: { id: string; name: string; onboarding_completed: boolean };
+  onboarding: { completed: boolean; completed_at: string };
+  ingestion: {
+    triggered: boolean;
+    jobs_created: number;
+    jobs: Array<{ id: string; source_id: string; status: string }>;
+  };
+}
+
+export async function completeOnboarding(input: { workspaceId: string; triggerIngestion?: boolean }): Promise<OnboardingCompleteResponse | null> {
+  try {
+    return await apiClient<OnboardingCompleteResponse>("/api/onboarding/complete", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  } catch {
+    return null;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // File Upload (Logo)
 // ---------------------------------------------------------------------------

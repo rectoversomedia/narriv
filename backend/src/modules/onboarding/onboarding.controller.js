@@ -3,6 +3,17 @@ import { badRequest, internalError } from "../../lib/api-error.js";
 import { logStructured } from "../../lib/logger.js";
 import { recordAuditLog } from "../../lib/audit.js";
 
+// Helper: verify workspace membership
+async function verifyWorkspaceAccess(userId, workspaceId) {
+    const { data } = await supabase
+        .from("workspace_members")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("workspace_id", workspaceId)
+        .maybeSingle();
+    return !!data;
+}
+
 export async function createOnboardingWorkspace(req, res) {
     try {
         const { brandName, industry, timezone } = req.body;
@@ -299,6 +310,218 @@ export async function createOnboardingTeam(req, res) {
         return res.json({ results });
     } catch (error) {
         logStructured("error", "Error creating onboarding team:", { error: error?.message || error, stack: error?.stack });
+        return internalError(res);
+    }
+}
+
+// Get pre-configured Indonesia media source templates
+export async function getSourceTemplates(req, res) {
+    try {
+        const { category, search } = req.query;
+
+        let query = supabase
+            .from("source_templates")
+            .select("*")
+            .eq("is_active", true)
+            .order("category", { ascending: true })
+            .order("name", { ascending: true });
+
+        if (category) {
+            query = query.eq("category", category);
+        }
+
+        if (search) {
+            query = query.ilike("name", `%${search}%`);
+        }
+
+        const { data: templates, error } = await query;
+
+        if (error) {
+            logStructured("error", "Error fetching source templates:", { error: error?.message || error });
+            return internalError(res);
+        }
+
+        // Group by category
+        const grouped = templates?.reduce((acc, template) => {
+            if (!acc[template.category]) {
+                acc[template.category] = [];
+            }
+            acc[template.category].push(template);
+            return acc;
+        }, {}) || {};
+
+        return res.json({
+            templates: templates || [],
+            grouped,
+            total: templates?.length || 0,
+        });
+    } catch (error) {
+        logStructured("error", "Error getting source templates:", { error: error?.message || error, stack: error?.stack });
+        return internalError(res);
+    }
+}
+
+// Create onboarding keywords
+export async function createOnboardingKeywords(req, res) {
+    try {
+        const { workspaceId, keywords } = req.body;
+
+        if (!workspaceId) {
+            return badRequest(res, "workspaceId is required.", "WORKSPACE_ID_REQUIRED");
+        }
+
+        const hasAccess = await verifyWorkspaceAccess(req.user.id, workspaceId);
+        if (!hasAccess) {
+            return badRequest(res, "Workspace access denied.", "WORKSPACE_ACCESS_DENIED");
+        }
+
+        // Upsert keywords
+        const keywordsData = keywords.map((keyword) => ({
+            workspace_id: workspaceId,
+            keyword: keyword.trim(),
+            is_active: true,
+        }));
+
+        const { data: created, error } = await supabase
+            .from("monitoring_keywords")
+            .upsert(keywordsData, { onConflict: "workspace_id,keyword" })
+            .select();
+
+        if (error) {
+            logStructured("error", "Error creating monitoring keywords:", { error: error?.message || error });
+            return internalError(res);
+        }
+
+        await recordAuditLog({
+            userId: req.user.id,
+            workspaceId,
+            event: "onboarding_keywords_created",
+            metadata: { workspaceId, count: keywords.length, keywords },
+        });
+
+        return res.status(201).json({
+            count: created?.length || keywords.length,
+            keywords: created || keywordsData,
+        });
+    } catch (error) {
+        logStructured("error", "Error creating onboarding keywords:", { error: error?.message || error, stack: error?.stack });
+        return internalError(res);
+    }
+}
+
+// Complete onboarding - mark done and optionally trigger ingestion
+export async function completeOnboarding(req, res) {
+    try {
+        const { workspaceId, triggerIngestion = true } = req.body;
+
+        if (!workspaceId) {
+            return badRequest(res, "workspaceId is required.", "WORKSPACE_ID_REQUIRED");
+        }
+
+        const hasAccess = await verifyWorkspaceAccess(req.user.id, workspaceId);
+        if (!hasAccess) {
+            return badRequest(res, "Workspace access denied.", "WORKSPACE_ACCESS_DENIED");
+        }
+
+        // Update workspace onboarding status
+        const { data: workspace, error: wsError } = await supabase
+            .from("workspaces")
+            .update({
+                onboarding_completed: true,
+                onboarding_step: 100, // 100% complete
+            })
+            .eq("id", workspaceId)
+            .select()
+            .single();
+
+        if (wsError) {
+            logStructured("error", "Error updating workspace onboarding status:", { error: wsError?.message || wsError });
+            return internalError(res);
+        }
+
+        // Create/update onboarding progress record
+        const { data: progress, error: progressError } = await supabase
+            .from("onboarding_progress")
+            .upsert({
+                workspace_id: workspaceId,
+                current_step: 100,
+                completed_steps: ["profile", "keywords", "sources", "notifications", "preview"],
+                setup_completed_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            }, { onConflict: "workspace_id" })
+            .select()
+            .single();
+
+        if (progressError) {
+            logStructured("error", "Error updating onboarding progress:", { error: progressError?.message || progressError });
+            // Continue anyway
+        }
+
+        // Trigger ingestion if requested
+        let ingestionJobs = [];
+        if (triggerIngestion) {
+            // Get active sources for this workspace
+            const { data: sources } = await supabase
+                .from("sources")
+                .select("id, name, type")
+                .eq("workspace_id", workspaceId)
+                .eq("is_active", true);
+
+            if (sources && sources.length > 0) {
+                // Create ingestion jobs for each source
+                const jobsData = sources.map((source) => ({
+                    workspace_id: workspaceId,
+                    source_id: source.id,
+                    status: "pending",
+                }));
+
+                const { data: jobs, error: jobsError } = await supabase
+                    .from("ingestion_jobs")
+                    .insert(jobsData)
+                    .select();
+
+                if (!jobsError && jobs) {
+                    ingestionJobs = jobs;
+                    logStructured("info", "Ingestion jobs created", {
+                        workspaceId,
+                        sourceCount: sources.length,
+                        jobIds: jobs.map(j => j.id)
+                    });
+                }
+            }
+        }
+
+        await recordAuditLog({
+            userId: req.user.id,
+            workspaceId,
+            event: "onboarding_completed",
+            metadata: {
+                workspaceId,
+                triggerIngestion,
+                ingestionJobsCreated: ingestionJobs.length,
+                sourcesCount: ingestionJobs.length,
+            },
+        });
+
+        return res.json({
+            success: true,
+            workspace: {
+                id: workspace.id,
+                name: workspace.name,
+                onboarding_completed: true,
+            },
+            onboarding: {
+                completed: true,
+                completed_at: progress?.setup_completed_at || new Date().toISOString(),
+            },
+            ingestion: {
+                triggered: triggerIngestion,
+                jobs_created: ingestionJobs.length,
+                jobs: ingestionJobs.map(j => ({ id: j.id, source_id: j.source_id, status: j.status })),
+            },
+        });
+    } catch (error) {
+        logStructured("error", "Error completing onboarding:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }
