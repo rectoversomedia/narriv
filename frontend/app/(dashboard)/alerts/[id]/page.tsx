@@ -262,7 +262,7 @@ export default function AlertDetailPage() {
   const escalationRecords = getDisplayEscalationRecords(escalationQuery.data);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5 pb-6 text-[#101334]">
+    <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
       <Link href="/alerts" className="inline-flex items-center gap-2 text-[13px] font-black text-[#68739F] transition hover:text-[#465FFF]">
         <ArrowLeft size={16} />
         {td("nav.back")}

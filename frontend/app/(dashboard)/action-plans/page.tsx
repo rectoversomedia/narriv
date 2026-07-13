@@ -28,6 +28,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
+import { isDemoMode, getMockActionPlans } from "@/lib/demo-mock-data";
 import { getActionPlanById, getActionQueue, getFeedbackAccuracy, submitActionPlanFeedback, getActionPlansMetrics, getActionPlanLearning, type ActionPlanResponse, type ActionQueueRecord } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
 import { CreateActionPlanModal } from "./components/create-action-plan-modal";
@@ -313,6 +314,16 @@ export default function ActionPlansPage() {
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
+  // Demo mode state
+  const [demoMode, setDemoMode] = useState(false);
+  const [hasCheckedDemoMode, setHasCheckedDemoMode] = useState(false);
+
+  // Check demo mode on mount
+  useEffect(() => {
+    setDemoMode(isDemoMode());
+    setHasCheckedDemoMode(true);
+  }, []);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [filterPriority, filterStatus, searchQuery]);
@@ -337,9 +348,12 @@ export default function ActionPlansPage() {
     onError: () => showToast(t("toast.feedbackRetry"), "error"),
   });
   const actionQueueQuery = useQuery({
-    queryKey: ["action-queue", { page: currentPage, limit: 8, search: searchQuery.trim(), priority: filterPriority, status: filterStatus }],
-    queryFn: () => getActionQueue({ page: currentPage, limit: 8, search: searchQuery.trim(), priority: filterPriority, status: filterStatus }),
+    queryKey: ["action-queue", { page: currentPage, limit: 8, search: searchQuery.trim(), priority: filterPriority, status: filterStatus, demoMode }],
+    queryFn: () => demoMode
+      ? Promise.resolve(getMockActionPlans())
+      : getActionQueue({ page: currentPage, limit: 8, search: searchQuery.trim(), priority: filterPriority, status: filterStatus }),
     staleTime: 30 * 1000,
+    enabled: hasCheckedDemoMode,
   });
   const actionPlanQuery = useQuery({
     queryKey: ["action-plan", selectedActionId],
@@ -403,7 +417,15 @@ export default function ActionPlansPage() {
   const needsAttentionCount = highActions.length;
 
   return (
-    <div className="mx-auto flex max-w-[1600px] flex-col gap-4 pb-6 text-[#101334]">
+    <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
+      {demoMode && (
+        <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
+          <Sparkles size={16} className="text-[#8B5CFF]" />
+          <p className="text-[13px] font-bold text-[#8B5CFF]">
+            Demo Mode — Showing sample data for demonstration purposes
+          </p>
+        </div>
+      )}
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-[31px] font-black tracking-[-0.045em] text-[#060A23]">{t("title")}</h1>

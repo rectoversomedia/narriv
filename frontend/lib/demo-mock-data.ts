@@ -296,6 +296,91 @@ export function getMockSignals() {
 }
 
 /**
+ * Generate mock action plans for demo mode
+ */
+export function getMockActionPlans() {
+  const now = new Date();
+  return {
+    data: [
+      {
+        id: "demo-plan-1",
+        title: "Monitor Service Disruption Response",
+        description: "Track user sentiment and engagement following the service disruption incident",
+        status: "active",
+        priority: "high",
+        type: "monitoring",
+        assignedTo: "John Smith",
+        createdAt: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(),
+      },
+      {
+        id: "demo-plan-2",
+        title: "App Update Feedback Analysis",
+        description: "Collect and analyze user feedback on the new app update",
+        status: "in-progress",
+        priority: "medium",
+        type: "analysis",
+        assignedTo: "Sarah Johnson",
+        createdAt: new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString(),
+      },
+      {
+        id: "demo-plan-3",
+        title: "Loyalty Program Launch",
+        description: "Coordinate marketing efforts for the new loyalty program",
+        status: "active",
+        priority: "high",
+        type: "campaign",
+        assignedTo: "Mike Chen",
+        createdAt: new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString(),
+      },
+      {
+        id: "demo-plan-4",
+        title: "Privacy Policy Communication",
+        description: "Prepare FAQ and user communication about privacy policy changes",
+        status: "done",
+        priority: "medium",
+        type: "communication",
+        assignedTo: "Lisa Wong",
+        createdAt: new Date(now.getTime() - 72 * 60 * 60 * 1000).toISOString(),
+      },
+    ],
+    meta: { page: 1, limit: 10, total: 4 },
+  };
+}
+
+/**
+ * Generate mock reports for demo mode
+ */
+export function getMockReports() {
+  const now = new Date();
+  return {
+    data: [
+      {
+        id: "demo-report-1",
+        title: "Weekly Sentiment Overview",
+        type: "sentiment",
+        status: "completed",
+        createdAt: new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString(),
+      },
+      {
+        id: "demo-report-2",
+        title: "Service Disruption Analysis",
+        type: "incident",
+        status: "completed",
+        createdAt: new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString(),
+      },
+      {
+        id: "demo-report-3",
+        title: "Monthly Executive Summary",
+        type: "executive",
+        status: "pending",
+        createdAt: new Date(now.getTime() - 72 * 60 * 60 * 1000).toISOString(),
+      },
+    ],
+    pagination: { page: 1, limit: 10, total: 3, totalPages: 1 },
+  };
+}
+
+/**
  * Check if current session is demo mode
  */
 export function isDemoMode(): boolean {

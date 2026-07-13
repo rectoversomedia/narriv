@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton, formatPaginationSummary } from "@/components/dashboard/dashboard-states";
 import { getReports, getReportTemplates, createReportTemplate, updateReportTemplate, deleteReportTemplate, getReportsAnalytics, createReportExport, getReportExportStatus, getNarratives, getDashboardSummary, getReportSchedules, createReportSchedule, updateReportSchedule, deleteReportSchedule, toggleReportSchedule, generateReportFromTemplate, sendReportEmail, sendTestScheduleEmail, type PaginationInfo, type ReportRecord, type ReportsAnalyticsResponse, type NarrativeRecord, type DashboardSummary, type ReportTemplate, type ReportScheduleRecord } from "@/lib/api-service";
+import { isDemoMode, getMockReports } from "@/lib/demo-mock-data";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type ReportStatus = "READY" | "REVIEW" | "DRAFT" | "SCHEDULED" | "ARCHIVED";
@@ -858,19 +859,29 @@ export default function ReportsPage() {
   const [isTemplatesModalOpen, setIsTemplatesModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  
+
+  // Demo mode state
+  const [demoMode, setDemoMode] = useState(false);
+  const [hasCheckedDemoMode, setHasCheckedDemoMode] = useState(false);
+
+  // Check demo mode on mount
+  useEffect(() => {
+    setDemoMode(isDemoMode());
+    setHasCheckedDemoMode(true);
+  }, []);
+
   // Custom Template State
   const [editingTemplate, setEditingTemplate] = useState<Partial<ReportTemplate> | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  
+
   // Schedule State
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isScheduleFormOpen, setIsScheduleFormOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<Partial<ReportScheduleRecord> | null>(null);
-  
+
   // Popular Reports Modal
   const [isPopularModalOpen, setIsPopularModalOpen] = useState(false);
-  
+
   // Share Modal
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
@@ -928,9 +939,12 @@ export default function ReportsPage() {
     onError: () => showToast(tr("toast.exportInitFailed"), "error"),
   });
   const reportsQuery = useQuery({
-    queryKey: ["reports", { page, limit: reportsApiLimit }],
-    queryFn: () => getReports({ page, limit: reportsApiLimit }),
+    queryKey: ["reports", { page, limit: reportsApiLimit, demoMode }],
+    queryFn: () => demoMode
+      ? Promise.resolve(getMockReports())
+      : getReports({ page, limit: reportsApiLimit }),
     staleTime: 30 * 1000,
+    enabled: hasCheckedDemoMode,
   });
   const templatesQuery = useQuery({
     queryKey: ["report-templates"],
@@ -1190,7 +1204,15 @@ export default function ReportsPage() {
       : tr("paginationExtended.sampleSummary");
 
   return (
-    <div className="mx-auto flex max-w-[1600px] flex-col gap-4 pb-6 text-[#101334]">
+    <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
+      {demoMode && (
+        <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
+          <Sparkles size={16} className="text-[#8B5CFF]" />
+          <p className="text-[13px] font-bold text-[#8B5CFF]">
+            Demo Mode — Showing sample data for demonstration purposes
+          </p>
+        </div>
+      )}
       {/* Header */}
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>

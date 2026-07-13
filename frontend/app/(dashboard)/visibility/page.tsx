@@ -778,7 +778,7 @@ export default function VisibilityPage() {
   })();
 
   return (
-    <div className="mx-auto flex max-w-[1600px] flex-col gap-4 pb-6 text-[#101334]">
+    <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
       {/* Header section */}
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>

@@ -103,7 +103,7 @@ export default function ReportDetailPage() {
   const sections = Array.isArray(report.sections) ? report.sections : [];
 
   return (
-    <div className="mx-auto flex max-w-[1180px] flex-col gap-4 pb-6 text-[#101334]">
+    <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
       <header className="rounded-[18px] border border-[#DDE3EF] bg-white p-5 shadow-[0_2px_14px_rgba(16,24,40,0.04)]">
         <Link href="/reports" className="inline-flex items-center gap-2 text-[12px] font-black text-[#58648C] transition hover:text-[#465FFF]">
           <ArrowLeft size={15} /> {tr("detail.back")}

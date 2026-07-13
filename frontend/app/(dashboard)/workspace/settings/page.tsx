@@ -520,7 +520,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="mx-auto flex max-w-[1600px] flex-col gap-6 pb-12 text-[#101334]">
+    <div className="flex max-w-full flex-col gap-6 pb-12 text-[#101334]">
       {/* Header */}
       <div>
         <h1 className="text-[31px] font-black tracking-[-0.045em] text-[#060A23]">{ts("pageHeaderTitle")}</h1>
