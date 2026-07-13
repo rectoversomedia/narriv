@@ -3,7 +3,7 @@
 
 -- Webhooks table
 CREATE TABLE IF NOT EXISTS public.webhooks (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
   url TEXT NOT NULL,
   events TEXT[] NOT NULL DEFAULT '{}',
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS public.webhooks (
 
 -- Webhook deliveries table (for delivery history)
 CREATE TABLE IF NOT EXISTS public.webhook_deliveries (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   webhook_id UUID NOT NULL REFERENCES public.webhooks(id) ON DELETE CASCADE,
   event TEXT NOT NULL,
   payload JSONB NOT NULL,

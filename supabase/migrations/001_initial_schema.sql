@@ -2,8 +2,17 @@
 -- Migration: 001_initial_schema.sql
 -- Version: 1.0.0
 
--- Enable UUID extension
+-- Enable extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- Helper function for UUID generation (works with both local and Supabase managed)
+CREATE OR REPLACE FUNCTION public.gen_random_uuid()
+RETURNS UUID AS $$
+BEGIN
+    RETURN gen_random_uuid();
+END;
+$$ LANGUAGE plpgsql VOLATILE;
 
 -- ============================================
 -- USERS & AUTHENTICATION
@@ -11,7 +20,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Users (extended from Supabase Auth)
 CREATE TABLE IF NOT EXISTS public.users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email TEXT UNIQUE NOT NULL,
     name TEXT,
     avatar_url TEXT,
@@ -21,7 +30,7 @@ CREATE TABLE IF NOT EXISTS public.users (
 
 -- Refresh tokens
 CREATE TABLE IF NOT EXISTS public.refresh_tokens (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     token_hash TEXT NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL,
@@ -30,7 +39,7 @@ CREATE TABLE IF NOT EXISTS public.refresh_tokens (
 
 -- OAuth accounts
 CREATE TABLE IF NOT EXISTS public.oauth_accounts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     provider TEXT NOT NULL,
     provider_user_id TEXT NOT NULL,
@@ -43,7 +52,7 @@ CREATE TABLE IF NOT EXISTS public.oauth_accounts (
 
 -- Password reset tokens
 CREATE TABLE IF NOT EXISTS public.password_reset_tokens (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     token_hash TEXT NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL,
@@ -52,7 +61,7 @@ CREATE TABLE IF NOT EXISTS public.password_reset_tokens (
 
 -- Email verification tokens
 CREATE TABLE IF NOT EXISTS public.email_verification_tokens (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     token_hash TEXT NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL,
@@ -65,7 +74,7 @@ CREATE TABLE IF NOT EXISTS public.email_verification_tokens (
 
 -- Workspaces (tenants)
 CREATE TABLE IF NOT EXISTS public.workspaces (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     slug TEXT UNIQUE,
     logo_url TEXT,
@@ -76,7 +85,7 @@ CREATE TABLE IF NOT EXISTS public.workspaces (
 
 -- Workspace members
 CREATE TABLE IF NOT EXISTS public.workspace_members (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     role TEXT NOT NULL DEFAULT 'member',
@@ -86,7 +95,7 @@ CREATE TABLE IF NOT EXISTS public.workspace_members (
 
 -- Workspace settings
 CREATE TABLE IF NOT EXISTS public.workspace_settings (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID UNIQUE NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
     brand_name TEXT,
     industry TEXT,
@@ -100,7 +109,7 @@ CREATE TABLE IF NOT EXISTS public.workspace_settings (
 
 -- Workspace notification settings
 CREATE TABLE IF NOT EXISTS public.workspace_notification_settings (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID UNIQUE NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
     email_enabled BOOLEAN DEFAULT true,
     whatsapp_enabled BOOLEAN DEFAULT false,
@@ -117,7 +126,7 @@ CREATE TABLE IF NOT EXISTS public.workspace_notification_settings (
 
 -- Sources (data collection configuration)
 CREATE TABLE IF NOT EXISTS public.sources (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     type TEXT NOT NULL,
@@ -133,7 +142,7 @@ CREATE TABLE IF NOT EXISTS public.sources (
 
 -- Ingestion jobs
 CREATE TABLE IF NOT EXISTS public.ingestion_jobs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
     source_id UUID REFERENCES public.sources(id) ON DELETE SET NULL,
     status TEXT NOT NULL DEFAULT 'pending',
@@ -146,7 +155,7 @@ CREATE TABLE IF NOT EXISTS public.ingestion_jobs (
 
 -- Raw documents
 CREATE TABLE IF NOT EXISTS public.raw_documents (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
     source_id UUID REFERENCES public.sources(id) ON DELETE SET NULL,
     external_id TEXT,
@@ -161,7 +170,7 @@ CREATE TABLE IF NOT EXISTS public.raw_documents (
 
 -- Signals (processed intelligence)
 CREATE TABLE IF NOT EXISTS public.signals (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
     source_id UUID REFERENCES public.sources(id) ON DELETE SET NULL,
     raw_document_id UUID REFERENCES public.raw_documents(id) ON DELETE SET NULL,
@@ -184,7 +193,7 @@ CREATE TABLE IF NOT EXISTS public.signals (
 
 -- Signal analyses
 CREATE TABLE IF NOT EXISTS public.signal_analyses (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     signal_id UUID NOT NULL REFERENCES public.signals(id) ON DELETE CASCADE,
     analysis JSONB NOT NULL,
     confidence NUMERIC(3,2),
@@ -198,7 +207,7 @@ CREATE TABLE IF NOT EXISTS public.signal_analyses (
 
 -- Alerts
 CREATE TABLE IF NOT EXISTS public.alerts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     description TEXT,
@@ -219,7 +228,7 @@ CREATE TABLE IF NOT EXISTS public.alerts (
 
 -- Escalation matrices
 CREATE TABLE IF NOT EXISTS public.escalation_matrices (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
     level TEXT NOT NULL,
     sla_minutes INT NOT NULL,
@@ -231,7 +240,7 @@ CREATE TABLE IF NOT EXISTS public.escalation_matrices (
 
 -- Narrative clusters
 CREATE TABLE IF NOT EXISTS public.narrative_clusters (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     description TEXT,
@@ -249,7 +258,7 @@ CREATE TABLE IF NOT EXISTS public.narrative_clusters (
 
 -- Narrative cluster signals
 CREATE TABLE IF NOT EXISTS public.narrative_cluster_signals (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     cluster_id UUID NOT NULL REFERENCES public.narrative_clusters(id) ON DELETE CASCADE,
     signal_id UUID NOT NULL REFERENCES public.signals(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -262,7 +271,7 @@ CREATE TABLE IF NOT EXISTS public.narrative_cluster_signals (
 
 -- Reports
 CREATE TABLE IF NOT EXISTS public.reports (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     type TEXT NOT NULL,
@@ -275,7 +284,7 @@ CREATE TABLE IF NOT EXISTS public.reports (
 
 -- Report exports
 CREATE TABLE IF NOT EXISTS public.report_exports (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     report_id UUID NOT NULL REFERENCES public.reports(id) ON DELETE CASCADE,
     format TEXT NOT NULL,
     status TEXT DEFAULT 'pending',
@@ -288,7 +297,7 @@ CREATE TABLE IF NOT EXISTS public.report_exports (
 
 -- Report templates
 CREATE TABLE IF NOT EXISTS public.report_templates (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID REFERENCES public.workspaces(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     type TEXT NOT NULL,
@@ -300,7 +309,7 @@ CREATE TABLE IF NOT EXISTS public.report_templates (
 
 -- Report schedules
 CREATE TABLE IF NOT EXISTS public.report_schedules (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
     template_id UUID REFERENCES public.report_templates(id) ON DELETE SET NULL,
     name TEXT NOT NULL,
@@ -320,7 +329,7 @@ CREATE TABLE IF NOT EXISTS public.report_schedules (
 
 -- Action plans
 CREATE TABLE IF NOT EXISTS public.action_plans (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     description TEXT,
@@ -336,7 +345,7 @@ CREATE TABLE IF NOT EXISTS public.action_plans (
 
 -- Generated assets
 CREATE TABLE IF NOT EXISTS public.generated_assets (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
     action_plan_id UUID REFERENCES public.action_plans(id) ON DELETE SET NULL,
     type TEXT NOT NULL,
@@ -347,7 +356,7 @@ CREATE TABLE IF NOT EXISTS public.generated_assets (
 
 -- AI feedback
 CREATE TABLE IF NOT EXISTS public.ai_feedback (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
     action_plan_id UUID REFERENCES public.action_plans(id) ON DELETE SET NULL,
     feedback_type TEXT NOT NULL,
@@ -358,7 +367,7 @@ CREATE TABLE IF NOT EXISTS public.ai_feedback (
 
 -- AI analysis failure logs
 CREATE TABLE IF NOT EXISTS public.ai_analysis_failure_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
     signal_id UUID REFERENCES public.signals(id) ON DELETE SET NULL,
     error_type TEXT,
@@ -373,7 +382,7 @@ CREATE TABLE IF NOT EXISTS public.ai_analysis_failure_logs (
 
 -- AI visibility results
 CREATE TABLE IF NOT EXISTS public.ai_visibility_results (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
     engine TEXT NOT NULL,
     query TEXT,
@@ -384,7 +393,7 @@ CREATE TABLE IF NOT EXISTS public.ai_visibility_results (
 
 -- Prompt test runs
 CREATE TABLE IF NOT EXISTS public.prompt_test_runs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
     visibility_result_id UUID REFERENCES public.ai_visibility_results(id) ON DELETE SET NULL,
     prompt TEXT NOT NULL,
@@ -402,7 +411,7 @@ CREATE TABLE IF NOT EXISTS public.prompt_test_runs (
 
 -- Cases
 CREATE TABLE IF NOT EXISTS public.cases (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     description TEXT,
@@ -418,7 +427,7 @@ CREATE TABLE IF NOT EXISTS public.cases (
 
 -- Integrations
 CREATE TABLE IF NOT EXISTS public.integrations (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     platform TEXT NOT NULL,
@@ -431,7 +440,7 @@ CREATE TABLE IF NOT EXISTS public.integrations (
 
 -- Token usage tracking
 CREATE TABLE IF NOT EXISTS public.token_usage (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
     operation TEXT NOT NULL,
     model TEXT,
@@ -443,7 +452,7 @@ CREATE TABLE IF NOT EXISTS public.token_usage (
 
 -- App notifications
 CREATE TABLE IF NOT EXISTS public.app_notifications (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
@@ -456,7 +465,7 @@ CREATE TABLE IF NOT EXISTS public.app_notifications (
 
 -- Audit logs
 CREATE TABLE IF NOT EXISTS public.audit_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID REFERENCES public.workspaces(id) ON DELETE SET NULL,
     user_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
     event TEXT NOT NULL,
