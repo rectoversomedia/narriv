@@ -2923,6 +2923,8 @@
       "command": {
         "title": "Command Center",
         "desc": "Real-time summary from Narriv. Monitor, analyze, and take action quickly.",
+        "demoMode": "Demo Mode",
+        "demoModeDesc": "Showing sample data for demonstration purposes",
         "customize": "Customize Dashboard",
         "refresh": "Auto refresh: 30 seconds",
         "activity": "Real-time Signal Activity",

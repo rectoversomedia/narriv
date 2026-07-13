@@ -2923,6 +2923,8 @@
       "command": {
         "title": "Command Center",
         "desc": "Ringkasan real-time dari sistem Narriv. Pantau, analisis, dan ambil tindakan dengan cepat.",
+        "demoMode": "Mode Demo",
+        "demoModeDesc": "Menampilkan data contoh untuk tujuan demonstrasi",
         "customize": "Kustomisasi Dashboard",
         "refresh": "Auto refresh: 30 detik",
         "activity": "Aktivitas Sinyal Real-time",
