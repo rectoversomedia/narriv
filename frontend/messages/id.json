@@ -798,7 +798,7 @@
     "advancedSearchResults": "Hasil Pencarian Lanjutan",
     "footerSearch": "{from}-{to} dari {total} hasil"
   },
-  "Signals.advancedSearch": {
+  "advancedSearch": {
     "title": "Filter Lanjutan",
     "description": "Filter sinyal berdasarkan platform, sentimen, rentang tanggal, dan lainnya.",
     "platform": "Platform",

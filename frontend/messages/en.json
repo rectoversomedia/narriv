@@ -798,7 +798,7 @@
     "advancedSearchResults": "Advanced Search Results",
     "footerSearch": "{from}-{to} of {total} results"
   },
-  "Signals.advancedSearch": {
+  "advancedSearch": {
     "title": "Advanced Filters",
     "description": "Filter signals by platform, sentiment, date range, and more.",
     "platform": "Platform",

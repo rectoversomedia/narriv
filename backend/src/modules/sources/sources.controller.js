@@ -15,8 +15,16 @@ export const getSources = async (req, res) => {
     try {
         const userId = req.user.id;
         const workspaceIds = await getUserWorkspaceIds(userId);
+
+        if (!workspaceIds || workspaceIds.length === 0) {
+            return res.json({
+                data: [],
+                pagination: { page: 1, limit: 10, total: 0, totalPages: 0 }
+            });
+        }
+
         const page = Math.max(1, parseInt(req.query.page, 10) || 1);
-        const limit = Math.max(1, Math.min(100, parseInt(req.query.limit, 10) || 50));
+        const limit = Math.max(1, Math.min(100, parseInt(req.query.limit, 10) || 10));
         const skip = (page - 1) * limit;
         const type = req.query.type ? String(req.query.type).toLowerCase() : null;
         const isActive = req.query.isActive !== undefined ? String(req.query.isActive).toLowerCase() === "true" : null;
@@ -25,8 +33,8 @@ export const getSources = async (req, res) => {
         // Build query conditions
         let query = supabase.from('sources').select('*', { count: 'exact' });
 
-        // Filter by workspace_ids (Supabase array contains)
-        query = query.overlaps('workspace_id', workspaceIds);
+        // Filter by workspace_id - use IN for UUID array
+        query = query.in('workspace_id', workspaceIds);
 
         // Filter by type
         if (type === "deleted") {
@@ -37,8 +45,6 @@ export const getSources = async (req, res) => {
         }
         if (type) {
             query = query.eq('type', type);
-        } else {
-            query = query.neq('type', 'deleted');
         }
 
         if (isActive !== null) {
@@ -55,8 +61,8 @@ export const getSources = async (req, res) => {
         const { data: sources, count: total, error } = await query;
 
         if (error) {
-            logStructured("error", "Error fetching sources from Supabase:", { error: error?.message || error });
-            return res.status(500).json({ error: "Internal server error" });
+            logStructured("error", "Error fetching sources:", { error: error?.message || error });
+            return res.status(500).json({ error: "Failed to fetch sources" });
         }
 
         res.json({

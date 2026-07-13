@@ -64,7 +64,7 @@ export function AdvancedSearchModal({
   onApplyFilters,
   isSearching = false,
 }: AdvancedSearchModalProps) {
-  const t = useTranslations("Signals.advancedSearch");
+  const t = useTranslations("advancedSearch");
   const titleId = useId();
   const descriptionId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -431,7 +431,7 @@ interface ActiveFiltersChipsProps {
 }
 
 export function ActiveFiltersChips({ filters, onRemove, onClearAll }: ActiveFiltersChipsProps) {
-  const t = useTranslations("Signals.advancedSearch");
+  const t = useTranslations("advancedSearch");
 
   const chips: ActiveFilter[] = [];
 
