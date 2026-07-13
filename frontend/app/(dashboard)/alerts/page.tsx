@@ -26,6 +26,7 @@ import {
   Shield,
   ShieldCheck,
   SlidersHorizontal,
+  Sparkles,
   Star,
   Trash2,
   Users,
@@ -67,6 +68,7 @@ import {
   type NotificationRuleRecord,
   type NotificationRuleTrigger,
 } from "@/lib/api-service";
+import { isDemoMode, getMockAlerts } from "@/lib/demo-mock-data";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type AlertStatus = "New" | "Investigating" | "Escalated" | "Resolved";
@@ -1039,6 +1041,15 @@ export default function AlertsPage() {
   }
 
   // Members and escalation data feed live alert panels plus create/edit dropdowns.
+  const [demoMode, setDemoMode] = useState(false);
+  const [hasCheckedDemoMode, setHasCheckedDemoMode] = useState(false);
+
+  // Check demo mode on mount
+  useEffect(() => {
+    setDemoMode(isDemoMode());
+    setHasCheckedDemoMode(true);
+  }, []);
+
   const membersQuery = useQuery({
     queryKey: ["workspace-members"],
     queryFn: () => getWorkspaceMembers(),
@@ -1065,18 +1076,23 @@ export default function AlertsPage() {
     queryKey: ["alerts-summary"],
     queryFn: () => getAlertsSummary(),
     staleTime: 60 * 1000,
+    enabled: !demoMode,
   });
   const summary = summaryQuery.data ?? null;
 
   const alertsQuery = useQuery({
-    queryKey: ["alerts", { page, severity: severityFilter, status: statusFilter, search: searchQuery.trim() }],
-    queryFn: () => getAlerts({ page, limit: 10, severity: severityFilter || undefined, status: statusFilter || undefined, search: searchQuery.trim() || undefined }),
+    queryKey: ["alerts", { page, severity: severityFilter, status: statusFilter, search: searchQuery.trim(), demoMode }],
+    queryFn: () => demoMode
+      ? Promise.resolve({ data: getMockAlerts(), pagination: { page: 1, limit: 10, total: 5, totalPages: 1 } })
+      : getAlerts({ page, limit: 10, severity: severityFilter || undefined, status: statusFilter || undefined, search: searchQuery.trim() || undefined }),
     staleTime: 30 * 1000,
+    enabled: hasCheckedDemoMode,
   });
   const criticalAlertsQuery = useQuery({
     queryKey: ["alerts", "critical-delivery"],
     queryFn: () => getAlerts({ page: 1, limit: 100, severity: "critical" }),
     staleTime: 30 * 1000,
+    enabled: !demoMode,
   });
   const alertsData = alertsQuery.data;
   const escalationLevels = getDisplayEscalationRecords(escalationQuery.data, ta);
@@ -1363,7 +1379,15 @@ export default function AlertsPage() {
     : taCreate("assignedTeamPlaceholder");
 
   return (
-    <div className="mx-auto flex max-w-[1600px] flex-col gap-4 pb-6 text-[#101334]">
+    <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
+      {demoMode && (
+        <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
+          <Sparkles size={16} className="text-[#8B5CFF]" />
+          <p className="text-[13px] font-bold text-[#8B5CFF]">
+            Demo Mode — Showing sample data for demonstration purposes
+          </p>
+        </div>
+      )}
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-[31px] font-black tracking-[-0.045em] text-[#060A23]">{ta("v2.header.title")}</h1>

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useDeferredValue, useState, type ReactNode } from "react";
+import { useDeferredValue, useEffect, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { useUiStore } from "@/store/useUiStore";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -36,6 +36,7 @@ import { CreateInvestigationModal } from "./components/create-investigation-moda
 import { AdvancedSearchModal, ActiveFiltersChips } from "./components/advanced-search-modal";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton } from "@/components/dashboard/dashboard-states";
 import { getDateRangeOptions, getSignals, type PaginationInfo, type Signal, getSignalsMeta, type SignalsMeta, bulkDeleteSignals, bulkAnalyzeSignals, bulkCreateAlertsFromSignals, searchSignals, type AdvancedSearchFilters, type SearchSignalsResponse } from "@/lib/api-service";
+import { isDemoMode, getMockSignals } from "@/lib/demo-mock-data";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Sentiment = "NEGATIVE" | "POSITIVE" | "NEUTRAL" | "MIXED";
@@ -734,6 +735,16 @@ export default function SignalsPage() {
   const dateRange = getDateRangeOptions("24h");
   const queryClient = useQueryClient();
 
+  // Demo mode state
+  const [demoMode, setDemoMode] = useState(false);
+  const [hasCheckedDemoMode, setHasCheckedDemoMode] = useState(false);
+
+  // Check demo mode on mount
+  useEffect(() => {
+    setDemoMode(isDemoMode());
+    setHasCheckedDemoMode(true);
+  }, []);
+
   // Advanced search state
   const [advancedSearchFilters, setAdvancedSearchFilters] = useState<AdvancedSearchFilters>({});
   const [isAdvancedSearchActive, setIsAdvancedSearchActive] = useState(false);
@@ -806,9 +817,12 @@ export default function SignalsPage() {
     activeFilter === "mixed" ? "mixed" : undefined;
 
   const signalsQuery = useQuery({
-    queryKey: ["signals", { keyword: deferredQuery, page, sentiment: apiSentimentFilter }],
-    queryFn: () => getSignals({ page, limit: signalApiLimit, keyword: deferredQuery.trim() || undefined, sentiment: apiSentimentFilter, ...dateRange }),
+    queryKey: ["signals", { keyword: deferredQuery, page, sentiment: apiSentimentFilter, demoMode }],
+    queryFn: () => demoMode
+      ? Promise.resolve(getMockSignals())
+      : getSignals({ page, limit: signalApiLimit, keyword: deferredQuery.trim() || undefined, sentiment: apiSentimentFilter, ...dateRange }),
     staleTime: 30 * 1000,
+    enabled: hasCheckedDemoMode,
   });
 
   const handleQueryChange = (value: string) => {
@@ -897,7 +911,15 @@ export default function SignalsPage() {
       : "";
 
   return (
-    <div className="mx-auto flex max-w-[1600px] flex-col gap-4 pb-6 text-[#101334]">
+    <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
+      {demoMode && (
+        <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
+          <Sparkles size={16} className="text-[#8B5CFF]" />
+          <p className="text-[13px] font-bold text-[#8B5CFF]">
+            Demo Mode — Showing sample data for demonstration purposes
+          </p>
+        </div>
+      )}
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div><h1 className="text-[31px] font-black tracking-[-0.045em] text-[#060A23]">{t("title")}</h1><p className="mt-2 text-[14px] font-semibold text-[#68739F]">{t("subtitle")}</p></div>
         <div className="flex gap-2">

@@ -10,6 +10,7 @@ import type {
   GlobalActivitySummary,
   TrendPoint,
   LatestSignal,
+  Alert,
 } from "./api-service";
 import { dashboardMetrics, topTopics, sources } from "./mock-data";
 
@@ -165,6 +166,132 @@ export function getMockDashboardSummary(): DashboardSummary {
     mini_topics: generateMiniTopics(),
     sources_health: generateSourcesHealth(),
     system_status: ["Platform", "AI Engine", "Data Pipeline", "Integrasi", "Penyimpanan"],
+  };
+}
+
+/**
+ * Generate mock alerts for demo mode
+ */
+export function getMockAlerts(): Alert[] {
+  const now = new Date();
+  const alerts: Alert[] = [
+    {
+      id: "demo-alert-1",
+      title: "Service disruption affecting users in Southeast Asia",
+      whatHappened: "Multiple users reporting inability to access core services",
+      whyItMatters: "Affects approximately 15,000 active users in the region",
+      whatToDo: "Investigate server logs and coordinate with infrastructure team",
+      severity: "critical",
+      status: "open",
+      type: "outage",
+      assignedTo: "John Smith",
+      assignedTeam: "Infrastructure",
+      deadline: new Date(now.getTime() + 30 * 60 * 1000).toISOString(),
+      escalationLevel: "high",
+      createdAt: new Date(now.getTime() - 15 * 60 * 1000).toISOString(),
+    },
+    {
+      id: "demo-alert-2",
+      title: "New app update receives mixed reactions",
+      whatHappened: "App Store reviews showing mixed sentiment about latest release",
+      whyItMatters: "Could impact user retention and app ratings",
+      whatToDo: "Monitor sentiment and prepare response strategy",
+      severity: "medium",
+      status: "acknowledged",
+      type: "sentiment",
+      assignedTo: "Sarah Johnson",
+      assignedTeam: "Marketing",
+      deadline: new Date(now.getTime() + 4 * 60 * 60 * 1000).toISOString(),
+      escalationLevel: "medium",
+      createdAt: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: "demo-alert-3",
+      title: "Exclusive promo for loyal customers announced",
+      whatHappened: "New loyalty program generating positive buzz on social media",
+      whyItMatters: "Opportunity to capitalize on positive sentiment",
+      whatToDo: "Track engagement metrics and customer feedback",
+      severity: "low",
+      status: "open",
+      type: "campaign",
+      assignedTo: "Mike Chen",
+      assignedTeam: "Marketing",
+      createdAt: new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: "demo-alert-4",
+      title: "Security update addresses recent vulnerabilities",
+      whatHappened: "Patch deployed addressing 3 critical security vulnerabilities",
+      whyItMatters: "Essential for maintaining user trust and compliance",
+      whatToDo: "Verify all systems are patched and monitor for issues",
+      severity: "high",
+      status: "resolved",
+      type: "security",
+      assignedTo: "Alex Kumar",
+      assignedTeam: "Security",
+      createdAt: new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: "demo-alert-5",
+      title: "New privacy policy raises concerns among users",
+      whatHappened: "Users expressing concerns about data collection practices",
+      whyItMatters: "May impact user trust and regulatory compliance",
+      whatToDo: "Review policy with legal team and prepare FAQ for users",
+      severity: "medium",
+      status: "in_progress",
+      type: "compliance",
+      assignedTo: "Lisa Wong",
+      assignedTeam: "Legal",
+      deadline: new Date(now.getTime() + 8 * 60 * 60 * 1000).toISOString(),
+      escalationLevel: "medium",
+      createdAt: new Date(now.getTime() - 6 * 60 * 60 * 1000).toISOString(),
+    },
+  ];
+  return alerts;
+}
+
+/**
+ * Generate mock signals for demo mode
+ */
+export function getMockSignals() {
+  const now = new Date();
+  const signals = [];
+
+  for (let i = 0; i < 20; i++) {
+    const publishedAt = new Date(now.getTime() - i * 30 * 60 * 1000);
+    const platforms = ["Twitter", "Facebook", "Instagram", "Reddit", "News", "TikTok"];
+    const sentiments = ["positive", "neutral", "negative"];
+
+    signals.push({
+      id: `demo-sig-${i}`,
+      title: [
+        "Service disruption affecting users in Southeast Asia",
+        "New app update receives mixed reactions",
+        "Exclusive promo for loyal customers announced",
+        "Security update addresses recent vulnerabilities",
+        "Customer support response times improve significantly",
+        "App performance optimization updates released",
+        "Community guidelines update announced",
+        "New features coming in next release",
+        "Users praise improved user experience",
+        "Bug fixes address reported issues",
+      ][i % 10],
+      content: "This is a sample signal content that would normally come from social media monitoring, news aggregation, or other data sources.",
+      platform: platforms[i % platforms.length],
+      sentiment: sentiments[i % sentiments.length],
+      publishedAt: publishedAt.toISOString(),
+      capturedAt: new Date(publishedAt.getTime() - 5 * 60 * 1000).toISOString(),
+    });
+  }
+
+  return {
+    data: signals,
+    pagination: {
+      page: 1,
+      limit: 20,
+      total: 100,
+      totalPages: 5,
+    },
   };
 }
 

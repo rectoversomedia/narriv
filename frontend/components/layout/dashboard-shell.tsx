@@ -41,7 +41,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
       <div className={`flex min-h-screen flex-col transition-[padding] duration-300 ${sidebarCollapsed ? "lg:pl-[92px]" : "lg:pl-[292px]"}`}>
         <Topbar />
         <main className="flex-1 px-4 pb-32 pt-6 sm:px-6 lg:px-8 lg:pb-10">
-          <div className="relative z-10 w-full max-w-[1920px] mx-auto">{children}</div>
+          <div className="relative z-10 w-full">{children}</div>
         </main>
       </div>
     </div>
