@@ -1,14 +1,4 @@
 # Supabase CLI Configuration
-# https://supabase.com/docs/guides/cli/config
-
-version = "1.1.1"
-
-[project]
-project_id = "your-project-id"
-
-# ============================================
-# API
-# ============================================
 
 [api]
 enabled = true
@@ -17,54 +7,23 @@ schemas = ["public", "storage", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
-# ============================================
-# DB
-# ============================================
-
 [db]
 port = 54322
-major_version = 16
-
-# ============================================
-# Studio
-# ============================================
+# major_version is auto-detected
 
 [studio]
 enabled = true
 port = 54323
 api_url = "http://127.0.0.1"
 
-# ============================================
-# Inbucket (Email Testing)
-# ============================================
-
-[inbucket]
-enabled = true
-port = 54324
-smtp_port = 54325
-pop3_port = 54326
-
-# ============================================
-# Realtime
-# ============================================
-
 [realtime]
 enabled = true
-ip_version = "ipv4"
-port = 54327
+ip_version = "IPv4"
 max_header_length = 4096
-
-# ============================================
-# Storage
-# ============================================
 
 [storage]
 enabled = true
 file_size_limit = "50MiB"
-
-# ============================================
-# Auth
-# ============================================
 
 [auth]
 enabled = true
@@ -79,18 +38,9 @@ enable_signup = true
 double_confirm_changes = true
 enable_confirmations = true
 
-# Uncomment to enable email auto-confirmation
-# [auth.email.template.confirm_updat]
-# subject = "Confirm your email update"
-# content_path = "./supabase/templates/confirm_update_email.html"
-
 [auth.sms]
 enable_signup = false
 enable_confirmations = false
-
-# ============================================
-# Auth Providers
-# ============================================
 
 [auth.external.google]
 enabled = true
@@ -98,17 +48,8 @@ client_id = "your-google-client-id"
 secret = "your-google-client-secret"
 redirect_uri = "http://localhost:3000/auth/google/callback"
 
-# ============================================
-# Edge Functions
-# ============================================
-
 [edge_runtime]
 enabled = true
-port = 54325
-
-# ============================================
-# Analytics
-# ============================================
 
 [analytics]
 enabled = true

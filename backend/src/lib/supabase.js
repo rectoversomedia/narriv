@@ -21,12 +21,10 @@ const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || supabaseServiceKey;
 
 // Connection pool configuration
 const POOL_CONFIG = {
-    // Connection pool settings
     poolMin: parseInt(process.env.DB_POOL_MIN || "2", 10),
     poolMax: parseInt(process.env.DB_POOL_MAX || "20", 10),
     poolIdleTimeout: parseInt(process.env.DB_POOL_IDLE_TIMEOUT || "30000", 10),
     connectionTimeout: parseInt(process.env.DB_CONNECTION_TIMEOUT || "10000", 10),
-    // Enable prepared statement caching
     preparedStatements: process.env.DB_PREPARED_STATEMENTS !== "false",
 };
 
@@ -39,83 +37,80 @@ const connectionMetrics = {
     lastError: null,
 };
 
-// Table name mapping: snake_case (code) → PascalCase (Supabase)
+// Table name mapping: snake_case (code) → actual PostgreSQL table names
+// CRITICAL: users renamed to user_profiles to avoid conflict with Supabase auth.users
 const TABLE_MAP = {
     // Auth & Users
-    'users': 'User',
-    'refresh_tokens': 'RefreshToken',
-    'password_reset_tokens': 'PasswordResetToken',
-    'email_verification_tokens': 'EmailVerificationToken',
-    'oauth_accounts': 'OAuthAccount',
+    'users': 'user_profiles',
+    'refresh_tokens': 'refresh_tokens',
+    'password_reset_tokens': 'password_reset_tokens',
+    'email_verification_tokens': 'email_verification_tokens',
+    'oauth_accounts': 'oauth_accounts',
 
     // Workspace
-    'workspaces': 'Workspace',
-    'workspace_members': 'WorkspaceMember',
-    'workspace_settings': 'WorkspaceSettings',
-    'workspace_notification_settings': 'WorkspaceNotificationSettings',
+    'workspaces': 'workspaces',
+    'workspace_members': 'workspace_members',
+    'workspace_settings': 'workspace_settings',
+    'workspace_notification_settings': 'workspace_notification_settings',
 
     // Data Pipeline
-    'sources': 'Source',
-    'ingestion_jobs': 'IngestionJob',
-    'raw_documents': 'RawDocument',
-    'signals': 'Signal',
-    'signal_analyses': 'SignalAnalysis',
+    'sources': 'sources',
+    'ingestion_jobs': 'ingestion_jobs',
+    'raw_documents': 'raw_documents',
+    'signals': 'signals',
+    'signal_analyses': 'signal_analyses',
 
     // Core Features
-    'alerts': 'Alert',
-    'escalation_matrices': 'EscalationMatrix',
-    'narrative_clusters': 'NarrativeCluster',
-    'narrative_cluster_signals': 'NarrativeClusterSignal',
+    'alerts': 'alerts',
+    'escalation_matrices': 'escalation_matrices',
+    'narrative_clusters': 'narrative_clusters',
+    'narrative_cluster_signals': 'narrative_cluster_signals',
 
     // Reports
-    'reports': 'Report',
-    'report_exports': 'ReportExport',
-    'report_templates': 'ReportTemplate',
-    'report_schedules': 'ReportSchedule',
+    'reports': 'reports',
+    'report_exports': 'report_exports',
+    'report_templates': 'report_templates',
+    'report_schedules': 'report_schedules',
 
     // Actions
-    'action_plans': 'ActionPlan',
-    'generated_assets': 'GeneratedAsset',
-    'ai_feedback': 'AIFeedback',
-    'ai_analysis_failure_logs': 'AIAnalysisFailureLog',
+    'action_plans': 'action_plans',
+    'generated_assets': 'generated_assets',
+    'ai_feedback': 'ai_feedback',
+    'ai_analysis_failure_logs': 'ai_analysis_failure_logs',
 
     // AI Visibility
-    'ai_visibility_results': 'AIVisibilityResult',
-    'prompt_test_runs': 'PromptTestRun',
+    'ai_visibility_results': 'ai_visibility_results',
+    'prompt_test_runs': 'prompt_test_runs',
 
     // System
-    'audit_logs': 'AuditLog',
-    'cases': 'Case',
-    'integrations': 'Integration',
-    'token_usage': 'TokenUsage',
-    'app_notifications': 'AppNotification',
+    'audit_logs': 'audit_logs',
+    'cases': 'cases',
+    'integrations': 'integrations',
+    'token_usage': 'token_usage',
+    'app_notifications': 'app_notifications',
 };
 
-// Convert snake_case to PascalCase for tables
-function toPascalCase(name) {
-    if (TABLE_MAP[name]) return TABLE_MAP[name];
-    // Auto-convert: user_ids -> UserIds
-    const parts = name.split('_');
-    return parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
+// Convert camelCase to snake_case
+function camelToSnake(str) {
+    return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
 }
 
-// Create Supabase clients with connection pool settings
+// Convert snake_case to actual table name
+function toTableName(name) {
+    // First convert camelCase to snake_case
+    const snakeName = camelToSnake(name);
+    if (TABLE_MAP[snakeName]) return TABLE_MAP[snakeName];
+    // If not in map, return as-is
+    return name;
+}
+
+// Create Supabase clients
 const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
-    global: {
-        headers: {
-            "x-pool-config": JSON.stringify(POOL_CONFIG),
-        },
-    },
 });
 
 const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
     auth: { autoRefreshToken: true, persistSession: true },
-    global: {
-        headers: {
-            "x-pool-config": JSON.stringify(POOL_CONFIG),
-        },
-    },
 });
 
 // Create wrapped client that auto-converts table names
@@ -125,14 +120,19 @@ function createDbClient(base) {
             const value = target[prop];
             if (typeof value === 'function') {
                 return function(...args) {
-                    // Convert first arg (table name) from snake_case to PascalCase
+                    // Convert first arg (table name) from snake_case to actual table name
                     if (args[0] && typeof args[0] === 'string') {
+                        const originalTable = args[0];
                         // Handle objects like { from: 'table' }
                         if (args[0].from) {
-                            args[0] = { ...args[0], from: toPascalCase(args[0].from) };
+                            args[0] = { ...args[0], from: toTableName(args[0].from) };
                         } else if (!args[0].includes(' ') && !args[0].includes('(')) {
                             // Plain table name
-                            args[0] = toPascalCase(args[0]);
+                            args[0] = toTableName(args[0]);
+                        }
+                        // Debug log for user_profiles
+                        if (originalTable === 'users' || args[0] === 'user_profiles') {
+                            // Skip debug to reduce noise
                         }
                     }
                     return value.apply(target, args);
@@ -169,7 +169,7 @@ export function getPoolConfig() {
 export async function checkConnection() {
     const startTime = Date.now();
     try {
-        const { data, error } = await baseSupabaseAdmin.from('User').select('id').limit(1);
+        const { data, error } = await baseSupabaseAdmin.from('user_profiles').select('id').limit(1);
         const latency = Date.now() - startTime;
 
         connectionMetrics.total++;
@@ -204,7 +204,7 @@ export async function checkConnection() {
     }
 }
 
-// Cleanup idle connections periodically (for long-running processes)
+// Cleanup idle connections periodically
 let cleanupInterval = null;
 
 export function startConnectionCleanup(intervalMs = 60000) {
