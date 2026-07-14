@@ -2,9 +2,7 @@
 
 import { NextIntlClientProvider } from "next-intl";
 import { ReactNode, useEffect, useState } from "react";
-// @ts-ignore - next-intl v3 type mismatch with JSON imports
 import en from "@/messages/en.json";
-// @ts-ignore - next-intl v3 type mismatch with JSON imports
 import id from "@/messages/id.json";
 import { useUiStore, type AppLanguage } from "@/store/useUiStore";
 
@@ -28,8 +26,10 @@ export function IntlProvider({ children }: { children: ReactNode }) {
   const activeLang = mounted ? language : "en";
 
   return (
-    // @ts-ignore - next-intl v3 type compatibility
-    <NextIntlClientProvider locale={activeLang} messages={messages[activeLang]} timeZone="UTC">
+    <NextIntlClientProvider
+      locale={activeLang}
+      messages={messages[activeLang] as unknown as Record<string, string>}
+    >
       {children}
     </NextIntlClientProvider>
   );
