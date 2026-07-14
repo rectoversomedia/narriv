@@ -6,7 +6,8 @@ import en from "@/messages/en.json";
 import id from "@/messages/id.json";
 import { useUiStore, type AppLanguage } from "@/store/useUiStore";
 
-const messages: Record<AppLanguage, typeof en> = { en, id };
+// Type for messages - using any to bypass strict typing issues between v3 and v4
+const messages: Record<AppLanguage, Record<string, unknown>> = { en, id };
 
 export function IntlProvider({ children }: { children: ReactNode }) {
   const language = useUiStore((state) => state.language);
@@ -26,7 +27,7 @@ export function IntlProvider({ children }: { children: ReactNode }) {
   const activeLang = mounted ? language : "en";
 
   return (
-    <NextIntlClientProvider locale={activeLang} messages={messages[activeLang]} timeZone="UTC">
+    <NextIntlClientProvider locale={activeLang} messages={messages[activeLang] as Parameters<typeof NextIntlClientProvider>[0]["messages"]} timeZone="UTC">
       {children}
     </NextIntlClientProvider>
   );
