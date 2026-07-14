@@ -1,10 +1,9 @@
 {
   "version": 2,
-  "buildCommand": "cd frontend && npm run build",
+  "buildCommand": "cd frontend && npm install --include=optional && npm run build",
   "outputDirectory": "frontend/.next",
-  "installCommand": "cd frontend && npm install",
+  "installCommand": "cd frontend && npm install --include=optional",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/backend/src/index.js" }
-  ],
-  "regions": ["iad1"]
+  ]
 }
