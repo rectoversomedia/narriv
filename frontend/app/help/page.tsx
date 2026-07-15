@@ -30,6 +30,7 @@ import { videoWalkthroughs, type VideoWalkthrough } from "@/components/help/vide
 import { VideoCard, VideoScriptOutline } from "@/components/help/VideoCard";
 import { VideoPlayer } from "@/components/help/VideoPlayer";
 import { X, BookOpen } from "lucide-react";
+import { sanitizeHtml } from "@/lib/utils";
 
 const categories = [
   {
@@ -183,7 +184,8 @@ function ArticlePage({ article }: { article: Article }) {
 
         <div
           className="prose prose-slate max-w-none"
-          dangerouslySetInnerHTML={{ __html: article.content }}
+          // SECURITY: Sanitize HTML content to prevent XSS attacks
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(article.content) }}
         />
 
         <div className="mt-12 pt-8 border-t border-slate-100">

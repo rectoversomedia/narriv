@@ -315,51 +315,76 @@ export function SocialButtons() {
 
 function DemoButton() {
   const t = useTranslations("AuthDesign");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleDemoLogin = async () => {
-    // Demo mode - bypass backend and set session directly
-    const demoUser = {
-      name: "Demo User",
-      email: "demo@narriv.ai",
-      provider: "demo",
-      workspace: "Demo Workspace",
-    };
+    // SECURITY FIX: Demo mode now requires server-side authentication
+    // Direct localStorage manipulation bypasses security - we must validate at server
+    setIsLoading(true);
 
-    // Store in localStorage for persistence
-    localStorage.setItem("narriv_demo_user", JSON.stringify(demoUser));
-    localStorage.setItem("narriv_demo_token", "demo-token-" + Date.now());
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/auth/demo`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // Include cookies for session
+      });
 
-    // Also store in Zustand persist format for compatibility
-    const zustandState = {
-      state: {
-        token: "demo-token-" + Date.now(),
-        refreshToken: null,
-        user: demoUser,
-        isAuthenticated: true,
-      },
-      version: 0,
-    };
-    localStorage.setItem("narriv-auth", JSON.stringify(zustandState));
+      if (!response.ok) {
+        throw new Error("Demo login failed");
+      }
 
-    // Dispatch custom event for auth store to pick up
-    window.dispatchEvent(new CustomEvent("narriv_demo_login", { detail: demoUser }));
+      const data = await response.json();
 
-    // Redirect to dashboard with demo URL parameter (most reliable detection method)
-    window.location.href = "/?demo=true";
+      // Store auth state from server response
+      const zustandState = {
+        state: {
+          token: data.accessToken,
+          refreshToken: data.refreshToken,
+          user: data.user,
+          isAuthenticated: true,
+        },
+        version: 0,
+      };
+      localStorage.setItem("narriv-auth", JSON.stringify(zustandState));
+
+      // Dispatch custom event for auth store to pick up
+      window.dispatchEvent(new CustomEvent("narriv_demo_login", { detail: data.user }));
+
+      // Redirect to dashboard
+      window.location.href = "/?demo=true";
+    } catch (error) {
+      console.error("Demo login error:", error);
+      // Fallback to server-side demo page if API is not available
+      window.location.href = "/demo";
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <button
       type="button"
       onClick={handleDemoLogin}
-      className="relative flex h-[58px] w-full items-center justify-center gap-3 rounded-[8px] border border-[#D6DDEC] bg-gradient-to-r from-[#10B981]/10 to-[#059669]/10 text-[18px] font-semibold text-[#059669] transition hover:border-[#10B981] hover:from-[#10B981]/20 hover:to-[#059669]/20"
+      disabled={isLoading}
+      className="relative flex h-[58px] w-full items-center justify-center gap-3 rounded-[8px] border border-[#D6DDEC] bg-gradient-to-r from-[#10B981]/10 to-[#059669]/10 text-[18px] font-semibold text-[#059669] transition hover:border-[#10B981] hover:from-[#10B981]/20 hover:to-[#059669]/20 disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      <span className="absolute left-9 flex h-6 w-6 items-center justify-center">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-        </svg>
-      </span>
-      {t("social.demo") || "Try Demo"}
+      {isLoading ? (
+        <span className="absolute left-9 flex h-6 w-6 items-center justify-center">
+          <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+        </span>
+      ) : (
+        <span className="absolute left-9 flex h-6 w-6 items-center justify-center">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+          </svg>
+        </span>
+      )}
+      {isLoading ? "Loading..." : (t("social.demo") || "Try Demo")}
     </button>
   );
 }

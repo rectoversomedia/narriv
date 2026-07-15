@@ -63,9 +63,64 @@ type OnboardingContextValue = {
   updateForm: <K extends keyof OnboardingFormData>(section: K, data: OnboardingFormData[K]) => void;
   submitOnboarding: () => Promise<void>;
   isSubmitting: boolean;
+  validationErrors: Record<string, string>;
+  validateStep: (step: Step) => boolean;
 };
 
 const OnboardingContext = createContext<OnboardingContextValue | null>(null);
+
+// Validation helper functions
+function validateProfile(profile: OnboardingFormData["profile"]): string | null {
+  if (!profile.brandName?.trim()) {
+    return "Brand name is required";
+  }
+  if (profile.brandName.trim().length < 2) {
+    return "Brand name must be at least 2 characters";
+  }
+  if (!profile.industry) {
+    return "Please select an industry";
+  }
+  if (!profile.timezone) {
+    return "Please select a timezone";
+  }
+  return null;
+}
+
+function validateKeywords(keywords: string[]): string | null {
+  if (keywords.length === 0) {
+    return "Please add at least 1 keyword to monitor";
+  }
+  if (keywords.length > 50) {
+    return "Maximum 50 keywords allowed";
+  }
+  return null;
+}
+
+function validateSources(sources: OnboardingFormData["sources"]): string | null {
+  if (sources.length === 0) {
+    return "Please select at least 1 data source";
+  }
+  return null;
+}
+
+function validateStepData(step: Step, formData: OnboardingFormData): string | null {
+  switch (step) {
+    case 1:
+      return validateProfile(formData.profile);
+    case 2:
+      return validateKeywords(formData.keywords);
+    case 3:
+      return validateSources(formData.sources);
+    case 4:
+      // Notifications are optional
+      return null;
+    case 5:
+      // Preview - all data should be valid
+      return null;
+    default:
+      return null;
+  }
+}
 
 // Internal hook for use within this page only (not exported to avoid Next.js page export error)
 function useOnboardingContext() {
@@ -80,9 +135,27 @@ export default function OnboardingPage() {
   const t = useTranslations("OnboardingDesign");
   const [step, setStep] = useState<Step | "processing">(1);
   const currentStep = step === "processing" ? 5 : step;
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const validateStep = (stepToValidate: Step): boolean => {
+    const error = validateStepData(stepToValidate, formData);
+    if (error) {
+      setValidationErrors({ [stepToValidate.toString()]: error });
+      return false;
+    }
+    setValidationErrors({});
+    return true;
+  };
 
   const next = () => {
     if (step === "processing") return;
+
+    // UX FIX: Validate current step before proceeding
+    if (!validateStep(step)) {
+      return; // Don't proceed if validation fails
+    }
+
     if (step === 5) {
       setStep("processing");
       return;
@@ -110,14 +183,34 @@ export default function OnboardingPage() {
 
   const updateForm: OnboardingContextValue["updateForm"] = (section, data) => {
     setFormData(prev => ({ ...prev, [section]: data }));
+    // Clear validation error when user updates form
+    const sectionKey = section as string;
+    if (validationErrors[sectionKey]) {
+      setValidationErrors(prev => {
+        const next = { ...prev };
+        delete next[sectionKey];
+        return next;
+      });
+    }
   };
 
   const submitOnboarding = async () => {
     setIsSubmitting(true);
+    setSubmitError(null);
+
+    // Final validation before submit
+    if (formData.keywords.length === 0) {
+      setSubmitError("Please add at least 1 keyword before finishing setup");
+      setIsSubmitting(false);
+      setStep(2); // Go back to keywords step
+      return;
+    }
+
     try {
       // Step 1: Create workspace
       const workspace = await createOnboardingWorkspace(formData.profile);
       if (!workspace || !workspace.id) {
+        setSubmitError("Failed to create workspace. Please try again.");
         setIsSubmitting(false);
         setStep(5);
         return;
@@ -148,18 +241,35 @@ export default function OnboardingPage() {
         // Redirect to dashboard
         router.push("/");
       } else {
+        setSubmitError("Setup incomplete. Some features may not be available.");
         setIsSubmitting(false);
         setStep(5);
       }
     } catch (e) {
-      console.error(e);
+      // UX FIX: Provide specific error messages based on error type
+      let errorMessage = "An unexpected error occurred. Please try again.";
+      if (e instanceof Error) {
+        if (e.message.includes("network") || e.message.includes("fetch")) {
+          errorMessage = "Network error. Please check your connection and try again.";
+        } else if (e.message.includes("timeout")) {
+          errorMessage = "Request timed out. Please try again.";
+        } else if (e.message.includes("401") || e.message.includes("unauthorized")) {
+          errorMessage = "Session expired. Please log in again.";
+        } else if (e.message.includes("500") || e.message.includes("server")) {
+          errorMessage = "Server error. Please try again in a few moments.";
+        } else {
+          errorMessage = e.message;
+        }
+      }
+      console.error("Onboarding error:", e);
+      setSubmitError(errorMessage);
       setIsSubmitting(false);
       setStep(5);
     }
   };
 
   return (
-    <OnboardingContext.Provider value={{ formData, updateForm, submitOnboarding, isSubmitting }}>
+    <OnboardingContext.Provider value={{ formData, updateForm, submitOnboarding, isSubmitting, validationErrors, validateStep }}>
     <div className="min-h-screen bg-background text-foreground relative overflow-hidden selection:bg-[#465FFF]/30">
       <Particles particleCount={120} particleBaseSize={5} speed={0.06} particleColors={['#465FFF', '#8B5CFF', '#00F0FF']} />
       
@@ -1158,6 +1268,21 @@ function ProcessingScreen() {
   }, [submitOnboarding]);
 
   const t = useTranslations("OnboardingDesign.processing");
+  // UX FIX: Use animated progress instead of static 70%
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const steps = [15, 30, 50, 70, 85, 95]; // Simulated progress steps
+    let currentStep = 0;
+    const interval = setInterval(() => {
+      if (currentStep < steps.length) {
+        setProgress(steps[currentStep]);
+        currentStep++;
+      }
+    }, 800);
+    return () => clearInterval(interval);
+  }, []);
+
   const items = [[t("mineTitle"), t("mineDesc"), Search], [t("sentimentTitle"), t("sentimentDesc"), ShieldCheck], [t("insightTitle"), t("insightDesc"), BarChart3], [t("alertTitle"), t("alertDesc"), Bell]] as const;
   const summary = [[t("topics"), "6 keyword", Hash], [t("sources"), "6", Database], [t("alerts"), "4", Bell], [t("summaryTime"), t("dailyWeekly"), Clock3]] as const;
   return (
@@ -1167,17 +1292,17 @@ function ProcessingScreen() {
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="w-[300px] h-[300px] rounded-full border border-[#465FFF]/15 animate-ping" />
         </div>
-        
+
         <div className="mx-auto flex h-[200px] w-[200px] items-center justify-center rounded-full border border-dashed border-[#8B5CFF]/30 bg-slate-50 relative z-10 shadow-[0_0_20px_rgba(70,95,255,0.1)]">
           <div className="flex h-[120px] w-[120px] items-center justify-center rounded-full border border-slate-100 bg-slate-50 shadow-[0_0_30px_rgba(70,95,255,0.25)]">
             <Image src="/narriv-logo.svg" alt="Narriv" width={84} height={84} priority className="h-[84px] w-[84px] object-contain animate-pulse" />
           </div>
         </div>
-        
+
         <div className="mt-8 grid gap-5 lg:grid-cols-2 relative z-10">
           {items.map(([title, desc, Icon], i) => (
-            <div 
-              key={title} 
+            <div
+              key={title}
               className={`rounded-[12px] border border-slate-100 bg-slate-50 p-6 shadow-[0_10px_20px_rgba(0,0,0,0.3)] backdrop-blur-md ${i % 2 === 0 ? "lg:mr-28" : "lg:ml-28"} hover:border-[#465FFF]/30 transition duration-300`}
             >
               <div className="flex items-center gap-5">
@@ -1191,17 +1316,21 @@ function ProcessingScreen() {
           ))}
         </div>
       </div>
-      
+
       <h1 className="mt-12 text-center text-[32px] font-black tracking-tight text-slate-900">{t("title")}</h1>
       <p className="mt-4 max-w-[720px] text-center text-[17px] font-semibold leading-7 text-slate-400">{t("desc")}</p>
-      
+
+      {/* UX FIX: Animated progress bar instead of static 70% */}
       <div className="mt-10 flex w-full max-w-[720px] items-center gap-5">
         <div className="h-3 flex-1 overflow-hidden rounded-full bg-slate-100 border border-slate-100">
-          <div className="h-full w-[70%] rounded-full bg-gradient-to-r from-[#465FFF] to-[#8B5CFF] shadow-[0_0_10px_rgba(70,95,255,0.5)]" />
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-[#465FFF] to-[#8B5CFF] shadow-[0_0_10px_rgba(70,95,255,0.5)] transition-all duration-500 ease-out"
+            style={{ width: `${progress}%` }}
+          />
         </div>
-        <span className="text-[24px] font-black text-[#465FFF] drop-shadow-[0_0_8px_rgba(70,95,255,0.4)]">70%</span>
+        <span className="text-[24px] font-black text-[#465FFF] drop-shadow-[0_0_8px_rgba(70,95,255,0.4)]">{progress}%</span>
       </div>
-      
+
       <div className="mt-14 w-full max-w-[1060px]">
         <h2 className="mb-5 text-[14px] font-bold uppercase tracking-[0.08em] text-slate-400">{t("summaryTitle")}</h2>
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
@@ -1216,7 +1345,7 @@ function ProcessingScreen() {
           ))}
         </div>
       </div>
-      
+
       <div className="mt-8 w-full max-w-[1060px] rounded-[10px] border border-slate-100 bg-[#8B5CFF]/5 p-6">
         <div className="flex items-center gap-5">
           <Sparkles size={30} className="text-[#8B5CFF] shrink-0" />
@@ -1226,7 +1355,7 @@ function ProcessingScreen() {
           </span>
         </div>
       </div>
-      
+
       <SafetyFooter />
     </div>
   );

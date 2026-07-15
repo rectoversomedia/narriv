@@ -172,27 +172,48 @@ export function sendHeartbeat(workspaceId) {
 
 /**
  * Cleanup stale connections (no ping in 5 minutes)
+ * SECURITY FIX: More aggressive cleanup to prevent memory leaks
  */
 export function cleanupStaleConnections() {
     const staleThreshold = 5 * 60 * 1000; // 5 minutes
     const now = Date.now();
+    let totalCleaned = 0;
 
     for (const [workspaceId, workspaceConnections] of connections) {
+        const connectionsToRemove = [];
+
         for (const [connectionId, connection] of workspaceConnections) {
-            if (now - connection.lastPing.getTime() > staleThreshold) {
+            // Check if connection is actually still alive
+            const isStale = now - connection.lastPing.getTime() > staleThreshold;
+
+            if (isStale) {
+                connectionsToRemove.push(connectionId);
                 logStructured("warn", "sse_connection_stale", {
                     workspaceId,
                     connectionId,
                     lastPing: connection.lastPing,
+                    connectedAt: connection.connectedAt,
                 });
+            } else {
+                // Also check if the response stream is still writable
                 try {
-                    connection.res.write(formatSSEMessage("timeout", { message: "Connection timed out" }));
-                    connection.res.end();
+                    if (connection.res && connection.res.writableEnded) {
+                        connectionsToRemove.push(connectionId);
+                        logStructured("warn", "sse_connection_ended", {
+                            workspaceId,
+                            connectionId,
+                        });
+                    }
                 } catch {
-                    // Ignore
+                    connectionsToRemove.push(connectionId);
                 }
-                workspaceConnections.delete(connectionId);
             }
+        }
+
+        // Remove dead connections
+        for (const connectionId of connectionsToRemove) {
+            workspaceConnections.delete(connectionId);
+            totalCleaned++;
         }
 
         // Clean up empty workspace
@@ -200,11 +221,33 @@ export function cleanupStaleConnections() {
             connections.delete(workspaceId);
         }
     }
+
+    if (totalCleaned > 0) {
+        logStructured("info", "sse_cleanup_completed", {
+            cleanedConnections: totalCleaned,
+            remainingWorkspaces: connections.size,
+        });
+    }
+
+    return totalCleaned;
 }
 
-// Start periodic cleanup (every minute)
+// Start periodic cleanup (every 30 seconds - more aggressive to prevent memory leaks)
+// SECURITY FIX: Shorter interval for faster stale connection cleanup
 if (typeof setInterval !== 'undefined') {
-    setInterval(cleanupStaleConnections, 60 * 1000);
+    setInterval(cleanupStaleConnections, 30 * 1000);
+
+    // Log memory usage periodically for monitoring
+    setInterval(() => {
+        let totalConnections = 0;
+        for (const [, workspaceConnections] of connections) {
+            totalConnections += workspaceConnections.size;
+        }
+        logStructured("info", "sse_memory_stats", {
+            totalWorkspaces: connections.size,
+            totalConnections,
+        });
+    }, 5 * 60 * 1000); // Every 5 minutes
 }
 
 // Event types for documentation

@@ -132,8 +132,20 @@ function createResetCode() {
     return String(crypto.randomInt(0, 1000000)).padStart(6, "0");
 }
 
+/**
+ * SECURITY FIX: Reset secrets should NEVER be exposed in API responses.
+ * This function now always returns false to prevent account takeover via leaked reset codes.
+ * If debugging is needed, use server-side logs only.
+ */
 function shouldExposeResetSecrets() {
-    return process.env.NODE_ENV !== "production" || String(process.env.EXPOSE_RESET_SECRETS || "").toLowerCase() === "true";
+    // NEVER expose reset secrets in responses - log warning if someone tries to enable
+    if (String(process.env.EXPOSE_RESET_SECRETS || "").toLowerCase() === "true") {
+        logStructured("warn", "security_override_attempt", {
+            message: "EXPOSE_RESET_SECRETS is enabled - this should NEVER be true",
+            environment: process.env.NODE_ENV
+        });
+    }
+    return false; // Always false - secrets must never be in API responses
 }
 
 async function issueRefreshToken(user_id) {
@@ -368,12 +380,10 @@ export const login = async (req, res) => {
         // DEBUG
         logStructured("debug", "login_attempt", { email: email.toLowerCase(), hasPassword: !!user.password, user_id: user.id });
 
-        // Dev bypass for email verification
-        const isDev = process.env.NODE_ENV === "development";
-        if (!user.email_verified && !isDev) {
+        // SECURITY FIX: Email verification must ALWAYS be enforced regardless of environment
+        // Dev mode bypass has been removed to prevent account takeover in non-production environments
+        if (!user.email_verified) {
             return res.status(403).json({ error: "Email is not verified.", code: "EMAIL_NOT_VERIFIED", requireVerification: true, email: user.email });
-        } else if (!user.email_verified && isDev) {
-            logStructured("warn", "dev_bypass_email_verification", { user_id: user.id, email: user.email });
         }
 
         if (user.locked_until && new Date(user.locked_until) > new Date()) {

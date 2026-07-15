@@ -15,9 +15,26 @@ if (existsSync(envPath)) {
 }
 
 // Get environment variables
-const supabaseUrl = process.env.SUPABASE_URL || "https://placeholder.supabase.co";
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || "placeholder-key";
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || supabaseServiceKey;
+// SECURITY FIX: Required environment variables must be set - no fallback to dangerous defaults
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+
+// Validate required environment variables
+if (!supabaseUrl) {
+    throw new Error("CRITICAL: SUPABASE_URL environment variable is not set");
+}
+if (!supabaseServiceKey) {
+    throw new Error("CRITICAL: SUPABASE_SERVICE_KEY environment variable is not set");
+}
+if (!supabaseAnonKey) {
+    throw new Error("CRITICAL: SUPABASE_ANON_KEY environment variable is not set");
+}
+
+// SECURITY FIX: Never use service key as anon key fallback - this grants admin privileges to all users
+if (supabaseAnonKey === supabaseServiceKey) {
+    throw new Error("CRITICAL: SUPABASE_ANON_KEY must be different from SUPABASE_SERVICE_KEY");
+}
 
 // Connection pool configuration
 const POOL_CONFIG = {

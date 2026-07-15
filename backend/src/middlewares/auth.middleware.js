@@ -12,13 +12,16 @@ export const verifyToken = (req, res, next) => {
     const bearerHeader = req.headers["authorization"];
     if (bearerHeader) {
         token = bearerHeader.split(" ")[1];
-    } else if (req.query && req.query.token) {
-        // Deprecated: Query token is less secure, log warning
-        logStructured("warn", "query_token_used", {
+    }
+
+    // SECURITY FIX: Query string tokens are no longer supported
+    // Tokens in query strings are leaked via browser history, server logs, and referrer headers
+    if (!token && req.query && req.query.token) {
+        logStructured("warn", "query_token_rejected", {
             path: req.originalUrl || req.url,
-            ip: req.ip
+            ip: req.ip,
+            message: "Query string tokens are no longer supported. Use Authorization header."
         });
-        token = req.query.token;
     }
 
     if (!token) {

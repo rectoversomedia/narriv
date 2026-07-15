@@ -51,15 +51,20 @@ export function rateLimit(options = {}) {
 
             next();
         } catch (error) {
-            // Fail open - allow request if rate limiting fails
+            // SECURITY FIX: Fail closed - reject requests when rate limiting fails
+            // This prevents DoS attacks when the rate limiter backend is unavailable
             logStructured("error", "rate_limit_error", {
                 key,
                 error: error.message,
                 path: req.originalUrl || req.url,
             });
 
-            // Continue without rate limiting on error
-            next();
+            // Reject the request instead of allowing it through
+            return res.status(503).json({
+                error: "Service temporarily unavailable. Please try again later.",
+                code: "RATE_LIMIT_SERVICE_UNAVAILABLE",
+                retryAfter: 5, // Suggest retry in 5 seconds
+            });
         }
     };
 }
