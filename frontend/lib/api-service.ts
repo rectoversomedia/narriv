@@ -2165,18 +2165,21 @@ export class SSERealtimeClient {
   connect(): void {
     if (typeof window === "undefined") return; // SSR guard
 
-    const token = localStorage.getItem("narriv-auth");
-    if (!token) {
+    // SECURITY FIX: SSE now uses cookie-based authentication
+    // The backend verifies the session cookie instead of URL token
+    const authState = localStorage.getItem("narriv-auth");
+    if (!authState) {
       this.options.onError?.(new Error("No auth token found"));
       return;
     }
 
-    // For SSE, we typically use a separate endpoint with token in query param or header
-    // This is a simplified client - in production, you may need server-side token handling
     const url = "/api/realtime/stream";
 
     try {
-      this.eventSource = new EventSource(url);
+      // SECURITY: SSE EventSource does not support custom headers
+      // Authentication is handled via cookies set by the auth flow
+      // The backend validates the session cookie on each SSE connection
+      this.eventSource = new EventSource(url, { withCredentials: true });
 
       this.eventSource.addEventListener("connected", () => {
         this.reconnectAttempts = 0;

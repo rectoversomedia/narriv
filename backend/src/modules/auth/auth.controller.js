@@ -1203,3 +1203,86 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
     // Redirect with a short-lived one-time code instead of tokens in the URL.
     res.redirect(`${FRONTEND_URL}/oauth/callback?code=${exchangeCode}`);
 }
+
+/**
+ * Demo login endpoint - creates a temporary demo session
+ * SECURITY: This requires server-side validation instead of client-side bypass
+ */
+export const demo = async (req, res) => {
+    try {
+        // Rate limit demo endpoint to prevent abuse
+        const rateKey = `demo:${req.ip || "unknown"}`;
+        if (checkRateLimit(loginRateBucket, rateKey, 5, 60 * 1000)) {
+            return res.status(429).json({
+                error: "Too many demo login attempts. Please try again later.",
+                code: "RATE_LIMIT_EXCEEDED"
+            });
+        }
+
+        // Create demo user data (not stored in DB - temporary session)
+        const demoUserId = `demo_${crypto.randomUUID()}`;
+        const demoUser = {
+            id: demoUserId,
+            email: "demo@narriv.ai",
+            name: "Demo User",
+            provider: "demo",
+            email_verified: true, // Skip verification for demo
+        };
+
+        // Generate tokens for demo session
+        const token = jwt.sign(
+            {
+                id: demoUserId,
+                email: demoUser.email,
+                name: demoUser.name,
+                isDemo: true, // Mark as demo session
+            },
+            JWT_SECRET,
+            { expiresIn: ACCESS_TOKEN_TTL }
+        );
+
+        const refresh_token = crypto.randomBytes(48).toString("hex");
+
+        // Set HTTP-only cookie for session
+        res.cookie("narriv_demo_session", "true", {
+            httpOnly: true,
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+            maxAge: 30 * 60 * 1000, // 30 minutes demo session
+            path: "/",
+        });
+
+        // Set refresh token cookie
+        res.cookie("narriv_refresh_token", refresh_token, {
+            httpOnly: true,
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+            maxAge: 30 * 60 * 1000, // 30 minutes
+            path: "/",
+        });
+
+        logStructured("info", "demo_login", {
+            userId: demoUserId,
+            ip: req.ip,
+        });
+
+        res.json({
+            accessToken: token,
+            refreshToken: refresh_token,
+            user: {
+                id: demoUserId,
+                email: demoUser.email,
+                name: demoUser.name,
+                provider: "demo",
+                workspace: "Demo Workspace",
+                isDemo: true,
+            },
+        });
+    } catch (error) {
+        logStructured("error", "demo_login_error", {
+            error: error?.message || error,
+            ip: req.ip,
+        });
+        res.status(500).json({ error: "Demo login failed. Please try again." });
+    }
+};

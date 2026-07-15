@@ -17,6 +17,7 @@ export type AuthUser = {
   email: string;
   provider: "password" | "google" | "demo";
   workspace: string;
+  isDemo?: boolean;
 };
 
 interface AuthState {
@@ -29,7 +30,7 @@ interface AuthState {
   setUser: (user: AuthUser | null) => void;
   setSession: (token: string, user: AuthUser, refreshToken?: string | null) => void;
   logout: () => void;
-  initDemoSession: (user: AuthUser) => void;
+  initDemoSession: (user: AuthUser, accessToken: string, refreshToken?: string) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -53,10 +54,16 @@ export const useAuthStore = create<AuthState>()(
         setAuthCookie(false);
         set({ token: null, refreshToken: null, user: null, isAuthenticated: false });
       },
-      initDemoSession: (user) => {
-        const demoToken = "demo-token-" + Date.now();
+      // SECURITY FIX: initDemoSession now requires server-provided tokens
+      // Demo sessions must be validated server-side
+      initDemoSession: (user, accessToken, refreshToken) => {
         setAuthCookie(true);
-        set({ token: demoToken, refreshToken: null, user, isAuthenticated: true });
+        set({
+          token: accessToken,
+          refreshToken: refreshToken || null,
+          user,
+          isAuthenticated: true
+        });
       },
     }),
     {
@@ -65,24 +72,14 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
-// Initialize demo session listener
+// Initialize demo session listener - now receives server-validated tokens
 if (typeof window !== "undefined") {
   window.addEventListener("narriv_demo_login", ((event: CustomEvent) => {
-    const user = event.detail as AuthUser;
-    useAuthStore.getState().initDemoSession(user);
+    const { user, accessToken, refreshToken } = event.detail as {
+      user: AuthUser;
+      accessToken: string;
+      refreshToken?: string;
+    };
+    useAuthStore.getState().initDemoSession(user, accessToken, refreshToken);
   }) as EventListener);
-}
-
-// Restore demo session from localStorage on page load
-if (typeof window !== "undefined") {
-  const demoUser = localStorage.getItem("narriv_demo_user");
-  const demoToken = localStorage.getItem("narriv_demo_token");
-  if (demoUser && demoToken && !useAuthStore.getState().isAuthenticated) {
-    try {
-      const user = JSON.parse(demoUser) as AuthUser;
-      useAuthStore.getState().initDemoSession(user);
-    } catch {
-      // Invalid demo data, ignore
-    }
-  }
 }

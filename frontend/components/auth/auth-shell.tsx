@@ -332,7 +332,8 @@ function DemoButton() {
       });
 
       if (!response.ok) {
-        throw new Error("Demo login failed");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Demo login failed");
       }
 
       const data = await response.json();
@@ -349,15 +350,22 @@ function DemoButton() {
       };
       localStorage.setItem("narriv-auth", JSON.stringify(zustandState));
 
-      // Dispatch custom event for auth store to pick up
-      window.dispatchEvent(new CustomEvent("narriv_demo_login", { detail: data.user }));
+      // SECURITY FIX: Dispatch custom event WITH server-provided tokens
+      // Tokens must come from server-side validation
+      window.dispatchEvent(new CustomEvent("narriv_demo_login", {
+        detail: {
+          user: data.user,
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+        }
+      }));
 
       // Redirect to dashboard
       window.location.href = "/?demo=true";
     } catch (error) {
       console.error("Demo login error:", error);
-      // Fallback to server-side demo page if API is not available
-      window.location.href = "/demo";
+      // Show error message to user
+      alert(error instanceof Error ? error.message : "Demo login failed. Please try again.");
     } finally {
       setIsLoading(false);
     }

@@ -1,5 +1,5 @@
 import express from "express";
-import { register, login, me, refresh, logout, changePassword, forgotPassword, verifyResetCode, resetPassword, verifyEmail, resendVerification, googleAuth, googleCallback, exchangeOAuthCode } from "./auth.controller.js";
+import { register, login, me, refresh, logout, changePassword, forgotPassword, verifyResetCode, resetPassword, verifyEmail, resendVerification, googleAuth, googleCallback, exchangeOAuthCode, demo } from "./auth.controller.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
 import {
@@ -28,6 +28,9 @@ router.post("/verify-email", validateRequest({ body: verifyEmailBodySchema }), v
 router.post("/resend-verification", validateRequest({ body: resendVerificationBodySchema }), resendVerification);
 router.post("/change-password", verifyToken, validateRequest({ body: changePasswordBodySchema }), changePassword);
 router.get("/me", verifyToken, me);
+
+// Demo endpoint for demo mode - creates a temporary demo session
+router.post("/demo", demo);
 
 // OAuth Routes
 router.get("/google", googleAuth);
