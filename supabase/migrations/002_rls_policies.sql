@@ -10,7 +10,7 @@ ALTER TABLE public.refresh_tokens ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.oauth_accounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.workspaces ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.workspace_members ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.workspaces_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.workspace_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.workspaces_notification_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sources ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ingestion_jobs ENABLE ROW LEVEL SECURITY;
@@ -144,14 +144,14 @@ CREATE POLICY "Workspace admins can remove members"
 
 -- Users can view workspace settings
 CREATE POLICY "Users can view workspace settings"
-    ON public.workspaces_settings FOR SELECT
+    ON public.workspace_settings FOR SELECT
     USING (
         workspace_id IN (SELECT get_user_workspace_ids())
     );
 
 -- Workspace admins can update settings
 CREATE POLICY "Workspace admins can update settings"
-    ON public.workspaces_settings FOR UPDATE
+    ON public.workspace_settings FOR UPDATE
     USING (
         is_workspace_admin(workspace_id)
     );

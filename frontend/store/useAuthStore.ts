@@ -4,6 +4,16 @@ import { persist } from "zustand/middleware";
 const AUTH_COOKIE_NAME = "narriv-authenticated";
 const AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 
+/**
+ * Generate a cryptographically secure demo token
+ * Demo tokens are for UI testing only - they don't authenticate to the backend
+ */
+function generateDemoToken(): string {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return "demo-" + Array.from(array, byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
 function setAuthCookie(isAuthenticated: boolean) {
   if (typeof document === "undefined") return;
 
@@ -30,7 +40,7 @@ interface AuthState {
   setUser: (user: AuthUser | null) => void;
   setSession: (token: string, user: AuthUser, refreshToken?: string | null) => void;
   logout: () => void;
-  initDemoSession: (user: AuthUser, accessToken: string, refreshToken?: string) => void;
+  initDemoSession: (user: AuthUser) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -54,16 +64,11 @@ export const useAuthStore = create<AuthState>()(
         setAuthCookie(false);
         set({ token: null, refreshToken: null, user: null, isAuthenticated: false });
       },
-      // SECURITY FIX: initDemoSession now requires server-provided tokens
-      // Demo sessions must be validated server-side
-      initDemoSession: (user, accessToken, refreshToken) => {
+      initDemoSession: (user) => {
+        // Use cryptographically secure random token for demo mode
+        const demoToken = generateDemoToken();
         setAuthCookie(true);
-        set({
-          token: accessToken,
-          refreshToken: refreshToken || null,
-          user,
-          isAuthenticated: true
-        });
+        set({ token: demoToken, refreshToken: null, user, isAuthenticated: true });
       },
     }),
     {
@@ -72,14 +77,24 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
-// Initialize demo session listener - now receives server-validated tokens
+// Initialize demo session listener
 if (typeof window !== "undefined") {
   window.addEventListener("narriv_demo_login", ((event: CustomEvent) => {
-    const { user, accessToken, refreshToken } = event.detail as {
-      user: AuthUser;
-      accessToken: string;
-      refreshToken?: string;
-    };
-    useAuthStore.getState().initDemoSession(user, accessToken, refreshToken);
+    const user = event.detail as AuthUser;
+    useAuthStore.getState().initDemoSession(user);
   }) as EventListener);
+}
+
+// Restore demo session from localStorage on page load
+if (typeof window !== "undefined") {
+  const demoUser = localStorage.getItem("narriv_demo_user");
+  const demoToken = localStorage.getItem("narriv_demo_token");
+  if (demoUser && demoToken && demoToken.startsWith("demo-") && !useAuthStore.getState().isAuthenticated) {
+    try {
+      const user = JSON.parse(demoUser) as AuthUser;
+      useAuthStore.getState().initDemoSession(user);
+    } catch {
+      // Invalid demo data, ignore
+    }
+  }
 }

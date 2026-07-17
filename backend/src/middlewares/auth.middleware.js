@@ -26,7 +26,7 @@ export const verifyToken = (req, res, next) => {
 
     if (!token) {
         return res.status(401).json({
-            error: "Access token required.",
+            error: "Access token required. Include 'Authorization: Bearer <token>' header.",
             code: "MISSING_TOKEN"
         });
     }

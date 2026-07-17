@@ -2,6 +2,7 @@
  * Session Management Middleware
  *
  * Implements secure session handling with:
+ * - Redis-backed storage for horizontal scaling
  * - Session timeout
  * - Concurrent session limits
  * - Session invalidation
@@ -15,9 +16,16 @@
 
 import jwt from "jsonwebtoken";
 import { logStructured } from "../lib/logger.js";
+import redis from "../lib/redis.js";
 
-// In-memory session store (use Redis in production)
+// Redis session store (production-ready)
+const REDIS_PREFIX = "narrative:session:";
+const REDIS_SESSION_TTL = 30 * 60; // 30 minutes in seconds
+
+// In-memory fallback (only for development without Redis)
 const activeSessions = new Map();
+const useRedis = () => redis && redis.status === 'ready' && !redis.mockMode;
+
 const SESSION_CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
 // Session configuration
@@ -33,9 +41,11 @@ const SESSION_CONFIG = {
 };
 
 /**
- * Clean up expired sessions periodically
+ * Clean up expired sessions periodically (memory fallback only)
  */
 setInterval(() => {
+    if (useRedis()) return; // Redis handles expiry via TTL
+
     const now = Date.now();
     let cleaned = 0;
 
@@ -55,11 +65,156 @@ setInterval(() => {
 }, SESSION_CLEANUP_INTERVAL);
 
 /**
+ * Store session in Redis (with memory fallback)
+ */
+async function storeSession(sessionId, sessionData, ttlMs) {
+    const ttlSeconds = Math.ceil(ttlMs / 1000);
+
+    if (useRedis()) {
+        try {
+            await redis.setex(`${REDIS_PREFIX}${sessionId}`, ttlSeconds, JSON.stringify(sessionData));
+            return true;
+        } catch (error) {
+            logStructured("error", "redis_session_store_error", { sessionId, error: error.message });
+        }
+    }
+
+    // Fallback to memory
+    activeSessions.set(sessionId, {
+        ...sessionData,
+        expiresAt: Date.now() + ttlMs,
+    });
+    return true;
+}
+
+/**
+ * Get session from Redis (with memory fallback)
+ */
+async function getSession(sessionId) {
+    if (useRedis()) {
+        try {
+            const data = await redis.get(`${REDIS_PREFIX}${sessionId}`);
+            if (data) {
+                return JSON.parse(data);
+            }
+            return null;
+        } catch (error) {
+            logStructured("error", "redis_session_get_error", { sessionId, error: error.message });
+        }
+    }
+
+    // Fallback to memory
+    return activeSessions.get(sessionId) || null;
+}
+
+/**
+ * Delete session from Redis (with memory fallback)
+ */
+async function deleteSession(sessionId) {
+    if (useRedis()) {
+        try {
+            await redis.del(`${REDIS_PREFIX}${sessionId}`);
+        } catch (error) {
+            logStructured("error", "redis_session_delete_error", { sessionId, error: error.message });
+        }
+    }
+
+    activeSessions.delete(sessionId);
+}
+
+/**
+ * Invalidate all sessions for a user
+ */
+export async function invalidateUserSessions(userId) {
+    if (useRedis()) {
+        try {
+            const pattern = `${REDIS_PREFIX}*`;
+            let cursor = '0';
+            let deleted = 0;
+
+            do {
+                const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+                cursor = nextCursor;
+
+                for (const key of keys) {
+                    const data = await redis.get(key);
+                    if (data) {
+                        const session = JSON.parse(data);
+                        if (session.userId === userId) {
+                            await redis.del(key);
+                            deleted++;
+                        }
+                    }
+                }
+            } while (cursor !== '0');
+
+            logStructured("info", "sessions_invalidated_redis", { userId, deleted });
+            return deleted;
+        } catch (error) {
+            logStructured("error", "redis_session_invalidate_error", { userId, error: error.message });
+        }
+    }
+
+    // Fallback to memory
+    let deleted = 0;
+    for (const [sessionId, session] of activeSessions.entries()) {
+        if (session.userId === userId) {
+            activeSessions.delete(sessionId);
+            deleted++;
+        }
+    }
+    logStructured("info", "sessions_invalidated_memory", { userId, deleted });
+    return deleted;
+}
+
+/**
+ * Count active sessions for a user
+ */
+async function countUserSessions(userId) {
+    if (useRedis()) {
+        try {
+            const pattern = `${REDIS_PREFIX}*`;
+            let cursor = '0';
+            let count = 0;
+
+            do {
+                const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+                cursor = nextCursor;
+
+                for (const key of keys) {
+                    const data = await redis.get(key);
+                    if (data) {
+                        const session = JSON.parse(data);
+                        if (session.userId === userId && session.expiresAt > Date.now()) {
+                            count++;
+                        }
+                    }
+                }
+            } while (cursor !== '0');
+
+            return count;
+        } catch (error) {
+            logStructured("error", "redis_session_count_error", { userId, error: error.message });
+        }
+    }
+
+    // Fallback to memory
+    let count = 0;
+    for (const [, session] of activeSessions.entries()) {
+        if (session.userId === userId && session.expiresAt > Date.now()) {
+            count++;
+        }
+    }
+    return count;
+}
+
+/**
  * Session Management Middleware
  *
  * Validates session and updates activity timestamp
+ * Uses Redis for production, memory fallback for development
  */
-export function sessionManager(req, res, next) {
+export async function sessionManager(req, res, next) {
     // Skip for public routes
     if (isPublicRoute(req.path)) {
         return next();
@@ -78,30 +233,13 @@ export function sessionManager(req, res, next) {
         const decoded = verifySessionToken(token);
         const sessionId = getSessionId(req);
 
-        // Check if session exists and is valid
-        const existingSession = activeSessions.get(sessionId);
+        // Check if session exists and is valid (async)
+        const existingSession = await getSession(sessionId);
 
         if (existingSession) {
-            // Update activity timestamp
-            existingSession.lastActivity = Date.now();
-
-            // Check for concurrent session limit
-            if (!checkConcurrentSessionLimit(decoded.userId, sessionId)) {
-                logStructured("warn", "session_limit_exceeded", {
-                    userId: decoded.userId,
-                    sessionId,
-                });
-
-                return res.status(429).json({
-                    error: "Maximum concurrent sessions reached",
-                    code: "SESSION_LIMIT_EXCEEDED",
-                    message: "Please logout from another device to continue.",
-                });
-            }
-
             // Check session expiry
             if (Date.now() > existingSession.expiresAt) {
-                activeSessions.delete(sessionId);
+                await deleteSession(sessionId);
                 logStructured("info", "session_expired", {
                     userId: decoded.userId,
                     sessionId,
@@ -114,10 +252,16 @@ export function sessionManager(req, res, next) {
                 });
             }
 
+            // Update activity timestamp
+            existingSession.lastActivity = Date.now();
+
             // Extend session if needed for privileged operations
             if (req.headers["x-extend-session"] === "true") {
                 existingSession.expiresAt = Date.now() + SESSION_CONFIG.EXTENDED_TIMEOUT_MS;
             }
+
+            // Store updated session
+            await storeSession(sessionId, existingSession, existingSession.expiresAt - Date.now());
 
             // Add session info to request
             req.session = {
@@ -147,9 +291,11 @@ export function sessionManager(req, res, next) {
             };
 
             // Enforce concurrent session limit
-            if (!checkConcurrentSessionLimit(decoded.userId, sessionId)) {
+            const userSessionCount = await countUserSessions(decoded.userId);
+            if (userSessionCount >= SESSION_CONFIG.MAX_CONCURRENT_SESSIONS) {
                 logStructured("warn", "session_limit_exceeded_new", {
                     userId: decoded.userId,
+                    currentSessions: userSessionCount,
                 });
 
                 return res.status(429).json({
@@ -158,7 +304,7 @@ export function sessionManager(req, res, next) {
                 });
             }
 
-            activeSessions.set(sessionId, newSession);
+            await storeSession(sessionId, newSession, SESSION_CONFIG.DEFAULT_TIMEOUT_MS);
             req.session = {
                 id: sessionId,
                 userId: decoded.userId,
@@ -320,45 +466,28 @@ function isPublicRoute(path) {
 }
 
 /**
- * Invalidate all sessions for a user
- * Used for force logout, password change, etc.
- */
-export function invalidateUserSessions(userId) {
-    let invalidated = 0;
-
-    for (const [sessionId, session] of activeSessions.entries()) {
-        if (session.userId === userId) {
-            activeSessions.delete(sessionId);
-            invalidated++;
-        }
-    }
-
-    logStructured("info", "sessions_invalidated", {
-        userId,
-        count: invalidated,
-    });
-
-    return invalidated;
-}
-
-/**
  * Invalidate a specific session
  */
-export function invalidateSession(sessionId) {
-    const deleted = activeSessions.delete(sessionId);
-
+export async function invalidateSession(sessionId) {
+    await deleteSession(sessionId);
     logStructured("info", "session_invalidated", {
         sessionId,
-        success: deleted,
     });
-
-    return deleted;
+    return true;
 }
 
 /**
  * Get active session count
  */
-export function getActiveSessionCount() {
+export async function getActiveSessionCount() {
+    if (useRedis()) {
+        try {
+            const keys = await redis.keys(`${REDIS_PREFIX}*`);
+            return keys.length;
+        } catch {
+            return 0;
+        }
+    }
     // Clean expired first
     const now = Date.now();
     for (const [sessionId, session] of activeSessions.entries()) {
@@ -366,7 +495,6 @@ export function getActiveSessionCount() {
             activeSessions.delete(sessionId);
         }
     }
-
     return activeSessions.size;
 }
 

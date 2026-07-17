@@ -47,6 +47,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useUiStore } from "@/store/useUiStore";
+import { useToast } from "@/components/ui/toast";
 import { Particles } from "@/components/ui/particles";
 
 
@@ -133,6 +134,7 @@ type Step = 1 | 2 | 3 | 4 | 5;
 
 export default function OnboardingPage() {
   const t = useTranslations("OnboardingDesign");
+  const toast = useToast();
   const [step, setStep] = useState<Step | "processing">(1);
   const currentStep = step === "processing" ? 5 : step;
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -243,7 +245,7 @@ export default function OnboardingPage() {
       } else {
         setSubmitError("Setup incomplete. Some features may not be available.");
         setIsSubmitting(false);
-        setStep(5);
+        toast.error(t("errors.setupFailed") || "Setup failed. Please try again.");
       }
     } catch (e) {
       // UX FIX: Provide specific error messages based on error type
@@ -264,7 +266,7 @@ export default function OnboardingPage() {
       console.error("Onboarding error:", e);
       setSubmitError(errorMessage);
       setIsSubmitting(false);
-      setStep(5);
+      toast.error(t("errors.setupFailed") || "Setup failed. Please try again.");
     }
   };
 

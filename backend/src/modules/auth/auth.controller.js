@@ -129,7 +129,10 @@ function compareResetSecret(value, expectedHash) {
 }
 
 function createResetCode() {
-    return String(crypto.randomInt(0, 1000000)).padStart(6, "0");
+    // Use crypto.randomBytes for better entropy (32 bits of randomness)
+    const bytes = crypto.randomBytes(4);
+    const num = bytes.readUInt32BE(0);
+    return String(num % 1000000).padStart(6, "0");
 }
 
 /**
@@ -152,6 +155,27 @@ async function issueRefreshToken(user_id) {
     const rawToken = crypto.randomBytes(48).toString("hex");
     const token_hash = hashRefreshToken(rawToken);
     const expires_at = new Date(Date.now() + REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000);
+
+    // Limit active refresh tokens per user (max 5)
+    const MAX_REFRESH_TOKENS_PER_USER = 5;
+    const { data: existingTokens } = await supabase
+        .from("refresh_tokens")
+        .select("id")
+        .eq("user_id", user_id)
+        .is("revoked_at", null)
+        .order("created_at", { ascending: false });
+
+    if (existingTokens && existingTokens.length >= MAX_REFRESH_TOKENS_PER_USER) {
+        // Revoke oldest tokens beyond the limit
+        const tokensToRevoke = existingTokens.slice(MAX_REFRESH_TOKENS_PER_USER - 1);
+        for (const token of tokensToRevoke) {
+            await supabase
+                .from("refresh_tokens")
+                .update({ revoked_at: new Date().toISOString() })
+                .eq("id", token.id);
+        }
+        logStructured("info", "refresh_tokens_pruned", { user_id, revoked: tokensToRevoke.length });
+    }
 
     const { error } = await supabase.from("refresh_tokens").insert({
         id: crypto.randomUUID(),
@@ -290,7 +314,17 @@ export const register = async (req, res) => {
 
         // Auto-create workspace for new user
         const workspaceId = crypto.randomUUID();
-        const workspaceSlug = user.email.split("@")[0].replace(/[^a-z0-9]/gi, "-").toLowerCase();
+        // Generate safe workspace slug from email
+        let workspaceSlug = user.email.split("@")[0]
+            .replace(/[^a-z0-9]/gi, "-")
+            .toLowerCase()
+            .substring(0, 50) // Limit length
+            .replace(/^-+|-+$/g, '') // Trim leading/trailing dashes
+            .replace(/-+/g, '-'); // Collapse multiple dashes
+        // Ensure slug is not empty
+        if (!workspaceSlug || workspaceSlug.length < 3) {
+            workspaceSlug = `workspace-${user.id.substring(0, 8)}`;
+        }
         await supabase.from("workspaces").insert({
             id: workspaceId,
             name: `${user.name || "My"}'s Workspace`,
@@ -378,7 +412,7 @@ export const login = async (req, res) => {
         }
 
         // DEBUG
-        logStructured("debug", "login_attempt", { email: email.toLowerCase(), hasPassword: !!user.password, user_id: user.id });
+        logStructured("debug", "login_attempt", { email: email.toLowerCase(), user_id: user.id });
 
         // SECURITY FIX: Email verification must ALWAYS be enforced regardless of environment
         // Dev mode bypass has been removed to prevent account takeover in non-production environments
@@ -549,9 +583,27 @@ export const logout = async (req, res) => {
 export const forgotPassword = async (req, res) => {
     try {
         const email = String(req.body.email || "").trim().toLowerCase();
-        const rateKey = `password-reset:${req.ip || "unknown"}::${email}`;
+        const clientIP = req.ip || "unknown";
+        const rateKey = `password-reset:${clientIP}::${email}`;
+
+        // Check IP + email rate limit
         if (checkRateLimit(passwordResetRateBucket, rateKey, PASSWORD_RESET_MAX_ATTEMPTS, PASSWORD_RESET_WINDOW_MS)) {
             return res.status(429).json({ error: "Too many password reset attempts. Try again later." });
+        }
+
+        // Check account-level lockout for this email
+        const { data: tracking } = await supabase
+            .from("password_reset_tracking")
+            .select("*")
+            .eq("user_id", (await supabase.from("users").select("id").eq("email", email).single())?.data?.id || "not-found")
+            .single();
+
+        if (tracking?.locked_until && new Date(tracking.locked_until) > new Date()) {
+            const remainingMinutes = Math.ceil((new Date(tracking.locked_until).getTime() - Date.now()) / 60000);
+            return res.status(429).json({
+                error: `Account temporarily locked for password resets. Try again in ${remainingMinutes} minutes.`,
+                code: "RESET_LOCKED"
+            });
         }
 
         const genericResponse = {
@@ -570,8 +622,17 @@ export const forgotPassword = async (req, res) => {
         }
 
         if (!user) {
-            await writeAuditLog(null, "password_reset_requested_unknown_email", { email });
+            // Still record attempt for unknown emails to prevent enumeration
+            await writeAuditLog(null, "password_reset_requested_unknown_email", { email, ip: clientIP });
             return res.json(genericResponse);
+        }
+
+        // Check if user is already locked
+        if (tracking?.locked_until && new Date(tracking.locked_until) > new Date()) {
+            return res.status(429).json({
+                error: "Account temporarily locked for password resets. Try again later.",
+                code: "RESET_LOCKED"
+            });
         }
 
         const reset_code = createResetCode();
@@ -580,15 +641,13 @@ export const forgotPassword = async (req, res) => {
 
         // Invalidate previous unused tokens
         const now = new Date().toISOString();
-        const { error: invalidateError } = await supabase
+        await supabase
             .from("password_reset_tokens")
             .update({ usedAt: now })
             .eq("user_id", user.id)
             .is("usedAt", null);
 
-        if (invalidateError) throw invalidateError;
-
-        const { error: createError } = await supabase.from("password_reset_tokens").insert({
+        await supabase.from("password_reset_tokens").insert({
             id: crypto.randomUUID(),
             user_id: user.id,
             token_hash: hashResetSecret(resetToken),
@@ -596,9 +655,42 @@ export const forgotPassword = async (req, res) => {
             expires_at: expires_at.toISOString(),
         });
 
-        if (createError) throw createError;
+        await writeAuditLog(user.id, "password_reset_requested", { email: user.email, ip: clientIP });
 
-        await writeAuditLog(user.id, "password_reset_requested", { email: user.email });
+        // Update reset tracking
+        const RESET_LOCKOUT_ATTEMPTS = 5;
+        const RESET_LOCKOUT_MINUTES = 15;
+        const currentAttempts = (tracking?.attempt_count || 0) + 1;
+        const lockedUntil = currentAttempts >= RESET_LOCKOUT_ATTEMPTS
+            ? new Date(Date.now() + RESET_LOCKOUT_MINUTES * 60 * 1000).toISOString()
+            : null;
+
+        if (tracking) {
+            await supabase
+                .from("password_reset_tracking")
+                .update({
+                    attempt_count: currentAttempts,
+                    locked_until: lockedUntil,
+                    last_attempt_at: now,
+                    ip_address: clientIP,
+                    user_agent: req.headers["user-agent"]
+                })
+                .eq("id", tracking.id);
+        } else {
+            await supabase.from("password_reset_tracking").insert({
+                user_id: user.id,
+                attempt_count: 1,
+                locked_until: lockedUntil,
+                first_attempt_at: now,
+                last_attempt_at: now,
+                ip_address: clientIP,
+                user_agent: req.headers["user-agent"]
+            });
+        }
+
+        if (lockedUntil) {
+            logStructured("warn", "password_reset_locked", { user_id: user.id, email: user.email, attempts: currentAttempts });
+        }
 
         // Send reset code email (best-effort, never blocks response)
         const emailTemplate = passwordResetCode({
@@ -973,6 +1065,26 @@ export const changePassword = async (req, res) => {
             return res.status(400).json({ error: passwordError });
         }
 
+        // Check password history (last 5 passwords cannot be reused)
+        const { data: recentPasswords } = await supabase
+            .from("password_history")
+            .select("password_hash")
+            .eq("user_id", user_id)
+            .order("created_at", { ascending: false })
+            .limit(5);
+
+        if (recentPasswords && recentPasswords.length > 0) {
+            for (const entry of recentPasswords) {
+                if (await bcrypt.compare(newPassword, entry.password_hash)) {
+                    await writeAuditLog(user_id, "password_change_rejected", { reason: "password_reused" });
+                    return res.status(400).json({
+                        error: "Cannot reuse a recent password. Please choose a different password.",
+                        code: "PASSWORD_RECENTLY_USED"
+                    });
+                }
+            }
+        }
+
         const hashed = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
 
         const { error: updateError } = await supabase
@@ -982,8 +1094,27 @@ export const changePassword = async (req, res) => {
 
         if (updateError) throw updateError;
 
+        // Add current password to password history before hashing new one
+        await supabase
+            .from("password_history")
+            .insert({
+                user_id: user_id,
+                password_hash: user.password // Store previous password hash
+            });
+
+        // Invalidate all sessions for this user (security measure)
+        if (typeof invalidateUserSessions === 'function') {
+            await invalidateUserSessions(user_id);
+        }
+
+        // Revoke all refresh tokens for this user
+        await supabase
+            .from("refresh_tokens")
+            .update({ revoked_at: new Date().toISOString() })
+            .eq("user_id", user_id);
+
         await writeAuditLog(user_id, "password_change", { email: user.email });
-        return res.json({ success: true });
+        return res.json({ success: true, message: "Password changed. Please login again with your new password." });
     } catch (error) {
         logStructured("error", "Error changing password:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
@@ -1170,7 +1301,16 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
 
         if (!existingMembership) {
             const workspaceId = crypto.randomUUID();
-            const workspaceSlug = email.split("@")[0].replace(/[^a-z0-9]/gi, "-").toLowerCase();
+            // Generate safe workspace slug from email
+            let workspaceSlug = email.split("@")[0]
+                .replace(/[^a-z0-9]/gi, "-")
+                .toLowerCase()
+                .substring(0, 50)
+                .replace(/^-+|-+$/g, '')
+                .replace(/-+/g, '-');
+            if (!workspaceSlug || workspaceSlug.length < 3) {
+                workspaceSlug = `workspace-${user.id.substring(0, 8)}`;
+            }
             await supabase.from("workspaces").insert({
                 id: workspaceId,
                 name: `${name || "My"}'s Workspace`,

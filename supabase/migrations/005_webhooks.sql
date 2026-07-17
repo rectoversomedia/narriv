@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS public.webhook_deliveries (
 
 -- Indexes for webhooks
 CREATE INDEX IF NOT EXISTS idx_webhooks_workspace ON public.webhooks(workspace_id);
-CREATE INDEX IF NOT EXISTS idx_webhooks_active ON public.webhooks(is_active) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_webhooks_active ON public.webhooks(is_active);
 CREATE INDEX IF NOT EXISTS idx_webhooks_events ON public.webhooks USING GIN(events);
 
 -- Indexes for webhook deliveries

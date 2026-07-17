@@ -19,6 +19,7 @@ export function rateLimit(options = {}) {
         message = "Too many requests, please try again later",
         keyGenerator = (req) => req.user?.id || req.ip || "unknown",
         prefix = "default",
+        failClosed = false, // When true, blocks requests if rate limiting fails
     } = options;
 
     return async (req, res, next) => {
@@ -59,12 +60,15 @@ export function rateLimit(options = {}) {
                 path: req.originalUrl || req.url,
             });
 
-            // Reject the request instead of allowing it through
-            return res.status(503).json({
-                error: "Service temporarily unavailable. Please try again later.",
-                code: "RATE_LIMIT_SERVICE_UNAVAILABLE",
-                retryAfter: 5, // Suggest retry in 5 seconds
-            });
+            // For auth endpoints, fail closed (block requests)
+            // For others, fail open (allow requests)
+            if (failClosed) {
+                return res.status(503).json({
+                    error: "Rate limiting unavailable. Please try again later.",
+                    code: "RATE_LIMIT_UNAVAILABLE",
+                });
+            }
+            next();
         }
     };
 }
@@ -171,7 +175,7 @@ export const rateLimiters = {
     export: () => rateLimit({ ...RATE_LIMITS.export, prefix: "export" }),
     ingestion: () => rateLimit({ ...RATE_LIMITS.ingestion, prefix: "ingest" }),
     feedback: () => rateLimit({ ...RATE_LIMITS.feedback, prefix: "feedback" }),
-    auth: () => rateLimit({ ...RATE_LIMITS.auth, prefix: "auth" }),
+    auth: () => rateLimit({ ...RATE_LIMITS.auth, prefix: "auth", failClosed: true }),
     apiDefault: () => rateLimit({ ...RATE_LIMITS.api_default, prefix: "api" }),
     search: () => rateLimit({ ...RATE_LIMITS.search, prefix: "search" }),
     upload: () => rateLimit({ ...RATE_LIMITS.upload, prefix: "upload" }),
