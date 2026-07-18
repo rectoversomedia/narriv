@@ -342,7 +342,7 @@ function SummaryPoint({ color, title, text }: { color: string; title: string; te
   );
 }
 
-function ReportPreviewSidebar({ latestReport, onExportPdf, isPending }: { latestReport?: { id: string; title: string; status: string; sections?: string }; onExportPdf?: () => void; isPending?: boolean }) {
+function ReportPreviewSidebar({ latestReport, onExportPdf, isPending }: { latestReport?: { id: string; title: string; status: string; sections?: string | unknown }; onExportPdf?: () => void; isPending?: boolean }) {
   const tr = useTranslations("Reports");
 
   const reportTitle = latestReport?.title || tr("preview.executiveBrief");

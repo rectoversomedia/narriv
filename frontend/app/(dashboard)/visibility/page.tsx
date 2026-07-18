@@ -20,6 +20,7 @@ import {
   CheckCircle,
   AlertCircle,
   RefreshCcw,
+  Sparkles,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -27,6 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardErrorState, MetricRowSkeleton } from "@/components/dashboard/dashboard-states";
 import { getVisibility, getVisibilitySummary, getVisibilityTrends, getWorkspaceSettings, triggerVisibilityAnalysis, type VisibilityResponse } from "@/lib/api-service";
+import { isDemoMode, getMockVisibility } from "@/lib/demo-mock-data";
 import { useUiStore } from "@/store/useUiStore";
 import {
   OpenAILight,
@@ -487,6 +489,16 @@ export default function VisibilityPage() {
   const [isActionsModalOpen, setIsActionsModalOpen] = useState(false);
   const dateMenuRef = useRef<HTMLDivElement | null>(null);
 
+  // Demo mode state
+  const [demoMode, setDemoMode] = useState(false);
+  const [hasCheckedDemoMode, setHasCheckedDemoMode] = useState(false);
+
+  // Check demo mode on mount
+  useEffect(() => {
+    setDemoMode(isDemoMode());
+    setHasCheckedDemoMode(true);
+  }, []);
+
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dateMenuRef.current && !dateMenuRef.current.contains(e.target as Node)) setIsDateMenuOpen(false);
@@ -498,9 +510,12 @@ export default function VisibilityPage() {
   }, [isDateMenuOpen]);
 
   const visibilityQuery = useQuery({
-    queryKey: ["visibility"],
-    queryFn: () => getVisibility(),
+    queryKey: ["visibility", demoMode],
+    queryFn: () => demoMode
+      ? Promise.resolve(getMockVisibility())
+      : getVisibility(),
     staleTime: 30 * 1000,
+    enabled: hasCheckedDemoMode,
   });
   const visibilitySummaryQuery = useQuery({
     queryKey: ["visibility-summary"],
@@ -779,6 +794,16 @@ export default function VisibilityPage() {
 
   return (
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
+      {/* Demo Mode Banner */}
+      {demoMode && (
+        <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
+          <Sparkles size={16} className="text-[#8B5CFF]" />
+          <p className="text-[13px] font-bold text-[#8B5CFF]">
+            Demo Mode — Showing sample data for demonstration purposes
+          </p>
+        </div>
+      )}
+
       {/* Header section */}
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>

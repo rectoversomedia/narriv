@@ -21,7 +21,7 @@ export function toneBadge(tone: Tone) {
 
 export function AppCard({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <Card className={cn("app-card app-card-hover rounded-[12px] bg-slate-50 border border-slate-100 backdrop-blur-md transition-all duration-300", className)}>
+    <Card className={cn("app-card app-card-hover rounded-[10px] bg-slate-50/80 border border-slate-100 backdrop-blur-md transition-all duration-300", className)}>
       {children}
     </Card>
   );
@@ -73,9 +73,9 @@ export function MetricTile({ label, value, helper, icon: Icon, tone }: { label: 
   const isNegative = helper.startsWith("-");
   return (
     <AppCard>
-      <CardContent className="flex min-h-[116px] items-center gap-5 p-5">
-        <div className={cn("flex h-[56px] w-[56px] shrink-0 items-center justify-center rounded-full border border-slate-100 shadow-[0_0_10px_rgba(0,0,0,0.2)]", styles.bg, styles.text)}>
-          <Icon size={26} strokeWidth={2.1} />
+      <CardContent className="flex min-h-[96px] items-center gap-4 p-4">
+        <div className={cn("flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full border border-slate-100 shadow-[0_0_8px_rgba(0,0,0,0.15)]", styles.bg, styles.text)}>
+          <Icon size={20} strokeWidth={2.1} />
         </div>
         <div className="min-w-0 flex-1 overflow-hidden">
           <p className="text-[13px] font-bold text-slate-400 truncate">{label}</p>
@@ -93,10 +93,10 @@ export function MetricTile({ label, value, helper, icon: Icon, tone }: { label: 
 export function SectionHeader({ title, description, action, actionPlacement = "side" }: { title: string; description?: string; action?: ReactNode; actionPlacement?: "side" | "below" }) {
   if (actionPlacement === "below") {
     return (
-      <div className="mb-6 flex flex-col gap-4">
+      <div className="mb-4 flex flex-col gap-3">
         <div className="min-w-0">
-          <h2 className="text-[20px] font-bold tracking-[-0.02em] text-slate-900">{title}</h2>
-          {description ? <p className="mt-1 text-[13px] font-semibold text-slate-400">{description}</p> : null}
+          <h2 className="text-[16px] font-bold tracking-[-0.02em] text-slate-900">{title}</h2>
+          {description ? <p className="mt-1 text-[12px] font-semibold text-slate-400">{description}</p> : null}
         </div>
         {action ? <div className="flex w-full items-center">{action}</div> : null}
       </div>

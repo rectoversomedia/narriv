@@ -387,12 +387,12 @@ export default function DashboardPage() {
       )}
 
       {/* Header Section */}
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between mb-2 rounded-[12px] border border-slate-100 bg-[linear-gradient(135deg,#ffffff_0%,#f8fbff_52%,#fff7ed_100%)] p-5 shadow-[0_14px_38px_rgba(16,24,40,0.04)]">
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between mb-2 rounded-[10px] border border-slate-100 bg-[linear-gradient(135deg,#ffffff_0%,#f8fbff_52%,#fff7ed_100%)] p-4 shadow-[0_14px_38px_rgba(16,24,40,0.04)]">
         <div>
-          <h1 className="text-[34px] font-black tracking-tight text-slate-900 flex items-center gap-2">
+          <h1 className="text-[26px] font-black tracking-tight text-slate-900 flex items-center gap-2">
             {t("pages.command.title")}
           </h1>
-          <p className="mt-3 text-[15px] font-medium text-slate-400">{t("pages.command.desc")}</p>
+          <p className="mt-2 text-[13px] font-medium text-slate-400">{t("pages.command.desc")}</p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Link 
@@ -420,7 +420,7 @@ export default function DashboardPage() {
       ) : dashboardQuery.isPending ? (
         <MetricRowSkeleton count={6} />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {metricsRow.map((metric) => (
             <MetricTile
               key={metric.label}
@@ -457,11 +457,11 @@ export default function DashboardPage() {
             {activityData.length === 0 ? (
               <EmptyPanel label={t("pages.command.emptyTrends")} />
             ) : null}
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 2xl:grid-cols-6">
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 2xl:grid-cols-6">
               {miniTrends.length > 0 ? miniTrends.map((topic) => (
-                <div key={topic.label} className="rounded-[8px] border border-slate-100 bg-slate-50 p-3 transition hover:border-[#465FFF]/20">
-                  <p className="text-xs font-bold text-slate-400 truncate">{topic.label}</p>
-                  <p className="mt-2 text-lg font-black text-slate-900">{formatNumber(parseInt(topic.value.replace(/[^0-9]/g, "")) || 0)}</p>
+                <div key={topic.label} className="rounded-[6px] border border-slate-100 bg-slate-50 p-2.5 transition hover:border-[#465FFF]/20">
+                  <p className="text-[10px] font-bold text-slate-400 truncate">{topic.label}</p>
+                  <p className="mt-1 text-base font-black text-slate-900">{formatNumber(parseInt(topic.value.replace(/[^0-9]/g, "")) || 0)}</p>
                   <MiniSparkline tone={topic.tone as Tone} />
                 </div>
               )) : (

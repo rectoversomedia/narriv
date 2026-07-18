@@ -45,29 +45,29 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className={`sidebar-gradient fixed inset-y-0 left-0 z-30 hidden overflow-y-auto px-5 py-8 text-white transition-[width,padding] duration-300 lg:block ${sidebarCollapsed ? "w-[92px] px-4" : "w-[292px]"}`}>
-        <div className={`flex items-center gap-3 px-1 ${sidebarCollapsed ? "justify-center" : ""}`}>
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full">
-            <Image src={activeLogo} alt={brandName} width={64} height={64} priority unoptimized={activeLogo.startsWith("http")} className="h-16 w-16 scale-[1.28] object-contain" />
+      <aside className={`sidebar-gradient fixed inset-y-0 left-0 z-30 hidden overflow-y-auto px-4 py-6 text-white transition-[width,padding] duration-300 lg:block ${sidebarCollapsed ? "w-[72px] px-2" : "w-[240px]"}`}>
+        <div className={`flex items-center gap-2 px-1 ${sidebarCollapsed ? "justify-center" : ""}`}>
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full">
+            <Image src={activeLogo} alt={brandName} width={48} height={48} priority unoptimized={activeLogo.startsWith("http")} className="h-12 w-12 scale-[1.28] object-contain" />
           </span>
-          {sidebarCollapsed ? null : <span className="text-[33px] font-bold tracking-[-0.05em] bg-clip-text text-transparent bg-linear-to-r from-white via-white to-white/70">{brandName}</span>}
+          {sidebarCollapsed ? null : <span className="text-[24px] font-bold tracking-[-0.05em] bg-clip-text text-transparent bg-linear-to-r from-white via-white to-white/70">{brandName}</span>}
         </div>
 
         <button
           type="button"
           onClick={toggleSidebar}
-          className="absolute right-4 top-8 flex h-9 w-9 items-center justify-center rounded-[8px] border border-white/10 bg-white/4 text-white/80 transition hover:bg-white/10 hover:text-white"
+          className="absolute right-3 top-6 flex h-7 w-7 items-center justify-center rounded-[6px] border border-white/10 bg-white/4 text-white/80 transition hover:bg-white/10 hover:text-white"
           aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          {sidebarCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+          {sidebarCollapsed ? <PanelLeftOpen size={14} /> : <PanelLeftClose size={14} />}
         </button>
 
-        <nav className={`space-y-8 ${sidebarCollapsed ? "mt-10" : "mt-9"}`}>
+        <nav className={`space-y-5 ${sidebarCollapsed ? "mt-8" : "mt-6"}`}>
           {navGroups.map((group) => (
             <div key={group.key}>
-              {sidebarCollapsed ? null : <p className="px-2 text-[13px] font-semibold uppercase tracking-[0.08em] text-white/40">{t(`navGroups.${group.key}`)}</p>}
-              <div className="mt-3 grid gap-2">
+              {sidebarCollapsed ? null : <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-white/40">{t(`navGroups.${group.key}`)}</p>}
+              <div className="mt-2 grid gap-1.5">
                 {group.items.map((item) => {
                   const Icon = item.icon;
                   const active = activeRoute(pathname, item.href);
@@ -77,9 +77,9 @@ export function Sidebar() {
                       href={item.href}
                       title={t(`nav.${item.key}`)}
                       aria-label={t(`nav.${item.key}`)}
-                      className={`flex h-[52px] items-center gap-4 rounded-[8px] text-[16px] font-bold transition ${sidebarCollapsed ? "justify-center px-0" : "px-4"} ${active ? "bg-[#465FFF] text-white shadow-[0_0_15px_rgba(70,95,255,0.4)]" : "text-white/70 hover:bg-white/5"}`}
+                      className={`flex h-[40px] items-center gap-3 rounded-[6px] text-[13px] font-semibold transition ${sidebarCollapsed ? "justify-center px-0" : "px-3"} ${active ? "bg-[#465FFF] text-white shadow-[0_0_12px_rgba(70,95,255,0.4)]" : "text-white/70 hover:bg-white/5"}`}
                     >
-                      <Icon size={24} strokeWidth={2} className="shrink-0" />
+                      <Icon size={18} strokeWidth={2} className="shrink-0" />
                       {sidebarCollapsed ? null : t(`nav.${item.key}`)}
                     </Link>
                   );
@@ -89,24 +89,24 @@ export function Sidebar() {
           ))}
         </nav>
 
-        {sidebarCollapsed ? null : <div className="mt-10 rounded-[10px] border border-white/10 bg-white/2 p-5 backdrop-blur-md">
-          <div className="flex items-center justify-between text-[13px] font-semibold text-white/90">
+        {sidebarCollapsed ? null : <div className="mt-8 rounded-[8px] border border-white/10 bg-white/2 p-4 backdrop-blur-md">
+          <div className="flex items-center justify-between text-[11px] font-semibold text-white/90">
             <span>{t("sidebar.scoreTitle")}</span>
-            <span className="flex h-4 w-4 items-center justify-center rounded-full border border-white/40 text-[10px]">i</span>
+            <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full border border-white/40 text-[9px]">i</span>
           </div>
-          <div className="mt-4 flex items-end gap-1">
-            <span className="text-[42px] font-bold leading-none text-[#8B5CFF] drop-shadow-[0_0_10px_rgba(139,92,255,0.3)]">86</span>
-            <span className="pb-1 text-sm text-white/50">/100</span>
+          <div className="mt-3 flex items-end gap-1">
+            <span className="text-[32px] font-bold leading-none text-[#8B5CFF] drop-shadow-[0_0_8px_rgba(139,92,255,0.3)]">86</span>
+            <span className="pb-0.5 text-xs text-white/50">/100</span>
           </div>
-          <p className="mt-3 text-[15px] font-bold text-[#10B981]">{t("sidebar.good")}</p>
-          <p className="mt-2 text-[13px] text-white/60">{t("sidebar.scoreText")}</p>
-          <div className="mt-5 h-2 overflow-hidden rounded-full bg-white/5">
-            <div className="h-full w-[78%] rounded-full bg-linear-to-r from-[#465FFF] to-[#8B5CFF] shadow-[0_0_10px_rgba(70,95,255,0.5)]" />
+          <p className="mt-2 text-[12px] font-bold text-[#10B981]">{t("sidebar.good")}</p>
+          <p className="mt-1.5 text-[11px] text-white/60">{t("sidebar.scoreText")}</p>
+          <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/5">
+            <div className="h-full w-[78%] rounded-full bg-linear-to-r from-[#465FFF] to-[#8B5CFF] shadow-[0_0_8px_rgba(70,95,255,0.5)]" />
           </div>
         </div>}
 
-        {sidebarCollapsed ? null : <p className="mt-8 px-2 text-[13px] text-white/40">© 2026 Narriv</p>}
-        {sidebarCollapsed ? null : <p className="mt-3 px-2 text-[13px] text-white/40">All rights reserved.</p>}
+        {sidebarCollapsed ? null : <p className="mt-6 px-2 text-[11px] text-white/40">© 2026 Narriv</p>}
+        {sidebarCollapsed ? null : <p className="mt-2 px-2 text-[11px] text-white/40">All rights reserved.</p>}
       </aside>
 
       <nav className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 rounded-2xl border border-border bg-[#090D16]/90 p-1.5 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] lg:hidden">

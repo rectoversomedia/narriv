@@ -44,7 +44,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
     <div className="relative min-h-screen overflow-x-hidden bg-background text-foreground selection:bg-[#465FFF]/30">
       <Particles particleCount={150} particleBaseSize={6} speed={0.08} particleColors={["#465FFF", "#8B5CFF", "#00F0FF"]} />
       <Sidebar />
-      <div className={`flex min-h-screen flex-col transition-[padding] duration-300 ${sidebarCollapsed ? "lg:pl-[92px]" : "lg:pl-[292px]"}`}>
+      <div className={`flex min-h-screen flex-col transition-[padding] duration-300 ${sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-[240px]"}`}>
         <Topbar />
         <main className="flex-1 px-4 pb-32 pt-6 sm:px-6 lg:px-6 2xl:px-8">
           <div className="relative z-10 w-full max-w-[1600px] mx-auto">{children}</div>

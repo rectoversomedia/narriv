@@ -36,11 +36,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
 import { getNarrativeById, getNarratives, getSources, type NarrativeRecord } from "@/lib/api-service";
+import { isDemoMode, getMockNarratives } from "@/lib/demo-mock-data";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { useUiStore } from "@/store/useUiStore";
 import { useToast } from "@/components/ui/toast";
-
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type LocalizedText = { en: string; id: string };
 
@@ -504,6 +504,16 @@ export default function IntelligencePage() {
   const [isSelectedActionsOpen, setIsSelectedActionsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
+  // Demo mode state
+  const [demoMode, setDemoMode] = useState(false);
+  const [hasCheckedDemoMode, setHasCheckedDemoMode] = useState(false);
+
+  // Check demo mode on mount
+  useEffect(() => {
+    setDemoMode(isDemoMode());
+    setHasCheckedDemoMode(true);
+  }, []);
+
   const periodMenuRef = useRef<HTMLDivElement | null>(null);
   const impactMenuRef = useRef<HTMLDivElement | null>(null);
   const sentimentMenuRef = useRef<HTMLDivElement | null>(null);
@@ -538,14 +548,17 @@ export default function IntelligencePage() {
   }, [isPeriodMenuOpen, isImpactMenuOpen, isSentimentMenuOpen, isSelectedActionsOpen]);
 
   const narrativesQuery = useQuery({
-    queryKey: ["narratives", { limit: narrativeApiLimit, days: selectedPeriod.days, impact: impactFilter, sentiment: sentimentFilter }],
-    queryFn: () => getNarratives({
-      limit: narrativeApiLimit,
-      days: selectedPeriod.days,
-      impact: impactFilter === "all" ? undefined : impactFilter,
-      sentiment: sentimentFilter === "all" ? undefined : sentimentFilter,
-    }),
+    queryKey: ["narratives", { limit: narrativeApiLimit, days: selectedPeriod.days, impact: impactFilter, sentiment: sentimentFilter, demoMode }],
+    queryFn: () => demoMode
+      ? Promise.resolve(getMockNarratives())
+      : getNarratives({
+          limit: narrativeApiLimit,
+          days: selectedPeriod.days,
+          impact: impactFilter === "all" ? undefined : impactFilter,
+          sentiment: sentimentFilter === "all" ? undefined : sentimentFilter,
+        }),
     staleTime: 30 * 1000,
+    enabled: hasCheckedDemoMode,
   });
   const liveNarrativeRecords = narrativesQuery.data?.data ?? [];
   const liveClusters = liveNarrativeRecords.length > 0 ? buildNarrativeClusters(liveNarrativeRecords, { sources: (count) => ti("labels.sources", { count }), mediumPriority: ti("mediumPriorityFallback") }) : [];
@@ -661,6 +674,16 @@ export default function IntelligencePage() {
 
   return (
     <div className="flex flex-col gap-4 pb-8 text-[#101334]">
+      {/* Demo Mode Banner */}
+      {demoMode && (
+        <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
+          <Sparkles size={16} className="text-[#8B5CFF]" />
+          <p className="text-[13px] font-bold text-[#8B5CFF]">
+            Demo Mode — Showing sample data for demonstration purposes
+          </p>
+        </div>
+      )}
+
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-[32px] font-black tracking-[-0.045em] text-[#060A23]">{ti("pageTitle")}</h1>

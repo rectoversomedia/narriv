@@ -271,6 +271,7 @@ export default function PricingPage() {
               {t("annual")}
               <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-xs font-bold text-green-400">
                 <span>-20%</span>
+              </span>
             </button>
           </div>
         </div>
@@ -298,6 +299,7 @@ export default function PricingPage() {
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500 px-4 py-1.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/30">
                       <Zap size={14} />
                       <span>{t("mostPopular")}</span>
+                    </span>
                   </div>
                 )}
 
