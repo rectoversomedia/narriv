@@ -9,7 +9,7 @@ import express from "express";
 import { logStructured } from "../../lib/logger.js";
 import { supabaseAdmin } from "../../lib/supabase.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
-import { WorkspacePlan, PLAN_LIMITS } from "../../types/workspace.js";
+import { WorkspacePlan, PLAN_LIMITS } from "../../types/workspace.d.ts";
 
 const router = express.Router();
 

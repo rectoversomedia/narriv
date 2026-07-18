@@ -150,7 +150,7 @@ const mockPrisma = {
   $transaction: jest.fn(async (cb) => cb(mockPrisma)),
 };
 
-jest.unstable_mockModule('../src/prisma.js', () => ({
+jest.unstable_mockModule('../src/lib/supabase.js', () => ({
   default: mockPrisma,
 }));
 

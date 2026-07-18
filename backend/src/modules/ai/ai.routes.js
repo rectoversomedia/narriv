@@ -1,6 +1,7 @@
 import express from "express";
 import { analyzeSignal } from "./ai.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
+import { rateLimiters } from "../../middlewares/rate-limit.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
 import { analyzeBodySchema } from "./ai.module.schema.js";
 import { logStructured } from "../../lib/logger.js";
@@ -12,8 +13,9 @@ router.use(verifyToken);
  * POST /ai/analyze
  * Analyzes a signal's title + content using OpenAI.
  * Body: { title?: string, content: string }
+ * Rate limited: 20/minute
  */
-router.post("/analyze", validateRequest({ body: analyzeBodySchema }), async (req, res) => {
+router.post("/analyze", rateLimiters.aiGeneration(), validateRequest({ body: analyzeBodySchema }), async (req, res) => {
     try {
         const { title, content, text } = req.body;
         const inputContent = content || text;

@@ -6,6 +6,7 @@
 import express from "express";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { getUserWorkspaceIds } from "../../lib/workspace-access.js";
+import { rateLimiters } from "../../middlewares/rate-limit.js";
 import {
     bulkDeleteSignals,
     bulkUpdateSignals,
@@ -27,8 +28,9 @@ router.use(verifyToken);
 /**
  * POST /api/bulk/signals/delete
  * Bulk delete signals
+ * Rate limited: 20/minute
  */
-router.post("/signals/delete", async (req, res) => {
+router.post("/signals/delete", rateLimiters.apiDefault(), async (req, res) => {
     try {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
         const workspaceId = workspaceIds[0];
@@ -61,8 +63,9 @@ router.post("/signals/delete", async (req, res) => {
 /**
  * PATCH /api/bulk/signals
  * Bulk update signals (add tags, update metadata)
+ * Rate limited: 30/minute
  */
-router.patch("/signals", async (req, res) => {
+router.patch("/signals", rateLimiters.search(), async (req, res) => {
     try {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
         const workspaceId = workspaceIds[0];
@@ -103,8 +106,9 @@ router.patch("/signals", async (req, res) => {
 /**
  * POST /api/bulk/signals/analyze
  * Bulk analyze signals
+ * Rate limited: 10/minute (AI operations are expensive)
  */
-router.post("/signals/analyze", async (req, res) => {
+router.post("/signals/analyze", rateLimiters.aiGeneration(), async (req, res) => {
     try {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
         const workspaceId = workspaceIds[0];
@@ -137,8 +141,9 @@ router.post("/signals/analyze", async (req, res) => {
 /**
  * POST /api/bulk/signals/create-alerts
  * Bulk create alerts from signals
+ * Rate limited: 20/minute
  */
-router.post("/signals/create-alerts", async (req, res) => {
+router.post("/signals/create-alerts", rateLimiters.apiDefault(), async (req, res) => {
     try {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
         const workspaceId = workspaceIds[0];
@@ -171,8 +176,9 @@ router.post("/signals/create-alerts", async (req, res) => {
 /**
  * PATCH /api/bulk/alerts
  * Bulk update alerts (status, etc)
+ * Rate limited: 30/minute
  */
-router.patch("/alerts", async (req, res) => {
+router.patch("/alerts", rateLimiters.search(), async (req, res) => {
     try {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
         const workspaceId = workspaceIds[0];
@@ -213,8 +219,9 @@ router.patch("/alerts", async (req, res) => {
 /**
  * POST /api/bulk/alerts/assign
  * Bulk assign alerts
+ * Rate limited: 20/minute
  */
-router.post("/alerts/assign", async (req, res) => {
+router.post("/alerts/assign", rateLimiters.apiDefault(), async (req, res) => {
     try {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
         const workspaceId = workspaceIds[0];
@@ -255,8 +262,9 @@ router.post("/alerts/assign", async (req, res) => {
 /**
  * PATCH /api/bulk/action-plans
  * Bulk update action plans
+ * Rate limited: 20/minute
  */
-router.patch("/action-plans", async (req, res) => {
+router.patch("/action-plans", rateLimiters.apiDefault(), async (req, res) => {
     try {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
         const workspaceId = workspaceIds[0];
@@ -296,8 +304,9 @@ router.patch("/action-plans", async (req, res) => {
 /**
  * POST /api/bulk/action-plans/feedback
  * Bulk submit feedback for action plans
+ * Rate limited: 30/minute
  */
-router.post("/action-plans/feedback", async (req, res) => {
+router.post("/action-plans/feedback", rateLimiters.feedback(), async (req, res) => {
     try {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
         const workspaceId = workspaceIds[0];
@@ -337,8 +346,9 @@ router.post("/action-plans/feedback", async (req, res) => {
 /**
  * GET /api/bulk/export/signals
  * Export signals to CSV/JSON
+ * Rate limited: 10/minute (expensive operation)
  */
-router.get("/export/signals", async (req, res) => {
+router.get("/export/signals", rateLimiters.export(), async (req, res) => {
     try {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
         const workspaceId = workspaceIds[0];

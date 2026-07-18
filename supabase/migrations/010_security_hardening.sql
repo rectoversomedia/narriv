@@ -63,6 +63,12 @@ CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_expires
 -- SESSION TRACKING INDEX
 -- ============================================
 -- Add index for active sessions lookup by user
-CREATE INDEX IF NOT EXISTS idx_active_sessions
-    ON public.users(id)
-    WHERE email_verified = true;
+-- Note: email_verified column is added by migration 007b_auth_tables_patch.sql
+-- This migration should run AFTER 007b_auth_tables_patch.sql
+DO $$
+BEGIN
+    -- Only create index if the column exists
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'email_verified') THEN
+        CREATE INDEX IF NOT EXISTS idx_active_sessions ON public.users(id) WHERE email_verified = true;
+    END IF;
+END $$;

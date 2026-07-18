@@ -271,7 +271,7 @@ const mockPrisma = {
   auditLog: { create: jest.fn(async ({ data }) => ({ id: `audit-${Date.now()}`, ...data })) },
 };
 
-jest.unstable_mockModule('../src/prisma.js', () => ({
+jest.unstable_mockModule('../src/lib/supabase.js', () => ({
   default: mockPrisma,
 }));
 

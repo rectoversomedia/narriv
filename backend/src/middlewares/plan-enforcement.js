@@ -8,7 +8,7 @@
  */
 
 import { logStructured } from "../lib/logger.js";
-import { WorkspacePlan, PLAN_LIMITS } from "../types/workspace.js";
+import { WorkspacePlan, PLAN_LIMITS } from "../types/workspace.d.ts";
 
 // Feature to plan mapping
 const FEATURE_PLANS: Record<string, WorkspacePlan> = {
