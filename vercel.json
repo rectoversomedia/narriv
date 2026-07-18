@@ -21,6 +21,6 @@
     }
   ],
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://narriv-i3i8tb6tn-rectoverso-media.vercel.app/:path*" }
+    { "source": "/api/:path*", "destination": "https://narriv-3mn6akgbv-rectoverso-media.vercel.app/:path*" }
   ]
 }
