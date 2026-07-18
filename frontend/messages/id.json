@@ -3466,5 +3466,101 @@
     "event_onboarding_workspace_created": "Workspace Onboarding Dibuat",
     "event_onboarding_sources_created": "Sumber Onboarding Dibuat",
     "event_onboarding_team_invited": "Tim Onboarding Diundang"
+  },
+  "Pricing": {
+    "title": "Harga yang sederhana dan transparan",
+    "subtitle": "Pilih paket yang sesuai dengan tim kamu. Semua paket mencakup uji coba gratis 14 hari.",
+    "badge": "Paling Populer",
+    "monthly": "Bulanan",
+    "annual": "Tahunan",
+    "mostPopular": "Nilai terbaik",
+    "startTrial": "Mulai Uji Coba Gratis",
+    "contactSales": "Hubungi Sales",
+    "compareTitle": "Bandingkan Paket",
+    "compareSubtitle": "Temukan paket yang sempurna untuk kebutuhan tim kamu",
+    "faqTitle": "Pertanyaan yang Sering Diajukan",
+    "faq1": {
+      "q": "Bisakah saya mengganti paket nanti?",
+      "a": "Ya, kamu bisa upgrade atau downgrade paket kapan saja. Perubahan berlaku segera."
+    },
+    "faq2": {
+      "q": "Metode pembayaran apa yang kalian terima?",
+      "a": "Kami menerima semua kartu kredit utama, transfer bank, dan invoicing untuk paket tahunan."
+    },
+    "faq3": {
+      "q": "Apakah ada uji coba gratis?",
+      "a": "Ya! Semua paket mencakup uji coba gratis 14 hari dengan akses penuh ke semua fitur."
+    },
+    "faq4": {
+      "q": "Apa yang terjadi jika saya melebihi batas?",
+      "a": "Kami akan memberitahu kamu saat mendekati batas. Kamu bisa upgrade kapan saja untuk menghindari gangguan."
+    },
+    "faq5": {
+      "q": "Apakah kalian menawarkan paket enterprise kustom?",
+      "a": "Ya, paket Command mencakup integrasi kustom, infrastruktur khusus, dan SLA enterprise."
+    },
+    "ctaTitle": "Siap untuk memulai?",
+    "ctaSubtitle": "Bergabunglah dengan ribuan tim yang menggunakan Narriv untuk memantau dan merespons narasi.",
+    "ctaButton": "Mulai Uji Coba Gratis Kamu",
+    "terms": "Ketentuan Layanan",
+    "privacy": "Kebijakan Privasi",
+    "contact": "Hubungi Kami"
+  },
+  "HelpCenter": {
+    "searchPlaceholder": "Cari artikel bantuan...",
+    "title": "Pusat Bantuan",
+    "subtitle": "Temukan jawaban dan pelajari cara memaksimalkan Narriv",
+    "categoriesTitle": "Telusuri berdasarkan Kategori",
+    "popularTitle": "Artikel Populer",
+    "contactTitle": "Butuh bantuan lebih lanjut?",
+    "contactDescription": "Tidak menemukan yang kamu cari? Tim kami siap membantu.",
+    "contactButton": "Hubungi Dukungan",
+    "backToHelp": "Kembali ke Pusat Bantuan",
+    "wasHelpful": "Apakah artikel ini membantu?",
+    "helpful": "Ya, membantu",
+    "notHelpful": "Tidak membantu",
+    "lastUpdated": "Terakhir diperbarui",
+    "categories": {
+      "gettingStarted": "Memulai",
+      "dataSources": "Sumber Data",
+      "signals": "Sinyal & Pemantauan",
+      "alerts": "Peringatan & Notifikasi",
+      "ai": "AI & Otomatisasi",
+      "reports": "Laporan & Analitik",
+      "team": "Manajemen Tim",
+      "security": "Keamanan & Kepatuhan"
+    },
+    "topics": {
+      "quickStart": "Panduan Memulai Cepat",
+      "dashboard": "Ikhtisar Dashboard",
+      "workspaceSetup": "Menyiapkan Workspace Kamu",
+      "teamInvitation": "Mengundang Member Tim",
+      "addingSource": "Menambahkan Sumber Pertama",
+      "supportedPlatforms": "Platform yang Didukung",
+      "apifyIntegration": "Integrasi Apify",
+      "webhookSetup": "Pengaturan Webhook",
+      "whatAreSignals": "Apa itu Sinyal?",
+      "filteringSearch": "Pemfilteran & Pencarian",
+      "sentimentAnalysis": "Analisis Sentimen",
+      "exportingData": "Mengekspor Data",
+      "alertTypes": "Jenis Alert Dijelaskan",
+      "customAlerts": "Membuat Alert Kustom",
+      "escalationMatrix": "Matriks Eskalasi",
+      "notificationChannels": "Saluran Notifikasi",
+      "aiAnalysis": "Analisis Sinyal AI",
+      "actionPlans": "Menghasilkan Action Plans",
+      "narrativeClustering": "Pengelompokan Narasi",
+      "aiVisibility": "Laporan Visibilitas AI",
+      "reportTemplates": "Template Laporan",
+      "scheduledReports": "Laporan Terjadwal",
+      "customReports": "Laporan Kustom",
+      "exportFormats": "Format Export",
+      "rolesPermissions": "Peran & Izin",
+      "workspaceSettings": "Pengaturan Workspace",
+      "auditLogs": "Log Audit",
+      "dataEncryption": "Enkripsi Data",
+      "gdprCompliance": "Kepatuhan GDPR",
+      "apiSecurity": "Keamanan API"
+    }
   }
 }
