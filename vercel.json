@@ -21,6 +21,6 @@
     }
   ],
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://api.narriv.app/:path*" }
+    { "source": "/api/:path*", "destination": "https://narriv-api.vercel.app/:path*" }
   ]
 }
