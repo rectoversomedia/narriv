@@ -268,7 +268,7 @@ export function UpgradeModal({ isOpen, onClose, feature, limit, currentPlan }: U
               className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50"
             >
               Maybe Later
-            </button>>
+            </button>
             <Link
               href={`/pricing?plan=${selectedPlan}${feature ? `&feature=${feature}` : ""}${limit ? `&limit=${limit}` : ""}`}
               className="flex items-center gap-2 rounded-lg bg-[#465FFF] px-4 py-2 text-sm font-bold text-white shadow-[0_4px_12px_rgba(70,95,255,0.3)] transition hover:bg-[#3b50d8]"

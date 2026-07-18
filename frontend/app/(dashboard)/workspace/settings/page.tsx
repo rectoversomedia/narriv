@@ -42,7 +42,6 @@ import { getWorkspaceMembers, getWorkspaceSettings, updateWorkspaceSettings, cre
 import { cn } from "@/lib/utils";
 import { SubscriptionCard } from "@/components/dashboard/SubscriptionCard";
 import { UpgradeModal } from "@/components/dashboard/UpgradeModal";
-import { useState } from "react";
 
 type TeamMember = {
   name: string;

@@ -2334,12 +2334,19 @@ export interface CurrentSubscription {
     status: string;
   };
   usage: {
+    membersUsed: number;
+    membersLimit: number;
     topicsUsed: number;
     topicsLimit: number;
-    usersUsed: number;
-    usersLimit: number;
+    signalsUsed: number;
+    signalsLimit: number;
+    alertsUsed: number;
+    alertsLimit: number;
+    reportsUsed: number;
+    reportsLimit: number;
   };
   expiresAt: string | null;
+  trialEndsAt: string | null;
 }
 
 export async function getSubscriptionPlans(): Promise<{ plans: SubscriptionPlan[]; featuredPlan: PlanKey } | null> {

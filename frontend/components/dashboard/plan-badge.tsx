@@ -83,7 +83,7 @@ export function PlanUsageBar() {
     ? 0
     : (usage.topicsUsed / usage.topicsLimit) * 100;
 
-  const usersPercent = (usage.usersUsed / usage.usersLimit) * 100;
+  const usersPercent = (usage.membersUsed / usage.membersLimit) * 100;
 
   const getBarColor = (percent: number) => {
     if (percent >= 90) return "bg-red-500";
@@ -117,7 +117,7 @@ export function PlanUsageBar() {
           <div className="flex justify-between text-xs mb-1">
             <span className="text-slate-500">Team Members</span>
             <span className="text-slate-700 font-medium">
-              {usage.usersUsed} / {usage.usersLimit === -1 ? "∞" : usage.usersLimit}
+              {usage.membersUsed} / {usage.membersLimit === -1 ? "∞" : usage.membersLimit}
             </span>
           </div>
           <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
