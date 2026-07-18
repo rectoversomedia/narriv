@@ -101,11 +101,16 @@ export async function createOnboardingWorkspace(req, res) {
 
 export async function createOnboardingSources(req, res) {
     try {
-        const { sources } = req.body;
-        const workspaceId = req.body.workspaceId;
+        const { sources, workspaceId } = req.body;
 
         if (!workspaceId) {
             return badRequest(res, "workspaceId is required.", "WORKSPACE_ID_REQUIRED");
+        }
+
+        // Validate UUID format
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(workspaceId)) {
+            return badRequest(res, "Invalid workspace ID format.", "INVALID_WORKSPACE_ID");
         }
 
         const { data: membership, error: memberError } = await supabase
@@ -161,6 +166,12 @@ export async function createOnboardingNotifications(req, res) {
 
         if (!workspaceId) {
             return badRequest(res, "workspaceId is required.", "WORKSPACE_ID_REQUIRED");
+        }
+
+        // Validate UUID format
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(workspaceId)) {
+            return badRequest(res, "Invalid workspace ID format.", "INVALID_WORKSPACE_ID");
         }
 
         const { data: membership, error: memberError } = await supabase
@@ -236,6 +247,12 @@ export async function createOnboardingTeam(req, res) {
 
         if (!workspaceId) {
             return badRequest(res, "workspaceId is required.", "WORKSPACE_ID_REQUIRED");
+        }
+
+        // Validate UUID format
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(workspaceId)) {
+            return badRequest(res, "Invalid workspace ID format.", "INVALID_WORKSPACE_ID");
         }
 
         const { data: membership, error: memberError } = await supabase
@@ -370,6 +387,12 @@ export async function createOnboardingKeywords(req, res) {
             return badRequest(res, "workspaceId is required.", "WORKSPACE_ID_REQUIRED");
         }
 
+        // Validate UUID format
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(workspaceId)) {
+            return badRequest(res, "Invalid workspace ID format.", "INVALID_WORKSPACE_ID");
+        }
+
         const hasAccess = await verifyWorkspaceAccess(req.user.id, workspaceId);
         if (!hasAccess) {
             return badRequest(res, "Workspace access denied.", "WORKSPACE_ACCESS_DENIED");
@@ -416,6 +439,12 @@ export async function completeOnboarding(req, res) {
 
         if (!workspaceId) {
             return badRequest(res, "workspaceId is required.", "WORKSPACE_ID_REQUIRED");
+        }
+
+        // Validate UUID format
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(workspaceId)) {
+            return badRequest(res, "Invalid workspace ID format.", "INVALID_WORKSPACE_ID");
         }
 
         const hasAccess = await verifyWorkspaceAccess(req.user.id, workspaceId);

@@ -113,6 +113,13 @@ const TABLE_MAP = {
     'workspace_subscriptions': 'workspace_subscriptions',
     'workspace_usage': 'workspace_usage',
     'workspace_invoices': 'workspace_invoices',
+
+    // Webhooks
+    'webhooks': 'webhooks',
+    'webhook_deliveries': 'webhook_deliveries',
+
+    // Password History
+    'password_history': 'password_history',
 };
 
 // Convert camelCase to snake_case

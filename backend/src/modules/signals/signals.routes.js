@@ -7,6 +7,7 @@ import { validateRequest } from "../../middlewares/validate-request.js";
 import { createSignalBodySchema, signalIdParamsSchema } from "./signals.schema.js";
 import { logStructured } from "../../lib/logger.js";
 import { globalEvents } from "../app-notifications/app-notifications.events.js";
+import { recordAuditLog } from "../../lib/audit.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -544,6 +545,172 @@ router.post("/batch-analyze", async (req, res) => {
     } catch (error) {
         logStructured("error", "[BATCH-ANALYZE] Error:", { error: error.message?.message || error.message, stack: error.message?.stack });
         res.status(500).json({ error: error.message });
+    }
+});
+
+// PATCH /api/signals/:id - Update a signal
+router.patch("/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const workspaceIds = await getUserWorkspaceIds(req.user.id);
+
+        // Fetch signal to check ownership
+        const { data: existingSignal, error: fetchError } = await supabase
+            .from('signals')
+            .select('workspace_id')
+            .eq('id', id)
+            .single();
+
+        if (fetchError || !existingSignal) {
+            return res.status(404).json({ error: "Signal not found" });
+        }
+
+        if (!workspaceIds.includes(existingSignal.workspace_id)) {
+            return res.status(403).json({ error: "Access denied" });
+        }
+
+        // Allowed fields to update
+        const { sentiment, severity, topics, metadata } = req.body;
+        const updateData = {};
+
+        if (sentiment !== undefined) updateData.sentiment = sentiment;
+        if (severity !== undefined) updateData.severity = severity;
+        if (topics !== undefined) updateData.topics = topics;
+        if (metadata !== undefined) updateData.metadata = metadata;
+
+        if (Object.keys(updateData).length === 0) {
+            return res.status(400).json({ error: "No valid fields to update" });
+        }
+
+        const { data: updatedSignal, error: updateError } = await supabase
+            .from('signals')
+            .update(updateData)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (updateError) throw updateError;
+
+        await recordAuditLog({
+            userId: req.user.id,
+            event: "signal_updated",
+            workspaceId: existingSignal.workspace_id,
+            metadata: { signalId: id, fields: Object.keys(updateData) }
+        });
+
+        res.json(updatedSignal);
+    } catch (error) {
+        logStructured("error", "Error updating signal:", { error: error.message || error, stack: error.stack });
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// DELETE /api/signals/:id - Delete a signal
+router.delete("/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const workspaceIds = await getUserWorkspaceIds(req.user.id);
+
+        // Fetch signal to check ownership
+        const { data: existingSignal, error: fetchError } = await supabase
+            .from('signals')
+            .select('workspace_id')
+            .eq('id', id)
+            .single();
+
+        if (fetchError || !existingSignal) {
+            return res.status(404).json({ error: "Signal not found" });
+        }
+
+        if (!workspaceIds.includes(existingSignal.workspace_id)) {
+            return res.status(403).json({ error: "Access denied" });
+        }
+
+        // Delete related analyses first (if any)
+        await supabase
+            .from('signal_analyses')
+            .delete()
+            .eq('signal_id', id);
+
+        // Delete the signal
+        const { error: deleteError } = await supabase
+            .from('signals')
+            .delete()
+            .eq('id', id);
+
+        if (deleteError) throw deleteError;
+
+        await recordAuditLog({
+            userId: req.user.id,
+            event: "signal_deleted",
+            workspaceId: existingSignal.workspace_id,
+            metadata: { signalId: id }
+        });
+
+        res.json({ success: true, message: "Signal deleted" });
+    } catch (error) {
+        logStructured("error", "Error deleting signal:", { error: error.message || error, stack: error.stack });
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// DELETE /api/signals - Bulk delete signals
+router.delete("/", async (req, res) => {
+    try {
+        const { signalIds } = req.body;
+
+        if (!signalIds || !Array.isArray(signalIds) || signalIds.length === 0) {
+            return res.status(400).json({ error: "signalIds array is required" });
+        }
+
+        const workspaceIds = await getUserWorkspaceIds(req.user.id);
+
+        // Fetch signals to verify ownership
+        const { data: signalsToDelete, error: fetchError } = await supabase
+            .from('signals')
+            .select('id, workspace_id')
+            .in('id', signalIds);
+
+        if (fetchError) throw fetchError;
+
+        // Filter to only signals user owns
+        const ownedSignalIds = (signalsToDelete || [])
+            .filter(s => workspaceIds.includes(s.workspace_id))
+            .map(s => s.id);
+
+        if (ownedSignalIds.length === 0) {
+            return res.status(403).json({ error: "No signals to delete" });
+        }
+
+        // Delete related analyses first
+        await supabase
+            .from('signal_analyses')
+            .delete()
+            .in('signal_id', ownedSignalIds);
+
+        // Delete signals
+        const { error: deleteError } = await supabase
+            .from('signals')
+            .delete()
+            .in('id', ownedSignalIds);
+
+        if (deleteError) throw deleteError;
+
+        await recordAuditLog({
+            userId: req.user.id,
+            event: "signals_bulk_deleted",
+            workspaceId: ownedSignalIds.length > 0 ? (signalsToDelete || [])[0]?.workspace_id : null,
+            metadata: { signalIds: ownedSignalIds, count: ownedSignalIds.length }
+        });
+
+        res.json({
+            success: true,
+            deleted: ownedSignalIds.length,
+            message: `${ownedSignalIds.length} signals deleted`
+        });
+    } catch (error) {
+        logStructured("error", "Error bulk deleting signals:", { error: error.message || error, stack: error.stack });
+        res.status(500).json({ error: "Internal server error" });
     }
 });
 

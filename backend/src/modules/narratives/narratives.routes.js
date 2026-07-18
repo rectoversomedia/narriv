@@ -4,6 +4,7 @@ import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { compareClusterPeriods } from "../clustering/clustering.service.js";
 import { logStructured } from "../../lib/logger.js";
+import { recordAuditLog } from "../../lib/audit.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -214,6 +215,168 @@ router.get("/:id", async (req, res) => {
         });
     } catch (error) {
         logStructured("error", "Error fetching narrative:", { error: error?.message || error, stack: error?.stack });
+        return res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// POST /api/narratives - Create a new narrative cluster
+router.post("/", async (req, res) => {
+    try {
+        const { title, description, workspaceId, priority, keywords } = req.body;
+
+        if (!title || !title.trim()) {
+            return res.status(400).json({ error: "title is required" });
+        }
+
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
+        if (!scopedWorkspaceId) {
+            return res.status(403).json({ error: "Workspace access denied" });
+        }
+
+        const { data: cluster, error } = await supabase
+            .from("narrative_clusters")
+            .insert({
+                workspace_id: scopedWorkspaceId,
+                title: title.trim(),
+                description: description || null,
+                priority: priority || "MEDIUM",
+                keywords: keywords || [],
+                signal_count: 0,
+                velocity: 0,
+                impact: "MEDIUM",
+                lifecycle: "active",
+            })
+            .select()
+            .single();
+
+        if (error) {
+            logStructured("error", "Error creating narrative:", { error: error.message || error });
+            return res.status(500).json({ error: "Internal server error" });
+        }
+
+        await recordAuditLog({
+            userId: req.user.id,
+            event: "narrative_created",
+            workspaceId: scopedWorkspaceId,
+            metadata: { clusterId: cluster.id, title: cluster.title }
+        });
+
+        return res.status(201).json(toNarrativeItem(cluster));
+    } catch (error) {
+        logStructured("error", "Error creating narrative:", { error: error?.message || error, stack: error?.stack });
+        return res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// PATCH /api/narratives/:id - Update a narrative cluster
+router.patch("/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { title, description, priority, impact, lifecycle, keywords } = req.body;
+
+        // Fetch existing cluster
+        const { data: existing, error: fetchError } = await supabase
+            .from("narrative_clusters")
+            .select("workspace_id")
+            .eq("id", id)
+            .single();
+
+        if (fetchError || !existing) {
+            return res.status(404).json({ error: "Narrative cluster not found" });
+        }
+
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, existing.workspace_id);
+        if (!scopedWorkspaceId) {
+            return res.status(403).json({ error: "Workspace access denied" });
+        }
+
+        // Build update object
+        const updateData = {};
+        if (title !== undefined) updateData.title = title.trim();
+        if (description !== undefined) updateData.description = description;
+        if (priority !== undefined) updateData.priority = priority;
+        if (impact !== undefined) updateData.impact = impact;
+        if (lifecycle !== undefined) updateData.lifecycle = lifecycle;
+        if (keywords !== undefined) updateData.keywords = keywords;
+
+        if (Object.keys(updateData).length === 0) {
+            return res.status(400).json({ error: "No valid fields to update" });
+        }
+
+        const { data: cluster, error } = await supabase
+            .from("narrative_clusters")
+            .update(updateData)
+            .eq("id", id)
+            .select()
+            .single();
+
+        if (error) {
+            logStructured("error", "Error updating narrative:", { error: error.message || error });
+            return res.status(500).json({ error: "Internal server error" });
+        }
+
+        await recordAuditLog({
+            userId: req.user.id,
+            event: "narrative_updated",
+            workspaceId: scopedWorkspaceId,
+            metadata: { clusterId: id, fields: Object.keys(updateData) }
+        });
+
+        return res.json(toNarrativeItem(cluster));
+    } catch (error) {
+        logStructured("error", "Error updating narrative:", { error: error?.message || error, stack: error?.stack });
+        return res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// DELETE /api/narratives/:id - Delete a narrative cluster
+router.delete("/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Fetch existing cluster
+        const { data: existing, error: fetchError } = await supabase
+            .from("narrative_clusters")
+            .select("workspace_id")
+            .eq("id", id)
+            .single();
+
+        if (fetchError || !existing) {
+            return res.status(404).json({ error: "Narrative cluster not found" });
+        }
+
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, existing.workspace_id);
+        if (!scopedWorkspaceId) {
+            return res.status(403).json({ error: "Workspace access denied" });
+        }
+
+        // Delete cluster signals first
+        await supabase
+            .from("narrative_cluster_signals")
+            .delete()
+            .eq("cluster_id", id);
+
+        // Delete cluster
+        const { error } = await supabase
+            .from("narrative_clusters")
+            .delete()
+            .eq("id", id);
+
+        if (error) {
+            logStructured("error", "Error deleting narrative:", { error: error.message || error });
+            return res.status(500).json({ error: "Internal server error" });
+        }
+
+        await recordAuditLog({
+            userId: req.user.id,
+            event: "narrative_deleted",
+            workspaceId: scopedWorkspaceId,
+            metadata: { clusterId: id }
+        });
+
+        return res.json({ success: true, message: "Narrative cluster deleted" });
+    } catch (error) {
+        logStructured("error", "Error deleting narrative:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
     }
 });

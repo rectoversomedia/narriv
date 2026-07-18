@@ -243,7 +243,7 @@ export default function PricingPage() {
         <div className="relative z-10 mx-auto max-w-5xl text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur-sm mb-6">
             <Sparkles size={16} />
-            {t("badge")}
+            <span>{t("badge")}</span>
           </div>
           <h1 className="text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl">{t("title")}</h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-300 sm:text-xl">{t("subtitle")}</p>
@@ -270,8 +270,7 @@ export default function PricingPage() {
             >
               {t("annual")}
               <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-xs font-bold text-green-400">
-                -20%
-              </span>
+                <span>-20%</span>
             </button>
           </div>
         </div>
@@ -298,8 +297,7 @@ export default function PricingPage() {
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500 px-4 py-1.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/30">
                       <Zap size={14} />
-                      {t("mostPopular")}
-                    </span>
+                      <span>{t("mostPopular")}</span>
                   </div>
                 )}
 
@@ -318,7 +316,7 @@ export default function PricingPage() {
                 {/* Price */}
                 <div className="mt-6 text-center">
                   {isCustom ? (
-                    <div className="text-3xl font-black text-slate-900">Custom</div>
+                    <div className="text-3xl font-black text-slate-900"><span>Custom</span></div>
                   ) : (
                     <>
                       <div className="text-4xl font-black text-slate-900">
@@ -326,9 +324,7 @@ export default function PricingPage() {
                         <span className="text-base font-normal text-slate-400">/{plan.period}</span>
                       </div>
                       {billingPeriod === "annual" && (
-                        <p className="mt-1 text-sm text-green-600 font-medium">
-                          Save {formatPrice(plan.price - price)}/bulan
-                        </p>
+                        <span>Save {formatPrice(plan.price - price)}/bulan</span>
                       )}
                     </>
                   )}

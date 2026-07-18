@@ -10,9 +10,9 @@ CREATE TABLE IF NOT EXISTS public.password_history (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     password_hash TEXT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-CREATE INDEX IF NOT EXISTS idx_password_history_user ON public.password_history(user_id);
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
+CREATE INDEX IF NOT EXISTS idx_password_history_user ON public.password_history(user_id);
 
 -- RLS for password history
 ALTER TABLE public.password_history ENABLE ROW LEVEL SECURITY;
@@ -62,7 +62,7 @@ CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_expires
 -- ============================================
 -- SESSION TRACKING INDEX
 -- ============================================
--- Add index for session lookup by user
+-- Add index for active sessions lookup by user
 CREATE INDEX IF NOT EXISTS idx_active_sessions
     ON public.users(id)
     WHERE email_verified = true;

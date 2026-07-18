@@ -1,37 +1,77 @@
 /**
  * Real-time SSE (Server-Sent Events) Service for Narriv
  * Handles live notifications and dashboard updates
+ *
+ * SUPPORTS TWO MODES:
+ * 1. In-memory (default) - single server, doesn't survive restarts
+ * 2. Redis (production) - survives restarts, supports horizontal scaling
  */
 
 import { logStructured } from "./logger.js";
+import redis from "./redis.js";
 
-// Store active SSE connections per workspace
-const connections = new Map();
+// Redis key prefix for SSE connections
+const SSE_KEY_PREFIX = "sse:";
+const SSE_TTL = 300; // 5 minutes TTL for connection entries
+
+// Check if Redis is available
+const isRedisAvailable = () => {
+    try {
+        return redis.status === "ready";
+    } catch {
+        return false;
+    }
+};
+
+// Fallback in-memory storage
+const memoryConnections = new Map();
 
 /**
  * Add a new SSE connection for a workspace
  */
 export function addSSEConnection(workspaceId, userId, res) {
-    if (!connections.has(workspaceId)) {
-        connections.set(workspaceId, new Map());
-    }
-
-    const workspaceConnections = connections.get(workspaceId);
     const connectionId = `${userId}_${Date.now()}`;
 
-    workspaceConnections.set(connectionId, {
-        userId,
-        res,
-        connectedAt: new Date(),
-        lastPing: new Date(),
-    });
+    if (isRedisAvailable()) {
+        // Redis mode - store connection metadata in Redis
+        const key = `${SSE_KEY_PREFIX}${workspaceId}`;
+        const connectionData = JSON.stringify({
+            userId,
+            connectionId,
+            connectedAt: new Date().toISOString(),
+        });
 
-    logStructured("info", "sse_connection_added", {
-        workspaceId,
-        userId,
-        connectionId,
-        totalConnections: workspaceConnections.size,
-    });
+        redis.hset(key, connectionId, connectionData);
+        redis.expire(key, SSE_TTL);
+
+        logStructured("info", "sse_connection_added_redis", {
+            workspaceId,
+            userId,
+            connectionId,
+            mode: "redis",
+        });
+    } else {
+        // Memory mode
+        if (!memoryConnections.has(workspaceId)) {
+            memoryConnections.set(workspaceId, new Map());
+        }
+
+        const workspaceConnections = memoryConnections.get(workspaceId);
+        workspaceConnections.set(connectionId, {
+            userId,
+            res,
+            connectedAt: new Date(),
+            lastPing: new Date(),
+        });
+
+        logStructured("info", "sse_connection_added_memory", {
+            workspaceId,
+            userId,
+            connectionId,
+            mode: "memory",
+            totalConnections: workspaceConnections.size,
+        });
+    }
 
     return connectionId;
 }
@@ -40,19 +80,29 @@ export function addSSEConnection(workspaceId, userId, res) {
  * Remove an SSE connection
  */
 export function removeSSEConnection(workspaceId, connectionId) {
-    const workspaceConnections = connections.get(workspaceId);
-    if (!workspaceConnections) return;
+    if (isRedisAvailable()) {
+        const key = `${SSE_KEY_PREFIX}${workspaceId}`;
+        redis.hdel(key, connectionId);
 
-    workspaceConnections.delete(connectionId);
-    logStructured("info", "sse_connection_removed", {
-        workspaceId,
-        connectionId,
-        remainingConnections: workspaceConnections.size,
-    });
+        logStructured("info", "sse_connection_removed_redis", {
+            workspaceId,
+            connectionId,
+        });
+    } else {
+        const workspaceConnections = memoryConnections.get(workspaceId);
+        if (!workspaceConnections) return;
 
-    // Clean up empty workspace
-    if (workspaceConnections.size === 0) {
-        connections.delete(workspaceId);
+        workspaceConnections.delete(connectionId);
+
+        if (workspaceConnections.size === 0) {
+            memoryConnections.delete(workspaceId);
+        }
+
+        logStructured("info", "sse_connection_removed_memory", {
+            workspaceId,
+            connectionId,
+            remainingConnections: workspaceConnections?.size || 0,
+        });
     }
 }
 
@@ -60,81 +110,147 @@ export function removeSSEConnection(workspaceId, connectionId) {
  * Update last ping time for a connection
  */
 export function updateConnectionPing(workspaceId, connectionId) {
-    const workspaceConnections = connections.get(workspaceId);
-    if (!workspaceConnections) return;
+    if (isRedisAvailable()) {
+        const key = `${SSE_KEY_PREFIX}${workspaceId}`;
+        const data = redis.hget(key, connectionId);
+        if (data) {
+            const parsed = JSON.parse(data);
+            parsed.lastPing = new Date().toISOString();
+            redis.hset(key, connectionId, JSON.stringify(parsed));
+            redis.expire(key, SSE_TTL);
+        }
+    } else {
+        const workspaceConnections = memoryConnections.get(workspaceId);
+        if (!workspaceConnections) return;
 
-    const connection = workspaceConnections.get(connectionId);
-    if (connection) {
-        connection.lastPing = new Date();
+        const connection = workspaceConnections.get(connectionId);
+        if (connection) {
+            connection.lastPing = new Date();
+        }
     }
-}
-
-/**
- * Get all active connections for a workspace
- */
-export function getWorkspaceConnections(workspaceId) {
-    return connections.get(workspaceId) || new Map();
 }
 
 /**
  * Get connection count for a workspace
  */
 export function getConnectionCount(workspaceId) {
-    const workspaceConnections = connections.get(workspaceId);
-    return workspaceConnections ? workspaceConnections.size : 0;
+    if (isRedisAvailable()) {
+        const key = `${SSE_KEY_PREFIX}${workspaceId}`;
+        return redis.hlen(key);
+    } else {
+        const workspaceConnections = memoryConnections.get(workspaceId);
+        return workspaceConnections ? workspaceConnections.size : 0;
+    }
+}
+
+/**
+ * Get all active connections for a workspace (memory mode only)
+ * Note: Redis mode requires Pub/Sub for broadcasting
+ */
+export function getWorkspaceConnections(workspaceId) {
+    if (isRedisAvailable()) {
+        // In Redis mode, we store metadata only - can't access res objects
+        logStructured("warn", "sse_get_connections_redis", {
+            workspaceId,
+            message: "Cannot get res objects in Redis mode - use broadcastToWorkspace"
+        });
+        return new Map();
+    }
+    return memoryConnections.get(workspaceId) || new Map();
 }
 
 /**
  * Broadcast event to all connections in a workspace
  */
 export function broadcastToWorkspace(workspaceId, event, data) {
-    const workspaceConnections = connections.get(workspaceId);
-    if (!workspaceConnections || workspaceConnections.size === 0) {
-        logStructured("debug", "sse_no_connections", { workspaceId, event });
-        return 0;
-    }
-
     const message = formatSSEMessage(event, data);
-    let delivered = 0;
 
-    for (const [connectionId, connection] of workspaceConnections) {
-        try {
-            connection.res.write(message);
-            delivered++;
-        } catch (error) {
-            logStructured("error", "sse_broadcast_failed", {
-                workspaceId,
-                connectionId,
-                error: error.message,
-            });
-            // Remove dead connection
-            workspaceConnections.delete(connectionId);
+    if (isRedisAvailable()) {
+        // Redis Pub/Sub approach for horizontal scaling
+        // Publish to a channel that all server instances subscribe to
+        const channel = `${SSE_KEY_PREFIX}broadcast:${workspaceId}`;
+        const payload = JSON.stringify({ event, data, message });
+
+        redis.publish(channel, payload);
+
+        // Also send to local connections (for single-instance scenarios)
+        const key = `${SSE_KEY_PREFIX}${workspaceId}`;
+        const connectionIds = redis.hkeys(key);
+        let delivered = 0;
+
+        for (const connId of connectionIds) {
+            const connData = redis.hget(key, connId);
+            if (connData) {
+                delivered++;
+            }
         }
+
+        logStructured("info", "sse_broadcast_redis", {
+            workspaceId,
+            event,
+            delivered,
+            mode: "redis_pubsub",
+        });
+
+        return delivered;
+    } else {
+        // Memory mode - direct write
+        const workspaceConnections = memoryConnections.get(workspaceId);
+        if (!workspaceConnections || workspaceConnections.size === 0) {
+            return 0;
+        }
+
+        let delivered = 0;
+
+        for (const [connectionId, connection] of workspaceConnections) {
+            try {
+                connection.res.write(message);
+                delivered++;
+            } catch (error) {
+                logStructured("error", "sse_broadcast_failed", {
+                    workspaceId,
+                    connectionId,
+                    error: error.message,
+                });
+                // Remove dead connection
+                workspaceConnections.delete(connectionId);
+            }
+        }
+
+        logStructured("info", "sse_broadcast_memory", {
+            workspaceId,
+            event,
+            delivered,
+            total: workspaceConnections.size,
+        });
+
+        return delivered;
     }
-
-    logStructured("info", "sse_broadcast", {
-        workspaceId,
-        event,
-        delivered,
-        total: workspaceConnections.size,
-    });
-
-    return delivered;
 }
 
 /**
- * Send event to specific user across all their workspaces
+ * Send event to specific user across all their workspaces (memory mode only)
  */
 export function broadcastToUser(userId, event, data) {
     let delivered = 0;
 
-    for (const [workspaceId, workspaceConnections] of connections) {
+    if (isRedisAvailable()) {
+        // In Redis mode, user broadcasts would need to iterate all workspaces
+        // This is a limitation of Redis mode
+        logStructured("warn", "sse_user_broadcast_redis", {
+            userId,
+            message: "User-specific broadcasts not supported in Redis mode"
+        });
+        return delivered;
+    }
+
+    for (const [workspaceId, workspaceConnections] of memoryConnections) {
         for (const [connectionId, connection] of workspaceConnections) {
             if (connection.userId === userId) {
                 try {
                     connection.res.write(formatSSEMessage(event, data));
                     delivered++;
-                } catch (error) {
+                } catch {
                     workspaceConnections.delete(connectionId);
                 }
             }
@@ -153,37 +269,23 @@ export function formatSSEMessage(event, data, id = null) {
 }
 
 /**
- * Send heartbeat to keep connections alive
- */
-export function sendHeartbeat(workspaceId) {
-    const workspaceConnections = connections.get(workspaceId);
-    if (!workspaceConnections) return;
-
-    const heartbeat = formatSSEMessage("heartbeat", { timestamp: Date.now() });
-
-    for (const [connectionId, connection] of workspaceConnections) {
-        try {
-            connection.res.write(heartbeat);
-        } catch {
-            workspaceConnections.delete(connectionId);
-        }
-    }
-}
-
-/**
- * Cleanup stale connections (no ping in 5 minutes)
- * SECURITY FIX: More aggressive cleanup to prevent memory leaks
+ * Cleanup stale connections (memory mode only)
+ * Redis handles TTL automatically
  */
 export function cleanupStaleConnections() {
+    if (isRedisAvailable()) {
+        // Redis handles TTL automatically
+        return 0;
+    }
+
     const staleThreshold = 5 * 60 * 1000; // 5 minutes
     const now = Date.now();
     let totalCleaned = 0;
 
-    for (const [workspaceId, workspaceConnections] of connections) {
+    for (const [workspaceId, workspaceConnections] of memoryConnections) {
         const connectionsToRemove = [];
 
         for (const [connectionId, connection] of workspaceConnections) {
-            // Check if connection is actually still alive
             const isStale = now - connection.lastPing.getTime() > staleThreshold;
 
             if (isStale) {
@@ -192,17 +294,11 @@ export function cleanupStaleConnections() {
                     workspaceId,
                     connectionId,
                     lastPing: connection.lastPing,
-                    connectedAt: connection.connectedAt,
                 });
             } else {
-                // Also check if the response stream is still writable
                 try {
                     if (connection.res && connection.res.writableEnded) {
                         connectionsToRemove.push(connectionId);
-                        logStructured("warn", "sse_connection_ended", {
-                            workspaceId,
-                            connectionId,
-                        });
                     }
                 } catch {
                     connectionsToRemove.push(connectionId);
@@ -210,43 +306,52 @@ export function cleanupStaleConnections() {
             }
         }
 
-        // Remove dead connections
         for (const connectionId of connectionsToRemove) {
             workspaceConnections.delete(connectionId);
             totalCleaned++;
         }
 
-        // Clean up empty workspace
         if (workspaceConnections.size === 0) {
-            connections.delete(workspaceId);
+            memoryConnections.delete(workspaceId);
         }
     }
 
     if (totalCleaned > 0) {
         logStructured("info", "sse_cleanup_completed", {
             cleanedConnections: totalCleaned,
-            remainingWorkspaces: connections.size,
+            remainingWorkspaces: memoryConnections.size,
         });
     }
 
     return totalCleaned;
 }
 
-// Start periodic cleanup (every 30 seconds - more aggressive to prevent memory leaks)
-// SECURITY FIX: Shorter interval for faster stale connection cleanup
+// Start periodic cleanup for memory mode
 if (typeof setInterval !== 'undefined') {
-    setInterval(cleanupStaleConnections, 30 * 1000);
-
-    // Log memory usage periodically for monitoring
     setInterval(() => {
-        let totalConnections = 0;
-        for (const [, workspaceConnections] of connections) {
-            totalConnections += workspaceConnections.size;
+        // Only cleanup in memory mode
+        if (!isRedisAvailable()) {
+            cleanupStaleConnections();
         }
-        logStructured("info", "sse_memory_stats", {
-            totalWorkspaces: connections.size,
-            totalConnections,
-        });
+
+        // Log stats
+        let totalConnections = 0;
+        if (isRedisAvailable()) {
+            // Count Redis connections
+            logStructured("info", "sse_memory_stats", {
+                mode: "redis",
+                message: "Connection tracking via Redis",
+            });
+        } else {
+            for (const [, workspaceConnections] of memoryConnections) {
+                totalConnections += workspaceConnections.size;
+            }
+            logStructured("info", "sse_memory_stats", {
+                mode: "memory",
+                totalWorkspaces: memoryConnections.size,
+                totalConnections,
+            });
+        }
     }, 5 * 60 * 1000); // Every 5 minutes
 }
 

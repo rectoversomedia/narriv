@@ -7,6 +7,7 @@ export const onboardingWorkspaceBodySchema = z.object({
 });
 
 export const onboardingSourcesBodySchema = z.object({
+    workspaceId: z.string().uuid("Invalid workspace ID."),
     sources: z.array(z.object({
         name: z.string().trim().min(1, "Source name is required.").max(100, "Source name is too long."),
         type: z.string().trim().min(1, "Source type is required.").max(50, "Source type is too long."),
@@ -16,6 +17,7 @@ export const onboardingSourcesBodySchema = z.object({
 });
 
 export const onboardingNotificationsBodySchema = z.object({
+    workspaceId: z.string().uuid("Invalid workspace ID."),
     emailEnabled: z.boolean().optional().default(true),
     whatsappEnabled: z.boolean().optional().default(false),
     escalationNotifications: z.boolean().optional().default(true),
@@ -23,6 +25,7 @@ export const onboardingNotificationsBodySchema = z.object({
 });
 
 export const onboardingTeamBodySchema = z.object({
+    workspaceId: z.string().uuid("Invalid workspace ID."),
     members: z.array(z.object({
         email: z.string().email("Invalid email format."),
         role: z.enum(["admin", "analyst", "viewer"], {
@@ -33,6 +36,7 @@ export const onboardingTeamBodySchema = z.object({
 
 // Keywords onboarding schema
 export const onboardingKeywordsBodySchema = z.object({
+    workspaceId: z.string().uuid("Invalid workspace ID."),
     keywords: z.array(z.string().trim().min(1).max(100)).min(1, "At least one keyword is required.").max(50, "Maximum 50 keywords."),
 });
 

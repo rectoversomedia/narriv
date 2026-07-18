@@ -305,7 +305,7 @@ export const register = async (req, res) => {
                 password: hashed,
                 name,
                 created_at: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
             })
             .select()
             .single();

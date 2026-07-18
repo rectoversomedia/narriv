@@ -266,7 +266,7 @@ router.get("/:id/learning", async (req, res) => {
 
         const { data: plan, error } = await supabase
             .from("action_plans")
-            .select("id, workspace_id")
+            .select("id, workspace_id, title, status, created_at")
             .eq("id", id)
             .maybeSingle();
 
@@ -276,11 +276,93 @@ router.get("/:id/learning", async (req, res) => {
             return res.status(404).json({ error: "Action plan not found" });
         }
 
-        // Return mock data that can be localized or displayed directly
-        // In a real implementation, this would aggregate data from related actions/reports
+        // Fetch feedback for this action plan
+        const { data: feedback } = await supabase
+            .from("ai_feedback")
+            .select("*")
+            .eq("action_plan_id", id)
+            .order("created_at", { ascending: false })
+            .limit(50);
+
+        // Fetch generated assets for this action plan
+        const { data: assets } = await supabase
+            .from("generated_assets")
+            .select("*")
+            .eq("action_plan_id", id)
+            .order("created_at", { ascending: false })
+            .limit(20);
+
+        // Aggregate insights from feedback
+        const insights = [];
+        const acceptedCount = (feedback || []).filter(f => f.feedback_type === "accepted").length;
+        const rejectedCount = (feedback || []).filter(f => f.feedback_type === "rejected").length;
+        const editedCount = (feedback || []).filter(f => f.feedback_type === "edited").length;
+        const totalFeedback = (feedback || []).length;
+
+        if (totalFeedback > 0) {
+            const acceptanceRate = Math.round((acceptedCount / totalFeedback) * 100);
+            insights.push({
+                type: "acceptance_rate",
+                value: acceptanceRate,
+                label: "AI Suggestion Acceptance Rate",
+                description: `${acceptedCount} accepted, ${rejectedCount} rejected, ${editedCount} edited out of ${totalFeedback} total suggestions`
+            });
+
+            // Calculate average rating if available
+            const ratingsWithValue = (feedback || []).filter(f => f.rating && f.rating > 0);
+            if (ratingsWithValue.length > 0) {
+                const avgRating = ratingsWithValue.reduce((sum, f) => sum + f.rating, 0) / ratingsWithValue.length;
+                insights.push({
+                    type: "avg_rating",
+                    value: Math.round(avgRating * 10) / 10,
+                    label: "Average Content Rating",
+                    description: `Based on ${ratingsWithValue.length} rated responses`
+                });
+            }
+
+            // Suggest improvements based on rejection patterns
+            if (rejectedCount > acceptedCount) {
+                insights.push({
+                    type: "improvement",
+                    value: rejectedCount,
+                    label: "High Rejection Rate",
+                    description: "Consider reviewing AI prompt templates to improve suggestion relevance"
+                });
+            }
+        }
+
+        // Templates from high-rated generated assets
+        const templates = (assets || [])
+            .filter(a => {
+                const feedbackForAsset = (feedback || []).filter(f => f.action_plan_id === id);
+                const avgRating = feedbackForAsset.reduce((sum, f) => sum + (f.rating || 0), 0) / Math.max(1, feedbackForAsset.length);
+                return avgRating >= 4; // Only include high-rated templates
+            })
+            .map(a => ({
+                id: a.id,
+                type: a.type,
+                content: a.content?.substring(0, 200) + "...",
+                metadata: a.metadata,
+                createdAt: a.created_at
+            }));
+
+        await recordAuditLog({
+            userId: req.user.id,
+            event: "action_plan_learning_viewed",
+            workspaceId: plan.workspace_id,
+            metadata: { actionPlanId: id }
+        });
+
         return res.json({
-            insights: [],
-            templates: []
+            insights,
+            templates,
+            stats: {
+                totalFeedback,
+                accepted: acceptedCount,
+                rejected: rejectedCount,
+                edited: editedCount,
+                assetsGenerated: (assets || []).length
+            }
         });
     } catch (error) {
         logStructured("error", "Error fetching action plan learning:", { error: error?.message || error, stack: error?.stack });

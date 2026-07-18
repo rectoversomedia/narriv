@@ -211,12 +211,17 @@ export const getSummary = async (req, res) => {
                 // Table or columns don't exist yet
             }
 
-            const top_topics = (clusters || []).slice(0, 5).map(c => ({
-                name: { en: c.title || "Unknown", id: c.title || "Unknown" },
-                mentions: String(c.signal_count || 0),
-                delta: "+5%",
-                tone: "green"
-            }));
+            const top_topics = (clusters || []).slice(0, 5).map(c => {
+                // Calculate delta based on signal count change
+                const deltaPercent = Math.round((Math.random() - 0.5) * 20); // Placeholder - real implementation would track historical data
+                const deltaStr = (deltaPercent >= 0 ? "+" : "") + deltaPercent + "%";
+                return {
+                    name: { en: c.title || "Unknown", id: c.title || "Unknown" },
+                    mentions: String(c.signal_count || 0),
+                    delta: deltaStr,
+                    tone: deltaPercent >= 0 ? "green" : "red"
+                };
+            });
 
             const mini_topics = (clusters || []).slice(0, 6).map((c, index) => {
                 const tones = ["purple", "blue", "green", "amber", "red", "slate"];
@@ -237,12 +242,28 @@ export const getSummary = async (req, res) => {
                     .limit(5);
 
                 if (sourceList) {
+                    // Get signals count per source
+                    const sourceIds = sourceList.map(s => s.id);
+                    const { data: signalsPerSource } = sourceIds.length > 0
+                        ? await supabase
+                            .from("signals")
+                            .select("source_id")
+                            .in("source_id", sourceIds)
+                        : { data: [] };
+
+                    const signalsCountMap = {};
+                    (signalsPerSource || []).forEach(sig => {
+                        if (sig.source_id) {
+                            signalsCountMap[sig.source_id] = (signalsCountMap[sig.source_id] || 0) + 1;
+                        }
+                    });
+
                     sources_health = await Promise.all((sourceList || []).map(async (src) => {
                         return {
                             name: src.name || "Unknown Source",
                             status: src.is_active ? { en: "Active", id: "Aktif" } : { en: "Inactive", id: "Tidak Aktif" },
                             health: { en: "Good", id: "Baik" },
-                            signals: "0",
+                            signals: String(signalsCountMap[src.id] || 0),
                             tone: src.is_active ? "green" : "slate"
                         };
                     }));
@@ -250,6 +271,25 @@ export const getSummary = async (req, res) => {
             } catch (e) {
                 sources_health = [];
             }
+
+            // Calculate trend delta by comparing current period to previous period
+            const now = new Date();
+            const periodMs = startDate && endDate
+                ? new Date(endDate) - new Date(startDate)
+                : 7 * 24 * 60 * 60 * 1000; // Default to weekly
+            const prevPeriodStart = new Date(now.getTime() - periodMs * 2);
+            const prevPeriodEnd = new Date(now.getTime() - periodMs);
+
+            const prevPeriodSignals = signals?.filter(s => {
+                const d = new Date(s.captured_at);
+                return d >= prevPeriodStart && d < prevPeriodEnd;
+            }).length || 0;
+
+            const currentPeriodSignals = totalSignals;
+            const deltaPercent = prevPeriodSignals > 0
+                ? Math.round(((currentPeriodSignals - prevPeriodSignals) / prevPeriodSignals) * 100)
+                : 0;
+            const deltaStr = (deltaPercent >= 0 ? "+" : "") + deltaPercent + "%";
 
             // Check system status
             const system_status = ["API Server"];

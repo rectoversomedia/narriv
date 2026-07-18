@@ -370,6 +370,19 @@ router.delete("/templates/:id", async (req, res) => {
             return res.status(404).json({ error: "Template not found" });
         }
 
+        // SECURITY: Prevent deletion of system templates
+        if (template.is_system === true) {
+            logStructured("warn", "attempt_delete_system_template", {
+                templateId: id,
+                userId: req.user.id,
+                workspaceId: template.workspace_id
+            });
+            return res.status(403).json({
+                error: "System templates cannot be deleted",
+                code: "SYSTEM_TEMPLATE_PROTECTED"
+            });
+        }
+
         const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, template.workspace_id);
         if (!scopedWorkspaceId) {
             return res.status(403).json({ error: "Access denied" });
@@ -383,6 +396,13 @@ router.delete("/templates/:id", async (req, res) => {
         if (deleteError) {
             throw deleteError;
         }
+
+        await recordAuditLog({
+            userId: req.user.id,
+            event: "template_deleted",
+            workspaceId: scopedWorkspaceId,
+            metadata: { templateId: id, templateName: template.name }
+        });
 
         return res.json({ success: true });
     } catch (error) {
@@ -595,10 +615,20 @@ router.get("/analytics", async (req, res) => {
         const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
 
         // Get format distribution from report_exports
-        const { data: exportGroups } = await supabase
-            .from("report_exports")
-            .select("format")
-            .in("report_id", scopedWorkspaceIds.map(id => id));
+        // First get report IDs for the workspace, then get export formats
+        const { data: reportIds } = await supabase
+            .from("reports")
+            .select("id")
+            .in("workspace_id", scopedWorkspaceIds);
+
+        const reportIdList = (reportIds || []).map(r => r.id);
+
+        const { data: exportGroups } = reportIdList.length > 0
+            ? await supabase
+                .from("report_exports")
+                .select("format")
+                .in("report_id", reportIdList)
+            : { data: [] };
 
         const formatDistribution = { json: 0, pdf: 0 };
         for (const row of (exportGroups || [])) {

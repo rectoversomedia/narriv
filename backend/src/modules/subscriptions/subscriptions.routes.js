@@ -1,29 +1,91 @@
 /**
  * Subscription routes for Narriv
  * Handles subscription management, plan limits, and feature checks
+ *
+ * IMPORTANT: All endpoints require authentication
  */
 
 import express from "express";
 import { logStructured } from "../../lib/logger.js";
-import { validateRequest } from "../../lib/validation.js";
-import { z } from "zod";
+import { supabaseAdmin } from "../../lib/supabase.js";
+import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { WorkspacePlan, PLAN_LIMITS } from "../../types/workspace.js";
 
 const router = express.Router();
 
-// Validation schemas
-const getPlanSchema = z.object({
-  workspaceId: z.string().uuid().optional(),
-});
+// Apply authentication to all routes
+router.use(verifyToken);
 
-const upgradeSchema = z.object({
-  workspaceId: z.string().uuid(),
-  planKey: z.enum(["pilot", "intelligence", "decision", "command"]),
-});
+/**
+ * Helper: Get workspace subscription from database
+ */
+async function getWorkspaceSubscription(workspaceId) {
+  const { data, error } = await supabaseAdmin
+    .from("workspace_subscriptions")
+    .select(`
+      *,
+      plan:subscription_plans(*)
+    `)
+    .eq("workspace_id", workspaceId)
+    .eq("status", "active")
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+  return data;
+}
+
+/**
+ * Helper: Get workspace plan limits
+ */
+function getPlanLimits(planKey) {
+  const planKeyUpper = planKey.toUpperCase();
+  const plan = Object.values(PLAN_LIMITS).find(p => p.plan.toUpperCase() === planKeyUpper);
+  return plan || PLAN_LIMITS[WorkspacePlan.PILOT];
+}
+
+/**
+ * Helper: Get workspace usage statistics
+ */
+async function getWorkspaceUsage(workspaceId) {
+  const [membersCount, topicsCount, signalsCount, alertsCount, reportsCount] = await Promise.all([
+    supabaseAdmin.from("workspace_members").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId),
+    supabaseAdmin.from("monitoring_keywords").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId).eq("is_active", true),
+    supabaseAdmin.from("signals").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId),
+    supabaseAdmin.from("alerts").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId),
+    supabaseAdmin.from("reports").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId),
+  ]);
+
+  return {
+    membersUsed: membersCount.count || 0,
+    topicsUsed: topicsCount.count || 0,
+    signalsUsed: signalsCount.count || 0,
+    alertsUsed: alertsCount.count || 0,
+    reportsUsed: reportsCount.count || 0,
+  };
+}
+
+/**
+ * Helper: Get user's default workspace
+ */
+async function getUserWorkspace(userId) {
+  const { data, error } = await supabaseAdmin
+    .from("workspace_members")
+    .select("workspace_id")
+    .eq("user_id", userId)
+    .limit(1)
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+  return data.workspace_id;
+}
 
 /**
  * GET /api/subscriptions/plans
- * Get all available subscription plans
+ * Get all available subscription plans (public, no workspace required)
  */
 router.get("/plans", async (req, res) => {
   try {
@@ -55,58 +117,96 @@ router.get("/plans", async (req, res) => {
 /**
  * GET /api/subscriptions/my-plan
  * Get current workspace subscription plan
+ * Requires authentication - returns user's workspace subscription
  */
 router.get("/my-plan", async (req, res) => {
   try {
-    // For now, return PILOT as default
-    // In production, this would check the database
-    const defaultPlan = PLAN_LIMITS[WorkspacePlan.PILOT];
+    const userId = req.user.userId;
+
+    // Get user's workspace
+    const workspaceId = await getUserWorkspace(userId);
+    if (!workspaceId) {
+      return res.status(404).json({ error: "No workspace found for user" });
+    }
+
+    // Get subscription from database
+    const subscription = await getWorkspaceSubscription(workspaceId);
+
+    // Get plan limits
+    const planKey = subscription?.plan?.plan_key || WorkspacePlan.PILOT;
+    const planLimits = getPlanLimits(planKey);
+
+    // Get usage statistics
+    const usage = await getWorkspaceUsage(workspaceId);
 
     res.json({
       plan: {
-        key: defaultPlan.plan,
-        name: defaultPlan.name,
-        tagline: defaultPlan.tagline,
-        priceIdr: defaultPlan.priceIdr,
-        status: "active",
+        key: planLimits.plan,
+        name: planLimits.name,
+        tagline: planLimits.tagline,
+        priceIdr: planLimits.priceIdr,
+        status: subscription?.status || "active",
       },
       usage: {
-        topicsUsed: 0,
-        topicsLimit: defaultPlan.maxTopics,
-        usersUsed: 1,
-        usersLimit: defaultPlan.maxMembers,
+        membersUsed: usage.membersUsed,
+        membersLimit: planLimits.maxMembers,
+        topicsUsed: usage.topicsUsed,
+        topicsLimit: planLimits.maxTopics,
+        signalsUsed: usage.signalsUsed,
+        signalsLimit: planLimits.maxSignalsPerMonth,
+        alertsUsed: usage.alertsUsed,
+        alertsLimit: planLimits.maxAlertsPerMonth,
+        reportsUsed: usage.reportsUsed,
+        reportsLimit: planLimits.maxReportsPerMonth,
       },
-      expiresAt: null,
+      expiresAt: subscription?.expires_at || null,
+      trialEndsAt: subscription?.trial_ends_at || null,
     });
   } catch (error) {
-    logStructured("error", "get_my_plan_error", { error: error.message });
+    logStructured("error", "get_my_plan_error", {
+      error: error.message,
+      userId: req.user.userId
+    });
     res.status(500).json({ error: "Failed to fetch subscription" });
   }
 });
 
 /**
  * GET /api/subscriptions/limits
- * Get plan limits for a workspace
+ * Get plan limits for current workspace
  */
 router.get("/limits", async (req, res) => {
   try {
-    // For now, return PILOT limits
-    // In production, this would check the database
-    const defaultPlan = PLAN_LIMITS[WorkspacePlan.PILOT];
+    const userId = req.user.userId;
+
+    // Get user's workspace
+    const workspaceId = await getUserWorkspace(userId);
+    if (!workspaceId) {
+      return res.status(404).json({ error: "No workspace found for user" });
+    }
+
+    // Get subscription
+    const subscription = await getWorkspaceSubscription(workspaceId);
+    const planKey = subscription?.plan?.plan_key || WorkspacePlan.PILOT;
+    const planLimits = getPlanLimits(planKey);
 
     res.json({
       limits: {
-        maxMembers: defaultPlan.maxMembers,
-        maxTopics: defaultPlan.maxTopics,
-        maxSignalsPerMonth: defaultPlan.maxSignalsPerMonth,
-        maxAlertsPerMonth: defaultPlan.maxAlertsPerMonth,
-        maxReportsPerMonth: defaultPlan.maxReportsPerMonth,
-        maxAiAnalysesPerMonth: defaultPlan.maxAiAnalysesPerMonth,
-        dataRetentionDays: defaultPlan.dataRetentionDays,
+        maxMembers: planLimits.maxMembers,
+        maxTopics: planLimits.maxTopics,
+        maxSignalsPerMonth: planLimits.maxSignalsPerMonth,
+        maxAlertsPerMonth: planLimits.maxAlertsPerMonth,
+        maxReportsPerMonth: planLimits.maxReportsPerMonth,
+        maxAiAnalysesPerMonth: planLimits.maxAiAnalysesPerMonth,
+        dataRetentionDays: planLimits.dataRetentionDays,
       },
+      plan: planLimits.plan,
     });
   } catch (error) {
-    logStructured("error", "get_limits_error", { error: error.message });
+    logStructured("error", "get_limits_error", {
+      error: error.message,
+      userId: req.user.userId
+    });
     res.status(500).json({ error: "Failed to fetch limits" });
   }
 });
@@ -117,17 +217,31 @@ router.get("/limits", async (req, res) => {
  */
 router.get("/features", async (req, res) => {
   try {
-    // For now, return PILOT features
-    const defaultPlan = PLAN_LIMITS[WorkspacePlan.PILOT];
+    const userId = req.user.userId;
+
+    // Get user's workspace
+    const workspaceId = await getUserWorkspace(userId);
+    if (!workspaceId) {
+      return res.status(404).json({ error: "No workspace found for user" });
+    }
+
+    // Get subscription
+    const subscription = await getWorkspaceSubscription(workspaceId);
+    const planKey = subscription?.plan?.plan_key || WorkspacePlan.PILOT;
+    const planLimits = getPlanLimits(planKey);
 
     res.json({
-      features: defaultPlan.features.map((feature) => ({
+      features: planLimits.features.map((feature) => ({
         key: feature,
         enabled: true,
       })),
+      plan: planLimits.plan,
     });
   } catch (error) {
-    logStructured("error", "get_features_error", { error: error.message });
+    logStructured("error", "get_features_error", {
+      error: error.message,
+      userId: req.user.userId
+    });
     res.status(500).json({ error: "Failed to fetch features" });
   }
 });
@@ -139,24 +253,36 @@ router.get("/features", async (req, res) => {
 router.post("/check-feature", async (req, res) => {
   try {
     const { featureKey } = req.body;
+    const userId = req.user.userId;
 
     if (!featureKey) {
       return res.status(400).json({ error: "featureKey is required" });
     }
 
-    // For now, return based on PILOT plan
-    // In production, this would check the database
-    const defaultPlan = PLAN_LIMITS[WorkspacePlan.PILOT];
-    const hasFeature = defaultPlan.features.includes(featureKey);
+    // Get user's workspace
+    const workspaceId = await getUserWorkspace(userId);
+    if (!workspaceId) {
+      return res.status(404).json({ error: "No workspace found for user" });
+    }
+
+    // Get subscription
+    const subscription = await getWorkspaceSubscription(workspaceId);
+    const planKey = subscription?.plan?.plan_key || WorkspacePlan.PILOT;
+    const planLimits = getPlanLimits(planKey);
+    const hasFeature = planLimits.features.includes(featureKey);
 
     res.json({
       featureKey,
       enabled: hasFeature,
       upgradeRequired: !hasFeature,
       suggestedPlan: hasFeature ? null : "intelligence",
+      currentPlan: planLimits.plan,
     });
   } catch (error) {
-    logStructured("error", "check_feature_error", { error: error.message });
+    logStructured("error", "check_feature_error", {
+      error: error.message,
+      userId: req.user.userId
+    });
     res.status(500).json({ error: "Failed to check feature" });
   }
 });
@@ -168,14 +294,41 @@ router.post("/check-feature", async (req, res) => {
 router.post("/check-limit", async (req, res) => {
   try {
     const { limitKey, requestedValue } = req.body;
+    const userId = req.user.userId;
 
     if (!limitKey || requestedValue === undefined) {
       return res.status(400).json({ error: "limitKey and requestedValue are required" });
     }
 
-    // For now, return based on PILOT plan
-    const defaultPlan = PLAN_LIMITS[WorkspacePlan.PILOT];
-    const limitValue = defaultPlan[`max${limitKey.charAt(0).toUpperCase() + limitKey.slice(1)}`];
+    // Get user's workspace
+    const workspaceId = await getUserWorkspace(userId);
+    if (!workspaceId) {
+      return res.status(404).json({ error: "No workspace found for user" });
+    }
+
+    // Get subscription
+    const subscription = await getWorkspaceSubscription(workspaceId);
+    const planKey = subscription?.plan?.plan_key || WorkspacePlan.PILOT;
+    const planLimits = getPlanLimits(planKey);
+
+    // Map limitKey to plan limits
+    const limitMapping = {
+      members: "maxMembers",
+      topics: "maxTopics",
+      signalsPerMonth: "maxSignalsPerMonth",
+      alertsPerMonth: "maxAlertsPerMonth",
+      reportsPerMonth: "maxReportsPerMonth",
+      aiAnalysesPerMonth: "maxAiAnalysesPerMonth",
+    };
+
+    const limitProperty = limitMapping[limitKey];
+    if (!limitProperty) {
+      return res.status(400).json({ error: "Invalid limitKey" });
+    }
+
+    const limitValue = planLimits[limitProperty];
+    const usage = await getWorkspaceUsage(workspaceId);
+    const currentUsage = usage[`${limitKey.replace(/([A-Z])/g, '_$1').toLowerCase()}Used`] || 0;
 
     // -1 means unlimited
     if (limitValue === -1) {
@@ -190,15 +343,81 @@ router.post("/check-limit", async (req, res) => {
 
     res.json({
       limitKey,
-      hasCapacity: requestedValue <= limitValue,
-      currentUsage: 0,
+      hasCapacity: currentUsage + requestedValue <= limitValue,
+      currentUsage,
       limit: limitValue,
-      upgradeRequired: requestedValue > limitValue,
-      suggestedPlan: requestedValue > limitValue ? "intelligence" : null,
+      upgradeRequired: currentUsage + requestedValue > limitValue,
+      suggestedPlan: currentUsage + requestedValue > limitValue ? "intelligence" : null,
+      currentPlan: planLimits.plan,
     });
   } catch (error) {
-    logStructured("error", "check_limit_error", { error: error.message });
+    logStructured("error", "check_limit_error", {
+      error: error.message,
+      userId: req.user.userId
+    });
     res.status(500).json({ error: "Failed to check limit" });
+  }
+});
+
+/**
+ * GET /api/subscriptions/usage
+ * Get detailed usage statistics for current workspace
+ */
+router.get("/usage", async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    // Get user's workspace
+    const workspaceId = await getUserWorkspace(userId);
+    if (!workspaceId) {
+      return res.status(404).json({ error: "No workspace found for user" });
+    }
+
+    // Get subscription and usage
+    const subscription = await getWorkspaceSubscription(workspaceId);
+    const planKey = subscription?.plan?.plan_key || WorkspacePlan.PILOT;
+    const planLimits = getPlanLimits(planKey);
+    const usage = await getWorkspaceUsage(workspaceId);
+
+    res.json({
+      workspaceId,
+      plan: planLimits.plan,
+      usage: {
+        members: {
+          used: usage.membersUsed,
+          limit: planLimits.maxMembers,
+          percentage: planLimits.maxMembers === -1 ? 0 : (usage.membersUsed / planLimits.maxMembers) * 100,
+        },
+        topics: {
+          used: usage.topicsUsed,
+          limit: planLimits.maxTopics,
+          percentage: planLimits.maxTopics === -1 ? 0 : (usage.topicsUsed / planLimits.maxTopics) * 100,
+        },
+        signals: {
+          used: usage.signalsUsed,
+          limit: planLimits.maxSignalsPerMonth,
+          percentage: planLimits.maxSignalsPerMonth === -1 ? 0 : (usage.signalsUsed / planLimits.maxSignalsPerMonth) * 100,
+        },
+        alerts: {
+          used: usage.alertsUsed,
+          limit: planLimits.maxAlertsPerMonth,
+          percentage: planLimits.maxAlertsPerMonth === -1 ? 0 : (usage.alertsUsed / planLimits.maxAlertsPerMonth) * 100,
+        },
+        reports: {
+          used: usage.reportsUsed,
+          limit: planLimits.maxReportsPerMonth,
+          percentage: planLimits.maxReportsPerMonth === -1 ? 0 : (usage.reportsUsed / planLimits.maxReportsPerMonth) * 100,
+        },
+      },
+      expiresAt: subscription?.expires_at || null,
+      trialEndsAt: subscription?.trial_ends_at || null,
+    });
+  } catch (error) {
+    logStructured("error", "get_usage_error", {
+      error: error.message,
+      userId: req.user.userId
+    });
+    res.status(500).json({ error: "Failed to fetch usage" });
   }
 });
 

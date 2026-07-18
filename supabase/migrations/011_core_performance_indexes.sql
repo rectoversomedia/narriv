@@ -1,19 +1,16 @@
 -- ============================================
--- Migration: 008_core_performance_indexes.sql
+-- Migration: 011_core_performance_indexes.sql
 -- CRITICAL PERFORMANCE: Add indexes for core tables
 -- ============================================
 -- This migration adds critical indexes for commonly queried tables
 -- Run with: supabase db push or psql
+-- Fixed: Removed references to non-existent columns
 
 BEGIN;
 
 -- ============================================
 -- Workspaces Table Indexes
 -- ============================================
-
--- Index for user workspace lookup
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_workspaces_owner
-ON workspaces (owner_id);
 
 -- Index for workspace slug lookups
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_workspaces_slug
@@ -44,13 +41,13 @@ ON workspace_members (workspace_id, role);
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_sources_workspace
 ON sources (workspace_id);
 
--- Index for source status
+-- Index for source status (using last_status column)
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_sources_status
-ON sources (status);
+ON sources (last_status);
 
 -- Composite for workspace + status
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_sources_workspace_status
-ON sources (workspace_id, status);
+ON sources (workspace_id, last_status);
 
 -- Index for source type
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_sources_type
@@ -112,16 +109,6 @@ ON action_plans (status);
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_action_plans_workspace_status
 ON action_plans (workspace_id, status);
 
--- Index for due date
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_action_plans_due_date
-ON action_plans (due_date)
-WHERE due_date IS NOT NULL;
-
--- Composite for workspace + due date
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_action_plans_workspace_due
-ON action_plans (workspace_id, due_date)
-WHERE due_date IS NOT NULL;
-
 -- ============================================
 -- App Notifications Indexes
 -- ============================================
@@ -147,17 +134,17 @@ ON app_notifications (user_id, created_at DESC);
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_audit_logs_workspace
 ON audit_logs (workspace_id);
 
--- Index for action type
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_audit_logs_action
-ON audit_logs (action);
+-- Index for event type (using event column, not action)
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_audit_logs_event
+ON audit_logs (event);
 
 -- Composite for workspace + created
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_audit_logs_workspace_created
 ON audit_logs (workspace_id, created_at DESC);
 
--- Composite for user action lookup
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_audit_logs_user_action
-ON audit_logs (user_id, action, created_at DESC);
+-- Composite for user event lookup
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_audit_logs_user_event
+ON audit_logs (user_id, event, created_at DESC);
 
 -- ============================================
 -- Refresh Tokens Indexes
@@ -175,6 +162,52 @@ ON refresh_tokens (user_id);
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_refresh_tokens_expires
 ON refresh_tokens (expires_at)
 WHERE expires_at < NOW();
+
+-- ============================================
+-- New indexes for additional tables
+-- ============================================
+
+-- Ingestion jobs indexes
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_ingestion_jobs_workspace
+ON ingestion_jobs (workspace_id);
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_ingestion_jobs_status
+ON ingestion_jobs (status);
+
+-- Signals indexes
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_signals_workspace_created
+ON signals (workspace_id, created_at DESC);
+
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_signals_published
+ON signals (published_at DESC);
+
+-- Alerts indexes
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_alerts_workspace_created
+ON alerts (workspace_id, created_at DESC);
+
+-- Token usage indexes
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_token_usage_workspace
+ON token_usage (workspace_id);
+
+-- Monitoring keywords indexes
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_monitoring_keywords_workspace
+ON monitoring_keywords (workspace_id);
+
+-- Workspace sources indexes
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_workspace_sources_workspace
+ON workspace_sources (workspace_id);
+
+-- Onboarding progress indexes
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_onboarding_progress_workspace
+ON onboarding_progress (workspace_id);
+
+-- Workspace subscriptions indexes
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_workspace_subscriptions_workspace
+ON workspace_subscriptions (workspace_id);
+
+-- Workspace usage indexes
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_workspace_usage_workspace
+ON workspace_usage (workspace_id);
 
 COMMIT;
 
