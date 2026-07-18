@@ -435,7 +435,7 @@ export default function DashboardPage() {
       )}
 
       {/* Main Insights Grid */}
-      <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr_0.8fr] xl:grid-cols-[1.4fr_1fr_0.7fr] 2xl:grid-cols-[1.3fr_1fr_0.65fr]">
+      <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr_0.7fr] xl:grid-cols-[1.1fr_1fr_0.65fr]">
         {/* Signal Volume Trends */}
         <AppCard>
           <CardContent className="p-5">
