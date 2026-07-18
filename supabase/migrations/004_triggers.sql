@@ -17,12 +17,12 @@ CREATE TRIGGER update_workspaces_updated_at
 
 -- Workspace settings updated_at
 CREATE TRIGGER update_workspace_settings_updated_at
-    BEFORE UPDATE ON public.workspaces_settings
+    BEFORE UPDATE ON public.workspace_settings
     FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
 -- Workspace notification settings updated_at
 CREATE TRIGGER update_workspace_notification_settings_updated_at
-    BEFORE UPDATE ON public.workspaces_notification_settings
+    BEFORE UPDATE ON public.workspace_notification_settings
     FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
 
 -- Sources updated_at

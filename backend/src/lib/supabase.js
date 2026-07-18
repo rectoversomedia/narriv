@@ -55,11 +55,10 @@ const connectionMetrics = {
 };
 
 // Table name mapping: snake_case (code) → actual PostgreSQL table names
-// CRITICAL: users renamed to user_profiles to avoid conflict with Supabase auth.users
+// Note: The actual table is 'users' not 'user_profiles'
 const TABLE_MAP = {
     // Auth & Users
-    'users': 'user_profiles',
-    'user_profiles': 'user_profiles',
+    'users': 'users',
     'refresh_tokens': 'refresh_tokens',
     'password_reset_tokens': 'password_reset_tokens',
     'email_verification_tokens': 'email_verification_tokens',
@@ -148,8 +147,8 @@ function createDbClient(base) {
                             // Plain table name
                             args[0] = toTableName(args[0]);
                         }
-                        // Debug log for user_profiles
-                        if (originalTable === 'users' || args[0] === 'user_profiles') {
+                        // Debug log for users table
+                        if (originalTable === 'users') {
                             // Skip debug to reduce noise
                         }
                     }
@@ -187,7 +186,7 @@ export function getPoolConfig() {
 export async function checkConnection() {
     const startTime = Date.now();
     try {
-        const { data, error } = await baseSupabaseAdmin.from('user_profiles').select('id').limit(1);
+        const { data, error } = await baseSupabaseAdmin.from('users').select('id').limit(1);
         const latency = Date.now() - startTime;
 
         connectionMetrics.total++;

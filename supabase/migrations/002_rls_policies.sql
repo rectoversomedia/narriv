@@ -11,7 +11,7 @@ ALTER TABLE public.oauth_accounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.workspaces ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.workspace_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.workspace_settings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.workspaces_notification_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.workspace_notification_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sources ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ingestion_jobs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.raw_documents ENABLE ROW LEVEL SECURITY;

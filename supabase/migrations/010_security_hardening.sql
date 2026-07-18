@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS public.password_history (
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     password_hash TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    INDEX idx_password_history_user (user_id)
+CREATE INDEX IF NOT EXISTS idx_password_history_user ON public.password_history(user_id);
 );
 
 -- RLS for password history

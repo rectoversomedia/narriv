@@ -17,13 +17,13 @@ export interface Workspace {
 }
 
 /**
- * Workspace plan types
+ * Workspace plan types (matching pricing tiers)
  */
 export enum WorkspacePlan {
-  FREE = "free",
-  STARTER = "starter",
-  PROFESSIONAL = "professional",
-  ENTERPRISE = "enterprise",
+  PILOT = "pilot",
+  INTELLIGENCE = "intelligence",
+  DECISION = "decision",
+  COMMAND = "command",
 }
 
 /**
@@ -181,68 +181,121 @@ export interface WorkspaceAccess {
 }
 
 /**
- * Available plans with limits
+ * Available plans with limits (matching pricing image)
  */
 export interface PlanLimits {
   plan: WorkspacePlan;
   name: string;
+  tagline: string;
+  priceIdr: number;
   maxMembers: number;
-  maxSignalsPerDay: number;
-  maxStorageGb: number;
+  maxTopics: number;
+  maxSignalsPerMonth: number;
+  maxAlertsPerMonth: number;
+  maxReportsPerMonth: number;
+  maxAiAnalysesPerMonth: number;
+  dataRetentionDays: number;
   features: string[];
 }
 
 /**
- * Default plan limits
+ * Default plan limits (matching pricing image)
  */
 export const PLAN_LIMITS: Record<WorkspacePlan, PlanLimits> = {
-  [WorkspacePlan.FREE]: {
-    plan: WorkspacePlan.FREE,
-    name: "Free",
-    maxMembers: 2,
-    maxSignalsPerDay: 100,
-    maxStorageGb: 1,
-    features: ["basic_signals", "email_support"],
+  [WorkspacePlan.PILOT]: {
+    plan: WorkspacePlan.PILOT,
+    name: "PILOT",
+    tagline: "Validate the value",
+    priceIdr: 5000000,
+    maxMembers: 1,
+    maxTopics: 5,
+    maxSignalsPerMonth: 10000,
+    maxAlertsPerMonth: 100,
+    maxReportsPerMonth: 10,
+    maxAiAnalysesPerMonth: 500,
+    dataRetentionDays: 30,
+    features: ["signals_monitoring", "alerts", "email_notifications"],
   },
-  [WorkspacePlan.STARTER]: {
-    plan: WorkspacePlan.STARTER,
-    name: "Starter",
-    maxMembers: 5,
-    maxSignalsPerDay: 1000,
-    maxStorageGb: 10,
-    features: ["basic_signals", "email_support", "alerts", "reports"],
-  },
-  [WorkspacePlan.PROFESSIONAL]: {
-    plan: WorkspacePlan.PROFESSIONAL,
-    name: "Professional",
-    maxMembers: 20,
-    maxSignalsPerDay: 10000,
-    maxStorageGb: 100,
+  [WorkspacePlan.INTELLIGENCE]: {
+    plan: WorkspacePlan.INTELLIGENCE,
+    name: "INTELLIGENCE",
+    tagline: "Understand what matters",
+    priceIdr: 25000000,
+    maxMembers: 10,
+    maxTopics: 50,
+    maxSignalsPerMonth: 100000,
+    maxAlertsPerMonth: 1000,
+    maxReportsPerMonth: 100,
+    maxAiAnalysesPerMonth: 5000,
+    dataRetentionDays: 365,
     features: [
-      "advanced_signals",
-      "priority_support",
+      "signals_monitoring",
       "alerts",
-      "reports",
-      "integrations",
-      "api_access",
+      "email_notifications",
+      "intelligence",
+      "ai_visibility",
+      "whatsapp_notifications",
+      "monthly_report",
     ],
   },
-  [WorkspacePlan.ENTERPRISE]: {
-    plan: WorkspacePlan.ENTERPRISE,
-    name: "Enterprise",
-    maxMembers: -1, // Unlimited
-    maxSignalsPerDay: -1, // Unlimited
-    maxStorageGb: -1, // Unlimited
+  [WorkspacePlan.DECISION]: {
+    plan: WorkspacePlan.DECISION,
+    name: "DECISION",
+    tagline: "Turn intelligence into action",
+    priceIdr: 50000000,
+    maxMembers: 50,
+    maxTopics: 200,
+    maxSignalsPerMonth: 500000,
+    maxAlertsPerMonth: 5000,
+    maxReportsPerMonth: 500,
+    maxAiAnalysesPerMonth: 20000,
+    dataRetentionDays: 365,
     features: [
-      "advanced_signals",
-      "dedicated_support",
+      "signals_monitoring",
       "alerts",
-      "reports",
-      "integrations",
+      "email_notifications",
+      "intelligence",
+      "ai_visibility",
+      "whatsapp_notifications",
+      "monthly_report",
+      "action_center",
+      "escalation_workflow",
+      "slack_integration",
+      "teams_integration",
+      "weekly_report",
+    ],
+  },
+  [WorkspacePlan.COMMAND]: {
+    plan: WorkspacePlan.COMMAND,
+    name: "COMMAND",
+    tagline: "Operationalize intelligence",
+    priceIdr: 100000000,
+    maxMembers: -1, // Unlimited
+    maxTopics: -1, // Unlimited
+    maxSignalsPerMonth: -1, // Unlimited
+    maxAlertsPerMonth: -1, // Unlimited
+    maxReportsPerMonth: -1, // Unlimited
+    maxAiAnalysesPerMonth: -1, // Unlimited
+    dataRetentionDays: -1, // Unlimited
+    features: [
+      "signals_monitoring",
+      "alerts",
+      "email_notifications",
+      "intelligence",
+      "ai_visibility",
+      "whatsapp_notifications",
+      "monthly_report",
+      "action_center",
+      "escalation_workflow",
+      "slack_integration",
+      "teams_integration",
+      "weekly_report",
+      "custom_ai_models",
       "api_access",
-      "sso",
-      "audit_logs",
-      "custom_retention",
+      "dedicated_infrastructure",
+      "enterprise_sla",
+      "dedicated_success_manager",
+      "quarterly_review",
     ],
   },
 };
