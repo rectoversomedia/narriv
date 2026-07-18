@@ -40,6 +40,9 @@ import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useToast } from "@/components/ui/toast";
 import { getWorkspaceMembers, getWorkspaceSettings, updateWorkspaceSettings, createWorkspaceMember, deleteWorkspaceMember, changePassword, uploadWorkspaceLogo, type CreateWorkspaceMemberInput, type UpdateWorkspaceSettingsInput, type WorkspaceMemberRecord } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
+import { SubscriptionCard } from "@/components/dashboard/SubscriptionCard";
+import { UpgradeModal } from "@/components/dashboard/UpgradeModal";
+import { useState } from "react";
 
 type TeamMember = {
   name: string;
@@ -326,6 +329,11 @@ export default function SettingsPage() {
   const [ipRestrict, setIpRestrict] = useState(false);
   const [dataRetention, setDataRetention] = useState("90 hari");
 
+  // State: Upgrade Modal
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>();
+  const [upgradeLimit, setUpgradeLimit] = useState<string | undefined>();
+
   // State: Chart interactive hover
   const chartData = [18452, 22000, 19800, 26000, 24500, 31000, 29000, 34000, 32041];
   const chartDates = ts.raw("billingCard.chartDates") as unknown as string[];
@@ -528,6 +536,9 @@ export default function SettingsPage() {
           {ts("pageHeaderSubtitle")}
         </p>
       </div>
+
+      {/* Subscription Card */}
+      <SubscriptionCard onUpgradeClick={() => setShowUpgradeModal(true)} />
 
       {workspaceSettingsQuery.data === null ? (
         <DashboardErrorState title={ts("loadFailedTitle")} description={ts("loadFailedDesc")} onRetry={() => void workspaceSettingsQuery.refetch()} minHeight="min-h-[150px]" />
@@ -1512,6 +1523,13 @@ export default function SettingsPage() {
         onOpenChange={(open) => {
           if (!open) setMemberToDelete(null);
         }}
+      />
+
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        feature={upgradeFeature}
+        limit={upgradeLimit}
       />
     </div>
   );
