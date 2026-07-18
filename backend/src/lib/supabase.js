@@ -105,6 +105,14 @@ const TABLE_MAP = {
     'integrations': 'integrations',
     'token_usage': 'token_usage',
     'app_notifications': 'app_notifications',
+
+    // Subscriptions
+    'subscription_plans': 'subscription_plans',
+    'plan_limits': 'plan_limits',
+    'plan_features': 'plan_features',
+    'workspace_subscriptions': 'workspace_subscriptions',
+    'workspace_usage': 'workspace_usage',
+    'workspace_invoices': 'workspace_invoices',
 };
 
 // Convert camelCase to snake_case

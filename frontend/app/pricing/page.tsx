@@ -15,171 +15,193 @@ import {
   Shield,
   Headphones,
   ArrowRight,
-  CreditCard,
-  Clock,
+  Brain,
+  Target,
+  Crown,
+  Rocket,
+  MessageCircle,
   FileText,
-  Bell,
   Bot,
-  Database,
+  Workflow,
+  Sliders,
 } from "lucide-react";
 
+// Subscription plans matching pricing image
 const plans = [
   {
-    id: "starter",
-    name: "Starter",
-    price: 499000,
+    id: "pilot",
+    name: "PILOT",
+    tagline: "Validate the value.",
+    icon: Rocket,
+    price: 5_000_000,
     period: "bulan",
-    description: "Perfect untuk tim kecil yang baru memulai",
-    features: {
-      seats: 3,
-      signals: "5,000/bulan",
-      sources: 3,
-      alerts: 50,
-      reports: 10,
-      ai_analysis: "1,000 sinyal",
-      support: "Email",
-      storage: "5GB",
+    description: "Perfect untuk pilot projects dan proof of concept",
+    popular: false,
+    limits: {
+      topics: 5,
+      users: 1,
+      retention: "30 days",
     },
     included: [
-      "Dashboard real-time",
-      "Monitoring 3 platform",
-      "AI sentiment analysis",
-      "Email notifications",
-      "Basic reports",
-      "7-day data retention",
+      "Signals Monitoring",
+      "Alerts",
+      "Email Notifications",
     ],
     excluded: [
-      "Custom data sources",
-      "Priority support",
-      "Advanced analytics",
-      "API access",
-      "White-label",
+      "Intelligence",
+      "AI Visibility",
+      "WhatsApp Notifications",
+      "Action Center",
+      "Slack/Teams Integration",
+      "API Access",
     ],
   },
   {
-    id: "professional",
-    name: "Professional",
-    price: 1_499_000,
+    id: "intelligence",
+    name: "INTELLIGENCE",
+    tagline: "Understand what matters.",
+    icon: Brain,
+    price: 25_000_000,
     period: "bulan",
-    description: "Untuk tim yang serius mengelola narrative",
+    description: "Corporate communications, brand, and reputation teams",
     popular: true,
-    features: {
-      seats: 10,
-      signals: "25,000/bulan",
-      sources: 10,
-      alerts: 200,
-      reports: 50,
-      ai_analysis: "5,000 sinyal",
-      support: "Priority",
-      storage: "50GB",
+    limits: {
+      topics: 50,
+      users: 10,
+      retention: "12 months",
     },
     included: [
-      "Everything in Starter",
-      "10 platform monitoring",
-      "Advanced AI analysis",
-      "Priority support",
-      "Custom reports",
-      "30-day data retention",
-      "Team collaboration",
-      "Alert escalation",
+      "Signals Monitoring",
+      "Alerts",
+      "Intelligence",
+      "AI Visibility",
+      "WhatsApp Notifications",
+      "Monthly Executive Report",
     ],
     excluded: [
-      "White-label",
-      "Dedicated account manager",
+      "Action Center",
+      "Slack/Teams Integration",
+      "Weekly Report",
+      "Custom AI Models",
+      "API Access",
     ],
   },
   {
-    id: "enterprise",
-    name: "Enterprise",
-    price: null,
-    period: "custom",
-    description: "Solusi lengkap untuk organisasi besar",
-    features: {
-      seats: "Unlimited",
-      signals: "Unlimited",
-      sources: "Unlimited",
-      alerts: "Unlimited",
-      reports: "Unlimited",
-      ai_analysis: "Unlimited",
-      support: "Dedicated",
-      storage: "Unlimited",
+    id: "decision",
+    name: "DECISION",
+    tagline: "Turn intelligence into action.",
+    icon: Target,
+    price: 50_000_000,
+    period: "bulan",
+    description: "Large organizations managing multiple brands, products, and issues",
+    popular: false,
+    limits: {
+      topics: 200,
+      users: 50,
+      retention: "12 months",
     },
     included: [
-      "Everything in Professional",
-      "Unlimited platforms",
-      "White-label option",
-      "Dedicated account manager",
-      "Custom integrations",
-      "SLA guarantee",
-      "On-premise option",
-      "Advanced security",
-      "API access",
-      "Training & onboarding",
+      "Everything in Intelligence",
+      "Action Center",
+      "Escalation Workflow",
+      "Slack Integration",
+      "Microsoft Teams Integration",
+      "WhatsApp Alerts",
+      "Weekly Executive Brief",
+    ],
+    excluded: [
+      "Custom AI Models",
+      "API Access",
+      "Dedicated Infrastructure",
+      "Enterprise SLA",
+    ],
+  },
+  {
+    id: "command",
+    name: "COMMAND",
+    tagline: "Operationalize intelligence.",
+    icon: Crown,
+    price: 100_000_000,
+    period: "bulan+",
+    description: "Banks, telcos, ministries, and enterprise organizations",
+    popular: false,
+    limits: {
+      topics: "Unlimited",
+      users: "Unlimited",
+      retention: "Custom",
+    },
+    included: [
+      "Everything in Decision",
+      "Custom AI Models",
+      "API Access",
+      "Dedicated Infrastructure",
+      "Enterprise SLA",
+      "Dedicated Success Manager",
+      "Quarterly Strategic Review",
     ],
     excluded: [],
   },
 ];
 
+// Feature comparison table
 const comparisonFeatures = [
   {
-    category: "Core Features",
-    icon: BarChart3,
+    category: "Core Intelligence",
+    icon: Brain,
     items: [
-      { name: "Dashboard real-time", starter: true, professional: true, enterprise: true },
-      { name: "Signal monitoring", starter: "5,000/bulan", professional: "25,000/bulan", enterprise: "Unlimited" },
-      { name: "Data sources", starter: 3, professional: 10, enterprise: "Unlimited" },
-      { name: "Sentiment analysis", starter: true, professional: true, enterprise: true },
-      { name: "Alert system", starter: "50/bulan", professional: "200/bulan", enterprise: "Unlimited" },
+      { name: "Signals Monitoring", pilot: true, intelligence: true, decision: true, command: true },
+      { name: "Alerts", pilot: true, intelligence: true, decision: true, command: true },
+      { name: "Intelligence", pilot: false, intelligence: true, decision: true, command: true },
+      { name: "AI Visibility", pilot: false, intelligence: true, decision: true, command: true },
     ],
   },
   {
-    category: "AI & Analytics",
-    icon: Bot,
+    category: "Notifications",
+    icon: MessageCircle,
     items: [
-      { name: "AI signal analysis", starter: "1,000/bulan", professional: "5,000/bulan", enterprise: "Unlimited" },
-      { name: "Narrative clustering", starter: false, professional: true, enterprise: true },
-      { name: "Predictive alerts", starter: false, professional: true, enterprise: true },
-      { name: "Custom AI models", starter: false, professional: false, enterprise: true },
-      { name: "Advanced analytics", starter: false, professional: true, enterprise: true },
+      { name: "Email Notifications", pilot: true, intelligence: true, decision: true, command: true },
+      { name: "WhatsApp Notifications", pilot: false, intelligence: true, decision: true, command: true },
     ],
   },
   {
-    category: "Reports & Exports",
+    category: "Action & Workflow",
+    icon: Workflow,
+    items: [
+      { name: "Action Center", pilot: false, intelligence: false, decision: true, command: true },
+      { name: "Escalation Workflow", pilot: false, intelligence: false, decision: true, command: true },
+    ],
+  },
+  {
+    category: "Integrations",
+    icon: Sliders,
+    items: [
+      { name: "Slack Integration", pilot: false, intelligence: false, decision: true, command: true },
+      { name: "Microsoft Teams", pilot: false, intelligence: false, decision: true, command: true },
+      { name: "API Access", pilot: false, intelligence: false, decision: false, command: true },
+    ],
+  },
+  {
+    category: "Reports",
     icon: FileText,
     items: [
-      { name: "Report templates", starter: 5, professional: 20, enterprise: "Unlimited" },
-      { name: "Scheduled reports", starter: false, professional: true, enterprise: true },
-      { name: "PDF/CSV export", starter: true, professional: true, enterprise: true },
-      { name: "Custom branding", starter: false, professional: false, enterprise: true },
-      { name: "API access", starter: false, professional: false, enterprise: true },
+      { name: "Monthly Executive Report", pilot: false, intelligence: true, decision: true, command: true },
+      { name: "Weekly Executive Brief", pilot: false, intelligence: false, decision: true, command: true },
     ],
   },
   {
-    category: "Team & Collaboration",
-    icon: Users,
+    category: "Enterprise",
+    icon: Crown,
     items: [
-      { name: "Team seats", starter: "3 users", professional: "10 users", enterprise: "Unlimited" },
-      { name: "Role-based access", starter: true, professional: true, enterprise: true },
-      { name: "Workflow automation", starter: false, professional: true, enterprise: true },
-      { name: "Audit logs", starter: false, professional: true, enterprise: true },
-      { name: "SSO/SAML", starter: false, professional: false, enterprise: true },
-    ],
-  },
-  {
-    category: "Support & Security",
-    icon: Shield,
-    items: [
-      { name: "Support level", starter: "Email", professional: "Priority", enterprise: "Dedicated" },
-      { name: "Response time", starter: "48 jam", professional: "4 jam", enterprise: "1 jam" },
-      { name: "Data retention", starter: "7 days", professional: "30 days", enterprise: "Custom" },
-      { name: "Storage", starter: "5GB", professional: "50GB", enterprise: "Unlimited" },
-      { name: "99.9% SLA", starter: false, professional: true, enterprise: true },
+      { name: "Custom AI Models", pilot: false, intelligence: false, decision: false, command: true },
+      { name: "Dedicated Infrastructure", pilot: false, intelligence: false, decision: false, command: true },
+      { name: "Enterprise SLA", pilot: false, intelligence: false, decision: false, command: true },
+      { name: "Dedicated Success Manager", pilot: false, intelligence: false, decision: false, command: true },
+      { name: "Quarterly Strategic Review", pilot: false, intelligence: false, decision: false, command: true },
     ],
   },
 ];
 
-function formatPrice(price: number | null): string {
-  if (price === null) return "Custom";
+function formatPrice(price: number): string {
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
@@ -257,17 +279,18 @@ export default function PricingPage() {
 
       {/* Pricing Cards */}
       <section className="px-6 py-16">
-        <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-3">
+        <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-4">
           {plans.map((plan) => {
-            const price = plan.price ? Math.round(plan.price * discount) : null;
-            const isCustom = plan.id === "enterprise";
+            const price = Math.round(plan.price * discount);
+            const isCustom = plan.id === "command";
+            const PlanIcon = plan.icon;
 
             return (
               <div
                 key={plan.id}
                 className={`relative rounded-2xl border p-8 ${
                   plan.popular
-                    ? "border-indigo-500 bg-gradient-to-b from-indigo-50 to-white shadow-xl shadow-indigo-100"
+                    ? "border-indigo-500 bg-gradient-to-b from-indigo-50 to-white shadow-xl shadow-indigo-100 ring-2 ring-indigo-500"
                     : "border-slate-200 bg-white shadow-lg"
                 }`}
               >
@@ -280,29 +303,38 @@ export default function PricingPage() {
                   </div>
                 )}
 
+                {/* Plan Header */}
                 <div className="text-center">
-                  <h3 className="text-xl font-bold text-slate-900">{plan.name}</h3>
-                  <p className="mt-2 text-sm text-slate-500">{plan.description}</p>
-
-                  <div className="mt-6">
-                    {isCustom ? (
-                      <div className="text-3xl font-black text-slate-900">{t("contactSales")}</div>
-                    ) : (
-                      <>
-                        <div className="text-4xl font-black text-slate-900">
-                          {formatPrice(price)}
-                          <span className="text-base font-normal text-slate-400">/{plan.period}</span>
-                        </div>
-                        {billingPeriod === "annual" && (
-                          <p className="mt-1 text-sm text-green-600 font-medium">
-                            Save {formatPrice(plan.price! - price!)}/bulan
-                          </p>
-                        )}
-                      </>
-                    )}
+                  <div className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl ${
+                    plan.popular ? "bg-indigo-500 text-white" : "bg-slate-100 text-slate-600"
+                  }`}>
+                    <PlanIcon size={28} />
                   </div>
+                  <h3 className="text-xl font-bold text-slate-900">{plan.name}</h3>
+                  <p className="mt-1 text-sm text-slate-500">{plan.tagline}</p>
+                  <p className="mt-2 text-xs text-slate-400">{plan.description}</p>
                 </div>
 
+                {/* Price */}
+                <div className="mt-6 text-center">
+                  {isCustom ? (
+                    <div className="text-3xl font-black text-slate-900">Custom</div>
+                  ) : (
+                    <>
+                      <div className="text-4xl font-black text-slate-900">
+                        {formatPrice(price)}
+                        <span className="text-base font-normal text-slate-400">/{plan.period}</span>
+                      </div>
+                      {billingPeriod === "annual" && (
+                        <p className="mt-1 text-sm text-green-600 font-medium">
+                          Save {formatPrice(plan.price - price)}/bulan
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* CTA Button */}
                 <Link
                   href={isCustom ? "/contact" : `/signup?plan=${plan.id}`}
                   className={`mt-8 block w-full rounded-xl py-3.5 text-center text-base font-bold transition ${
@@ -311,10 +343,27 @@ export default function PricingPage() {
                       : "border-2 border-slate-200 text-slate-900 hover:border-indigo-500 hover:text-indigo-600"
                   }`}
                 >
-                  {isCustom ? t("getStarted") : plan.price ? t("startTrial") : t("contactSales")}
+                  {isCustom ? t("contactSales") : plan.price ? t("startTrial") : t("contactSales")}
                 </Link>
 
-                <div className="mt-8 space-y-4">
+                {/* Limits */}
+                <div className="mt-6 space-y-3 border-t border-slate-100 pt-6">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500">Intelligence Topics</span>
+                    <span className="font-semibold text-slate-900">{plan.limits.topics}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500">Users</span>
+                    <span className="font-semibold text-slate-900">{plan.limits.users}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500">Data Retention</span>
+                    <span className="font-semibold text-slate-900">{plan.limits.retention}</span>
+                  </div>
+                </div>
+
+                {/* Features */}
+                <div className="mt-6 space-y-3">
                   {plan.included.map((feature) => (
                     <div key={feature} className="flex items-start gap-3">
                       <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-600">
@@ -324,28 +373,13 @@ export default function PricingPage() {
                     </div>
                   ))}
                 </div>
-
-                <div className="mt-6 space-y-3 border-t border-slate-100 pt-6">
-                  <div className="flex items-center gap-3 text-sm font-semibold text-slate-900">
-                    <Users size={16} className="text-slate-400" />
-                    {typeof plan.features.seats === "number" ? `${plan.features.seats} users` : plan.features.seats}
-                  </div>
-                  <div className="flex items-center gap-3 text-sm font-semibold text-slate-900">
-                    <Globe size={16} className="text-slate-400" />
-                    {plan.features.signals}
-                  </div>
-                  <div className="flex items-center gap-3 text-sm font-semibold text-slate-900">
-                    <Database size={16} className="text-slate-400" />
-                    {plan.features.storage}
-                  </div>
-                </div>
               </div>
             );
           })}
         </div>
       </section>
 
-      {/* Comparison Table */}
+      {/* Feature Comparison Table */}
       <section className="px-6 py-16">
         <div className="mx-auto max-w-6xl">
           <div className="text-center">
@@ -358,24 +392,27 @@ export default function PricingPage() {
               <thead>
                 <tr className="border-b-2 border-slate-200">
                   <th className="py-4 pr-4 text-left text-sm font-bold text-slate-900">
-                    {t("feature")}
+                    Feature
                   </th>
-                  <th className="px-4 py-4 text-center text-sm font-bold text-slate-900">
-                    Starter
+                  <th className="px-4 py-4 text-center text-sm font-bold text-slate-600">
+                    PILOT
                   </th>
                   <th className="px-4 py-4 text-center text-sm font-bold text-indigo-600">
-                    Professional
+                    INTELLIGENCE
                   </th>
-                  <th className="px-4 py-4 text-center text-sm font-bold text-slate-900">
-                    Enterprise
+                  <th className="px-4 py-4 text-center text-sm font-bold text-slate-600">
+                    DECISION
+                  </th>
+                  <th className="px-4 py-4 text-center text-sm font-bold text-slate-600">
+                    COMMAND
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {comparisonFeatures.map((category, idx) => (
+                {comparisonFeatures.map((category) => (
                   <>
                     <tr key={category.category} className="bg-slate-50">
-                      <td colSpan={4} className="py-3 px-4">
+                      <td colSpan={5} className="py-3 px-4">
                         <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
                           <category.icon size={16} className="text-indigo-500" />
                           {category.category}
@@ -386,8 +423,8 @@ export default function PricingPage() {
                       <tr key={item.name} className="border-b border-slate-100">
                         <td className="py-4 pr-4 text-sm text-slate-600">{item.name}</td>
                         <td className="px-4 py-4 text-center">
-                          {typeof item.starter === "boolean" ? (
-                            item.starter ? (
+                          {typeof item.pilot === "boolean" ? (
+                            item.pilot ? (
                               <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-600">
                                 <CheckIcon className="h-3.5 w-3.5" />
                               </span>
@@ -397,12 +434,12 @@ export default function PricingPage() {
                               </span>
                             )
                           ) : (
-                            <span className="text-sm font-medium text-slate-900">{item.starter}</span>
+                            <span className="text-sm font-medium text-slate-900">{item.pilot}</span>
                           )}
                         </td>
                         <td className="px-4 py-4 text-center">
-                          {typeof item.professional === "boolean" ? (
-                            item.professional ? (
+                          {typeof item.intelligence === "boolean" ? (
+                            item.intelligence ? (
                               <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
                                 <CheckIcon className="h-3.5 w-3.5" />
                               </span>
@@ -412,12 +449,12 @@ export default function PricingPage() {
                               </span>
                             )
                           ) : (
-                            <span className="text-sm font-medium text-indigo-600">{item.professional}</span>
+                            <span className="text-sm font-medium text-indigo-600">{item.intelligence}</span>
                           )}
                         </td>
                         <td className="px-4 py-4 text-center">
-                          {typeof item.enterprise === "boolean" ? (
-                            item.enterprise ? (
+                          {typeof item.decision === "boolean" ? (
+                            item.decision ? (
                               <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-600">
                                 <CheckIcon className="h-3.5 w-3.5" />
                               </span>
@@ -427,7 +464,22 @@ export default function PricingPage() {
                               </span>
                             )
                           ) : (
-                            <span className="text-sm font-bold text-slate-900">{item.enterprise}</span>
+                            <span className="text-sm font-medium text-slate-900">{item.decision}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          {typeof item.command === "boolean" ? (
+                            item.command ? (
+                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-600">
+                                <CheckIcon className="h-3.5 w-3.5" />
+                              </span>
+                            ) : (
+                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                                <XIcon className="h-3.5 w-3.5" />
+                              </span>
+                            )
+                          ) : (
+                            <span className="text-sm font-bold text-slate-900">{item.command}</span>
                           )}
                         </td>
                       </tr>
