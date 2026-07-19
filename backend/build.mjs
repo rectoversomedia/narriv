@@ -31,7 +31,6 @@ await esbuild.build({
     "openai",
     "bcrypt",
     "jsonwebtoken",
-    "uuid",
     "zod",
     "apify-client",
     "resend",
@@ -42,8 +41,5 @@ await esbuild.build({
     js: `"use strict";`,
   },
 });
-
-// Copy as index.js for Vercel
-existsSync(join(outDir, "index.js")) && rmSync(join(outDir, "index.js"));
 
 console.log("✅ Backend bundled successfully to vercel_dist/");

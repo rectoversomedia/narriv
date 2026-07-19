@@ -16,6 +16,7 @@
     "dev:js": "nodemon src/index.js",
     "start": "node dist/index.js",
     "build": "tsc",
+    "build:bundle": "node build.mjs",
     "build:watch": "tsc --watch",
     "test": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "load:smoke": "node tests/load/run-k6.js smoke",
@@ -24,7 +25,11 @@
     "typecheck": "tsc --noEmit",
     "typecheck:watch": "tsc --noEmit --watch"
   },
-  "keywords": ["narriv", "api", "narrative-intelligence"],
+  "keywords": [
+    "narriv",
+    "api",
+    "narrative-intelligence"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -41,7 +46,7 @@
     "lodash.isequal": "^4.5.0",
     "openai": "^6.34.0",
     "resend": "^6.12.4",
-    "uuid": "^14.0.1",
+    "uuid": "^9.0.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -53,10 +58,12 @@
     "@types/node": "^22.15.3",
     "@types/uuid": "^10.0.0",
     "cross-env": "^10.1.0",
+    "esbuild": "^0.28.1",
     "jest": "^30.4.2",
     "nodemon": "^3.1.14",
     "supertest": "^7.2.2",
     "tsx": "^4.19.4",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vercel": "^56.3.1"
   }
 }
