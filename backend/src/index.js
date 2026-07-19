@@ -4,8 +4,7 @@ import compression from "compression";
 import dotenv from "dotenv";
 
 // Import Sentry for error tracking
-import Sentry from "./lib/sentry.js";
-import { flushSentry } from "./lib/sentry.js";
+import { Sentry, flushSentry } from "./lib/sentry-wrapper.js";
 
 // Import Routes
 import authRoutes from "./modules/auth/auth.routes.js";

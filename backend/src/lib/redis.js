@@ -50,15 +50,16 @@ if (isRedisDisabled) {
 
     connection = new MockRedis();
 } else {
-    // Dynamic import to avoid issues when disabled
-    const Redis = await import("ioredis");
+    // Static import - ioredis will be loaded normally
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const Redis = require("ioredis");
     const redisOptions = {
         maxRetriesPerRequest: null, // Required by BullMQ
         connectTimeout: 10000,
         lazyConnect: true,
     };
 
-    connection = new Redis.default(process.env.REDIS_URL, redisOptions);
+    connection = new Redis(process.env.REDIS_URL, redisOptions);
 
     connection.on("error", (err) => {
         if (err.code === 'ECONNREFUSED' || err.message?.includes('ECONNREFUSED')) {
@@ -70,7 +71,7 @@ if (isRedisDisabled) {
     });
 
     connection.on("connect", () => {
-        logStructured("info", "redis_connected");
+        logStructured("info", "redis_connected", { url: process.env.REDIS_URL?.replace(/\/\/.*@/, "//***@") });
     });
 }
 
