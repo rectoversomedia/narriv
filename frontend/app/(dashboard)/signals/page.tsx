@@ -344,7 +344,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
 
       <Panel className="overflow-hidden p-0 xl:min-h-[610px] flex flex-col">
         <div className="overflow-x-auto flex-1 flex flex-col">
-          <table className="w-full min-w-[780px] border-collapse text-left flex-1 h-full">
+          <table className="w-full min-w-[600px] lg:min-w-full border-collapse text-left flex-1 h-full">
             <thead>
               <tr className="border-b border-[#E6EAF2] bg-[#FBFCFF] text-[10px] font-black uppercase tracking-[0.17em] text-[#68739F]">
                 <th className="w-10 px-3.5 py-3">
@@ -921,7 +921,7 @@ export default function SignalsPage() {
         </div>
       )}
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div><h1 className="text-[31px] font-black tracking-[-0.045em] text-[#060A23]">{t("title")}</h1><p className="mt-2 text-[14px] font-semibold text-[#68739F]">{t("subtitle")}</p></div>
+        <div><h1 className="text-[32px] font-black tracking-[-0.04em] text-[#060A23]">{t("title")}</h1><p className="mt-2 text-[15px] font-medium text-slate-500">{t("subtitle")}</p></div>
         <div className="flex gap-2">
           <button onClick={() => setIsAdvancedSearchOpen(true)} className={cn("flex h-10 items-center justify-center gap-2 rounded-[8px] border px-4 text-[12px] font-black transition", isAdvancedSearchActive ? "border-[#465FFF] bg-[#465FFF]/10 text-[#465FFF]" : "border-[#DDE3EF] bg-white text-[#31406B] hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]")}>
             <Filter size={15} />
