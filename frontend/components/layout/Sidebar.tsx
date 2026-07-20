@@ -105,7 +105,7 @@ export function Sidebar() {
           </div>
         </div>}
 
-        {sidebarCollapsed ? null : <p className="mt-6 px-2 text-[11px] text-white/40">© 2026 Narriv</p>}
+        {sidebarCollapsed ? null : <p className="mt-6 px-2 text-[11px] text-white/40">© {new Date().getFullYear()} Narriv</p>}
         {sidebarCollapsed ? null : <p className="mt-2 px-2 text-[11px] text-white/40">All rights reserved.</p>}
       </aside>
 

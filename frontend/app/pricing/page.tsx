@@ -548,7 +548,7 @@ export default function PricingPage() {
             <Link href="/privacy" className="hover:text-slate-900">{t("privacy")}</Link>
             <Link href="/contact" className="hover:text-slate-900">{t("contact")}</Link>
           </div>
-          <p className="text-sm text-slate-400">© 2024 Narriv. All rights reserved.</p>
+          <p className="text-sm text-slate-400">© {new Date().getFullYear()} Narriv. All rights reserved.</p>
         </div>
       </footer>
     </div>

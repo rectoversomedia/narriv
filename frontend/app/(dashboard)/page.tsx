@@ -389,10 +389,10 @@ export default function DashboardPage() {
       {/* Header Section */}
       <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between mb-2 rounded-[10px] border border-slate-100 bg-[linear-gradient(135deg,#ffffff_0%,#f8fbff_52%,#fff7ed_100%)] p-4 shadow-[0_14px_38px_rgba(16,24,40,0.04)]">
         <div>
-          <h1 className="text-[26px] font-black tracking-tight text-slate-900 flex items-center gap-2">
+          <h1 className="text-[32px] font-black tracking-[-0.04em] text-slate-900 flex items-center gap-2">
             {t("pages.command.title")}
           </h1>
-          <p className="mt-2 text-[13px] font-medium text-slate-400">{t("pages.command.desc")}</p>
+          <p className="mt-2 text-[15px] font-medium text-slate-500">{t("pages.command.desc")}</p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Link 
