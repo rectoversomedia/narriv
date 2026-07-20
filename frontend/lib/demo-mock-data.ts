@@ -589,6 +589,156 @@ export function getMockVisibility(): VisibilityResponse {
 }
 
 // ---------------------------------------------------------------------------
+// AI Visibility Summary & Trends Mock Data
+// ---------------------------------------------------------------------------
+
+/**
+ * Mock visibility summary - provides KPI cards + engine breakdown
+ */
+export function getMockVisibilitySummary(): {
+  kpis: {
+    avg_visibility_score: number;
+    avg_brand_presence_rate: number;
+    avg_competitor_mention_rate: number;
+    engines_tracked: number;
+    total_analyses: number;
+  };
+  engine_breakdown: Array<{
+    engineName: string;
+    visibilityScore: number;
+    brandPresenceRate: number;
+    competitorMentionRate: number;
+    lastChecked: string;
+    metadata: Record<string, unknown>;
+  }>;
+} {
+  return {
+    kpis: {
+      avg_visibility_score: 68,
+      avg_brand_presence_rate: 72,
+      avg_competitor_mention_rate: 28,
+      engines_tracked: 4,
+      total_analyses: 247,
+    },
+    engine_breakdown: [
+      {
+        engineName: "ChatGPT",
+        visibilityScore: 78,
+        brandPresenceRate: 82,
+        competitorMentionRate: 18,
+        lastChecked: new Date().toISOString(),
+        metadata: {},
+      },
+      {
+        engineName: "Claude",
+        visibilityScore: 71,
+        brandPresenceRate: 75,
+        competitorMentionRate: 25,
+        lastChecked: new Date().toISOString(),
+        metadata: {},
+      },
+      {
+        engineName: "Gemini",
+        visibilityScore: 65,
+        brandPresenceRate: 68,
+        competitorMentionRate: 32,
+        lastChecked: new Date().toISOString(),
+        metadata: {},
+      },
+      {
+        engineName: "Perplexity",
+        visibilityScore: 58,
+        brandPresenceRate: 63,
+        competitorMentionRate: 37,
+        lastChecked: new Date().toISOString(),
+        metadata: {},
+      },
+    ],
+  };
+}
+
+/**
+ * Mock visibility trends - provides time series data for charts
+ */
+export function getMockVisibilityTrends(days = 7): {
+  period: { from: string; to: string; days: number };
+  trends: Array<{
+    date: string;
+    avg_visibility_score: number;
+    avg_brand_presence_rate: number;
+    avg_competitor_mention_rate: number;
+    data_points: number;
+  }>;
+  engine_trends: Record<string, Array<{
+    date: string;
+    visibilityScore: number;
+    brandPresenceRate: number;
+    competitorMentionRate: number;
+  }>>;
+} {
+  const trends = [];
+  const engineTrends: Record<string, Array<{ date: string; visibilityScore: number; brandPresenceRate: number; competitorMentionRate: number }>> = {
+    ChatGPT: [],
+    Claude: [],
+    Gemini: [],
+    Perplexity: [],
+  };
+
+  const now = new Date();
+  const from = new Date(now);
+  from.setDate(from.getDate() - days);
+
+  for (let i = 0; i < days; i++) {
+    const d = new Date(from);
+    d.setDate(d.getDate() + i);
+    const dateStr = d.toISOString().split("T")[0];
+    const base = 65 + Math.sin(i * 0.7) * 10 + (i * 0.5);
+    trends.push({
+      date: dateStr,
+      avg_visibility_score: Math.round(base),
+      avg_brand_presence_rate: Math.round(base + 5),
+      avg_competitor_mention_rate: Math.round(100 - base - 5),
+      data_points: 12,
+    });
+
+    engineTrends.ChatGPT.push({
+      date: dateStr,
+      visibilityScore: Math.round(base + 10),
+      brandPresenceRate: Math.round(base + 15),
+      competitorMentionRate: Math.round(100 - base - 15),
+    });
+    engineTrends.Claude.push({
+      date: dateStr,
+      visibilityScore: Math.round(base + 3),
+      brandPresenceRate: Math.round(base + 8),
+      competitorMentionRate: Math.round(100 - base - 8),
+    });
+    engineTrends.Gemini.push({
+      date: dateStr,
+      visibilityScore: Math.round(base - 3),
+      brandPresenceRate: Math.round(base + 2),
+      competitorMentionRate: Math.round(100 - base - 2),
+    });
+    engineTrends.Perplexity.push({
+      date: dateStr,
+      visibilityScore: Math.round(base - 10),
+      brandPresenceRate: Math.round(base - 5),
+      competitorMentionRate: Math.round(100 - base + 5),
+    });
+  }
+
+  return {
+    period: {
+      from: from.toISOString(),
+      to: now.toISOString(),
+      days,
+    },
+    trends,
+    engine_trends: engineTrends,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Sources Mock Data
 // ---------------------------------------------------------------------------
 

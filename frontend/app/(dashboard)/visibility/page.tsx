@@ -28,7 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardErrorState, MetricRowSkeleton } from "@/components/dashboard/dashboard-states";
 import { getVisibility, getVisibilitySummary, getVisibilityTrends, getWorkspaceSettings, triggerVisibilityAnalysis, type VisibilityResponse } from "@/lib/api-service";
-import { isDemoMode, getMockVisibility } from "@/lib/demo-mock-data";
+import { isDemoMode, getMockVisibility, getMockVisibilitySummary, getMockVisibilityTrends } from "@/lib/demo-mock-data";
 import { useUiStore } from "@/store/useUiStore";
 import {
   OpenAILight,
@@ -518,14 +518,20 @@ export default function VisibilityPage() {
     enabled: hasCheckedDemoMode,
   });
   const visibilitySummaryQuery = useQuery({
-    queryKey: ["visibility-summary"],
-    queryFn: () => getVisibilitySummary(),
+    queryKey: ["visibility-summary", demoMode],
+    queryFn: () => demoMode
+      ? Promise.resolve(getMockVisibilitySummary())
+      : getVisibilitySummary(),
     staleTime: 60 * 1000,
+    enabled: hasCheckedDemoMode,
   });
   const visibilityTrendsQuery = useQuery({
-    queryKey: ["visibility-trends", selectedDays],
-    queryFn: () => getVisibilityTrends(undefined, undefined, selectedDays),
+    queryKey: ["visibility-trends", selectedDays, demoMode],
+    queryFn: () => demoMode
+      ? Promise.resolve(getMockVisibilityTrends(selectedDays))
+      : getVisibilityTrends(undefined, undefined, selectedDays),
     staleTime: 60 * 1000,
+    enabled: hasCheckedDemoMode,
   });
   const workspaceSettingsQuery = useQuery({
     queryKey: ["workspace-settings"],
