@@ -540,11 +540,47 @@ export default function SettingsPage() {
       <SubscriptionCard onUpgradeClick={() => setShowUpgradeModal(true)} />
 
       {workspaceSettingsQuery.data === null ? (
-        <DashboardErrorState title={ts("loadFailedTitle")} description={ts("loadFailedDesc")} onRetry={() => void workspaceSettingsQuery.refetch()} minHeight="min-h-[150px]" />
+        <div className="rounded-[12px] border border-dashed border-[#8B5CFF]/30 bg-gradient-to-br from-white to-[#F8F5FF] px-5 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#8B5CFF]/10 text-[#8B5CFF] shrink-0">
+              <Sparkles size={18} />
+            </div>
+            <div>
+              <p className="text-[13px] font-bold text-slate-900">{ts("loadFailedTitle")}</p>
+              <p className="text-[11px] font-medium text-slate-500">{ts("loadFailedDesc")}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => void workspaceSettingsQuery.refetch()}
+              className="h-8 rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-700 hover:bg-slate-50"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
       ) : null}
 
       {membersQuery.data === null ? (
-        <DashboardErrorState title={ts("membersLoadFailedTitle")} description={ts("membersLoadFailedDesc")} onRetry={() => void membersQuery.refetch()} minHeight="min-h-[150px]" />
+        <div className="rounded-[12px] border border-dashed border-amber-300 bg-amber-50 px-5 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-amber-600 shrink-0">
+              <Users size={18} />
+            </div>
+            <div>
+              <p className="text-[13px] font-bold text-slate-900">{ts("membersLoadFailedTitle")}</p>
+              <p className="text-[11px] font-medium text-slate-500">{ts("membersLoadFailedDesc")}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => void membersQuery.refetch()}
+            className="h-8 rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-700 hover:bg-slate-50 shrink-0"
+          >
+            Retry
+          </button>
+        </div>
       ) : null}
 
       {/* Row 1: Workspace & User Management */}

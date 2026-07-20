@@ -675,19 +675,36 @@ export default function IntelligencePage() {
   return (
     <div className="flex flex-col gap-4 pb-8 text-[#101334]">
       {/* Demo Mode Banner */}
-      {demoMode && (
+      {demoMode ? (
         <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
           <Sparkles size={16} className="text-[#8B5CFF]" />
           <p className="text-[13px] font-bold text-[#8B5CFF]">
             Demo Mode — Showing sample data for demonstration purposes
           </p>
         </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              const url = new URL(window.location.href);
+              url.searchParams.set("demo", "true");
+              window.location.href = url.toString();
+            }
+          }}
+          className="flex items-center justify-center gap-2 rounded-[10px] border border-dashed border-[#8B5CFF]/30 bg-[#8B5CFF]/5 px-4 py-3 transition hover:bg-[#8B5CFF]/10"
+        >
+          <Sparkles size={16} className="text-[#8B5CFF]" />
+          <p className="text-[13px] font-bold text-[#8B5CFF]">
+            Activate Demo Mode — explore Intelligence with sample data
+          </p>
+        </button>
       )}
 
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-[32px] font-black tracking-[-0.045em] text-[#060A23]">{ti("pageTitle")}</h1>
-          <p className="mt-2 text-[14px] font-semibold text-[#737D9F]">{ti("pageSubtitle")}</p>
+          <h1 className="text-[32px] font-black tracking-[-0.04em] text-[#060A23]">{ti("pageTitle")}</h1>
+          <p className="mt-2 text-[15px] font-medium text-slate-500">{ti("pageSubtitle")}</p>
         </div>
         <div className="relative w-full sm:w-fit" ref={periodMenuRef}>
           <button type="button" onClick={() => setIsPeriodMenuOpen((open) => !open)} aria-expanded={isPeriodMenuOpen} className="flex h-10 w-full items-center justify-center gap-2 rounded-[10px] border border-[#E5E9F3] bg-white px-4 text-xs font-extrabold text-[#475070] shadow-sm transition hover:bg-[#F8FAFF] sm:w-fit">

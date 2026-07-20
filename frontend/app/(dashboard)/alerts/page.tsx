@@ -1380,18 +1380,35 @@ export default function AlertsPage() {
 
   return (
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
-      {demoMode && (
+      {demoMode ? (
         <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
           <Sparkles size={16} className="text-[#8B5CFF]" />
           <p className="text-[13px] font-bold text-[#8B5CFF]">
             Demo Mode — Showing sample data for demonstration purposes
           </p>
         </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              const url = new URL(window.location.href);
+              url.searchParams.set("demo", "true");
+              window.location.href = url.toString();
+            }
+          }}
+          className="flex items-center justify-center gap-2 rounded-[10px] border border-dashed border-[#8B5CFF]/30 bg-[#8B5CFF]/5 px-4 py-3 transition hover:bg-[#8B5CFF]/10"
+        >
+          <Sparkles size={16} className="text-[#8B5CFF]" />
+          <p className="text-[13px] font-bold text-[#8B5CFF]">
+            Activate Demo Mode — see Alerts with sample data
+          </p>
+        </button>
       )}
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-[31px] font-black tracking-[-0.045em] text-[#060A23]">{ta("v2.header.title")}</h1>
-          <p className="mt-2 text-[14px] font-semibold text-[#31406B]">{ta("v2.header.desc")}</p>
+          <h1 className="text-[32px] font-black tracking-[-0.04em] text-[#060A23]">{ta("v2.header.title")}</h1>
+          <p className="mt-2 text-[15px] font-medium text-slate-500">{ta("v2.header.desc")}</p>
         </div>
         <div className="flex flex-wrap gap-3">
           <button type="button" onClick={openNotificationRulesModal} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF] sm:w-auto"><Settings size={14} />{ta("v2.header.notificationRules")}</button>
@@ -1408,8 +1425,38 @@ export default function AlertsPage() {
         )}
       </section>
       {summaryQuery.isError || (!summaryQuery.isLoading && !summaryQuery.data) ? (
-        <div className="rounded-[10px] border border-[#FAD7D7] bg-[#FFF6F6] px-4 py-3 text-[12px] font-bold text-[#B42318]">
-          {ta("v2.metrics.summaryUnavailable")}
+        <div className="rounded-[12px] border border-dashed border-[#8B5CFF]/30 bg-gradient-to-br from-white to-[#F8F5FF] px-5 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#8B5CFF]/10 text-[#8B5CFF] shrink-0">
+              <Sparkles size={18} />
+            </div>
+            <div>
+              <p className="text-[13px] font-bold text-slate-900">Alert metrics unavailable</p>
+              <p className="text-[11px] font-medium text-slate-500">Backend data couldn't be loaded. Activate Demo Mode to explore with sample alerts.</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  const url = new URL(window.location.href);
+                  url.searchParams.set("demo", "true");
+                  window.location.href = url.toString();
+                }
+              }}
+              className="h-8 rounded-lg bg-gradient-to-r from-[#8B5CFF] to-[#6B4DFF] px-3 text-[11px] font-bold text-white shadow-[0_4px_14px_rgba(139,92,255,0.25)] hover:from-[#7C4DFF] hover:to-[#5B3DFF]"
+            >
+              Try Demo
+            </button>
+            <button
+              type="button"
+              onClick={() => void summaryQuery.refetch()}
+              className="h-8 rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-700 hover:bg-slate-50"
+            >
+              Retry
+            </button>
+          </div>
         </div>
       ) : null}
 
