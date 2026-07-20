@@ -5,9 +5,9 @@ import { buildTemplateContext } from "./action-templates.js";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-const client = new OpenAI({
-    apiKey: OPENAI_API_KEY || "sk-placeholder",
-});
+const client = OPENAI_API_KEY ? new OpenAI({
+    apiKey: OPENAI_API_KEY,
+}) : null;
 
 const OPENAI_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 20000);
 const OPENAI_MAX_RETRIES = 1;

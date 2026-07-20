@@ -10,9 +10,9 @@ if (!OPENAI_API_KEY) {
 }
 
 // Initialize the OpenAI client
-const client = new OpenAI({
-    apiKey: OPENAI_API_KEY || "sk-placeholder",
-});
+const client = OPENAI_API_KEY ? new OpenAI({
+    apiKey: OPENAI_API_KEY,
+}) : null;
 
 class AIAnalysisError extends Error {
     constructor(message, details = {}) {

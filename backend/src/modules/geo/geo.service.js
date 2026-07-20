@@ -4,9 +4,9 @@ import { logStructured } from "../../lib/logger.js";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-const client = new OpenAI({
-    apiKey: OPENAI_API_KEY || "sk-placeholder",
-});
+const client = OPENAI_API_KEY ? new OpenAI({
+    apiKey: OPENAI_API_KEY,
+}) : null;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CORE CALCULATION HELPERS

@@ -20,7 +20,7 @@ await esbuild.build({
   target: "node20",
   format: "cjs",
   outfile: join(outDir, "index.cjs"),
-  external: [
+    external: [
     "express",
     "cors",
     "compression",
@@ -33,6 +33,7 @@ await esbuild.build({
     "jsonwebtoken",
     "zod",
     "apify-client",
+    "proxy-agent",
     "resend",
   ],
   sourcemap: false,

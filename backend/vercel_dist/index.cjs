@@ -48550,9 +48550,9 @@ var OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 if (!OPENAI_API_KEY) {
   logStructured("warn", "[AI SERVICE] WARNING: OPENAI_API_KEY is not set. AI features will be disabled.");
 }
-var client = new import_openai7.default({
-  apiKey: OPENAI_API_KEY || "sk-placeholder"
-});
+var client = OPENAI_API_KEY ? new import_openai7.default({
+  apiKey: OPENAI_API_KEY
+}) : null;
 function buildSignalSystemPrompt() {
   return `You are a narrative intelligence engine for a PR & crisis communications platform.
 Your ONLY job is to analyze media content and return a structured JSON signal analysis.
@@ -51883,9 +51883,9 @@ var import_openai8 = __toESM(require("openai"), 1);
 init_supabase();
 init_logger();
 var OPENAI_API_KEY2 = process.env.OPENAI_API_KEY;
-var client2 = new import_openai8.default({
-  apiKey: OPENAI_API_KEY2 || "sk-placeholder"
-});
+var client2 = OPENAI_API_KEY2 ? new import_openai8.default({
+  apiKey: OPENAI_API_KEY2
+}) : null;
 function countMentions(text, term) {
   if (!text || !term) return 0;
   const regex = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "gi");
@@ -53554,9 +53554,9 @@ KEY MESSAGES: ${template.key_messages.join(", ")}`);
 
 // src/modules/actions/actions.service.js
 var OPENAI_API_KEY3 = process.env.OPENAI_API_KEY;
-var client3 = new import_openai9.default({
-  apiKey: OPENAI_API_KEY3 || "sk-placeholder"
-});
+var client3 = OPENAI_API_KEY3 ? new import_openai9.default({
+  apiKey: OPENAI_API_KEY3
+}) : null;
 var OPENAI_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 2e4);
 var OPENAI_MAX_RETRIES = 1;
 function isAbortError(error3) {
@@ -59254,8 +59254,16 @@ function fail(service, error3, details = {}) {
 }
 async function checkDatabaseHealth() {
   try {
+    const url = process.env.SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_KEY;
+    if (!url || !key || key === "REPLACE_WITH_YOUR_SERVICE_ROLE_KEY" || url.includes("your-project")) {
+      return { service: "database", status: "unavailable", reason: "Supabase credentials not configured" };
+    }
     const { error: error3 } = await supabase_default.from("users").select("id").limit(1);
     if (error3) {
+      if (String(error3?.message || "").includes("Invalid API key")) {
+        return { service: "database", status: "unavailable", reason: "Invalid Supabase API key - check credentials" };
+      }
       throw error3;
     }
     return ok("database");
@@ -59276,6 +59284,9 @@ async function checkOpenAIHealth() {
   if (!key) {
     return { service: "openai", status: "unavailable", reason: "OPENAI_API_KEY is missing" };
   }
+  if (key.startsWith("sk-placeholder") || key.startsWith("sk-disab") || key.includes("placeholder")) {
+    return { service: "openai", status: "unavailable", reason: "OPENAI_API_KEY is a placeholder - AI features disabled" };
+  }
   try {
     const client4 = new import_openai10.default({ apiKey: key });
     await client4.models.list({ limit: 1 });
@@ -59289,11 +59300,21 @@ async function checkIngestionProviderHealth() {
   if (!token) {
     return { service: "ingestion_provider", provider: "apify", status: "unavailable", reason: "APIFY_TOKEN is missing" };
   }
+  if (token.includes("REPLACE") || token.includes("placeholder")) {
+    return { service: "ingestion_provider", provider: "apify", status: "unavailable", reason: "APIFY_TOKEN is a placeholder - ingestion disabled" };
+  }
   try {
+    try {
+      require("proxy-agent");
+    } catch {
+    }
     const client4 = new import_apify_client.ApifyClient({ token });
     const me2 = await client4.user().get();
     return ok("ingestion_provider", { provider: "apify", accountId: me2?.id || null });
   } catch (error3) {
+    if (String(error3?.message || "").includes("proxy-agent")) {
+      return { service: "ingestion_provider", provider: "apify", status: "unavailable", reason: "Apify proxy-agent dependency missing - ingestion disabled" };
+    }
     return fail("ingestion_provider", error3, { provider: "apify" });
   }
 }
