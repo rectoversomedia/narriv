@@ -109,25 +109,37 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
   );
 }
 
-function MetricCard({ label, value, helper, icon, tone, sparklineValues }: { label: string; value: string; helper: string; icon: LucideIcon; tone: Tone; sparklineValues: number[] }) {
+function MetricCard({ label, value, subValue, helper, icon, tone, sparklineValues }: { label: string; value: string; subValue?: string; helper: string; icon: LucideIcon; tone: Tone; sparklineValues: number[] }) {
   const styles = toneStyles[tone];
   const isNegative = helper.startsWith("-") || helper.startsWith("▼");
   return (
     <Panel>
-      <CardContent className="relative flex min-h-[94px] items-center justify-between gap-4 p-5 overflow-hidden">
-        <div className="flex items-center gap-4 z-10 min-w-0">
-          <IconHalo icon={icon} tone={tone} />
-          <div className="min-w-0">
-            <p className="truncate text-[12px] font-extrabold leading-none text-[#68739F]">{label}</p>
-            <p className="mt-2 text-[27px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</p>
-            <p className={cn("mt-2 flex items-center gap-1 text-[11px] font-black", isNegative ? "text-[#EF4444]" : "text-[#10B981]")}>
-              <span className={cn("size-1.5 rounded-full", isNegative ? "bg-[#EF4444]" : "bg-[#10B981]")} />
-              {helper}
-            </p>
+      <CardContent className="flex flex-col gap-3 p-5 min-h-[110px]">
+        {/* Header row: icon + label */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <IconHalo icon={icon} tone={tone} />
+            <p className="truncate text-[11px] font-extrabold uppercase tracking-wider text-[#68739F]">{label}</p>
           </div>
+          <p className={cn("shrink-0 flex items-center gap-1 text-[10px] font-bold whitespace-nowrap tabular-nums", isNegative ? "text-[#EF4444]" : "text-[#10B981]")}>
+            <span className={cn("size-1.5 rounded-full", isNegative ? "bg-[#EF4444]" : "bg-[#10B981]")} />
+            {helper}
+          </p>
         </div>
-        <div className="absolute right-4 bottom-3 w-24 h-6 opacity-70">
-          {sparklineValues.length >= 2 && <Sparkline values={sparklineValues} color={styles.color} />}
+
+        {/* Value + sparkline row */}
+        <div className="flex items-end justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-[24px] font-black leading-none tracking-[-0.04em] text-[#101334] tabular-nums truncate">{value}</p>
+            {subValue ? (
+              <p className="mt-1 text-[10.5px] font-bold text-[#8A94B8] tabular-nums truncate">{subValue}</p>
+            ) : null}
+          </div>
+          {sparklineValues.length >= 2 ? (
+            <div className="shrink-0 w-20 h-7">
+              <Sparkline values={sparklineValues} color={styles.color} />
+            </div>
+          ) : null}
         </div>
       </CardContent>
     </Panel>
@@ -663,12 +675,18 @@ export default function VisibilityPage() {
   })();
 
   const totalMentions = (() => {
-    if (!visibilityData?.presenceMentions) return "-";
+    if (!visibilityData?.presenceMentions) return { value: "-", sub: undefined as string | undefined };
     const raw = String(visibilityData.presenceMentions);
-    if (language === "id") {
-      return raw.replace(/(\d+) of (\d+)/, "$1 dari $2");
+    const match = raw.match(/^(\d+(?:,\d+)?)\s*(?:of|dari)\s*(\d+(?:,\d+)?)/);
+    if (match) {
+      const main = match[1];
+      const total = match[2];
+      if (language === "id") {
+        return { value: main, sub: `dari ${total}` };
+      }
+      return { value: main, sub: `of ${total}` };
     }
-    return raw;
+    return { value: raw, sub: undefined as string | undefined };
   })();
   const brandPresencePercent = normalizePercent(visibilityData?.presence, normalizePercent(visibilitySummary?.kpis.avg_brand_presence_rate));
   const competitorPresencePercent = normalizePercent(visibilityData?.competitor, normalizePercent(visibilitySummary?.kpis.avg_competitor_mention_rate));
@@ -851,7 +869,7 @@ export default function VisibilityPage() {
             onClick={() => {
               exportVisibilityCsv({
                 language,
-                totalMentions,
+                totalMentions: totalMentions.value,
                 brandPresence,
                 competitorPresence,
                 visibilityScore,
@@ -884,7 +902,7 @@ export default function VisibilityPage() {
             <MetricRowSkeleton count={4} />
           ) : (
             <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
-              <MetricCard label={t("metrics.totalMentions.label")} value={totalMentions} helper={deltaTotalMentions ? `${deltaTotalMentions} ${formatPeriodLabel(trendPeriodDays)}` : "-"} icon={MessageCircle} tone="purple" sparklineValues={brandTrendValues.length > 1 ? brandTrendValues : []} />
+              <MetricCard label={t("metrics.totalMentions.label")} value={totalMentions.value} subValue={totalMentions.sub} helper={deltaTotalMentions ? `${deltaTotalMentions} ${formatPeriodLabel(trendPeriodDays)}` : "-"} icon={MessageCircle} tone="purple" sparklineValues={brandTrendValues.length > 1 ? brandTrendValues : []} />
               <MetricCard label={t("metrics.brandMentions.label")} value={brandPresence} helper={deltaBrandPresence ? `${deltaBrandPresence} ${formatPeriodLabel(trendPeriodDays)}` : "-"} icon={Target} tone="blue" sparklineValues={brandTrendValues.length > 1 ? brandTrendValues : []} />
               <MetricCard label={t("metrics.sov.label")} value={competitorPresence} helper={deltaSov ? `${deltaSov} ${formatPeriodLabel(trendPeriodDays)}` : "-"} icon={Shield} tone="green" sparklineValues={competitorTrendValues.length > 1 ? competitorTrendValues : []} />
               <MetricCard label={t("metrics.avgPos.label")} value={visibilityScore} helper={deltaScore ? `${deltaScore} ${formatPeriodLabel(trendPeriodDays)}` : "-"} icon={TrendingUp} tone="amber" sparklineValues={scoreTrendValues.length > 1 ? scoreTrendValues : []} />
