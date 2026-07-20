@@ -1,23 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
   <defs>
     <!-- Outer glow gradient -->
     <radialGradient id="outerGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#8B5CFF" stop-opacity="0.4"/>
-      <stop offset="60%" stop-color="#6B4DFF" stop-opacity="0.15"/>
+      <stop offset="0%" stop-color="#8B5CFF" stop-opacity="0.55"/>
+      <stop offset="55%" stop-color="#6B4DFF" stop-opacity="0.18"/>
       <stop offset="100%" stop-color="#4A2BCC" stop-opacity="0"/>
     </radialGradient>
 
     <!-- Inner ball gradient -->
-    <radialGradient id="ballGradient" cx="50%" cy="45%" r="50%">
-      <stop offset="0%" stop-color="#A78BFA"/>
-      <stop offset="50%" stop-color="#8B5CFF"/>
-      <stop offset="100%" stop-color="#5B21B6"/>
+    <radialGradient id="ballGradient" cx="50%" cy="42%" r="55%">
+      <stop offset="0%" stop-color="#C4B5FD"/>
+      <stop offset="35%" stop-color="#A78BFA"/>
+      <stop offset="70%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#4C1D95"/>
     </radialGradient>
 
-    <!-- White ring -->
+    <!-- Specular highlight on ball -->
+    <radialGradient id="ballHighlight" cx="35%" cy="28%" r="35%">
+      <stop offset="0%" stop-color="white" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- White bright ring -->
     <radialGradient id="ringGradient" cx="50%" cy="50%" r="50%">
-      <stop offset="80%" stop-color="white" stop-opacity="0"/>
-      <stop offset="95%" stop-color="white" stop-opacity="0.6"/>
+      <stop offset="78%" stop-color="white" stop-opacity="0"/>
+      <stop offset="92%" stop-color="white" stop-opacity="0.85"/>
       <stop offset="100%" stop-color="white" stop-opacity="0"/>
     </radialGradient>
 
@@ -29,79 +36,79 @@
 
     <!-- Pink dot glow -->
     <radialGradient id="dotGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#FF8FB8"/>
-      <stop offset="100%" stop-color="#FF6FA8" stop-opacity="0.6"/>
+      <stop offset="0%" stop-color="#FFB3D1"/>
+      <stop offset="60%" stop-color="#FF6FA8" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#FF6FA8" stop-opacity="0"/>
     </radialGradient>
 
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="2"/>
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="1.2"/>
     </filter>
   </defs>
 
-  <!-- Outer purple glow -->
-  <circle cx="100" cy="100" r="95" fill="url(#outerGlow)"/>
+  <!-- Outer purple glow halo -->
+  <circle cx="60" cy="60" r="58" fill="url(#outerGlow)"/>
 
-  <!-- White ring -->
-  <circle cx="100" cy="100" r="62" fill="none" stroke="url(#ringGradient)" stroke-width="1.5" opacity="0.9"/>
+  <!-- Bright white ring -->
+  <circle cx="60" cy="60" r="45" fill="none" stroke="url(#ringGradient)" stroke-width="2" opacity="0.95"/>
 
-  <!-- Inner glow ring -->
-  <circle cx="100" cy="100" r="70" fill="none" stroke="#A78BFA" stroke-width="0.5" opacity="0.4"/>
+  <!-- Dimmer outer mesh ring -->
+  <circle cx="60" cy="60" r="50" fill="none" stroke="#A78BFA" stroke-width="0.6" opacity="0.45"/>
 
   <!-- Main purple ball -->
-  <circle cx="100" cy="100" r="58" fill="url(#ballGradient)"/>
+  <circle cx="60" cy="60" r="42" fill="url(#ballGradient)"/>
 
-  <!-- Network connections (neural mesh) -->
-  <g stroke="#E9D5FF" stroke-width="0.4" opacity="0.5" fill="none">
+  <!-- Ball specular highlight -->
+  <circle cx="60" cy="60" r="42" fill="url(#ballHighlight)"/>
+
+  <!-- Network connections (neural mesh - 3D wireframe) -->
+  <g stroke="#E9D5FF" stroke-width="0.35" opacity="0.55" fill="none">
     <!-- Latitude lines -->
-    <ellipse cx="100" cy="100" rx="56" ry="20"/>
-    <ellipse cx="100" cy="100" rx="56" ry="35"/>
-    <ellipse cx="100" cy="100" rx="56" ry="50"/>
+    <ellipse cx="60" cy="60" rx="40" ry="14"/>
+    <ellipse cx="60" cy="60" rx="40" ry="26"/>
+    <ellipse cx="60" cy="60" rx="40" ry="38"/>
 
     <!-- Longitude lines -->
-    <ellipse cx="100" cy="100" rx="20" ry="56"/>
-    <ellipse cx="100" cy="100" rx="35" ry="56"/>
-    <ellipse cx="100" cy="100" rx="50" ry="56"/>
+    <ellipse cx="60" cy="60" rx="14" ry="40"/>
+    <ellipse cx="60" cy="60" rx="26" ry="40"/>
+    <ellipse cx="60" cy="60" rx="38" ry="40"/>
 
-    <!-- Vertical center line -->
-    <line x1="100" y1="42" x2="100" y2="158"/>
-    <!-- Horizontal center line -->
-    <line x1="42" y1="100" x2="158" y2="100"/>
+    <!-- Equator + meridian -->
+    <line x1="60" y1="18" x2="60" y2="102"/>
+    <line x1="18" y1="60" x2="102" y2="60"/>
   </g>
 
-  <!-- Network nodes (constellation dots) -->
+  <!-- Network nodes (constellation dots on mesh) -->
   <g fill="url(#nodeGradient)">
-    <circle cx="70" cy="75" r="1.5"/>
-    <circle cx="130" cy="80" r="1.5"/>
-    <circle cx="115" cy="65" r="1.5"/>
-    <circle cx="85" cy="120" r="1.5"/>
-    <circle cx="135" cy="115" r="1.5"/>
-    <circle cx="100" cy="135" r="1.5"/>
-    <circle cx="65" cy="100" r="1.5"/>
-    <circle cx="148" cy="100" r="1.5"/>
-    <circle cx="100" cy="65" r="1.5"/>
-    <circle cx="80" cy="90" r="1.5"/>
-    <circle cx="120" cy="90" r="1.5"/>
-    <circle cx="90" cy="110" r="1.5"/>
-    <circle cx="110" cy="110" r="1.5"/>
-    <circle cx="75" cy="130" r="1.5"/>
-    <circle cx="125" cy="130" r="1.5"/>
-    <circle cx="90" cy="80" r="1.5"/>
-    <circle cx="110" cy="125" r="1.5"/>
+    <circle cx="38" cy="42" r="1.4"/>
+    <circle cx="82" cy="46" r="1.4"/>
+    <circle cx="72" cy="34" r="1.4"/>
+    <circle cx="50" cy="76" r="1.4"/>
+    <circle cx="86" cy="72" r="1.4"/>
+    <circle cx="60" cy="86" r="1.4"/>
+    <circle cx="34" cy="60" r="1.4"/>
+    <circle cx="98" cy="60" r="1.4"/>
+    <circle cx="60" cy="34" r="1.4"/>
+    <circle cx="46" cy="52" r="1.4"/>
+    <circle cx="74" cy="52" r="1.4"/>
+    <circle cx="48" cy="68" r="1.4"/>
+    <circle cx="70" cy="68" r="1.4"/>
+    <circle cx="44" cy="84" r="1.4"/>
+    <circle cx="80" cy="84" r="1.4"/>
+    <circle cx="50" cy="44" r="1.4"/>
+    <circle cx="68" cy="76" r="1.4"/>
   </g>
 
-  <!-- Particle highlights (small bright spots) -->
-  <g fill="white" opacity="0.9">
-    <circle cx="75" cy="70" r="0.8"/>
-    <circle cx="120" cy="75" r="0.8"/>
-    <circle cx="130" cy="110" r="0.8"/>
-    <circle cx="70" cy="115" r="0.8"/>
-    <circle cx="100" cy="130" r="0.8"/>
+  <!-- Small bright particle highlights -->
+  <g fill="white" opacity="0.95">
+    <circle cx="42" cy="38" r="0.9"/>
+    <circle cx="76" cy="42" r="0.9"/>
+    <circle cx="84" cy="68" r="0.9"/>
+    <circle cx="38" cy="70" r="0.9"/>
+    <circle cx="60" cy="82" r="0.9"/>
   </g>
-
-  <!-- Text "Narriv" below -->
-  <text x="100" y="187" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="18" font-weight="700" fill="white" letter-spacing="-0.5">Narriv</text>
 
   <!-- Pink glowing dot on the right -->
-  <circle cx="186" cy="118" r="3" fill="url(#dotGlow)"/>
-  <circle cx="186" cy="118" r="1.5" fill="white"/>
+  <circle cx="113" cy="58" r="6" fill="url(#dotGlow)" filter="url(#softGlow)"/>
+  <circle cx="113" cy="58" r="2.2" fill="white"/>
 </svg>
