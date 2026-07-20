@@ -377,13 +377,30 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8 pb-6">
       {/* Demo Mode Banner */}
-      {demoMode && (
+      {demoMode ? (
         <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
           <Sparkles size={16} className="text-[#8B5CFF]" />
           <p className="text-[13px] font-bold text-[#8B5CFF]">
             {t("pages.command.demoMode") || "Demo Mode"} — {t("pages.command.demoModeDesc") || "Showing sample data for demonstration purposes"}
           </p>
         </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              const url = new URL(window.location.href);
+              url.searchParams.set("demo", "true");
+              window.location.href = url.toString();
+            }
+          }}
+          className="flex items-center justify-center gap-2 rounded-[10px] border border-dashed border-[#8B5CFF]/30 bg-[#8B5CFF]/5 px-4 py-3 transition hover:bg-[#8B5CFF]/10"
+        >
+          <Sparkles size={16} className="text-[#8B5CFF]" />
+          <p className="text-[13px] font-bold text-[#8B5CFF]">
+            Activate Demo Mode — see Narriv with sample data
+          </p>
+        </button>
       )}
 
       {/* Header Section */}
