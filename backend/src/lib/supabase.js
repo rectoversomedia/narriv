@@ -57,11 +57,11 @@ const connectionMetrics = {
     lastError: null,
 };
 
-// Table name mapping: snake_case (code) → actual PostgreSQL table names
-// Note: The actual table is 'users' not 'user_profiles'
+// Table name mapping: code usage → actual PostgreSQL table names
+// The actual table is 'User' (PascalCase), not 'users' (lowercase)
 const TABLE_MAP = {
     // Auth & Users
-    'users': 'users',
+    'users': 'User',
     'refresh_tokens': 'refresh_tokens',
     'password_reset_tokens': 'password_reset_tokens',
     'email_verification_tokens': 'email_verification_tokens',

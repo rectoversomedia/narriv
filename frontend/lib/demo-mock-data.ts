@@ -368,6 +368,48 @@ export function getMockAlerts(): Alert[] {
 // Action Plans Mock Data
 // ---------------------------------------------------------------------------
 
+export function getMockAlertsSummary(): {
+  total: number;
+  by_severity: { critical: number; high: number; medium: number; low: number; info: number };
+  by_status: { open: number; in_progress: number; resolved: number };
+  by_type: Record<string, number>;
+  last_7_days: number;
+  previous_7_days: number;
+  trend_delta: number;
+  timeline: number[];
+  timeline_labels: string[];
+  acknowledged_count: number;
+  resolved_count: number;
+  escalated_count: number;
+  overdue_count: number;
+  avg_response_time_minutes: number | null;
+  delivery_success_rate: number;
+  acknowledgment_rate: number;
+  sla_target_minutes: number | null;
+} {
+  return {
+    total: 27,
+    by_severity: { critical: 3, high: 5, medium: 8, low: 7, info: 4 },
+    by_status: { open: 12, in_progress: 8, resolved: 7 },
+    by_type: { outage: 3, sentiment: 8, campaign: 6, security: 5, performance: 5 },
+    last_7_days: 27,
+    previous_7_days: 22,
+    trend_delta: 22.7,
+    timeline: [3, 4, 2, 5, 6, 4, 3],
+    timeline_labels: ["Jul 13", "Jul 14", "Jul 15", "Jul 16", "Jul 17", "Jul 18", "Jul 19"],
+    acknowledged_count: 15,
+    resolved_count: 7,
+    escalated_count: 3,
+    overdue_count: 1,
+    avg_response_time_minutes: 8,
+    delivery_success_rate: 96,
+    acknowledgment_rate: 78,
+    sla_target_minutes: 15,
+  };
+}
+
+// ---------------------------------------------------------------------------
+
 export function getMockActionPlans(): MetaPaginatedResponse<ActionQueueRecord> {
   const now = new Date();
   return {

@@ -68,7 +68,7 @@ import {
   type NotificationRuleRecord,
   type NotificationRuleTrigger,
 } from "@/lib/api-service";
-import { isDemoMode, getMockAlerts } from "@/lib/demo-mock-data";
+import { isDemoMode, getMockAlerts, getMockAlertsSummary } from "@/lib/demo-mock-data";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type AlertStatus = "New" | "Investigating" | "Escalated" | "Resolved";
@@ -1051,8 +1051,16 @@ export default function AlertsPage() {
   }, []);
 
   const membersQuery = useQuery({
-    queryKey: ["workspace-members"],
-    queryFn: () => getWorkspaceMembers(),
+    queryKey: ["workspace-members", demoMode],
+    queryFn: () => demoMode
+      ? Promise.resolve([
+          { id: "demo-user-1", workspaceId: "demo-workspace", userId: "demo-user-1", role: "owner", createdAt: new Date().toISOString() },
+          { id: "demo-user-2", workspaceId: "demo-workspace", userId: "demo-user-2", role: "admin", createdAt: new Date().toISOString() },
+          { id: "demo-user-3", workspaceId: "demo-workspace", userId: "demo-user-3", role: "analyst", createdAt: new Date().toISOString() },
+          { id: "demo-user-4", workspaceId: "demo-workspace", userId: "demo-user-4", role: "analyst", createdAt: new Date().toISOString() },
+          { id: "demo-user-5", workspaceId: "demo-workspace", userId: "demo-user-5", role: "analyst", createdAt: new Date().toISOString() },
+        ])
+      : getWorkspaceMembers(),
     staleTime: 5 * 60 * 1000,
   });
   const escalationQuery = useQuery({
@@ -1073,10 +1081,12 @@ export default function AlertsPage() {
   });
 
   const summaryQuery = useQuery({
-    queryKey: ["alerts-summary"],
-    queryFn: () => getAlertsSummary(),
+    queryKey: ["alerts-summary", demoMode],
+    queryFn: () => demoMode
+      ? Promise.resolve(getMockAlertsSummary())
+      : getAlertsSummary(),
     staleTime: 60 * 1000,
-    enabled: !demoMode,
+    enabled: hasCheckedDemoMode,
   });
   const summary = summaryQuery.data ?? null;
 
@@ -1089,19 +1099,23 @@ export default function AlertsPage() {
     enabled: hasCheckedDemoMode,
   });
   const criticalAlertsQuery = useQuery({
-    queryKey: ["alerts", "critical-delivery"],
-    queryFn: () => getAlerts({ page: 1, limit: 100, severity: "critical" }),
+    queryKey: ["alerts", "critical-delivery", demoMode],
+    queryFn: () => demoMode
+      ? Promise.resolve({ data: getMockAlerts().filter((a) => a.severity === "critical"), pagination: { page: 1, limit: 100, total: 1, totalPages: 1 } })
+      : getAlerts({ page: 1, limit: 100, severity: "critical" }),
     staleTime: 30 * 1000,
-    enabled: !demoMode,
+    enabled: hasCheckedDemoMode,
   });
   const alertsData = alertsQuery.data;
   const escalationLevels = getDisplayEscalationRecords(escalationQuery.data, ta);
   const ownerOptions = (membersQuery.data ?? [])
     .map((member) => {
-      const displayName = member.user?.name || member.user?.email || member.userId;
-      const roleLabel = member.role ? ` (${member.role})` : "";
+      // member may be from real API (with .user) or mock (just workspaceId/userId)
+      const userObj = (member as any).user;
+      const displayName = userObj?.name || userObj?.email || (member as any).userId;
+      const roleLabel = (member as any).role ? ` (${(member as any).role})` : "";
       return {
-        id: member.id,
+        id: (member as any).id,
         value: `${displayName}${roleLabel}`,
         label: `${displayName}${roleLabel}`,
       };
