@@ -294,7 +294,7 @@ export const getSummary = async (req, res) => {
             // Check system status
             const system_status = ["API Server"];
             try {
-                const { error: dbError } = await supabase.from("users").select("id").limit(1);
+                const { error: dbError } = await supabase.from("User").select("id").limit(1);
                 if (!dbError) system_status.push("Database");
             } catch (e) {}
 

@@ -412,13 +412,16 @@ router.post("/:id/analyze", validateRequest({ params: signalIdParamsSchema }), a
             .from('signal_analyses')
             .insert({
                 signal_id: id,
-                sentiment: result.sentiment,
-                narrative_type: result.narrative_type,
-                stakeholder: result.stakeholder,
-                impact: result.impact,
-                summary: result.summary,
-                recommended_action: result.recommended_action,
-                confidence_score: result.confidence_score
+                analysis: JSON.stringify({
+                    sentiment: result.sentiment,
+                    narrative_type: result.narrative_type,
+                    stakeholder: result.stakeholder,
+                    impact: result.impact,
+                    summary: result.summary,
+                    recommended_action: result.recommended_action,
+                }),
+                confidence: result.confidence_score,
+                model: "gpt-4o-mini",
             })
             .select()
             .single();
@@ -502,13 +505,16 @@ router.post("/batch-analyze", async (req, res) => {
                     .from('signal_analyses')
                     .insert({
                         signal_id: signal.id,
-                        sentiment: result.sentiment,
-                        narrative_type: result.narrative_type,
-                        stakeholder: result.stakeholder,
-                        impact: result.impact,
-                        summary: result.summary,
-                        recommended_action: result.recommended_action,
-                        confidence_score: result.confidence_score,
+                        analysis: JSON.stringify({
+                            sentiment: result.sentiment,
+                            narrative_type: result.narrative_type,
+                            stakeholder: result.stakeholder,
+                            impact: result.impact,
+                            summary: result.summary,
+                            recommended_action: result.recommended_action,
+                        }),
+                        confidence: result.confidence_score,
+                        model: "gpt-4o-mini",
                     })
                     .select()
                     .single();

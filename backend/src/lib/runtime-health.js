@@ -21,7 +21,7 @@ export async function checkDatabaseHealth() {
         }
 
         // Supabase equivalent: select 1 row to verify connection
-        const { error } = await supabase.from('users').select('id').limit(1);
+        const { error } = await supabase.from('User').select('id').limit(1);
         if (error) {
             // Invalid API key means credentials are wrong
             if (String(error?.message || "").includes("Invalid API key")) {

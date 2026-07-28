@@ -82,11 +82,13 @@ const worker = new Worker(
                 .from("signal_analyses")
                 .insert({
                     signal_id: signal.id,
-                    sentiment: "neutral",
-                    summary: "Analysis pending - budget limit reached. Will resume when budget resets.",
-                    confidence_score: 0,
-                    deferred: true,
-                    deferred_reason: "budget_exceeded",
+                    analysis: JSON.stringify({
+                        sentiment: "neutral",
+                        summary: "Analysis pending - budget limit reached. Will resume when budget resets.",
+                        recommended_action: "Wait for budget reset to process AI analysis.",
+                    }),
+                    confidence: 0,
+                    model: "gpt-4o-mini",
                 });
 
             return { deferred: true, reason: budgetCheck.reason };
@@ -150,13 +152,16 @@ const worker = new Worker(
                 .from("signal_analyses")
                 .insert({
                     signal_id: signal.id,
-                    sentiment: analysisResult.sentiment,
-                    narrative_type: analysisResult.narrative_type,
-                    stakeholder: analysisResult.stakeholder,
-                    impact: analysisResult.impact,
-                    summary: analysisResult.summary,
-                    recommended_action: analysisResult.recommended_action,
-                    confidence_score: analysisResult.confidence_score,
+                    analysis: JSON.stringify({
+                        sentiment: analysisResult.sentiment,
+                        narrative_type: analysisResult.narrative_type,
+                        stakeholder: analysisResult.stakeholder,
+                        impact: analysisResult.impact,
+                        summary: analysisResult.summary,
+                        recommended_action: analysisResult.recommended_action,
+                    }),
+                    confidence: analysisResult.confidence_score,
+                    model: "gpt-4o-mini",
                 });
 
             if (analysisError) {

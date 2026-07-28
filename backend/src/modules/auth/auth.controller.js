@@ -231,7 +231,7 @@ async function consumeOAuthExchange(code) {
 
     // Fetch the user separately
     const { data: user, error: userError } = await supabase
-        .from("users")
+        .from("User")
         .select("*")
         .eq("id", tokenRow.user_id)
         .single();
@@ -281,7 +281,7 @@ export const register = async (req, res) => {
 
         // Check if user exists
         const { data: existingUser, error: existingError } = await supabase
-            .from("users")
+            .from("User")
             .select("*")
             .eq("email", email.toLowerCase())
             .single();
@@ -298,7 +298,7 @@ export const register = async (req, res) => {
         const hashed = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
 
         const { data: user, error: createError } = await supabase
-            .from("users")
+            .from("User")
             .insert({
                 id: crypto.randomUUID(),
                 email: email.toLowerCase(),
@@ -397,7 +397,7 @@ export const login = async (req, res) => {
         }
 
         const { data: user, error } = await supabase
-            .from("users")
+            .from("User")
             .select("*")
             .eq("email", email.toLowerCase())
             .single();
@@ -432,7 +432,7 @@ export const login = async (req, res) => {
             const lockUntil = shouldLock ? new Date(Date.now() + 15 * 60 * 1000).toISOString() : null;
 
             const { error: updateError } = await supabase
-                .from("users")
+                .from("User")
                 .update({
                     failed_login_attempts: shouldLock ? 0 : nextAttempts,
                     locked_until: lockUntil,
@@ -446,7 +446,7 @@ export const login = async (req, res) => {
         }
 
         const { error: updateError } = await supabase
-            .from("users")
+            .from("User")
             .update({ failed_login_attempts: 0, locked_until: null })
             .eq("id", user.id);
 
@@ -512,7 +512,7 @@ export const refresh = async (req, res) => {
 
         // Fetch user
         const { data: user, error: userError } = await supabase
-            .from("users")
+            .from("User")
             .select("*")
             .eq("id", tokenRow.user_id)
             .single();
@@ -595,7 +595,7 @@ export const forgotPassword = async (req, res) => {
         const { data: tracking } = await supabase
             .from("password_reset_tracking")
             .select("*")
-            .eq("user_id", (await supabase.from("users").select("id").eq("email", email).single())?.data?.id || "not-found")
+            .eq("user_id", (await supabase.from("User").select("id").eq("email", email).single())?.data?.id || "not-found")
             .single();
 
         if (tracking?.locked_until && new Date(tracking.locked_until) > new Date()) {
@@ -612,7 +612,7 @@ export const forgotPassword = async (req, res) => {
         };
 
         const { data: user, error } = await supabase
-            .from("users")
+            .from("User")
             .select("*")
             .eq("email", email)
             .single();
@@ -716,7 +716,7 @@ export const verifyResetCode = async (req, res) => {
         const code = String(req.body.code || "").trim();
 
         const { data: user, error } = await supabase
-            .from("users")
+            .from("User")
             .select("*")
             .eq("email", email)
             .single();
@@ -774,7 +774,7 @@ export const verifyEmail = async (req, res) => {
         const code = String(req.body.code || "").trim();
 
         const { data: user, error } = await supabase
-            .from("users")
+            .from("User")
             .select("*")
             .eq("email", email)
             .single();
@@ -811,7 +811,7 @@ export const verifyEmail = async (req, res) => {
 
         // Update user email verified
         const { error: userUpdateError } = await supabase
-            .from("users")
+            .from("User")
             .update({ email_verified: now })
             .eq("id", user.id);
 
@@ -843,7 +843,7 @@ export const resendVerification = async (req, res) => {
         const email = String(req.body.email || "").trim().toLowerCase();
 
         const { data: user, error } = await supabase
-            .from("users")
+            .from("User")
             .select("*")
             .eq("email", email)
             .single();
@@ -932,7 +932,7 @@ export const resetPassword = async (req, res) => {
 
         // Fetch user
         const { data: user, error: userError } = await supabase
-            .from("users")
+            .from("User")
             .select("*")
             .eq("id", tokenRow.user_id)
             .single();
@@ -950,7 +950,7 @@ export const resetPassword = async (req, res) => {
 
         // Update user password
         const { error: userUpdateError } = await supabase
-            .from("users")
+            .from("User")
             .update({
                 password: hashed,
                 failed_login_attempts: 0,
@@ -995,7 +995,7 @@ export const me = async (req, res) => {
         const user_id = req.user.id;
 
         const { data: user, error } = await supabase
-            .from("users")
+            .from("User")
             .select("id, email, name, created_at")
             .eq("id", user_id)
             .single();
@@ -1041,7 +1041,7 @@ export const changePassword = async (req, res) => {
         const { currentPassword, newPassword } = req.body;
 
         const { data: user, error } = await supabase
-            .from("users")
+            .from("User")
             .select("*")
             .eq("id", user_id)
             .single();
@@ -1088,7 +1088,7 @@ export const changePassword = async (req, res) => {
         const hashed = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
 
         const { error: updateError } = await supabase
-            .from("users")
+            .from("User")
             .update({ password: hashed })
             .eq("id", user_id);
 
@@ -1219,7 +1219,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
     if (oauthAccount) {
         // Fetch user from oauth account
         const { data: userData, error: userError } = await supabase
-            .from("users")
+            .from("User")
             .select("*")
             .eq("id", oauthAccount.user_id)
             .single();
@@ -1231,7 +1231,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
     } else {
         // 2. Look up user by email
         const { data: userByEmail, error: userByEmailError } = await supabase
-            .from("users")
+            .from("User")
             .select("*")
             .eq("email", email)
             .single();
@@ -1248,7 +1248,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
             const hashedPassword = await bcrypt.hash(dummyPassword, BCRYPT_SALT_ROUNDS);
 
             const { data: newUser, error: createError } = await supabase
-                .from("users")
+                .from("User")
                 .insert({
                     email,
                     name,
@@ -1265,7 +1265,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
         } else if (!user.email_verified) {
             // Auto-verify email if they log in with a matching OAuth account
             const { error: updateError } = await supabase
-                .from("users")
+                .from("User")
                 .update({ email_verified: new Date().toISOString() })
                 .eq("id", user.id);
 
@@ -1273,7 +1273,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
 
             // Re-fetch user with updated email_verified
             const { data: updatedUser, error: reFetchError } = await supabase
-                .from("users")
+                .from("User")
                 .select("*")
                 .eq("id", user.id)
                 .single();
@@ -1329,7 +1329,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
     // Reset lockout if needed
     if (user.failed_login_attempts > 0 || user.locked_until) {
         const { error: lockoutError } = await supabase
-            .from("users")
+            .from("User")
             .update({ failed_login_attempts: 0, locked_until: null })
             .eq("id", user.id);
 

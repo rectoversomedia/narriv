@@ -272,7 +272,7 @@ export async function createOnboardingTeam(req, res) {
         const results = [];
         for (const member of members) {
             const { data: user, error: userError } = await supabase
-                .from("users")
+                .from("User")
                 .select("id")
                 .eq("email", member.email)
                 .maybeSingle();

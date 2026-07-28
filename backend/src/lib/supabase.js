@@ -204,7 +204,7 @@ export function getPoolConfig() {
 export async function checkConnection() {
     const startTime = Date.now();
     try {
-        const { data, error } = await baseSupabaseAdmin.from('users').select('id').limit(1);
+        const { data, error } = await baseSupabaseAdmin.from('User').select('id').limit(1);
         const latency = Date.now() - startTime;
 
         connectionMetrics.total++;

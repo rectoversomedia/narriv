@@ -185,7 +185,7 @@ export async function createWorkspaceMember(req, res) {
         let user;
         if (userId) {
             const { data, error } = await supabase
-                .from("users")
+                .from("User")
                 .select("id, email, name")
                 .eq("id", userId)
                 .maybeSingle();
@@ -196,7 +196,7 @@ export async function createWorkspaceMember(req, res) {
             user = data;
         } else if (normalizedEmail) {
             const { data, error } = await supabase
-                .from("users")
+                .from("User")
                 .select("id, email, name")
                 .eq("email", normalizedEmail)
                 .maybeSingle();
