@@ -148,29 +148,153 @@ const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
     auth: { autoRefreshToken: true, persistSession: true },
 });
 
-// Create wrapped client that auto-converts table names
+// Convert snake_case column names from DB to camelCase
+// The database uses camelCase columns (emailVerified, failedLoginAttempts, lockedUntil)
+// but Supabase REST API returns snake_case keys by default
+function transformResponseData(data) {
+    if (!data) return data;
+    if (Array.isArray(data)) return data.map(transformRow);
+    return transformRow(data);
+}
+
+function transformRow(row) {
+    if (!row || typeof row !== 'object') return row;
+    const mapped = {};
+    for (const [key, val] of Object.entries(row)) {
+        mapped[key] = val;
+    }
+    // Map known snake_case → camelCase (response from DB)
+    if ('email_verified' in row) mapped.emailVerified = row.email_verified;
+    if ('failed_login_attempts' in row) mapped.failedLoginAttempts = row.failed_login_attempts;
+    if ('locked_until' in row) mapped.lockedUntil = row.locked_until;
+    if ('created_at' in row && !('createdAt' in row)) mapped.createdAt = row.created_at;
+    if ('updated_at' in row && !('updatedAt' in row)) mapped.updatedAt = row.updated_at;
+    return mapped;
+}
+
+// Convert camelCase in request body → snake_case for PostgreSQL
+function transformRequestData(data, tableName) {
+    if (!data || typeof data !== 'object') return data;
+    if (Array.isArray(data)) return data.map(d => transformRequestData(d, tableName));
+
+    // Only transform for User table (has camelCase columns in DB)
+    if (tableName === 'User') {
+        const mapped = {};
+        for (const [key, val] of Object.entries(data)) {
+            if (key === 'emailVerified') mapped['email_verified'] = val;
+            else if (key === 'failedLoginAttempts') mapped['failed_login_attempts'] = val;
+            else if (key === 'lockedUntil') mapped['locked_until'] = val;
+            else mapped[key] = val;
+        }
+        return mapped;
+    }
+    return data;
+}
+
+// WeakMap to track table name for request body transformation
+const tableNameMap = new WeakMap();
+
+// Create wrapped client that auto-converts table names and response keys
 function createDbClient(base) {
     return new Proxy(base, {
         get(target, prop) {
             const value = target[prop];
             if (typeof value === 'function') {
                 return function(...args) {
+                    let currentTable = null;
                     // Convert first arg (table name) from snake_case to actual table name
                     if (args[0] && typeof args[0] === 'string') {
                         const originalTable = args[0];
-                        // Handle objects like { from: 'table' }
+                        const mapped = toTableName(originalTable);
                         if (args[0].from) {
-                            args[0] = { ...args[0], from: toTableName(args[0].from) };
+                            args[0] = { ...args[0], from: mapped };
                         } else if (!args[0].includes(' ') && !args[0].includes('(')) {
-                            // Plain table name
-                            args[0] = toTableName(args[0]);
+                            args[0] = mapped;
                         }
-                        // Debug log for users table
-                        if (originalTable === 'users') {
-                            // Skip debug to reduce noise
-                        }
+                        currentTable = mapped;
+                    } else if (args[0] && typeof args[0] === 'object' && args[0].from) {
+                        // Handle { from: 'table' } object format
+                        const mapped = toTableName(args[0].from);
+                        args[0] = { ...args[0], from: mapped };
+                        currentTable = mapped;
                     }
-                    return value.apply(target, args);
+
+                    const result = value.apply(target, args);
+
+                    // If this is .from('User') returning a query builder, wrap it
+                    if (result && typeof result === 'object' && typeof result.then !== 'function') {
+                        const originalResult = result;
+                        // Store table name on query builder for downstream methods
+                        if (currentTable) tableNameMap.set(result, currentTable);
+
+                        // Wrap mutation methods to transform request bodies
+                        const wrapped = new Proxy(result, {
+                            get(subProp, subMethod) {
+                                const method = originalResult[subProp];
+                                if (typeof method !== 'function') return method;
+
+                                return function(...methodArgs) {
+                                    // Transform INSERT/UPDATE request body
+                                    if ((subMethod === 'insert' || subMethod === 'update' || subMethod === 'upsert') && methodArgs[0]) {
+                                        const table = tableNameMap.get(originalResult) || currentTable;
+                                        methodArgs[0] = transformRequestData(methodArgs[0], table);
+                                    }
+                                    const subResult = method.apply(originalResult, methodArgs);
+
+                                    // Transform response
+                                    if (subResult && typeof subResult.then === 'function') {
+                                        return subResult.then(response => {
+                                            if (response && typeof response === 'object') {
+                                                return {
+                                                    ...response,
+                                                    data: transformResponseData(response.data),
+                                                };
+                                            }
+                                            return response;
+                                        }).catch(err => {
+                                            if (err?.details) {
+                                                const normalized = { ...err };
+                                                if (Array.isArray(err.details)) {
+                                                    normalized.details = err.details.map(transformRow);
+                                                } else if (typeof err.details === 'object') {
+                                                    normalized.details = transformRow(err.details);
+                                                }
+                                                return Promise.reject(normalized);
+                                            }
+                                            return Promise.reject(err);
+                                        });
+                                    }
+                                    return subResult;
+                                };
+                            }
+                        });
+                        return wrapped;
+                    }
+
+                    // For non-builder results (like direct calls), transform response
+                    if (result && typeof result.then === 'function') {
+                        return result.then(response => {
+                            if (response && typeof response === 'object') {
+                                return {
+                                    ...response,
+                                    data: transformResponseData(response.data),
+                                };
+                            }
+                            return response;
+                        }).catch(err => {
+                            if (err?.details) {
+                                const normalized = { ...err };
+                                if (Array.isArray(err.details)) {
+                                    normalized.details = err.details.map(transformRow);
+                                } else if (typeof err.details === 'object') {
+                                    normalized.details = transformRow(err.details);
+                                }
+                                return Promise.reject(normalized);
+                            }
+                            return Promise.reject(err);
+                        });
+                    }
+                    return result;
                 };
             }
             return value;
