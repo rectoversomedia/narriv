@@ -1,26 +1,25 @@
 {
   "version": 2,
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/.next",
-  "installCommand": "cd frontend && npm install",
-  "headers": [
+  "builds": [
     {
-      "source": "/static/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-      ]
+      "src": "backend/vercel_dist/index.cjs",
+      "use": "@vercel/node"
     },
     {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "X-XSS-Protection", "value": "1; mode=block" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
-      ]
+      "src": "frontend/package.json",
+      "use": "@vercel/next"
     }
   ],
-  "rewrites": [
-    { "source": "/api/:path*", "destination": "https://narriv-3mn6akgbv-rectoverso-media.vercel.app/:path*" }
-  ]
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/backend/vercel_dist/index.cjs"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/$1"
+    }
+  ],
+  "installCommand": "cd frontend && npm install && cd ../backend && npm install",
+  "buildCommand": "cd frontend && npm install && npm run build && cd ../backend && npm run build:bundle"
 }
