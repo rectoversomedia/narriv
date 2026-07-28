@@ -157,6 +157,11 @@ function transformResponseData(data) {
     return transformRow(data);
 }
 
+// Alias used by wrapQueryBuilder's Promise response transformer
+function transformResponseDataForTable(data, tableName) {
+    return transformResponseData(data);
+}
+
 function transformRow(row) {
     if (!row || typeof row !== 'object') return row;
     const mapped = {};
@@ -191,6 +196,69 @@ function transformRequestData(data, tableName) {
     return data;
 }
 
+// Convert column names in .select() calls to snake_case for the DB
+// Also track the table so we can transform responses
+function wrapQueryBuilder(builder, tableName) {
+    // Mark the builder with its table name for downstream methods
+    builder.__narrivTable = tableName;
+
+    return new Proxy(builder, {
+        get(target, prop) {
+            const method = target[prop];
+
+            // .select('*') or .select('id,email_verified,...')
+            // → convert camelCase column names to snake_case
+            if (prop === 'select') {
+                return function(...selectArgs) {
+                    const cols = selectArgs[0];
+                    if (typeof cols === 'string' && cols !== '*') {
+                        // Convert camelCase → snake_case for each column name
+                        const converted = cols.split(',').map(c => {
+                            c = c.trim();
+                            if (c === 'emailVerified') return 'email_verified';
+                            if (c === 'failedLoginAttempts') return 'failed_login_attempts';
+                            if (c === 'lockedUntil') return 'locked_until';
+                            return c;
+                        }).join(',');
+                        return wrapQueryBuilder(method.call(target, converted), tableName);
+                    }
+                    return wrapQueryBuilder(method.apply(target, selectArgs), tableName);
+                };
+            }
+
+            // For other methods, pass through but keep wrapping the result if it's another builder
+            if (typeof method === 'function') {
+                return function(...methodArgs) {
+                    const result = method.apply(target, methodArgs);
+                    // If result is a query builder, wrap it too (for chained .eq().order() etc.)
+                    if (result && typeof result === 'object' && typeof result.then !== 'function' && typeof result.subscribe !== 'function') {
+                        // Check if it looks like a query builder
+                        if (typeof result.select === 'function' || typeof result.eq === 'function') {
+                            return wrapQueryBuilder(result, tableName);
+                        }
+                    }
+                    // Transform Promise results
+                    if (result && typeof result.then === 'function') {
+                        return result.then(response => {
+                            if (response && typeof response === 'object') {
+                                // Determine table from builder or target
+                                const tbl = (result.__narrivTable) || tableName;
+                                return {
+                                    ...response,
+                                    data: transformResponseDataForTable(response.data, tbl),
+                                };
+                            }
+                            return response;
+                        }).catch(err => Promise.reject(err));
+                    }
+                    return result;
+                };
+            }
+            return method;
+        }
+    });
+}
+
 // WeakMap to track table name for request body transformation
 const tableNameMap = new WeakMap();
 
@@ -223,52 +291,7 @@ function createDbClient(base) {
 
                     // If this is .from('User') returning a query builder, wrap it
                     if (result && typeof result === 'object' && typeof result.then !== 'function') {
-                        const originalResult = result;
-                        // Store table name on query builder for downstream methods
-                        if (currentTable) tableNameMap.set(result, currentTable);
-
-                        // Wrap mutation methods to transform request bodies
-                        const wrapped = new Proxy(result, {
-                            get(subProp, subMethod) {
-                                const method = originalResult[subProp];
-                                if (typeof method !== 'function') return method;
-
-                                return function(...methodArgs) {
-                                    // Transform INSERT/UPDATE request body
-                                    if ((subMethod === 'insert' || subMethod === 'update' || subMethod === 'upsert') && methodArgs[0]) {
-                                        const table = tableNameMap.get(originalResult) || currentTable;
-                                        methodArgs[0] = transformRequestData(methodArgs[0], table);
-                                    }
-                                    const subResult = method.apply(originalResult, methodArgs);
-
-                                    // Transform response
-                                    if (subResult && typeof subResult.then === 'function') {
-                                        return subResult.then(response => {
-                                            if (response && typeof response === 'object') {
-                                                return {
-                                                    ...response,
-                                                    data: transformResponseData(response.data),
-                                                };
-                                            }
-                                            return response;
-                                        }).catch(err => {
-                                            if (err?.details) {
-                                                const normalized = { ...err };
-                                                if (Array.isArray(err.details)) {
-                                                    normalized.details = err.details.map(transformRow);
-                                                } else if (typeof err.details === 'object') {
-                                                    normalized.details = transformRow(err.details);
-                                                }
-                                                return Promise.reject(normalized);
-                                            }
-                                            return Promise.reject(err);
-                                        });
-                                    }
-                                    return subResult;
-                                };
-                            }
-                        });
-                        return wrapped;
+                        return wrapQueryBuilder(result, currentTable);
                     }
 
                     // For non-builder results (like direct calls), transform response
