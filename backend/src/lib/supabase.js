@@ -226,35 +226,28 @@ function wrapQueryBuilder(builder, tableName) {
                 };
             }
 
-            // Pass through non-function properties (including then/catch for Promise)
+            // For non-function properties (including Promise's .then/.catch), pass through directly.
+            // The outer createDbClient handles response transformation at the Promise level.
             if (typeof method !== 'function') {
                 return method;
             }
 
-            // For other methods, pass through but keep wrapping the result if it's another builder
+            // If the target is itself a thenable (Promise-like), let Promise methods through.
+            // This prevents wrapping .then() on an already-resolved value.
+            if (target && typeof target.then === 'function') {
+                return method;
+            }
+
+            // For query builder methods, pass through and wrap the result
             return function(...methodArgs) {
                 const result = method.apply(target, methodArgs);
-                // If result is a query builder, wrap it too (for chained .eq().order() etc.)
+                // Wrap returned query builders to preserve column name transformation
                 if (result && typeof result === 'object' && typeof result.then !== 'function' && typeof result.subscribe !== 'function') {
-                    // Check if it looks like a query builder
                     if (typeof result.select === 'function' || typeof result.eq === 'function') {
                         return wrapQueryBuilder(result, tableName);
                     }
                 }
-                // Transform Promise results
-                if (result && typeof result.then === 'function') {
-                    return result.then(response => {
-                        if (response && typeof response === 'object') {
-                            // Determine table from builder or target
-                            const tbl = (result.__narrivTable) || tableName;
-                            return {
-                                ...response,
-                                data: transformResponseDataForTable(response.data, tbl),
-                            };
-                        }
-                        return response;
-                    }).catch(err => Promise.reject(err));
-                }
+                // Don't transform the Promise itself here — createDbClient does that at the outer level
                 return result;
             };
         }
