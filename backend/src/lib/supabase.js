@@ -226,35 +226,37 @@ function wrapQueryBuilder(builder, tableName) {
                 };
             }
 
-            // For other methods, pass through but keep wrapping the result if it's another builder
-            if (typeof method === 'function') {
-                return function(...methodArgs) {
-                    const result = method.apply(target, methodArgs);
-                    // If result is a query builder, wrap it too (for chained .eq().order() etc.)
-                    if (result && typeof result === 'object' && typeof result.then !== 'function' && typeof result.subscribe !== 'function') {
-                        // Check if it looks like a query builder
-                        if (typeof result.select === 'function' || typeof result.eq === 'function') {
-                            return wrapQueryBuilder(result, tableName);
-                        }
-                    }
-                    // Transform Promise results
-                    if (result && typeof result.then === 'function') {
-                        return result.then(response => {
-                            if (response && typeof response === 'object') {
-                                // Determine table from builder or target
-                                const tbl = (result.__narrivTable) || tableName;
-                                return {
-                                    ...response,
-                                    data: transformResponseDataForTable(response.data, tbl),
-                                };
-                            }
-                            return response;
-                        }).catch(err => Promise.reject(err));
-                    }
-                    return result;
-                };
+            // Pass through non-function properties (including then/catch for Promise)
+            if (typeof method !== 'function') {
+                return method;
             }
-            return method;
+
+            // For other methods, pass through but keep wrapping the result if it's another builder
+            return function(...methodArgs) {
+                const result = method.apply(target, methodArgs);
+                // If result is a query builder, wrap it too (for chained .eq().order() etc.)
+                if (result && typeof result === 'object' && typeof result.then !== 'function' && typeof result.subscribe !== 'function') {
+                    // Check if it looks like a query builder
+                    if (typeof result.select === 'function' || typeof result.eq === 'function') {
+                        return wrapQueryBuilder(result, tableName);
+                    }
+                }
+                // Transform Promise results
+                if (result && typeof result.then === 'function') {
+                    return result.then(response => {
+                        if (response && typeof response === 'object') {
+                            // Determine table from builder or target
+                            const tbl = (result.__narrivTable) || tableName;
+                            return {
+                                ...response,
+                                data: transformResponseDataForTable(response.data, tbl),
+                            };
+                        }
+                        return response;
+                    }).catch(err => Promise.reject(err));
+                }
+                return result;
+            };
         }
     });
 }
