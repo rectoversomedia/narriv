@@ -13,12 +13,12 @@
   ],
   "routes": [
     {
-      "src": "/api/(?<path>.*)",
-      "dest": "/backend/vercel_dist/index.cjs/${path}"
+      "src": "/api/(.*)",
+      "dest": "/backend/vercel_dist/index.cjs"
     },
     {
       "src": "/(.*)",
-      "dest": "/backend/vercel_dist/index.cjs/$1"
+      "dest": "/backend/vercel_dist/index.cjs"
     }
   ],
   "installCommand": "cd frontend && npm install && cd ../backend && npm install",

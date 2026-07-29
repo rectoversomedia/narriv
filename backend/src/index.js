@@ -190,7 +190,19 @@ const gracefulShutdown = async (signal) => {
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
-// Vercel serverless handler - export app
+// Vercel serverless handler
+export const handler = (req, res) => {
+    const server = app;
+    // Patch the Node.js request object to add query/body (Vercel passes queryString as parsed object)
+    if (req.query && !req.url.includes('?')) {
+        const qs = new URLSearchParams(req.query).toString();
+        req.url = qs ? `${req.url}?${qs}` : req.url;
+    }
+    server(req, res);
+    return res;
+};
+
+// Also export app as default for direct module usage
 export default app;
 
 // Start server locally if run directly
