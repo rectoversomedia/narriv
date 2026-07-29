@@ -67,6 +67,7 @@ import {
   type IntegrationRecord,
   type NotificationRuleRecord,
   type NotificationRuleTrigger,
+  type WorkspaceMemberRecord,
 } from "@/lib/api-service";
 import { isDemoMode, getMockAlerts, getMockAlertsSummary } from "@/lib/demo-mock-data";
 
@@ -1378,8 +1379,9 @@ export default function AlertsPage() {
   const totalPages = alertsData?.pagination?.totalPages ?? 1;
   const footerText = td("pagination.summary", { start: alertsData?.pagination && alertsData.pagination.total > 0 ? (alertsData.pagination.page - 1) * alertsData.pagination.limit + 1 : 0, end: alertsData?.pagination ? Math.min(alertsData.pagination.page * alertsData.pagination.limit, alertsData.pagination.total) : 0, total: alertsData?.pagination?.total ?? 0, label: ta("table.alertsLabel") });
 
-  const selectedMember = (membersQuery.data ?? []).find(
-    (m) => (m.user?.name || m.user?.email || m.userId) === createAssignedTo
+  const members: WorkspaceMemberRecord[] = membersQuery.data ?? [];
+  const selectedMember = members.find(
+    (m: WorkspaceMemberRecord) => (m.user?.name || m.user?.email || m.userId) === createAssignedTo
   );
   const assignedToHoverTitle = selectedMember
     ? `${selectedMember.user?.name || selectedMember.user?.email || selectedMember.userId}${
@@ -2001,7 +2003,7 @@ export default function AlertsPage() {
                             className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF]"
                           >
                             <option value="" title={taCreate("assignedToPlaceholder")}>{taCreate("assignedToPlaceholder")}</option>
-                            {(membersQuery.data ?? []).map((m) => {
+                            {(membersQuery.data ?? []).map((m: WorkspaceMemberRecord) => {
                               const val = m.user?.name || m.user?.email || m.userId;
                               const label = `${val}${m.role ? ` (${m.role})` : ""}`;
                               return (
