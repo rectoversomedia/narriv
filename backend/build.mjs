@@ -41,6 +41,9 @@ await esbuild.build({
   banner: {
     js: `"use strict";`,
   },
+  footer: {
+    js: `module.exports = index_default;`,
+  },
 });
 
 console.log("✅ Backend bundled successfully to vercel_dist/");
