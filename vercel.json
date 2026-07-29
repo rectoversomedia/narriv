@@ -7,17 +7,14 @@
     },
     {
       "src": "frontend/package.json",
-      "use": "@vercel/next"
+      "use": "@vercel/next",
+      "config": { "outputDirectory": "frontend/.next" }
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
       "dest": "/backend/vercel_dist/index.cjs"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/frontend/$1"
     }
   ],
   "installCommand": "cd frontend && npm install && cd ../backend && npm install",
