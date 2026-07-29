@@ -62,9 +62,8 @@ app.set("trust proxy", process.env.TRUST_PROXY || "loopback");
 // Strip /api prefix so Express can match routes mounted at /, /auth, /signals, etc.
 // This is needed for Vercel unified deployments where /api/* routes are forwarded to Express.
 app.use((req, res, next) => {
-    if (req.path.startsWith("/api")) {
+    if (req.url.startsWith("/api")) {
         req.url = req.url.replace(/^\/api/, "") || "/";
-        req.path = req.path.replace(/^\/api/, "") || "/";
     }
     next();
 });
@@ -203,11 +202,6 @@ process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 // Vercel serverless handler
 export const handler = (req, res) => {
     const server = app;
-    // Patch the Node.js request object to add query/body (Vercel passes queryString as parsed object)
-    if (req.query && !req.url.includes('?')) {
-        const qs = new URLSearchParams(req.query).toString();
-        req.url = qs ? `${req.url}?${qs}` : req.url;
-    }
     server(req, res);
     return res;
 };
