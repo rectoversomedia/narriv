@@ -8,7 +8,7 @@
     {
       "src": "frontend/package.json",
       "use": "@vercel/next",
-      "config": { "outputDirectory": "frontend/.next" }
+      "config": { "outputDirectory": ".next" }
     }
   ],
   "routes": [
