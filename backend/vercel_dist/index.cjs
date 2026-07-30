@@ -1925,8 +1925,8 @@ var require_global_error_handler = __commonJS({
     exports2.globalErrorHandler = exports2.setGlobalErrorHandler = void 0;
     var logging_error_handler_1 = require_logging_error_handler();
     var delegateHandler = (0, logging_error_handler_1.loggingErrorHandler)();
-    function setGlobalErrorHandler(handler) {
-      delegateHandler = handler;
+    function setGlobalErrorHandler(handler2) {
+      delegateHandler = handler2;
     }
     exports2.setGlobalErrorHandler = setGlobalErrorHandler;
     function globalErrorHandler2(ex) {
@@ -10921,26 +10921,83 @@ function toTableName(name) {
   if (TABLE_MAP[snakeName]) return TABLE_MAP[snakeName];
   return name;
 }
+function transformRow(row) {
+  if (!row || typeof row !== "object") return row;
+  const mapped = {};
+  for (const [key, val] of Object.entries(row)) {
+    mapped[key] = val;
+  }
+  if ("email_verified" in row) {
+    mapped.emailVerified = row.email_verified;
+    delete mapped.email_verified;
+  }
+  if ("failed_login_attempts" in row) {
+    mapped.failedLoginAttempts = row.failed_login_attempts;
+    delete mapped.failed_login_attempts;
+  }
+  if ("locked_until" in row) {
+    mapped.lockedUntil = row.locked_until;
+    delete mapped.locked_until;
+  }
+  if ("created_at" in row && !("createdAt" in row)) {
+    mapped.createdAt = row.created_at;
+    delete mapped.created_at;
+  }
+  if ("updated_at" in row && !("updatedAt" in row)) {
+    mapped.updatedAt = row.updated_at;
+    delete mapped.updated_at;
+  }
+  return mapped;
+}
+function transformResponseData(data) {
+  if (!data) return data;
+  if (Array.isArray(data)) return data.map(transformRow);
+  return transformRow(data);
+}
+function transformErrorDetails(details) {
+  if (!details) return details;
+  if (Array.isArray(details)) return details.map(transformRow);
+  if (typeof details === "object") return transformRow(details);
+  return details;
+}
 function createDbClient(base) {
   return new Proxy(base, {
     get(target, prop) {
       const value = target[prop];
-      if (typeof value === "function") {
-        return function(...args) {
-          if (args[0] && typeof args[0] === "string") {
-            const originalTable = args[0];
-            if (args[0].from) {
-              args[0] = { ...args[0], from: toTableName(args[0].from) };
-            } else if (!args[0].includes(" ") && !args[0].includes("(")) {
-              args[0] = toTableName(args[0]);
-            }
-            if (originalTable === "users") {
+      if (typeof value !== "function") return value;
+      return function(...args) {
+        let tableName = null;
+        if (args[0] !== void 0) {
+          const arg0 = args[0];
+          if (typeof arg0 === "string") {
+            tableName = toTableName(arg0);
+            args[0] = tableName;
+          } else if (arg0 && typeof arg0 === "object" && !arg0.from && !arg0.select) {
+            if (typeof arg0.from === "string") {
+              tableName = toTableName(arg0.from);
+              args[0] = { ...arg0, from: tableName };
             }
           }
-          return value.apply(target, args);
-        };
-      }
-      return value;
+        }
+        const result = value.apply(target, args);
+        if (result && typeof result.then === "function") {
+          const isRealPromise = result instanceof Promise;
+          if (isRealPromise) {
+            return result.then((response) => {
+              if (response && typeof response === "object" && "data" in response) {
+                return { ...response, data: transformResponseData(response.data) };
+              }
+              return response;
+            }).catch((err) => {
+              if (err && typeof err === "object" && err.details) {
+                err.details = transformErrorDetails(err.details);
+              }
+              return Promise.reject(err);
+            });
+          }
+        }
+        return result;
+      };
     }
   });
 }
@@ -10957,33 +11014,24 @@ function getPoolConfig() {
 async function checkConnection() {
   const startTime = Date.now();
   try {
-    const { data, error: error3 } = await baseSupabaseAdmin.from("users").select("id").limit(1);
+    const { data, error: error3 } = await baseSupabaseAdmin.from("User").select("id").limit(1);
     const latency = Date.now() - startTime;
     connectionMetrics.total++;
     connectionMetrics.active++;
     if (error3 && error3.code !== "PGRST116" && !error3.message?.includes("JWT")) {
       connectionMetrics.errors++;
       connectionMetrics.lastError = error3.message;
-      logStructured("error", "supabase_connection_failed", {
-        latency,
-        error: error3.message
-      });
+      logStructured("error", "supabase_connection_failed", { latency, error: error3.message });
       return false;
     }
-    logStructured("info", "supabase_connection_success", {
-      latency,
-      totalConnections: connectionMetrics.total
-    });
+    logStructured("info", "supabase_connection_success", { latency, totalConnections: connectionMetrics.total });
     connectionMetrics.active--;
     return true;
   } catch (err) {
     connectionMetrics.errors++;
     connectionMetrics.lastError = err.message;
     connectionMetrics.active--;
-    logStructured("error", "supabase_connection_error", {
-      latency: Date.now() - startTime,
-      error: err.message
-    });
+    logStructured("error", "supabase_connection_error", { latency: Date.now() - startTime, error: err.message });
     return false;
   }
 }
@@ -10992,10 +11040,7 @@ function startConnectionCleanup(intervalMs = 6e4) {
   cleanupInterval = setInterval(() => {
     const metrics3 = getPoolMetrics();
     if (metrics3.active === 0) {
-      logStructured("info", "supabase_idle_cleanup", {
-        idleTime: intervalMs,
-        totalConnections: metrics3.total
-      });
+      logStructured("info", "supabase_idle_cleanup", { idleTime: intervalMs, totalConnections: metrics3.total });
     }
   }, intervalMs);
   if (cleanupInterval.unref) {
@@ -11057,8 +11102,7 @@ var init_supabase = __esm({
       lastError: null
     };
     TABLE_MAP = {
-      // Auth & Users
-      "users": "users",
+      "users": "User",
       "refresh_tokens": "refresh_tokens",
       "password_reset_tokens": "password_reset_tokens",
       "email_verification_tokens": "email_verification_tokens",
@@ -12195,7 +12239,8 @@ var init_export = __esm({
 // src/index.js
 var index_exports = {};
 __export(index_exports, {
-  default: () => index_default
+  default: () => index_default,
+  handler: () => handler
 });
 module.exports = __toCommonJS(index_exports);
 var import_express32 = __toESM(require("express"), 1);
@@ -12593,13 +12638,13 @@ function normalizeStackTracePath(path2) {
 // ../node_modules/@sentry/core/build/esm/instrument/handlers.js
 var handlers = {};
 var instrumented = {};
-function addHandler(type, handler) {
+function addHandler(type, handler2) {
   handlers[type] = handlers[type] || [];
-  handlers[type].push(handler);
+  handlers[type].push(handler2);
   return () => {
     const typeHandlers = handlers[type];
     if (typeHandlers) {
-      const index = typeHandlers.indexOf(handler);
+      const index = typeHandlers.indexOf(handler2);
       if (index !== -1) {
         typeHandlers.splice(index, 1);
       }
@@ -12621,14 +12666,14 @@ function triggerHandlers(type, data) {
   if (!typeHandlers) {
     return;
   }
-  for (const handler of typeHandlers) {
+  for (const handler2 of typeHandlers) {
     try {
-      handler(data);
+      handler2(data);
     } catch (e) {
       DEBUG_BUILD && debug.error(
         `Error while triggering instrumentation handler.
 Type: ${type}
-Name: ${getFunctionName(handler)}
+Name: ${getFunctionName(handler2)}
 Error:`,
         e
       );
@@ -16818,17 +16863,17 @@ var SyncPromise = class _SyncPromise {
     }
     const cachedHandlers = this._handlers.slice();
     this._handlers = [];
-    cachedHandlers.forEach((handler) => {
-      if (handler[0]) {
+    cachedHandlers.forEach((handler2) => {
+      if (handler2[0]) {
         return;
       }
       if (this._state === STATE_RESOLVED) {
-        handler[1](this._value);
+        handler2[1](this._value);
       }
       if (this._state === STATE_REJECTED) {
-        handler[2](this._value);
+        handler2[2](this._value);
       }
-      handler[0] = true;
+      handler2[0] = true;
     });
   }
   /** Run the executor for the SyncPromise. */
@@ -20206,9 +20251,9 @@ function normalizeQueryString(queryString) {
 
 // ../node_modules/@sentry/core/build/esm/instrument/console.js
 var _filter = /* @__PURE__ */ new Set([]);
-function addConsoleInstrumentationHandler(handler) {
+function addConsoleInstrumentationHandler(handler2) {
   const type = "console";
-  const removeHandler = addHandler(type, handler);
+  const removeHandler = addHandler(type, handler2);
   maybeInstrument(type, instrumentConsole);
   return removeHandler;
 }
@@ -24128,8 +24173,8 @@ function isCallbackManager(value) {
   const candidate = value;
   return typeof candidate.addHandler === "function" && typeof candidate.copy === "function";
 }
-function isSentryHandler(handler) {
-  return typeof handler === "object" && handler?.name === "SentryCallbackHandler";
+function isSentryHandler(handler2) {
+  return typeof handler2 === "object" && handler2?.name === "SentryCallbackHandler";
 }
 function containsSentryHandler(handlers2) {
   return handlers2.some(isSentryHandler);
@@ -24165,7 +24210,7 @@ function createLangChainCallbackHandler(options = {}) {
       spanMap.delete(runId);
     }
   };
-  const handler = {
+  const handler2 = {
     // Required LangChain BaseCallbackHandler properties
     lc_serializable: false,
     lc_namespace: ["langchain_core", "callbacks", "sentry"],
@@ -24384,24 +24429,24 @@ function createLangChainCallbackHandler(options = {}) {
     },
     // LangChain BaseCallbackHandler required methods
     copy() {
-      return handler;
+      return handler2;
     },
     toJSON() {
       return {
         lc: 1,
         type: "not_implemented",
-        id: handler.lc_id
+        id: handler2.lc_id
       };
     },
     toJSONNotImplemented() {
       return {
         lc: 1,
         type: "not_implemented",
-        id: handler.lc_id
+        id: handler2.lc_id
       };
     }
   };
-  return handler;
+  return handler2;
 }
 
 // ../node_modules/@sentry/core/build/esm/tracing/langgraph/constants.js
@@ -25371,11 +25416,11 @@ function captureError(error3, errorType, extraData) {
 function wrapMethodHandler(serverInstance, methodName) {
   fill(serverInstance, methodName, (originalMethod) => {
     return function(name, ...args) {
-      const handler = args[args.length - 1];
-      if (typeof handler !== "function") {
+      const handler2 = args[args.length - 1];
+      if (typeof handler2 !== "function") {
         return originalMethod.call(this, name, ...args);
       }
-      const wrappedHandler = createWrappedHandler(handler, methodName, name);
+      const wrappedHandler = createWrappedHandler(handler2, methodName, name);
       return originalMethod.call(this, name, ...args.slice(0, -1), wrappedHandler);
     };
   });
@@ -34577,15 +34622,15 @@ var FastifyInstrumentationV3 = class extends import_instrumentation6.Instrumenta
     return function(original) {
       return function wrappedAddHook(...args) {
         const name = args[0];
-        const handler = args[1];
+        const handler2 = args[1];
         const pluginName = this.pluginName;
         if (!hooksNamesToWrap.has(name)) {
           return original.apply(this, args);
         }
-        const syncFunctionWithDone = typeof args[args.length - 1] === "function" && handler.constructor.name !== "AsyncFunction";
+        const syncFunctionWithDone = typeof args[args.length - 1] === "function" && handler2.constructor.name !== "AsyncFunction";
         return original.apply(this, [
           name,
-          instrumentation._wrapHandler(pluginName, name, handler, syncFunctionWithDone)
+          instrumentation._wrapHandler(pluginName, name, handler2, syncFunctionWithDone)
         ]);
       };
     };
@@ -34638,8 +34683,8 @@ var FastifyInstrumentationV3 = class extends import_instrumentation6.Instrumenta
         return done();
       }
       const anyRequest = request2;
-      const handler = anyRequest.routeOptions?.handler || anyRequest.context?.handler;
-      const handlerName = handler?.name.startsWith("bound ") ? handler.name.substring(6) : handler?.name;
+      const handler2 = anyRequest.routeOptions?.handler || anyRequest.context?.handler;
+      const handlerName = handler2?.name.startsWith("bound ") ? handler2.name.substring(6) : handler2?.name;
       const spanName = `${FastifyNames.REQUEST_HANDLER} - ${handlerName || this.pluginName || ANONYMOUS_NAME}`;
       const spanAttributes = {
         [AttributeNames.PLUGIN_NAME]: this.pluginName,
@@ -35985,7 +36030,7 @@ function otelWireRoute(routeOptions) {
       );
     } else if (Array.isArray(handlerLike)) {
       routeOptions[hook] = handlerLike.map(
-        (handler) => handlerWrapper(handler, hook, routeHookAttributes(this.pluginName, hook, handler, routeOptions.url))
+        (handler2) => handlerWrapper(handler2, hook, routeHookAttributes(this.pluginName, hook, handler2, routeOptions.url))
       );
     }
   }
@@ -35998,12 +36043,12 @@ function otelWireRoute(routeOptions) {
     [ATTRIBUTE_HOOK_CALLBACK_NAME]: routeOptions.handler.name.length > 0 ? routeOptions.handler.name : ANONYMOUS_FUNCTION_NAME
   });
 }
-function routeHookAttributes(pluginName, hook, handler, url) {
+function routeHookAttributes(pluginName, hook, handler2, url) {
   return {
     [ATTRIBUTE_HOOK_NAME]: `${pluginName} - route -> ${hook}`,
     [ATTRIBUTE_FASTIFY_TYPE]: HOOK_TYPE_ROUTE,
     [Aa]: url,
-    [ATTRIBUTE_HOOK_CALLBACK_NAME]: handler.name?.length > 0 ? handler.name : ANONYMOUS_FUNCTION_NAME
+    [ATTRIBUTE_HOOK_CALLBACK_NAME]: handler2.name?.length > 0 ? handler2.name : ANONYMOUS_FUNCTION_NAME
   };
 }
 function appendRouteHook(existing, hook) {
@@ -36080,7 +36125,7 @@ function addHookPatched(name, hook) {
   }
   return addHookOriginal.call(this, name, hook);
 }
-function setNotFoundHandlerPatched(hooks, handler) {
+function setNotFoundHandlerPatched(hooks, handler2) {
   const setNotFoundHandlerOriginal = this[kSetNotFoundOriginal];
   if (typeof hooks === "function") {
     setNotFoundHandlerOriginal.call(
@@ -36107,17 +36152,17 @@ function setNotFoundHandlerPatched(hooks, handler) {
       [ATTRIBUTE_HOOK_CALLBACK_NAME]: hooks.preHandler.name?.length > 0 ? hooks.preHandler.name : ANONYMOUS_FUNCTION_NAME
     });
   }
-  if (handler == null) {
+  if (handler2 == null) {
     setNotFoundHandlerOriginal.call(this, hooks);
     return;
   }
   setNotFoundHandlerOriginal.call(
     this,
     hooks,
-    handlerWrapper(handler, "notFoundHandler", {
+    handlerWrapper(handler2, "notFoundHandler", {
       [ATTRIBUTE_HOOK_NAME]: `${this.pluginName} - not-found-handler`,
       [ATTRIBUTE_FASTIFY_TYPE]: HOOK_TYPE_INSTANCE,
-      [ATTRIBUTE_HOOK_CALLBACK_NAME]: handler.name?.length > 0 ? handler.name : ANONYMOUS_FUNCTION_NAME
+      [ATTRIBUTE_HOOK_CALLBACK_NAME]: handler2.name?.length > 0 ? handler2.name : ANONYMOUS_FUNCTION_NAME
     })
   );
 }
@@ -36129,14 +36174,14 @@ function getRequestFromArgs(args) {
   }
   return null;
 }
-function handlerWrapper(handler, hookName, spanAttributes = {}) {
+function handlerWrapper(handler2, hookName, spanAttributes = {}) {
   return function handlerWrapped(...args) {
     const request2 = getRequestFromArgs(args);
     if (request2 === null || getRequestRouteConfig(request2)?.otel === false) {
-      return handler.call(this, ...args);
+      return handler2.call(this, ...args);
     }
     const parentSpan = request2[kRequestSpan] ?? void 0;
-    const handlerName = handler.name?.length > 0 ? handler.name : this.pluginName ?? ANONYMOUS_FUNCTION_NAME;
+    const handlerName = handler2.name?.length > 0 ? handler2.name : this.pluginName ?? ANONYMOUS_FUNCTION_NAME;
     const hookType = spanAttributes[ATTRIBUTE_FASTIFY_TYPE];
     const op2 = hookType === HOOK_TYPE_INSTANCE ? HOOK_OP : hookType === HOOK_TYPE_HANDLER ? REQUEST_HANDLER_OP : void 0;
     const name = op2 ? stripFastifyPrefix(spanAttributes[ATTRIBUTE_HOOK_NAME]) : `${hookName} - ${handlerName}`;
@@ -36150,7 +36195,7 @@ function handlerWrapper(handler, hookName, spanAttributes = {}) {
         },
         parentSpan
       },
-      () => handler.call(this, ...args)
+      () => handler2.call(this, ...args)
     );
   };
 }
@@ -40405,8 +40450,8 @@ var HapiInstrumentation = class extends import_instrumentation29.Instrumentation
           const eventObj = eventsList[i];
           if (isLifecycleExtType(eventObj.type)) {
             const lifecycleEventObj = eventObj;
-            const handler = instrumentation._wrapExtMethods(lifecycleEventObj.method, eventObj.type, pluginName);
-            lifecycleEventObj.method = handler;
+            const handler2 = instrumentation._wrapExtMethods(lifecycleEventObj.method, eventObj.type, pluginName);
+            lifecycleEventObj.method = handler2;
             eventsList[i] = lifecycleEventObj;
           }
         }
@@ -40414,12 +40459,12 @@ var HapiInstrumentation = class extends import_instrumentation29.Instrumentation
       } else if (isDirectExtInput(args)) {
         const extInput = args;
         const method = extInput[1];
-        const handler = instrumentation._wrapExtMethods(method, extInput[0], pluginName);
-        return original.apply(this, [extInput[0], handler, extInput[2]]);
+        const handler2 = instrumentation._wrapExtMethods(method, extInput[0], pluginName);
+        return original.apply(this, [extInput[0], handler2, extInput[2]]);
       } else if (isLifecycleExtEventObj(args[0])) {
         const lifecycleEventObj = args[0];
-        const handler = instrumentation._wrapExtMethods(lifecycleEventObj.method, lifecycleEventObj.type, pluginName);
-        lifecycleEventObj.method = handler;
+        const handler2 = instrumentation._wrapExtMethods(lifecycleEventObj.method, lifecycleEventObj.type, pluginName);
+        lifecycleEventObj.method = handler2;
         return original.call(this, lifecycleEventObj);
       }
       return original.apply(this, args);
@@ -40677,12 +40722,12 @@ var HonoInstrumentation = class extends import_instrumentation31.Instrumentation
           const handlers2 = args.slice(1);
           return original.apply(this, [
             path2,
-            ...handlers2.map((handler) => instrumentation._wrapHandler(handler))
+            ...handlers2.map((handler2) => instrumentation._wrapHandler(handler2))
           ]);
         }
         return original.apply(
           this,
-          args.map((handler) => instrumentation._wrapHandler(handler))
+          args.map((handler2) => instrumentation._wrapHandler(handler2))
         );
       };
     };
@@ -40697,7 +40742,7 @@ var HonoInstrumentation = class extends import_instrumentation31.Instrumentation
         const handlers2 = args.slice(2);
         return original.apply(this, [
           ...args.slice(0, 2),
-          ...handlers2.map((handler) => instrumentation._wrapHandler(handler))
+          ...handlers2.map((handler2) => instrumentation._wrapHandler(handler2))
         ]);
       };
     };
@@ -40717,12 +40762,12 @@ var HonoInstrumentation = class extends import_instrumentation31.Instrumentation
           const handlers2 = args.slice(1);
           return original.apply(this, [
             path2,
-            ...handlers2.map((handler) => instrumentation._wrapHandler(handler))
+            ...handlers2.map((handler2) => instrumentation._wrapHandler(handler2))
           ]);
         }
         return original.apply(
           this,
-          args.map((handler) => instrumentation._wrapHandler(handler))
+          args.map((handler2) => instrumentation._wrapHandler(handler2))
         );
       };
     };
@@ -40730,24 +40775,24 @@ var HonoInstrumentation = class extends import_instrumentation31.Instrumentation
   /**
    * Wraps a handler or middleware handler to apply instrumentation.
    */
-  _wrapHandler(handler) {
+  _wrapHandler(handler2) {
     const instrumentation = this;
     return function(c, next) {
       if (!instrumentation.isEnabled()) {
-        return handler.apply(this, [c, next]);
+        return handler2.apply(this, [c, next]);
       }
       const path2 = c.req.path;
       const span = instrumentation.tracer.startSpan(path2);
       return context.with(trace.setSpan(context.active(), span), () => {
         return instrumentation._safeExecute(
           () => {
-            const result = handler.apply(this, [c, next]);
+            const result = handler2.apply(this, [c, next]);
             if (isThenable(result)) {
               return result.then((result2) => {
                 const type = instrumentation._determineHandlerType(result2);
                 span.setAttributes({
                   [AttributeNames5.HONO_TYPE]: type,
-                  [AttributeNames5.HONO_NAME]: type === HonoTypes.REQUEST_HANDLER ? path2 : handler.name || "anonymous"
+                  [AttributeNames5.HONO_NAME]: type === HonoTypes.REQUEST_HANDLER ? path2 : handler2.name || "anonymous"
                 });
                 instrumentation.getConfig().responseHook?.(span);
                 return result2;
@@ -40756,7 +40801,7 @@ var HonoInstrumentation = class extends import_instrumentation31.Instrumentation
               const type = instrumentation._determineHandlerType(result);
               span.setAttributes({
                 [AttributeNames5.HONO_TYPE]: type,
-                [AttributeNames5.HONO_NAME]: type === HonoTypes.REQUEST_HANDLER ? path2 : handler.name || "anonymous"
+                [AttributeNames5.HONO_NAME]: type === HonoTypes.REQUEST_HANDLER ? path2 : handler2.name || "anonymous"
               });
               instrumentation.getConfig().responseHook?.(span);
               return result;
@@ -43465,9 +43510,9 @@ function patchFunctions(functionsSupportedVersions2, wrap, unwrap) {
 function patchV2Functions(triggerType) {
   return function v2FunctionsWrapper(original) {
     return function(...args) {
-      const handler = typeof args[0] === "function" ? args[0] : args[1];
+      const handler2 = typeof args[0] === "function" ? args[0] : args[1];
       const documentOrOptions = typeof args[0] === "function" ? void 0 : args[0];
-      if (!handler) {
+      if (!handler2) {
         return original.call(this, ...args);
       }
       const wrappedHandler = async function(...handlerArgs) {
@@ -43493,7 +43538,7 @@ function patchV2Functions(triggerType) {
           },
           async (span) => {
             try {
-              const result = await handler.apply(this, handlerArgs);
+              const result = await handler2.apply(this, handlerArgs);
               span.end();
               return result;
             } catch (error3) {
@@ -45525,8 +45570,8 @@ function wrapExtArguments(args, pluginName) {
       const eventObj = eventsList[i];
       if (isLifecycleExtType2(eventObj.type)) {
         const lifecycleEventObj = eventObj;
-        const handler = wrapExtMethods(lifecycleEventObj.method, eventObj.type, pluginName);
-        lifecycleEventObj.method = handler;
+        const handler2 = wrapExtMethods(lifecycleEventObj.method, eventObj.type, pluginName);
+        lifecycleEventObj.method = handler2;
         eventsList[i] = lifecycleEventObj;
       }
     }
@@ -45534,13 +45579,13 @@ function wrapExtArguments(args, pluginName) {
   } else if (isDirectExtInput2(args)) {
     const extInput = args;
     const method = extInput[1];
-    const handler = wrapExtMethods(method, extInput[0], pluginName);
-    args[1] = handler;
+    const handler2 = wrapExtMethods(method, extInput[0], pluginName);
+    args[1] = handler2;
     return;
   } else if (isLifecycleExtEventObj2(args[0])) {
     const lifecycleEventObj = args[0];
-    const handler = wrapExtMethods(lifecycleEventObj.method, lifecycleEventObj.type, pluginName);
-    lifecycleEventObj.method = handler;
+    const handler2 = wrapExtMethods(lifecycleEventObj.method, lifecycleEventObj.type, pluginName);
+    lifecycleEventObj.method = handler2;
   }
 }
 
@@ -47534,7 +47579,7 @@ async function consumeOAuthExchange(code) {
   const tokenRow = tokens[0];
   const { error: updateError } = await supabase_default.from("refresh_tokens").update({ revokedAt: now }).eq("id", tokenRow.id);
   if (updateError) return null;
-  const { data: user, error: userError } = await supabase_default.from("users").select("*").eq("id", tokenRow.user_id).single();
+  const { data: user, error: userError } = await supabase_default.from("User").select("*").eq("id", tokenRow.user_id).single();
   if (userError || !user) return null;
   const provider = code.includes(".") ? code.split(".", 1)[0] : "oauth";
   return { user, provider };
@@ -47569,7 +47614,7 @@ var register2 = async (req, res) => {
     if (passwordError) {
       return res.status(400).json({ error: passwordError });
     }
-    const { data: existingUser, error: existingError } = await supabase_default.from("users").select("*").eq("email", email.toLowerCase()).single();
+    const { data: existingUser, error: existingError } = await supabase_default.from("User").select("*").eq("email", email.toLowerCase()).single();
     if (existingError && existingError.code !== "PGRST116") {
       throw existingError;
     }
@@ -47578,7 +47623,7 @@ var register2 = async (req, res) => {
       return res.status(400).json({ error: "Email already in use." });
     }
     const hashed = await import_bcrypt.default.hash(password, BCRYPT_SALT_ROUNDS);
-    const { data: user, error: createError } = await supabase_default.from("users").insert({
+    const { data: user, error: createError } = await supabase_default.from("User").insert({
       id: import_crypto2.default.randomUUID(),
       email: email.toLowerCase(),
       password: hashed,
@@ -47647,7 +47692,7 @@ var login = async (req, res) => {
     if (checkRateLimit(loginRateBucket, rateKey, LOGIN_MAX_ATTEMPTS, LOGIN_WINDOW_MS)) {
       return res.status(429).json({ error: "Too many login attempts. Try again later." });
     }
-    const { data: user, error: error3 } = await supabase_default.from("users").select("*").eq("email", email.toLowerCase()).single();
+    const { data: user, error: error3 } = await supabase_default.from("User").select("*").eq("email", email.toLowerCase()).single();
     if (error3 && error3.code !== "PGRST116") {
       throw error3;
     }
@@ -47668,7 +47713,7 @@ var login = async (req, res) => {
       const nextAttempts = (user.failed_login_attempts || 0) + 1;
       const shouldLock = nextAttempts >= 5;
       const lockUntil = shouldLock ? new Date(Date.now() + 15 * 60 * 1e3).toISOString() : null;
-      const { error: updateError2 } = await supabase_default.from("users").update({
+      const { error: updateError2 } = await supabase_default.from("User").update({
         failed_login_attempts: shouldLock ? 0 : nextAttempts,
         locked_until: lockUntil
       }).eq("id", user.id);
@@ -47676,7 +47721,7 @@ var login = async (req, res) => {
       await writeAuditLog(user.id, "failed_login", { attempts: nextAttempts, locked: shouldLock });
       return res.status(401).json({ error: "Invalid credentials." });
     }
-    const { error: updateError } = await supabase_default.from("users").update({ failed_login_attempts: 0, locked_until: null }).eq("id", user.id);
+    const { error: updateError } = await supabase_default.from("User").update({ failed_login_attempts: 0, locked_until: null }).eq("id", user.id);
     if (updateError) throw updateError;
     let workspace = "Narriv";
     try {
@@ -47711,7 +47756,7 @@ var refresh = async (req, res) => {
       return res.status(401).json({ error: "Invalid refresh token." });
     }
     const tokenRow = tokens[0];
-    const { data: user, error: userError } = await supabase_default.from("users").select("*").eq("id", tokenRow.user_id).single();
+    const { data: user, error: userError } = await supabase_default.from("User").select("*").eq("id", tokenRow.user_id).single();
     if (userError || !user) {
       return res.status(401).json({ error: "Invalid refresh token." });
     }
@@ -47758,7 +47803,7 @@ var forgotPassword = async (req, res) => {
     if (checkRateLimit(passwordResetRateBucket, rateKey, PASSWORD_RESET_MAX_ATTEMPTS, PASSWORD_RESET_WINDOW_MS)) {
       return res.status(429).json({ error: "Too many password reset attempts. Try again later." });
     }
-    const { data: tracking } = await supabase_default.from("password_reset_tracking").select("*").eq("user_id", (await supabase_default.from("users").select("id").eq("email", email).single())?.data?.id || "not-found").single();
+    const { data: tracking } = await supabase_default.from("password_reset_tracking").select("*").eq("user_id", (await supabase_default.from("User").select("id").eq("email", email).single())?.data?.id || "not-found").single();
     if (tracking?.locked_until && new Date(tracking.locked_until) > /* @__PURE__ */ new Date()) {
       const remainingMinutes = Math.ceil((new Date(tracking.locked_until).getTime() - Date.now()) / 6e4);
       return res.status(429).json({
@@ -47770,7 +47815,7 @@ var forgotPassword = async (req, res) => {
       success: true,
       message: "If an account exists for this email, a reset code has been generated."
     };
-    const { data: user, error: error3 } = await supabase_default.from("users").select("*").eq("email", email).single();
+    const { data: user, error: error3 } = await supabase_default.from("User").select("*").eq("email", email).single();
     if (error3 && error3.code !== "PGRST116") {
       throw error3;
     }
@@ -47843,7 +47888,7 @@ var verifyResetCode = async (req, res) => {
   try {
     const email = String(req.body.email || "").trim().toLowerCase();
     const code = String(req.body.code || "").trim();
-    const { data: user, error: error3 } = await supabase_default.from("users").select("*").eq("email", email).single();
+    const { data: user, error: error3 } = await supabase_default.from("User").select("*").eq("email", email).single();
     if (error3 && error3.code !== "PGRST116") {
       throw error3;
     }
@@ -47875,7 +47920,7 @@ var verifyEmail = async (req, res) => {
   try {
     const email = String(req.body.email || "").trim().toLowerCase();
     const code = String(req.body.code || "").trim();
-    const { data: user, error: error3 } = await supabase_default.from("users").select("*").eq("email", email).single();
+    const { data: user, error: error3 } = await supabase_default.from("User").select("*").eq("email", email).single();
     if (error3 && error3.code !== "PGRST116") {
       throw error3;
     }
@@ -47893,7 +47938,7 @@ var verifyEmail = async (req, res) => {
       await writeAuditLog(user.id, "email_verification_failed", { email: user.email });
       return res.status(400).json({ error: "Invalid or expired verification code.", code: "INVALID_VERIFICATION_CODE" });
     }
-    const { error: userUpdateError } = await supabase_default.from("users").update({ email_verified: now }).eq("id", user.id);
+    const { error: userUpdateError } = await supabase_default.from("User").update({ email_verified: now }).eq("id", user.id);
     if (userUpdateError) throw userUpdateError;
     const { error: tokenUpdateError } = await supabase_default.from("email_verification_tokens").update({ usedAt: now }).eq("id", tokenRow.id);
     if (tokenUpdateError) throw tokenUpdateError;
@@ -47909,7 +47954,7 @@ var verifyEmail = async (req, res) => {
 var resendVerification = async (req, res) => {
   try {
     const email = String(req.body.email || "").trim().toLowerCase();
-    const { data: user, error: error3 } = await supabase_default.from("users").select("*").eq("email", email).single();
+    const { data: user, error: error3 } = await supabase_default.from("User").select("*").eq("email", email).single();
     const genericResponse = { success: true, message: "If an account exists, a verification code has been sent." };
     if (error3 && error3.code !== "PGRST116") {
       throw error3;
@@ -47963,7 +48008,7 @@ var resetPassword = async (req, res) => {
       return res.status(400).json({ error: "Invalid or expired reset token.", code: "INVALID_RESET_TOKEN" });
     }
     const tokenRow = tokens[0];
-    const { data: user, error: userError } = await supabase_default.from("users").select("*").eq("id", tokenRow.user_id).single();
+    const { data: user, error: userError } = await supabase_default.from("User").select("*").eq("id", tokenRow.user_id).single();
     if (userError || !user) {
       return res.status(400).json({ error: "Invalid or expired reset token.", code: "INVALID_RESET_TOKEN" });
     }
@@ -47972,7 +48017,7 @@ var resetPassword = async (req, res) => {
       return res.status(400).json({ error: passwordError });
     }
     const hashed = await import_bcrypt.default.hash(newPassword, BCRYPT_SALT_ROUNDS);
-    const { error: userUpdateError } = await supabase_default.from("users").update({
+    const { error: userUpdateError } = await supabase_default.from("User").update({
       password: hashed,
       failed_login_attempts: 0,
       locked_until: null
@@ -47995,7 +48040,7 @@ var resetPassword = async (req, res) => {
 var me = async (req, res) => {
   try {
     const user_id = req.user.id;
-    const { data: user, error: error3 } = await supabase_default.from("users").select("id, email, name, created_at").eq("id", user_id).single();
+    const { data: user, error: error3 } = await supabase_default.from("User").select("id, email, name, created_at").eq("id", user_id).single();
     if (error3 && error3.code !== "PGRST116") {
       throw error3;
     }
@@ -48021,7 +48066,7 @@ var changePassword = async (req, res) => {
   try {
     const user_id = req.user.id;
     const { currentPassword, newPassword } = req.body;
-    const { data: user, error: error3 } = await supabase_default.from("users").select("*").eq("id", user_id).single();
+    const { data: user, error: error3 } = await supabase_default.from("User").select("*").eq("id", user_id).single();
     if (error3 && error3.code !== "PGRST116") {
       throw error3;
     }
@@ -48050,7 +48095,7 @@ var changePassword = async (req, res) => {
       }
     }
     const hashed = await import_bcrypt.default.hash(newPassword, BCRYPT_SALT_ROUNDS);
-    const { error: updateError } = await supabase_default.from("users").update({ password: hashed }).eq("id", user_id);
+    const { error: updateError } = await supabase_default.from("User").update({ password: hashed }).eq("id", user_id);
     if (updateError) throw updateError;
     await supabase_default.from("password_history").insert({
       user_id,
@@ -48131,13 +48176,13 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
   }
   let user;
   if (oauthAccount) {
-    const { data: userData, error: userError } = await supabase_default.from("users").select("*").eq("id", oauthAccount.user_id).single();
+    const { data: userData, error: userError } = await supabase_default.from("User").select("*").eq("id", oauthAccount.user_id).single();
     if (userError || !userData) {
       throw new Error("OAuth account exists but user not found");
     }
     user = userData;
   } else {
-    const { data: userByEmail, error: userByEmailError } = await supabase_default.from("users").select("*").eq("email", email).single();
+    const { data: userByEmail, error: userByEmailError } = await supabase_default.from("User").select("*").eq("email", email).single();
     if (userByEmailError && userByEmailError.code !== "PGRST116") {
       throw userByEmailError;
     }
@@ -48145,7 +48190,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
     if (!user) {
       const dummyPassword = import_crypto2.default.randomBytes(32).toString("hex");
       const hashedPassword = await import_bcrypt.default.hash(dummyPassword, BCRYPT_SALT_ROUNDS);
-      const { data: newUser, error: createError } = await supabase_default.from("users").insert({
+      const { data: newUser, error: createError } = await supabase_default.from("User").insert({
         email,
         name,
         password: hashedPassword,
@@ -48156,9 +48201,9 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
       user = newUser;
       await writeAuditLog(user.id, "register_success_oauth", { provider, email });
     } else if (!user.email_verified) {
-      const { error: updateError } = await supabase_default.from("users").update({ email_verified: (/* @__PURE__ */ new Date()).toISOString() }).eq("id", user.id);
+      const { error: updateError } = await supabase_default.from("User").update({ email_verified: (/* @__PURE__ */ new Date()).toISOString() }).eq("id", user.id);
       if (updateError) throw updateError;
-      const { data: updatedUser, error: reFetchError } = await supabase_default.from("users").select("*").eq("id", user.id).single();
+      const { data: updatedUser, error: reFetchError } = await supabase_default.from("User").select("*").eq("id", user.id).single();
       if (reFetchError) throw reFetchError;
       user = updatedUser;
     }
@@ -48192,7 +48237,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
     }
   }
   if (user.failed_login_attempts > 0 || user.locked_until) {
-    const { error: lockoutError } = await supabase_default.from("users").update({ failed_login_attempts: 0, locked_until: null }).eq("id", user.id);
+    const { error: lockoutError } = await supabase_default.from("User").update({ failed_login_attempts: 0, locked_until: null }).eq("id", user.id);
     if (lockoutError) throw lockoutError;
   }
   await writeAuditLog(user.id, "login_oauth", { provider, email });
@@ -49013,13 +49058,16 @@ router2.post("/:id/analyze", validateRequest({ params: signalIdParamsSchema }), 
     const result = await analyzeSignal(signal.title, signal.content);
     const { data: analysis, error: analysisError } = await supabase_default.from("signal_analyses").insert({
       signal_id: id,
-      sentiment: result.sentiment,
-      narrative_type: result.narrative_type,
-      stakeholder: result.stakeholder,
-      impact: result.impact,
-      summary: result.summary,
-      recommended_action: result.recommended_action,
-      confidence_score: result.confidence_score
+      analysis: JSON.stringify({
+        sentiment: result.sentiment,
+        narrative_type: result.narrative_type,
+        stakeholder: result.stakeholder,
+        impact: result.impact,
+        summary: result.summary,
+        recommended_action: result.recommended_action
+      }),
+      confidence: result.confidence_score,
+      model: "gpt-4o-mini"
     }).select().single();
     if (analysisError) throw analysisError;
     const { error: updateError } = await supabase_default.from("signals").update({ sentiment: result.sentiment }).eq("id", id);
@@ -49068,13 +49116,16 @@ router2.post("/batch-analyze", async (req, res) => {
         const result = await analyzeSignal(signal.title, signal.content);
         const { data: analysis, error: createError } = await supabase_default.from("signal_analyses").insert({
           signal_id: signal.id,
-          sentiment: result.sentiment,
-          narrative_type: result.narrative_type,
-          stakeholder: result.stakeholder,
-          impact: result.impact,
-          summary: result.summary,
-          recommended_action: result.recommended_action,
-          confidence_score: result.confidence_score
+          analysis: JSON.stringify({
+            sentiment: result.sentiment,
+            narrative_type: result.narrative_type,
+            stakeholder: result.stakeholder,
+            impact: result.impact,
+            summary: result.summary,
+            recommended_action: result.recommended_action
+          }),
+          confidence: result.confidence_score,
+          model: "gpt-4o-mini"
         }).select().single();
         if (createError) throw createError;
         const { error: updateError } = await supabase_default.from("signals").update({ sentiment: result.sentiment }).eq("id", signal.id);
@@ -50977,7 +51028,7 @@ var getSummary = async (req, res) => {
       const deltaStr = (deltaPercent >= 0 ? "+" : "") + deltaPercent + "%";
       const system_status = ["API Server"];
       try {
-        const { error: dbError } = await supabase_default.from("users").select("id").limit(1);
+        const { error: dbError } = await supabase_default.from("User").select("id").limit(1);
         if (!dbError) system_status.push("Database");
       } catch (e) {
       }
@@ -55213,13 +55264,13 @@ async function createWorkspaceMember(req, res) {
     const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : null;
     let user;
     if (userId) {
-      const { data, error: error3 } = await supabase_default.from("users").select("id, email, name").eq("id", userId).maybeSingle();
+      const { data, error: error3 } = await supabase_default.from("User").select("id, email, name").eq("id", userId).maybeSingle();
       if (error3) {
         logStructured("error", "Error finding user by id:", { error: error3?.message || error3 });
       }
       user = data;
     } else if (normalizedEmail) {
-      const { data, error: error3 } = await supabase_default.from("users").select("id, email, name").eq("email", normalizedEmail).maybeSingle();
+      const { data, error: error3 } = await supabase_default.from("User").select("id, email, name").eq("email", normalizedEmail).maybeSingle();
       if (error3) {
         logStructured("error", "Error finding user by email:", { error: error3?.message || error3 });
       }
@@ -55979,7 +56030,7 @@ async function createOnboardingTeam(req, res) {
     }
     const results = [];
     for (const member of members) {
-      const { data: user, error: userError } = await supabase_default.from("users").select("id").eq("email", member.email).maybeSingle();
+      const { data: user, error: userError } = await supabase_default.from("User").select("id").eq("email", member.email).maybeSingle();
       if (userError) {
         logStructured("error", "Error finding user:", { error: userError?.message || userError });
       }
@@ -59259,7 +59310,7 @@ async function checkDatabaseHealth() {
     if (!url || !key || key === "REPLACE_WITH_YOUR_SERVICE_ROLE_KEY" || url.includes("your-project")) {
       return { service: "database", status: "unavailable", reason: "Supabase credentials not configured" };
     }
-    const { error: error3 } = await supabase_default.from("users").select("id").limit(1);
+    const { error: error3 } = await supabase_default.from("User").select("id").limit(1);
     if (error3) {
       if (String(error3?.message || "").includes("Invalid API key")) {
         return { service: "database", status: "unavailable", reason: "Invalid Supabase API key - check credentials" };
@@ -59637,6 +59688,12 @@ scheduleAlertEscalation();
 scheduleVisibilityScans();
 var app = (0, import_express32.default)();
 app.set("trust proxy", process.env.TRUST_PROXY || "loopback");
+app.use((req, res, next) => {
+  if (req.url.startsWith("/api")) {
+    req.url = req.url.replace(/^\/api/, "") || "/";
+  }
+  next();
+});
 app.use(securityHeaders);
 if (process.env.SENTRY_DSN) {
   app.use(Sentry.Handlers.requestHandler({
@@ -59725,6 +59782,11 @@ var gracefulShutdown = async (signal) => {
 };
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+var handler = (req, res) => {
+  const server = app;
+  server(req, res);
+  return res;
+};
 var index_default = app;
 var PORT = process.env.PORT || 3e3;
 if (process.env.NODE_ENV !== "test") {
@@ -59732,3 +59794,8 @@ if (process.env.NODE_ENV !== "test") {
     logStructured("info", "server_started", { port: PORT, env: process.env.NODE_ENV });
   });
 }
+// Annotate the CommonJS export names for ESM import in node:
+0 && (module.exports = {
+  handler
+});
+module.exports = index_default;

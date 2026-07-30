@@ -18,12 +18,10 @@ for (const envPath of envPaths) {
 }
 
 // Get environment variables
-// SECURITY FIX: Required environment variables must be set - no fallback to dangerous defaults
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
-// Validate required environment variables
 if (!supabaseUrl) {
     throw new Error("CRITICAL: SUPABASE_URL environment variable is not set");
 }
@@ -33,8 +31,6 @@ if (!supabaseServiceKey) {
 if (!supabaseAnonKey) {
     throw new Error("CRITICAL: SUPABASE_ANON_KEY environment variable is not set");
 }
-
-// SECURITY FIX: Never use service key as anon key fallback - this grants admin privileges to all users
 if (supabaseAnonKey === supabaseServiceKey) {
     throw new Error("CRITICAL: SUPABASE_ANON_KEY must be different from SUPABASE_SERVICE_KEY");
 }
@@ -60,7 +56,6 @@ const connectionMetrics = {
 // Table name mapping: code usage → actual PostgreSQL table names
 // The actual table is 'User' (PascalCase), not 'users' (lowercase)
 const TABLE_MAP = {
-    // Auth & Users
     'users': 'User',
     'refresh_tokens': 'refresh_tokens',
     'password_reset_tokens': 'password_reset_tokens',
@@ -130,12 +125,10 @@ function camelToSnake(str) {
     return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
 }
 
-// Convert snake_case to actual table name
+// Convert table name to actual PostgreSQL table name
 function toTableName(name) {
-    // First convert camelCase to snake_case
     const snakeName = camelToSnake(name);
     if (TABLE_MAP[snakeName]) return TABLE_MAP[snakeName];
-    // If not in map, return as-is
     return name;
 }
 
@@ -148,31 +141,14 @@ const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
     auth: { autoRefreshToken: true, persistSession: true },
 });
 
-// Convert snake_case column names from DB to camelCase
-// The database uses camelCase columns (emailVerified, failedLoginAttempts, lockedUntil)
-// but Supabase REST API returns snake_case keys by default
-function transformResponseData(data) {
-    if (!data) return data;
-    if (Array.isArray(data)) return data.map(transformRow);
-    return transformRow(data);
-}
-
-// Alias used by wrapQueryBuilder's Promise response transformer
-function transformResponseDataForTable(data, tableName) {
-    return transformResponseData(data);
-}
-
+// Transform a single DB row: snake_case keys → camelCase
+// and delete the snake_case originals to prevent duplicate keys.
 function transformRow(row) {
     if (!row || typeof row !== 'object') return row;
-    // Supabase REST API returns snake_case keys for camelCase DB columns.
-    // Transform to camelCase and delete the snake_case originals so callers
-    // checking for email_verified / failed_login_attempts / locked_until get the
-    // right value (not the old null).
     const mapped = {};
     for (const [key, val] of Object.entries(row)) {
         mapped[key] = val;
     }
-    // Map snake_case → camelCase and delete original
     if ('email_verified' in row) {
         mapped.emailVerified = row.email_verified;
         delete mapped.email_verified;
@@ -196,81 +172,75 @@ function transformRow(row) {
     return mapped;
 }
 
-// Convert camelCase in request body → snake_case for PostgreSQL
-function transformRequestData(data, tableName) {
-    if (!data || typeof data !== 'object') return data;
-    if (Array.isArray(data)) return data.map(d => transformRequestData(d, tableName));
-
-    // Only transform for User table (has camelCase columns in DB)
-    if (tableName === 'User') {
-        const mapped = {};
-        for (const [key, val] of Object.entries(data)) {
-            if (key === 'emailVerified') mapped['email_verified'] = val;
-            else if (key === 'failedLoginAttempts') mapped['failed_login_attempts'] = val;
-            else if (key === 'lockedUntil') mapped['locked_until'] = val;
-            else mapped[key] = val;
-        }
-        return mapped;
-    }
-    return data;
+// Transform response data: handle null, array, or single object
+function transformResponseData(data) {
+    if (!data) return data;
+    if (Array.isArray(data)) return data.map(transformRow);
+    return transformRow(data);
 }
 
-// Convert column names in .select() calls to snake_case for the DB
-// Also track the table so we can transform responses
-function wrapQueryBuilder(builder, tableName) {
-    // Mark the builder with its table name for downstream methods
-    builder.__narrivTable = tableName;
+// Transform an error's .details field (also snake_case from DB)
+function transformErrorDetails(details) {
+    if (!details) return details;
+    if (Array.isArray(details)) return details.map(transformRow);
+    if (typeof details === 'object') return transformRow(details);
+    return details;
+}
 
-    return new Proxy(builder, {
+// Create wrapped Supabase client.
+// Handles:
+//   1. Table name mapping  (e.g. 'users' → 'User', 'User' stays 'User')
+//   2. Response data transform  (snake_case from DB → camelCase for callers)
+//   3. Error details transform  (snake_case → camelCase on rejection)
+function createDbClient(base) {
+    return new Proxy(base, {
         get(target, prop) {
-            const method = target[prop];
+            const value = target[prop];
 
-            // .select('*') or .select('id,email_verified,...')
-            // → convert camelCase column names to snake_case
-            if (prop === 'select') {
-                return function(...selectArgs) {
-                    const cols = selectArgs[0];
-                    if (typeof cols === 'string' && cols !== '*') {
-                        // Convert camelCase → snake_case for each column name
-                        const converted = cols.split(',').map(c => {
-                            c = c.trim();
-                            if (c === 'emailVerified') return 'email_verified';
-                            if (c === 'failedLoginAttempts') return 'failed_login_attempts';
-                            if (c === 'lockedUntil') return 'locked_until';
-                            return c;
-                        }).join(',');
-                        return wrapQueryBuilder(method.call(target, converted), tableName);
-                    }
-                    return wrapQueryBuilder(method.apply(target, selectArgs), tableName);
-                };
-            }
+            if (typeof value !== 'function') return value;
 
-            // Exclude Promise.prototype methods — wrapping them breaks the Promise chain.
-            // queryBuilderInstance.then = Promise.prototype.then.
-            if (prop === 'then' || prop === 'catch' || prop === 'finally') {
-                return method;
-            }
+            return function(...args) {
+                let tableName = null;
 
-            // Pass through non-function properties
-            if (typeof method !== 'function') {
-                return method;
-            }
-
-            return function(...methodArgs) {
-                const result = method.apply(target, methodArgs);
-
-                // If result is a Promise (from .single(), .maybeSingle(), etc.),
-                // transform the response data before resolving
-                if (result && typeof result.then === 'function') {
-                    return result.then(response => {
-                        if (response && typeof response === 'object') {
-                            return {
-                                ...response,
-                                data: transformRow(response.data),
-                            };
+                // ── Table name mapping ─────────────────────────────────────
+                if (args[0] !== undefined) {
+                    const arg0 = args[0];
+                    if (typeof arg0 === 'string') {
+                        tableName = toTableName(arg0);
+                        args[0] = tableName;
+                    } else if (arg0 && typeof arg0 === 'object' && !arg0.from && !arg0.select) {
+                        // Plain object { from: 'users' } or { user_id: '...' }
+                        if (typeof arg0.from === 'string') {
+                            tableName = toTableName(arg0.from);
+                            args[0] = { ...arg0, from: tableName };
                         }
-                        return response;
-                    }).catch(err => Promise.reject(err));
+                    }
+                }
+
+                const result = value.apply(target, args);
+
+                // ── Non-Promise results (builders, raw objects) ───────────
+                // A query builder is thenable but NOT an instance of Promise.
+                // It must NOT be awaited here — let the caller's .then() run.
+                if (result && typeof result.then === 'function') {
+                    const isRealPromise = result instanceof Promise;
+                    if (isRealPromise) {
+                        // Direct API call (e.g. supabase.auth.signInWithPassword())
+                        // → transform resolved data
+                        return result.then(response => {
+                            if (response && typeof response === 'object' && 'data' in response) {
+                                return { ...response, data: transformResponseData(response.data) };
+                            }
+                            return response;
+                        }).catch(err => {
+                            if (err && typeof err === 'object' && err.details) {
+                                err.details = transformErrorDetails(err.details);
+                            }
+                            return Promise.reject(err);
+                        });
+                    }
+                    // else: query builder (PostgrestFilterBuilder, etc.)
+                    // → pass through unchanged so .then/.single() work natively
                 }
 
                 return result;
@@ -279,77 +249,11 @@ function wrapQueryBuilder(builder, tableName) {
     });
 }
 
-// WeakMap to track table name for request body transformation
-const tableNameMap = new WeakMap();
-
-// Create wrapped client that auto-converts table names and response keys
-function createDbClient(base) {
-    return new Proxy(base, {
-        get(target, prop) {
-            const value = target[prop];
-            if (typeof value === 'function') {
-                return function(...args) {
-                    let currentTable = null;
-                    // Convert first arg (table name) from snake_case to actual table name
-                    if (args[0] && typeof args[0] === 'string') {
-                        const originalTable = args[0];
-                        const mapped = toTableName(originalTable);
-                        if (args[0].from) {
-                            args[0] = { ...args[0], from: mapped };
-                        } else if (!args[0].includes(' ') && !args[0].includes('(')) {
-                            args[0] = mapped;
-                        }
-                        currentTable = mapped;
-                    } else if (args[0] && typeof args[0] === 'object' && args[0].from) {
-                        // Handle { from: 'table' } object format
-                        const mapped = toTableName(args[0].from);
-                        args[0] = { ...args[0], from: mapped };
-                        currentTable = mapped;
-                    }
-
-                    const result = value.apply(target, args);
-
-                    // If this is .from('User') returning a query builder, wrap it
-                    if (result && typeof result === 'object' && typeof result.then !== 'function') {
-                        return wrapQueryBuilder(result, currentTable);
-                    }
-
-                    // For non-builder results (like direct calls), transform response
-                    if (result && typeof result.then === 'function') {
-                        return result.then(response => {
-                            if (response && typeof response === 'object') {
-                                return {
-                                    ...response,
-                                    data: transformResponseData(response.data),
-                                };
-                            }
-                            return response;
-                        }).catch(err => {
-                            if (err?.details) {
-                                const normalized = { ...err };
-                                if (Array.isArray(err.details)) {
-                                    normalized.details = err.details.map(transformRow);
-                                } else if (typeof err.details === 'object') {
-                                    normalized.details = transformRow(err.details);
-                                }
-                                return Promise.reject(normalized);
-                            }
-                            return Promise.reject(err);
-                        });
-                    }
-                    return result;
-                };
-            }
-            return value;
-        }
-    });
-}
-
 // Export wrapped clients
 export const supabaseAdmin = createDbClient(adminClient);
 export const supabase = createDbClient(anonClient);
 
-// Also export base clients
+// Also export base (unwrapped) clients for direct use
 export const baseSupabaseAdmin = adminClient;
 export const baseSupabase = anonClient;
 
@@ -362,12 +266,10 @@ export function getPoolMetrics() {
     };
 }
 
-// Connection pool configuration export
 export function getPoolConfig() {
     return { ...POOL_CONFIG };
 }
 
-// Helper to check connection
 export async function checkConnection() {
     const startTime = Date.now();
     try {
@@ -380,17 +282,11 @@ export async function checkConnection() {
         if (error && error.code !== 'PGRST116' && !error.message?.includes('JWT')) {
             connectionMetrics.errors++;
             connectionMetrics.lastError = error.message;
-            logStructured("error", "supabase_connection_failed", {
-                latency,
-                error: error.message
-            });
+            logStructured("error", "supabase_connection_failed", { latency, error: error.message });
             return false;
         }
 
-        logStructured("info", "supabase_connection_success", {
-            latency,
-            totalConnections: connectionMetrics.total
-        });
+        logStructured("info", "supabase_connection_success", { latency, totalConnections: connectionMetrics.total });
 
         connectionMetrics.active--;
         return true;
@@ -398,10 +294,7 @@ export async function checkConnection() {
         connectionMetrics.errors++;
         connectionMetrics.lastError = err.message;
         connectionMetrics.active--;
-        logStructured("error", "supabase_connection_error", {
-            latency: Date.now() - startTime,
-            error: err.message
-        });
+        logStructured("error", "supabase_connection_error", { latency: Date.now() - startTime, error: err.message });
         return false;
     }
 }
@@ -415,10 +308,7 @@ export function startConnectionCleanup(intervalMs = 60000) {
     cleanupInterval = setInterval(() => {
         const metrics = getPoolMetrics();
         if (metrics.active === 0) {
-            logStructured("info", "supabase_idle_cleanup", {
-                idleTime: intervalMs,
-                totalConnections: metrics.total
-            });
+            logStructured("info", "supabase_idle_cleanup", { idleTime: intervalMs, totalConnections: metrics.total });
         }
     }, intervalMs);
 
