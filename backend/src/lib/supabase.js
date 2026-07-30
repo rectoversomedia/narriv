@@ -164,16 +164,35 @@ function transformResponseDataForTable(data, tableName) {
 
 function transformRow(row) {
     if (!row || typeof row !== 'object') return row;
+    // Supabase REST API returns snake_case keys for camelCase DB columns.
+    // Transform to camelCase and delete the snake_case originals so callers
+    // checking for email_verified / failed_login_attempts / locked_until get the
+    // right value (not the old null).
     const mapped = {};
     for (const [key, val] of Object.entries(row)) {
         mapped[key] = val;
     }
-    // Map known snake_case → camelCase (response from DB)
-    if ('email_verified' in row) mapped.emailVerified = row.email_verified;
-    if ('failed_login_attempts' in row) mapped.failedLoginAttempts = row.failed_login_attempts;
-    if ('locked_until' in row) mapped.lockedUntil = row.locked_until;
-    if ('created_at' in row && !('createdAt' in row)) mapped.createdAt = row.created_at;
-    if ('updated_at' in row && !('updatedAt' in row)) mapped.updatedAt = row.updated_at;
+    // Map snake_case → camelCase and delete original
+    if ('email_verified' in row) {
+        mapped.emailVerified = row.email_verified;
+        delete mapped.email_verified;
+    }
+    if ('failed_login_attempts' in row) {
+        mapped.failedLoginAttempts = row.failed_login_attempts;
+        delete mapped.failed_login_attempts;
+    }
+    if ('locked_until' in row) {
+        mapped.lockedUntil = row.locked_until;
+        delete mapped.locked_until;
+    }
+    if ('created_at' in row && !('createdAt' in row)) {
+        mapped.createdAt = row.created_at;
+        delete mapped.created_at;
+    }
+    if ('updated_at' in row && !('updatedAt' in row)) {
+        mapped.updatedAt = row.updated_at;
+        delete mapped.updated_at;
+    }
     return mapped;
 }
 
@@ -226,28 +245,35 @@ function wrapQueryBuilder(builder, tableName) {
                 };
             }
 
-            // For non-function properties (including Promise's .then/.catch), pass through directly.
-            // The outer createDbClient handles response transformation at the Promise level.
+            // Pass through non-function properties (includes Promise's .then/.catch)
             if (typeof method !== 'function') {
                 return method;
             }
 
-            // If the target is itself a thenable (Promise-like), let Promise methods through.
-            // This prevents wrapping .then() on an already-resolved value.
-            if (target && typeof target.then === 'function') {
-                return method;
-            }
-
-            // For query builder methods, pass through and wrap the result
             return function(...methodArgs) {
                 const result = method.apply(target, methodArgs);
-                // Wrap returned query builders to preserve column name transformation
+
+                // If result is a query builder, wrap it to preserve column name transformation
                 if (result && typeof result === 'object' && typeof result.then !== 'function' && typeof result.subscribe !== 'function') {
                     if (typeof result.select === 'function' || typeof result.eq === 'function') {
                         return wrapQueryBuilder(result, tableName);
                     }
                 }
-                // Don't transform the Promise itself here — createDbClient does that at the outer level
+
+                // If result is a Promise (response from .single(), .then(), etc.),
+                // transform the response data before resolving
+                if (result && typeof result.then === 'function') {
+                    return result.then(response => {
+                        if (response && typeof response === 'object') {
+                            return {
+                                ...response,
+                                data: transformRow(response.data),
+                            };
+                        }
+                        return response;
+                    }).catch(err => Promise.reject(err));
+                }
+
                 return result;
             };
         }

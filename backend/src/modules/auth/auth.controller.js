@@ -416,18 +416,18 @@ export const login = async (req, res) => {
 
         // SECURITY FIX: Email verification must ALWAYS be enforced regardless of environment
         // Dev mode bypass has been removed to prevent account takeover in non-production environments
-        if (!user.email_verified) {
+        if (!user.emailVerified) {
             return res.status(403).json({ error: "Email is not verified.", code: "EMAIL_NOT_VERIFIED", requireVerification: true, email: user.email });
         }
 
-        if (user.locked_until && new Date(user.locked_until) > new Date()) {
-            await writeAuditLog(user.id, "failed_login", { reason: "account_locked", locked_until: user.locked_until });
+        if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
+            await writeAuditLog(user.id, "failed_login", { reason: "account_locked", lockedUntil: user.lockedUntil });
             return res.status(429).json({ error: "Account temporarily locked. Try again later." });
         }
 
         const match = await bcrypt.compare(password, user.password);
         if (!match) {
-            const nextAttempts = (user.failed_login_attempts || 0) + 1;
+            const nextAttempts = (user.failedLoginAttempts || 0) + 1;
             const shouldLock = nextAttempts >= 5;
             const lockUntil = shouldLock ? new Date(Date.now() + 15 * 60 * 1000).toISOString() : null;
 
@@ -598,8 +598,8 @@ export const forgotPassword = async (req, res) => {
             .eq("user_id", (await supabase.from("User").select("id").eq("email", email).single())?.data?.id || "not-found")
             .single();
 
-        if (tracking?.locked_until && new Date(tracking.locked_until) > new Date()) {
-            const remainingMinutes = Math.ceil((new Date(tracking.locked_until).getTime() - Date.now()) / 60000);
+        if (tracking?.lockedUntil && new Date(tracking.lockedUntil) > new Date()) {
+            const remainingMinutes = Math.ceil((new Date(tracking.lockedUntil).getTime() - Date.now()) / 60000);
             return res.status(429).json({
                 error: `Account temporarily locked for password resets. Try again in ${remainingMinutes} minutes.`,
                 code: "RESET_LOCKED"
@@ -628,7 +628,7 @@ export const forgotPassword = async (req, res) => {
         }
 
         // Check if user is already locked
-        if (tracking?.locked_until && new Date(tracking.locked_until) > new Date()) {
+        if (tracking?.lockedUntil && new Date(tracking.lockedUntil) > new Date()) {
             return res.status(429).json({
                 error: "Account temporarily locked for password resets. Try again later.",
                 code: "RESET_LOCKED"
@@ -787,7 +787,7 @@ export const verifyEmail = async (req, res) => {
             return res.status(400).json({ error: "Invalid or expired verification code.", code: "INVALID_VERIFICATION_CODE" });
         }
 
-        if (user.email_verified) {
+        if (user.emailVerified) {
             return res.status(400).json({ error: "Email is already verified." });
         }
 
@@ -825,7 +825,7 @@ export const verifyEmail = async (req, res) => {
 
         if (tokenUpdateError) throw tokenUpdateError;
 
-        await writeAuditLog(user.id, "email_verified", { email: user.email });
+        await writeAuditLog(user.id, "emailVerified", { email: user.email });
 
         // Issue tokens and log them in
         const token = signAccessToken(user);
@@ -858,7 +858,7 @@ export const resendVerification = async (req, res) => {
             return res.json(genericResponse);
         }
 
-        if (user.email_verified) {
+        if (user.emailVerified) {
             return res.status(400).json({ error: "Email is already verified." });
         }
 
@@ -1262,7 +1262,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
             user = newUser;
 
             await writeAuditLog(user.id, "register_success_oauth", { provider, email });
-        } else if (!user.email_verified) {
+        } else if (!user.emailVerified) {
             // Auto-verify email if they log in with a matching OAuth account
             const { error: updateError } = await supabase
                 .from("User")
@@ -1271,7 +1271,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
 
             if (updateError) throw updateError;
 
-            // Re-fetch user with updated email_verified
+            // Re-fetch user with updated emailVerified
             const { data: updatedUser, error: reFetchError } = await supabase
                 .from("User")
                 .select("*")
@@ -1327,7 +1327,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
     }
 
     // Reset lockout if needed
-    if (user.failed_login_attempts > 0 || user.locked_until) {
+    if (user.failedLoginAttempts > 0 || user.lockedUntil) {
         const { error: lockoutError } = await supabase
             .from("User")
             .update({ failed_login_attempts: 0, locked_until: null })
