@@ -996,7 +996,7 @@ export const me = async (req, res) => {
 
         const { data: user, error } = await supabase
             .from("User")
-            .select("id, email, name, created_at")
+            .select("id, email, name")
             .eq("id", user_id)
             .single();
 

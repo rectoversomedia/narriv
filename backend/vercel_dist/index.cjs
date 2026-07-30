@@ -48040,7 +48040,7 @@ var resetPassword = async (req, res) => {
 var me = async (req, res) => {
   try {
     const user_id = req.user.id;
-    const { data: user, error: error3 } = await supabase_default.from("User").select("id, email, name, created_at").eq("id", user_id).single();
+    const { data: user, error: error3 } = await supabase_default.from("User").select("id, email, name").eq("id", user_id).single();
     if (error3 && error3.code !== "PGRST116") {
       throw error3;
     }
@@ -59688,12 +59688,6 @@ scheduleAlertEscalation();
 scheduleVisibilityScans();
 var app = (0, import_express32.default)();
 app.set("trust proxy", process.env.TRUST_PROXY || "loopback");
-app.use((req, res, next) => {
-  if (req.url.startsWith("/api")) {
-    req.url = req.url.replace(/^\/api/, "") || "/";
-  }
-  next();
-});
 app.use(securityHeaders);
 if (process.env.SENTRY_DSN) {
   app.use(Sentry.Handlers.requestHandler({

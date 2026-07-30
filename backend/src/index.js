@@ -59,15 +59,6 @@ scheduleVisibilityScans();
 const app = express();
 app.set("trust proxy", process.env.TRUST_PROXY || "loopback");
 
-// Strip /api prefix so Express can match routes mounted at /, /auth, /signals, etc.
-// This is needed for Vercel unified deployments where /api/* routes are forwarded to Express.
-app.use((req, res, next) => {
-    if (req.url.startsWith("/api")) {
-        req.url = req.url.replace(/^\/api/, "") || "/";
-    }
-    next();
-});
-
 // Security headers (apply early)
 app.use(securityHeaders);
 
