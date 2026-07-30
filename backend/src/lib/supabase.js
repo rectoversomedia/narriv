@@ -266,9 +266,9 @@ function wrapQueryBuilder(builder, tableName) {
                     }).catch(err => Promise.reject(err));
                 }
 
-                // Return query builder results as-is — don't re-wrap them.
-                // The caller holds the wrapped reference; re-wrapping causes .single()
-                // etc. to resolve from Promise.prototype instead of the actual builder.
+                // Return results as-is — don't re-wrap query builders.
+                // Wrapping the result of .eq() causes .single() to resolve from
+                // Promise.prototype instead of the query builder (double-wrapping).
                 return result;
             };
         }
