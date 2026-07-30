@@ -245,7 +245,7 @@ function wrapQueryBuilder(builder, tableName) {
                 };
             }
 
-            // Pass through non-function properties (includes Promise's .then/.catch)
+            // For non-function properties (includes .then, .catch inherited from Promise.prototype)
             if (typeof method !== 'function') {
                 return method;
             }
@@ -253,15 +253,7 @@ function wrapQueryBuilder(builder, tableName) {
             return function(...methodArgs) {
                 const result = method.apply(target, methodArgs);
 
-                // If result is a query builder, wrap it to preserve column name transformation
-                if (result && typeof result === 'object' && typeof result.then !== 'function' && typeof result.subscribe !== 'function') {
-                    if (typeof result.select === 'function' || typeof result.eq === 'function') {
-                        return wrapQueryBuilder(result, tableName);
-                    }
-                }
-
-                // If result is a Promise (response from .single(), .then(), etc.),
-                // transform the response data before resolving
+                // Transform Promise results (e.g. from .single(), .maybeSingle(), .then())
                 if (result && typeof result.then === 'function') {
                     return result.then(response => {
                         if (response && typeof response === 'object') {
@@ -274,6 +266,9 @@ function wrapQueryBuilder(builder, tableName) {
                     }).catch(err => Promise.reject(err));
                 }
 
+                // Return query builder results as-is — don't re-wrap them.
+                // The caller holds the wrapped reference; re-wrapping causes .single()
+                // etc. to resolve from Promise.prototype instead of the actual builder.
                 return result;
             };
         }
