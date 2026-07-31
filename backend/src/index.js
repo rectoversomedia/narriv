@@ -59,6 +59,15 @@ scheduleVisibilityScans();
 const app = express();
 app.set("trust proxy", process.env.TRUST_PROXY || "loopback");
 
+// Strip /api prefix so Express can match routes registered without /api.
+// Vercel routes /api/* to Express, so /api/dashboard/summary becomes /dashboard/summary.
+app.use((req, _res, next) => {
+    if (req.url.startsWith("/api")) {
+        req.url = req.url.replace(/^\/api/, "") || "/";
+    }
+    next();
+});
+
 // Security headers (apply early)
 app.use(securityHeaders);
 
@@ -131,31 +140,32 @@ app.get("/metrics", verifyToken, (req, res) => {
 });
 
 // Use Routes (with rate limiting on sensitive endpoints)
+// NOTE: /api prefix is stripped by middleware above, so register without /api
 app.use("/auth", rateLimit(RATE_LIMITS.auth), authRoutes);
 app.use("/ai", rateLimit(RATE_LIMITS.ai_generation), apiSecurityHeaders, aiRoutes);
 app.use("/ingestion", rateLimit(RATE_LIMITS.ingestion), ingestionRoutes);
-app.use("/api/actions", rateLimit(RATE_LIMITS.ai_generation), apiSecurityHeaders, actionsRoutes);
-app.use("/api/feedback", rateLimit(RATE_LIMITS.feedback), apiSecurityHeaders, feedbackRoutes);
+app.use("/actions", rateLimit(RATE_LIMITS.ai_generation), apiSecurityHeaders, actionsRoutes);
+app.use("/feedback", rateLimit(RATE_LIMITS.feedback), apiSecurityHeaders, feedbackRoutes);
 app.use("/signals", signalsRoutes);
 app.use("/sources", sourcesRoutes);
-app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/alerts", escalationMatrixRoutes);
-app.use("/api/alerts", alertsRoutes);
-app.use("/api/narratives", narrativesRoutes);
-app.use("/api/visibility", geoRoutes);
-app.use("/api/reports", rateLimit(RATE_LIMITS.export), apiSecurityHeaders, reportsRoutes);
-app.use("/api/action-plans", actionPlansRoutes);
-app.use("/api/workspace", sensitiveDataHeaders, workspaceSettingsRoutes);
-app.use("/api/workspace/activity", activityRoutes);
-app.use("/api/onboarding", onboardingRoutes);
-app.use("/api/workspace/cases", casesRoutes);
-app.use("/api/workspace/integrations", integrationsRoutes);
-app.use("/api/notifications", appNotificationsRoutes);
-app.use("/api/workspace", costRoutes);
-app.use("/api/bulk", bulkRoutes);
-app.use("/api/search", searchRoutes);
-app.use("/api/realtime", realtimeRoutes);
-app.use("/api/subscriptions", subscriptionsRoutes);
+app.use("/dashboard", dashboardRoutes);
+app.use("/alerts", escalationMatrixRoutes);
+app.use("/alerts", alertsRoutes);
+app.use("/narratives", narrativesRoutes);
+app.use("/visibility", geoRoutes);
+app.use("/reports", rateLimit(RATE_LIMITS.export), apiSecurityHeaders, reportsRoutes);
+app.use("/action-plans", actionPlansRoutes);
+app.use("/workspace", sensitiveDataHeaders, workspaceSettingsRoutes);
+app.use("/workspace/activity", activityRoutes);
+app.use("/onboarding", onboardingRoutes);
+app.use("/workspace/cases", casesRoutes);
+app.use("/workspace/integrations", integrationsRoutes);
+app.use("/notifications", appNotificationsRoutes);
+app.use("/workspace", costRoutes);
+app.use("/bulk", bulkRoutes);
+app.use("/search", searchRoutes);
+app.use("/realtime", realtimeRoutes);
+app.use("/subscriptions", subscriptionsRoutes);
 
 // Sentry error handler (must be before error handler)
 if (process.env.SENTRY_DSN) {

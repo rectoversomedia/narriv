@@ -59688,6 +59688,12 @@ scheduleAlertEscalation();
 scheduleVisibilityScans();
 var app = (0, import_express32.default)();
 app.set("trust proxy", process.env.TRUST_PROXY || "loopback");
+app.use((req, _res, next) => {
+  if (req.url.startsWith("/api")) {
+    req.url = req.url.replace(/^\/api/, "") || "/";
+  }
+  next();
+});
 app.use(securityHeaders);
 if (process.env.SENTRY_DSN) {
   app.use(Sentry.Handlers.requestHandler({
@@ -59736,28 +59742,28 @@ app.get("/metrics", verifyToken, (req, res) => {
 app.use("/auth", rateLimit(RATE_LIMITS.auth), auth_routes_default);
 app.use("/ai", rateLimit(RATE_LIMITS.ai_generation), apiSecurityHeaders, ai_routes_default);
 app.use("/ingestion", rateLimit(RATE_LIMITS.ingestion), ingestion_routes_default);
-app.use("/api/actions", rateLimit(RATE_LIMITS.ai_generation), apiSecurityHeaders, actions_routes_default);
-app.use("/api/feedback", rateLimit(RATE_LIMITS.feedback), apiSecurityHeaders, feedback_routes_default);
+app.use("/actions", rateLimit(RATE_LIMITS.ai_generation), apiSecurityHeaders, actions_routes_default);
+app.use("/feedback", rateLimit(RATE_LIMITS.feedback), apiSecurityHeaders, feedback_routes_default);
 app.use("/signals", signals_routes_default);
 app.use("/sources", sources_routes_default);
-app.use("/api/dashboard", dashboard_routes_default);
-app.use("/api/alerts", escalation_matrix_routes_default);
-app.use("/api/alerts", alerts_routes_default);
-app.use("/api/narratives", narratives_routes_default);
-app.use("/api/visibility", geo_routes_default);
-app.use("/api/reports", rateLimit(RATE_LIMITS.export), apiSecurityHeaders, reports_routes_default);
-app.use("/api/action-plans", action_plans_routes_default);
-app.use("/api/workspace", sensitiveDataHeaders, workspace_settings_routes_default);
-app.use("/api/workspace/activity", activity_routes_default);
-app.use("/api/onboarding", onboarding_routes_default);
-app.use("/api/workspace/cases", cases_routes_default);
-app.use("/api/workspace/integrations", integrations_routes_default);
-app.use("/api/notifications", app_notifications_routes_default);
-app.use("/api/workspace", cost_routes_default);
-app.use("/api/bulk", bulk_routes_default);
-app.use("/api/search", search_routes_default);
-app.use("/api/realtime", realtime_routes_default);
-app.use("/api/subscriptions", subscriptions_routes_default);
+app.use("/dashboard", dashboard_routes_default);
+app.use("/alerts", escalation_matrix_routes_default);
+app.use("/alerts", alerts_routes_default);
+app.use("/narratives", narratives_routes_default);
+app.use("/visibility", geo_routes_default);
+app.use("/reports", rateLimit(RATE_LIMITS.export), apiSecurityHeaders, reports_routes_default);
+app.use("/action-plans", action_plans_routes_default);
+app.use("/workspace", sensitiveDataHeaders, workspace_settings_routes_default);
+app.use("/workspace/activity", activity_routes_default);
+app.use("/onboarding", onboarding_routes_default);
+app.use("/workspace/cases", cases_routes_default);
+app.use("/workspace/integrations", integrations_routes_default);
+app.use("/notifications", app_notifications_routes_default);
+app.use("/workspace", cost_routes_default);
+app.use("/bulk", bulk_routes_default);
+app.use("/search", search_routes_default);
+app.use("/realtime", realtime_routes_default);
+app.use("/subscriptions", subscriptions_routes_default);
 if (process.env.SENTRY_DSN) {
   app.use(Sentry.Handlers.errorHandler({
     shouldHandleError(error3) {
