@@ -15,10 +15,6 @@
     {
       "src": "/api/(.*)",
       "dest": "/backend/vercel_dist/index.cjs"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/backend/vercel_dist/index.cjs"
     }
   ],
   "installCommand": "cd frontend && npm install && cd ../backend && npm install",
