@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { sendEmail } from "../../lib/email.js";
 import { passwordResetCode, passwordResetConfirmation, emailVerificationCode } from "../../lib/email-templates.js";
 import { logStructured } from "../../lib/logger.js";
+import { invalidateUserSessions } from "../../middlewares/session.middleware.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const ACCESS_TOKEN_TTL = process.env.ACCESS_TOKEN_TTL || "1h";
@@ -215,7 +216,7 @@ async function consumeOAuthExchange(code) {
         .from("refresh_tokens")
         .select("*")
         .eq("token_hash", token_hash)
-        .is("revokedAt", null)
+        .is("revoked_at", null)
         .gt("expires_at", now);
 
     if (findError || !tokens || tokens.length === 0) return null;
@@ -224,7 +225,7 @@ async function consumeOAuthExchange(code) {
 
     const { error: updateError } = await supabase
         .from("refresh_tokens")
-        .update({ revokedAt: now })
+        .update({ revoked_at: now })
         .eq("id", tokenRow.id);
 
     if (updateError) return null;
@@ -469,7 +470,9 @@ export const login = async (req, res) => {
                     .single();
                 if (ws) workspace = ws.name;
             }
-        } catch {}
+        } catch (err) {
+            logStructured("warn", "workspace_resolution_failed_login", { userId: user.id, error: err.message });
+        }
 
         const token = signAccessToken(user);
         const { refresh_token } = await issueRefreshToken(user.id);
@@ -499,7 +502,7 @@ export const refresh = async (req, res) => {
             .from("refresh_tokens")
             .select("*")
             .eq("token_hash", token_hash)
-            .is("revokedAt", null)
+            .is("revoked_at", null)
             .gt("expires_at", now);
 
         if (findError) throw findError;
@@ -524,7 +527,7 @@ export const refresh = async (req, res) => {
         // Revoke current token
         const { error: revokeError } = await supabase
             .from("refresh_tokens")
-            .update({ revokedAt: now })
+            .update({ revoked_at: now })
             .eq("id", tokenRow.id);
 
         if (revokeError) throw revokeError;
@@ -553,7 +556,7 @@ export const logout = async (req, res) => {
             .from("refresh_tokens")
             .select("id, user_id")
             .eq("token_hash", token_hash)
-            .is("revokedAt", null)
+            .is("revoked_at", null)
             .single();
 
         if (error && error.code !== "PGRST116") {
@@ -567,7 +570,7 @@ export const logout = async (req, res) => {
         const now = new Date().toISOString();
         const { error: updateError } = await supabase
             .from("refresh_tokens")
-            .update({ revokedAt: now })
+            .update({ revoked_at: now })
             .eq("id", tokenRow.id);
 
         if (updateError) throw updateError;
@@ -643,9 +646,9 @@ export const forgotPassword = async (req, res) => {
         const now = new Date().toISOString();
         await supabase
             .from("password_reset_tokens")
-            .update({ usedAt: now })
+            .update({ used_at: now })
             .eq("user_id", user.id)
-            .is("usedAt", null);
+            .is("used_at", null);
 
         await supabase.from("password_reset_tokens").insert({
             id: crypto.randomUUID(),
@@ -734,7 +737,7 @@ export const verifyResetCode = async (req, res) => {
             .from("password_reset_tokens")
             .select("*")
             .eq("user_id", user.id)
-            .is("usedAt", null)
+            .is("used_at", null)
             .gt("expires_at", now)
             .order("created_at", { ascending: false })
             .limit(5);
@@ -752,7 +755,7 @@ export const verifyResetCode = async (req, res) => {
             .from("password_reset_tokens")
             .update({
                 token_hash: hashResetSecret(resetToken),
-                verifiedAt: now,
+                verified_at: now,
             })
             .eq("id", tokenRow.id);
 
@@ -796,7 +799,7 @@ export const verifyEmail = async (req, res) => {
             .from("email_verification_tokens")
             .select("*")
             .eq("user_id", user.id)
-            .is("usedAt", null)
+            .is("used_at", null)
             .gt("expires_at", now)
             .order("created_at", { ascending: false })
             .limit(5);
@@ -820,7 +823,7 @@ export const verifyEmail = async (req, res) => {
         // Mark verification token as used
         const { error: tokenUpdateError } = await supabase
             .from("email_verification_tokens")
-            .update({ usedAt: now })
+            .update({ used_at: now })
             .eq("id", tokenRow.id);
 
         if (tokenUpdateError) throw tokenUpdateError;
@@ -872,9 +875,9 @@ export const resendVerification = async (req, res) => {
         const now = new Date().toISOString();
         const { error: invalidateError } = await supabase
             .from("email_verification_tokens")
-            .update({ usedAt: now })
+            .update({ used_at: now })
             .eq("user_id", user.id)
-            .is("usedAt", null);
+            .is("used_at", null);
 
         if (invalidateError) throw invalidateError;
 
@@ -918,8 +921,8 @@ export const resetPassword = async (req, res) => {
             .from("password_reset_tokens")
             .select("*")
             .eq("token_hash", hashResetSecret(resetToken))
-            .is("usedAt", null)
-            .not("verifiedAt", "is", null)
+            .is("used_at", null)
+            .not("verified_at", "is", "null")
             .gt("expires_at", now);
 
         if (findError) throw findError;
@@ -963,7 +966,7 @@ export const resetPassword = async (req, res) => {
         // Mark reset token as used
         const { error: tokenUpdateError } = await supabase
             .from("password_reset_tokens")
-            .update({ usedAt: now })
+            .update({ used_at: now })
             .eq("id", tokenRow.id);
 
         if (tokenUpdateError) throw tokenUpdateError;
@@ -971,9 +974,9 @@ export const resetPassword = async (req, res) => {
         // Revoke all refresh tokens for this user
         const { error: revokeError } = await supabase
             .from("refresh_tokens")
-            .update({ revokedAt: now })
+            .update({ revoked_at: now })
             .eq("user_id", tokenRow.user_id)
-            .is("revokedAt", null);
+            .is("revoked_at", null);
 
         if (revokeError) throw revokeError;
 
@@ -1026,7 +1029,9 @@ export const me = async (req, res) => {
                     workspace = { ...ws, role: membership.role };
                 }
             }
-        } catch {}
+        } catch (err) {
+            logStructured("warn", "workspace_resolution_failed_me", { userId: req.user.id, error: err.message });
+        }
 
         res.json({ ...user, workspace });
     } catch (error) {
@@ -1103,9 +1108,7 @@ export const changePassword = async (req, res) => {
             });
 
         // Invalidate all sessions for this user (security measure)
-        if (typeof invalidateUserSessions === 'function') {
-            await invalidateUserSessions(user_id);
-        }
+        await invalidateUserSessions(user_id);
 
         // Revoke all refresh tokens for this user
         await supabase
@@ -1394,6 +1397,14 @@ export const demo = async (req, res) => {
 
         // Set refresh token cookie
         res.cookie("narriv_refresh_token", refresh_token, {
+            httpOnly: true,
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+            maxAge: 30 * 60 * 1000, // 30 minutes
+            path: "/",
+        });
+
+        res.cookie("narriv_auth", token, {
             httpOnly: true,
             sameSite: "lax",
             secure: process.env.NODE_ENV === "production",

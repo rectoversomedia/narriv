@@ -38,6 +38,7 @@ import { scheduleAlertDetection, scheduleAlertEscalation, scheduleVisibilityScan
 import { getRuntimeHealth } from "./lib/runtime-health.js";
 import { requestLogger, logStructured } from "./lib/logger.js";
 import { getMetricsSnapshot } from "./lib/metrics.js";
+import redis from "./lib/redis.js";
 
 // Import Middlewares
 import { globalErrorHandler, notFoundHandler } from "./middlewares/error-handler.js";
@@ -46,10 +47,14 @@ import { rateLimit, RATE_LIMITS } from "./middlewares/rate-limit.js";
 import { verifyToken } from "./middlewares/auth.middleware.js";
 import { buildCorsOriginChecker, enforceHttps } from "./middlewares/security.js";
 import { securityHeaders, sensitiveDataHeaders, apiSecurityHeaders } from "./middlewares/security-headers.js";
+import { initializeRateLimiter } from "./middlewares/rate-limit.js";
 import { sanitizeInput, validateContentType } from "./middlewares/sanitize.js";
 import { flushAllAuditLogs } from "./lib/audit-enhanced.js";
 
 dotenv.config();
+
+// Wire Redis client into rate limiter store (gracefully no-ops if Redis unavailable)
+initializeRateLimiter(redis);
 
 // Initialize Scheduled Jobs
 scheduleAlertDetection();
@@ -199,6 +204,27 @@ const gracefulShutdown = async (signal) => {
 
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+
+// Catch unhandled promise rejections — don't crash silently
+process.on("unhandledRejection", (reason, promise) => {
+    logStructured("error", "unhandled_promise_rejection", {
+        reason: String(reason),
+        stack: reason instanceof Error ? reason.stack : undefined,
+    });
+    // In production, log and continue if possible rather than exiting immediately
+    if (process.env.NODE_ENV === "production") {
+        gracefulShutdown("unhandledRejection");
+    }
+});
+
+// Catch uncaught synchronous exceptions
+process.on("uncaughtException", (err) => {
+    logStructured("error", "uncaught_exception", {
+        message: err.message,
+        stack: err.stack,
+    });
+    gracefulShutdown("uncaughtException");
+});
 
 // Vercel serverless handler
 export const handler = (req, res) => {

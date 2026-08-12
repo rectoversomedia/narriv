@@ -138,15 +138,12 @@ export const getSummary = async (req, res) => {
                 .in("workspace_id", workspaceIds)
                 .order("captured_at", { ascending: false });
 
-            if (Object.keys(dateFilter).length > 0) {
-                signalsQuery = signalsQuery.filter("captured_at", Object.keys(dateFilter)[0], dateFilter[Object.keys(dateFilter)[0]]);
-                if (dateFilter.gte && dateFilter.lte) {
-                    signalsQuery = signalsQuery.gte("captured_at", dateFilter.gte).lte("captured_at", dateFilter.lte);
-                } else if (dateFilter.gte) {
-                    signalsQuery = signalsQuery.gte("captured_at", dateFilter.gte);
-                } else if (dateFilter.lte) {
-                    signalsQuery = signalsQuery.lte("captured_at", dateFilter.lte);
-                }
+            if (dateFilter.gte && dateFilter.lte) {
+                signalsQuery = signalsQuery.gte("captured_at", dateFilter.gte).lte("captured_at", dateFilter.lte);
+            } else if (dateFilter.gte) {
+                signalsQuery = signalsQuery.gte("captured_at", dateFilter.gte);
+            } else if (dateFilter.lte) {
+                signalsQuery = signalsQuery.lte("captured_at", dateFilter.lte);
             }
 
             const { data: signals, error: signalsError } = await signalsQuery;
@@ -212,14 +209,11 @@ export const getSummary = async (req, res) => {
             }
 
             const top_topics = (clusters || []).slice(0, 5).map(c => {
-                // Calculate delta based on signal count change
-                const deltaPercent = Math.round((Math.random() - 0.5) * 20); // Placeholder - real implementation would track historical data
-                const deltaStr = (deltaPercent >= 0 ? "+" : "") + deltaPercent + "%";
                 return {
                     name: { en: c.title || "Unknown", id: c.title || "Unknown" },
                     mentions: String(c.signal_count || 0),
-                    delta: deltaStr,
-                    tone: deltaPercent >= 0 ? "green" : "red"
+                    delta: null,   // Real delta requires historical snapshots — track in a future migration
+                    tone: null
                 };
             });
 
