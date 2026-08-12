@@ -1,17 +1,4 @@
 import * as Sentry from "@sentry/node";
-import { config } from "dotenv";
-import { existsSync } from "fs";
-import { resolve, dirname } from "path";
-import { fileURLToPath } from "url";
-
-// Load .env file
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const envPath = resolve(__dirname, "../../.env");
-
-if (existsSync(envPath)) {
-    config({ path: envPath });
-}
 
 // Initialize Sentry if DSN is provided
 const SENTRY_DSN = process.env.SENTRY_DSN;

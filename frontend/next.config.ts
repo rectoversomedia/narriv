@@ -3,6 +3,9 @@ import nextIntl from "next-intl/plugin";
 
 const withNextIntl = nextIntl();
 
+// App URL for CSP — set via env var so any deployment domain works
+const appUrl = process.env.NEXT_PUBLIC_API_URL || "https://narriv.digital";
+
 const nextConfig: NextConfig = {
   // Enable strict mode for better debugging
   reactStrictMode: true,
@@ -13,7 +16,7 @@ const nextConfig: NextConfig = {
     serverActions: {
       allowedOrigins: process.env.ALLOWED_ORIGINS
         ? process.env.ALLOWED_ORIGINS.split(",")
-        : ["localhost:3001"],
+        : ["localhost:3001"], // dev only — in production, set ALLOWED_ORIGINS env var
     },
   },
 
@@ -45,26 +48,26 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Security-Policy",
             value: [
-              "default-src 'self'",
-              // Script sources - restrict to self and trusted domains
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com",
+              `default-src 'self' ${appUrl}`,
+              // Script sources — 'unsafe-eval' removed; 'unsafe-inline' required by Next.js styles
+              "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com",
               // Style sources
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com ${appUrl}`,
               // Font sources
-              "font-src 'self' https://fonts.gstatic.com",
+              `font-src 'self' https://fonts.gstatic.com ${appUrl}`,
               // Image sources
-              "img-src 'self' data: https: blob:",
+              `img-src 'self' data: https: blob: ${appUrl}`,
               // Connect/API sources
-              "connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://analytics.google.com",
-              // Frame sources - deny all
+              `connect-src 'self' ${appUrl} https://*.supabase.co https://www.google-analytics.com https://analytics.google.com`,
+              // Frame sources — deny all
               "frame-src 'none'",
-              // Object sources - deny all
+              // Object sources — deny all
               "object-src 'none'",
               // Base URI restriction
               "base-uri 'self'",
               // Form action restriction
               "form-action 'self'",
-              // Frame ancestors - prevent clickjacking
+              // Frame ancestors — prevent clickjacking
               "frame-ancestors 'none'",
               // Upgrade insecure requests in production
               process.env.NODE_ENV === "production" ? "upgrade-insecure-requests" : "",

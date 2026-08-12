@@ -1,0 +1,52 @@
+# Dependencies — installed by Vercel via npm install
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Development files
+.env
+.env.local
+.env.development
+.env.test
+.env.example
+
+# Git
+.git
+.gitignore
+
+# Build artifacts (Next.js handles .next directory via build command)
+.vercelignore
+Dockerfile
+docker-compose*
+nginx
+
+# Documentation
+*.md
+!package.json
+!package-lock.json
+!public/robots.txt
+!public/sitemap.xml
+
+# Test files
+tests
+jest.config.*
+vitest.config.*
+playwright.config.*
+*.test.*
+*.spec.*
+
+# Editor
+.vscode
+.idea
+*.swp
+
+# Agent/context files
+.claude
+.agents
+.codex
+process
+
+# Temp
+tmp
+temp
+*.tmp

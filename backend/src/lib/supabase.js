@@ -1,21 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { config } from "dotenv";
-import { existsSync } from "fs";
 import { logStructured } from "./logger.js";
-
-// Load .env file if it exists (try multiple locations)
-const envPaths = [
-  process.env.VERCEL ? "/var/task/.env" : undefined,
-  process.cwd() + "/.env",
-  __dirname + "/../../.env",
-].filter(Boolean);
-
-for (const envPath of envPaths) {
-  if (existsSync(envPath)) {
-    config({ path: envPath });
-    break;
-  }
-}
 
 // Get environment variables
 const supabaseUrl = process.env.SUPABASE_URL;

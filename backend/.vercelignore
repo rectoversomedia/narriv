@@ -1,0 +1,51 @@
+# Dependencies — installed by Vercel via npm install
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Development files
+.env
+.env.local
+.env.development
+.env.test
+.env.example
+
+# Git
+.git
+.gitignore
+
+# Build artifacts (not used on Vercel — built during deploy)
+dist
+build
+.vercelignore
+Dockerfile
+docker-compose*
+nginx
+
+# Documentation
+*.md
+!package.json
+!package-lock.json
+
+# Test files
+tests
+jest.config.*
+vitest.config.*
+*.test.*
+*.spec.*
+
+# Editor
+.vscode
+.idea
+*.swp
+
+# Agent/context files
+.claude
+.agents
+.codex
+process
+
+# Temp
+tmp
+temp
+*.tmp
