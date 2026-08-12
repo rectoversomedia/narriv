@@ -157,27 +157,6 @@ async function issueRefreshToken(user_id) {
     const token_hash = hashRefreshToken(rawToken);
     const expires_at = new Date(Date.now() + REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000);
 
-    // Limit active refresh tokens per user (max 5)
-    const MAX_REFRESH_TOKENS_PER_USER = 5;
-    const { data: existingTokens } = await supabase
-        .from("refresh_tokens")
-        .select("id")
-        .eq("user_id", user_id)
-        .is("revoked_at", null)
-        .order("created_at", { ascending: false });
-
-    if (existingTokens && existingTokens.length >= MAX_REFRESH_TOKENS_PER_USER) {
-        // Revoke oldest tokens beyond the limit
-        const tokensToRevoke = existingTokens.slice(MAX_REFRESH_TOKENS_PER_USER - 1);
-        for (const token of tokensToRevoke) {
-            await supabase
-                .from("refresh_tokens")
-                .update({ revoked_at: new Date().toISOString() })
-                .eq("id", token.id);
-        }
-        logStructured("info", "refresh_tokens_pruned", { user_id, revoked: tokensToRevoke.length });
-    }
-
     const { error } = await supabase.from("refresh_tokens").insert({
         id: crypto.randomUUID(),
         user_id: user_id,
@@ -211,24 +190,23 @@ async function consumeOAuthExchange(code) {
     const token_hash = hashOAuthExchangeCode(code);
     const now = new Date().toISOString();
 
-    // First, find and revoke the token
+    // First, find and delete the token
     const { data: tokens, error: findError } = await supabase
         .from("refresh_tokens")
         .select("*")
         .eq("token_hash", token_hash)
-        .is("revoked_at", null)
         .gt("expires_at", now);
 
     if (findError || !tokens || tokens.length === 0) return null;
 
     const tokenRow = tokens[0];
 
-    const { error: updateError } = await supabase
+    const { error: deleteError } = await supabase
         .from("refresh_tokens")
-        .update({ revoked_at: now })
+        .delete()
         .eq("id", tokenRow.id);
 
-    if (updateError) return null;
+    if (deleteError) return null;
 
     // Fetch the user separately
     const { data: user, error: userError } = await supabase
@@ -502,7 +480,6 @@ export const refresh = async (req, res) => {
             .from("refresh_tokens")
             .select("*")
             .eq("token_hash", token_hash)
-            .is("revoked_at", null)
             .gt("expires_at", now);
 
         if (findError) throw findError;
@@ -524,13 +501,13 @@ export const refresh = async (req, res) => {
             return res.status(401).json({ error: "Invalid refresh token." });
         }
 
-        // Revoke current token
-        const { error: revokeError } = await supabase
+        // Delete consumed token
+        const { error: deleteError } = await supabase
             .from("refresh_tokens")
-            .update({ revoked_at: now })
+            .delete()
             .eq("id", tokenRow.id);
 
-        if (revokeError) throw revokeError;
+        if (deleteError) throw deleteError;
 
         const token = signAccessToken(user);
         const next = await issueRefreshToken(user.id);
@@ -556,7 +533,6 @@ export const logout = async (req, res) => {
             .from("refresh_tokens")
             .select("id, user_id")
             .eq("token_hash", token_hash)
-            .is("revoked_at", null)
             .single();
 
         if (error && error.code !== "PGRST116") {
@@ -567,13 +543,12 @@ export const logout = async (req, res) => {
             return res.status(200).json({ success: true });
         }
 
-        const now = new Date().toISOString();
-        const { error: updateError } = await supabase
+        const { error: deleteError } = await supabase
             .from("refresh_tokens")
-            .update({ revoked_at: now })
+            .delete()
             .eq("id", tokenRow.id);
 
-        if (updateError) throw updateError;
+        if (deleteError) throw deleteError;
 
         await writeAuditLog(tokenRow.user_id, "logout");
         return res.json({ success: true });
@@ -971,14 +946,11 @@ export const resetPassword = async (req, res) => {
 
         if (tokenUpdateError) throw tokenUpdateError;
 
-        // Revoke all refresh tokens for this user
-        const { error: revokeError } = await supabase
+        // Delete all refresh tokens for this user (no revoked_at column)
+        await supabase
             .from("refresh_tokens")
-            .update({ revoked_at: now })
-            .eq("user_id", tokenRow.user_id)
-            .is("revoked_at", null);
-
-        if (revokeError) throw revokeError;
+            .delete()
+            .eq("user_id", tokenRow.user_id);
 
         await writeAuditLog(tokenRow.user_id, "password_reset_completed", { email: user.email });
 
@@ -1110,10 +1082,10 @@ export const changePassword = async (req, res) => {
         // Invalidate all sessions for this user (security measure)
         await invalidateUserSessions(user_id);
 
-        // Revoke all refresh tokens for this user
+        // Delete all refresh tokens for this user (no revoked_at column)
         await supabase
             .from("refresh_tokens")
-            .update({ revoked_at: new Date().toISOString() })
+            .delete()
             .eq("user_id", user_id);
 
         await writeAuditLog(user_id, "password_change", { email: user.email });

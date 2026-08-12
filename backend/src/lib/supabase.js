@@ -127,12 +127,14 @@ const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Transform a single DB row: snake_case keys → camelCase
 // and delete the snake_case originals to prevent duplicate keys.
+// Also handles camelCase columns (from User table) → snake_case aliases.
 function transformRow(row) {
     if (!row || typeof row !== 'object') return row;
     const mapped = {};
     for (const [key, val] of Object.entries(row)) {
         mapped[key] = val;
     }
+    // snake_case → camelCase (for tables with snake_case columns)
     if ('email_verified' in row) {
         mapped.emailVerified = row.email_verified;
         delete mapped.email_verified;
@@ -152,6 +154,16 @@ function transformRow(row) {
     if ('updated_at' in row && !('updatedAt' in row)) {
         mapped.updatedAt = row.updated_at;
         delete mapped.updated_at;
+    }
+    // camelCase → snake_case aliases (for User table which uses camelCase columns)
+    if ('emailVerified' in row && !('email_verified' in mapped)) {
+        mapped.email_verified = row.emailVerified;
+    }
+    if ('failedLoginAttempts' in row && !('failed_login_attempts' in mapped)) {
+        mapped.failed_login_attempts = row.failedLoginAttempts;
+    }
+    if ('lockedUntil' in row && !('locked_until' in mapped)) {
+        mapped.locked_until = row.lockedUntil;
     }
     return mapped;
 }
