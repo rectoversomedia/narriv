@@ -9,6 +9,17 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  // Report to Sentry so root layout errors are visible in production monitoring
+  if (typeof window !== "undefined") {
+    Promise.all([import("@sentry/nextjs")]).then(([Sentry]) => {
+      Sentry.captureException(error, {
+        tags: { type: "global-error", digest: error.digest || "unknown" },
+      });
+    }).catch(() => {
+      // Sentry not configured — fail silently rather than crash the error page
+    });
+  }
+
   const message = error.message || "Aplikasi belum bisa dimuat.";
 
   return (

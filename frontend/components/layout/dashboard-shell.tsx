@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { Particles } from "@/components/ui/particles";
@@ -11,25 +11,32 @@ import { useUiStore } from "@/store/useUiStore";
 
 export function DashboardShell({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const token = useAuthStore((state) => state.token);
   const sidebarCollapsed = useUiStore((state) => state.sidebarCollapsed);
   const [mounted, setMounted] = useState(false);
   const [checked, setChecked] = useState(false);
 
-  // Mark as mounted after initial render (client-side only)
+  // Mark as mounted after client-side hydration
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Check auth after mount and token changes
+  // Auth redirect — runs AFTER Zustand rehydrates from localStorage (mounted=true guard)
+  // Skip redirect if we're already on the login page to prevent redirect loops
   useEffect(() => {
-    if (mounted && !token) {
+    if (!mounted) return;
+    if (pathname === "/login") {
+      setChecked(true);
+      return;
+    }
+    if (!token) {
       router.replace("/login");
       setChecked(false);
-    } else if (mounted && token) {
+    } else {
       setChecked(true);
     }
-  }, [mounted, token, router]);
+  }, [mounted, token, pathname, router]);
 
   // Show loading only if not checked yet (prevent flash)
   if (!mounted || !checked) {

@@ -350,6 +350,11 @@ function DemoButton() {
       };
       localStorage.setItem("narriv-auth", JSON.stringify(zustandState));
 
+      // Store legacy keys for page-load restoration
+      localStorage.setItem("narriv_demo_user", JSON.stringify(data.user));
+      localStorage.setItem("narriv_demo_token", data.accessToken);
+      localStorage.setItem("narriv_demo_refresh_token", data.refreshToken);
+
       // SECURITY FIX: Dispatch custom event WITH server-provided tokens
       // Tokens must come from server-side validation
       window.dispatchEvent(new CustomEvent("narriv_demo_login", {

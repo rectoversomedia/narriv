@@ -272,7 +272,8 @@ export async function getDashboardSummary(options: DateRangeOptions = {}): Promi
 
   try {
     return await apiClient<DashboardSummary>(`/api/dashboard/summary${query ? `?${query}` : ""}`);
-  } catch {
+  } catch (err) {
+    console.warn("[api-service] getDashboardSummary failed, returning null:", err);
     return null;
   }
 }

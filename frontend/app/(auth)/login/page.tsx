@@ -1,5 +1,9 @@
 "use client";
 
+// Opt out of static prerendering to prevent SSR/hydration mismatch
+// caused by DashboardShell auth check running server-side with null token
+export const dynamic = "force-dynamic";
+
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -49,6 +53,8 @@ function LoginContent() {
 
   const finishLogin = (token: string, user: AuthUser, refreshToken?: string | null) => {
     setSession(token, user, refreshToken);
+    // Set httpOnly JWT cookie so frontend middleware can verify auth on each request
+    document.cookie = `narriv_auth=${encodeURIComponent(token)}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`;
     const nextPath = new URLSearchParams(window.location.search).get("next");
     router.push(nextPath?.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/");
   };

@@ -49,11 +49,6 @@ export function isDemoMode(): boolean {
       if (userProvider === "demo") {
         return true;
       }
-
-      // Check if token starts with "demo-token-"
-      if (token && typeof token === "string" && token.startsWith("demo-token-")) {
-        return true;
-      }
     }
 
     // 3. Check legacy demo token keys for backwards compatibility

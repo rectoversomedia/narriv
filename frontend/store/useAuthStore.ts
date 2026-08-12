@@ -1,18 +1,15 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+// Extend Window to track demo listener registration
+declare global {
+  interface Window {
+    _narrivDemoListenerRegistered?: boolean;
+  }
+}
+
 const AUTH_COOKIE_NAME = "narriv-authenticated";
 const AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
-
-/**
- * Generate a cryptographically secure demo token
- * Demo tokens are for UI testing only - they don't authenticate to the backend
- */
-function generateDemoToken(): string {
-  const array = new Uint8Array(32);
-  crypto.getRandomValues(array);
-  return "demo-" + Array.from(array, byte => byte.toString(16).padStart(2, "0")).join("");
-}
 
 function setAuthCookie(isAuthenticated: boolean) {
   if (typeof document === "undefined") return;
@@ -21,6 +18,23 @@ function setAuthCookie(isAuthenticated: boolean) {
     ? `${AUTH_COOKIE_NAME}=true; path=/; max-age=${AUTH_COOKIE_MAX_AGE}; SameSite=Lax`
     : `${AUTH_COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax`;
 }
+
+// Clean up stale fake demo tokens from legacy code (client-generated, not real JWTs)
+function invalidateStaleDemoSession() {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = localStorage.getItem("narriv-auth");
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    const token = parsed?.state?.token || parsed?.token;
+    if (typeof token === "string" && token.startsWith("demo-")) {
+      localStorage.removeItem("narriv-auth");
+    }
+  } catch {
+    // ignore
+  }
+}
+invalidateStaleDemoSession();
 
 export type AuthUser = {
   name: string;
@@ -40,7 +54,7 @@ interface AuthState {
   setUser: (user: AuthUser | null) => void;
   setSession: (token: string, user: AuthUser, refreshToken?: string | null) => void;
   logout: () => void;
-  initDemoSession: (user: AuthUser) => void;
+  initDemoSession: (user: AuthUser, accessToken: string, refreshToken?: string | null) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -64,11 +78,9 @@ export const useAuthStore = create<AuthState>()(
         setAuthCookie(false);
         set({ token: null, refreshToken: null, user: null, isAuthenticated: false });
       },
-      initDemoSession: (user) => {
-        // Use cryptographically secure random token for demo mode
-        const demoToken = generateDemoToken();
+      initDemoSession: (user, accessToken, refreshToken) => {
         setAuthCookie(true);
-        set({ token: demoToken, refreshToken: null, user, isAuthenticated: true });
+        set({ token: accessToken, refreshToken: refreshToken || null, user, isAuthenticated: true });
       },
     }),
     {
@@ -77,11 +89,16 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
-// Initialize demo session listener
-if (typeof window !== "undefined") {
+// Initialize demo session listener (guard against duplicate registration in React 18 Strict Mode)
+if (typeof window !== "undefined" && !window._narrivDemoListenerRegistered) {
+  window._narrivDemoListenerRegistered = true;
   window.addEventListener("narriv_demo_login", ((event: CustomEvent) => {
-    const user = event.detail as AuthUser;
-    useAuthStore.getState().initDemoSession(user);
+    const { user, accessToken, refreshToken } = event.detail as {
+      user: AuthUser;
+      accessToken: string;
+      refreshToken?: string;
+    };
+    useAuthStore.getState().initDemoSession(user, accessToken, refreshToken);
   }) as EventListener);
 }
 
@@ -89,10 +106,11 @@ if (typeof window !== "undefined") {
 if (typeof window !== "undefined") {
   const demoUser = localStorage.getItem("narriv_demo_user");
   const demoToken = localStorage.getItem("narriv_demo_token");
-  if (demoUser && demoToken && demoToken.startsWith("demo-") && !useAuthStore.getState().isAuthenticated) {
+  const demoRefreshToken = localStorage.getItem("narriv_demo_refresh_token");
+  if (demoUser && demoToken && demoRefreshToken && !useAuthStore.getState().isAuthenticated) {
     try {
       const user = JSON.parse(demoUser) as AuthUser;
-      useAuthStore.getState().initDemoSession(user);
+      useAuthStore.getState().initDemoSession(user, demoToken, demoRefreshToken);
     } catch {
       // Invalid demo data, ignore
     }

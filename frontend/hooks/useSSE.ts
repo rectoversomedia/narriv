@@ -143,7 +143,14 @@ export function useSSE(options: UseSSEOptions = {}) {
   } = options;
 
   const queryClient = useQueryClient();
-  const toast = useToast();
+  const toastContext = useToast();
+  // Use a no-op toast during hydration when ToastContext is null
+  const toast = toastContext ?? {
+    showToast: () => {},
+    success: () => {},
+    error: () => {},
+    info: () => {},
+  };
   const clientRef = useRef<SSERealtimeClient | null>(null);
   const [status, setStatus] = useState<SSEConnectionStatus>("disconnected");
   const [lastMessage, setLastMessage] = useState<SSEMessage | null>(null);
