@@ -16,6 +16,7 @@ import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { updateSourceSyncSettings, getWorkspaceSyncSchedule, getFrequencyOptions, canSyncSource } from "../../lib/source-cost-controls.js";
 import { logStructured } from "../../lib/logger.js";
 import { badRequest, forbidden, internalError } from "../../lib/api-error.js";
+import { wrapAsync } from "../../lib/sentry.js";
 
 const router = express.Router();
 

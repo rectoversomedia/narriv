@@ -4,6 +4,7 @@ import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { runVisibilityAnalysis } from "./geo.service.js";
 import { logStructured } from "../../lib/logger.js";
+import { wrapAsync } from "../../lib/sentry.js";
 
 const router = express.Router();
 router.use(verifyToken);

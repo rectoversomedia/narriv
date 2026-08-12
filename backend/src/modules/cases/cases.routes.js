@@ -8,6 +8,7 @@ import {
     updateCase,
     deleteCase,
 } from "./cases.controller.js";
+import { wrapAsync } from "../../lib/sentry.js";
 import {
     casesQuerySchema,
     createCaseBodySchema,

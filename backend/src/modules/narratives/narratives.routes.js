@@ -5,6 +5,7 @@ import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/
 import { compareClusterPeriods } from "../clustering/clustering.service.js";
 import { logStructured } from "../../lib/logger.js";
 import { recordAuditLog } from "../../lib/audit.js";
+import { wrapAsync } from "../../lib/sentry.js";
 
 const router = express.Router();
 router.use(verifyToken);

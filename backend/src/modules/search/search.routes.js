@@ -15,6 +15,7 @@ import {
     getSearchFacets,
 } from "../../lib/search.js";
 import { logStructured } from "../../lib/logger.js";
+import { wrapAsync } from "../../lib/sentry.js";
 
 const router = express.Router();
 

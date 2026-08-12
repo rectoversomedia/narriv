@@ -8,6 +8,7 @@ import { validateRequest } from "../../middlewares/validate-request.js";
 import { createActionPlanBodySchema } from "./actions.schema.js";
 import { recordAuditLog } from "../../lib/audit.js";
 import { logStructured } from "../../lib/logger.js";
+import { wrapAsync } from "../../lib/sentry.js";
 
 const router = express.Router();
 router.use(verifyToken);

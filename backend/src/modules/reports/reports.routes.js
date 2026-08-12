@@ -15,6 +15,7 @@ import { generateReport as generateFromTemplate, sendReportEmail } from "./repor
 import { getAllReportTemplates } from "./report-templates.js";
 import { recordAuditLog } from "../../lib/audit.js";
 import { logStructured } from "../../lib/logger.js";
+import { wrapAsync } from "../../lib/sentry.js";
 
 const router = express.Router();
 

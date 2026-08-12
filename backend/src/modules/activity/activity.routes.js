@@ -3,6 +3,7 @@ import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
 import { listActivityLogs } from "./activity.controller.js";
 import { activityQuerySchema } from "./activity.schema.js";
+import { wrapAsync } from "../../lib/sentry.js";
 
 const router = express.Router();
 router.use(verifyToken);

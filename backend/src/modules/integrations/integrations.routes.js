@@ -8,6 +8,7 @@ import {
     updateIntegration,
     deleteIntegration,
 } from "./integrations.controller.js";
+import { wrapAsync } from "../../lib/sentry.js";
 import {
     integrationsQuerySchema,
     createIntegrationBodySchema,

@@ -55,12 +55,12 @@ router.get("/stream", verifyToken, async (req, res) => {
         });
 
         // Send heartbeat every 30 seconds
-        const heartbeatInterval = setInterval(() => {
+        const heartbeatInterval = setInterval(async () => {
             try {
                 res.write(formatSSEMessage("heartbeat", {
                     timestamp: Date.now()
                 }));
-                updateConnectionPing(workspaceId, connectionId);
+                await updateConnectionPing(workspaceId, connectionId);
             } catch (error) {
                 clearInterval(heartbeatInterval);
             }
@@ -162,6 +162,7 @@ router.post("/broadcast", verifyToken, async (req, res) => {
 
 // Helper function since we can't directly import broadcastToWorkspace
 import { broadcastToWorkspace } from "../../lib/sse.js";
+import { wrapAsync } from "../../lib/sentry.js";
 function broadcastToWorkspaceFromImport(workspaceId, event, data) {
     return broadcastToWorkspace(workspaceId, event, data);
 }

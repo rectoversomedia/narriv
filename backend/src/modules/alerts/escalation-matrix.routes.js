@@ -5,6 +5,7 @@ import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
 import { z } from "zod";
 import { logStructured } from "../../lib/logger.js";
+import { wrapAsync } from "../../lib/sentry.js";
 
 const router = express.Router();
 router.use(verifyToken);

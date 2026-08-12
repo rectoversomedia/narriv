@@ -5,8 +5,10 @@ import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds } from "../../lib/workspace-access.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
 import { logStructured } from "../../lib/logger.js";
+import { recordAuditLog } from "../../lib/audit.js";
 import { z } from "zod";
 import { actionPlanIdParamsSchema, submitActionPlanFeedbackBodySchema } from "./action-plans.schema.js";
+import { wrapAsync } from "../../lib/sentry.js";
 
 const router = express.Router();
 router.use(verifyToken);

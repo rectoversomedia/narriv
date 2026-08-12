@@ -8,6 +8,7 @@ import { createSignalBodySchema, signalIdParamsSchema } from "./signals.schema.j
 import { logStructured } from "../../lib/logger.js";
 import { globalEvents } from "../app-notifications/app-notifications.events.js";
 import { recordAuditLog } from "../../lib/audit.js";
+import { wrapAsync } from "../../lib/sentry.js";
 
 const router = express.Router();
 router.use(verifyToken);

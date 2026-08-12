@@ -4,6 +4,7 @@ import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { getWorkspaceSourceHealth, getSourceCoverage } from "../../lib/source-health.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
+import { wrapAsync } from "../../lib/sentry.js";
 import {
     createSourceBodySchema,
     bootstrapDefaultsBodySchema,
@@ -15,7 +16,7 @@ import {
 const router = express.Router();
 router.use(verifyToken);
 
-router.get("/", getSources);
+router.get("/", wrapAsync(getSources));
 router.post("/", validateRequest({ body: createSourceBodySchema }), createSource);
 router.get("/presets", validateRequest({ query: sourcePresetsQuerySchema }), getSourcePresets);
 router.post("/bootstrap-defaults", validateRequest({ body: bootstrapDefaultsBodySchema }), bootstrapDefaultSources);
@@ -24,7 +25,7 @@ router.patch(
     validateRequest({ params: updateSourceParamsSchema, body: updateSourceBodySchema }),
     updateSource
 );
-router.delete("/:sourceId", deleteSource);
+router.delete("/:sourceId", wrapAsync(deleteSource));
 
 // GET /sources/health — Get health status for all sources
 router.get("/health", async (req, res) => {

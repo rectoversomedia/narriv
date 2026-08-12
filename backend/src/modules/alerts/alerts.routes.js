@@ -6,6 +6,7 @@ import { validateRequest } from "../../middlewares/validate-request.js";
 import { z } from "zod";
 import { alertIdParamsSchema, updateAlertStatusBodySchema } from "./alerts.schema.js";
 import { logStructured } from "../../lib/logger.js";
+import { wrapAsync } from "../../lib/sentry.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -63,7 +64,7 @@ router.post("/", validateRequest({ body: createAlertBodySchema }), async (req, r
         const { title, type, severity, whatHappened, whyItMatters, whatToDo, assignedTo, assignedTeam, deadline, sources, workspaceId } = req.body;
         const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
         if (!scopedWorkspaceId) {
-            return res.status(403).json({ error: "Workspace access denied" });
+            return res.status(404).json({ error: "Workspace access denied" });
         }
 
         const { data: alert, error: alertError } = await supabase

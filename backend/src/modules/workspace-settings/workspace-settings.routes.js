@@ -29,6 +29,7 @@ import { uploadWorkspaceLogo } from "./workspace-logo.controller.js";
 import { uploadLogoBodySchema } from "./workspace-logo.schema.js";
 import { getTokenUsageSummary } from "../../lib/token-tracking.js";
 import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
+import { wrapAsync } from "../../lib/sentry.js";
 
 const router = express.Router();
 router.use(verifyToken);

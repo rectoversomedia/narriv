@@ -10,6 +10,7 @@ import {
     completeOnboarding,
     getSourceTemplates,
 } from "./onboarding.controller.js";
+import { wrapAsync } from "../../lib/sentry.js";
 import {
     onboardingWorkspaceBodySchema,
     onboardingSourcesBodySchema,
@@ -27,7 +28,7 @@ router.post("/workspace", validateRequest({ body: onboardingWorkspaceBodySchema 
 
 // Sources (with pre-configured Indonesia media pack)
 router.post("/sources", validateRequest({ body: onboardingSourcesBodySchema }), createOnboardingSources);
-router.get("/source-templates", getSourceTemplates);
+router.get("/source-templates", wrapAsync(getSourceTemplates));
 
 // Keywords management
 router.post("/keywords", validateRequest({ body: onboardingKeywordsBodySchema }), createOnboardingKeywords);

@@ -7,6 +7,7 @@ import supabaseAdmin from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
 import { addAnalysisJob } from "../../lib/queue.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
+import { wrapAsync } from "../../lib/sentry.js";
 import {
     cancelIngestionBodySchema,
     cancelIngestionParamsSchema,
@@ -27,7 +28,7 @@ router.post(
     validateRequest({ params: triggerIngestionParamsSchema }),
     triggerIngestion
 );
-router.get("/status/:jobId", getIngestionStatus);
+router.get("/status/:jobId", wrapAsync(getIngestionStatus));
 router.post(
     "/cancel/:jobId",
     validateRequest({ params: cancelIngestionParamsSchema, body: cancelIngestionBodySchema }),
