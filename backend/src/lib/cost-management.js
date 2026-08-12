@@ -12,6 +12,7 @@
 import supabase from "./supabase.js";
 import { logStructured } from "./logger.js";
 import { calculateCost } from "./token-tracking.js";
+import { createNotification } from "../modules/app-notifications/app-notifications.controller.js";
 
 // Cost alert thresholds
 const ALERT_THRESHOLDS = {
@@ -346,19 +347,33 @@ export function estimateBatchCost(count, avgTokensPerItem = 500, model = "gpt-4o
  * Send budget alert (placeholder - integrate with notification system)
  */
 async function sendBudgetAlert(workspaceId, level, utilization, currentCost, budget) {
+    const levelLabel = level === "exceeded" ? "Exceeded" : level === "critical" ? "Critical (90%)" : level === "warning" ? "Warning (70%)" : level;
+    const message = `AI budget is ${levelLabel}: ${utilization}% used ($${currentCost.toFixed(2)} of $${budget.toFixed(2)} monthly limit). AI analysis has been ${level === "exceeded" ? "paused — analysis will resume when budget resets or is increased." : "throttled — processing may be slower than usual."}`;
+
     logStructured("warn", "budget_alert_triggered", {
         workspaceId,
         level,
         utilization,
         currentCost,
         budget,
-        message: `Budget ${level} alert: ${utilization}% used`,
+        message,
     });
 
-    // TODO: Integrate with notification system
-    // - Send email to workspace admin
-    // - Create in-app notification
-    // - Webhook to external system
+    // Create in-app notification for workspace admin
+    try {
+        await createNotification({
+            workspaceId,
+            type: "budget_alert",
+            title: `AI Budget ${levelLabel}`,
+            message,
+            link: "/workspace/settings",
+        });
+    } catch (err) {
+        logStructured("error", "budget_alert_notification_failed", {
+            workspaceId,
+            error: err.message,
+        });
+    }
 }
 
 /**

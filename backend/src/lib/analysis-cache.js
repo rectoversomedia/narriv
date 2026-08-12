@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import supabase from "./supabase.js";
+import { logStructured } from "./logger.js";
 
 /**
  * Generate a content hash for cache key.
@@ -27,7 +28,11 @@ export async function getCachedAnalysis(contentHash) {
         }
 
         return data && data.length > 0 ? data[0] : null;
-    } catch {
+    } catch (err) {
+        logStructured("warn", "analysis_cache_lookup_failed", {
+            contentHash,
+            error: err.message,
+        });
         return null;
     }
 }

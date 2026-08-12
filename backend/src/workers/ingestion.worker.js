@@ -309,6 +309,16 @@ const ingestionWorker = new Worker(
                     continue;
                 }
 
+                if (!createdDoc) {
+                    logStructured("warn", "raw_document_insert_returned_null", {
+                        queueJobId: job.id,
+                        ingestionJobId: jobId,
+                        sourceId,
+                        externalId,
+                    });
+                    continue;
+                }
+
                 const dedupeHash = crypto
                     .createHash("sha256")
                     .update(`${source.workspace_id}:${source.id}:${externalId}`)

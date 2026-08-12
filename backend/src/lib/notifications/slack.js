@@ -64,6 +64,10 @@ export async function exchangeSlackCode(clientId, clientSecret, code, redirectUr
  */
 export async function sendSlackMessage(webhookUrl, message) {
     try {
+        if (typeof webhookUrl !== "string" || !webhookUrl.startsWith("https://hooks.slack.com/")) {
+            throw new Error("Invalid Slack webhook URL — must be a https://hooks.slack.com/ URL");
+        }
+
         const response = await fetch(webhookUrl, {
             method: "POST",
             headers: {

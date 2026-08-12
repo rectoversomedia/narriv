@@ -23,7 +23,16 @@ async function analyzeWithRetry(title, content, signalId) {
     }
 
     await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
-    return await analyzeSignal(title, content);
+    try {
+        return await analyzeSignal(title, content);
+    } catch (retryErr) {
+        logStructured("error", "ai_analysis_retry_exhausted", {
+            worker: "ai-analysis-worker",
+            signalId,
+            error: retryErr.message,
+        });
+        throw retryErr;
+    }
 }
 
 function buildSafeFallbackAnalysis() {

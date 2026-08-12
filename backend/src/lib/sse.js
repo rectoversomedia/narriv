@@ -109,15 +109,23 @@ export function removeSSEConnection(workspaceId, connectionId) {
 /**
  * Update last ping time for a connection
  */
-export function updateConnectionPing(workspaceId, connectionId) {
+export async function updateConnectionPing(workspaceId, connectionId) {
     if (isRedisAvailable()) {
-        const key = `${SSE_KEY_PREFIX}${workspaceId}`;
-        const data = redis.hget(key, connectionId);
-        if (data) {
-            const parsed = JSON.parse(data);
-            parsed.lastPing = new Date().toISOString();
-            redis.hset(key, connectionId, JSON.stringify(parsed));
-            redis.expire(key, SSE_TTL);
+        try {
+            const key = `${SSE_KEY_PREFIX}${workspaceId}`;
+            const data = await redis.hget(key, connectionId);
+            if (data) {
+                const parsed = JSON.parse(data);
+                parsed.lastPing = new Date().toISOString();
+                await redis.hset(key, connectionId, JSON.stringify(parsed));
+                await redis.expire(key, SSE_TTL);
+            }
+        } catch (err) {
+            logStructured("error", "sse_ping_update_failed", {
+                workspaceId,
+                connectionId,
+                error: err.message,
+            });
         }
     } else {
         const workspaceConnections = memoryConnections.get(workspaceId);
@@ -162,7 +170,7 @@ export function getWorkspaceConnections(workspaceId) {
 /**
  * Broadcast event to all connections in a workspace
  */
-export function broadcastToWorkspace(workspaceId, event, data) {
+export async function broadcastToWorkspace(workspaceId, event, data) {
     const message = formatSSEMessage(event, data);
 
     if (isRedisAvailable()) {
@@ -171,28 +179,36 @@ export function broadcastToWorkspace(workspaceId, event, data) {
         const channel = `${SSE_KEY_PREFIX}broadcast:${workspaceId}`;
         const payload = JSON.stringify({ event, data, message });
 
-        redis.publish(channel, payload);
+        try {
+            await redis.publish(channel, payload);
 
-        // Also send to local connections (for single-instance scenarios)
-        const key = `${SSE_KEY_PREFIX}${workspaceId}`;
-        const connectionIds = redis.hkeys(key);
-        let delivered = 0;
+            const key = `${SSE_KEY_PREFIX}${workspaceId}`;
+            const connectionIds = await redis.hkeys(key);
+            let delivered = 0;
 
-        for (const connId of connectionIds) {
-            const connData = redis.hget(key, connId);
-            if (connData) {
-                delivered++;
+            for (const connId of connectionIds) {
+                const connData = await redis.hget(key, connId);
+                if (connData) {
+                    delivered++;
+                }
             }
+
+            logStructured("info", "sse_broadcast_redis", {
+                workspaceId,
+                event,
+                delivered,
+                mode: "redis_pubsub",
+            });
+
+            return delivered;
+        } catch (err) {
+            logStructured("error", "sse_broadcast_redis_failed", {
+                workspaceId,
+                event,
+                error: err.message,
+            });
+            return 0;
         }
-
-        logStructured("info", "sse_broadcast_redis", {
-            workspaceId,
-            event,
-            delivered,
-            mode: "redis_pubsub",
-        });
-
-        return delivered;
     } else {
         // Memory mode - direct write
         const workspaceConnections = memoryConnections.get(workspaceId);
@@ -250,7 +266,12 @@ export function broadcastToUser(userId, event, data) {
                 try {
                     connection.res.write(formatSSEMessage(event, data));
                     delivered++;
-                } catch {
+                } catch (err) {
+                    logStructured("warn", "sse_connection_dropped", {
+                        userId,
+                        connectionId,
+                        error: err.message,
+                    });
                     workspaceConnections.delete(connectionId);
                 }
             }
