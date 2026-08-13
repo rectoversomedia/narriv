@@ -43,6 +43,326 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
+// src/lib/metrics.js
+function getOrCreateLatencyBucket(key) {
+  if (!metrics.endpointLatency.byEndpoint[key]) {
+    metrics.endpointLatency.byEndpoint[key] = {
+      count: 0,
+      totalMs: 0,
+      maxMs: 0,
+      minMs: Number.POSITIVE_INFINITY
+    };
+  }
+  return metrics.endpointLatency.byEndpoint[key];
+}
+function recordEndpointLatency(method, path2, latencyMs) {
+  const key = `${method.toUpperCase()} ${path2}`;
+  const bucket = getOrCreateLatencyBucket(key);
+  bucket.count += 1;
+  bucket.totalMs += latencyMs;
+  bucket.maxMs = Math.max(bucket.maxMs, latencyMs);
+  bucket.minMs = Math.min(bucket.minMs, latencyMs);
+}
+function incrementAIFailure() {
+  metrics.failures.ai += 1;
+}
+function incrementExportFailure() {
+  metrics.failures.export += 1;
+}
+function getMetricsSnapshot() {
+  const latency = {};
+  for (const [key, bucket] of Object.entries(metrics.endpointLatency.byEndpoint)) {
+    latency[key] = {
+      count: bucket.count,
+      avgMs: bucket.count > 0 ? Math.round(bucket.totalMs / bucket.count * 100) / 100 : 0,
+      maxMs: bucket.maxMs,
+      minMs: Number.isFinite(bucket.minMs) ? bucket.minMs : 0
+    };
+  }
+  return {
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    endpointLatency: latency,
+    failures: { ...metrics.failures }
+  };
+}
+var metrics;
+var init_metrics = __esm({
+  "src/lib/metrics.js"() {
+    "use strict";
+    metrics = {
+      endpointLatency: {
+        // key: "METHOD /path" -> { count, totalMs, maxMs, minMs }
+        byEndpoint: {}
+      },
+      failures: {
+        ai: 0,
+        ingestion: 0,
+        export: 0
+      }
+    };
+  }
+});
+
+// src/lib/logger.js
+function safeHeaders(headers = {}) {
+  const sanitized = {};
+  for (const [key, value] of Object.entries(headers)) {
+    const lower = key.toLowerCase();
+    sanitized[key] = SENSITIVE_HEADERS.has(lower) ? "[REDACTED]" : value;
+  }
+  return sanitized;
+}
+function createRequestId() {
+  if (typeof import_crypto.default.randomUUID === "function") return import_crypto.default.randomUUID();
+  return import_crypto.default.randomBytes(16).toString("hex");
+}
+function logStructured(level, event, payload = {}) {
+  const entry = {
+    level,
+    event,
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    ...payload
+  };
+  const line = JSON.stringify(entry);
+  if (level === "error") console.error(line);
+  else if (level === "warn") console.warn(line);
+  else console.log(line);
+}
+function requestLogger(req, res, next) {
+  const requestId = req.headers["x-request-id"] || createRequestId();
+  req.requestId = String(requestId);
+  res.setHeader("x-request-id", req.requestId);
+  const startedAt = Date.now();
+  logStructured("info", "api_request_started", {
+    requestId: req.requestId,
+    method: req.method,
+    path: req.originalUrl,
+    ip: req.ip,
+    userAgent: req.get("user-agent") || null,
+    headers: safeHeaders(req.headers)
+  });
+  res.on("finish", () => {
+    const latencyMs = Date.now() - startedAt;
+    recordEndpointLatency(req.method, req.route?.path || req.path || req.originalUrl, latencyMs);
+    logStructured("info", "api_request_finished", {
+      requestId: req.requestId,
+      method: req.method,
+      path: req.originalUrl,
+      statusCode: res.statusCode,
+      latencyMs
+    });
+  });
+  next();
+}
+var import_crypto, SENSITIVE_HEADERS;
+var init_logger = __esm({
+  "src/lib/logger.js"() {
+    "use strict";
+    import_crypto = __toESM(require("crypto"), 1);
+    init_metrics();
+    SENSITIVE_HEADERS = /* @__PURE__ */ new Set([
+      "authorization",
+      "cookie",
+      "set-cookie",
+      "x-api-key",
+      "proxy-authorization"
+    ]);
+  }
+});
+
+// src/lib/supabase.js
+var supabase_exports = {};
+__export(supabase_exports, {
+  baseSupabase: () => baseSupabase,
+  baseSupabaseAdmin: () => baseSupabaseAdmin,
+  checkConnection: () => checkConnection,
+  default: () => supabase_default,
+  getPoolConfig: () => getPoolConfig,
+  getPoolMetrics: () => getPoolMetrics,
+  startConnectionCleanup: () => startConnectionCleanup,
+  stopConnectionCleanup: () => stopConnectionCleanup,
+  supabase: () => supabase,
+  supabaseAdmin: () => supabaseAdmin
+});
+function camelToSnake(str) {
+  return str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+}
+function toTableName(name) {
+  const snakeName = camelToSnake(name);
+  if (TABLE_MAP[snakeName]) return TABLE_MAP[snakeName];
+  return name;
+}
+function createDbClient(base) {
+  return new Proxy(base, {
+    get(target, prop) {
+      const value = target[prop];
+      if (typeof value !== "function") return value;
+      return function(...args) {
+        if (args[0] !== void 0 && typeof args[0] === "string") {
+          args[0] = toTableName(args[0]);
+        }
+        return value.apply(target, args);
+      };
+    }
+  });
+}
+function getPoolMetrics() {
+  return {
+    ...connectionMetrics,
+    config: POOL_CONFIG,
+    timestamp: (/* @__PURE__ */ new Date()).toISOString()
+  };
+}
+function getPoolConfig() {
+  return { ...POOL_CONFIG };
+}
+async function checkConnection() {
+  const startTime = Date.now();
+  try {
+    const { data, error: error3 } = await baseSupabaseAdmin.from("User").select("id").limit(1);
+    const latency = Date.now() - startTime;
+    connectionMetrics.total++;
+    connectionMetrics.active++;
+    if (error3 && error3.code !== "PGRST116" && !error3.message?.includes("JWT")) {
+      connectionMetrics.errors++;
+      connectionMetrics.lastError = error3.message;
+      logStructured("error", "supabase_connection_failed", { latency, error: error3.message });
+      return false;
+    }
+    logStructured("info", "supabase_connection_success", { latency, totalConnections: connectionMetrics.total });
+    connectionMetrics.active--;
+    return true;
+  } catch (err) {
+    connectionMetrics.errors++;
+    connectionMetrics.lastError = err.message;
+    connectionMetrics.active--;
+    logStructured("error", "supabase_connection_error", { latency: Date.now() - startTime, error: err.message });
+    return false;
+  }
+}
+function startConnectionCleanup(intervalMs = 6e4) {
+  if (cleanupInterval) return;
+  cleanupInterval = setInterval(() => {
+    const metrics3 = getPoolMetrics();
+    if (metrics3.active === 0) {
+      logStructured("info", "supabase_idle_cleanup", { idleTime: intervalMs, totalConnections: metrics3.total });
+    }
+  }, intervalMs);
+  if (cleanupInterval.unref) {
+    cleanupInterval.unref();
+  }
+}
+function stopConnectionCleanup() {
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval);
+    cleanupInterval = null;
+  }
+}
+var import_supabase_js, supabaseUrl, supabaseServiceKey, supabaseAnonKey, POOL_CONFIG, connectionMetrics, TABLE_MAP, adminClient, anonClient, supabaseAdmin, supabase, baseSupabaseAdmin, baseSupabase, cleanupInterval, supabase_default;
+var init_supabase = __esm({
+  "src/lib/supabase.js"() {
+    "use strict";
+    import_supabase_js = require("@supabase/supabase-js");
+    init_logger();
+    supabaseUrl = process.env.SUPABASE_URL;
+    supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+    supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+    if (!supabaseUrl) {
+      throw new Error("CRITICAL: SUPABASE_URL environment variable is not set");
+    }
+    if (!supabaseServiceKey) {
+      throw new Error("CRITICAL: SUPABASE_SERVICE_KEY environment variable is not set");
+    }
+    if (!supabaseAnonKey) {
+      throw new Error("CRITICAL: SUPABASE_ANON_KEY environment variable is not set");
+    }
+    if (supabaseAnonKey === supabaseServiceKey) {
+      throw new Error("CRITICAL: SUPABASE_ANON_KEY must be different from SUPABASE_SERVICE_KEY");
+    }
+    POOL_CONFIG = {
+      poolMin: parseInt(process.env.DB_POOL_MIN || "2", 10),
+      poolMax: parseInt(process.env.DB_POOL_MAX || "20", 10),
+      poolIdleTimeout: parseInt(process.env.DB_POOL_IDLE_TIMEOUT || "30000", 10),
+      connectionTimeout: parseInt(process.env.DB_CONNECTION_TIMEOUT || "10000", 10),
+      preparedStatements: process.env.DB_PREPARED_STATEMENTS !== "false"
+    };
+    connectionMetrics = {
+      active: 0,
+      idle: 0,
+      total: 0,
+      errors: 0,
+      lastError: null
+    };
+    TABLE_MAP = {
+      "users": "users",
+      // lowercase table — FK from workspace_members, email_verification_tokens, etc. all reference users(id)
+      "refresh_tokens": "refresh_tokens",
+      "password_reset_tokens": "password_reset_tokens",
+      "email_verification_tokens": "email_verification_tokens",
+      "oauth_accounts": "oauth_accounts",
+      // Workspace
+      "workspaces": "workspaces",
+      "workspace_members": "workspace_members",
+      "workspace_settings": "workspace_settings",
+      "workspace_notification_settings": "workspace_notification_settings",
+      // Data Pipeline
+      "sources": "sources",
+      "ingestion_jobs": "ingestion_jobs",
+      "raw_documents": "raw_documents",
+      "signals": "signals",
+      "signal_analyses": "signal_analyses",
+      // Core Features
+      "alerts": "alerts",
+      "escalation_matrices": "escalation_matrices",
+      "narrative_clusters": "narrative_clusters",
+      "narrative_cluster_signals": "narrative_cluster_signals",
+      // Reports
+      "reports": "reports",
+      "report_exports": "report_exports",
+      "report_templates": "report_templates",
+      "report_schedules": "report_schedules",
+      // Actions
+      "action_plans": "action_plans",
+      "generated_assets": "generated_assets",
+      "ai_feedback": "ai_feedback",
+      "ai_analysis_failure_logs": "ai_analysis_failure_logs",
+      // AI Visibility
+      "ai_visibility_results": "ai_visibility_results",
+      "prompt_test_runs": "prompt_test_runs",
+      // System
+      "audit_logs": "audit_logs",
+      "cases": "cases",
+      "integrations": "integrations",
+      "token_usage": "token_usage",
+      "app_notifications": "app_notifications",
+      // Subscriptions
+      "subscription_plans": "subscription_plans",
+      "plan_limits": "plan_limits",
+      "plan_features": "plan_features",
+      "workspace_subscriptions": "workspace_subscriptions",
+      "workspace_usage": "workspace_usage",
+      "workspace_invoices": "workspace_invoices",
+      // Webhooks
+      "webhooks": "webhooks",
+      "webhook_deliveries": "webhook_deliveries",
+      // Password History
+      "password_history": "password_history"
+    };
+    adminClient = (0, import_supabase_js.createClient)(supabaseUrl, supabaseServiceKey, {
+      auth: { autoRefreshToken: false, persistSession: false }
+    });
+    anonClient = (0, import_supabase_js.createClient)(supabaseUrl, supabaseAnonKey, {
+      auth: { autoRefreshToken: true, persistSession: true }
+    });
+    supabaseAdmin = createDbClient(adminClient);
+    supabase = createDbClient(anonClient);
+    baseSupabaseAdmin = adminClient;
+    baseSupabase = anonClient;
+    cleanupInterval = null;
+    supabase_default = supabaseAdmin;
+  }
+});
+
 // ../node_modules/@opentelemetry/api/build/esm/version.js
 var VERSION;
 var init_version = __esm({
@@ -1267,7 +1587,7 @@ var init_NoopMeterProvider = __esm({
 
 // ../node_modules/@opentelemetry/api/build/esm/api/metrics.js
 var API_NAME3, MetricsAPI;
-var init_metrics = __esm({
+var init_metrics2 = __esm({
   "../node_modules/@opentelemetry/api/build/esm/api/metrics.js"() {
     init_NoopMeterProvider();
     init_global_utils();
@@ -1312,11 +1632,11 @@ var init_metrics = __esm({
 });
 
 // ../node_modules/@opentelemetry/api/build/esm/metrics-api.js
-var metrics;
+var metrics2;
 var init_metrics_api = __esm({
   "../node_modules/@opentelemetry/api/build/esm/metrics-api.js"() {
-    init_metrics();
-    metrics = MetricsAPI.getInstance();
+    init_metrics2();
+    metrics2 = MetricsAPI.getInstance();
   }
 });
 
@@ -1543,7 +1863,7 @@ __export(esm_exports, {
   isSpanContextValid: () => isSpanContextValid,
   isValidSpanId: () => isValidSpanId,
   isValidTraceId: () => isValidTraceId,
-  metrics: () => metrics,
+  metrics: () => metrics2,
   propagation: () => propagation,
   trace: () => trace
 });
@@ -1574,7 +1894,7 @@ var init_esm = __esm({
     esm_default = {
       context,
       diag: diag2,
-      metrics,
+      metrics: metrics2,
       propagation,
       trace
     };
@@ -4440,8 +4760,8 @@ var require_composite = __commonJS({
        *
        * @param [config] Configuration object for composite propagator
        */
-      constructor(config2 = {}) {
-        this._propagators = config2.propagators ?? [];
+      constructor(config = {}) {
+        this._propagators = config.propagators ?? [];
         const fields = /* @__PURE__ */ new Set();
         for (const propagator of this._propagators) {
           const propagatorFields = typeof propagator.fields === "function" ? propagator.fields() : [];
@@ -6083,10 +6403,10 @@ var require_instrumentation = __commonJS({
       _diag;
       instrumentationName;
       instrumentationVersion;
-      constructor(instrumentationName, instrumentationVersion, config2) {
+      constructor(instrumentationName, instrumentationVersion, config) {
         this.instrumentationName = instrumentationName;
         this.instrumentationVersion = instrumentationVersion;
-        this.setConfig(config2);
+        this.setConfig(config);
         this._diag = api_1.diag.createComponentLogger({
           namespace: instrumentationName
         });
@@ -6155,10 +6475,10 @@ var require_instrumentation = __commonJS({
        * Sets InstrumentationConfig to this plugin
        * @param config
        */
-      setConfig(config2) {
+      setConfig(config) {
         this._config = {
           enabled: true,
-          ...config2
+          ...config
         };
       }
       /**
@@ -7747,8 +8067,8 @@ var require_instrumentation2 = __commonJS({
       _hooks = [];
       _requireInTheMiddleSingleton = RequireInTheMiddleSingleton_1.RequireInTheMiddleSingleton.getInstance();
       _enabled = false;
-      constructor(instrumentationName, instrumentationVersion, config2) {
-        super(instrumentationName, instrumentationVersion, config2);
+      constructor(instrumentationName, instrumentationVersion, config) {
+        super(instrumentationName, instrumentationVersion, config);
         let modules = this.init();
         if (modules && !Array.isArray(modules)) {
           modules = [modules];
@@ -8332,10 +8652,10 @@ var require_detect_resources = __commonJS({
     exports2.detectResources = void 0;
     var api_1 = (init_esm(), __toCommonJS(esm_exports));
     var ResourceImpl_1 = require_ResourceImpl();
-    var detectResources = (config2 = {}) => {
-      const resources = (config2.detectors || []).map((d) => {
+    var detectResources = (config = {}) => {
+      const resources = (config.detectors || []).map((d) => {
         try {
-          const resource = (0, ResourceImpl_1.resourceFromDetectedResource)(d.detect(config2));
+          const resource = (0, ResourceImpl_1.resourceFromDetectedResource)(d.detect(config));
           api_1.diag.debug(`${d.constructor.name} found resource.`, resource);
           return resource;
         } catch (e) {
@@ -9723,16 +10043,16 @@ var require_ParentBasedSampler = __commonJS({
       _remoteParentNotSampled;
       _localParentSampled;
       _localParentNotSampled;
-      constructor(config2) {
-        this._root = config2.root;
+      constructor(config) {
+        this._root = config.root;
         if (!this._root) {
           (0, core_1.globalErrorHandler)(new Error("ParentBasedSampler must have a root sampler configured"));
           this._root = new AlwaysOnSampler_1.AlwaysOnSampler();
         }
-        this._remoteParentSampled = config2.remoteParentSampled ?? new AlwaysOnSampler_1.AlwaysOnSampler();
-        this._remoteParentNotSampled = config2.remoteParentNotSampled ?? new AlwaysOffSampler_1.AlwaysOffSampler();
-        this._localParentSampled = config2.localParentSampled ?? new AlwaysOnSampler_1.AlwaysOnSampler();
-        this._localParentNotSampled = config2.localParentNotSampled ?? new AlwaysOffSampler_1.AlwaysOffSampler();
+        this._remoteParentSampled = config.remoteParentSampled ?? new AlwaysOnSampler_1.AlwaysOnSampler();
+        this._remoteParentNotSampled = config.remoteParentNotSampled ?? new AlwaysOffSampler_1.AlwaysOffSampler();
+        this._localParentSampled = config.localParentSampled ?? new AlwaysOnSampler_1.AlwaysOnSampler();
+        this._localParentNotSampled = config.localParentNotSampled ?? new AlwaysOffSampler_1.AlwaysOffSampler();
       }
       shouldSample(context2, traceId, spanName, spanKind, attributes, links) {
         const parentContext = api_1.trace.getSpanContext(context2);
@@ -10663,8 +10983,8 @@ var require_BasicTracerProvider_shim = __commonJS({
     var utility_1 = require_utility();
     var sdk_trace_1 = require_src6();
     var BasicTracerProvider2 = class extends sdk_trace_1.TracerProvider {
-      constructor(config2 = {}) {
-        const mergedConfig = (0, core_1.merge)({}, (0, config_1.loadDefaultConfig)(), (0, utility_1.reconfigureLimits)(config2));
+      constructor(config = {}) {
+        const mergedConfig = (0, core_1.merge)({}, (0, config_1.loadDefaultConfig)(), (0, utility_1.reconfigureLimits)(config));
         delete mergedConfig.generalLimits;
         super(mergedConfig);
       }
@@ -10682,9 +11002,9 @@ var require_BatchSpanProcessor_shim = __commonJS({
     var core_1 = require_src();
     var sdk_trace_1 = require_src6();
     var BatchSpanProcessor = class extends sdk_trace_1.BatchSpanProcessor {
-      constructor(exporter, config2) {
-        if (!config2) {
-          config2 = {};
+      constructor(exporter, config) {
+        if (!config) {
+          config = {};
         }
         const envFallbacks = [
           ["maxExportBatchSize", "OTEL_BSP_MAX_EXPORT_BATCH_SIZE"],
@@ -10693,14 +11013,14 @@ var require_BatchSpanProcessor_shim = __commonJS({
           ["exportTimeoutMillis", "OTEL_BSP_EXPORT_TIMEOUT"]
         ];
         for (const [configName, envName] of envFallbacks) {
-          if (config2[configName] === void 0) {
+          if (config[configName] === void 0) {
             const envFallback = (0, core_1.getNumberFromEnv)(envName);
             if (envFallback !== void 0) {
-              config2[configName] = envFallback;
+              config[configName] = envFallback;
             }
           }
         }
-        super({ exporter, ...config2 });
+        super({ exporter, ...config });
       }
     };
     exports2.BatchSpanProcessor = BatchSpanProcessor;
@@ -10769,404 +11089,6 @@ var require_index_shim = __commonJS({
     Object.defineProperty(exports2, "SamplingDecision", { enumerable: true, get: function() {
       return sdk_trace_1.SamplingDecision;
     } });
-  }
-});
-
-// src/lib/metrics.js
-function getOrCreateLatencyBucket(key) {
-  if (!metrics2.endpointLatency.byEndpoint[key]) {
-    metrics2.endpointLatency.byEndpoint[key] = {
-      count: 0,
-      totalMs: 0,
-      maxMs: 0,
-      minMs: Number.POSITIVE_INFINITY
-    };
-  }
-  return metrics2.endpointLatency.byEndpoint[key];
-}
-function recordEndpointLatency(method, path2, latencyMs) {
-  const key = `${method.toUpperCase()} ${path2}`;
-  const bucket = getOrCreateLatencyBucket(key);
-  bucket.count += 1;
-  bucket.totalMs += latencyMs;
-  bucket.maxMs = Math.max(bucket.maxMs, latencyMs);
-  bucket.minMs = Math.min(bucket.minMs, latencyMs);
-}
-function incrementAIFailure() {
-  metrics2.failures.ai += 1;
-}
-function incrementExportFailure() {
-  metrics2.failures.export += 1;
-}
-function getMetricsSnapshot() {
-  const latency = {};
-  for (const [key, bucket] of Object.entries(metrics2.endpointLatency.byEndpoint)) {
-    latency[key] = {
-      count: bucket.count,
-      avgMs: bucket.count > 0 ? Math.round(bucket.totalMs / bucket.count * 100) / 100 : 0,
-      maxMs: bucket.maxMs,
-      minMs: Number.isFinite(bucket.minMs) ? bucket.minMs : 0
-    };
-  }
-  return {
-    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-    endpointLatency: latency,
-    failures: { ...metrics2.failures }
-  };
-}
-var metrics2;
-var init_metrics2 = __esm({
-  "src/lib/metrics.js"() {
-    "use strict";
-    metrics2 = {
-      endpointLatency: {
-        // key: "METHOD /path" -> { count, totalMs, maxMs, minMs }
-        byEndpoint: {}
-      },
-      failures: {
-        ai: 0,
-        ingestion: 0,
-        export: 0
-      }
-    };
-  }
-});
-
-// src/lib/logger.js
-function safeHeaders(headers = {}) {
-  const sanitized = {};
-  for (const [key, value] of Object.entries(headers)) {
-    const lower = key.toLowerCase();
-    sanitized[key] = SENSITIVE_HEADERS.has(lower) ? "[REDACTED]" : value;
-  }
-  return sanitized;
-}
-function createRequestId() {
-  if (typeof import_crypto.default.randomUUID === "function") return import_crypto.default.randomUUID();
-  return import_crypto.default.randomBytes(16).toString("hex");
-}
-function logStructured(level, event, payload = {}) {
-  const entry = {
-    level,
-    event,
-    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-    ...payload
-  };
-  const line = JSON.stringify(entry);
-  if (level === "error") console.error(line);
-  else if (level === "warn") console.warn(line);
-  else console.log(line);
-}
-function requestLogger(req, res, next) {
-  const requestId = req.headers["x-request-id"] || createRequestId();
-  req.requestId = String(requestId);
-  res.setHeader("x-request-id", req.requestId);
-  const startedAt = Date.now();
-  logStructured("info", "api_request_started", {
-    requestId: req.requestId,
-    method: req.method,
-    path: req.originalUrl,
-    ip: req.ip,
-    userAgent: req.get("user-agent") || null,
-    headers: safeHeaders(req.headers)
-  });
-  res.on("finish", () => {
-    const latencyMs = Date.now() - startedAt;
-    recordEndpointLatency(req.method, req.route?.path || req.path || req.originalUrl, latencyMs);
-    logStructured("info", "api_request_finished", {
-      requestId: req.requestId,
-      method: req.method,
-      path: req.originalUrl,
-      statusCode: res.statusCode,
-      latencyMs
-    });
-  });
-  next();
-}
-var import_crypto, SENSITIVE_HEADERS;
-var init_logger = __esm({
-  "src/lib/logger.js"() {
-    "use strict";
-    import_crypto = __toESM(require("crypto"), 1);
-    init_metrics2();
-    SENSITIVE_HEADERS = /* @__PURE__ */ new Set([
-      "authorization",
-      "cookie",
-      "set-cookie",
-      "x-api-key",
-      "proxy-authorization"
-    ]);
-  }
-});
-
-// src/lib/supabase.js
-var supabase_exports = {};
-__export(supabase_exports, {
-  baseSupabase: () => baseSupabase,
-  baseSupabaseAdmin: () => baseSupabaseAdmin,
-  checkConnection: () => checkConnection,
-  default: () => supabase_default,
-  getPoolConfig: () => getPoolConfig,
-  getPoolMetrics: () => getPoolMetrics,
-  startConnectionCleanup: () => startConnectionCleanup,
-  stopConnectionCleanup: () => stopConnectionCleanup,
-  supabase: () => supabase,
-  supabaseAdmin: () => supabaseAdmin
-});
-function camelToSnake(str) {
-  return str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
-}
-function toTableName(name) {
-  const snakeName = camelToSnake(name);
-  if (TABLE_MAP[snakeName]) return TABLE_MAP[snakeName];
-  return name;
-}
-function transformRow(row) {
-  if (!row || typeof row !== "object") return row;
-  const mapped = {};
-  for (const [key, val] of Object.entries(row)) {
-    mapped[key] = val;
-  }
-  if ("email_verified" in row) {
-    mapped.emailVerified = row.email_verified;
-    delete mapped.email_verified;
-  }
-  if ("failed_login_attempts" in row) {
-    mapped.failedLoginAttempts = row.failed_login_attempts;
-    delete mapped.failed_login_attempts;
-  }
-  if ("locked_until" in row) {
-    mapped.lockedUntil = row.locked_until;
-    delete mapped.locked_until;
-  }
-  if ("created_at" in row && !("createdAt" in row)) {
-    mapped.createdAt = row.created_at;
-    delete mapped.created_at;
-  }
-  if ("updated_at" in row && !("updatedAt" in row)) {
-    mapped.updatedAt = row.updated_at;
-    delete mapped.updated_at;
-  }
-  return mapped;
-}
-function transformResponseData(data) {
-  if (!data) return data;
-  if (Array.isArray(data)) return data.map(transformRow);
-  return transformRow(data);
-}
-function transformErrorDetails(details) {
-  if (!details) return details;
-  if (Array.isArray(details)) return details.map(transformRow);
-  if (typeof details === "object") return transformRow(details);
-  return details;
-}
-function createDbClient(base) {
-  return new Proxy(base, {
-    get(target, prop) {
-      const value = target[prop];
-      if (typeof value !== "function") return value;
-      return function(...args) {
-        let tableName = null;
-        if (args[0] !== void 0) {
-          const arg0 = args[0];
-          if (typeof arg0 === "string") {
-            tableName = toTableName(arg0);
-            args[0] = tableName;
-          } else if (arg0 && typeof arg0 === "object" && !arg0.from && !arg0.select) {
-            if (typeof arg0.from === "string") {
-              tableName = toTableName(arg0.from);
-              args[0] = { ...arg0, from: tableName };
-            }
-          }
-        }
-        const result = value.apply(target, args);
-        if (result && typeof result.then === "function") {
-          const isRealPromise = result instanceof Promise;
-          if (isRealPromise) {
-            return result.then((response) => {
-              if (response && typeof response === "object" && "data" in response) {
-                return { ...response, data: transformResponseData(response.data) };
-              }
-              return response;
-            }).catch((err) => {
-              if (err && typeof err === "object" && err.details) {
-                err.details = transformErrorDetails(err.details);
-              }
-              return Promise.reject(err);
-            });
-          }
-        }
-        return result;
-      };
-    }
-  });
-}
-function getPoolMetrics() {
-  return {
-    ...connectionMetrics,
-    config: POOL_CONFIG,
-    timestamp: (/* @__PURE__ */ new Date()).toISOString()
-  };
-}
-function getPoolConfig() {
-  return { ...POOL_CONFIG };
-}
-async function checkConnection() {
-  const startTime = Date.now();
-  try {
-    const { data, error: error3 } = await baseSupabaseAdmin.from("User").select("id").limit(1);
-    const latency = Date.now() - startTime;
-    connectionMetrics.total++;
-    connectionMetrics.active++;
-    if (error3 && error3.code !== "PGRST116" && !error3.message?.includes("JWT")) {
-      connectionMetrics.errors++;
-      connectionMetrics.lastError = error3.message;
-      logStructured("error", "supabase_connection_failed", { latency, error: error3.message });
-      return false;
-    }
-    logStructured("info", "supabase_connection_success", { latency, totalConnections: connectionMetrics.total });
-    connectionMetrics.active--;
-    return true;
-  } catch (err) {
-    connectionMetrics.errors++;
-    connectionMetrics.lastError = err.message;
-    connectionMetrics.active--;
-    logStructured("error", "supabase_connection_error", { latency: Date.now() - startTime, error: err.message });
-    return false;
-  }
-}
-function startConnectionCleanup(intervalMs = 6e4) {
-  if (cleanupInterval) return;
-  cleanupInterval = setInterval(() => {
-    const metrics3 = getPoolMetrics();
-    if (metrics3.active === 0) {
-      logStructured("info", "supabase_idle_cleanup", { idleTime: intervalMs, totalConnections: metrics3.total });
-    }
-  }, intervalMs);
-  if (cleanupInterval.unref) {
-    cleanupInterval.unref();
-  }
-}
-function stopConnectionCleanup() {
-  if (cleanupInterval) {
-    clearInterval(cleanupInterval);
-    cleanupInterval = null;
-  }
-}
-var import_supabase_js, import_dotenv, import_fs2, envPaths, supabaseUrl, supabaseServiceKey, supabaseAnonKey, POOL_CONFIG, connectionMetrics, TABLE_MAP, adminClient, anonClient, supabaseAdmin, supabase, baseSupabaseAdmin, baseSupabase, cleanupInterval, supabase_default;
-var init_supabase = __esm({
-  "src/lib/supabase.js"() {
-    "use strict";
-    import_supabase_js = require("@supabase/supabase-js");
-    import_dotenv = require("dotenv");
-    import_fs2 = require("fs");
-    init_logger();
-    envPaths = [
-      process.env.VERCEL ? "/var/task/.env" : void 0,
-      process.cwd() + "/.env",
-      __dirname + "/../../.env"
-    ].filter(Boolean);
-    for (const envPath of envPaths) {
-      if ((0, import_fs2.existsSync)(envPath)) {
-        (0, import_dotenv.config)({ path: envPath });
-        break;
-      }
-    }
-    supabaseUrl = process.env.SUPABASE_URL;
-    supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
-    supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
-    if (!supabaseUrl) {
-      throw new Error("CRITICAL: SUPABASE_URL environment variable is not set");
-    }
-    if (!supabaseServiceKey) {
-      throw new Error("CRITICAL: SUPABASE_SERVICE_KEY environment variable is not set");
-    }
-    if (!supabaseAnonKey) {
-      throw new Error("CRITICAL: SUPABASE_ANON_KEY environment variable is not set");
-    }
-    if (supabaseAnonKey === supabaseServiceKey) {
-      throw new Error("CRITICAL: SUPABASE_ANON_KEY must be different from SUPABASE_SERVICE_KEY");
-    }
-    POOL_CONFIG = {
-      poolMin: parseInt(process.env.DB_POOL_MIN || "2", 10),
-      poolMax: parseInt(process.env.DB_POOL_MAX || "20", 10),
-      poolIdleTimeout: parseInt(process.env.DB_POOL_IDLE_TIMEOUT || "30000", 10),
-      connectionTimeout: parseInt(process.env.DB_CONNECTION_TIMEOUT || "10000", 10),
-      preparedStatements: process.env.DB_PREPARED_STATEMENTS !== "false"
-    };
-    connectionMetrics = {
-      active: 0,
-      idle: 0,
-      total: 0,
-      errors: 0,
-      lastError: null
-    };
-    TABLE_MAP = {
-      "users": "User",
-      "refresh_tokens": "refresh_tokens",
-      "password_reset_tokens": "password_reset_tokens",
-      "email_verification_tokens": "email_verification_tokens",
-      "oauth_accounts": "oauth_accounts",
-      // Workspace
-      "workspaces": "workspaces",
-      "workspace_members": "workspace_members",
-      "workspace_settings": "workspace_settings",
-      "workspace_notification_settings": "workspace_notification_settings",
-      // Data Pipeline
-      "sources": "sources",
-      "ingestion_jobs": "ingestion_jobs",
-      "raw_documents": "raw_documents",
-      "signals": "signals",
-      "signal_analyses": "signal_analyses",
-      // Core Features
-      "alerts": "alerts",
-      "escalation_matrices": "escalation_matrices",
-      "narrative_clusters": "narrative_clusters",
-      "narrative_cluster_signals": "narrative_cluster_signals",
-      // Reports
-      "reports": "reports",
-      "report_exports": "report_exports",
-      "report_templates": "report_templates",
-      "report_schedules": "report_schedules",
-      // Actions
-      "action_plans": "action_plans",
-      "generated_assets": "generated_assets",
-      "ai_feedback": "ai_feedback",
-      "ai_analysis_failure_logs": "ai_analysis_failure_logs",
-      // AI Visibility
-      "ai_visibility_results": "ai_visibility_results",
-      "prompt_test_runs": "prompt_test_runs",
-      // System
-      "audit_logs": "audit_logs",
-      "cases": "cases",
-      "integrations": "integrations",
-      "token_usage": "token_usage",
-      "app_notifications": "app_notifications",
-      // Subscriptions
-      "subscription_plans": "subscription_plans",
-      "plan_limits": "plan_limits",
-      "plan_features": "plan_features",
-      "workspace_subscriptions": "workspace_subscriptions",
-      "workspace_usage": "workspace_usage",
-      "workspace_invoices": "workspace_invoices",
-      // Webhooks
-      "webhooks": "webhooks",
-      "webhook_deliveries": "webhook_deliveries",
-      // Password History
-      "password_history": "password_history"
-    };
-    adminClient = (0, import_supabase_js.createClient)(supabaseUrl, supabaseServiceKey, {
-      auth: { autoRefreshToken: false, persistSession: false }
-    });
-    anonClient = (0, import_supabase_js.createClient)(supabaseUrl, supabaseAnonKey, {
-      auth: { autoRefreshToken: true, persistSession: true }
-    });
-    supabaseAdmin = createDbClient(adminClient);
-    supabase = createDbClient(anonClient);
-    baseSupabaseAdmin = adminClient;
-    baseSupabase = anonClient;
-    cleanupInterval = null;
-    supabase_default = supabaseAdmin;
   }
 });
 
@@ -11239,13 +11161,13 @@ var redis_exports = {};
 __export(redis_exports, {
   default: () => redis_default
 });
-var import_dotenv2, isRedisDisabled, connection, redis_default;
+var import_dotenv, isRedisDisabled, connection, redis_default;
 var init_redis = __esm({
   "src/lib/redis.js"() {
     "use strict";
-    import_dotenv2 = __toESM(require("dotenv"), 1);
+    import_dotenv = __toESM(require("dotenv"), 1);
     init_logger();
-    import_dotenv2.default.config();
+    import_dotenv.default.config();
     isRedisDisabled = process.env.ENABLE_WORKERS !== "true" || !process.env.REDIS_URL;
     if (isRedisDisabled) {
       logStructured("info", "redis_disabled", { reason: "ENABLE_WORKERS != true or REDIS_URL not set" });
@@ -12246,7 +12168,9 @@ module.exports = __toCommonJS(index_exports);
 var import_express32 = __toESM(require("express"), 1);
 var import_cors = __toESM(require("cors"), 1);
 var import_compression = __toESM(require("compression"), 1);
-var import_dotenv3 = __toESM(require("dotenv"), 1);
+var import_dotenv2 = __toESM(require("dotenv"), 1);
+init_supabase();
+init_supabase();
 
 // ../node_modules/@sentry/node/build/esm/index.js
 var esm_exports3 = {};
@@ -13065,10 +12989,10 @@ var emptyUuid;
 function getRandomByte() {
   return safeMathRandom() * 16;
 }
-function uuid4(crypto5 = getCrypto()) {
+function uuid4(crypto6 = getCrypto()) {
   try {
-    if (crypto5?.randomUUID) {
-      return withRandomSafeContext(() => crypto5.randomUUID()).replace(/-/g, "");
+    if (crypto6?.randomUUID) {
+      return withRandomSafeContext(() => crypto6.randomUUID()).replace(/-/g, "");
     }
   } catch {
   }
@@ -23663,25 +23587,25 @@ function extractModel(params, context2) {
   }
   return "unknown";
 }
-function extractConfigAttributes(config2) {
+function extractConfigAttributes(config) {
   const attributes = {};
-  if ("temperature" in config2 && typeof config2.temperature === "number") {
-    attributes[GEN_AI_REQUEST_TEMPERATURE_ATTRIBUTE] = config2.temperature;
+  if ("temperature" in config && typeof config.temperature === "number") {
+    attributes[GEN_AI_REQUEST_TEMPERATURE_ATTRIBUTE] = config.temperature;
   }
-  if ("topP" in config2 && typeof config2.topP === "number") {
-    attributes[GEN_AI_REQUEST_TOP_P_ATTRIBUTE] = config2.topP;
+  if ("topP" in config && typeof config.topP === "number") {
+    attributes[GEN_AI_REQUEST_TOP_P_ATTRIBUTE] = config.topP;
   }
-  if ("topK" in config2 && typeof config2.topK === "number") {
-    attributes[GEN_AI_REQUEST_TOP_K_ATTRIBUTE] = config2.topK;
+  if ("topK" in config && typeof config.topK === "number") {
+    attributes[GEN_AI_REQUEST_TOP_K_ATTRIBUTE] = config.topK;
   }
-  if ("maxOutputTokens" in config2 && typeof config2.maxOutputTokens === "number") {
-    attributes[GEN_AI_REQUEST_MAX_TOKENS_ATTRIBUTE] = config2.maxOutputTokens;
+  if ("maxOutputTokens" in config && typeof config.maxOutputTokens === "number") {
+    attributes[GEN_AI_REQUEST_MAX_TOKENS_ATTRIBUTE] = config.maxOutputTokens;
   }
-  if ("frequencyPenalty" in config2 && typeof config2.frequencyPenalty === "number") {
-    attributes[GEN_AI_REQUEST_FREQUENCY_PENALTY_ATTRIBUTE] = config2.frequencyPenalty;
+  if ("frequencyPenalty" in config && typeof config.frequencyPenalty === "number") {
+    attributes[GEN_AI_REQUEST_FREQUENCY_PENALTY_ATTRIBUTE] = config.frequencyPenalty;
   }
-  if ("presencePenalty" in config2 && typeof config2.presencePenalty === "number") {
-    attributes[GEN_AI_REQUEST_PRESENCE_PENALTY_ATTRIBUTE] = config2.presencePenalty;
+  if ("presencePenalty" in config && typeof config.presencePenalty === "number") {
+    attributes[GEN_AI_REQUEST_PRESENCE_PENALTY_ATTRIBUTE] = config.presencePenalty;
   }
   return attributes;
 }
@@ -23694,10 +23618,10 @@ function extractRequestAttributes3(operationName, params, context2) {
   if (params) {
     attributes[GEN_AI_REQUEST_MODEL_ATTRIBUTE] = extractModel(params, context2);
     if ("config" in params && typeof params.config === "object" && params.config) {
-      const config2 = params.config;
-      Object.assign(attributes, extractConfigAttributes(config2));
-      if ("tools" in config2 && Array.isArray(config2.tools)) {
-        const functionDeclarations = config2.tools.flatMap(
+      const config = params.config;
+      Object.assign(attributes, extractConfigAttributes(config));
+      if ("tools" in config && Array.isArray(config.tools)) {
+        const functionDeclarations = config.tools.flatMap(
           (tool) => tool.functionDeclarations
         );
         attributes[GEN_AI_REQUEST_AVAILABLE_TOOLS_ATTRIBUTE] = JSON.stringify(functionDeclarations);
@@ -24754,8 +24678,8 @@ function instrumentCompiledGraphInvoke(originalInvoke, graphInstance, compileOpt
             if (modelName) {
               span.setAttribute(GEN_AI_REQUEST_MODEL_ATTRIBUTE, modelName);
             }
-            const config2 = args.length > 1 ? args[1] : void 0;
-            const configurable = config2?.configurable;
+            const config = args.length > 1 ? args[1] : void 0;
+            const configurable = config?.configurable;
             const threadId2 = configurable?.thread_id;
             if (threadId2 && typeof threadId2 === "string") {
               span.setAttribute(GEN_AI_CONVERSATION_ID_ATTRIBUTE2, threadId2);
@@ -25967,34 +25891,34 @@ var METHOD_CONFIGS = {
   }
 };
 function extractTargetInfo(method, params) {
-  const config2 = METHOD_CONFIGS[method];
-  if (!config2) {
+  const config = METHOD_CONFIGS[method];
+  if (!config) {
     return { attributes: {} };
   }
-  const target = config2.targetField && typeof params?.[config2.targetField] === "string" ? params[config2.targetField] : void 0;
+  const target = config.targetField && typeof params?.[config.targetField] === "string" ? params[config.targetField] : void 0;
   return {
     target,
-    attributes: target && config2.targetAttribute ? { [config2.targetAttribute]: target } : {}
+    attributes: target && config.targetAttribute ? { [config.targetAttribute]: target } : {}
   };
 }
 function getRequestArguments(method, params) {
   const args = {};
-  const config2 = METHOD_CONFIGS[method];
-  if (!config2) {
+  const config = METHOD_CONFIGS[method];
+  if (!config) {
     return args;
   }
-  if (config2.captureArguments && config2.argumentsField && params?.[config2.argumentsField]) {
-    const argumentsObj = params[config2.argumentsField];
+  if (config.captureArguments && config.argumentsField && params?.[config.argumentsField]) {
+    const argumentsObj = params[config.argumentsField];
     if (isObjectLike(argumentsObj)) {
       for (const [key, value] of Object.entries(argumentsObj)) {
         args[`${MCP_REQUEST_ARGUMENT}.${key.toLowerCase()}`] = JSON.stringify(value);
       }
     }
   }
-  if (config2.captureUri && params?.uri) {
+  if (config.captureUri && params?.uri) {
     args[`${MCP_REQUEST_ARGUMENT}.uri`] = JSON.stringify(params.uri);
   }
-  if (config2.captureName && params?.name) {
+  if (config.captureName && params?.name) {
     args[`${MCP_REQUEST_ARGUMENT}.name`] = JSON.stringify(params.name);
   }
   return args;
@@ -26122,8 +26046,8 @@ function buildSentryAttributes(type) {
     [SEMANTIC_ATTRIBUTE_SENTRY_SOURCE]: MCP_ROUTE_SOURCE_VALUE
   };
 }
-function createMcpSpan(config2) {
-  const { type, message, transport, extra, callback, options } = config2;
+function createMcpSpan(config) {
+  const { type, message, transport, extra, callback, options } = config;
   const { method } = message;
   const params = message.params;
   let spanName;
@@ -26510,15 +26434,15 @@ var getRouterPath = (path2, layer) => {
   }
   return path2;
 };
-var isLayerIgnored = (name, type, config2) => {
-  if (Array.isArray(config2?.ignoreLayersType) && config2?.ignoreLayersType?.includes(type)) {
+var isLayerIgnored = (name, type, config) => {
+  if (Array.isArray(config?.ignoreLayersType) && config?.ignoreLayersType?.includes(type)) {
     return true;
   }
-  if (!Array.isArray(config2?.ignoreLayers)) {
+  if (!Array.isArray(config?.ignoreLayers)) {
     return false;
   }
   try {
-    return stringMatchesSomePattern(name, config2.ignoreLayers, true);
+    return stringMatchesSomePattern(name, config.ignoreLayers, true);
   } catch {
   }
   return false;
@@ -28457,16 +28381,16 @@ var _channelSubs = [];
 var spanFromReq = /* @__PURE__ */ new WeakMap();
 var ignoreRequestMap = /* @__PURE__ */ new WeakMap();
 var propagationDecisionMap = new LRUMap(100);
-function instrumentUndici(config2 = {}) {
+function instrumentUndici(config = {}) {
   if (_channelSubs.length) {
     return;
   }
-  subscribeToChannel("undici:request:create", (message) => onRequestCreated(config2, message));
+  subscribeToChannel("undici:request:create", (message) => onRequestCreated(config, message));
   subscribeToChannel(
     "undici:client:sendHeaders",
-    (message) => onRequestHeaders(config2, message)
+    (message) => onRequestHeaders(config, message)
   );
-  subscribeToChannel("undici:request:headers", (message) => onResponseHeaders(config2, message));
+  subscribeToChannel("undici:request:headers", (message) => onResponseHeaders(config, message));
   subscribeToChannel("undici:request:trailers", (message) => onDone(message));
   subscribeToChannel("undici:request:error", (message) => onError(message));
 }
@@ -28521,16 +28445,16 @@ function parseRequestHeaders(request2) {
   }
   return result;
 }
-function onRequestCreated(config2, { request: request2 }) {
+function onRequestCreated(config, { request: request2 }) {
   const url = getAbsoluteUrl3(request2.origin, request2.path);
   const ignoredByCallback = safeExecute(
-    () => !!config2.ignoreOutgoingRequests?.(url),
+    () => !!config.ignoreOutgoingRequests?.(url),
     (e) => e && DEBUG_BUILD2 && debug.error("caught ignoreOutgoingRequests error: ", e)
   );
   const ignoreForBreadcrumbs = isTracingSuppressed() || !!ignoredByCallback;
   ignoreRequestMap.set(request2, ignoreForBreadcrumbs);
-  if (!config2.spans) {
-    if (config2.tracePropagation !== false && !ignoreForBreadcrumbs) {
+  if (!config.spans) {
+    if (config.tracePropagation !== false && !ignoreForBreadcrumbs) {
       addTracePropagationHeadersToFetchRequest(request2, propagationDecisionMap);
     }
     return;
@@ -28583,13 +28507,13 @@ function onRequestCreated(config2, { request: request2 }) {
     onlyIfParent: !client4 || !hasSpanStreamingEnabled(client4)
   });
   safeExecute(
-    () => config2.requestHook?.(span, request2),
+    () => config.requestHook?.(span, request2),
     (e) => e && DEBUG_BUILD2 && debug.error("caught requestHook error: ", e)
   );
   addTracePropagationHeadersToFetchRequest(request2, propagationDecisionMap, span);
   spanFromReq.set(request2, span);
 }
-function onRequestHeaders(config2, { request: request2, socket }) {
+function onRequestHeaders(config, { request: request2, socket }) {
   const span = spanFromReq.get(request2);
   if (!span) {
     return;
@@ -28599,8 +28523,8 @@ function onRequestHeaders(config2, { request: request2, socket }) {
     [lo]: remoteAddress,
     [po]: remotePort
   };
-  if (config2.headersToSpanAttributes?.requestHeaders) {
-    const headersToAttribs = new Set(config2.headersToSpanAttributes.requestHeaders.map((n) => n.toLowerCase()));
+  if (config.headersToSpanAttributes?.requestHeaders) {
+    const headersToAttribs = new Set(config.headersToSpanAttributes.requestHeaders.map((n) => n.toLowerCase()));
     const headersMap = parseRequestHeaders(request2);
     for (const [name, value] of headersMap.entries()) {
       if (headersToAttribs.has(name)) {
@@ -28611,8 +28535,8 @@ function onRequestHeaders(config2, { request: request2, socket }) {
   }
   span.setAttributes(spanAttributes);
 }
-function onResponseHeaders(config2, { request: request2, response }) {
-  const breadcrumbsEnabled = config2.breadcrumbs !== false;
+function onResponseHeaders(config, { request: request2, response }) {
+  const breadcrumbsEnabled = config.breadcrumbs !== false;
   if (breadcrumbsEnabled && !ignoreRequestMap.get(request2)) {
     addFetchRequestBreadcrumb(request2, response);
   }
@@ -28624,12 +28548,12 @@ function onResponseHeaders(config2, { request: request2, response }) {
     [Oa]: response.statusCode
   };
   safeExecute(
-    () => config2.responseHook?.(span, { request: request2, response }),
+    () => config.responseHook?.(span, { request: request2, response }),
     (e) => e && DEBUG_BUILD2 && debug.error("caught responseHook error: ", e)
   );
-  if (config2.headersToSpanAttributes?.responseHeaders) {
+  if (config.headersToSpanAttributes?.responseHeaders) {
     const headersToAttribs = /* @__PURE__ */ new Set();
-    config2.headersToSpanAttributes?.responseHeaders.forEach((name) => headersToAttribs.add(name.toLowerCase()));
+    config.headersToSpanAttributes?.responseHeaders.forEach((name) => headersToAttribs.add(name.toLowerCase()));
     for (let idx = 0; idx < response.headers.length; idx = idx + 2) {
       const nameBuf = response.headers[idx];
       const valueBuf = response.headers[idx + 1];
@@ -34198,12 +34122,12 @@ var FS_OPERATIONS_WITH_PATH_ARG = [
   "utimesSync",
   "writeFileSync"
 ];
-function getSpanAttributes(functionName, args, config2) {
+function getSpanAttributes(functionName, args, config) {
   const attributes = {
     [SEMANTIC_ATTRIBUTE_SENTRY_OP]: SPAN_OP,
     [SEMANTIC_ATTRIBUTE_SENTRY_ORIGIN]: SPAN_ORIGIN
   };
-  if (!config2.recordFilePaths) {
+  if (!config.recordFilePaths) {
     return attributes;
   }
   if (typeof args[0] === "string" && FS_OPERATIONS_WITH_PATH_ARG.includes(functionName)) {
@@ -34243,34 +34167,34 @@ function _patchMethod(obj, name, wrapper) {
   patched.add(name);
   obj[name] = wrapper(original);
 }
-function _patchSyncFunction(functionName, original, config2) {
+function _patchSyncFunction(functionName, original, config) {
   const patchedFunction = function(...args) {
-    const attributes = getSpanAttributes(functionName, args, config2);
+    const attributes = getSpanAttributes(functionName, args, config);
     return startSpan({ name: `fs.${functionName}`, onlyIfParent: true, attributes }, (span) => {
       try {
         return suppressTracing(() => original.apply(this, args));
       } catch (error3) {
-        recordError(span, error3, config2);
+        recordError(span, error3, config);
         throw error3;
       }
     });
   };
   return patchedFunctionWithOriginalProperties(patchedFunction, original);
 }
-function _patchCallbackFunction(functionName, original, config2) {
+function _patchCallbackFunction(functionName, original, config) {
   const patchedFunction = function(...args) {
     const lastIdx = args.length - 1;
     const cb = args[lastIdx];
     if (typeof cb !== "function") {
       return original.apply(this, args);
     }
-    const attributes = getSpanAttributes(functionName, args, config2);
+    const attributes = getSpanAttributes(functionName, args, config);
     const span = startInactiveSpan({ name: `fs.${functionName}`, onlyIfParent: true, attributes });
     const parentSpan = getActiveSpan();
     args[lastIdx] = function(...cbArgs) {
       const error3 = cbArgs[0];
       if (error3) {
-        recordError(span, error3, config2);
+        recordError(span, error3, config);
       }
       span.end();
       if (parentSpan) {
@@ -34281,14 +34205,14 @@ function _patchCallbackFunction(functionName, original, config2) {
     try {
       return suppressTracing(() => original.apply(this, args));
     } catch (error3) {
-      recordError(span, error3, config2);
+      recordError(span, error3, config);
       span.end();
       throw error3;
     }
   };
   return patchedFunctionWithOriginalProperties(patchedFunction, original);
 }
-function _patchExistsCallbackFunction(original, config2) {
+function _patchExistsCallbackFunction(original, config) {
   const functionName = "exists";
   const patchedFunction = function(...args) {
     const lastIdx = args.length - 1;
@@ -34296,7 +34220,7 @@ function _patchExistsCallbackFunction(original, config2) {
     if (typeof cb !== "function") {
       return original.apply(this, args);
     }
-    const attributes = getSpanAttributes(functionName, args, config2);
+    const attributes = getSpanAttributes(functionName, args, config);
     const span = startInactiveSpan({ name: `fs.${functionName}`, onlyIfParent: true, attributes });
     const parentSpan = getActiveSpan();
     args[lastIdx] = function(...cbArgs) {
@@ -34309,7 +34233,7 @@ function _patchExistsCallbackFunction(original, config2) {
     try {
       return suppressTracing(() => original.apply(this, args));
     } catch (error3) {
-      recordError(span, error3, config2);
+      recordError(span, error3, config);
       span.end();
       throw error3;
     }
@@ -34324,41 +34248,41 @@ function _patchExistsCallbackFunction(original, config2) {
   });
   return functionWithOriginalProperties;
 }
-function _patchPromiseFunction(functionName, original, config2) {
+function _patchPromiseFunction(functionName, original, config) {
   const patchedFunction = async function(...args) {
-    const attributes = getSpanAttributes(functionName, args, config2);
+    const attributes = getSpanAttributes(functionName, args, config);
     return startSpan({ name: `fs.${functionName}`, onlyIfParent: true, attributes }, async (span) => {
       try {
         return await suppressTracing(() => original.apply(this, args));
       } catch (error3) {
-        recordError(span, error3, config2);
+        recordError(span, error3, config);
         throw error3;
       }
     });
   };
   return patchedFunctionWithOriginalProperties(patchedFunction, original);
 }
-function enableFsInstrumentation(config2 = {}) {
+function enableFsInstrumentation(config = {}) {
   for (const fName of SYNC_FUNCTIONS) {
     const { objectToPatch, functionNameToPatch } = indexFs(fs, fName);
-    _patchMethod(objectToPatch, functionNameToPatch, (original) => _patchSyncFunction(fName, original, config2));
+    _patchMethod(objectToPatch, functionNameToPatch, (original) => _patchSyncFunction(fName, original, config));
   }
   for (const fName of CALLBACK_FUNCTIONS) {
     const { objectToPatch, functionNameToPatch } = indexFs(fs, fName);
     if (fName === "exists") {
-      _patchMethod(objectToPatch, functionNameToPatch, (original) => _patchExistsCallbackFunction(original, config2));
+      _patchMethod(objectToPatch, functionNameToPatch, (original) => _patchExistsCallbackFunction(original, config));
     } else {
-      _patchMethod(objectToPatch, functionNameToPatch, (original) => _patchCallbackFunction(fName, original, config2));
+      _patchMethod(objectToPatch, functionNameToPatch, (original) => _patchCallbackFunction(fName, original, config));
     }
   }
   const fsPromises = fs.promises;
   for (const fName of PROMISE_FUNCTIONS) {
-    _patchMethod(fsPromises, fName, (original) => _patchPromiseFunction(fName, original, config2));
+    _patchMethod(fsPromises, fName, (original) => _patchPromiseFunction(fName, original, config));
   }
 }
-function recordError(span, error3, config2) {
+function recordError(span, error3, config) {
   span.setStatus({ code: SPAN_STATUS_ERROR, message: "internal_error" });
-  if (config2.recordErrorMessagesAsSpanAttributes && error3 instanceof Error) {
+  if (config.recordErrorMessagesAsSpanAttributes && error3 instanceof Error) {
     span.setAttribute("fs_error", error3.message);
   }
 }
@@ -34408,8 +34332,8 @@ var instrumentExpress = generateInstrumentOnce(
   (options) => new ExpressInstrumentation(options)
 );
 var ExpressInstrumentation = class extends import_instrumentation5.InstrumentationBase {
-  constructor(config2 = {}) {
-    super("sentry-express", SDK_VERSION, config2);
+  constructor(config = {}) {
+    super("sentry-express", SDK_VERSION, config);
   }
   init() {
     const module2 = new import_instrumentation5.InstrumentationNodeModuleDefinition(
@@ -34546,8 +34470,8 @@ var hooksNamesToWrap = /* @__PURE__ */ new Set([
   "onError"
 ]);
 var FastifyInstrumentationV3 = class extends import_instrumentation6.InstrumentationBase {
-  constructor(config2 = {}) {
-    super(PACKAGE_NAME, SDK_VERSION, config2);
+  constructor(config = {}) {
+    super(PACKAGE_NAME, SDK_VERSION, config);
   }
   init() {
     return [
@@ -36620,8 +36544,8 @@ function wrapFieldResolver(getConfig3, fieldResolver, isDefaultResolver = false)
     if (!fieldResolver) {
       return void 0;
     }
-    const config2 = getConfig3();
-    if (config2.ignoreTrivialResolveSpans && isDefaultResolver && (isObjectLike(source) || typeof source === "function")) {
+    const config = getConfig3();
+    if (config.ignoreTrivialResolveSpans && isDefaultResolver && (isObjectLike(source) || typeof source === "function")) {
       const property = source[info2.fieldName];
       if (typeof property !== "function") {
         return fieldResolver.call(this, source, args, contextValue, info2);
@@ -36670,11 +36594,11 @@ var DEFAULT_CONFIG = {
 };
 var supportedVersions = [">=14.0.0 <17"];
 var GraphQLInstrumentation = class extends import_instrumentation9.InstrumentationBase {
-  constructor(config2 = {}) {
-    super(PACKAGE_NAME3, SDK_VERSION, { ...DEFAULT_CONFIG, ...config2 });
+  constructor(config = {}) {
+    super(PACKAGE_NAME3, SDK_VERSION, { ...DEFAULT_CONFIG, ...config });
   }
-  setConfig(config2 = {}) {
-    super.setConfig({ ...DEFAULT_CONFIG, ...config2 });
+  setConfig(config = {}) {
+    super.setConfig({ ...DEFAULT_CONFIG, ...config });
   }
   init() {
     const module2 = new import_instrumentation9.InstrumentationNodeModuleDefinition("graphql", supportedVersions);
@@ -37123,8 +37047,8 @@ function endSpansOnPromise(spans, sendPromise) {
 // ../node_modules/@sentry/node/build/esm/integrations/tracing/kafka/vendored/instrumentation.js
 var PACKAGE_NAME4 = "@sentry/instrumentation-kafkajs";
 var KafkaJsInstrumentation = class extends import_instrumentation11.InstrumentationBase {
-  constructor(config2 = {}) {
-    super(PACKAGE_NAME4, SDK_VERSION, config2);
+  constructor(config = {}) {
+    super(PACKAGE_NAME4, SDK_VERSION, config);
   }
   init() {
     const unpatch = (moduleExports) => {
@@ -37186,20 +37110,20 @@ var KafkaJsInstrumentation = class extends import_instrumentation11.Instrumentat
     const instrumentation = this;
     return (original) => {
       return function run(...args) {
-        const config2 = args[0];
-        if (config2?.eachMessage) {
-          if ((0, import_instrumentation11.isWrapped)(config2.eachMessage)) {
-            instrumentation._unwrap(config2, "eachMessage");
+        const config = args[0];
+        if (config?.eachMessage) {
+          if ((0, import_instrumentation11.isWrapped)(config.eachMessage)) {
+            instrumentation._unwrap(config, "eachMessage");
           }
-          instrumentation._wrap(config2, "eachMessage", instrumentation._getConsumerEachMessagePatch());
+          instrumentation._wrap(config, "eachMessage", instrumentation._getConsumerEachMessagePatch());
         }
-        if (config2?.eachBatch) {
-          if ((0, import_instrumentation11.isWrapped)(config2.eachBatch)) {
-            instrumentation._unwrap(config2, "eachBatch");
+        if (config?.eachBatch) {
+          if ((0, import_instrumentation11.isWrapped)(config.eachBatch)) {
+            instrumentation._unwrap(config, "eachBatch");
           }
-          instrumentation._wrap(config2, "eachBatch", instrumentation._getConsumerEachBatchPatch());
+          instrumentation._wrap(config, "eachBatch", instrumentation._getConsumerEachBatchPatch());
         }
-        return original.call(this, config2);
+        return original.call(this, config);
       };
     };
   }
@@ -37707,8 +37631,8 @@ function getV4ConnectionPoolCheckOut() {
 // ../node_modules/@sentry/node/build/esm/integrations/tracing/mongo/vendored/instrumentation.js
 var PACKAGE_NAME6 = "@sentry/instrumentation-mongodb";
 var MongoDBInstrumentation = class extends import_instrumentation15.InstrumentationBase {
-  constructor(config2 = {}) {
-    super(PACKAGE_NAME6, SDK_VERSION, config2);
+  constructor(config = {}) {
+    super(PACKAGE_NAME6, SDK_VERSION, config);
   }
   init() {
     const { v3PatchConnection, v3UnpatchConnection } = this._getV3ConnectionPatches();
@@ -37936,8 +37860,8 @@ function needsDocumentMethodPatch(moduleVersion) {
 var _STORED_PARENT_SPAN = /* @__PURE__ */ Symbol("stored-parent-span");
 var _ALREADY_INSTRUMENTED = /* @__PURE__ */ Symbol("already-instrumented");
 var MongooseInstrumentation = class extends import_instrumentation17.InstrumentationBase {
-  constructor(config2 = {}) {
-    super(PACKAGE_NAME7, SDK_VERSION, config2);
+  constructor(config = {}) {
+    super(PACKAGE_NAME7, SDK_VERSION, config);
   }
   init() {
     const module2 = new import_instrumentation17.InstrumentationNodeModuleDefinition(
@@ -38133,8 +38057,8 @@ var ATTR_DB_CONNECTION_STRING2 = "db.connection_string";
 var DB_SYSTEM_VALUE_MYSQL = "mysql";
 
 // ../node_modules/@sentry/node/build/esm/integrations/tracing/mysql/vendored/utils.js
-function getConfig(config2) {
-  const resolved = config2?.connectionConfig || config2 || {};
+function getConfig(config) {
+  const resolved = config?.connectionConfig || config || {};
   const { host, port, database, user } = resolved;
   return { host, port, database, user };
 }
@@ -38168,8 +38092,8 @@ function getSpanName(query) {
 var PACKAGE_NAME8 = "@sentry/instrumentation-mysql";
 var ORIGIN10 = "auto.db.otel.mysql";
 var MySQLInstrumentation = class extends import_instrumentation18.InstrumentationBase {
-  constructor(config2 = {}) {
-    super(PACKAGE_NAME8, SDK_VERSION, config2);
+  constructor(config = {}) {
+    super(PACKAGE_NAME8, SDK_VERSION, config);
   }
   init() {
     return [
@@ -38361,8 +38285,8 @@ var ATTR_DB_CONNECTION_STRING3 = "db.connection_string";
 var DB_SYSTEM_VALUE_MYSQL2 = "mysql";
 
 // ../node_modules/@sentry/node/build/esm/integrations/tracing/mysql2/vendored/utils.js
-function getConnectionAttributes(config2) {
-  const { host, port, database, user } = getConfig2(config2);
+function getConnectionAttributes(config) {
+  const { host, port, database, user } = getConfig2(config);
   const attrs = {
     [ATTR_DB_CONNECTION_STRING3]: getJDBCString2(host, port, database),
     // oxlint-disable-next-line typescript/no-deprecated
@@ -38377,8 +38301,8 @@ function getConnectionAttributes(config2) {
   }
   return attrs;
 }
-function getConfig2(config2) {
-  const { host, port, database, user } = config2?.connectionConfig || config2 || {};
+function getConfig2(config) {
+  const { host, port, database, user } = config?.connectionConfig || config || {};
   return { host, port, database, user };
 }
 function getJDBCString2(host, port, database) {
@@ -38436,8 +38360,8 @@ var PACKAGE_NAME9 = "@sentry/instrumentation-mysql2";
 var ORIGIN11 = "auto.db.otel.mysql2";
 var supportedVersions2 = [">=1.4.2 <3.20.0"];
 var MySQL2Instrumentation = class extends import_instrumentation20.InstrumentationBase {
-  constructor(config2 = {}) {
-    super(PACKAGE_NAME9, SDK_VERSION, config2);
+  constructor(config = {}) {
+    super(PACKAGE_NAME9, SDK_VERSION, config);
   }
   init() {
     let format2;
@@ -38728,8 +38652,8 @@ function endSpan3(span, err) {
   span.end();
 }
 var IORedisInstrumentation = class extends import_instrumentation22.InstrumentationBase {
-  constructor(config2 = {}) {
-    super(PACKAGE_NAME10, SDK_VERSION, config2);
+  constructor(config = {}) {
+    super(PACKAGE_NAME10, SDK_VERSION, config);
   }
   init() {
     return [
@@ -38904,8 +38828,8 @@ function getClientAttributes2(options) {
   };
 }
 var _RedisInstrumentationV2_V3 = class _RedisInstrumentationV2_V32 extends import_instrumentation23.InstrumentationBase {
-  constructor(config2 = {}) {
-    super(PACKAGE_NAME11, SDK_VERSION, config2);
+  constructor(config = {}) {
+    super(PACKAGE_NAME11, SDK_VERSION, config);
   }
   init() {
     return [
@@ -38974,8 +38898,8 @@ var _RedisInstrumentationV2_V3 = class _RedisInstrumentationV2_V32 extends impor
 _RedisInstrumentationV2_V3.COMPONENT = "redis";
 var RedisInstrumentationV2_V3 = _RedisInstrumentationV2_V3;
 var _RedisInstrumentationV4_V5 = class _RedisInstrumentationV4_V52 extends import_instrumentation23.InstrumentationBase {
-  constructor(config2 = {}) {
-    super(PACKAGE_NAME11, SDK_VERSION, config2);
+  constructor(config = {}) {
+    super(PACKAGE_NAME11, SDK_VERSION, config);
   }
   init() {
     return [
@@ -39096,12 +39020,12 @@ var _RedisInstrumentationV4_V5 = class _RedisInstrumentationV4_V52 extends impor
   _getPatchExtendWithCommands(transformCommandArguments) {
     const plugin = this;
     return function extendWithCommandsPatchWrapper(original) {
-      return function extendWithCommandsPatch(config2) {
-        if (config2?.BaseClass?.name !== "RedisClient") {
+      return function extendWithCommandsPatch(config) {
+        if (config?.BaseClass?.name !== "RedisClient") {
           return original.apply(this, arguments);
         }
-        const origExecutor = config2.executor;
-        config2.executor = function(command, args) {
+        const origExecutor = config.executor;
+        config.executor = function(command, args) {
           const redisCommandArguments = transformCommandArguments(command, args).args;
           return plugin._traceClientCommand(origExecutor, this, arguments, redisCommandArguments);
         };
@@ -39244,20 +39168,20 @@ var _RedisInstrumentationV4_V5 = class _RedisInstrumentationV4_V52 extends impor
 _RedisInstrumentationV4_V5.COMPONENT = "redis";
 var RedisInstrumentationV4_V5 = _RedisInstrumentationV4_V5;
 var RedisInstrumentation = class extends import_instrumentation23.InstrumentationBase {
-  constructor(config2 = {}) {
-    super(PACKAGE_NAME11, SDK_VERSION, config2);
+  constructor(config = {}) {
+    super(PACKAGE_NAME11, SDK_VERSION, config);
     this.initialized = false;
     this.instrumentationV2_V3 = new RedisInstrumentationV2_V3(this.getConfig());
     this.instrumentationV4_V5 = new RedisInstrumentationV4_V5(this.getConfig());
     this.initialized = true;
   }
-  setConfig(config2 = {}) {
-    super.setConfig(config2);
+  setConfig(config = {}) {
+    super.setConfig(config);
     if (!this.initialized) {
       return;
     }
-    this.instrumentationV2_V3.setConfig(config2);
-    this.instrumentationV4_V5.setConfig(config2);
+    this.instrumentationV2_V3.setConfig(config);
+    this.instrumentationV4_V5.setConfig(config);
   }
   init() {
   }
@@ -39485,8 +39409,8 @@ function bindCallbackToSpan(parentSpan, callback) {
   };
 }
 var PgInstrumentation = class extends import_instrumentation24.InstrumentationBase {
-  constructor(config2 = {}) {
-    super(PACKAGE_NAME12, SDK_VERSION, config2);
+  constructor(config = {}) {
+    super(PACKAGE_NAME12, SDK_VERSION, config);
   }
   init() {
     const SUPPORTED_PG_VERSIONS = [">=8.0.3 <9"];
@@ -39725,8 +39649,8 @@ var instrumentPostgresJs = generateInstrumentOnce(
   })
 );
 var PostgresJsInstrumentation = class extends import_instrumentation26.InstrumentationBase {
-  constructor(config2) {
-    super("sentry-postgres-js", SDK_VERSION, config2);
+  constructor(config) {
+    super("sentry-postgres-js", SDK_VERSION, config);
   }
   /**
    * Initializes the instrumentation by patching the postgres module.
@@ -39778,10 +39702,10 @@ var PostgresJsInstrumentation = class extends import_instrumentation26.Instrumen
         DEBUG_BUILD4 && debug.warn("postgres() did not return a valid instance");
         return sql;
       }
-      const config2 = self2.getConfig();
+      const config = self2.getConfig();
       return instrumentPostgresJsSql(sql, {
-        requireParentSpan: config2.requireParentSpan,
-        requestHook: config2.requestHook
+        requireParentSpan: config.requireParentSpan,
+        requestHook: config.requestHook
       });
     };
     Object.setPrototypeOf(WrappedPostgres, Original);
@@ -39807,9 +39731,9 @@ var PostgresJsInstrumentation = class extends import_instrumentation26.Instrumen
    * only be created if there is a parent span available.
    */
   _shouldCreateSpans() {
-    const config2 = this.getConfig();
+    const config = this.getConfig();
     const hasParentSpan = trace.getSpan(context.active()) !== void 0;
-    return hasParentSpan || !config2.requireParentSpan;
+    return hasParentSpan || !config.requireParentSpan;
   }
   /**
    * Extracts DB operation name from SQL query and sets it on the span.
@@ -39883,8 +39807,8 @@ var PostgresJsInstrumentation = class extends import_instrumentation26.Instrumen
             [bt]: "postgres",
             [nt]: sanitizedSqlQuery
           });
-          const config2 = self2.getConfig();
-          const { requestHook } = config2;
+          const config = self2.getConfig();
+          const { requestHook } = config;
           if (requestHook) {
             (0, import_instrumentation26.safeExecuteInTheMiddle)(
               () => requestHook(span, sanitizedSqlQuery, void 0),
@@ -40137,18 +40061,18 @@ function clearGlobalTracingHelper() {
 
 // ../node_modules/@sentry/node/build/esm/integrations/tracing/prisma/vendored/instrumentation.js
 var PrismaInstrumentation = class extends import_instrumentation27.InstrumentationBase {
-  constructor(config2 = {}) {
-    super(NAME, VERSION2, config2);
+  constructor(config = {}) {
+    super(NAME, VERSION2, config);
   }
   init() {
     const module2 = new import_instrumentation27.InstrumentationNodeModuleDefinition(MODULE_NAME, SUPPORTED_MODULE_VERSIONS);
     return [module2];
   }
   enable() {
-    const config2 = this._config;
+    const config = this._config;
     setGlobalTracingHelper(
       new ActiveTracingHelper({
-        ignoreSpanTypes: config2.ignoreSpanTypes ?? []
+        ignoreSpanTypes: config.ignoreSpanTypes ?? []
       })
     );
   }
@@ -40364,8 +40288,8 @@ var getPluginFromInput = (pluginObj) => {
 // ../node_modules/@sentry/node/build/esm/integrations/tracing/hapi/vendored/instrumentation.js
 var PACKAGE_NAME13 = "@sentry/instrumentation-hapi";
 var HapiInstrumentation = class extends import_instrumentation29.InstrumentationBase {
-  constructor(config2 = {}) {
-    super(PACKAGE_NAME13, SDK_VERSION, config2);
+  constructor(config = {}) {
+    super(PACKAGE_NAME13, SDK_VERSION, config);
   }
   init() {
     return new import_instrumentation29.InstrumentationNodeModuleDefinition(
@@ -40670,8 +40594,8 @@ var import_instrumentation31 = __toESM(require_src4(), 1);
 var PACKAGE_NAME14 = "@sentry/instrumentation-hono";
 var PACKAGE_VERSION = "0.0.1";
 var HonoInstrumentation = class extends import_instrumentation31.InstrumentationBase {
-  constructor(config2 = {}) {
-    super(PACKAGE_NAME14, PACKAGE_VERSION, config2);
+  constructor(config = {}) {
+    super(PACKAGE_NAME14, PACKAGE_VERSION, config);
   }
   /**
    * Initialize the instrumentation.
@@ -40972,8 +40896,8 @@ var getMiddlewareMetadata = (context2, layer, isRouter, layerPath) => {
     };
   }
 };
-var isLayerIgnored2 = (type, config2) => {
-  return !!(Array.isArray(config2?.ignoreLayersType) && config2?.ignoreLayersType?.includes(type));
+var isLayerIgnored2 = (type, config) => {
+  return !!(Array.isArray(config?.ignoreLayersType) && config?.ignoreLayersType?.includes(type));
 };
 
 // ../node_modules/@sentry/node/build/esm/integrations/tracing/koa/vendored/internal-types.js
@@ -40982,8 +40906,8 @@ var kLayerPatched = /* @__PURE__ */ Symbol("koa-layer-patched");
 // ../node_modules/@sentry/node/build/esm/integrations/tracing/koa/vendored/instrumentation.js
 var PACKAGE_NAME15 = "@sentry/instrumentation-koa";
 var KoaInstrumentation = class extends import_instrumentation33.InstrumentationBase {
-  constructor(config2 = {}) {
-    super(PACKAGE_NAME15, SDK_VERSION, config2);
+  constructor(config = {}) {
+    super(PACKAGE_NAME15, SDK_VERSION, config);
   }
   init() {
     return new import_instrumentation33.InstrumentationNodeModuleDefinition(
@@ -41180,8 +41104,8 @@ var generateRoute = (request2) => {
 var PACKAGE_NAME16 = "@sentry/instrumentation-connect";
 var ANONYMOUS_NAME2 = "anonymous";
 var ConnectInstrumentation = class extends import_instrumentation35.InstrumentationBase {
-  constructor(config2 = {}) {
-    super(PACKAGE_NAME16, SDK_VERSION, config2);
+  constructor(config = {}) {
+    super(PACKAGE_NAME16, SDK_VERSION, config);
   }
   init() {
     return [
@@ -41425,8 +41349,8 @@ var SUPPORTED_VERSIONS5 = [
 var MAX_QUERY_LENGTH = 1022;
 var parentSpanSymbol = /* @__PURE__ */ Symbol("sentry.instrumentation-knex.parent-span");
 var KnexInstrumentation = class extends import_instrumentation37.InstrumentationBase {
-  constructor(config2 = {}) {
-    super(PACKAGE_NAME17, SDK_VERSION, config2);
+  constructor(config = {}) {
+    super(PACKAGE_NAME17, SDK_VERSION, config);
   }
   init() {
     const module2 = new import_instrumentation37.InstrumentationNodeModuleDefinition(MODULE_NAME2, SUPPORTED_VERSIONS5);
@@ -41474,22 +41398,22 @@ var KnexInstrumentation = class extends import_instrumentation37.Instrumentation
   _createQueryWrapper(moduleVersion) {
     return function wrapQuery(original) {
       return function wrapped_logging_method(query) {
-        const config2 = this.client.config;
+        const config = this.client.config;
         const table = extractTableName(this.builder);
         const operation = query?.method;
-        const connectionString = config2?.connection?.connectionString;
-        const name = config2?.connection?.filename || config2?.connection?.database || extractDatabaseFromConnectionString(connectionString);
+        const connectionString = config?.connection?.connectionString;
+        const name = config?.connection?.filename || config?.connection?.database || extractDatabaseFromConnectionString(connectionString);
         const attributes = {
           [SEMANTIC_ATTRIBUTE_SENTRY_ORIGIN]: ORIGIN15,
           "knex.version": moduleVersion,
           [ut]: mapSystem(this.client.driverName),
           [ATTR_DB_SQL_TABLE]: table,
           [$i]: operation,
-          [gt]: config2?.connection?.user,
+          [gt]: config?.connection?.user,
           [Ji]: name,
-          [vo]: config2?.connection?.host ?? extractHostFromConnectionString(connectionString),
-          [fo]: config2?.connection?.port ?? extractPortFromConnectionString(connectionString),
-          [Ro]: config2?.connection?.filename === ":memory:" ? "inproc" : void 0,
+          [vo]: config?.connection?.host ?? extractHostFromConnectionString(connectionString),
+          [fo]: config?.connection?.port ?? extractPortFromConnectionString(connectionString),
+          [Ro]: config?.connection?.filename === ":memory:" ? "inproc" : void 0,
           [pt]: limitLength(query?.sql, MAX_QUERY_LENGTH)
         };
         const parentSpan = this.builder[parentSpanSymbol] || getActiveSpan();
@@ -41591,8 +41515,8 @@ function setDatabase(databaseName) {
   });
 }
 var _TediousInstrumentation = class _TediousInstrumentation2 extends import_instrumentation39.InstrumentationBase {
-  constructor(config2 = {}) {
-    super(PACKAGE_NAME18, SDK_VERSION, config2);
+  constructor(config = {}) {
+    super(PACKAGE_NAME18, SDK_VERSION, config);
   }
   init() {
     return [
@@ -41742,8 +41666,8 @@ var import_instrumentation41 = __toESM(require_src4(), 1);
 var MODULE_NAME3 = "generic-pool";
 var PACKAGE_NAME19 = "@sentry/instrumentation-generic-pool";
 var GenericPoolInstrumentation = class extends import_instrumentation41.InstrumentationBase {
-  constructor(config2 = {}) {
-    super(PACKAGE_NAME19, SDK_VERSION, config2);
+  constructor(config = {}) {
+    super(PACKAGE_NAME19, SDK_VERSION, config);
     this._isDisabled = false;
   }
   init() {
@@ -41891,8 +41815,8 @@ function getSpanOp(operation) {
   return void 0;
 }
 var DataloaderInstrumentation = class extends import_instrumentation43.InstrumentationBase {
-  constructor(config2 = {}) {
-    super(PACKAGE_NAME20, SDK_VERSION, config2);
+  constructor(config = {}) {
+    super(PACKAGE_NAME20, SDK_VERSION, config);
   }
   init() {
     return [
@@ -42411,8 +42335,8 @@ function getPublishPatch(original) {
 var PACKAGE_NAME21 = "@sentry/instrumentation-amqplib";
 var supportedVersions3 = [">=0.5.5 <2"];
 var AmqplibInstrumentation = class extends import_instrumentation45.InstrumentationBase {
-  constructor(config2 = {}) {
-    super(PACKAGE_NAME21, SDK_VERSION, config2);
+  constructor(config = {}) {
+    super(PACKAGE_NAME21, SDK_VERSION, config);
   }
   init() {
     const channelModelModuleFile = new InstrumentationNodeModuleFile(
@@ -42611,8 +42535,8 @@ function determineRecordingSettings(integrationRecordingOptions, methodTelemetry
   return { recordInputs, recordOutputs };
 }
 var SentryVercelAiInstrumentation = class extends import_instrumentation47.InstrumentationBase {
-  constructor(config2 = {}) {
-    super("@sentry/instrumentation-vercel-ai", SDK_VERSION, config2);
+  constructor(config = {}) {
+    super("@sentry/instrumentation-vercel-ai", SDK_VERSION, config);
     this._isPatched = false;
     this._callbacks = [];
   }
@@ -42728,8 +42652,8 @@ var vercelAIIntegration = defineIntegration(_vercelAIIntegration);
 var import_instrumentation49 = __toESM(require_src4(), 1);
 var supportedVersions4 = [">=4.0.0 <7"];
 var SentryOpenAiInstrumentation = class extends import_instrumentation49.InstrumentationBase {
-  constructor(config2 = {}) {
-    super("@sentry/instrumentation-openai", SDK_VERSION, config2);
+  constructor(config = {}) {
+    super("@sentry/instrumentation-openai", SDK_VERSION, config);
   }
   /**
    * Initializes the instrumentation by defining the modules to be patched.
@@ -42755,13 +42679,13 @@ var SentryOpenAiInstrumentation = class extends import_instrumentation49.Instrum
     if (!Original) {
       return exports2;
     }
-    const config2 = this.getConfig();
+    const config = this.getConfig();
     const WrappedOpenAI = function(...args) {
       if (_INTERNAL_shouldSkipAiProviderWrapping(OPENAI_INTEGRATION_NAME)) {
         return Reflect.construct(Original, args);
       }
       const instance = Reflect.construct(Original, args);
-      return instrumentOpenAiClient(instance, config2);
+      return instrumentOpenAiClient(instance, config);
     };
     Object.setPrototypeOf(WrappedOpenAI, Original);
     Object.setPrototypeOf(WrappedOpenAI.prototype, Original.prototype);
@@ -42818,8 +42742,8 @@ var openAIIntegration = defineIntegration(_openAiIntegration);
 var import_instrumentation51 = __toESM(require_src4(), 1);
 var supportedVersions5 = [">=0.19.2 <1.0.0"];
 var SentryAnthropicAiInstrumentation = class extends import_instrumentation51.InstrumentationBase {
-  constructor(config2 = {}) {
-    super("@sentry/instrumentation-anthropic-ai", SDK_VERSION, config2);
+  constructor(config = {}) {
+    super("@sentry/instrumentation-anthropic-ai", SDK_VERSION, config);
   }
   /**
    * Initializes the instrumentation by defining the modules to be patched.
@@ -42837,13 +42761,13 @@ var SentryAnthropicAiInstrumentation = class extends import_instrumentation51.In
    */
   _patch(exports2) {
     const Original = exports2.Anthropic;
-    const config2 = this.getConfig();
+    const config = this.getConfig();
     const WrappedAnthropic = function(...args) {
       if (_INTERNAL_shouldSkipAiProviderWrapping(ANTHROPIC_AI_INTEGRATION_NAME)) {
         return Reflect.construct(Original, args);
       }
       const instance = Reflect.construct(Original, args);
-      return instrumentAnthropicAiClient(instance, config2);
+      return instrumentAnthropicAiClient(instance, config);
     };
     Object.setPrototypeOf(WrappedAnthropic, Original);
     Object.setPrototypeOf(WrappedAnthropic.prototype, Original.prototype);
@@ -42901,8 +42825,8 @@ var anthropicAIIntegration = defineIntegration(_anthropicAIIntegration);
 var import_instrumentation53 = __toESM(require_src4(), 1);
 var supportedVersions6 = [">=0.10.0 <2"];
 var SentryGoogleGenAiInstrumentation = class extends import_instrumentation53.InstrumentationBase {
-  constructor(config2 = {}) {
-    super("@sentry/instrumentation-google-genai", SDK_VERSION, config2);
+  constructor(config = {}) {
+    super("@sentry/instrumentation-google-genai", SDK_VERSION, config);
   }
   /**
    * Initializes the instrumentation by defining the modules to be patched.
@@ -42933,7 +42857,7 @@ var SentryGoogleGenAiInstrumentation = class extends import_instrumentation53.In
    */
   _patch(exports2) {
     const Original = exports2.GoogleGenAI;
-    const config2 = this.getConfig();
+    const config = this.getConfig();
     if (typeof Original !== "function") {
       return exports2;
     }
@@ -42942,7 +42866,7 @@ var SentryGoogleGenAiInstrumentation = class extends import_instrumentation53.In
         return Reflect.construct(Original, args);
       }
       const instance = Reflect.construct(Original, args);
-      return instrumentGoogleGenAIClient(instance, config2);
+      return instrumentGoogleGenAIClient(instance, config);
     };
     Object.setPrototypeOf(WrappedGoogleGenAI, Original);
     Object.setPrototypeOf(WrappedGoogleGenAI.prototype, Original.prototype);
@@ -42992,8 +42916,8 @@ function wrapRunnableMethod(originalMethod, sentryHandler, _methodName) {
   });
 }
 var SentryLangChainInstrumentation = class extends import_instrumentation55.InstrumentationBase {
-  constructor(config2 = {}) {
-    super("@sentry/instrumentation-langchain", SDK_VERSION, config2);
+  constructor(config = {}) {
+    super("@sentry/instrumentation-langchain", SDK_VERSION, config);
   }
   /**
    * Initializes the instrumentation by defining the modules to be patched.
@@ -43059,10 +42983,10 @@ var SentryLangChainInstrumentation = class extends import_instrumentation55.Inst
       ANTHROPIC_AI_INTEGRATION_NAME,
       GOOGLE_GENAI_INTEGRATION_NAME
     ]);
-    const config2 = this.getConfig();
-    const sentryHandler = createLangChainCallbackHandler(config2);
+    const config = this.getConfig();
+    const sentryHandler = createLangChainCallbackHandler(config);
     this._patchRunnableMethods(exports2, sentryHandler);
-    this._patchEmbeddingsMethods(exports2, config2);
+    this._patchEmbeddingsMethods(exports2, config);
     return exports2;
   }
   /**
@@ -43148,8 +43072,8 @@ var langChainIntegration = defineIntegration(_langChainIntegration);
 var import_instrumentation57 = __toESM(require_src4(), 1);
 var supportedVersions8 = [">=0.0.0 <2.0.0"];
 var SentryLangGraphInstrumentation = class extends import_instrumentation57.InstrumentationBase {
-  constructor(config2 = {}) {
-    super("@sentry/instrumentation-langgraph", SDK_VERSION, config2);
+  constructor(config = {}) {
+    super("@sentry/instrumentation-langgraph", SDK_VERSION, config);
   }
   /**
    * Initializes the instrumentation by defining the modules to be patched.
@@ -43623,8 +43547,8 @@ function unwrapCommonFunctions(moduleExports, unwrap) {
 var firestoreSupportedVersions = [">=3.0.0 <5"];
 var functionsSupportedVersions = [">=6.0.0 <7"];
 var FirebaseInstrumentation = class extends import_instrumentation61.InstrumentationBase {
-  constructor(config2 = {}) {
-    super("@sentry/instrumentation-firebase", SDK_VERSION, config2);
+  constructor(config = {}) {
+    super("@sentry/instrumentation-firebase", SDK_VERSION, config);
   }
   /**
    *
@@ -45107,8 +45031,8 @@ function wrapFieldResolver2(getConfig3, fieldResolver, isDefaultResolver = false
       return void 0;
     }
     const contextValue = rawContextValue ?? {};
-    const config2 = getConfig3();
-    if (config2.ignoreTrivialResolveSpans && isDefaultResolver && (isObjectLike(source) || typeof source === "function")) {
+    const config = getConfig3();
+    if (config.ignoreTrivialResolveSpans && isDefaultResolver && (isObjectLike(source) || typeof source === "function")) {
       const property = source[info2.fieldName];
       if (typeof property !== "function") {
         return fieldResolver.call(this, source, args, contextValue, info2);
@@ -45299,12 +45223,12 @@ function normalizeExecuteArgs(argsArray) {
     }
   };
 }
-function startExecuteSpan(argsArray, self2, config2, getConfig3) {
+function startExecuteSpan(argsArray, self2, config, getConfig3) {
   const args = normalizeExecuteArgs(argsArray);
   const { schema, document: document2 } = args;
   let { contextValue, fieldResolver } = args;
   const alreadyInstrumented = !!contextValue[GRAPHQL_DATA_SYMBOL];
-  if (!config2.ignoreResolveSpans && !alreadyInstrumented) {
+  if (!config.ignoreResolveSpans && !alreadyInstrumented) {
     const isUsingDefaultResolver = fieldResolver == null;
     const defaultFieldResolver = self2?.defaultFieldResolver;
     const fieldResolverForExecute = fieldResolver ?? defaultFieldResolver;
@@ -45328,7 +45252,7 @@ function startExecuteSpan(argsArray, self2, config2, getConfig3) {
       [zn]: redactGraphqlDocument(document2)
     }
   });
-  if (config2.useOperationNameForRootSpan && operationType) {
+  if (config.useOperationNameForRootSpan && operationType) {
     renameRootSpanWithOperation(span, operationType, operationName || void 0);
   }
   contextValue[GRAPHQL_DATA_SYMBOL] = { source: document2, span, fields: {} };
@@ -45359,8 +45283,8 @@ function safe(fn) {
   }
 }
 var _graphqlChannelIntegration = ((options = {}) => {
-  const config2 = getOptionsWithDefaults2(options);
-  const getConfig3 = () => config2;
+  const config = getOptionsWithDefaults2(options);
+  const getConfig3 = () => config;
   return {
     name: INTEGRATION_NAME60,
     setupOnce() {
@@ -45379,7 +45303,7 @@ var _graphqlChannelIntegration = ((options = {}) => {
         );
         bindTracingChannelToSpan(
           diagnosticsChannel13.tracingChannel(CHANNELS.GRAPHQL_EXECUTE),
-          (data) => safe(() => startExecuteSpan(data.arguments, data.self, config2, getConfig3)),
+          (data) => safe(() => startExecuteSpan(data.arguments, data.self, config, getConfig3)),
           { beforeSpanEnd: (span, data) => void safe(() => finalizeExecuteSpan(span, data.result)) }
         );
       });
@@ -45820,12 +45744,12 @@ function extractSql(firstArg) {
   return void 0;
 }
 function getConnectionConfig(connection2) {
-  const config2 = connection2?.config?.connectionConfig ?? connection2?.config ?? {};
+  const config = connection2?.config?.connectionConfig ?? connection2?.config ?? {};
   return {
-    host: config2.host,
-    port: config2.port,
-    database: config2.database,
-    user: config2.user
+    host: config.host,
+    port: config.port,
+    database: config.database,
+    user: config.user
   };
 }
 function getJDBCString3(host, port, database) {
@@ -47297,7 +47221,7 @@ var import_express7 = __toESM(require("express"), 1);
 init_supabase();
 var import_bcrypt = __toESM(require("bcrypt"), 1);
 var import_crypto2 = __toESM(require("crypto"), 1);
-var import_jsonwebtoken = __toESM(require("jsonwebtoken"), 1);
+var import_jsonwebtoken2 = __toESM(require("jsonwebtoken"), 1);
 init_email();
 
 // src/lib/email-templates.js
@@ -47421,6 +47345,81 @@ function passwordResetConfirmation({ name }) {
 
 // src/modules/auth/auth.controller.js
 init_logger();
+
+// src/middlewares/session.middleware.js
+var import_jsonwebtoken = __toESM(require("jsonwebtoken"), 1);
+init_logger();
+init_redis();
+var REDIS_PREFIX = "narrative:session:";
+var REDIS_SESSION_TTL = 30 * 60;
+var activeSessions = /* @__PURE__ */ new Map();
+var useRedis = () => redis_default && redis_default.status === "ready" && !redis_default.mockMode;
+var SESSION_CLEANUP_INTERVAL = 5 * 60 * 1e3;
+var SESSION_CONFIG = {
+  // Default session timeout: 30 minutes of inactivity
+  DEFAULT_TIMEOUT_MS: parseInt(process.env.SESSION_TIMEOUT_MS || "1800000"),
+  // Maximum concurrent sessions per user
+  MAX_CONCURRENT_SESSIONS: parseInt(process.env.MAX_CONCURRENT_SESSIONS || "3"),
+  // Extended timeout for privileged operations (e.g., during report generation)
+  EXTENDED_TIMEOUT_MS: parseInt(process.env.SESSION_EXTENDED_TIMEOUT_MS || "3600000"),
+  // Warning before session expiry (send to frontend)
+  EXPIRY_WARNING_MS: parseInt(process.env.SESSION_EXPIRY_WARNING_MS || "60000")
+};
+setInterval(() => {
+  if (useRedis()) return;
+  const now = Date.now();
+  let cleaned = 0;
+  for (const [sessionId, session] of activeSessions.entries()) {
+    if (now > session.expiresAt) {
+      activeSessions.delete(sessionId);
+      cleaned++;
+    }
+  }
+  if (cleaned > 0) {
+    logStructured("info", "session_cleanup", {
+      cleaned,
+      activeCount: activeSessions.size
+    });
+  }
+}, SESSION_CLEANUP_INTERVAL);
+async function invalidateUserSessions(userId) {
+  if (useRedis()) {
+    try {
+      const pattern = `${REDIS_PREFIX}*`;
+      let cursor = "0";
+      let deleted2 = 0;
+      do {
+        const [nextCursor, keys] = await redis_default.scan(cursor, "MATCH", pattern, "COUNT", 100);
+        cursor = nextCursor;
+        for (const key of keys) {
+          const data = await redis_default.get(key);
+          if (data) {
+            const session = JSON.parse(data);
+            if (session.userId === userId) {
+              await redis_default.del(key);
+              deleted2++;
+            }
+          }
+        }
+      } while (cursor !== "0");
+      logStructured("info", "sessions_invalidated_redis", { userId, deleted: deleted2 });
+      return deleted2;
+    } catch (error3) {
+      logStructured("error", "redis_session_invalidate_error", { userId, error: error3.message });
+    }
+  }
+  let deleted = 0;
+  for (const [sessionId, session] of activeSessions.entries()) {
+    if (session.userId === userId) {
+      activeSessions.delete(sessionId);
+      deleted++;
+    }
+  }
+  logStructured("info", "sessions_invalidated_memory", { userId, deleted });
+  return deleted;
+}
+
+// src/modules/auth/auth.controller.js
 var JWT_SECRET = process.env.JWT_SECRET;
 var ACCESS_TOKEN_TTL = process.env.ACCESS_TOKEN_TTL || "1h";
 var REFRESH_TOKEN_TTL_DAYS = Number(process.env.REFRESH_TOKEN_TTL_DAYS || 30);
@@ -47494,7 +47493,7 @@ function requireSecretsOrFail(res) {
   return true;
 }
 function signAccessToken(user) {
-  return import_jsonwebtoken.default.sign(
+  return import_jsonwebtoken2.default.sign(
     { id: user.id, email: user.email },
     JWT_SECRET,
     { expiresIn: ACCESS_TOKEN_TTL }
@@ -47540,16 +47539,7 @@ async function issueRefreshToken(user_id) {
   const rawToken = import_crypto2.default.randomBytes(48).toString("hex");
   const token_hash = hashRefreshToken(rawToken);
   const expires_at = new Date(Date.now() + REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1e3);
-  const MAX_REFRESH_TOKENS_PER_USER = 5;
-  const { data: existingTokens } = await supabase_default.from("refresh_tokens").select("id").eq("user_id", user_id).is("revoked_at", null).order("created_at", { ascending: false });
-  if (existingTokens && existingTokens.length >= MAX_REFRESH_TOKENS_PER_USER) {
-    const tokensToRevoke = existingTokens.slice(MAX_REFRESH_TOKENS_PER_USER - 1);
-    for (const token of tokensToRevoke) {
-      await supabase_default.from("refresh_tokens").update({ revoked_at: (/* @__PURE__ */ new Date()).toISOString() }).eq("id", token.id);
-    }
-    logStructured("info", "refresh_tokens_pruned", { user_id, revoked: tokensToRevoke.length });
-  }
-  const { error: error3 } = await supabase_default.from("refresh_tokens").insert({
+  const { error: error3 } = await baseSupabaseAdmin.from("refresh_tokens").insert({
     id: import_crypto2.default.randomUUID(),
     user_id,
     token_hash,
@@ -47562,7 +47552,7 @@ async function storeOAuthExchange({ user_id, provider }) {
   const code = `${provider}.${import_crypto2.default.randomBytes(32).toString("hex")}`;
   const token_hash = hashOAuthExchangeCode(code);
   const expires_at = new Date(Date.now() + OAUTH_EXCHANGE_TTL_MS);
-  const { error: error3 } = await supabase_default.from("refresh_tokens").insert({
+  const { error: error3 } = await baseSupabaseAdmin.from("refresh_tokens").insert({
     id: import_crypto2.default.randomUUID(),
     user_id,
     token_hash,
@@ -47574,19 +47564,19 @@ async function storeOAuthExchange({ user_id, provider }) {
 async function consumeOAuthExchange(code) {
   const token_hash = hashOAuthExchangeCode(code);
   const now = (/* @__PURE__ */ new Date()).toISOString();
-  const { data: tokens, error: findError } = await supabase_default.from("refresh_tokens").select("*").eq("token_hash", token_hash).is("revokedAt", null).gt("expires_at", now);
+  const { data: tokens, error: findError } = await baseSupabaseAdmin.from("refresh_tokens").select("*").eq("token_hash", token_hash).gt("expires_at", now);
   if (findError || !tokens || tokens.length === 0) return null;
   const tokenRow = tokens[0];
-  const { error: updateError } = await supabase_default.from("refresh_tokens").update({ revokedAt: now }).eq("id", tokenRow.id);
-  if (updateError) return null;
-  const { data: user, error: userError } = await supabase_default.from("User").select("*").eq("id", tokenRow.user_id).single();
+  const { error: deleteError } = await baseSupabaseAdmin.from("refresh_tokens").delete().eq("id", tokenRow.id);
+  if (deleteError) return null;
+  const { data: user, error: userError } = await baseSupabaseAdmin.from("users").select("*").eq("id", tokenRow.user_id).single();
   if (userError || !user) return null;
   const provider = code.includes(".") ? code.split(".", 1)[0] : "oauth";
   return { user, provider };
 }
 async function writeAuditLog(user_id, event, metadata = {}) {
   try {
-    const { error: error3 } = await supabase_default.from("audit_logs").insert({
+    const { error: error3 } = await baseSupabaseAdmin.from("audit_logs").insert({
       id: import_crypto2.default.randomUUID(),
       user_id: user_id || null,
       event,
@@ -47614,7 +47604,7 @@ var register2 = async (req, res) => {
     if (passwordError) {
       return res.status(400).json({ error: passwordError });
     }
-    const { data: existingUser, error: existingError } = await supabase_default.from("User").select("*").eq("email", email.toLowerCase()).single();
+    const { data: existingUser, error: existingError } = await baseSupabaseAdmin.from("users").select("*").eq("email", email.toLowerCase()).single();
     if (existingError && existingError.code !== "PGRST116") {
       throw existingError;
     }
@@ -47623,44 +47613,78 @@ var register2 = async (req, res) => {
       return res.status(400).json({ error: "Email already in use." });
     }
     const hashed = await import_bcrypt.default.hash(password, BCRYPT_SALT_ROUNDS);
-    const { data: user, error: createError } = await supabase_default.from("User").insert({
-      id: import_crypto2.default.randomUUID(),
+    const newUserId = import_crypto2.default.randomUUID();
+    const now = (/* @__PURE__ */ new Date()).toISOString();
+    logStructured("info", "register_insert_attempt", { newUserId, email: email.toLowerCase(), name });
+    const { data: user, error: createError } = await baseSupabaseAdmin.from("users").insert({
+      id: newUserId,
       email: email.toLowerCase(),
       password: hashed,
       name,
-      created_at: (/* @__PURE__ */ new Date()).toISOString(),
-      updated_at: (/* @__PURE__ */ new Date()).toISOString()
+      email_verified: false,
+      failed_login_attempts: 0,
+      locked_until: null,
+      created_at: now,
+      updated_at: now
     }).select().single();
-    if (createError) throw createError;
+    if (createError) {
+      logStructured("error", "register_user_insert_failed", {
+        error: createError.message,
+        code: createError.code,
+        details: createError.details,
+        hint: createError.hint,
+        newUserId
+      });
+      throw createError;
+    }
+    logStructured("info", "register_user_inserted", {
+      returnedId: user?.id,
+      returnedEmail: user?.email,
+      returnedKeys: user ? Object.keys(user) : null,
+      returnedValues: user ? Object.fromEntries(Object.entries(user).map(([k, v]) => [k, typeof v === "string" ? v.slice(0, 20) : v])) : null
+    });
+    if (!user?.id || user.id.length === 0) {
+      logStructured("warn", "register_user_id_empty_fetching", { email: email.toLowerCase(), newUserId });
+      const { data: fetchedUser } = await baseSupabaseAdmin.from("users").select("id,email,name").eq("id", newUserId).single();
+      if (!fetchedUser) {
+        logStructured("error", "register_user_fetch_failed", { email: email.toLowerCase(), newUserId });
+        throw new Error("User registration failed: could not retrieve user after insert");
+      }
+      user.id = newUserId;
+    }
     const workspaceId = import_crypto2.default.randomUUID();
     let workspaceSlug = user.email.split("@")[0].replace(/[^a-z0-9]/gi, "-").toLowerCase().substring(0, 50).replace(/^-+|-+$/g, "").replace(/-+/g, "-");
     if (!workspaceSlug || workspaceSlug.length < 3) {
       workspaceSlug = `workspace-${user.id.substring(0, 8)}`;
     }
-    await supabase_default.from("workspaces").insert({
+    const { error: wsError } = await baseSupabaseAdmin.from("workspaces").insert({
       id: workspaceId,
       name: `${user.name || "My"}'s Workspace`,
       slug: workspaceSlug,
       settings: { timezone: "Asia/Jakarta", language: "id" }
-    }).catch((err) => logStructured("warn", "auto_workspace_create_failed", { error: err.message }));
-    await supabase_default.from("workspace_members").insert({
+    });
+    if (wsError) logStructured("warn", "auto_workspace_create_failed", { error: wsError.message });
+    logStructured("info", "register_link_user", { userId: user?.id, wsId: workspaceId });
+    const { error: wmError } = await baseSupabaseAdmin.from("workspace_members").insert({
       workspace_id: workspaceId,
       user_id: user.id,
       role: "owner"
-    }).catch((err) => logStructured("warn", "auto_workspace_member_failed", { error: err.message }));
-    await supabase_default.from("workspace_settings").insert({
+    });
+    if (wmError) logStructured("warn", "auto_workspace_member_failed", { error: wmError.message, userId: user?.id, wsId: workspaceId });
+    const { error: wsSettingsError } = await baseSupabaseAdmin.from("workspace_settings").insert({
       workspace_id: workspaceId,
       brand_name: user.name || "My Workspace",
       timezone: "Asia/Jakarta",
       language: "id"
-    }).catch((err) => logStructured("warn", "auto_workspace_settings_failed", { error: err.message }));
+    });
+    if (wsSettingsError) logStructured("warn", "auto_workspace_settings_failed", { error: wsSettingsError.message });
     await writeAuditLog(user.id, "register_success", { email: user.email, workspace_id: workspaceId });
     const verificationCode = createResetCode();
     const expires_at = new Date(Date.now() + PASSWORD_RESET_TTL_MINUTES * 60 * 1e3);
-    const { error: verifyError } = await supabase_default.from("email_verification_tokens").insert({
+    const { error: verifyError } = await baseSupabaseAdmin.from("email_verification_tokens").insert({
       id: import_crypto2.default.randomUUID(),
       user_id: user.id,
-      code_hash: hashResetSecret(verificationCode),
+      token_hash: hashResetSecret(verificationCode),
       expires_at: expires_at.toISOString()
     });
     if (verifyError) throw verifyError;
@@ -47692,7 +47716,7 @@ var login = async (req, res) => {
     if (checkRateLimit(loginRateBucket, rateKey, LOGIN_MAX_ATTEMPTS, LOGIN_WINDOW_MS)) {
       return res.status(429).json({ error: "Too many login attempts. Try again later." });
     }
-    const { data: user, error: error3 } = await supabase_default.from("User").select("*").eq("email", email.toLowerCase()).single();
+    const { data: user, error: error3 } = await baseSupabaseAdmin.from("users").select("*").eq("email", email.toLowerCase()).single();
     if (error3 && error3.code !== "PGRST116") {
       throw error3;
     }
@@ -47700,7 +47724,6 @@ var login = async (req, res) => {
       await writeAuditLog(null, "failed_login", { email });
       return res.status(401).json({ error: "Invalid credentials." });
     }
-    logStructured("debug", "login_attempt", { email: email.toLowerCase(), user_id: user.id });
     if (!user.email_verified) {
       return res.status(403).json({ error: "Email is not verified.", code: "EMAIL_NOT_VERIFIED", requireVerification: true, email: user.email });
     }
@@ -47713,24 +47736,25 @@ var login = async (req, res) => {
       const nextAttempts = (user.failed_login_attempts || 0) + 1;
       const shouldLock = nextAttempts >= 5;
       const lockUntil = shouldLock ? new Date(Date.now() + 15 * 60 * 1e3).toISOString() : null;
-      const { error: updateError2 } = await supabase_default.from("User").update({
+      const { error: updateError2 } = await baseSupabaseAdmin.from("users").update({
         failed_login_attempts: shouldLock ? 0 : nextAttempts,
-        locked_until: lockUntil
+        locked_until: shouldLock ? lockUntil : null
       }).eq("id", user.id);
       if (updateError2) throw updateError2;
       await writeAuditLog(user.id, "failed_login", { attempts: nextAttempts, locked: shouldLock });
       return res.status(401).json({ error: "Invalid credentials." });
     }
-    const { error: updateError } = await supabase_default.from("User").update({ failed_login_attempts: 0, locked_until: null }).eq("id", user.id);
+    const { error: updateError } = await baseSupabaseAdmin.from("users").update({ failed_login_attempts: 0, locked_until: null }).eq("id", user.id);
     if (updateError) throw updateError;
     let workspace = "Narriv";
     try {
-      const { data: membership } = await supabase_default.from("workspace_members").select("workspace_id").eq("user_id", user.id).single();
+      const { data: membership } = await baseSupabaseAdmin.from("workspace_members").select("workspace_id").eq("user_id", user.id).single();
       if (membership) {
-        const { data: ws } = await supabase_default.from("workspaces").select("name").eq("id", membership.workspace_id).single();
+        const { data: ws } = await baseSupabaseAdmin.from("workspaces").select("name").eq("id", membership.workspace_id).single();
         if (ws) workspace = ws.name;
       }
-    } catch {
+    } catch (err) {
+      logStructured("warn", "workspace_resolution_failed_login", { userId: user.id, error: err.message });
     }
     const token = signAccessToken(user);
     const { refresh_token } = await issueRefreshToken(user.id);
@@ -47750,18 +47774,18 @@ var refresh = async (req, res) => {
     }
     const token_hash = hashRefreshToken(refresh_token);
     const now = (/* @__PURE__ */ new Date()).toISOString();
-    const { data: tokens, error: findError } = await supabase_default.from("refresh_tokens").select("*").eq("token_hash", token_hash).is("revokedAt", null).gt("expires_at", now);
+    const { data: tokens, error: findError } = await baseSupabaseAdmin.from("refresh_tokens").select("*").eq("token_hash", token_hash).gt("expires_at", now);
     if (findError) throw findError;
     if (!tokens || tokens.length === 0) {
       return res.status(401).json({ error: "Invalid refresh token." });
     }
     const tokenRow = tokens[0];
-    const { data: user, error: userError } = await supabase_default.from("User").select("*").eq("id", tokenRow.user_id).single();
+    const { data: user, error: userError } = await baseSupabaseAdmin.from("users").select("*").eq("id", tokenRow.user_id).single();
     if (userError || !user) {
       return res.status(401).json({ error: "Invalid refresh token." });
     }
-    const { error: revokeError } = await supabase_default.from("refresh_tokens").update({ revokedAt: now }).eq("id", tokenRow.id);
-    if (revokeError) throw revokeError;
+    const { error: deleteError } = await baseSupabaseAdmin.from("refresh_tokens").delete().eq("id", tokenRow.id);
+    if (deleteError) throw deleteError;
     const token = signAccessToken(user);
     const next = await issueRefreshToken(user.id);
     await writeAuditLog(user.id, "refresh_success");
@@ -47778,16 +47802,15 @@ var logout = async (req, res) => {
       return res.status(400).json({ error: "refresh_token is required." });
     }
     const token_hash = hashRefreshToken(refresh_token);
-    const { data: tokenRow, error: error3 } = await supabase_default.from("refresh_tokens").select("id, user_id").eq("token_hash", token_hash).is("revokedAt", null).single();
+    const { data: tokenRow, error: error3 } = await baseSupabaseAdmin.from("refresh_tokens").select("id, user_id").eq("token_hash", token_hash).single();
     if (error3 && error3.code !== "PGRST116") {
       throw error3;
     }
     if (!tokenRow) {
       return res.status(200).json({ success: true });
     }
-    const now = (/* @__PURE__ */ new Date()).toISOString();
-    const { error: updateError } = await supabase_default.from("refresh_tokens").update({ revokedAt: now }).eq("id", tokenRow.id);
-    if (updateError) throw updateError;
+    const { error: deleteError } = await baseSupabaseAdmin.from("refresh_tokens").delete().eq("id", tokenRow.id);
+    if (deleteError) throw deleteError;
     await writeAuditLog(tokenRow.user_id, "logout");
     return res.json({ success: true });
   } catch (error3) {
@@ -47803,7 +47826,7 @@ var forgotPassword = async (req, res) => {
     if (checkRateLimit(passwordResetRateBucket, rateKey, PASSWORD_RESET_MAX_ATTEMPTS, PASSWORD_RESET_WINDOW_MS)) {
       return res.status(429).json({ error: "Too many password reset attempts. Try again later." });
     }
-    const { data: tracking } = await supabase_default.from("password_reset_tracking").select("*").eq("user_id", (await supabase_default.from("User").select("id").eq("email", email).single())?.data?.id || "not-found").single();
+    const { data: tracking } = await baseSupabaseAdmin.from("password_reset_tracking").select("*").eq("user_id", (await baseSupabaseAdmin.from("users").select("id").eq("email", email).single())?.data?.id || "not-found").single();
     if (tracking?.locked_until && new Date(tracking.locked_until) > /* @__PURE__ */ new Date()) {
       const remainingMinutes = Math.ceil((new Date(tracking.locked_until).getTime() - Date.now()) / 6e4);
       return res.status(429).json({
@@ -47815,7 +47838,7 @@ var forgotPassword = async (req, res) => {
       success: true,
       message: "If an account exists for this email, a reset code has been generated."
     };
-    const { data: user, error: error3 } = await supabase_default.from("User").select("*").eq("email", email).single();
+    const { data: user, error: error3 } = await baseSupabaseAdmin.from("users").select("*").eq("email", email).single();
     if (error3 && error3.code !== "PGRST116") {
       throw error3;
     }
@@ -47833,39 +47856,38 @@ var forgotPassword = async (req, res) => {
     const resetToken = import_crypto2.default.randomBytes(32).toString("hex");
     const expires_at = new Date(Date.now() + PASSWORD_RESET_TTL_MINUTES * 60 * 1e3);
     const now = (/* @__PURE__ */ new Date()).toISOString();
-    await supabase_default.from("password_reset_tokens").update({ usedAt: now }).eq("user_id", user.id).is("usedAt", null);
-    await supabase_default.from("password_reset_tokens").insert({
+    await baseSupabaseAdmin.from("password_reset_tokens").update({ used_at: now }).eq("user_id", user.id).is("used_at", null);
+    await baseSupabaseAdmin.from("password_reset_tokens").insert({
       id: import_crypto2.default.randomUUID(),
       user_id: user.id,
       token_hash: hashResetSecret(resetToken),
-      code_hash: hashResetSecret(reset_code),
       expires_at: expires_at.toISOString()
     });
     await writeAuditLog(user.id, "password_reset_requested", { email: user.email, ip: clientIP });
     const RESET_LOCKOUT_ATTEMPTS = 5;
     const RESET_LOCKOUT_MINUTES = 15;
     const currentAttempts = (tracking?.attempt_count || 0) + 1;
-    const lockedUntil = currentAttempts >= RESET_LOCKOUT_ATTEMPTS ? new Date(Date.now() + RESET_LOCKOUT_MINUTES * 60 * 1e3).toISOString() : null;
+    const locked_until = currentAttempts >= RESET_LOCKOUT_ATTEMPTS ? new Date(Date.now() + RESET_LOCKOUT_MINUTES * 60 * 1e3).toISOString() : null;
     if (tracking) {
-      await supabase_default.from("password_reset_tracking").update({
+      await baseSupabaseAdmin.from("password_reset_tracking").update({
         attempt_count: currentAttempts,
-        locked_until: lockedUntil,
+        locked_until,
         last_attempt_at: now,
         ip_address: clientIP,
         user_agent: req.headers["user-agent"]
       }).eq("id", tracking.id);
     } else {
-      await supabase_default.from("password_reset_tracking").insert({
+      await baseSupabaseAdmin.from("password_reset_tracking").insert({
         user_id: user.id,
         attempt_count: 1,
-        locked_until: lockedUntil,
+        locked_until,
         first_attempt_at: now,
         last_attempt_at: now,
         ip_address: clientIP,
         user_agent: req.headers["user-agent"]
       });
     }
-    if (lockedUntil) {
+    if (locked_until) {
       logStructured("warn", "password_reset_locked", { user_id: user.id, email: user.email, attempts: currentAttempts });
     }
     const emailTemplate = passwordResetCode({
@@ -47888,7 +47910,7 @@ var verifyResetCode = async (req, res) => {
   try {
     const email = String(req.body.email || "").trim().toLowerCase();
     const code = String(req.body.code || "").trim();
-    const { data: user, error: error3 } = await supabase_default.from("User").select("*").eq("email", email).single();
+    const { data: user, error: error3 } = await baseSupabaseAdmin.from("users").select("*").eq("email", email).single();
     if (error3 && error3.code !== "PGRST116") {
       throw error3;
     }
@@ -47896,17 +47918,17 @@ var verifyResetCode = async (req, res) => {
       return res.status(400).json({ error: "Invalid or expired reset code.", code: "INVALID_RESET_CODE" });
     }
     const now = (/* @__PURE__ */ new Date()).toISOString();
-    const { data: candidates, error: findError } = await supabase_default.from("password_reset_tokens").select("*").eq("user_id", user.id).is("usedAt", null).gt("expires_at", now).order("created_at", { ascending: false }).limit(5);
+    const { data: candidates, error: findError } = await baseSupabaseAdmin.from("password_reset_tokens").select("*").eq("user_id", user.id).is("used_at", null).gt("expires_at", now).order("created_at", { ascending: false }).limit(5);
     if (findError) throw findError;
-    const tokenRow = candidates.find((candidate) => compareResetSecret(code, candidate.code_hash));
+    const tokenRow = candidates.find((candidate) => compareResetSecret(code, candidate.token_hash));
     if (!tokenRow) {
       await writeAuditLog(user.id, "password_reset_code_failed", { email: user.email });
       return res.status(400).json({ error: "Invalid or expired reset code.", code: "INVALID_RESET_CODE" });
     }
     const resetToken = import_crypto2.default.randomBytes(32).toString("hex");
-    const { error: updateError } = await supabase_default.from("password_reset_tokens").update({
+    const { error: updateError } = await baseSupabaseAdmin.from("password_reset_tokens").update({
       token_hash: hashResetSecret(resetToken),
-      verifiedAt: now
+      verified_at: now
     }).eq("id", tokenRow.id);
     if (updateError) throw updateError;
     await writeAuditLog(user.id, "password_reset_code_verified", { email: user.email });
@@ -47920,7 +47942,7 @@ var verifyEmail = async (req, res) => {
   try {
     const email = String(req.body.email || "").trim().toLowerCase();
     const code = String(req.body.code || "").trim();
-    const { data: user, error: error3 } = await supabase_default.from("User").select("*").eq("email", email).single();
+    const { data: user, error: error3 } = await baseSupabaseAdmin.from("users").select("*").eq("email", email).single();
     if (error3 && error3.code !== "PGRST116") {
       throw error3;
     }
@@ -47931,16 +47953,16 @@ var verifyEmail = async (req, res) => {
       return res.status(400).json({ error: "Email is already verified." });
     }
     const now = (/* @__PURE__ */ new Date()).toISOString();
-    const { data: candidates, error: findError } = await supabase_default.from("email_verification_tokens").select("*").eq("user_id", user.id).is("usedAt", null).gt("expires_at", now).order("created_at", { ascending: false }).limit(5);
+    const { data: candidates, error: findError } = await baseSupabaseAdmin.from("email_verification_tokens").select("*").eq("user_id", user.id).is("used_at", null).gt("expires_at", now).order("created_at", { ascending: false }).limit(5);
     if (findError) throw findError;
-    const tokenRow = candidates.find((candidate) => compareResetSecret(code, candidate.code_hash));
+    const tokenRow = candidates.find((candidate) => compareResetSecret(code, candidate.token_hash));
     if (!tokenRow) {
       await writeAuditLog(user.id, "email_verification_failed", { email: user.email });
       return res.status(400).json({ error: "Invalid or expired verification code.", code: "INVALID_VERIFICATION_CODE" });
     }
-    const { error: userUpdateError } = await supabase_default.from("User").update({ email_verified: now }).eq("id", user.id);
+    const { error: userUpdateError } = await baseSupabaseAdmin.from("users").update({ email_verified: (/* @__PURE__ */ new Date()).toISOString() }).eq("id", user.id);
     if (userUpdateError) throw userUpdateError;
-    const { error: tokenUpdateError } = await supabase_default.from("email_verification_tokens").update({ usedAt: now }).eq("id", tokenRow.id);
+    const { error: tokenUpdateError } = await baseSupabaseAdmin.from("email_verification_tokens").update({ used_at: now }).eq("id", tokenRow.id);
     if (tokenUpdateError) throw tokenUpdateError;
     await writeAuditLog(user.id, "email_verified", { email: user.email });
     const token = signAccessToken(user);
@@ -47954,7 +47976,7 @@ var verifyEmail = async (req, res) => {
 var resendVerification = async (req, res) => {
   try {
     const email = String(req.body.email || "").trim().toLowerCase();
-    const { data: user, error: error3 } = await supabase_default.from("User").select("*").eq("email", email).single();
+    const { data: user, error: error3 } = await baseSupabaseAdmin.from("users").select("*").eq("email", email).single();
     const genericResponse = { success: true, message: "If an account exists, a verification code has been sent." };
     if (error3 && error3.code !== "PGRST116") {
       throw error3;
@@ -47970,14 +47992,14 @@ var resendVerification = async (req, res) => {
       return res.status(429).json({ error: "Too many verification requests. Try again later." });
     }
     const now = (/* @__PURE__ */ new Date()).toISOString();
-    const { error: invalidateError } = await supabase_default.from("email_verification_tokens").update({ usedAt: now }).eq("user_id", user.id).is("usedAt", null);
+    const { error: invalidateError } = await baseSupabaseAdmin.from("email_verification_tokens").update({ used_at: now }).eq("user_id", user.id).is("used_at", null);
     if (invalidateError) throw invalidateError;
     const verificationCode = createResetCode();
     const expires_at = new Date(Date.now() + PASSWORD_RESET_TTL_MINUTES * 60 * 1e3);
-    const { error: createError } = await supabase_default.from("email_verification_tokens").insert({
+    const { error: createError } = await baseSupabaseAdmin.from("email_verification_tokens").insert({
       id: import_crypto2.default.randomUUID(),
       user_id: user.id,
-      code_hash: hashResetSecret(verificationCode),
+      token_hash: hashResetSecret(verificationCode),
       expires_at: expires_at.toISOString()
     });
     if (createError) throw createError;
@@ -48002,13 +48024,13 @@ var resetPassword = async (req, res) => {
   try {
     const { resetToken, newPassword } = req.body;
     const now = (/* @__PURE__ */ new Date()).toISOString();
-    const { data: tokens, error: findError } = await supabase_default.from("password_reset_tokens").select("*").eq("token_hash", hashResetSecret(resetToken)).is("usedAt", null).not("verifiedAt", "is", null).gt("expires_at", now);
+    const { data: tokens, error: findError } = await baseSupabaseAdmin.from("password_reset_tokens").select("*").eq("token_hash", hashResetSecret(resetToken)).is("used_at", null).not("verified_at", "is", "null").gt("expires_at", now);
     if (findError) throw findError;
     if (!tokens || tokens.length === 0) {
       return res.status(400).json({ error: "Invalid or expired reset token.", code: "INVALID_RESET_TOKEN" });
     }
     const tokenRow = tokens[0];
-    const { data: user, error: userError } = await supabase_default.from("User").select("*").eq("id", tokenRow.user_id).single();
+    const { data: user, error: userError } = await baseSupabaseAdmin.from("users").select("*").eq("id", tokenRow.user_id).single();
     if (userError || !user) {
       return res.status(400).json({ error: "Invalid or expired reset token.", code: "INVALID_RESET_TOKEN" });
     }
@@ -48017,16 +48039,15 @@ var resetPassword = async (req, res) => {
       return res.status(400).json({ error: passwordError });
     }
     const hashed = await import_bcrypt.default.hash(newPassword, BCRYPT_SALT_ROUNDS);
-    const { error: userUpdateError } = await supabase_default.from("User").update({
+    const { error: userUpdateError } = await baseSupabaseAdmin.from("users").update({
       password: hashed,
       failed_login_attempts: 0,
       locked_until: null
     }).eq("id", tokenRow.user_id);
     if (userUpdateError) throw userUpdateError;
-    const { error: tokenUpdateError } = await supabase_default.from("password_reset_tokens").update({ usedAt: now }).eq("id", tokenRow.id);
+    const { error: tokenUpdateError } = await baseSupabaseAdmin.from("password_reset_tokens").update({ used_at: now }).eq("id", tokenRow.id);
     if (tokenUpdateError) throw tokenUpdateError;
-    const { error: revokeError } = await supabase_default.from("refresh_tokens").update({ revokedAt: now }).eq("user_id", tokenRow.user_id).is("revokedAt", null);
-    if (revokeError) throw revokeError;
+    await baseSupabaseAdmin.from("refresh_tokens").delete().eq("user_id", tokenRow.user_id);
     await writeAuditLog(tokenRow.user_id, "password_reset_completed", { email: user.email });
     const confirmTemplate = passwordResetConfirmation({ name: user.name });
     sendEmail({ to: user.email, ...confirmTemplate }).catch(() => {
@@ -48040,21 +48061,22 @@ var resetPassword = async (req, res) => {
 var me = async (req, res) => {
   try {
     const user_id = req.user.id;
-    const { data: user, error: error3 } = await supabase_default.from("User").select("id, email, name").eq("id", user_id).single();
+    const { data: user, error: error3 } = await baseSupabaseAdmin.from("users").select("id, email, name").eq("id", user_id).single();
     if (error3 && error3.code !== "PGRST116") {
       throw error3;
     }
     if (!user) return res.status(404).json({ error: "User not found." });
     let workspace = null;
     try {
-      const { data: membership } = await supabase_default.from("workspace_members").select("workspace_id, role").eq("user_id", user_id).single();
+      const { data: membership } = await baseSupabaseAdmin.from("workspace_members").select("workspace_id, role").eq("user_id", user_id).single();
       if (membership) {
-        const { data: ws } = await supabase_default.from("workspaces").select("id, name, slug").eq("id", membership.workspace_id).single();
+        const { data: ws } = await baseSupabaseAdmin.from("workspaces").select("id, name, slug").eq("id", membership.workspace_id).single();
         if (ws) {
           workspace = { ...ws, role: membership.role };
         }
       }
-    } catch {
+    } catch (err) {
+      logStructured("warn", "workspace_resolution_failed_me", { userId: req.user.id, error: err.message });
     }
     res.json({ ...user, workspace });
   } catch (error3) {
@@ -48066,7 +48088,7 @@ var changePassword = async (req, res) => {
   try {
     const user_id = req.user.id;
     const { currentPassword, newPassword } = req.body;
-    const { data: user, error: error3 } = await supabase_default.from("User").select("*").eq("id", user_id).single();
+    const { data: user, error: error3 } = await baseSupabaseAdmin.from("users").select("*").eq("id", user_id).single();
     if (error3 && error3.code !== "PGRST116") {
       throw error3;
     }
@@ -48082,7 +48104,7 @@ var changePassword = async (req, res) => {
     if (passwordError) {
       return res.status(400).json({ error: passwordError });
     }
-    const { data: recentPasswords } = await supabase_default.from("password_history").select("password_hash").eq("user_id", user_id).order("created_at", { ascending: false }).limit(5);
+    const { data: recentPasswords } = await baseSupabaseAdmin.from("password_history").select("password_hash").eq("user_id", user_id).order("created_at", { ascending: false }).limit(5);
     if (recentPasswords && recentPasswords.length > 0) {
       for (const entry of recentPasswords) {
         if (await import_bcrypt.default.compare(newPassword, entry.password_hash)) {
@@ -48095,17 +48117,15 @@ var changePassword = async (req, res) => {
       }
     }
     const hashed = await import_bcrypt.default.hash(newPassword, BCRYPT_SALT_ROUNDS);
-    const { error: updateError } = await supabase_default.from("User").update({ password: hashed }).eq("id", user_id);
+    const { error: updateError } = await baseSupabaseAdmin.from("users").update({ password: hashed }).eq("id", user_id);
     if (updateError) throw updateError;
-    await supabase_default.from("password_history").insert({
+    await baseSupabaseAdmin.from("password_history").insert({
       user_id,
       password_hash: user.password
       // Store previous password hash
     });
-    if (typeof invalidateUserSessions === "function") {
-      await invalidateUserSessions(user_id);
-    }
-    await supabase_default.from("refresh_tokens").update({ revoked_at: (/* @__PURE__ */ new Date()).toISOString() }).eq("user_id", user_id);
+    await invalidateUserSessions(user_id);
+    await baseSupabaseAdmin.from("refresh_tokens").delete().eq("user_id", user_id);
     await writeAuditLog(user_id, "password_change", { email: user.email });
     return res.json({ success: true, message: "Password changed. Please login again with your new password." });
   } catch (error3) {
@@ -48170,19 +48190,19 @@ var exchangeOAuthCode = async (req, res) => {
   return res.json({ token, refresh_token, user: toSessionUser(payload.user, payload.provider) });
 };
 async function handleOAuthLogin(res, { provider, providerAccountId, email, name }) {
-  const { data: oauthAccount, error: oauthError } = await supabase_default.from("oauth_accounts").select("*").eq("provider", provider).eq("providerAccountId", providerAccountId).single();
+  const { data: oauthAccount, error: oauthError } = await baseSupabaseAdmin.from("oauth_accounts").select("*").eq("provider", provider).eq("provider_user_id", providerAccountId).single();
   if (oauthError && oauthError.code !== "PGRST116") {
     throw oauthError;
   }
   let user;
   if (oauthAccount) {
-    const { data: userData, error: userError } = await supabase_default.from("User").select("*").eq("id", oauthAccount.user_id).single();
+    const { data: userData, error: userError } = await baseSupabaseAdmin.from("users").select("*").eq("id", oauthAccount.user_id).single();
     if (userError || !userData) {
       throw new Error("OAuth account exists but user not found");
     }
     user = userData;
   } else {
-    const { data: userByEmail, error: userByEmailError } = await supabase_default.from("User").select("*").eq("email", email).single();
+    const { data: userByEmail, error: userByEmailError } = await baseSupabaseAdmin.from("users").select("*").eq("email", email).single();
     if (userByEmailError && userByEmailError.code !== "PGRST116") {
       throw userByEmailError;
     }
@@ -48190,7 +48210,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
     if (!user) {
       const dummyPassword = import_crypto2.default.randomBytes(32).toString("hex");
       const hashedPassword = await import_bcrypt.default.hash(dummyPassword, BCRYPT_SALT_ROUNDS);
-      const { data: newUser, error: createError } = await supabase_default.from("User").insert({
+      const { data: newUser, error: createError } = await baseSupabaseAdmin.from("users").insert({
         email,
         name,
         password: hashedPassword,
@@ -48201,43 +48221,43 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
       user = newUser;
       await writeAuditLog(user.id, "register_success_oauth", { provider, email });
     } else if (!user.email_verified) {
-      const { error: updateError } = await supabase_default.from("User").update({ email_verified: (/* @__PURE__ */ new Date()).toISOString() }).eq("id", user.id);
+      const { error: updateError } = await baseSupabaseAdmin.from("users").update({ email_verified: (/* @__PURE__ */ new Date()).toISOString() }).eq("id", user.id);
       if (updateError) throw updateError;
-      const { data: updatedUser, error: reFetchError } = await supabase_default.from("User").select("*").eq("id", user.id).single();
+      const { data: updatedUser, error: reFetchError } = await baseSupabaseAdmin.from("users").select("*").eq("id", user.id).single();
       if (reFetchError) throw reFetchError;
       user = updatedUser;
     }
-    const { error: linkError } = await supabase_default.from("oauth_accounts").insert({
+    const { error: linkError } = await baseSupabaseAdmin.from("oauth_accounts").insert({
       id: import_crypto2.default.randomUUID(),
       user_id: user.id,
       provider,
-      providerAccountId
+      provider_user_id: providerAccountId
     });
     if (linkError) throw linkError;
-    const { data: existingMembership } = await supabase_default.from("workspace_members").select("id").eq("user_id", user.id).single();
+    const { data: existingMembership } = await baseSupabaseAdmin.from("workspace_members").select("id").eq("user_id", user.id).single();
     if (!existingMembership) {
       const workspaceId = import_crypto2.default.randomUUID();
       let workspaceSlug = email.split("@")[0].replace(/[^a-z0-9]/gi, "-").toLowerCase().substring(0, 50).replace(/^-+|-+$/g, "").replace(/-+/g, "-");
       if (!workspaceSlug || workspaceSlug.length < 3) {
         workspaceSlug = `workspace-${user.id.substring(0, 8)}`;
       }
-      await supabase_default.from("workspaces").insert({
+      const { error: wsError2 } = await baseSupabaseAdmin.from("workspaces").insert({
         id: workspaceId,
         name: `${name || "My"}'s Workspace`,
         slug: workspaceSlug,
         settings: { timezone: "Asia/Jakarta", language: "id" }
-      }).catch(() => {
       });
-      await supabase_default.from("workspace_members").insert({
+      if (wsError2) logStructured("warn", "oauth_workspace_create_failed", { error: wsError2.message });
+      const { error: wmError2 } = await baseSupabaseAdmin.from("workspace_members").insert({
         workspace_id: workspaceId,
         user_id: user.id,
         role: "owner"
-      }).catch(() => {
       });
+      if (wmError2) logStructured("warn", "oauth_workspace_member_failed", { error: wmError2.message });
     }
   }
   if (user.failed_login_attempts > 0 || user.locked_until) {
-    const { error: lockoutError } = await supabase_default.from("User").update({ failed_login_attempts: 0, locked_until: null }).eq("id", user.id);
+    const { error: lockoutError } = await baseSupabaseAdmin.from("users").update({ failed_login_attempts: 0, locked_until: null }).eq("id", user.id);
     if (lockoutError) throw lockoutError;
   }
   await writeAuditLog(user.id, "login_oauth", { provider, email });
@@ -48262,7 +48282,7 @@ var demo = async (req, res) => {
       email_verified: true
       // Skip verification for demo
     };
-    const token = import_jsonwebtoken.default.sign(
+    const token = import_jsonwebtoken2.default.sign(
       {
         id: demoUserId,
         email: demoUser.email,
@@ -48283,6 +48303,14 @@ var demo = async (req, res) => {
       path: "/"
     });
     res.cookie("narriv_refresh_token", refresh_token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 30 * 60 * 1e3,
+      // 30 minutes
+      path: "/"
+    });
+    res.cookie("narriv_auth", token, {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
@@ -48316,7 +48344,7 @@ var demo = async (req, res) => {
 };
 
 // src/middlewares/auth.middleware.js
-var import_jsonwebtoken2 = __toESM(require("jsonwebtoken"), 1);
+var import_jsonwebtoken3 = __toESM(require("jsonwebtoken"), 1);
 init_logger();
 var verifyToken = (req, res, next) => {
   const secret = process.env.JWT_SECRET;
@@ -48343,7 +48371,7 @@ var verifyToken = (req, res, next) => {
     });
   }
   try {
-    const decoded = import_jsonwebtoken2.default.verify(token, secret);
+    const decoded = import_jsonwebtoken3.default.verify(token, secret);
     req.user = decoded;
     next();
   } catch (error3) {
@@ -48459,6 +48487,91 @@ function validateRequest({ body, params, query } = {}) {
   };
 }
 
+// src/lib/sentry.js
+var SENTRY_DSN2 = process.env.SENTRY_DSN;
+if (SENTRY_DSN2) {
+  init2({
+    dsn: SENTRY_DSN2,
+    // Performance monitoring
+    tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1,
+    // Error sampling
+    sampleRate: 1,
+    // Environment
+    environment: process.env.NODE_ENV || "development",
+    // Release tracking
+    release: process.env.npm_package_version || "1.0.0",
+    // Ignore common errors
+    ignoreErrors: [
+      "NetworkError",
+      "FetchError",
+      "ECONNRESET",
+      "ETIMEDOUT",
+      "Socket hang up"
+    ],
+    // Filter breadcrumbs
+    beforeBreadcrumb(breadcrumb) {
+      if (breadcrumb.message?.includes("health")) {
+        return null;
+      }
+      return breadcrumb;
+    },
+    // Attach stacktrace to all thrown errors
+    attachStacktrace: true,
+    // Include node_modules frames in stack traces (disabled by default)
+    includeSourceMaps: process.env.NODE_ENV === "production",
+    // Context extra
+    initialScope: {
+      tags: {
+        service: "narriv-backend",
+        version: process.env.npm_package_version || "1.0.0"
+      }
+    }
+  });
+  console.log("[SENTRY] Initialized with DSN:", SENTRY_DSN2.replace(/\/\/.*@/, "//***@"));
+}
+function captureError2(error3, context2 = {}) {
+  if (!SENTRY_DSN2) {
+    console.error("[SENTRY] Not initialized - error not captured:", error3.message);
+    return;
+  }
+  withScope2((scope) => {
+    if (context2.workspaceId) {
+      scope.setTag("workspace_id", context2.workspaceId);
+    }
+    if (context2.userId) {
+      scope.setTag("user_id", context2.userId);
+    }
+    if (context2.endpoint) {
+      scope.setTag("endpoint", context2.endpoint);
+    }
+    if (context2.extra) {
+      scope.setExtra("custom_data", context2.extra);
+    }
+    if (context2.user) {
+      scope.setUser({
+        id: context2.user.id,
+        email: context2.user.email
+      });
+    }
+    captureException(error3);
+  });
+}
+function wrapAsync(fn) {
+  if (!SENTRY_DSN2) return fn;
+  return (...args) => {
+    return fn(...args).catch((error3) => {
+      captureError2(error3, {
+        extra: {
+          args: args.map(
+            (arg) => typeof arg === "object" ? JSON.stringify(arg).slice(0, 200) : arg
+          )
+        }
+      });
+      throw error3;
+    });
+  };
+}
+
 // src/modules/auth/auth.schema.js
 var import_zod = require("zod");
 var passwordStrengthSchema = import_zod.z.string({ required_error: "Password is required." }).min(10, "Password must be at least 10 characters long.").regex(/[A-Z]/, "Password must contain at least one uppercase letter.").regex(/[a-z]/, "Password must contain at least one lowercase letter.").regex(/[0-9]/, "Password must contain at least one number.").regex(/[^A-Za-z0-9]/, "Password must contain at least one symbol.");
@@ -48502,21 +48615,21 @@ var logoutBodySchema = import_zod.z.object({
 
 // src/modules/auth/auth.routes.js
 var router = import_express7.default.Router();
-router.post("/register", validateRequest({ body: registerBodySchema }), register2);
-router.post("/login", validateRequest({ body: loginBodySchema }), login);
-router.post("/refresh", validateRequest({ body: refreshBodySchema }), refresh);
-router.post("/logout", validateRequest({ body: logoutBodySchema }), logout);
-router.post("/forgot-password", validateRequest({ body: forgotPasswordBodySchema }), forgotPassword);
-router.post("/verify-reset-code", validateRequest({ body: verifyResetCodeBodySchema }), verifyResetCode);
-router.post("/reset-password", validateRequest({ body: resetPasswordBodySchema }), resetPassword);
-router.post("/verify-email", validateRequest({ body: verifyEmailBodySchema }), verifyEmail);
-router.post("/resend-verification", validateRequest({ body: resendVerificationBodySchema }), resendVerification);
-router.post("/change-password", verifyToken, validateRequest({ body: changePasswordBodySchema }), changePassword);
-router.get("/me", verifyToken, me);
-router.post("/demo", demo);
-router.get("/google", googleAuth);
-router.get("/google/callback", googleCallback);
-router.post("/oauth/exchange", exchangeOAuthCode);
+router.post("/register", validateRequest({ body: registerBodySchema }), wrapAsync(register2));
+router.post("/login", validateRequest({ body: loginBodySchema }), wrapAsync(login));
+router.post("/refresh", validateRequest({ body: refreshBodySchema }), wrapAsync(refresh));
+router.post("/logout", validateRequest({ body: logoutBodySchema }), wrapAsync(logout));
+router.post("/forgot-password", validateRequest({ body: forgotPasswordBodySchema }), wrapAsync(forgotPassword));
+router.post("/verify-reset-code", validateRequest({ body: verifyResetCodeBodySchema }), wrapAsync(verifyResetCode));
+router.post("/reset-password", validateRequest({ body: resetPasswordBodySchema }), wrapAsync(resetPassword));
+router.post("/verify-email", validateRequest({ body: verifyEmailBodySchema }), wrapAsync(verifyEmail));
+router.post("/resend-verification", validateRequest({ body: resendVerificationBodySchema }), wrapAsync(resendVerification));
+router.post("/change-password", verifyToken, validateRequest({ body: changePasswordBodySchema }), wrapAsync(changePassword));
+router.get("/me", verifyToken, wrapAsync(me));
+router.post("/demo", wrapAsync(demo));
+router.get("/google", wrapAsync(googleAuth));
+router.get("/google/callback", wrapAsync(googleCallback));
+router.post("/oauth/exchange", wrapAsync(exchangeOAuthCode));
 var auth_routes_default = router;
 
 // src/modules/signals/signals.routes.js
@@ -48590,7 +48703,7 @@ ${errors.map((e) => `  - ${e}`).join("\n")}`);
 
 // src/modules/ai/ai.service.js
 init_logger();
-init_metrics2();
+init_metrics();
 var OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 if (!OPENAI_API_KEY) {
   logStructured("warn", "[AI SERVICE] WARNING: OPENAI_API_KEY is not set. AI features will be disabled.");
@@ -48790,7 +48903,7 @@ globalEvents.setMaxListeners(1e3);
 // src/lib/audit.js
 init_supabase();
 init_logger();
-async function recordAuditLog2({ userId = null, event, workspaceId = null, metadata = {} }) {
+async function recordAuditLog({ userId = null, event, workspaceId = null, metadata = {} }) {
   if (!event) return;
   try {
     const { error: error3 } = await supabase_default.from("audit_logs").insert({
@@ -49175,7 +49288,7 @@ router2.patch("/:id", async (req, res) => {
     }
     const { data: updatedSignal, error: updateError } = await supabase_default.from("signals").update(updateData).eq("id", id).select().single();
     if (updateError) throw updateError;
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       event: "signal_updated",
       workspaceId: existingSignal.workspace_id,
@@ -49201,7 +49314,7 @@ router2.delete("/:id", async (req, res) => {
     await supabase_default.from("signal_analyses").delete().eq("signal_id", id);
     const { error: deleteError } = await supabase_default.from("signals").delete().eq("id", id);
     if (deleteError) throw deleteError;
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       event: "signal_deleted",
       workspaceId: existingSignal.workspace_id,
@@ -49229,7 +49342,7 @@ router2.delete("/", async (req, res) => {
     await supabase_default.from("signal_analyses").delete().in("signal_id", ownedSignalIds);
     const { error: deleteError } = await supabase_default.from("signals").delete().in("id", ownedSignalIds);
     if (deleteError) throw deleteError;
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       event: "signals_bulk_deleted",
       workspaceId: ownedSignalIds.length > 0 ? (signalsToDelete || [])[0]?.workspace_id : null,
@@ -49865,7 +49978,7 @@ var createSource = async (req, res) => {
       return res.status(500).json({ error: "Internal server error" });
     }
     await invalidateWorkspaceCache(targetWorkspaceId);
-    await recordAuditLog2({
+    await recordAuditLog({
       userId,
       event: "source_created",
       workspaceId: targetWorkspaceId,
@@ -49916,7 +50029,7 @@ var updateSource = async (req, res) => {
       return res.status(500).json({ error: "Internal server error" });
     }
     await invalidateWorkspaceCache(existingSource.workspace_id);
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       event: "source_updated",
       workspaceId: existingSource.workspace_id,
@@ -49946,7 +50059,7 @@ var deleteSource = async (req, res) => {
       return res.status(500).json({ error: "Internal server error" });
     }
     await invalidateWorkspaceCache(existingSource.workspace_id);
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       event: "source_deleted",
       workspaceId: existingSource.workspace_id,
@@ -50013,7 +50126,7 @@ var bootstrapDefaultSources = async (req, res) => {
       created.push(source);
     }
     await invalidateWorkspaceCache(targetWorkspaceId);
-    await recordAuditLog2({
+    await recordAuditLog({
       userId,
       event: "default_sources_bootstrapped",
       workspaceId: targetWorkspaceId,
@@ -50195,7 +50308,7 @@ var bootstrapDefaultsBodySchema = import_zod3.z.object({
 // src/modules/sources/sources.routes.js
 var router3 = import_express9.default.Router();
 router3.use(verifyToken);
-router3.get("/", getSources);
+router3.get("/", wrapAsync(getSources));
 router3.post("/", validateRequest({ body: createSourceBodySchema }), createSource);
 router3.get("/presets", validateRequest({ query: sourcePresetsQuerySchema }), getSourcePresets);
 router3.post("/bootstrap-defaults", validateRequest({ body: bootstrapDefaultsBodySchema }), bootstrapDefaultSources);
@@ -50204,7 +50317,7 @@ router3.patch(
   validateRequest({ params: updateSourceParamsSchema, body: updateSourceBodySchema }),
   updateSource
 );
-router3.delete("/:sourceId", deleteSource);
+router3.delete("/:sourceId", wrapAsync(deleteSource));
 router3.get("/health", async (req, res) => {
   try {
     const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, req.query.workspaceId);
@@ -50247,7 +50360,7 @@ async function createAndQueueIngestionJob(source, userId) {
   if (error3 || !job) {
     throw new Error(error3?.message || "Failed to create ingestion job");
   }
-  await recordAuditLog2({
+  await recordAuditLog({
     userId,
     event: "ingestion_job_queued",
     workspaceId: source.workspaceId,
@@ -50347,7 +50460,7 @@ var cancelIngestion = async (req, res) => {
       throw updateError;
     }
     const queueCancelResult = await cancelIngestionQueueJob(jobId);
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       event: "ingestion_job_cancelled",
       workspaceId: job.workspace_id,
@@ -50433,7 +50546,7 @@ router4.post(
   validateRequest({ params: triggerIngestionParamsSchema }),
   triggerIngestion
 );
-router4.get("/status/:jobId", getIngestionStatus);
+router4.get("/status/:jobId", wrapAsync(getIngestionStatus));
 router4.post(
   "/cancel/:jobId",
   validateRequest({ params: cancelIngestionParamsSchema, body: cancelIngestionBodySchema }),
@@ -50707,6 +50820,10 @@ function rateLimit(options = {}) {
     }
   };
 }
+function initializeRateLimiter(redisClient) {
+  rate_limit_store_default.setRedis(redisClient);
+  logStructured("info", "rate_limiter_initialized_with_redis");
+}
 var RATE_LIMITS = {
   // AI generation - strict limits
   ai_generation: {
@@ -50922,15 +51039,12 @@ var getSummary = async (req, res) => {
                     captured_at,
                     published_at
                 `).in("workspace_id", workspaceIds).order("captured_at", { ascending: false });
-      if (Object.keys(dateFilter).length > 0) {
-        signalsQuery = signalsQuery.filter("captured_at", Object.keys(dateFilter)[0], dateFilter[Object.keys(dateFilter)[0]]);
-        if (dateFilter.gte && dateFilter.lte) {
-          signalsQuery = signalsQuery.gte("captured_at", dateFilter.gte).lte("captured_at", dateFilter.lte);
-        } else if (dateFilter.gte) {
-          signalsQuery = signalsQuery.gte("captured_at", dateFilter.gte);
-        } else if (dateFilter.lte) {
-          signalsQuery = signalsQuery.lte("captured_at", dateFilter.lte);
-        }
+      if (dateFilter.gte && dateFilter.lte) {
+        signalsQuery = signalsQuery.gte("captured_at", dateFilter.gte).lte("captured_at", dateFilter.lte);
+      } else if (dateFilter.gte) {
+        signalsQuery = signalsQuery.gte("captured_at", dateFilter.gte);
+      } else if (dateFilter.lte) {
+        signalsQuery = signalsQuery.lte("captured_at", dateFilter.lte);
       }
       const { data: signals, error: signalsError } = await signalsQuery;
       if (signalsError) throw signalsError;
@@ -50973,13 +51087,12 @@ var getSummary = async (req, res) => {
       } catch (e) {
       }
       const top_topics = (clusters || []).slice(0, 5).map((c) => {
-        const deltaPercent2 = Math.round((Math.random() - 0.5) * 20);
-        const deltaStr2 = (deltaPercent2 >= 0 ? "+" : "") + deltaPercent2 + "%";
         return {
           name: { en: c.title || "Unknown", id: c.title || "Unknown" },
           mentions: String(c.signal_count || 0),
-          delta: deltaStr2,
-          tone: deltaPercent2 >= 0 ? "green" : "red"
+          delta: null,
+          // Real delta requires historical snapshots — track in a future migration
+          tone: null
         };
       });
       const mini_topics = (clusters || []).slice(0, 6).map((c, index) => {
@@ -51070,7 +51183,7 @@ var getSummary = async (req, res) => {
 // src/modules/dashboard/dashboard.routes.js
 var router6 = import_express12.default.Router();
 router6.use(verifyToken);
-router6.get("/summary", getSummary);
+router6.get("/summary", wrapAsync(getSummary));
 var dashboard_routes_default = router6;
 
 // src/modules/alerts/alerts.routes.js
@@ -51139,7 +51252,7 @@ router7.post("/", validateRequest({ body: createAlertBodySchema }), async (req, 
     const { title, type, severity, whatHappened, whyItMatters, whatToDo, assignedTo, assignedTeam, deadline, sources, workspaceId } = req.body;
     const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
     if (!scopedWorkspaceId) {
-      return res.status(403).json({ error: "Workspace access denied" });
+      return res.status(404).json({ error: "Workspace access denied" });
     }
     const { data: alert, error: alertError } = await supabase_default.from("alerts").insert({
       workspace_id: scopedWorkspaceId,
@@ -51843,7 +51956,7 @@ router9.post("/", async (req, res) => {
       logStructured("error", "Error creating narrative:", { error: error3.message || error3 });
       return res.status(500).json({ error: "Internal server error" });
     }
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       event: "narrative_created",
       workspaceId: scopedWorkspaceId,
@@ -51882,7 +51995,7 @@ router9.patch("/:id", async (req, res) => {
       logStructured("error", "Error updating narrative:", { error: error3.message || error3 });
       return res.status(500).json({ error: "Internal server error" });
     }
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       event: "narrative_updated",
       workspaceId: scopedWorkspaceId,
@@ -51911,7 +52024,7 @@ router9.delete("/:id", async (req, res) => {
       logStructured("error", "Error deleting narrative:", { error: error3.message || error3 });
       return res.status(500).json({ error: "Internal server error" });
     }
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       event: "narrative_deleted",
       workspaceId: scopedWorkspaceId,
@@ -52532,7 +52645,7 @@ async function cleanupExpiredReportExports(limit = 100) {
 }
 
 // src/modules/reports/reports.routes.js
-init_metrics2();
+init_metrics();
 
 // src/modules/reports/reports.schema.js
 var import_zod9 = require("zod");
@@ -52882,7 +52995,7 @@ router11.post("/", validateRequest({ body: createReportBodySchema }), async (req
       return res.status(403).json({ error: "Workspace access denied" });
     }
     const report = await generateReport({ workspaceId: scopedWorkspaceId, title, periodStart, periodEnd });
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       event: "report_created",
       workspaceId: scopedWorkspaceId,
@@ -53032,7 +53145,7 @@ router11.delete("/templates/:id", async (req, res) => {
     if (deleteError) {
       throw deleteError;
     }
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       event: "template_deleted",
       workspaceId: scopedWorkspaceId,
@@ -53220,7 +53333,7 @@ router11.post("/generate", validateRequest({ body: generateReportBodySchema }), 
       templateKey,
       options: { dateRange }
     });
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       event: "report_generated_from_template",
       workspaceId: scopedWorkspaceId,
@@ -53275,7 +53388,7 @@ router11.post("/:id/export", validateRequest({ params: reportIdParamsSchema, bod
         fileName: `narriv-report-${report.id.substring(0, 8)}.${normalizedFormat}`,
         baseUrl
       });
-      await recordAuditLog2({
+      await recordAuditLog({
         userId: req.user.id,
         event: "report_export_created",
         workspaceId: report.workspace_id,
@@ -54300,7 +54413,7 @@ router12.post("/", validateRequest({ body: createActionPlanBodySchema }), async 
       });
     }
     const plan = await generateActionPlan({ workspaceId: scopedWorkspaceId, strategyType, alertId, clusterId });
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       event: "action_plan_generated",
       workspaceId: scopedWorkspaceId,
@@ -54450,7 +54563,7 @@ router12.post("/multi-step", async (req, res) => {
       clusterId,
       maxSteps: Math.min(Math.max(parseInt(maxSteps) || 5, 2), 10)
     });
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       event: "multi_step_action_plan_generated",
       workspaceId: scopedWorkspaceId,
@@ -55066,7 +55179,7 @@ router14.post("/", validateRequest({ body: submitFeedbackBodySchema }), async (r
       reason,
       userId
     });
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       event: "ai_feedback_submitted",
       workspaceId: scopedWorkspaceId,
@@ -55198,7 +55311,7 @@ async function updateWorkspaceSettings(req, res) {
       }
       updated = data;
     }
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       workspaceId: scopedWorkspaceId,
       event: "workspace_settings_updated",
@@ -55292,7 +55405,7 @@ async function createWorkspaceMember(req, res) {
       logStructured("error", "Error creating workspace member:", { error: createError?.message || createError });
       return internalError(res);
     }
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       event: "workspace_member_added",
       workspaceId: scopedWorkspaceId,
@@ -55353,7 +55466,7 @@ async function deleteWorkspace(req, res) {
     const counts = countResults.map((r) => r.count || 0);
     const hasTenantData = counts.some((count2) => count2 > 0);
     if (hasTenantData) {
-      await recordAuditLog2({
+      await recordAuditLog({
         userId: req.user.id,
         workspaceId: scopedWorkspaceId,
         event: "workspace_delete_restricted",
@@ -55396,7 +55509,7 @@ async function deleteWorkspace(req, res) {
       logStructured("error", "Error deleting workspace:", { error: deleteWorkspaceError?.message || deleteWorkspaceError });
       return internalError(res);
     }
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       workspaceId: scopedWorkspaceId,
       event: "workspace_deleted",
@@ -55527,7 +55640,7 @@ async function updateNotificationSettings(req, res) {
       }
       updated = data;
     }
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       workspaceId: scopedWorkspaceId,
       event: "notification_settings_updated",
@@ -55573,7 +55686,7 @@ var updateNotificationSettingsBodySchema = import_zod15.z.object({
 });
 
 // src/modules/workspace-settings/workspace-logo.controller.js
-var import_fs3 = __toESM(require("fs"), 1);
+var import_fs2 = __toESM(require("fs"), 1);
 var import_path4 = __toESM(require("path"), 1);
 var import_crypto4 = __toESM(require("crypto"), 1);
 init_supabase();
@@ -55581,8 +55694,8 @@ init_logger();
 var UPLOAD_DIR = import_path4.default.join(process.cwd(), "uploads", "logos");
 var MAX_FILE_SIZE = 2 * 1024 * 1024;
 function ensureUploadDir() {
-  if (!import_fs3.default.existsSync(UPLOAD_DIR)) {
-    import_fs3.default.mkdirSync(UPLOAD_DIR, { recursive: true });
+  if (!import_fs2.default.existsSync(UPLOAD_DIR)) {
+    import_fs2.default.mkdirSync(UPLOAD_DIR, { recursive: true });
   }
 }
 function getExtensionFromMime(mimeType) {
@@ -55610,7 +55723,7 @@ async function uploadWorkspaceLogo(req, res) {
     const uniqueName = `${import_crypto4.default.randomUUID()}${ext}`;
     ensureUploadDir();
     const filePath = import_path4.default.join(UPLOAD_DIR, uniqueName);
-    import_fs3.default.writeFileSync(filePath, buffer);
+    import_fs2.default.writeFileSync(filePath, buffer);
     const logo_url = `/uploads/logos/${uniqueName}`;
     const { data: existing } = await supabase_default.from("workspace_settings").select("id").eq("workspace_id", scopedWorkspaceId).maybeSingle();
     if (existing) {
@@ -55621,7 +55734,7 @@ async function uploadWorkspaceLogo(req, res) {
         logo_url
       });
     }
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       workspaceId: scopedWorkspaceId,
       event: "workspace_logo_uploaded",
@@ -55901,7 +56014,7 @@ async function createOnboardingWorkspace(req, res) {
     if (memberError) {
       logStructured("error", "Error creating workspace member:", { error: memberError?.message || memberError });
     }
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       workspaceId: workspace.id,
       event: "onboarding_workspace_created",
@@ -55948,7 +56061,7 @@ async function createOnboardingSources(req, res) {
       logStructured("error", "Error creating sources:", { error: createError?.message || createError });
       return internalError(res);
     }
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       workspaceId,
       event: "onboarding_sources_created",
@@ -56055,7 +56168,7 @@ async function createOnboardingTeam(req, res) {
       }
       results.push({ email: member.email, status: "added", role: member.role });
     }
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       workspaceId,
       event: "onboarding_team_invited",
@@ -56123,7 +56236,7 @@ async function createOnboardingKeywords(req, res) {
       logStructured("error", "Error creating monitoring keywords:", { error: error3?.message || error3 });
       return internalError(res);
     }
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       workspaceId,
       event: "onboarding_keywords_created",
@@ -56191,7 +56304,7 @@ async function completeOnboarding(req, res) {
         }
       }
     }
-    await recordAuditLog2({
+    await recordAuditLog({
       userId: req.user.id,
       workspaceId,
       event: "onboarding_completed",
@@ -56271,7 +56384,7 @@ var router17 = import_express23.default.Router();
 router17.use(verifyToken);
 router17.post("/workspace", validateRequest({ body: onboardingWorkspaceBodySchema }), createOnboardingWorkspace);
 router17.post("/sources", validateRequest({ body: onboardingSourcesBodySchema }), createOnboardingSources);
-router17.get("/source-templates", getSourceTemplates);
+router17.get("/source-templates", wrapAsync(getSourceTemplates));
 router17.post("/keywords", validateRequest({ body: onboardingKeywordsBodySchema }), createOnboardingKeywords);
 router17.post("/notifications", validateRequest({ body: onboardingNotificationsBodySchema }), createOnboardingNotifications);
 router17.post("/team", validateRequest({ body: onboardingTeamBodySchema }), createOnboardingTeam);
@@ -56549,7 +56662,7 @@ async function getIntegration(req, res) {
 }
 async function createIntegration(req, res) {
   try {
-    const { workspaceId, name, platform: platform2, config: config2 } = req.body;
+    const { workspaceId, name, platform: platform2, config } = req.body;
     const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
     if (!scopedWorkspaceId) {
       return forbidden(res, "Workspace access denied", "WORKSPACE_ACCESS_DENIED");
@@ -56558,7 +56671,7 @@ async function createIntegration(req, res) {
       workspace_id: scopedWorkspaceId,
       name,
       platform: platform2,
-      config: config2 || {}
+      config: config || {}
     }).select().single();
     if (error3) {
       logStructured("error", "Error creating integration:", { error: error3.message || error3 });
@@ -56835,11 +56948,11 @@ var streamNotifications = async (req, res) => {
 
 // src/modules/app-notifications/app-notifications.routes.js
 var router20 = import_express26.default.Router();
-router20.get("/stream", verifyToken, streamNotifications);
+router20.get("/stream", verifyToken, wrapAsync(streamNotifications));
 router20.use(verifyToken);
-router20.get("/", getNotifications);
-router20.patch("/read-all", markAllAsRead);
-router20.patch("/:id/read", markAsRead);
+router20.get("/", wrapAsync(getNotifications));
+router20.patch("/read-all", wrapAsync(markAllAsRead));
+router20.patch("/:id/read", wrapAsync(markAsRead));
 var app_notifications_routes_default = router20;
 
 // src/modules/cost/cost.routes.js
@@ -57531,15 +57644,23 @@ function removeSSEConnection(workspaceId, connectionId) {
     });
   }
 }
-function updateConnectionPing(workspaceId, connectionId) {
+async function updateConnectionPing(workspaceId, connectionId) {
   if (isRedisAvailable2()) {
-    const key = `${SSE_KEY_PREFIX}${workspaceId}`;
-    const data = redis_default.hget(key, connectionId);
-    if (data) {
-      const parsed = JSON.parse(data);
-      parsed.lastPing = (/* @__PURE__ */ new Date()).toISOString();
-      redis_default.hset(key, connectionId, JSON.stringify(parsed));
-      redis_default.expire(key, SSE_TTL);
+    try {
+      const key = `${SSE_KEY_PREFIX}${workspaceId}`;
+      const data = await redis_default.hget(key, connectionId);
+      if (data) {
+        const parsed = JSON.parse(data);
+        parsed.lastPing = (/* @__PURE__ */ new Date()).toISOString();
+        await redis_default.hset(key, connectionId, JSON.stringify(parsed));
+        await redis_default.expire(key, SSE_TTL);
+      }
+    } catch (err) {
+      logStructured("error", "sse_ping_update_failed", {
+        workspaceId,
+        connectionId,
+        error: err.message
+      });
     }
   } else {
     const workspaceConnections = memoryConnections.get(workspaceId);
@@ -57559,28 +57680,37 @@ function getConnectionCount(workspaceId) {
     return workspaceConnections ? workspaceConnections.size : 0;
   }
 }
-function broadcastToWorkspace(workspaceId, event, data) {
+async function broadcastToWorkspace(workspaceId, event, data) {
   const message = formatSSEMessage(event, data);
   if (isRedisAvailable2()) {
     const channel3 = `${SSE_KEY_PREFIX}broadcast:${workspaceId}`;
     const payload = JSON.stringify({ event, data, message });
-    redis_default.publish(channel3, payload);
-    const key = `${SSE_KEY_PREFIX}${workspaceId}`;
-    const connectionIds = redis_default.hkeys(key);
-    let delivered = 0;
-    for (const connId of connectionIds) {
-      const connData = redis_default.hget(key, connId);
-      if (connData) {
-        delivered++;
+    try {
+      await redis_default.publish(channel3, payload);
+      const key = `${SSE_KEY_PREFIX}${workspaceId}`;
+      const connectionIds = await redis_default.hkeys(key);
+      let delivered = 0;
+      for (const connId of connectionIds) {
+        const connData = await redis_default.hget(key, connId);
+        if (connData) {
+          delivered++;
+        }
       }
+      logStructured("info", "sse_broadcast_redis", {
+        workspaceId,
+        event,
+        delivered,
+        mode: "redis_pubsub"
+      });
+      return delivered;
+    } catch (err) {
+      logStructured("error", "sse_broadcast_redis_failed", {
+        workspaceId,
+        event,
+        error: err.message
+      });
+      return 0;
     }
-    logStructured("info", "sse_broadcast_redis", {
-      workspaceId,
-      event,
-      delivered,
-      mode: "redis_pubsub"
-    });
-    return delivered;
   } else {
     const workspaceConnections = memoryConnections.get(workspaceId);
     if (!workspaceConnections || workspaceConnections.size === 0) {
@@ -58791,12 +58921,12 @@ router24.get("/stream", verifyToken, async (req, res) => {
       connectionId,
       connectionCount: getConnectionCount(workspaceId)
     });
-    const heartbeatInterval = setInterval(() => {
+    const heartbeatInterval = setInterval(async () => {
       try {
         res.write(formatSSEMessage("heartbeat", {
           timestamp: Date.now()
         }));
-        updateConnectionPing(workspaceId, connectionId);
+        await updateConnectionPing(workspaceId, connectionId);
       } catch (error3) {
         clearInterval(heartbeatInterval);
       }
@@ -59386,7 +59516,8 @@ async function getRuntimeHealth() {
 
 // src/index.js
 init_logger();
-init_metrics2();
+init_metrics();
+init_redis();
 
 // src/middlewares/error-handler.js
 init_logger();
@@ -59682,7 +59813,8 @@ async function flushAllAuditLogs() {
 }
 
 // src/index.js
-import_dotenv3.default.config();
+import_dotenv2.default.config();
+initializeRateLimiter(redis_default);
 scheduleAlertDetection();
 scheduleAlertEscalation();
 scheduleVisibilityScans();
@@ -59736,6 +59868,38 @@ app.get("/health/runtime", async (req, res) => {
   const statusCode = health.status === "ok" ? 200 : 503;
   res.status(statusCode).json(health);
 });
+app.get("/debug/rls", async (req, res) => {
+  try {
+    const testId = crypto.randomUUID();
+    const testEmail = `rls-debug-${Date.now()}@test.com`;
+    const { data: user, error: insertErr } = await baseSupabaseAdmin.from("users").insert({
+      id: testId,
+      email: testEmail,
+      name: "Debug",
+      password: "hashed",
+      email_verified: false,
+      failed_login_attempts: 0,
+      locked_until: null,
+      created_at: (/* @__PURE__ */ new Date()).toISOString(),
+      updated_at: (/* @__PURE__ */ new Date()).toISOString()
+    }).select().single();
+    if (insertErr) {
+      const { data: existingUser, error: selectErr } = await baseSupabaseAdmin.from("users").select("id,email,email_verified").limit(1).single();
+      res.json({
+        insertError: insertErr.message,
+        insertCode: insertErr.code,
+        selectWorks: !selectErr,
+        selectSample: selectErr ? null : existingUser,
+        hint: insertErr.message.includes("42501") ? "RLS policy blocks even service_role. Check if users table is in correct schema." : null
+      });
+      return;
+    }
+    await baseSupabaseAdmin.from("users").delete().eq("id", testId);
+    res.json({ success: true, userId: user.id });
+  } catch (err) {
+    res.json({ error: err.message });
+  }
+});
 app.get("/metrics", verifyToken, (req, res) => {
   res.status(200).json(getMetricsSnapshot());
 });
@@ -59782,6 +59946,22 @@ var gracefulShutdown = async (signal) => {
 };
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("unhandledRejection", (reason, promise) => {
+  logStructured("error", "unhandled_promise_rejection", {
+    reason: String(reason),
+    stack: reason instanceof Error ? reason.stack : void 0
+  });
+  if (process.env.NODE_ENV === "production") {
+    gracefulShutdown("unhandledRejection");
+  }
+});
+process.on("uncaughtException", (err) => {
+  logStructured("error", "uncaught_exception", {
+    message: err.message,
+    stack: err.stack
+  });
+  gracefulShutdown("uncaughtException");
+});
 var handler = (req, res) => {
   const server = app;
   server(req, res);

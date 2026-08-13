@@ -3,6 +3,7 @@ import cors from "cors";
 import compression from "compression";
 import dotenv from "dotenv";
 import supabaseAdmin from "./lib/supabase.js";
+import { baseSupabaseAdmin } from "./lib/supabase.js";
 
 // Import Sentry for error tracking
 import { Sentry, flushSentry } from "./lib/sentry-wrapper.js";
@@ -140,7 +141,54 @@ app.get("/health/runtime", async (req, res) => {
     res.status(statusCode).json(health);
 });
 
-// Metrics endpoint (protected)
+// Debug RLS endpoint - REMOVE IN PRODUCTION
+app.get("/debug/rls", async (req, res) => {
+    try {
+        const testId = crypto.randomUUID();
+        const testEmail = `rls-debug-${Date.now()}@test.com`;
+
+        // Test 1: Try INSERT directly
+        const { data: user, error: insertErr } = await baseSupabaseAdmin
+            .from("users")
+            .insert({
+                id: testId,
+                email: testEmail,
+                name: "Debug",
+                password: "hashed",
+                email_verified: false,
+                failed_login_attempts: 0,
+                locked_until: null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            })
+            .select()
+            .single();
+
+        if (insertErr) {
+            // Test 2: Check existing user with SELECT
+            const { data: existingUser, error: selectErr } = await baseSupabaseAdmin
+                .from("users")
+                .select("id,email,email_verified")
+                .limit(1)
+                .single();
+
+            res.json({
+                insertError: insertErr.message,
+                insertCode: insertErr.code,
+                selectWorks: !selectErr,
+                selectSample: selectErr ? null : existingUser,
+                hint: insertErr.message.includes("42501") ? "RLS policy blocks even service_role. Check if users table is in correct schema." : null
+            });
+            return;
+        }
+
+        // Clean up
+        await baseSupabaseAdmin.from("users").delete().eq("id", testId);
+        res.json({ success: true, userId: user.id });
+    } catch (err) {
+        res.json({ error: err.message });
+    }
+});
 app.get("/metrics", verifyToken, (req, res) => {
     res.status(200).json(getMetricsSnapshot());
 });

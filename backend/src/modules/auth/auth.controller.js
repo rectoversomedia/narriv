@@ -1,4 +1,4 @@
-import supabase, { baseSupabase } from "../../lib/supabase.js";
+import supabase, { baseSupabase, baseSupabaseAdmin } from "../../lib/supabase.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
@@ -157,7 +157,7 @@ async function issueRefreshToken(user_id) {
     const token_hash = hashRefreshToken(rawToken);
     const expires_at = new Date(Date.now() + REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000);
 
-    const { error } = await baseSupabase.from("refresh_tokens").insert({
+    const { error } = await baseSupabaseAdmin.from("refresh_tokens").insert({
         id: crypto.randomUUID(),
         user_id: user_id,
         token_hash: token_hash,
@@ -174,7 +174,7 @@ async function storeOAuthExchange({ user_id, provider }) {
     const token_hash = hashOAuthExchangeCode(code);
     const expires_at = new Date(Date.now() + OAUTH_EXCHANGE_TTL_MS);
 
-    const { error } = await baseSupabase.from("refresh_tokens").insert({
+    const { error } = await baseSupabaseAdmin.from("refresh_tokens").insert({
         id: crypto.randomUUID(),
         user_id: user_id,
         token_hash: token_hash,
@@ -191,7 +191,7 @@ async function consumeOAuthExchange(code) {
     const now = new Date().toISOString();
 
     // First, find and delete the token
-    const { data: tokens, error: findError } = await baseSupabase
+    const { data: tokens, error: findError } = await baseSupabaseAdmin
         .from("refresh_tokens")
         .select("*")
         .eq("token_hash", token_hash)
@@ -201,7 +201,7 @@ async function consumeOAuthExchange(code) {
 
     const tokenRow = tokens[0];
 
-    const { error: deleteError } = await baseSupabase
+    const { error: deleteError } = await baseSupabaseAdmin
         .from("refresh_tokens")
         .delete()
         .eq("id", tokenRow.id);
@@ -209,7 +209,7 @@ async function consumeOAuthExchange(code) {
     if (deleteError) return null;
 
     // Fetch the user separately
-    const { data: user, error: userError } = await baseSupabase
+    const { data: user, error: userError } = await baseSupabaseAdmin
         .from("users")
         .select("*")
         .eq("id", tokenRow.user_id)
@@ -223,7 +223,7 @@ async function consumeOAuthExchange(code) {
 
 async function writeAuditLog(user_id, event, metadata = {}) {
     try {
-        const { error } = await baseSupabase.from("audit_logs").insert({
+        const { error } = await baseSupabaseAdmin.from("audit_logs").insert({
             id: crypto.randomUUID(),
             user_id: user_id || null,
             event,
@@ -259,7 +259,7 @@ export const register = async (req, res) => {
         }
 
         // Check if user exists
-        const { data: existingUser, error: existingError } = await baseSupabase
+        const { data: existingUser, error: existingError } = await baseSupabaseAdmin
             .from("users")
             .select("*")
             .eq("email", email.toLowerCase())
@@ -279,7 +279,8 @@ export const register = async (req, res) => {
         const now = new Date().toISOString();
 
         // Insert into 'users' (snake_case) - this is the table that workspace_members FK references
-        const { data: user, error: createError } = await baseSupabase
+        logStructured("info", "register_insert_attempt", { newUserId, email: email.toLowerCase(), name });
+        const { data: user, error: createError } = await baseSupabaseAdmin
             .from("users")
             .insert({
                 id: newUserId,
@@ -296,14 +297,27 @@ export const register = async (req, res) => {
             .single();
 
         if (createError) {
-            logStructured("error", "register_user_insert_failed", { error: createError.message, code: createError.code, details: createError.details });
+            logStructured("error", "register_user_insert_failed", {
+                error: createError.message,
+                code: createError.code,
+                details: createError.details,
+                hint: createError.hint,
+                newUserId,
+            });
             throw createError;
         }
+
+        logStructured("info", "register_user_inserted", {
+            returnedId: user?.id,
+            returnedEmail: user?.email,
+            returnedKeys: user ? Object.keys(user) : null,
+            returnedValues: user ? Object.fromEntries(Object.entries(user).map(([k, v]) => [k, typeof v === 'string' ? v.slice(0, 20) : v])) : null,
+        });
 
         // Fallback: if user.id is empty, re-fetch by id
         if (!user?.id || user.id.length === 0) {
             logStructured("warn", "register_user_id_empty_fetching", { email: email.toLowerCase(), newUserId });
-            const { data: fetchedUser } = await baseSupabase.from("users").select("id,email,name").eq("id", newUserId).single();
+            const { data: fetchedUser } = await baseSupabaseAdmin.from("users").select("id,email,name").eq("id", newUserId).single();
             if (!fetchedUser) {
                 logStructured("error", "register_user_fetch_failed", { email: email.toLowerCase(), newUserId });
                 throw new Error("User registration failed: could not retrieve user after insert");
@@ -324,7 +338,7 @@ export const register = async (req, res) => {
         if (!workspaceSlug || workspaceSlug.length < 3) {
             workspaceSlug = `workspace-${user.id.substring(0, 8)}`;
         }
-        const { error: wsError } = await baseSupabase.from("workspaces").insert({
+        const { error: wsError } = await baseSupabaseAdmin.from("workspaces").insert({
             id: workspaceId,
             name: `${user.name || "My"}'s Workspace`,
             slug: workspaceSlug,
@@ -333,15 +347,16 @@ export const register = async (req, res) => {
         if (wsError) logStructured("warn", "auto_workspace_create_failed", { error: wsError.message });
 
         // Link user to workspace as owner
-        const { error: wmError } = await baseSupabase.from("workspace_members").insert({
+        logStructured("info", "register_link_user", { userId: user?.id, wsId: workspaceId });
+        const { error: wmError } = await baseSupabaseAdmin.from("workspace_members").insert({
             workspace_id: workspaceId,
             user_id: user.id,
             role: "owner",
         });
-        if (wmError) logStructured("warn", "auto_workspace_member_failed", { error: wmError.message });
+        if (wmError) logStructured("warn", "auto_workspace_member_failed", { error: wmError.message, userId: user?.id, wsId: workspaceId });
 
         // Create workspace settings
-        const { error: wsSettingsError } = await baseSupabase.from("workspace_settings").insert({
+        const { error: wsSettingsError } = await baseSupabaseAdmin.from("workspace_settings").insert({
             workspace_id: workspaceId,
             brand_name: user.name || "My Workspace",
             timezone: "Asia/Jakarta",
@@ -355,7 +370,7 @@ export const register = async (req, res) => {
         const verificationCode = createResetCode();
         const expires_at = new Date(Date.now() + PASSWORD_RESET_TTL_MINUTES * 60 * 1000);
 
-        const { error: verifyError } = await baseSupabase.from("email_verification_tokens").insert({
+        const { error: verifyError } = await baseSupabaseAdmin.from("email_verification_tokens").insert({
             id: crypto.randomUUID(),
             user_id: user.id,
             token_hash: hashResetSecret(verificationCode),
@@ -398,7 +413,7 @@ export const login = async (req, res) => {
             return res.status(429).json({ error: "Too many login attempts. Try again later." });
         }
 
-        const { data: user, error } = await baseSupabase
+        const { data: user, error } = await baseSupabaseAdmin
             .from("users")
             .select("*")
             .eq("email", email.toLowerCase())
@@ -430,7 +445,7 @@ export const login = async (req, res) => {
             const shouldLock = nextAttempts >= 5;
             const lockUntil = shouldLock ? new Date(Date.now() + 15 * 60 * 1000).toISOString() : null;
 
-            const { error: updateError } = await baseSupabase
+            const { error: updateError } = await baseSupabaseAdmin
                 .from("users")
                 .update({
                     failed_login_attempts: shouldLock ? 0 : nextAttempts,
@@ -444,7 +459,7 @@ export const login = async (req, res) => {
             return res.status(401).json({ error: "Invalid credentials." });
         }
 
-        const { error: updateError } = await baseSupabase
+        const { error: updateError } = await baseSupabaseAdmin
             .from("users")
             .update({ failed_login_attempts: 0, locked_until: null })
             .eq("id", user.id);
@@ -454,15 +469,15 @@ export const login = async (req, res) => {
         // Get user's workspace
         let workspace = "Narriv";
         try {
-            const { data: membership } = await baseSupabase
-        .from("workspace_members")
+            const { data: membership } = await baseSupabaseAdmin
+                .from("workspace_members")
                 .select("workspace_id")
                 .eq("user_id", user.id)
                 .single();
 
             if (membership) {
-                const { data: ws } = await baseSupabase
-        .from("workspaces")
+                const { data: ws } = await baseSupabaseAdmin
+                    .from("workspaces")
                     .select("name")
                     .eq("id", membership.workspace_id)
                     .single();
@@ -496,8 +511,8 @@ export const refresh = async (req, res) => {
         const token_hash = hashRefreshToken(refresh_token);
         const now = new Date().toISOString();
 
-        const { data: tokens, error: findError } = await baseSupabase
-        .from("refresh_tokens")
+        const { data: tokens, error: findError } = await baseSupabaseAdmin
+            .from("refresh_tokens")
             .select("*")
             .eq("token_hash", token_hash)
             .gt("expires_at", now);
@@ -511,7 +526,7 @@ export const refresh = async (req, res) => {
         const tokenRow = tokens[0];
 
         // Fetch user
-        const { data: user, error: userError } = await baseSupabase
+        const { data: user, error: userError } = await baseSupabaseAdmin
             .from("users")
             .select("*")
             .eq("id", tokenRow.user_id)
@@ -522,8 +537,8 @@ export const refresh = async (req, res) => {
         }
 
         // Delete consumed token
-        const { error: deleteError } = await baseSupabase
-        .from("refresh_tokens")
+        const { error: deleteError } = await baseSupabaseAdmin
+            .from("refresh_tokens")
             .delete()
             .eq("id", tokenRow.id);
 
@@ -549,8 +564,8 @@ export const logout = async (req, res) => {
 
         const token_hash = hashRefreshToken(refresh_token);
 
-        const { data: tokenRow, error } = await baseSupabase
-        .from("refresh_tokens")
+        const { data: tokenRow, error } = await baseSupabaseAdmin
+            .from("refresh_tokens")
             .select("id, user_id")
             .eq("token_hash", token_hash)
             .single();
@@ -563,8 +578,8 @@ export const logout = async (req, res) => {
             return res.status(200).json({ success: true });
         }
 
-        const { error: deleteError } = await baseSupabase
-        .from("refresh_tokens")
+        const { error: deleteError } = await baseSupabaseAdmin
+            .from("refresh_tokens")
             .delete()
             .eq("id", tokenRow.id);
 
@@ -590,10 +605,10 @@ export const forgotPassword = async (req, res) => {
         }
 
         // Check account-level lockout for this email
-        const { data: tracking } = await baseSupabase
-        .from("password_reset_tracking")
+        const { data: tracking } = await baseSupabaseAdmin
+            .from("password_reset_tracking")
             .select("*")
-            .eq("user_id", (await baseSupabase.from("users").select("id").eq("email", email).single())?.data?.id || "not-found")
+            .eq("user_id", (await baseSupabaseAdmin.from("users").select("id").eq("email", email).single())?.data?.id || "not-found")
             .single();
 
         if (tracking?.locked_until && new Date(tracking.locked_until) > new Date()) {
@@ -609,7 +624,7 @@ export const forgotPassword = async (req, res) => {
             message: "If an account exists for this email, a reset code has been generated.",
         };
 
-        const { data: user, error } = await baseSupabase
+        const { data: user, error } = await baseSupabaseAdmin
             .from("users")
             .select("*")
             .eq("email", email)
@@ -639,13 +654,13 @@ export const forgotPassword = async (req, res) => {
 
         // Invalidate previous unused tokens
         const now = new Date().toISOString();
-        await baseSupabase
-        .from("password_reset_tokens")
+        await baseSupabaseAdmin
+            .from("password_reset_tokens")
             .update({ used_at: now })
             .eq("user_id", user.id)
             .is("used_at", null);
 
-        await baseSupabase.from("password_reset_tokens").insert({
+        await baseSupabaseAdmin.from("password_reset_tokens").insert({
             id: crypto.randomUUID(),
             user_id: user.id,
             token_hash: hashResetSecret(resetToken),
@@ -663,8 +678,8 @@ export const forgotPassword = async (req, res) => {
             : null;
 
         if (tracking) {
-            await baseSupabase
-        .from("password_reset_tracking")
+            await baseSupabaseAdmin
+                .from("password_reset_tracking")
                 .update({
                     attempt_count: currentAttempts,
                     locked_until: locked_until,
@@ -674,7 +689,7 @@ export const forgotPassword = async (req, res) => {
                 })
                 .eq("id", tracking.id);
         } else {
-            await baseSupabase.from("password_reset_tracking").insert({
+            await baseSupabaseAdmin.from("password_reset_tracking").insert({
                 user_id: user.id,
                 attempt_count: 1,
                 locked_until: locked_until,
@@ -712,7 +727,7 @@ export const verifyResetCode = async (req, res) => {
         const email = String(req.body.email || "").trim().toLowerCase();
         const code = String(req.body.code || "").trim();
 
-        const { data: user, error } = await baseSupabase
+        const { data: user, error } = await baseSupabaseAdmin
             .from("users")
             .select("*")
             .eq("email", email)
@@ -727,8 +742,8 @@ export const verifyResetCode = async (req, res) => {
         }
 
         const now = new Date().toISOString();
-        const { data: candidates, error: findError } = await baseSupabase
-        .from("password_reset_tokens")
+        const { data: candidates, error: findError } = await baseSupabaseAdmin
+            .from("password_reset_tokens")
             .select("*")
             .eq("user_id", user.id)
             .is("used_at", null)
@@ -745,8 +760,8 @@ export const verifyResetCode = async (req, res) => {
         }
 
         const resetToken = crypto.randomBytes(32).toString("hex");
-        const { error: updateError } = await baseSupabase
-        .from("password_reset_tokens")
+        const { error: updateError } = await baseSupabaseAdmin
+            .from("password_reset_tokens")
             .update({
                 token_hash: hashResetSecret(resetToken),
                 verified_at: now,
@@ -770,7 +785,7 @@ export const verifyEmail = async (req, res) => {
         const email = String(req.body.email || "").trim().toLowerCase();
         const code = String(req.body.code || "").trim();
 
-        const { data: user, error } = await baseSupabase
+        const { data: user, error } = await baseSupabaseAdmin
             .from("users")
             .select("*")
             .eq("email", email)
@@ -789,8 +804,8 @@ export const verifyEmail = async (req, res) => {
         }
 
         const now = new Date().toISOString();
-        const { data: candidates, error: findError } = await baseSupabase
-        .from("email_verification_tokens")
+        const { data: candidates, error: findError } = await baseSupabaseAdmin
+            .from("email_verification_tokens")
             .select("*")
             .eq("user_id", user.id)
             .is("used_at", null)
@@ -807,7 +822,7 @@ export const verifyEmail = async (req, res) => {
         }
 
         // Update user email verified
-        const { error: userUpdateError } = await baseSupabase
+        const { error: userUpdateError } = await baseSupabaseAdmin
             .from("users")
             .update({ email_verified: new Date().toISOString() })
             .eq("id", user.id);
@@ -815,8 +830,8 @@ export const verifyEmail = async (req, res) => {
         if (userUpdateError) throw userUpdateError;
 
         // Mark verification token as used
-        const { error: tokenUpdateError } = await baseSupabase
-        .from("email_verification_tokens")
+        const { error: tokenUpdateError } = await baseSupabaseAdmin
+            .from("email_verification_tokens")
             .update({ used_at: now })
             .eq("id", tokenRow.id);
 
@@ -839,7 +854,7 @@ export const resendVerification = async (req, res) => {
     try {
         const email = String(req.body.email || "").trim().toLowerCase();
 
-        const { data: user, error } = await baseSupabase
+        const { data: user, error } = await baseSupabaseAdmin
             .from("users")
             .select("*")
             .eq("email", email)
@@ -867,8 +882,8 @@ export const resendVerification = async (req, res) => {
 
         // Invalidate previous unused tokens
         const now = new Date().toISOString();
-        const { error: invalidateError } = await baseSupabase
-        .from("email_verification_tokens")
+        const { error: invalidateError } = await baseSupabaseAdmin
+            .from("email_verification_tokens")
             .update({ used_at: now })
             .eq("user_id", user.id)
             .is("used_at", null);
@@ -878,7 +893,7 @@ export const resendVerification = async (req, res) => {
         const verificationCode = createResetCode();
         const expires_at = new Date(Date.now() + PASSWORD_RESET_TTL_MINUTES * 60 * 1000);
 
-        const { error: createError } = await baseSupabase.from("email_verification_tokens").insert({
+        const { error: createError } = await baseSupabaseAdmin.from("email_verification_tokens").insert({
             id: crypto.randomUUID(),
             user_id: user.id,
             token_hash: hashResetSecret(verificationCode),
@@ -911,8 +926,8 @@ export const resetPassword = async (req, res) => {
         const { resetToken, newPassword } = req.body;
         const now = new Date().toISOString();
 
-        const { data: tokens, error: findError } = await baseSupabase
-        .from("password_reset_tokens")
+        const { data: tokens, error: findError } = await baseSupabaseAdmin
+            .from("password_reset_tokens")
             .select("*")
             .eq("token_hash", hashResetSecret(resetToken))
             .is("used_at", null)
@@ -928,7 +943,7 @@ export const resetPassword = async (req, res) => {
         const tokenRow = tokens[0];
 
         // Fetch user
-        const { data: user, error: userError } = await baseSupabase
+        const { data: user, error: userError } = await baseSupabaseAdmin
             .from("users")
             .select("*")
             .eq("id", tokenRow.user_id)
@@ -946,7 +961,7 @@ export const resetPassword = async (req, res) => {
         const hashed = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
 
         // Update user password
-        const { error: userUpdateError } = await baseSupabase
+        const { error: userUpdateError } = await baseSupabaseAdmin
             .from("users")
             .update({
                 password: hashed,
@@ -958,16 +973,16 @@ export const resetPassword = async (req, res) => {
         if (userUpdateError) throw userUpdateError;
 
         // Mark reset token as used
-        const { error: tokenUpdateError } = await baseSupabase
-        .from("password_reset_tokens")
+        const { error: tokenUpdateError } = await baseSupabaseAdmin
+            .from("password_reset_tokens")
             .update({ used_at: now })
             .eq("id", tokenRow.id);
 
         if (tokenUpdateError) throw tokenUpdateError;
 
         // Delete all refresh tokens for this user (no revoked_at column)
-        await baseSupabase
-        .from("refresh_tokens")
+        await baseSupabaseAdmin
+            .from("refresh_tokens")
             .delete()
             .eq("user_id", tokenRow.user_id);
 
@@ -988,7 +1003,7 @@ export const me = async (req, res) => {
     try {
         const user_id = req.user.id;
 
-        const { data: user, error } = await baseSupabase
+        const { data: user, error } = await baseSupabaseAdmin
             .from("users")
             .select("id, email, name")
             .eq("id", user_id)
@@ -1003,15 +1018,15 @@ export const me = async (req, res) => {
         // Get workspace info
         let workspace = null;
         try {
-            const { data: membership } = await baseSupabase
-        .from("workspace_members")
+            const { data: membership } = await baseSupabaseAdmin
+            .from("workspace_members")
                 .select("workspace_id, role")
                 .eq("user_id", user_id)
                 .single();
 
             if (membership) {
-                const { data: ws } = await baseSupabase
-        .from("workspaces")
+                const { data: ws } = await baseSupabaseAdmin
+            .from("workspaces")
                     .select("id, name, slug")
                     .eq("id", membership.workspace_id)
                     .single();
@@ -1036,7 +1051,7 @@ export const changePassword = async (req, res) => {
         const user_id = req.user.id;
         const { currentPassword, newPassword } = req.body;
 
-        const { data: user, error } = await baseSupabase
+        const { data: user, error } = await baseSupabaseAdmin
             .from("users")
             .select("*")
             .eq("id", user_id)
@@ -1062,8 +1077,8 @@ export const changePassword = async (req, res) => {
         }
 
         // Check password history (last 5 passwords cannot be reused)
-        const { data: recentPasswords } = await baseSupabase
-        .from("password_history")
+        const { data: recentPasswords } = await baseSupabaseAdmin
+            .from("password_history")
             .select("password_hash")
             .eq("user_id", user_id)
             .order("created_at", { ascending: false })
@@ -1083,7 +1098,7 @@ export const changePassword = async (req, res) => {
 
         const hashed = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
 
-        const { error: updateError } = await baseSupabase
+        const { error: updateError } = await baseSupabaseAdmin
             .from("users")
             .update({ password: hashed })
             .eq("id", user_id);
@@ -1091,8 +1106,8 @@ export const changePassword = async (req, res) => {
         if (updateError) throw updateError;
 
         // Add current password to password history before hashing new one
-        await baseSupabase
-        .from("password_history")
+        await baseSupabaseAdmin
+            .from("password_history")
             .insert({
                 user_id: user_id,
                 password_hash: user.password // Store previous password hash
@@ -1102,8 +1117,8 @@ export const changePassword = async (req, res) => {
         await invalidateUserSessions(user_id);
 
         // Delete all refresh tokens for this user (no revoked_at column)
-        await baseSupabase
-        .from("refresh_tokens")
+        await baseSupabaseAdmin
+            .from("refresh_tokens")
             .delete()
             .eq("user_id", user_id);
 
@@ -1197,8 +1212,8 @@ export const exchangeOAuthCode = async (req, res) => {
 // ==========================================
 async function handleOAuthLogin(res, { provider, providerAccountId, email, name }) {
     // 1. Check if OAuth account exists
-    const { data: oauthAccount, error: oauthError } = await baseSupabase
-        .from("oauth_accounts")
+    const { data: oauthAccount, error: oauthError } = await baseSupabaseAdmin
+            .from("oauth_accounts")
         .select("*")
         .eq("provider", provider)
         .eq("provider_user_id", providerAccountId)
@@ -1212,7 +1227,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
 
     if (oauthAccount) {
         // Fetch user from oauth account
-        const { data: userData, error: userError } = await baseSupabase
+        const { data: userData, error: userError } = await baseSupabaseAdmin
             .from("users")
             .select("*")
             .eq("id", oauthAccount.user_id)
@@ -1224,7 +1239,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
         user = userData;
     } else {
         // 2. Look up user by email
-        const { data: userByEmail, error: userByEmailError } = await baseSupabase
+        const { data: userByEmail, error: userByEmailError } = await baseSupabaseAdmin
             .from("users")
             .select("*")
             .eq("email", email)
@@ -1241,8 +1256,8 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
             const dummyPassword = crypto.randomBytes(32).toString('hex');
             const hashedPassword = await bcrypt.hash(dummyPassword, BCRYPT_SALT_ROUNDS);
 
-            const { data: newUser, error: createError } = await baseSupabase
-                .from("users")
+            const { data: newUser, error: createError } = await baseSupabaseAdmin
+            .from("users")
                 .insert({
                     email,
                     name,
@@ -1258,16 +1273,16 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
             await writeAuditLog(user.id, "register_success_oauth", { provider, email });
         } else if (!user.email_verified) {
             // Auto-verify email if they log in with a matching OAuth account
-            const { error: updateError } = await baseSupabase
-                .from("users")
+            const { error: updateError } = await baseSupabaseAdmin
+            .from("users")
                 .update({ email_verified: new Date().toISOString() })
                 .eq("id", user.id);
 
             if (updateError) throw updateError;
 
             // Re-fetch user with updated email_verified
-            const { data: updatedUser, error: reFetchError } = await baseSupabase
-                .from("users")
+            const { data: updatedUser, error: reFetchError } = await baseSupabaseAdmin
+            .from("users")
                 .select("*")
                 .eq("id", user.id)
                 .single();
@@ -1277,7 +1292,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
         }
 
         // Link the new OAuth account
-        const { error: linkError } = await baseSupabase.from("oauth_accounts").insert({
+        const { error: linkError } = await baseSupabaseAdmin.from("oauth_accounts").insert({
             id: crypto.randomUUID(),
             user_id: user.id,
             provider,
@@ -1287,8 +1302,8 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
         if (linkError) throw linkError;
 
         // Auto-create workspace for new OAuth user if not already in one
-        const { data: existingMembership } = await baseSupabase
-        .from("workspace_members")
+        const { data: existingMembership } = await baseSupabaseAdmin
+            .from("workspace_members")
             .select("id")
             .eq("user_id", user.id)
             .single();
@@ -1305,7 +1320,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
             if (!workspaceSlug || workspaceSlug.length < 3) {
                 workspaceSlug = `workspace-${user.id.substring(0, 8)}`;
             }
-            const { error: wsError2 } = await baseSupabase.from("workspaces").insert({
+            const { error: wsError2 } = await baseSupabaseAdmin.from("workspaces").insert({
                 id: workspaceId,
                 name: `${name || "My"}'s Workspace`,
                 slug: workspaceSlug,
@@ -1313,7 +1328,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
             });
             if (wsError2) logStructured("warn", "oauth_workspace_create_failed", { error: wsError2.message });
 
-            const { error: wmError2 } = await baseSupabase.from("workspace_members").insert({
+            const { error: wmError2 } = await baseSupabaseAdmin.from("workspace_members").insert({
                 workspace_id: workspaceId,
                 user_id: user.id,
                 role: "owner",
@@ -1324,7 +1339,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
 
     // Reset lockout if needed
     if (user.failed_login_attempts > 0 || user.locked_until) {
-        const { error: lockoutError } = await baseSupabase
+        const { error: lockoutError } = await baseSupabaseAdmin
             .from("users")
             .update({ failed_login_attempts: 0, locked_until: null })
             .eq("id", user.id);
