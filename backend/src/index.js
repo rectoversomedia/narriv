@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import compression from "compression";
 import dotenv from "dotenv";
+import supabaseAdmin from "./lib/supabase.js";
 
 // Import Sentry for error tracking
 import { Sentry, flushSentry } from "./lib/sentry-wrapper.js";

@@ -1,4 +1,4 @@
-import supabase from "../../lib/supabase.js";
+import supabase, { baseSupabase } from "../../lib/supabase.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
@@ -157,7 +157,7 @@ async function issueRefreshToken(user_id) {
     const token_hash = hashRefreshToken(rawToken);
     const expires_at = new Date(Date.now() + REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000);
 
-    const { error } = await supabase.from("refresh_tokens").insert({
+    const { error } = await baseSupabase.from("refresh_tokens").insert({
         id: crypto.randomUUID(),
         user_id: user_id,
         token_hash: token_hash,
@@ -174,7 +174,7 @@ async function storeOAuthExchange({ user_id, provider }) {
     const token_hash = hashOAuthExchangeCode(code);
     const expires_at = new Date(Date.now() + OAUTH_EXCHANGE_TTL_MS);
 
-    const { error } = await supabase.from("refresh_tokens").insert({
+    const { error } = await baseSupabase.from("refresh_tokens").insert({
         id: crypto.randomUUID(),
         user_id: user_id,
         token_hash: token_hash,
@@ -191,7 +191,7 @@ async function consumeOAuthExchange(code) {
     const now = new Date().toISOString();
 
     // First, find and delete the token
-    const { data: tokens, error: findError } = await supabase
+    const { data: tokens, error: findError } = await baseSupabase
         .from("refresh_tokens")
         .select("*")
         .eq("token_hash", token_hash)
@@ -201,7 +201,7 @@ async function consumeOAuthExchange(code) {
 
     const tokenRow = tokens[0];
 
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await baseSupabase
         .from("refresh_tokens")
         .delete()
         .eq("id", tokenRow.id);
@@ -209,8 +209,8 @@ async function consumeOAuthExchange(code) {
     if (deleteError) return null;
 
     // Fetch the user separately
-    const { data: user, error: userError } = await supabase
-        .from("User")
+    const { data: user, error: userError } = await baseSupabase
+        .from("users")
         .select("*")
         .eq("id", tokenRow.user_id)
         .single();
@@ -223,7 +223,7 @@ async function consumeOAuthExchange(code) {
 
 async function writeAuditLog(user_id, event, metadata = {}) {
     try {
-        const { error } = await supabase.from("audit_logs").insert({
+        const { error } = await baseSupabase.from("audit_logs").insert({
             id: crypto.randomUUID(),
             user_id: user_id || null,
             event,
@@ -259,8 +259,8 @@ export const register = async (req, res) => {
         }
 
         // Check if user exists
-        const { data: existingUser, error: existingError } = await supabase
-            .from("User")
+        const { data: existingUser, error: existingError } = await baseSupabase
+            .from("users")
             .select("*")
             .eq("email", email.toLowerCase())
             .single();
@@ -275,21 +275,41 @@ export const register = async (req, res) => {
         }
 
         const hashed = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
+        const newUserId = crypto.randomUUID();
+        const now = new Date().toISOString();
 
-        const { data: user, error: createError } = await supabase
-            .from("User")
+        // Insert into 'users' (snake_case) - this is the table that workspace_members FK references
+        const { data: user, error: createError } = await baseSupabase
+            .from("users")
             .insert({
-                id: crypto.randomUUID(),
+                id: newUserId,
                 email: email.toLowerCase(),
                 password: hashed,
                 name,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
+                email_verified: false,
+                failed_login_attempts: 0,
+                locked_until: null,
+                created_at: now,
+                updated_at: now,
             })
             .select()
             .single();
 
-        if (createError) throw createError;
+        if (createError) {
+            logStructured("error", "register_user_insert_failed", { error: createError.message, code: createError.code, details: createError.details });
+            throw createError;
+        }
+
+        // Fallback: if user.id is empty, re-fetch by id
+        if (!user?.id || user.id.length === 0) {
+            logStructured("warn", "register_user_id_empty_fetching", { email: email.toLowerCase(), newUserId });
+            const { data: fetchedUser } = await baseSupabase.from("users").select("id,email,name").eq("id", newUserId).single();
+            if (!fetchedUser) {
+                logStructured("error", "register_user_fetch_failed", { email: email.toLowerCase(), newUserId });
+                throw new Error("User registration failed: could not retrieve user after insert");
+            }
+            user.id = newUserId;
+        }
 
         // Auto-create workspace for new user
         const workspaceId = crypto.randomUUID();
@@ -304,27 +324,30 @@ export const register = async (req, res) => {
         if (!workspaceSlug || workspaceSlug.length < 3) {
             workspaceSlug = `workspace-${user.id.substring(0, 8)}`;
         }
-        await supabase.from("workspaces").insert({
+        const { error: wsError } = await baseSupabase.from("workspaces").insert({
             id: workspaceId,
             name: `${user.name || "My"}'s Workspace`,
             slug: workspaceSlug,
             settings: { timezone: "Asia/Jakarta", language: "id" },
-        }).catch(err => logStructured("warn", "auto_workspace_create_failed", { error: err.message }));
+        });
+        if (wsError) logStructured("warn", "auto_workspace_create_failed", { error: wsError.message });
 
         // Link user to workspace as owner
-        await supabase.from("workspace_members").insert({
+        const { error: wmError } = await baseSupabase.from("workspace_members").insert({
             workspace_id: workspaceId,
             user_id: user.id,
             role: "owner",
-        }).catch(err => logStructured("warn", "auto_workspace_member_failed", { error: err.message }));
+        });
+        if (wmError) logStructured("warn", "auto_workspace_member_failed", { error: wmError.message });
 
         // Create workspace settings
-        await supabase.from("workspace_settings").insert({
+        const { error: wsSettingsError } = await baseSupabase.from("workspace_settings").insert({
             workspace_id: workspaceId,
             brand_name: user.name || "My Workspace",
             timezone: "Asia/Jakarta",
             language: "id",
-        }).catch(err => logStructured("warn", "auto_workspace_settings_failed", { error: err.message }));
+        });
+        if (wsSettingsError) logStructured("warn", "auto_workspace_settings_failed", { error: wsSettingsError.message });
 
         await writeAuditLog(user.id, "register_success", { email: user.email, workspace_id: workspaceId });
 
@@ -332,10 +355,10 @@ export const register = async (req, res) => {
         const verificationCode = createResetCode();
         const expires_at = new Date(Date.now() + PASSWORD_RESET_TTL_MINUTES * 60 * 1000);
 
-        const { error: verifyError } = await supabase.from("email_verification_tokens").insert({
+        const { error: verifyError } = await baseSupabase.from("email_verification_tokens").insert({
             id: crypto.randomUUID(),
             user_id: user.id,
-            code_hash: hashResetSecret(verificationCode),
+            token_hash: hashResetSecret(verificationCode),
             expires_at: expires_at.toISOString(),
         });
 
@@ -375,8 +398,8 @@ export const login = async (req, res) => {
             return res.status(429).json({ error: "Too many login attempts. Try again later." });
         }
 
-        const { data: user, error } = await supabase
-            .from("User")
+        const { data: user, error } = await baseSupabase
+            .from("users")
             .select("*")
             .eq("email", email.toLowerCase())
             .single();
@@ -389,9 +412,6 @@ export const login = async (req, res) => {
             await writeAuditLog(null, "failed_login", { email });
             return res.status(401).json({ error: "Invalid credentials." });
         }
-
-        // DEBUG
-        logStructured("debug", "login_attempt", { email: email.toLowerCase(), user_id: user.id });
 
         // SECURITY FIX: Email verification must ALWAYS be enforced regardless of environment
         // Dev mode bypass has been removed to prevent account takeover in non-production environments
@@ -410,11 +430,11 @@ export const login = async (req, res) => {
             const shouldLock = nextAttempts >= 5;
             const lockUntil = shouldLock ? new Date(Date.now() + 15 * 60 * 1000).toISOString() : null;
 
-            const { error: updateError } = await supabase
-                .from("User")
+            const { error: updateError } = await baseSupabase
+                .from("users")
                 .update({
                     failed_login_attempts: shouldLock ? 0 : nextAttempts,
-                    locked_until: lockUntil,
+                    locked_until: shouldLock ? lockUntil : null,
                 })
                 .eq("id", user.id);
 
@@ -424,8 +444,8 @@ export const login = async (req, res) => {
             return res.status(401).json({ error: "Invalid credentials." });
         }
 
-        const { error: updateError } = await supabase
-            .from("User")
+        const { error: updateError } = await baseSupabase
+            .from("users")
             .update({ failed_login_attempts: 0, locked_until: null })
             .eq("id", user.id);
 
@@ -434,15 +454,15 @@ export const login = async (req, res) => {
         // Get user's workspace
         let workspace = "Narriv";
         try {
-            const { data: membership } = await supabase
-                .from("workspace_members")
+            const { data: membership } = await baseSupabase
+        .from("workspace_members")
                 .select("workspace_id")
                 .eq("user_id", user.id)
                 .single();
 
             if (membership) {
-                const { data: ws } = await supabase
-                    .from("workspaces")
+                const { data: ws } = await baseSupabase
+        .from("workspaces")
                     .select("name")
                     .eq("id", membership.workspace_id)
                     .single();
@@ -476,8 +496,8 @@ export const refresh = async (req, res) => {
         const token_hash = hashRefreshToken(refresh_token);
         const now = new Date().toISOString();
 
-        const { data: tokens, error: findError } = await supabase
-            .from("refresh_tokens")
+        const { data: tokens, error: findError } = await baseSupabase
+        .from("refresh_tokens")
             .select("*")
             .eq("token_hash", token_hash)
             .gt("expires_at", now);
@@ -491,8 +511,8 @@ export const refresh = async (req, res) => {
         const tokenRow = tokens[0];
 
         // Fetch user
-        const { data: user, error: userError } = await supabase
-            .from("User")
+        const { data: user, error: userError } = await baseSupabase
+            .from("users")
             .select("*")
             .eq("id", tokenRow.user_id)
             .single();
@@ -502,8 +522,8 @@ export const refresh = async (req, res) => {
         }
 
         // Delete consumed token
-        const { error: deleteError } = await supabase
-            .from("refresh_tokens")
+        const { error: deleteError } = await baseSupabase
+        .from("refresh_tokens")
             .delete()
             .eq("id", tokenRow.id);
 
@@ -529,8 +549,8 @@ export const logout = async (req, res) => {
 
         const token_hash = hashRefreshToken(refresh_token);
 
-        const { data: tokenRow, error } = await supabase
-            .from("refresh_tokens")
+        const { data: tokenRow, error } = await baseSupabase
+        .from("refresh_tokens")
             .select("id, user_id")
             .eq("token_hash", token_hash)
             .single();
@@ -543,8 +563,8 @@ export const logout = async (req, res) => {
             return res.status(200).json({ success: true });
         }
 
-        const { error: deleteError } = await supabase
-            .from("refresh_tokens")
+        const { error: deleteError } = await baseSupabase
+        .from("refresh_tokens")
             .delete()
             .eq("id", tokenRow.id);
 
@@ -570,10 +590,10 @@ export const forgotPassword = async (req, res) => {
         }
 
         // Check account-level lockout for this email
-        const { data: tracking } = await supabase
-            .from("password_reset_tracking")
+        const { data: tracking } = await baseSupabase
+        .from("password_reset_tracking")
             .select("*")
-            .eq("user_id", (await supabase.from("User").select("id").eq("email", email).single())?.data?.id || "not-found")
+            .eq("user_id", (await baseSupabase.from("users").select("id").eq("email", email).single())?.data?.id || "not-found")
             .single();
 
         if (tracking?.locked_until && new Date(tracking.locked_until) > new Date()) {
@@ -589,8 +609,8 @@ export const forgotPassword = async (req, res) => {
             message: "If an account exists for this email, a reset code has been generated.",
         };
 
-        const { data: user, error } = await supabase
-            .from("User")
+        const { data: user, error } = await baseSupabase
+            .from("users")
             .select("*")
             .eq("email", email)
             .single();
@@ -619,17 +639,16 @@ export const forgotPassword = async (req, res) => {
 
         // Invalidate previous unused tokens
         const now = new Date().toISOString();
-        await supabase
-            .from("password_reset_tokens")
+        await baseSupabase
+        .from("password_reset_tokens")
             .update({ used_at: now })
             .eq("user_id", user.id)
             .is("used_at", null);
 
-        await supabase.from("password_reset_tokens").insert({
+        await baseSupabase.from("password_reset_tokens").insert({
             id: crypto.randomUUID(),
             user_id: user.id,
             token_hash: hashResetSecret(resetToken),
-            code_hash: hashResetSecret(reset_code),
             expires_at: expires_at.toISOString(),
         });
 
@@ -639,26 +658,26 @@ export const forgotPassword = async (req, res) => {
         const RESET_LOCKOUT_ATTEMPTS = 5;
         const RESET_LOCKOUT_MINUTES = 15;
         const currentAttempts = (tracking?.attempt_count || 0) + 1;
-        const lockedUntil = currentAttempts >= RESET_LOCKOUT_ATTEMPTS
+        const locked_until = currentAttempts >= RESET_LOCKOUT_ATTEMPTS
             ? new Date(Date.now() + RESET_LOCKOUT_MINUTES * 60 * 1000).toISOString()
             : null;
 
         if (tracking) {
-            await supabase
-                .from("password_reset_tracking")
+            await baseSupabase
+        .from("password_reset_tracking")
                 .update({
                     attempt_count: currentAttempts,
-                    locked_until: lockedUntil,
+                    locked_until: locked_until,
                     last_attempt_at: now,
                     ip_address: clientIP,
                     user_agent: req.headers["user-agent"]
                 })
                 .eq("id", tracking.id);
         } else {
-            await supabase.from("password_reset_tracking").insert({
+            await baseSupabase.from("password_reset_tracking").insert({
                 user_id: user.id,
                 attempt_count: 1,
-                locked_until: lockedUntil,
+                locked_until: locked_until,
                 first_attempt_at: now,
                 last_attempt_at: now,
                 ip_address: clientIP,
@@ -666,7 +685,7 @@ export const forgotPassword = async (req, res) => {
             });
         }
 
-        if (lockedUntil) {
+        if (locked_until) {
             logStructured("warn", "password_reset_locked", { user_id: user.id, email: user.email, attempts: currentAttempts });
         }
 
@@ -693,8 +712,8 @@ export const verifyResetCode = async (req, res) => {
         const email = String(req.body.email || "").trim().toLowerCase();
         const code = String(req.body.code || "").trim();
 
-        const { data: user, error } = await supabase
-            .from("User")
+        const { data: user, error } = await baseSupabase
+            .from("users")
             .select("*")
             .eq("email", email)
             .single();
@@ -708,8 +727,8 @@ export const verifyResetCode = async (req, res) => {
         }
 
         const now = new Date().toISOString();
-        const { data: candidates, error: findError } = await supabase
-            .from("password_reset_tokens")
+        const { data: candidates, error: findError } = await baseSupabase
+        .from("password_reset_tokens")
             .select("*")
             .eq("user_id", user.id)
             .is("used_at", null)
@@ -719,15 +738,15 @@ export const verifyResetCode = async (req, res) => {
 
         if (findError) throw findError;
 
-        const tokenRow = candidates.find((candidate) => compareResetSecret(code, candidate.code_hash));
+        const tokenRow = candidates.find((candidate) => compareResetSecret(code, candidate.token_hash));
         if (!tokenRow) {
             await writeAuditLog(user.id, "password_reset_code_failed", { email: user.email });
             return res.status(400).json({ error: "Invalid or expired reset code.", code: "INVALID_RESET_CODE" });
         }
 
         const resetToken = crypto.randomBytes(32).toString("hex");
-        const { error: updateError } = await supabase
-            .from("password_reset_tokens")
+        const { error: updateError } = await baseSupabase
+        .from("password_reset_tokens")
             .update({
                 token_hash: hashResetSecret(resetToken),
                 verified_at: now,
@@ -751,8 +770,8 @@ export const verifyEmail = async (req, res) => {
         const email = String(req.body.email || "").trim().toLowerCase();
         const code = String(req.body.code || "").trim();
 
-        const { data: user, error } = await supabase
-            .from("User")
+        const { data: user, error } = await baseSupabase
+            .from("users")
             .select("*")
             .eq("email", email)
             .single();
@@ -770,8 +789,8 @@ export const verifyEmail = async (req, res) => {
         }
 
         const now = new Date().toISOString();
-        const { data: candidates, error: findError } = await supabase
-            .from("email_verification_tokens")
+        const { data: candidates, error: findError } = await baseSupabase
+        .from("email_verification_tokens")
             .select("*")
             .eq("user_id", user.id)
             .is("used_at", null)
@@ -781,23 +800,23 @@ export const verifyEmail = async (req, res) => {
 
         if (findError) throw findError;
 
-        const tokenRow = candidates.find((candidate) => compareResetSecret(code, candidate.code_hash));
+        const tokenRow = candidates.find((candidate) => compareResetSecret(code, candidate.token_hash));
         if (!tokenRow) {
             await writeAuditLog(user.id, "email_verification_failed", { email: user.email });
             return res.status(400).json({ error: "Invalid or expired verification code.", code: "INVALID_VERIFICATION_CODE" });
         }
 
         // Update user email verified
-        const { error: userUpdateError } = await supabase
-            .from("User")
-            .update({ email_verified: now })
+        const { error: userUpdateError } = await baseSupabase
+            .from("users")
+            .update({ email_verified: new Date().toISOString() })
             .eq("id", user.id);
 
         if (userUpdateError) throw userUpdateError;
 
         // Mark verification token as used
-        const { error: tokenUpdateError } = await supabase
-            .from("email_verification_tokens")
+        const { error: tokenUpdateError } = await baseSupabase
+        .from("email_verification_tokens")
             .update({ used_at: now })
             .eq("id", tokenRow.id);
 
@@ -820,8 +839,8 @@ export const resendVerification = async (req, res) => {
     try {
         const email = String(req.body.email || "").trim().toLowerCase();
 
-        const { data: user, error } = await supabase
-            .from("User")
+        const { data: user, error } = await baseSupabase
+            .from("users")
             .select("*")
             .eq("email", email)
             .single();
@@ -848,8 +867,8 @@ export const resendVerification = async (req, res) => {
 
         // Invalidate previous unused tokens
         const now = new Date().toISOString();
-        const { error: invalidateError } = await supabase
-            .from("email_verification_tokens")
+        const { error: invalidateError } = await baseSupabase
+        .from("email_verification_tokens")
             .update({ used_at: now })
             .eq("user_id", user.id)
             .is("used_at", null);
@@ -859,10 +878,10 @@ export const resendVerification = async (req, res) => {
         const verificationCode = createResetCode();
         const expires_at = new Date(Date.now() + PASSWORD_RESET_TTL_MINUTES * 60 * 1000);
 
-        const { error: createError } = await supabase.from("email_verification_tokens").insert({
+        const { error: createError } = await baseSupabase.from("email_verification_tokens").insert({
             id: crypto.randomUUID(),
             user_id: user.id,
-            code_hash: hashResetSecret(verificationCode),
+            token_hash: hashResetSecret(verificationCode),
             expires_at: expires_at.toISOString(),
         });
 
@@ -892,8 +911,8 @@ export const resetPassword = async (req, res) => {
         const { resetToken, newPassword } = req.body;
         const now = new Date().toISOString();
 
-        const { data: tokens, error: findError } = await supabase
-            .from("password_reset_tokens")
+        const { data: tokens, error: findError } = await baseSupabase
+        .from("password_reset_tokens")
             .select("*")
             .eq("token_hash", hashResetSecret(resetToken))
             .is("used_at", null)
@@ -909,8 +928,8 @@ export const resetPassword = async (req, res) => {
         const tokenRow = tokens[0];
 
         // Fetch user
-        const { data: user, error: userError } = await supabase
-            .from("User")
+        const { data: user, error: userError } = await baseSupabase
+            .from("users")
             .select("*")
             .eq("id", tokenRow.user_id)
             .single();
@@ -927,8 +946,8 @@ export const resetPassword = async (req, res) => {
         const hashed = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
 
         // Update user password
-        const { error: userUpdateError } = await supabase
-            .from("User")
+        const { error: userUpdateError } = await baseSupabase
+            .from("users")
             .update({
                 password: hashed,
                 failed_login_attempts: 0,
@@ -939,16 +958,16 @@ export const resetPassword = async (req, res) => {
         if (userUpdateError) throw userUpdateError;
 
         // Mark reset token as used
-        const { error: tokenUpdateError } = await supabase
-            .from("password_reset_tokens")
+        const { error: tokenUpdateError } = await baseSupabase
+        .from("password_reset_tokens")
             .update({ used_at: now })
             .eq("id", tokenRow.id);
 
         if (tokenUpdateError) throw tokenUpdateError;
 
         // Delete all refresh tokens for this user (no revoked_at column)
-        await supabase
-            .from("refresh_tokens")
+        await baseSupabase
+        .from("refresh_tokens")
             .delete()
             .eq("user_id", tokenRow.user_id);
 
@@ -969,8 +988,8 @@ export const me = async (req, res) => {
     try {
         const user_id = req.user.id;
 
-        const { data: user, error } = await supabase
-            .from("User")
+        const { data: user, error } = await baseSupabase
+            .from("users")
             .select("id, email, name")
             .eq("id", user_id)
             .single();
@@ -984,15 +1003,15 @@ export const me = async (req, res) => {
         // Get workspace info
         let workspace = null;
         try {
-            const { data: membership } = await supabase
-                .from("workspace_members")
+            const { data: membership } = await baseSupabase
+        .from("workspace_members")
                 .select("workspace_id, role")
                 .eq("user_id", user_id)
                 .single();
 
             if (membership) {
-                const { data: ws } = await supabase
-                    .from("workspaces")
+                const { data: ws } = await baseSupabase
+        .from("workspaces")
                     .select("id, name, slug")
                     .eq("id", membership.workspace_id)
                     .single();
@@ -1017,8 +1036,8 @@ export const changePassword = async (req, res) => {
         const user_id = req.user.id;
         const { currentPassword, newPassword } = req.body;
 
-        const { data: user, error } = await supabase
-            .from("User")
+        const { data: user, error } = await baseSupabase
+            .from("users")
             .select("*")
             .eq("id", user_id)
             .single();
@@ -1043,8 +1062,8 @@ export const changePassword = async (req, res) => {
         }
 
         // Check password history (last 5 passwords cannot be reused)
-        const { data: recentPasswords } = await supabase
-            .from("password_history")
+        const { data: recentPasswords } = await baseSupabase
+        .from("password_history")
             .select("password_hash")
             .eq("user_id", user_id)
             .order("created_at", { ascending: false })
@@ -1064,16 +1083,16 @@ export const changePassword = async (req, res) => {
 
         const hashed = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
 
-        const { error: updateError } = await supabase
-            .from("User")
+        const { error: updateError } = await baseSupabase
+            .from("users")
             .update({ password: hashed })
             .eq("id", user_id);
 
         if (updateError) throw updateError;
 
         // Add current password to password history before hashing new one
-        await supabase
-            .from("password_history")
+        await baseSupabase
+        .from("password_history")
             .insert({
                 user_id: user_id,
                 password_hash: user.password // Store previous password hash
@@ -1083,8 +1102,8 @@ export const changePassword = async (req, res) => {
         await invalidateUserSessions(user_id);
 
         // Delete all refresh tokens for this user (no revoked_at column)
-        await supabase
-            .from("refresh_tokens")
+        await baseSupabase
+        .from("refresh_tokens")
             .delete()
             .eq("user_id", user_id);
 
@@ -1178,11 +1197,11 @@ export const exchangeOAuthCode = async (req, res) => {
 // ==========================================
 async function handleOAuthLogin(res, { provider, providerAccountId, email, name }) {
     // 1. Check if OAuth account exists
-    const { data: oauthAccount, error: oauthError } = await supabase
+    const { data: oauthAccount, error: oauthError } = await baseSupabase
         .from("oauth_accounts")
         .select("*")
         .eq("provider", provider)
-        .eq("providerAccountId", providerAccountId)
+        .eq("provider_user_id", providerAccountId)
         .single();
 
     if (oauthError && oauthError.code !== "PGRST116") {
@@ -1193,8 +1212,8 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
 
     if (oauthAccount) {
         // Fetch user from oauth account
-        const { data: userData, error: userError } = await supabase
-            .from("User")
+        const { data: userData, error: userError } = await baseSupabase
+            .from("users")
             .select("*")
             .eq("id", oauthAccount.user_id)
             .single();
@@ -1205,8 +1224,8 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
         user = userData;
     } else {
         // 2. Look up user by email
-        const { data: userByEmail, error: userByEmailError } = await supabase
-            .from("User")
+        const { data: userByEmail, error: userByEmailError } = await baseSupabase
+            .from("users")
             .select("*")
             .eq("email", email)
             .single();
@@ -1222,8 +1241,8 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
             const dummyPassword = crypto.randomBytes(32).toString('hex');
             const hashedPassword = await bcrypt.hash(dummyPassword, BCRYPT_SALT_ROUNDS);
 
-            const { data: newUser, error: createError } = await supabase
-                .from("User")
+            const { data: newUser, error: createError } = await baseSupabase
+                .from("users")
                 .insert({
                     email,
                     name,
@@ -1239,16 +1258,16 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
             await writeAuditLog(user.id, "register_success_oauth", { provider, email });
         } else if (!user.email_verified) {
             // Auto-verify email if they log in with a matching OAuth account
-            const { error: updateError } = await supabase
-                .from("User")
+            const { error: updateError } = await baseSupabase
+                .from("users")
                 .update({ email_verified: new Date().toISOString() })
                 .eq("id", user.id);
 
             if (updateError) throw updateError;
 
             // Re-fetch user with updated email_verified
-            const { data: updatedUser, error: reFetchError } = await supabase
-                .from("User")
+            const { data: updatedUser, error: reFetchError } = await baseSupabase
+                .from("users")
                 .select("*")
                 .eq("id", user.id)
                 .single();
@@ -1258,18 +1277,18 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
         }
 
         // Link the new OAuth account
-        const { error: linkError } = await supabase.from("oauth_accounts").insert({
+        const { error: linkError } = await baseSupabase.from("oauth_accounts").insert({
             id: crypto.randomUUID(),
             user_id: user.id,
             provider,
-            providerAccountId: providerAccountId,
+            provider_user_id: providerAccountId,
         });
 
         if (linkError) throw linkError;
 
         // Auto-create workspace for new OAuth user if not already in one
-        const { data: existingMembership } = await supabase
-            .from("workspace_members")
+        const { data: existingMembership } = await baseSupabase
+        .from("workspace_members")
             .select("id")
             .eq("user_id", user.id)
             .single();
@@ -1286,25 +1305,27 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
             if (!workspaceSlug || workspaceSlug.length < 3) {
                 workspaceSlug = `workspace-${user.id.substring(0, 8)}`;
             }
-            await supabase.from("workspaces").insert({
+            const { error: wsError2 } = await baseSupabase.from("workspaces").insert({
                 id: workspaceId,
                 name: `${name || "My"}'s Workspace`,
                 slug: workspaceSlug,
                 settings: { timezone: "Asia/Jakarta", language: "id" },
-            }).catch(() => {});
+            });
+            if (wsError2) logStructured("warn", "oauth_workspace_create_failed", { error: wsError2.message });
 
-            await supabase.from("workspace_members").insert({
+            const { error: wmError2 } = await baseSupabase.from("workspace_members").insert({
                 workspace_id: workspaceId,
                 user_id: user.id,
                 role: "owner",
-            }).catch(() => {});
+            });
+            if (wmError2) logStructured("warn", "oauth_workspace_member_failed", { error: wmError2.message });
         }
     }
 
     // Reset lockout if needed
     if (user.failed_login_attempts > 0 || user.locked_until) {
-        const { error: lockoutError } = await supabase
-            .from("User")
+        const { error: lockoutError } = await baseSupabase
+            .from("users")
             .update({ failed_login_attempts: 0, locked_until: null })
             .eq("id", user.id);
 

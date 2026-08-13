@@ -38,7 +38,7 @@ const connectionMetrics = {
 };
 
 // Table name mapping: code usage -> actual PostgreSQL table names
-// The actual table is 'User' (PascalCase), not 'users' (lowercase)
+// The User table is 'User' (PascalCase), not 'users'
 const TABLE_MAP = {
     'users': 'User',
     'refresh_tokens': 'refresh_tokens',
@@ -104,7 +104,7 @@ const TABLE_MAP = {
     'password_history': 'password_history',
 };
 
-// Convert camelCase to snake_case
+// Convert camelCase to snake_case for table name lookup
 function camelToSnake(str) {
     return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
 }
@@ -125,73 +125,10 @@ const anonClient = createClient(supabaseUrl, supabaseAnonKey, {
     auth: { autoRefreshToken: true, persistSession: true },
 });
 
-// Transform a single DB row:
-//   1. snake_case keys -> camelCase (standard PostgREST behavior)
-//   2. camelCase keys -> snake_case aliases (for User table which uses camelCase columns)
-function transformRow(row) {
-    if (!row || typeof row !== 'object') return row;
-    const mapped = {};
-    for (const [key, val] of Object.entries(row)) {
-        mapped[key] = val;
-    }
-    // snake_case -> camelCase (standard tables)
-    if ('email_verified' in row && !('emailVerified' in mapped)) {
-        mapped.emailVerified = row.email_verified;
-        delete mapped.email_verified;
-    }
-    if ('failed_login_attempts' in row && !('failedLoginAttempts' in mapped)) {
-        mapped.failedLoginAttempts = row.failed_login_attempts;
-        delete mapped.failed_login_attempts;
-    }
-    if ('locked_until' in row && !('lockedUntil' in mapped)) {
-        mapped.lockedUntil = row.locked_until;
-        delete mapped.locked_until;
-    }
-    if ('created_at' in row && !('createdAt' in row)) {
-        mapped.createdAt = row.created_at;
-        delete mapped.created_at;
-    }
-    if ('updated_at' in row && !('updatedAt' in row)) {
-        mapped.updatedAt = row.updated_at;
-        delete mapped.updated_at;
-    }
-    // camelCase -> snake_case aliases (User table columns are camelCase in Supabase)
-    if ('emailVerified' in row && !('email_verified' in mapped)) {
-        mapped.email_verified = row.emailVerified;
-    }
-    if ('failedLoginAttempts' in row && !('failed_login_attempts' in mapped)) {
-        mapped.failed_login_attempts = row.failedLoginAttempts;
-    }
-    if ('lockedUntil' in row && !('locked_until' in mapped)) {
-        mapped.locked_until = row.lockedUntil;
-    }
-    return mapped;
-}
-
-// Transform response data: handle null, array, or single object
-function transformResponseData(data) {
-    if (!data) return data;
-    if (Array.isArray(data)) return data.map(transformRow);
-    return transformRow(data);
-}
-
-// Transform an error's .details field (also snake_case from DB)
-function transformErrorDetails(details) {
-    if (!details) return details;
-    if (Array.isArray(details)) return details.map(transformRow);
-    if (typeof details === 'object') return transformRow(details);
-    return details;
-}
-
-// Create wrapped Supabase client.
-// Handles:
-//   1. Table name mapping  (e.g. 'users' -> 'User', 'User' stays 'User')
-//   2. Response data transform  (DB columns -> camelCase + snake_case aliases for callers)
-//   3. Error details transform
-//
-// Key insight: Supabase query builders (PostgrestFilterBuilder) are thenables but NOT
-// instanceof Promise. We intercept .then() on the returned object to transform the
-// resolved data before callers receive it.
+// Simple wrapper that only does table name mapping.
+// Supabase PostgREST returns columns as they exist in the DB.
+// The users/User table uses camelCase columns: emailVerified, failedLoginAttempts, lockedUntil, createdAt, updatedAt.
+// No column transformation needed — raw clients return correct names.
 function createDbClient(base) {
     return new Proxy(base, {
         get(target, prop) {
@@ -200,69 +137,18 @@ function createDbClient(base) {
             if (typeof value !== 'function') return value;
 
             return function(...args) {
-                let tableName = null;
-
                 // Table name mapping
-                if (args[0] !== undefined) {
-                    const arg0 = args[0];
-                    if (typeof arg0 === 'string') {
-                        tableName = toTableName(arg0);
-                        args[0] = tableName;
-                    } else if (arg0 && typeof arg0 === 'object' && !arg0.from && !arg0.select) {
-                        if (typeof arg0.from === 'string') {
-                            tableName = toTableName(arg0.from);
-                            args[0] = { ...arg0, from: tableName };
-                        }
-                    }
+                if (args[0] !== undefined && typeof args[0] === 'string') {
+                    args[0] = toTableName(args[0]);
                 }
 
-                const result = value.apply(target, args);
-
-                // Plain values (auth.user, etc.) -- pass through unchanged
-                if (!result || typeof result.then !== 'function') {
-                    return result;
-                }
-
-                // Real Promises (supabase.auth.signInWithPassword, etc.) -- transform directly
-                if (result instanceof Promise) {
-                    return result.then(response => {
-                        if (response && typeof response === 'object' && 'data' in response) {
-                            return { ...response, data: transformResponseData(response.data) };
-                        }
-                        return response;
-                    });
-                }
-
-                // Query builders (PostgrestFilterBuilder) -- thenables that are NOT
-                // instanceof Promise. We wrap .then() to intercept the resolved data.
-                const thenable = result;
-                const chained = Object.create(Object.getPrototypeOf(thenable));
-                chained.then = (onFulfilled, onRejected) => {
-                    return thenable.then(
-                        (response) => {
-                            if (response && typeof response === 'object' && 'data' in response) {
-                                // Preserve prototype chain and spread response, replacing data with transformed version
-                                const transformed = Object.assign(Object.create(Object.getPrototypeOf(response)), response);
-                                transformed.data = transformResponseData(response.data);
-                                return onFulfilled ? onFulfilled(transformed) : transformed;
-                            }
-                            return onFulfilled ? onFulfilled(response) : response;
-                        },
-                        (err) => {
-                            if (onRejected) return onRejected(err);
-                            throw err;
-                        }
-                    );
-                };
-                chained.catch = (onRejected) => thenable.catch(onRejected);
-                chained.finally = (onFinally) => thenable.finally(onFinally);
-                return chained;
+                return value.apply(target, args);
             };
         }
     });
 }
 
-// Export wrapped clients
+// Export clients
 export const supabaseAdmin = createDbClient(adminClient);
 export const supabase = createDbClient(anonClient);
 

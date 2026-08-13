@@ -148,7 +148,9 @@ export interface UserTable {
   name: string | null;
   avatar_url: string | null;
   role: string;
-  email_verified: boolean;
+  emailVerified: string | null; // ISO date string when verified, null when not
+  failedLoginAttempts: number;
+  lockedUntil: string | null;
   created_at: string;
   updated_at: string;
 }
