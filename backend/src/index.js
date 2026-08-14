@@ -166,36 +166,21 @@ app.get("/debug/rls", async (req, res) => {
             .single();
 
         if (insertErr) {
-            res.json({
-                step: "user_insert",
-                success: false,
-                error: insertErr.message,
-                code: insertErr.code,
-            });
+            res.json({ step: "user_insert", success: false, error: insertErr.message, code: insertErr.code });
             return;
         }
 
         // Step 2: INSERT workspace
-        const { error: wsErr } = await baseSupabaseAdmin.from("workspaces").insert({
-            id: wsId,
-            name: "Debug WS",
-            slug: `debug-ws-${Date.now()}`,
-        });
+        const { error: wsErr } = await baseSupabaseAdmin.from("workspaces").insert({ id: wsId, name: "Debug WS", slug: `debug-ws-${Date.now()}` });
 
-        // Step 3: Try workspace_members INSERT (FK test)
-        const { error: wmErr } = await baseSupabaseAdmin.from("workspace_members").insert({
-            workspace_id: wsId,
-            user_id: user.id,
-            role: "owner",
-        });
+        // Step 3: INSERT workspace_members (FK test)
+        const { error: wmErr } = await baseSupabaseAdmin.from("workspace_members").insert({ workspace_id: wsId, user_id: user.id, role: "owner" });
 
-        // Step 4: Try email_verification_tokens INSERT (FK test)
-        const { error: evErr } = await baseSupabaseAdmin.from("email_verification_tokens").insert({
-            id: crypto.randomUUID(),
-            user_id: user.id,
-            token_hash: "debug_hash",
-            expires_at: new Date(Date.now() + 3600000).toISOString(),
-        });
+        // Step 4: Check if user exists in public.users via direct SELECT
+        const { data: userCheck, error: checkErr } = await baseSupabaseAdmin.from("users").select("id,email").eq("id", user.id).single();
+
+        // Step 5: Check all workspace_members records for this workspace
+        const { data: wmRecords } = await baseSupabaseAdmin.from("workspace_members").select("user_id,workspace_id").eq("workspace_id", wsId);
 
         // Clean up
         await baseSupabaseAdmin.from("workspace_members").delete().eq("workspace_id", wsId);
@@ -203,13 +188,14 @@ app.get("/debug/rls", async (req, res) => {
         await baseSupabaseAdmin.from("users").delete().eq("id", testId);
 
         res.json({
-            success: !wmErr && !evErr,
-            step: "complete",
+            success: !wmErr,
             userId: user.id,
             workspaceId: wsId,
             workspaceError: wsErr?.message || null,
             workspaceMembersError: wmErr?.message || null,
-            emailTokenError: evErr?.message || null,
+            userCheckFound: !!userCheck,
+            userCheckId: userCheck?.id || null,
+            wmRecords: wmRecords || [],
         });
     } catch (err) {
         res.json({ error: err.message });
