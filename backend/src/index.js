@@ -141,13 +141,14 @@ app.get("/health/runtime", async (req, res) => {
     res.status(statusCode).json(health);
 });
 
-// Debug RLS endpoint - REMOVE IN PRODUCTION
+// Debug RLS + FK endpoint - REMOVE IN PRODUCTION
 app.get("/debug/rls", async (req, res) => {
     try {
         const testId = crypto.randomUUID();
+        const wsId = crypto.randomUUID();
         const testEmail = `rls-debug-${Date.now()}@test.com`;
 
-        // Test 1: Try INSERT directly
+        // Step 1: INSERT user
         const { data: user, error: insertErr } = await baseSupabaseAdmin
             .from("users")
             .insert({
@@ -165,26 +166,51 @@ app.get("/debug/rls", async (req, res) => {
             .single();
 
         if (insertErr) {
-            // Test 2: Check existing user with SELECT
-            const { data: existingUser, error: selectErr } = await baseSupabaseAdmin
-                .from("users")
-                .select("id,email,email_verified")
-                .limit(1)
-                .single();
-
             res.json({
-                insertError: insertErr.message,
-                insertCode: insertErr.code,
-                selectWorks: !selectErr,
-                selectSample: selectErr ? null : existingUser,
-                hint: insertErr.message.includes("42501") ? "RLS policy blocks even service_role. Check if users table is in correct schema." : null
+                step: "user_insert",
+                success: false,
+                error: insertErr.message,
+                code: insertErr.code,
             });
             return;
         }
 
+        // Step 2: INSERT workspace
+        const { error: wsErr } = await baseSupabaseAdmin.from("workspaces").insert({
+            id: wsId,
+            name: "Debug WS",
+            slug: `debug-ws-${Date.now()}`,
+        });
+
+        // Step 3: Try workspace_members INSERT (FK test)
+        const { error: wmErr } = await baseSupabaseAdmin.from("workspace_members").insert({
+            workspace_id: wsId,
+            user_id: user.id,
+            role: "owner",
+        });
+
+        // Step 4: Try email_verification_tokens INSERT (FK test)
+        const { error: evErr } = await baseSupabaseAdmin.from("email_verification_tokens").insert({
+            id: crypto.randomUUID(),
+            user_id: user.id,
+            token_hash: "debug_hash",
+            expires_at: new Date(Date.now() + 3600000).toISOString(),
+        });
+
         // Clean up
+        await baseSupabaseAdmin.from("workspace_members").delete().eq("workspace_id", wsId);
+        await baseSupabaseAdmin.from("workspaces").delete().eq("id", wsId);
         await baseSupabaseAdmin.from("users").delete().eq("id", testId);
-        res.json({ success: true, userId: user.id });
+
+        res.json({
+            success: !wmErr && !evErr,
+            step: "complete",
+            userId: user.id,
+            workspaceId: wsId,
+            workspaceError: wsErr?.message || null,
+            workspaceMembersError: wmErr?.message || null,
+            emailTokenError: evErr?.message || null,
+        });
     } catch (err) {
         res.json({ error: err.message });
     }
