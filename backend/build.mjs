@@ -1,9 +1,12 @@
+// Root-level build script for Vercel monorepo deployment
+// This script builds the backend only (frontend is served separately by Next.js)
 import * as esbuild from "esbuild";
 import { rmSync, mkdirSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+// __dirname is now the backend/ directory (where this file lives)
 const outDir = join(__dirname, "vercel_dist");
 
 // Clean output directory
@@ -14,13 +17,13 @@ mkdirSync(outDir);
 
 // Bundle the backend - use CJS for better compatibility
 await esbuild.build({
-  entryPoints: [join(__dirname, "src/index.js")],
+  entryPoints: [join(__dirname, "src", "index.js")],
   bundle: true,
   platform: "node",
   target: "node20",
   format: "cjs",
   outfile: join(outDir, "index.cjs"),
-    external: [
+  external: [
     "express",
     "cors",
     "compression",
@@ -38,12 +41,9 @@ await esbuild.build({
   ],
   sourcemap: false,
   minify: false,
-  banner: {
-    js: `"use strict";`,
-  },
-  footer: {
-    js: `module.exports = index_default;`,
+  define: {
+    "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV || "production"),
   },
 });
 
-console.log("✅ Backend bundled successfully to vercel_dist/");
+console.log("Backend bundled successfully to", outDir);
