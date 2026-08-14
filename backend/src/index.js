@@ -149,7 +149,7 @@ app.get("/debug/rls", async (req, res) => {
         const testEmail = `rls-debug-${Date.now()}@test.com`;
         const now = new Date().toISOString();
 
-        // Step 1: INSERT user - exact same pattern as auth controller
+        // Step 1: INSERT user
         const { data: user, error: insertErr } = await baseSupabaseAdmin
             .from("users")
             .insert({
@@ -171,44 +171,46 @@ app.get("/debug/rls", async (req, res) => {
             return;
         }
 
-        // Step 2: Check user directly in DB - query auth controller re-fetch pattern
-        const { data: userCheck } = await baseSupabaseAdmin.from("users").select("id,email,name").eq("id", testId).single();
+        // Step 2: Check where the user actually landed - try both table names
+        const { data: fromUsers } = await baseSupabaseAdmin
+            .from("users")
+            .select("id,email")
+            .eq("id", testId)
+            .single()
+            .catch(() => null);
 
-        // Step 3: Check if user_id is UUID type by trying to cast it
-        const userIdType = typeof user?.id;
-        const userIdLength = user?.id?.length;
-        const userIdMatchesUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user?.id || "");
+        // Try "User" (TABLE_MAP routes users->users so this should go to "users" too via TABLE_MAP)
+        // But let's try it raw without TABLE_MAP by checking what TABLE_MAP resolves to
+        // Since baseSupabaseAdmin bypasses TABLE_MAP (it's the raw adminClient), from("users") goes to "users"
+        // Let me check if there's a "User" table by trying to select from it
+        const { data: fromUserTable } = await baseSupabaseAdmin
+            .from("User")
+            .select("id,email")
+            .eq("id", testId)
+            .single()
+            .catch(e => ({ error: e.message }));
 
-        // Step 4: INSERT workspace
+        // Step 3: INSERT workspace
         const { error: wsErr } = await baseSupabaseAdmin.from("workspaces").insert({
             id: wsId,
             name: "Debug WS",
             slug: `debug-ws-${Date.now()}`,
         });
 
-        // Step 5: Check workspace was created
-        const { data: wsCheck } = await baseSupabaseAdmin.from("workspaces").select("id").eq("id", wsId).single();
-
-        // Step 6: Try INSERT workspace_members with explicit types
-        const insertPayload = {
-            workspace_id: wsId,
-            user_id: user?.id,
-            role: "owner",
-        };
-        const { error: wmErr } = await baseSupabaseAdmin.from("workspace_members").insert(insertPayload);
-
-        // Step 7: Try the same INSERT but from a FRESH client (new connection)
-        const { createClient } = await import('@supabase/supabase-js');
-        const freshClient = createClient(
-            process.env.SUPABASE_URL,
-            process.env.SUPABASE_SERVICE_KEY,
-            { auth: { autoRefreshToken: false, persistSession: false } }
-        );
-        const { error: wmErrFresh } = await freshClient.from("workspace_members").insert({
+        // Step 4: Try workspace_members INSERT
+        const { error: wmErr } = await baseSupabaseAdmin.from("workspace_members").insert({
             workspace_id: wsId,
             user_id: user?.id,
             role: "owner",
         });
+
+        // Step 5: Check the actual workspace_members FK constraint via direct query
+        // If the FK references auth.users, then inserting into public.users won't satisfy it
+        // Try to find out by checking: is there a record in workspace_members for this test user?
+        const { data: wmRecords } = await baseSupabaseAdmin
+            .from("workspace_members")
+            .select("user_id")
+            .eq("workspace_id", wsId);
 
         // Clean up
         await baseSupabaseAdmin.from("workspace_members").delete().eq("workspace_id", wsId);
@@ -218,16 +220,14 @@ app.get("/debug/rls", async (req, res) => {
         res.json({
             success: !wmErr,
             userId: user?.id,
-            userIdType,
-            userIdLength,
-            userIdMatchesUUID,
-            userCheckFound: !!userCheck,
-            userCheckId: userCheck?.id || null,
+            userFoundInUsersTable: !!fromUsers,
+            userFoundInUserTable: fromUserTable && !fromUserTable.error,
+            userTableError: fromUserTable?.error || null,
+            userInUsersTableId: fromUsers?.id || null,
+            userInUserTableId: fromUserTable?.id || null,
             wsError: wsErr?.message || null,
-            wsCheckFound: !!wsCheck,
-            workspaceMembersError: wmErr?.message || null,
-            workspaceMembersErrorFresh: wmErrFresh?.message || null,
-            insertPayloadUserId: insertPayload.user_id,
+            wmError: wmErr?.message || null,
+            wmRecordsFound: wmRecords?.length || 0,
         });
     } catch (err) {
         res.json({ error: err.message });
