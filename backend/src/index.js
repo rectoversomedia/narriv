@@ -183,12 +183,13 @@ app.get("/debug/rls", async (req, res) => {
         // But let's try it raw without TABLE_MAP by checking what TABLE_MAP resolves to
         // Since baseSupabaseAdmin bypasses TABLE_MAP (it's the raw adminClient), from("users") goes to "users"
         // Let me check if there's a "User" table by trying to select from it
-        const { data: fromUserTable } = await baseSupabaseAdmin
-            .from("User")
-            .select("id,email")
-            .eq("id", testId)
-            .single()
-            .catch(e => ({ error: e.message }));
+        let fromUserTable = null;
+        try {
+            const r = await baseSupabaseAdmin.from("User").select("id,email").eq("id", testId).single();
+            fromUserTable = r.data ? { found: true, id: r.data.id } : { found: false };
+        } catch (e) {
+            fromUserTable = { found: false, error: e.message };
+        }
 
         // Step 3: INSERT workspace
         const { error: wsErr } = await baseSupabaseAdmin.from("workspaces").insert({
@@ -221,7 +222,7 @@ app.get("/debug/rls", async (req, res) => {
             success: !wmErr,
             userId: user?.id,
             userFoundInUsersTable: !!fromUsers,
-            userFoundInUserTable: fromUserTable && !fromUserTable.error,
+            userFoundInUserTable: fromUserTable?.found || false,
             userTableError: fromUserTable?.error || null,
             userInUsersTableId: fromUsers?.id || null,
             userInUserTableId: fromUserTable?.id || null,
