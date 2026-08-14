@@ -2,9 +2,6 @@ import express from "express";
 import cors from "cors";
 import compression from "compression";
 import dotenv from "dotenv";
-import supabaseAdmin from "./lib/supabase.js";
-import { baseSupabaseAdmin } from "./lib/supabase.js";
-
 // Import Sentry for error tracking
 import { Sentry, flushSentry } from "./lib/sentry-wrapper.js";
 
@@ -141,100 +138,6 @@ app.get("/health/runtime", async (req, res) => {
     res.status(statusCode).json(health);
 });
 
-// Debug RLS + FK endpoint - REMOVE IN PRODUCTION
-app.get("/debug/rls", async (req, res) => {
-    try {
-        const testId = crypto.randomUUID();
-        const wsId = crypto.randomUUID();
-        const testEmail = `rls-debug-${Date.now()}@test.com`;
-        const now = new Date().toISOString();
-
-        // Step 1: INSERT user
-        const { data: user, error: insertErr } = await baseSupabaseAdmin
-            .from("users")
-            .insert({
-                id: testId,
-                email: testEmail,
-                name: "Debug",
-                password: "hashed",
-                email_verified: false,
-                failed_login_attempts: 0,
-                locked_until: null,
-                created_at: now,
-                updated_at: now,
-            })
-            .select()
-            .single();
-
-        if (insertErr) {
-            res.json({ step: "user_insert", success: false, error: insertErr.message, code: insertErr.code });
-            return;
-        }
-
-        // Step 2: Check where the user actually landed - try both table names
-        // baseSupabaseAdmin is the RAW client, bypasses TABLE_MAP Proxy
-        // So from("users") -> PostgREST -> "users" table (lowercase)
-        // And from("User") -> PostgREST -> "User" table (PascalCase)
-        let fromUsers = null;
-        let fromUserTable = null;
-
-        try {
-            const r1 = await baseSupabaseAdmin.from("users").select("id,email").eq("id", testId).single();
-            fromUsers = r1.data ? { found: true, id: r1.data.id } : { found: false, error: r1.error?.message };
-        } catch (e) {
-            fromUsers = { found: false, error: e.message };
-        }
-
-        try {
-            const r2 = await baseSupabaseAdmin.from("User").select("id,email").eq("id", testId).single();
-            fromUserTable = r2.data ? { found: true, id: r2.data.id } : { found: false, error: r2.error?.message };
-        } catch (e) {
-            fromUserTable = { found: false, error: e.message };
-        }
-
-        // Step 3: INSERT workspace
-        const { error: wsErr } = await baseSupabaseAdmin.from("workspaces").insert({
-            id: wsId,
-            name: "Debug WS",
-            slug: `debug-ws-${Date.now()}`,
-        });
-
-        // Step 4: Try workspace_members INSERT
-        const { error: wmErr } = await baseSupabaseAdmin.from("workspace_members").insert({
-            workspace_id: wsId,
-            user_id: user?.id,
-            role: "owner",
-        });
-
-        // Step 5: Check the actual workspace_members FK constraint via direct query
-        // If the FK references auth.users, then inserting into public.users won't satisfy it
-        // Try to find out by checking: is there a record in workspace_members for this test user?
-        const { data: wmRecords } = await baseSupabaseAdmin
-            .from("workspace_members")
-            .select("user_id")
-            .eq("workspace_id", wsId);
-
-        // Clean up
-        await baseSupabaseAdmin.from("workspace_members").delete().eq("workspace_id", wsId);
-        await baseSupabaseAdmin.from("workspaces").delete().eq("id", wsId);
-        await baseSupabaseAdmin.from("users").delete().eq("id", testId);
-
-        res.json({
-            success: !wmErr,
-            userId: user?.id,
-            userFoundInUsersTable: !!fromUsers,
-            userFoundInUserTable: fromUserTable?.found || false,
-            userTableError: fromUserTable?.error || null,
-            userInUsersTableId: fromUsers?.id || null,
-            userInUserTableId: fromUserTable?.id || null,
-            wsError: wsErr?.message || null,
-            wmError: wmErr?.message || null,
-            wmRecordsFound: wmRecords?.length || 0,
-        });
-    } catch (err) {
-        res.json({ error: err.message });
-    }
-});
 app.get("/metrics", verifyToken, (req, res) => {
     res.status(200).json(getMetricsSnapshot());
 });
