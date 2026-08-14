@@ -278,7 +278,8 @@ export const register = async (req, res) => {
         const newUserId = crypto.randomUUID();
         const now = new Date().toISOString();
 
-        // Insert into 'users' (snake_case) - this is the table that workspace_members FK references
+        // Insert into 'users' (snake_case) AND 'user_profiles' (which workspace_members FK references)
+        // NOTE: workspace_members.user_id FK references user_profiles.id, NOT users.id!
         logStructured("info", "register_insert_attempt", { newUserId, email: email.toLowerCase(), name });
         const { data: user, error: createError } = await baseSupabaseAdmin
             .from("users")
@@ -305,6 +306,29 @@ export const register = async (req, res) => {
                 newUserId,
             });
             throw createError;
+        }
+
+        // ALSO insert into user_profiles - this is what workspace_members FK references!
+        const { error: profileError } = await baseSupabaseAdmin
+            .from("user_profiles")
+            .insert({
+                id: newUserId,
+                email: email.toLowerCase(),
+                name: name || email.split("@")[0],
+                password: hashed,
+                email_verified: false,
+                failed_login_attempts: 0,
+                locked_until: null,
+                provider: "password",
+                created_at: now,
+                updated_at: now,
+            });
+        if (profileError) {
+            logStructured("warn", "register_profile_insert_failed", {
+                error: profileError.message,
+                code: profileError.code,
+                newUserId,
+            });
         }
 
         logStructured("info", "register_user_inserted", {

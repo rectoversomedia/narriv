@@ -172,21 +172,22 @@ app.get("/debug/rls", async (req, res) => {
         }
 
         // Step 2: Check where the user actually landed - try both table names
-        const { data: fromUsers } = await baseSupabaseAdmin
-            .from("users")
-            .select("id,email")
-            .eq("id", testId)
-            .single()
-            .catch(() => null);
-
-        // Try "User" (TABLE_MAP routes users->users so this should go to "users" too via TABLE_MAP)
-        // But let's try it raw without TABLE_MAP by checking what TABLE_MAP resolves to
-        // Since baseSupabaseAdmin bypasses TABLE_MAP (it's the raw adminClient), from("users") goes to "users"
-        // Let me check if there's a "User" table by trying to select from it
+        // baseSupabaseAdmin is the RAW client, bypasses TABLE_MAP Proxy
+        // So from("users") -> PostgREST -> "users" table (lowercase)
+        // And from("User") -> PostgREST -> "User" table (PascalCase)
+        let fromUsers = null;
         let fromUserTable = null;
+
         try {
-            const r = await baseSupabaseAdmin.from("User").select("id,email").eq("id", testId).single();
-            fromUserTable = r.data ? { found: true, id: r.data.id } : { found: false };
+            const r1 = await baseSupabaseAdmin.from("users").select("id,email").eq("id", testId).single();
+            fromUsers = r1.data ? { found: true, id: r1.data.id } : { found: false, error: r1.error?.message };
+        } catch (e) {
+            fromUsers = { found: false, error: e.message };
+        }
+
+        try {
+            const r2 = await baseSupabaseAdmin.from("User").select("id,email").eq("id", testId).single();
+            fromUserTable = r2.data ? { found: true, id: r2.data.id } : { found: false, error: r2.error?.message };
         } catch (e) {
             fromUserTable = { found: false, error: e.message };
         }
