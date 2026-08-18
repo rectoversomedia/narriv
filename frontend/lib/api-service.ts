@@ -1772,7 +1772,7 @@ export interface AlertsSummaryResponse {
 // ---------------------------------------------------------------------------
 
 export async function exchangeOAuthCode(code: string): Promise<{ token: string; user: AuthUser; refreshToken: string }> {
-  console.log("[exchangeOAuthCode] Sending code exchange request to", apiClient ? "apiClient" : "unknown");
+  console.log("[exchangeOAuthCode] Starting exchange for code:", code.substring(0, 10) + "...");
   let raw: Record<string, unknown> | null = null;
   try {
     raw = await apiClient<Record<string, unknown>>("/auth/oauth/exchange", {

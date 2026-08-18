@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 
 const PUBLIC_PATHS = [
   "/login",
@@ -23,23 +22,32 @@ const AUTH_PATHNAMES = ["/login", "/signup"];
 
 // Frontend JWT secret — mirrors backend JWT_SECRET.
 // Never expose this to the browser bundle; it runs only in Next.js middleware (server-side).
-function verifyJwt(token: string, secret: string): { valid: boolean; expired?: boolean; payload?: Record<string, unknown> } {
+// Use Web Crypto API (available in Edge Runtime) instead of Node.js crypto
+async function verifyJwt(token: string, secret: string): Promise<{ valid: boolean; expired?: boolean; payload?: Record<string, unknown> }> {
   try {
     const parts = token.split(".");
     if (parts.length !== 3) return { valid: false };
 
     const [headerB64, payloadB64, sigB64] = parts;
 
-    // Verify signature (HS256)
+    // Verify signature using Web Crypto API (Edge-compatible)
     const toSign = `${headerB64}.${payloadB64}`;
-    const expectedSig = crypto
-      .createHmac("sha256", secret)
-      .update(toSign)
-      .digest("base64url");
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(secret);
+    const signingKey = await globalThis.crypto.subtle.importKey(
+      "raw", keyData, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+    );
+    const signature = await globalThis.crypto.subtle.sign("HMAC", signingKey, encoder.encode(toSign));
+    const sigBytes = new Uint8Array(signature);
+    let sigBase64 = "";
+    for (const byte of sigBytes) sigBase64 += String.fromCharCode(byte);
+    sigBase64 = btoa(sigBase64).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+    const expectedSig = sigBase64;
     if (expectedSig !== sigB64) return { valid: false };
 
     // Decode payload
-    const payload = JSON.parse(Buffer.from(payloadB64, "base64url").toString("utf-8")) as Record<string, unknown>;
+    const payloadB64Url = payloadB64.replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(payloadB64Url)) as Record<string, unknown>;
 
     // Check expiry
     const exp = payload.exp as number | undefined;
@@ -55,7 +63,7 @@ function verifyJwt(token: string, secret: string): { valid: boolean; expired?: b
 
 const JWT_SECRET = process.env.JWT_SECRET || "";
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Exact match for public paths
@@ -64,7 +72,7 @@ export function middleware(request: NextRequest) {
       // For demo login, read JWT from httpOnly cookie set by backend
       const authCookie = request.cookies.get("narriv_auth");
       if (authCookie?.value) {
-        const result = verifyJwt(authCookie.value, JWT_SECRET);
+        const result = await verifyJwt(authCookie.value, JWT_SECRET);
         if (result.valid) {
           return NextResponse.redirect(new URL("/", request.url));
         }
@@ -82,7 +90,7 @@ export function middleware(request: NextRequest) {
   // Read JWT from httpOnly cookie set by backend after login/demo
   const authCookie = request.cookies.get("narriv_auth");
   if (authCookie?.value) {
-    const result = verifyJwt(authCookie.value, JWT_SECRET);
+    const result = await verifyJwt(authCookie.value, JWT_SECRET);
     if (result.valid) {
       return NextResponse.next();
     }
