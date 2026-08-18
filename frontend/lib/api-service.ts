@@ -1772,11 +1772,24 @@ export interface AlertsSummaryResponse {
 // ---------------------------------------------------------------------------
 
 export async function exchangeOAuthCode(code: string): Promise<{ token: string; user: AuthUser; refreshToken: string }> {
-  const res = await apiClient<{ token: string; user: AuthUser; refreshToken: string }>("/auth/oauth/exchange", {
-    method: "POST",
-    body: JSON.stringify({ code })
-  });
-  return res as { token: string; user: AuthUser; refreshToken: string };
+  console.log("[exchangeOAuthCode] Sending code exchange request to", apiClient ? "apiClient" : "unknown");
+  let raw: Record<string, unknown> | null = null;
+  try {
+    raw = await apiClient<Record<string, unknown>>("/auth/oauth/exchange", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    });
+    console.log("[exchangeOAuthCode] Response keys:", raw ? Object.keys(raw) : "null", "has token:", !!raw?.token, "has user:", !!raw?.user);
+  } catch (err) {
+    console.error("[exchangeOAuthCode] API call failed:", err);
+    throw err;
+  }
+  if (!raw) throw new Error("Empty response from exchange endpoint");
+  return {
+    token: String(raw.token || ""),
+    user: raw.user as AuthUser,
+    refreshToken: String(raw.refreshToken || raw.refresh_token || ""),
+  };
 }
 
 export interface FeedbackAccuracyResponse {
