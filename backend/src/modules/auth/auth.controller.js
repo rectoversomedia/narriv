@@ -1178,9 +1178,14 @@ export const googleAuth = (req, res) => {
 export const googleCallback = async (req, res) => {
     try {
         const { code } = req.query;
+        logStructured("info", "oauth_callback_start", { hasCode: !!code, state: req.query.state });
         if (!code) return res.redirect(`${FRONTEND_URL}/login?error=oauth_failed`);
-        if (!validateOAuthState(req, res, "google")) return res.redirect(`${FRONTEND_URL}/login?error=oauth_failed`);
+        if (!validateOAuthState(req, res, "google")) {
+            logStructured("warn", "oauth_state_invalid");
+            return res.redirect(`${FRONTEND_URL}/login?error=oauth_failed`);
+        }
 
+        logStructured("info", "oauth_exchanging_code");
         // Exchange code for token
         const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
             method: "POST",
@@ -1194,8 +1199,13 @@ export const googleCallback = async (req, res) => {
             })
         });
 
-        if (!tokenResponse.ok) throw new Error("Failed to exchange Google token");
+        if (!tokenResponse.ok) {
+            const body = await tokenResponse.text();
+            logStructured("error", "oauth_token_exchange_failed", { status: tokenResponse.status, body });
+            throw new Error("Failed to exchange Google token");
+        }
         const tokenData = await tokenResponse.json();
+        logStructured("info", "oauth_token_exchanged", { hasAccessToken: !!tokenData.access_token });
 
         // Get user profile
         const profileResponse = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
@@ -1204,6 +1214,7 @@ export const googleCallback = async (req, res) => {
 
         if (!profileResponse.ok) throw new Error("Failed to fetch Google profile");
         const profile = await profileResponse.json();
+        logStructured("info", "oauth_profile_fetched", { email: profile.email, name: profile.name });
 
         // Handle login/register
         await handleOAuthLogin(res, {
@@ -1214,8 +1225,7 @@ export const googleCallback = async (req, res) => {
         });
     } catch (error) {
         const msg = error?.message || String(error);
-        logStructured("error", "Google OAuth error", { error: msg, stack: error?.stack });
-        // Return JSON in ?error=json mode for debugging
+        logStructured("error", "Google OAuth error", { error: msg });
         if (req.query.debug === "1") {
             return res.status(500).json({ error: "oauth_callback_failed", detail: msg });
         }
@@ -1240,6 +1250,7 @@ export const exchangeOAuthCode = async (req, res) => {
 // Shared OAuth handler
 // ==========================================
 async function handleOAuthLogin(res, { provider, providerAccountId, email, name }) {
+    logStructured("info", "oauth_handleLogin_start", { provider, email });
     // 1. Check if OAuth account exists
     const { data: oauthAccount, error: oauthError } = await baseSupabaseAdmin
             .from("oauth_accounts")
@@ -1249,12 +1260,14 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
         .single();
 
     if (oauthError && oauthError.code !== "PGRST116") {
+        logStructured("error", "oauth_db_error_accounts", { error: oauthError.message });
         throw oauthError;
     }
 
     let user;
 
     if (oauthAccount) {
+        logStructured("info", "oauth_existing_account", { userId: oauthAccount.user_id });
         // Fetch user from oauth account
         const { data: userData, error: userError } = await baseSupabaseAdmin
             .from("users")
@@ -1268,6 +1281,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
         user = userData;
     } else {
         // 2. Look up user by email
+        logStructured("info", "oauth_new_user_flow", { email });
         const { data: userByEmail, error: userByEmailError } = await baseSupabaseAdmin
             .from("users")
             .select("*")
@@ -1275,6 +1289,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
             .single();
 
         if (userByEmailError && userByEmailError.code !== "PGRST116") {
+            logStructured("error", "oauth_db_error_userlookup", { error: userByEmailError.message });
             throw userByEmailError;
         }
 
@@ -1282,6 +1297,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
 
         if (!user) {
             // 3. Create user if not exists
+            logStructured("info", "oauth_creating_user", { email, name });
             const dummyPassword = crypto.randomBytes(32).toString('hex');
             const hashedPassword = await bcrypt.hash(dummyPassword, BCRYPT_SALT_ROUNDS);
 
@@ -1296,8 +1312,12 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
                 .select()
                 .single();
 
-            if (createError) throw createError;
+            if (createError) {
+                logStructured("error", "oauth_user_create_failed", { error: createError.message, code: createError.code });
+                throw createError;
+            }
             user = newUser;
+            logStructured("info", "oauth_user_created", { userId: user.id });
 
             // ALSO insert into user_profiles (table may not exist in all deployments)
             const { error: profileError } = await baseSupabaseAdmin
@@ -1345,7 +1365,11 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
             provider_user_id: providerAccountId,
         });
 
-        if (linkError) throw linkError;
+        if (linkError) {
+            logStructured("error", "oauth_link_failed", { error: linkError.message, code: linkError.code });
+            throw linkError;
+        }
+        logStructured("info", "oauth_linked", { userId: user.id });
 
         // Auto-create workspace for new OAuth user if not already in one
         const { data: existingMembership } = await baseSupabaseAdmin
@@ -1355,6 +1379,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
             .single();
 
         if (!existingMembership) {
+            logStructured("info", "oauth_creating_workspace", { email });
             const workspaceId = crypto.randomUUID();
             // Generate safe workspace slug from email
             let workspaceSlug = email.split("@")[0]
@@ -1396,6 +1421,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
     await writeAuditLog(user.id, "login_oauth", { provider, email });
 
     const exchangeCode = await storeOAuthExchange({ user_id: user.id, provider });
+    logStructured("info", "oauth_complete_redirecting", { exchangeCode, redirectTo: `${FRONTEND_URL}/oauth/callback?code=***` });
 
     // Redirect with a short-lived one-time code instead of tokens in the URL.
     res.redirect(`${FRONTEND_URL}/oauth/callback?code=${exchangeCode}`);
