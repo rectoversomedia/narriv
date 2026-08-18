@@ -1213,7 +1213,12 @@ export const googleCallback = async (req, res) => {
             name: profile.name
         });
     } catch (error) {
-        logStructured("error", "Google OAuth error:", { error: error?.message || error, stack: error?.stack });
+        const msg = error?.message || String(error);
+        logStructured("error", "Google OAuth error", { error: msg, stack: error?.stack });
+        // Return JSON in ?error=json mode for debugging
+        if (req.query.debug === "1") {
+            return res.status(500).json({ error: "oauth_callback_failed", detail: msg });
+        }
         res.redirect(`${FRONTEND_URL}/login?error=oauth_failed`);
     }
 };
@@ -1294,7 +1299,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
             if (createError) throw createError;
             user = newUser;
 
-            // ALSO insert into user_profiles - workspace_members FK references user_profiles.id!
+            // ALSO insert into user_profiles (table may not exist in all deployments)
             const { error: profileError } = await baseSupabaseAdmin
                 .from("user_profiles")
                 .insert({
@@ -1309,7 +1314,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString(),
                 });
-            if (profileError) throw profileError;
+            if (profileError) logStructured("warn", "oauth_profile_insert_failed", { error: profileError.message });
 
             await writeAuditLog(user.id, "register_success_oauth", { provider, email });
         } else if (!user.email_verified) {
