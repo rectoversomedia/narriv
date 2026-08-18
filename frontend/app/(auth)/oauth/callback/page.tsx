@@ -13,8 +13,13 @@ function OAuthCallbackContent() {
 
   useEffect(() => {
     const code = searchParams.get("code");
+    const errorParam = searchParams.get("error");
+    if (errorParam) {
+      router.replace(`/login?error=${errorParam}`);
+      return;
+    }
     if (!code) {
-      router.push("/login?error=oauth_failed");
+      router.replace("/login?error=oauth_failed");
       return;
     }
 
@@ -22,11 +27,14 @@ function OAuthCallbackContent() {
     exchangeOAuthCode(code)
       .then(({ token, user, refreshToken }) => {
         if (cancelled) return;
+        console.log("[OAuth] Exchange success, token:", token ? "present" : "MISSING", "user:", user?.email);
         setSession(token, user, refreshToken);
         router.replace("/");
       })
-      .catch(() => {
-        if (!cancelled) router.replace("/login?error=oauth_failed");
+      .catch((err) => {
+        if (cancelled) return;
+        console.error("[OAuth] Exchange failed:", err);
+        router.replace("/login?error=oauth_failed");
       });
 
     return () => {
