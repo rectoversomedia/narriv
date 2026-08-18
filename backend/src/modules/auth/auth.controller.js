@@ -1294,6 +1294,23 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
             if (createError) throw createError;
             user = newUser;
 
+            // ALSO insert into user_profiles - workspace_members FK references user_profiles.id!
+            const { error: profileError } = await baseSupabaseAdmin
+                .from("user_profiles")
+                .insert({
+                    id: user.id,
+                    email: email.toLowerCase(),
+                    name: name || email.split("@")[0],
+                    password: hashedPassword,
+                    email_verified: true, // verified via OAuth provider
+                    failed_login_attempts: 0,
+                    locked_until: null,
+                    provider: provider,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                });
+            if (profileError) throw profileError;
+
             await writeAuditLog(user.id, "register_success_oauth", { provider, email });
         } else if (!user.email_verified) {
             // Auto-verify email if they log in with a matching OAuth account
