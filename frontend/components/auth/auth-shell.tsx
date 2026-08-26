@@ -63,54 +63,57 @@ function BrandPanel({ visual, email }: { visual: AuthVisual; email?: string }) {
   const isVerification = visual === "verification";
 
   return (
-    <aside className="relative hidden min-h-dvh overflow-hidden bg-[#020733] px-12 py-14 text-white lg:flex lg:flex-col xl:px-16">
-      {/* Subtle radial glow top-left */}
+    <aside className="relative hidden min-h-dvh flex-col overflow-hidden bg-[#020733] px-16 py-16 text-white lg:flex">
+      {/* Subtle ambient glow */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(80,60,255,0.22),transparent_40%),radial-gradient(circle_at_80%_90%,rgba(60,40,200,0.18),transparent_35%),linear-gradient(180deg,#020733_0%,#040830_100%)]" />
-      {/* Bottom ambient */}
       <div className="absolute inset-x-0 bottom-0 h-[25%] bg-[radial-gradient(ellipse_at_center_bottom,rgba(60,50,220,0.28),transparent_70%)]" />
 
-      <div className="relative z-10 flex h-full flex-col">
+      {/* Top section: logo */}
+      <div className="relative z-10 shrink-0 text-center">
         <NarrivLogo />
+      </div>
 
-        <div className={isVerification ? "mt-36 max-w-[560px]" : "mt-16 max-w-[560px]"}>
-          {isVerification ? (
-            <>
-              <h1 className="text-[42px] font-bold leading-[1.2] tracking-[-0.04em] text-white">
-                {t("brand.verifyTitle")}
-              </h1>
-              <p className="mt-7 max-w-[500px] text-xl leading-8 text-white/72">
-                {t("brand.verifyDescription")}
-                <br />
-                <span className="font-semibold text-[#6B7FFF]">{email || t("sampleEmail")}</span>
-              </p>
-            </>
-          ) : (
-            <>
-              <h1 className="text-[40px] font-bold leading-[1.18] tracking-[-0.04em] xl:text-[44px]">
+      {/* Center section: headline + description — vertically centered */}
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center">
+        {isVerification ? (
+          <div>
+            <h1 className="text-[42px] font-bold leading-[1.15] tracking-[-0.04em] text-white">
+              {t("brand.verifyTitle")}
+            </h1>
+            <p className="mt-6 text-xl leading-relaxed text-white/70">
+              {t("brand.verifyDescription")}
+              <br />
+              <span className="font-semibold text-[#6B7FFF]">{email || t("sampleEmail")}</span>
+            </p>
+          </div>
+        ) : (
+          <div>
+            <div className="space-y-1">
+              <p className="text-[42px] font-bold leading-[1.1] tracking-[-0.04em] text-white">
                 {t("brand.line1")}
-                <br />
-                {t("brand.line2")}
-                <br />
-                <span className="bg-gradient-to-r from-[#8D4DFF] via-[#6B63FF] to-[#22B8FF] bg-clip-text text-transparent">
-                  {t("brand.line3")}
-                </span>
-              </h1>
-              <p className="mt-6 max-w-[520px] text-xl leading-8 text-white/72">
-                {visual === "features"
-                  ? t("brand.featuresDescription")
-                  : t("brand.description")}
               </p>
-            </>
-          )}
-        </div>
+              <p className="text-[42px] font-bold leading-[1.1] tracking-[-0.04em] text-white">
+                {t("brand.line2")}
+              </p>
+              <p className="bg-gradient-to-r from-[#8D4DFF] via-[#6B63FF] to-[#22B8FF] bg-clip-text text-[42px] font-bold leading-[1.1] tracking-[-0.04em] text-transparent">
+                {t("brand.line3")}
+              </p>
+            </div>
+            <p className="mt-8 text-lg leading-relaxed text-white/60">
+              {visual === "features"
+                ? t("brand.featuresDescription")
+                : t("brand.description")}
+            </p>
+          </div>
+        )}
+      </div>
 
-        {/* Minimal decorative line */}
-        <div className="mt-auto space-y-6 pb-10">
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-[rgba(100,80,255,0.4)] to-transparent" />
-          <p className="text-sm font-medium text-white/40 tracking-wide">
-            &copy; {new Date().getFullYear()} Narriv &mdash; Narrative Intelligence Platform
-          </p>
-        </div>
+      {/* Bottom section: divider + footer */}
+      <div className="relative z-10 shrink-0 space-y-6 text-center">
+        <div className="h-px w-full bg-gradient-to-r from-transparent via-[rgba(100,80,255,0.35)] to-transparent" />
+        <p className="text-sm font-medium tracking-wide text-white/35">
+          &copy; {new Date().getFullYear()} Narriv &mdash; Narrative Intelligence Platform
+        </p>
       </div>
     </aside>
   );
@@ -118,7 +121,9 @@ function BrandPanel({ visual, email }: { visual: AuthVisual; email?: string }) {
 
 function NarrivLogo() {
   return (
-    <span className="text-[64px] font-bold tracking-[-0.04em] text-white leading-none">Narriv</span>
+    <span className="text-[38px] font-bold tracking-[-0.05em] text-white">
+      Narriv
+    </span>
   );
 }
 
