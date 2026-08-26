@@ -337,7 +337,7 @@ function OnboardingSidebar() {
     <aside className="sidebar-gradient fixed inset-y-0 left-0 z-30 hidden w-[292px] overflow-y-auto px-5 py-8 text-slate-900 lg:block">
       <div className="flex items-center gap-3 px-1">
         <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full">
-          <Image src="/narriv-logo.svg" alt="Narriv" width={64} height={64} priority className="h-16 w-16 scale-[1.28] object-cover" />
+          <Image src="/narriv-logo.png" alt="Narriv" width={64} height={64} priority className="h-16 w-16 scale-[1.28] object-cover" />
         </span>
         <span className="text-[33px] font-bold tracking-[-0.05em] bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/70">Narriv</span>
       </div>
@@ -1297,7 +1297,7 @@ function ProcessingScreen() {
 
         <div className="mx-auto flex h-[200px] w-[200px] items-center justify-center rounded-full border border-dashed border-[#8B5CFF]/30 bg-slate-50 relative z-10 shadow-[0_0_20px_rgba(70,95,255,0.1)]">
           <div className="flex h-[120px] w-[120px] items-center justify-center rounded-full border border-slate-100 bg-slate-50 shadow-[0_0_30px_rgba(70,95,255,0.25)]">
-            <Image src="/narriv-logo.svg" alt="Narriv" width={84} height={84} priority className="h-[84px] w-[84px] object-contain animate-pulse" />
+            <Image src="/narriv-logo.png" alt="Narriv" width={84} height={84} priority className="h-[84px] w-[84px] object-contain animate-pulse" />
           </div>
         </div>
 

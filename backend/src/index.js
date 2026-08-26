@@ -31,6 +31,7 @@ import bulkRoutes from "./modules/bulk/bulk.routes.js";
 import searchRoutes from "./modules/search/search.routes.js";
 import realtimeRoutes from "./modules/realtime/realtime.routes.js";
 import subscriptionsRoutes from "./modules/subscriptions/subscriptions.routes.js";
+import cronRoutes from "./modules/cron/cron.routes.js";
 
 // Import Libs
 import { scheduleAlertDetection, scheduleAlertEscalation, scheduleVisibilityScans } from "./lib/queue.js";
@@ -169,6 +170,7 @@ app.use("/bulk", bulkRoutes);
 app.use("/search", searchRoutes);
 app.use("/realtime", realtimeRoutes);
 app.use("/subscriptions", subscriptionsRoutes);
+app.use("/api/cron", cronRoutes);
 
 // Sentry error handler (must be before error handler)
 if (process.env.SENTRY_DSN) {

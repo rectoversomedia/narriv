@@ -263,7 +263,7 @@ export default function SettingsPage() {
   const [workspaceUrl, setWorkspaceUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [workspaceLogo, setWorkspaceLogo] = useState<string | null>(null);
-  const activeLogo = workspaceLogo || (workspaceSettingsQuery.data?.logoUrl ? resolveBackendAssetUrl(workspaceSettingsQuery.data.logoUrl) : "/narriv-logo.svg");
+  const activeLogo = workspaceLogo || (workspaceSettingsQuery.data?.logoUrl ? resolveBackendAssetUrl(workspaceSettingsQuery.data.logoUrl) : "/narriv-logo.png");
   const [logoError, setLogoError] = useState("");
   const logoInputRef = useRef<HTMLInputElement | null>(null);
   const isSavingInfo = updateSettingsMutation.isPending;

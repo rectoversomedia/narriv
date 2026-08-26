@@ -1775,10 +1775,18 @@ export async function exchangeOAuthCode(code: string): Promise<{ token: string; 
   console.log("[exchangeOAuthCode] Starting exchange for code:", code.substring(0, 10) + "...");
   let raw: Record<string, unknown> | null = null;
   try {
-    raw = await apiClient<Record<string, unknown>>("/auth/oauth/exchange", {
+    // Call the frontend proxy route (not backend) so the frontend can set the auth cookie
+    // on narriv.digital domain where the middleware runs.
+    const response = await fetch("/api/auth/oauth/exchange", {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code }),
     });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error || `Exchange failed: ${response.status}`);
+    }
+    raw = await response.json() as Record<string, unknown>;
     console.log("[exchangeOAuthCode] Response keys:", raw ? Object.keys(raw) : "null", "has token:", !!raw?.token, "has user:", !!raw?.user);
   } catch (err) {
     console.error("[exchangeOAuthCode] API call failed:", err);
@@ -2187,7 +2195,8 @@ export class SSERealtimeClient {
       return;
     }
 
-    const url = "/api/realtime/stream";
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "https://narriv-api.vercel.app";
+    const url = `${baseUrl}/api/realtime/stream`;
 
     try {
       // SECURITY: SSE EventSource does not support custom headers

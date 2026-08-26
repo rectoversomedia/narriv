@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useTranslations } from "next-intl";
 import type { ChangeEvent, ClipboardEvent, InputHTMLAttributes, KeyboardEvent, MouseEvent, ReactNode } from "react";
 import { useRef, useState } from "react";
@@ -65,12 +64,15 @@ function BrandPanel({ visual, email }: { visual: AuthVisual; email?: string }) {
 
   return (
     <aside className="relative hidden min-h-dvh overflow-hidden bg-[#020733] px-12 py-14 text-white lg:flex lg:flex-col xl:px-16">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(50,103,255,0.28),transparent_27%),radial-gradient(circle_at_82%_88%,rgba(70,95,255,0.42),transparent_35%),linear-gradient(180deg,#020733_0%,#050946_48%,#080066_100%)]" />
-      <div className="absolute inset-x-0 bottom-0 h-[38%] bg-[radial-gradient(ellipse_at_center,rgba(69,95,255,0.44),transparent_68%)]" />
+      {/* Subtle radial glow top-left */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(80,60,255,0.22),transparent_40%),radial-gradient(circle_at_80%_90%,rgba(60,40,200,0.18),transparent_35%),linear-gradient(180deg,#020733_0%,#040830_100%)]" />
+      {/* Bottom ambient */}
+      <div className="absolute inset-x-0 bottom-0 h-[25%] bg-[radial-gradient(ellipse_at_center_bottom,rgba(60,50,220,0.28),transparent_70%)]" />
+
       <div className="relative z-10 flex h-full flex-col">
         <NarrivLogo />
 
-        <div className={isVerification ? "mt-36 max-w-[560px]" : "mt-24 max-w-[560px]"}>
+        <div className={isVerification ? "mt-36 max-w-[560px]" : "mt-16 max-w-[560px]"}>
           {isVerification ? (
             <>
               <h1 className="text-[42px] font-bold leading-[1.2] tracking-[-0.04em] text-white">
@@ -102,20 +104,12 @@ function BrandPanel({ visual, email }: { visual: AuthVisual; email?: string }) {
           )}
         </div>
 
-        <div className="relative mt-auto flex-1 flex flex-col justify-center min-h-[460px] pb-10">
-          <WorldMapGlow />
-          {visual === "dashboard" && (
-            <Image src="/auth/dashboard-v2.svg" alt="Dashboard Illustration" width={680} height={400} className="w-full max-w-[680px] h-auto object-contain z-10 mx-auto" priority />
-          )}
-          {visual === "features" && (
-            <Image src="/auth/features-v2.svg" alt="Feature Illustration" width={680} height={400} className="w-full max-w-[680px] h-auto object-contain z-10 mx-auto scale-[1.15]" priority />
-          )}
-          {visual === "security" && (
-            <Image src="/auth/security-v2.svg" alt="Security Illustration" width={560} height={400} className="w-full max-w-[560px] h-auto object-contain z-10 mx-auto scale-[1.15]" priority />
-          )}
-          {visual === "verification" && (
-            <Image src="/auth/verification-v2.svg" alt="Verification Illustration" width={560} height={400} className="w-full max-w-[560px] h-auto object-contain z-10 mx-auto" priority />
-          )}
+        {/* Minimal decorative line */}
+        <div className="mt-auto space-y-6 pb-10">
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-[rgba(100,80,255,0.4)] to-transparent" />
+          <p className="text-sm font-medium text-white/40 tracking-wide">
+            &copy; {new Date().getFullYear()} Narriv &mdash; Narrative Intelligence Platform
+          </p>
         </div>
       </div>
     </aside>
@@ -124,33 +118,7 @@ function BrandPanel({ visual, email }: { visual: AuthVisual; email?: string }) {
 
 function NarrivLogo() {
   return (
-    <div className="flex items-center gap-3">
-      <LogoMark className="h-[112px] w-[112px]" priority />
-      <span className="text-[64px] font-bold tracking-[-0.04em] text-white">Narriv</span>
-    </div>
-  );
-}
-
-function LogoMark({ className = "h-16 w-16", priority = false }: { className?: string; priority?: boolean }) {
-  return (
-    <span className={`relative flex shrink-0 items-center justify-center overflow-hidden ${className}`}>
-      <Image src="/narriv-logo.svg" alt="Narriv Logo" fill sizes="112px" className="object-contain" priority={priority} />
-    </span>
-  );
-}
-
-function WorldMapGlow() {
-  return (
-    <div className="pointer-events-none absolute inset-x-[-70px] bottom-[-76px] h-[300px] opacity-80">
-      <div className="absolute inset-x-0 bottom-0 h-[210px] bg-[radial-gradient(ellipse_at_center,rgba(65,67,255,0.48),transparent_66%)] blur-sm" />
-      <div className="absolute bottom-12 left-10 h-[130px] w-[80%] rounded-[50%] border-t border-[#244CFF]/35" />
-      <div className="absolute inset-x-0 bottom-10 h-[170px] bg-[repeating-radial-gradient(circle_at_center,rgba(49,91,255,0.85)_0_1px,transparent_1px_8px)] opacity-55 [clip-path:polygon(8%_58%,18%_50%,28%_58%,36%_42%,47%_49%,55%_38%,64%_53%,77%_42%,90%_58%,84%_75%,65%_72%,52%_83%,38%_69%,22%_80%)]" />
-      {[8, 22, 41, 58, 74, 89].map((left, index) => (
-        <span key={left} className="absolute bottom-8 w-px bg-linear-to-t from-[#6B4DFF] to-transparent" style={{ left: `${left}%`, height: `${90 + index * 12}px` }}>
-          <span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-[#8B5CFF] shadow-[0_0_18px_#8B5CFF]" />
-        </span>
-      ))}
-    </div>
+    <span className="text-[64px] font-bold tracking-[-0.04em] text-white leading-none">Narriv</span>
   );
 }
 
@@ -323,12 +291,11 @@ function DemoButton() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/auth/demo`, {
+      // Call frontend proxy route — it calls the backend and sets the narriv_auth cookie
+      // on narriv.digital so the middleware can read it.
+      const response = await fetch("/api/auth/demo-login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include", // Include cookies for session
+        headers: { "Content-Type": "application/json" },
       });
 
       if (!response.ok) {

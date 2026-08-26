@@ -4,7 +4,6 @@
 // caused by DashboardShell auth check running server-side with null token
 export const dynamic = "force-dynamic";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -91,12 +90,7 @@ function LoginContent() {
     return (
     <AuthShell visual="dashboard" topAction={<LanguageSelector />}>
       <div className="mb-12 lg:hidden">
-        <div className="flex items-center gap-3">
-          <span className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden">
-            <Image src="/narriv-logo.svg" alt="Narriv Logo" fill sizes="64px" className="object-contain" priority />
-          </span>
-          <p className="text-3xl font-bold tracking-[-0.04em] text-[#111536]">Narriv</p>
-        </div>
+        <p className="text-3xl font-bold tracking-[-0.04em] text-[#111536]">Narriv</p>
       </div>
 
       <div className="mb-12">

@@ -40,25 +40,57 @@ function parseCookies(header = "") {
     );
 }
 
-function createOAuthState(res, provider) {
-    const state = crypto.randomBytes(32).toString("hex");
-    res.cookie(`narriv_oauth_${provider}_state`, state, {
-        httpOnly: true,
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
-        maxAge: OAUTH_STATE_TTL_MS,
-        path: `/auth/${provider}/callback`,
-    });
-    return state;
+/**
+ * Signed stateless OAuth state — no cookie needed.
+ * Format: randomHex.timestampHex.hmacHex
+ * The HMAC signs randomBytes + timestamp so any tampering is detectable.
+ */
+function createOAuthState() {
+    const randomBytes = crypto.randomBytes(24);
+    const randomHex = randomBytes.toString("hex");
+    const timestamp = Date.now();
+    const timestampHex = timestamp.toString(16);
+    const sig = crypto
+        .createHmac("sha256", JWT_SECRET)
+        .update(`${randomHex}.${timestampHex}`)
+        .digest("hex");
+    return `${randomHex}.${timestampHex}.${sig}`;
 }
 
-function validateOAuthState(req, res, provider) {
-    const cookieName = `narriv_oauth_${provider}_state`;
-    const cookies = parseCookies(req.headers.cookie);
-    const expected = cookies[cookieName];
-    const received = String(req.query.state || "");
-    res.clearCookie(cookieName, { path: `/auth/${provider}/callback` });
-    return Boolean(expected && received && expected === received);
+function validateOAuthState(req) {
+    const state = String(req.query.state || "");
+    const parts = state.split(".");
+    if (parts.length !== 3) {
+        logStructured("warn", "oauth_state_invalid_format", { parts: parts.length });
+        return false;
+    }
+    const [randomHex, timestampHex, providedSig] = parts;
+    const timestamp = parseInt(timestampHex, 16);
+    const now = Date.now();
+
+    // Check expiry (10-minute window)
+    if (isNaN(timestamp) || now - timestamp > OAUTH_STATE_TTL_MS) {
+        logStructured("warn", "oauth_state_expired", { timestamp, now, diff: now - timestamp });
+        return false;
+    }
+
+    // Verify HMAC signature
+    const expectedSig = crypto
+        .createHmac("sha256", JWT_SECRET)
+        .update(`${randomHex}.${timestampHex}`)
+        .digest("hex");
+
+    const sigBuf = Buffer.from(providedSig, "hex");
+    const expBuf = Buffer.from(expectedSig, "hex");
+    const valid = sigBuf.length === expBuf.length && crypto.timingSafeEqual(sigBuf, expBuf);
+
+    logStructured("info", "oauth_state_validate", {
+        valid,
+        hasState: !!state,
+        parts: parts.length,
+        expired: now - timestamp > OAUTH_STATE_TTL_MS,
+    });
+    return valid;
 }
 
 function checkRateLimit(map, key, max, windowMs) {
@@ -278,8 +310,6 @@ export const register = async (req, res) => {
         const newUserId = crypto.randomUUID();
         const now = new Date().toISOString();
 
-        // Insert into 'users' (snake_case) AND 'user_profiles' (which workspace_members FK references)
-        // NOTE: workspace_members.user_id FK references user_profiles.id, NOT users.id!
         logStructured("info", "register_insert_attempt", { newUserId, email: email.toLowerCase(), name });
         const { data: user, error: createError } = await baseSupabaseAdmin
             .from("users")
@@ -307,30 +337,6 @@ export const register = async (req, res) => {
             });
             throw createError;
         }
-
-        // ALSO insert into user_profiles - this is what workspace_members FK references!
-        const { error: profileError } = await baseSupabaseAdmin
-            .from("user_profiles")
-            .insert({
-                id: newUserId,
-                email: email.toLowerCase(),
-                name: name || email.split("@")[0],
-                password: hashed,
-                email_verified: false,
-                failed_login_attempts: 0,
-                locked_until: null,
-                provider: "password",
-                created_at: now,
-                updated_at: now,
-            });
-        if (profileError) {
-            logStructured("warn", "register_profile_insert_failed", {
-                error: profileError.message,
-                code: profileError.code,
-                newUserId,
-            });
-        }
-
         logStructured("info", "register_user_inserted", {
             returnedId: user?.id,
             returnedEmail: user?.email,
@@ -409,7 +415,10 @@ export const register = async (req, res) => {
             code: verificationCode,
             expiresInMinutes: PASSWORD_RESET_TTL_MINUTES,
         });
-        sendEmail({ to: user.email, ...emailTemplate }).catch(() => {});
+        const emailResult = await sendEmail({ to: user.email, ...emailTemplate });
+        if (!emailResult) {
+            logStructured("warn", "register_email_send_failed", { userId: user.id, email: user.email });
+        }
 
         res.status(201).json({
             requireVerification: true,
@@ -734,7 +743,9 @@ export const forgotPassword = async (req, res) => {
             code: reset_code,
             expiresInMinutes: PASSWORD_RESET_TTL_MINUTES,
         });
-        sendEmail({ to: user.email, ...emailTemplate }).catch(() => {});
+        sendEmail({ to: user.email, ...emailTemplate }).catch(err =>
+            logStructured("warn", "password_reset_email_failed", { email: user.email, error: err?.message })
+        );
 
         return res.json({
             ...genericResponse,
@@ -848,7 +859,7 @@ export const verifyEmail = async (req, res) => {
         // Update user email verified
         const { error: userUpdateError } = await baseSupabaseAdmin
             .from("users")
-            .update({ email_verified: new Date().toISOString() })
+            .update({ email_verified: true })
             .eq("id", user.id);
 
         if (userUpdateError) throw userUpdateError;
@@ -931,7 +942,9 @@ export const resendVerification = async (req, res) => {
             code: verificationCode,
             expiresInMinutes: PASSWORD_RESET_TTL_MINUTES,
         });
-        sendEmail({ to: user.email, ...emailTemplate }).catch(() => {});
+        sendEmail({ to: user.email, ...emailTemplate }).catch(err =>
+            logStructured("warn", "verification_resend_email_failed", { email: user.email, error: err?.message })
+        );
 
         await writeAuditLog(user.id, "email_verification_resent", { email: user.email });
 
@@ -1014,7 +1027,9 @@ export const resetPassword = async (req, res) => {
 
         // Send confirmation email (best-effort, never blocks response)
         const confirmTemplate = passwordResetConfirmation({ name: user.name });
-        sendEmail({ to: user.email, ...confirmTemplate }).catch(() => {});
+        sendEmail({ to: user.email, ...confirmTemplate }).catch(err =>
+            logStructured("warn", "password_reset_confirm_email_failed", { email: user.email, error: err?.message })
+        );
 
         return res.json({ success: true });
     } catch (error) {
@@ -1171,21 +1186,21 @@ export const googleAuth = (req, res) => {
     authUrl.searchParams.set("redirect_uri", redirectUri);
     authUrl.searchParams.set("response_type", "code");
     authUrl.searchParams.set("scope", "email profile");
-    authUrl.searchParams.set("state", createOAuthState(res, "google"));
+    authUrl.searchParams.set("state", createOAuthState());
     res.redirect(authUrl.toString());
 };
 
 export const googleCallback = async (req, res) => {
     try {
         const { code } = req.query;
-        logStructured("info", "oauth_callback_start", { hasCode: !!code, state: req.query.state });
+        logStructured("info", "oauth_callback_start", { hasCode: !!code, state: req.query.state ? "(present)" : "(missing)" });
         if (!code) return res.redirect(`${FRONTEND_URL}/login?error=oauth_failed`);
-        if (!validateOAuthState(req, res, "google")) {
+        if (!validateOAuthState(req)) {
             logStructured("warn", "oauth_state_invalid");
             return res.redirect(`${FRONTEND_URL}/login?error=oauth_failed`);
         }
 
-        logStructured("info", "oauth_exchanging_code");
+        logStructured("info", "oauth_state_valid_exchanging_code");
         // Exchange code for token
         const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
             method: "POST",
@@ -1229,7 +1244,7 @@ export const googleCallback = async (req, res) => {
         if (req.query.debug === "1") {
             return res.status(500).json({ error: "oauth_callback_failed", detail: msg });
         }
-        res.redirect(`${FRONTEND_URL}/login?error=oauth_failed`);
+        return res.redirect(`${FRONTEND_URL}/login?error=oauth_failed`);
     }
 };
 
@@ -1307,7 +1322,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
                     email,
                     name,
                     password: hashedPassword,
-                    email_verified: new Date().toISOString(), // implicitly verified since it came from OAuth provider
+                    email_verified: true, // implicitly verified since it came from OAuth provider
                 })
                 .select()
                 .single();
@@ -1319,29 +1334,12 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
             user = newUser;
             logStructured("info", "oauth_user_created", { userId: user.id });
 
-            // ALSO insert into user_profiles (table may not exist in all deployments)
-            const { error: profileError } = await baseSupabaseAdmin
-                .from("user_profiles")
-                .insert({
-                    id: user.id,
-                    email: email.toLowerCase(),
-                    name: name || email.split("@")[0],
-                    password: hashedPassword,
-                    email_verified: true, // verified via OAuth provider
-                    failed_login_attempts: 0,
-                    locked_until: null,
-                    provider: provider,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                });
-            if (profileError) logStructured("warn", "oauth_profile_insert_failed", { error: profileError.message });
-
             await writeAuditLog(user.id, "register_success_oauth", { provider, email });
         } else if (!user.email_verified) {
             // Auto-verify email if they log in with a matching OAuth account
             const { error: updateError } = await baseSupabaseAdmin
             .from("users")
-                .update({ email_verified: new Date().toISOString() })
+                .update({ email_verified: true })
                 .eq("id", user.id);
 
             if (updateError) throw updateError;
@@ -1424,7 +1422,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
     logStructured("info", "oauth_complete_redirecting", { exchangeCode, redirectTo: `${FRONTEND_URL}/oauth/callback?code=***` });
 
     // Redirect with a short-lived one-time code instead of tokens in the URL.
-    res.redirect(`${FRONTEND_URL}/oauth/callback?code=${exchangeCode}`);
+    return res.redirect(`${FRONTEND_URL}/oauth/callback?code=${exchangeCode}`);
 }
 
 /**

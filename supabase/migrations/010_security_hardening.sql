@@ -57,7 +57,7 @@ CREATE POLICY "Users can view own reset tracking"
 -- Add index for cleanup queries
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_expires
     ON public.refresh_tokens(user_id, expires_at)
-    WHERE revoked_at IS NULL;
+    
 
 -- ============================================
 -- SESSION TRACKING INDEX

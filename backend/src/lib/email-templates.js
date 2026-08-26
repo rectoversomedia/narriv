@@ -6,6 +6,17 @@
 
 const APP_NAME = process.env.APP_NAME || "Narriv";
 const APP_URL = process.env.APP_URL || "http://localhost:3001";
+// SAFETY: warn if emails would contain broken localhost links in production
+if (
+    typeof process !== "undefined" &&
+    process.env.NODE_ENV === "production" &&
+    APP_URL.includes("localhost")
+) {
+    console.error(
+        "[Narriv] CRITICAL: APP_URL is set to localhost in production! " +
+        "Email links will be broken. Set APP_URL to your production frontend URL."
+    );
+}
 
 /* ------------------------------------------------------------------ */
 /*  Shared layout helpers                                              */
