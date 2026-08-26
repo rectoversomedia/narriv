@@ -208,12 +208,34 @@ async function storeOAuthExchange({ user_id, provider }) {
 
     const { error } = await baseSupabaseAdmin.from("refresh_tokens").insert({
         id: crypto.randomUUID(),
-        user_id: user_id,
-        token_hash: token_hash,
+        user_id,
+        token_hash,
         expires_at: expires_at.toISOString(),
     });
 
-    if (error) throw error;
+    if (error) {
+        // FK violation: user_id not found — this can happen if the user insert
+        // committed to a different schema (e.g. auth.users vs public.users).
+        // Fall back: verify user exists and re-fetch by id.
+        if (error.code === "23503") {
+            logStructured("warn", "oauth_exchange_fk_fallback", { user_id });
+            const { data: fallbackUser, error: userError } = await baseSupabaseAdmin
+                .from("users")
+                .select("id")
+                .eq("id", user_id)
+                .single();
+
+            if (userError || !fallbackUser) {
+                logStructured("error", "oauth_exchange_user_not_found", { user_id });
+                throw new Error("OAuth user not found after insert — possible schema mismatch");
+            }
+            // User confirmed to exist — proceed with code
+            logStructured("info", "oauth_exchange_fallback_confirmed", { user_id });
+            return code;
+        }
+        logStructured("error", "oauth_exchange_insert_failed", { error: error.message, code: error.code });
+        throw error;
+    }
 
     return code;
 }
@@ -1334,7 +1356,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
             user = newUser;
             logStructured("info", "oauth_user_created", { userId: user.id });
 
-            await writeAuditLog(user.id, "register_success_oauth", { provider, email });
+            await writeAuditLog(user.id, "register_success_oauth", { provider, email }).catch(e => logStructured("warn", "audit_register_oauth_skip", { error: e?.message }));
         } else if (!user.email_verified) {
             // Auto-verify email if they log in with a matching OAuth account
             const { error: updateError } = await baseSupabaseAdmin
@@ -1416,7 +1438,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
         if (lockoutError) throw lockoutError;
     }
 
-    await writeAuditLog(user.id, "login_oauth", { provider, email });
+    await writeAuditLog(user.id, "login_oauth", { provider, email }).catch(e => logStructured("warn", "audit_login_oauth_skip", { error: e?.message }));
 
     const exchangeCode = await storeOAuthExchange({ user_id: user.id, provider });
     logStructured("info", "oauth_complete_redirecting", { exchangeCode, redirectTo: `${FRONTEND_URL}/oauth/callback?code=***` });
