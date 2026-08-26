@@ -19,6 +19,7 @@ import type {
   SourceRecord,
   IntegrationRecord,
 } from "./api-service";
+import { useAuthStore } from "@/store/useAuthStore";
 
 // ---------------------------------------------------------------------------
 // Demo Mode Detection
@@ -39,16 +40,20 @@ export function isDemoMode(): boolean {
     }
 
     // 2. Check Zustand persist store (narriv-auth)
+    // IMPORTANT: read from Zustand store directly to avoid localStorage hydration race.
+    // Zustand persist rehydrates synchronously from localStorage on create(), so
+    // getState() always returns the persisted state (not default values).
+    const storeState = useAuthStore.getState();
+    if (storeState.isAuthenticated && storeState.user) {
+      return storeState.user.provider === "demo";
+    }
+    // Fallback: read localStorage directly for initial mount
     const authStateStr = localStorage.getItem("narriv-auth");
     if (authStateStr) {
       const authState = JSON.parse(authStateStr);
-      const token = authState?.state?.token || authState?.token;
-      const userProvider = authState?.state?.user?.provider || authState?.user?.provider;
-
-      // Check if provider is "demo"
-      if (userProvider === "demo") {
-        return true;
-      }
+      const userProvider =
+        authState?.state?.user?.provider || authState?.user?.provider;
+      if (userProvider === "demo") return true;
     }
 
     // 3. Check legacy demo token keys for backwards compatibility
