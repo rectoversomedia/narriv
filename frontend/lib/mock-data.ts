@@ -20,6 +20,7 @@ import {
   Target,
   Users,
   Webhook,
+  ScrollText,
 } from "lucide-react";
 
 export type Localized = Record<"en" | "id", string>;
@@ -46,12 +47,14 @@ export const navGroups = [
       { key: "reports", href: "/reports", icon: FileText },
       { key: "askNarriv", href: "/ask", icon: Bot },
       { key: "opportunities", href: "/opportunities", icon: Sparkles },
+      { key: "brief", href: "/brief", icon: FileText },
+      { key: "timeline", href: "/timeline", icon: ScrollText },
     ],
   },
   {
     key: "action",
     items: [
-      { key: "actions", href: "/actions", icon: Target },
+      { key: "alertCenter", href: "/alert-center", icon: Bell },
       { key: "actionCenter", href: "/action-plans", icon: CheckCircle2 },
       { key: "cases", href: "/workspace/cases", icon: Briefcase },
     ],
