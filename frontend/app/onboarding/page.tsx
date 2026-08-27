@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useState, useEffect, startTransition, useRef, type ChangeEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
@@ -14,8 +15,11 @@ import {
   ArrowRight,
   BarChart3,
   Bell,
+  Bot,
+  Briefcase,
   CalendarDays,
   Check,
+  CheckCircle2,
   ChevronDown,
   Clock3,
   Database,
@@ -43,9 +47,11 @@ import {
   User,
   Users,
   Video,
+  Webhook,
   X,
   type LucideIcon,
 } from "lucide-react";
+import { navGroups } from "@/lib/mock-data";
 import { useUiStore } from "@/store/useUiStore";
 import { useToast } from "@/components/ui/toast";
 import { Particles } from "@/components/ui/particles";
@@ -316,84 +322,64 @@ export default function OnboardingPage() {
 }
 
 function OnboardingSidebar() {
-  const t = useTranslations("OnboardingDesign.sidebar");
-  const main = [
-    { icon: Home, label: t("command"), active: true },
-    { icon: Activity, label: t("signals") },
-    { icon: Bell, label: t("alerts") },
-    { icon: Search, label: t("visibility") },
-  ];
-  const analysis = [
-    { icon: BarChart3, label: t("intelligence") },
-    { icon: FileText, label: t("reports") },
-  ];
-  const action = [{ icon: Target, label: t("actionCenter") }];
-  const system = [
-    { icon: Database, label: t("dataSources") },
-    { icon: Settings, label: t("settings") },
-  ];
+  const t = useTranslations("DemoApp");
+  const pathname = "/";
 
   return (
-    <aside className="sidebar-gradient fixed inset-y-0 left-0 z-30 hidden w-[292px] overflow-y-auto px-5 py-8 text-slate-900 lg:block">
-      <div className="flex items-center gap-3 px-1">
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full">
-          <Image src="/narriv-logo.png" alt="Narriv" width={64} height={64} priority className="h-16 w-16 scale-[1.28] object-cover" />
+    <aside className="sidebar-gradient fixed inset-y-0 left-0 z-30 hidden w-[240px] overflow-y-auto px-4 py-6 text-white lg:block">
+      {/* Logo */}
+      <div className="flex items-center gap-2 px-1">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full">
+          <Image src="/narriv-logo.png" alt="Narriv" width={48} height={48} priority className="h-12 w-12 scale-[1.28] object-contain" />
         </span>
-        <span className="text-[33px] font-bold tracking-[-0.05em] bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/70">Narriv</span>
+        <span className="text-[24px] font-bold tracking-[-0.05em] bg-clip-text text-transparent bg-linear-to-r from-white via-white to-white/70">Narriv</span>
       </div>
 
-      <SidebarGroup title={t("main")} items={main} />
-      <SidebarGroup title={t("analysis")} items={analysis} />
-      <SidebarGroup title={t("action")} items={action} />
-      <SidebarGroup title={t("system")} items={system} />
+      {/* Navigation */}
+      <nav className="mt-6 space-y-5">
+        {navGroups.map((group) => (
+          <div key={group.key}>
+            <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-white/40">{t(`navGroups.${group.key}`)}</p>
+            <div className="mt-2 grid gap-1.5">
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+                return (
+                  <div
+                    key={item.href}
+                    title={t(`nav.${item.key}`)}
+                    className={`flex h-[40px] items-center gap-3 rounded-[6px] text-[13px] font-semibold transition px-3 ${active ? "bg-[#465FFF] text-white shadow-[0_0_12px_rgba(70,95,255,0.4)]" : "text-white/70 hover:bg-white/5"}`}
+                  >
+                    <Icon size={18} strokeWidth={2} className="shrink-0" />
+                    {t(`nav.${item.key}`)}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </nav>
 
-      <div className="mt-10 rounded-[10px] border border-slate-200 bg-slate-50 p-5 backdrop-blur-md">
-        <div className="flex items-center justify-between text-[13px] font-semibold text-slate-800">
-          <span>{t("scoreTitle")}</span>
-          <span className="flex h-4 w-4 items-center justify-center rounded-full border border-white/40 text-[10px]">i</span>
+      {/* Intelligence Score */}
+      <div className="mt-8 rounded-[8px] border border-white/10 bg-white/2 p-4 backdrop-blur-md">
+        <div className="flex items-center justify-between text-[11px] font-semibold text-white/90">
+          <span>{t("sidebar.scoreTitle")}</span>
+          <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full border border-white/40 text-[9px]">i</span>
         </div>
-        <div className="mt-4 flex items-end gap-1">
-          <span className="text-[42px] font-bold leading-none text-[#8B5CFF] drop-shadow-[0_0_10px_rgba(139,92,255,0.3)]">86</span>
-          <span className="pb-1 text-sm text-slate-400">/100</span>
+        <div className="mt-3 flex items-end gap-1">
+          <span className="text-[32px] font-bold leading-none text-[#8B5CFF] drop-shadow-[0_0_8px_rgba(139,92,255,0.3)]">86</span>
+          <span className="pb-0.5 text-xs text-white/50">/100</span>
         </div>
-        <p className="mt-3 text-[15px] font-bold text-[#10B981]">{t("good")}</p>
-        <p className="mt-2 text-[13px] text-slate-500">{t("scoreText")}</p>
-        <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100">
-          <div className="h-full w-[78%] rounded-full bg-linear-to-r from-[#465FFF] to-[#8B5CFF] shadow-[0_0_10px_rgba(70,95,255,0.5)]" />
+        <p className="mt-2 text-[12px] font-bold text-[#10B981]">{t("sidebar.good")}</p>
+        <p className="mt-1.5 text-[11px] text-white/60">{t("sidebar.scoreText")}</p>
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/5">
+          <div className="h-full w-[78%] rounded-full bg-linear-to-r from-[#465FFF] to-[#8B5CFF] shadow-[0_0_8px_rgba(70,95,255,0.5)]" />
         </div>
       </div>
 
-      <div className="mt-8 flex items-center gap-4 rounded-[10px] border border-slate-200 bg-slate-50 p-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-tr from-[#465FFF] to-[#8B5CFF] text-sm font-bold text-white shadow-[0_0_10px_rgba(70,95,255,0.3)]">TU</div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[15px] font-bold text-slate-900">{t("user")}</p>
-          <p className="mt-1 truncate text-[13px] text-slate-400">{t("workspace")}</p>
-        </div>
-        <ChevronDown size={18} className="text-slate-500" />
-      </div>
-
-      <p className="mt-8 px-2 text-[13px] text-slate-400">© 2025 Narriv</p>
-      <p className="mt-3 px-2 text-[13px] text-slate-400">All rights reserved.</p>
+      <p className="mt-6 px-2 text-[11px] text-white/40">© {new Date().getFullYear()} Narriv</p>
+      <p className="mt-2 px-2 text-[11px] text-white/40">All rights reserved.</p>
     </aside>
-  );
-}
-
-function SidebarGroup({ title, items }: { title: string; items: { icon: LucideIcon; label: string; active?: boolean }[] }) {
-  return (
-    <div className="mt-9">
-      <p className="px-2 text-[13px] font-semibold uppercase tracking-[0.08em] text-slate-400">{title}</p>
-      <div className="mt-3 grid gap-2">
-        {items.map((item) => {
-          const Icon = item.icon;
-          return (
-            <button key={item.label} className={`flex h-[52px] items-center gap-4 rounded-[8px] px-4 text-left text-[16px] font-bold ${item.active ? "bg-[#465FFF] text-white shadow-[0_0_15px_rgba(70,95,255,0.4)]" : "text-slate-600 hover:bg-slate-100"} transition-all`} type="button">
-              <Icon size={24} strokeWidth={2} />
-              {item.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
   );
 }
 
