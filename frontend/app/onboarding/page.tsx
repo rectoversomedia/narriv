@@ -6,6 +6,7 @@ import {
   useState,
   useEffect,
   useCallback,
+  useMemo,
   type ChangeEvent,
   type KeyboardEvent,
   type ReactNode,
@@ -771,7 +772,7 @@ function SourcesStep({
     onChange(newSources);
   };
 
-  const categories = Object.keys(templates);
+  const categories = useMemo(() => Object.keys(templates), [templates]);
 
   return (
     <div className="space-y-8">
