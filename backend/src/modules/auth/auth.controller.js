@@ -1425,6 +1425,15 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
                 role: "owner",
             });
             if (wmError2) logStructured("warn", "oauth_workspace_member_failed", { error: wmError2.message });
+
+            // Create workspace_settings for new OAuth user (needed for dashboard to work)
+            const { error: wsSettingsError } = await baseSupabaseAdmin.from("workspace_settings").insert({
+                workspace_id: workspaceId,
+                brand_name: name || "My Workspace",
+                timezone: "Asia/Jakarta",
+                language: "id",
+            });
+            if (wsSettingsError) logStructured("warn", "oauth_workspace_settings_failed", { error: wsSettingsError.message });
         }
     }
 

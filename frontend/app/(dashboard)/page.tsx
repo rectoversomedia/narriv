@@ -245,11 +245,11 @@ export default function DashboardPage() {
     enabled: hasCheckedDemoMode && !demoMode,
   });
 
-  // Redirect to onboarding if not set up
+  // Redirect to onboarding if workspace not configured (brand_name is null = never set up)
   const router = useRouter();
   useEffect(() => {
-    if (hasCheckedDemoMode && !demoMode && workspaceQuery.data === null && !workspaceQuery.isLoading) {
-      // No workspace settings yet, redirect to onboarding
+    if (hasCheckedDemoMode && !demoMode && !workspaceQuery.isLoading && (workspaceQuery.data === null || workspaceQuery.data?.brandName == null)) {
+      // No brand name set yet, redirect to onboarding
       router.push("/onboarding");
     }
   }, [hasCheckedDemoMode, demoMode, workspaceQuery.data, workspaceQuery.isLoading, router]);
