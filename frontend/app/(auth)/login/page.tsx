@@ -1,7 +1,5 @@
-// Force dynamic rendering so useSearchParams() in LoginForm works without SSR prerender issues.
-// This file is a SERVER COMPONENT — it can export 'dynamic' because it has no 'use client' directive.
-export const dynamic = "force-dynamic";
-
+// No 'dynamic' export here — Suspense boundary in LoginPage handles useSearchParams() correctly.
+// Next.js 15 App Router automatically treats pages with Suspense + useSearchParams as dynamic.
 import { Suspense } from "react";
 import { LoginForm } from "./LoginForm";
 
