@@ -565,7 +565,7 @@ export default function DashboardPage() {
                   </thead>
                   <tbody>
                     {competitors.map((c) => {
-                      const sentStyle = toneMap[c.sentiment];
+                      const sentStyle = toneMap[c.sentiment] ?? toneMap.slate;
                       const momentumPositive = c.momentum.startsWith("+");
                       const sentimentLabel = c.sentiment === "green" ? "Positive" : c.sentiment === "red" ? "Negative" : c.sentiment === "amber" ? "Mixed" : "Neutral";
                       return (

@@ -16,7 +16,7 @@ export const toneMap: Record<Tone, { bg: string; text: string; soft: string; bad
 };
 
 export function toneBadge(tone: Tone) {
-  return toneMap[tone].badge;
+  return toneMap[tone]?.badge ?? "default";
 }
 
 export function AppCard({ children, className = "" }: { children: ReactNode; className?: string }) {
@@ -69,7 +69,7 @@ export function SecondaryAction({ children, className = "", onClick }: { childre
 }
 
 export function MetricTile({ label, value, helper, icon: Icon, tone }: { label: string; value: string; helper: string; icon: LucideIcon; tone: Tone }) {
-  const styles = toneMap[tone];
+  const styles = toneMap[tone] ?? toneMap.purple;
   const isNegative = helper.startsWith("-");
   return (
     <AppCard>
@@ -115,7 +115,7 @@ export function SectionHeader({ title, description, action, actionPlacement = "s
 }
 
 export function StatusPill({ children, tone = "purple" }: { children: ReactNode; tone?: Tone }) {
-  return <Badge variant={toneMap[tone].badge}>{children}</Badge>;
+  return <Badge variant={toneMap[tone]?.badge ?? "default"}>{children}</Badge>;
 }
 
 export function ProgressBar({ value, tone = "purple" }: { value: number; tone?: Tone }) {
@@ -166,6 +166,6 @@ export function MiniSpark({ tone = "purple" }: { tone?: Tone }) {
 }
 
 export function IconBubble({ icon: Icon, tone = "purple", className = "" }: { icon: LucideIcon; tone?: Tone; className?: string }) {
-  const styles = toneMap[tone];
+  const styles = toneMap[tone] ?? toneMap.purple;
   return <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] border border-slate-100 shadow-[0_0_8px_rgba(0,0,0,0.15)]", styles.bg, styles.text, className)}><Icon size={22} /></div>;
 }
