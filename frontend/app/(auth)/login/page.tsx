@@ -1,9 +1,5 @@
 "use client";
 
-// Opt out of static prerendering to prevent SSR/hydration mismatch
-// caused by DashboardShell auth check running server-side with null token
-export const dynamic = "force-dynamic";
-
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
