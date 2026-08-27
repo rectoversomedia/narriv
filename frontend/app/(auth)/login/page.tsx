@@ -10,7 +10,7 @@ import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useMemo, useState, Suspense } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import { AuthInput, AuthShell, Divider, LanguageSelector, PasswordInput, PrimaryButton, SecurityFooter, SocialButtons } from "@/components/auth/auth-shell";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { loginWithPassword } from "@/lib/api-service";
@@ -27,6 +27,17 @@ function LoginContent() {
   const t = useTranslations("AuthDesign.login");
   const setSession = useAuthStore((state) => state.setSession);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC]">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#E6EAF2] border-t-[#465FFF]" />
+      </div>
+    );
+  }
 
   const oauthError = useMemo(() => {
     if (searchParams.get("error") === "oauth_failed") {
