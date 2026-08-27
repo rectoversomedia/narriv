@@ -467,7 +467,7 @@ export default function DashboardPage() {
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
           {developments.map((d) => {
             const Icon = d.icon;
-            const toneStyle = toneMap[d.tone];
+            const toneStyle = toneMap[d.tone] ?? toneMap.purple;
             return (
               <div key={d.id} className="flex min-w-[220px] max-w-[260px] flex-col gap-2.5 rounded-[10px] border border-slate-100 bg-white p-4 shadow-sm transition hover:border-slate-200 hover:shadow-md">
                 <div className="flex items-start justify-between gap-2">
@@ -489,7 +489,7 @@ export default function DashboardPage() {
         {scorecard.map((s) => {
           const isPositive = s.lowerIsBetter ? s.delta.startsWith("-") || s.delta === "0" : !s.delta.startsWith("-");
           const trendColor = isPositive ? "text-[#10B981]" : "text-[#EF4444]";
-          const scoreStyle = toneMap[s.tone];
+          const scoreStyle = toneMap[s.tone] ?? toneMap.purple;
           return (
             <AppCard key={s.label}>
               <CardContent className="flex flex-col gap-1 p-4">
@@ -636,7 +636,7 @@ export default function DashboardPage() {
               />
               <div className="mt-3 space-y-3">
                 {aiPlatforms.map((p) => {
-                  const platformStyle = toneMap[p.tone];
+                  const platformStyle = toneMap[p.tone] ?? toneMap.purple;
                   const changePositive = !p.change.startsWith("-");
                   return (
                     <div key={p.name} className="flex items-center justify-between rounded-[8px] border border-slate-100 bg-white px-4 py-3">
