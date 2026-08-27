@@ -396,9 +396,9 @@ export default function DashboardPage() {
   ];
 
   const competitors = [
-    { name: "CompetitorA", shareOfVoice: 42, sentiment: "positive" as Tone, momentum: "+12%", aiVisibility: 68 },
-    { name: "CompetitorB", shareOfVoice: 18, sentiment: "neutral" as Tone, momentum: "-3%", aiVisibility: 54 },
-    { name: "CompetitorC", shareOfVoice: 6, sentiment: "negative" as Tone, momentum: "+1%", aiVisibility: 31 },
+    { name: "CompetitorA", shareOfVoice: 42, sentiment: "green" as Tone, momentum: "+12%", aiVisibility: 68 },
+    { name: "CompetitorB", shareOfVoice: 18, sentiment: "slate" as Tone, momentum: "-3%", aiVisibility: 54 },
+    { name: "CompetitorC", shareOfVoice: 6, sentiment: "red" as Tone, momentum: "+1%", aiVisibility: 31 },
   ];
 
   const recommendedActions = [
@@ -429,7 +429,7 @@ export default function DashboardPage() {
           id: `topic-${i}`,
           title: text(t.name, language),
           status: "active" as const,
-          sentiment: t.tone as Tone,
+          sentiment: (t.tone === "positive" ? "green" : t.tone === "negative" ? "red" : t.tone === "mixed" ? "amber" : "blue") as Tone,
           volume: t.mentions,
           growth: t.delta,
         }));
@@ -567,6 +567,7 @@ export default function DashboardPage() {
                     {competitors.map((c) => {
                       const sentStyle = toneMap[c.sentiment];
                       const momentumPositive = c.momentum.startsWith("+");
+                      const sentimentLabel = c.sentiment === "green" ? "Positive" : c.sentiment === "red" ? "Negative" : c.sentiment === "amber" ? "Mixed" : "Neutral";
                       return (
                         <tr key={c.name} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
                           <td className="px-3 py-2.5 font-bold text-slate-800">{c.name}</td>
@@ -574,7 +575,7 @@ export default function DashboardPage() {
                           <td className="px-3 py-2.5 text-center">
                             <span className={`inline-flex h-5 items-center gap-1 rounded-[6px] px-1.5 text-[10px] font-bold ${sentStyle.bg} ${sentStyle.text}`}>
                               <span className={`h-1.5 w-1.5 rounded-full ${sentStyle.soft}`} />
-                              {c.sentiment.charAt(0).toUpperCase() + c.sentiment.slice(1)}
+                              {sentimentLabel}
                             </span>
                           </td>
                           <td className={`px-3 py-2.5 text-right font-bold tabular-nums ${momentumPositive ? "text-[#10B981]" : "text-[#EF4444]"}`}>{c.momentum}</td>

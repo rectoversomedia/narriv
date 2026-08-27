@@ -40,6 +40,7 @@ const connectionMetrics = {
 // Table name mapping: code usage -> actual PostgreSQL table names
 const TABLE_MAP = {
     'users': 'users',  // lowercase table — FK from workspace_members, email_verification_tokens, etc. all reference users(id)
+    'User': 'users',    // camelCase alias for the users table (PostgreSQL table name is 'users')
     'refresh_tokens': 'refresh_tokens',
     'password_reset_tokens': 'password_reset_tokens',
     'email_verification_tokens': 'email_verification_tokens',

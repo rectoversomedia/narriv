@@ -2916,13 +2916,16 @@
       "system": "System"
     },
     "nav": {
-      "command": "Command Center",
+      "command": "Dashboard",
       "signals": "Signals",
       "alerts": "Alerts",
       "visibility": "AI Visibility",
       "intelligence": "Intelligence",
       "reports": "Reports",
-      "actionCenter": "Action Center",
+      "askNarriv": "Ask Narriv",
+      "opportunities": "Opportunities",
+      "actions": "Action Center",
+      "actionCenter": "Action Plans",
       "cases": "Cases",
       "dataSources": "Data Sources",
       "integrations": "Integrations",
