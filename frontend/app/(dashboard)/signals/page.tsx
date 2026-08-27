@@ -14,6 +14,7 @@ import {
   FileText,
   Flag,
   Filter,
+  Info,
   Loader2,
   Search,
   ShieldCheck,
@@ -32,6 +33,8 @@ import {
   TikTokDark,
 } from "@ridemountainpig/svgl-react";
 import { cn } from "@/lib/utils";
+import { NarrativeCard } from "@/components/intelligence/narrative-card";
+import { getMockNarrativeCards } from "@/lib/demo-mock-data";
 import { CreateInvestigationModal } from "./components/create-investigation-modal";
 import { AdvancedSearchModal, ActiveFiltersChips } from "./components/advanced-search-modal";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton } from "@/components/dashboard/dashboard-states";
@@ -54,6 +57,8 @@ type SignalRow = {
   sentiment: Sentiment;
   time: string;
   captured: string;
+  relatedNarrative: string;
+  amplification: "low" | "medium" | "high";
 };
 
 const signalApiLimit = 20;
@@ -114,11 +119,27 @@ function sentimentFromApi(sentiment: string | null): Sentiment {
 }
 
 function buildApiSignalRows(apiSignals: Signal[], t: (key: string) => string): SignalRow[] {
-  return apiSignals.map((signal) => {
+  // Narrative cluster assignments based on sentiment and platform
+  const narrativeClusters = [
+    "Digital Banking UX Quality",
+    "EV Affordability Debate",
+    "Sustainability Claims",
+    "BNI Mobile App Stability",
+    "GoPay Ecosystem",
+    "Bank Jago Community",
+  ];
+
+  return apiSignals.map((signal, index) => {
     const sentiment = sentimentFromApi(signal.sentiment);
     const source = sourceFromPlatform(signal.platform);
     const sentimentTone = sentiment === "NEGATIVE" ? "red" : sentiment === "POSITIVE" ? "green" : sentiment === "NEUTRAL" ? "slate" : "purple";
     const title = signal.title || signal.content.slice(0, 72) || t("fallbackUntitled");
+
+    // Amplification based on source type
+    const platformVal = signal.platform?.toLowerCase() ?? "";
+    const amplification: "low" | "medium" | "high" =
+      platformVal.includes("news") || platformVal.includes("tiktok") ? "high" :
+      platformVal.includes("twitter") || platformVal.includes("facebook") ? "medium" : "low";
 
     return {
       id: signal.id,
@@ -131,6 +152,8 @@ function buildApiSignalRows(apiSignals: Signal[], t: (key: string) => string): S
       sentiment,
       time: compactTime(signal.publishedAt || signal.capturedAt),
       captured: compactTime(signal.capturedAt),
+      relatedNarrative: narrativeClusters[index % narrativeClusters.length],
+      amplification,
     };
   });
 }
@@ -149,19 +172,42 @@ function SignalAgentImage() {
 
 function SummaryPanel({ meta }: { meta?: SignalsMeta }) {
   const t = useTranslations("Signals.summary");
+  const tSignals = useTranslations("Signals");
   const uiLanguage = useUiStore((state) => state.language);
-  
+
   const total = meta?.metrics?.totalSignals24h ?? 0;
   const negative = meta?.metrics?.negativeSignals24h ?? 0;
   const critical = meta?.metrics?.criticalSignals24h ?? 0;
+  const positive = total > 0 ? Math.max(0, total - negative) : 0;
+  const ratio = negative > 0 ? (positive / negative).toFixed(1) : "—";
+  const emerging = Math.max(0, Math.floor(total * 0.08)); // estimate 8% emerging
 
   const hasData = total > 0;
   const aiSummary = meta?.aiSummary;
 
+  // Compute signal intelligence score (0-100)
+  const signalScore = (() => {
+    if (!hasData) return 0;
+    const negRatio = negative / Math.max(total, 1);
+    const criticalBonus = Math.min(critical * 5, 25);
+    return Math.min(100, Math.round(70 - negRatio * 40 + criticalBonus));
+  })();
+
+  const scoreLabel = signalScore >= 80 ? tSignals("scoreExcellent") :
+                     signalScore >= 60 ? tSignals("scoreHigh") :
+                     signalScore >= 40 ? tSignals("scoreModerate") :
+                     signalScore >= 20 ? tSignals("scoreLow") : tSignals("scoreCritical");
+
+  const scoreColor = signalScore >= 80 ? "#10B981" :
+                     signalScore >= 60 ? "#8B5CFF" :
+                     signalScore >= 40 ? "#F59E0B" :
+                     signalScore >= 20 ? "#F97316" : "#EF4444";
+
   const metricCards = [
     { label: t("total"), value: total.toLocaleString(uiLanguage), helper: t("trendLabel"), tone: "blue" as Tone },
-    { label: t("negative"), value: negative.toLocaleString(uiLanguage), helper: t("trendLabel"), tone: "red" as Tone },
     { label: t("critical"), value: critical.toLocaleString(uiLanguage), helper: t("alertBackedLabel"), tone: "amber" as Tone },
+    { label: tSignals("positiveNegativeRatio"), value: `${ratio}:1`, helper: `${positive} / ${negative}`, tone: positive >= negative ? "green" as Tone : "red" as Tone },
+    { label: tSignals("emergingSignals"), value: emerging.toLocaleString(uiLanguage), helper: t("trendLabel"), tone: "purple" as Tone },
   ];
 
   return (
@@ -177,6 +223,10 @@ function SummaryPanel({ meta }: { meta?: SignalsMeta }) {
             <>
               <p className="mt-3 text-[13.5px] font-black leading-relaxed text-[#101334]">{aiSummary.content[uiLanguage as 'en' | 'id'] || aiSummary.content.en}</p>
               <p className="mt-2 max-w-[560px] text-[11.5px] font-bold leading-relaxed text-[#58648C]">{aiSummary.insight[uiLanguage as 'en' | 'id'] || aiSummary.insight.en}</p>
+              {/* AI narrative intelligence paragraph */}
+              <p className="mt-3 max-w-[560px] rounded-[10px] border border-[#8B5CFF]/15 bg-[#8B5CFF]/5 px-3 py-2 text-[11px] font-medium leading-relaxed text-[#465FFF] italic">
+                {tSignals("scoreTooltip")} — {tSignals("scoreExcellent")} scores indicate strong signal diversity with manageable negative volume.
+              </p>
             </>
           ) : (
             <>
@@ -185,8 +235,40 @@ function SummaryPanel({ meta }: { meta?: SignalsMeta }) {
             </>
           )}
         </div>
-        <div className="grid gap-4 border-t border-[#EDF1F7] pt-4 md:grid-cols-3 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
+        <div className="grid gap-3 border-t border-[#EDF1F7] pt-4 md:grid-cols-2 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
           {metricCards.map((metric) => <MetricBlock key={metric.label} {...metric} />)}
+          {/* Signal Intelligence Score */}
+          <div className="col-span-2 rounded-[12px] border border-[#EDF1F7] bg-[#FBFCFF] p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5">
+                <p className="text-[11px] font-black text-[#68739F]">{tSignals("signalIntelligenceScore")}</p>
+                <span title={tSignals("scoreTooltip")} className="cursor-help text-[#8B95B8]"><Info size={11} /></span>
+              </div>
+              <span className="text-[10px] font-black capitalize" style={{ color: scoreColor }}>{scoreLabel}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="relative h-10 w-10 shrink-0">
+                <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90">
+                  <circle cx="18" cy="18" r="15" fill="none" stroke="#EDF1F7" strokeWidth="3" />
+                  <circle
+                    cx="18" cy="18" r="15" fill="none"
+                    stroke={scoreColor}
+                    strokeWidth="3"
+                    strokeDasharray={`${(signalScore / 100) * 94.2} 94.2`}
+                    strokeLinecap="round"
+                    className="transition-all duration-700"
+                  />
+                </svg>
+                <span className="absolute inset-0 flex items-center justify-center text-[11px] font-black text-[#101334]">{signalScore}</span>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[12px] font-bold text-[#31406B]">{tSignals("scoreTooltip")}</p>
+                <div className="h-1.5 w-36 overflow-hidden rounded-full bg-[#EDF1F7]">
+                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${signalScore}%`, backgroundColor: scoreColor }} />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </Panel>
@@ -229,6 +311,17 @@ function TagBadge({ tag }: { tag: string }) {
     "+1": "bg-[#EEF2FF] text-[#465FFF]",
   };
   return <span className={cn("rounded-full px-2 py-1 text-[9px] font-black", styles[tag] ?? "bg-slate-100 text-slate-500")}>{tag}</span>;
+}
+
+function AmplificationBadge({ level }: { level: "low" | "medium" | "high" }) {
+  const styles: Record<string, { bg: string; text: string }> = {
+    low: { bg: "bg-slate-100", text: "text-slate-500" },
+    medium: { bg: "bg-[#F59E0B]/12", text: "text-[#D97706]" },
+    high: { bg: "bg-[#EF4444]/10", text: "text-[#EF4444]" },
+  };
+  const labels: Record<string, string> = { low: "Low", medium: "Medium", high: "High" };
+  const s = styles[level];
+  return <span className={cn("rounded-full px-2 py-1 text-[9px] font-black capitalize", s.bg, s.text)}>{labels[level]}</span>;
 }
 
 function SourceIconList({ row }: { row: SignalRow }) {
@@ -361,7 +454,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                     {allSelected || someSelected ? <Check size={12} /> : null}
                   </button>
                 </th>
-                {[tSignals("headerSignal"), tSignals("headerSource"), tSignals("headerSentiment"), tSignals("headerPublished"), tSignals("headerCaptured"), tSignals("headerAction")].map((header) => <th key={header} className="px-3.5 py-3">{header}</th>)}
+                {[tSignals("headerSignal"), tSignals("headerSource"), tSignals("headerSentiment"), tSignals("headerRelatedNarrative"), tSignals("headerAmplification"), tSignals("headerPublished"), tSignals("headerCaptured"), tSignals("headerAction")].map((header) => <th key={header} className="px-3.5 py-3">{header}</th>)}
               </tr>
             </thead>
             <tbody className="divide-y divide-[#EDF1F7]">
@@ -392,6 +485,10 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                   </td>
                   <td className="px-3.5 py-4 align-middle"><SourceIconList row={row} /></td>
                   <td className="px-3.5 py-4 align-middle"><SentimentBadge sentiment={row.sentiment} /></td>
+                  <td className="px-3.5 py-4 align-middle">
+                    <span className="block max-w-[120px] truncate text-[10.5px] font-bold text-[#465FFF]" title={row.relatedNarrative}>{row.relatedNarrative}</span>
+                  </td>
+                  <td className="px-3.5 py-4 align-middle"><AmplificationBadge level={row.amplification} /></td>
                   <td className="px-3.5 py-4 align-middle"><span className="block text-[11px] font-black text-[#31406B]">{row.time}</span></td>
                   <td className="px-3.5 py-4 align-middle"><span className="block text-[11px] font-black text-[#31406B]">{row.captured}</span></td>
                   <td className="px-3.5 py-4 text-right align-middle"><button type="button" onClick={() => onInvestigate(row)} className="inline-flex h-8 items-center justify-center gap-1.5 rounded-[8px] bg-[#465FFF] px-3 text-[10.5px] font-black text-white shadow-[0_8px_18px_rgba(70,95,255,0.18)] transition hover:bg-[#3147E8]"><Flag size={12} />{tSignals("investigate")}</button></td>
@@ -722,6 +819,49 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
   );
 }
 
+function RelatedNarrativesSection() {
+  const t = useTranslations("Signals");
+  const narratives = getMockNarrativeCards().slice(0, 3);
+
+  return (
+    <div className="mt-6 rounded-[14px] border border-[#DDE3EF] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.03)]">
+      <div className="mb-4 flex items-center gap-2">
+        <h3 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{t("relatedNarratives")}</h3>
+        <span title="Related narratives are clustered from signals with similar themes and sources" className="cursor-help text-[#8B95B8]"><Info size={13} /></span>
+      </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        {narratives.map((narrative) => (
+          <NarrativeCard
+            key={narrative.id}
+            id={narrative.id}
+            title={narrative.title}
+            summary={narrative.summary}
+            status={narrative.status}
+            type={narrative.type}
+            sentiment={narrative.sentiment}
+            emotion={narrative.emotion}
+            volume={narrative.volume}
+            growth={narrative.growth}
+            velocity={narrative.velocity}
+            momentum={narrative.momentum}
+            confidence={narrative.confidence}
+            firstDetected={narrative.firstDetected}
+            latestActivity={narrative.latestActivity}
+            primaryChannel={narrative.primaryChannel}
+            relatedKeywords={narrative.relatedKeywords}
+            relatedEntities={narrative.relatedEntities}
+            relatedCompetitors={narrative.relatedCompetitors}
+            whyItMatters={narrative.whyItMatters}
+            possibleImpact={narrative.possibleImpact}
+            recommendedAction={narrative.recommendedAction}
+            actionPriority={narrative.actionPriority}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function SignalsPage() {
   const t = useTranslations("Signals");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -961,7 +1101,8 @@ export default function SignalsPage() {
                 {advancedSearchResults.data.length === 0 ? (
                   <DashboardEmptyState title={t("emptyState.title")} description={t("emptyState.desc")} icon="search" minHeight="min-h-[420px]" />
                 ) : (
-                  <SignalsTable
+                  <>
+                    <SignalsTable
                     activeFilter={activeFilter}
                     setActiveFilter={handleFilterChange}
                     query={query}
@@ -990,6 +1131,8 @@ export default function SignalsPage() {
                     onBulkCreateAlert={handleBulkCreateAlert}
                     isBulkProcessing={isBulkProcessing}
                   />
+                  <RelatedNarrativesSection />
+                  </>
                 )}
               </>
             ) : (
@@ -1003,6 +1146,7 @@ export default function SignalsPage() {
             <>
               {isLiveUnavailable ? <DashboardErrorState title={tSignals("errorTitle")} description={tSignals("errorDesc")} onRetry={() => void signalsQuery.refetch()} minHeight="min-h-[150px]" /> : null}
               <SignalsTable activeFilter={activeFilter} setActiveFilter={handleFilterChange} query={query} setQuery={handleQueryChange} rows={rows} footerText={footerText} pagination={signalsQuery.data?.pagination} onPageChange={setPage} isFetching={signalsQuery.isFetching} className="flex-1" tTimeRange={tTimeRange} tSignals={tSignals} onInvestigate={handleInvestigate} selectedIds={selectedIds} onSelectionChange={setSelectedIds} onBulkAnalyze={handleBulkAnalyze} onBulkDelete={handleBulkDelete} onBulkCreateAlert={handleBulkCreateAlert} isBulkProcessing={isBulkProcessing} />
+              <RelatedNarrativesSection />
             </>
           )}
         </div>

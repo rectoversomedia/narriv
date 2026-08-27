@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { ArrowRight, BarChart3, Bell, CheckCircle2, Database, FileText, Headphones, RefreshCcw, Send, Settings, Sparkles, X, Zap, Rocket, Lightbulb } from "lucide-react";
+import { ArrowRight, ArrowUpRight, BarChart3, Bell, CheckCircle2, ChevronRight, Database, FileText, Headphones, RefreshCcw, Send, Settings, Sparkles, TrendingUp, X, Zap, Rocket, Lightbulb, AlertTriangle, Activity, Bot } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
-import { AppCard, IconBubble, MetricTile, SectionHeader } from "@/components/dashboard/dashboard-kit";
+import { AppCard, IconBubble, MetricTile, SectionHeader, toneMap } from "@/components/dashboard/dashboard-kit";
 import { CardContent } from "@/components/ui/card";
 import { quickActions, text, type Tone } from "@/lib/mock-data";
 import { useUiStore } from "@/store/useUiStore";
-import { isDemoMode } from "@/lib/demo-mock-data";
+import { getMockNarratives, isDemoMode } from "@/lib/demo-mock-data";
 
 import { useQuery } from "@tanstack/react-query";
 import { getDashboardSummary, getDateRangeOptions, getWorkspaceSettings, type DateRangeKey } from "@/lib/api-service";
@@ -374,322 +374,335 @@ export default function DashboardPage() {
     );
   }
 
+  // ── New "Today's Intelligence" data ───────────────────────────────────────
+
+  const today = new Date();
+  const dateStr = today.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+  const developments: Array<{ id: string; icon: typeof AlertTriangle; title: string; change: string; category: string; tone: Tone }> = [
+    { id: "d1", icon: Activity, title: "Service quality mentions spiking on Reddit", change: "+38%", category: "Risk", tone: "red" },
+    { id: "d2", icon: Zap, title: "New competitor mentioned in AI responses", change: "NEW", category: "Competitor", tone: "amber" },
+    { id: "d3", icon: TrendingUp, title: "Feature launch driving positive momentum", change: "+67%", category: "Opportunity", tone: "green" },
+    { id: "d4", icon: Bot, title: "AI visibility score improving across platforms", change: "+8pp", category: "AI Visibility", tone: "blue" },
+  ];
+
+  const scorecard = [
+    { label: "Narrative Health", value: 74, delta: "+3", lowerIsBetter: false, tone: "green" as Tone },
+    { label: "Reputation Score", value: 81, delta: "-1", lowerIsBetter: false, tone: "blue" as Tone },
+    { label: "Risk Level", value: 27, delta: "+5", lowerIsBetter: true, tone: "red" as Tone },
+    { label: "Narrative Momentum", value: 69, delta: "+8", lowerIsBetter: false, tone: "green" as Tone },
+    { label: "Share of Narrative", value: "34%", delta: "+2pp", lowerIsBetter: false, tone: "blue" as Tone },
+    { label: "AI Visibility", value: 72, delta: "+6", lowerIsBetter: false, tone: "purple" as Tone },
+  ];
+
+  const competitors = [
+    { name: "CompetitorA", shareOfVoice: 42, sentiment: "positive" as Tone, momentum: "+12%", aiVisibility: 68 },
+    { name: "CompetitorB", shareOfVoice: 18, sentiment: "neutral" as Tone, momentum: "-3%", aiVisibility: 54 },
+    { name: "CompetitorC", shareOfVoice: 6, sentiment: "negative" as Tone, momentum: "+1%", aiVisibility: 31 },
+  ];
+
+  const recommendedActions = [
+    { id: "a1", priority: "Immediate" as const, text: "Monitor spike in negative service quality mentions on Reddit — consider response strategy", href: "/signals" },
+    { id: "a2", priority: "High" as const, text: "Investigate sudden drop in positive sentiment (-8%) over the past 24 hours", href: "/signals" },
+    { id: "a3", priority: "High" as const, text: "Review AI-generated content citing competitor comparison — assess opportunity", href: "/visibility" },
+    { id: "a4", priority: "Medium" as const, text: "Prepare response to emerging \"app performance\" topic before it gains traction", href: "/intelligence" },
+    { id: "a5", priority: "Low" as const, text: "Capitalize on positive loyalty program momentum with follow-up content", href: "/reports" },
+  ];
+
+  const aiPlatforms = [
+    { name: "ChatGPT", score: 72, change: "+6", tone: "green" as Tone },
+    { name: "Gemini", score: 61, change: "+3", tone: "blue" as Tone },
+    { name: "Perplexity", score: 58, change: "-2", tone: "red" as Tone },
+  ];
+
+  const narratives: Array<{ id: string; title: string; status: "active"; sentiment: Tone; volume: string; growth: string }> =
+    demoMode
+      ? getMockNarratives().data.map((n) => ({
+          id: n.id,
+          title: n.title,
+          status: "active" as const,
+          sentiment: (n.sentiment === "positive" ? "green" : n.sentiment === "negative" ? "red" : n.sentiment === "mixed" ? "amber" : "blue") as Tone,
+          volume: String(n.signalCount),
+          growth: n.velocity,
+        }))
+      : (summary?.top_topics ?? []).map((t, i) => ({
+          id: `topic-${i}`,
+          title: text(t.name, language),
+          status: "active" as const,
+          sentiment: t.tone as Tone,
+          volume: t.mentions,
+          growth: t.delta,
+        }));
+
+  const priorityBadgeClass: Record<string, string> = {
+    Immediate: "bg-red-50 text-red-600 border-red-200",
+    High: "bg-amber-50 text-amber-600 border-amber-200",
+    Medium: "bg-blue-50 text-blue-600 border-blue-200",
+    Low: "bg-slate-50 text-slate-500 border-slate-200",
+  };
+
   return (
     <div className="space-y-8 pb-6">
-      {/* Demo Mode Banner */}
-      {demoMode ? (
-        <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
-          <Sparkles size={16} className="text-[#8B5CFF]" />
-          <p className="text-[13px] font-bold text-[#8B5CFF]">
-            {t("pages.command.demoMode") || "Demo Mode"} — {t("pages.command.demoModeDesc") || "Showing sample data for demonstration purposes"}
-          </p>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => {
-            if (typeof window !== "undefined") {
-              const url = new URL(window.location.href);
-              url.searchParams.set("demo", "true");
-              window.location.href = url.toString();
-            }
-          }}
-          className="flex items-center justify-center gap-2 rounded-[10px] border border-dashed border-[#8B5CFF]/30 bg-[#8B5CFF]/5 px-4 py-3 transition hover:bg-[#8B5CFF]/10"
-        >
-          <Sparkles size={16} className="text-[#8B5CFF]" />
-          <p className="text-[13px] font-bold text-[#8B5CFF]">
-            Activate Demo Mode — see Narriv with sample data
-          </p>
-        </button>
-      )}
-
-      {/* Header Section */}
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between mb-2 rounded-[10px] border border-slate-100 bg-[linear-gradient(135deg,#ffffff_0%,#f8fbff_52%,#fff7ed_100%)] p-4 shadow-[0_14px_38px_rgba(16,24,40,0.04)]">
-        <div>
-          <h1 className="text-[32px] font-black tracking-[-0.04em] text-slate-900 flex items-center gap-2">
-            {t("pages.command.title")}
-          </h1>
-          <p className="mt-2 text-[15px] font-medium text-slate-500">{t("pages.command.desc")}</p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <Link 
-            href="/workspace/settings"
-            className="inline-flex h-[42px] w-full items-center justify-center gap-2 rounded-[8px] border border-slate-200 bg-white/80 px-4 text-[14px] font-bold text-slate-900 shadow-sm transition-all hover:border-slate-300 hover:bg-white active:scale-[0.98] sm:w-auto"
-          >
-            <Settings size={16} className="text-slate-500" />
-            {t("pages.command.customize")}
-          </Link>
-          <button 
-            type="button"
-            onClick={() => void dashboardQuery.refetch()}
-            disabled={dashboardQuery.isFetching}
-            className="inline-flex h-[42px] w-full items-center justify-center gap-2 rounded-[8px] border border-[#465FFF]/20 bg-[#465FFF] px-4 text-[14px] font-bold text-white shadow-[0_10px_24px_rgba(70,95,255,0.18)] transition-all hover:bg-[#3b50d8] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
-          >
-            <RefreshCcw size={16} className={dashboardQuery.isFetching ? "animate-spin" : ""} />
-            {t("pages.command.refresh")}
-          </button>
-        </div>
-      </div>
-
-      {/* Metrics Row */}
-      {isLiveUnavailable ? (
-        <DashboardErrorState title={t("pages.command.errorTitle")} description={t("pages.command.errorDesc")} onRetry={() => void dashboardQuery.refetch()} minHeight="min-h-[150px]" />
-      ) : dashboardQuery.isPending ? (
-        <MetricRowSkeleton count={6} />
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          {metricsRow.map((metric) => (
-            <MetricTile
-              key={metric.label}
-              label={metric.label}
-              value={metric.value}
-              helper={metric.helper}
-              icon={metric.icon}
-              tone={metric.tone}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Main Insights Grid */}
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr_0.7fr] xl:grid-cols-[1.1fr_1fr_0.65fr]">
-        {/* Signal Volume Trends */}
-        <AppCard>
-          <CardContent className="p-5">
-            <SectionHeader 
-              title={t("pages.command.activity")} 
-              description={t("pages.command.activityDesc")} 
-              actionPlacement="below"
-              action={
-                <div className="grid w-full grid-cols-3 gap-1 rounded-[10px] border border-slate-200 bg-slate-100/70 p-1">
-                  {timeRangeOptions.map((range) => (
-                    <button key={range.value} type="button" onClick={() => setTimeRange(range.value)} className={`h-8 rounded-[7px] px-3 text-[11px] font-extrabold whitespace-nowrap transition ${timeRange === range.value ? "bg-white text-[#465FFF] shadow-sm ring-1 ring-slate-200" : "text-slate-500 hover:bg-white/70 hover:text-slate-800"}`}>
-                      {range.label}
-                    </button>
-                  ))}
-                </div>
-              } 
-            />
-            <ActivityAreaChart data={activityData} />
-            {activityData.length === 0 ? (
-              <EmptyPanel label={t("pages.command.emptyTrends")} />
-            ) : null}
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 2xl:grid-cols-6">
-              {miniTrends.length > 0 ? miniTrends.map((topic) => (
-                <div key={topic.label} className="rounded-[6px] border border-slate-100 bg-slate-50 p-2.5 transition hover:border-[#465FFF]/20">
-                  <p className="text-[10px] font-bold text-slate-400 truncate">{topic.label}</p>
-                  <p className="mt-1 text-base font-black text-slate-900">{formatNumber(parseInt(topic.value.replace(/[^0-9]/g, "")) || 0)}</p>
-                  <MiniSparkline tone={topic.tone as Tone} />
-                </div>
-              )) : (
-                <div className="sm:col-span-2 2xl:col-span-6">
-                  <EmptyPanel label={t("pages.command.emptyTopics")} compact />
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </AppCard>
-
-        {/* Narrative Command Map */}
-        <AppCard>
-          <CardContent className="p-5">
-            <SectionHeader 
-              title={t("pages.command.map")} 
-              description={t("pages.command.mapDesc")} 
-              action={
-                <span className="inline-flex h-8 items-center rounded-[8px] border border-[#12B76A]/20 bg-[#12B76A]/10 px-3 text-xs font-black text-[#027A48]">
-                  {t("pages.command.mapLive")}
-                </span>
-              }
-            />
-            <WorldActivityMap
-              activity={globalActivity}
-              emptyLabel={t("pages.command.emptyMap")}
-              mapErrorLabel={t("pages.command.mapError")}
-              lowLabel={t("pages.command.mapLow")}
-              highLabel={t("pages.command.mapHigh")}
-            />
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <div className="rounded-[10px] border border-slate-100 bg-slate-50 px-3 py-2">
-                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">{t("pages.command.mapSignals")}</p>
-                <p className="mt-1 text-lg font-black text-slate-900">{mappedSignalCount.toLocaleString()}</p>
-              </div>
-              <div className="rounded-[10px] border border-slate-100 bg-slate-50 px-3 py-2">
-                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">{t("pages.command.mapRegions")}</p>
-                <p className="mt-1 text-lg font-black text-slate-900">{mappedRegionCount.toLocaleString()}</p>
-              </div>
-            </div>
-          </CardContent>
-        </AppCard>
-
-        {/* Predictive Alerts */}
-        <AppCard className="h-full">
-          <CardContent className="flex h-full flex-col p-5">
-            <SectionHeader 
-              title={t("pages.command.alerts")} 
-              description={t("pages.command.alertsDesc")} 
-              action={<Link href="/alerts" className="whitespace-nowrap text-[11px] font-bold text-[#465FFF] transition-all hover:text-[#8B5CFF] hover:underline">{t("common.viewAll")}</Link>} 
-            />
-            <div className="min-h-[180px] flex-1 space-y-4">
-              {alertsRow.length > 0 ? alertsRow.map((alert) => (
-                <div key={alert.id} className="flex gap-3 border-b border-slate-100 pb-3.5 last:border-0 last:pb-0">
-                  <IconBubble icon={Zap} tone={alert.tone as Tone} className="h-9 w-9 rounded-[8px]" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-bold text-slate-800">{alert.title}</p>
-                    <p className="mt-1 text-[11px] font-semibold text-slate-400">{alert.source}</p>
-                  </div>
-                  <span className="text-[11px] font-semibold text-slate-400">{alert.time}</span>
-                </div>
-              )) : (
-                <EmptyPanel label={t("pages.command.emptySignals")} />
-              )}
-            </div>
-            <Link href="/signals" className="group mt-auto flex w-full items-center justify-center gap-2 border-t border-slate-100 pt-4 text-sm font-bold text-[#465FFF] transition-all hover:text-[#465FFF]">
-              {t("common.viewAll")} 
-              <ArrowRight size={16} className="transform transition-transform group-hover:translate-x-1" />
-            </Link>
-          </CardContent>
-        </AppCard>
-      </div>
-
-      {/* Extra Details Grid */}
-      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-4">
-        {/* Hot Topics */}
-        <AppCard>
-          <CardContent className="p-5">
-            <SectionHeader title={t("pages.command.topics")} description={t("pages.command.topicsDesc")} />
-            <div className="space-y-2 mt-4">
-              {hotTopics.length > 0 ? hotTopics.map((topic, index) => (
-                <div key={text(topic.name, language)} className="flex items-center gap-3 py-2.5 border-b border-slate-100 last:border-0 last:pb-0">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#8B5CFF]/15 text-xs font-bold text-[#8B5CFF] border border-[#8B5CFF]/20">
-                    {index + 1}
-                  </span>
-                  <p className="flex-1 text-sm font-bold text-slate-900 truncate">{text(topic.name, language)}</p>
-                  <p className="text-xs font-semibold text-slate-400 tabular-nums">{formatNumber(parseInt(topic.mentions.replace(/[^0-9]/g, "")))}</p>
-                  <p className={`text-xs font-extrabold tabular-nums ${topic.tone === "red" ? "text-[#EF4444]" : "text-[#10B981]"}`}>
-                    {topic.delta}
-                  </p>
-                </div>
-              )) : (
-                <EmptyPanel label={t("pages.command.emptyTopics")} />
-              )}
-            </div>
-          </CardContent>
-        </AppCard>
-
-        {/* Data Sources */}
-        <AppCard>
-          <CardContent className="p-5">
-            <SectionHeader title={t("pages.command.sources")} description={t("pages.command.sourcesDesc")} />
-            <div className="space-y-2 mt-4">
-              {sourcesData.length > 0 ? sourcesData.map((source, index) => (
-                <div key={`${source.name}-${index}`} className="grid grid-cols-[1fr_75px_60px] items-center gap-2 py-3 border-b border-slate-100 last:border-0 last:pb-0 text-sm">
-                  <p className="font-bold text-slate-800 truncate">{source.name}</p>
-                  <p className="text-xs font-extrabold text-[#10B981] flex items-center gap-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />
-                    {text(source.status, language)}
-                  </p>
-                  <p className="text-right text-xs font-bold text-slate-500 tabular-nums">{formatNumber(parseInt(source.signals.replace(/[^0-9]/g, "")))}</p>
-                </div>
-              )) : (
-                <EmptyPanel label={t("pages.command.emptySources")} />
-              )}
-            </div>
-          </CardContent>
-        </AppCard>
-
-        {/* Mentions Sentiment Visibility */}
-        <AppCard>
-          <CardContent className="p-5">
-            <SectionHeader title={t("pages.command.visibility")} description={t("pages.command.visibilityDesc")} />
-            {sentimentData.some((item) => item.value > 0) ? (
-              <DonutChart center={String(summary?.kpis?.analyzed_signals ?? 0)} label={t("pages.command.totalMentions")} data={sentimentData} />
-            ) : (
-              <div className="mx-auto flex h-[188px] w-[188px] items-center justify-center rounded-full border border-dashed border-slate-200 bg-slate-50 text-center text-[12px] font-bold text-slate-400">
-                {t("pages.command.emptySentiment")}
-              </div>
-            )}
-            <div className="mt-6 grid gap-2.5 text-sm">
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span className="text-slate-500 flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-[#12B76A]" />
-                  {t("pages.command.positive")}
-                </span>
-                <b className="text-slate-900 font-semibold tabular-nums">{formatNumber(summary?.sentiment_distribution?.positive)}</b>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span className="text-slate-500 flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-[#465FFF]" />
-                  {t("pages.command.neutral")}
-                </span>
-                <b className="text-slate-900 font-semibold tabular-nums">{formatNumber(summary?.sentiment_distribution?.neutral)}</b>
-              </div>
-              <div className="flex justify-between py-1">
-                <span className="text-slate-500 flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-[#F04438]" />
-                  {t("pages.command.negative")}
-                </span>
-                <b className="text-slate-900 font-semibold tabular-nums">{formatNumber(summary?.sentiment_distribution?.negative)}</b>
-              </div>
-            </div>
-          </CardContent>
-        </AppCard>
-
-        {/* Quick Actions */}
-        <AppCard>
-          <CardContent className="p-5">
-            <SectionHeader title={t("pages.command.quick")} description={t("pages.command.quickDesc")} />
-            <div className="grid grid-cols-2 gap-3 mt-4">
-              {quickActions.map((action) => { 
-                const Icon = action.icon; 
-                return (
-                    <button 
-                      key={action.key} 
-                      type="button"
-                      onClick={() => setSelectedAction(action.key as QuickActionKey)}
-                      className={`flex min-h-[82px] flex-col items-center justify-center gap-2.5 rounded-[8px] border transition-all text-center text-xs font-bold active:scale-[0.96] ${selectedAction === action.key ? "border-[#465FFF] bg-[#465FFF]/5 text-[#465FFF]" : "border-slate-100 bg-slate-50 text-slate-800 hover:bg-slate-100 hover:border-[#465FFF]/35"}`}
-                    >
-                    <Icon size={22} className="text-[#465FFF] drop-shadow-[0_0_8px_rgba(70,95,255,0.4)]" />
-                    <span className="px-1">{t(`pages.quickActions.${action.key}`)}</span>
-                  </button>
-                ); 
-              })}
-            </div>
-            {selectedAction ? (
-              <QuickActionDrawer actionKey={selectedAction} onClose={() => setSelectedAction(null)} quickActionContent={quickActionContent} tDrawer={(key) => tDrawer(key)} />
-            ) : null}
-          </CardContent>
-        </AppCard>
-      </div>
-
-      {/* System Status Banner */}
-      <AppCard>
-        <CardContent className="p-5">
-          <SectionHeader 
-            title={t("pages.command.status")} 
-            action={
-              <Link href="/workspace/activity" className="flex items-center gap-1 text-sm font-bold text-[#465FFF] hover:underline">
-                {t("pages.command.viewStatus")} <ArrowRight size={16} className="inline ml-1" />
-              </Link>
-            } 
-          />
-          <div className="grid gap-3 md:grid-cols-5 mt-4">
-            {sysStatusData.length > 0 ? sysStatusData.map((item) => (
-              <div key={item} className="flex items-center gap-3 rounded-[10px] bg-slate-50 border border-slate-100 p-4 transition hover:border-[#10B981]/25">
-                <IconBubble icon={CheckCircle2} tone="green" className="h-8 w-8 rounded-full shrink-0" />
-                <div>
-                  <p className="text-sm font-bold text-slate-900">{item}</p>
-                  <p className="text-xs font-semibold text-[#10B981]">{t("common.operational")}</p>
-                </div>
-              </div>
-            )) : (
-              <div className="md:col-span-5">
-                <EmptyPanel label={t("pages.command.emptyStatus")} />
-              </div>
-            )}
+      {/* ── 1. Executive Summary Bar ──────────────────────────────────────── */}
+      <div className="flex flex-col gap-3 rounded-[14px] border border-slate-100 bg-[linear-gradient(135deg,#ffffff_0%,#f8fbff_52%,#fff7ed_100%)] p-4 shadow-[0_14px_38px_rgba(16,24,40,0.04)]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#465FFF]/10 text-[#465FFF]">
+              <Sparkles size={18} />
+            </span>
+            <h1 className="text-[22px] font-black tracking-[-0.03em] text-slate-900">
+              Today&apos;s Intelligence
+            </h1>
           </div>
-        </CardContent>
-      </AppCard>
+          <span className="text-[13px] font-semibold text-slate-400">{dateStr}</span>
+        </div>
+        <p className="text-[13px] font-medium leading-relaxed text-slate-500">
+          3 emerging risks detected. 1 opportunity identified. Net sentiment shifted +8% today.
+        </p>
+      </div>
+
+      {/* ── 2. Top Developments ───────────────────────────────────────────── */}
+      <div>
+        <h2 className="mb-3 text-[13px] font-black uppercase tracking-[0.1em] text-slate-400">Top Developments</h2>
+        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+          {developments.map((d) => {
+            const Icon = d.icon;
+            const toneStyle = toneMap[d.tone];
+            return (
+              <div key={d.id} className="flex min-w-[220px] max-w-[260px] flex-col gap-2.5 rounded-[10px] border border-slate-100 bg-white p-4 shadow-sm transition hover:border-slate-200 hover:shadow-md">
+                <div className="flex items-start justify-between gap-2">
+                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] ${toneStyle.bg} ${toneStyle.text}`}>
+                    <Icon size={15} />
+                  </span>
+                  <span className="rounded-[6px] border border-slate-100 bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-slate-500">{d.category}</span>
+                </div>
+                <p className="text-[12px] font-bold leading-snug text-slate-800">{d.title}</p>
+                <span className={`text-[13px] font-black tabular-nums ${toneStyle.text}`}>{d.change}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── 3. Intelligence Scorecard ─────────────────────────────────────── */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+        {scorecard.map((s) => {
+          const isPositive = s.lowerIsBetter ? s.delta.startsWith("-") || s.delta === "0" : !s.delta.startsWith("-");
+          const trendColor = isPositive ? "text-[#10B981]" : "text-[#EF4444]";
+          const scoreStyle = toneMap[s.tone];
+          return (
+            <AppCard key={s.label}>
+              <CardContent className="flex flex-col gap-1 p-4">
+                <p className="text-[11px] font-bold text-slate-400">{s.label}</p>
+                <p className={`text-[26px] font-black tracking-[-0.03em] tabular-nums ${scoreStyle.text}`}>{s.value}</p>
+                <p className={`text-[12px] font-bold tabular-nums ${trendColor}`}>
+                  {s.delta}
+                </p>
+              </CardContent>
+            </AppCard>
+          );
+        })}
+      </div>
+
+      {/* ── 4. Two-column layout ──────────────────────────────────────────── */}
+      <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
+
+        {/* Left column: Top Narratives + Competitor Snapshot */}
+        <div className="flex flex-col gap-6">
+          {/* Today's Top Narratives */}
+          <AppCard>
+            <CardContent className="p-5">
+              <SectionHeader
+                title="Today&apos;s Top Narratives"
+                description="Most active narrative clusters in the last 24 hours"
+                action={
+                  <Link href="/intelligence" className="flex items-center gap-1 text-[11px] font-bold text-[#465FFF] transition-all hover:text-[#8B5CFF] hover:underline">
+                    View all <ArrowRight size={12} />
+                  </Link>
+                }
+              />
+              <div className="mt-3 space-y-2.5">
+                {narratives.slice(0, 5).map((n) => {
+                  const sentimentColor = toneMap[n.sentiment] ?? toneMap.slate;
+                  return (
+                    <div key={n.id} className="flex items-center gap-3 rounded-[8px] border border-slate-100 bg-white px-4 py-3 transition hover:border-[#465FFF]/20 hover:bg-[#465FFF]/2">
+                      <span className={`h-2 w-2 shrink-0 rounded-full ${sentimentColor.soft}`} />
+                      <p className="flex-1 text-[13px] font-bold text-slate-800 truncate">{n.title}</p>
+                      <span className="hidden text-[11px] font-semibold text-slate-400 sm:block">{n.volume}</span>
+                      <span className="rounded-[6px] bg-slate-50 px-2 py-0.5 text-[11px] font-bold text-slate-600">{n.growth}</span>
+                    </div>
+                  );
+                })}
+                {narratives.length === 0 && (
+                  <EmptyPanel label={t("pages.command.emptyTopics")} />
+                )}
+              </div>
+            </CardContent>
+          </AppCard>
+
+          {/* Competitor Snapshot */}
+          <AppCard>
+            <CardContent className="p-5">
+              <SectionHeader
+                title="Competitor Snapshot"
+                description="Share of voice and sentiment vs. key competitors"
+                action={
+                  <Link href="/visibility" className="flex items-center gap-1 text-[11px] font-bold text-[#465FFF] transition-all hover:text-[#8B5CFF] hover:underline">
+                    View all <ArrowRight size={12} />
+                  </Link>
+                }
+              />
+              <div className="mt-3 overflow-hidden rounded-[8px] border border-slate-100">
+                <table className="w-full text-[12px]">
+                  <thead>
+                    <tr className="border-b border-slate-100 bg-slate-50">
+                      <th className="px-3 py-2 text-left font-bold text-slate-400">Competitor</th>
+                      <th className="px-3 py-2 text-right font-bold text-slate-400">Voice Share</th>
+                      <th className="px-3 py-2 text-center font-bold text-slate-400">Sentiment</th>
+                      <th className="px-3 py-2 text-right font-bold text-slate-400">Momentum</th>
+                      <th className="px-3 py-2 text-right font-bold text-slate-400">AI Visibility</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {competitors.map((c) => {
+                      const sentStyle = toneMap[c.sentiment];
+                      const momentumPositive = c.momentum.startsWith("+");
+                      return (
+                        <tr key={c.name} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
+                          <td className="px-3 py-2.5 font-bold text-slate-800">{c.name}</td>
+                          <td className="px-3 py-2.5 text-right font-bold tabular-nums text-slate-700">{c.shareOfVoice}%</td>
+                          <td className="px-3 py-2.5 text-center">
+                            <span className={`inline-flex h-5 items-center gap-1 rounded-[6px] px-1.5 text-[10px] font-bold ${sentStyle.bg} ${sentStyle.text}`}>
+                              <span className={`h-1.5 w-1.5 rounded-full ${sentStyle.soft}`} />
+                              {c.sentiment.charAt(0).toUpperCase() + c.sentiment.slice(1)}
+                            </span>
+                          </td>
+                          <td className={`px-3 py-2.5 text-right font-bold tabular-nums ${momentumPositive ? "text-[#10B981]" : "text-[#EF4444]"}`}>{c.momentum}</td>
+                          <td className="px-3 py-2.5 text-right font-bold tabular-nums text-slate-700">{c.aiVisibility}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </AppCard>
+        </div>
+
+        {/* Right column: Actions + AI Visibility + Data Status */}
+        <div className="flex flex-col gap-6">
+          {/* Recommended Actions */}
+          <AppCard>
+            <CardContent className="p-5">
+              <SectionHeader
+                title="Recommended Actions"
+                description="Prioritized response items for today"
+                action={
+                  <Link href="/action-plans" className="flex items-center gap-1 text-[11px] font-bold text-[#465FFF] transition-all hover:text-[#8B5CFF] hover:underline">
+                    View all <ArrowRight size={12} />
+                  </Link>
+                }
+              />
+              <div className="mt-3 space-y-2.5">
+                {recommendedActions.map((a) => (
+                  <div key={a.id} className="flex flex-col gap-2 rounded-[8px] border border-slate-100 bg-white px-4 py-3 transition hover:border-[#465FFF]/20">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`rounded-[6px] border px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ${priorityBadgeClass[a.priority]}`}>
+                        {a.priority}
+                      </span>
+                      <Link href={a.href} className="flex items-center gap-0.5 text-[10px] font-bold text-[#465FFF] transition hover:text-[#8B5CFF]">
+                        View <ChevronRight size={10} />
+                      </Link>
+                    </div>
+                    <p className="text-[12px] font-medium leading-snug text-slate-700">{a.text}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </AppCard>
+
+          {/* AI Visibility Changes */}
+          <AppCard>
+            <CardContent className="p-5">
+              <SectionHeader
+                title="AI Visibility Changes"
+                description="Platform visibility scores vs. last week"
+                action={
+                  <Link href="/visibility" className="flex items-center gap-1 text-[11px] font-bold text-[#465FFF] transition-all hover:text-[#8B5CFF] hover:underline">
+                    Details <ArrowRight size={12} />
+                  </Link>
+                }
+              />
+              <div className="mt-3 space-y-3">
+                {aiPlatforms.map((p) => {
+                  const platformStyle = toneMap[p.tone];
+                  const changePositive = !p.change.startsWith("-");
+                  return (
+                    <div key={p.name} className="flex items-center justify-between rounded-[8px] border border-slate-100 bg-white px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] ${platformStyle.bg} ${platformStyle.text}`}>
+                          <Bot size={14} />
+                        </span>
+                        <span className="text-[13px] font-bold text-slate-700">{p.name}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[15px] font-black tabular-nums text-slate-900">{p.score}</span>
+                        <span className={`text-[11px] font-bold tabular-nums ${changePositive ? "text-[#10B981]" : "text-[#EF4444]"}`}>{p.change}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </AppCard>
+
+          {/* Data Status */}
+          <AppCard>
+            <CardContent className="flex flex-col gap-3 p-5">
+              <SectionHeader title="Data Status" />
+              <div className="space-y-2.5 text-[12px]">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-slate-400">Last updated</span>
+                  <span className="font-bold text-slate-700">{today.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-slate-400">Data coverage</span>
+                  <span className="font-bold text-slate-700">48 / 62 sources</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-slate-400">Mode</span>
+                  <span className={`inline-flex items-center gap-1.5 rounded-[6px] px-2 py-0.5 text-[11px] font-bold ${demoMode ? "bg-[#8B5CFF]/10 text-[#8B5CFF]" : "bg-[#10B981]/10 text-[#10B981]"}`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${demoMode ? "bg-[#8B5CFF]" : "bg-[#10B981]"}`} />
+                    {demoMode ? "Demo" : "Live"}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => void dashboardQuery.refetch()}
+                disabled={dashboardQuery.isFetching}
+                className="mt-1 flex h-9 w-full items-center justify-center gap-2 rounded-[8px] border border-slate-200 bg-white text-[12px] font-bold text-slate-600 transition hover:border-[#465FFF]/30 hover:bg-[#465FFF]/5 hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <RefreshCcw size={13} className={dashboardQuery.isFetching ? "animate-spin" : ""} />
+                Refresh now
+              </button>
+            </CardContent>
+          </AppCard>
+        </div>
+      </div>
+
+      {/* ── 5. Footer strip ───────────────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-slate-100 bg-slate-50 px-5 py-3 text-[12px] font-semibold text-slate-400">
+        <span>Last refresh: {today.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</span>
+        <div className="flex items-center gap-3">
+          {demoMode && (
+            <span className="rounded-[6px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#8B5CFF]">
+              Demo
+            </span>
+          )}
+          <span>Narriv Intelligence Platform</span>
+        </div>
+      </div>
     </div>
   );
 }

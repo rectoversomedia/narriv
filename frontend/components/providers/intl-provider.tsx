@@ -6,7 +6,7 @@ import en from "@/messages/en.json";
 import id from "@/messages/id.json";
 import { useUiStore, type AppLanguage } from "@/store/useUiStore";
 
-const messages: Record<AppLanguage, typeof en> = { en, id };
+const messages: Record<AppLanguage, Record<string, unknown>> = { en: en as Record<string, unknown>, id: id as Record<string, unknown> };
 
 export function IntlProvider({ children }: { children: ReactNode }) {
   const language = useUiStore((state) => state.language);

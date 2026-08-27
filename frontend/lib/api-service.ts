@@ -2045,6 +2045,7 @@ export interface AdvancedSearchFilters {
   assignedTo?: string;
   escalationLevel?: string;
   priority?: string;
+  narrativeTypes?: string[];
 }
 
 export interface SearchSignalsResponse {

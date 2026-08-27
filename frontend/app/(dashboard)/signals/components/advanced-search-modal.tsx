@@ -58,6 +58,15 @@ const DATE_PRESETS = [
   { value: "custom", label: "Custom Range" },
 ];
 
+const NARRATIVE_TYPES = [
+  { value: "crisis", label: "Crisis" },
+  { value: "opportunity", label: "Opportunity" },
+  { value: "reputation", label: "Reputation" },
+  { value: "competitor", label: "Competitor" },
+  { value: "product", label: "Product" },
+  { value: "service", label: "Service" },
+];
+
 export function AdvancedSearchModal({
   open,
   onOpenChange,
@@ -78,6 +87,7 @@ export function AdvancedSearchModal({
   const [datePreset, setDatePreset] = useState<string>("24h");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
+  const [narrativeTypes, setNarrativeTypes] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Reset form when modal opens
@@ -91,6 +101,7 @@ export function AdvancedSearchModal({
       setDatePreset("24h");
       setDateFrom("");
       setDateTo("");
+      setNarrativeTypes([]);
     }
   }, [open]);
 
@@ -120,6 +131,7 @@ export function AdvancedSearchModal({
     if (language) filters.language = language;
     if (sourceId) filters.sourceId = sourceId;
     if (topics) filters.topics = topics.split(",").map((t) => t.trim()).filter(Boolean);
+    if (narrativeTypes.length > 0) filters.narrativeTypes = narrativeTypes;
 
     // Date range handling
     if (datePreset === "custom") {
@@ -136,12 +148,12 @@ export function AdvancedSearchModal({
     }
 
     return filters;
-  }, [platform, sentiment, language, sourceId, topics, datePreset, dateFrom, dateTo]);
+  }, [platform, sentiment, language, sourceId, topics, datePreset, dateFrom, dateTo, narrativeTypes]);
 
   const hasActiveFilters = useCallback((): boolean => {
     return platform !== "" || sentiment !== "" || language !== "" ||
-           sourceId !== "" || topics !== "" || datePreset !== "24h";
-  }, [platform, sentiment, language, sourceId, topics, datePreset]);
+           sourceId !== "" || topics !== "" || datePreset !== "24h" || narrativeTypes.length > 0;
+  }, [platform, sentiment, language, sourceId, topics, datePreset, narrativeTypes]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,6 +180,7 @@ export function AdvancedSearchModal({
     setDatePreset("24h");
     setDateFrom("");
     setDateTo("");
+    setNarrativeTypes([]);
   };
 
   if (!open || typeof document === "undefined") return null;
@@ -388,6 +401,40 @@ export function AdvancedSearchModal({
                 ))}
               </div>
             </div>
+
+            {/* Narrative Type */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-[12px] font-black text-[#31406B]">
+                <span className="flex h-5 w-5 items-center justify-center rounded bg-[#8B5CFF]/10 text-[10px] font-black text-[#8B5CFF]">N</span>
+                {t("filterNarrativeType")}
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {NARRATIVE_TYPES.map((opt) => {
+                  const isActive = narrativeTypes.includes(opt.value);
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => {
+                        setNarrativeTypes(
+                          isActive
+                            ? narrativeTypes.filter((v) => v !== opt.value)
+                            : [...narrativeTypes, opt.value]
+                        );
+                      }}
+                      className={cn(
+                        "rounded-lg border px-3 py-2 text-[11px] font-bold transition",
+                        isActive
+                          ? "border-[#8B5CFF] bg-[#8B5CFF]/10 text-[#8B5CFF]"
+                          : "border-[#EDF1F7] bg-white text-[#58648C] hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]"
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           {/* Actions */}
@@ -449,6 +496,9 @@ export function ActiveFiltersChips({ filters, onRemove, onClearAll }: ActiveFilt
   }
   if (filters.topics && filters.topics.length > 0) {
     chips.push({ key: "topics", label: t("topics"), value: filters.topics.join(", ") });
+  }
+  if (filters.narrativeTypes && filters.narrativeTypes.length > 0) {
+    chips.push({ key: "narrativeTypes", label: t("filterNarrativeType"), value: filters.narrativeTypes.join(", ") });
   }
   if (filters.dateFrom || filters.dateTo) {
     const dateLabel = filters.dateFrom && filters.dateTo

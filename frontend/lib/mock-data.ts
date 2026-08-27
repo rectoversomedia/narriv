@@ -3,6 +3,7 @@ import {
   Activity,
   BarChart3,
   Bell,
+  Bot,
   Briefcase,
   CheckCircle2,
   Clock3,
@@ -43,12 +44,15 @@ export const navGroups = [
     items: [
       { key: "intelligence", href: "/intelligence", icon: BarChart3 },
       { key: "reports", href: "/reports", icon: FileText },
+      { key: "askNarriv", href: "/ask", icon: Bot },
+      { key: "opportunities", href: "/opportunities", icon: Sparkles },
     ],
   },
   {
     key: "action",
     items: [
-      { key: "actionCenter", href: "/action-plans", icon: Target },
+      { key: "actions", href: "/actions", icon: Target },
+      { key: "actionCenter", href: "/action-plans", icon: CheckCircle2 },
       { key: "cases", href: "/workspace/cases", icon: Briefcase },
     ],
   },

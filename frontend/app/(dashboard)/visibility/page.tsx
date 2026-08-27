@@ -830,9 +830,14 @@ export default function VisibilityPage() {
 
       {/* Header section */}
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="text-[28px] font-black leading-none tracking-[-0.03em] text-[#101334]">{t("title")}</h1>
-          <p className="mt-2 text-[13px] font-bold text-[#53608C]">{t("subtitle")}</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-[28px] font-black leading-none tracking-[-0.03em] text-[#101334]">{t("title")}</h1>
+              <Badge variant="purple" className="px-2 py-0.5 text-[9px] font-bold normal-case tracking-normal">DEMO</Badge>
+            </div>
+            <p className="mt-2 text-[13px] font-bold text-[#53608C]">{t("subtitle")}</p>
+          </div>
         </div>
         <div className="flex w-full flex-wrap gap-2.5 md:w-auto">
           <div className="relative" ref={dateMenuRef}>
@@ -1223,6 +1228,195 @@ export default function VisibilityPage() {
           </Panel>
         </aside>
       </section>
+
+      {/* Citation Intelligence Section */}
+      <Panel>
+        <CardContent className="p-5">
+          <div className="mb-5">
+            <h3 className="text-[15px] font-black tracking-[-0.02em] text-[#101334]">{t("citationIntelligence")}</h3>
+            <p className="text-[11px] font-bold text-[#8A94B8] mt-1">{t("whereDoesAI")}</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-[11px] font-bold text-[#53608C]">
+              <thead>
+                <tr className="border-b border-[#EEF1F7] text-[10px] font-black uppercase text-[#8A94B8]">
+                  <th className="pb-2.5 pr-4">{t("sourceDomain")}</th>
+                  <th className="pb-2.5 pr-4">{t("sourceType")}</th>
+                  <th className="pb-2.5 pr-4 text-right">{t("citationFreq")}</th>
+                  <th className="pb-2.5 pr-4">{t("authorityScore")}</th>
+                  <th className="pb-2.5 pr-4 text-right">{t("brandCitations")}</th>
+                  <th className="pb-2.5 text-right">{t("compCitations")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { domain: "bni.co.id", type: "Owned", typeColor: "indigo", freq: 42, authority: 95, brandC: 18, compC: 3 },
+                  { domain: "detik.com", type: "News", typeColor: "blue", freq: 28, authority: 88, brandC: 12, compC: 14 },
+                  { domain: "techinasia.com", type: "Blog", typeColor: "purple", freq: 18, authority: 76, brandC: 8, compC: 22 },
+                  { domain: "reddit.com", type: "Forum", typeColor: "amber", freq: 12, authority: 65, brandC: 4, compC: 9 },
+                  { domain: "gsmarena.com", type: "Review", typeColor: "green", freq: 8, authority: 72, brandC: 3, compC: 15 },
+                  { domain: "wikipedia.org", type: "Wiki", typeColor: "slate", freq: 6, authority: 82, brandC: 2, compC: 7 },
+                  { domain: "twitter.com", type: "Social", typeColor: "red", freq: 5, authority: 70, brandC: 1, compC: 11 },
+                  { domain: "medium.com", type: "Blog", typeColor: "purple", freq: 3, authority: 61, brandC: 1, compC: 6 },
+                ].map((row) => {
+                  const chipColors: Record<string, string> = {
+                    indigo: "bg-indigo-100 text-indigo-700",
+                    blue: "bg-blue-100 text-blue-700",
+                    purple: "bg-purple-100 text-purple-700",
+                    amber: "bg-amber-100 text-amber-700",
+                    green: "bg-green-100 text-green-700",
+                    slate: "bg-slate-100 text-slate-600",
+                    red: "bg-red-100 text-red-700",
+                  };
+                  return (
+                    <tr key={row.domain} className="border-b border-[#F5F7FC] last:border-0 hover:bg-[#FDFEFF]">
+                      <td className="py-3 pr-4 font-black text-[#101334]">{row.domain}</td>
+                      <td className="py-3 pr-4">
+                        <span className={cn("inline-block rounded-full px-2.5 py-0.5 text-[9px] font-bold", chipColors[row.typeColor] ?? chipColors.slate)}>
+                          {row.type}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-4 text-right font-black text-[#101334]">{row.freq}%</td>
+                      <td className="py-3 pr-4">
+                        <div className="flex items-center gap-2">
+                          <div className="h-1.5 w-20 rounded-full bg-[#EEF1F7] overflow-hidden">
+                            <div className="h-full rounded-full bg-[#8B5CFF]" style={{ width: `${row.authority}%` }} />
+                          </div>
+                          <span className="text-[10px] font-black text-[#8A94B8]">{row.authority}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 pr-4 text-right font-black text-[#101334]">{row.brandC}</td>
+                      <td className="py-3 text-right text-[#EF4444] font-bold">{row.compC}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-4 rounded-[10px] border border-[#D9E1FC] bg-[#F6F8FF] px-4 py-3">
+            <p className="text-[11px] font-semibold leading-relaxed text-[#53608C]">
+              {t("citationInsight1")} {t("citationInsight2")} {t("citationInsight3")}
+            </p>
+          </div>
+        </CardContent>
+      </Panel>
+
+      {/* AI Reputation Section */}
+      <Panel>
+        <CardContent className="p-5">
+          <div className="mb-5">
+            <h3 className="text-[15px] font-black tracking-[-0.02em] text-[#101334]">{t("aiReputation")}</h3>
+            <p className="text-[11px] font-bold text-[#8A94B8] mt-1">{t("aiReputationDesc")}</p>
+          </div>
+          <div className="flex flex-col gap-3">
+            {[
+              { label: "trusted", brand: 78, comp: 62 },
+              { label: "innovative", brand: 64, comp: 82 },
+              { label: "affordable", brand: 88, comp: 42 },
+              { label: "premium", brand: 52, comp: 68 },
+              { label: "reliable", brand: 74, comp: 76 },
+              { label: "customer-friendly", brand: 91, comp: 54 },
+              { label: "technology-driven", brand: 65, comp: 73 },
+              { label: "sustainable", brand: 45, comp: 61 },
+              { label: "controversial", brand: 18, comp: 64, brandNeg: true },
+            ].map((attr) => (
+              <div key={attr.label} className="grid grid-cols-[140px_1fr_1fr] items-center gap-3">
+                <p className="text-[11px] font-black capitalize text-[#101334]">{attr.label}</p>
+                {/* Brand bar */}
+                <div className="flex items-center gap-2">
+                  <div className="h-2 flex-1 rounded-full bg-[#EEF1F7] overflow-hidden">
+                    <div
+                      className={cn("h-full rounded-full", attr.brandNeg ? "bg-[#EF4444]" : "bg-[#8B5CFF]")}
+                      style={{ width: `${attr.brand}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-black text-[#101334] tabular-nums w-7 text-right">{attr.brand}%</span>
+                </div>
+                {/* Competitor bar */}
+                <div className="flex items-center gap-2">
+                  <div className="h-2 flex-1 rounded-full bg-[#EEF1F7] overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-[#EF4444]"
+                      style={{ width: `${attr.comp}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-black text-[#101334] tabular-nums w-7 text-right">{attr.comp}%</span>
+                </div>
+              </div>
+            ))}
+            <div className="mt-2 flex flex-wrap items-center gap-4 text-[10px] font-bold text-[#53608C]">
+              <span className="flex items-center gap-1.5">
+                <span className="size-2.5 rounded-full bg-[#8B5CFF]" />{t("brand")}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-2.5 rounded-full bg-[#EF4444]" />{t("competitor")}
+              </span>
+            </div>
+          </div>
+          <div className="mt-4 rounded-[10px] border border-[#D9E1FC] bg-[#F6F8FF] px-4 py-3">
+            <p className="text-[11px] font-semibold leading-relaxed text-[#53608C]">{t("reputationInsight1")}</p>
+          </div>
+        </CardContent>
+      </Panel>
+
+      {/* Share of AI Answer Section */}
+      <Panel>
+        <CardContent className="p-5">
+          <div className="mb-5">
+            <h3 className="text-[15px] font-black tracking-[-0.02em] text-[#101334]">{t("shareOfAIAnswer")}</h3>
+            <p className="text-[11px] font-bold text-[#8A94B8] mt-1">{t("shareOfAIAnswerDesc")}</p>
+          </div>
+          <div className="flex flex-col gap-6">
+            {[
+              {
+                category: "Best Digital Bank Indonesia",
+                rows: [
+                  { label: "Your Brand", pct: 38, color: "#8B5CFF" },
+                  { label: "Bank Jago", pct: 31, color: "#EF4444" },
+                  { label: "OVO", pct: 18, color: "#465FFF" },
+                  { label: "Others", pct: 13, color: "#CBD0E0" },
+                ],
+              },
+              {
+                category: "Mobile Banking Features",
+                rows: [
+                  { label: "Your Brand", pct: 42, color: "#8B5CFF" },
+                  { label: "Bank Jago", pct: 28, color: "#EF4444" },
+                  { label: "OVO", pct: 20, color: "#465FFF" },
+                  { label: "Others", pct: 10, color: "#CBD0E0" },
+                ],
+              },
+              {
+                category: "Best for Savings",
+                rows: [
+                  { label: "Your Brand", pct: 29, color: "#8B5CFF" },
+                  { label: "Bank Jago", pct: 38, color: "#EF4444" },
+                  { label: "OVO", pct: 21, color: "#465FFF" },
+                  { label: "Others", pct: 12, color: "#CBD0E0" },
+                ],
+              },
+            ].map((prompt) => (
+              <div key={prompt.category}>
+                <p className="text-[11px] font-black text-[#101334] mb-2">{prompt.category}</p>
+                <div className="flex flex-col gap-2">
+                  {prompt.rows.map((row) => (
+                    <div key={row.label} className="flex items-center gap-3">
+                      <div className="w-28 shrink-0 text-[11px] font-bold text-[#53608C] truncate">{row.label}</div>
+                      <div className="h-2.5 flex-1 rounded-full bg-[#EEF1F7] overflow-hidden">
+                        <div
+                          className="h-full rounded-full"
+                          style={{ width: `${row.pct}%`, backgroundColor: row.color }}
+                        />
+                      </div>
+                      <span className="text-[11px] font-black text-[#101334] tabular-nums w-10 text-right shrink-0">{row.pct}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Panel>
 
       {/* Actions Modal */}
       {isActionsModalOpen && createPortal(

@@ -515,7 +515,7 @@ export function getMockReports(): PaginatedResponse<{
 }
 
 // ---------------------------------------------------------------------------
-// Intelligence/Narratives Mock Data
+// Intelligence/Narratives Mock Data — legacy PaginatedResponse shape
 // ---------------------------------------------------------------------------
 
 export function getMockNarratives(): PaginatedResponse<NarrativeRecord> {
@@ -1035,3 +1035,253 @@ export function getMockActivityLogs(): { data: Array<{
     meta: { page: 1, limit: 20, total: 5, totalPages: 1, summary: { actors: 3, today: 2, eventTypes: 5 } },
   };
 }
+
+// ---------------------------------------------------------------------------
+// NarrativeCard Mock Data — Indonesian financial/brand narratives
+// ---------------------------------------------------------------------------
+
+export interface MockNarrativeCardData {
+  id: string;
+  title: string;
+  summary: string;
+  status: "emerging" | "growing" | "stable" | "declining" | "escalating" | "resolved";
+  type: "reputation" | "product" | "service" | "campaign" | "customer_experience" | "pricing" | "competitor" | "regulatory" | "political" | "industry" | "crisis" | "opportunity" | "innovation" | "brand_perception";
+  sentiment: "positive" | "neutral" | "negative" | "mixed";
+  emotion: string;
+  volume: number;
+  growth: number;
+  velocity: number;
+  momentum: number;
+  confidence: number;
+  firstDetected: string;
+  latestActivity: string;
+  primaryChannel: string;
+  relatedKeywords: string[];
+  relatedEntities: string[];
+  relatedCompetitors: string[];
+  whyItMatters: string;
+  possibleImpact: string;
+  recommendedAction: string;
+  actionPriority?: "immediate" | "high" | "medium" | "low";
+}
+
+/**
+ * Returns 6 realistic Indonesian financial/brand narrative items
+ * suitable for use with the NarrativeCard component.
+ */
+export function getMockNarrativeCards(): MockNarrativeCardData[] {
+  const now = new Date();
+  const daysAgo = (d: number) =>
+    new Date(now.getTime() - d * 24 * 60 * 60 * 1000).toISOString();
+
+  return [
+    {
+      id: "narrative-1",
+      title: "Digital Banking UX Quality",
+      summary:
+        "Diskusi publik tentang kualitas pengalaman pengguna aplikasi mobile banking semakin meningkat, dengan keluhan utama集中在 antarmuka yang tidak intuitif dan waktu muat yang lambat pada jaringan lemah.",
+      status: "growing",
+      type: "customer_experience",
+      sentiment: "negative",
+      emotion: "frustration",
+      volume: 3847,
+      growth: 24.0,
+      velocity: 72,
+      momentum: 68,
+      confidence: 84,
+      firstDetected: daysAgo(18),
+      latestActivity: now.toISOString(),
+      primaryChannel: "Twitter/X",
+      relatedKeywords: [
+        "mobile banking",
+        "UX banking",
+        "internet banking",
+        "app banking",
+        "digital banking",
+      ],
+      relatedEntities: ["BRI Mobile", "BNI Mobile", "BCA Mobile"],
+      relatedCompetitors: ["Jago", "Blu by BCA", "SeaBank"],
+      whyItMatters:
+        "Kualitas UX langsung memengaruhi retensi pengguna dan akuisisi baru. Keluhan yang tidak ditangani dapat转化为滑落流失竞争对手.",
+      possibleImpact:
+        "Penurunan NPS hingga 12 poin dan potensi迁移pengguna ke kompetitor dengan UX lebih baik dalam 3-6 bulan ke depan.",
+      recommendedAction:
+        "Lakukan sprint UX review pada fitur utama, prioritaskan perbaikan alur login, transfer, dan tagihan. Publikasikan roadmap perbaikan kepada pengguna.",
+      actionPriority: "high",
+    },
+    {
+      id: "narrative-2",
+      title: "EV Affordability Debate",
+      summary:
+        "Perdebatan hangat di media sosial mengenai keterjangkauan kendaraan listrik di pasar Indonesia, dengan konsumen menilai harga masih terlalu tinggi dibandingkan kendaraan ICE konvensional.",
+      status: "emerging",
+      type: "pricing",
+      sentiment: "mixed",
+      emotion: "debate",
+      volume: 5612,
+      growth: 180.0,
+      velocity: 91,
+      momentum: 87,
+      confidence: 79,
+      firstDetected: daysAgo(9),
+      latestActivity: now.toISOString(),
+      primaryChannel: "Instagram",
+      relatedKeywords: [
+        "mobil listrik",
+        "EV Indonesia",
+        "harga EV",
+        "keterjangkauan EV",
+        "subsidi EV",
+        "penipuan subsidi",
+      ],
+      relatedEntities: ["Hyundai Indonesia", "Wuling Indonesia", "BYD Indonesia"],
+      relatedCompetitors: ["Toyota Indonesia", "Mitsubishi Indonesia"],
+      whyItMatters:
+        "Sentimen negatif terhadap harga dapat menghambat adopsi EV nasional dan mempengaruhi target pemerintah 2 juta unit EV pada 2030.",
+      possibleImpact:
+        "Penurunan minat beli 25-35% pada segmen harga Rp 400-700 juta jika tidak ada klarifikasi kebijakan subsidi yang cepat.",
+      recommendedAction:
+        "Koordinasikan dengan asosiasi industri untuk membuat simulator TCO yang transparan dan sampaikan ke publik melalui influencer otomotif.",
+      actionPriority: "high",
+    },
+    {
+      id: "narrative-3",
+      title: "Sustainability Claims Skepticism",
+      summary:
+        "Muncul skeptisisme publik terhadap klaim keberlanjutan (greenwashing) yang dinyatakan oleh beberapa korporasi besar Indonesia, terutama di sektor energi dan FMCG.",
+      status: "emerging",
+      type: "brand_perception",
+      sentiment: "negative",
+      emotion: "skepticism",
+      volume: 2103,
+      growth: 67.0,
+      velocity: 58,
+      momentum: 63,
+      confidence: 77,
+      firstDetected: daysAgo(12),
+      latestActivity: now.toISOString(),
+      primaryChannel: "News",
+      relatedKeywords: [
+        "greenwashing",
+        "ESG Indonesia",
+        "keberlanjutan",
+        "carbon neutral",
+        "sustainability",
+        "tuduhan pencucian hijau",
+      ],
+      relatedEntities: ["PT Chandra Asri", "PT Unilever Indonesia", "PT Semen Indonesia"],
+      relatedCompetitors: ["PT Charoen Pokphand", "PT Japfa"],
+      whyItMatters:
+        " Tuduhan greenwashing dapat merusak kepercayaan investor ESG dan mempengaruhi nilai saham perusahaan yang terkapitalisasi tinggi.",
+      possibleImpact:
+        "Penurunan skoring ESG dari lembaga pemeringkat hingga 15% dan potensi divestasi oleh dana pensiun dalam 6-12 bulan.",
+      recommendedAction:
+        "Publikasikan laporan keberlanjutan terverifikasi pihak ketiga, buka akses data emisi kepada publik, danrespon cepat terhadap tuduhan spesifik.",
+      actionPriority: "medium",
+    },
+    {
+      id: "narrative-4",
+      title: "BNI Mobile App Stability",
+      summary:
+        "Serangkaian gangguan dan crash pada aplikasi BNI Mobile memicu wave keluhan pelanggan di media sosial, dengan viral video tutorial workaround yang menampilkan frustrasi pengguna.",
+      status: "growing",
+      type: "product",
+      sentiment: "negative",
+      emotion: "frustration",
+      volume: 7231,
+      growth: 38.0,
+      velocity: 85,
+      momentum: 79,
+      confidence: 91,
+      firstDetected: daysAgo(6),
+      latestActivity: now.toISOString(),
+      primaryChannel: "Twitter/X",
+      relatedKeywords: [
+        "BNI Mobile error",
+        "BNI Mobile down",
+        "BNI banking gangguan",
+        "BNI app crash",
+        "Bank BNI keluhan",
+      ],
+      relatedEntities: ["PT Bank Negara Indonesia", "BNI Mobile"],
+      relatedCompetitors: ["Bank BRI", "Bank BTPN", "Bank Jago"],
+      whyItMatters:
+        "Sebagai bank milik negara dengan basis pengguna ritel terbesar kedua, gangguan BNI Mobile berpotensi menggerus kepercayaan pada ekosistem digital banking nasional.",
+      possibleImpact:
+        "Peningkatan churn rate hingga 8%, potensi pengaduan ke OJK, dan dampak negative terhadap program digitalisasi government payment yang menjadi kontrak bisnis penting BNI.",
+      recommendedAction:
+        "Terbitkan press release resmi dengan timeline perbaikan yang konkret. Berikan kompensasi kepada pengguna terdampak. Tingkatkan kapasitas infrastruktur sebelum periode high-volume seperti gajian.",
+      actionPriority: "immediate",
+    },
+    {
+      id: "narrative-5",
+      title: "GoPay Integration Ecosystem",
+      summary:
+        "Pengguna mengekspresikan kepuasan terhadap integrasi ekosistem GoPay dengan layanan sehari-hari, dari transportasi hingga pembayaran tagihan, memperkuat posisi GoPay sebagai super-app dominan.",
+      status: "stable",
+      type: "service",
+      sentiment: "positive",
+      emotion: "satisfaction",
+      volume: 9124,
+      growth: 8.0,
+      velocity: 45,
+      momentum: 62,
+      confidence: 88,
+      firstDetected: daysAgo(45),
+      latestActivity: now.toISOString(),
+      primaryChannel: "Reddit",
+      relatedKeywords: [
+        "GoPay",
+        "Gojek ecosystem",
+        "e-wallet Indonesia",
+        "super app",
+        "GoPay integration",
+        "pembayaran digital",
+      ],
+      relatedEntities: ["GoTo Financial", "Gojek Indonesia", "Tokopedia"],
+      relatedCompetitors: ["OVO", "DANA", "ShopeePay"],
+      whyItMatters:
+        "Ekosistem terintegrasi menciptakan high switching cost bagi pengguna, menjadikannya salah satu narrative paling kuat dalam mempertahankan dominance di pasar e-wallet Indonesia.",
+      possibleImpact:
+        "Potensi pertumbuhan basis pengguna aktif bulanan 15-20% YoY dan peningkatan average transaction value melalui cross-selling layanan dalam ekosistem.",
+      recommendedAction:
+        "Perkuat narasi #Hidup Lebih Gampang dengan user-generated content. Ekspansi integrasi keutility dan pendidikan untuk memperbesar use case.",
+      actionPriority: "medium",
+    },
+    {
+      id: "narrative-6",
+      title: "Bank Jago Community Banking",
+      summary:
+        "Diskusi tentang model community banking Bank Jago mulai kehilangan momentum, dengan beberapa financial influencer mulai mempertanyakan scalability model ini di luar segmen Gen Z dan Milenial perkotaan.",
+      status: "declining",
+      type: "service",
+      sentiment: "neutral",
+      emotion: "curiosity",
+      volume: 1432,
+      growth: -12.0,
+      velocity: 28,
+      momentum: 22,
+      confidence: 71,
+      firstDetected: daysAgo(60),
+      latestActivity: now.toISOString(),
+      primaryChannel: "YouTube",
+      relatedKeywords: [
+        "Bank Jago",
+        "community banking",
+        "digital bank Indonesia",
+        "Jago app",
+        "kesehatan finansial",
+      ],
+      relatedEntities: ["PT Bank Jago Indonesia", "PT Gojek Indonesia"],
+      relatedCompetitors: ["Bank BTPN (Jenius)", "Bank Commonwealth", "LINE Bank"],
+      whyItMatters:
+        "Jika momentum narasi community banking meredup, Bank Jago perlu mendiversifikasi positioning untuk mempertahankan pertumbuhan user base di luar core demographic-nya.",
+      possibleImpact:
+        "Perlambatan akuisisi pengguna baru 18-25% di semester depan dan potensi review negatif dari analis fintech yang mengawasi metrik DAU/MAU.",
+      recommendedAction:
+        "Rilis studi kasus impact social banking dengan metrik terukur. Eksplorasi kemitraan dengan platform like Grab atau Traveloka untuk perluasan reach.",
+      actionPriority: "low",
+    },
+  ];
+}
+

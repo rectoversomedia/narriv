@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { Tone } from "@/lib/mock-data";
 
-const toneMap: Record<Tone, { bg: string; text: string; soft: string; badge: "default" | "green" | "amber" | "red" | "purple" | "slate" }> = {
+export const toneMap: Record<Tone, { bg: string; text: string; soft: string; badge: "default" | "green" | "amber" | "red" | "purple" | "slate" }> = {
   blue: { bg: "bg-[#465FFF]/15", text: "text-[#465FFF]", soft: "bg-[#465FFF]", badge: "default" },
   purple: { bg: "bg-[#8B5CFF]/15", text: "text-[#8B5CFF]", soft: "bg-[#8B5CFF]", badge: "purple" },
   green: { bg: "bg-[#10B981]/15", text: "text-[#10B981]", soft: "bg-[#10B981]", badge: "green" },
