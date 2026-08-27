@@ -187,3 +187,30 @@ button {
     stroke-dashoffset: 0 !important;
   }
 }
+
+/* Onboarding form inputs */
+@layer components {
+  .form-input {
+    @apply flex h-12 w-full items-center gap-3 rounded-xl border border-[#D6DDEC] bg-white px-5 text-sm font-medium text-[#111536] outline-none transition-all placeholder:text-[#9BA3C2];
+  }
+
+  .form-input:focus {
+    @apply border-[#2F20FF] ring-2 ring-[#2F20FF]/20;
+  }
+
+  .form-textarea {
+    @apply flex w-full resize-none rounded-xl border border-[#D6DDEC] bg-white px-5 py-4 text-sm font-medium text-[#111536] outline-none transition-all placeholder:text-[#9BA3C2];
+  }
+
+  .form-textarea:focus {
+    @apply border-[#2F20FF] ring-2 ring-[#2F20FF]/20;
+  }
+
+  .form-select {
+    @apply flex h-12 w-full items-center rounded-xl border border-[#D6DDEC] bg-white px-5 text-sm font-medium text-[#111536] outline-none transition-all;
+  }
+
+  .form-select:focus {
+    @apply border-[#2F20FF] ring-2 ring-[#2F20FF]/20;
+  }
+}

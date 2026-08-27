@@ -1,1476 +1,1314 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useState, useEffect, startTransition, useRef, type ChangeEvent, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
-import { createContext, useContext } from "react";
-import { createOnboardingWorkspace, createOnboardingSources, createOnboardingNotifications, createOnboardingTeam, createOnboardingKeywords, getSourceTemplates, completeOnboarding } from "@/lib/api-service";
-
 import {
-  Activity,
-  AlertTriangle,
+  useState,
+  useEffect,
+  useCallback,
+  type ChangeEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
+import { useRouter } from "next/navigation";
+import {
   ArrowLeft,
   ArrowRight,
   BarChart3,
   Bell,
-  Bot,
-  Briefcase,
-  CalendarDays,
   Check,
   CheckCircle2,
   ChevronDown,
-  Clock3,
   Database,
-  Eye,
-  FileText,
-  Folder,
   Globe2,
   Hash,
   Headphones,
-  Home,
   Lightbulb,
   Mail,
   MessageCircle,
   Mic,
   Newspaper,
   Plus,
-  Search,
-  Settings,
   Share2,
   Shield,
   ShieldCheck,
   ShoppingCart,
   Sparkles,
-  Target,
-  User,
   Users,
-  Video,
-  Webhook,
   X,
   type LucideIcon,
 } from "lucide-react";
-import { navGroups } from "@/lib/mock-data";
-import { useUiStore } from "@/store/useUiStore";
 import { useToast } from "@/components/ui/toast";
-import { Particles } from "@/components/ui/particles";
+import {
+  createOnboardingWorkspace,
+  createOnboardingSources,
+  createOnboardingNotifications,
+  createOnboardingTeam,
+  createOnboardingKeywords,
+  getSourceTemplates,
+  completeOnboarding,
+} from "@/lib/api-service";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-type OnboardingFormData = {
-  profile: { brandName: string; industry: string; timezone: string };
+type Step = 1 | 2 | 3 | 4 | 5;
+
+type ProfileData = {
+  name: string;
+  role: string;
+  company: string;
+  industry: string;
+  mainGoal: string;
+  goals: string[];
+};
+
+type NotificationsData = {
+  emailEnabled: boolean;
+  inAppEnabled: boolean;
+  telegramEnabled: boolean;
+  whatsappEnabled: boolean;
+  alertSpike: boolean;
+  alertNegative: boolean;
+  alertViral: boolean;
+  alertComplaint: boolean;
+  realtimeEnabled: boolean;
+  dailyEnabled: boolean;
+  weeklyEnabled: boolean;
+};
+
+type OnboardingData = {
+  profile: ProfileData;
   keywords: string[];
   sources: Array<{ name: string; type: string; sourceTemplateId?: string }>;
-  notifications: { emailEnabled: boolean; whatsappEnabled: boolean; escalationNotifications: boolean; reminderNotifications: boolean };
+  notifications: NotificationsData;
   team: Array<{ email: string; role: string }>;
 };
 
-type OnboardingContextValue = {
-  formData: OnboardingFormData;
-  updateForm: <K extends keyof OnboardingFormData>(section: K, data: OnboardingFormData[K]) => void;
-  submitOnboarding: () => Promise<void>;
-  isSubmitting: boolean;
-  validationErrors: Record<string, string>;
-  validateStep: (step: Step) => boolean;
-};
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-const OnboardingContext = createContext<OnboardingContextValue | null>(null);
+const INDUSTRIES = [
+  "Banking & Financial Services",
+  "Leasing & Financing",
+  "Insurance",
+  "Telecommunications",
+  "E-commerce & Retail",
+  "Technology & Software",
+  "Healthcare & Pharmaceuticals",
+  "Automotive",
+  "Food & Beverage",
+  "Manufacturing",
+  "Energy & Utilities",
+  "Real Estate",
+  "Education",
+  "Government & Public Sector",
+  "Media & Entertainment",
+  "Transportation & Logistics",
+  "Hospitality & Tourism",
+  "Professional Services",
+  "Agriculture",
+  "Other",
+];
 
-// Validation helper functions
-function validateProfile(profile: OnboardingFormData["profile"]): string | null {
-  if (!profile.brandName?.trim()) {
-    return "Brand name is required";
-  }
-  if (profile.brandName.trim().length < 2) {
-    return "Brand name must be at least 2 characters";
-  }
-  if (!profile.industry) {
-    return "Please select an industry";
-  }
-  if (!profile.timezone) {
-    return "Please select a timezone";
-  }
-  return null;
-}
+const ROLES = [
+  "CEO / Founder",
+  "Marketing Manager",
+  "Brand Manager",
+  "Communications Manager",
+  "PR Manager",
+  "Social Media Manager",
+  "Customer Experience Manager",
+  "Business Intelligence Analyst",
+  "Risk Manager",
+  "Compliance Officer",
+  "Sales Manager",
+  "Product Manager",
+  "Data Analyst",
+  "Other",
+];
 
-function validateKeywords(keywords: string[]): string | null {
-  if (keywords.length === 0) {
-    return "Please add at least 1 keyword to monitor";
-  }
-  if (keywords.length > 50) {
-    return "Maximum 50 keywords allowed";
-  }
-  return null;
-}
+const DEFAULT_GOALS: Array<{
+  id: string;
+  labelKey: string;
+  descKey: string;
+  icon: LucideIcon;
+  color: string;
+}> = [
+  { id: "brand", labelKey: "goalBrand", descKey: "goalBrandDesc", icon: BarChart3, color: "#10B981" },
+  { id: "competitor", labelKey: "goalCompetitor", descKey: "goalCompetitorDesc", icon: Users, color: "#3B82F6" },
+  { id: "market", labelKey: "goalMarket", descKey: "goalMarketDesc", icon: Lightbulb, color: "#F59E0B" },
+  { id: "complaints", labelKey: "goalService", descKey: "goalServiceDesc", icon: Headphones, color: "#EF4444" },
+];
 
-function validateSources(sources: OnboardingFormData["sources"]): string | null {
-  if (sources.length === 0) {
-    return "Please select at least 1 data source";
-  }
-  return null;
-}
-
-function validateStepData(step: Step, formData: OnboardingFormData): string | null {
-  switch (step) {
-    case 1:
-      return validateProfile(formData.profile);
-    case 2:
-      return validateKeywords(formData.keywords);
-    case 3:
-      return validateSources(formData.sources);
-    case 4:
-      // Notifications are optional
-      return null;
-    case 5:
-      // Preview - all data should be valid
-      return null;
-    default:
-      return null;
-  }
-}
-
-// Internal hook for use within this page only (not exported to avoid Next.js page export error)
-function useOnboardingContext() {
-  const ctx = useContext(OnboardingContext);
-  if (!ctx) throw new Error("useOnboarding must be used within OnboardingContext");
-  return ctx;
-}
-
-type Step = 1 | 2 | 3 | 4 | 5;
+// ─── Root Page ────────────────────────────────────────────────────────────────
 
 export default function OnboardingPage() {
   const t = useTranslations("OnboardingDesign");
   const toast = useToast();
+  const router = useRouter();
+
   const [step, setStep] = useState<Step | "processing">(1);
-  const currentStep = step === "processing" ? 5 : step;
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [processingProgress, setProcessingProgress] = useState(0);
 
-  const validateStep = (stepToValidate: Step): boolean => {
-    const error = validateStepData(stepToValidate, formData);
-    if (error) {
-      setValidationErrors({ [stepToValidate.toString()]: error });
-      return false;
+  const [data, setData] = useState<OnboardingData>({
+    profile: {
+      name: "",
+      role: "",
+      company: "",
+      industry: "",
+      mainGoal: "",
+      goals: ["brand"],
+    },
+    keywords: [],
+    sources: [],
+    notifications: {
+      emailEnabled: true,
+      inAppEnabled: true,
+      telegramEnabled: false,
+      whatsappEnabled: false,
+      alertSpike: true,
+      alertNegative: true,
+      alertViral: true,
+      alertComplaint: true,
+      realtimeEnabled: true,
+      dailyEnabled: true,
+      weeklyEnabled: false,
+    },
+    team: [],
+  });
+
+  const updateProfile = useCallback((updates: Partial<ProfileData>) => {
+    setData((prev) => ({ ...prev, profile: { ...prev.profile, ...updates } }));
+  }, []);
+
+  const updateKeywords = useCallback((keywords: string[]) => {
+    setData((prev) => ({ ...prev, keywords }));
+  }, []);
+
+  const updateSources = useCallback((sources: OnboardingData["sources"]) => {
+    setData((prev) => ({ ...prev, sources }));
+  }, []);
+
+  const updateNotifications = useCallback((updates: Partial<NotificationsData>) => {
+    setData((prev) => ({ ...prev, notifications: { ...prev.notifications, ...updates } }));
+  }, []);
+
+  const validateStep = useCallback(
+    (s: Step): string | null => {
+      if (s === 1) {
+        if (!data.profile.name.trim()) return "Please enter your full name.";
+        if (!data.profile.role) return "Please select your role.";
+        if (!data.profile.company.trim()) return "Please enter your company or brand name.";
+        if (!data.profile.industry) return "Please select your industry.";
+        return null;
+      }
+      if (s === 2) {
+        if (data.keywords.length === 0) return "Please add at least one keyword to monitor.";
+        return null;
+      }
+      if (s === 3) {
+        if (data.sources.length === 0) return "Please select at least one data source.";
+        return null;
+      }
+      return null;
+    },
+    [data]
+  );
+
+  const next = useCallback(() => {
+    const current = step === "processing" ? 5 : step;
+    const err = validateStep(current);
+    if (err) {
+      toast.error(err);
+      return;
     }
-    setValidationErrors({});
-    return true;
-  };
-
-  const next = () => {
-    if (step === "processing") return;
-
-    // UX FIX: Validate current step before proceeding
-    if (!validateStep(step)) {
-      return; // Don't proceed if validation fails
-    }
-
     if (step === 5) {
       setStep("processing");
       return;
     }
-    setStep((step + 1) as Step);
-  };
+    const nextStep = (step as number) + 1;
+    setStep(nextStep as Step);
+  }, [step, validateStep, toast]);
 
-  const back = () => {
-    if (step === "processing") {
-      setStep(5);
-      return;
-    }
-    if (step > 1) setStep((step - 1) as Step);
-  };
+  const back = useCallback(() => {
+    if (step === "processing") { setStep(5); return; }
+    if (step === 1) return;
+    const prevStep = (step as number) - 1;
+    setStep(prevStep as Step);
+  }, [step]);
 
-  const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<OnboardingFormData>({
-    profile: { brandName: "Narriv Workspace", industry: "Technology", timezone: "Asia/Jakarta" },
-    keywords: [],
-    sources: [],
-    notifications: { emailEnabled: true, whatsappEnabled: false, escalationNotifications: true, reminderNotifications: true },
-    team: []
-  });
-
-  const updateForm: OnboardingContextValue["updateForm"] = (section, data) => {
-    setFormData(prev => ({ ...prev, [section]: data }));
-    // Clear validation error when user updates form
-    const sectionKey = section as string;
-    if (validationErrors[sectionKey]) {
-      setValidationErrors(prev => {
-        const next = { ...prev };
-        delete next[sectionKey];
-        return next;
-      });
-    }
-  };
-
-  const submitOnboarding = async () => {
+  const handleSubmit = useCallback(async () => {
     setIsSubmitting(true);
     setSubmitError(null);
+    setProcessingProgress(0);
 
-    // Final validation before submit
-    if (formData.keywords.length === 0) {
-      setSubmitError("Please add at least 1 keyword before finishing setup");
-      setIsSubmitting(false);
-      setStep(2); // Go back to keywords step
-      return;
-    }
+    const progressSteps = [10, 25, 40, 55, 70, 85, 95];
+    let stepIdx = 0;
+    const progressInterval = setInterval(() => {
+      if (stepIdx < progressSteps.length) {
+        setProcessingProgress(progressSteps[stepIdx++]);
+      }
+    }, 600);
 
     try {
-      // Step 1: Create workspace
-      const workspace = await createOnboardingWorkspace(formData.profile);
-      if (!workspace || !workspace.id) {
-        setSubmitError("Failed to create workspace. Please try again.");
-        setIsSubmitting(false);
-        setStep(5);
-        return;
+      const workspace = await createOnboardingWorkspace({
+        brandName: data.profile.company,
+        industry: data.profile.industry,
+        timezone: "Asia/Jakarta",
+      });
+      if (!workspace?.id) throw new Error("Failed to create workspace.");
+
+      await createOnboardingKeywords({ workspaceId: workspace.id, keywords: data.keywords });
+      await createOnboardingSources({ workspaceId: workspace.id, sources: data.sources });
+      await createOnboardingNotifications({
+        workspaceId: workspace.id,
+        emailEnabled: data.notifications.emailEnabled,
+        whatsappEnabled: data.notifications.whatsappEnabled,
+        escalationNotifications: data.notifications.alertNegative,
+        reminderNotifications: data.notifications.dailyEnabled,
+      });
+      if (data.team.length > 0) {
+        await createOnboardingTeam({ workspaceId: workspace.id, members: data.team });
       }
 
-      // Step 2: Create keywords
-      if (formData.keywords.length > 0) {
-        await createOnboardingKeywords({ workspaceId: workspace.id, keywords: formData.keywords });
-      }
-
-      // Step 3: Create sources
-      if (formData.sources.length > 0) {
-        await createOnboardingSources({ workspaceId: workspace.id, sources: formData.sources });
-      }
-
-      // Step 4: Create notifications
-      await createOnboardingNotifications({ workspaceId: workspace.id, ...formData.notifications });
-
-      // Step 5: Create team (if any)
-      if (formData.team.length > 0) {
-        await createOnboardingTeam({ workspaceId: workspace.id, members: formData.team });
-      }
-
-      // Step 6: Complete onboarding & trigger ingestion
       const result = await completeOnboarding({ workspaceId: workspace.id, triggerIngestion: true });
 
-      if (result && result.success) {
-        // Redirect to dashboard
-        router.push("/");
+      clearInterval(progressInterval);
+      setProcessingProgress(100);
+
+      if (result?.success) {
+        setTimeout(() => router.push("/"), 800);
       } else {
-        setSubmitError("Setup incomplete. Some features may not be available.");
-        setIsSubmitting(false);
-        toast.error(t("errors.setupFailed") || "Setup failed. Please try again.");
+        throw new Error("Setup incomplete.");
       }
     } catch (e) {
-      // UX FIX: Provide specific error messages based on error type
-      let errorMessage = "An unexpected error occurred. Please try again.";
-      if (e instanceof Error) {
-        if (e.message.includes("network") || e.message.includes("fetch")) {
-          errorMessage = "Network error. Please check your connection and try again.";
-        } else if (e.message.includes("timeout")) {
-          errorMessage = "Request timed out. Please try again.";
-        } else if (e.message.includes("401") || e.message.includes("unauthorized")) {
-          errorMessage = "Session expired. Please log in again.";
-        } else if (e.message.includes("500") || e.message.includes("server")) {
-          errorMessage = "Server error. Please try again in a few moments.";
-        } else {
-          errorMessage = e.message;
-        }
-      }
-      console.error("Onboarding error:", e);
-      setSubmitError(errorMessage);
+      clearInterval(progressInterval);
+      const msg = e instanceof Error ? e.message : "An unexpected error occurred.";
+      setSubmitError(msg);
       setIsSubmitting(false);
-      toast.error(t("errors.setupFailed") || "Setup failed. Please try again.");
+      setProcessingProgress(0);
+      toast.error(msg);
     }
-  };
-
-  return (
-    <OnboardingContext.Provider value={{ formData, updateForm, submitOnboarding, isSubmitting, validationErrors, validateStep }}>
-    <div className="min-h-screen bg-background text-foreground relative overflow-hidden selection:bg-[#465FFF]/30">
-      <Particles particleCount={120} particleBaseSize={5} speed={0.06} particleColors={['#465FFF', '#8B5CFF', '#00F0FF']} />
-      
-      <OnboardingSidebar />
-      <div className="min-h-screen lg:pl-[292px] relative z-10">
-        <OnboardingTopbar showSearch={step !== 1} />
-        
-        <main className="px-5 pb-10 pt-6 sm:px-8 lg:px-10 xl:px-12">
-          <div className="mx-auto max-w-[1510px]">
-            {step === "processing" ? (
-              <ProcessingScreen />
-            ) : (
-              <>
-                <header className="mb-8">
-                  <h1 className="text-[34px] font-black tracking-tight text-slate-900 bg-clip-text text-transparent bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800">{t("title")}</h1>
-                  <p className="mt-2 text-[15px] font-semibold text-slate-400">{t("subtitle")}</p>
-                </header>
-                
-                <StepProgress current={currentStep} />
-                
-                <section className="mt-8 overflow-hidden rounded-[14px] border border-slate-100 bg-slate-50 backdrop-blur-md shadow-[0_0_30px_rgba(0,0,0,0.4)]">
-                  <div className="p-7 sm:p-9">
-                    {step === 1 ? <ProfileStep /> : null}
-                    {step === 2 ? <KeywordsStep /> : null}
-                    {step === 3 ? <SourcesStep /> : null}
-                    {step === 4 ? <NotificationsStep /> : null}
-                    {step === 5 ? <PreviewStep /> : null}
-                  </div>
-                  <StepFooter step={step} onBack={back} onNext={next} />
-                </section>
-                
-                <SafetyFooter />
-                <HelpBubble />
-              </>
-            )}
-          </div>
-        </main>
-      </div>
-    </div>
-    </OnboardingContext.Provider>
-  );
-}
-
-function OnboardingSidebar() {
-  const t = useTranslations("DemoApp");
-  const pathname = "/";
-
-  return (
-    <aside className="sidebar-gradient fixed inset-y-0 left-0 z-30 hidden w-[240px] overflow-y-auto px-4 py-6 text-white lg:block">
-      {/* Logo */}
-      <div className="flex items-center gap-2 px-1">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full">
-          <Image src="/narriv-logo.png" alt="Narriv" width={48} height={48} priority className="h-12 w-12 scale-[1.28] object-contain" />
-        </span>
-        <span className="text-[24px] font-bold tracking-[-0.05em] bg-clip-text text-transparent bg-linear-to-r from-white via-white to-white/70">Narriv</span>
-      </div>
-
-      {/* Navigation */}
-      <nav className="mt-6 space-y-5">
-        {navGroups.map((group) => (
-          <div key={group.key}>
-            <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-white/40">{t(`navGroups.${group.key}`)}</p>
-            <div className="mt-2 grid gap-1.5">
-              {group.items.map((item) => {
-                const Icon = item.icon;
-                const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
-                return (
-                  <div
-                    key={item.href}
-                    title={t(`nav.${item.key}`)}
-                    className={`flex h-[40px] items-center gap-3 rounded-[6px] text-[13px] font-semibold transition px-3 ${active ? "bg-[#465FFF] text-white shadow-[0_0_12px_rgba(70,95,255,0.4)]" : "text-white/70 hover:bg-white/5"}`}
-                  >
-                    <Icon size={18} strokeWidth={2} className="shrink-0" />
-                    {t(`nav.${item.key}`)}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </nav>
-
-      {/* Intelligence Score */}
-      <div className="mt-8 rounded-[8px] border border-white/10 bg-white/2 p-4 backdrop-blur-md">
-        <div className="flex items-center justify-between text-[11px] font-semibold text-white/90">
-          <span>{t("sidebar.scoreTitle")}</span>
-          <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full border border-white/40 text-[9px]">i</span>
-        </div>
-        <div className="mt-3 flex items-end gap-1">
-          <span className="text-[32px] font-bold leading-none text-[#8B5CFF] drop-shadow-[0_0_8px_rgba(139,92,255,0.3)]">86</span>
-          <span className="pb-0.5 text-xs text-white/50">/100</span>
-        </div>
-        <p className="mt-2 text-[12px] font-bold text-[#10B981]">{t("sidebar.good")}</p>
-        <p className="mt-1.5 text-[11px] text-white/60">{t("sidebar.scoreText")}</p>
-        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/5">
-          <div className="h-full w-[78%] rounded-full bg-linear-to-r from-[#465FFF] to-[#8B5CFF] shadow-[0_0_8px_rgba(70,95,255,0.5)]" />
-        </div>
-      </div>
-
-      <p className="mt-6 px-2 text-[11px] text-white/40">© {new Date().getFullYear()} Narriv</p>
-      <p className="mt-2 px-2 text-[11px] text-white/40">All rights reserved.</p>
-    </aside>
-  );
-}
-
-function OnboardingTopbar({ showSearch }: { showSearch: boolean }) {
-  const t = useTranslations("OnboardingDesign.topbar");
-  const language = useUiStore((state) => state.language);
-  const toggleLanguage = useUiStore((state) => state.toggleLanguage);
-  const [mounted, setMounted] = useState(false);
+  }, [data, router, toast]);
 
   useEffect(() => {
-    const id = window.setTimeout(() => setMounted(true), 0);
-    return () => window.clearTimeout(id);
-  }, []);
-
-  const activeLang = mounted ? language : "en";
+    if (step === "processing" && !isSubmitting) {
+      handleSubmit();
+    }
+  }, [step, isSubmitting, handleSubmit]);
 
   return (
-    <header className="sticky top-0 z-20 flex h-[88px] items-center justify-between border-b border-border bg-background/60 px-5 backdrop-blur-xl sm:px-8 lg:px-10 xl:px-12">
-      <div className="flex min-w-0 flex-1 items-center gap-4">
-        {showSearch ? (
-          <label className="hidden h-[48px] w-full max-w-[530px] items-center gap-4 rounded-[8px] border border-border bg-slate-50 px-5 text-slate-500 lg:flex focus-within:border-[#465FFF]/50 transition-all">
-            <Search size={20} className="text-slate-400" />
-            <input className="min-w-0 flex-1 bg-transparent text-[15px] font-semibold outline-none placeholder:text-slate-300 text-slate-900" placeholder={t("search")} />
-          </label>
-        ) : (
-          <div />
-        )}
-      </div>
-      <div className="flex items-center gap-5">
-        <button type="button" onClick={() => startTransition(toggleLanguage)} className="hidden rounded-[8px] border border-border px-3 py-2 text-xs font-bold text-slate-700 transition-colors duration-200 hover:border-[#465FFF] sm:block">
-          {activeLang === "id" ? "ID" : "EN"}
-        </button>
-        <button type="button" className="relative text-slate-900 hover:text-[#465FFF] transition">
-          <Bell size={25} />
-          <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#465FFF] text-[11px] font-bold text-white shadow-[0_0_8px_rgba(70,95,255,0.4)]">3</span>
-        </button>
-        <div className="h-8 w-px bg-border" />
-        <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-tr from-[#465FFF] to-[#8B5CFF] text-[16px] font-bold text-white shadow-[0_0_10px_rgba(70,95,255,0.3)]">TU</div>
-          <div className="hidden sm:block">
-            <p className="text-[15px] font-bold text-slate-900">{t("user")}</p>
-            <p className="mt-1 text-[13px] font-semibold text-slate-400">{t("workspace")}</p>
-          </div>
-          <ChevronDown size={18} className="hidden sm:block text-slate-400" />
+    <div className="min-h-dvh bg-[#F8F9FF] text-[#111536]">
+      {/* Top bar */}
+      <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-[#E8EAF6] bg-white/80 backdrop-blur-md px-6 lg:px-10">
+        <div className="flex items-center gap-3">
+          <Image src="/narriv-logo.png" alt="Narriv" width={32} height={32} />
+          <span className="text-[20px] font-bold tracking-[-0.04em] text-[#111536]">Narriv</span>
         </div>
-      </div>
-    </header>
+
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-semibold text-[#68739F]">
+            {step === "processing" ? 5 : step} of 5
+          </span>
+          <div className="h-6 w-px bg-[#D6DDEC]" />
+          <button
+            type="button"
+            className="flex h-9 items-center gap-2 rounded-full border border-[#D6DDEC] bg-white px-4 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#2F20FF] hover:text-[#2F20FF]"
+          >
+            Need help?
+          </button>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-5xl px-6 py-10">
+        {step !== "processing" && <StepIndicator current={step as Step} />}
+
+        <div className="mt-8">
+          {step === "processing" ? (
+            <ProcessingStep
+              progress={processingProgress}
+              submitError={submitError}
+              onRetry={handleSubmit}
+            />
+          ) : (
+            <div className="rounded-2xl border border-[#E8EAF6] bg-white shadow-sm">
+              <div className="p-8 lg:p-10">
+                {step === 1 && (
+                  <ProfileStep data={data.profile} onChange={updateProfile} />
+                )}
+                {step === 2 && (
+                  <KeywordsStep keywords={data.keywords} onChange={updateKeywords} />
+                )}
+                {step === 3 && (
+                  <SourcesStep sources={data.sources} onChange={updateSources} />
+                )}
+                {step === 4 && (
+                  <NotificationsStep
+                    data={data.notifications}
+                    onChange={updateNotifications}
+                  />
+                )}
+                {step === 5 && <PreviewStep data={data} />}
+              </div>
+
+              <div className="flex items-center justify-between border-t border-[#F0F2FA] px-8 py-6 lg:px-10">
+                {step === 1 ? (
+                  <button
+                    type="button"
+                    className="text-sm font-semibold text-[#68739F] transition-colors hover:text-[#2F20FF]"
+                    onClick={() => next()}
+                  >
+                    Skip for now
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={back}
+                    className="flex h-11 items-center gap-2 rounded-xl border border-[#D6DDEC] bg-white px-6 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#2F20FF] hover:text-[#2F20FF]"
+                  >
+                    <ArrowLeft size={16} />
+                    Back
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={next}
+                  className="flex h-11 items-center gap-3 rounded-xl bg-gradient-to-r from-[#2F20FF] to-[#6B2EFF] px-8 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(47,32,255,0.3)] transition-all hover:shadow-[0_6px_20px_rgba(47,32,255,0.4)] active:scale-[0.98]"
+                >
+                  {step === 5 ? "Finish Setup" : "Continue"}
+                  <ArrowRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <p className="mt-6 flex items-center justify-center gap-2 text-center text-sm font-medium text-[#9BA3C2]">
+          <ShieldCheck size={15} className="text-[#10B981]" />
+          Your data is safe with Narriv. We protect your privacy and information security.
+        </p>
+      </main>
+    </div>
   );
 }
 
-function StepProgress({ current }: { current: Step }) {
+// ─── Step Indicator ────────────────────────────────────────────────────────────
+
+function StepIndicator({ current }: { current: Step }) {
   const t = useTranslations("OnboardingDesign.steps");
   const steps = [
-    { title: t("profile"), desc: t("profileDesc") },
-    { title: t("keywords"), desc: t("keywordsDesc") },
-    { title: t("sources"), desc: t("sourcesDesc") },
-    { title: t("notifications"), desc: t("notificationsDesc") },
-    { title: t("preview"), desc: t("previewDesc") },
+    { label: t("profile"), num: 1 },
+    { label: t("keywords"), num: 2 },
+    { label: t("sources"), num: 3 },
+    { label: t("notifications"), num: 4 },
+    { label: t("preview"), num: 5 },
   ];
 
   return (
-    <div className="grid gap-5 xl:grid-cols-5 bg-slate-50 border border-slate-100 p-5 rounded-[12px] backdrop-blur-md">
-      {steps.map((item, index) => {
-        const number = index + 1;
-        const done = number < current;
-        const active = number === current;
-        return (
-          <div key={item.title} className="relative flex items-center gap-4">
-            {index > 0 ? <div className={`absolute -left-[calc(50%-8px)] top-6 hidden h-px w-[calc(100%-32px)] xl:block ${done || active ? "bg-[#465FFF]/50" : "bg-slate-200"}`} /> : null}
-            <div className={`relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border text-[18px] font-bold transition-all ${done ? "border-white bg-white text-black" : active ? "border-[#465FFF] bg-[#465FFF] text-white shadow-[0_0_10px_rgba(70,95,255,0.4)]" : "border-slate-300 bg-slate-50 text-slate-400"}`}>
-              {done ? <Check size={23} strokeWidth={2.6} /> : number}
+    <div className="flex items-center">
+      {steps.map((s, i) => (
+        <div key={s.num} className="flex items-center">
+          <div className="flex flex-col items-center gap-1.5">
+            <div
+              className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all ${
+                s.num < current
+                  ? "bg-[#2F20FF] text-white"
+                  : s.num === current
+                  ? "border-2 border-[#2F20FF] bg-white text-[#2F20FF]"
+                  : "border-2 border-[#D6DDEC] bg-white text-[#9BA3C2]"
+              }`}
+            >
+              {s.num < current ? <Check size={14} strokeWidth={3} /> : s.num}
             </div>
-            <div className="min-w-0">
-              <p className={`text-[15px] font-bold ${active ? "text-[#465FFF] drop-shadow-[0_0_8px_rgba(70,95,255,0.2)]" : "text-slate-900"}`}>{item.title}</p>
-              <p className="mt-1 text-[13px] font-medium text-slate-400">{item.desc}</p>
-            </div>
+            <span
+              className={`text-xs font-semibold whitespace-nowrap hidden sm:block ${
+                s.num === current ? "text-[#2F20FF]" : s.num < current ? "text-[#3E4975]" : "text-[#9BA3C2]"
+              }`}
+            >
+              {s.label}
+            </span>
           </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function SectionTitle({ icon: Icon, step, title, desc }: { icon: LucideIcon; step: number; title: string; desc: string }) {
-  return (
-    <div className="mb-8 flex items-start gap-5">
-      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#8B5CFF]/15 text-[#8B5CFF] border border-[#8B5CFF]/20 shadow-[0_0_12px_rgba(139,92,255,0.25)]">
-        <Icon size={33} strokeWidth={2.2} />
-      </div>
-      <div>
-        <h2 className="text-[26px] font-black tracking-tight text-slate-900">{step}. {title}</h2>
-        <p className="mt-2 text-[15px] font-semibold text-slate-400">{desc}</p>
-      </div>
-    </div>
-  );
-}
-
-function ProfileStep() {
-  const { formData, updateForm } = useOnboardingContext();
-
-  const t = useTranslations("OnboardingDesign.profile");
-  const goals = [
-    { title: t("goalBrand"), desc: t("goalBrandDesc"), icon: BarChart3, checked: true, tone: "green" },
-    { title: t("goalCompetitor"), desc: t("goalCompetitorDesc"), icon: Users, checked: false, tone: "blue" },
-    { title: t("goalMarket"), desc: t("goalMarketDesc"), icon: Lightbulb, checked: true, tone: "amber" },
-    { title: t("goalService"), desc: t("goalServiceDesc"), icon: Headphones, checked: false, tone: "blue" },
-  ];
-
-  return (
-    <div>
-      <SectionTitle icon={User} step={1} title={t("title")} desc={t("desc")} />
-      
-      <div className="grid gap-10 xl:grid-cols-[1fr_560px]">
-        <div className="grid gap-7">
-          <div className="grid gap-7 md:grid-cols-2">
-            <TextField label={t("name")} value="Testing User" icon={User} />
-            <SelectField label={t("role")} value="Marketing Manager" />
-            <TextField label={t("company")} value={formData.profile.brandName} onChange={(e) => updateForm("profile", { ...formData.profile, brandName: e.target.value })} />
-            <SelectField label={t("industry")} value={t("industryValue")} />
-          </div>
-          <label className="block">
-            <span className="mb-3 block text-[15px] font-bold text-slate-900">{t("mainGoal")}</span>
-            <textarea 
-              className="min-h-[118px] w-full resize-none rounded-[8px] border border-slate-200 bg-slate-50 p-5 text-[15px] font-medium leading-7 text-slate-900 outline-none focus:border-[#465FFF]/50 focus:ring-1 focus:ring-[#465FFF]/50 transition-all" 
-              defaultValue={t("mainGoalValue")} 
+          {i < steps.length - 1 && (
+            <div
+              className={`mb-5 h-px w-8 sm:w-16 ${s.num < current ? "bg-[#2F20FF]" : "bg-[#E8EAF6]"}`}
             />
-            <span className="-mt-9 mr-5 block text-right text-[13px] font-semibold text-slate-400">136/200</span>
-          </label>
+          )}
         </div>
-        
-        <div className="rounded-[10px] border border-slate-100 bg-slate-50 p-6">
-          <h3 className="text-[18px] font-bold text-slate-900">{t("goalsTitle")}</h3>
-          <p className="mt-2 text-[14px] font-semibold text-slate-400">{t("goalsDesc")}</p>
-          <div className="mt-6 grid gap-4">
-            {goals.map((goal) => <GoalCard key={goal.title} {...goal} />)}
-          </div>
-        </div>
-      </div>
-      
-      <PersonalizationCard />
+      ))}
     </div>
   );
 }
 
-function TextField({ label, value, icon: Icon, onChange }: { label: string; value: string; icon?: LucideIcon; onChange?: (event: ChangeEvent<HTMLInputElement>) => void }) {
-  return (
-    <label className="block">
-      <span className="mb-3 block text-[15px] font-bold text-slate-900">{label}</span>
-      <div className="flex h-[56px] items-center gap-3 rounded-[8px] border border-slate-200 bg-slate-50 px-5 text-[15px] font-semibold text-slate-700 focus-within:border-[#465FFF]/50">
-        {Icon ? <Icon size={19} className="text-slate-400" /> : null}
-        <input value={value} onChange={onChange} className="bg-transparent outline-none w-full" />
-      </div>
-    </label>
-  );
-}
+// ─── Step 1: Profile & Goals ──────────────────────────────────────────────────
 
-function SelectField({ label, value }: { label: string; value: string }) {
-  return (
-    <label className="block">
-      <span className="mb-3 block text-[15px] font-bold text-slate-900">{label}</span>
-      <span className="flex h-[56px] items-center justify-between rounded-[8px] border border-slate-200 bg-slate-50 px-5 text-[15px] font-semibold text-slate-700 cursor-pointer">
-        {value}
-        <ChevronDown size={18} className="text-slate-400" />
-      </span>
-    </label>
-  );
-}
-
-function GoalCard({ title, desc, icon: Icon, checked, tone }: { title: string; desc: string; icon: LucideIcon; checked: boolean; tone: string }) {
-  const toneClass = tone === "green" ? "text-[#10B981]" : tone === "amber" ? "text-[#F59E0B]" : "text-[#465FFF]";
-  return (
-    <button 
-      type="button" 
-      className={`flex items-center gap-4 rounded-[8px] border p-4 text-left transition-all duration-300 ${checked ? "border-[#465FFF] bg-[#465FFF]/10 shadow-[0_0_12px_rgba(70,95,255,0.15)]" : "border-slate-100 bg-slate-50 hover:border-slate-200"}`}
-    >
-      <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${checked ? "border-[#465FFF] bg-[#465FFF] text-white" : "border-slate-300 text-transparent"}`}>
-        <Check size={15} strokeWidth={3} />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-[16px] font-bold text-slate-900">{title}</span>
-        <span className="mt-1 block text-[13px] font-semibold text-slate-400">{desc}</span>
-      </span>
-      <Icon size={21} className={`${toneClass} shrink-0`} />
-    </button>
-  );
-}
-
-function PersonalizationCard() {
+function ProfileStep({
+  data,
+  onChange,
+}: {
+  data: ProfileData;
+  onChange: (u: Partial<ProfileData>) => void;
+}) {
   const t = useTranslations("OnboardingDesign.profile");
+
+  const toggleGoal = (id: string) => {
+    const current = data.goals;
+    if (current.includes(id)) {
+      if (current.length === 1) return;
+      onChange({ goals: current.filter((g) => g !== id) });
+    } else {
+      if (current.length >= 3) return;
+      onChange({ goals: [...current, id] });
+    }
+  };
+
+  const mainGoalMax = 200;
+
   return (
-    <div className="mt-8 flex items-center gap-6 rounded-[10px] border border-slate-100 bg-slate-50 p-7">
-      <Sparkles size={35} className="shrink-0 text-[#8B5CFF] drop-shadow-[0_0_10px_rgba(139,92,255,0.5)]" />
+    <div className="space-y-8">
       <div>
-        <h3 className="text-[19px] font-bold text-slate-900">{t("aiTitle")}</h3>
-        <p className="mt-2 text-[15px] font-semibold text-slate-400">{t("aiDesc")}</p>
+        <h1 className="text-2xl font-bold tracking-tight text-[#111536]">{t("title")}</h1>
+        <p className="mt-1.5 text-sm font-medium text-[#68739F]">{t("desc")}</p>
       </div>
-      <div className="ml-auto hidden h-16 w-44 rounded-[8px] border border-slate-100 bg-black/30 shadow-inner xl:block" />
+
+      {/* Personal Info */}
+      <div className="space-y-5">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-[#9BA3C2]">Personal Information</h2>
+        <div className="grid gap-5 lg:grid-cols-2">
+          <FormField label={t("name")} required>
+            <input
+              type="text"
+              value={data.name}
+              onChange={(e) => onChange({ name: e.target.value })}
+              placeholder="e.g. Sarah Johnson"
+              className="form-input"
+              autoComplete="name"
+            />
+          </FormField>
+
+          <FormField label={t("role")} required>
+            <Select
+              value={data.role}
+              onChange={(v) => onChange({ role: v })}
+              placeholder="Select your role"
+            >
+              {ROLES.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </Select>
+          </FormField>
+        </div>
+      </div>
+
+      <div className="border-t border-[#F0F2FA]" />
+
+      {/* Company Info */}
+      <div className="space-y-5">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-[#9BA3C2]">Company / Brand</h2>
+        <div className="grid gap-5 lg:grid-cols-2">
+          <FormField label={t("company")} required>
+            <input
+              type="text"
+              value={data.company}
+              onChange={(e) => onChange({ company: e.target.value })}
+              placeholder="e.g. FIFGROUP"
+              className="form-input"
+              autoComplete="organization"
+            />
+          </FormField>
+
+          <FormField label={t("industry")} required>
+            <Select
+              value={data.industry}
+              onChange={(v) => onChange({ industry: v })}
+              placeholder="Select your industry"
+            >
+              {INDUSTRIES.map((ind) => (
+                <option key={ind} value={ind}>{ind}</option>
+              ))}
+            </Select>
+          </FormField>
+        </div>
+
+        <FormField label={t("mainGoal")}>
+          <textarea
+            value={data.mainGoal}
+            onChange={(e) => {
+              if (e.target.value.length <= mainGoalMax) {
+                onChange({ mainGoal: e.target.value });
+              }
+            }}
+            placeholder="Describe what you want to achieve with Narriv. This helps AI personalize your experience..."
+            rows={4}
+            className="form-textarea"
+          />
+          <p className="mt-1.5 text-right text-xs font-medium text-[#9BA3C2]">
+            {data.mainGoal.length}/{mainGoalMax}
+          </p>
+        </FormField>
+      </div>
+
+      <div className="border-t border-[#F0F2FA]" />
+
+      {/* Goals */}
+      <div className="space-y-5">
+        <div>
+          <h2 className="text-base font-bold text-[#111536]">{t("goalsTitle")}</h2>
+          <p className="mt-1 text-sm font-medium text-[#68739F]">{t("goalsDesc")}</p>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          {DEFAULT_GOALS.map((goal) => {
+            const selected = data.goals.includes(goal.id);
+            return (
+              <button
+                key={goal.id}
+                type="button"
+                onClick={() => toggleGoal(goal.id)}
+                className={`flex items-start gap-4 rounded-xl border p-5 text-left transition-all ${
+                  selected
+                    ? "border-[#2F20FF] bg-[#F8F6FF] shadow-[0_0_0_3px_rgba(47,32,255,0.08)]"
+                    : "border-[#E8EAF6] bg-white hover:border-[#B8BDD8]"
+                }`}
+              >
+                <div
+                  className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 transition-all ${
+                    selected ? "border-[#2F20FF] bg-[#2F20FF]" : "border-[#D6DDEC] bg-white"
+                  }`}
+                >
+                  {selected && <Check size={12} strokeWidth={3} className="text-white" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <goal.icon size={16} style={{ color: goal.color }} />
+                    <p className="text-sm font-bold text-[#111536]">
+                      {t(goal.labelKey as any)}
+                    </p>
+                  </div>
+                  <p className="mt-1 text-xs font-medium text-[#68739F] leading-relaxed">
+                    {t(goal.descKey as any)}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <p className="text-xs font-medium text-[#9BA3C2]">
+          Select 1–3 goals. You can change this anytime in Settings.
+        </p>
+      </div>
     </div>
   );
 }
 
-function KeywordsStep() {
-  const { formData, updateForm } = useOnboardingContext();
+// ─── Step 2: Keywords ─────────────────────────────────────────────────────────
+
+function KeywordsStep({
+  keywords,
+  onChange,
+}: {
+  keywords: string[];
+  onChange: (kw: string[]) => void;
+}) {
   const t = useTranslations("OnboardingDesign.keywords");
-  const [inputValue, setInputValue] = useState("");
-  const [keywords, setKeywords] = useState<string[]>(formData.keywords.length > 0 ? formData.keywords : ["FIFGROUP", "Leasing", "Motor", "Keluhan Kredit", "Customer Service", "Pembiayaan"]);
+  const [input, setInput] = useState("");
 
-  // Default keywords based on Indonesia media
-  const defaultSuggestions = [
-    "Brand Indonesia",
-    "Product Launch",
-    "Customer Service",
-    "Viral",
-    "Trending",
-    "Kritik",
-    "Keluhan",
-    "Review",
-    "Competitor",
-    "Market News",
-  ];
+  const suggestions = ["Brand Indonesia", "Customer Service", "Viral", "Competitor", "Market News"];
 
-  const handleAddKeyword = () => {
-    const trimmed = inputValue.trim();
-    if (trimmed && !keywords.includes(trimmed) && keywords.length < 50) {
-      const newKeywords = [...keywords, trimmed];
-      setKeywords(newKeywords);
-      updateForm("keywords", newKeywords);
-      setInputValue("");
-    }
+  const add = (kw: string) => {
+    const trimmed = kw.trim();
+    if (!trimmed || keywords.includes(trimmed) || keywords.length >= 50) return;
+    onChange([...keywords, trimmed]);
+    setInput("");
   };
 
-  const handleRemoveKeyword = (keyword: string) => {
-    const newKeywords = keywords.filter(k => k !== keyword);
-    setKeywords(newKeywords);
-    updateForm("keywords", newKeywords);
-  };
+  const remove = (kw: string) => onChange(keywords.filter((k) => k !== kw));
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleAddKeyword();
-    }
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") { e.preventDefault(); add(input); }
   };
 
   return (
-    <div>
-      <SectionTitle icon={Hash} step={2} title={t("title")} desc={t("desc")} />
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-[#111536]">{t("title")}</h1>
+        <p className="mt-1.5 text-sm font-medium text-[#68739F]">{t("desc")}</p>
+      </div>
 
-      <div className="grid gap-10 xl:grid-cols-[1fr_520px]">
-        <div>
-          <h3 className="mb-4 text-[16px] font-bold text-slate-900">{t("inputLabel")}</h3>
-          <div className="flex gap-4">
+      <div className="space-y-3">
+        <FormField label={t("inputLabel")}>
+          <div className="flex gap-3">
             <input
-              className="h-[56px] min-w-0 flex-1 rounded-[8px] border border-slate-200 bg-slate-50 px-5 text-[15px] font-semibold outline-none placeholder:text-slate-300 text-slate-900 focus:border-[#465FFF]/50"
-              placeholder={t("placeholder")}
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
+              placeholder={t("placeholder")}
+              className="form-input flex-1"
             />
             <button
-              className="flex h-[56px] items-center gap-3 rounded-[8px] border border-[#8B5CFF]/30 bg-[#8B5CFF]/15 px-7 text-[16px] font-bold text-[#8B5CFF] hover:bg-[#8B5CFF]/25 transition"
               type="button"
-              onClick={handleAddKeyword}
+              onClick={() => add(input)}
+              disabled={!input.trim()}
+              className="flex h-12 items-center gap-2 rounded-xl border border-[#D6DDEC] bg-white px-5 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#2F20FF] hover:text-[#2F20FF] disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <Plus size={21} />
+              <Plus size={16} />
               {t("add")}
             </button>
           </div>
+        </FormField>
 
-          {/* Suggestions */}
-          <div className="mt-5 flex flex-wrap items-center gap-3 text-[14px] font-semibold">
-            <span className="text-slate-400">{t("examples")}</span>
-            {defaultSuggestions.slice(0, 5).map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => {
-                  if (!keywords.includes(item) && keywords.length < 50) {
-                    const newKeywords = [...keywords, item];
-                    setKeywords(newKeywords);
-                    updateForm("keywords", newKeywords);
-                  }
-                }}
-                className="inline-flex items-center gap-2 rounded-full bg-slate-100 border border-slate-100 px-4 py-2 text-slate-600 hover:border-[#465FFF]/50 hover:text-[#465FFF] transition-all"
-              >
-                {item}
-              </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold text-[#9BA3C2]">{t("examples")}</span>
+          {suggestions.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => add(s)}
+              disabled={keywords.includes(s) || keywords.length >= 50}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#E8EAF6] bg-white px-3 py-1.5 text-xs font-semibold text-[#3E4975] transition-colors hover:border-[#2F20FF] hover:text-[#2F20FF] disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-[#9BA3C2]">Your Keywords</h2>
+          <span className="text-xs font-semibold text-[#9BA3C2]">{keywords.length}/50</span>
+        </div>
+
+        {keywords.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#E8EAF6] py-12 text-center">
+            <Hash size={32} className="text-[#D6DDEC]" />
+            <p className="mt-3 text-sm font-semibold text-[#9BA3C2]">No keywords added yet</p>
+            <p className="mt-1 text-xs font-medium text-[#C4C9E2]">Type a keyword above and press Enter to add</p>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {keywords.map((kw) => (
+              <KeywordPill key={kw} label={kw} onRemove={() => remove(kw)} />
             ))}
           </div>
+        )}
+      </div>
 
-          {/* Current keywords */}
-          <h3 className="mb-4 mt-10 text-[16px] font-bold text-slate-900">{t("yourKeywords")} ({keywords.length}/50)</h3>
-          {keywords.length === 0 ? (
-            <div className="rounded-[8px] border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
-              <p className="text-[15px] font-semibold text-slate-400">No keywords added yet. Add at least 1 keyword to continue.</p>
-            </div>
-          ) : (
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {keywords.map((keyword) => (
-                <KeywordCard
-                  key={keyword}
-                  label={keyword}
-                  onRemove={() => handleRemoveKeyword(keyword)}
-                />
-              ))}
-            </div>
-          )}
-
-          <TipBox tone="purple" title={t("tipTitle")} text={t("tipText")} />
+      <div className="flex items-start gap-3 rounded-xl border border-[#F0EFFF] bg-[#FAF8FF] p-4">
+        <Lightbulb size={18} className="mt-0.5 shrink-0 text-[#8B5CFF]" />
+        <div>
+          <p className="text-sm font-bold text-[#111536]">{t("tipTitle")}</p>
+          <p className="mt-0.5 text-xs font-medium text-[#68739F] leading-relaxed">{t("tipText")}</p>
         </div>
-        <TopicPreview />
       </div>
     </div>
   );
 }
 
-function Pill({ children }: { children: string }) {
+function KeywordPill({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 border border-slate-100 px-4 py-2 text-slate-600">
-      {children}
-      <X size={14} className="text-slate-400 hover:text-[#465FFF] cursor-pointer" />
+    <span className="inline-flex items-center gap-2 rounded-full border border-[#E8EAF6] bg-white px-4 py-2 text-sm font-semibold text-[#3E4975] shadow-sm">
+      <span className="h-1.5 w-1.5 rounded-full bg-[#10B981] animate-pulse" />
+      {label}
+      <button type="button" onClick={onRemove} className="text-[#9BA3C2] hover:text-[#EF4444] transition-colors">
+        <X size={14} />
+      </button>
     </span>
   );
 }
 
-function KeywordCard({ label, onRemove }: { label: string; onRemove: () => void }) {
-  const t = useTranslations("OnboardingDesign.keywords");
-  return (
-    <div className="flex h-[62px] items-center justify-between rounded-[8px] border border-slate-100 bg-slate-50 px-5 hover:border-slate-200 transition-all">
-      <span className="text-[16px] font-bold text-slate-900">{label}</span>
-      <span className="flex items-center gap-3 text-[13px] font-semibold text-slate-400">
-        <span className="h-1.5 w-1.5 rounded-full bg-[#10B981] animate-pulse" />
-        {t("active")}
-      </span>
-      <button type="button" onClick={onRemove}>
-        <X size={18} className="text-slate-400 hover:text-[#465FFF] cursor-pointer" />
-      </button>
-    </div>
-  );
-}
+// ─── Step 3: Sources ────────────────────────────────────────────────────────────
 
-function TopicPreview() {
-  const t = useTranslations("OnboardingDesign.keywords");
-  const legend = [
-    [t("social"), "5.642 (43,9%)", "#465FFF"],
-    [t("news"), "3.892 (30,3%)", "#00F0FF"],
-    [t("forum"), "2.156 (16,8%)", "#10B981"],
-    [t("blog"), "1.152 (8,9%)", "#F59E0B"],
-  ];
-  const topics = ["FIFGROUP", "Leasing", "Keluhan Kredit", "Motor", "Customer Service"];
-  return (
-    <aside className="rounded-[10px] border border-slate-100 bg-slate-50 p-7">
-      <h3 className="text-[17px] font-bold text-slate-900">{t("previewTitle")}</h3>
-      <div className="mt-8 grid gap-8 md:grid-cols-[190px_1fr] xl:grid-cols-1 2xl:grid-cols-[190px_1fr]">
-        <DonutChart center="12.842" label={t("mentions")} />
-        <div className="grid content-center gap-5">
-          {legend.map(([label, value, color]) => <LegendRow key={label} label={label} value={value} color={color} />)}
-        </div>
-      </div>
-      <h4 className="mt-8 text-[16px] font-bold text-slate-900">{t("topTalked")}</h4>
-      <div className="mt-5 grid gap-4">
-        {topics.map((topic, index) => <RankRow key={topic} rank={index + 1} label={topic} value={["4.128", "3.042", "2.156", "1.894", "1.622"][index]} />)}
-      </div>
-      <button className="mx-auto mt-7 flex items-center gap-3 text-[15px] font-bold text-[#465FFF] hover:text-[#465FFF] transition-all" type="button">
-        {t("viewDetails")} 
-        <ArrowRight size={18} />
-      </button>
-    </aside>
-  );
-}
-
-function SourcesStep() {
-  const { formData, updateForm } = useOnboardingContext();
+function SourcesStep({
+  sources,
+  onChange,
+}: {
+  sources: OnboardingData["sources"];
+  onChange: (s: OnboardingData["sources"]) => void;
+}) {
   const t = useTranslations("OnboardingDesign.sources");
-  const [sourceTemplates, setSourceTemplates] = useState<Record<string, Array<{ id: string; name: string; slug: string; description: string | null; category: string; default_keywords: string[] | null }>>>({});
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(["news", "social", "forum"]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchTemplates() {
-      try {
-        const result = await getSourceTemplates();
-        if (result && result.grouped) {
-          setSourceTemplates(result.grouped);
-        }
-      } catch (e) {
-        console.error("Error fetching source templates:", e);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    fetchTemplates();
-  }, []);
-
-  const toggleCategory = (category: string) => {
-    const newCategories = selectedCategories.includes(category)
-      ? selectedCategories.filter(c => c !== category)
-      : [...selectedCategories, category];
-    setSelectedCategories(newCategories);
-
-    // Update selected sources based on categories
-    const selectedSources: Array<{ name: string; type: string; sourceTemplateId?: string }> = [];
-    Object.entries(sourceTemplates).forEach(([cat, templates]) => {
-      if (newCategories.includes(cat)) {
-        templates.forEach(template => {
-          selectedSources.push({
-            name: template.name,
-            type: template.category,
-            sourceTemplateId: template.id
-          });
-        });
-      }
-    });
-    updateForm("sources", selectedSources);
-  };
-
-  const allCategories = Object.keys(sourceTemplates);
+  const [templates, setTemplates] = useState<
+    Record<string, Array<{ id: string; name: string; description: string | null; category: string }>>
+  >({});
+  const [loading, setLoading] = useState(true);
+  const [selectedCats, setSelectedCats] = useState<string[]>(["news", "social"]);
 
   const categoryIcons: Record<string, LucideIcon> = {
     news: Globe2,
     social: Share2,
     forum: MessageCircle,
     review: ShoppingCart,
-    blog: FileText,
+    blog: Newspaper,
     podcast: Mic,
   };
 
+  useEffect(() => {
+    getSourceTemplates()
+      .then((r) => { if (r?.grouped) setTemplates(r.grouped); })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const toggleCategory = (cat: string) => {
+    let newCats: string[];
+    if (selectedCats.includes(cat)) {
+      if (selectedCats.length === 1) return; // keep at least one
+      newCats = selectedCats.filter((c) => c !== cat);
+    } else {
+      newCats = [...selectedCats, cat];
+    }
+    setSelectedCats(newCats);
+
+    const newSources: OnboardingData["sources"] = [];
+    newCats.forEach((catName) => {
+      (templates[catName] || []).forEach((tmpl) => {
+        newSources.push({ name: tmpl.name, type: tmpl.category, sourceTemplateId: tmpl.id });
+      });
+    });
+    onChange(newSources);
+  };
+
+  const categories = Object.keys(templates);
+
   return (
-    <div>
-      <div className="grid gap-9 xl:grid-cols-[1fr_470px]">
-        <div>
-          <SectionTitle icon={Database} step={3} title={t("title")} desc={t("desc")} />
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-[#111536]">{t("title")}</h1>
+        <p className="mt-1.5 text-sm font-medium text-[#68739F]">{t("desc")}</p>
+      </div>
 
-          {/* Indonesia Media Pack - Quick Select */}
-          <div className="mb-6 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/5 p-5">
-            <div className="flex items-center gap-3 mb-4">
-              <ShieldCheck size={20} className="text-[#8B5CFF]" />
-              <span className="text-[16px] font-bold text-[#8B5CFF]">Indonesia Media Pack</span>
-            </div>
-            <p className="text-[14px] font-semibold text-slate-600 mb-4">
-              Pre-configured Indonesian news, social media, and forum sources
-            </p>
-            <div className="flex flex-wrap gap-3">
-              {allCategories.map((category) => {
-                const Icon = categoryIcons[category] || Globe2;
-                const isSelected = selectedCategories.includes(category);
-                return (
-                  <button
-                    key={category}
-                    type="button"
-                    onClick={() => toggleCategory(category)}
-                    className={`flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-bold transition-all ${
-                      isSelected
-                        ? "bg-[#8B5CFF] text-white shadow-[0_0_10px_rgba(139,92,255,0.3)]"
-                        : "bg-white border border-slate-200 text-slate-600 hover:border-[#8B5CFF]/50"
-                    }`}
-                  >
-                    <Icon size={16} />
-                    {category.charAt(0).toUpperCase() + category.slice(1)}
-                    <span className="ml-1 opacity-70">({sourceTemplates[category]?.length || 0})</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <h3 className="mb-5 text-[16px] font-bold text-slate-900">{t("choose")}</h3>
-
-          {isLoading ? (
-            <div className="grid gap-5 md:grid-cols-2">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-[112px] rounded-[8px] border border-slate-100 bg-slate-50 animate-pulse" />
-              ))}
-            </div>
-          ) : (
-            <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
-              {allCategories.flatMap((category) =>
-                (sourceTemplates[category] || []).map((template) => {
-                  const Icon = categoryIcons[category] || Globe2;
-                  const isSelected = selectedCategories.includes(category);
-                  return (
-                    <SourceCard
-                      key={template.id}
-                      icon={Icon}
-                      title={template.name}
-                      desc={template.description || `${template.category} source`}
-                      checked={isSelected}
-                      onToggle={() => toggleCategory(category)}
-                    />
-                  );
-                })
-              )}
-            </div>
-          )}
-
-          <div className="mt-7 flex items-center gap-4 rounded-[8px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/5 p-5 text-[16px] font-semibold text-[#8B5CFF]">
-            <ShieldCheck size={24} />
-            {t("moreSources")}
-          </div>
+      <div className="space-y-3">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-[#9BA3C2]">Quick Select by Category</h2>
+        <div className="flex flex-wrap gap-3">
+          {categories.map((cat) => {
+            const Icon = categoryIcons[cat] || Globe2;
+            const active = selectedCats.includes(cat);
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => toggleCategory(cat)}
+                className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-all ${
+                  active
+                    ? "border-[#2F20FF] bg-[#2F20FF] text-white shadow-[0_2px_8px_rgba(47,32,255,0.25)]"
+                    : "border-[#E8EAF6] bg-white text-[#3E4975] hover:border-[#B8BDD8]"
+                }`}
+              >
+                <Icon size={15} />
+                {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                <span className="opacity-60">({templates[cat]?.length ?? 0})</span>
+              </button>
+            );
+          })}
         </div>
-        <aside className="grid content-start gap-5 border-l border-slate-100 pl-8">
-          <SelectedSourcesSummary selectedCount={formData.sources.length} />
-          <TipBox tone="blue" title={t("qualityTitle")} text={t("qualityText")} icon={ShieldCheck} />
-          <TipBox tone="amber" title={t("tipTitle")} text={t("tipText")} icon={Lightbulb} />
-        </aside>
+      </div>
+
+      <div className="space-y-3">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-[#9BA3C2]">{t("choose")}</h2>
+
+        {loading ? (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-24 rounded-xl border border-[#F0F2FA] bg-[#F8F9FF] animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {categories.flatMap((cat) =>
+              (templates[cat] || []).map((tmpl) => {
+                const Icon = categoryIcons[cat] || Globe2;
+                const isActive = selectedCats.includes(cat);
+                return (
+                  <SourceCard
+                    key={tmpl.id}
+                    icon={Icon}
+                    title={tmpl.name}
+                    desc={tmpl.description ?? `${cat} source`}
+                    active={isActive}
+                    onToggle={() => toggleCategory(cat)}
+                  />
+                );
+              })
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between rounded-xl border border-[#E8EAF6] bg-[#FAFBFF] px-6 py-4">
+        <div className="flex items-center gap-3">
+          <Database size={20} className="text-[#2F20FF]" />
+          <span className="text-sm font-bold text-[#111536]">
+            {sources.length} source{sources.length !== 1 ? "s" : ""} selected
+          </span>
+        </div>
+        {sources.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {[...new Set(sources.map((s) => s.type))].map((type) => {
+              const Icon = categoryIcons[type];
+              return (
+                <span key={type} className="inline-flex items-center gap-1.5 rounded-full bg-[#2F20FF]/10 px-3 py-1 text-xs font-semibold text-[#2F20FF]">
+                  {Icon && <Icon size={12} />}
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                </span>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function SourceCard({ icon: Icon, title, desc, checked, onToggle, red, black }: { icon: LucideIcon; title: string; desc: string; checked?: boolean; onToggle?: () => void; red?: boolean; black?: boolean }) {
+function SourceCard({
+  icon: Icon,
+  title,
+  desc,
+  active,
+  onToggle,
+}: {
+  icon: LucideIcon;
+  title: string;
+  desc: string;
+  active: boolean;
+  onToggle: () => void;
+}) {
   return (
     <button
       type="button"
       onClick={onToggle}
-      className={`flex min-h-[112px] items-start gap-5 rounded-[8px] border p-5 text-left transition-all duration-300 ${checked ? "border-[#465FFF] bg-[#465FFF]/5 shadow-[0_0_10px_rgba(70,95,255,0.1)]" : "border-slate-100 bg-slate-50 hover:border-slate-200"}`}
+      className={`flex items-start gap-4 rounded-xl border p-5 text-left transition-all ${
+        active
+          ? "border-[#2F20FF] bg-[#F8F6FF] shadow-[0_0_0_3px_rgba(47,32,255,0.08)]"
+          : "border-[#E8EAF6] bg-white hover:border-[#B8BDD8]"
+      }`}
     >
-      <Icon size={26} className={red ? "text-rose-500" : black ? "text-slate-900" : "text-[#465FFF]"} fill={red ? "currentColor" : undefined} />
-      <div className="min-w-0 flex-1">
-        <h3 className="text-[16px] font-bold text-slate-900">{title}</h3>
-        <p className="mt-2 text-[14px] font-semibold leading-6 text-slate-400">{desc}</p>
+      <div
+        className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
+          active ? "bg-[#2F20FF] text-white" : "bg-[#F0F2FA] text-[#68739F]"
+        }`}
+      >
+        <Icon size={20} />
       </div>
-      <CheckBox checked={!!checked} />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-bold text-[#111536]">{title}</p>
+        <p className="mt-1 text-xs font-medium text-[#68739F] leading-relaxed">{desc}</p>
+      </div>
+      <div
+        className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-all ${
+          active ? "border-[#2F20FF] bg-[#2F20FF]" : "border-[#D6DDEC] bg-white"
+        }`}
+      >
+        {active && <Check size={10} strokeWidth={3} className="text-white" />}
+      </div>
     </button>
   );
 }
 
-function SelectedSourcesSummary({ selectedCount }: { selectedCount: number }) {
-  const t = useTranslations("OnboardingDesign.sources");
-  const rows = [
-    [t("onlineNews"), "1.248", Globe2],
-    [t("socialMedia"), "8", Share2],
-    ["YouTube", "2", Video],
-    ["TikTok", "1.024", Video],
-    [t("forum"), "156", MessageCircle],
-    [t("podcast"), "48", Mic],
-  ] as const;
-  return (
-    <div className="rounded-[10px] border border-slate-100 bg-slate-50 p-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-[17px] font-bold text-slate-900">{t("summaryTitle")}</h3>
-        <span className="rounded-full bg-[#10B981]/15 border border-[#10B981]/25 px-4 py-2 text-[13px] font-bold text-[#10B981]">{selectedCount} {t("active")}</span>
-      </div>
-      <div className="mt-6 grid gap-5">
-        {rows.map(([label, value, Icon]) => (
-          <div key={label} className="flex items-center gap-4">
-            <Icon size={20} className="text-[#465FFF]" />
-            <span className="min-w-0 flex-1 text-[15px] font-bold text-slate-800">{label}</span>
-            <span className="text-[14px] font-semibold text-slate-400">{value}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+// ─── Step 4: Notifications ─────────────────────────────────────────────────
 
-function NotificationsStep() {
+function NotificationsStep({
+  data,
+  onChange,
+}: {
+  data: NotificationsData;
+  onChange: (u: Partial<NotificationsData>) => void;
+}) {
   const t = useTranslations("OnboardingDesign.notifications");
-  const alerts = [
-    { icon: BarChart3, title: t("spike"), desc: t("spikeDesc"), checked: true, tone: "purple" },
-    { icon: Shield, title: t("negative"), desc: t("negativeDesc"), checked: true, tone: "red" },
-    { icon: AlertTriangle, title: t("viral"), desc: t("viralDesc"), checked: true, tone: "amber" },
-    { icon: MessageCircle, title: t("complaint"), desc: t("complaintDesc"), checked: true, tone: "green" },
-    { icon: Newspaper, title: t("importantNews"), desc: t("importantNewsDesc") },
-    { icon: User, title: t("competitor"), desc: t("competitorDesc") },
+
+  const alertTypes = [
+    { key: "alertSpike" as const, label: t("spike"), desc: t("spikeDesc"), icon: BarChart3, color: "#8B5CFF" },
+    { key: "alertNegative" as const, label: t("negative"), desc: t("negativeDesc"), icon: Shield, color: "#EF4444" },
+    { key: "alertViral" as const, label: t("viral"), desc: t("viralDesc"), icon: Sparkles, color: "#F59E0B" },
+    { key: "alertComplaint" as const, label: t("complaint"), desc: t("complaintDesc"), icon: Headphones, color: "#10B981" },
   ];
-  const channels = [t("email"), "In-app", "Telegram", "WhatsApp", "SMS"];
+
+  const channels = [
+    { key: "emailEnabled" as const, label: t("email"), icon: Mail },
+    { key: "inAppEnabled" as const, label: "In-app", icon: Bell },
+    { key: "telegramEnabled" as const, label: "Telegram", icon: MessageCircle },
+    { key: "whatsappEnabled" as const, label: "WhatsApp", icon: MessageCircle },
+  ];
+
   return (
-    <div className="grid gap-9 xl:grid-cols-[1fr_470px]">
+    <div className="space-y-8">
       <div>
-        <SectionTitle icon={Bell} step={4} title={t("title")} desc={t("desc")} />
-        
-        <h3 className="mb-5 text-[16px] font-bold text-slate-900">{t("alertTypes")}</h3>
-        <div className="grid gap-4 md:grid-cols-2">
-          {alerts.map((item) => <AlertCard key={item.title} {...item} />)}
-        </div>
-        
-        <h3 className="mb-2 mt-6 text-[16px] font-bold text-slate-900">{t("channels")}</h3>
-        <p className="mb-4 text-[14px] font-semibold text-slate-400">{t("channelsDesc")}</p>
-        <div className="grid gap-3 md:grid-cols-5">
-          {channels.map((item, index) => <ChannelCard key={item} label={item} checked={index < 4} />)}
-        </div>
-        
-        <h3 className="mb-4 mt-7 text-[16px] font-bold text-slate-900">{t("frequency")}</h3>
-        <div className="grid gap-4 md:grid-cols-[1fr_1fr_220px]">
-          <ScheduleCard title={t("daily")} value={t("dailyValue")} />
-          <ScheduleCard title={t("weekly")} value={t("weeklyValue")} />
-          <div className="flex items-center justify-between rounded-[8px] border border-slate-100 bg-slate-50 p-5">
-            <span>
-              <span className="block text-[15px] font-bold text-slate-900">{t("realtime")}</span>
-              <span className="mt-1 block text-[12px] font-semibold text-slate-400">{t("realtimeDesc")}</span>
-            </span>
-            <span className="flex h-6 w-11 items-center rounded-full bg-[#465FFF] p-1 cursor-pointer">
-              <span className="ml-auto h-4 w-4 rounded-full bg-white shadow-md" />
-            </span>
-          </div>
-        </div>
+        <h1 className="text-2xl font-bold tracking-tight text-[#111536]">{t("title")}</h1>
+        <p className="mt-1.5 text-sm font-medium text-[#68739F]">{t("desc")}</p>
       </div>
-      <aside className="grid content-start gap-5 border-l border-slate-100 pl-8">
-        <NotificationSummary />
-        <TipBox tone="amber" title={t("tipTitle")} text={t("tipText")} icon={Lightbulb} />
-      </aside>
-    </div>
-  );
-}
 
-function AlertCard({ icon: Icon, title, desc, checked, tone }: { icon: LucideIcon; title: string; desc: string; checked?: boolean; tone?: string }) {
-  const colors = tone === "red" ? "bg-rose-500/10 text-rose-400 border-rose-500/20" : tone === "amber" ? "bg-amber-500/10 text-amber-400 border-amber-500/20" : tone === "green" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-[#8B5CFF]/10 text-[#8B5CFF] border-[#8B5CFF]/20";
-  return (
-    <div className={`flex items-start gap-5 rounded-[8px] border p-5 transition-all duration-300 ${checked ? "border-[#465FFF] bg-[#465FFF]/5" : "border-slate-100 bg-slate-50 hover:border-slate-200"}`}>
-      <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[8px] border ${colors}`}><Icon size={25} /></span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-[16px] font-bold text-slate-900">{title}</span>
-        <span className="mt-2 block text-[14px] font-semibold leading-6 text-slate-400">{desc}</span>
-      </span>
-      <CheckBox checked={!!checked} />
-    </div>
-  );
-}
-
-function ChannelCard({ label, checked }: { label: string; checked?: boolean }) {
-  return (
-    <div className="flex h-[54px] items-center justify-between rounded-[8px] border border-slate-100 bg-slate-50 px-5 text-[14px] font-bold text-slate-800">
-      <div className="flex items-center gap-2">
-        <Mail size={18} className="text-[#465FFF]" />
-        {label}
-      </div>
-      <CheckBox checked={!!checked} />
-    </div>
-  );
-}
-
-function ScheduleCard({ title, value }: { title: string; value: string }) {
-  return (
-    <div className="flex h-[64px] items-center justify-between rounded-[8px] border border-slate-100 bg-slate-50 px-5">
-      <span>
-        <span className="block text-[14px] font-bold text-slate-900">{title}</span>
-        <span className="mt-1 block text-[13px] font-semibold text-slate-400">{value}</span>
-      </span>
-      <CalendarDays size={18} className="text-slate-400" />
-    </div>
-  );
-}
-
-function NotificationSummary() {
-  const t = useTranslations("OnboardingDesign.notifications");
-  const alerts = [t("spike"), t("negative"), t("viral"), t("complaint")];
-  return (
-    <div className="rounded-[10px] border border-slate-100 bg-slate-50 p-6">
-      <h3 className="text-[17px] font-bold text-slate-900">{t("summaryTitle")}</h3>
-      <p className="mt-2 text-[14px] font-semibold text-slate-400">{t("summaryDesc")}</p>
-      
-      <div className="mt-5 rounded-[8px] border border-slate-100 bg-slate-50 p-5">
-        <h4 className="mb-4 text-[14px] font-bold text-slate-800">{t("alertCount")}</h4>
-        <div className="grid gap-4">
-          {alerts.map((item) => (
-            <div key={item} className="flex items-center gap-3 text-[14px] font-bold text-slate-700">
-              <Bell size={17} className="text-[#465FFF]" />
-              {item}
-            </div>
-          ))}
-        </div>
-      </div>
-      
-      <div className="mt-4 rounded-[8px] border border-slate-100 bg-slate-50 p-5">
-        <h4 className="mb-4 text-[14px] font-bold text-slate-800">{t("channelCount")}</h4>
-        <div className="flex flex-wrap gap-3 text-[13px] font-bold text-[#465FFF] items-center">
-          <Mail size={18} />
-          <span>In-app</span>
-          <span className="h-1 w-1 rounded-full bg-slate-500" />
-          <span>Telegram</span>
-          <span className="h-1 w-1 rounded-full bg-slate-500" />
-          <span>WhatsApp</span>
-        </div>
-      </div>
-      
-      <div className="mt-4 rounded-[8px] border border-slate-100 bg-slate-50 p-5">
-        <h4 className="mb-4 text-[14px] font-bold text-slate-800">{t("summaryTime")}</h4>
-        <p className="text-[14px] font-semibold text-slate-400"><b className="text-slate-900">{t("daily")}</b> {t("dailyValue")}</p>
-        <p className="mt-3 text-[14px] font-semibold text-slate-400"><b className="text-slate-900">{t("weekly")}</b> {t("weeklyValue")}</p>
-      </div>
-    </div>
-  );
-}
-
-function PreviewStep() {
-  const t = useTranslations("OnboardingDesign.preview");
-  const metrics = [
-    [t("totalMentions"), "12.842", Activity],
-    [t("negativeSentiment"), "2.156", Shield],
-    [t("activeSources"), "6 / 8", Database],
-    [t("avgResponse"), "17m 24s", Clock3],
-    [t("aiVisibility"), "2.451", Eye],
-  ] as const;
-  return (
-    <div>
-      <div className="mb-7 flex items-center justify-between">
-        <SectionTitle icon={Sparkles} step={5} title={t("title")} desc={t("desc")} />
-        <span className="hidden rounded-full bg-[#10B981]/15 border border-[#10B981]/25 px-4 py-2 text-[13px] font-bold text-[#10B981] md:inline-flex items-center gap-1">
-          <Check size={15} /> 
-          {t("ready")}
-        </span>
-      </div>
-      
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
-        {metrics.map(([label, value, Icon]) => <MetricPreview key={label} label={label} value={value} icon={Icon} />)}
-      </div>
-      
-      <div className="mt-5 grid gap-5 xl:grid-cols-[1fr_360px]">
-        <div className="grid gap-5">
-          <div className="grid gap-5 xl:grid-cols-[1.25fr_1fr]">
-            <LineChartCard />
-            <TopTopicsCard />
-          </div>
-          <div className="grid gap-5 xl:grid-cols-3">
-            <SentimentCard />
-            <TopSourcesCard />
-            <LatestAlertsCard />
-          </div>
-        </div>
-        <PreviewSummary />
-      </div>
-    </div>
-  );
-}
-
-function MetricPreview({ label, value, icon: Icon }: { label: string; value: string; icon: LucideIcon }) {
-  return (
-    <div className="rounded-[8px] border border-slate-100 bg-slate-50 p-5">
-      <div className="flex items-center gap-4">
-        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#8B5CFF]/15 text-[#8B5CFF] border border-[#8B5CFF]/20 shadow-[0_0_8px_rgba(139,92,255,0.2)]">
-          <Icon size={25} />
-        </span>
-        <span>
-          <span className="block text-[13px] font-semibold text-slate-400">{label}</span>
-          <span className="mt-1 block text-[26px] font-black text-slate-900 leading-none tracking-tight">{value}</span>
-          <span className="mt-1.5 block text-[12px] font-bold text-[#10B981]">▲ 18,3%</span>
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function LineChartCard() {
-  const t = useTranslations("OnboardingDesign.preview");
-  return (
-    <ChartPanel title={t("activityTitle")} desc={t("activityDesc")}>
-      <div className="h-[230px] w-full relative">
-        <svg viewBox="0 0 560 210" className="h-[230px] w-full z-10 relative">
-          <defs>
-            <linearGradient id="lineFill" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="#465FFF" stopOpacity="0.3" />
-              <stop offset="100%" stopColor="#465FFF" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          {[0, 1, 2, 3, 4].map((i) => (
-            <line key={i} x1="0" x2="560" y1={35 + i * 35} y2={35 + i * 35} stroke="rgba(255,255,255,0.05)" />
-          ))}
-          <path d="M0 160 L55 138 L110 132 L165 104 L220 122 L275 91 L330 98 L385 35 L440 48 L495 90 L560 72 L560 210 L0 210 Z" fill="url(#lineFill)" />
-          <polyline points="0,160 55,138 110,132 165,104 220,122 275,91 330,98 385,35 440,48 495,90 560,72" fill="none" stroke="#465FFF" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </div>
-    </ChartPanel>
-  );
-}
-
-function TopTopicsCard() {
-  const t = useTranslations("OnboardingDesign.preview");
-  const topics = ["FIFGROUP", "Leasing", "Keluhan Kredit", "Motor", "Customer Service"];
-  return (
-    <ChartPanel title={t("topicTitle")} desc={t("topicDesc")}>
-      {topics.map((topic, i) => (
-        <BarRank key={topic} rank={i + 1} label={topic} value={[75, 62, 43, 37, 31][i]} />
-      ))}
-      <button className="mt-4 flex items-center gap-2 text-[14px] font-bold text-[#465FFF] hover:text-[#465FFF] transition" type="button">
-        {t("viewAllTopics")}
-        <ArrowRight size={16} />
-      </button>
-    </ChartPanel>
-  );
-}
-
-function SentimentCard() {
-  const t = useTranslations("OnboardingDesign.preview");
-  return (
-    <ChartPanel title={t("sentimentTitle")} desc={t("sentimentDesc")}>
-      <div className="grid grid-cols-[150px_1fr] items-center gap-5">
-        <DonutChart center="12.842" label={t("totalMentionsShort")} />
-        <div className="grid gap-3">
-          <LegendRow label={t("positive")} value="6.842" color="#10B981" />
-          <LegendRow label={t("neutral")} value="3.892" color="#00F0FF" />
-          <LegendRow label={t("negative")} value="2.108" color="#EF4444" />
-        </div>
-      </div>
-    </ChartPanel>
-  );
-}
-
-function TopSourcesCard() {
-  const t = useTranslations("OnboardingDesign.preview");
-  const rows = ["TikTok", "YouTube", t("onlineNews"), t("forum"), "Instagram"];
-  return (
-    <ChartPanel title={t("topSources")} desc={t("topSourcesDesc")}>
-      {rows.map((row, i) => (
-        <div key={row} className="mb-3 flex items-center gap-3 text-[14px] font-bold text-slate-800 py-1 border-b border-slate-100 last:border-0 last:pb-0">
-          <Globe2 size={17} className="text-[#465FFF]" />
-          <span className="flex-1 truncate">{row}</span>
-          <span className="text-slate-400">{["4.218", "3.156", "2.842", "1.118", "832"][i]}</span>
-        </div>
-      ))}
-      <button className="mt-4 flex items-center gap-2 text-[14px] font-bold text-[#465FFF] hover:text-[#465FFF] transition" type="button">
-        {t("viewAllSources")}
-        <ArrowRight size={16} />
-      </button>
-    </ChartPanel>
-  );
-}
-
-function LatestAlertsCard() {
-  const t = useTranslations("OnboardingDesign.preview");
-  const rows = [t("alertNegative"), t("alertViral"), t("alertComplaint")];
-  return (
-    <ChartPanel title={t("latestAlerts")} desc={t("latestAlertsDesc")}>
-      {rows.map((row, i) => (
-        <div key={row} className="mb-4 flex items-center gap-3 border-b border-slate-100 pb-3.5 last:border-0 last:pb-0">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[8px] bg-rose-500/10 text-rose-400 border border-rose-500/20">
-            <AlertTriangle size={20} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-[14px] font-bold text-slate-900 truncate">{row}</span>
-            <span className="text-[12px] font-semibold text-slate-400 truncate">Topik: {i === 0 ? "Keluhan Kredit" : i === 1 ? "Leasing" : "Motor"}</span>
-          </span>
-          <span className="text-[12px] font-bold text-slate-400">{["10:23", "09:45", "08:20"][i]}</span>
-        </div>
-      ))}
-      <button className="mt-4 flex items-center gap-2 text-[14px] font-bold text-[#465FFF] hover:text-[#465FFF] transition" type="button">
-        {t("viewAllAlerts")}
-        <ArrowRight size={16} />
-      </button>
-    </ChartPanel>
-  );
-}
-
-function PreviewSummary() {
-  const t = useTranslations("OnboardingDesign.preview");
-  const rows = [[t("topics"), "6 keyword"], [t("sources"), "6"], [t("alerts"), "4"], [t("channels"), "4"], [t("time"), t("dailyWeekly")]];
-  return (
-    <aside className="grid content-start gap-5">
-      <div className="rounded-[10px] border border-slate-100 bg-slate-50 overflow-hidden">
-        <h3 className="border-b border-slate-100 p-6 text-[18px] font-bold text-slate-900">{t("summaryTitle")}</h3>
-        {rows.map(([label, value]) => (
-          <div key={label} className="flex items-center justify-between border-b border-slate-100 px-6 py-5 last:border-b-0">
-            <span className="font-bold text-slate-700">{label}</span>
-            <span className="rounded-full bg-slate-100 px-4 py-2 text-[13px] font-bold text-slate-500">{value}</span>
-          </div>
-        ))}
-      </div>
-      
-      <div className="rounded-[10px] border border-slate-100 bg-[#465FFF]/5 p-6">
-        <h3 className="text-[17px] font-bold text-[#465FFF]">{t("readyTitle")}</h3>
-        <p className="mt-2 text-[14px] font-semibold leading-6 text-slate-400">{t("readyText")}</p>
-      </div>
-    </aside>
-  );
-}
-
-function ProcessingScreen() {
-  const { submitOnboarding } = useOnboardingContext();
-  const didSubmitRef = useRef(false);
-  useEffect(() => {
-    if (didSubmitRef.current) return;
-    didSubmitRef.current = true;
-    submitOnboarding();
-  }, [submitOnboarding]);
-
-  const t = useTranslations("OnboardingDesign.processing");
-  // UX FIX: Use animated progress instead of static 70%
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    const steps = [15, 30, 50, 70, 85, 95]; // Simulated progress steps
-    let currentStep = 0;
-    const interval = setInterval(() => {
-      if (currentStep < steps.length) {
-        setProgress(steps[currentStep]);
-        currentStep++;
-      }
-    }, 800);
-    return () => clearInterval(interval);
-  }, []);
-
-  const items = [[t("mineTitle"), t("mineDesc"), Search], [t("sentimentTitle"), t("sentimentDesc"), ShieldCheck], [t("insightTitle"), t("insightDesc"), BarChart3], [t("alertTitle"), t("alertDesc"), Bell]] as const;
-  const summary = [[t("topics"), "6 keyword", Hash], [t("sources"), "6", Database], [t("alerts"), "4", Bell], [t("summaryTime"), t("dailyWeekly"), Clock3]] as const;
-  return (
-    <div className="flex min-h-[calc(100vh-138px)] flex-col items-center justify-center py-10">
-      <div className="relative w-full max-w-[980px]">
-        {/* Radar pulsing rings */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="w-[300px] h-[300px] rounded-full border border-[#465FFF]/15 animate-ping" />
-        </div>
-
-        <div className="mx-auto flex h-[200px] w-[200px] items-center justify-center rounded-full border border-dashed border-[#8B5CFF]/30 bg-slate-50 relative z-10 shadow-[0_0_20px_rgba(70,95,255,0.1)]">
-          <div className="flex h-[120px] w-[120px] items-center justify-center rounded-full border border-slate-100 bg-slate-50 shadow-[0_0_30px_rgba(70,95,255,0.25)]">
-            <Image src="/narriv-logo.png" alt="Narriv" width={84} height={84} priority className="h-[84px] w-[84px] object-contain animate-pulse" />
-          </div>
-        </div>
-
-        <div className="mt-8 grid gap-5 lg:grid-cols-2 relative z-10">
-          {items.map(([title, desc, Icon], i) => (
-            <div
-              key={title}
-              className={`rounded-[12px] border border-slate-100 bg-slate-50 p-6 shadow-[0_10px_20px_rgba(0,0,0,0.3)] backdrop-blur-md ${i % 2 === 0 ? "lg:mr-28" : "lg:ml-28"} hover:border-[#465FFF]/30 transition duration-300`}
+      <div className="space-y-4">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-[#9BA3C2]">{t("alertTypes")}</h2>
+        <div className="grid gap-3 lg:grid-cols-2">
+          {alertTypes.map(({ key, label, desc, icon: Icon, color }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onChange({ [key]: !data[key] })}
+              className={`flex items-start gap-4 rounded-xl border p-5 text-left transition-all ${
+                data[key]
+                  ? "border-[#2F20FF] bg-[#F8F6FF] shadow-[0_0_0_3px_rgba(47,32,255,0.08)]"
+                  : "border-[#E8EAF6] bg-white hover:border-[#B8BDD8]"
+              }`}
             >
-              <div className="flex items-center gap-5">
-                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#8B5CFF]/15 text-[#8B5CFF] border border-[#8B5CFF]/20"><Icon size={28} /></span>
-                <span>
-                  <span className="block text-[15px] font-bold text-slate-900">{title}</span>
-                  <span className="mt-1 block text-[13px] font-semibold leading-6 text-slate-400">{desc}</span>
-                </span>
+              <div
+                className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                style={{ backgroundColor: `${color}18`, color }}
+              >
+                <Icon size={18} />
               </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-[#111536]">{label}</p>
+                <p className="mt-1 text-xs font-medium text-[#68739F] leading-relaxed">{desc}</p>
+              </div>
+              <ToggleSwitch
+                active={data[key]}
+                onChange={() => onChange({ [key]: !data[key] })}
+              />
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-[#9BA3C2]">{t("channels")}</h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {channels.map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onChange({ [key]: !data[key] })}
+              className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-all ${
+                data[key] ? "border-[#2F20FF] bg-[#F8F6FF]" : "border-[#E8EAF6] bg-white hover:border-[#B8BDD8]"
+              }`}
+            >
+              <Icon size={18} className={data[key] ? "text-[#2F20FF]" : "text-[#68739F]"} />
+              <span className={`text-sm font-semibold ${data[key] ? "text-[#111536]" : "text-[#68739F]"}`}>
+                {label}
+              </span>
+              <div className="ml-auto">
+                <ToggleSwitch active={data[key]} onChange={() => onChange({ [key]: !data[key] })} />
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-[#9BA3C2]">{t("frequency")}</h2>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {[
+            { key: "dailyEnabled" as const, title: t("daily"), sub: "Every day, 08:00" },
+            { key: "weeklyEnabled" as const, title: t("weekly"), sub: "Every Monday, 09:00" },
+            { key: "realtimeEnabled" as const, title: t("realtime"), sub: t("realtimeDesc") },
+          ].map(({ key, title, sub }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onChange({ [key]: !data[key] })}
+              className={`flex items-center justify-between rounded-xl border p-5 text-left transition-all ${
+                data[key] ? "border-[#2F20FF] bg-[#F8F6FF]" : "border-[#E8EAF6] bg-white"
+              }`}
+            >
+              <div>
+                <p className="text-sm font-bold text-[#111536]">{title}</p>
+                <p className="mt-1 text-xs font-medium text-[#68739F]">{sub}</p>
+              </div>
+              <ToggleSwitch active={data[key]} onChange={() => onChange({ [key]: !data[key] })} />
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ToggleSwitch({ active, onChange }: { active: boolean; onChange: () => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={active}
+      onClick={onChange}
+      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[#2F20FF] focus:ring-offset-2 ${
+        active ? "bg-[#2F20FF]" : "bg-[#D6DDEC]"
+      }`}
+    >
+      <span
+        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
+          active ? "translate-x-6" : "translate-x-1"
+        }`}
+      />
+    </button>
+  );
+}
+
+// ─── Step 5: Preview ─────────────────────────────────────────────────────────
+
+function PreviewStep({ data }: { data: OnboardingData }) {
+  const t = useTranslations("OnboardingDesign.preview");
+
+  const activeAlertTypes = [
+    data.notifications.alertSpike && t("spike"),
+    data.notifications.alertNegative && t("negative"),
+    data.notifications.alertViral && t("viral"),
+    data.notifications.alertComplaint && t("complaint"),
+  ].filter(Boolean);
+
+  const activeChannels = [
+    data.notifications.emailEnabled && t("email"),
+    data.notifications.inAppEnabled && "In-app",
+    data.notifications.telegramEnabled && "Telegram",
+    data.notifications.whatsappEnabled && "WhatsApp",
+  ].filter(Boolean);
+
+  const summaryRows = [
+    { label: "Name", value: data.profile.name || "—" },
+    { label: "Role", value: data.profile.role || "—" },
+    { label: "Company", value: data.profile.company || "—" },
+    { label: "Industry", value: data.profile.industry || "—" },
+    {
+      label: "Keywords",
+      value: `${data.keywords.length} keyword${data.keywords.length !== 1 ? "s" : ""}`,
+    },
+    {
+      label: "Data Sources",
+      value: `${data.sources.length} source${data.sources.length !== 1 ? "s" : ""}`,
+    },
+    { label: "Alert Types", value: `${activeAlertTypes.length} active` },
+    { label: "Channels", value: `${activeChannels.length} active` },
+  ];
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-[#111536]">{t("title")}</h1>
+          <p className="mt-1.5 text-sm font-medium text-[#68739F]">{t("desc")}</p>
+        </div>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#10B981]/12 px-4 py-2 text-xs font-bold text-[#10B981]">
+          <CheckCircle2 size={14} />
+          Ready
+        </span>
+      </div>
+
+      {data.keywords.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-[#9BA3C2]">
+            Keywords you&apos;ll monitor
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {data.keywords.map((kw) => (
+              <span
+                key={kw}
+                className="inline-flex items-center gap-1.5 rounded-full bg-[#2F20FF]/10 px-4 py-2 text-sm font-semibold text-[#2F20FF]"
+              >
+                <Hash size={13} />
+                {kw}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {data.sources.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-[#9BA3C2]">Data Sources</h2>
+          <div className="flex flex-wrap gap-2">
+            {[...new Set(data.sources.map((s) => s.type))].map((type) => (
+              <span
+                key={type}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#E8EAF6] bg-white px-4 py-2 text-sm font-semibold text-[#3E4975]"
+              >
+                {type.charAt(0).toUpperCase() + type.slice(1)} (
+                {data.sources.filter((s) => s.type === type).length})
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {activeAlertTypes.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-[#9BA3C2]">
+            Alerts &amp; Notifications
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {activeAlertTypes.map(
+              (label) =>
+                label && (
+                  <div
+                    key={label}
+                    className="flex items-center gap-3 rounded-xl border border-[#E8EAF6] bg-[#FAFBFF] px-4 py-3"
+                  >
+                    <Bell size={16} className="text-[#2F20FF]" />
+                    <span className="text-sm font-semibold text-[#111536]">{label}</span>
+                  </div>
+                )
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="border-t border-[#F0F2FA]" />
+
+      <div className="rounded-xl border border-[#E8EAF6] overflow-hidden">
+        <div className="border-b border-[#F0F2FA] bg-[#FAFBFF] px-6 py-4">
+          <h2 className="text-sm font-bold text-[#111536]">{t("summaryTitle")}</h2>
+        </div>
+        <div className="divide-y divide-[#F0F2FA]">
+          {summaryRows.map(({ label, value }) => (
+            <div key={label} className="flex items-center justify-between px-6 py-4">
+              <span className="text-sm font-medium text-[#68739F]">{label}</span>
+              <span className="text-sm font-semibold text-[#111536]">{value}</span>
             </div>
           ))}
         </div>
       </div>
 
-      <h1 className="mt-12 text-center text-[32px] font-black tracking-tight text-slate-900">{t("title")}</h1>
-      <p className="mt-4 max-w-[720px] text-center text-[17px] font-semibold leading-7 text-slate-400">{t("desc")}</p>
+      <div className="flex items-start gap-4 rounded-xl border border-[#10B981]/20 bg-[#F0FFF8] p-6">
+        <CheckCircle2 size={24} className="mt-0.5 shrink-0 text-[#10B981]" />
+        <div>
+          <p className="text-base font-bold text-[#111536]">{t("readyTitle")}</p>
+          <p className="mt-1 text-sm font-medium text-[#68739F]">{t("readyText")}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-      {/* UX FIX: Animated progress bar instead of static 70% */}
-      <div className="mt-10 flex w-full max-w-[720px] items-center gap-5">
-        <div className="h-3 flex-1 overflow-hidden rounded-full bg-slate-100 border border-slate-100">
+// ─── Processing Step ─────────────────────────────────────────────────────────
+
+function ProcessingStep({
+  progress,
+  submitError,
+  onRetry,
+}: {
+  progress: number;
+  submitError: string | null;
+  onRetry: () => void;
+}) {
+  const t = useTranslations("OnboardingDesign.processing");
+
+  const steps = [
+    { label: "Creating workspace", done: progress >= 10 },
+    { label: "Adding keywords", done: progress >= 40 },
+    { label: "Setting up sources", done: progress >= 55 },
+    { label: "Configuring notifications", done: progress >= 70 },
+    { label: "Launching dashboard", done: progress >= 95 },
+  ];
+
+  return (
+    <div className="flex flex-col items-center py-16 text-center">
+      <div className="relative">
+        <div
+          className="absolute inset-0 rounded-full border border-[#2F20FF]/20 animate-ping"
+          style={{ animationDuration: "2s" }}
+        />
+        <div className="relative flex h-24 w-24 items-center justify-center rounded-full border-2 border-dashed border-[#2F20FF]/40 bg-white shadow-lg">
+          <Image src="/narriv-logo.png" alt="Narriv" width={56} height={56} className="object-contain" />
+        </div>
+      </div>
+
+      <h1 className="mt-10 text-2xl font-bold tracking-tight text-[#111536]">{t("title")}</h1>
+      <p className="mt-3 max-w-md text-sm font-medium text-[#68739F] leading-relaxed">{t("desc")}</p>
+
+      <div className="mt-8 w-full max-w-md">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-xs font-semibold text-[#9BA3C2]">{progress}%</span>
+        </div>
+        <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#F0F2FA]">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-[#465FFF] to-[#8B5CFF] shadow-[0_0_10px_rgba(70,95,255,0.5)] transition-all duration-500 ease-out"
+            className="h-full rounded-full bg-gradient-to-r from-[#2F20FF] to-[#6B2EFF] transition-all duration-500 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
-        <span className="text-[24px] font-black text-[#465FFF] drop-shadow-[0_0_8px_rgba(70,95,255,0.4)]">{progress}%</span>
-      </div>
 
-      <div className="mt-14 w-full max-w-[1060px]">
-        <h2 className="mb-5 text-[14px] font-bold uppercase tracking-[0.08em] text-slate-400">{t("summaryTitle")}</h2>
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-          {summary.map(([title, value, Icon]) => (
-            <div key={title} className="flex items-center gap-5 rounded-[10px] border border-slate-100 bg-slate-50 p-5 hover:border-slate-200 transition">
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/15 text-[#465FFF] border border-[#465FFF]/20"><Icon size={28} /></span>
-              <span>
-                <span className="block text-[15px] font-bold text-slate-900">{title}</span>
-                <span className="mt-1 block text-[14px] font-semibold text-slate-400">{value}</span>
+        <div className="mt-6 space-y-2">
+          {steps.map((s, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <div
+                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                  s.done ? "bg-[#10B981]" : "border border-[#D6DDEC] bg-white"
+                }`}
+              >
+                {s.done && <Check size={11} strokeWidth={3} className="text-white" />}
+              </div>
+              <span className={`text-xs font-semibold ${s.done ? "text-[#10B981]" : "text-[#9BA3C2]"}`}>
+                {s.label}
               </span>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="mt-8 w-full max-w-[1060px] rounded-[10px] border border-slate-100 bg-[#8B5CFF]/5 p-6">
-        <div className="flex items-center gap-5">
-          <Sparkles size={30} className="text-[#8B5CFF] shrink-0" />
-          <span>
-            <span className="block text-[18px] font-bold text-slate-900">{t("didYouKnow")}</span>
-            <span className="mt-1 block text-[15px] font-semibold text-slate-400">{t("didYouKnowText")}</span>
-          </span>
+      {submitError && (
+        <div className="mt-8 flex flex-col items-center gap-3">
+          <p className="text-sm font-semibold text-[#EF4444]">{submitError}</p>
+          <button
+            type="button"
+            onClick={onRetry}
+            className="rounded-xl border border-[#EF4444] bg-white px-6 py-3 text-sm font-semibold text-[#EF4444] transition-colors hover:bg-[#FFF5F5]"
+          >
+            Try Again
+          </button>
         </div>
-      </div>
-
-      <SafetyFooter />
-    </div>
-  );
-}
-
-function StepFooter({ step, onBack, onNext }: { step: Step; onBack: () => void; onNext: () => void }) {
-  const t = useTranslations("OnboardingDesign.footer");
-  return (
-    <div className="flex items-center gap-4 border-t border-slate-100 px-7 py-6 sm:px-9 bg-slate-50">
-      {step === 1 ? (
-        <button className="h-[50px] rounded-[8px] border border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 transition-all px-7 text-[15px] font-bold text-slate-700" type="button">
-          {t("skip")}
-        </button>
-      ) : (
-        <button onClick={onBack} className="flex h-[50px] items-center gap-3 rounded-[8px] border border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 transition-all px-7 text-[15px] font-bold text-slate-700" type="button">
-          <ArrowLeft size={19} />
-          {t("back")}
-        </button>
       )}
-      <div className="ml-auto text-[15px] font-semibold text-slate-400">{t("step", { step })}</div>
-      <button 
-        onClick={onNext} 
-        className="flex h-[50px] min-w-[252px] items-center justify-center gap-3 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#8B5CFF] px-8 text-[15px] font-bold text-white shadow-[0_0_15px_rgba(70,95,255,0.3)] transition hover:from-[#3b52d9] hover:to-[#764ee6] border border-slate-200 active:scale-[0.98]" 
-        type="button"
+    </div>
+  );
+}
+
+// ─── Shared UI Components ─────────────────────────────────────────────────────
+
+function FormField({
+  label,
+  required,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div className="space-y-2">
+      <label className="block">
+        <span className="text-sm font-semibold text-[#3E4975]">
+          {label}
+          {required && <span className="ml-1 text-[#EF4444]">*</span>}
+        </span>
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function Select({
+  value,
+  onChange,
+  placeholder,
+  children,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="relative">
+      <select
+        value={value}
+        onChange={(e: ChangeEvent<HTMLSelectElement>) => onChange(e.target.value)}
+        className="form-select w-full appearance-none pr-10"
       >
-        {step === 5 ? t("finish") : t("continue")} 
-        <ArrowRight size={19} />
-      </button>
+        {placeholder && <option value="">{placeholder}</option>}
+        {children}
+      </select>
+      <ChevronDown
+        size={16}
+        className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#9BA3C2]"
+      />
     </div>
-  );
-}
-
-function TipBox({ title, text, tone = "purple", icon: Icon = Sparkles }: { title: string; text: string; tone?: "purple" | "blue" | "amber"; icon?: LucideIcon }) {
-  const cls = tone === "amber" ? "border-amber-500/20 bg-amber-500/5 text-amber-400" : tone === "blue" ? "border-sky-500/20 bg-sky-500/5 text-sky-400" : "border-purple-500/20 bg-purple-500/5 text-purple-400";
-  return (
-    <div className={`mt-8 flex items-center gap-5 rounded-[8px] border p-5 ${cls}`}>
-      <Icon size={25} className="shrink-0" />
-      <span>
-        <span className="block text-[16px] font-bold text-slate-900">{title}</span>
-        <span className="mt-1 block text-[14px] font-semibold leading-6 text-slate-400">{text}</span>
-      </span>
-    </div>
-  );
-}
-
-function CheckBox({ checked }: { checked: boolean }) {
-  return (
-    <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px] border transition ${checked ? "border-[#465FFF] bg-[#465FFF] text-white" : "border-slate-300 bg-slate-50 text-transparent"}`}>
-      <Check size={15} strokeWidth={3} />
-    </span>
-  );
-}
-
-function ChartPanel({ title, desc, children }: { title: string; desc?: string; children: ReactNode }) {
-  return (
-    <div className="rounded-[8px] border border-slate-100 bg-slate-50 p-6">
-      <h3 className="text-[16px] font-bold text-slate-900">{title}</h3>
-      {desc ? <p className="mt-2 text-[13px] font-semibold text-slate-400">{desc}</p> : null}
-      <div className="mt-5">{children}</div>
-    </div>
-  );
-}
-
-function DonutChart({ center, label }: { center: string; label: string }) {
-  return (
-    <div className="relative mx-auto flex h-[168px] w-[168px] items-center justify-center rounded-full bg-[conic-gradient(#465FFF_0_44%,#00F0FF_44%_74%,#10B981_74%_91%,#F59E0B_91%_100%)] p-[24px]">
-      <div className="flex h-full w-full flex-col items-center justify-center rounded-full bg-background text-center">
-        <span className="text-[25px] font-black text-slate-900 leading-none">{center}</span>
-        <span className="mt-1 text-[12px] font-semibold text-slate-400">{label}</span>
-      </div>
-    </div>
-  );
-}
-
-function LegendRow({ label, value, color }: { label: string; value: string; color: string }) {
-  return (
-    <div className="flex items-center gap-3 text-[14px] font-semibold">
-      <span className="h-2.5 w-2.5 rounded-full shrink-0 animate-pulse" style={{ backgroundColor: color, boxShadow: `0_0_8px_${color}` }} />
-      <span className="flex-1 text-slate-500 truncate">{label}</span>
-      <span className="text-slate-900 font-bold">{value}</span>
-    </div>
-  );
-}
-
-function RankRow({ rank, label, value }: { rank: number; label: string; value: string }) {
-  return (
-    <div className="flex items-center gap-4 text-[14px] font-bold border-b border-slate-100 pb-2.5 last:border-0 last:pb-0">
-      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 border border-slate-100 shrink-0">{rank}</span>
-      <span className="flex-1 text-slate-800 truncate">{label}</span>
-      <span className="text-slate-400">{value} mentions</span>
-    </div>
-  );
-}
-
-function BarRank({ rank, label, value }: { rank: number; label: string; value: number }) {
-  return (
-    <div className="mb-4 grid grid-cols-[28px_130px_1fr] items-center gap-4">
-      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-[13px] font-bold text-slate-500 border border-slate-100">{rank}</span>
-      <span className="text-[14px] font-bold text-slate-800 truncate">{label}</span>
-      <span className="h-1.5 rounded-full bg-slate-100">
-        <span className="block h-full rounded-full bg-[#465FFF] shadow-[0_0_8px_#465FFF]" style={{ width: `${value}%` }} />
-      </span>
-    </div>
-  );
-}
-
-function SafetyFooter() {
-  const t = useTranslations("OnboardingDesign.footer");
-  return (
-    <div className="mt-8 flex items-center justify-center gap-3 text-center text-[13px] font-semibold text-slate-400">
-      <ShieldCheck size={18} className="text-[#10B981]" />
-      {t("safety")}
-    </div>
-  );
-}
-
-function HelpBubble() {
-  const t = useTranslations("OnboardingDesign.footer");
-  return (
-    <button 
-      className="fixed bottom-6 right-6 hidden items-center gap-4 rounded-full bg-[#0C0F1D]/80 border border-slate-100 backdrop-blur-md py-3 pl-4 pr-6 text-[15px] font-bold text-white shadow-[0_0_20px_rgba(70,95,255,0.15)] hover:border-[#465FFF]/50 hover:shadow-[0_0_25px_rgba(70,95,255,0.25)] transition duration-300 xl:flex active:scale-[0.96]" 
-      type="button"
-    >
-      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#465FFF] text-white shadow-[0_0_12px_rgba(70,95,255,0.4)]">
-        <MessageCircle size={22} />
-      </span>
-      {t("help")}
-    </button>
   );
 }

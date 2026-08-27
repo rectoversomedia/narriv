@@ -6,16 +6,19 @@ import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { AuthInput, AuthShell, Divider, LanguageSelector, PasswordInput, PrimaryButton, SecurityFooter, SocialButtons } from "@/components/auth/auth-shell";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { loginWithPassword } from "@/lib/api-service";
 import { useAuthStore, type AuthUser } from "@/store/useAuthStore";
 
-type LoginFormValues = {
-  email: string;
-  password: string;
-};
+// Schema is defined outside the component to avoid recreating it on every render
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
   const router = useRouter();
@@ -23,30 +26,18 @@ export function LoginForm() {
   const t = useTranslations("AuthDesign.login");
   const setSession = useAuthStore((state) => state.setSession);
   const [apiError, setApiError] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => setMounted(true), []);
-
-  if (!mounted) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center bg-white">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#2F20FF] border-t-transparent" />
-      </div>
-    );
-  }
-
+  // Derive oauthError without a mounted guard — useSearchParams in a Suspense
+  // boundary is safe in Next.js 15 App Router. Reading it directly avoids the
+  // double-render pattern (spinner → form) that can corrupt React 19's hook chain.
   const oauthError = useMemo(() => {
-    if (searchParams.get("error") === "oauth_failed") {
-      return t("errors.loginFailed") || "Social login failed. Please try again or use password.";
-    }
-    return null;
+    if (typeof window === "undefined") return null;
+    return searchParams.get("error") === "oauth_failed"
+      ? t("errors.loginFailed") || "Social login failed. Please try again or use password."
+      : null;
   }, [searchParams, t]);
 
-  const displayError = apiError ?? oauthError;
-  const loginSchema = z.object({
-    email: z.email({ message: t("errors.invalidEmail") }),
-    password: z.string().min(1, { message: t("errors.passwordRequired") }),
-  });
+  const displayError = useMemo(() => apiError ?? oauthError, [apiError, oauthError]);
 
   const {
     register,
@@ -57,14 +48,14 @@ export function LoginForm() {
     defaultValues: { email: "", password: "" },
   });
 
-  const finishLogin = (token: string, user: AuthUser, refreshToken?: string | null) => {
+  const finishLogin = useCallback((token: string, user: AuthUser, refreshToken?: string | null) => {
     setSession(token, user, refreshToken);
     document.cookie = `narriv_auth=${encodeURIComponent(token)}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`;
     const nextPath = new URLSearchParams(window.location.search).get("next");
     router.push(nextPath?.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/");
-  };
+  }, [setSession, router]);
 
-  const onSubmit = async (data: LoginFormValues) => {
+  const onSubmit = useCallback(async (data: LoginFormValues) => {
     setApiError(null);
 
     try {
@@ -91,7 +82,7 @@ export function LoginForm() {
       }
       setApiError(t("errors.backendUnavailable"));
     }
-  };
+  }, [finishLogin, router, t]);
 
   return (
     <AuthShell visual="dashboard" topAction={<LanguageSelector />}>
