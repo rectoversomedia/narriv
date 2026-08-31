@@ -1,11 +1,14 @@
 import express from "express";
 import { inspectSchema, runMigration, execSql, seedSourceTemplates } from "./migrate.controller.js";
+import { debugSchema } from "./debug.controller.js";
 
 const router = express.Router();
 
 // Inspect current DB schema (public, no auth)
-// GET /api/migrate/inspect
 router.get("/inspect", inspectSchema);
+
+// Debug: full schema + insert test
+router.get("/debug-schema", debugSchema);
 
 // Run migration checks (requires ADMIN_SECRET header)
 router.post("/check", runMigration);

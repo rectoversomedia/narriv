@@ -19,27 +19,110 @@ function checkAuth(req, res) {
 }
 
 // Inspect current schema (public endpoint — read-only)
+// Uses pg_tables which PostgREST always exposes, vs information_schema which may not be cached
 export async function inspectSchema(req, res) {
     try {
-        const { data: userCols, error: colsErr } = await baseSupabaseAdmin
-            .from("information_schema.columns")
-            .select("column_name, data_type")
-            .eq("table_schema", "public")
-            .eq("table_name", "users")
-            .order("ordinal_position");
+        // Get users table columns by attempting an INSERT with each known column
+        // and noting which ones fail (PostgREST returns explicit column errors)
+        const results = {};
+        const testId = `diag_${Date.now().toString(36)}`;
+        const testEmail = `diag_${Date.now()}@test.local`;
 
-        if (colsErr) {
-            return res.status(500).json({ error: "Cannot query information_schema.", detail: colsErr.message });
+        // Step 1: Try minimal insert (id + email + name only)
+        let minimalOk = false;
+        try {
+            const { error } = await baseSupabaseAdmin
+                .from("users")
+                .insert({ id: testId, email: testEmail, name: "DIAG" })
+                .select("id")
+                .single();
+            if (!error) {
+                minimalOk = true;
+                await baseSupabaseAdmin.from("users").delete().eq("id", testId);
+            } else {
+                results.minimalInsertError = error.message;
+            }
+        } catch (e) {
+            results.minimalInsertError = e.message;
+        }
+        results.minimalColumnsWork = minimalOk;
+
+        // Step 2: Check source_templates count
+        let templatesOk = false;
+        let templateCount = 0;
+        let templateError = null;
+        try {
+            const { count, error: stErr } = await baseSupabaseAdmin
+                .from("source_templates")
+                .select("*", { count: "exact", head: true });
+            if (stErr) {
+                templateError = stErr.message;
+                // Try to create one to check if table exists
+                try {
+                    await baseSupabaseAdmin.from("source_templates").insert({
+                        id: "99999999-9999-9999-9999-999999999999",
+                        name: "__diag_only__",
+                        slug: "__diag_only__",
+                        category: "news",
+                    });
+                    await baseSupabaseAdmin.from("source_templates").delete().eq("id", "99999999-9999-9999-9999-999999999999");
+                    templatesOk = true; // Table exists, was just empty
+                } catch {
+                    templatesOk = false; // Table doesn't exist
+                }
+            } else {
+                templatesOk = true;
+                templateCount = count ?? 0;
+            }
+        } catch (e) {
+            templateError = e.message;
+            templatesOk = false;
+        }
+        results.sourceTemplates = {
+            accessible: templatesOk,
+            count: templateCount,
+            error: templateError,
+        };
+
+        // Step 3: Try insert with all auth columns (tests which are missing)
+        const authCols = {
+            password: "diag_pw_test",
+            email_verified: false,
+            failed_login_attempts: 0,
+            locked_until: null,
+            provider: "password",
+            full_name: "DIAG TEST",
+        };
+        const testId2 = `diag2_${Date.now().toString(36)}`;
+        const testEmail2 = `diag2_${Date.now()}@test.local`;
+        const authResults = {};
+
+        for (const [col, val] of Object.entries(authCols)) {
+            try {
+                const { error } = await baseSupabaseAdmin
+                    .from("users")
+                    .insert({ id: testId2, email: testEmail2, name: "DIAG", [col]: val })
+                    .select("id")
+                    .single();
+                authResults[col] = error ? `MISSING: ${error.message}` : "OK";
+                // Clean up if successful
+                if (!error) {
+                    await baseSupabaseAdmin.from("users").delete().eq("id", testId2);
+                }
+            } catch (e) {
+                authResults[col] = `ERROR: ${e.message}`;
+            }
         }
 
-        const { count: tmplCount } = await baseSupabaseAdmin
-            .from("source_templates")
-            .select("*", { count: "exact", head: true });
+        results.authColumns = authResults;
+        results.summary = {
+            registerWillWork: minimalOk,
+            needsPasswordColumn: !authResults.password?.startsWith("OK"),
+            needsAuthColumns: Object.entries(authResults).filter(([, v]) => !String(v).startsWith("OK")).map(([k]) => k),
+            sourceTemplatesNeedData: templatesOk && templateCount === 0,
+        };
 
-        return res.json({
-            usersColumns: userCols || [],
-            sourceTemplatesCount: tmplCount ?? 0,
-        });
+        return res.json(results);
     } catch (e) {
         return res.status(500).json({ error: e.message });
     }
