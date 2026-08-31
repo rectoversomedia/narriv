@@ -1,13 +1,19 @@
 import express from "express";
-import { inspectSchema, runMigration } from "./migrate.controller.js";
+import { inspectSchema, runMigration, execSql, seedSourceTemplates } from "./migrate.controller.js";
 
 const router = express.Router();
 
-// Inspect current DB schema (no auth for easy checking)
+// Inspect current DB schema (public, no auth)
 // GET /api/migrate/inspect
 router.get("/inspect", inspectSchema);
 
 // Run migration checks (requires ADMIN_SECRET header)
 router.post("/check", runMigration);
+
+// Dry-run SQL (DDL cannot be executed via PostgREST)
+router.post("/exec-sql", execSql);
+
+// Seed source_templates (uses DML — PostgREST can do this)
+router.post("/seed-sources", seedSourceTemplates);
 
 export default router;

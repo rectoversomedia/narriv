@@ -21,6 +21,10 @@ import {
 } from "./onboarding.schema.js";
 
 const router = express.Router();
+
+// Public endpoint — no auth required (used on onboarding page before login)
+router.get("/source-templates", wrapAsync(getSourceTemplates));
+
 router.use(verifyToken);
 
 // Workspace setup
@@ -28,7 +32,6 @@ router.post("/workspace", validateRequest({ body: onboardingWorkspaceBodySchema 
 
 // Sources (with pre-configured Indonesia media pack)
 router.post("/sources", validateRequest({ body: onboardingSourcesBodySchema }), createOnboardingSources);
-router.get("/source-templates", wrapAsync(getSourceTemplates));
 
 // Keywords management
 router.post("/keywords", validateRequest({ body: onboardingKeywordsBodySchema }), createOnboardingKeywords);
