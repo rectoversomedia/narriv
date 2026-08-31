@@ -357,7 +357,11 @@ export const register = async (req, res) => {
                 hint: createError.hint,
                 newUserId,
             });
-            throw createError;
+            return res.status(500).json({
+                error: "Failed to create user.",
+                detail: createError.message,
+                code: createError.code,
+            });
         }
         logStructured("info", "register_user_inserted", {
             returnedId: user?.id,
