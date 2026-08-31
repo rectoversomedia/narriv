@@ -2,14 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "vercel_dist/index.cjs",
+      "src": "vercel_dist_v2/index.cjs",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/vercel_dist/index.cjs"
+      "dest": "/vercel_dist_v2/index.cjs"
     }
   ],
   "buildCommand": "node build.mjs",

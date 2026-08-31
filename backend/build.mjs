@@ -7,7 +7,7 @@ import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // __dirname is now the backend/ directory (where this file lives)
-const outDir = join(__dirname, "vercel_dist");
+const outDir = join(__dirname, "vercel_dist_v2");
 
 // Clean output directory
 if (existsSync(outDir)) {
