@@ -400,7 +400,10 @@ export const register = async (req, res) => {
             slug: workspaceSlug,
             settings: { timezone: "Asia/Jakarta", language: "id" },
         });
-        if (wsError) logStructured("warn", "auto_workspace_create_failed", { error: wsError.message });
+        if (wsError) {
+            logStructured("error", "register_workspace_create_failed", { error: wsError.message, code: wsError.code });
+            throw new Error(`Workspace creation failed: ${wsError.message}`);
+        }
 
         // Link user to workspace as owner
         logStructured("info", "register_link_user", { userId: user?.id, wsId: workspaceId });
@@ -409,7 +412,10 @@ export const register = async (req, res) => {
             user_id: user.id,
             role: "owner",
         });
-        if (wmError) logStructured("warn", "auto_workspace_member_failed", { error: wmError.message, userId: user?.id, wsId: workspaceId });
+        if (wmError) {
+            logStructured("error", "register_workspace_member_failed", { error: wmError.message, code: wmError.code });
+            throw new Error(`Workspace member creation failed: ${wmError.message}`);
+        }
 
         // Create workspace settings
         const { error: wsSettingsError } = await baseSupabaseAdmin.from("workspace_settings").insert({
@@ -418,7 +424,10 @@ export const register = async (req, res) => {
             timezone: "Asia/Jakarta",
             language: "id",
         });
-        if (wsSettingsError) logStructured("warn", "auto_workspace_settings_failed", { error: wsSettingsError.message });
+        if (wsSettingsError) {
+            logStructured("error", "register_workspace_settings_failed", { error: wsSettingsError.message, code: wsSettingsError.code });
+            throw new Error(`Workspace settings creation failed: ${wsSettingsError.message}`);
+        }
 
         await writeAuditLog(user.id, "register_success", { email: user.email, workspace_id: workspaceId });
 
@@ -433,7 +442,10 @@ export const register = async (req, res) => {
             expires_at: expires_at.toISOString(),
         });
 
-        if (verifyError) throw verifyError;
+        if (verifyError) {
+            logStructured("error", "register_email_token_failed", { error: verifyError.message, code: verifyError.code });
+            throw new Error(`Email token creation failed: ${verifyError.message}`);
+        }
 
         // Send verification email
         const emailTemplate = emailVerificationCode({
@@ -453,7 +465,10 @@ export const register = async (req, res) => {
         });
     } catch (error) {
         logStructured("error", "Error registering user:", { error: error?.message || error, stack: error?.stack });
-        res.status(500).json({ error: "Internal server error" });
+        res.status(500).json({
+            error: "Registration failed.",
+            detail: error?.message || "Unknown error",
+        });
     }
 };
 
