@@ -6,13 +6,6 @@
       "use": "@vercel/node"
     }
   ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/dist/index.cjs"
-    }
-  ],
-  "buildCommand": "node build.mjs",
   "crons": [
     {
       "path": "/api/cron/daily",
