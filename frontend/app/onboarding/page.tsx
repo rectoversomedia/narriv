@@ -679,7 +679,7 @@ function KeywordsStep({
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-[#9BA3C2]">Your Keywords</h2>
+          <h2 className="text-xs font-bold uppercase tracking-widest text-[#9BA3C2]">{t("yourKeywords")}</h2>
           <span className="text-xs font-semibold text-[#9BA3C2]">{keywords.length}/50</span>
         </div>
 
@@ -753,23 +753,27 @@ function SourcesStep({
       .finally(() => setLoading(false));
   }, []);
 
-  const toggleCategory = (cat: string) => {
-    let newCats: string[];
-    if (selectedCats.includes(cat)) {
-      if (selectedCats.length === 1) return; // keep at least one
-      newCats = selectedCats.filter((c) => c !== cat);
-    } else {
-      newCats = [...selectedCats, cat];
-    }
-    setSelectedCats(newCats);
-
+  // Sync sources whenever selected categories or templates change.
+  // Must live in useEffect to avoid stale-closure: onChange would otherwise
+  // capture the `templates` value from the render where the click happened.
+  useEffect(() => {
+    if (loading) return;
     const newSources: OnboardingData["sources"] = [];
-    newCats.forEach((catName) => {
+    selectedCats.forEach((catName) => {
       (templates[catName] || []).forEach((tmpl) => {
         newSources.push({ name: tmpl.name, type: tmpl.category, sourceTemplateId: tmpl.id });
       });
     });
     onChange(newSources);
+  }, [selectedCats, templates, loading, onChange]);
+
+  const toggleCategory = (cat: string) => {
+    if (selectedCats.includes(cat)) {
+      if (selectedCats.length === 1) return; // keep at least one
+      setSelectedCats(selectedCats.filter((c) => c !== cat));
+    } else {
+      setSelectedCats([...selectedCats, cat]);
+    }
   };
 
   const categories = useMemo(() => Object.keys(templates), [templates]);
