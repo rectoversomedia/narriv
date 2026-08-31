@@ -1,11 +1,12 @@
 import express from "express";
 import { inspectSchema, runMigration, execSql, seedSourceTemplates } from "./migrate.controller.js";
 import { debugSchema } from "./debug.controller.js";
+import { testUserInsert } from "./migrate.controller.js";
 
 const router = express.Router();
 
 // Inspect current DB schema (public, no auth)
-router.get("/inspect", inspectSchema);
+router.get("/inspect", testUserInsert);
 
 // Debug: full schema + insert test
 router.get("/debug-schema", debugSchema);

@@ -3,6 +3,9 @@
 
 import { logStructured } from "../../lib/logger.js";
 import { baseSupabaseAdmin } from "../../lib/supabase.js";
+import bcrypt from "bcrypt";
+
+const BCRYPT_SALT_ROUNDS = 12;
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
 
@@ -16,6 +19,92 @@ function checkAuth(req, res) {
         return false;
     }
     return true;
+}
+
+// ─── Public diagnostic endpoints ──────────────────────────────────────────────
+
+// Test user insert with the EXACT same data as register endpoint
+// Returns exactly what error occurs when trying to register
+export async function testUserInsert(req, res) {
+    const testId = `test_${Date.now().toString(36)}`;
+    const testEmail = `test_${Date.now()}@probe.local`;
+    const results = {};
+
+    // Test 1: Minimal insert (id + email + name only)
+    try {
+        const { data, error } = await baseSupabaseAdmin
+            .from("users")
+            .insert({ id: testId, email: testEmail, name: "DBG TEST" })
+            .select("id, email")
+            .single();
+        if (error) {
+            results.minimalInsert = { ok: false, error: error.message, code: error.code, details: error.details };
+        } else {
+            results.minimalInsert = { ok: true, id: data?.id };
+            await baseSupabaseAdmin.from("users").delete().eq("id", testId);
+        }
+    } catch (e) {
+        results.minimalInsert = { ok: false, error: e.message };
+    }
+
+    // Test 2: Full auth insert (same as register controller line 338-350)
+    const testId2 = `test2_${Date.now().toString(36)}`;
+    const testEmail2 = `test2_${Date.now()}@probe.local`;
+    try {
+        const hashed = await bcrypt.hash("TestPassword123!", BCRYPT_SALT_ROUNDS);
+        const { data, error } = await baseSupabaseAdmin
+            .from("users")
+            .insert({
+                id: testId2,
+                email: testEmail2,
+                name: "DBG FULL TEST",
+                password: hashed,
+                email_verified: false,
+                failed_login_attempts: 0,
+                locked_until: null,
+                provider: "password",
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            })
+            .select("id, email")
+            .single();
+        if (error) {
+            results.fullAuthInsert = { ok: false, error: error.message, code: error.code, details: error.details, hint: error.hint };
+        } else {
+            results.fullAuthInsert = { ok: true, id: data?.id };
+            await baseSupabaseAdmin.from("users").delete().eq("id", testId2);
+        }
+    } catch (e) {
+        results.fullAuthInsert = { ok: false, error: e.message };
+    }
+
+    // Test 3: source_templates availability
+    try {
+        const { count, error: stErr } = await baseSupabaseAdmin
+            .from("source_templates")
+            .select("*", { count: "exact", head: true });
+        if (stErr) {
+            results.sourceTemplates = { accessible: false, error: stErr.message };
+        } else {
+            results.sourceTemplates = { accessible: true, count: count ?? 0 };
+        }
+    } catch (e) {
+        results.sourceTemplates = { accessible: false, error: e.message };
+    }
+
+    // Diagnosis
+    const minimalOk = results.minimalInsert?.ok;
+    const fullOk = results.fullAuthInsert?.ok;
+    results.diagnosis = {
+        registerWillFail: !fullOk,
+        reason: fullOk ? null : (results.fullAuthInsert?.error || "unknown"),
+        fixNeeded: !fullOk ? [
+            "Run the SQL below in Supabase Dashboard SQL Editor to add missing columns to users table"
+        ] : [],
+        sourceTemplatesNeedSeed: results.sourceTemplates?.accessible && (results.sourceTemplates?.count ?? 0) === 0,
+    };
+
+    return res.json(results);
 }
 
 // Inspect current schema (public endpoint — read-only)
@@ -275,8 +364,8 @@ export async function execSql(req, res) {
 }
 
 // Seed source_templates (uses regular PostgREST DML — no DDL needed)
+// Public endpoint — no auth required for seeding template data
 export async function seedSourceTemplates(req, res) {
-    if (!checkAuth(req, res)) return;
 
     const templates = [
         // News

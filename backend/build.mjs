@@ -7,13 +7,17 @@ import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // __dirname is now the backend/ directory (where this file lives)
-const outDir = join(__dirname, "vercel_dist_v2");
+// Output to vercel_dist for @vercel/node builder
+const outDir = join(__dirname, "vercel_dist");
 
 // Clean output directory
 if (existsSync(outDir)) {
   rmSync(outDir, { recursive: true });
 }
 mkdirSync(outDir);
+
+// Cache-busting: include build timestamp in bundle to invalidate Vercel's server-side cache
+const BUILD_TS = Date.now();
 
 // Bundle the backend - use CJS for better compatibility
 await esbuild.build({
@@ -43,7 +47,9 @@ await esbuild.build({
   minify: false,
   define: {
     "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV || "production"),
+    // Invalidate Vercel server-side build cache
+    "BUNDLE_BUILD_TS": JSON.stringify(BUILD_TS),
   },
 });
 
-console.log("Backend bundled successfully to", outDir);
+console.log("Backend bundled successfully to", outDir, "at", new Date(BUILD_TS).toISOString());
