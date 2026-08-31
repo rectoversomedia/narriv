@@ -114,7 +114,7 @@ export async function inspectSchema(req, res) {
         // Get users table columns by attempting an INSERT with each known column
         // and noting which ones fail (PostgREST returns explicit column errors)
         const results = {};
-        const testId = `diag_${Date.now().toString(36)}`;
+        const testId = `diag_${crypto.randomUUID()}`;
         const testEmail = `diag_${Date.now()}@test.local`;
 
         // Step 1: Try minimal insert (id + email + name only)
@@ -182,7 +182,7 @@ export async function inspectSchema(req, res) {
             provider: "password",
             full_name: "DIAG TEST",
         };
-        const testId2 = `diag2_${Date.now().toString(36)}`;
+        const testId2 = `diag2_${crypto.randomUUID()}`;
         const testEmail2 = `diag2_${Date.now()}@test.local`;
         const authResults = {};
 
