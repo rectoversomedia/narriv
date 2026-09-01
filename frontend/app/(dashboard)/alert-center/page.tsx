@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { Activity, AlertTriangle, ArrowUpRight, Clock, ShieldAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { isDemoMode, getMockAlerts, getMockAlertsSummary } from "@/lib/demo-mock-data";
+import { getAlerts, getAlertsSummary } from "@/lib/api-service";
+import type { Alert, AlertsSummaryResponse } from "@/lib/api-service";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -58,176 +61,33 @@ const TYPE_STYLES: Record<AlertType, { bg: string; text: string }> = {
 // Demo data
 // ---------------------------------------------------------------------------
 
-const ALERTS: AlertEntry[] = [
-  {
-    id: "1",
-    title: "App login failures viral on Twitter",
-    severity: "Critical",
-    status: "Open",
-    type: "Risk",
-    whatHappened: "Widespread login failures triggered a viral complaint thread on Twitter, gaining 127 critical signals in under 3 hours.",
-    whyItMatters: "Unresolved login issues directly impact user trust and can trigger app store rating drops.",
-    whatToDo: "Immediately escalate to engineering on-call and prepare a public acknowledgment statement.",
-    assignedTo: "Priya Sharma",
-    createdAt: "3h ago",
-    signalCount: 127,
+// Adapter: map API Alert → local AlertEntry
+function mapApiAlertToEntry(alert: Alert): AlertEntry {
+  const sev = (alert.severity ?? "Medium") as Severity;
+  const statusRaw = alert.status ?? "open";
+  const statusMap: Record<string, Status> = {
+    open: "Open",
+    in_progress: "Investigating",
+    acknowledged: "Acknowledged",
+    resolved: "Resolved",
+  };
+  return {
+    id: alert.id,
+    title: alert.title,
+    severity: sev,
+    status: statusMap[statusRaw] ?? "Open",
+    type: (alert.type ?? "Risk") as AlertType,
+    whatHappened: alert.whatHappened ?? "",
+    whyItMatters: alert.whyItMatters ?? "",
+    whatToDo: alert.whatToDo ?? "",
+    assignedTo: alert.assignedTo ?? "Unassigned",
+    createdAt: alert.createdAt
+      ? new Date(alert.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      : "Unknown",
+    signalCount: alert.sources?.length ?? 0,
     signalUnit: "signals",
-  },
-  {
-    id: "2",
-    title: "Battery safety misinformation spreading",
-    severity: "Critical",
-    status: "Open",
-    type: "Risk",
-    whatHappened: "Misinformation about product battery safety is circulating across social channels, amplified by unverified sources.",
-    whyItMatters: "Safety misinformation can rapidly erode brand credibility and may require regulatory response.",
-    whatToDo: "Prepare fact-check rebuttal content and coordinate with legal and PR teams for rapid response.",
-    assignedTo: "James Liu",
-    createdAt: "6h ago",
-    signalCount: 89,
-    signalUnit: "signals",
-  },
-  {
-    id: "3",
-    title: "Pricing sensitivity narrative growing fast",
-    severity: "High",
-    status: "Open",
-    type: "Risk",
-    whatHappened: "Mentions around pricing sensitivity have grown 34% in 24 hours, concentrated in financial forums and Reddit communities.",
-    whyItMatters: "Price perception narratives can shift brand positioning if left unaddressed for too long.",
-    whatToDo: "Monitor closely and prepare competitive pricing brief for leadership review.",
-    assignedTo: "Maria Santos",
-    createdAt: "12h ago",
-    signalCount: 243,
-    signalUnit: "signals",
-  },
-  {
-    id: "4",
-    title: "Competitor overtaking AI visibility for 3 key prompts",
-    severity: "High",
-    status: "Open",
-    type: "Risk",
-    whatHappened: "Bank Jago is now appearing in AI-generated answers for 3 previously brand-dominant key prompts in Gemini and Perplexity.",
-    whyItMatters: "AI visibility losses directly affect how potential customers discover the brand in AI search.",
-    whatToDo: "Initiate content optimization for affected prompts and run AI visibility test suite.",
-    assignedTo: "David Chen",
-    createdAt: "1d ago",
-    signalCount: 3,
-    signalUnit: "prompts",
-  },
-  {
-    id: "5",
-    title: "Influencer criticism of customer service",
-    severity: "High",
-    status: "Investigating",
-    type: "Risk",
-    whatHappened: "Three fintech influencers published critical posts about customer service wait times, generating 67 signals of negative amplification.",
-    whyItMatters: "Influencer criticism reaches large, high-intent audiences and can shape brand perception rapidly.",
-    whatToDo: "Prepare response strategy and consider direct outreach to influencers for feedback loop.",
-    assignedTo: "Aiko Tanaka",
-    createdAt: "2d ago",
-    signalCount: 67,
-    signalUnit: "signals",
-  },
-  {
-    id: "6",
-    title: "Sustainability narrative emerging — whitespace detected",
-    severity: "Medium",
-    status: "Open",
-    type: "Opportunity",
-    whatHappened: "Green finance and sustainability discussions are increasing among target demographics, with low competitor engagement.",
-    whyItMatters: "Early positioning in the sustainability space could establish brand leadership before competitors react.",
-    whatToDo: "Develop sustainability narrative content plan and evaluate partnership opportunities with green initiatives.",
-    assignedTo: "Carlos Rivera",
-    createdAt: "2d ago",
-    signalCount: 38,
-    signalUnit: "signals",
-  },
-  {
-    id: "7",
-    title: "Negative review cluster on Google",
-    severity: "Medium",
-    status: "Acknowledged",
-    type: "Risk",
-    whatHappened: "A cluster of 156 one-star reviews appeared over 72 hours citing similar issues around app performance.",
-    whyItMatters: "Google review clusters signal systemic issues and influence purchase decisions in the app store funnel.",
-    whatToDo: "Flag to product team for root cause analysis and prepare review response strategy.",
-    assignedTo: "Priya Sharma",
-    createdAt: "3d ago",
-    signalCount: 156,
-    signalUnit: "reviews",
-  },
-  {
-    id: "8",
-    title: "Community banking narrative — positioning opportunity",
-    severity: "Medium",
-    status: "Open",
-    type: "Positioning",
-    whatHappened: "Community banking topics are gaining traction in Indonesia with 22 signals and minimal competitor coverage.",
-    whyItMatters: "Capturing the community banking narrative now could differentiate the brand in a growing market segment.",
-    whatToDo: "Assess content calendar alignment and consider launching a community banking thought leadership series.",
-    assignedTo: "Maria Santos",
-    createdAt: "3d ago",
-    signalCount: 22,
-    signalUnit: "signals",
-  },
-  {
-    id: "9",
-    title: "Minor complaint spike from app update",
-    severity: "Low",
-    status: "Resolved",
-    type: "Risk",
-    whatHappened: "A recent app update caused a brief spike in complaints related to UI changes, with 89 signals captured.",
-    whyItMatters: "Minor update friction is expected but unchecked complaints can compound into larger reputation issues.",
-    whatToDo: "Resolved — user feedback incorporated into follow-up patch. No further action required.",
-    assignedTo: "James Liu",
-    createdAt: "5d ago",
-    signalCount: 89,
-    signalUnit: "signals",
-  },
-  {
-    id: "10",
-    title: "Positive brand mention by fintech influencer",
-    severity: "Low",
-    status: "Resolved",
-    type: "Opportunity",
-    whatHappened: "A well-known fintech influencer posted a positive review, generating 12 engagement signals and positive brand sentiment.",
-    whyItMatters: "Positive influencer coverage strengthens brand credibility in the fintech community.",
-    whatToDo: "Resolved — consider nurturing relationship with influencer for future collaboration opportunities.",
-    assignedTo: "Aiko Tanaka",
-    createdAt: "6d ago",
-    signalCount: 12,
-    signalUnit: "signals",
-  },
-  {
-    id: "11",
-    title: "Regulatory discussion increasing — fintech guidelines",
-    severity: "High",
-    status: "Open",
-    type: "Risk",
-    whatHappened: "Government bodies are increasingly discussing new fintech guidelines that may require product and compliance adjustments.",
-    whyItMatters: "Proactive regulatory engagement prevents reactive compliance scrambles that can disrupt product roadmap.",
-    whatToDo: "Brief legal and compliance teams and monitor for official announcements.",
-    assignedTo: "David Chen",
-    createdAt: "7d ago",
-    signalCount: 31,
-    signalUnit: "signals",
-  },
-  {
-    id: "12",
-    title: "AI platforms citing outdated product info",
-    severity: "Medium",
-    status: "Open",
-    type: "Risk",
-    whatHappened: "AI platforms are referencing outdated product descriptions and feature lists in their generated answers.",
-    whyItMatters: "Outdated AI citations misinform potential customers and erode trust in the brand's digital presence.",
-    whatToDo: "Submit updated product information to AI platform data feeds and monitor for correction.",
-    assignedTo: "Carlos Rivera",
-    createdAt: "8d ago",
-    signalCount: 8,
-    signalUnit: "prompts",
-  },
-];
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Filter config
@@ -388,9 +248,38 @@ export default function AlertCenterPage() {
   const t = useTranslations();
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("All");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
-  const [demoMode] = useState(true);
+  const [demoMode, setDemoMode] = useState(false);
+  const [alerts, setAlerts] = useState<AlertEntry[]>([]);
+  const [summary, setSummary] = useState<AlertsSummaryResponse | null>(null);
 
-  const filtered = ALERTS.filter((a) => {
+  // Load data based on demo mode
+  useEffect(() => {
+    const demo = isDemoMode();
+    setDemoMode(demo);
+
+    if (demo) {
+      const mockAlerts = getMockAlerts();
+      setAlerts(mockAlerts.map(mapApiAlertToEntry));
+      const mockSummary = getMockAlertsSummary();
+      setSummary(mockSummary);
+    } else {
+      Promise.all([
+        getAlerts({ limit: 50 }),
+        getAlertsSummary(),
+      ]).then(([alertsResult, summaryResult]) => {
+        if (alertsResult?.data) {
+          setAlerts(alertsResult.data.map(mapApiAlertToEntry));
+        }
+        if (summaryResult) setSummary(summaryResult);
+      }).catch(() => {
+        // Fallback to mock on API failure
+        setAlerts(getMockAlerts().map(mapApiAlertToEntry));
+        setSummary(getMockAlertsSummary());
+      });
+    }
+  }, []);
+
+  const filtered = alerts.filter((a) => {
     const sevOk = severityFilter === "All" || a.severity === severityFilter;
     const statOk = statusFilter === "All" || a.status === statusFilter;
     return sevOk && statOk;
@@ -457,25 +346,27 @@ export default function AlertCenterPage() {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <MetricCard
           icon={Activity}
-          value="23"
+          value={summary ? String(summary.by_status.open + summary.by_status.in_progress) : "—"}
           label={t("alertCenter.active")}
           tone="red"
         />
         <MetricCard
           icon={AlertTriangle}
-          value="4"
+          value={summary ? String(summary.by_severity.critical + summary.by_severity.high) : "—"}
           label={t("alertCenter.criticalThisWeek")}
           tone="amber"
         />
         <MetricCard
           icon={Clock}
-          value="2h 14m"
+          value={summary?.avg_response_time_minutes
+            ? `${Math.round(summary.avg_response_time_minutes)}m`
+            : "—"}
           label={t("alertCenter.avgResponse")}
           tone="blue"
         />
         <MetricCard
           icon={ShieldAlert}
-          value="6"
+          value={summary ? String(summary.escalated_count ?? 0) : "—"}
           label={t("alertCenter.escalated")}
           tone="purple"
         />

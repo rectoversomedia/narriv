@@ -66,7 +66,7 @@ export function Sidebar() {
         <nav className={`space-y-5 ${sidebarCollapsed ? "mt-8" : "mt-6"}`}>
           {navGroups.map((group) => (
             <div key={group.key}>
-              {sidebarCollapsed ? null : <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-white/40">{t(`navGroups.${group.key}`)}</p>}
+              {sidebarCollapsed ? null : <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-white/40">{group.label ?? t(`navGroups.${group.key}`)}</p>}
               <div className="mt-2 grid gap-1.5">
                 {group.items.map((item) => {
                   const Icon = item.icon;

@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { Send, BotMessageSquare, TrendingUp, Zap, AlertTriangle, Users, Compass, Eye, BarChart2, Activity, ChevronDown, ChevronRight } from "lucide-react";
 import { CardContent } from "@/components/ui/card";
-import { getMockNarratives, getMockDashboardSummary } from "@/lib/demo-mock-data";
+import { isDemoMode, getMockNarratives, getMockDashboardSummary } from "@/lib/demo-mock-data";
+import { getNarratives, getDashboardSummary } from "@/lib/api-service";
+import type { NarrativeRecord, DashboardSummary } from "@/lib/api-service";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -160,7 +162,7 @@ function buildAssistantMessage(response: string): Message {
       { label: "View Signals", href: "/signals" },
       { label: "View Alerts", href: "/alerts" },
     ],
-    isDemo: true,
+    isDemo: isDemoMode(),
   };
 }
 
@@ -224,9 +226,29 @@ export default function AskPage() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  // Load mock data for context
-  const narratives = getMockNarratives();
-  const dashboardSummary = getMockDashboardSummary();
+  // Load context data based on demo mode
+  const [narratives, setNarratives] = useState<{ data: NarrativeRecord[] } | null>(null);
+  const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null);
+
+  useEffect(() => {
+    if (isDemoMode()) {
+      setNarratives(getMockNarratives());
+      setDashboardSummary(getMockDashboardSummary());
+    } else {
+      // Load real API data in parallel
+      Promise.all([
+        getNarratives({ limit: 10 }),
+        getDashboardSummary(),
+      ]).then(([narrativesResult, summaryResult]) => {
+        if (narrativesResult) setNarratives(narrativesResult);
+        if (summaryResult) setDashboardSummary(summaryResult);
+      }).catch(() => {
+        // Fallback to mock if API fails
+        setNarratives(getMockNarratives());
+        setDashboardSummary(getMockDashboardSummary());
+      });
+    }
+  }, []);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -257,11 +279,11 @@ export default function AskPage() {
       if (categoryMatch) {
         assistantMsg = buildAssistantMessage(categoryMatch.response);
       } else {
-        // Fallback generic response using mock data
-        const totalSignals = dashboardSummary.kpis.total_signals;
-        const positivePct = dashboardSummary.kpis.positive_percentage;
-        const narrativeCount = narratives.data.length;
-        const topNarrative = narratives.data[0];
+        // Fallback generic response using loaded real or mock data
+        const totalSignals = dashboardSummary?.kpis.total_signals ?? 0;
+        const positivePct = dashboardSummary?.kpis.positive_percentage ?? 0;
+        const narrativeCount = narratives?.data.length ?? 0;
+        const topNarrative = narratives?.data[0];
 
         assistantMsg = {
           id: crypto.randomUUID(),
@@ -278,7 +300,7 @@ export default function AskPage() {
             { label: "View in Signals", href: "/signals" },
             { label: "View Intelligence", href: "/intelligence" },
           ],
-          isDemo: true,
+          isDemo: isDemoMode(),
         };
       }
 
@@ -300,17 +322,23 @@ export default function AskPage() {
     textareaRef.current?.focus();
   }
 
-  const WELCOME_MESSAGE: Message = {
+  // Dynamic welcome message — uses loaded real or mock data
+  const welcomeContent = useMemo(() => {
+    if (!dashboardSummary) return "Hello! I'm **Narriv**, your AI intelligence copilot. Loading your workspace data...";
+    return `Hello! I'm **Narriv**, your AI intelligence copilot. I can answer questions about your signals, narratives, competitors, AI visibility, and recommended actions — all grounded in your current workspace data.\n\n**${dashboardSummary.kpis.total_signals.toLocaleString()} signals** are loaded from your monitoring workspace. Try one of the suggested questions, or ask anything in your own words.`;
+  }, [dashboardSummary]);
+
+  const WELCOME_MESSAGE = useMemo<Message>(() => ({
     id: "welcome",
     role: "assistant",
-    content: `Hello! I'm **Narriv**, your AI intelligence copilot. I can answer questions about your signals, narratives, competitors, AI visibility, and recommended actions — all grounded in your current workspace data.\n\n**${dashboardSummary.kpis.total_signals.toLocaleString()} signals** are loaded from your monitoring workspace. Try one of the suggested questions, or ask anything in your own words.`,
+    content: welcomeContent,
     confidence: "high",
     links: [
       { label: "View Signals", href: "/signals" },
       { label: "View Dashboard", href: "/" },
     ],
-    isDemo: true,
-  };
+    isDemo: isDemoMode(),
+  }), [welcomeContent]);
 
   const [initialized, setInitialized] = useState(false);
 

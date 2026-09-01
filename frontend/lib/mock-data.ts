@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
+  BarChart2,
   BarChart3,
   Bell,
   Bot,
@@ -17,10 +18,8 @@ import {
   Search,
   Settings,
   Sparkles,
-  Target,
   Users,
   Webhook,
-  ScrollText,
 } from "lucide-react";
 
 export type Localized = Record<"en" | "id", string>;
@@ -33,6 +32,7 @@ export function text(value: Localized, language: string) {
 export const navGroups = [
   {
     key: "main",
+    label: "Command",
     items: [
       { key: "command", href: "/", icon: Home },
       { key: "signals", href: "/signals", icon: Activity },
@@ -42,25 +42,24 @@ export const navGroups = [
   },
   {
     key: "analysis",
+    label: "Insight",
     items: [
       { key: "intelligence", href: "/intelligence", icon: BarChart3 },
       { key: "reports", href: "/reports", icon: FileText },
-      { key: "askNarriv", href: "/ask", icon: Bot },
-      { key: "opportunities", href: "/opportunities", icon: Sparkles },
-      { key: "brief", href: "/brief", icon: FileText },
-      { key: "timeline", href: "/timeline", icon: ScrollText },
+      { key: "brief", href: "/brief", icon: BarChart2 },
     ],
   },
   {
     key: "action",
+    label: "Response",
     items: [
-      { key: "alertCenter", href: "/alert-center", icon: Bell },
       { key: "actionCenter", href: "/action-plans", icon: CheckCircle2 },
       { key: "cases", href: "/workspace/cases", icon: Briefcase },
     ],
   },
   {
     key: "system",
+    label: "Operations",
     items: [
       { key: "dataSources", href: "/workspace/sources", icon: Database },
       { key: "activity", href: "/workspace/activity", icon: Clock3 },

@@ -2,7 +2,9 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
+import { Bot, ChevronUp } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { Particles } from "@/components/ui/particles";
@@ -56,6 +58,16 @@ export function DashboardShell({ children }: { children: ReactNode }) {
         <main className="flex-1 px-4 pb-32 pt-6 sm:px-6 lg:px-6 2xl:px-8">
           <div className="relative z-10 w-full max-w-[1600px] mx-auto">{children}</div>
         </main>
+
+        {/* Floating Ask AI button */}
+        <Link
+          href="/ask"
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-[#465FFF] px-4 py-3 text-white shadow-[0_4px_20px_rgba(70,95,255,0.5)] transition-all hover:bg-[#3b50d8] hover:shadow-[0_6px_28px_rgba(70,95,255,0.65)] active:scale-95"
+          aria-label="Open Ask AI"
+        >
+          <Bot size={18} />
+          <span className="text-[13px] font-bold">Ask AI</span>
+        </Link>
       </div>
     </div>
   );

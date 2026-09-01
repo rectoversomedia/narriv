@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { isDemoMode } from "@/lib/demo-mock-data";
+import { getAlerts, getActivityLogs } from "@/lib/api-service";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -38,172 +40,38 @@ const SEVERITY_STYLES: Record<Severity, { dot: string; chipVariant: "red" | "amb
 // Demo data
 // ---------------------------------------------------------------------------
 
-const EVENTS: TimelineEvent[] = [
-  {
-    id: "1",
-    date: "2026-08-26",
-    dateLabel: "Aug 26",
-    title: "Viral complaint post on Twitter/X",
-    category: "Competitor",
-    severity: "Critical",
-    description: "A viral complaint post on Twitter/X gained significant traction, amplified by 3 influencers in the financial space.",
-    metrics: [
-      { label: "Impressions", value: "2,847 in 4h" },
-      { label: "Amplified by", value: "3 influencers" },
-      { label: "Sentiment shift", value: "-8%" },
-    ],
-    source: "Narriv AI",
-  },
-  {
-    id: "2",
-    date: "2026-08-25",
-    dateLabel: "Aug 25",
-    title: "New competitor campaign launched",
-    category: "Competitor",
-    severity: "High",
-    description: "Bank Jago community banking push detected with elevated narrative momentum across fintech channels.",
-    metrics: [
-      { label: "Narrative momentum", value: "+18%" },
-    ],
-    source: "Signal detected",
-  },
-  {
-    id: "3",
-    date: "2026-08-24",
-    dateLabel: "Aug 24",
-    title: "AI visibility decline detected",
-    category: "AI Visibility",
-    severity: "Medium",
-    description: "AI visibility score dropped from 78 to 72, with Gemini coverage declining by 8 percentage points.",
-    metrics: [
-      { label: "Score drop", value: "78 → 72" },
-      { label: "Gemini coverage", value: "-8%" },
-    ],
-    source: "Narriv AI",
-  },
-  {
-    id: "4",
-    date: "2026-08-23",
-    dateLabel: "Aug 23",
-    title: "Positive sustainability narrative emerged",
-    category: "Opportunity",
-    severity: "Low",
-    description: "Consumer discussion increasing around green finance and sustainable banking practices in target demographics.",
-    metrics: [
-      { label: "Trend direction", value: "Growing" },
-    ],
-    source: "Narriv AI",
-  },
-  {
-    id: "5",
-    date: "2026-08-22",
-    dateLabel: "Aug 22",
-    title: "Pricing sensitivity narrative growing",
-    category: "Reputation",
-    severity: "High",
-    description: "Discussions around pricing sensitivity are growing rapidly in financial forums, with mixed sentiment from users.",
-    metrics: [
-      { label: "Mentions", value: "+34%" },
-      { label: "Sentiment", value: "Mixed" },
-    ],
-    source: "Signal detected",
-  },
-  {
-    id: "6",
-    date: "2026-08-21",
-    dateLabel: "Aug 21",
-    title: "Media pickup: tech news feature",
-    category: "Media",
-    severity: "Medium",
-    description: "3 articles published with positive framing around product features, generating significant reach.",
-    metrics: [
-      { label: "Articles", value: "3" },
-      { label: "Reach", value: "+12%" },
-    ],
-    source: "Narriv AI",
-  },
-  {
-    id: "7",
-    date: "2026-08-20",
-    dateLabel: "Aug 20",
-    title: "App update generates discussion spike",
-    category: "Product",
-    severity: "Medium",
-    description: "Recent app update generated a spike in social media mentions with neutral to positive sentiment.",
-    metrics: [
-      { label: "Mentions", value: "842" },
-      { label: "Sentiment", value: "Neutral to positive" },
-    ],
-    source: "Signal detected",
-  },
-  {
-    id: "8",
-    date: "2026-08-19",
-    dateLabel: "Aug 19",
-    title: "Competitor AI visibility surge",
-    category: "AI Visibility",
-    severity: "High",
-    description: "Bank Jago appeared in 42% of relevant AI-generated responses, up significantly from prior baseline.",
-    metrics: [
-      { label: "AI share of voice", value: "42%" },
-    ],
-    source: "Narriv AI",
-  },
-  {
-    id: "9",
-    date: "2026-08-18",
-    dateLabel: "Aug 18",
-    title: "Customer complaint cluster detected",
-    category: "Crisis",
-    severity: "High",
-    description: "Service disruption narrative detected through clustering of 128 critical signals from support channels.",
-    metrics: [
-      { label: "Critical signals", value: "128" },
-    ],
-    source: "Signal detected",
-  },
-  {
-    id: "10",
-    date: "2026-08-17",
-    dateLabel: "Aug 17",
-    title: "Influencer criticism amplifies",
-    category: "Reputation",
-    severity: "High",
-    description: "3 fintech influencers shared negative posts targeting customer experience, reaching wide audiences.",
-    metrics: [
-      { label: "Influencers", value: "3" },
-      { label: "Sentiment", value: "Negative" },
-    ],
-    source: "Narriv AI",
-  },
-  {
-    id: "11",
-    date: "2026-08-15",
-    dateLabel: "Aug 15",
-    title: "New regulatory discussion detected",
-    category: "Regulatory",
-    severity: "Medium",
-    description: "Government considering new fintech guidelines that may impact product positioning and compliance requirements.",
-    metrics: [
-      { label: "Status", value: "Under discussion" },
-    ],
-    source: "Signal detected",
-  },
-  {
-    id: "12",
-    date: "2026-08-12",
-    dateLabel: "Aug 12",
-    title: "Campaign message penetration assessment",
-    category: "Campaign",
-    severity: "Low",
-    description: "Campaign message penetration is at 28% against a 62% target, indicating room for increased distribution.",
-    metrics: [
-      { label: "Penetration", value: "28%" },
-      { label: "Target", value: "62%" },
-    ],
-    source: "Narriv AI",
-  },
-];
+// Adapter: build TimelineEvent from an activity log entry
+function buildEventFromActivity(entry: {
+  id: string;
+  event: string;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+}): TimelineEvent {
+  const date = new Date(entry.createdAt);
+  const severityMap: Record<string, Severity> = {
+    created: "Medium",
+    updated: "Low",
+    deleted: "High",
+    completed: "Low",
+    escalated: "Critical",
+  };
+  return {
+    id: entry.id,
+    date: entry.createdAt.split("T")[0],
+    dateLabel: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    title: (entry.metadata?.title as string) ?? entry.event,
+    category: (entry.metadata?.category as string) ?? "Activity",
+    severity: severityMap[entry.event] ?? "Medium",
+    description: (entry.metadata?.description as string) ?? `Event: ${entry.event}`,
+    metrics: entry.metadata && Object.keys(entry.metadata).length > 2
+      ? Object.entries(entry.metadata)
+          .filter(([k]) => !["title", "category", "description"].includes(k))
+          .slice(0, 3)
+          .map(([k, v]) => ({ label: k, value: String(v) }))
+      : [],
+    source: entry.metadata?.source as string ?? "Narriv",
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Date range filter config
@@ -287,7 +155,59 @@ function TimelineEntry({ event }: { event: TimelineEvent }) {
 export default function TimelinePage() {
   const t = useTranslations();
   const [range, setRange] = useState<DateRange>("30d");
-  const [demoMode] = useState(true);
+  const [demoMode, setDemoMode] = useState(false);
+  const [events, setEvents] = useState<TimelineEvent[]>([]);
+
+  // Load data based on demo mode
+  useEffect(() => {
+    const demo = isDemoMode();
+    setDemoMode(demo);
+
+    if (demo) {
+      // Use demo EVENTS constant (hardcoded mock data for demo mode)
+      const DEMO_EVENTS: TimelineEvent[] = [
+        { id: "1", date: "2026-08-26", dateLabel: "Aug 26", title: "Viral complaint post on Twitter/X", category: "Competitor", severity: "Critical", description: "A viral complaint post on Twitter/X gained significant traction, amplified by 3 influencers in the financial space.", metrics: [{ label: "Impressions", value: "2,847 in 4h" }, { label: "Amplified by", value: "3 influencers" }], source: "Narriv AI" },
+        { id: "2", date: "2026-08-25", dateLabel: "Aug 25", title: "New competitor campaign launched", category: "Competitor", severity: "High", description: "Bank Jago community banking push detected with elevated narrative momentum across fintech channels.", metrics: [{ label: "Narrative momentum", value: "+18%" }], source: "Signal detected" },
+        { id: "3", date: "2026-08-24", dateLabel: "Aug 24", title: "AI visibility decline detected", category: "AI Visibility", severity: "Medium", description: "AI visibility score dropped from 78 to 72, with Gemini coverage declining by 8 percentage points.", metrics: [{ label: "Score drop", value: "78 → 72" }], source: "Narriv AI" },
+        { id: "4", date: "2026-08-23", dateLabel: "Aug 23", title: "Positive sustainability narrative emerged", category: "Opportunity", severity: "Low", description: "Consumer discussion increasing around green finance and sustainable banking practices.", metrics: [{ label: "Trend direction", value: "Growing" }], source: "Narriv AI" },
+        { id: "5", date: "2026-08-22", dateLabel: "Aug 22", title: "Pricing sensitivity narrative growing", category: "Reputation", severity: "High", description: "Discussions around pricing sensitivity growing rapidly in financial forums.", metrics: [{ label: "Mentions", value: "+34%" }], source: "Signal detected" },
+        { id: "6", date: "2026-08-21", dateLabel: "Aug 21", title: "Media pickup: tech news feature", category: "Media", severity: "Medium", description: "3 articles published with positive framing around product features.", metrics: [{ label: "Articles", value: "3" }], source: "Narriv AI" },
+        { id: "7", date: "2026-08-20", dateLabel: "Aug 20", title: "App update generates discussion spike", category: "Product", severity: "Medium", description: "Recent app update generated spike in social media mentions.", metrics: [{ label: "Mentions", value: "842" }], source: "Signal detected" },
+        { id: "8", date: "2026-08-19", dateLabel: "Aug 19", title: "Competitor AI visibility surge", category: "AI Visibility", severity: "High", description: "Bank Jago appeared in 42% of relevant AI-generated responses.", metrics: [{ label: "AI share of voice", value: "42%" }], source: "Narriv AI" },
+        { id: "9", date: "2026-08-18", dateLabel: "Aug 18", title: "Customer complaint cluster detected", category: "Crisis", severity: "High", description: "Service disruption narrative detected through clustering of critical signals.", metrics: [{ label: "Critical signals", value: "128" }], source: "Signal detected" },
+        { id: "10", date: "2026-08-17", dateLabel: "Aug 17", title: "Influencer criticism amplifies", category: "Reputation", severity: "High", description: "3 fintech influencers shared negative posts targeting customer experience.", metrics: [{ label: "Influencers", value: "3" }], source: "Narriv AI" },
+        { id: "11", date: "2026-08-15", dateLabel: "Aug 15", title: "New regulatory discussion detected", category: "Regulatory", severity: "Medium", description: "Government considering new fintech guidelines.", metrics: [{ label: "Status", value: "Under discussion" }], source: "Signal detected" },
+        { id: "12", date: "2026-08-12", dateLabel: "Aug 12", title: "Campaign message penetration assessment", category: "Campaign", severity: "Low", description: "Campaign message penetration at 28% against 62% target.", metrics: [{ label: "Penetration", value: "28%" }], source: "Narriv AI" },
+      ];
+      setEvents(DEMO_EVENTS);
+    } else {
+      // Load real API data: activity logs + alerts
+      Promise.all([
+        getActivityLogs({ limit: 50 }),
+        getAlerts({ limit: 20 }),
+      ]).then(([activityResult, alertsResult]) => {
+        const activityEvents = (activityResult?.data ?? []).map(buildEventFromActivity);
+        const alertEvents: TimelineEvent[] = (alertsResult?.data ?? []).map(alert => ({
+          id: alert.id,
+          date: alert.createdAt.split("T")[0],
+          dateLabel: new Date(alert.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+          title: alert.title,
+          category: alert.type ?? "Alert",
+          severity: (alert.severity ?? "Medium") as Severity,
+          description: alert.whatHappened ?? alert.whyItMatters ?? "",
+          metrics: alert.severity ? [{ label: "Severity", value: alert.severity }] : [],
+          source: "Narriv",
+        }));
+        // Merge and sort by date descending
+        const merged = [...activityEvents, ...alertEvents].sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+        setEvents(merged);
+      }).catch(() => {
+        setEvents([]);
+      });
+    }
+  }, []);
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -325,9 +245,14 @@ export default function TimelinePage() {
 
       {/* Timeline */}
       <div className="max-w-2xl">
-        {EVENTS.map((event) => (
+        {events.map((event) => (
           <TimelineEntry key={event.id} event={event} />
         ))}
+        {events.length === 0 && (
+          <div className="flex flex-col items-center justify-center rounded-[14px] border border-dashed border-slate-300 py-16">
+            <p className="text-[14px] text-[#68739F]">No timeline events found.</p>
+          </div>
+        )}
       </div>
     </div>
   );
