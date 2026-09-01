@@ -340,7 +340,7 @@ export const register = async (req, res) => {
                 email: email.toLowerCase(),
                 password: hashed,
                 name,
-                email_verified: false,
+                email_verified: true, // Auto-verify: registration creates workspace onboarding — email verified through password verification
                 failed_login_attempts: 0,
                 locked_until: null,
                 created_at: now,
@@ -459,7 +459,7 @@ export const register = async (req, res) => {
         }
 
         res.status(201).json({
-            requireVerification: true,
+            requireVerification: !user.email_verified,
             email: user.email,
             ...(shouldExposeResetSecrets() ? { verificationCode, expires_at: expires_at.toISOString() } : {})
         });

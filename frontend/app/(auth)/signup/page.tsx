@@ -51,14 +51,19 @@ export default function SignupPage() {
 
     try {
       const json = await registerWithPassword({ name: data.name, email: data.email, password: data.password });
-      
+
       // Store email temporarily for verify page
       sessionStorage.setItem("narriv_verify_email", json.email);
       if (json.verificationCode) {
         sessionStorage.setItem("narriv_dev_verification_code", json.verificationCode);
       }
-      
-      router.push("/verify-email");
+
+      if (json.requireVerification) {
+        router.push("/verify-email");
+      } else {
+        // Auto-verified: redirect to login so user can get auth token for onboarding
+        router.push("/login");
+      }
     } catch (error) {
       const status = (error as { status?: number }).status;
       if (status) {
