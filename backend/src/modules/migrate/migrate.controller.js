@@ -3,7 +3,7 @@
 
 import { logStructured } from "../../lib/logger.js";
 import { baseSupabaseAdmin } from "../../lib/supabase.js";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 const BCRYPT_SALT_ROUNDS = 12;
 

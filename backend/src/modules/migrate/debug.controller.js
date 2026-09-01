@@ -4,6 +4,90 @@
 import { logStructured } from "../../lib/logger.js";
 import { baseSupabaseAdmin } from "../../lib/supabase.js";
 
+// DB Debug: simulate exact register flow
+export async function debugRegisterFlow(req, res) {
+    const testEmail = `flow_${Date.now()}@test.local`;
+    const testUserId = crypto.randomUUID();
+    const testWorkspaceId = crypto.randomUUID();
+
+    const results = { userId: testUserId, workspaceId: testWorkspaceId };
+
+    try {
+        // Step 1: Insert user
+        const { data: user, error: userErr } = await baseSupabaseAdmin
+            .from("users")
+            .insert({
+                id: testUserId,
+                email: testEmail,
+                name: "Flow Test",
+                password: "hashed_pw",
+                email_verified: false,
+                failed_login_attempts: 0,
+                locked_until: null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            })
+            .select("id, email")
+            .single();
+
+        if (userErr) {
+            return res.json({ step: "user_insert", ok: false, error: userErr.message, code: userErr.code });
+        }
+        results.userInsert = { ok: true, returnedId: user?.id };
+
+        // Step 2: Verify user exists in users table
+        const { data: verifyUser, error: verifyErr } = await baseSupabaseAdmin
+            .from("users").select("id").eq("id", user?.id).single();
+        results.userVerify = { ok: !verifyErr, id: verifyUser?.id, error: verifyErr?.message };
+
+        // Step 2b: Check user_profiles table
+        const { data: up, error: upErr } = await baseSupabaseAdmin
+            .from("user_profiles").select("id").eq("id", user?.id).single();
+        results.userProfilesCheck = { table: "user_profiles", exists: !upErr, id: up?.id, error: upErr?.message };
+
+        // Step 3: Insert workspace
+        const { error: wsErr } = await baseSupabaseAdmin.from("workspaces").insert({
+            id: testWorkspaceId,
+            name: "Flow Test Workspace",
+            slug: `flow-${testUserId.substring(0, 8)}`,
+        });
+        if (wsErr) {
+            return res.json({ step: "workspace_insert", ok: false, error: wsErr.message, code: wsErr.code });
+        }
+        results.workspaceInsert = { ok: true, workspaceId: testWorkspaceId };
+
+        // Step 4: Insert workspace_members
+        const { error: wmErr } = await baseSupabaseAdmin.from("workspace_members").insert({
+            workspace_id: testWorkspaceId,
+            user_id: user?.id,
+            role: "owner",
+        });
+        if (wmErr) {
+            return res.json({
+                step: "workspace_members_insert",
+                ok: false,
+                error: wmErr.message,
+                code: wmErr.code,
+                detail: wmErr.details,
+                hint: wmErr.hint,
+                userIdUsed: user?.id,
+                workspaceIdUsed: testWorkspaceId,
+            });
+        }
+        results.workspaceMemberInsert = { ok: true };
+
+        // Cleanup
+        await baseSupabaseAdmin.from("workspace_members").delete()
+            .eq("workspace_id", testWorkspaceId).eq("user_id", user?.id);
+        await baseSupabaseAdmin.from("workspaces").delete().eq("id", testWorkspaceId);
+        await baseSupabaseAdmin.from("users").delete().eq("id", testUserId);
+
+        return res.json({ ...results, overall: "success" });
+    } catch (e) {
+        return res.json({ step: "exception", ok: false, error: e.message });
+    }
+}
+
 export async function debugSchema(req, res) {
     const results = {};
     const testEmail = `debug_${Date.now()}@test.local`;

@@ -1,5 +1,5 @@
 import supabase, { baseSupabase, baseSupabaseAdmin } from "../../lib/supabase.js";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { sendEmail } from "../../lib/email.js";

@@ -1,14 +1,16 @@
 {
   "version": 2,
-  "rootDirectory": ".",
   "buildCommand": "node build.mjs",
-  "outputDirectory": "dist",
   "installCommand": "npm install --ignore-scripts",
   "builds": [
     {
-      "src": "dist/index.cjs",
+      "src": "src/index.js",
       "use": "@vercel/node"
     }
+  ],
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/src" }
   ],
   "crons": [
     {
