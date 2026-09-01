@@ -1,15 +1,13 @@
 {
   "version": 2,
   "rootDirectory": ".",
+  "buildCommand": "node build.mjs",
+  "outputDirectory": "dist",
+  "installCommand": "npm install --ignore-scripts",
   "builds": [
     {
       "src": "dist/index.cjs",
-      "use": "@vercel/node",
-      "config": {
-        "bundle": true,
-        "minify": false,
-        "sourcemap": false
-      }
+      "use": "@vercel/node"
     }
   ],
   "crons": [
