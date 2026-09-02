@@ -153,6 +153,8 @@ export function useSSE(options: UseSSEOptions = {}) {
     info: () => {},
   };
   const clientRef = useRef<SSERealtimeClient | null>(null);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true); // Prevents SSE from starting in demo mode after initial render
   const [status, setStatus] = useState<SSEConnectionStatus>("disconnected");
   const [lastMessage, setLastMessage] = useState<SSEMessage | null>(null);
   const reconnectAttemptsRef = useRef(0);
@@ -293,6 +295,8 @@ export function useSSE(options: UseSSEOptions = {}) {
 
   const connect = useCallback(() => {
     if (typeof window === "undefined") return; // SSR guard
+    if (!mountedRef.current) return; // Skip if demo mode or unmounted
+    if (isDemoMode()) { mountedRef.current = false; return; } // Double-check in case URL not set yet
 
     // Clean up existing connection
     if (clientRef.current) {
@@ -313,15 +317,17 @@ export function useSSE(options: UseSSEOptions = {}) {
         log("Error:", error.message);
         updateStatus("error");
 
-        // Auto-reconnect logic
-        if (reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
+        // Auto-reconnect logic — but respect mountedRef (demo mode / unmount)
+        if (reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS && mountedRef.current) {
           reconnectAttemptsRef.current++;
           const delay = DEFAULT_RECONNECT_DELAY * reconnectAttemptsRef.current;
           log(`Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current}/${MAX_RECONNECT_ATTEMPTS})`);
           updateStatus("connecting");
-          setTimeout(() => connect(), delay);
+          reconnectTimerRef.current = setTimeout(() => {
+            if (mountedRef.current) connect();
+          }, delay);
         } else {
-          log("Max reconnection attempts reached");
+          log("Max reconnection attempts reached or component unmounted");
           updateStatus("error");
         }
       },
@@ -337,6 +343,8 @@ export function useSSE(options: UseSSEOptions = {}) {
   }, [log, updateStatus, handleMessage]);
 
   const disconnect = useCallback(() => {
+    mountedRef.current = false;
+    if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
     if (clientRef.current) {
       clientRef.current.disconnect();
       clientRef.current = null;
@@ -348,13 +356,16 @@ export function useSSE(options: UseSSEOptions = {}) {
 
   // Auto-connect on mount (skip in demo mode — demo token has no workspace, SSE returns 401)
   useEffect(() => {
-    const demo = isDemoMode();
-    console.log("[useSSE] autoConnect:", autoConnect, "isDemoMode:", demo);
-    if (autoConnect && !demo) {
+    if (autoConnect && !isDemoMode()) {
       connect();
+    } else {
+      // Mark as not mounted so any pending reconnects don't fire
+      mountedRef.current = false;
     }
 
     return () => {
+      mountedRef.current = false;
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
       if (clientRef.current) {
         clientRef.current.disconnect();
         clientRef.current = null;
