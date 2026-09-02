@@ -3,6 +3,8 @@
 import {
   createContext,
   useContext,
+  useEffect,
+  useState,
   type ReactNode,
   type ReactElement,
 } from "react";
@@ -49,10 +51,23 @@ export function SSERealtimeProvider({
   children,
   options = {},
 }: SSERealtimeProviderProps): ReactElement {
+  // Force re-evaluation of SSE auth when demo session initializes.
+  // DemoButton uses window.location.href (full page reload), so on reload:
+  // Zustand rehydrates user=null → connect() runs → isDemoMode()=false → SSE 401.
+  // Then narriv_demo_login fires → we increment this counter → useSSE re-runs
+  // with correct isDemoMode()=true.
+  const [authVersion, setAuthVersion] = useState(0);
+  useEffect(() => {
+    const handler = () => setAuthVersion((v) => v + 1);
+    window.addEventListener("narriv_demo_login", handler);
+    return () => window.removeEventListener("narriv_demo_login", handler);
+  }, []);
+
   const { status, isConnected, isConnecting, reconnect } = useSSE({
     ...options,
-    // Default to auto-connect
     autoConnect: options.autoConnect ?? true,
+    // Bump key when auth changes so useSSE re-runs with fresh auth state
+    authVersion,
   });
 
   const value: SSEContextValue = {

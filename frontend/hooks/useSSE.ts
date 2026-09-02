@@ -71,6 +71,8 @@ interface NotificationData {
 export interface UseSSEOptions {
   /** Auto-connect on mount (default: true) */
   autoConnect?: boolean;
+  /** Version counter — change to force re-evaluation of auth state */
+  authVersion?: number;
   /** Enable verbose logging (default: false in production) */
   debug?: boolean;
   /** Called when connection status changes */
@@ -128,6 +130,7 @@ const MAX_RECONNECT_ATTEMPTS = 3;
 export function useSSE(options: UseSSEOptions = {}) {
   const {
     autoConnect = true,
+    authVersion = 0,
     debug = process.env.NODE_ENV === "development",
     onStatusChange,
     onMessage,
@@ -291,6 +294,7 @@ export function useSSE(options: UseSSEOptions = {}) {
     onAlertStatusChanged,
     onAlertEscalated,
     onNotification,
+    authVersion,
   ]);
 
   const connect = useCallback(() => {
@@ -340,7 +344,7 @@ export function useSSE(options: UseSSEOptions = {}) {
 
     clientRef.current = new SSERealtimeClient(sseOptions);
     clientRef.current.connect();
-  }, [log, updateStatus, handleMessage]);
+  }, [log, updateStatus, handleMessage, authVersion]);
 
   const disconnect = useCallback(() => {
     mountedRef.current = false;
