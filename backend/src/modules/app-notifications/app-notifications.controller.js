@@ -115,7 +115,16 @@ export const streamNotifications = async (req, res) => {
     try {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
         const workspaceId = workspaceIds[0];
-        if (!workspaceId) return res.status(403).json({ error: "No workspace access" });
+        // Demo users have no workspace — send graceful "demo mode" response and close
+        if (!workspaceId) {
+            res.setHeader("Content-Type", "text/event-stream");
+            res.setHeader("Cache-Control", "no-cache");
+            res.setHeader("Connection", "close");
+            res.flushHeaders();
+            res.write(`data: ${JSON.stringify({ type: "connected", demo: true, message: "Demo mode — no notifications stream" })}\n\n`);
+            res.end();
+            return;
+        }
 
         res.setHeader("Content-Type", "text/event-stream");
         res.setHeader("Cache-Control", "no-cache");

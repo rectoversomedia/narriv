@@ -1,6 +1,20 @@
 import jwt from "jsonwebtoken";
 import { logStructured } from "../lib/logger.js";
 
+function parseCookies(header = "") {
+    return Object.fromEntries(
+        String(header)
+            .split(";")
+            .map((item) => item.trim())
+            .filter(Boolean)
+            .map((item) => {
+                const index = item.indexOf("=");
+                if (index === -1) return [item, ""];
+                return [item.slice(0, index), decodeURIComponent(item.slice(index + 1))];
+            })
+    );
+}
+
 export const verifyToken = (req, res, next) => {
     const secret = process.env.JWT_SECRET;
     if (!secret) {
@@ -9,9 +23,18 @@ export const verifyToken = (req, res, next) => {
     }
 
     let token;
+
+    // 1. Authorization header (standard Bearer token — takes precedence)
     const bearerHeader = req.headers["authorization"];
     if (bearerHeader) {
         token = bearerHeader.split(" ")[1];
+    }
+
+    // 2. Cookie fallback (for SSE which can't send custom headers)
+    if (!token) {
+        const cookieHeader = req.headers["cookie"] || "";
+        const cookies = parseCookies(cookieHeader);
+        token = cookies["narriv_auth"];
     }
 
     // SECURITY FIX: Query string tokens are no longer supported
@@ -26,7 +49,7 @@ export const verifyToken = (req, res, next) => {
 
     if (!token) {
         return res.status(401).json({
-            error: "Access token required. Include 'Authorization: Bearer <token>' header.",
+            error: "Access token required. Include 'Authorization: Bearer <token>' header or narriv_auth cookie.",
             code: "MISSING_TOKEN"
         });
     }
