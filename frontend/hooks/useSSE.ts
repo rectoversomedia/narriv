@@ -348,7 +348,9 @@ export function useSSE(options: UseSSEOptions = {}) {
 
   // Auto-connect on mount (skip in demo mode — demo token has no workspace, SSE returns 401)
   useEffect(() => {
-    if (autoConnect && !isDemoMode()) {
+    const demo = isDemoMode();
+    console.log("[useSSE] autoConnect:", autoConnect, "isDemoMode:", demo);
+    if (autoConnect && !demo) {
       connect();
     }
 
