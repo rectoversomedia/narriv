@@ -41,6 +41,7 @@ export type AuthUser = {
   email: string;
   provider: "password" | "google" | "demo";
   workspace: string;
+  workspaceId?: string;
   isDemo?: boolean;
 };
 

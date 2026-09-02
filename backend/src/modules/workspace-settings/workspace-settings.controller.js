@@ -36,11 +36,18 @@ export async function getWorkspaceSettings(req, res) {
             return internalError(res);
         }
 
+        // Also fetch onboarding_completed from workspaces table for redirect logic
+        const { data: workspaceData } = await supabase
+            .from("workspaces")
+            .select("onboarding_completed")
+            .eq("id", scopedWorkspaceId)
+            .maybeSingle();
+
         if (!settings) {
-            return res.json(toSafeDefaults(scopedWorkspaceId));
+            return res.json({ ...toSafeDefaults(scopedWorkspaceId), onboarding_completed: workspaceData?.onboarding_completed ?? false });
         }
 
-        return res.json(settings);
+        return res.json({ ...settings, onboarding_completed: workspaceData?.onboarding_completed ?? false });
     } catch (error) {
         logStructured("error", "Error fetching workspace settings:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);

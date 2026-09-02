@@ -1,4 +1,4 @@
-import supabase from "../../lib/supabase.js";
+import supabase, { baseSupabaseAdmin } from "../../lib/supabase.js";
 import { badRequest, internalError } from "../../lib/api-error.js";
 import { logStructured } from "../../lib/logger.js";
 import { recordAuditLog } from "../../lib/audit.js";
@@ -452,8 +452,8 @@ export async function completeOnboarding(req, res) {
             return badRequest(res, "Workspace access denied.", "WORKSPACE_ACCESS_DENIED");
         }
 
-        // Update workspace onboarding status
-        const { data: workspace, error: wsError } = await supabase
+        // Update workspace onboarding status (use baseSupabaseAdmin to bypass RLS)
+        const { data: workspace, error: wsError } = await baseSupabaseAdmin
             .from("workspaces")
             .update({
                 onboarding_completed: true,
@@ -468,8 +468,8 @@ export async function completeOnboarding(req, res) {
             return internalError(res);
         }
 
-        // Create/update onboarding progress record
-        const { data: progress, error: progressError } = await supabase
+        // Create/update onboarding progress record (use baseSupabaseAdmin to bypass RLS)
+        const { data: progress, error: progressError } = await baseSupabaseAdmin
             .from("onboarding_progress")
             .upsert({
                 workspace_id: workspaceId,
@@ -489,8 +489,8 @@ export async function completeOnboarding(req, res) {
         // Trigger ingestion if requested
         let ingestionJobs = [];
         if (triggerIngestion) {
-            // Get active sources for this workspace
-            const { data: sources } = await supabase
+            // Get active sources for this workspace (use baseSupabaseAdmin to bypass RLS)
+            const { data: sources } = await baseSupabaseAdmin
                 .from("sources")
                 .select("id, name, type")
                 .eq("workspace_id", workspaceId)
@@ -504,7 +504,7 @@ export async function completeOnboarding(req, res) {
                     status: "pending",
                 }));
 
-                const { data: jobs, error: jobsError } = await supabase
+                const { data: jobs, error: jobsError } = await baseSupabaseAdmin
                     .from("ingestion_jobs")
                     .insert(jobsData)
                     .select();

@@ -25,10 +25,11 @@ function OAuthCallbackContent() {
 
     let cancelled = false;
     exchangeOAuthCode(code)
-      .then(({ token, user, refreshToken }) => {
+      .then(({ token, user, refreshToken, workspace }) => {
         if (cancelled) return;
-        console.log("[OAuth] Exchange success, token:", token ? "present" : "MISSING", "user:", user?.email);
+        console.log("[OAuth] Exchange success", { email: user?.email, workspace });
         setSession(token, user, refreshToken);
+        // Always redirect to / — dashboard-shell middleware handles auth + onboarding check
         router.replace("/");
       })
       .catch((err) => {

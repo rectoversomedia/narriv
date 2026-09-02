@@ -245,11 +245,13 @@ export default function DashboardPage() {
     enabled: hasCheckedDemoMode && !demoMode,
   });
 
-  // Redirect to onboarding if workspace not configured (brand_name is null = never set up)
+  // Redirect to onboarding if onboarding not yet completed
   const router = useRouter();
   useEffect(() => {
-    if (hasCheckedDemoMode && !demoMode && !workspaceQuery.isLoading && (workspaceQuery.data === null || workspaceQuery.data?.brandName == null)) {
-      // No brand name set yet, redirect to onboarding
+    if (!hasCheckedDemoMode || demoMode || workspaceQuery.isLoading) return;
+    const onboardingCompleted = workspaceQuery.data?.onboarding_completed === true;
+    if (!onboardingCompleted) {
+      // Onboarding not yet completed, redirect to onboarding
       router.push("/onboarding");
     }
   }, [hasCheckedDemoMode, demoMode, workspaceQuery.data, workspaceQuery.isLoading, router]);

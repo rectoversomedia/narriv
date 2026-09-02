@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
         token: data.token,
         refreshToken: data.refresh_token,
         user: data.user,
+        workspace: data.workspace,
       },
       { headers: responseHeaders }
     );

@@ -1299,7 +1299,33 @@ export const exchangeOAuthCode = async (req, res) => {
     const token = signAccessToken(payload.user);
     const { refresh_token } = await issueRefreshToken(payload.user.id);
 
-    return res.json({ token, refresh_token, user: toSessionUser(payload.user, payload.provider) });
+    // Fetch workspace info for OAuth users (needed to check onboarding status)
+    let workspaceData = null;
+    try {
+        const { data: membership } = await baseSupabaseAdmin
+            .from("workspace_members")
+            .select("workspace_id")
+            .eq("user_id", payload.user.id)
+            .single();
+
+        if (membership) {
+            const { data: ws } = await baseSupabaseAdmin
+                .from("workspaces")
+                .select("id, name, slug, onboarding_completed")
+                .eq("id", membership.workspace_id)
+                .single();
+            if (ws) workspaceData = { ...ws, role: membership.role };
+        }
+    } catch (err) {
+        logStructured("warn", "oauth_exchange_workspace_fetch_failed", { userId: payload.user.id, error: err.message });
+    }
+
+    return res.json({
+        token,
+        refresh_token,
+        user: toSessionUser(payload.user, payload.provider),
+        workspace: workspaceData,
+    });
 };
 
 // ==========================================

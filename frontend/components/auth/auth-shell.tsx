@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { ChangeEvent, ClipboardEvent, InputHTMLAttributes, KeyboardEvent, MouseEvent, ReactNode } from "react";
@@ -121,9 +122,14 @@ function BrandPanel({ visual, email }: { visual: AuthVisual; email?: string }) {
 
 function NarrivLogo() {
   return (
-    <span className="text-[38px] font-bold tracking-[-0.05em] text-white">
-      Narriv
-    </span>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/narriv-logo-final.png"
+      alt="Narriv"
+      width={240}
+      height={160}
+      className="h-auto w-auto object-contain"
+    />
   );
 }
 

@@ -681,6 +681,7 @@ export interface WorkspaceSettingsResponse {
   logoUrl: string | null;
   createdAt: string | null;
   updatedAt: string | null;
+  onboarding_completed?: boolean;
 }
 
 export interface UpdateWorkspaceSettingsInput {
@@ -1771,7 +1772,7 @@ export interface AlertsSummaryResponse {
 // Recovered Missing Endpoints
 // ---------------------------------------------------------------------------
 
-export async function exchangeOAuthCode(code: string): Promise<{ token: string; user: AuthUser; refreshToken: string }> {
+export async function exchangeOAuthCode(code: string): Promise<{ token: string; user: AuthUser; refreshToken: string; workspace?: { id: string; name: string; slug: string; onboarding_completed: boolean } }> {
   console.log("[exchangeOAuthCode] Starting exchange for code:", code.substring(0, 10) + "...");
   let raw: Record<string, unknown> | null = null;
   try {
@@ -1797,6 +1798,7 @@ export async function exchangeOAuthCode(code: string): Promise<{ token: string; 
     token: String(raw.token || ""),
     user: raw.user as AuthUser,
     refreshToken: String(raw.refreshToken || raw.refresh_token || ""),
+    workspace: raw.workspace as { id: string; name: string; slug: string; onboarding_completed: boolean } | undefined,
   };
 }
 

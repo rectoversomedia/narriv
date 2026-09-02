@@ -1,208 +1,123 @@
-import * as Sentry from "@sentry/node";
-
-// Initialize Sentry if DSN is provided
+// Sentry wrapper with graceful fallback (no crash if @sentry/node not installed)
 const SENTRY_DSN = process.env.SENTRY_DSN;
 
-if (SENTRY_DSN) {
-    Sentry.init({
-        dsn: SENTRY_DSN,
+let SentryLib = null;
+let initialized = false;
 
-        // Performance monitoring
-        tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
+async function ensureSentry() {
+  if (initialized) return;
+  initialized = true;
 
-        // Error sampling
-        sampleRate: 1.0,
+  if (!SENTRY_DSN) return;
 
-        // Environment
-        environment: process.env.NODE_ENV || "development",
-
-        // Release tracking
-        release: process.env.npm_package_version || "1.0.0",
-
-        // Ignore common errors
-        ignoreErrors: [
-            "NetworkError",
-            "FetchError",
-            "ECONNRESET",
-            "ETIMEDOUT",
-            "Socket hang up",
-        ],
-
-        // Filter breadcrumbs
-        beforeBreadcrumb(breadcrumb) {
-            // Filter out health check logs from breadcrumbs
-            if (breadcrumb.message?.includes("health")) {
-                return null;
-            }
-            return breadcrumb;
+  try {
+    const mod = await import("@sentry/node");
+    SentryLib = mod;
+    SentryLib.init({
+      dsn: SENTRY_DSN,
+      tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
+      sampleRate: 1.0,
+      environment: process.env.NODE_ENV || "development",
+      release: process.env.npm_package_version || "1.0.0",
+      ignoreErrors: [
+        "NetworkError",
+        "FetchError",
+        "ECONNRESET",
+        "ETIMEDOUT",
+        "Socket hang up",
+      ],
+      attachStacktrace: true,
+      includeSourceMaps: process.env.NODE_ENV === "production",
+      initialScope: {
+        tags: {
+          service: "narriv-backend",
+          version: process.env.npm_package_version || "1.0.0",
         },
-
-        // Attach stacktrace to all thrown errors
-        attachStacktrace: true,
-
-        // Include node_modules frames in stack traces (disabled by default)
-        includeSourceMaps: process.env.NODE_ENV === "production",
-
-        // Context extra
-        initialScope: {
-            tags: {
-                service: "narriv-backend",
-                version: process.env.npm_package_version || "1.0.0",
-            },
-        },
+      },
     });
-
     console.log("[SENTRY] Initialized with DSN:", SENTRY_DSN.replace(/\/\/.*@/, "//***@"));
+  } catch (err) {
+    console.warn("[SENTRY] Failed to load @sentry/node:", err.message);
+    SentryLib = null;
+  }
 }
 
-export default Sentry;
+// Initialize synchronously on module load — if @sentry/node is missing, fall back gracefully
+const noop = () => {};
+const stubHandlers = {
+  requestHandler: () => (req, res, next) => next(),
+  errorHandler: () => (err, req, res, next) => next(err),
+  tracingHandler: () => (req, res, next) => next(),
+};
 
-/**
- * Capture an exception with additional context
- */
-export function captureError(error, context = {}) {
-    if (!SENTRY_DSN) {
-        console.error("[SENTRY] Not initialized - error not captured:", error.message);
-        return;
+const Sentry = {
+  get lib() { return SentryLib; },
+  get Handlers() { return SentryLib ? SentryLib.Handlers : stubHandlers; },
+  init: () => { ensureSentry(); },
+  captureException: (err, ctx) => { if (SentryLib) SentryLib.captureException(err, ctx); },
+  captureMessage: (msg, ctx) => { if (SentryLib) SentryLib.captureMessage(msg, ctx); },
+  addBreadcrumb: (data) => { if (SentryLib) SentryLib.addBreadcrumb(data); },
+  setTag: (k, v) => { if (SentryLib) SentryLib.setTag(k, v); },
+  setContext: (k, v) => { if (SentryLib) SentryLib.setContext(k, v); },
+  setUser: (u) => { if (SentryLib) SentryLib.setUser(u); },
+  withScope: (fn) => { if (SentryLib) SentryLib.withScope(fn); else fn({ setTag: () => {}, setContext: () => {}, captureException: () => {} }); },
+  flush: (ms) => SentryLib ? SentryLib.flush(ms) : Promise.resolve(),
+};
+
+export { Sentry as default };
+
+export const captureError = (error, context = {}) => {
+  if (!SENTRY_DSN || !SentryLib) { console.error("[SENTRY] Not initialized - error not captured:", error.message); return; }
+  SentryLib.withScope((scope) => {
+    if (context.workspaceId) scope.setTag("workspace_id", context.workspaceId);
+    if (context.userId) scope.setTag("user_id", context.userId);
+    if (context.endpoint) scope.setTag("endpoint", context.endpoint);
+    if (context.extra) scope.setExtra("custom_data", context.extra);
+    if (context.user) scope.setUser({ id: context.user.id, email: context.user.email });
+    SentryLib.captureException(error);
+  });
+};
+
+export const captureMessage = (message, level = "info", context = {}) => {
+  if (!SENTRY_DSN || !SentryLib) { console.log("[SENTRY] Not initialized:", message); return; }
+  SentryLib.withScope((scope) => {
+    if (context.workspaceId) scope.setTag("workspace_id", context.workspaceId);
+    if (context.userId) scope.setTag("user_id", context.userId);
+    if (context.extra) scope.setExtra("custom_data", context.extra);
+    SentryLib.captureMessage(message, level);
+  });
+};
+
+export const addBreadcrumb = (message, data = {}, category = "custom") => {
+  if (!SENTRY_DSN || !SentryLib) return;
+  SentryLib.addBreadcrumb({ message, data, category, timestamp: Date.now() / 1000 });
+};
+
+export const setTransactionName = (name) => {
+  if (!SENTRY_DSN || !SentryLib) return;
+  SentryLib.setTag("transaction", name);
+};
+
+export const sentryMiddleware = (req, res, next) => {
+  if (!SENTRY_DSN || !SentryLib) return next();
+  SentryLib.setTag("http.method", req.method);
+  SentryLib.setTag("http.url", req.url);
+  const start = Date.now();
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    if (process.env.NODE_ENV === "production" && duration > 1000) {
+      captureMessage(`Slow request: ${req.method} ${req.url}`, "warning", { extra: { duration, statusCode: res.statusCode } });
     }
+  });
+  next();
+};
 
-    Sentry.withScope((scope) => {
-        // Add custom tags
-        if (context.workspaceId) {
-            scope.setTag("workspace_id", context.workspaceId);
-        }
-        if (context.userId) {
-            scope.setTag("user_id", context.userId);
-        }
-        if (context.endpoint) {
-            scope.setTag("endpoint", context.endpoint);
-        }
+export const wrapAsync = (fn) => {
+  if (!SENTRY_DSN || !SentryLib) return fn;
+  return (...args) => fn(...args).catch((error) => {
+    captureError(error, { extra: { args: args.map((a) => typeof a === "object" ? JSON.stringify(a).slice(0, 200) : a) } });
+    throw error;
+  });
+};
 
-        // Add custom extra data
-        if (context.extra) {
-            scope.setExtra("custom_data", context.extra);
-        }
-
-        // Set user context
-        if (context.user) {
-            scope.setUser({
-                id: context.user.id,
-                email: context.user.email,
-            });
-        }
-
-        Sentry.captureException(error);
-    });
-}
-
-/**
- * Capture a message with level
- */
-export function captureMessage(message, level = "info", context = {}) {
-    if (!SENTRY_DSN) {
-        console.log(`[SENTRY] Not initialized - message not captured:`, message);
-        return;
-    }
-
-    Sentry.withScope((scope) => {
-        if (context.workspaceId) {
-            scope.setTag("workspace_id", context.workspaceId);
-        }
-        if (context.userId) {
-            scope.setTag("user_id", context.userId);
-        }
-
-        if (context.extra) {
-            scope.setExtra("custom_data", context.extra);
-        }
-
-        Sentry.captureMessage(message, level);
-    });
-}
-
-/**
- * Add breadcrumb for tracing user actions
- */
-export function addBreadcrumb(message, data = {}, category = "custom") {
-    if (!SENTRY_DSN) return;
-
-    Sentry.addBreadcrumb({
-        message,
-        data,
-        category,
-        timestamp: Date.now() / 1000,
-    });
-}
-
-/**
- * Set transaction name for performance monitoring
- */
-export function setTransactionName(name) {
-    if (!SENTRY_DSN) return;
-    Sentry.setTag("transaction", name);
-}
-
-/**
- * Express middleware to capture errors and performance
- */
-export function sentryMiddleware(req, res, next) {
-    if (!SENTRY_DSN) return next();
-
-    // Set transaction name
-    Sentry.setTag("http.method", req.method);
-    Sentry.setTag("http.url", req.url);
-
-    // Track request start time
-    const startTime = Date.now();
-
-    // Capture response when finished
-    res.on("finish", () => {
-        const duration = Date.now() - startTime;
-
-        // Only capture slow requests (>1s) in production
-        if (process.env.NODE_ENV === "production" && duration > 1000) {
-            captureMessage(`Slow request: ${req.method} ${req.url}`, "warning", {
-                extra: {
-                    duration,
-                    statusCode: res.statusCode,
-                },
-            });
-        }
-    });
-
-    next();
-}
-
-/**
- * Wrap an async function to capture errors
- */
-export function wrapAsync(fn) {
-    if (!SENTRY_DSN) return fn;
-
-    return (...args) => {
-        return fn(...args).catch((error) => {
-            captureError(error, {
-                extra: {
-                    args: args.map((arg) =>
-                        typeof arg === "object" ? JSON.stringify(arg).slice(0, 200) : arg
-                    ),
-                },
-            });
-            throw error;
-        });
-    };
-}
-
-/**
- * Graceful shutdown handler for Sentry
- */
-export async function flushSentry() {
-    if (!SENTRY_DSN) return;
-
-    try {
-        await Sentry.flush(2000);
-        console.log("[SENTRY] Flushed successfully");
-    } catch (error) {
-        console.error("[SENTRY] Flush failed:", error);
-    }
-}
+export const flushSentry = () => SentryLib ? SentryLib.flush(2000) : Promise.resolve();
