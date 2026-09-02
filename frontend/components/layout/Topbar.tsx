@@ -177,14 +177,11 @@ export function Topbar() {
       return;
     }
 
-    // SECURITY FIX: Tokens must NEVER be passed in URL query parameters
-    // SSE connections should use HTTP headers or WebSocket with proper authentication
-    // For now, we authenticate via the regular API and use a session cookie for SSE
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-
-    // Use a dedicated SSE endpoint that reads from an HttpOnly session cookie
-    // The backend should validate the session cookie instead of URL token
-    const sseUrl = `${baseUrl.replace(/\/$/, "")}/api/notifications/stream`;
+    // Pass token as query param — EventSource cannot send custom headers.
+    // Vercel Edge strips HttpOnly cookies from cross-origin SSE requests,
+    // so we send the JWT as a query param. The backend's verifyTokenSSE
+    // middleware reads ?token=<jwt> for SSE endpoints only.
+    const sseUrl = `${baseUrl.replace(/\/$/, "")}/api/notifications/stream?token=${encodeURIComponent(token || "")}`;
 
     const sse = new EventSource(sseUrl, { withCredentials: true });
 

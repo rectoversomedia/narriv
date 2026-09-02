@@ -2199,12 +2199,15 @@ export class SSERealtimeClient {
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "https://narriv-api.vercel.app";
-    const url = `${baseUrl}/api/realtime/stream`;
+    // Pass token as query param — EventSource cannot send custom headers.
+    // Vercel Edge strips HttpOnly cookies from cross-origin SSE requests,
+    // so we read the JWT directly from localStorage and send it as a query param.
+    // The backend's verifyTokenSSE middleware accepts ?token=<jwt> for SSE endpoints only.
+    const url = `${baseUrl}/api/realtime/stream?token=${encodeURIComponent(authState)}`;
 
     try {
-      // SECURITY: SSE EventSource does not support custom headers
-      // Authentication is handled via cookies set by the auth flow
-      // The backend validates the session cookie on each SSE connection
+      // withCredentials: true sends same-origin cookies but Vercel Edge strips
+      // cross-origin cookies for SSE. The token is in the URL query param instead.
       this.eventSource = new EventSource(url, { withCredentials: true });
 
       this.eventSource.addEventListener("connected", () => {
