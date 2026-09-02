@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { SSERealtimeClient, type SSEStreamOptions } from "@/lib/api-service";
+import { isDemoMode } from "@/lib/demo-mock-data";
 import { useToast } from "@/components/ui/toast";
 
 export type SSEConnectionStatus = "connecting" | "connected" | "disconnected" | "error";
@@ -345,9 +346,9 @@ export function useSSE(options: UseSSEOptions = {}) {
     }
   }, [log, updateStatus]);
 
-  // Auto-connect on mount
+  // Auto-connect on mount (skip in demo mode — demo token has no workspace, SSE returns 401)
   useEffect(() => {
-    if (autoConnect) {
+    if (autoConnect && !isDemoMode()) {
       connect();
     }
 

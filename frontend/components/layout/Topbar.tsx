@@ -14,6 +14,7 @@ import { useUiStore } from "@/store/useUiStore";
 import { logoutSession, getNotifications, getAlerts, getNarratives, markNotificationAsRead, markAllNotificationsAsRead, type AppNotification, type Alert as ApiAlert, type NarrativeRecord, type NotificationsResponse } from "@/lib/api-service";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSSEContext } from "@/components/providers/SSEProvider";
+import { isDemoMode } from "@/lib/demo-mock-data";
 
 
 const notificationToneClass = {
@@ -171,7 +172,7 @@ export function Topbar() {
   });
 
   useEffect(() => {
-    if (!token) {
+    if (!token || isDemoMode()) {
       setNotificationStreamStatus("idle");
       return;
     }
