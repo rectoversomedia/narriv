@@ -4,7 +4,7 @@
  */
 
 import express from "express";
-import { verifyToken } from "../../middlewares/auth.middleware.js";
+import { verifyTokenSSE } from "../../middlewares/auth.middleware.js";
 import { getUserWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import {
     addSSEConnection,
@@ -25,7 +25,7 @@ const cleanupIntervals = new Map();
  * GET /api/realtime/stream
  * SSE endpoint for real-time updates
  */
-router.get("/stream", verifyToken, async (req, res) => {
+router.get("/stream", verifyTokenSSE, async (req, res) => {
     try {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
         const workspaceId = workspaceIds[0];
