@@ -122,7 +122,6 @@ function BrandPanel({ visual, email }: { visual: AuthVisual; email?: string }) {
 
 function NarrivLogo() {
   return (
-    // eslint-disable-next-line @next/next/no-img-element
     <img
       src="/narriv-logo-final.png"
       alt="Narriv"

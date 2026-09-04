@@ -304,7 +304,6 @@ export default function OnboardingPage() {
       {/* Top bar */}
       <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-[#E8EAF6] bg-white/80 backdrop-blur-md px-6 lg:px-10">
         <div className="flex items-center gap-3">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/narriv-logo-final.png" alt="Narriv" width={36} height={24} className="object-contain" />
         </div>
 
@@ -1213,7 +1212,6 @@ function ProcessingStep({
           style={{ animationDuration: "2s" }}
         />
         <div className="relative flex h-24 w-24 items-center justify-center rounded-full border-2 border-dashed border-[#2F20FF]/40 bg-white shadow-lg">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/narriv-logo-final.png" alt="Narriv" width={72} height={48} className="object-contain" />
         </div>
       </div>
