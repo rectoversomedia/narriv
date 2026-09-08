@@ -49,8 +49,10 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               `default-src 'self' ${appUrl}`,
-              // Script sources — 'unsafe-eval' removed; 'unsafe-inline' required by Next.js styles
-              "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com",
+              // Script sources — 'unsafe-eval' is required in development for Next.js dev server/webpack/source-maps
+              process.env.NODE_ENV === "development"
+                ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com http://unpkg.com https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com"
+                : "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com",
               // Style sources
               `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com ${appUrl}`,
               // Font sources

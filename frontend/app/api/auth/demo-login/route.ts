@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
   try {
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || "https://narriv-api.vercel.app";
 
-    const response = await fetch(`${backendUrl}/api/auth/demo`, {
+    const response = await fetch(`${backendUrl}/auth/demo`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include", // so we receive the backend's Set-Cookie (for logging/debugging)
@@ -26,10 +26,12 @@ export async function POST(request: NextRequest) {
     // non-httpOnly so Edge middleware (not Node.js) can verify the JWT.
     // The cookie value is a server-generated JWT — XSS risk is same as localStorage.
     const cookieMaxAge = 30 * 60; // 30 minutes
+    const isProduction = process.env.NODE_ENV === "production";
+    const secureFlag = isProduction ? "; Secure" : "";
     const responseHeaders = new Headers();
     responseHeaders.set(
       "Set-Cookie",
-      `narriv_auth=${data.accessToken}; Max-Age=${cookieMaxAge}; Path=/; SameSite=Lax; Secure`
+      `narriv_auth=${data.accessToken}; Max-Age=${cookieMaxAge}; Path=/; SameSite=Lax${secureFlag}`
     );
 
     return NextResponse.json(
