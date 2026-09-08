@@ -9,10 +9,10 @@
  * - Comprehensive API routes
  */
 
+import "dotenv/config";
 import express, { type Express, type Request, type Response } from "express";
 import cors from "cors";
 import compression from "compression";
-import { config } from "dotenv";
 
 // Lib imports
 import Sentry, { flushSentry } from "./lib/sentry.js";
@@ -58,8 +58,6 @@ import searchRoutes from "./modules/search/search.routes.js";
 import realtimeRoutes from "./modules/realtime/realtime.routes.js";
 import subscriptionsRoutes from "./modules/subscriptions/subscriptions.routes.js";
 
-// Load environment variables
-config();
 
 // Initialize scheduled jobs
 scheduleAlertDetection();
