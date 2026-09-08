@@ -37,7 +37,39 @@ export const verifyToken = (req, res, next) => {
         token = cookies["narriv_auth"];
     }
 
-    // verifyTokenSSE: reads token from ?token= query param (SSE only).
+    if (!token) {
+        return res.status(401).json({
+            error: "Access token required. Include 'Authorization: Bearer <token>' header or narriv_auth cookie.",
+            code: "MISSING_TOKEN"
+        });
+    }
+
+    try {
+        const decoded = jwt.verify(token, secret);
+        req.user = decoded;
+        next();
+    } catch (error) {
+        if (error.name === "TokenExpiredError") {
+            logStructured("warn", "token_expired", { path: req.originalUrl || req.url });
+            return res.status(401).json({
+                error: "Access token expired.",
+                code: "TOKEN_EXPIRED"
+            });
+        }
+        if (error.name === "JsonWebTokenError") {
+            logStructured("warn", "invalid_token", {
+                path: req.originalUrl || req.url,
+                error: error.message
+            });
+        }
+        return res.status(401).json({
+            error: "Invalid access token.",
+            code: "INVALID_TOKEN"
+        });
+    }
+};
+
+// verifyTokenSSE: reads token from ?token= query param (SSE only).
 // SSE EventSource cannot send custom headers or HttpOnly cookies cross-origin
 // (Vercel Edge strips cookies from cross-origin SSE requests).
 // The token is read from localStorage on the client and passed as a query param.
@@ -88,37 +120,5 @@ export const verifyTokenSSE = (req, res, next) => {
         }
         logStructured("warn", "invalid_token_sse", { path: req.originalUrl || req.url, error: error.message });
         return res.status(401).json({ error: "Invalid access token.", code: "INVALID_TOKEN" });
-    }
-};
-
-    if (!token) {
-        return res.status(401).json({
-            error: "Access token required. Include 'Authorization: Bearer <token>' header or narriv_auth cookie.",
-            code: "MISSING_TOKEN"
-        });
-    }
-
-    try {
-        const decoded = jwt.verify(token, secret);
-        req.user = decoded;
-        next();
-    } catch (error) {
-        if (error.name === "TokenExpiredError") {
-            logStructured("warn", "token_expired", { path: req.originalUrl || req.url });
-            return res.status(401).json({
-                error: "Access token expired.",
-                code: "TOKEN_EXPIRED"
-            });
-        }
-        if (error.name === "JsonWebTokenError") {
-            logStructured("warn", "invalid_token", {
-                path: req.originalUrl || req.url,
-                error: error.message
-            });
-        }
-        return res.status(401).json({
-            error: "Invalid access token.",
-            code: "INVALID_TOKEN"
-        });
     }
 };
