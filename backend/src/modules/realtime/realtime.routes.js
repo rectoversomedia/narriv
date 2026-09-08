@@ -4,7 +4,7 @@
  */
 
 import express from "express";
-import { verifyTokenSSE } from "../../middlewares/auth.middleware.js";
+import { verifyToken, verifyTokenSSE } from "../../middlewares/auth.middleware.js";
 import { getUserWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import {
     addSSEConnection,
