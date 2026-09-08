@@ -181,6 +181,7 @@ export function Topbar() {
     // Vercel Edge strips HttpOnly cookies from cross-origin SSE requests,
     // so we send the JWT as a query param. The backend's verifyTokenSSE
     // middleware reads ?token=<jwt> for SSE endpoints only.
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
     const sseUrl = `${baseUrl.replace(/\/$/, "")}/api/notifications/stream?token=${encodeURIComponent(token || "")}`;
 
     const sse = new EventSource(sseUrl, { withCredentials: true });
