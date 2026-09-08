@@ -14,7 +14,6 @@ process/general-plans/*
 !process/general-plans/references/
 process/general-plans/references/*
 !process/general-plans/references/production-readiness-runbook.md
-package-lock.json
 pnpm-lock.yaml
 yarn.lock
 .vercel
