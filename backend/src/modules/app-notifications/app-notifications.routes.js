@@ -1,5 +1,5 @@
 import express from "express";
-import { verifyTokenSSE } from "../../middlewares/auth.middleware.js";
+import { verifyToken, verifyTokenSSE } from "../../middlewares/auth.middleware.js";
 import { getNotifications, markAsRead, markAllAsRead, streamNotifications } from "./app-notifications.controller.js";
 import { wrapAsync } from "../../lib/sentry.js";
 
