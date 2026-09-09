@@ -122,7 +122,34 @@ router.get("/plans", async (req, res) => {
  */
 router.get("/my-plan", async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user.id || req.user.userId;
+
+    if (req.user?.isDemo) {
+      const planLimits = getPlanLimits(WorkspacePlan.PILOT);
+      return res.json({
+        plan: {
+          key: planLimits.plan,
+          name: planLimits.name,
+          tagline: planLimits.tagline,
+          priceIdr: planLimits.priceIdr,
+          status: "active",
+        },
+        usage: {
+          membersUsed: 2,
+          membersLimit: planLimits.maxMembers,
+          topicsUsed: 1,
+          topicsLimit: planLimits.maxTopics,
+          signalsUsed: 4,
+          signalsLimit: planLimits.maxSignalsPerMonth,
+          alertsUsed: 3,
+          alertsLimit: planLimits.maxAlertsPerMonth,
+          reportsUsed: 1,
+          reportsLimit: planLimits.maxReportsPerMonth,
+        },
+        expiresAt: null,
+        trialEndsAt: null,
+      });
+    }
 
     // Get user's workspace
     const workspaceId = await getUserWorkspace(userId);
@@ -166,7 +193,7 @@ router.get("/my-plan", async (req, res) => {
   } catch (error) {
     logStructured("error", "get_my_plan_error", {
       error: error.message,
-      userId: req.user.userId
+      userId: req.user.id || req.user.userId
     });
     res.status(500).json({ error: "Failed to fetch subscription" });
   }
@@ -178,7 +205,23 @@ router.get("/my-plan", async (req, res) => {
  */
 router.get("/limits", async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user.id || req.user.userId;
+
+    if (req.user?.isDemo) {
+      const planLimits = getPlanLimits(WorkspacePlan.PILOT);
+      return res.json({
+        limits: {
+          maxMembers: planLimits.maxMembers,
+          maxTopics: planLimits.maxTopics,
+          maxSignalsPerMonth: planLimits.maxSignalsPerMonth,
+          maxAlertsPerMonth: planLimits.maxAlertsPerMonth,
+          maxReportsPerMonth: planLimits.maxReportsPerMonth,
+          maxAiAnalysesPerMonth: planLimits.maxAiAnalysesPerMonth,
+          dataRetentionDays: planLimits.dataRetentionDays,
+        },
+        plan: planLimits.plan,
+      });
+    }
 
     // Get user's workspace
     const workspaceId = await getUserWorkspace(userId);
@@ -206,7 +249,7 @@ router.get("/limits", async (req, res) => {
   } catch (error) {
     logStructured("error", "get_limits_error", {
       error: error.message,
-      userId: req.user.userId
+      userId: req.user.id || req.user.userId
     });
     res.status(500).json({ error: "Failed to fetch limits" });
   }
@@ -218,7 +261,18 @@ router.get("/limits", async (req, res) => {
  */
 router.get("/features", async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user.id || req.user.userId;
+
+    if (req.user?.isDemo) {
+      const planLimits = getPlanLimits(WorkspacePlan.PILOT);
+      return res.json({
+        features: planLimits.features.map((feature) => ({
+          key: feature,
+          enabled: true,
+        })),
+        plan: planLimits.plan,
+      });
+    }
 
     // Get user's workspace
     const workspaceId = await getUserWorkspace(userId);
@@ -241,7 +295,7 @@ router.get("/features", async (req, res) => {
   } catch (error) {
     logStructured("error", "get_features_error", {
       error: error.message,
-      userId: req.user.userId
+      userId: req.user.id || req.user.userId
     });
     res.status(500).json({ error: "Failed to fetch features" });
   }
@@ -254,10 +308,22 @@ router.get("/features", async (req, res) => {
 router.post("/check-feature", async (req, res) => {
   try {
     const { featureKey } = req.body;
-    const userId = req.user.userId;
+    const userId = req.user.id || req.user.userId;
 
     if (!featureKey) {
       return res.status(400).json({ error: "featureKey is required" });
+    }
+
+    if (req.user?.isDemo) {
+      const planLimits = getPlanLimits(WorkspacePlan.PILOT);
+      const hasFeature = planLimits.features.includes(featureKey);
+      return res.json({
+        featureKey,
+        enabled: hasFeature,
+        upgradeRequired: !hasFeature,
+        suggestedPlan: hasFeature ? null : "intelligence",
+        currentPlan: planLimits.plan,
+      });
     }
 
     // Get user's workspace
@@ -282,7 +348,7 @@ router.post("/check-feature", async (req, res) => {
   } catch (error) {
     logStructured("error", "check_feature_error", {
       error: error.message,
-      userId: req.user.userId
+      userId: req.user.id || req.user.userId
     });
     res.status(500).json({ error: "Failed to check feature" });
   }
@@ -295,10 +361,22 @@ router.post("/check-feature", async (req, res) => {
 router.post("/check-limit", async (req, res) => {
   try {
     const { limitKey, requestedValue } = req.body;
-    const userId = req.user.userId;
+    const userId = req.user.id || req.user.userId;
 
     if (!limitKey || requestedValue === undefined) {
       return res.status(400).json({ error: "limitKey and requestedValue are required" });
+    }
+
+    if (req.user?.isDemo) {
+      return res.json({
+        limitKey,
+        hasCapacity: true,
+        currentUsage: 2,
+        limit: 10,
+        upgradeRequired: false,
+        suggestedPlan: null,
+        currentPlan: WorkspacePlan.PILOT,
+      });
     }
 
     // Get user's workspace
@@ -354,7 +432,7 @@ router.post("/check-limit", async (req, res) => {
   } catch (error) {
     logStructured("error", "check_limit_error", {
       error: error.message,
-      userId: req.user.userId
+      userId: req.user.id || req.user.userId
     });
     res.status(500).json({ error: "Failed to check limit" });
   }
@@ -366,7 +444,24 @@ router.post("/check-limit", async (req, res) => {
  */
 router.get("/usage", async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user.id || req.user.userId;
+
+    if (req.user?.isDemo) {
+      const planLimits = getPlanLimits(WorkspacePlan.PILOT);
+      return res.json({
+        workspaceId: "demo-workspace",
+        plan: planLimits.plan,
+        usage: {
+          members: { used: 2, limit: planLimits.maxMembers, percentage: 40 },
+          topics: { used: 1, limit: planLimits.maxTopics, percentage: 33 },
+          signals: { used: 4, limit: planLimits.maxSignalsPerMonth, percentage: 8 },
+          alerts: { used: 3, limit: planLimits.maxAlertsPerMonth, percentage: 15 },
+          reports: { used: 1, limit: planLimits.maxReportsPerMonth, percentage: 20 },
+        },
+        expiresAt: null,
+        trialEndsAt: null,
+      });
+    }
 
     // Get user's workspace
     const workspaceId = await getUserWorkspace(userId);
@@ -416,7 +511,7 @@ router.get("/usage", async (req, res) => {
   } catch (error) {
     logStructured("error", "get_usage_error", {
       error: error.message,
-      userId: req.user.userId
+      userId: req.user.id || req.user.userId
     });
     res.status(500).json({ error: "Failed to fetch usage" });
   }
