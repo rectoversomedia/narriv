@@ -86,10 +86,16 @@ if (process.env.SENTRY_DSN) {
     }));
 }
 
-// Compression (gzip) for responses > 1KB
+// Compression (gzip) for responses > 1KB (skip SSE streams)
 app.use(compression({
     threshold: 1024,
     level: 6,
+    filter: (req, res) => {
+        if (req.headers.accept === "text/event-stream" || req.path?.includes("/realtime/stream")) {
+            return false;
+        }
+        return compression.filter(req, res);
+    },
 }));
 
 // HTTPS enforcement in production

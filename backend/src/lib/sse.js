@@ -221,6 +221,9 @@ export async function broadcastToWorkspace(workspaceId, event, data) {
         for (const [connectionId, connection] of workspaceConnections) {
             try {
                 connection.res.write(message);
+                if (typeof connection.res.flush === "function") {
+                    connection.res.flush();
+                }
                 delivered++;
             } catch (error) {
                 logStructured("error", "sse_broadcast_failed", {

@@ -46,6 +46,9 @@ router.get("/stream", verifyTokenSSE, async (req, res) => {
             userId: req.user.id,
             timestamp: Date.now()
         }));
+        if (typeof res.flush === "function") {
+            res.flush();
+        }
 
         // Add connection
         const connectionId = addSSEConnection(workspaceId, req.user.id, res);
@@ -63,6 +66,9 @@ router.get("/stream", verifyTokenSSE, async (req, res) => {
                 res.write(formatSSEMessage("heartbeat", {
                     timestamp: Date.now()
                 }));
+                if (typeof res.flush === "function") {
+                    res.flush();
+                }
                 await updateConnectionPing(workspaceId, connectionId);
             } catch (error) {
                 clearInterval(heartbeatInterval);

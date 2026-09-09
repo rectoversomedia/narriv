@@ -1,6 +1,8 @@
 import supabase from "./supabase.js";
 
 export const getUserWorkspaceIds = async (userId) => {
+  if (!userId) return [];
+  if (String(userId).startsWith("demo")) return ["demo-workspace"];
   const { data: memberships, error } = await supabase
     .from("workspace_members")
     .select("workspace_id")
@@ -15,6 +17,10 @@ export const getUserWorkspaceIds = async (userId) => {
 };
 
 export const resolveWorkspaceIdForUser = async (userId, requestedWorkspaceId) => {
+  if (!userId) return null;
+  if (String(userId).startsWith("demo")) {
+    return requestedWorkspaceId || "demo-workspace";
+  }
   if (requestedWorkspaceId) {
     const { data: membership, error } = await supabase
       .from("workspace_members")
