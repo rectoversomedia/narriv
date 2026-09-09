@@ -40,7 +40,7 @@ export function Sidebar() {
     staleTime: 30 * 1000,
   });
 
-  const activeLogo = workspaceSettingsQuery.data?.logoUrl ? resolveBackendAssetUrl(workspaceSettingsQuery.data.logoUrl) : "/narriv-logo.png";
+  const activeLogo = workspaceSettingsQuery.data?.logoUrl ? resolveBackendAssetUrl(workspaceSettingsQuery.data.logoUrl) : "/logo-final-narriv.png";
   const brandName = workspaceSettingsQuery.data?.brandName || "Narriv";
 
   return (

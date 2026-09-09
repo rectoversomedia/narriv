@@ -2,7 +2,8 @@ const CACHE_NAME = 'narriv-v1';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
-  '/narriv-logo.png',
+  '/logo-final-narriv.png',
+  '/favicon.ico',
 ];
 
 // Install event - cache static assets

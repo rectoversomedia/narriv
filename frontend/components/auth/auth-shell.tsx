@@ -123,11 +123,11 @@ function BrandPanel({ visual, email }: { visual: AuthVisual; email?: string }) {
 function NarrivLogo() {
   return (
     <img
-      src="/narriv-logo-final.png"
+      src="/logo-final-narriv.png"
       alt="Narriv"
       width={240}
       height={160}
-      className="h-auto w-auto object-contain"
+      className="h-auto w-auto max-h-[80px] object-contain mx-auto"
     />
   );
 }
