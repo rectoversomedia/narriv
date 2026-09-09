@@ -554,17 +554,26 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
         generateOption(strategyType, promptConfig, fullContext, "Option C (Bold/Aggressive)")
     ]);
 
+    const strategyPayload = {
+        executive_summary: options[1]?.executive_summary || options[0]?.executive_summary || `${formatStrategyName(strategyType)} Action Plan`,
+        ...(options[1] || options[0] || {}),
+        conservative: options[0],
+        balanced: options[1],
+        bold: options[2]
+    };
+
     // 3. Save to database
     const { data: actionPlan, error } = await supabase
         .from("action_plans")
         .insert({
             workspace_id: workspaceId,
-            alert_id: scopedAlertId,
-            cluster_id: scopedClusterId,
+            alert_id: scopedAlertId || null,
+            cluster_id: scopedClusterId || null,
             title: `${formatStrategyName(strategyType)} Action Plan`,
-            option1: JSON.stringify(options[0]),
-            option2: JSON.stringify(options[1]),
-            option3: JSON.stringify(options[2])
+            type: strategyType,
+            strategy: JSON.stringify(strategyPayload),
+            priority: "medium",
+            status: "pending"
         })
         .select()
         .single();
@@ -779,9 +788,10 @@ Return ONLY a raw JSON object with these fields:
             alert_id: alertId || null,
             cluster_id: clusterId || null,
             title: plan.title,
-            option1: JSON.stringify(plan),
-            option2: null,
-            option3: null,
+            type: strategyType || "multi_step",
+            strategy: JSON.stringify(plan),
+            priority: "medium",
+            status: "pending",
         })
         .select()
         .single();
