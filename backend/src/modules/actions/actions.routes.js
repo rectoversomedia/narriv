@@ -84,13 +84,9 @@ router.get("/", async (req, res) => {
                 id,
                 title,
                 assigned_to,
-                assigned_team,
-                deadline,
-                escalation_level,
-                workflow_status,
-                created_at,
-                alert:alerts(title, severity),
-                cluster:narrative_clusters(title, sentiment)
+                priority,
+                status,
+                created_at
             `, { count: "exact" })
             .in("workspace_id", scopedWorkspaceIds)
             .order("created_at", { ascending: false })
@@ -98,24 +94,24 @@ router.get("/", async (req, res) => {
 
         if (search && String(search).trim()) {
             const term = String(search).trim();
-            query = query.or(`title.ilike.%${term}%,assigned_to.ilike.%${term}%,assigned_team.ilike.%${term}%`);
+            query = query.ilike("title", `%${term}%`);
         }
 
         if (priority && priority !== "all") {
             const priorityValue = String(priority).toLowerCase();
             if (["low", "medium", "high", "critical"].includes(priorityValue)) {
-                query = query.eq("escalation_level", priorityValue);
+                query = query.eq("priority", priorityValue);
             }
         }
 
         if (status && status !== "all") {
             const normalizedStatus = String(status);
             if (normalizedStatus === "active") {
-                query = query.or(`workflow_status.is.null,workflow_status.eq.todo,workflow_status.eq.active`);
+                query = query.or(`status.is.null,status.eq.pending,status.eq.active,status.eq.open`);
             } else if (normalizedStatus === "in-progress") {
-                query = query.in("workflow_status", ["in_progress", "blocked"]);
+                query = query.in("status", ["in_progress", "in-progress", "blocked"]);
             } else {
-                query = query.eq("workflow_status", normalizedStatus);
+                query = query.eq("status", normalizedStatus);
             }
         }
 
@@ -127,13 +123,13 @@ router.get("/", async (req, res) => {
             data: (data || []).map(plan => ({
                 id: plan.id,
                 title: plan.title,
-                alert: plan.alert,
-                cluster: plan.cluster,
+                alert: null,
+                cluster: null,
                 assignedTo: plan.assigned_to,
-                assignedTeam: plan.assigned_team,
-                deadline: plan.deadline,
-                escalationLevel: plan.escalation_level,
-                workflowStatus: plan.workflow_status,
+                assignedTeam: null,
+                deadline: null,
+                escalationLevel: plan.priority || "medium",
+                workflowStatus: plan.status || "pending",
                 createdAt: plan.created_at
             })),
             meta: { page: safePage, limit: safeLimit, total: count || 0 }
@@ -154,8 +150,6 @@ router.get("/:id", async (req, res) => {
             .from("action_plans")
             .select(`
                 *,
-                alert:alerts(*),
-                cluster:narrative_clusters(*),
                 generated_assets:generated_assets(*)
             `)
             .eq("id", id)
@@ -169,21 +163,26 @@ router.get("/:id", async (req, res) => {
 
         // Parse the stored JSON option strings back into objects
         const parseOption = (raw) => {
+            if (!raw) return null;
+            if (typeof raw === "object") return raw;
             try { return JSON.parse(raw); } catch { return null; }
+        };
+
+        const strategy = parseOption(plan.strategy) || {};
+        const options = {
+            conservative: parseOption(plan.option1) || strategy.conservative || strategy.option1 || null,
+            balanced: parseOption(plan.option2) || strategy.balanced || strategy.option2 || null,
+            bold: parseOption(plan.option3) || strategy.bold || strategy.option3 || null
         };
 
         res.json({
             id: plan.id,
             title: plan.title,
             createdAt: plan.created_at,
-            alert: plan.alert,
-            cluster: plan.cluster,
-            options: {
-                conservative: parseOption(plan.option1),
-                balanced: parseOption(plan.option2),
-                bold: parseOption(plan.option3)
-            },
-            generatedAssets: plan.generated_assets
+            alert: null,
+            cluster: null,
+            options,
+            generatedAssets: plan.generated_assets || []
         });
     } catch (error) {
         logStructured("error", "Error fetching action plan:", { error: error?.message || error, stack: error?.stack });

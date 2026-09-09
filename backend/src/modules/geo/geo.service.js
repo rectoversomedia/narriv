@@ -228,17 +228,21 @@ export async function runVisibilityAnalysis({ workspaceId, brandName, competitor
         .from("ai_visibility_results")
         .insert({
             workspace_id: workspaceId,
-            engine_name: engineName,
-            visibility_score: visibilityScore,
-            brand_presence_rate: Math.round(brandPresenceRate * 1000) / 1000,
-            competitor_mention_rate: Math.round(competitorMentionRate * 1000) / 1000,
-            query_used: JSON.stringify(queries),
-            raw_response: queryResults,
-            metadata: {
-                brand_name: brandName,
-                competitors,
-                total_queries: queries.length,
-                total_responses: responses.filter(r => r.length > 0).length
+            engine: engineName,
+            score: visibilityScore,
+            query: JSON.stringify(queries),
+            result: {
+                visibility_score: visibilityScore,
+                brand_presence_rate: Math.round(brandPresenceRate * 1000) / 1000,
+                competitor_mention_rate: Math.round(competitorMentionRate * 1000) / 1000,
+                query_used: queries,
+                raw_response: queryResults,
+                metadata: {
+                    brand_name: brandName,
+                    competitors,
+                    total_queries: queries.length,
+                    total_responses: responses.filter(r => r.length > 0).length
+                }
             }
         })
         .select()

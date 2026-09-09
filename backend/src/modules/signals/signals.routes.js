@@ -221,12 +221,14 @@ router.get("/meta", async (req, res) => {
         // Fetch cases
         const { data: rawCases, error: casesError } = await supabase
             .from('cases')
-            .select('title, assigned_team, status')
+            .select('title, status')
             .in('workspace_id', workspaceIds)
             .order('created_at', { ascending: false })
             .limit(3);
 
-        if (casesError) throw casesError;
+        if (casesError) {
+            logStructured("warn", "cases_fetch_in_meta_failed", { error: casesError.message });
+        }
 
         let investigationQueue = [];
 

@@ -56,15 +56,20 @@ router.get("/", async (req, res) => {
         const { data: latest, error } = await supabase
             .from("ai_visibility_results")
             .select(`
-                *,
+                id,
+                workspace_id,
+                engine,
+                query,
+                result,
+                score,
+                created_at,
                 prompt_test_runs (
+                    id,
                     prompt,
-                    engine,
-                    brand,
-                    competitor,
-                    brand_tone,
-                    comp_tone,
-                    highlighted
+                    response,
+                    sentiment,
+                    relevance_score,
+                    metadata
                 )
             `)
             .in("workspace_id", scopedWorkspaceIds)
@@ -87,26 +92,27 @@ router.get("/", async (req, res) => {
 
         const prompts = (latest.prompt_test_runs || []).map((row) => ({
             prompt: row.prompt,
-            engine: row.engine,
-            brand: row.brand,
-            competitor: row.competitor,
-            brandTone: row.brand_tone,
-            compTone: row.comp_tone,
+            engine: row.metadata?.engine || latest.engine || "chatgpt",
+            brand: row.metadata?.brand || (row.sentiment === "positive" ? "mentioned" : "unmentioned"),
+            competitor: row.metadata?.competitor || "not mentioned",
+            brandTone: row.metadata?.brand_tone || row.sentiment || "neutral",
+            compTone: row.metadata?.comp_tone || "neutral",
         }));
 
-        const mentionedCount = (latest.prompt_test_runs || []).filter((row) => row.brand?.toLowerCase() === "mentioned").length;
-        const presence = Math.round(latest.brand_presence_rate * 100);
-        const competitor = Math.round(latest.competitor_mention_rate * 100);
-        const totalPrompts = (latest.prompt_test_runs || []).length;
+        const totalPrompts = prompts.length;
+        const mentionedCount = prompts.filter((p) => p.brand?.toLowerCase() === "mentioned").length;
+        const presence = totalPrompts > 0 ? Math.round((mentionedCount / totalPrompts) * 100) : (latest.result?.brand_presence_rate ? Math.round(latest.result.brand_presence_rate * 100) : 0);
+        const competitor = latest.result?.competitor_mention_rate ? Math.round(latest.result.competitor_mention_rate * 100) : 0;
+        const visibilityScore = Number(latest.score ?? latest.result?.visibility_score ?? 0);
 
         res.json({
-            score: Number(latest.visibility_score),
+            score: visibilityScore,
             presence,
             presenceMentions: `${mentionedCount} of ${totalPrompts}`,
             competitor,
             prompts,
             geoActions: buildGeoActions({
-                score: Number(latest.visibility_score),
+                score: visibilityScore,
                 competitor,
                 hasWeakPrompts: mentionedCount < totalPrompts,
             }),
@@ -129,7 +135,7 @@ router.get("/summary", async (req, res) => {
         // Fetch the most recent result for each engine
         const { data: allResults, error } = await supabase
             .from("ai_visibility_results")
-            .select("*")
+            .select("id, engine, score, result, query, created_at")
             .in("workspace_id", scopedWorkspaceIds)
             .order("created_at", { ascending: false });
 
@@ -138,8 +144,9 @@ router.get("/summary", async (req, res) => {
         // Group by engine, keep only the latest per engine
         const latestByEngine = {};
         (allResults || []).forEach(result => {
-            if (!latestByEngine[result.engine_name]) {
-                latestByEngine[result.engine_name] = result;
+            const engineKey = result.engine || "chatgpt";
+            if (!latestByEngine[engineKey]) {
+                latestByEngine[engineKey] = result;
             }
         });
 
@@ -148,23 +155,23 @@ router.get("/summary", async (req, res) => {
         // Calculate aggregate KPIs across all engines
         const totalEngines = engines.length;
         const avgVisibility = totalEngines > 0
-            ? Math.round((engines.reduce((sum, e) => sum + e.visibility_score, 0) / totalEngines) * 100) / 100
+            ? Math.round((engines.reduce((sum, e) => sum + Number(e.score || 0), 0) / totalEngines) * 100) / 100
             : 0;
         const avgBrandPresence = totalEngines > 0
-            ? Math.round((engines.reduce((sum, e) => sum + e.brand_presence_rate, 0) / totalEngines) * 1000) / 1000
+            ? Math.round((engines.reduce((sum, e) => sum + (e.result?.brand_presence_rate || 0), 0) / totalEngines) * 1000) / 1000
             : 0;
         const avgCompetitorMention = totalEngines > 0
-            ? Math.round((engines.reduce((sum, e) => sum + e.competitor_mention_rate, 0) / totalEngines) * 1000) / 1000
+            ? Math.round((engines.reduce((sum, e) => sum + (e.result?.competitor_mention_rate || 0), 0) / totalEngines) * 1000) / 1000
             : 0;
 
         // Per-engine breakdown
         const engineBreakdown = engines.map(e => ({
-            engineName: e.engine_name,
-            visibilityScore: e.visibility_score,
-            brandPresenceRate: e.brand_presence_rate,
-            competitorMentionRate: e.competitor_mention_rate,
+            engineName: e.engine || "chatgpt",
+            visibilityScore: Number(e.score || 0),
+            brandPresenceRate: e.result?.brand_presence_rate || 0,
+            competitorMentionRate: e.result?.competitor_mention_rate || 0,
             lastChecked: e.created_at,
-            metadata: e.metadata
+            metadata: e.result?.metadata || {}
         }));
 
         res.json({
@@ -197,13 +204,13 @@ router.get("/trends", async (req, res) => {
 
         let query = supabase
             .from("ai_visibility_results")
-            .select("id, engine_name, visibility_score, brand_presence_rate, competitor_mention_rate, created_at, metadata")
+            .select("id, engine, score, result, created_at")
             .in("workspace_id", scopedWorkspaceIds)
             .gte("created_at", since.toISOString())
             .order("created_at", { ascending: true });
 
         if (engineName) {
-            query = query.eq("engine_name", engineName);
+            query = query.eq("engine", engineName);
         }
 
         const { data: results, error } = await query;
@@ -231,9 +238,9 @@ router.get("/trends", async (req, res) => {
             const count = day.entries.length;
             return {
                 date: day.date,
-                avg_visibility_score: Math.round((day.entries.reduce((s, e) => s + e.visibility_score, 0) / count) * 100) / 100,
-                avg_brand_presence_rate: Math.round((day.entries.reduce((s, e) => s + e.brand_presence_rate, 0) / count) * 1000) / 1000,
-                avg_competitor_mention_rate: Math.round((day.entries.reduce((s, e) => s + e.competitor_mention_rate, 0) / count) * 1000) / 1000,
+                avg_visibility_score: Math.round((day.entries.reduce((s, e) => s + Number(e.score || 0), 0) / count) * 100) / 100,
+                avg_brand_presence_rate: Math.round((day.entries.reduce((s, e) => s + (e.result?.brand_presence_rate || 0), 0) / count) * 1000) / 1000,
+                avg_competitor_mention_rate: Math.round((day.entries.reduce((s, e) => s + (e.result?.competitor_mention_rate || 0), 0) / count) * 1000) / 1000,
                 data_points: count
             };
         }).sort((a, b) => a.date.localeCompare(b.date));
@@ -241,12 +248,13 @@ router.get("/trends", async (req, res) => {
         // Per-engine trend lines (for multi-line charts)
         const engineTrends = {};
         (results || []).forEach(r => {
-            if (!engineTrends[r.engine_name]) engineTrends[r.engine_name] = [];
-            engineTrends[r.engine_name].push({
+            const engName = r.engine || "chatgpt";
+            if (!engineTrends[engName]) engineTrends[engName] = [];
+            engineTrends[engName].push({
                 date: new Date(r.created_at).toISOString().split("T")[0],
-                visibilityScore: r.visibility_score,
-                brandPresenceRate: r.brand_presence_rate,
-                competitorMentionRate: r.competitor_mention_rate
+                visibilityScore: Number(r.score || 0),
+                brandPresenceRate: r.result?.brand_presence_rate || 0,
+                competitorMentionRate: r.result?.competitor_mention_rate || 0
             });
         });
 

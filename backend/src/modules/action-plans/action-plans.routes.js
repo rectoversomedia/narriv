@@ -82,10 +82,10 @@ function buildActionPlanResponse(plan) {
     return {
         id: plan.id,
         assignedTo: plan.assigned_to,
-        assignedTeam: plan.assigned_team,
-        deadline: plan.deadline,
-        escalationLevel: plan.escalation_level,
-        workflowStatus: plan.workflow_status,
+        assignedTeam: plan.assigned_team || null,
+        deadline: plan.deadline || null,
+        escalationLevel: plan.escalation_level || plan.priority || "medium",
+        workflowStatus: plan.workflow_status || plan.status || "open",
         inputNarrative: primaryOption.executive_summary
             || primaryOption.severity_assessment
             || plan.description
@@ -161,7 +161,7 @@ router.get("/metrics", async (req, res) => {
 
         const { data: allPlans, error } = await supabase
             .from("action_plans")
-            .select("workflow_status, escalation_level, created_at")
+            .select("status, priority, created_at")
             .in("workspace_id", scopedWorkspaceIds);
 
         if (error) throw error;
@@ -181,10 +181,12 @@ router.get("/metrics", async (req, res) => {
         for (const plan of (allPlans || [])) {
             const isCurrent = new Date(plan.created_at) >= sevenDaysAgo;
             const isPrevious = new Date(plan.created_at) >= fourteenDaysAgo && new Date(plan.created_at) < sevenDaysAgo;
-            const isActive = plan.workflow_status !== "done";
-            const isInProgress = ["in_progress", "blocked"].includes(plan.workflow_status);
-            const isDone = plan.workflow_status === "done";
-            const isNeedsAttention = isActive && ["high", "critical"].includes(plan.escalation_level);
+            const status = plan.status || "pending";
+            const priority = plan.priority || "medium";
+            const isActive = !["done", "completed"].includes(status);
+            const isInProgress = ["in_progress", "in-progress", "blocked"].includes(status);
+            const isDone = ["done", "completed"].includes(status);
+            const isNeedsAttention = isActive && ["high", "critical"].includes(priority);
 
             if (isActive) metrics.active.total++;
             if (isInProgress) metrics.inProgress.total++;
@@ -433,7 +435,7 @@ router.patch("/:id/assign", validateRequest({ params: assignActionPlanParamsSche
 
         const { data: existing, error: existingError } = await supabase
             .from("action_plans")
-            .select("id, workspace_id, escalation_level")
+            .select("id, workspace_id, priority")
             .eq("id", id)
             .maybeSingle();
 
@@ -443,14 +445,19 @@ router.patch("/:id/assign", validateRequest({ params: assignActionPlanParamsSche
             return res.status(404).json({ error: "Action plan not found" });
         }
 
+        const updatePayload = {
+            updated_at: new Date().toISOString(),
+        };
+        if (assignedTo !== undefined) {
+            updatePayload.assigned_to = assignedTo ? (assignedTo.match(/^[0-9a-fA-F-]{36}$/) ? assignedTo : null) : null;
+        }
+        if (escalationLevel) {
+            updatePayload.priority = escalationLevel;
+        }
+
         const { data: updated, error: updateError } = await supabase
             .from("action_plans")
-            .update({
-                assigned_to: assignedTo ?? null,
-                assigned_team: assignedTeam ?? null,
-                deadline: deadline ? new Date(deadline) : null,
-                escalation_level: escalationLevel ?? existing.escalation_level,
-            })
+            .update(updatePayload)
             .eq("id", id)
             .select()
             .single();
@@ -466,13 +473,13 @@ router.patch("/:id/assign", validateRequest({ params: assignActionPlanParamsSche
                 action_plan_id: updated.id,
                 workspace_id: updated.workspace_id,
                 assigned_to: updated.assigned_to,
-                assigned_team: updated.assigned_team,
-                deadline: updated.deadline,
-                escalation_level: updated.escalation_level,
+                assigned_team: assignedTeam ?? null,
+                deadline: deadline ?? null,
+                escalation_level: escalationLevel ?? updated.priority,
             }
         });
 
-        if (escalationLevel && escalationLevel !== existing.escalation_level) {
+        if (escalationLevel && escalationLevel !== existing.priority) {
             await supabase.from("audit_logs").insert({
                 user_id: req.user.id,
                 workspace_id: updated.workspace_id,
@@ -481,13 +488,19 @@ router.patch("/:id/assign", validateRequest({ params: assignActionPlanParamsSche
                     target_type: "action_plan",
                     action_plan_id: updated.id,
                     workspace_id: updated.workspace_id,
-                    previous_escalation_level: existing.escalation_level,
-                    escalation_level: updated.escalation_level,
+                    previous_escalation_level: existing.priority,
+                    escalation_level: updated.priority,
                 }
             });
         }
 
-        return res.json(updated);
+        return res.json({
+            ...updated,
+            assignedTeam: assignedTeam ?? null,
+            deadline: deadline ?? null,
+            escalationLevel: escalationLevel ?? updated.priority,
+            workflowStatus: updated.status || "open",
+        });
     } catch (error) {
         logStructured("error", "Error updating action plan assignment:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });

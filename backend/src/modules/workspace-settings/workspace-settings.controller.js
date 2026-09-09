@@ -140,7 +140,7 @@ export async function listWorkspaceMembers(req, res) {
             return forbidden(res, "Workspace access denied", "WORKSPACE_ACCESS_DENIED");
         }
 
-        const { data: members, error } = await supabase
+        let { data: members, error } = await supabase
             .from("workspace_members")
             .select(`
                 id,
@@ -148,7 +148,7 @@ export async function listWorkspaceMembers(req, res) {
                 user_id,
                 role,
                 created_at,
-                users (
+                user_profiles (
                     id,
                     email,
                     name
@@ -158,18 +158,23 @@ export async function listWorkspaceMembers(req, res) {
             .order("created_at", { ascending: true });
 
         if (error) {
-            logStructured("error", "Error listing workspace members:", { error: error?.message || error });
-            return internalError(res);
+            logStructured("warn", "workspace_members_user_profiles_failed_trying_fallback", { error: error?.message || error });
+            const fallbackRes = await supabase
+                .from("workspace_members")
+                .select("id, workspace_id, user_id, role, created_at")
+                .eq("workspace_id", scopedWorkspaceId)
+                .order("created_at", { ascending: true });
+            members = fallbackRes.data || [];
         }
 
         return res.json({
-            data: members.map((member) => ({
+            data: (members || []).map((member) => ({
                 id: member.id,
                 workspace_id: member.workspace_id,
                 user_id: member.user_id,
                 role: member.role,
                 created_at: member.created_at,
-                user: member.users,
+                user: member.user_profiles || member.users || null,
             }))
         });
     } catch (error) {
@@ -192,7 +197,7 @@ export async function createWorkspaceMember(req, res) {
         let user;
         if (userId) {
             const { data, error } = await supabase
-                .from("User")
+                .from("users")
                 .select("id, email, name")
                 .eq("id", userId)
                 .maybeSingle();
@@ -203,7 +208,7 @@ export async function createWorkspaceMember(req, res) {
             user = data;
         } else if (normalizedEmail) {
             const { data, error } = await supabase
-                .from("User")
+                .from("users")
                 .select("id, email, name")
                 .eq("email", normalizedEmail)
                 .maybeSingle();
