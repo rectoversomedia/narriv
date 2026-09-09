@@ -27,8 +27,8 @@ const cleanupIntervals = new Map();
  */
 router.get("/stream", verifyTokenSSE, async (req, res) => {
     try {
-        const workspaceIds = req.user.isDemo ? ["demo-workspace"] : await getUserWorkspaceIds(req.user.id);
-        const workspaceId = workspaceIds[0] || (req.user.isDemo ? "demo-workspace" : req.user.id);
+        const workspaceIds = await getUserWorkspaceIds(req.user.id);
+        const workspaceId = workspaceIds[0] || (req.user.isDemo ? "4c77fd4b-7dc2-4a9b-be78-f9eee336e042" : req.user.id);
 
         // Set SSE headers
         res.setHeader("Content-Type", "text/event-stream");
