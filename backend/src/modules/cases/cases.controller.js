@@ -22,7 +22,7 @@ export async function listCases(req, res) {
 
         if (search) {
             query = query.or(
-                `title.ilike.%${search}%,description.ilike.%${search}%,assigned_to.ilike.%${search}%,assigned_team.ilike.%${search}%`
+                `title.ilike.%${search}%,description.ilike.%${search}%`
             );
         }
         if (status) query = query.eq("status", status);
@@ -38,7 +38,11 @@ export async function listCases(req, res) {
         const totalPages = Math.ceil((count || 0) / limit);
 
         return res.json({
-            data: cases || [],
+            data: (cases || []).map(c => ({
+                ...c,
+                assignedTo: c.assignee_id || null,
+                assignedTeam: null,
+            })),
             meta: { page, limit, total: count || 0, totalPages },
         });
     } catch (error) {
@@ -70,7 +74,11 @@ export async function getCase(req, res) {
             return notFound(res, "Case not found", "CASE_NOT_FOUND");
         }
 
-        return res.json(caseRecord);
+        return res.json({
+            ...caseRecord,
+            assignedTo: caseRecord.assignee_id || null,
+            assignedTeam: null,
+        });
     } catch (error) {
         logStructured("error", "Error getting case:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
@@ -95,8 +103,7 @@ export async function createCase(req, res) {
                 priority: priority || "medium",
                 source_type: sourceType || null,
                 source_id: sourceId || null,
-                assigned_to: assignedTo || null,
-                assigned_team: assignedTeam || null,
+                assignee_id: assignedTo || null,
                 deadline: deadline ? new Date(deadline).toISOString() : null,
             })
             .select()
@@ -114,7 +121,11 @@ export async function createCase(req, res) {
             metadata: { workspace_id: scopedWorkspaceId, case_id: caseRecord.id, title },
         });
 
-        return res.status(201).json(caseRecord);
+        return res.status(201).json({
+            ...caseRecord,
+            assignedTo: caseRecord.assignee_id || null,
+            assignedTeam: null,
+        });
     } catch (error) {
         logStructured("error", "Error creating case:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
@@ -152,8 +163,7 @@ export async function updateCase(req, res) {
         if (updateData.description !== undefined) supabaseUpdateData.description = updateData.description;
         if (updateData.status !== undefined) supabaseUpdateData.status = updateData.status;
         if (updateData.priority !== undefined) supabaseUpdateData.priority = updateData.priority;
-        if (updateData.assignedTo !== undefined) supabaseUpdateData.assigned_to = updateData.assignedTo;
-        if (updateData.assignedTeam !== undefined) supabaseUpdateData.assigned_team = updateData.assignedTeam;
+        if (updateData.assignedTo !== undefined) supabaseUpdateData.assignee_id = updateData.assignedTo || null;
         if (updateData.deadline !== undefined) {
             supabaseUpdateData.deadline = updateData.deadline ? new Date(updateData.deadline).toISOString() : null;
         }
@@ -178,7 +188,11 @@ export async function updateCase(req, res) {
             metadata: { workspace_id: scopedWorkspaceId, case_id: updated.id, changes: updateData },
         });
 
-        return res.json(updated);
+        return res.json({
+            ...updated,
+            assignedTo: updated.assignee_id || null,
+            assignedTeam: null,
+        });
     } catch (error) {
         logStructured("error", "Error updating case:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);

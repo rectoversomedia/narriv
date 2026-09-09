@@ -186,7 +186,11 @@ router.get("/:id", async (req, res) => {
             alert: plan.alert || null,
             cluster: plan.cluster || null,
             options,
-            generatedAssets: plan.generated_assets || []
+            generatedAssets: plan.generated_assets || [],
+            status: plan.status,
+            priority: plan.priority,
+            workflowStatus: plan.status || "pending",
+            escalationLevel: plan.priority || "medium",
         });
     } catch (error) {
         logStructured("error", "Error fetching action plan:", { error: error?.message || error, stack: error?.stack });

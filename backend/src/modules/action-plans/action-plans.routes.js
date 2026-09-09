@@ -86,8 +86,8 @@ function buildActionPlanResponse(plan) {
         assignedTo: plan.assigned_to,
         assignedTeam: plan.assigned_team || null,
         deadline: plan.deadline || null,
-        escalationLevel: plan.escalation_level || plan.priority || "medium",
-        workflowStatus: plan.workflow_status || plan.status || "open",
+        escalationLevel: plan.priority || "medium",
+        workflowStatus: plan.status || "open",
         inputNarrative: primaryOption.executive_summary
             || primaryOption.severity_assessment
             || plan.description

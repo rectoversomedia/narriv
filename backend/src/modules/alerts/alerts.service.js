@@ -246,7 +246,6 @@ export async function escalateAlertsForWorkspace(workspaceId) {
             .from('alerts')
             .update({
                 escalation_level: nextLevel,
-                workflow_status: "blocked",
                 assigned_team: nextRole.roleName,
             })
             .eq('id', alert.id)
@@ -304,7 +303,6 @@ export async function escalateAlertsForWorkspace(workspaceId) {
             .from('alerts')
             .update({
                 escalation_level: "critical",
-                workflow_status: "blocked",
                 assigned_team: criticalRole.role_name,
             })
             .eq('id', alert.id)
