@@ -86,7 +86,9 @@ router.get("/", async (req, res) => {
                 assigned_to,
                 priority,
                 status,
-                created_at
+                created_at,
+                alert:alerts(id, title, severity),
+                cluster:narrative_clusters(id, title, summary)
             `, { count: "exact" })
             .in("workspace_id", scopedWorkspaceIds)
             .order("created_at", { ascending: false })
@@ -123,8 +125,8 @@ router.get("/", async (req, res) => {
             data: (data || []).map(plan => ({
                 id: plan.id,
                 title: plan.title,
-                alert: null,
-                cluster: null,
+                alert: plan.alert || null,
+                cluster: plan.cluster || null,
                 assignedTo: plan.assigned_to,
                 assignedTeam: null,
                 deadline: null,
@@ -150,6 +152,8 @@ router.get("/:id", async (req, res) => {
             .from("action_plans")
             .select(`
                 *,
+                alert:alerts(id, title, severity),
+                cluster:narrative_clusters(id, title, summary),
                 generated_assets:generated_assets(*)
             `)
             .eq("id", id)
@@ -179,8 +183,8 @@ router.get("/:id", async (req, res) => {
             id: plan.id,
             title: plan.title,
             createdAt: plan.created_at,
-            alert: null,
-            cluster: null,
+            alert: plan.alert || null,
+            cluster: plan.cluster || null,
             options,
             generatedAssets: plan.generated_assets || []
         });

@@ -81,6 +81,8 @@ function buildActionPlanResponse(plan) {
 
     return {
         id: plan.id,
+        alert: plan.alert || null,
+        cluster: plan.cluster || null,
         assignedTo: plan.assigned_to,
         assignedTeam: plan.assigned_team || null,
         deadline: plan.deadline || null,
@@ -89,6 +91,7 @@ function buildActionPlanResponse(plan) {
         inputNarrative: primaryOption.executive_summary
             || primaryOption.severity_assessment
             || plan.description
+            || (plan.alert ? `Alert Context: ${plan.alert.title}` : (plan.cluster ? `Cluster Context: ${plan.cluster.title}` : ""))
             || "",
         evidenceSummary: `Status: ${plan.status || "open"} · Priority: ${plan.priority || "medium"}`,
         outputs: [
@@ -112,7 +115,11 @@ router.get("/", async (req, res) => {
 
         const { data: latestPlan, error } = await supabase
             .from("action_plans")
-            .select("*")
+            .select(`
+                *,
+                alert:alerts(id, title, severity),
+                cluster:narrative_clusters(id, title, summary)
+            `)
             .in("workspace_id", scopedWorkspaceIds)
             .order("created_at", { ascending: false })
             .limit(1)
@@ -236,8 +243,8 @@ router.get("/:id", async (req, res) => {
             .from("action_plans")
             .select(`
                 *,
-                alert:alerts(*),
-                cluster:narrative_clusters(*)
+                alert:alerts(id, title, severity),
+                cluster:narrative_clusters(id, title, summary)
             `)
             .eq("id", id)
             .maybeSingle();
