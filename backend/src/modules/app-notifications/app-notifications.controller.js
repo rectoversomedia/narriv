@@ -6,6 +6,52 @@ import { logStructured } from "../../lib/logger.js";
 // Fetch paginated notifications
 export const getNotifications = async (req, res) => {
     try {
+        if (req.user?.isDemo) {
+            const mockNotifications = [
+                {
+                    id: "demo-notif-1",
+                    workspace_id: "demo-workspace",
+                    type: "alert",
+                    title: "High Negative Spike Detected",
+                    message: "Negative sentiment spiked by 42% on Twitter/X in the last 2 hours.",
+                    link: "/alert-center",
+                    is_read: false,
+                    created_at: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+                },
+                {
+                    id: "demo-notif-2",
+                    workspace_id: "demo-workspace",
+                    type: "action_plan",
+                    title: "Action Plan Ready for Review",
+                    message: "AI generated an urgent response strategy for PR crisis mitigation.",
+                    link: "/action-plans",
+                    is_read: false,
+                    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+                },
+                {
+                    id: "demo-notif-3",
+                    workspace_id: "demo-workspace",
+                    type: "signal",
+                    title: "Emerging Topic: AI Governance",
+                    message: "New narrative cluster identified across 12 articles and posts.",
+                    link: "/signals",
+                    is_read: true,
+                    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+                },
+            ];
+
+            return res.json({
+                data: mockNotifications,
+                meta: {
+                    page: 1,
+                    limit: 20,
+                    total: mockNotifications.length,
+                    unreadCount: mockNotifications.filter(n => !n.is_read).length,
+                    totalPages: 1
+                }
+            });
+        }
+
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
         const workspaceId = workspaceIds[0];
         if (!workspaceId) return res.status(403).json({ error: "No workspace access" });
@@ -55,6 +101,10 @@ export const getNotifications = async (req, res) => {
 // Mark single as read
 export const markAsRead = async (req, res) => {
     try {
+        if (req.user?.isDemo) {
+            return res.json({ success: true });
+        }
+
         const { id } = req.params;
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
 
@@ -88,6 +138,10 @@ export const markAsRead = async (req, res) => {
 // Mark all as read
 export const markAllAsRead = async (req, res) => {
     try {
+        if (req.user?.isDemo) {
+            return res.json({ success: true });
+        }
+
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
         const workspaceId = workspaceIds[0];
         if (!workspaceId) return res.status(403).json({ error: "No workspace access" });
