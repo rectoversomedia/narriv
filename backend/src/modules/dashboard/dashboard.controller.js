@@ -111,13 +111,13 @@ export const getSummary = async (req, res) => {
                 if (startDate) {
                     const dateStart = new Date(startDate);
                     if (!isNaN(dateStart.getTime())) {
-                        dateFilter.gte = dateStart;
+                        dateFilter.gte = dateStart.toISOString();
                     }
                 }
                 if (endDate) {
                     const dateEnd = new Date(endDate);
                     if (!isNaN(dateEnd.getTime())) {
-                        dateFilter.lte = dateEnd;
+                        dateFilter.lte = dateEnd.toISOString();
                     }
                 }
             }
