@@ -3,7 +3,8 @@ const STATIC_ASSETS = [
   '/',
   '/manifest.json',
   '/logo-final-narriv.png',
-  '/favicon.ico',
+  '/logo-narriv-putih.png',
+  '/logo-wording-narriv.png',
 ];
 
 // Install event - cache static assets

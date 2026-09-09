@@ -40,17 +40,55 @@ export function Sidebar() {
     staleTime: 30 * 1000,
   });
 
-  const activeLogo = workspaceSettingsQuery.data?.logoUrl ? resolveBackendAssetUrl(workspaceSettingsQuery.data.logoUrl) : "/logo-final-narriv.png";
+  const customLogoUrl = workspaceSettingsQuery.data?.logoUrl ? resolveBackendAssetUrl(workspaceSettingsQuery.data.logoUrl) : null;
+  const activeLogo = customLogoUrl || "/logo-narriv-putih.png";
   const brandName = workspaceSettingsQuery.data?.brandName || "Narriv";
 
   return (
     <>
       <aside className={`sidebar-gradient fixed inset-y-0 left-0 z-30 hidden overflow-y-auto px-4 py-6 text-white transition-[width,padding] duration-300 lg:block ${sidebarCollapsed ? "w-[72px] px-2" : "w-[240px]"}`}>
         <div className={`flex items-center gap-2 px-1 ${sidebarCollapsed ? "justify-center" : ""}`}>
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full">
-            <Image src={activeLogo} alt={brandName} width={48} height={48} priority unoptimized={activeLogo.startsWith("http")} className="h-12 w-12 scale-[1.28] object-contain" />
-          </span>
-          {sidebarCollapsed ? null : <span className="text-[24px] font-bold tracking-[-0.05em] bg-clip-text text-transparent bg-linear-to-r from-white via-white to-white/70">{brandName}</span>}
+          {sidebarCollapsed ? (
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full">
+              <Image
+                src={customLogoUrl || "/logo-final-narriv.png"}
+                alt={brandName}
+                width={40}
+                height={40}
+                priority
+                unoptimized={Boolean(customLogoUrl)}
+                className="h-10 w-10 object-contain"
+              />
+            </span>
+          ) : customLogoUrl ? (
+            <>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full">
+                <Image
+                  src={customLogoUrl}
+                  alt={brandName}
+                  width={48}
+                  height={48}
+                  priority
+                  unoptimized
+                  className="h-12 w-12 scale-[1.28] object-contain"
+                />
+              </span>
+              <span className="text-[24px] font-bold tracking-[-0.05em] bg-clip-text text-transparent bg-linear-to-r from-white via-white to-white/70">
+                {brandName}
+              </span>
+            </>
+          ) : (
+            <div className="flex h-10 items-center px-1">
+              <Image
+                src="/logo-narriv-putih.png"
+                alt={brandName}
+                width={124}
+                height={32}
+                priority
+                className="h-7 w-auto object-contain"
+              />
+            </div>
+          )}
         </div>
 
         <button
@@ -131,7 +169,7 @@ export function Sidebar() {
           <button type="button" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} aria-label="Close menu" />
           <div className="absolute inset-x-3 bottom-3 max-h-[82dvh] overflow-y-auto rounded-[24px] bg-[#090D16] border border-border p-4 shadow-2xl">
             <div className="mb-4 flex items-center justify-between">
-              <p className="text-lg font-bold bg-clip-text text-transparent bg-linear-to-r from-white to-white/70">Narriv</p>
+              <Image src="/logo-narriv-putih.png" alt="Narriv" width={110} height={28} priority className="h-7 w-auto object-contain" />
               <button type="button" onClick={() => setOpen(false)} className="rounded-xl border border-border p-2 text-white/60 hover:text-white hover:bg-white/5"><X size={18} /></button>
             </div>
             <div className="grid gap-2">
