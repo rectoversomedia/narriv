@@ -8,15 +8,19 @@ declare global {
   }
 }
 
-const AUTH_COOKIE_NAME = "narriv-authenticated";
+const AUTH_COOKIE_NAME = "narriv_auth";
 const AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 
-function setAuthCookie(isAuthenticated: boolean) {
+function setAuthCookie(tokenOrClear: string | boolean | null) {
   if (typeof document === "undefined") return;
 
-  document.cookie = isAuthenticated
-    ? `${AUTH_COOKIE_NAME}=true; path=/; max-age=${AUTH_COOKIE_MAX_AGE}; SameSite=Lax`
-    : `${AUTH_COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax`;
+  if (typeof tokenOrClear === "string" && tokenOrClear) {
+    document.cookie = `${AUTH_COOKIE_NAME}=${encodeURIComponent(tokenOrClear)}; path=/; max-age=${AUTH_COOKIE_MAX_AGE}; SameSite=Lax`;
+  } else if (tokenOrClear === false || tokenOrClear === null) {
+    // Delete both narriv_auth and legacy narriv-authenticated cookies
+    document.cookie = `${AUTH_COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax`;
+    document.cookie = `narriv-authenticated=; path=/; max-age=0; SameSite=Lax`;
+  }
 }
 
 // Clean up stale fake demo tokens from legacy code (client-generated, not real JWTs)
@@ -66,21 +70,27 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       setToken: (token) => {
-        setAuthCookie(!!token);
+        setAuthCookie(token);
         set({ token, isAuthenticated: !!token });
       },
       setRefreshToken: (refreshToken) => set({ refreshToken }),
       setUser: (user) => set({ user }),
       setSession: (token, user, refreshToken = null) => {
-        setAuthCookie(true);
+        setAuthCookie(token);
         set({ token, refreshToken, user, isAuthenticated: true });
       },
       logout: () => {
         setAuthCookie(false);
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("narriv_demo_user");
+          localStorage.removeItem("narriv_demo_token");
+          localStorage.removeItem("narriv_demo_refresh_token");
+          localStorage.removeItem("narriv-auth");
+        }
         set({ token: null, refreshToken: null, user: null, isAuthenticated: false });
       },
       initDemoSession: (user, accessToken, refreshToken) => {
-        setAuthCookie(true);
+        setAuthCookie(accessToken);
         set({ token: accessToken, refreshToken: refreshToken || null, user, isAuthenticated: true });
       },
     }),
