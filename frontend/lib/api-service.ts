@@ -11,7 +11,7 @@
 
 import type { LucideIcon } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
-import type { AuthUser } from "@/store/useAuthStore";
+import { useAuthStore, type AuthUser } from "@/store/useAuthStore";
 import { getMockDashboardSummary, isDemoMode } from "./demo-mock-data";
 
 // ---------------------------------------------------------------------------
@@ -2190,10 +2190,30 @@ export class SSERealtimeClient {
   connect(): void {
     if (typeof window === "undefined") return; // SSR guard
 
-    // SECURITY FIX: SSE now uses cookie-based authentication
-    // The backend verifies the session cookie instead of URL token
-    const authState = localStorage.getItem("narriv-auth");
-    if (!authState) {
+    let token: string | null = null;
+    if (typeof window !== "undefined") {
+      try {
+        token = useAuthStore.getState().token || null;
+      } catch {
+        token = null;
+      }
+    }
+    if (!token) {
+      const authState = localStorage.getItem("narriv-auth");
+      if (authState) {
+        try {
+          const parsed = JSON.parse(authState);
+          token = parsed?.state?.token || null;
+        } catch {
+          token = authState;
+        }
+      }
+    }
+    if (!token) {
+      token = localStorage.getItem("narriv_demo_token") || null;
+    }
+
+    if (!token) {
       this.options.onError?.(new Error("No auth token found"));
       return;
     }
@@ -2201,9 +2221,9 @@ export class SSERealtimeClient {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "https://narriv-api.vercel.app";
     // Pass token as query param — EventSource cannot send custom headers.
     // Vercel Edge strips HttpOnly cookies from cross-origin SSE requests,
-    // so we read the JWT directly from localStorage and send it as a query param.
+    // so we read the JWT directly and send it as a query param.
     // The backend's verifyTokenSSE middleware accepts ?token=<jwt> for SSE endpoints only.
-    const url = `${baseUrl}/api/realtime/stream?token=${encodeURIComponent(authState)}`;
+    const url = `${baseUrl}/api/realtime/stream?token=${encodeURIComponent(token)}`;
 
     try {
       // withCredentials: true sends same-origin cookies but Vercel Edge strips

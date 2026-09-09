@@ -27,14 +27,17 @@ const cleanupIntervals = new Map();
  */
 router.get("/stream", verifyTokenSSE, async (req, res) => {
     try {
-        const workspaceIds = await getUserWorkspaceIds(req.user.id);
-        const workspaceId = workspaceIds[0];
+        const workspaceIds = req.user.isDemo ? ["demo-workspace"] : await getUserWorkspaceIds(req.user.id);
+        const workspaceId = workspaceIds[0] || (req.user.isDemo ? "demo-workspace" : req.user.id);
 
         // Set SSE headers
         res.setHeader("Content-Type", "text/event-stream");
         res.setHeader("Cache-Control", "no-cache");
         res.setHeader("Connection", "keep-alive");
         res.setHeader("X-Accel-Buffering", "no"); // Disable nginx buffering
+        if (typeof res.flushHeaders === "function") {
+            res.flushHeaders();
+        }
 
         // Send initial connection event
         res.write(formatSSEMessage("connected", {
@@ -97,7 +100,11 @@ router.get("/stream", verifyTokenSSE, async (req, res) => {
             userId: req.user?.id,
             error: error.message
         });
-        res.status(500).json({ error: "Failed to establish SSE connection" });
+        if (!res.headersSent) {
+            res.status(500).json({ error: "Failed to establish SSE connection" });
+        } else {
+            res.end();
+        }
     }
 });
 

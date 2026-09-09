@@ -17,7 +17,7 @@ const SSE_TTL = 300; // 5 minutes TTL for connection entries
 // Check if Redis is available
 const isRedisAvailable = () => {
     try {
-        return redis.status === "ready";
+        return Boolean(redis && redis.status === "ready" && !redis.mockMode && typeof redis.hset === "function");
     } catch {
         return false;
     }
