@@ -2,10 +2,10 @@
 
 import { useId, useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { X, Sparkles, Loader2, Megaphone, FileText, Users, ShieldAlert, MessageCircle, Handshake, BarChart3 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { createActionPlan, type ActionStrategyType } from "@/lib/api-service";
+import { createActionPlan, getAlerts, getNarratives, type ActionStrategyType } from "@/lib/api-service";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
@@ -33,11 +33,27 @@ export function CreateActionPlanModal({ open, onOpenChange }: CreateActionPlanMo
   const toast = useToast();
 
   const [strategyType, setStrategyType] = useState<ActionStrategyType>("crisis_response");
+  const [selectedAlertId, setSelectedAlertId] = useState<string>("");
+  const [selectedClusterId, setSelectedClusterId] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { data: alertsData } = useQuery({
+    queryKey: ["alerts-modal-select"],
+    queryFn: () => getAlerts({ limit: 50 }),
+    enabled: open,
+  });
+
+  const { data: narrativesData } = useQuery({
+    queryKey: ["narratives-modal-select"],
+    queryFn: () => getNarratives({ limit: 50 }),
+    enabled: open,
+  });
 
   useEffect(() => {
     if (open) {
       setStrategyType("crisis_response");
+      setSelectedAlertId("");
+      setSelectedClusterId("");
     }
   }, [open]);
 
@@ -64,7 +80,11 @@ export function CreateActionPlanModal({ open, onOpenChange }: CreateActionPlanMo
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const result = await createActionPlan({ strategyType });
+      const result = await createActionPlan({
+        strategyType,
+        alertId: selectedAlertId || undefined,
+        clusterId: selectedClusterId || undefined,
+      });
       if (result) {
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ["action-queue"] }),
@@ -91,7 +111,7 @@ export function CreateActionPlanModal({ open, onOpenChange }: CreateActionPlanMo
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
-        className="w-full max-w-md rounded-2xl border bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+        className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">
@@ -139,6 +159,46 @@ export function CreateActionPlanModal({ open, onOpenChange }: CreateActionPlanMo
                 );
               })}
             </div>
+          </div>
+
+          {/* Alert Selector (Optional) */}
+          <div className="space-y-1.5">
+            <label htmlFor="modal-alert-select" className="text-[12px] font-black text-slate-700">
+              {t("alertLabel")}
+            </label>
+            <select
+              id="modal-alert-select"
+              value={selectedAlertId}
+              onChange={(e) => setSelectedAlertId(e.target.value)}
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-semibold text-slate-700 outline-none transition focus:border-[#465FFF] focus:ring-2 focus:ring-[#465FFF]/15"
+            >
+              <option value="">{t("alertPlaceholder")}</option>
+              {alertsData?.data?.map((alert) => (
+                <option key={alert.id} value={alert.id}>
+                  {alert.title} {alert.severity ? `(${alert.severity.toUpperCase()})` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Narrative Cluster Selector (Optional) */}
+          <div className="space-y-1.5">
+            <label htmlFor="modal-cluster-select" className="text-[12px] font-black text-slate-700">
+              {t("clusterLabel")}
+            </label>
+            <select
+              id="modal-cluster-select"
+              value={selectedClusterId}
+              onChange={(e) => setSelectedClusterId(e.target.value)}
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-semibold text-slate-700 outline-none transition focus:border-[#465FFF] focus:ring-2 focus:ring-[#465FFF]/15"
+            >
+              <option value="">{t("clusterPlaceholder")}</option>
+              {narrativesData?.data?.map((cluster) => (
+                <option key={cluster.id} value={cluster.id}>
+                  {cluster.title}
+                </option>
+              ))}
+            </select>
           </div>
 
           <p className="text-[11px] font-semibold text-slate-400">{t("hint")}</p>

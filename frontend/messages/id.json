@@ -3265,6 +3265,10 @@
     "modal": {
       "title": "Buat Rencana Aksi",
       "desc": "Hasilkan rencana aksi berbasis AI untuk workspace Anda.",
+      "alertLabel": "Terkait Alert (Opsional)",
+      "alertPlaceholder": "Pilih alert terkait (opsional)...",
+      "clusterLabel": "Terkait Cluster Narasi (Opsional)",
+      "clusterPlaceholder": "Pilih cluster terkait (opsional)...",
       "strategyLabel": "Jenis Strategi",
       "strategy": {
         "pr_response": "Respons PR",

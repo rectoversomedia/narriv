@@ -3293,6 +3293,10 @@
     "modal": {
       "title": "Create Action Plan",
       "desc": "Generate an AI-powered action plan for your workspace.",
+      "alertLabel": "Related Alert (Optional)",
+      "alertPlaceholder": "Select related alert (optional)...",
+      "clusterLabel": "Related Narrative Cluster (Optional)",
+      "clusterPlaceholder": "Select related cluster (optional)...",
       "strategyLabel": "Strategy Type",
       "strategy": {
         "pr_response": "PR Response",
