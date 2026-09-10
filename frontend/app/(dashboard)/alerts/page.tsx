@@ -459,7 +459,7 @@ function CriticalIncident({
     : [];
 
   return (
-    <Panel className="overflow-hidden border-[#FAD7D7] bg-linear-to-br from-[#FFF4F4] via-white to-white p-5">
+    <Panel className="min-h-0 h-auto border-[#FAD7D7] bg-linear-to-br from-[#FFF4F4] via-white to-white p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="flex size-8 items-center justify-center rounded-full bg-[#EF4444]/10 text-[#EF4444] ring-4 ring-[#EF4444]/5"><AlertTriangle size={17} fill="#EF4444" /></span>
@@ -489,31 +489,31 @@ function CriticalIncident({
       ) : alert ? (
         <>
           <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h3 className="text-[22px] font-black leading-tight tracking-[-0.04em] text-[#070B28]">{alert.title}</h3>
-              <p className="mt-2 line-clamp-2 text-[12px] font-semibold leading-5 text-[#31406B]">{alert.description}</p>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-[18px] sm:text-[20px] font-black leading-snug tracking-[-0.03em] text-[#070B28] line-clamp-2">{alert.title}</h3>
+              <p className="mt-1.5 line-clamp-2 text-[12px] font-semibold leading-5 text-[#31406B]">{alert.description}</p>
             </div>
-            <span className="rounded-[7px] bg-[#EF4444]/10 px-3 py-1 text-[10px] font-black tracking-[0.12em] text-[#EF4444]">{ta("v2.incident.critical")}</span>
+            <span className="shrink-0 rounded-[7px] bg-[#EF4444]/10 px-3 py-1 text-[10px] font-black tracking-[0.12em] text-[#EF4444]">{ta("v2.incident.critical")}</span>
           </div>
-          <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-5">
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
             {stats.map(([label, value, helper, tone]) => (
-              <div key={label} className="rounded-[12px] border border-[#F4D8D8] bg-white/75 p-3 shadow-[0_1px_3px_rgba(16,24,40,0.03)]">
-                <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#8A94B8]">{label}</p>
-                <p className={cn("mt-2 truncate text-[15px] font-black leading-none tracking-[-0.02em]", toneStyles[tone].text)} title={value}>{value}</p>
-                <p className="mt-2 truncate text-[9px] font-bold text-[#68739F]" title={helper}>{helper}</p>
+              <div key={label} className="min-w-0 rounded-[12px] border border-[#F4D8D8] bg-white/75 p-2.5 shadow-[0_1px_3px_rgba(16,24,40,0.03)]">
+                <p className="truncate text-[9px] font-black uppercase tracking-wider text-[#8A94B8]" title={label}>{label}</p>
+                <p className={cn("mt-1.5 truncate text-[14px] font-black leading-tight tracking-[-0.02em]", toneStyles[tone].text)} title={value}>{value}</p>
+                <p className="mt-1.5 truncate text-[9px] font-bold text-[#68739F]" title={helper}>{helper}</p>
               </div>
             ))}
           </div>
-          <div className="mt-6 grid gap-3 border-t border-[#F2DCDC] pt-4 sm:grid-cols-3">
+          <div className="mt-5 grid gap-3 border-t border-[#F2DCDC] pt-3.5 sm:grid-cols-3">
             <SourceIconList label={ta("v2.incident.source")} sources={alert.sources} extraSources={alert.extraSources} />
-            <div>
+            <div className="min-w-0">
               <p className="mb-2 text-[9px] font-black text-[#68739F]">{ta("v2.incident.owner")}</p>
               <div className="inline-flex min-h-[30px] max-w-full items-center gap-1.5 rounded-[7px] border border-[#E6EAF2] bg-white px-2 text-[9px] font-black leading-none text-[#101334]">
                 <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[#465FFF]">O</span>
                 <span className="truncate">{alert.sourceLabel || ta("table.unassigned")}</span>
               </div>
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="mb-2 text-[9px] font-black text-[#68739F]">{ta("v2.incident.status")}</p>
               <div className="flex flex-wrap items-center gap-2"><StatusBadge status={alert.status} /><span className="text-[9px] font-black text-[#31406B]">{ta("v2.incident.since", { time: alert.time })}</span></div>
             </div>
@@ -1477,7 +1477,7 @@ export default function AlertsPage() {
       ) : null}
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_336px]">
-        <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(250px,0.7fr)_minmax(250px,0.7fr)]">
+        <div className="grid min-w-0 items-start gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(250px,0.7fr)_minmax(250px,0.7fr)]">
           <CriticalIncident alert={highlightedCriticalAlert} totalCritical={totalCriticalAlerts} isLoading={criticalAlertsQuery.isLoading} ta={ta} />
           <DeliveryStatus ta={ta} integrations={integrationsQuery.data?.data ?? []} isLoading={integrationsQuery.isLoading} />
           <StakeholderEngagement ta={ta} summary={summary} memberCount={membersQuery.data ? membersQuery.data.length : null} isLoading={summaryQuery.isLoading || membersQuery.isLoading} />

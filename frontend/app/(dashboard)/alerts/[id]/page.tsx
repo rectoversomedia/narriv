@@ -271,7 +271,7 @@ export default function AlertDetailPage() {
       {alertQuery.isPending ? (
         <PanelSkeleton />
       ) : liveData ? (
-        <section className={`overflow-hidden rounded-[20px] border ${toneClass[tone].border} bg-linear-to-br ${toneClass[tone].panel} via-white to-white shadow-[0_2px_16px_rgba(16,24,40,0.04)]`}>
+        <section className={`min-h-0 h-auto overflow-hidden rounded-[20px] border ${toneClass[tone].border} bg-linear-to-br ${toneClass[tone].panel} via-white to-white shadow-[0_2px_16px_rgba(16,24,40,0.04)]`}>
           <div className="p-5 sm:p-6">
             <div className="flex flex-wrap items-center gap-3">
               <StatusBadge tone={tone}>{liveData.severity ?? "alert"}</StatusBadge>
