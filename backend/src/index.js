@@ -155,7 +155,7 @@ app.get("/metrics", verifyToken, (req, res) => {
 app.use("/auth", rateLimit(RATE_LIMITS.auth), authRoutes);
 app.use("/ai", rateLimit(RATE_LIMITS.ai_generation), apiSecurityHeaders, aiRoutes);
 app.use("/ingestion", rateLimit(RATE_LIMITS.ingestion), ingestionRoutes);
-app.use("/actions", rateLimit(RATE_LIMITS.ai_generation), apiSecurityHeaders, actionsRoutes);
+app.use("/actions", rateLimit(RATE_LIMITS.api_default), apiSecurityHeaders, actionsRoutes);
 app.use("/feedback", rateLimit(RATE_LIMITS.feedback), apiSecurityHeaders, feedbackRoutes);
 app.use("/signals", signalsRoutes);
 app.use("/sources", sourcesRoutes);

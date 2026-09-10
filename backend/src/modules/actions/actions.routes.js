@@ -9,12 +9,13 @@ import { createActionPlanBodySchema } from "./actions.schema.js";
 import { recordAuditLog } from "../../lib/audit.js";
 import { logStructured } from "../../lib/logger.js";
 import { wrapAsync } from "../../lib/sentry.js";
+import { rateLimit, RATE_LIMITS } from "../../middlewares/rate-limit.js";
 
 const router = express.Router();
 router.use(verifyToken);
 
 // POST /api/actions — Generate a new action plan
-router.post("/", validateRequest({ body: createActionPlanBodySchema }), async (req, res) => {
+router.post("/", rateLimit(RATE_LIMITS.ai_generation), validateRequest({ body: createActionPlanBodySchema }), async (req, res) => {
     try {
         const { workspaceId, strategyType, alertId, clusterId } = req.body;
 
@@ -199,7 +200,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // POST /api/actions/multi-step — Generate a multi-step sequential action plan
-router.post("/multi-step", async (req, res) => {
+router.post("/multi-step", rateLimit(RATE_LIMITS.ai_generation), async (req, res) => {
     try {
         const { workspaceId, strategyType, alertId, clusterId, maxSteps } = req.body;
 
