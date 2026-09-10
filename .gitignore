@@ -1,3 +1,49 @@
+# Dependencies & Package Managers
+node_modules/
+pnpm-lock.yaml
+yarn.lock
+
+# Environment Variables (keep secrets out, keep examples in)
+.env*
+!.env.example
+!.env*.example
+
+# Build Outputs
+dist/
+build/
+.next/
+out/
+vercel_dist/
+.vercel
+*.tsbuildinfo
+
+# Testing & QA Artifacts
+coverage/
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+
+# QA Media & Scratch Files (prevent repo bloat)
+docs/qa/videos/
+*.webm
+*.mp4
+qa_*_runner.*
+qa-*-results.json
+
+# Process & Context Rules
+process
+!process/
+process/*
+!process/context/
+!process/context/**
+!process/general-plans/
+process/general-plans/*
+!process/general-plans/references/
+process/general-plans/references/*
+!process/general-plans/references/production-readiness-runbook.md
+
+# AI / Harness Tooling
 .trunk
 opencode.json
 .opencode
@@ -6,25 +52,12 @@ opencode.json
 .playwright-mcp
 .codex
 .commandcode
-process
-!process/
-process/*
-!process/general-plans/
-process/general-plans/*
-!process/general-plans/references/
-process/general-plans/references/*
-!process/general-plans/references/production-readiness-runbook.md
-pnpm-lock.yaml
-yarn.lock
-.vercel
-.env*
-node_modules/
+
+# Python Artifacts (for .agents skills)
+__pycache__/
+*.py[cod]
+
+# Logs & System Files
 *.log
 .DS_Store
-dist/
-build/
-.next/
-out/
-coverage/
-*.tsbuildinfo
-vercel_dist/
+Thumbs.db
