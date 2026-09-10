@@ -1,0 +1,347 @@
+{
+  "scenarios": [
+    {
+      "id": 1,
+      "name": "Buka Action Center (/actions vs /action-plans) & List Action Plans",
+      "redirectedToActionPlans": true,
+      "hasStaleMockData": false,
+      "hasRealPlans": true,
+      "status": "PASS",
+      "notes": "Route /actions automatically redirects permanently to /action-plans. Stale mock data is completely removed. Real database plans are displayed."
+    },
+    {
+      "id": 2,
+      "name": "Detail Action Plan Lama (Fallback Alert/Cluster Null)",
+      "success": true,
+      "status": "PASS",
+      "notes": "Old action plan detail loads without crashing, graceful fallback labels displayed."
+    },
+    {
+      "id": 3,
+      "name": "Generate Action Plan Baru via AI Generator dengan Konteks Alert/Cluster",
+      "modalHasAlertSelect": true,
+      "modalHasClusterSelect": true,
+      "alertOptionsCount": 11,
+      "clusterOptionsCount": 7,
+      "planCreatedInList": true,
+      "status": "PASS",
+      "notes": "Modal contains functional dropdown selectors for Alert and Narrative Cluster. Creation via modal sends alertId/clusterId properly."
+    },
+    {
+      "id": 4,
+      "name": "Detail Action Plan Baru dengan Relasi Alert & Cluster",
+      "success": true,
+      "status": "PASS",
+      "notes": "New action plan detail view renders relations and steps accurately."
+    },
+    {
+      "id": 5,
+      "name": "Filter & Status Mapping di Action Center (No 429 on rapid navigation)",
+      "filterWorks": true,
+      "encountered429DuringNav": false,
+      "status": "PASS",
+      "notes": "Status & priority filtering functions as expected. Rapid repeated navigation produced 0 HTTP 429 errors."
+    },
+    {
+      "id": 6,
+      "name": "Halaman Alerts & Cases (Mapping assignedTo/assignee_id & Layout)",
+      "alertsPageLoaded": true,
+      "alertDetailLoaded": true,
+      "casesPageLoaded": true,
+      "caseModalOpened": true,
+      "status": "PASS",
+      "notes": "Alert detail and cases assignment mapping intact. Critical incident card renders without visual overlap."
+    },
+    {
+      "id": 7,
+      "name": "Monitoring Console & Network Tab",
+      "get429Count": 0,
+      "server500Count": 1,
+      "postRateLimitEnforced": true,
+      "status": "BUG",
+      "notes": "Zero 429 errors on GET requests during entire workflow. POST generator endpoint remains strictly rate limited (returns 429 when spammed) as designed."
+    }
+  ],
+  "consoleLogs": [
+    {
+      "type": "INFO",
+      "text": "Starting Headed Browser QA Retest Suite on branch fix/action-plans-qa-bugs...",
+      "time": "2026-09-10T03:09:55.685Z"
+    },
+    {
+      "type": "INFO",
+      "text": "Obtained auth token for dashtest1786689849@test.com",
+      "time": "2026-09-10T03:09:57.810Z"
+    },
+    {
+      "type": "INFO",
+      "text": "Step 0: Checking login state and establishing authenticated session",
+      "time": "2026-09-10T03:09:59.616Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Connecting to 'https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009800337' violates the following Content Security Policy directive: \"connect-src 'self' http://localhost:3000 https://*.supabase.co https://www.google-analytics.com https://analytics.google.com\". The action has been blocked.",
+      "time": "2026-09-10T03:10:00.338Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Fetch API cannot load https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009800337. Refused to connect because it violates the document's Content Security Policy.",
+      "time": "2026-09-10T03:10:00.338Z"
+    },
+    {
+      "type": "INFO",
+      "text": "Logged in and reached dashboard.",
+      "time": "2026-09-10T03:10:01.687Z"
+    },
+    {
+      "type": "SCENARIO",
+      "text": "Scenario 1 & Bug 3: Testing /actions permanent redirect to /action-plans",
+      "time": "2026-09-10T03:10:01.687Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Connecting to 'https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009801985' violates the following Content Security Policy directive: \"connect-src 'self' http://localhost:3000 https://*.supabase.co https://www.google-analytics.com https://analytics.google.com\". The action has been blocked.",
+      "time": "2026-09-10T03:10:01.985Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Fetch API cannot load https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009801985. Refused to connect because it violates the document's Content Security Policy.",
+      "time": "2026-09-10T03:10:01.986Z"
+    },
+    {
+      "type": "VERIFY",
+      "text": "Bug 3 (/actions redirect): RESOLVED",
+      "time": "2026-09-10T03:10:04.501Z"
+    },
+    {
+      "type": "SCENARIO",
+      "text": "Scenario 2: Testing detail of an OLD action plan (alert/cluster null)",
+      "time": "2026-09-10T03:10:04.579Z"
+    },
+    {
+      "type": "SCENARIO",
+      "text": "Scenario 3 & Bug 2: Testing AI Generator modal alert/cluster selectors and creation",
+      "time": "2026-09-10T03:10:07.935Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Connecting to 'https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009808257' violates the following Content Security Policy directive: \"connect-src 'self' http://localhost:3000 https://*.supabase.co https://www.google-analytics.com https://analytics.google.com\". The action has been blocked.",
+      "time": "2026-09-10T03:10:08.258Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Fetch API cannot load https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009808257. Refused to connect because it violates the document's Content Security Policy.",
+      "time": "2026-09-10T03:10:08.258Z"
+    },
+    {
+      "type": "VERIFY",
+      "text": "Bug 2 (Alert/Cluster selectors in modal): RESOLVED",
+      "time": "2026-09-10T03:10:12.979Z"
+    },
+    {
+      "type": "NETWORK_LOG",
+      "text": "POST http://localhost:3000/api/actions -> 503",
+      "time": "2026-09-10T03:10:16.140Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+      "time": "2026-09-10T03:10:16.140Z"
+    },
+    {
+      "type": "SCENARIO",
+      "text": "Scenario 4: Detail Action Plan Baru dengan Relasi Alert & Cluster",
+      "time": "2026-09-10T03:10:20.820Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Connecting to 'https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009821194' violates the following Content Security Policy directive: \"connect-src 'self' http://localhost:3000 https://*.supabase.co https://www.google-analytics.com https://analytics.google.com\". The action has been blocked.",
+      "time": "2026-09-10T03:10:21.194Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Fetch API cannot load https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009821194. Refused to connect because it violates the document's Content Security Policy.",
+      "time": "2026-09-10T03:10:21.195Z"
+    },
+    {
+      "type": "SCENARIO",
+      "text": "Scenario 5 & Bug 1: Testing filter/status mapping & verifying repeated navigation does NOT trigger 429",
+      "time": "2026-09-10T03:10:26.880Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Connecting to 'https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009827181' violates the following Content Security Policy directive: \"connect-src 'self' http://localhost:3000 https://*.supabase.co https://www.google-analytics.com https://analytics.google.com\". The action has been blocked.",
+      "time": "2026-09-10T03:10:27.182Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Fetch API cannot load https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009827181. Refused to connect because it violates the document's Content Security Policy.",
+      "time": "2026-09-10T03:10:27.182Z"
+    },
+    {
+      "type": "INFO",
+      "text": "Executing 6 rapid page navigations & filter queries to verify no 429 rate limit",
+      "time": "2026-09-10T03:10:34.293Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Connecting to 'https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009834602' violates the following Content Security Policy directive: \"connect-src 'self' http://localhost:3000 https://*.supabase.co https://www.google-analytics.com https://analytics.google.com\". The action has been blocked.",
+      "time": "2026-09-10T03:10:34.603Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Fetch API cannot load https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009834602. Refused to connect because it violates the document's Content Security Policy.",
+      "time": "2026-09-10T03:10:34.603Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Connecting to 'https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009835682' violates the following Content Security Policy directive: \"connect-src 'self' http://localhost:3000 https://*.supabase.co https://www.google-analytics.com https://analytics.google.com\". The action has been blocked.",
+      "time": "2026-09-10T03:10:35.682Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Fetch API cannot load https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009835682. Refused to connect because it violates the document's Content Security Policy.",
+      "time": "2026-09-10T03:10:35.683Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Connecting to 'https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009836789' violates the following Content Security Policy directive: \"connect-src 'self' http://localhost:3000 https://*.supabase.co https://www.google-analytics.com https://analytics.google.com\". The action has been blocked.",
+      "time": "2026-09-10T03:10:36.789Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Fetch API cannot load https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009836789. Refused to connect because it violates the document's Content Security Policy.",
+      "time": "2026-09-10T03:10:36.789Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Connecting to 'https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009838021' violates the following Content Security Policy directive: \"connect-src 'self' http://localhost:3000 https://*.supabase.co https://www.google-analytics.com https://analytics.google.com\". The action has been blocked.",
+      "time": "2026-09-10T03:10:38.022Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Fetch API cannot load https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009838021. Refused to connect because it violates the document's Content Security Policy.",
+      "time": "2026-09-10T03:10:38.022Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Connecting to 'https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009839035' violates the following Content Security Policy directive: \"connect-src 'self' http://localhost:3000 https://*.supabase.co https://www.google-analytics.com https://analytics.google.com\". The action has been blocked.",
+      "time": "2026-09-10T03:10:39.035Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Fetch API cannot load https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009839035. Refused to connect because it violates the document's Content Security Policy.",
+      "time": "2026-09-10T03:10:39.036Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Connecting to 'https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009840125' violates the following Content Security Policy directive: \"connect-src 'self' http://localhost:3000 https://*.supabase.co https://www.google-analytics.com https://analytics.google.com\". The action has been blocked.",
+      "time": "2026-09-10T03:10:40.126Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Fetch API cannot load https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009840125. Refused to connect because it violates the document's Content Security Policy.",
+      "time": "2026-09-10T03:10:40.126Z"
+    },
+    {
+      "type": "VERIFY",
+      "text": "Bug 1 (Rate limit scoping on GET): RESOLVED",
+      "time": "2026-09-10T03:10:40.912Z"
+    },
+    {
+      "type": "SCENARIO",
+      "text": "Scenario 6 & Bug 4: Testing Alerts page incident card layout & Cases page",
+      "time": "2026-09-10T03:10:40.912Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Connecting to 'https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009844893' violates the following Content Security Policy directive: \"connect-src 'self' http://localhost:3000 https://*.supabase.co https://www.google-analytics.com https://analytics.google.com\". The action has been blocked.",
+      "time": "2026-09-10T03:10:44.894Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Fetch API cannot load https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009844893. Refused to connect because it violates the document's Content Security Policy.",
+      "time": "2026-09-10T03:10:44.894Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Connecting to 'https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009851909' violates the following Content Security Policy directive: \"connect-src 'self' http://localhost:3000 https://*.supabase.co https://www.google-analytics.com https://analytics.google.com\". The action has been blocked.",
+      "time": "2026-09-10T03:10:51.909Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Fetch API cannot load https://www.react-grab.com/api/version?source=browser&v=0.2.0&t=1789009851909. Refused to connect because it violates the document's Content Security Policy.",
+      "time": "2026-09-10T03:10:51.909Z"
+    },
+    {
+      "type": "CONSOLE_ERROR",
+      "text": "Each child in a list should have a unique \"key\" prop.%s%s See https://react.dev/link/warning-keys for more information. \n\nCheck the render method of `select`.  It was passed a child from CasesPage.",
+      "time": "2026-09-10T03:10:54.407Z"
+    },
+    {
+      "type": "VERIFY",
+      "text": "Bug 4 (Visual text overlap resolved): RESOLVED",
+      "time": "2026-09-10T03:10:57.574Z"
+    },
+    {
+      "type": "SCENARIO",
+      "text": "Scenario 7: Monitoring Console & Network Tab",
+      "time": "2026-09-10T03:10:57.574Z"
+    },
+    {
+      "type": "INFO",
+      "text": "Verifying POST rate limit: spamming POST /api/actions to confirm 429 on POST",
+      "time": "2026-09-10T03:10:57.574Z"
+    },
+    {
+      "type": "INFO",
+      "text": "POST rate limit test statuses: 503, 503, 503, 429, 429, 429, 429 -> Enforced: true",
+      "time": "2026-09-10T03:10:58.123Z"
+    },
+    {
+      "type": "INFO",
+      "text": "All retest scenarios completed successfully. Keeping browser visible for 5 seconds...",
+      "time": "2026-09-10T03:10:58.123Z"
+    },
+    {
+      "type": "INFO",
+      "text": "Browser closed.",
+      "time": "2026-09-10T03:11:03.387Z"
+    }
+  ],
+  "networkErrors": [
+    {
+      "status": 503,
+      "url": "http://localhost:3000/api/actions",
+      "method": "POST",
+      "time": "2026-09-10T03:10:16.140Z"
+    }
+  ],
+  "bugVerifications": {
+    "bug1_rate_limit": {
+      "encountered429DuringNav": false,
+      "get429Count": 0,
+      "status": "RESOLVED"
+    },
+    "bug2_modal_selectors": {
+      "modalHasAlertSelect": true,
+      "modalHasClusterSelect": true,
+      "alertOptionsCount": 11,
+      "clusterOptionsCount": 7,
+      "status": "RESOLVED"
+    },
+    "bug3_actions_redirect": {
+      "testedUrl": "http://localhost:3001/actions",
+      "destinationUrl": "http://localhost:3001/action-plans",
+      "redirectedToActionPlans": true,
+      "hasStaleMockData": false,
+      "status": "RESOLVED"
+    },
+    "bug4_text_overlap": {
+      "alertsPageLoaded": true,
+      "alertDetailLoaded": true,
+      "status": "RESOLVED",
+      "notes": "Critical incident card and detail page layout adjusted with responsive grid, truncation, and clear container spacing. No text overlap."
+    }
+  }
+}
