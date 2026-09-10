@@ -10,7 +10,17 @@
     "dev": "npm run dev --workspace=frontend",
     "build": "npm run build --workspace=frontend",
     "dev:backend": "npm run dev --workspace=backend",
-    "start:backend": "npm run start --workspace=backend"
+    "start:backend": "npm run start --workspace=backend",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:report": "playwright show-report",
+    "test:e2e:codegen": "playwright codegen",
+    "audit": "lhci autorun"
   },
   "dependencies": {
     "bcrypt": "^6.0.0"

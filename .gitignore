@@ -28,3 +28,12 @@ out/
 coverage/
 *.tsbuildinfo
 vercel_dist/
+
+# QA & E2E Testing artifacts
+test-results/
+playwright-report/
+blob-report/
+e2e/artifacts/
+.lighthouseci/
+*.webm
+*.mp4
