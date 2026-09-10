@@ -28,3 +28,14 @@ out/
 coverage/
 *.tsbuildinfo
 vercel_dist/
+
+# Playwright & test artifacts
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+
+# Agent local rules
+.agents/rules/browser-automation.md
+
+

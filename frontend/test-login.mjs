@@ -1,7 +1,16 @@
 import { chromium } from "@playwright/test";
 
 (async () => {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({
+    headless: false,
+    args: [
+      '--disable-backgrounding-occluded-windows',
+      '--disable-renderer-backgrounding',
+      '--disable-background-timer-throttling',
+      '--disable-features=CalculateNativeWinOcclusion',
+      '--disable-ipc-flooding-protection',
+    ],
+  });
   const page = await browser.newPage();
 
   const errors = [];

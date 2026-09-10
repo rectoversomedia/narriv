@@ -283,6 +283,11 @@ export async function getBrowser(options = {}) {
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
+      '--disable-backgrounding-occluded-windows',
+      '--disable-renderer-backgrounding',
+      '--disable-background-timer-throttling',
+      '--disable-features=CalculateNativeWinOcclusion',
+      '--disable-ipc-flooding-protection',
       ...(extraArgs || [])
     ],
     defaultViewport: viewport || {

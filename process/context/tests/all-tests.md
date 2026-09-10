@@ -73,6 +73,7 @@ There is no root test command because this repo has separate `frontend/` and `ba
 
 - Frontend is Next.js `16.2.4`; check local Next docs before changing framework-specific test setup or routing conventions.
 - Playwright exists in dependencies and scripts, but current E2E coverage should be inspected before relying on it as a full regression suite.
+- Playwright Chromium launch configuration in `frontend/playwright.config.ts` includes macOS anti-throttling flags (`--disable-backgrounding-occluded-windows`, `--disable-renderer-backgrounding`, `--disable-background-timer-throttling`, `--disable-features=CalculateNativeWinOcclusion`, `--disable-ipc-flooding-protection`) to prevent App Nap and window occlusion slowdowns during headed browser automation or QA runs.
 - For UI changes, also run or inspect `npm run build` when touching server/client boundaries, dynamic imports, or route structure.
 
 ## Default Verification Order
