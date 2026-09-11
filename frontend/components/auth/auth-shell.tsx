@@ -125,9 +125,7 @@ function NarrivLogo() {
     <img
       src="/logo-final-narriv.png"
       alt="Narriv"
-      width={240}
-      height={160}
-      className="h-auto w-auto max-h-[80px] object-contain mx-auto"
+      className="mx-auto h-auto w-full max-w-[800px] object-contain"
     />
   );
 }

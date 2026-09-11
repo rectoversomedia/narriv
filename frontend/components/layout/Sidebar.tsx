@@ -78,14 +78,14 @@ export function Sidebar() {
               </span>
             </>
           ) : (
-            <div className="flex h-10 items-center px-1">
+            <div className="flex h-14 items-center px-3">
               <Image
                 src="/logo-narriv-putih.png"
                 alt={brandName}
-                width={124}
-                height={32}
+                width={200}
+                height={60}
                 priority
-                className="h-7 w-auto object-contain"
+                className="h-14 w-auto max-w-[160px] object-contain"
               />
             </div>
           )}
