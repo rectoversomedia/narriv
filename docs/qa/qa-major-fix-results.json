@@ -1,0 +1,78 @@
+{
+  "timestamp": "2026-09-11T02:10:47.940Z",
+  "environment": "Local Development (Frontend: 3001, Backend: 3000)",
+  "mode": "HEADED (headless: false)",
+  "scenarios": [
+    {
+      "id": 1,
+      "name": "Buka Action Center & List Action Plans",
+      "status": "PASS",
+      "details": "7 action plans rendered from database"
+    },
+    {
+      "id": 2,
+      "name": "Detail Action Plan Lama (Legacy Plan)",
+      "status": "PASS",
+      "details": "Detail view renders cleanly without errors"
+    },
+    {
+      "id": 3,
+      "name": "Generate Action Plan Baru via Live AI (Fix 3)",
+      "status": "PASS",
+      "title": "Crisis Response Action Plan",
+      "executiveSummaryExcerpt": "Anomaly detected in signal monitoring related to cryptocurrency market discussions. Current assessments indicate low risk, but proactive measures are ",
+      "isRealAi": true
+    },
+    {
+      "id": 4,
+      "name": "Tombol Approve & Update Status Database (Fix 2)",
+      "status": "PASS",
+      "httpStatus": 201,
+      "uiBadgeUpdated": true,
+      "dbFeedbackSaved": true
+    },
+    {
+      "id": 5,
+      "name": "Tombol Reject & Modal Pengumpulan Alasan (Fix 1)",
+      "status": "PASS",
+      "httpStatus": 201,
+      "validationEnforced": true,
+      "dbCommentSaved": true
+    },
+    {
+      "id": 6,
+      "name": "Relasi Alert & Cluster",
+      "status": "PASS"
+    },
+    {
+      "id": 7,
+      "name": "Filter & Navigasi Cepat",
+      "status": "PASS"
+    },
+    {
+      "id": 8,
+      "name": "Validasi Search & Empty State",
+      "status": "PASS"
+    },
+    {
+      "id": 9,
+      "name": "Halaman Alerts & Layout Kartu Insiden",
+      "status": "PASS"
+    },
+    {
+      "id": 10,
+      "name": "Halaman Cases & Modal",
+      "status": "PASS"
+    },
+    {
+      "id": 11,
+      "name": "Dashboard Command Center",
+      "status": "PASS"
+    },
+    {
+      "id": 12,
+      "name": "Proteksi Akses & Redirect Login",
+      "status": "PASS"
+    }
+  ]
+}
