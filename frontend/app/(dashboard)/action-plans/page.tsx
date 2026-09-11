@@ -76,8 +76,8 @@ function normalizePriority(record: ActionQueueRecord): Exclude<Priority, "done">
 }
 
 function normalizeStatus(status?: string | null): ActionStatus {
-  if (status === "done") return "done";
-  if (status === "in_progress" || status === "in-progress" || status === "blocked") return "in-progress";
+  if (status === "done" || status === "completed") return "done";
+  if (status === "in_progress" || status === "in-progress" || status === "blocked" || status === "approved") return "in-progress";
   return "active";
 }
 

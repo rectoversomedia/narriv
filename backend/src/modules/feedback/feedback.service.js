@@ -58,18 +58,17 @@ export async function submitFeedback({ workspaceId, targetType, targetId, action
         }
     }
 
+    const insertPayload = {
+        workspace_id: workspaceId,
+        action_plan_id: targetType === "action_plan" ? targetId : null,
+        feedback_type: action,
+        comment: reason || null,
+        rating: action === "accepted" ? 5 : action === "edited" ? 3 : 1,
+    };
+
     const { data: feedback, error } = await supabase
         .from("ai_feedback")
-        .insert({
-            workspace_id: workspaceId,
-            target_type: targetType,
-            target_id: targetId,
-            action: action,
-            original_output: originalOutput || null,
-            edited_output: editedOutput || null,
-            reason: reason || null,
-            user_id: userId || null,
-        })
+        .insert(insertPayload)
         .select()
         .single();
 
@@ -77,8 +76,16 @@ export async function submitFeedback({ workspaceId, targetType, targetId, action
         throw error;
     }
 
+    const normalizedFeedback = {
+        ...feedback,
+        action: feedback.feedback_type || action,
+        target_type: targetType,
+        target_id: feedback.action_plan_id || targetId,
+        reason: feedback.comment || reason || null,
+    };
+
     logStructured("info", "feedback_recorded", { action, targetType, targetId });
-    return feedback;
+    return normalizedFeedback;
 }
 
 /**
@@ -93,7 +100,7 @@ export async function getActionPlanPromptScoring(workspaceId) {
         .from("ai_feedback")
         .select("*")
         .eq("workspace_id", workspaceId)
-        .eq("target_type", "action_plan")
+        .not("action_plan_id", "is", null)
         .order("created_at", { ascending: false })
         .limit(200);
 
@@ -113,18 +120,18 @@ export async function getActionPlanPromptScoring(workspaceId) {
         };
     }
 
-    const accepted = rows.filter((r) => r.action === "accepted").length;
-    const edited = rows.filter((r) => r.action === "edited").length;
-    const rejected = rows.filter((r) => r.action === "rejected").length;
+    const accepted = rows.filter((r) => (r.feedback_type || r.action) === "accepted").length;
+    const edited = rows.filter((r) => (r.feedback_type || r.action) === "edited").length;
+    const rejected = rows.filter((r) => (r.feedback_type || r.action) === "rejected").length;
 
     // Weighted score intended for prompt tuning dashboards.
     const promptScore = Math.round((((accepted * 1.0) + (edited * 0.55)) / total) * 100);
 
     const reasonCounts = {};
     rows
-        .filter((r) => r.reason)
+        .filter((r) => r.comment || r.reason)
         .forEach((r) => {
-            const key = String(r.reason).trim().toLowerCase();
+            const key = String(r.comment || r.reason).trim().toLowerCase();
             if (!key) return;
             reasonCounts[key] = (reasonCounts[key] || 0) + 1;
         });
@@ -179,9 +186,9 @@ export async function getAccuracyMetrics(workspaceId) {
         };
     }
 
-    const accepted = allFeedback.filter(f => f.action === "accepted").length;
-    const edited = allFeedback.filter(f => f.action === "edited").length;
-    const rejected = allFeedback.filter(f => f.action === "rejected").length;
+    const accepted = allFeedback.filter(f => (f.feedback_type || f.action) === "accepted").length;
+    const edited = allFeedback.filter(f => (f.feedback_type || f.action) === "edited").length;
+    const rejected = allFeedback.filter(f => (f.feedback_type || f.action) === "rejected").length;
 
     // Accuracy formula: accepted = 1.0, edited = 0.5, rejected = 0.0
     const accuracyScore = Math.round(((accepted * 1.0 + edited * 0.5 + rejected * 0.0) / total) * 100) / 100;
@@ -190,12 +197,12 @@ export async function getAccuracyMetrics(workspaceId) {
     const byType = {};
     const validTypes = ["signal_analysis", "alert", "action_plan", "cluster"];
     validTypes.forEach(type => {
-        const typeFeedback = allFeedback.filter(f => f.target_type === type);
+        const typeFeedback = allFeedback.filter(f => (f.target_type === type) || (type === "action_plan" && f.action_plan_id));
         const typeTotal = typeFeedback.length;
         if (typeTotal > 0) {
-            const typeAccepted = typeFeedback.filter(f => f.action === "accepted").length;
-            const typeEdited = typeFeedback.filter(f => f.action === "edited").length;
-            const typeRejected = typeFeedback.filter(f => f.action === "rejected").length;
+            const typeAccepted = typeFeedback.filter(f => (f.feedback_type || f.action) === "accepted").length;
+            const typeEdited = typeFeedback.filter(f => (f.feedback_type || f.action) === "edited").length;
+            const typeRejected = typeFeedback.filter(f => (f.feedback_type || f.action) === "rejected").length;
             byType[type] = {
                 total: typeTotal,
                 accepted: typeAccepted,
@@ -217,8 +224,8 @@ export async function getAccuracyMetrics(workspaceId) {
         });
         const wTotal = weekFeedback.length;
         if (wTotal > 0) {
-            const wAccepted = weekFeedback.filter(f => f.action === "accepted").length;
-            const wEdited = weekFeedback.filter(f => f.action === "edited").length;
+            const wAccepted = weekFeedback.filter(f => (f.feedback_type || f.action) === "accepted").length;
+            const wEdited = weekFeedback.filter(f => (f.feedback_type || f.action) === "edited").length;
             trend.push({
                 week_start: weekStart.toISOString().split("T")[0],
                 total: wTotal,
@@ -249,8 +256,8 @@ export async function getRejectionInsights(workspaceId) {
         .from("ai_feedback")
         .select("*")
         .eq("workspace_id", workspaceId)
-        .eq("action", "rejected")
-        .not("reason", "is", null)
+        .eq("feedback_type", "rejected")
+        .not("comment", "is", null)
         .order("created_at", { ascending: false })
         .limit(50);
 
@@ -261,10 +268,11 @@ export async function getRejectionInsights(workspaceId) {
     // Group by targetType
     const grouped = {};
     rejections.forEach(r => {
-        if (!grouped[r.target_type]) grouped[r.target_type] = [];
-        grouped[r.target_type].push({
-            target_id: r.target_id,
-            reason: r.reason,
+        const targetType = r.target_type || (r.action_plan_id ? "action_plan" : "general");
+        if (!grouped[targetType]) grouped[targetType] = [];
+        grouped[targetType].push({
+            target_id: r.action_plan_id || r.target_id,
+            reason: r.comment || r.reason,
             created_at: r.created_at
         });
     });

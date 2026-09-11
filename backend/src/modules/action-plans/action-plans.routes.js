@@ -419,12 +419,30 @@ router.post("/:id/feedback", validateRequest({ params: actionPlanIdParamsSchema,
             userId: userId || null,
         });
 
+        // When action plan is approved (accepted), update action_plans.status in database
+        let updatedStatus = null;
+        if (action === "accepted") {
+            updatedStatus = "in_progress";
+        } else if (action === "rejected") {
+            updatedStatus = "rejected";
+        }
+
+        if (updatedStatus) {
+            const { error: updatePlanError } = await supabase
+                .from("action_plans")
+                .update({ status: updatedStatus, updated_at: new Date().toISOString() })
+                .eq("id", plan.id);
+            if (updatePlanError) {
+                logStructured("warn", "action_plan_status_update_failed", { id: plan.id, status: updatedStatus, error: updatePlanError.message });
+            }
+        }
+
         return res.status(201).json({
             id: feedback.id,
-            action: feedback.action,
-            targetType: feedback.target_type,
-            targetId: feedback.target_id,
-            reason: feedback.reason,
+            action: feedback.action || feedback.feedback_type,
+            targetType: feedback.target_type || "action_plan",
+            targetId: feedback.target_id || feedback.action_plan_id || plan.id,
+            reason: feedback.reason || feedback.comment,
             createdAt: feedback.created_at,
         });
     } catch (error) {
