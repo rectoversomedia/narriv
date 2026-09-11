@@ -21,14 +21,18 @@ async function callOpenAIWithTimeout(messages, timeoutMs) {
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-        return await client.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages,
-            temperature: 0.7,
-            max_tokens: 800,
-            response_format: { type: "json_object" },
-            signal: controller.signal,
-        });
+        return await client.chat.completions.create(
+            {
+                model: "gpt-4o-mini",
+                messages,
+                temperature: 0.7,
+                max_tokens: 800,
+                response_format: { type: "json_object" },
+            },
+            {
+                signal: controller.signal,
+            }
+        );
     } finally {
         clearTimeout(timeoutId);
     }
@@ -620,8 +624,8 @@ async function generateOption(strategyType, promptConfig, context, toneSuffix) {
         return normalizeStrategyOutput(
             strategyType,
             {
-                title: `${formatStrategyName(promptConfig.type)} (${toneSuffix})`,
-                executive_summary: `Generation fallback used due to provider failure: ${error.message}`,
+                title: `${formatStrategyName(strategyType)} (${toneSuffix})`,
+                executive_summary: "Generated using backup template due to temporary AI service unavailability.",
             },
             toneSuffix
         );
@@ -654,17 +658,17 @@ export async function buildFeedbackContext(workspaceId, strategyType) {
     try {
         const { data: feedback } = await supabase
             .from("ai_feedback")
-            .select("action, reason, edited_output")
+            .select("feedback_type, comment, action_plan_id, created_at")
             .eq("workspace_id", workspaceId)
-            .eq("target_type", "action_plan")
+            .not("action_plan_id", "is", null)
             .order("created_at", { ascending: false })
             .limit(10);
 
         if (!feedback || feedback.length === 0) return "";
 
-        const accepted = feedback.filter((f) => f.action === "accepted");
-        const rejected = feedback.filter((f) => f.action === "rejected");
-        const edited = feedback.filter((f) => f.action === "edited");
+        const accepted = feedback.filter((f) => (f.feedback_type || f.action) === "accepted");
+        const rejected = feedback.filter((f) => (f.feedback_type || f.action) === "rejected");
+        const edited = feedback.filter((f) => (f.feedback_type || f.action) === "edited");
 
         const lines = [];
         lines.push("HISTORICAL FEEDBACK CONTEXT:");
@@ -673,7 +677,7 @@ export async function buildFeedbackContext(workspaceId, strategyType) {
             lines.push(`- ${accepted.length} previous plans were accepted by the team`);
         }
         if (rejected.length > 0) {
-            const reasons = rejected.filter((f) => f.reason).map((f) => f.reason).slice(0, 3);
+            const reasons = rejected.filter((f) => f.comment || f.reason).map((f) => f.comment || f.reason).slice(0, 3);
             lines.push(`- ${rejected.length} previous plans were rejected. Reasons: ${reasons.join("; ") || "not specified"}`);
         }
         if (edited.length > 0) {
