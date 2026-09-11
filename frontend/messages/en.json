@@ -3323,6 +3323,17 @@
         "errorTitle": "Failed to create",
         "errorDesc": "An error occurred while generating the action plan."
       }
+    },
+    "rejectModal": {
+      "title": "Reject Action Plan",
+      "desc": "Please provide a reason for rejecting this action plan to help improve future AI recommendations.",
+      "planTitleLabel": "Action Plan",
+      "reasonLabel": "Rejection Reason",
+      "reasonPlaceholder": "Explain why this plan is being rejected (e.g. unrealistic timeline, misaligned stakeholders, tone issue)...",
+      "reasonRequired": "Rejection reason is required.",
+      "cancel": "Cancel",
+      "confirm": "Confirm Rejection",
+      "submitting": "Rejecting..."
     }
   },
   "Sources": {

@@ -32,6 +32,7 @@ import { isDemoMode, getMockActionPlans } from "@/lib/demo-mock-data";
 import { getActionPlanById, getActionQueue, getFeedbackAccuracy, submitActionPlanFeedback, getActionPlansMetrics, getActionPlanLearning, type ActionPlanResponse, type ActionQueueRecord } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
 import { CreateActionPlanModal } from "./components/create-action-plan-modal";
+import { RejectActionPlanModal } from "./components/reject-action-plan-modal";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Priority = "high" | "medium" | "low" | "done";
@@ -309,6 +310,7 @@ export default function ActionPlansPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedActionId, setSelectedActionId] = useState<string>("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filterPriority, setFilterPriority] = useState<string>("all");
@@ -438,6 +440,25 @@ export default function ActionPlansPage() {
       </header>
 
       <CreateActionPlanModal open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen} />
+      <RejectActionPlanModal
+        open={isRejectModalOpen}
+        onOpenChange={setIsRejectModalOpen}
+        planTitle={selectedAction?.title ?? (latestPlan?.id ? `Action Plan ${latestPlan.id.slice(0, 8)}` : undefined)}
+        isSubmitting={feedbackMutation.isPending}
+        onConfirm={async (reason) => {
+          if (!latestPlan?.id) return;
+          try {
+            await feedbackMutation.mutateAsync({
+              actionPlanId: latestPlan.id,
+              action: "rejected",
+              reason,
+            });
+            setIsRejectModalOpen(false);
+          } catch {
+            // Error handled by feedbackMutation onError
+          }
+        }}
+      />
 
       <section className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-5">
         <MetricCard label={t("metricActiveActions")} value={metricsQuery.data ? String(metricsQuery.data.active.value) : String(activeCount)} trend={metricsQuery.data?.active.trend} helper={metricsQuery.data ? t("metricTrendHelper", { trend: Math.abs(metricsQuery.data.active.trend) }) : t("metricActiveHelper", { count: activeCount })} icon={Target} tone="blue" />
@@ -576,7 +597,7 @@ export default function ActionPlansPage() {
             <button type="button" onClick={() => setSelectedActionId("")} className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#F8FAFF] text-[12px] font-black text-[#465FFF] transition hover:bg-[#465FFF]/5">{t("backToQueue")} <ChevronRight size={14} /></button>
             <div className="mt-3 flex gap-2">
               <button type="button" onClick={() => { if (latestPlan?.id) feedbackMutation.mutate({ actionPlanId: latestPlan.id, action: "accepted" }); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[#10B981]/10 text-[11px] font-black text-[#0C9B69] transition hover:bg-[#10B981]/20 disabled:opacity-50"><Check size={14} /> {t("approve")}</button>
-              <button type="button" onClick={() => { if (latestPlan?.id) feedbackMutation.mutate({ actionPlanId: latestPlan.id, action: "rejected" }); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[#EF4444]/10 text-[11px] font-black text-[#EF4444] transition hover:bg-[#EF4444]/20 disabled:opacity-50"><X size={14} /> {t("reject")}</button>
+              <button type="button" onClick={() => { if (latestPlan?.id) setIsRejectModalOpen(true); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[#EF4444]/10 text-[11px] font-black text-[#EF4444] transition hover:bg-[#EF4444]/20 disabled:opacity-50"><X size={14} /> {t("reject")}</button>
             </div>
             </>)}
           </CardContent>

@@ -3295,6 +3295,17 @@
         "errorTitle": "Gagal membuat",
         "errorDesc": "Terjadi kesalahan saat menghasilkan rencana aksi."
       }
+    },
+    "rejectModal": {
+      "title": "Tolak Rencana Aksi",
+      "desc": "Mohon berikan alasan penolakan rencana aksi ini untuk membantu meningkatkan rekomendasi AI di masa mendatang.",
+      "planTitleLabel": "Rencana Aksi",
+      "reasonLabel": "Alasan Penolakan",
+      "reasonPlaceholder": "Jelaskan mengapa rencana ini ditolak (misal: linimasa tidak realistis, pemangku kepentingan tidak tepat, isu nada bicara)...",
+      "reasonRequired": "Alasan penolakan wajib diisi.",
+      "cancel": "Batal",
+      "confirm": "Konfirmasi Penolakan",
+      "submitting": "Menolak..."
     }
   },
   "Sources": {
