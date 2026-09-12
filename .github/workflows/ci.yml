@@ -31,11 +31,13 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm ci
-          cd frontend && npm ci
+          npm ci 2>&1 | tail -5
+          echo "---ROOT DEPS DONE---"
+          cd frontend && npm ci 2>&1 | tail -5
+          echo "---FRONTEND DEPS DONE---"
 
       - name: Backend Lint
-        run: npm run lint || true
+        run: npm run lint 2>&1 | tail -20 || true
 
       - name: Frontend Lint
         run: |
@@ -48,8 +50,10 @@ jobs:
           # ESLint 9 + eslint-config-next: known config error — @next/next/no-img-element rule
           # definition is missing. Treat this ESLint config error (exit 2) as non-fatal.
           cd frontend
-          npm run lint
-          EXIT=$?
+          echo "Running: npm run lint"
+          npm run lint 2>&1 | tail -30
+          EXIT=${PIPESTATUS[0]}
+          echo "Exit code: $EXIT"
           if [ $EXIT -eq 2 ]; then
             echo "ESLint config warnings (exit 2) treated as pass"
             exit 0
