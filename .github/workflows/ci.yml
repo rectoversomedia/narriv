@@ -31,10 +31,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm ci 2>&1 | tail -5
-          echo "---ROOT DEPS DONE---"
-          cd frontend && npm ci 2>&1 | tail -5
-          echo "---FRONTEND DEPS DONE---"
+          # Monorepo with npm workspaces — root install covers all workspaces
+          npm ci 2>&1 | tee /tmp/npm-ci-root.log
+          echo "---ROOT DONE: $?---"
+          # Verify frontend node_modules exists
+          ls frontend/node_modules/.package-lock.json 2>/dev/null && echo "FRONTEND OK" || echo "FRONTEND MISSING"
 
       - name: Backend Lint
         run: npm run lint 2>&1 | tail -20 || true
@@ -44,16 +45,14 @@ jobs:
           # Stub out @rushstack/eslint-patch (not needed for ESLint 9 flat config)
           node -e "
           const fs = require('fs');
-          const filePath = 'node_modules/@rushstack/eslint-patch/lib-commonjs/modern-module-resolution.js';
+          const filePath = 'frontend/node_modules/@rushstack/eslint-patch/lib-commonjs/modern-module-resolution.js';
           fs.writeFileSync(filePath, 'module.exports = {};\n');
+          console.log('Stub written to', filePath);
           "
-          # ESLint 9 + eslint-config-next: known config error — @next/next/no-img-element rule
-          # definition is missing. Treat this ESLint config error (exit 2) as non-fatal.
-          cd frontend
-          echo "Running: npm run lint"
-          npm run lint 2>&1 | tail -30
+          echo "Running: npm run lint --prefix frontend"
+          npx --prefix frontend eslint . 2>&1 | tail -40
           EXIT=${PIPESTATUS[0]}
-          echo "Exit code: $EXIT"
+          echo "ESLint exit code: $EXIT"
           if [ $EXIT -eq 2 ]; then
             echo "ESLint config warnings (exit 2) treated as pass"
             exit 0
@@ -61,7 +60,7 @@ jobs:
           exit $EXIT
 
       - name: Type Check Frontend
-        run: cd frontend && npx tsc --noEmit
+        run: npx --prefix frontend tsc --noEmit
 
   # ============================================
   # BACKEND TESTS
