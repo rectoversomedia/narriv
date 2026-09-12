@@ -26,14 +26,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: '**/package-lock.json'
 
       - name: Install dependencies
         run: |
+          # Check network first
+          curl -s --max-time 10 https://registry.npmjs.org/ 2>&1 | head -1
+          echo "---NETWORK CHECK DONE---"
           # Monorepo with npm workspaces — root install covers all workspaces
-          npm ci 2>&1 | tee /tmp/npm-ci-root.log
-          echo "---ROOT DONE: $?---"
+          timeout 120 npm ci 2>&1 | tail -20
+          echo "---NPM CI EXIT: $?---"
           # Verify frontend node_modules exists
           ls frontend/node_modules/.package-lock.json 2>/dev/null && echo "FRONTEND OK" || echo "FRONTEND MISSING"
 
