@@ -23,7 +23,27 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          # Increase npm timeouts for slow/unreliable network
+          npm config set fetch-timeout 300000
+          npm config set fetch-retry-mintimeout 10000
+          npm config set fetch-retry-maxtimeout 120000
+          # Retry npm ci up to 3 times on transient network errors
+          for i in 1 2 3; do
+            echo "Attempt $i/3: npm ci"
+            if npm ci --prefer-offline 2>&1; then
+              echo "npm ci succeeded"
+              break
+            else
+              EXIT=$?
+              echo "npm ci failed (exit $EXIT), attempt $i/3"
+              if [ $i -eq 3 ]; then
+                echo "All npm ci attempts failed"
+                exit $EXIT
+              fi
+              sleep 10
+            fi
+          done
 
       - name: Backend Lint
         run: npm run lint
@@ -85,7 +105,27 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          # Increase npm timeouts for slow/unreliable network
+          npm config set fetch-timeout 300000
+          npm config set fetch-retry-mintimeout 10000
+          npm config set fetch-retry-maxtimeout 120000
+          # Retry npm ci up to 3 times on transient network errors
+          for i in 1 2 3; do
+            echo "Attempt $i/3: npm ci"
+            if npm ci --prefer-offline 2>&1; then
+              echo "npm ci succeeded"
+              break
+            else
+              EXIT=$?
+              echo "npm ci failed (exit $EXIT), attempt $i/3"
+              if [ $i -eq 3 ]; then
+                echo "All npm ci attempts failed"
+                exit $EXIT
+              fi
+              sleep 10
+            fi
+          done
 
       - name: Run tests
         run: npm test
@@ -105,7 +145,27 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          # Increase npm timeouts for slow/unreliable network
+          npm config set fetch-timeout 300000
+          npm config set fetch-retry-mintimeout 10000
+          npm config set fetch-retry-maxtimeout 120000
+          # Retry npm ci up to 3 times on transient network errors
+          for i in 1 2 3; do
+            echo "Attempt $i/3: npm ci"
+            if npm ci --prefer-offline 2>&1; then
+              echo "npm ci succeeded"
+              break
+            else
+              EXIT=$?
+              echo "npm ci failed (exit $EXIT), attempt $i/3"
+              if [ $i -eq 3 ]; then
+                echo "All npm ci attempts failed"
+                exit $EXIT
+              fi
+              sleep 10
+            fi
+          done
 
       - name: Build Frontend
         run: cd frontend && npm run build
@@ -150,7 +210,27 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          # Increase npm timeouts for slow/unreliable network
+          npm config set fetch-timeout 300000
+          npm config set fetch-retry-mintimeout 10000
+          npm config set fetch-retry-maxtimeout 120000
+          # Retry npm ci up to 3 times on transient network errors
+          for i in 1 2 3; do
+            echo "Attempt $i/3: npm ci"
+            if npm ci --prefer-offline 2>&1; then
+              echo "npm ci succeeded"
+              break
+            else
+              EXIT=$?
+              echo "npm ci failed (exit $EXIT), attempt $i/3"
+              if [ $i -eq 3 ]; then
+                echo "All npm ci attempts failed"
+                exit $EXIT
+              fi
+              sleep 10
+            fi
+          done
 
       - name: Install Playwright browsers
         run: cd frontend && npx playwright install --with-deps chromium
@@ -179,7 +259,27 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          # Increase npm timeouts for slow/unreliable network
+          npm config set fetch-timeout 300000
+          npm config set fetch-retry-mintimeout 10000
+          npm config set fetch-retry-maxtimeout 120000
+          # Retry npm ci up to 3 times on transient network errors
+          for i in 1 2 3; do
+            echo "Attempt $i/3: npm ci"
+            if npm ci --prefer-offline 2>&1; then
+              echo "npm ci succeeded"
+              break
+            else
+              EXIT=$?
+              echo "npm ci failed (exit $EXIT), attempt $i/3"
+              if [ $i -eq 3 ]; then
+                echo "All npm ci attempts failed"
+                exit $EXIT
+              fi
+              sleep 10
+            fi
+          done
 
       - name: Backend security audit
         run: npm audit --audit-level=high
@@ -211,7 +311,22 @@ jobs:
           sudo apt-get install k6
 
       - name: Install backend dependencies
-        run: npm ci
+        run: |
+          for i in 1 2 3; do
+            echo "Attempt $i/3: npm ci"
+            if npm ci --prefer-offline 2>&1; then
+              echo "npm ci succeeded"
+              break
+            else
+              EXIT=$?
+              echo "npm ci failed (exit $EXIT), attempt $i/3"
+              if [ $i -eq 3 ]; then
+                echo "All npm ci attempts failed"
+                exit $EXIT
+              fi
+              sleep 10
+            fi
+          done
 
       - name: Start backend
         run: npm run dev:backend &
