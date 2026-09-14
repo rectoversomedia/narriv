@@ -11,4 +11,4 @@ jobs:
   test:
     runs-on: ubuntu-22.04
     steps:
-      - run: echo hello && sleep 2 && echo world
+      - run: echo hello
