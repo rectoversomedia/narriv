@@ -4,17 +4,21 @@ on:
   push:
     branches: [ci-test]
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
       - run: |
-          echo "=== About to npm ci ==="
-          timeout 120 npm ci 2>&1 || { echo "npm ci failed with $?"; ls node_modules 2>/dev/null | wc -l; }
+          echo "=== System Info ==="
+          cat /etc/os-release | head -3
+          echo "=== Node ==="
+          node --version
+          echo "=== NPM ==="
+          npm --version
+          echo "=== Workspace ==="
+          ls -la
           echo "=== Done ==="
