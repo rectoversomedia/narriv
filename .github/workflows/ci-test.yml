@@ -10,15 +10,5 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-22.04
-    timeout-minutes: 30
     steps:
-      - run: |
-          echo "=== System Info ==="
-          cat /etc/os-release | head -3
-          echo "=== Node ==="
-          node --version
-          echo "=== NPM ==="
-          npm --version
-          echo "=== Workspace ==="
-          ls -la
-          echo "=== Done ==="
+      - run: echo hello && sleep 2 && echo world
