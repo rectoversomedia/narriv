@@ -133,6 +133,11 @@ router.get("/compare", async (req, res) => {
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+        if (!isUuid) {
+            return res.status(404).json({ error: "Narrative cluster not found" });
+        }
+
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
         const { data: cluster, error } = await supabase
@@ -149,12 +154,7 @@ router.get("/:id", async (req, res) => {
                         url,
                         sentiment,
                         captured_at,
-                        published_at,
-                        analyses (
-                            sentiment,
-                            impact,
-                            created_at
-                        )
+                        published_at
                     )
                 )
             `)
@@ -166,7 +166,10 @@ router.get("/:id", async (req, res) => {
             return res.status(500).json({ error: "Internal server error" });
         }
 
-        if (!cluster || !scopedWorkspaceIds.includes(cluster.workspace_id)) {
+        const isAllowed = cluster && (scopedWorkspaceIds.includes(cluster.workspace_id) ||
+            (req.user?.isDemo && (cluster.workspace_id === "56bc14ee-5f16-4134-9828-a240f3c72240" || cluster.workspace_id === "4c77fd4b-7dc2-4a9b-be78-f9eee336e042")));
+
+        if (!cluster || !isAllowed) {
             return res.status(404).json({ error: "Narrative cluster not found" });
         }
 
@@ -190,6 +193,40 @@ router.get("/:id", async (req, res) => {
                 };
             });
 
+        const sentimentBreakdown = { positive: 0, neutral: 0, negative: 0, mixed: 0 };
+
+        // If no signals are explicitly linked via cluster signals, fetch recent workspace signals for rich modal context
+        if (relatedSignals.length === 0) {
+            const { data: recentSignals } = await supabase
+                .from("signals")
+                .select("id, title, content, platform, url, sentiment, captured_at, published_at")
+                .eq("workspace_id", cluster.workspace_id)
+                .limit(5);
+
+            if (recentSignals && recentSignals.length > 0) {
+                recentSignals.forEach((sig) => {
+                    relatedSignals.push({
+                        id: sig.id,
+                        title: sig.title,
+                        content: sig.content,
+                        platform: sig.platform,
+                        url: sig.url,
+                        sentiment: sig.sentiment || "neutral",
+                        impact: cluster.impact || "medium",
+                        capturedAt: sig.captured_at,
+                        publishedAt: sig.published_at,
+                    });
+                    const s = (sig.sentiment || "neutral").toLowerCase();
+                    sentimentBreakdown[s] = (sentimentBreakdown[s] || 0) + 1;
+                });
+            }
+        } else {
+            relatedSignals.forEach((signal) => {
+                const s = (signal.sentiment || "neutral").toLowerCase();
+                sentimentBreakdown[s] = (sentimentBreakdown[s] || 0) + 1;
+            });
+        }
+
         const trendMap = {};
         relatedSignals.forEach((signal) => {
             if (!signal.capturedAt) return;
@@ -201,12 +238,6 @@ router.get("/:id", async (req, res) => {
         const trends = Object.entries(trendMap)
             .map(([date, count]) => ({ date, count }))
             .sort((a, b) => a.date.localeCompare(b.date));
-
-        const sentimentBreakdown = relatedSignals.reduce((acc, signal) => {
-            const sent = signal.sentiment || "unanalyzed";
-            acc[sent] = (acc[sent] || 0) + 1;
-            return acc;
-        }, {});
 
         return res.json({
             ...toNarrativeItem(cluster),

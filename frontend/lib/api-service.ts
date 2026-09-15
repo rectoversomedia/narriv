@@ -12,7 +12,7 @@
 import type { LucideIcon } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { useAuthStore, type AuthUser } from "@/store/useAuthStore";
-import { getMockAlerts, getMockDashboardSummary, isDemoMode } from "./demo-mock-data";
+import { getMockAlerts, getMockDashboardSummary, getMockNarrativeDetail, isDemoMode } from "./demo-mock-data";
 
 // ---------------------------------------------------------------------------
 // Types — shaped to match actual backend responses
@@ -1855,9 +1855,21 @@ export async function getFeedbackAccuracy(options: Record<string, string | numbe
 }
 
 export async function getNarrativeById(id: string): Promise<NarrativeDetailRecord | null> {
+  if (id.startsWith("demo-narrative-") || id.startsWith("mock-narrative-")) {
+    return getMockNarrativeDetail(id);
+  }
+
   try {
-    return await apiClient<NarrativeDetailRecord>(`/api/narratives/${id}`);
+    const res = await apiClient<NarrativeDetailRecord>(`/api/narratives/${id}`);
+    if (res) return res;
+    if (isDemoMode()) {
+      return getMockNarrativeDetail(id);
+    }
+    return null;
   } catch {
+    if (isDemoMode()) {
+      return getMockNarrativeDetail(id);
+    }
     return null;
   }
 }
