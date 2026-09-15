@@ -2225,11 +2225,11 @@
     "noWorkspace": "No workspace"
   },
   "AlertDetail": {
-    "backToAlerts": "Back to warnings",
+    "backToAlerts": "Back to alerts",
     "responseWindow": "response window",
-    "liveDetail": "Live warning detail from the backend.",
-    "notFoundTitle": "Warning not found",
-    "notFoundDesc": "This warning does not exist or your workspace cannot access it.",
+    "liveDetail": "Live alert detail from the backend.",
+    "notFoundTitle": "Alert not found",
+    "notFoundDesc": "This alert does not exist or your workspace cannot access it.",
     "recommendedStep": "Recommended next step",
     "assignmentTitle": "Assignment workflow",
     "assignmentDesc": "Set the PIC, responsible team, response deadline, and escalation level for this warning.",

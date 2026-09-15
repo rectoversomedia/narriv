@@ -253,9 +253,9 @@ export default function AlertDetailPage() {
   const title = liveData?.title ?? td("empty.title");
   const source = liveData?.type ?? "-";
   const issue = liveData?.type ?? "-";
-  const whatHappened = liveData?.whatHappened || td("section.empty");
-  const whyItMatters = liveData?.whyItMatters || td("section.empty");
-  const whatToDo = liveData?.whatToDo || td("section.empty");
+  const whatHappened = liveData?.whatHappened || (liveData as any)?.what_happened || (liveData as any)?.description || td("section.empty");
+  const whyItMatters = liveData?.whyItMatters || (liveData as any)?.why_it_matters || td("section.empty");
+  const whatToDo = liveData?.whatToDo || (liveData as any)?.what_to_do || td("section.empty");
   const tone = mapSeverityTone(liveData?.severity);
   const currentStatus = liveData?.status || "open";
   const members = membersQuery.data ?? [];
@@ -304,7 +304,7 @@ export default function AlertDetailPage() {
                 <p className="mt-3 text-[13px] font-bold leading-6 text-[#53608C]">{td("issue.description", { issue })}</p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                <DetailStat icon={UserRound} label={td("assignedTo")} value={liveData.assignedTo || "-"} tone="blue" />
+                <DetailStat icon={UserRound} label={td("assignedTo")} value={liveData.assignedTo || (liveData as any)?.assigned_to || "-"} tone="blue" />
                 <DetailStat icon={CalendarClock} label={td("deadline")} value={formatDateTime(liveData.deadline)} tone={tone} />
               </div>
             </div>

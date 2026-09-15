@@ -12,7 +12,7 @@
 import type { LucideIcon } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { useAuthStore, type AuthUser } from "@/store/useAuthStore";
-import { getMockDashboardSummary, isDemoMode } from "./demo-mock-data";
+import { getMockAlerts, getMockDashboardSummary, isDemoMode } from "./demo-mock-data";
 
 // ---------------------------------------------------------------------------
 // Types — shaped to match actual backend responses
@@ -379,9 +379,45 @@ export async function getAlerts(
 }
 
 export async function getAlertById(id: string): Promise<Alert | null> {
+  // If id is a mock ID or starts with demo-alert-, look up in mock alerts
+  if (id.startsWith("demo-alert-") || id.startsWith("mock-alert-")) {
+    const mockAlerts = getMockAlerts();
+    const found = mockAlerts.find((a) => a.id === id);
+    if (found) return found;
+  }
+
   try {
-    return await apiClient<Alert>(`/api/alerts/${id}`);
+    const raw = await apiClient<any>(`/api/alerts/${id}`);
+    if (!raw) {
+      if (isDemoMode()) {
+        const mockAlerts = getMockAlerts();
+        return mockAlerts.find((a) => a.id === id) ?? mockAlerts[0] ?? null;
+      }
+      return null;
+    }
+
+    return {
+      id: raw.id,
+      title: raw.title,
+      whatHappened: raw.whatHappened ?? raw.what_happened ?? raw.description ?? null,
+      whyItMatters: raw.whyItMatters ?? raw.why_it_matters ?? null,
+      whatToDo: raw.whatToDo ?? raw.what_to_do ?? null,
+      severity: raw.severity ?? null,
+      status: raw.status ?? "open",
+      type: raw.type ?? null,
+      assignedTo: raw.assignedTo ?? raw.assigned_to ?? null,
+      assignedTeam: raw.assignedTeam ?? raw.assigned_team ?? null,
+      deadline: raw.deadline ?? null,
+      escalationLevel: raw.escalationLevel ?? raw.escalation_level ?? null,
+      workflowStatus: raw.workflowStatus ?? raw.workflow_status ?? null,
+      sources: raw.sources ?? (raw.source ? [raw.source] : []),
+      createdAt: raw.createdAt ?? raw.created_at ?? new Date().toISOString(),
+    };
   } catch {
+    if (isDemoMode()) {
+      const mockAlerts = getMockAlerts();
+      return mockAlerts.find((a) => a.id === id) ?? mockAlerts[0] ?? null;
+    }
     return null;
   }
 }
