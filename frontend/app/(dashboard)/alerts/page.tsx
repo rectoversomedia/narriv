@@ -1083,9 +1083,11 @@ export default function AlertsPage() {
 
   const summaryQuery = useQuery({
     queryKey: ["alerts-summary", demoMode],
-    queryFn: () => demoMode
-      ? Promise.resolve(getMockAlertsSummary())
-      : getAlertsSummary(),
+    queryFn: async () => {
+      const res = await getAlertsSummary();
+      if (res) return res;
+      return demoMode ? getMockAlertsSummary() : null;
+    },
     staleTime: 60 * 1000,
     enabled: hasCheckedDemoMode,
   });
@@ -1093,17 +1095,35 @@ export default function AlertsPage() {
 
   const alertsQuery = useQuery({
     queryKey: ["alerts", { page, severity: severityFilter, status: statusFilter, search: searchQuery.trim(), demoMode }],
-    queryFn: () => demoMode
-      ? Promise.resolve({ data: getMockAlerts(), pagination: { page: 1, limit: 10, total: 5, totalPages: 1 } })
-      : getAlerts({ page, limit: 10, severity: severityFilter || undefined, status: statusFilter || undefined, search: searchQuery.trim() || undefined }),
+    queryFn: async () => {
+      const res = await getAlerts({
+        page,
+        limit: 10,
+        severity: severityFilter || undefined,
+        status: statusFilter || undefined,
+        search: searchQuery.trim() || undefined,
+      });
+      if (res && res.data && res.data.length > 0) {
+        return res;
+      }
+      return demoMode
+        ? { data: getMockAlerts(), pagination: { page: 1, limit: 10, total: 5, totalPages: 1 } }
+        : (res || { data: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0 } });
+    },
     staleTime: 30 * 1000,
     enabled: hasCheckedDemoMode,
   });
   const criticalAlertsQuery = useQuery({
     queryKey: ["alerts", "critical-delivery", demoMode],
-    queryFn: () => demoMode
-      ? Promise.resolve({ data: getMockAlerts().filter((a) => a.severity === "critical"), pagination: { page: 1, limit: 100, total: 1, totalPages: 1 } })
-      : getAlerts({ page: 1, limit: 100, severity: "critical" }),
+    queryFn: async () => {
+      const res = await getAlerts({ page: 1, limit: 100, severity: "critical" });
+      if (res && res.data && res.data.length > 0) {
+        return res;
+      }
+      return demoMode
+        ? { data: getMockAlerts().filter((a) => a.severity === "critical"), pagination: { page: 1, limit: 100, total: 1, totalPages: 1 } }
+        : (res || { data: [], pagination: { page: 1, limit: 100, total: 0, totalPages: 0 } });
+    },
     staleTime: 30 * 1000,
     enabled: hasCheckedDemoMode,
   });

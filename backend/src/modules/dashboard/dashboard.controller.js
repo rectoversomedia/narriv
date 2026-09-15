@@ -146,8 +146,29 @@ export const getSummary = async (req, res) => {
                 signalsQuery = signalsQuery.lte("captured_at", dateFilter.lte);
             }
 
-            const { data: signals, error: signalsError } = await signalsQuery;
+            let { data: signals, error: signalsError } = await signalsQuery;
             if (signalsError) throw signalsError;
+
+            // If date filter produced no signals for demo user, fallback to all workspace signals
+            if ((!signals || signals.length === 0) && (dateFilter.gte || dateFilter.lte) && (req.user?.isDemo || String(req.user?.id).startsWith("demo"))) {
+                const { data: allSignals } = await supabase
+                    .from("signals")
+                    .select(`
+                        id,
+                        title,
+                        content,
+                        platform,
+                        sentiment,
+                        region,
+                        captured_at,
+                        published_at
+                    `)
+                    .in("workspace_id", workspaceIds)
+                    .order("captured_at", { ascending: false });
+                if (allSignals && allSignals.length > 0) {
+                    signals = allSignals;
+                }
+            }
 
             const totalSignals = signals?.length || 0;
 

@@ -958,9 +958,18 @@ export default function SignalsPage() {
 
   const signalsQuery = useQuery({
     queryKey: ["signals", { keyword: deferredQuery, page, sentiment: apiSentimentFilter, demoMode }],
-    queryFn: () => demoMode
-      ? Promise.resolve(getMockSignals())
-      : getSignals({ page, limit: signalApiLimit, keyword: deferredQuery.trim() || undefined, sentiment: apiSentimentFilter, ...dateRange }),
+    queryFn: async () => {
+      const res = await getSignals({
+        page,
+        limit: signalApiLimit,
+        keyword: deferredQuery.trim() || undefined,
+        sentiment: apiSentimentFilter,
+      });
+      if (res && res.data && res.data.length > 0) {
+        return res;
+      }
+      return demoMode ? getMockSignals() : (res || { data: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0 } });
+    },
     staleTime: 30 * 1000,
     enabled: hasCheckedDemoMode,
   });

@@ -549,14 +549,18 @@ export default function IntelligencePage() {
 
   const narrativesQuery = useQuery({
     queryKey: ["narratives", { limit: narrativeApiLimit, days: selectedPeriod.days, impact: impactFilter, sentiment: sentimentFilter, demoMode }],
-    queryFn: () => demoMode
-      ? Promise.resolve(getMockNarratives())
-      : getNarratives({
-          limit: narrativeApiLimit,
-          days: selectedPeriod.days,
-          impact: impactFilter === "all" ? undefined : impactFilter,
-          sentiment: sentimentFilter === "all" ? undefined : sentimentFilter,
-        }),
+    queryFn: async () => {
+      const res = await getNarratives({
+        limit: narrativeApiLimit,
+        days: selectedPeriod.days,
+        impact: impactFilter === "all" ? undefined : impactFilter,
+        sentiment: sentimentFilter === "all" ? undefined : sentimentFilter,
+      });
+      if (res && res.data && res.data.length > 0) {
+        return res;
+      }
+      return demoMode ? getMockNarratives() : (res || { data: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0 } });
+    },
     staleTime: 30 * 1000,
     enabled: hasCheckedDemoMode,
   });

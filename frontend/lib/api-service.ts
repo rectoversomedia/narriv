@@ -260,22 +260,23 @@ export interface AssignmentInput {
 // ---------------------------------------------------------------------------
 
 export async function getDashboardSummary(options: DateRangeOptions = {}): Promise<DashboardSummary | null> {
-  // In demo mode, return mock data instead of trying to fetch from API
-  if (isDemoMode()) {
-    return getMockDashboardSummary();
-  }
-
   const params = new URLSearchParams();
   if (options.startDate) params.set("startDate", options.startDate);
   if (options.endDate) params.set("endDate", options.endDate);
   const query = params.toString();
 
   try {
-    return await apiClient<DashboardSummary>(`/api/dashboard/summary${query ? `?${query}` : ""}`);
+    const res = await apiClient<DashboardSummary>(`/api/dashboard/summary${query ? `?${query}` : ""}`);
+    if (res) return res;
   } catch (err) {
-    console.warn("[api-service] getDashboardSummary failed, returning null:", err);
-    return null;
+    console.warn("[api-service] getDashboardSummary failed, falling back:", err);
   }
+
+  // Fallback to mock data if API fails and in demo mode
+  if (isDemoMode()) {
+    return getMockDashboardSummary();
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------

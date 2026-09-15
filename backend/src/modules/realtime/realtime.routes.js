@@ -5,7 +5,7 @@
 
 import express from "express";
 import { verifyToken, verifyTokenSSE } from "../../middlewares/auth.middleware.js";
-import { getUserWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
+import { getUserWorkspaceIds, resolveWorkspaceIdForUser, DEMO_WORKSPACE_ID } from "../../lib/workspace-access.js";
 import {
     addSSEConnection,
     removeSSEConnection,
@@ -28,7 +28,7 @@ const cleanupIntervals = new Map();
 router.get("/stream", verifyTokenSSE, async (req, res) => {
     try {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
-        const workspaceId = workspaceIds[0] || (req.user.isDemo ? "4c77fd4b-7dc2-4a9b-be78-f9eee336e042" : req.user.id);
+        const workspaceId = workspaceIds[0] || (req.user.isDemo ? DEMO_WORKSPACE_ID : req.user.id);
 
         // Set SSE headers
         res.setHeader("Content-Type", "text/event-stream");

@@ -1,6 +1,6 @@
 import supabase from "./supabase.js";
 
-export const DEMO_WORKSPACE_ID = "4c77fd4b-7dc2-4a9b-be78-f9eee336e042";
+export const DEMO_WORKSPACE_ID = "56bc14ee-5f16-4134-9828-a240f3c72240";
 
 export const getUserWorkspaceIds = async (userId) => {
   if (!userId) return [];

@@ -78,11 +78,29 @@ router.get("/", async (req, res) => {
             query = query.gte("updated_at", minDate);
         }
 
-        const { data: data, error, count } = await query;
+        let { data: data, error, count } = await query;
 
         if (error) {
             logStructured("error", "Error fetching narratives:", { error: error.message || error });
             return res.status(500).json({ error: "Internal server error" });
+        }
+
+        // For demo session: if days filter caused 0 results, fallback to fetching all seeded clusters
+        if ((!data || data.length === 0) && Number.isFinite(days) && days > 0 && (req.user?.isDemo || String(req.user?.id).startsWith("demo"))) {
+            let fallbackQuery = supabase
+                .from("narrative_clusters")
+                .select("*", { count: "exact" })
+                .in("workspace_id", scopedWorkspaceIds);
+            if (sentiment) fallbackQuery = fallbackQuery.eq("sentiment", sentiment);
+            if (impact) fallbackQuery = fallbackQuery.eq("impact", String(impact).toUpperCase());
+
+            const fallbackRes = await fallbackQuery
+                .order("updated_at", { ascending: false })
+                .range(skip, skip + safeLimit - 1);
+            if (!fallbackRes.error && fallbackRes.data && fallbackRes.data.length > 0) {
+                data = fallbackRes.data;
+                count = fallbackRes.count;
+            }
         }
 
         return res.json({
