@@ -99,14 +99,22 @@ function eventVariant(event: string): "default" | "green" | "amber" | "red" | "p
 }
 
 function formatDateTime(value: string, locale: string) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
   return new Intl.DateTimeFormat(locale === "id" ? "id-ID" : "en-US", {
     dateStyle: "medium",
     timeStyle: "short",
-  }).format(new Date(value));
+  }).format(date);
 }
 
 function formatRelativeTime(value: string, locale: string, t: ActivityTranslator) {
-  const deltaSeconds = Math.round((new Date(value).getTime() - Date.now()) / 1000);
+  if (!value) return t("justNow");
+  const time = new Date(value).getTime();
+  if (Number.isNaN(time)) return t("justNow");
+  const deltaSeconds = Math.round((time - Date.now()) / 1000);
+  if (!Number.isFinite(deltaSeconds)) return t("justNow");
+
   const ranges: Array<[Intl.RelativeTimeFormatUnit, number]> = [
     ["year", 60 * 60 * 24 * 365],
     ["month", 60 * 60 * 24 * 30],
