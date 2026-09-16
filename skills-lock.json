@@ -115,11 +115,17 @@
       "skillPath": "frameworks/shared-skills/skills/software-architecture-design/SKILL.md",
       "computedHash": "489a330442d0df096555d13a4d3c4e9ffa0511311b758d779e7eb277dc2cfad3"
     },
+    "supabase": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase/SKILL.md",
+      "computedHash": "583344c20e90f3654dbb0632f088d89fd9f1dde8ac85e8a644dd12eee59b1380"
+    },
     "supabase-postgres-best-practices": {
       "source": "supabase/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/supabase-postgres-best-practices/SKILL.md",
-      "computedHash": "8e41c7417894e6f394614ee7ca3ee5322b1e58d890255d441f42dea98732597f"
+      "computedHash": "e14e276241805c97dbcfe40dcbea1a3035269cc7293cac4b1832dda41a835e60"
     },
     "two-factor-authentication-best-practices": {
       "source": "better-auth/skills",
