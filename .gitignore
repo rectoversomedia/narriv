@@ -28,3 +28,4 @@ out/
 coverage/
 *.tsbuildinfo
 vercel_dist/
+supabase/.temp/

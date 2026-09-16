@@ -6,8 +6,8 @@
 -- Scope: Mengunci 30 tabel operasional dan data yang sebelumnya terbuka untuk
 --        akses publik anonim tanpa autentikasi, serta mengamankan seluruh tabel 
 --        legacy Prisma (PascalCase) dengan total 41 tabel yang di-lockdown.
--- Status: PREPARED ONLY - PENDING EXECUTIVE / MANAGEMENT APPROVAL
--- DO NOT EXECUTE AUTOMATICALLY
+-- Status: APPLIED (Executed via Supabase SQL Editor on 16 Sep 2026)
+-- Live Verified: All 41 tables secured (rowsecurity = true, anon access blocked)
 -- ============================================================================
 
 BEGIN;
