@@ -1603,6 +1603,34 @@ export async function runSourceIngestion(sourceId: string): Promise<{ message: s
   }
 }
 
+export interface FetchSignalsResult {
+  success: boolean;
+  jobId?: string | null;
+  keyword?: string;
+  totalFetched: number;
+  newSignalsCreated: number;
+  newRawDocsCreated?: number;
+  skippedDuplicates?: number;
+  message?: string;
+}
+
+export async function fetchLatestSignals(params?: {
+  keyword?: string;
+  sourceId?: string;
+  rssUrl?: string;
+  limit?: number;
+}): Promise<FetchSignalsResult | null> {
+  try {
+    return await apiClient<FetchSignalsResult>("/ingestion/fetch", {
+      method: "POST",
+      body: JSON.stringify(params || {}),
+    });
+  } catch (err) {
+    console.error("fetchLatestSignals error:", err);
+    return null;
+  }
+}
+
 export async function getIngestionStatus(jobId: string): Promise<{ status: string; errorMessage?: string | null } | null> {
   try {
     return await apiClient<{ status: string; errorMessage?: string | null }>(`/ingestion/status/${jobId}`);

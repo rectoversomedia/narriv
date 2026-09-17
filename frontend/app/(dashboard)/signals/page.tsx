@@ -16,6 +16,7 @@ import {
   Filter,
   Info,
   Loader2,
+  RotateCw,
   Search,
   ShieldCheck,
   Sparkles,
@@ -25,6 +26,7 @@ import {
   CheckCircle2,
   X,
 } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
 import {
   AppStore,
   Facebook,
@@ -38,7 +40,7 @@ import { getMockNarrativeCards } from "@/lib/demo-mock-data";
 import { CreateInvestigationModal } from "./components/create-investigation-modal";
 import { AdvancedSearchModal, ActiveFiltersChips } from "./components/advanced-search-modal";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton } from "@/components/dashboard/dashboard-states";
-import { getDateRangeOptions, getSignals, type PaginationInfo, type Signal, getSignalsMeta, type SignalsMeta, bulkDeleteSignals, bulkAnalyzeSignals, bulkCreateAlertsFromSignals, searchSignals, type AdvancedSearchFilters, type SearchSignalsResponse } from "@/lib/api-service";
+import { getDateRangeOptions, getSignals, type PaginationInfo, type Signal, getSignalsMeta, type SignalsMeta, bulkDeleteSignals, bulkAnalyzeSignals, bulkCreateAlertsFromSignals, searchSignals, fetchLatestSignals, type AdvancedSearchFilters, type SearchSignalsResponse } from "@/lib/api-service";
 import { isDemoMode, getMockSignals } from "@/lib/demo-mock-data";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
@@ -864,6 +866,7 @@ function RelatedNarrativesSection() {
 
 export default function SignalsPage() {
   const t = useTranslations("Signals");
+  const toastHook = useToast();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
   const [selectedSignal, setSelectedSignal] = useState<SignalRow | null>(null);
@@ -871,9 +874,32 @@ export default function SignalsPage() {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isFetchingSignals, setIsFetchingSignals] = useState(false);
   const deferredQuery = useDeferredValue(query);
   const dateRange = getDateRangeOptions("24h");
   const queryClient = useQueryClient();
+
+  const handleFetchLatestSignals = async () => {
+    setIsFetchingSignals(true);
+    try {
+      const result = await fetchLatestSignals({ limit: 15 });
+      if (result && result.success) {
+        toastHook.success(
+          `Fetched ${result.totalFetched} live news items. ${result.newSignalsCreated} new signals ingested!`
+        );
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["signals"] }),
+          queryClient.invalidateQueries({ queryKey: ["signalsMeta"] }),
+        ]);
+      } else {
+        toastHook.info("Ingestion completed: No new signals found.");
+      }
+    } catch {
+      toastHook.error("Failed to fetch live signals");
+    } finally {
+      setIsFetchingSignals(false);
+    }
+  };
 
   // Demo mode state
   const [demoMode, setDemoMode] = useState(false);
@@ -1071,7 +1097,17 @@ export default function SignalsPage() {
       )}
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div><h1 className="text-[32px] font-black tracking-[-0.04em] text-[#060A23]">{t("title")}</h1><p className="mt-2 text-[15px] font-medium text-slate-500">{t("subtitle")}</p></div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={handleFetchLatestSignals}
+            disabled={isFetchingSignals}
+            title="Fetch latest news and signals from live RSS feeds"
+            className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#31406B] shadow-xs transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <RotateCw size={14} className={cn("text-[#465FFF]", isFetchingSignals && "animate-spin")} />
+            {isFetchingSignals ? "Fetching Signals..." : "Fetch Latest Signals"}
+          </button>
           <button onClick={() => setIsAdvancedSearchOpen(true)} className={cn("flex h-10 items-center justify-center gap-2 rounded-[8px] border px-4 text-[12px] font-black transition", isAdvancedSearchActive ? "border-[#465FFF] bg-[#465FFF]/10 text-[#465FFF]" : "border-[#DDE3EF] bg-white text-[#31406B] hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]")}>
             <Filter size={15} />
             {t("advancedSearch") || "Filters"}

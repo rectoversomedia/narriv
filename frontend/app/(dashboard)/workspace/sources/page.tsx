@@ -38,7 +38,7 @@ import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { AddSourceModal } from "@/components/dashboard/add-source-modal";
-import { bootstrapDefaultSources, getSources, updateSource, deleteSource, runBatchSourceIngestion, runSourceIngestion, getSourceHealth, getSourceCoverage, type SourceRecord, type SourceHealthSummary } from "@/lib/api-service";
+import { bootstrapDefaultSources, getSources, updateSource, deleteSource, runBatchSourceIngestion, runSourceIngestion, getSourceHealth, getSourceCoverage, fetchLatestSignals, type SourceRecord, type SourceHealthSummary } from "@/lib/api-service";
 import { isDemoMode, getMockSources } from "@/lib/demo-mock-data";
 import { cn } from "@/lib/utils";
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate" | "pink" | "black" | "orange";
@@ -689,6 +689,34 @@ export default function SourcesPage() {
     onError: () => showToast(toast("syncAllError"), "error"),
   });
 
+  const [isFetchingSignals, setIsFetchingSignals] = useState(false);
+
+  const handleFetchLatestSignals = async () => {
+    setIsFetchingSignals(true);
+    try {
+      const result = await fetchLatestSignals({ limit: 15 });
+      if (result && result.success) {
+        showToast(
+          `Fetched ${result.totalFetched} articles. ${result.newSignalsCreated} new signals ingested!`,
+          "success"
+        );
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["sources"] }),
+          queryClient.invalidateQueries({ queryKey: ["source-health"] }),
+          queryClient.invalidateQueries({ queryKey: ["source-coverage"] }),
+          queryClient.invalidateQueries({ queryKey: ["signals"] }),
+          queryClient.invalidateQueries({ queryKey: ["signalsMeta"] }),
+        ]);
+      } else {
+        showToast("Ingestion completed: No new signals found.", "info");
+      }
+    } catch {
+      showToast("Failed to fetch latest signals", "error");
+    } finally {
+      setIsFetchingSignals(false);
+    }
+  };
+
   const [selectedSourceId, setSelectedSourceId] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sourceToDelete, setSourceToDelete] = useState<Connector | null>(null);
@@ -754,7 +782,19 @@ export default function SourcesPage() {
 
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div><h1 className="text-[31px] font-black tracking-[-0.045em] text-[#060A23]">{t("title")}</h1><p className="mt-2 text-[14px] font-semibold text-[#68739F]">{t("desc")}</p></div>
-        <button type="button" onClick={() => setIsModalOpen(true)} disabled={bootstrapMutation.isPending} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#8B5CFF] px-4 text-[13px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] transition disabled:cursor-not-allowed disabled:opacity-70 sm:w-fit"><Plus size={15} />{bootstrapMutation.isPending ? toast("bootstrapInProgress") : t("add")}</button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={handleFetchLatestSignals}
+            disabled={isFetchingSignals}
+            title="Fetch latest live news signals from RSS & Google News"
+            className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[13px] font-black text-[#31406B] shadow-xs transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-70 sm:w-fit"
+          >
+            <RotateCw size={15} className={cn("text-[#465FFF]", isFetchingSignals && "animate-spin")} />
+            {isFetchingSignals ? "Fetching Signals..." : "Fetch Latest Signals"}
+          </button>
+          <button type="button" onClick={() => setIsModalOpen(true)} disabled={bootstrapMutation.isPending} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#8B5CFF] px-4 text-[13px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] transition disabled:cursor-not-allowed disabled:opacity-70 sm:w-fit"><Plus size={15} />{bootstrapMutation.isPending ? toast("bootstrapInProgress") : t("add")}</button>
+        </div>
       </header>
 
       <section className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-5">
