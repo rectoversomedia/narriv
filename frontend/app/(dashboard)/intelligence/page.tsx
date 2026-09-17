@@ -549,14 +549,18 @@ export default function IntelligencePage() {
 
   const narrativesQuery = useQuery({
     queryKey: ["narratives", { limit: narrativeApiLimit, days: selectedPeriod.days, impact: impactFilter, sentiment: sentimentFilter, demoMode }],
-    queryFn: () => demoMode
-      ? Promise.resolve(getMockNarratives())
-      : getNarratives({
-          limit: narrativeApiLimit,
-          days: selectedPeriod.days,
-          impact: impactFilter === "all" ? undefined : impactFilter,
-          sentiment: sentimentFilter === "all" ? undefined : sentimentFilter,
-        }),
+    queryFn: async () => {
+      const res = await getNarratives({
+        limit: narrativeApiLimit,
+        days: selectedPeriod.days,
+        impact: impactFilter === "all" ? undefined : impactFilter,
+        sentiment: sentimentFilter === "all" ? undefined : sentimentFilter,
+      });
+      if (res && res.data && res.data.length > 0) {
+        return res;
+      }
+      return demoMode ? getMockNarratives() : (res || { data: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0 } });
+    },
     staleTime: 30 * 1000,
     enabled: hasCheckedDemoMode,
   });
@@ -1154,9 +1158,9 @@ export default function IntelligencePage() {
                   <div>
                     <h3 className="text-sm font-black text-[#53608C]">{ti("analysisModal.sentimentBreakdown")}</h3>
                     <div className="mt-3 flex gap-2">
-                      {Object.entries(narrativeDetailQuery.data.sentimentBreakdown).map(([key, value]) => {
+                      {Object.entries(narrativeDetailQuery.data.sentimentBreakdown || {}).map(([key, value]) => {
                         const data = narrativeDetailQuery.data!;
-                        const total = Object.values(data.sentimentBreakdown).reduce((sum, v) => sum + v, 0);
+                        const total = Object.values(data.sentimentBreakdown || {}).reduce((sum, v) => sum + v, 0);
                         const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
                         return (
                           <div key={key} className="flex-1 rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3 text-center">
@@ -1171,7 +1175,7 @@ export default function IntelligencePage() {
                   <div>
                     <h3 className="text-sm font-black text-[#53608C]">{ti("analysisModal.relatedSignals")}</h3>
                     <div className="mt-3 flex flex-col gap-2">
-                      {narrativeDetailQuery.data.relatedSignals.slice(0, 5).map((sig) => (
+                      {(narrativeDetailQuery.data.relatedSignals || []).slice(0, 5).map((sig) => (
                         <div key={sig.id} className="rounded-lg border border-[#EEF1F7] p-3">
                           <p className="text-sm font-bold text-[#101334]">{sig.title}</p>
                           <p className="mt-1 text-xs font-medium text-[#737D9F] line-clamp-2">{sig.content || ti("analysisModal.noContent")}</p>

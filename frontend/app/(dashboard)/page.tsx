@@ -418,23 +418,25 @@ export default function DashboardPage() {
   ];
 
   const narratives: Array<{ id: string; title: string; status: "active"; sentiment: Tone; volume: string; growth: string }> =
-    demoMode
-      ? getMockNarratives().data.map((n) => ({
-          id: n.id,
-          title: n.title,
-          status: "active" as const,
-          sentiment: (n.sentiment === "positive" ? "green" : n.sentiment === "negative" ? "red" : n.sentiment === "mixed" ? "amber" : "blue") as Tone,
-          volume: String(n.signalCount),
-          growth: n.velocity,
-        }))
-      : (summary?.top_topics ?? []).map((t, i) => ({
+    (summary?.top_topics && summary.top_topics.length > 0)
+      ? summary.top_topics.map((t, i) => ({
           id: `topic-${i}`,
           title: text(t.name, language),
           status: "active" as const,
           sentiment: (t.tone === "positive" ? "green" : t.tone === "negative" ? "red" : t.tone === "mixed" ? "amber" : "blue") as Tone,
           volume: t.mentions,
-          growth: t.delta,
-        }));
+          growth: t.delta ?? "+0%",
+        }))
+      : demoMode
+        ? getMockNarratives().data.map((n) => ({
+            id: n.id,
+            title: n.title,
+            status: "active" as const,
+            sentiment: (n.sentiment === "positive" ? "green" : n.sentiment === "negative" ? "red" : n.sentiment === "mixed" ? "amber" : "blue") as Tone,
+            volume: String(n.signalCount),
+            growth: n.velocity,
+          }))
+        : [];
 
   const priorityBadgeClass: Record<string, string> = {
     Immediate: "bg-red-50 text-red-600 border-red-200",

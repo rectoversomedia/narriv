@@ -15,6 +15,7 @@ import type {
   MetaPaginatedResponse,
   ActionQueueRecord,
   NarrativeRecord,
+  NarrativeDetailRecord,
   VisibilityResponse,
   SourceRecord,
   IntegrationRecord,
@@ -583,6 +584,66 @@ export function getMockNarratives(): PaginatedResponse<NarrativeRecord> {
       },
     ],
     pagination: { page: 1, limit: 10, total: 5, totalPages: 1 },
+  };
+}
+
+export function getMockNarrativeDetail(id: string): NarrativeDetailRecord {
+  const narratives = getMockNarratives().data;
+  const base = narratives.find((n) => n.id === id) || narratives[0];
+
+  const now = new Date();
+  const trends = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(now.getTime() - (6 - i) * 24 * 60 * 60 * 1000);
+    return {
+      date: d.toISOString().split("T")[0],
+      count: Math.floor(Math.random() * 40) + 15,
+    };
+  });
+
+  return {
+    ...base,
+    trends,
+    sentimentBreakdown: {
+      positive: base.sentiment === "positive" ? 65 : 15,
+      neutral: 20,
+      negative: base.sentiment === "negative" ? 65 : 15,
+      mixed: 10,
+    },
+    relatedSignals: [
+      {
+        id: `${base.id}-sig-1`,
+        title: `${base.title}: Significant discussion on Twitter/X`,
+        content: `User feedback regarding ${base.title.toLowerCase()} has increased over the past 24 hours, focusing on service impact and resolution speed.`,
+        platform: "twitter",
+        url: "https://twitter.com/narriv/status/1",
+        sentiment: base.sentiment,
+        impact: base.impact,
+        capturedAt: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(),
+        publishedAt: new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString(),
+      },
+      {
+        id: `${base.id}-sig-2`,
+        title: `${base.title}: Analysis report published`,
+        content: `Industry commentary highlights how ${base.title.toLowerCase()} aligns with ongoing market trends and regulatory expectations.`,
+        platform: "news",
+        url: "https://news.example.com/article/1",
+        sentiment: "neutral",
+        impact: "medium",
+        capturedAt: new Date(now.getTime() - 5 * 60 * 60 * 1000).toISOString(),
+        publishedAt: new Date(now.getTime() - 6 * 60 * 60 * 1000).toISOString(),
+      },
+      {
+        id: `${base.id}-sig-3`,
+        title: `${base.title}: Community discussion thread`,
+        content: `Community members have gathered observations and shared recommendations on tackling ${base.title.toLowerCase()} proactively.`,
+        platform: "facebook",
+        url: "https://facebook.com/post/1",
+        sentiment: base.sentiment,
+        impact: "low",
+        capturedAt: new Date(now.getTime() - 12 * 60 * 60 * 1000).toISOString(),
+        publishedAt: new Date(now.getTime() - 14 * 60 * 60 * 1000).toISOString(),
+      },
+    ],
   };
 }
 

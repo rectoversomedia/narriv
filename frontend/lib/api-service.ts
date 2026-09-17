@@ -12,7 +12,7 @@
 import type { LucideIcon } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { useAuthStore, type AuthUser } from "@/store/useAuthStore";
-import { getMockDashboardSummary, isDemoMode } from "./demo-mock-data";
+import { getMockAlerts, getMockDashboardSummary, getMockNarrativeDetail, isDemoMode } from "./demo-mock-data";
 
 // ---------------------------------------------------------------------------
 // Types — shaped to match actual backend responses
@@ -260,22 +260,23 @@ export interface AssignmentInput {
 // ---------------------------------------------------------------------------
 
 export async function getDashboardSummary(options: DateRangeOptions = {}): Promise<DashboardSummary | null> {
-  // In demo mode, return mock data instead of trying to fetch from API
-  if (isDemoMode()) {
-    return getMockDashboardSummary();
-  }
-
   const params = new URLSearchParams();
   if (options.startDate) params.set("startDate", options.startDate);
   if (options.endDate) params.set("endDate", options.endDate);
   const query = params.toString();
 
   try {
-    return await apiClient<DashboardSummary>(`/api/dashboard/summary${query ? `?${query}` : ""}`);
+    const res = await apiClient<DashboardSummary>(`/api/dashboard/summary${query ? `?${query}` : ""}`);
+    if (res) return res;
   } catch (err) {
-    console.warn("[api-service] getDashboardSummary failed, returning null:", err);
-    return null;
+    console.warn("[api-service] getDashboardSummary failed, falling back:", err);
   }
+
+  // Fallback to mock data if API fails and in demo mode
+  if (isDemoMode()) {
+    return getMockDashboardSummary();
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -379,9 +380,45 @@ export async function getAlerts(
 }
 
 export async function getAlertById(id: string): Promise<Alert | null> {
+  // If id is a mock ID or starts with demo-alert-, look up in mock alerts
+  if (id.startsWith("demo-alert-") || id.startsWith("mock-alert-")) {
+    const mockAlerts = getMockAlerts();
+    const found = mockAlerts.find((a) => a.id === id);
+    if (found) return found;
+  }
+
   try {
-    return await apiClient<Alert>(`/api/alerts/${id}`);
+    const raw = await apiClient<any>(`/api/alerts/${id}`);
+    if (!raw) {
+      if (isDemoMode()) {
+        const mockAlerts = getMockAlerts();
+        return mockAlerts.find((a) => a.id === id) ?? mockAlerts[0] ?? null;
+      }
+      return null;
+    }
+
+    return {
+      id: raw.id,
+      title: raw.title,
+      whatHappened: raw.whatHappened ?? raw.what_happened ?? raw.description ?? null,
+      whyItMatters: raw.whyItMatters ?? raw.why_it_matters ?? null,
+      whatToDo: raw.whatToDo ?? raw.what_to_do ?? null,
+      severity: raw.severity ?? null,
+      status: raw.status ?? "open",
+      type: raw.type ?? null,
+      assignedTo: raw.assignedTo ?? raw.assigned_to ?? null,
+      assignedTeam: raw.assignedTeam ?? raw.assigned_team ?? null,
+      deadline: raw.deadline ?? null,
+      escalationLevel: raw.escalationLevel ?? raw.escalation_level ?? null,
+      workflowStatus: raw.workflowStatus ?? raw.workflow_status ?? null,
+      sources: raw.sources ?? (raw.source ? [raw.source] : []),
+      createdAt: raw.createdAt ?? raw.created_at ?? new Date().toISOString(),
+    };
   } catch {
+    if (isDemoMode()) {
+      const mockAlerts = getMockAlerts();
+      return mockAlerts.find((a) => a.id === id) ?? mockAlerts[0] ?? null;
+    }
     return null;
   }
 }
@@ -1819,9 +1856,21 @@ export async function getFeedbackAccuracy(options: Record<string, string | numbe
 }
 
 export async function getNarrativeById(id: string): Promise<NarrativeDetailRecord | null> {
+  if (id.startsWith("demo-narrative-") || id.startsWith("mock-narrative-")) {
+    return getMockNarrativeDetail(id);
+  }
+
   try {
-    return await apiClient<NarrativeDetailRecord>(`/api/narratives/${id}`);
+    const res = await apiClient<NarrativeDetailRecord>(`/api/narratives/${id}`);
+    if (res) return res;
+    if (isDemoMode()) {
+      return getMockNarrativeDetail(id);
+    }
+    return null;
   } catch {
+    if (isDemoMode()) {
+      return getMockNarrativeDetail(id);
+    }
     return null;
   }
 }

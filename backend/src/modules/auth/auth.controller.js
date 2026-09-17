@@ -6,6 +6,7 @@ import { sendEmail } from "../../lib/email.js";
 import { passwordResetCode, passwordResetConfirmation, emailVerificationCode } from "../../lib/email-templates.js";
 import { logStructured } from "../../lib/logger.js";
 import { invalidateUserSessions } from "../../middlewares/session.middleware.js";
+import { DEMO_WORKSPACE_ID } from "../../lib/workspace-access.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const ACCESS_TOKEN_TTL = process.env.ACCESS_TOKEN_TTL || "1h";
@@ -1083,6 +1084,22 @@ export const me = async (req, res) => {
     try {
         const user_id = req.user.id;
 
+        if (req.user.isDemo || String(user_id).startsWith("demo")) {
+            return res.json({
+                id: user_id,
+                email: req.user.email || "demo@narriv.ai",
+                name: req.user.name || "Demo User",
+                provider: "demo",
+                isDemo: true,
+                workspace: {
+                    id: DEMO_WORKSPACE_ID,
+                    name: "Demo Workspace",
+                    slug: "demo-workspace",
+                    role: "owner",
+                },
+            });
+        }
+
         const { data: user, error } = await baseSupabaseAdmin
             .from("users")
             .select("id, email, name")
@@ -1580,6 +1597,7 @@ export const demo = async (req, res) => {
                 name: demoUser.name,
                 provider: "demo",
                 workspace: "Demo Workspace",
+                workspaceId: DEMO_WORKSPACE_ID,
                 isDemo: true,
             },
         });

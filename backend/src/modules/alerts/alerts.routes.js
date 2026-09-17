@@ -326,6 +326,11 @@ router.get("/summary", async (req, res) => {
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+        if (!isUuid) {
+            return res.status(404).json({ error: "Alert not found" });
+        }
+
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
         const { data: alert, error } = await supabase
@@ -338,11 +343,25 @@ router.get("/:id", async (req, res) => {
             return res.status(404).json({ error: "Alert not found" });
         }
 
-        if (!scopedWorkspaceIds.includes(alert.workspace_id)) {
+        const isAllowed = scopedWorkspaceIds.includes(alert.workspace_id) ||
+            (req.user?.isDemo && (alert.workspace_id === "56bc14ee-5f16-4134-9828-a240f3c72240" || alert.workspace_id === "4c77fd4b-7dc2-4a9b-be78-f9eee336e042"));
+
+        if (!isAllowed) {
             return res.status(404).json({ error: "Alert not found" });
         }
 
-        res.json(alert);
+        res.json({
+            ...alert,
+            whatHappened: alert.what_happened || alert.description || null,
+            whyItMatters: alert.why_it_matters || null,
+            whatToDo: alert.what_to_do || null,
+            assignedTo: alert.assigned_to || null,
+            assignedTeam: alert.assigned_team || null,
+            escalationLevel: alert.escalation_level || null,
+            createdAt: alert.created_at,
+            updatedAt: alert.updated_at,
+            sources: alert.sources || (alert.source ? [alert.source] : []),
+        });
     } catch (error) {
         logStructured("error", "Error fetching alert:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });

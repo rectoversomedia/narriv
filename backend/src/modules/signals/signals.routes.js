@@ -63,11 +63,30 @@ router.get("/", async (req, res) => {
             }
         }
 
-        const { data: signalsData, error: signalsError, count } = await query
+        let { data: signalsData, error: signalsError, count } = await query
             .order('captured_at', { ascending: false })
             .range(skip, skip + safeLimit - 1);
 
         if (signalsError) throw signalsError;
+
+        // If date filter produced no signals for demo user, fallback to all workspace signals
+        if ((!signalsData || signalsData.length === 0) && (startDate || endDate) && (req.user?.isDemo || String(req.user?.id).startsWith("demo"))) {
+            let fallbackQuery = supabase
+                .from('signals')
+                .select('*', { count: 'exact' })
+                .in('workspace_id', workspaceIds);
+            if (keyword) fallbackQuery = fallbackQuery.or(`title.ilike.%${keyword}%,content.ilike.%${keyword}%`);
+            if (platform) fallbackQuery = fallbackQuery.eq('platform', platform);
+            if (sentiment) fallbackQuery = fallbackQuery.ilike('sentiment', sentiment);
+
+            const fallbackRes = await fallbackQuery
+                .order('captured_at', { ascending: false })
+                .range(skip, skip + safeLimit - 1);
+            if (!fallbackRes.error && fallbackRes.data && fallbackRes.data.length > 0) {
+                signalsData = fallbackRes.data;
+                count = fallbackRes.count;
+            }
+        }
 
         res.json({
             data: signalsData || [],

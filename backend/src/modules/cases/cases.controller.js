@@ -2,6 +2,7 @@ import supabase from "../../lib/supabase.js";
 import { badRequest, forbidden, internalError, notFound } from "../../lib/api-error.js";
 import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { logStructured } from "../../lib/logger.js";
+import { recordAuditLog } from "../../lib/audit.js";
 
 export async function listCases(req, res) {
     try {
@@ -87,11 +88,39 @@ export async function getCase(req, res) {
 
 export async function createCase(req, res) {
     try {
-        const { workspaceId, title, description, priority, sourceType, sourceId, assignedTo, assignedTeam, deadline } = req.body;
+        const { workspaceId, title, description, priority, sourceType, sourceId, signalId, assignedTo, assignedTeam, deadline } = req.body;
 
         const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
         if (!scopedWorkspaceId) {
             return forbidden(res, "Workspace access denied", "WORKSPACE_ACCESS_DENIED");
+        }
+
+        // Determine signal_id from either signalId or sourceId (when sourceType is "signal" or general)
+        const rawSignalId = signalId || (sourceType === "signal" ? sourceId : null) || sourceId || null;
+        const isSignalUuid = typeof rawSignalId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawSignalId);
+        let validSignalId = null;
+        if (isSignalUuid) {
+            const { data: signalExists } = await supabase
+                .from("signals")
+                .select("id")
+                .eq("id", rawSignalId)
+                .maybeSingle();
+            if (signalExists) {
+                validSignalId = rawSignalId;
+            }
+        }
+
+        const isAssigneeUuid = typeof assignedTo === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(assignedTo);
+        let validAssigneeId = null;
+        if (isAssigneeUuid) {
+            const { data: userExists } = await supabase
+                .from("users")
+                .select("id")
+                .eq("id", assignedTo)
+                .maybeSingle();
+            if (userExists) {
+                validAssigneeId = assignedTo;
+            }
         }
 
         const { data: caseRecord, error } = await supabase
@@ -101,9 +130,9 @@ export async function createCase(req, res) {
                 title,
                 description: description || null,
                 priority: priority || "medium",
-                source_type: sourceType || null,
-                source_id: sourceId || null,
-                assignee_id: assignedTo || null,
+                signal_id: validSignalId,
+                assignee_id: validAssigneeId,
+                status: "open",
                 deadline: deadline ? new Date(deadline).toISOString() : null,
             })
             .select()
@@ -114,9 +143,9 @@ export async function createCase(req, res) {
             return internalError(res);
         }
 
-        await supabase.from("audit_logs").insert({
-            user_id: req.user.id,
-            workspace_id: scopedWorkspaceId,
+        await recordAuditLog({
+            userId: req.user.id,
+            workspaceId: scopedWorkspaceId,
             event: "case_created",
             metadata: { workspace_id: scopedWorkspaceId, case_id: caseRecord.id, title },
         });
@@ -181,9 +210,9 @@ export async function updateCase(req, res) {
             return internalError(res);
         }
 
-        await supabase.from("audit_logs").insert({
-            user_id: req.user.id,
-            workspace_id: scopedWorkspaceId,
+        await recordAuditLog({
+            userId: req.user.id,
+            workspaceId: scopedWorkspaceId,
             event: "case_updated",
             metadata: { workspace_id: scopedWorkspaceId, case_id: updated.id, changes: updateData },
         });
@@ -232,9 +261,9 @@ export async function deleteCase(req, res) {
             return internalError(res);
         }
 
-        await supabase.from("audit_logs").insert({
-            user_id: req.user.id,
-            workspace_id: scopedWorkspaceId,
+        await recordAuditLog({
+            userId: req.user.id,
+            workspaceId: scopedWorkspaceId,
             event: "case_deleted",
             metadata: { workspace_id: scopedWorkspaceId, case_id: req.params.id },
         });

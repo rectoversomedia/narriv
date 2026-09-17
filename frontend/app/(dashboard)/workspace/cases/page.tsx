@@ -94,9 +94,12 @@ function dateInputToIsoDateTime(value: FormDataEntryValue | null) {
 }
 
 function formatRelativeTime(value: string, locale: string) {
-  const deltaSeconds = Math.round(
-    (new Date(value).getTime() - Date.now()) / 1000,
-  );
+  if (!value) return locale === "id" ? "baru saja" : "just now";
+  const time = new Date(value).getTime();
+  if (Number.isNaN(time)) return locale === "id" ? "baru saja" : "just now";
+  const deltaSeconds = Math.round((time - Date.now()) / 1000);
+  if (!Number.isFinite(deltaSeconds)) return locale === "id" ? "baru saja" : "just now";
+
   const ranges: Array<[Intl.RelativeTimeFormatUnit, number]> = [
     ["year", 60 * 60 * 24 * 365],
     ["month", 60 * 60 * 24 * 30],
@@ -117,10 +120,13 @@ function formatRelativeTime(value: string, locale: string) {
 }
 
 function formatDateTime(value: string, locale: string) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
   return new Intl.DateTimeFormat(locale === "id" ? "id-ID" : "en-US", {
     dateStyle: "medium",
     timeStyle: "short",
-  }).format(new Date(value));
+  }).format(date);
 }
 
 function formatDeadline(value: string | null, locale: string) {
