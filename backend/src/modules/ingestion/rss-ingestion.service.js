@@ -195,6 +195,41 @@ export async function ingestRssSignals({
     }
   }
 
+  // If no keyword specified, check monitoring_keywords first
+  if (!targetKeyword && !rssUrl) {
+    const { data: monitoringKws } = await supabaseAdmin
+      .from("monitoring_keywords")
+      .select("keyword")
+      .eq("workspace_id", workspaceId)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false });
+
+    if (monitoringKws && monitoringKws.length > 0 && monitoringKws[0]?.keyword) {
+      targetKeyword = monitoringKws[0].keyword;
+    }
+  }
+
+  // Next check active news/rss sources if still not specified
+  if (!targetKeyword && !rssUrl) {
+    const { data: newsSources } = await supabaseAdmin
+      .from("sources")
+      .select("*")
+      .eq("workspace_id", workspaceId)
+      .eq("is_active", true)
+      .in("type", ["news", "rss", "web"])
+      .order("created_at", { ascending: false });
+
+    if (newsSources && newsSources.length > 0) {
+      const matched = newsSources.find((s) => s.config?.keyword || s.config?.keywords?.[0]);
+      if (matched) {
+        activeSource = matched;
+        targetKeyword = matched.config?.keyword || matched.config?.keywords?.[0] || matched.name;
+      } else {
+        activeSource = newsSources[0];
+      }
+    }
+  }
+
   // Fallback to workspace brand if no keyword specified
   if (!targetKeyword && !rssUrl) {
     const { data: settings } = await supabaseAdmin
@@ -202,7 +237,26 @@ export async function ingestRssSignals({
       .select("brand_name")
       .eq("workspace_id", workspaceId)
       .maybeSingle();
-    targetKeyword = settings?.brand_name || "Perbankan Indonesia";
+
+    if (settings?.brand_name && settings.brand_name.toLowerCase() !== "narriv") {
+      targetKeyword = settings.brand_name;
+    } else {
+      targetKeyword = "Bank Mandiri";
+    }
+  }
+
+  // If activeSource is still null, associate with first active news source if available
+  if (!activeSource) {
+    const { data: fallbackSource } = await supabaseAdmin
+      .from("sources")
+      .select("*")
+      .eq("workspace_id", workspaceId)
+      .eq("is_active", true)
+      .eq("type", "news")
+      .maybeSingle();
+    if (fallbackSource) {
+      activeSource = fallbackSource;
+    }
   }
 
   // Fetch RSS items
