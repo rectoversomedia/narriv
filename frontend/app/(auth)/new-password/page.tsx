@@ -42,7 +42,7 @@ export default function NewPasswordPage() {
   const onSubmit = async (values: NewPasswordFormValues) => {
     const resetToken = window.sessionStorage.getItem("narriv-reset-token");
     if (!resetToken) {
-      setApiError("Token reset tidak ditemukan. Mulai ulang proses reset password.");
+      setApiError("Reset token not found. Please restart the password reset process.");
       return;
     }
 
@@ -54,7 +54,7 @@ export default function NewPasswordPage() {
       window.sessionStorage.removeItem("narriv-reset-dev-code");
       router.push("/login");
     } catch {
-      setApiError("Password belum bisa direset. Token mungkin sudah kedaluwarsa.");
+      setApiError("Unable to reset password. The token may have expired.");
     }
   };
 

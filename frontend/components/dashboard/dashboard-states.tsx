@@ -241,7 +241,7 @@ export function DashboardPagination({
           type="button"
           onClick={() => onPageChange(page - 1)}
           disabled={disabled || !canGoPrevious}
-          aria-label={`Ke halaman sebelumnya, halaman ${page - 1}`}
+          aria-label={`Go to previous page, page ${page - 1}`}
           className="inline-flex h-[34px] items-center rounded-[8px] border border-[#E6EAF2] bg-white px-3 text-[11px] font-black text-[#101334] transition hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-45"
         >
           {tp("pagination.prev")}
@@ -250,7 +250,7 @@ export function DashboardPagination({
           type="button"
           onClick={() => onPageChange(page + 1)}
           disabled={disabled || !canGoNext}
-          aria-label={`Ke halaman berikutnya, halaman ${page + 1}`}
+          aria-label={`Go to next page, page ${page + 1}`}
           className="inline-flex h-[34px] items-center rounded-[8px] border border-[#E6EAF2] bg-white px-3 text-[11px] font-black text-[#101334] transition hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-45"
         >
           {tp("pagination.next")}

@@ -56,11 +56,11 @@ export default function VerifyCodePage() {
     event.preventDefault();
     const joinedCode = code.join("");
     if (!email) {
-      setApiError("Reset email tidak ditemukan. Mulai ulang proses reset password.");
+      setApiError("Reset email not found. Please restart the password reset process.");
       return;
     }
     if (!/^\d{6}$/.test(joinedCode)) {
-      setApiError("Masukkan kode 6 digit.");
+      setApiError("Please enter a 6-digit code.");
       return;
     }
 
@@ -74,7 +74,7 @@ export default function VerifyCodePage() {
       window.sessionStorage.removeItem("narriv_reset_cooldown_at");
       router.push("/new-password");
     } catch {
-      setApiError("Kode reset tidak valid atau sudah kedaluwarsa.");
+      setApiError("Invalid or expired reset code.");
     } finally {
       setIsSubmitting(false);
     }
@@ -97,7 +97,7 @@ export default function VerifyCodePage() {
       setTimeLeft(600);
       setResendCooldown(45);
     } catch {
-      setApiError("Kode reset belum bisa dikirim ulang.");
+      setApiError("Unable to resend reset code. Please try again.");
     } finally {
       setIsResending(false);
     }
@@ -120,7 +120,7 @@ export default function VerifyCodePage() {
         <VerificationCodeInput value={code} onChange={setCode} />
         {devCode ? <p className="rounded-[8px] border border-[#D7E2FF] bg-[#F5F7FF] px-4 py-3 text-center text-sm font-semibold text-[#3446B5]">Dev reset code: {devCode}</p> : null}
         {apiError ? <p className="rounded-[8px] border border-[#F04438]/20 bg-[#FFF5F4] px-4 py-3 text-sm font-medium text-[#B42318]">{apiError}</p> : null}
-        <PrimaryButton loading={isSubmitting}>{isSubmitting ? "Memverifikasi..." : "Verifikasi kode"}</PrimaryButton>
+        <PrimaryButton loading={isSubmitting}>{isSubmitting ? "Verifying..." : "Verify code"}</PrimaryButton>
       </form>
 
       <p className="mt-12 text-center text-[17px] font-medium text-[#3E4975]">

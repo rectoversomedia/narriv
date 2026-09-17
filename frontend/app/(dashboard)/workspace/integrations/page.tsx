@@ -348,16 +348,16 @@ export default function IntegrationsPage() {
           <div className="overflow-hidden rounded-[16px] border border-slate-200 bg-white shadow-sm">
             {integrationsQuery.isError || integrationsQuery.data === null ? (
               <DashboardErrorState
-                title="Gagal memuat integrasi"
-                description="Daftar integrasi belum bisa diambil dari backend. Coba refresh atau periksa koneksi API."
+                title="Failed to load integrations"
+                description="Could not load integrations from backend. Please refresh or check API connection."
                 onRetry={() => integrationsQuery.refetch()}
               />
             ) : integrationsQuery.isPending ? (
               <div className="p-4"><TableSkeleton rows={6} columns={5} /></div>
             ) : integrations.length === 0 ? (
               <DashboardEmptyState
-                title="Belum ada integrasi"
-                description="Hubungkan Slack, Teams, webhook, atau database export agar response workflow lebih otomatis."
+                title="No integrations yet"
+                description="Connect Slack, Teams, webhooks, or database exports to automate response workflows."
                 icon="inbox"
               />
             ) : (
@@ -425,7 +425,7 @@ export default function IntegrationsPage() {
                               type="button"
                               onClick={() => setDeleteTarget(item)}
                               className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-500"
-                              aria-label={`Putus integrasi ${item.name}`}
+                              aria-label={`Disconnect ${item.name} integration`}
                             >
                               <Trash2 size={16} />
                             </button>

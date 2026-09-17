@@ -1088,8 +1088,8 @@
     "title": "Predictive Alerts",
     "subtitle": "Find issues before they grow, then record team decisions so future suggestions get better.",
     "learningQueue": "Review Queue",
-    "queue": "Warning Queue",
-    "noAlerts": "No live warnings found yet.",
+    "queue": "Alert Queue",
+    "noAlerts": "No live alerts found yet.",
     "createAction": "Create Action",
     "creatingAction": "Creating...",
     "createActionFailed": "Could not create an action plan for this alert. AI generation may be unavailable or missing configuration.",
@@ -1134,7 +1134,7 @@
       "betterTitle": "5. Better alerts",
       "betterDesc": "The next suggestions become more useful."
     },
-    "footer": "Note: each warning should explain why it matters, such as speed, source strength, sentiment, topic spread, impact timing, and confidence. Feedback should use clear categories.",
+    "footer": "Note: each alert should explain why it matters, such as speed, source strength, sentiment, topic spread, impact timing, and confidence. Feedback should use clear categories.",
     "toast": {
       "statusUpdated": "Alert status updated.",
       "statusUpdateFailed": "Could not update alert status.",
@@ -2232,7 +2232,7 @@
     "notFoundDesc": "This alert does not exist or your workspace cannot access it.",
     "recommendedStep": "Recommended next step",
     "assignmentTitle": "Assignment workflow",
-    "assignmentDesc": "Set the PIC, responsible team, response deadline, and escalation level for this warning.",
+    "assignmentDesc": "Set the PIC, responsible team, response deadline, and escalation level for this alert.",
     "assignedTo": "PIC / Owner",
     "assignedToPlaceholder": "Person responsible",
     "assignedTeam": "Team",
@@ -2242,7 +2242,7 @@
     "saveAssignment": "Save assignment",
     "savingAssignment": "Saving...",
     "assignmentSaved": "Assignment saved",
-    "assignmentSavedDesc": "The warning owner and escalation details were saved.",
+    "assignmentSavedDesc": "The alert owner and escalation details were saved.",
     "assignmentFailed": "Could not save assignment",
     "assignmentFailedDesc": "Check the assignment fields and try again.",
     "escalation": {

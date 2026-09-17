@@ -842,7 +842,7 @@ export default function SourcesPage() {
                   </button>
                   <button
                     type="button"
-                    aria-label="Tampilkan sumber dalam grid"
+                    aria-label="Display sources in grid view"
                     aria-pressed={viewMode === "grid"}
                     onClick={() => setViewMode("grid")}
                     className={cn(
@@ -856,7 +856,7 @@ export default function SourcesPage() {
                   </button>
                   <button
                     type="button"
-                    aria-label="Tampilkan sumber dalam daftar"
+                    aria-label="Display sources in list view"
                     aria-pressed={viewMode === "list"}
                     onClick={() => setViewMode("list")}
                     className={cn(

@@ -223,7 +223,7 @@ type PasswordInputProps = Omit<AuthInputProps, "type" | "rightAddon" | "icon"> &
   hideLabel?: string;
 };
 
-export function PasswordInput({ showLabel = "Tampilkan kata sandi", hideLabel = "Sembunyikan kata sandi", ...props }: PasswordInputProps) {
+export function PasswordInput({ showLabel = "Show password", hideLabel = "Hide password", ...props }: PasswordInputProps) {
   const [visible, setVisible] = useState(false);
 
   return (
