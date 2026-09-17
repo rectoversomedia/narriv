@@ -537,6 +537,7 @@ function ReportsTable({
   const [activeTab, setActiveTab] = useState<TabValue>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
   const tabs: Array<{ key: string; value: TabValue }> = [
     { key: "all", value: "all" },
     { key: "ready", value: "READY" },
@@ -547,13 +548,14 @@ function ReportsTable({
   ];
   const filteredRows = rows
     .filter((report) => activeTab === "all" || report.status === activeTab)
+    .filter((report) => typeFilter === "all" || report.type.toLowerCase().includes(typeFilter.toLowerCase()))
     .filter((report) => {
       const term = searchTerm.trim().toLowerCase();
       if (!term) return true;
       return [report.title, report.description, report.type, report.period, report.created].some((value) => value.toLowerCase().includes(term));
     });
   const visibleRows = sortDirection === "desc" ? filteredRows : [...filteredRows].reverse();
-  const hasLocalFilters = activeTab !== "all" || searchTerm.trim().length > 0;
+  const hasLocalFilters = activeTab !== "all" || searchTerm.trim().length > 0 || typeFilter !== "all";
 
   return (
     <Panel className="p-4">
@@ -562,7 +564,7 @@ function ReportsTable({
           <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{tr("table.title")}</h2>
           <p className="mt-1 text-[11px] font-bold text-[#68739F]">{tr("table.desc")}</p>
         </div>
-        <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           <label className="relative block w-full sm:w-[180px]">
             <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-[#8B95B8]" />
             <input
@@ -573,9 +575,28 @@ function ReportsTable({
               className="h-8 w-full rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] pl-8 pr-3 text-[10px] font-bold text-[#101334] outline-none transition placeholder:text-[#8B95B8] focus:border-[#465FFF] focus:bg-white"
             />
           </label>
-          <button type="button" onClick={() => { setActiveTab("all"); setSearchTerm(""); }} disabled={!hasLocalFilters} className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-2.5 text-[10px] font-black text-[#58648C] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-45 sm:flex-none">
-            <SlidersHorizontal size={12} /> {hasLocalFilters ? tr("clear") : tr("filter.title")}
-          </button>
+          <div className="relative flex-1 sm:flex-none">
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              aria-label="Filter report type"
+              className="h-8 w-full rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-2.5 text-[10px] font-black text-[#58648C] outline-none transition hover:bg-white focus:border-[#465FFF] sm:w-auto"
+            >
+              <option value="all">All Types</option>
+              <option value="Executive Brief">Executive Brief</option>
+              <option value="Incident">Incident</option>
+              <option value="Weekly">Weekly Digest</option>
+            </select>
+          </div>
+          {hasLocalFilters ? (
+            <button
+              type="button"
+              onClick={() => { setActiveTab("all"); setSearchTerm(""); setTypeFilter("all"); }}
+              className="inline-flex h-8 items-center justify-center gap-1 rounded-[7px] border border-[#FAD1D1] bg-[#FFF5F5] px-2.5 text-[10px] font-black text-[#B42318] transition hover:bg-[#FFEBEB] sm:flex-none"
+            >
+              <X size={12} /> {tr("clear") || "Reset"}
+            </button>
+          ) : null}
           <button type="button" onClick={() => setSortDirection((value) => value === "desc" ? "asc" : "desc")} className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-2.5 text-[10px] font-black text-[#58648C] transition hover:bg-white sm:flex-none">
             {sortDirection === "desc" ? tr("filter.latest") : tr("filter.oldest")} <ChevronDown size={12} className={cn("transition", sortDirection === "asc" && "rotate-180")} />
           </button>

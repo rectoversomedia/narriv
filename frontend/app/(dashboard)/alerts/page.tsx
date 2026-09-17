@@ -1042,6 +1042,28 @@ export default function AlertsPage() {
     setCreateAssignedTeam("");
   }
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (isCreateModalOpen) closeCreateModal();
+        if (isFilterModalOpen) setIsFilterModalOpen(false);
+        if (isNotificationRulesModalOpen) setIsNotificationRulesModalOpen(false);
+        if (isEscalationModalOpen) setIsEscalationModalOpen(false);
+        if (isCriticalStatusModalOpen) setIsCriticalStatusModalOpen(false);
+        if (isJourneyModalOpen) setIsJourneyModalOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    isCreateModalOpen,
+    isFilterModalOpen,
+    isNotificationRulesModalOpen,
+    isEscalationModalOpen,
+    isCriticalStatusModalOpen,
+    isJourneyModalOpen,
+  ]);
+
   // Members and escalation data feed live alert panels plus create/edit dropdowns.
   const user = useAuthStore((state) => state.user);
   const isDemoSession = Boolean(user?.isDemo || user?.provider === "demo");
@@ -1480,8 +1502,8 @@ export default function AlertsPage() {
       </section>
 
       {isCriticalStatusModalOpen && createPortal(
-        <div className="fixed inset-0 z-100 flex items-center justify-center bg-[#101334]/35 p-4 backdrop-blur-md" onClick={() => setIsCriticalStatusModalOpen(false)}>
-          <div className="flex max-h-[86vh] w-full max-w-2xl flex-col overflow-hidden rounded-[18px] border border-[#F4D8D8] bg-white text-[#101334] shadow-[0_24px_70px_rgba(16,24,40,0.22)]" onClick={(event) => event.stopPropagation()}>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#101334]/50 p-4 backdrop-blur-xs" onClick={() => setIsCriticalStatusModalOpen(false)}>
+          <div className="relative z-10 flex max-h-[86vh] w-full max-w-2xl flex-col overflow-hidden rounded-[18px] border border-[#F4D8D8] bg-white text-[#101334] shadow-[0_24px_70px_rgba(16,24,40,0.22)]" onClick={(event) => event.stopPropagation()}>
             <div className="flex items-start justify-between gap-4 border-b border-[#F4D8D8] bg-[#FFF6F6] p-5">
               <div>
                 <h2 className="text-lg font-black text-[#101334]">{ta("v2.criticalStatus.modalTitle")}</h2>
@@ -1525,8 +1547,8 @@ export default function AlertsPage() {
       )}
 
       {isJourneyModalOpen && createPortal(
-        <div className="fixed inset-0 z-100 flex items-center justify-center bg-[#101334]/35 p-4 backdrop-blur-md" onClick={() => setIsJourneyModalOpen(false)}>
-          <div className="flex max-h-[86vh] w-full max-w-2xl flex-col overflow-hidden rounded-[18px] border border-[#DDE5F4] bg-white text-[#101334] shadow-[0_24px_70px_rgba(16,24,40,0.22)]" onClick={(event) => event.stopPropagation()}>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#101334]/50 p-4 backdrop-blur-xs" onClick={() => setIsJourneyModalOpen(false)}>
+          <div className="relative z-10 flex max-h-[86vh] w-full max-w-2xl flex-col overflow-hidden rounded-[18px] border border-[#DDE5F4] bg-white text-[#101334] shadow-[0_24px_70px_rgba(16,24,40,0.22)]" onClick={(event) => event.stopPropagation()}>
             <div className="flex items-start justify-between gap-4 border-b border-[#EEF1F7] bg-[#F8FAFF] p-5">
               <div className="min-w-0">
                 <h2 className="text-lg font-black text-[#101334]">{ta("v2.journey.modalTitle")}</h2>
@@ -1556,8 +1578,8 @@ export default function AlertsPage() {
       )}
 
       {isNotificationRulesModalOpen && createPortal(
-        <div className="fixed inset-0 z-100 flex items-center justify-center bg-[#101334]/35 p-4 backdrop-blur-md" onClick={closeNotificationRulesModal}>
-          <div className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-[18px] border border-[#DDE5F4] bg-white text-[#101334] shadow-[0_24px_70px_rgba(16,24,40,0.22)]" onClick={(event) => event.stopPropagation()}>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#101334]/50 p-4 backdrop-blur-xs" onClick={closeNotificationRulesModal}>
+          <div className="relative z-10 flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-[18px] border border-[#DDE5F4] bg-white text-[#101334] shadow-[0_24px_70px_rgba(16,24,40,0.22)]" onClick={(event) => event.stopPropagation()}>
             <div className="relative overflow-hidden border-b border-[#E7ECF6] bg-linear-to-br from-[#F8FAFF] via-white to-[#EEF2FF] p-5">
               <div className="absolute right-8 top-3 size-28 rounded-full bg-[#465FFF]/10 blur-2xl" />
               <div className="relative flex items-start justify-between gap-4">
@@ -1745,8 +1767,8 @@ export default function AlertsPage() {
       )}
 
       {isEscalationModalOpen && createPortal(
-        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={closeEscalationModal}>
-          <div className="flex max-h-[88vh] w-full max-w-3xl flex-col rounded-[14px] border border-[#E8ECF5] bg-white text-[#101334] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs" onClick={closeEscalationModal}>
+          <div className="relative z-10 flex max-h-[88vh] w-full max-w-3xl flex-col rounded-[14px] border border-[#E8ECF5] bg-white text-[#101334] shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-4 border-b border-[#EEF1F7] p-5">
               <div>
                 <h2 className="text-lg font-black text-[#101334]">{ta("v2.escalationMatrix.modalTitle")}</h2>
@@ -1854,8 +1876,8 @@ export default function AlertsPage() {
 
       {/* Create Alert Modal */}
       {isCreateModalOpen && createPortal(
-        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={closeCreateModal}>
-          <div className="flex w-full max-w-lg flex-col max-h-[85vh] rounded-[14px] border border-[#E8ECF5] bg-white text-[#101334] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs" onClick={closeCreateModal}>
+          <div className="relative z-10 flex w-full max-w-lg flex-col max-h-[85vh] rounded-[14px] border border-[#E8ECF5] bg-white text-[#101334] shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div>
                 <h2 className="text-lg font-black text-[#101334]">{ta("v2.header.createAlert")}</h2>
@@ -2085,8 +2107,8 @@ export default function AlertsPage() {
 
       {/* Filter Modal */}
       {isFilterModalOpen && createPortal(
-        <div className="fixed inset-0 z-100 flex items-center justify-center bg-[#101334]/35 p-4 backdrop-blur-md" onClick={() => setIsFilterModalOpen(false)}>
-          <div className="flex w-full max-w-xl flex-col overflow-hidden rounded-[18px] border border-[#DDE5F4] bg-white text-[#101334] shadow-[0_24px_70px_rgba(16,24,40,0.22)]" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#101334]/50 p-4 backdrop-blur-xs" onClick={() => setIsFilterModalOpen(false)}>
+          <div className="relative z-10 flex w-full max-w-xl flex-col overflow-hidden rounded-[18px] border border-[#DDE5F4] bg-white text-[#101334] shadow-[0_24px_70px_rgba(16,24,40,0.22)]" onClick={(e) => e.stopPropagation()}>
             <div className="relative overflow-hidden border-b border-[#E7ECF6] bg-linear-to-br from-[#F8FAFF] via-white to-[#EEF2FF] p-5">
               <div className="absolute right-6 top-4 size-24 rounded-full bg-[#465FFF]/10 blur-2xl" />
               <div className="relative flex items-start justify-between gap-4">
