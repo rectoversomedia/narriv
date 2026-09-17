@@ -389,4 +389,102 @@ export const analyzeCluster = async (signalsContext) => {
     }
 };
 
+/**
+ * Fallback generator for signals summary when AI provider is offline or rate-limited
+ */
+function buildFallbackSummary(signals = [], contextInfo = {}) {
+    const total = contextInfo.totalSignals24h || signals.length;
+    const negative = contextInfo.negativeSignals24h || signals.filter((s) => String(s.sentiment).toUpperCase() === "NEGATIVE").length;
+    const firstTitle = signals[0]?.title ? `terkait ${signals[0].title}` : "dalam sektor perbankan dan fintech";
+    const firstTitleEn = signals[0]?.title ? `regarding ${signals[0].title}` : "across banking and digital finance";
+
+    return {
+        title: "AI Signal Summary",
+        content: {
+            en: `Monitored ${total} media signals ${firstTitleEn}. ${negative} negative discussions were detected requiring continuous observation.`,
+            id: `Terpantau ${total} sinyal percakapan media ${firstTitle}. Terdeteksi ${negative} pembahasan bernada negatif yang perlu diobservasi secara berkala.`
+        },
+        insight: {
+            en: "Engage proactive communications on operational reliability to preserve positive brand sentiment.",
+            id: "Lakukan komunikasi proaktif mengenai keandalan operasional untuk menjaga sentimen positif reputasi brand."
+        }
+    };
+}
+
+/**
+ * Generates an executive AI narrative summary from recent signals.
+ *
+ * @param {Array<{ title: string, sentiment?: string, platform?: string, content?: string }>} signals
+ * @param {object} contextInfo - Metrics context (totalSignals24h, negativeSignals24h, criticalSignals24h)
+ * @returns {Promise<{ title: string, content: { en: string, id: string }, insight: { en: string, id: string } }>}
+ */
+export const generateSignalsSummary = async (signals = [], contextInfo = {}) => {
+    if (!signals || signals.length === 0) {
+        return null;
+    }
+
+    if (!OPENAI_API_KEY) {
+        return buildFallbackSummary(signals, contextInfo);
+    }
+
+    const sampleSignals = signals.slice(0, 8);
+    const contextSnippet = sampleSignals
+        .map((s, idx) => `${idx + 1}. [${(s.sentiment || "NEUTRAL").toUpperCase()}] (${s.platform || "news"}) ${s.title}: ${s.content ? s.content.substring(0, 100) : ""}`)
+        .join("\n");
+
+    const systemPrompt = `You are an executive media intelligence analyst for a corporate reputation and PR crisis management platform.
+Your task is to analyze recent media signals and generate a high-level executive summary and actionable insight in both English and Indonesian.
+
+STRICT RULES:
+1. Return ONLY a valid JSON object. No markdown. No code fences.
+2. "content.en" and "content.id" must be a concise, professional 2-sentence executive summary reflecting the primary topics and media tone.
+3. "insight.en" and "insight.id" must be a 1-sentence actionable strategic recommendation for corporate communication teams.
+4. Base your summary directly on the provided signals.
+
+REQUIRED OUTPUT FORMAT (pure JSON):
+{
+  "title": "AI Signal Summary",
+  "content": {
+    "en": "<2 sentences executive summary in English>",
+    "id": "<2 kalimat ringkasan eksekutif dalam Bahasa Indonesia>"
+  },
+  "insight": {
+    "en": "<1 sentence strategic recommendation in English>",
+    "id": "<1 kalimat rekomendasi tindakan strategis dalam Bahasa Indonesia>"
+  }
+}`;
+
+    const userMessage = `SIGNALS CONTEXT:
+${contextSnippet}
+
+METRICS OVERVIEW:
+Total Signals (24h): ${contextInfo.totalSignals24h || signals.length}
+Negative Discussions: ${contextInfo.negativeSignals24h || 0}
+Critical Alerts: ${contextInfo.criticalSignals24h || 0}`;
+
+    try {
+        const rawContent = await callOpenAI([
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userMessage },
+        ]);
+        const parsed = tryParseJSON(rawContent);
+
+        if (parsed.ok && parsed.data?.content?.en && parsed.data?.content?.id) {
+            return {
+                title: parsed.data.title || "AI Signal Summary",
+                content: parsed.data.content,
+                insight: parsed.data.insight || {
+                    en: "Proactively monitor media coverage and align stakeholder statements.",
+                    id: "Pantau liputan media secara proaktif dan selaraskan pernyataan stakeholder."
+                },
+            };
+        }
+        return buildFallbackSummary(signals, contextInfo);
+    } catch (error) {
+        logStructured("warn", "ai_generate_signals_summary_failed_fallback", { error: error.message });
+        return buildFallbackSummary(signals, contextInfo);
+    }
+};
+
 export default client;
+

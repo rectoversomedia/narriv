@@ -1,6 +1,6 @@
 import express from "express";
 import supabase from "../../lib/supabase.js";
-import { analyzeSignal } from "../ai/ai.service.js";
+import { analyzeSignal, generateSignalsSummary } from "../ai/ai.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { getUserWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
@@ -306,19 +306,15 @@ router.get("/meta", async (req, res) => {
             criticalSignals24h: criticalAlerts24h
         };
 
-        const aiSummary = totalSignals24h === 0
-            ? null
-            : {
-                title: "AI Signal Summary",
-                content: {
-                    en: `In the last 24 hours, ${totalSignals24h} signals were captured. ${negativeSignals24h} negative discussions detected.`,
-                    id: `Dalam 24 jam terakhir, tertangkap ${totalSignals24h} sinyal. Ada ${negativeSignals24h} percakapan negatif yang terdeteksi.`
-                },
-                insight: {
-                    en: `Narriv recommends investigating critical alerts and communicating proactively.`,
-                    id: `Narriv merekomendasikan investigasi pada peringatan kritis dan melakukan komunikasi secara proaktif.`
-                }
-            };
+        // Fetch recent signals to power dynamic AI narrative summary
+        const { data: recentSignalsForSummary } = await supabase
+            .from('signals')
+            .select('title, content, sentiment, platform')
+            .in('workspace_id', workspaceIds)
+            .order('captured_at', { ascending: false })
+            .limit(8);
+
+        const aiSummary = await generateSignalsSummary(recentSignalsForSummary || [], metrics);
 
         return res.json({
             totalSignals,
