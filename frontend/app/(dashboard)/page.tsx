@@ -391,9 +391,10 @@ export default function DashboardPage() {
   ];
 
   const competitors = [
-    { name: "CompetitorA", shareOfVoice: 42, sentiment: "green" as Tone, momentum: "+12%", aiVisibility: 68 },
-    { name: "CompetitorB", shareOfVoice: 18, sentiment: "slate" as Tone, momentum: "-3%", aiVisibility: 54 },
-    { name: "CompetitorC", shareOfVoice: 6, sentiment: "red" as Tone, momentum: "+1%", aiVisibility: 31 },
+    { name: "Bank Central Asia (BCA)", shareOfVoice: 38, sentiment: "green" as Tone, momentum: "+8%", aiVisibility: 74 },
+    { name: "Bank Mandiri", shareOfVoice: 31, sentiment: "green" as Tone, momentum: "+5%", aiVisibility: 69 },
+    { name: "Bank Rakyat Indonesia (BRI)", shareOfVoice: 21, sentiment: "slate" as Tone, momentum: "-2%", aiVisibility: 62 },
+    { name: "Bank Negara Indonesia (BNI)", shareOfVoice: 10, sentiment: "slate" as Tone, momentum: "+1%", aiVisibility: 55 },
   ];
 
   const recommendedActions = [
