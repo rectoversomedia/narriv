@@ -547,8 +547,15 @@ export function buildSignalItems(apiSignals: Signal[]) {
 }
 
 // ---------------------------------------------------------------------------
-// V2 Endpoints (Visibility, Action Plans, Reports, Sources)
-// ---------------------------------------------------------------------------
+export interface VisibilityCitation {
+  domain: string;
+  type: string;
+  typeColor: string;
+  freq: number;
+  authority: number;
+  brandC: number;
+  compC: number;
+}
 
 export interface VisibilityResponse {
   score?: number | string;
@@ -563,6 +570,7 @@ export interface VisibilityResponse {
     brandTone?: string;
     compTone?: string;
   }[];
+  citations?: VisibilityCitation[];
   geoActions?: { title: string; tag: string; highlighted?: boolean }[];
 }
 
@@ -758,7 +766,20 @@ export async function getCurrentUser(): Promise<CurrentUserResponse | null> {
 
 export async function getWorkspaceSettings(): Promise<WorkspaceSettingsResponse | null> {
   try {
-    return await apiClient<WorkspaceSettingsResponse>("/api/workspace/settings");
+    const raw = await apiClient<Record<string, unknown>>("/api/workspace/settings");
+    if (!raw) return null;
+    return {
+      workspaceId: (raw.workspaceId as string) || (raw.workspace_id as string) || "",
+      brandName: (raw.brandName as string) || (raw.brand_name as string) || null,
+      industry: (raw.industry as string) || null,
+      timezone: (raw.timezone as string) || null,
+      notificationEmail: (raw.notificationEmail as string) || (raw.notification_email as string) || null,
+      whatsappPIC: (raw.whatsappPIC as string) || (raw.whatsapp_pic as string) || null,
+      logoUrl: (raw.logoUrl as string) || (raw.logo_url as string) || null,
+      createdAt: (raw.createdAt as string) || (raw.created_at as string) || null,
+      updatedAt: (raw.updatedAt as string) || (raw.updated_at as string) || null,
+      onboarding_completed: raw.onboarding_completed as boolean | undefined,
+    };
   } catch {
     return null;
   }
@@ -1183,9 +1204,47 @@ export async function deleteIntegration(id: string): Promise<boolean> {
 // AI Visibility Analysis
 // ---------------------------------------------------------------------------
 
-export async function triggerVisibilityAnalysis(input: { brandName: string; competitors?: string[]; queries: string[]; engineName?: string }): Promise<unknown | null> {
+export interface VisibilityAnalysisResult {
+  id?: string;
+  workspace_id?: string;
+  engine?: string;
+  score?: number;
+  result?: {
+    visibility_score?: number;
+    brand_presence_rate?: number;
+    competitor_mention_rate?: number;
+    query_used?: string[];
+    raw_response?: Array<{
+      query: string;
+      response: string;
+      responseId?: string;
+      analysis?: {
+        brandMentioned?: boolean;
+        sentiment?: string;
+        relevanceScore?: number;
+        citations?: Array<{ domain: string; authority: number; type: string }>;
+      };
+    }>;
+    citations?: VisibilityCitation[];
+    metadata?: Record<string, unknown>;
+  };
+  rawResponse?: Array<{
+    query: string;
+    response: string;
+    responseId?: string;
+    analysis?: {
+      brandMentioned?: boolean;
+      sentiment?: string;
+      relevanceScore?: number;
+      citations?: Array<{ domain: string; authority: number; type: string }>;
+    };
+  }>;
+  visibilityScore?: number;
+}
+
+export async function triggerVisibilityAnalysis(input: { brandName: string; competitors?: string[]; queries: string[]; engineName?: string }): Promise<VisibilityAnalysisResult | null> {
   try {
-    return await apiClient<unknown>("/api/visibility/analyze", {
+    return await apiClient<VisibilityAnalysisResult>("/api/visibility/analyze", {
       method: "POST",
       body: JSON.stringify(input),
     });

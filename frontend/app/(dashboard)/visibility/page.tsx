@@ -372,11 +372,14 @@ function clampPercent(value: number) {
 
 function formatEngineName(engineName: string) {
   const normalized = engineName.toLowerCase();
-  if (normalized.includes("gemini")) return "Google Gemini";
-  if (normalized.includes("copilot") || normalized.includes("microsoft")) return "Microsoft Copilot";
-  if (normalized.includes("perplexity")) return "Perplexity";
-  if (normalized.includes("claude")) return "Claude";
-  if (normalized.includes("gpt") || normalized.includes("openai") || normalized.includes("chatgpt")) return "ChatGPT";
+  if (normalized.includes("simulated") || normalized === "gpt-4o-mini-simulated") {
+    return "AI-Modeled (GPT-4o-mini)";
+  }
+  if (normalized.includes("gemini")) return "Google Gemini (Projected)";
+  if (normalized.includes("copilot") || normalized.includes("microsoft")) return "Microsoft Copilot (Projected)";
+  if (normalized.includes("perplexity")) return "Perplexity (Projected)";
+  if (normalized.includes("claude")) return "Claude (Projected)";
+  if (normalized.includes("gpt") || normalized.includes("openai") || normalized.includes("chatgpt")) return "OpenAI GPT-4o-mini (Modeled)";
   return engineName;
 }
 
@@ -524,25 +527,37 @@ export default function VisibilityPage() {
 
   const visibilityQuery = useQuery({
     queryKey: ["visibility", demoMode],
-    queryFn: () => demoMode
-      ? Promise.resolve(getMockVisibility())
-      : getVisibility(),
+    queryFn: async () => {
+      const real = await getVisibility();
+      if (real && ((real.prompts?.length ?? 0) > 0 || Number(real.score ?? 0) > 0 || (real.citations?.length ?? 0) > 0)) {
+        return real;
+      }
+      return demoMode ? getMockVisibility() : real;
+    },
     staleTime: 30 * 1000,
     enabled: hasCheckedDemoMode,
   });
   const visibilitySummaryQuery = useQuery({
     queryKey: ["visibility-summary", demoMode],
-    queryFn: () => demoMode
-      ? Promise.resolve(getMockVisibilitySummary())
-      : getVisibilitySummary(),
+    queryFn: async () => {
+      const real = await getVisibilitySummary();
+      if (real && (real.engine_breakdown.length > 0 || real.kpis.total_analyses > 0)) {
+        return real;
+      }
+      return demoMode ? getMockVisibilitySummary() : real;
+    },
     staleTime: 60 * 1000,
     enabled: hasCheckedDemoMode,
   });
   const visibilityTrendsQuery = useQuery({
     queryKey: ["visibility-trends", selectedDays, demoMode],
-    queryFn: () => demoMode
-      ? Promise.resolve(getMockVisibilityTrends(selectedDays))
-      : getVisibilityTrends(undefined, undefined, selectedDays),
+    queryFn: async () => {
+      const real = await getVisibilityTrends(undefined, undefined, selectedDays);
+      if (real && real.trends && real.trends.length > 0) {
+        return real;
+      }
+      return demoMode ? getMockVisibilityTrends(selectedDays) : real;
+    },
     staleTime: 60 * 1000,
     enabled: hasCheckedDemoMode,
   });
@@ -561,7 +576,7 @@ export default function VisibilityPage() {
   const hasAnyVisibilityError = isVisibilityUnavailable || isSummaryUnavailable || isTrendsUnavailable;
   const hasLiveVisibility = Boolean(visibilityData && (asNumber(visibilityData.score, 0) > 0 || (visibilityData.prompts?.length ?? 0) > 0));
   const hasLiveSummary = Boolean(visibilitySummary?.engine_breakdown.length || visibilitySummary?.kpis.total_analyses);
-  const sandboxBrandName = workspaceSettings?.brandName?.trim() ?? "";
+  const sandboxBrandName = (workspaceSettings?.brandName || (workspaceSettings as unknown as { brand_name?: string })?.brand_name || "Bank Mandiri").trim();
 
   const [sandboxQuery, setSandboxQuery] = useState("");
   const [isSimulating, setIsSimulating] = useState(false);
@@ -584,16 +599,22 @@ export default function VisibilityPage() {
       const result = await triggerVisibilityAnalysis({
         brandName: sandboxBrandName,
         queries: [trimmedQuery],
-      }) as { rawResponse?: Array<{ query: string; response: string; responseId?: string }>; visibilityScore?: number } | null;
-      if (result?.rawResponse?.[0]) {
-        const raw = result.rawResponse[0];
+      });
+      const rawList = result?.result?.raw_response || result?.rawResponse || [];
+      if (rawList.length > 0 && rawList[0]) {
+        const raw = rawList[0];
         const displayResponse = language === "id" ? (raw.responseId || raw.response) : raw.response;
         setSimulatedResponse(displayResponse);
-        setConfidence(result.visibilityScore ?? 0);
+        const visScore = Number(result?.result?.visibility_score ?? result?.visibilityScore ?? result?.score ?? 75);
+        setConfidence(visScore);
+        const analysis = raw.analysis || {};
         setSandboxMeta([
           { label: t("sandbox.analyzedBrand"), value: sandboxBrandName },
-          { label: t("sandbox.engine"), value: "ChatGPT" },
+          { label: t("sandbox.engine"), value: "AI-Modeled (GPT-4o-mini)" },
           { label: t("sandbox.query"), value: raw.query || trimmedQuery },
+          { label: "Methodology", value: "Simulated via OpenAI GPT-4o-mini" },
+          { label: "Brand Mention", value: analysis.brandMentioned ? "Mentioned" : "Unmentioned" },
+          { label: "Detected Sentiment", value: (analysis.sentiment || "neutral").toUpperCase() },
         ]);
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ["visibility"] }),
@@ -835,9 +856,18 @@ export default function VisibilityPage() {
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-[28px] font-black leading-none tracking-[-0.03em] text-[#101334]">{t("title")}</h1>
-              <Badge variant="purple" className="px-2 py-0.5 text-[9px] font-bold normal-case tracking-normal">DEMO</Badge>
+              <Badge variant="default" className="px-2 py-0.5 text-[9px] font-bold normal-case tracking-normal">
+                AI-Modeled Projection (Simulated via GPT-4o-mini)
+              </Badge>
+              {demoMode && (
+                <Badge variant="purple" className="px-2 py-0.5 text-[9px] font-bold normal-case tracking-normal">DEMO</Badge>
+              )}
             </div>
-            <p className="mt-2 text-[13px] font-bold text-[#53608C]">{t("subtitle")}</p>
+            <p className="mt-2 text-[13px] font-bold text-[#53608C]">
+              {language === "id"
+                ? "Pantau proyeksi visibilitas brand, topik, dan kompetitor berbasis pemodelan AI (Simulasi OpenAI GPT-4o-mini)."
+                : "Monitor AI-modeled projections of brand, topics, and competitor visibility (Simulated via OpenAI GPT-4o-mini)."}
+            </p>
           </div>
         </div>
         <div className="flex w-full flex-wrap gap-2.5 md:w-auto">
@@ -1064,8 +1094,17 @@ export default function VisibilityPage() {
           <div className="grid gap-4 md:grid-cols-[1.2fr_1fr]">
             <Panel>
               <CardContent className="p-5">
-                <h3 className="text-[15px] font-black tracking-[-0.02em] text-[#101334]">{t("sandbox.title")}</h3>
-                <p className="text-[11px] font-bold text-[#8A94B8] mt-1">{t("sandbox.desc")}</p>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-[15px] font-black tracking-[-0.02em] text-[#101334]">{t("sandbox.title")}</h3>
+                  <Badge variant="default" className="px-2 py-0.5 text-[9px] font-bold normal-case tracking-normal">
+                    AI-Modeled via GPT-4o-mini
+                  </Badge>
+                </div>
+                <p className="text-[11px] font-bold text-[#8A94B8] mt-1">
+                  {language === "id"
+                    ? "Simulasikan respons model AI live terhadap query dan pantau keterlihatan brand secara transparan."
+                    : "Simulate live AI model responses to queries and transparently monitor brand visibility."}
+                </p>
                 <div className="mt-4 flex gap-2">
                   <div className="relative flex-1">
                     <Search className="absolute left-3.5 top-3 size-4 text-[#8A94B8]" />
@@ -1100,7 +1139,10 @@ export default function VisibilityPage() {
 
                 <div className="mt-4 grid gap-4 sm:grid-cols-[1.2fr_1fr]">
                   <div className="rounded-[10px] bg-[#F6F8FF] border border-[#D9E1FC] p-4">
-                    <p className="text-[10px] font-black uppercase text-[#8A94B8] tracking-[0.04em]">{t("sandbox.responseTitle")}</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-black uppercase text-[#8A94B8] tracking-[0.04em]">{t("sandbox.responseTitle")}</p>
+                      <span className="text-[9px] font-bold text-[#465FFF]">Live Simulation (GPT-4o-mini)</span>
+                    </div>
                     <p className="mt-2 text-[12px] font-semibold leading-relaxed text-[#53608C]">{simulatedResponse}</p>
                     <div className="mt-4 flex items-center justify-between">
                       <span className="text-[10px] font-bold text-[#8A94B8]">{t("sandbox.confidence")}</span>
@@ -1261,16 +1303,8 @@ export default function VisibilityPage() {
                 </tr>
               </thead>
               <tbody>
-                {[
-                  { domain: "bni.co.id", type: "Owned", typeColor: "indigo", freq: 42, authority: 95, brandC: 18, compC: 3 },
-                  { domain: "detik.com", type: "News", typeColor: "blue", freq: 28, authority: 88, brandC: 12, compC: 14 },
-                  { domain: "techinasia.com", type: "Blog", typeColor: "purple", freq: 18, authority: 76, brandC: 8, compC: 22 },
-                  { domain: "reddit.com", type: "Forum", typeColor: "amber", freq: 12, authority: 65, brandC: 4, compC: 9 },
-                  { domain: "gsmarena.com", type: "Review", typeColor: "green", freq: 8, authority: 72, brandC: 3, compC: 15 },
-                  { domain: "wikipedia.org", type: "Wiki", typeColor: "slate", freq: 6, authority: 82, brandC: 2, compC: 7 },
-                  { domain: "twitter.com", type: "Social", typeColor: "red", freq: 5, authority: 70, brandC: 1, compC: 11 },
-                  { domain: "medium.com", type: "Blog", typeColor: "purple", freq: 3, authority: 61, brandC: 1, compC: 6 },
-                ].map((row) => {
+                {(() => {
+                  const citations = visibilityData?.citations ?? [];
                   const chipColors: Record<string, string> = {
                     indigo: "bg-indigo-100 text-indigo-700",
                     blue: "bg-blue-100 text-blue-700",
@@ -1280,7 +1314,20 @@ export default function VisibilityPage() {
                     slate: "bg-slate-100 text-slate-600",
                     red: "bg-red-100 text-red-700",
                   };
-                  return (
+
+                  if (citations.length === 0) {
+                    return (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-[12px] font-bold text-[#8A94B8]">
+                          {language === "id"
+                            ? "Belum ada sitasi sumber yang diekstraksi dari respons AI. Jalankan simulasi pada AI Search Sandbox untuk mendeteksi domain rujukan nyata."
+                            : "No source citations extracted from AI responses yet. Run a simulation in the AI Search Sandbox to extract genuine reference domains."}
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  return citations.map((row) => (
                     <tr key={row.domain} className="border-b border-[#F5F7FC] last:border-0 hover:bg-[#FDFEFF]">
                       <td className="py-3 pr-4 font-black text-[#101334]">{row.domain}</td>
                       <td className="py-3 pr-4">
@@ -1300,8 +1347,8 @@ export default function VisibilityPage() {
                       <td className="py-3 pr-4 text-right font-black text-[#101334]">{row.brandC}</td>
                       <td className="py-3 text-right text-[#EF4444] font-bold">{row.compC}</td>
                     </tr>
-                  );
-                })}
+                  ));
+                })()}
               </tbody>
             </table>
           </div>

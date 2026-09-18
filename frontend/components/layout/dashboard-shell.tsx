@@ -32,7 +32,10 @@ export function DashboardShell({ children }: { children: ReactNode }) {
       setChecked(true);
       return;
     }
-    if (!token) {
+    const hasCookie = typeof document !== "undefined" && document.cookie.includes("narriv_auth=");
+    const hasStorage = typeof window !== "undefined" && (Boolean(localStorage.getItem("narriv-auth")) || Boolean(localStorage.getItem("narriv_demo_token")));
+
+    if (!token && !hasCookie && !hasStorage) {
       router.replace("/login");
       setChecked(false);
     } else {
