@@ -624,6 +624,7 @@ export interface CreateActionPlanInput {
   strategyType: ActionStrategyType;
   alertId?: string;
   clusterId?: string;
+  signalId?: string;
 }
 
 export interface CreatedActionPlan {

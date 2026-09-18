@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowLeft, AlertTriangle, CalendarClock, CheckCircle2, Route, Save, ShieldAlert, UserRound } from "lucide-react";
+import { ArrowLeft, AlertTriangle, CalendarClock, CheckCircle2, Flag, Route, Save, ShieldAlert, Sparkles, UserRound } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/toast";
+import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components/create-action-plan-modal";
+import { CreateInvestigationModal } from "@/app/(dashboard)/signals/components/create-investigation-modal";
 import {
   getAlertById,
   getEscalationMatrix,
@@ -206,6 +208,8 @@ export default function AlertDetailPage() {
   const td = useTranslations("AlertDetail");
   const queryClient = useQueryClient();
   const toastHook = useToast();
+  const [isActionPlanModalOpen, setIsActionPlanModalOpen] = useState(false);
+  const [isCaseModalOpen, setIsCaseModalOpen] = useState(false);
 
   const showToast = (message: string, type: "success" | "error" = "success") => {
     if (type === "error") { toastHook.error(message); return; }
@@ -277,7 +281,24 @@ export default function AlertDetailPage() {
               <StatusBadge tone={tone}>{liveData.severity ?? "alert"}</StatusBadge>
               <StatusBadge tone="slate">{source}</StatusBadge>
               <span className="rounded-[8px] border border-[#E6EAF2] bg-white px-3 py-1.5 text-[10px] font-black text-[#68739F]">#{params.id}</span>
-              <div className="ml-auto flex flex-wrap gap-2">
+              <div className="ml-auto flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsActionPlanModalOpen(true)}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-[9px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-3.5 text-[11px] font-black text-white shadow-[0_8px_18px_rgba(70,95,255,0.22)] transition hover:opacity-90"
+                >
+                  <Sparkles size={13} />
+                  Generate Action Plan
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsCaseModalOpen(true)}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-[9px] border border-[#DDE3EF] bg-white px-3.5 text-[11px] font-black text-[#31406B] shadow-xs transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]"
+                >
+                  <Flag size={13} className="text-[#465FFF]" />
+                  Create Case
+                </button>
+                <div className="mx-1 hidden h-4 w-px bg-slate-200 sm:block" />
                 {(["open", "acknowledged", "resolved"] as const).map((status) => (
                   <button
                     key={status}
@@ -328,9 +349,24 @@ export default function AlertDetailPage() {
                 {td("recommendation.title")}
               </p>
               <p className="mt-2 text-[12px] font-bold leading-5 text-[#31406B]">{td("recommendation.desc")}</p>
-              <Link href="/action-plans" className="mt-4 inline-flex h-9 items-center justify-center rounded-[9px] bg-[#10B981] px-4 text-[12px] font-black text-white shadow-[0_10px_20px_rgba(16,185,129,0.18)] transition hover:bg-[#0C9B69]">
-                {td("createAction")}
-              </Link>
+              <div className="mt-4 flex flex-wrap gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsActionPlanModalOpen(true)}
+                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[9px] bg-[#10B981] px-4 text-[12px] font-black text-white shadow-[0_10px_20px_rgba(16,185,129,0.18)] transition hover:bg-[#0C9B69]"
+                >
+                  <Sparkles size={14} />
+                  {td("createAction")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsCaseModalOpen(true)}
+                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[9px] border border-[#CFEFE3] bg-white px-4 text-[12px] font-black text-[#0C9B69] transition hover:bg-[#F4FFFA]"
+                >
+                  <Flag size={14} />
+                  Escalate to Case
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -341,15 +377,32 @@ export default function AlertDetailPage() {
       {alertQuery.isPending ? (
         <PanelSkeleton />
       ) : liveData ? (
-        <AssignmentCard
-          key={liveData.id}
-          alert={liveData}
-          members={members}
-          escalationRecords={escalationRecords}
-          isLoadingOptions={membersQuery.isLoading || escalationQuery.isLoading}
-          isSaving={assignmentMutation.isPending}
-          onSave={(input) => assignmentMutation.mutate(input)}
-        />
+        <>
+          <AssignmentCard
+            key={liveData.id}
+            alert={liveData}
+            members={members}
+            escalationRecords={escalationRecords}
+            isLoadingOptions={membersQuery.isLoading || escalationQuery.isLoading}
+            isSaving={assignmentMutation.isPending}
+            onSave={(input) => assignmentMutation.mutate(input)}
+          />
+          <CreateActionPlanModal
+            open={isActionPlanModalOpen}
+            onOpenChange={setIsActionPlanModalOpen}
+            initialAlertId={params.id}
+            initialAlertTitle={title}
+            initialStrategyType={liveData.severity === "critical" || liveData.severity === "high" ? "crisis_response" : "pr_response"}
+          />
+          <CreateInvestigationModal
+            open={isCaseModalOpen}
+            onOpenChange={setIsCaseModalOpen}
+            alertId={params.id}
+            alertTitle={title}
+            initialPriority={(liveData.severity as any) || "medium"}
+            initialDescription={whatHappened !== td("section.empty") ? whatHappened : undefined}
+          />
+        </>
       ) : null}
     </div>
   );

@@ -12,7 +12,11 @@ interface CreateInvestigationModalProps {
   onOpenChange: (open: boolean) => void;
   signalId?: string;
   signalTitle?: string;
+  alertId?: string;
+  alertTitle?: string;
   workspaceId?: string;
+  initialPriority?: "low" | "medium" | "high" | "critical";
+  initialDescription?: string;
 }
 
 export function CreateInvestigationModal({
@@ -20,7 +24,11 @@ export function CreateInvestigationModal({
   onOpenChange,
   signalId,
   signalTitle,
+  alertId,
+  alertTitle,
   workspaceId,
+  initialPriority,
+  initialDescription,
 }: CreateInvestigationModalProps) {
   const t = useTranslations("Signals.modal");
   const titleId = useId();
@@ -28,18 +36,24 @@ export function CreateInvestigationModal({
   const dialogRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
 
-  const [title, setTitle] = useState(signalTitle ? t("defaultTitle", { title: signalTitle }) : "");
-  const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState<"low" | "medium" | "high" | "critical">("medium");
+  const getComputedTitle = () => {
+    if (alertTitle) return `Investigation: ${alertTitle}`;
+    if (signalTitle) return t("defaultTitle", { title: signalTitle });
+    return "";
+  };
+
+  const [title, setTitle] = useState(getComputedTitle());
+  const [description, setDescription] = useState(initialDescription || "");
+  const [priority, setPriority] = useState<"low" | "medium" | "high" | "critical">(initialPriority || "medium");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (open) {
-      setTitle(signalTitle ? t("defaultTitle", { title: signalTitle }) : "");
-      setDescription("");
-      setPriority("medium");
+      setTitle(getComputedTitle());
+      setDescription(initialDescription || "");
+      setPriority(initialPriority || "medium");
     }
-  }, [open, signalTitle, t]);
+  }, [open, signalTitle, alertTitle, initialDescription, initialPriority, t]);
 
   useEffect(() => {
     if (!open) return;
@@ -70,8 +84,8 @@ export function CreateInvestigationModal({
         title,
         description,
         priority,
-        sourceType: "signal",
-        sourceId: signalId,
+        sourceType: alertId ? "alert" : "signal",
+        sourceId: alertId || signalId,
         workspaceId,
       });
       if (!createdCase) {

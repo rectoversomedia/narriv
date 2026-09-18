@@ -17,7 +17,7 @@ router.use(verifyToken);
 // POST /api/actions — Generate a new action plan
 router.post("/", rateLimit(RATE_LIMITS.ai_generation), validateRequest({ body: createActionPlanBodySchema }), async (req, res) => {
     try {
-        const { workspaceId, strategyType, alertId, clusterId } = req.body;
+        const { workspaceId, strategyType, alertId, clusterId, signalId } = req.body;
 
         const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
         if (!scopedWorkspaceId) {
@@ -44,12 +44,12 @@ router.post("/", rateLimit(RATE_LIMITS.ai_generation), validateRequest({ body: c
             });
         }
 
-        const plan = await generateActionPlan({ workspaceId: scopedWorkspaceId, strategyType, alertId, clusterId });
+        const plan = await generateActionPlan({ workspaceId: scopedWorkspaceId, strategyType, alertId, clusterId, signalId });
         await recordAuditLog({
             userId: req.user.id,
             event: "action_plan_generated",
             workspaceId: scopedWorkspaceId,
-            metadata: { actionPlanId: plan.id, strategyType, alertId, clusterId },
+            metadata: { actionPlanId: plan.id, strategyType, alertId, clusterId, signalId },
         });
 
         res.status(201).json(plan);
