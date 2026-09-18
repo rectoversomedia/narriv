@@ -292,6 +292,49 @@ export async function runVisibilityAnalysis({ workspaceId, brandName, competitor
 
     if (error) throw error;
 
+    // 4. Save each prompt execution to prompt_test_runs linked to visibility_result_id
+    if (queryResults.length > 0) {
+        const promptRunsToInsert = queryResults.map(qr => {
+            const analysis = qr.analysis || {};
+            return {
+                workspace_id: workspaceId,
+                visibility_result_id: result.id,
+                prompt: qr.query,
+                response: qr.response || qr.responseId,
+                response_id: qr.responseId || qr.response,
+                sentiment: analysis.sentiment || "neutral",
+                relevance_score: analysis.relevanceScore ?? 0.5,
+                engine: engineName,
+                citations: analysis.citations || [],
+                metadata: {
+                    engine: engineName,
+                    methodology: "AI-Modeled via GPT-4o-mini",
+                    brand: analysis.brandMentioned ? "mentioned" : "unmentioned",
+                    competitor: (analysis.competitorsMentioned || []).join(", ") || "not mentioned",
+                    brand_tone: analysis.brandTone || "neutral",
+                    comp_tone: analysis.competitorTone || "neutral",
+                    relative_position: analysis.relativePosition || "not_mentioned",
+                },
+            };
+        });
+
+        const { error: promptInsertError } = await supabase
+            .from("prompt_test_runs")
+            .insert(promptRunsToInsert);
+
+        if (promptInsertError) {
+            logStructured("warn", "prompt_test_runs_insert_failed", {
+                visibilityResultId: result.id,
+                error: promptInsertError.message,
+            });
+        } else {
+            logStructured("info", "prompt_test_runs_persisted", {
+                visibilityResultId: result.id,
+                count: promptRunsToInsert.length,
+            });
+        }
+    }
+
     logStructured("info", "geo_analysis_saved", { resultId: result.id });
     return result;
 }

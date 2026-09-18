@@ -69,6 +69,8 @@ router.get("/", async (req, res) => {
                     response,
                     sentiment,
                     relevance_score,
+                    engine,
+                    citations,
                     metadata
                 )
             `)
@@ -87,12 +89,13 @@ router.get("/", async (req, res) => {
                 competitor: 0,
                 prompts: [],
                 geoActions: [],
+                citations: [],
             });
         }
 
         const prompts = (latest.prompt_test_runs || []).map((row) => ({
             prompt: row.prompt,
-            engine: row.metadata?.engine || latest.engine || "chatgpt",
+            engine: row.engine || row.metadata?.engine || latest.engine || "gpt-4o-mini-simulated",
             brand: row.metadata?.brand || (row.sentiment === "positive" ? "mentioned" : "unmentioned"),
             competitor: row.metadata?.competitor || "not mentioned",
             brandTone: row.metadata?.brand_tone || row.sentiment || "neutral",
@@ -111,6 +114,7 @@ router.get("/", async (req, res) => {
             presenceMentions: `${mentionedCount} of ${totalPrompts}`,
             competitor,
             prompts,
+            citations: latest.result?.citations || [],
             geoActions: buildGeoActions({
                 score: visibilityScore,
                 competitor,
@@ -144,7 +148,7 @@ router.get("/summary", async (req, res) => {
         // Group by engine, keep only the latest per engine
         const latestByEngine = {};
         (allResults || []).forEach(result => {
-            const engineKey = result.engine || "chatgpt";
+            const engineKey = result.engine || "gpt-4o-mini-simulated";
             if (!latestByEngine[engineKey]) {
                 latestByEngine[engineKey] = result;
             }
@@ -166,7 +170,7 @@ router.get("/summary", async (req, res) => {
 
         // Per-engine breakdown
         const engineBreakdown = engines.map(e => ({
-            engineName: e.engine || "chatgpt",
+            engineName: e.engine || "gpt-4o-mini-simulated",
             visibilityScore: Number(e.score || 0),
             brandPresenceRate: e.result?.brand_presence_rate || 0,
             competitorMentionRate: e.result?.competitor_mention_rate || 0,
@@ -248,7 +252,7 @@ router.get("/trends", async (req, res) => {
         // Per-engine trend lines (for multi-line charts)
         const engineTrends = {};
         (results || []).forEach(r => {
-            const engName = r.engine || "chatgpt";
+            const engName = r.engine || "gpt-4o-mini-simulated";
             if (!engineTrends[engName]) engineTrends[engName] = [];
             engineTrends[engName].push({
                 date: new Date(r.created_at).toISOString().split("T")[0],
@@ -292,7 +296,7 @@ router.post("/analyze", async (req, res) => {
             brandName,
             competitors: competitors || [],
             queries,
-            engineName: engineName || "chatgpt",
+            engineName: engineName || "gpt-4o-mini-simulated",
         });
 
         res.status(201).json(result);
