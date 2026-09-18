@@ -66,23 +66,31 @@ async function hasDuplicateAlert({ workspaceId, type, topicKey, windowStart }) {
 export async function detectAlerts(workspaceId) {
     const alerts = [];
     const now = new Date();
-    const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const prev24h = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+    // 6-hour immediate window, 24-hour baseline window
+    const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
     // Fetch recent signals with analyses
     const { data: recentSignals, error: signalsError } = await supabase
         .from('signals')
         .select(`
-            *,
-            analyses (
-                confidence_score,
-                sentiment,
-                impact
+            id,
+            workspace_id,
+            title,
+            content,
+            platform,
+            sentiment,
+            severity,
+            topics,
+            metadata,
+            captured_at,
+            analyses:signal_analyses (
+                confidence,
+                analysis
             )
         `)
         .eq('workspace_id', workspaceId)
-        .gte('captured_at', last24h.toISOString())
-        .lte('captured_at', now.toISOString())
+        .gte('captured_at', twentyFourHoursAgo.toISOString())
         .order('captured_at', { ascending: false });
 
     if (signalsError) {
@@ -90,118 +98,144 @@ export async function detectAlerts(workspaceId) {
         return alerts;
     }
 
-    // Count previous signals
-    const { count: previousSignals } = await supabase
-        .from('signals')
-        .select('id', { count: 'exact', head: true })
-        .eq('workspace_id', workspaceId)
-        .gte('captured_at', prev24h.toISOString())
-        .lt('captured_at', last24h.toISOString());
-
     if (!recentSignals || recentSignals.length === 0) {
         return alerts;
     }
 
+    // Group signals by target keyword or primary topic
     const topicBuckets = new Map();
     for (const signal of recentSignals) {
-        const key = buildTopicKey(signal);
-        if (!topicBuckets.has(key)) topicBuckets.set(key, []);
-        topicBuckets.get(key).push(signal);
+        const key = signal.metadata?.keyword || (Array.isArray(signal.topics) && signal.topics[0]) || buildTopicKey(signal);
+        const normalizedKey = String(key).trim();
+        if (!topicBuckets.has(normalizedKey)) topicBuckets.set(normalizedKey, []);
+        topicBuckets.get(normalizedKey).push(signal);
     }
 
     for (const [topicKey, signals] of topicBuckets.entries()) {
-        const countNow = signals.length;
-        if (countNow < 3) continue;
+        const totalCount = signals.length;
+        if (totalCount < 2) continue;
 
-        const negativeCount = signals.filter((s) => {
+        // Negative signals
+        const negativeSignals = signals.filter((s) => {
             const sent = s.analyses?.[0]?.sentiment || s.sentiment || "";
-            return String(sent).toLowerCase() === "negative";
-        }).length;
-
-        const sentimentRatio = Math.round((negativeCount / countNow) * 100);
-        const speed = previousSignals > 0 ? Math.round((countNow / previousSignals) * 100) : Math.min(100, countNow * 15);
-
-        const avgSourceStrength = Math.round(
-            (signals.reduce((sum, s) => sum + (SOURCE_STRENGTH[s.source_type || "unknown"] || SOURCE_STRENGTH.unknown), 0) / countNow) * 100
-        );
-
-        const spread = Math.round(
-            (new Set(signals.map((s) => (s.platform || "unknown").toLowerCase())).size / Math.max(1, countNow)) * 100
-        );
-
-        // Higher urgency when median capturedAt is recent.
-        const medianTs = signals
-            .map((s) => new Date(s.captured_at).getTime())
-            .sort((a, b) => a - b)[Math.floor(signals.length / 2)];
-        const hoursAgo = Math.max(1, (now.getTime() - medianTs) / (1000 * 60 * 60));
-        const timeToImpact = Math.max(20, Math.min(100, Math.round(100 - hoursAgo * 6)));
-
-        const confidenceValues = signals
-            .map((s) => s.analyses?.[0]?.confidence_score)
-            .filter((v) => typeof v === "number");
-        const confidence = confidenceValues.length > 0
-            ? Math.round((confidenceValues.reduce((sum, v) => sum + v, 0) / confidenceValues.length) * 100)
-            : 60;
-
-        const score = computeAlertScore({
-            speed,
-            sentimentRatio,
-            sourceStrength: avgSourceStrength,
-            spread,
-            timeToImpact,
-            confidence,
+            return String(sent).toUpperCase() === "NEGATIVE";
         });
+        const negativeCount = negativeSignals.length;
+        const negativeRatio = (negativeCount / totalCount) * 100;
+        const roundedRatio = Math.round(negativeRatio);
 
-        if (score < 45) continue;
-
-        const type = sentimentRatio >= 50 ? "risk" : "positioning";
-        const severity = toSeverity(score);
-
-        const duplicate = await hasDuplicateAlert({
-            workspaceId,
-            type,
-            topicKey,
-            windowStart: last24h,
+        // Recent 6-hour signals
+        const recent6hSignals = signals.filter(s => new Date(s.captured_at) >= sixHoursAgo);
+        const recent6hNegatives = recent6hSignals.filter(s => {
+            const sent = s.analyses?.[0]?.sentiment || s.sentiment || "";
+            return String(sent).toUpperCase() === "NEGATIVE";
         });
-        if (duplicate) continue;
+        const recent6hNegRatio = recent6hSignals.length > 0 
+            ? (recent6hNegatives.length / recent6hSignals.length) * 100 
+            : 0;
 
-        const topSignals = signals.slice(0, 5);
-        const signalsContext = topSignals
-            .map((s) => `[${(s.analyses?.[0]?.sentiment || s.sentiment || "unknown").toUpperCase()}] ${s.title || "No Title"}\n${(s.content || "").substring(0, 150)}...`)
-            .join("\n\n");
+        const hasCritical = signals.some(s => String(s.severity).toLowerCase() === "critical");
+        const hasHigh = signals.some(s => String(s.severity).toLowerCase() === "high");
 
-        const sources = [...new Set(signals.map((s) => s.platform).filter(Boolean))];
+        // Rule condition:
+        // 1. Negative ratio >= 30% in recent 6h window or 24h window (with at least 1 negative signal)
+        // OR 2. Severe volume surge (>= 3 negative signals)
+        // OR 3. Critical severity signal with negative sentiment
+        const isTriggered = (recent6hNegRatio >= 30 && recent6hNegatives.length >= 1) ||
+                            (negativeRatio >= 30 && negativeCount >= 1) ||
+                            negativeCount >= 3 ||
+                            (hasCritical && negativeCount >= 1);
 
-        const alertDataObj = {
-            type,
-            severity,
-            title: `${topicKey} trend alert`,
-            whatHappened: `Topic window score ${score}/100 (speed ${speed}, sentiment ${sentimentRatio}, source ${avgSourceStrength}, spread ${spread}, impact ETA ${timeToImpact}, confidence ${confidence}).`,
-        };
+        if (!isTriggered) continue;
 
-        const enhanced = await enhanceAlert(alertDataObj, signalsContext);
+        // Deduplication check: check if an open alert for this topic already exists in last 12 hours
+        const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000);
+        const { data: existingAlerts } = await supabase
+            .from('alerts')
+            .select('id, status, created_at')
+            .eq('workspace_id', workspaceId)
+            .ilike('title', `%${topicKey}%`)
+            .gte('created_at', twelveHoursAgo.toISOString())
+            .neq('status', 'resolved')
+            .limit(1);
+
+        if (existingAlerts && existingAlerts.length > 0) {
+            logStructured("info", "alert_rules_duplicate_skipped", { topicKey, existingAlertId: existingAlerts[0].id });
+            continue;
+        }
+
+        // Calculate severity
+        let severity = "medium";
+        if (negativeRatio >= 50 || hasCritical || negativeCount >= 4) {
+            severity = "critical";
+        } else if (negativeRatio >= 35 || hasHigh || negativeCount >= 2) {
+            severity = "high";
+        }
+
+        const sources = Array.from(new Set(signals.map((s) => s.platform).filter(Boolean)));
+        const title = `Negative Sentiment Spike: ${topicKey}`;
+        const description = `${negativeCount} of ${totalCount} recent signals (${roundedRatio}%) are negative for ${topicKey}.`;
+        const whatHappened = `Automated rules engine detected an acute negative sentiment surge (${roundedRatio}%, ${negativeCount}/${totalCount} signals) concerning '${topicKey}' within the recent monitoring window.`;
+        const defaultWhy = `A concentrated negative sentiment surge threatens brand trust and indicates an escalating crisis requiring immediate PR monitoring.`;
+        const defaultAction = `Review incoming signals, draft a clarifying statement or holding response, and assign an incident lead.`;
+
+        // Attempt AI enhancement if available
+        let whyItMatters = defaultWhy;
+        let whatToDo = defaultAction;
+        try {
+            const signalsContext = negativeSignals.slice(0, 5)
+                .map((s) => `[NEGATIVE] ${s.title || "No Title"}\n${(s.content || "").substring(0, 150)}...`)
+                .join("\n\n");
+            const enhanced = await enhanceAlert({
+                type: "risk",
+                severity,
+                title,
+                whatHappened,
+            }, signalsContext);
+            if (enhanced?.whyItMatters) whyItMatters = enhanced.whyItMatters;
+            if (enhanced?.whatToDo) whatToDo = enhanced.whatToDo;
+        } catch (aiErr) {
+            logStructured("warn", "alert_ai_enhancement_fallback", { error: aiErr.message });
+        }
 
         const { data: newAlert, error: createError } = await supabase
             .from('alerts')
             .insert({
                 workspace_id: workspaceId,
-                type,
+                type: "risk",
                 severity,
-                title: alertDataObj.title,
-                what_happened: alertDataObj.whatHappened,
-                why_it_matters: enhanced?.whyItMatters || `Narrative momentum is increasing for topic '${topicKey}'.`,
-                what_to_do: enhanced?.whatToDo || "Assign an owner, prepare response copy, and monitor the next 24h signal curve.",
+                title,
+                description,
+                what_happened: whatHappened,
+                why_it_matters: whyItMatters,
+                what_to_do: whatToDo,
                 status: "open",
-                sources,
+                sources: sources.length > 0 ? sources : ["news"],
+                source: sources[0] || "news",
+                metadata: {
+                    keyword: topicKey,
+                    negative_count: negativeCount,
+                    total_count: totalCount,
+                    negative_ratio: roundedRatio,
+                    signal_ids: negativeSignals.map(s => s.id),
+                    rule_triggered: "negative_sentiment_spike_30pct",
+                    detected_at: now.toISOString(),
+                }
             })
             .select()
             .single();
 
         if (!createError && newAlert) {
             alerts.push(newAlert);
+            logStructured("info", "alert_created_by_rules_engine", {
+                alertId: newAlert.id,
+                topicKey,
+                severity,
+                negativeRatio: roundedRatio,
+            });
             globalEvents.emit("dashboard_update", workspaceId);
         } else if (createError) {
-            logStructured("error", "Error creating alert:", { error: createError?.message || createError });
+            logStructured("error", "Error creating alert from rules engine:", { error: createError.message });
         }
     }
 
