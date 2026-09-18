@@ -2,7 +2,7 @@ import express from "express";
 import supabase from "../../lib/supabase.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
-import { compareClusterPeriods } from "../clustering/clustering.service.js";
+import { compareClusterPeriods, runClustering } from "../clustering/clustering.service.js";
 import { logStructured } from "../../lib/logger.js";
 import { recordAuditLog } from "../../lib/audit.js";
 import { wrapAsync } from "../../lib/sentry.js";
@@ -144,6 +144,23 @@ router.get("/compare", async (req, res) => {
     } catch (error) {
         logStructured("error", "Error comparing clusters:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// POST /api/narratives/cluster - Trigger narrative clustering
+router.post("/cluster", async (req, res) => {
+    try {
+        const { workspaceId } = req.body || {};
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
+        if (!scopedWorkspaceId) {
+            return res.status(403).json({ error: "Workspace access denied" });
+        }
+
+        const result = await runClustering(scopedWorkspaceId);
+        return res.json(result);
+    } catch (error) {
+        logStructured("error", "Error running narrative clustering:", { error: error?.message || error, stack: error?.stack });
+        return res.status(500).json({ error: "Clustering execution failed" });
     }
 });
 

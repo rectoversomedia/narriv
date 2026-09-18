@@ -890,6 +890,9 @@ export default function SignalsPage() {
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ["signals"] }),
           queryClient.invalidateQueries({ queryKey: ["signalsMeta"] }),
+          queryClient.invalidateQueries({ queryKey: ["narratives"] }),
+          queryClient.invalidateQueries({ queryKey: ["narrative-detail"] }),
+          queryClient.invalidateQueries({ queryKey: ["alerts"] }),
         ]);
       } else {
         toastHook.info("Ingestion completed: No new signals found.");

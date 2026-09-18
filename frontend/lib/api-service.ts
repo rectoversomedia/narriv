@@ -1515,6 +1515,29 @@ export async function getNarratives(
   }
 }
 
+export async function triggerClustering(workspaceId?: string): Promise<{
+  message: string;
+  signalsProcessed?: number;
+  clustersFound?: number;
+  clustersCreated?: number;
+  signalsAttached?: number;
+} | null> {
+  try {
+    return await apiClient<{
+      message: string;
+      signalsProcessed?: number;
+      clustersFound?: number;
+      clustersCreated?: number;
+      signalsAttached?: number;
+    }>("/api/narratives/cluster", {
+      method: "POST",
+      body: JSON.stringify(workspaceId ? { workspaceId } : {}),
+    });
+  } catch {
+    return null;
+  }
+}
+
 export interface SourceRecord {
   id: string;
   workspaceId?: string;

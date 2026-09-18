@@ -706,6 +706,9 @@ export default function SourcesPage() {
           queryClient.invalidateQueries({ queryKey: ["source-coverage"] }),
           queryClient.invalidateQueries({ queryKey: ["signals"] }),
           queryClient.invalidateQueries({ queryKey: ["signalsMeta"] }),
+          queryClient.invalidateQueries({ queryKey: ["narratives"] }),
+          queryClient.invalidateQueries({ queryKey: ["narrative-detail"] }),
+          queryClient.invalidateQueries({ queryKey: ["alerts"] }),
         ]);
       } else {
         showToast("Ingestion completed: No new signals found.", "info");

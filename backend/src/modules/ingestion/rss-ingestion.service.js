@@ -11,6 +11,7 @@ import crypto from "crypto";
 import supabaseAdmin from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
 import { analyzeSignal } from "../ai/ai.service.js";
+import { runClustering } from "../clustering/clustering.service.js";
 
 const DEFAULT_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 NarrivNewsBot/1.0";
 const REQUEST_TIMEOUT_MS = 15000;
@@ -453,6 +454,23 @@ export async function ingestRssSignals({
       .eq("id", job.id);
   }
 
+  // Trigger Dynamic Narrative Clustering if new signals were ingested
+  let clusteringResult = null;
+  if (createdSignals.length > 0) {
+    try {
+      logStructured("info", "triggering_dynamic_clustering_post_ingestion", {
+        workspaceId,
+        newSignalsCount: createdSignals.length,
+      });
+      clusteringResult = await runClustering(workspaceId);
+    } catch (clusterErr) {
+      logStructured("warn", "dynamic_clustering_post_ingestion_failed", {
+        error: clusterErr.message,
+        workspaceId,
+      });
+    }
+  }
+
   const durationMs = Date.now() - startTime;
   logStructured("info", "rss_ingestion_completed", {
     workspaceId,
@@ -460,6 +478,8 @@ export async function ingestRssSignals({
     fetched: fetchedItems.length,
     created: createdSignals.length,
     skipped: skippedDuplicates,
+    clustersCreated: clusteringResult?.clustersCreated || 0,
+    signalsAttached: clusteringResult?.signalsAttached || 0,
     durationMs,
   });
 
@@ -472,5 +492,6 @@ export async function ingestRssSignals({
     newRawDocsCreated: createdRawDocs.length,
     skippedDuplicates,
     signals: createdSignals,
+    clustering: clusteringResult,
   };
 }
