@@ -1,6 +1,11 @@
 import OpenAI from "openai";
 import supabase from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
+import {
+    generatePromptVariants,
+    analyzePromptResponse,
+    executeSimulatedPromptQuery,
+} from "./geo-prompts.service.js";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
@@ -209,39 +214,76 @@ Rules:
  * @param {string} [params.engineName="chatgpt"] - The AI engine to query.
  * @returns {Promise<object>} - The saved AIVisibilityResult record.
  */
-export async function runVisibilityAnalysis({ workspaceId, brandName, competitors = [], queries, engineName = "chatgpt" }) {
-    logStructured("info", "geo_analysis_started", { brandName, engineName, competitorCount: competitors.length, queryCount: queries.length });
+export async function runVisibilityAnalysis({ workspaceId, brandName, competitors = [], queries, engineName = "gpt-4o-mini-simulated" }) {
+    const cleanBrand = brandName?.trim() || "Bank Mandiri";
+    const effectiveQueries = (queries && Array.isArray(queries) && queries.length > 0)
+        ? queries
+        : generatePromptVariants(cleanBrand, competitors).map(pv => pv.prompt);
 
-    // 1. Query the AI engine
-    const queryResults = await queryAIEngine(engineName, queries);
-    const responses = queryResults.map(qr => qr.response);
+    logStructured("info", "geo_analysis_started", {
+        brandName: cleanBrand,
+        engineName,
+        competitorCount: competitors.length,
+        queryCount: effectiveQueries.length,
+    });
+
+    // 1. Query the AI engine and perform structured evaluation
+    const queryResults = [];
+    for (const q of effectiveQueries) {
+        try {
+            const executed = await executeSimulatedPromptQuery(q);
+            const evaluation = analyzePromptResponse(executed.id || executed.raw, cleanBrand, competitors);
+            queryResults.push({
+                query: q,
+                response: executed.en || executed.raw,
+                responseId: executed.id || executed.raw,
+                analysis: evaluation,
+            });
+        } catch (err) {
+            logStructured("warn", "geo_prompt_execution_failed", { query: q, error: err.message });
+            queryResults.push({
+                query: q,
+                response: `Simulated analysis error for: ${q}`,
+                responseId: `Gagal menjalankan simulasi untuk: ${q}`,
+                analysis: analyzePromptResponse("", cleanBrand, competitors),
+            });
+        }
+    }
+
+    const responses = queryResults.map(qr => qr.responseId || qr.response);
 
     // 2. Calculate metrics
-    const visibilityScore = calculateVisibilityScore(responses, brandName);
-    const brandPresenceRate = calculateBrandPresenceRate(responses, brandName);
+    const visibilityScore = calculateVisibilityScore(responses, cleanBrand);
+    const brandPresenceRate = calculateBrandPresenceRate(responses, cleanBrand);
     const competitorMentionRate = calculateCompetitorMentionRate(responses, competitors);
 
-    logStructured("info", "geo_analysis_results", { visibilityScore, brandPresence: `${(brandPresenceRate * 100).toFixed(1)}%`, competitorMention: `${(competitorMentionRate * 100).toFixed(1)}%` });
+    logStructured("info", "geo_analysis_results", {
+        visibilityScore,
+        brandPresence: `${(brandPresenceRate * 100).toFixed(1)}%`,
+        competitorMention: `${(competitorMentionRate * 100).toFixed(1)}%`,
+    });
 
-    // 3. Save to database
+    // 3. Save to database (ai_visibility_results)
     const { data: result, error } = await supabase
         .from("ai_visibility_results")
         .insert({
             workspace_id: workspaceId,
             engine: engineName,
             score: visibilityScore,
-            query: JSON.stringify(queries),
+            query: JSON.stringify(effectiveQueries),
             result: {
                 visibility_score: visibilityScore,
                 brand_presence_rate: Math.round(brandPresenceRate * 1000) / 1000,
                 competitor_mention_rate: Math.round(competitorMentionRate * 1000) / 1000,
-                query_used: queries,
+                query_used: effectiveQueries,
                 raw_response: queryResults,
                 metadata: {
-                    brand_name: brandName,
+                    brand_name: cleanBrand,
                     competitors,
-                    total_queries: queries.length,
-                    total_responses: responses.filter(r => r.length > 0).length
+                    total_queries: effectiveQueries.length,
+                    total_responses: responses.filter(r => r && r.length > 0).length,
+                    engine: engineName,
+                    methodology: "AI-Modeled via GPT-4o-mini",
                 }
             }
         })
