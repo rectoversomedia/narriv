@@ -6,6 +6,7 @@ import {
     analyzePromptResponse,
     executeSimulatedPromptQuery,
 } from "./geo-prompts.service.js";
+import { aggregateCitations } from "./citation-extractor.js";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
@@ -252,15 +253,17 @@ export async function runVisibilityAnalysis({ workspaceId, brandName, competitor
 
     const responses = queryResults.map(qr => qr.responseId || qr.response);
 
-    // 2. Calculate metrics
+    // 2. Calculate metrics and citations
     const visibilityScore = calculateVisibilityScore(responses, cleanBrand);
     const brandPresenceRate = calculateBrandPresenceRate(responses, cleanBrand);
     const competitorMentionRate = calculateCompetitorMentionRate(responses, competitors);
+    const aggregatedCitations = aggregateCitations(queryResults, cleanBrand, competitors);
 
     logStructured("info", "geo_analysis_results", {
         visibilityScore,
         brandPresence: `${(brandPresenceRate * 100).toFixed(1)}%`,
         competitorMention: `${(competitorMentionRate * 100).toFixed(1)}%`,
+        citationsCount: aggregatedCitations.length,
     });
 
     // 3. Save to database (ai_visibility_results)
@@ -277,6 +280,7 @@ export async function runVisibilityAnalysis({ workspaceId, brandName, competitor
                 competitor_mention_rate: Math.round(competitorMentionRate * 1000) / 1000,
                 query_used: effectiveQueries,
                 raw_response: queryResults,
+                citations: aggregatedCitations,
                 metadata: {
                     brand_name: cleanBrand,
                     competitors,

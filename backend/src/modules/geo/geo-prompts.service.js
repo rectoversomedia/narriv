@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { logStructured } from "../../lib/logger.js";
+import { extractCitationsFromText } from "./citation-extractor.js";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
@@ -94,6 +95,7 @@ export function analyzePromptResponse(responseText, brandName, competitors = [])
             competitorTone: "neutral",
             relativePosition: "not_mentioned",
             relevanceScore: 0,
+            citations: [],
         };
     }
 
@@ -180,6 +182,7 @@ export function analyzePromptResponse(responseText, brandName, competitors = [])
         competitorTone: competitorsMentioned.length > 0 ? "neutral" : "neutral",
         relativePosition,
         relevanceScore,
+        citations: extractCitationsFromText(responseText, brandName, competitors),
     };
 }
 
