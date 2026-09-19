@@ -102,14 +102,14 @@ function generateLatestSignals(): LatestSignal[] {
   const platforms = ["Twitter", "Facebook", "Instagram", "Reddit", "News", "TikTok"];
   const sentiments = ["positive", "neutral", "negative", "positive", "neutral"];
   const titles = [
-    "Service disruption affecting users in Southeast Asia",
-    "New app update receives mixed reactions",
-    "Exclusive promo for loyal customers announced",
-    "Security update addresses recent vulnerabilities",
-    "New privacy policy raises concerns among users",
-    "Customer support response times improve significantly",
-    "App performance optimization updates released",
-    "Community guidelines update announced",
+    "Gangguan Transaksi BI-FAST dan M-Banking di Jam Sibuk Gajian",
+    "Keluhan Lonjakan Tagihan Kartu Kredit Tak Dikenal di Media Sosial",
+    "Peluncuran Asisten AI Interaktif Layanan Nasabah 24/7 Menuai Respon Positif",
+    "Diskusi Kebijakan Pembaruan Syarat & Privasi Data Nasabah Perbankan Terbuka",
+    "Promo Bunga KPR Spesial Hari Kemerdekaan Diserbu Generasi Muda",
+    "Keluhan Layanan CS Lambat Menangani Kasus Penipuan Social Engineering",
+    "Analisis Keamanan Siber: Ancaman Malware Phishing yang Menyamar Jadi Aplikasi Mobile Banking",
+    "Transformasi Digital Perbankan: Efisiensi Kantor Cabang dan Migrasi ke SuperApp",
   ];
 
   const signals: LatestSignal[] = [];
