@@ -2,6 +2,7 @@ import supabase from "../../lib/supabase.js";
 import { badRequest, forbidden, internalError, notFound } from "../../lib/api-error.js";
 import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { logStructured } from "../../lib/logger.js";
+import { testIntegrationConnection } from "./webhook-dispatcher.service.js";
 
 export async function listIntegrations(req, res) {
     try {
@@ -199,5 +200,44 @@ export async function deleteIntegration(req, res) {
     } catch (error) {
         logStructured("error", "Error deleting integration:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
+    }
+}
+
+export async function testIntegration(req, res) {
+    try {
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, req.query.workspaceId || req.body?.workspaceId);
+        if (!scopedWorkspaceId) {
+            return forbidden(res, "Workspace access denied", "WORKSPACE_ACCESS_DENIED");
+        }
+
+        const { data: integration, error } = await supabase
+            .from("integrations")
+            .select("*")
+            .eq("id", req.params.id)
+            .eq("workspace_id", scopedWorkspaceId)
+            .maybeSingle();
+
+        if (error) {
+            logStructured("error", "Error finding integration for test:", { error: error.message || error });
+            return internalError(res);
+        }
+
+        if (!integration) {
+            return notFound(res, "Integration not found", "INTEGRATION_NOT_FOUND");
+        }
+
+        const result = await testIntegrationConnection(integration);
+
+        await supabase.from("audit_logs").insert({
+            user_id: req.user.id,
+            workspace_id: scopedWorkspaceId,
+            event: "integration_tested",
+            metadata: { workspace_id: scopedWorkspaceId, integration_id: integration.id, platform: integration.platform, result },
+        });
+
+        return res.json({ success: true, ...result });
+    } catch (error) {
+        logStructured("error", "Error testing integration webhook:", { error: error?.message || error });
+        return badRequest(res, error.message || "Failed to test integration webhook");
     }
 }

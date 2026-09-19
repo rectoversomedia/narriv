@@ -3,12 +3,12 @@
 import { useMemo, useState, useEffect, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Cable, CheckCircle2, Cloud, Filter, Link2, Plus, RefreshCcw, Sparkles, Trash2, TriangleAlert, Zap } from "lucide-react";
+import { Cable, CheckCircle2, Cloud, Filter, Link2, Plus, RefreshCcw, Send, Sparkles, Trash2, TriangleAlert, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { DashboardEmptyState, DashboardErrorState, TableSkeleton } from "@/components/dashboard/dashboard-states";
 import { useToast } from "@/components/ui/toast";
-import { createIntegration, deleteIntegration, getIntegrations, updateIntegration, type IntegrationRecord } from "@/lib/api-service";
+import { createIntegration, deleteIntegration, getIntegrations, updateIntegration, testIntegration, type IntegrationRecord } from "@/lib/api-service";
 import { getMockIntegrations } from "@/lib/demo-mock-data";
 import { useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
@@ -150,6 +150,16 @@ export default function IntegrationsPage() {
       toast.success(t("toast.deleteSuccess"));
     },
     onError: () => toast.error(t("toast.deleteFailed")),
+  });
+
+  const testMutation = useMutation({
+    mutationFn: (id: string) => testIntegration(id),
+    onSuccess: (res) => {
+      toast.success(res?.message || "Webhook test delivered successfully!");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Webhook test failed");
+    },
   });
 
   const integrations = integrationsQuery.data?.data || emptyIntegrations;
@@ -398,14 +408,28 @@ export default function IntegrationsPage() {
                           <p className="mt-1 text-xs font-semibold text-slate-400">Created {formatDateTime(item.createdAt, t("table.neverSynced"))}</p>
                         </td>
                         <td className="px-6 py-4 text-right align-top">
-                          <button
-                            type="button"
-                            onClick={() => setDeleteTarget(item)}
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-500"
-                            aria-label={`Putus integrasi ${item.name}`}
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            {["slack", "teams", "webhook"].includes(item.platform) && (
+                              <button
+                                type="button"
+                                onClick={() => testMutation.mutate(item.id)}
+                                disabled={testMutation.isPending}
+                                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 shadow-xs transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50"
+                                title="Test Webhook Connection"
+                              >
+                                <Send size={12} className={testMutation.isPending ? "animate-pulse text-[#465FFF]" : ""} />
+                                <span>Test</span>
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setDeleteTarget(item)}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-500"
+                              aria-label={`Putus integrasi ${item.name}`}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

@@ -7,6 +7,7 @@ import {
     createIntegration,
     updateIntegration,
     deleteIntegration,
+    testIntegration,
 } from "./integrations.controller.js";
 import { wrapAsync } from "../../lib/sentry.js";
 import {
@@ -23,6 +24,11 @@ router.use(verifyToken);
 router.get("/", validateRequest({ query: integrationsQuerySchema }), listIntegrations);
 router.get("/:id", validateRequest({ params: updateIntegrationParamsSchema, query: integrationsQuerySchema }), getIntegration);
 router.post("/", validateRequest({ body: createIntegrationBodySchema }), createIntegration);
+router.post(
+    "/:id/test",
+    validateRequest({ params: updateIntegrationParamsSchema }),
+    testIntegration
+);
 router.patch(
     "/:id",
     validateRequest({ params: updateIntegrationParamsSchema, body: updateIntegrationBodySchema }),

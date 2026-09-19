@@ -7,6 +7,7 @@ import { z } from "zod";
 import { alertIdParamsSchema, updateAlertStatusBodySchema } from "./alerts.schema.js";
 import { logStructured } from "../../lib/logger.js";
 import { wrapAsync } from "../../lib/sentry.js";
+import { dispatchAlertToWebhooks } from "../integrations/webhook-dispatcher.service.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -103,6 +104,11 @@ router.post("/", validateRequest({ body: createAlertBodySchema }), async (req, r
                 severity: alert.severity,
             }
         });
+
+        // Asynchronously dispatch alert to any active webhooks (Slack/Teams/generic)
+        dispatchAlertToWebhooks(alert).catch((err) =>
+            logStructured("warn", "Webhook dispatch error on manual alert creation", { error: err.message, alertId: alert.id })
+        );
 
         res.status(201).json(alert);
     } catch (error) {

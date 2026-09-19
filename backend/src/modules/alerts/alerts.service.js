@@ -2,6 +2,7 @@ import supabase from "../../lib/supabase.js";
 import { enhanceAlert } from "../ai/ai.service.js";
 import { globalEvents } from "../app-notifications/app-notifications.events.js";
 import { logStructured } from "../../lib/logger.js";
+import { dispatchAlertToWebhooks } from "../integrations/webhook-dispatcher.service.js";
 
 const SOURCE_STRENGTH = {
     news: 1,
@@ -234,6 +235,9 @@ export async function detectAlerts(workspaceId) {
                 negativeRatio: roundedRatio,
             });
             globalEvents.emit("dashboard_update", workspaceId);
+            dispatchAlertToWebhooks(newAlert).catch((err) =>
+                logStructured("warn", "Webhook dispatch error on rules engine alert", { error: err.message, alertId: newAlert.id })
+            );
         } else if (createError) {
             logStructured("error", "Error creating alert from rules engine:", { error: createError.message });
         }

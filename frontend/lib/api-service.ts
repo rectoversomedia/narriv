@@ -1201,6 +1201,16 @@ export async function deleteIntegration(id: string): Promise<boolean> {
   }
 }
 
+export async function testIntegration(id: string, workspaceId?: string): Promise<{ success: boolean; message: string }> {
+  const params = new URLSearchParams();
+  if (workspaceId) params.set("workspaceId", workspaceId);
+  const query = params.toString();
+  return await apiClient<{ success: boolean; message: string }>(
+    `/api/workspace/integrations/${id}/test${query ? `?${query}` : ""}`,
+    { method: "POST" }
+  );
+}
+
 // ---------------------------------------------------------------------------
 // AI Visibility Analysis
 // ---------------------------------------------------------------------------
