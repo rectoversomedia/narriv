@@ -1526,7 +1526,8 @@ export const demo = async (req, res) => {
     try {
         // Rate limit demo endpoint to prevent abuse
         const rateKey = `demo:${req.ip || "unknown"}`;
-        if (checkRateLimit(loginRateBucket, rateKey, 5, 60 * 1000)) {
+        const demoMax = process.env.NODE_ENV === "production" ? 5 : 100;
+        if (checkRateLimit(loginRateBucket, rateKey, demoMax, 60 * 1000)) {
             return res.status(429).json({
                 error: "Too many demo login attempts. Please try again later.",
                 code: "RATE_LIMIT_EXCEEDED"

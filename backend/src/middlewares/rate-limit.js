@@ -138,10 +138,10 @@ export const RATE_LIMITS = {
         message: "Feedback rate limit exceeded. Please wait before trying again.",
     },
 
-    // Authentication - relaxed over 15 minutes
+    // Authentication - relaxed over 15 minutes (higher limit in development for QA/testing)
     auth: {
         windowMs: 15 * 60 * 1000, // 15 minutes
-        max: 10,
+        max: process.env.NODE_ENV === "production" ? 15 : 200,
         message: "Too many authentication attempts. Please try again later.",
     },
 
