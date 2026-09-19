@@ -13,6 +13,15 @@ const TEAMS_WEBHOOK_URL = "https://outlook.office.com/webhook";
  */
 export async function sendTeamsMessage(webhookUrl, message) {
     try {
+        if (
+            typeof webhookUrl !== "string" ||
+            (!webhookUrl.startsWith("https://outlook.office.com/") &&
+             !webhookUrl.includes(".webhook.office.com") &&
+             !webhookUrl.includes(".office365.com"))
+        ) {
+            throw new Error("Invalid Microsoft Teams webhook URL — must be an authorized Microsoft Office webhook endpoint");
+        }
+
         const response = await fetch(webhookUrl, {
             method: "POST",
             headers: {

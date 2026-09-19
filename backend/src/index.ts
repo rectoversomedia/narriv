@@ -159,6 +159,7 @@ export function createApp(): Express {
 
   // Use Routes (with rate limiting on sensitive endpoints)
   app.use("/auth", rateLimit(RATE_LIMITS.auth), authRoutes);
+  app.use("/api/auth", rateLimit(RATE_LIMITS.auth), authRoutes);
   app.use("/ai", rateLimit(RATE_LIMITS.ai_generation), apiSecurityHeaders, aiRoutes);
   app.use("/ingestion", rateLimit(RATE_LIMITS.ingestion), ingestionRoutes);
   app.use("/api/actions", rateLimit(RATE_LIMITS.ai_generation), apiSecurityHeaders, actionsRoutes);
