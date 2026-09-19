@@ -16,6 +16,7 @@ import {
   Filter,
   Info,
   Loader2,
+  RotateCw,
   Search,
   ShieldCheck,
   Sparkles,
@@ -25,6 +26,7 @@ import {
   CheckCircle2,
   X,
 } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
 import {
   AppStore,
   Facebook,
@@ -36,9 +38,10 @@ import { cn } from "@/lib/utils";
 import { NarrativeCard } from "@/components/intelligence/narrative-card";
 import { getMockNarrativeCards } from "@/lib/demo-mock-data";
 import { CreateInvestigationModal } from "./components/create-investigation-modal";
+import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components/create-action-plan-modal";
 import { AdvancedSearchModal, ActiveFiltersChips } from "./components/advanced-search-modal";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton } from "@/components/dashboard/dashboard-states";
-import { getDateRangeOptions, getSignals, type PaginationInfo, type Signal, getSignalsMeta, type SignalsMeta, bulkDeleteSignals, bulkAnalyzeSignals, bulkCreateAlertsFromSignals, searchSignals, type AdvancedSearchFilters, type SearchSignalsResponse } from "@/lib/api-service";
+import { getDateRangeOptions, getSignals, type PaginationInfo, type Signal, getSignalsMeta, type SignalsMeta, bulkDeleteSignals, bulkAnalyzeSignals, bulkCreateAlertsFromSignals, searchSignals, fetchLatestSignals, type AdvancedSearchFilters, type SearchSignalsResponse } from "@/lib/api-service";
 import { isDemoMode, getMockSignals } from "@/lib/demo-mock-data";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
@@ -335,7 +338,7 @@ function SourceIconList({ row }: { row: SignalRow }) {
   );
 }
 
-function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, footerText, pagination, onPageChange, isFetching, className, tTimeRange, tSignals, onInvestigate, selectedIds, onSelectionChange, onBulkAnalyze, onBulkDelete, onBulkCreateAlert, isBulkProcessing }: { activeFilter: SignalFilter; setActiveFilter: (value: SignalFilter) => void; query: string; setQuery: (value: string) => void; rows: SignalRow[]; footerText: string; pagination?: PaginationInfo | null; onPageChange: (page: number) => void; isFetching?: boolean; className?: string; tTimeRange: (key: string) => string; tSignals: (key: string) => string; onInvestigate: (row: SignalRow) => void; selectedIds: Set<string>; onSelectionChange: (ids: Set<string>) => void; onBulkAnalyze: () => void; onBulkDelete: () => void; onBulkCreateAlert: () => void; isBulkProcessing: boolean }) {
+function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, footerText, pagination, onPageChange, isFetching, className, tTimeRange, tSignals, onInvestigate, onGenerateActionPlan, selectedIds, onSelectionChange, onBulkAnalyze, onBulkDelete, onBulkCreateAlert, isBulkProcessing }: { activeFilter: SignalFilter; setActiveFilter: (value: SignalFilter) => void; query: string; setQuery: (value: string) => void; rows: SignalRow[]; footerText: string; pagination?: PaginationInfo | null; onPageChange: (page: number) => void; isFetching?: boolean; className?: string; tTimeRange: (key: string) => string; tSignals: (key: string) => string; onInvestigate: (row: SignalRow) => void; onGenerateActionPlan?: (row: SignalRow) => void; selectedIds: Set<string>; onSelectionChange: (ids: Set<string>) => void; onBulkAnalyze: () => void; onBulkDelete: () => void; onBulkCreateAlert: () => void; isBulkProcessing: boolean }) {
   const t = useTranslations("Signals");
   const tabs: Array<{ value: SignalFilter; label: string }> = [
     { value: "all", label: tSignals("filterAll") },
@@ -491,7 +494,27 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                   <td className="px-3.5 py-4 align-middle"><AmplificationBadge level={row.amplification} /></td>
                   <td className="px-3.5 py-4 align-middle"><span className="block text-[11px] font-black text-[#31406B]">{row.time}</span></td>
                   <td className="px-3.5 py-4 align-middle"><span className="block text-[11px] font-black text-[#31406B]">{row.captured}</span></td>
-                  <td className="px-3.5 py-4 text-right align-middle"><button type="button" onClick={() => onInvestigate(row)} className="inline-flex h-8 items-center justify-center gap-1.5 rounded-[8px] bg-[#465FFF] px-3 text-[10.5px] font-black text-white shadow-[0_8px_18px_rgba(70,95,255,0.18)] transition hover:bg-[#3147E8]"><Flag size={12} />{tSignals("investigate")}</button></td>
+                  <td className="px-3.5 py-4 text-right align-middle">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => onGenerateActionPlan?.(row)}
+                        title="Generate Action Plan for this signal"
+                        className="inline-flex h-8 items-center justify-center gap-1 rounded-[8px] border border-[#DDE3EF] bg-white px-2.5 text-[10.5px] font-black text-[#465FFF] shadow-xs transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]"
+                      >
+                        <Sparkles size={11} />
+                        Plan
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onInvestigate(row)}
+                        className="inline-flex h-8 items-center justify-center gap-1.5 rounded-[8px] bg-[#465FFF] px-2.5 text-[10.5px] font-black text-white shadow-[0_8px_18px_rgba(70,95,255,0.18)] transition hover:bg-[#3147E8]"
+                      >
+                        <Flag size={11} />
+                        {tSignals("investigate")}
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -864,16 +887,45 @@ function RelatedNarrativesSection() {
 
 export default function SignalsPage() {
   const t = useTranslations("Signals");
+  const toastHook = useToast();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isActionPlanModalOpen, setIsActionPlanModalOpen] = useState(false);
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
   const [selectedSignal, setSelectedSignal] = useState<SignalRow | null>(null);
+  const [selectedSignalForAction, setSelectedSignalForAction] = useState<SignalRow | null>(null);
   const [activeFilter, setActiveFilter] = useState<SignalFilter>("all");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isFetchingSignals, setIsFetchingSignals] = useState(false);
   const deferredQuery = useDeferredValue(query);
   const dateRange = getDateRangeOptions("24h");
   const queryClient = useQueryClient();
+
+  const handleFetchLatestSignals = async () => {
+    setIsFetchingSignals(true);
+    try {
+      const result = await fetchLatestSignals({ limit: 15 });
+      if (result && result.success) {
+        toastHook.success(
+          `Fetched ${result.totalFetched} live news items. ${result.newSignalsCreated} new signals ingested!`
+        );
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["signals"] }),
+          queryClient.invalidateQueries({ queryKey: ["signalsMeta"] }),
+          queryClient.invalidateQueries({ queryKey: ["narratives"] }),
+          queryClient.invalidateQueries({ queryKey: ["narrative-detail"] }),
+          queryClient.invalidateQueries({ queryKey: ["alerts"] }),
+        ]);
+      } else {
+        toastHook.info("Ingestion completed: No new signals found.");
+      }
+    } catch {
+      toastHook.error("Failed to fetch live signals");
+    } finally {
+      setIsFetchingSignals(false);
+    }
+  };
 
   // Demo mode state
   const [demoMode, setDemoMode] = useState(false);
@@ -994,6 +1046,16 @@ export default function SignalsPage() {
     if (!open) setSelectedSignal(null);
   };
 
+  const handleGenerateActionPlan = (row: SignalRow) => {
+    setSelectedSignalForAction(row);
+    setIsActionPlanModalOpen(true);
+  };
+
+  const handleActionPlanModalChange = (open: boolean) => {
+    setIsActionPlanModalOpen(open);
+    if (!open) setSelectedSignalForAction(null);
+  };
+
   const handleApplyAdvancedFilters = (filters: AdvancedSearchFilters, results: SearchSignalsResponse | null) => {
     setAdvancedSearchFilters(filters);
     setAdvancedSearchResults(results);
@@ -1071,7 +1133,17 @@ export default function SignalsPage() {
       )}
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div><h1 className="text-[32px] font-black tracking-[-0.04em] text-[#060A23]">{t("title")}</h1><p className="mt-2 text-[15px] font-medium text-slate-500">{t("subtitle")}</p></div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={handleFetchLatestSignals}
+            disabled={isFetchingSignals}
+            title="Fetch latest news and signals from live RSS feeds"
+            className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#31406B] shadow-xs transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <RotateCw size={14} className={cn("text-[#465FFF]", isFetchingSignals && "animate-spin")} />
+            {isFetchingSignals ? "Fetching Signals..." : "Fetch Latest Signals"}
+          </button>
           <button onClick={() => setIsAdvancedSearchOpen(true)} className={cn("flex h-10 items-center justify-center gap-2 rounded-[8px] border px-4 text-[12px] font-black transition", isAdvancedSearchActive ? "border-[#465FFF] bg-[#465FFF]/10 text-[#465FFF]" : "border-[#DDE3EF] bg-white text-[#31406B] hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]")}>
             <Filter size={15} />
             {t("advancedSearch") || "Filters"}
@@ -1081,6 +1153,13 @@ export default function SignalsPage() {
       </header>
 
       <CreateInvestigationModal open={isCreateModalOpen} onOpenChange={handleCreateModalChange} signalId={selectedSignal?.id} signalTitle={selectedSignal?.title} />
+      <CreateActionPlanModal
+        open={isActionPlanModalOpen}
+        onOpenChange={handleActionPlanModalChange}
+        initialSignalId={selectedSignalForAction?.id}
+        initialSignalTitle={selectedSignalForAction?.title}
+        initialStrategyType={selectedSignalForAction?.sentiment?.toLowerCase() === "negative" ? "crisis_response" : "pr_response"}
+      />
 
       <AdvancedSearchModal
         open={isAdvancedSearchOpen}
@@ -1133,6 +1212,7 @@ export default function SignalsPage() {
                     tTimeRange={tTimeRange}
                     tSignals={tSignals}
                     onInvestigate={handleInvestigate}
+                    onGenerateActionPlan={handleGenerateActionPlan}
                     selectedIds={selectedIds}
                     onSelectionChange={setSelectedIds}
                     onBulkAnalyze={handleBulkAnalyze}
@@ -1154,7 +1234,7 @@ export default function SignalsPage() {
           ) : (
             <>
               {isLiveUnavailable ? <DashboardErrorState title={tSignals("errorTitle")} description={tSignals("errorDesc")} onRetry={() => { (signalsQuery as { refetch: () => unknown }).refetch(); }} minHeight="min-h-[150px]" /> : null}
-              <SignalsTable activeFilter={activeFilter} setActiveFilter={handleFilterChange} query={query} setQuery={handleQueryChange} rows={rows} footerText={footerText} pagination={signalsQuery.data?.pagination} onPageChange={setPage} isFetching={signalsQuery.isFetching} className="flex-1" tTimeRange={tTimeRange} tSignals={tSignals} onInvestigate={handleInvestigate} selectedIds={selectedIds} onSelectionChange={setSelectedIds} onBulkAnalyze={handleBulkAnalyze} onBulkDelete={handleBulkDelete} onBulkCreateAlert={handleBulkCreateAlert} isBulkProcessing={isBulkProcessing} />
+              <SignalsTable activeFilter={activeFilter} setActiveFilter={handleFilterChange} query={query} setQuery={handleQueryChange} rows={rows} footerText={footerText} pagination={signalsQuery.data?.pagination} onPageChange={setPage} isFetching={signalsQuery.isFetching} className="flex-1" tTimeRange={tTimeRange} tSignals={tSignals} onInvestigate={handleInvestigate} onGenerateActionPlan={handleGenerateActionPlan} selectedIds={selectedIds} onSelectionChange={setSelectedIds} onBulkAnalyze={handleBulkAnalyze} onBulkDelete={handleBulkDelete} onBulkCreateAlert={handleBulkCreateAlert} isBulkProcessing={isBulkProcessing} />
               <RelatedNarrativesSection />
             </>
           )}

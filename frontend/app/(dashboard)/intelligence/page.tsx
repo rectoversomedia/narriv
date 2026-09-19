@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
   Bot,
@@ -35,7 +35,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
-import { getNarrativeById, getNarratives, getSources, type NarrativeRecord } from "@/lib/api-service";
+import { getNarrativeById, getNarratives, getSources, triggerClustering, type NarrativeRecord } from "@/lib/api-service";
 import { isDemoMode, getMockNarratives } from "@/lib/demo-mock-data";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
@@ -503,6 +503,33 @@ export default function IntelligencePage() {
   const [isLandscapeOpen, setIsLandscapeOpen] = useState(false);
   const [isSelectedActionsOpen, setIsSelectedActionsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const queryClient = useQueryClient();
+  const [isSyncingClusters, setIsSyncingClusters] = useState(false);
+
+  const handleSyncClusters = async () => {
+    setIsSyncingClusters(true);
+    try {
+      const res = await triggerClustering();
+      if (res && res.clustersCreated !== undefined) {
+        toastHook.success(
+          language === "id"
+            ? `Kluster diperbarui: ${res.clustersCreated} baru dibuat, ${res.signalsAttached || 0} sinyal digabungkan.`
+            : `Clusters updated: ${res.clustersCreated} created, ${res.signalsAttached || 0} signals attached.`
+        );
+      } else {
+        toastHook.info(
+          language === "id"
+            ? "Sinkronisasi selesai: Semua sinyal sudah terkelompokkan."
+            : "Sync complete: All signals are clustered."
+        );
+      }
+      await queryClient.invalidateQueries({ queryKey: ["narratives"] });
+    } catch {
+      toastHook.error(language === "id" ? "Gagal menyinkronkan kluster" : "Failed to sync clusters");
+    } finally {
+      setIsSyncingClusters(false);
+    }
+  };
 
   // Demo mode state
   const [demoMode, setDemoMode] = useState(false);
@@ -710,12 +737,24 @@ export default function IntelligencePage() {
           <h1 className="text-[32px] font-black tracking-[-0.04em] text-[#060A23]">{ti("pageTitle")}</h1>
           <p className="mt-2 text-[15px] font-medium text-slate-500">{ti("pageSubtitle")}</p>
         </div>
-        <div className="relative w-full sm:w-fit" ref={periodMenuRef}>
-          <button type="button" onClick={() => setIsPeriodMenuOpen((open) => !open)} aria-expanded={isPeriodMenuOpen} className="flex h-10 w-full items-center justify-center gap-2 rounded-[10px] border border-[#E5E9F3] bg-white px-4 text-xs font-extrabold text-[#475070] shadow-sm transition hover:bg-[#F8FAFF] sm:w-fit">
-            <Calendar size={15} className="text-[#8A94B8]" />
-            {ti(`periods.${selectedPeriod.key}`)}
-            <ChevronDown size={14} className={cn("text-[#8A94B8] transition", isPeriodMenuOpen && "rotate-180")} />
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={handleSyncClusters}
+            disabled={isSyncingClusters}
+            className="flex h-10 items-center justify-center gap-2 rounded-[10px] border border-[#E5E9F3] bg-white px-3.5 text-xs font-extrabold text-[#475070] shadow-sm transition hover:bg-[#F8FAFF] disabled:opacity-60"
+            title="Trigger dynamic narrative clustering"
+          >
+            <RefreshCcw size={14} className={cn("text-[#465FFF]", isSyncingClusters && "animate-spin")} />
+            <span>{isSyncingClusters ? (language === "id" ? "Memproses..." : "Clustering...") : (language === "id" ? "Sinkronkan Kluster" : "Sync Clusters")}</span>
           </button>
+
+          <div className="relative w-full sm:w-fit" ref={periodMenuRef}>
+            <button type="button" onClick={() => setIsPeriodMenuOpen((open) => !open)} aria-expanded={isPeriodMenuOpen} className="flex h-10 w-full items-center justify-center gap-2 rounded-[10px] border border-[#E5E9F3] bg-white px-4 text-xs font-extrabold text-[#475070] shadow-sm transition hover:bg-[#F8FAFF] sm:w-fit">
+              <Calendar size={15} className="text-[#8A94B8]" />
+              {ti(`periods.${selectedPeriod.key}`)}
+              <ChevronDown size={14} className={cn("text-[#8A94B8] transition", isPeriodMenuOpen && "rotate-180")} />
+            </button>
           {isPeriodMenuOpen ? (
             <div className="absolute right-0 top-full z-50 mt-2 w-full min-w-[190px] overflow-hidden rounded-[12px] border border-[#E5E9F3] bg-white p-1.5 shadow-[0_16px_40px_rgba(16,24,40,0.12)] sm:w-[210px]">
               {periodOptions.map((option) => (
@@ -739,6 +778,7 @@ export default function IntelligencePage() {
             </div>
           ) : null}
         </div>
+      </div>
       </header>
 
       <section className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">

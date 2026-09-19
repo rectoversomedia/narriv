@@ -14,9 +14,65 @@ import {
     batchTriggerIngestionBodySchema,
     triggerIngestionParamsSchema
 } from "./ingestion.schema.js";
+import { ingestRssSignals } from "./rss-ingestion.service.js";
 
 const router = express.Router();
 router.use(verifyToken);
+
+// POST /ingestion/fetch — On-demand RSS / Google News live ingestion
+router.post("/fetch", async (req, res) => {
+    try {
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, req.body?.workspaceId);
+        if (!scopedWorkspaceId) {
+            return res.status(403).json({ error: "Workspace access denied" });
+        }
+
+        const { keyword, sourceId, rssUrl, limit } = req.body || {};
+        const result = await ingestRssSignals({
+            workspaceId: scopedWorkspaceId,
+            sourceId: sourceId || null,
+            keyword: keyword || null,
+            rssUrl: rssUrl || null,
+            limit: Math.min(Math.max(1, Number(limit) || 10), 30),
+            userId: req.user.id,
+        });
+
+        return res.json(result);
+    } catch (err) {
+        logStructured("error", "rss_fetch_endpoint_failed", { error: err.message });
+        return res.status(500).json({ error: err.message || "Failed to fetch live signals" });
+    }
+});
+
+// POST /ingestion/rss/:sourceId — Ingest from specific source
+router.post("/rss/:sourceId", async (req, res) => {
+    try {
+        const { sourceId } = req.params;
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, req.body?.workspaceId);
+        if (!scopedWorkspaceId) {
+            return res.status(403).json({ error: "Workspace access denied" });
+        }
+
+        const { url, maxItems, keyword } = req.body || {};
+        const result = await ingestRssSignals({
+            workspaceId: scopedWorkspaceId,
+            sourceId,
+            rssUrl: url || null,
+            keyword: keyword || null,
+            limit: Math.min(Math.max(1, Number(maxItems) || 10), 30),
+            userId: req.user.id,
+        });
+
+        return res.json({
+            fetched: result.totalFetched,
+            created: result.newSignalsCreated,
+            ...result,
+        });
+    } catch (err) {
+        logStructured("error", "rss_source_endpoint_failed", { error: err.message });
+        return res.status(500).json({ error: err.message || "Failed to ingest RSS source" });
+    }
+});
 
 router.post(
     "/run",

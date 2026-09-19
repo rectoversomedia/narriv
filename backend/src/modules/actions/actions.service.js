@@ -419,7 +419,7 @@ export function normalizeStrategyOutput(strategyType, raw, toneSuffix) {
 /**
  * Builds a rich context string from an alert or narrative cluster.
  */
-async function buildContext({ alertId, clusterId, workspaceId }) {
+async function buildContext({ alertId, clusterId, signalId, workspaceId }) {
     const lines = [];
 
     if (alertId) {
@@ -433,6 +433,22 @@ async function buildContext({ alertId, clusterId, workspaceId }) {
             lines.push(`ALERT: [${(alert.severity || "medium").toUpperCase()}] ${alert.title}`);
             if (alert.what_happened) lines.push(`What Happened: ${alert.what_happened}`);
             if (alert.why_it_matters) lines.push(`Why It Matters: ${alert.why_it_matters}`);
+            if (alert.what_to_do) lines.push(`Recommended Action: ${alert.what_to_do}`);
+        }
+    }
+
+    if (signalId) {
+        const { data: signal } = await supabase
+            .from("signals")
+            .select("*")
+            .eq("id", signalId)
+            .eq("workspace_id", workspaceId)
+            .maybeSingle();
+        if (signal) {
+            lines.push(`SIGNAL: [${(signal.sentiment || "UNKNOWN").toUpperCase()}] ${signal.title}`);
+            lines.push(`Content: ${signal.content}`);
+            if (signal.platform) lines.push(`Platform / Source: ${signal.platform}`);
+            if (signal.severity) lines.push(`Severity: ${signal.severity}`);
         }
     }
 
@@ -497,7 +513,7 @@ async function buildContext({ alertId, clusterId, workspaceId }) {
  * @param {string} [params.clusterId]
  * @returns {Promise<object>} - The saved ActionPlan with generated strategies.
  */
-export async function generateActionPlan({ workspaceId, strategyType, alertId, clusterId }) {
+export async function generateActionPlan({ workspaceId, strategyType, alertId, clusterId, signalId }) {
     if (!OPENAI_API_KEY) {
         throw new Error("OPENAI_API_KEY is not configured.");
     }
@@ -507,7 +523,7 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
         throw new Error(`Unknown strategy type: ${strategyType}. Must be one of: ${Object.keys(STRATEGY_PROMPTS).join(", ")}`);
     }
 
-    logStructured("info", "action_plan_generating", { strategyType, workspaceId });
+    logStructured("info", "action_plan_generating", { strategyType, workspaceId, alertId, clusterId, signalId });
 
     const scopedAlertId = alertId || null;
     if (scopedAlertId) {
@@ -532,7 +548,7 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
     }
 
     // 1. Build context
-    const context = await buildContext({ alertId: scopedAlertId, clusterId: scopedClusterId, workspaceId });
+    const context = await buildContext({ alertId: scopedAlertId, clusterId: scopedClusterId, signalId, workspaceId });
 
     // 2. Build feedback context from historical feedback
     const feedbackContext = await buildFeedbackContext(workspaceId, strategyType);
@@ -573,6 +589,7 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
             workspace_id: workspaceId,
             alert_id: scopedAlertId || null,
             cluster_id: scopedClusterId || null,
+            signal_id: signalId || null,
             title: `${formatStrategyName(strategyType)} Action Plan`,
             type: strategyType,
             strategy: JSON.stringify(strategyPayload),

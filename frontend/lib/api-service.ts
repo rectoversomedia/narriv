@@ -632,6 +632,7 @@ export interface CreateActionPlanInput {
   strategyType: ActionStrategyType;
   alertId?: string;
   clusterId?: string;
+  signalId?: string;
 }
 
 export interface CreatedActionPlan {
@@ -1574,6 +1575,29 @@ export async function getNarratives(
   }
 }
 
+export async function triggerClustering(workspaceId?: string): Promise<{
+  message: string;
+  signalsProcessed?: number;
+  clustersFound?: number;
+  clustersCreated?: number;
+  signalsAttached?: number;
+} | null> {
+  try {
+    return await apiClient<{
+      message: string;
+      signalsProcessed?: number;
+      clustersFound?: number;
+      clustersCreated?: number;
+      signalsAttached?: number;
+    }>("/api/narratives/cluster", {
+      method: "POST",
+      body: JSON.stringify(workspaceId ? { workspaceId } : {}),
+    });
+  } catch {
+    return null;
+  }
+}
+
 export interface SourceRecord {
   id: string;
   workspaceId?: string;
@@ -1658,6 +1682,34 @@ export async function runSourceIngestion(sourceId: string): Promise<{ message: s
       method: "POST",
     });
   } catch {
+    return null;
+  }
+}
+
+export interface FetchSignalsResult {
+  success: boolean;
+  jobId?: string | null;
+  keyword?: string;
+  totalFetched: number;
+  newSignalsCreated: number;
+  newRawDocsCreated?: number;
+  skippedDuplicates?: number;
+  message?: string;
+}
+
+export async function fetchLatestSignals(params?: {
+  keyword?: string;
+  sourceId?: string;
+  rssUrl?: string;
+  limit?: number;
+}): Promise<FetchSignalsResult | null> {
+  try {
+    return await apiClient<FetchSignalsResult>("/ingestion/fetch", {
+      method: "POST",
+      body: JSON.stringify(params || {}),
+    });
+  } catch (err) {
+    console.error("fetchLatestSignals error:", err);
     return null;
   }
 }

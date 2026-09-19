@@ -2,17 +2,22 @@ import supabase from "../../lib/supabase.js";
 import { analyzeCluster } from "../ai/ai.service.js";
 import { logStructured } from "../../lib/logger.js";
 
-// Helper to extract basic keywords (lowercase, basic stop words removed)
+// Helper to extract basic keywords (lowercase, basic stop words removed, bilingual EN + ID)
 function extractKeywords(text) {
     if (!text) return new Set();
-    const stopWords = new Set(["the", "and", "a", "an", "is", "in", "to", "of", "for", "on", "with", "as", "at", "by", "this", "that", "it", "are", "was", "were", "be", "been", "from", "has", "have", "had", "will", "would", "can", "could", "about"]);
-    const words = text.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/);
-    return new Set(words.filter(w => w.length > 3 && !stopWords.has(w)));
+    const stopWords = new Set([
+        // English stop words
+        "the", "and", "a", "an", "is", "in", "to", "of", "for", "on", "with", "as", "at", "by", "this", "that", "it", "are", "was", "were", "be", "been", "from", "has", "have", "had", "will", "would", "can", "could", "about", "news", "update",
+        // Indonesian stop words
+        "yang", "dan", "di", "dari", "ke", "ini", "itu", "untuk", "pada", "adalah", "dengan", "akan", "juga", "oleh", "dalam", "bisa", "lebih", "tidak", "ada", "saya", "kami", "mereka", "anda", "saat", "setelah", "karena", "bagi", "sampai", "antara", "hanya", "namun", "bukan", "tetapi", "serta", "tersebut", "sudah", "banyak", "harus", "agar", "supaya", "seperti", "tentang", "masih", "belum", "atas", "bila", "jika", "lagi", "lalu", "olehnya", "secara", "sebuah", "seorang", "suatu", "tanpa", "telah", "tentu", "terus", "terhadap", "berita", "indonesia", "hari"
+    ]);
+    const words = text.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/);
+    return new Set(words.filter(w => w.length >= 3 && !stopWords.has(w)));
 }
 
 // Helper to calculate Jaccard Similarity between two sets
 function calculateSimilarity(setA, setB) {
-    if (setA.size === 0 || setB.size === 0) return 0;
+    if (!setA || !setB || setA.size === 0 || setB.size === 0) return 0;
     const intersection = new Set([...setA].filter(x => setB.has(x)));
     const union = new Set([...setA, ...setB]);
     return intersection.size / union.size;
@@ -21,46 +26,77 @@ function calculateSimilarity(setA, setB) {
 export const runClustering = async (workspaceId) => {
     logStructured("info", "clustering_started", { workspaceId });
 
-    // 1. Fetch unclustered signals (or all recent signals)
-    // For simplicity, let's fetch all signals in the last 7 days for the workspace
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    // 1. Fetch recent signals for the workspace (last 14 days)
+    const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
 
-    // Fetch signals with analyses
     const { data: signals, error: signalsError } = await supabase
         .from("signals")
         .select(`
-            *,
+            id,
+            workspace_id,
+            title,
+            content,
+            sentiment,
+            severity,
+            topics,
+            captured_at,
+            metadata,
             analyses:signal_analyses(*)
         `)
         .eq("workspace_id", workspaceId)
-        .gte("captured_at", sevenDaysAgo.toISOString());
+        .gte("captured_at", fourteenDaysAgo.toISOString())
+        .order("captured_at", { ascending: false });
 
     if (signalsError) {
         logStructured("error", "clustering_fetch_signals_error", { error: signalsError.message });
         throw signalsError;
     }
 
-    // Fetch existing cluster signal links to identify already-clustered signals
+    if (!signals || signals.length === 0) {
+        logStructured("info", "clustering_no_signals", { workspaceId });
+        return { message: "No signals found to cluster", clustersCreated: 0, clustersUpdated: 0 };
+    }
+
+    // 2. Fetch existing cluster-signal links to find already-clustered signals
     const signalIds = signals.map(s => s.id);
     const { data: existingLinks } = await supabase
         .from("narrative_cluster_signals")
-        .select("signal_id")
+        .select("cluster_id, signal_id")
         .in("signal_id", signalIds);
 
     const clusteredSignalIds = new Set(existingLinks?.map(l => l.signal_id) || []);
-
-    // Filter out signals that are already fully clustered
     const unclusteredSignals = signals.filter(s => !clusteredSignalIds.has(s.id));
 
+    logStructured("info", "clustering_signals_evaluated", {
+        totalSignals: signals.length,
+        unclusteredCount: unclusteredSignals.length,
+    });
+
     if (unclusteredSignals.length === 0) {
-        logStructured("info", "clustering_no_unclustered_signals", { workspaceId });
-        return { message: "No signals to cluster", clustersCreated: 0 };
+        logStructured("info", "clustering_all_signals_already_clustered", { workspaceId });
+        return { message: "All signals already clustered", clustersCreated: 0, clustersUpdated: 0 };
     }
 
-    // 2. Prepare data for clustering
+    // 3. Fetch existing active clusters to see if unclustered signals match them
+    const { data: existingClusters } = await supabase
+        .from("narrative_clusters")
+        .select("id, title, description, keywords, signal_count, sentiment, impact")
+        .eq("workspace_id", workspaceId)
+        .order("updated_at", { ascending: false })
+        .limit(20);
+
+    // Prepare keywords for existing clusters
+    const activeClustersWithKeywords = (existingClusters || []).map(cluster => {
+        const clusterKwText = `${cluster.title || ""} ${cluster.description || ""} ${(cluster.keywords || []).join(" ")}`;
+        return {
+            ...cluster,
+            keywordSet: extractKeywords(clusterKwText),
+        };
+    });
+
+    // Prepare data for unclustered signals
     const signalData = unclusteredSignals.map(s => {
-        const textToAnalyze = `${s.title || ""} ${s.content || ""}`;
-        // Get the most recent analysis
+        const textToAnalyze = `${s.title || ""} ${s.content || ""} ${(s.topics || []).join(" ")}`;
         const latestAnalysis = Array.isArray(s.analyses) && s.analyses.length > 0
             ? s.analyses.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
             : null;
@@ -71,68 +107,112 @@ export const runClustering = async (workspaceId) => {
         };
     });
 
-    // 3. Cluster signals based on keyword similarity
-    const clusters = []; // Array of arrays of signals
-    const threshold = 0.15; // Jaccard similarity threshold
-    const clusteredIds = new Set();
+    let attachedCount = 0;
+    const remainingSignals = [];
 
-    for (let i = 0; i < signalData.length; i++) {
-        if (clusteredIds.has(signalData[i].id)) continue;
+    // 4. Try attaching unclustered signals to existing active clusters if similarity is high (>= 0.20)
+    for (const signal of signalData) {
+        let bestCluster = null;
+        let bestScore = 0;
 
-        const currentCluster = [signalData[i]];
-        clusteredIds.add(signalData[i].id);
-
-        for (let j = i + 1; j < signalData.length; j++) {
-            if (clusteredIds.has(signalData[j].id)) continue;
-
-            const similarity = calculateSimilarity(signalData[i].keywords, signalData[j].keywords);
-
-            if (similarity >= threshold) {
-                currentCluster.push(signalData[j]);
-                clusteredIds.add(signalData[j].id);
+        for (const cluster of activeClustersWithKeywords) {
+            const similarity = calculateSimilarity(signal.keywords, cluster.keywordSet);
+            if (similarity > bestScore && similarity >= 0.20) {
+                bestScore = similarity;
+                bestCluster = cluster;
             }
         }
 
-        // Only keep clusters with at least 2 signals to avoid single-signal "clusters"
-        if (currentCluster.length > 1) {
+        if (bestCluster) {
+            // Attach to existing cluster
+            const { error: linkErr } = await supabase
+                .from("narrative_cluster_signals")
+                .upsert(
+                    { cluster_id: bestCluster.id, signal_id: signal.id },
+                    { onConflict: "cluster_id,signal_id" }
+                );
+
+            if (!linkErr) {
+                // Increment cluster signal count
+                const newCount = (bestCluster.signal_count || 0) + 1;
+                bestCluster.signal_count = newCount;
+                await supabase
+                    .from("narrative_clusters")
+                    .update({
+                        signal_count: newCount,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq("id", bestCluster.id);
+                attachedCount++;
+            } else {
+                remainingSignals.push(signal);
+            }
+        } else {
+            remainingSignals.push(signal);
+        }
+    }
+
+    logStructured("info", "clustering_attached_to_existing", { attachedCount, remainingCount: remainingSignals.length });
+
+    // 5. Cluster remaining unclustered signals among themselves
+    const clusters = [];
+    const threshold = 0.15; // Jaccard threshold for new clusters
+    const clusteredIds = new Set();
+
+    for (let i = 0; i < remainingSignals.length; i++) {
+        if (clusteredIds.has(remainingSignals[i].id)) continue;
+
+        const currentCluster = [remainingSignals[i]];
+        clusteredIds.add(remainingSignals[i].id);
+
+        for (let j = i + 1; j < remainingSignals.length; j++) {
+            if (clusteredIds.has(remainingSignals[j].id)) continue;
+
+            const similarity = calculateSimilarity(remainingSignals[i].keywords, remainingSignals[j].keywords);
+            if (similarity >= threshold) {
+                currentCluster.push(remainingSignals[j]);
+                clusteredIds.add(remainingSignals[j].id);
+            }
+        }
+
+        // Form clusters: allow clusters of 2+ signals, or 1 signal if it has high severity
+        if (currentCluster.length > 1 || (currentCluster.length === 1 && String(currentCluster[0].severity).toLowerCase() === "high")) {
             clusters.push(currentCluster);
         }
     }
 
-    logStructured("info", "clustering_clusters_found", { clusterCount: clusters.length });
+    logStructured("info", "clustering_new_clusters_identified", { clusterCount: clusters.length });
 
-    // 4. Save narrative groups to database
+    // 6. Generate AI labels and save new narrative clusters to DB
     let createdCount = 0;
     for (const cluster of clusters) {
-        // Compile signals context for AI
         const signalsContext = cluster
-            .slice(0, 10) // Limit to top 10 to fit in context window
+            .slice(0, 8)
             .map(s => `[${s.sentiment || 'UNKNOWN'}] ${s.title || 'No Title'}\n${(s.content || "").substring(0, 150)}...`)
             .join("\n\n");
 
         logStructured("info", "clustering_analyzing_cluster", { signalCount: cluster.length });
-        const aiAnalysis = await analyzeCluster(signalsContext);
-
-        let title = "General Narrative Cluster";
-        let description = `Automatically generated cluster containing ${cluster.length} signals.`;
-        let mainNarrative = "This narrative was clustered by keyword similarity but AI analysis failed.";
-        let dominantSentiment = "neutral";
-        let impact = "LOW";
-
-        if (aiAnalysis) {
-            title = aiAnalysis.title || title;
-            description = aiAnalysis.description || description;
-            mainNarrative = aiAnalysis.description || mainNarrative;
-            dominantSentiment = aiAnalysis.dominant_sentiment || dominantSentiment;
-
-            // Map AI string directly to uppercase enum values if valid
-            const safeImpact = aiAnalysis.impact ? aiAnalysis.impact.toUpperCase() : "LOW";
-            if (["LOW", "MEDIUM", "HIGH", "CRITICAL"].includes(safeImpact)) {
-                impact = safeImpact;
-            }
+        let aiAnalysis = null;
+        try {
+            aiAnalysis = await analyzeCluster(signalsContext);
+        } catch (aiErr) {
+            logStructured("warn", "clustering_ai_analysis_fallback", { error: aiErr.message });
         }
 
-        // Create the NarrativeCluster in the DB
+        // Fallback heuristics if AI analysis is null
+        const allClusterKeywords = Array.from(new Set(cluster.flatMap(s => Array.from(s.keywords)))).slice(0, 8);
+        const dominantSentiment = aiAnalysis?.dominant_sentiment || cluster[0].sentiment?.toLowerCase() || "neutral";
+        const impact = aiAnalysis?.impact ? aiAnalysis.impact.toUpperCase() : (cluster[0].severity ? cluster[0].severity.toUpperCase() : "MEDIUM");
+        const safeImpact = ["LOW", "MEDIUM", "HIGH", "CRITICAL"].includes(impact) ? impact : "MEDIUM";
+        
+        const fallbackTitle = cluster[0]?.title 
+            ? `${cluster[0].title.split(" - ")[0].substring(0, 45)}`
+            : (allClusterKeywords.slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ") || "Emerging Topic");
+        const title = aiAnalysis?.title || fallbackTitle;
+        const description = aiAnalysis?.description || `Cluster of ${cluster.length} signals regarding ${allClusterKeywords.slice(0, 5).join(", ")}.`;
+        const mainNarrative = aiAnalysis?.description || description;
+
+        // Insert new cluster into DB
         const { data: dbCluster, error: clusterError } = await supabase
             .from("narrative_clusters")
             .insert({
@@ -141,26 +221,30 @@ export const runClustering = async (workspaceId) => {
                 description: description,
                 main_narrative: mainNarrative,
                 sentiment: dominantSentiment,
-                impact: impact,
-                signal_count: cluster.length
+                impact: safeImpact,
+                priority: safeImpact,
+                signal_count: cluster.length,
+                keywords: allClusterKeywords,
+                lifecycle: "emerging",
+                updated_at: new Date().toISOString()
             })
             .select()
             .single();
 
-        if (clusterError) {
-            logStructured("error", "clustering_create_cluster_error", { error: clusterError.message });
+        if (clusterError || !dbCluster) {
+            logStructured("error", "clustering_create_cluster_error", { error: clusterError?.message });
             continue;
         }
 
-        // Link the signals to the cluster
+        // Link signals to new cluster
         const signalLinks = cluster.map(s => ({
-            narrative_cluster_id: dbCluster.id,
+            cluster_id: dbCluster.id,
             signal_id: s.id
         }));
 
         const { error: linkError } = await supabase
             .from("narrative_cluster_signals")
-            .upsert(signalLinks, { onConflict: "narrative_cluster_id,signal_id" });
+            .upsert(signalLinks, { onConflict: "cluster_id,signal_id" });
 
         if (linkError) {
             logStructured("warn", "clustering_link_signals_error", { error: linkError.message });
@@ -169,11 +253,20 @@ export const runClustering = async (workspaceId) => {
         createdCount++;
     }
 
-    logStructured("info", "clustering_completed", { createdCount });
+    // 7. Update lifecycles of all clusters in workspace
+    try {
+        await updateClusterLifecycles(workspaceId);
+    } catch (lcErr) {
+        logStructured("warn", "clustering_lifecycle_update_failed", { error: lcErr.message });
+    }
+
+    logStructured("info", "clustering_completed", { createdCount, attachedCount });
     return {
         message: "Clustering complete",
+        signalsProcessed: unclusteredSignals.length,
         clustersFound: clusters.length,
-        clustersCreated: createdCount
+        clustersCreated: createdCount,
+        signalsAttached: attachedCount
     };
 };
 
@@ -324,8 +417,8 @@ export async function mergeOverlappingClusters(workspaceId, similarityThreshold 
         // Update signal links - move signals from mergeId to keepId
         await supabase
             .from("narrative_cluster_signals")
-            .update({ narrative_cluster_id: keepId })
-            .eq("narrative_cluster_id", mergeId);
+            .update({ cluster_id: keepId })
+            .eq("cluster_id", mergeId);
 
         // Update keep cluster signal count
         await supabase

@@ -1,6 +1,14 @@
 import { z } from "zod";
 
-const STRATEGY_TYPES = ["pr_response", "content_strategy", "influencer_strategy", "crisis_response"];
+const STRATEGY_TYPES = [
+    "pr_response",
+    "content_strategy",
+    "influencer_strategy",
+    "crisis_response",
+    "social_response",
+    "stakeholder_update",
+    "data_driven",
+];
 
 export const createActionPlanBodySchema = z.object({
     workspaceId: z.string().uuid("workspaceId must be a valid UUID.").optional(),
@@ -9,5 +17,6 @@ export const createActionPlanBodySchema = z.object({
     }),
     alertId: z.string().uuid("alertId must be a valid UUID.").optional().nullable(),
     clusterId: z.string().uuid("clusterId must be a valid UUID.").optional().nullable(),
+    signalId: z.string().uuid("signalId must be a valid UUID.").optional().nullable(),
 });
 

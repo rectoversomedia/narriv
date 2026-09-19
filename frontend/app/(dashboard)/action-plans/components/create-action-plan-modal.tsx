@@ -12,6 +12,12 @@ import { cn } from "@/lib/utils";
 interface CreateActionPlanModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialAlertId?: string;
+  initialAlertTitle?: string;
+  initialClusterId?: string;
+  initialSignalId?: string;
+  initialSignalTitle?: string;
+  initialStrategyType?: ActionStrategyType;
 }
 
 const strategyTypes: Array<{ value: ActionStrategyType; icon: React.ElementType; descriptionKey: string }> = [
@@ -24,7 +30,16 @@ const strategyTypes: Array<{ value: ActionStrategyType; icon: React.ElementType;
   { value: "data_driven", icon: BarChart3, descriptionKey: "ddDesc" },
 ];
 
-export function CreateActionPlanModal({ open, onOpenChange }: CreateActionPlanModalProps) {
+export function CreateActionPlanModal({
+  open,
+  onOpenChange,
+  initialAlertId,
+  initialAlertTitle,
+  initialClusterId,
+  initialSignalId,
+  initialSignalTitle,
+  initialStrategyType,
+}: CreateActionPlanModalProps) {
   const t = useTranslations("ActionPlans.modal");
   const titleId = useId();
   const descriptionId = useId();
@@ -32,9 +47,10 @@ export function CreateActionPlanModal({ open, onOpenChange }: CreateActionPlanMo
   const queryClient = useQueryClient();
   const toast = useToast();
 
-  const [strategyType, setStrategyType] = useState<ActionStrategyType>("crisis_response");
-  const [selectedAlertId, setSelectedAlertId] = useState<string>("");
-  const [selectedClusterId, setSelectedClusterId] = useState<string>("");
+  const [strategyType, setStrategyType] = useState<ActionStrategyType>(initialStrategyType || "crisis_response");
+  const [selectedAlertId, setSelectedAlertId] = useState<string>(initialAlertId || "");
+  const [selectedClusterId, setSelectedClusterId] = useState<string>(initialClusterId || "");
+  const [selectedSignalId, setSelectedSignalId] = useState<string>(initialSignalId || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: alertsData } = useQuery({
@@ -51,11 +67,12 @@ export function CreateActionPlanModal({ open, onOpenChange }: CreateActionPlanMo
 
   useEffect(() => {
     if (open) {
-      setStrategyType("crisis_response");
-      setSelectedAlertId("");
-      setSelectedClusterId("");
+      setStrategyType(initialStrategyType || "crisis_response");
+      setSelectedAlertId(initialAlertId || "");
+      setSelectedClusterId(initialClusterId || "");
+      setSelectedSignalId(initialSignalId || "");
     }
-  }, [open]);
+  }, [open, initialAlertId, initialClusterId, initialSignalId, initialStrategyType]);
 
   useEffect(() => {
     if (!open) return;
@@ -84,6 +101,7 @@ export function CreateActionPlanModal({ open, onOpenChange }: CreateActionPlanMo
         strategyType,
         alertId: selectedAlertId || undefined,
         clusterId: selectedClusterId || undefined,
+        signalId: selectedSignalId || undefined,
       });
       if (result) {
         await Promise.all([
@@ -130,6 +148,16 @@ export function CreateActionPlanModal({ open, onOpenChange }: CreateActionPlanMo
         </div>
 
         <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
+          {selectedSignalId && (
+            <div className="flex items-center gap-2.5 rounded-xl border border-[#465FFF]/20 bg-[#465FFF]/5 p-3 text-[12px] text-[#465FFF]">
+              <Sparkles size={16} className="shrink-0 text-[#465FFF]" />
+              <div className="min-w-0">
+                <span className="block text-[10px] font-black uppercase tracking-wider text-[#465FFF]/70">Prefilled Context: Signal</span>
+                <span className="block truncate font-bold text-slate-800">{initialSignalTitle || `#${selectedSignalId.slice(0, 8)}`}</span>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <label className="text-[12px] font-black text-slate-700">{t("strategyLabel")}</label>
             <div className="grid grid-cols-1 gap-2">
@@ -173,6 +201,11 @@ export function CreateActionPlanModal({ open, onOpenChange }: CreateActionPlanMo
               className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-semibold text-slate-700 outline-none transition focus:border-[#465FFF] focus:ring-2 focus:ring-[#465FFF]/15"
             >
               <option value="">{t("alertPlaceholder")}</option>
+              {selectedAlertId && !alertsData?.data?.some((a) => a.id === selectedAlertId) && (
+                <option value={selectedAlertId}>
+                  {initialAlertTitle || `Alert #${selectedAlertId.slice(0, 8)}`} (Pre-selected)
+                </option>
+              )}
               {alertsData?.data?.map((alert) => (
                 <option key={alert.id} value={alert.id}>
                   {alert.title} {alert.severity ? `(${alert.severity.toUpperCase()})` : ""}
