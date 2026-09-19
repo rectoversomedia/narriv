@@ -39,7 +39,8 @@ import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/compo
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { AddSourceModal } from "@/components/dashboard/add-source-modal";
 import { bootstrapDefaultSources, getSources, updateSource, deleteSource, runBatchSourceIngestion, runSourceIngestion, getSourceHealth, getSourceCoverage, fetchLatestSignals, type SourceRecord, type SourceHealthSummary } from "@/lib/api-service";
-import { isDemoMode, getMockSources } from "@/lib/demo-mock-data";
+import { getMockSources } from "@/lib/demo-mock-data";
+import { useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate" | "pink" | "black" | "orange";
 
@@ -574,15 +575,8 @@ export default function SourcesPage() {
   const queryClient = useQueryClient();
   const toastHook = useToast();
 
-  // Demo mode state
-  const [demoMode, setDemoMode] = useState(false);
-  const [hasCheckedDemoMode, setHasCheckedDemoMode] = useState(false);
-
-  // Check demo mode on mount
-  useEffect(() => {
-    setDemoMode(isDemoMode());
-    setHasCheckedDemoMode(true);
-  }, []);
+  const user = useAuthStore((state) => state.user);
+  const isDemoSession = user?.id === "56bc14ee-5f16-4134-9828-a240f3c72240" || user?.email === "demo@narriv.ai";
 
   const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
     if (type === "error") { toastHook.error(message); return; }
@@ -592,12 +586,18 @@ export default function SourcesPage() {
   const toast = useTranslations("Sources.toasts");
 
   const sourcesQuery = useQuery({
-    queryKey: ["sources", { limit: 50, demoMode }],
-    queryFn: () => demoMode
-      ? Promise.resolve(getMockSources())
-      : getSources({ limit: 50 }),
+    queryKey: ["sources", { limit: 50 }],
+    queryFn: async () => {
+      try {
+        return await getSources({ limit: 50 });
+      } catch (err) {
+        if (isDemoSession) {
+          return getMockSources();
+        }
+        throw err;
+      }
+    },
     staleTime: 30 * 1000,
-    enabled: hasCheckedDemoMode,
   });
   const sourceHealthQuery = useQuery({
     queryKey: ["source-health"],
@@ -773,12 +773,12 @@ export default function SourcesPage() {
 
   return (
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
-      {/* Demo Mode Banner */}
-      {demoMode && (
+      {/* Demo Workspace Banner */}
+      {isDemoSession && (
         <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
           <Sparkles size={16} className="text-[#8B5CFF]" />
           <p className="text-[13px] font-bold text-[#8B5CFF]">
-            Demo Mode — Showing sample data for demonstration purposes
+            Demo Workspace — Seeded sandbox workspace for evaluation
           </p>
         </div>
       )}

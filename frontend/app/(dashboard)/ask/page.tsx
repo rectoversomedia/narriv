@@ -4,8 +4,9 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { Send, BotMessageSquare, TrendingUp, Zap, AlertTriangle, Users, Compass, Eye, BarChart2, Activity, ChevronDown, ChevronRight } from "lucide-react";
 import { CardContent } from "@/components/ui/card";
-import { isDemoMode, getMockNarratives, getMockDashboardSummary } from "@/lib/demo-mock-data";
+import { getMockNarratives, getMockDashboardSummary } from "@/lib/demo-mock-data";
 import { getNarratives, getDashboardSummary } from "@/lib/api-service";
+import { useAuthStore } from "@/store/useAuthStore";
 import type { NarrativeRecord, DashboardSummary } from "@/lib/api-service";
 
 // ---------------------------------------------------------------------------
@@ -129,7 +130,7 @@ function getKeywordResponse(question: string): SuggestedCategory | null {
   return null;
 }
 
-function buildAssistantMessage(response: string): Message {
+function buildAssistantMessage(response: string, isDemoSession: boolean = false): Message {
   // Try to parse **bold** metrics
   const boldPattern = /\*\*([^*]+)\*\*/g;
   const evidence: string[] = [];
@@ -162,7 +163,7 @@ function buildAssistantMessage(response: string): Message {
       { label: "View Signals", href: "/signals" },
       { label: "View Alerts", href: "/alerts" },
     ],
-    isDemo: isDemoMode(),
+    isDemo: isDemoSession,
   };
 }
 
@@ -219,6 +220,8 @@ function TypingIndicator({ text }: { text: string }) {
 export default function AskPage() {
   const t = useTranslations("DemoApp");
   const tAsk = useTranslations("askNarriv");
+  const user = useAuthStore((state) => state.user);
+  const isDemoSession = user?.id === "56bc14ee-5f16-4134-9828-a240f3c72240" || user?.email === "demo@narriv.ai";
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -226,29 +229,25 @@ export default function AskPage() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  // Load context data based on demo mode
+  // Load real API data in parallel
   const [narratives, setNarratives] = useState<{ data: NarrativeRecord[] } | null>(null);
   const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null);
 
   useEffect(() => {
-    if (isDemoMode()) {
-      setNarratives(getMockNarratives());
-      setDashboardSummary(getMockDashboardSummary());
-    } else {
-      // Load real API data in parallel
-      Promise.all([
-        getNarratives({ limit: 10 }),
-        getDashboardSummary(),
-      ]).then(([narrativesResult, summaryResult]) => {
-        if (narrativesResult) setNarratives(narrativesResult);
-        if (summaryResult) setDashboardSummary(summaryResult);
-      }).catch(() => {
-        // Fallback to mock if API fails
+    Promise.all([
+      getNarratives({ limit: 10 }),
+      getDashboardSummary(),
+    ]).then(([narrativesResult, summaryResult]) => {
+      if (narrativesResult) setNarratives(narrativesResult);
+      if (summaryResult) setDashboardSummary(summaryResult);
+    }).catch(() => {
+      // Fallback to mock only if demo session and API fails
+      if (isDemoSession) {
         setNarratives(getMockNarratives());
         setDashboardSummary(getMockDashboardSummary());
-      });
-    }
-  }, []);
+      }
+    });
+  }, [isDemoSession]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -277,7 +276,7 @@ export default function AskPage() {
       let assistantMsg: Message;
 
       if (categoryMatch) {
-        assistantMsg = buildAssistantMessage(categoryMatch.response);
+        assistantMsg = buildAssistantMessage(categoryMatch.response, isDemoSession);
       } else {
         // Fallback generic response using loaded real or mock data
         const totalSignals = dashboardSummary?.kpis.total_signals ?? 0;
@@ -300,7 +299,7 @@ export default function AskPage() {
             { label: "View in Signals", href: "/signals" },
             { label: "View Intelligence", href: "/intelligence" },
           ],
-          isDemo: isDemoMode(),
+          isDemo: isDemoSession,
         };
       }
 
@@ -337,8 +336,8 @@ export default function AskPage() {
       { label: "View Signals", href: "/signals" },
       { label: "View Dashboard", href: "/" },
     ],
-    isDemo: isDemoMode(),
-  }), [welcomeContent]);
+    isDemo: isDemoSession,
+  }), [welcomeContent, isDemoSession]);
 
   const [initialized, setInitialized] = useState(false);
 

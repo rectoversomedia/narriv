@@ -41,6 +41,7 @@ function invalidateStaleDemoSession() {
 invalidateStaleDemoSession();
 
 export type AuthUser = {
+  id?: string;
   name: string;
   email: string;
   provider: "password" | "google" | "demo";
@@ -48,6 +49,10 @@ export type AuthUser = {
   workspaceId?: string;
   isDemo?: boolean;
 };
+
+export function isDemoSession(user: AuthUser | null | undefined): boolean {
+  return !!user && (user.isDemo === true || user.provider === "demo" || user.email === "demo@narriv.ai" || user.workspaceId === "56bc14ee-5f16-4134-9828-a240f3c72240");
+}
 
 interface AuthState {
   token: string | null;

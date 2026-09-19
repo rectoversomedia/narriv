@@ -10,7 +10,8 @@ import { AppCard, IconBubble, MetricTile, SectionHeader, toneMap } from "@/compo
 import { CardContent } from "@/components/ui/card";
 import { quickActions, text, type Tone } from "@/lib/mock-data";
 import { useUiStore } from "@/store/useUiStore";
-import { getMockNarratives, isDemoMode } from "@/lib/demo-mock-data";
+import { getMockNarratives } from "@/lib/demo-mock-data";
+import { useAuthStore } from "@/store/useAuthStore";
 
 import { useQuery } from "@tanstack/react-query";
 import { getDashboardSummary, getDateRangeOptions, getWorkspaceSettings, type DateRangeKey } from "@/lib/api-service";
@@ -225,44 +226,36 @@ export default function DashboardPage() {
   const language = useUiStore((state) => state.language);
   const [timeRange, setTimeRange] = useState<DateRangeKey>("24h");
   const [selectedAction, setSelectedAction] = useState<QuickActionKey | null>(null);
-  const [demoMode, setDemoMode] = useState(false);
-  const [hasCheckedDemoMode, setHasCheckedDemoMode] = useState(false);
+  const user = useAuthStore((state) => state.user);
+  const isDemoSession = user?.id === "56bc14ee-5f16-4134-9828-a240f3c72240" || user?.email === "demo@narriv.ai";
   const dateRange = getDateRangeOptions(timeRange);
   const quickActionContent = getQuickActionContent((key) => tDrawer(key));
-
-  // Check demo mode on mount and trigger refetch when detected
-  useEffect(() => {
-    const isDemo = isDemoMode();
-    setDemoMode(isDemo);
-    setHasCheckedDemoMode(true);
-  }, []);
 
   // Check onboarding status
   const workspaceQuery = useQuery({
     queryKey: ["workspace-settings"],
     queryFn: () => getWorkspaceSettings(),
     staleTime: 60 * 1000,
-    enabled: hasCheckedDemoMode && !demoMode,
+    enabled: !isDemoSession,
   });
 
   // Redirect to onboarding if onboarding not yet completed
   const router = useRouter();
   useEffect(() => {
-    if (!hasCheckedDemoMode || demoMode || workspaceQuery.isLoading) return;
+    if (isDemoSession || workspaceQuery.isLoading) return;
     const onboardingCompleted = workspaceQuery.data?.onboarding_completed === true;
-    if (!onboardingCompleted) {
+    if (!onboardingCompleted && workspaceQuery.data) {
       // Onboarding not yet completed, redirect to onboarding
       router.push("/onboarding");
     }
-  }, [hasCheckedDemoMode, demoMode, workspaceQuery.data, workspaceQuery.isLoading, router]);
+  }, [isDemoSession, workspaceQuery.data, workspaceQuery.isLoading, router]);
 
   const dashboardQuery = useQuery({
-    queryKey: ["dashboard-summary", timeRange, demoMode],
+    queryKey: ["dashboard-summary", timeRange],
     queryFn: () => getDashboardSummary(dateRange),
     staleTime: 15 * 1000,
-    refetchInterval: demoMode ? 60000 : 15 * 1000, // Longer interval in demo mode
+    refetchInterval: isDemoSession ? 60000 : 15 * 1000, // Longer interval in demo session
     refetchIntervalInBackground: false,
-    enabled: hasCheckedDemoMode, // Don't run until we've checked demo mode
   });
 
   const timeRangeOptions: Array<{ label: string; value: DateRangeKey }> = [
@@ -271,7 +264,7 @@ export default function DashboardPage() {
     { label: t("pages.command.timeRange30d"), value: "30d" },
   ];
 
-  const isLiveUnavailable = dashboardQuery.data === null && !demoMode;
+  const isLiveUnavailable = dashboardQuery.data === null && !isDemoSession;
   const summary = dashboardQuery.data;
 
   const activityData = summary?.trends?.length
@@ -329,8 +322,8 @@ export default function DashboardPage() {
   const mappedRegionCount = globalActivity?.countries?.length ?? 0;
 
   // Check if workspace needs onboarding
-  const needsOnboarding = hasCheckedDemoMode && !demoMode && workspaceQuery.data === null && !workspaceQuery.isLoading;
-  const isEmptyDashboard = summary?.kpis?.total_signals === 0 && !demoMode;
+  const needsOnboarding = !isDemoSession && workspaceQuery.data === null && !workspaceQuery.isLoading;
+  const isEmptyDashboard = summary?.kpis?.total_signals === 0 && !isDemoSession;
 
   // Onboarding Empty State Component
   if (needsOnboarding) {
@@ -427,7 +420,7 @@ export default function DashboardPage() {
           volume: t.mentions,
           growth: t.delta ?? "+0%",
         }))
-      : demoMode
+      : isDemoSession
         ? getMockNarratives().data.map((n) => ({
             id: n.id,
             title: n.title,
@@ -675,10 +668,10 @@ export default function DashboardPage() {
                   <span className="font-bold text-slate-700">48 / 62 sources</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-slate-400">Mode</span>
-                  <span className={`inline-flex items-center gap-1.5 rounded-[6px] px-2 py-0.5 text-[11px] font-bold ${demoMode ? "bg-[#8B5CFF]/10 text-[#8B5CFF]" : "bg-[#10B981]/10 text-[#10B981]"}`}>
-                    <span className={`h-1.5 w-1.5 rounded-full ${demoMode ? "bg-[#8B5CFF]" : "bg-[#10B981]"}`} />
-                    {demoMode ? "Demo" : "Live"}
+                  <span className="font-semibold text-slate-400">Workspace</span>
+                  <span className={`inline-flex items-center gap-1.5 rounded-[6px] px-2 py-0.5 text-[11px] font-bold ${isDemoSession ? "bg-[#8B5CFF]/10 text-[#8B5CFF]" : "bg-[#10B981]/10 text-[#10B981]"}`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${isDemoSession ? "bg-[#8B5CFF]" : "bg-[#10B981]"}`} />
+                    {isDemoSession ? "Demo Sandbox" : "Live Production"}
                   </span>
                 </div>
               </div>
@@ -700,9 +693,9 @@ export default function DashboardPage() {
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-slate-100 bg-slate-50 px-5 py-3 text-[12px] font-semibold text-slate-400">
         <span>Last refresh: {today.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</span>
         <div className="flex items-center gap-3">
-          {demoMode && (
+          {isDemoSession && (
             <span className="rounded-[6px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#8B5CFF]">
-              Demo
+              Demo Sandbox
             </span>
           )}
           <span>Narriv Intelligence Platform</span>

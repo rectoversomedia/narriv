@@ -36,7 +36,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
 import { getNarrativeById, getNarratives, getSources, triggerClustering, type NarrativeRecord } from "@/lib/api-service";
-import { isDemoMode, getMockNarratives } from "@/lib/demo-mock-data";
+import { getMockNarratives } from "@/lib/demo-mock-data";
+import { useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { useUiStore } from "@/store/useUiStore";
@@ -531,15 +532,8 @@ export default function IntelligencePage() {
     }
   };
 
-  // Demo mode state
-  const [demoMode, setDemoMode] = useState(false);
-  const [hasCheckedDemoMode, setHasCheckedDemoMode] = useState(false);
-
-  // Check demo mode on mount
-  useEffect(() => {
-    setDemoMode(isDemoMode());
-    setHasCheckedDemoMode(true);
-  }, []);
+  const user = useAuthStore((state) => state.user);
+  const isDemoSession = Boolean(user?.isDemo || user?.provider === "demo");
 
   const periodMenuRef = useRef<HTMLDivElement | null>(null);
   const impactMenuRef = useRef<HTMLDivElement | null>(null);
@@ -575,7 +569,7 @@ export default function IntelligencePage() {
   }, [isPeriodMenuOpen, isImpactMenuOpen, isSentimentMenuOpen, isSelectedActionsOpen]);
 
   const narrativesQuery = useQuery({
-    queryKey: ["narratives", { limit: narrativeApiLimit, days: selectedPeriod.days, impact: impactFilter, sentiment: sentimentFilter, demoMode }],
+    queryKey: ["narratives", { limit: narrativeApiLimit, days: selectedPeriod.days, impact: impactFilter, sentiment: sentimentFilter }],
     queryFn: async () => {
       const res = await getNarratives({
         limit: narrativeApiLimit,
@@ -583,13 +577,10 @@ export default function IntelligencePage() {
         impact: impactFilter === "all" ? undefined : impactFilter,
         sentiment: sentimentFilter === "all" ? undefined : sentimentFilter,
       });
-      if (res && res.data && res.data.length > 0) {
-        return res;
-      }
-      return demoMode ? getMockNarratives() : (res || { data: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0 } });
+      if (res) return res;
+      return isDemoSession ? getMockNarratives() : { data: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0 } };
     },
     staleTime: 30 * 1000,
-    enabled: hasCheckedDemoMode,
   });
   const liveNarrativeRecords = narrativesQuery.data?.data ?? [];
   const liveClusters = liveNarrativeRecords.length > 0 ? buildNarrativeClusters(liveNarrativeRecords, { sources: (count) => ti("labels.sources", { count }), mediumPriority: ti("mediumPriorityFallback") }) : [];
@@ -706,30 +697,13 @@ export default function IntelligencePage() {
   return (
     <div className="flex flex-col gap-4 pb-8 text-[#101334]">
       {/* Demo Mode Banner */}
-      {demoMode ? (
+      {isDemoSession && (
         <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
           <Sparkles size={16} className="text-[#8B5CFF]" />
           <p className="text-[13px] font-bold text-[#8B5CFF]">
             Demo Mode — Showing sample data for demonstration purposes
           </p>
         </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => {
-            if (typeof window !== "undefined") {
-              const url = new URL(window.location.href);
-              url.searchParams.set("demo", "true");
-              window.location.href = url.toString();
-            }
-          }}
-          className="flex items-center justify-center gap-2 rounded-[10px] border border-dashed border-[#8B5CFF]/30 bg-[#8B5CFF]/5 px-4 py-3 transition hover:bg-[#8B5CFF]/10"
-        >
-          <Sparkles size={16} className="text-[#8B5CFF]" />
-          <p className="text-[13px] font-bold text-[#8B5CFF]">
-            Activate Demo Mode — explore Intelligence with sample data
-          </p>
-        </button>
       )}
 
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">

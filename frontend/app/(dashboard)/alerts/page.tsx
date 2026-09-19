@@ -69,7 +69,8 @@ import {
   type NotificationRuleTrigger,
   type WorkspaceMemberRecord,
 } from "@/lib/api-service";
-import { isDemoMode, getMockAlerts, getMockAlertsSummary } from "@/lib/demo-mock-data";
+import { getMockAlerts, getMockAlertsSummary } from "@/lib/demo-mock-data";
+import { useAuthStore } from "@/store/useAuthStore";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type AlertStatus = "New" | "Investigating" | "Escalated" | "Resolved";
@@ -1042,26 +1043,12 @@ export default function AlertsPage() {
   }
 
   // Members and escalation data feed live alert panels plus create/edit dropdowns.
-  const [demoMode, setDemoMode] = useState(false);
-  const [hasCheckedDemoMode, setHasCheckedDemoMode] = useState(false);
-
-  // Check demo mode on mount
-  useEffect(() => {
-    setDemoMode(isDemoMode());
-    setHasCheckedDemoMode(true);
-  }, []);
+  const user = useAuthStore((state) => state.user);
+  const isDemoSession = Boolean(user?.isDemo || user?.provider === "demo");
 
   const membersQuery = useQuery({
-    queryKey: ["workspace-members", demoMode],
-    queryFn: () => demoMode
-      ? Promise.resolve([
-          { id: "demo-user-1", workspaceId: "demo-workspace", userId: "demo-user-1", role: "owner", createdAt: new Date().toISOString() },
-          { id: "demo-user-2", workspaceId: "demo-workspace", userId: "demo-user-2", role: "admin", createdAt: new Date().toISOString() },
-          { id: "demo-user-3", workspaceId: "demo-workspace", userId: "demo-user-3", role: "analyst", createdAt: new Date().toISOString() },
-          { id: "demo-user-4", workspaceId: "demo-workspace", userId: "demo-user-4", role: "analyst", createdAt: new Date().toISOString() },
-          { id: "demo-user-5", workspaceId: "demo-workspace", userId: "demo-user-5", role: "analyst", createdAt: new Date().toISOString() },
-        ])
-      : getWorkspaceMembers(),
+    queryKey: ["workspace-members"],
+    queryFn: () => getWorkspaceMembers(),
     staleTime: 5 * 60 * 1000,
   });
   const escalationQuery = useQuery({
@@ -1082,19 +1069,18 @@ export default function AlertsPage() {
   });
 
   const summaryQuery = useQuery({
-    queryKey: ["alerts-summary", demoMode],
+    queryKey: ["alerts-summary"],
     queryFn: async () => {
       const res = await getAlertsSummary();
       if (res) return res;
-      return demoMode ? getMockAlertsSummary() : null;
+      return isDemoSession ? getMockAlertsSummary() : null;
     },
     staleTime: 60 * 1000,
-    enabled: hasCheckedDemoMode,
   });
   const summary = summaryQuery.data ?? null;
 
   const alertsQuery = useQuery({
-    queryKey: ["alerts", { page, severity: severityFilter, status: statusFilter, search: searchQuery.trim(), demoMode }],
+    queryKey: ["alerts", { page, severity: severityFilter, status: statusFilter, search: searchQuery.trim() }],
     queryFn: async () => {
       const res = await getAlerts({
         page,
@@ -1103,29 +1089,23 @@ export default function AlertsPage() {
         status: statusFilter || undefined,
         search: searchQuery.trim() || undefined,
       });
-      if (res && res.data && res.data.length > 0) {
-        return res;
-      }
-      return demoMode
+      if (res) return res;
+      return isDemoSession
         ? { data: getMockAlerts(), pagination: { page: 1, limit: 10, total: 5, totalPages: 1 } }
-        : (res || { data: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0 } });
+        : { data: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0 } };
     },
     staleTime: 30 * 1000,
-    enabled: hasCheckedDemoMode,
   });
   const criticalAlertsQuery = useQuery({
-    queryKey: ["alerts", "critical-delivery", demoMode],
+    queryKey: ["alerts", "critical-delivery"],
     queryFn: async () => {
       const res = await getAlerts({ page: 1, limit: 100, severity: "critical" });
-      if (res && res.data && res.data.length > 0) {
-        return res;
-      }
-      return demoMode
+      if (res) return res;
+      return isDemoSession
         ? { data: getMockAlerts().filter((a) => a.severity === "critical"), pagination: { page: 1, limit: 100, total: 1, totalPages: 1 } }
-        : (res || { data: [], pagination: { page: 1, limit: 100, total: 0, totalPages: 0 } });
+        : { data: [], pagination: { page: 1, limit: 100, total: 0, totalPages: 0 } };
     },
     staleTime: 30 * 1000,
-    enabled: hasCheckedDemoMode,
   });
   const alertsData = alertsQuery.data;
   const escalationLevels = getDisplayEscalationRecords(escalationQuery.data, ta);
@@ -1416,30 +1396,13 @@ export default function AlertsPage() {
 
   return (
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
-      {demoMode ? (
+      {isDemoSession && (
         <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
           <Sparkles size={16} className="text-[#8B5CFF]" />
           <p className="text-[13px] font-bold text-[#8B5CFF]">
             Demo Mode — Showing sample data for demonstration purposes
           </p>
         </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => {
-            if (typeof window !== "undefined") {
-              const url = new URL(window.location.href);
-              url.searchParams.set("demo", "true");
-              window.location.href = url.toString();
-            }
-          }}
-          className="flex items-center justify-center gap-2 rounded-[10px] border border-dashed border-[#8B5CFF]/30 bg-[#8B5CFF]/5 px-4 py-3 transition hover:bg-[#8B5CFF]/10"
-        >
-          <Sparkles size={16} className="text-[#8B5CFF]" />
-          <p className="text-[13px] font-bold text-[#8B5CFF]">
-            Activate Demo Mode — see Alerts with sample data
-          </p>
-        </button>
       )}
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>

@@ -6,9 +6,10 @@ import { Activity, AlertTriangle, ArrowUpRight, Clock, ShieldAlert } from "lucid
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { isDemoMode, getMockAlerts, getMockAlertsSummary } from "@/lib/demo-mock-data";
+import { getMockAlerts, getMockAlertsSummary } from "@/lib/demo-mock-data";
 import { getAlerts, getAlertsSummary } from "@/lib/api-service";
 import type { Alert, AlertsSummaryResponse } from "@/lib/api-service";
+import { useAuthStore } from "@/store/useAuthStore";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -246,38 +247,37 @@ function AlertCard({ alert }: { alert: AlertEntry }) {
 
 export default function AlertCenterPage() {
   const t = useTranslations();
-  const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("All");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
-  const [demoMode, setDemoMode] = useState(false);
+  const user = useAuthStore((state) => state.user);
+  const isDemoSession = Boolean(user?.isDemo || user?.provider === "demo");
   const [alerts, setAlerts] = useState<AlertEntry[]>([]);
   const [summary, setSummary] = useState<AlertsSummaryResponse | null>(null);
+  const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("All");
+  const [statusFilter, setStatusFilter] = useState<Status | "All">("All");
 
-  // Load data based on demo mode
   useEffect(() => {
-    const demo = isDemoMode();
-    setDemoMode(demo);
-
-    if (demo) {
-      const mockAlerts = getMockAlerts();
-      setAlerts(mockAlerts.map(mapApiAlertToEntry));
-      const mockSummary = getMockAlertsSummary();
-      setSummary(mockSummary);
-    } else {
-      Promise.all([
-        getAlerts({ limit: 50 }),
-        getAlertsSummary(),
-      ]).then(([alertsResult, summaryResult]) => {
-        if (alertsResult?.data) {
-          setAlerts(alertsResult.data.map(mapApiAlertToEntry));
-        }
-        if (summaryResult) setSummary(summaryResult);
-      }).catch(() => {
-        // Fallback to mock on API failure
+    Promise.all([
+      getAlerts({ limit: 50 }),
+      getAlertsSummary(),
+    ]).then(([alertsResult, summaryResult]) => {
+      if (alertsResult?.data && alertsResult.data.length > 0) {
+        setAlerts(alertsResult.data.map(mapApiAlertToEntry));
+      } else if (isDemoSession) {
+        setAlerts(getMockAlerts().map(mapApiAlertToEntry));
+      } else {
+        setAlerts([]);
+      }
+      if (summaryResult) {
+        setSummary(summaryResult);
+      } else if (isDemoSession) {
+        setSummary(getMockAlertsSummary());
+      }
+    }).catch(() => {
+      if (isDemoSession) {
         setAlerts(getMockAlerts().map(mapApiAlertToEntry));
         setSummary(getMockAlertsSummary());
-      });
-    }
-  }, []);
+      }
+    });
+  }, [isDemoSession]);
 
   const filtered = alerts.filter((a) => {
     const sevOk = severityFilter === "All" || a.severity === severityFilter;
@@ -293,7 +293,7 @@ export default function AlertCenterPage() {
           <h1 className="text-[22px] font-bold text-[#101334]">
             {t("alertCenter.title")}
           </h1>
-          {demoMode && (
+          {isDemoSession && (
             <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-amber-600">
               DEMO
             </span>

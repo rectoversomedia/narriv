@@ -29,7 +29,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardErrorState, MetricRowSkeleton } from "@/components/dashboard/dashboard-states";
 import { getVisibility, getVisibilitySummary, getVisibilityTrends, getWorkspaceSettings, triggerVisibilityAnalysis, type VisibilityResponse } from "@/lib/api-service";
-import { isDemoMode, getMockVisibility, getMockVisibilitySummary, getMockVisibilityTrends } from "@/lib/demo-mock-data";
+import { getMockVisibility, getMockVisibilitySummary, getMockVisibilityTrends } from "@/lib/demo-mock-data";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useUiStore } from "@/store/useUiStore";
 import {
   OpenAILight,
@@ -505,15 +506,8 @@ export default function VisibilityPage() {
   const [isActionsModalOpen, setIsActionsModalOpen] = useState(false);
   const dateMenuRef = useRef<HTMLDivElement | null>(null);
 
-  // Demo mode state
-  const [demoMode, setDemoMode] = useState(false);
-  const [hasCheckedDemoMode, setHasCheckedDemoMode] = useState(false);
-
-  // Check demo mode on mount
-  useEffect(() => {
-    setDemoMode(isDemoMode());
-    setHasCheckedDemoMode(true);
-  }, []);
+  const user = useAuthStore((state) => state.user);
+  const isDemoSession = user?.id === "56bc14ee-5f16-4134-9828-a240f3c72240" || user?.email === "demo@narriv.ai";
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -526,40 +520,52 @@ export default function VisibilityPage() {
   }, [isDateMenuOpen]);
 
   const visibilityQuery = useQuery({
-    queryKey: ["visibility", demoMode],
+    queryKey: ["visibility"],
     queryFn: async () => {
-      const real = await getVisibility();
-      if (real && ((real.prompts?.length ?? 0) > 0 || Number(real.score ?? 0) > 0 || (real.citations?.length ?? 0) > 0)) {
-        return real;
+      try {
+        const real = await getVisibility();
+        if (real && ((real.prompts?.length ?? 0) > 0 || Number(real.score ?? 0) > 0 || (real.citations?.length ?? 0) > 0)) {
+          return real;
+        }
+        return isDemoSession ? getMockVisibility() : real;
+      } catch (err) {
+        if (isDemoSession) return getMockVisibility();
+        throw err;
       }
-      return demoMode ? getMockVisibility() : real;
     },
     staleTime: 30 * 1000,
-    enabled: hasCheckedDemoMode,
   });
   const visibilitySummaryQuery = useQuery({
-    queryKey: ["visibility-summary", demoMode],
+    queryKey: ["visibility-summary"],
     queryFn: async () => {
-      const real = await getVisibilitySummary();
-      if (real && (real.engine_breakdown.length > 0 || real.kpis.total_analyses > 0)) {
-        return real;
+      try {
+        const real = await getVisibilitySummary();
+        if (real && (real.engine_breakdown.length > 0 || real.kpis.total_analyses > 0)) {
+          return real;
+        }
+        return isDemoSession ? getMockVisibilitySummary() : real;
+      } catch (err) {
+        if (isDemoSession) return getMockVisibilitySummary();
+        throw err;
       }
-      return demoMode ? getMockVisibilitySummary() : real;
     },
     staleTime: 60 * 1000,
-    enabled: hasCheckedDemoMode,
   });
   const visibilityTrendsQuery = useQuery({
-    queryKey: ["visibility-trends", selectedDays, demoMode],
+    queryKey: ["visibility-trends", selectedDays],
     queryFn: async () => {
-      const real = await getVisibilityTrends(undefined, undefined, selectedDays);
-      if (real && real.trends && real.trends.length > 0) {
-        return real;
+      try {
+        const real = await getVisibilityTrends(undefined, undefined, selectedDays);
+        if (real && real.trends && real.trends.length > 0) {
+          return real;
+        }
+        return isDemoSession ? getMockVisibilityTrends(selectedDays) : real;
+      } catch (err) {
+        if (isDemoSession) return getMockVisibilityTrends(selectedDays);
+        throw err;
       }
-      return demoMode ? getMockVisibilityTrends(selectedDays) : real;
     },
     staleTime: 60 * 1000,
-    enabled: hasCheckedDemoMode,
   });
   const workspaceSettingsQuery = useQuery({
     queryKey: ["workspace-settings"],
@@ -840,12 +846,12 @@ export default function VisibilityPage() {
 
   return (
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
-      {/* Demo Mode Banner */}
-      {demoMode && (
+      {/* Demo Workspace Banner */}
+      {isDemoSession && (
         <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
           <Sparkles size={16} className="text-[#8B5CFF]" />
           <p className="text-[13px] font-bold text-[#8B5CFF]">
-            Demo Mode — Showing sample data for demonstration purposes
+            Demo Workspace — Seeded sandbox workspace for evaluation
           </p>
         </div>
       )}
@@ -859,7 +865,7 @@ export default function VisibilityPage() {
               <Badge variant="default" className="px-2 py-0.5 text-[9px] font-bold normal-case tracking-normal">
                 AI-Modeled Projection (Simulated via GPT-4o-mini)
               </Badge>
-              {demoMode && (
+              {isDemoSession && (
                 <Badge variant="purple" className="px-2 py-0.5 text-[9px] font-bold normal-case tracking-normal">DEMO</Badge>
               )}
             </div>

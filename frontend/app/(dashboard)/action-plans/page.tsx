@@ -28,8 +28,9 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
-import { isDemoMode, getMockActionPlans } from "@/lib/demo-mock-data";
-import { getActionPlanById, getActionQueue, getFeedbackAccuracy, submitActionPlanFeedback, getActionPlansMetrics, getActionPlanLearning, type ActionPlanResponse, type ActionQueueRecord } from "@/lib/api-service";
+import { getMockActionPlans } from "@/lib/demo-mock-data";
+import { useAuthStore } from "@/store/useAuthStore";
+import { getActionPlanById, getActionQueue, getFeedbackAccuracy, submitActionPlanFeedback, getActionPlansMetrics, getActionPlanLearning, type ActionPlanResponse, type ActionQueueRecord, type MetaPaginatedResponse } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
 import { CreateActionPlanModal } from "./components/create-action-plan-modal";
 import { RejectActionPlanModal } from "./components/reject-action-plan-modal";
@@ -316,15 +317,8 @@ export default function ActionPlansPage() {
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
-  // Demo mode state
-  const [demoMode, setDemoMode] = useState(false);
-  const [hasCheckedDemoMode, setHasCheckedDemoMode] = useState(false);
-
-  // Check demo mode on mount
-  useEffect(() => {
-    setDemoMode(isDemoMode());
-    setHasCheckedDemoMode(true);
-  }, []);
+  const user = useAuthStore((state) => state.user);
+  const isDemoSession = Boolean(user?.isDemo || user?.provider === "demo");
 
   useEffect(() => {
     setCurrentPage(1);
@@ -349,13 +343,14 @@ export default function ActionPlansPage() {
     },
     onError: () => showToast(t("toast.feedbackRetry"), "error"),
   });
-  const actionQueueQuery = useQuery({
-    queryKey: ["action-queue", { page: currentPage, limit: 8, search: searchQuery.trim(), priority: filterPriority, status: filterStatus, demoMode }],
-    queryFn: () => demoMode
-      ? Promise.resolve(getMockActionPlans())
-      : getActionQueue({ page: currentPage, limit: 8, search: searchQuery.trim(), priority: filterPriority, status: filterStatus }),
+  const actionQueueQuery = useQuery<MetaPaginatedResponse<ActionQueueRecord>>({
+    queryKey: ["action-queue", { page: currentPage, limit: 8, search: searchQuery.trim(), priority: filterPriority, status: filterStatus }],
+    queryFn: async () => {
+      const res = await getActionQueue({ page: currentPage, limit: 8, search: searchQuery.trim(), priority: filterPriority, status: filterStatus });
+      if (res && res.data && res.data.length > 0) return res;
+      return isDemoSession ? getMockActionPlans() : (res || { data: [], meta: { page: 1, limit: 8, total: 0, totalPages: 0 } });
+    },
     staleTime: 30 * 1000,
-    enabled: hasCheckedDemoMode,
   });
   const actionPlanQuery = useQuery({
     queryKey: ["action-plan", selectedActionId],
@@ -380,14 +375,14 @@ export default function ActionPlansPage() {
   const acceptanceRatePercent = accuracy ? Math.round(accuracy.acceptance_rate * 100) : null;
   const rejectionRatePercent = accuracy ? Math.round(accuracy.rejection_rate * 100) : null;
   const liveActions = actionQueueQuery.data?.data ? buildActionItems(actionQueueQuery.data.data, t) : [];
-  const isQueueUnavailable = actionQueueQuery.data === null;
-  const isPlanUnavailable = actionPlanQuery.data === null;
+  const isQueueUnavailable = actionQueueQuery.isError;
+  const isPlanUnavailable = !!selectedActionId && actionPlanQuery.isError;
   const actionItems = liveActions;
 
-  const pageSize = actionQueueQuery.data?.meta.limit ?? 8;
-  const totalFilteredItems = actionQueueQuery.data?.meta.total ?? actionItems.length;
+  const pageSize = actionQueueQuery.data?.meta?.limit ?? 8;
+  const totalFilteredItems = actionQueueQuery.data?.meta?.total ?? actionItems.length;
   const totalPages = Math.max(1, Math.ceil(totalFilteredItems / pageSize));
-  const validPage = actionQueueQuery.data?.meta.page ?? currentPage;
+  const validPage = actionQueueQuery.data?.meta?.page ?? currentPage;
   const paginatedItems = actionItems;
 
   const selectedAction = selectedActionId ? actionItems.find((action) => action.id === selectedActionId) || null : null;
@@ -420,7 +415,7 @@ export default function ActionPlansPage() {
 
   return (
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
-      {demoMode && (
+      {isDemoSession && (
         <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
           <Sparkles size={16} className="text-[#8B5CFF]" />
           <p className="text-[13px] font-bold text-[#8B5CFF]">

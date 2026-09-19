@@ -33,7 +33,8 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton, formatPaginationSummary } from "@/components/dashboard/dashboard-states";
 import { getReports, getReportTemplates, createReportTemplate, updateReportTemplate, deleteReportTemplate, getReportsAnalytics, createReportExport, getReportExportStatus, getNarratives, getDashboardSummary, getReportSchedules, createReportSchedule, updateReportSchedule, deleteReportSchedule, toggleReportSchedule, generateReportFromTemplate, sendReportEmail, sendTestScheduleEmail, type PaginationInfo, type ReportRecord, type ReportsAnalyticsResponse, type NarrativeRecord, type DashboardSummary, type ReportTemplate, type ReportScheduleRecord } from "@/lib/api-service";
-import { isDemoMode, getMockReports } from "@/lib/demo-mock-data";
+import { getMockReports } from "@/lib/demo-mock-data";
+import { useAuthStore } from "@/store/useAuthStore";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type ReportStatus = "READY" | "REVIEW" | "DRAFT" | "SCHEDULED" | "ARCHIVED";
@@ -861,15 +862,8 @@ export default function ReportsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // Demo mode state
-  const [demoMode, setDemoMode] = useState(false);
-  const [hasCheckedDemoMode, setHasCheckedDemoMode] = useState(false);
-
-  // Check demo mode on mount
-  useEffect(() => {
-    setDemoMode(isDemoMode());
-    setHasCheckedDemoMode(true);
-  }, []);
+  const user = useAuthStore((state) => state.user);
+  const isDemoSession = user?.id === "56bc14ee-5f16-4134-9828-a240f3c72240" || user?.email === "demo@narriv.ai";
 
   // Custom Template State
   const [editingTemplate, setEditingTemplate] = useState<Partial<ReportTemplate> | null>(null);
@@ -940,15 +934,18 @@ export default function ReportsPage() {
     onError: () => showToast(tr("toast.exportInitFailed"), "error"),
   });
   const reportsQuery = useQuery({
-    queryKey: ["reports", { page, limit: reportsApiLimit, demoMode }],
+    queryKey: ["reports", { page, limit: reportsApiLimit }],
     queryFn: async () => {
-      if (demoMode) {
-        return getMockReports();
+      try {
+        return await getReports({ page, limit: reportsApiLimit });
+      } catch (err) {
+        if (isDemoSession) {
+          return getMockReports();
+        }
+        throw err;
       }
-      return getReports({ page, limit: reportsApiLimit });
     },
     staleTime: 30 * 1000,
-    enabled: hasCheckedDemoMode,
   });
   const templatesQuery = useQuery({
     queryKey: ["report-templates"],
@@ -1209,11 +1206,11 @@ export default function ReportsPage() {
 
   return (
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
-      {demoMode && (
+      {isDemoSession && (
         <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
           <Sparkles size={16} className="text-[#8B5CFF]" />
           <p className="text-[13px] font-bold text-[#8B5CFF]">
-            Demo Mode — Showing sample data for demonstration purposes
+            Demo Workspace — Seeded sandbox workspace for evaluation
           </p>
         </div>
       )}

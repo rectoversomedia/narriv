@@ -9,7 +9,8 @@ import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { DashboardEmptyState, DashboardErrorState, TableSkeleton } from "@/components/dashboard/dashboard-states";
 import { useToast } from "@/components/ui/toast";
 import { createIntegration, deleteIntegration, getIntegrations, updateIntegration, type IntegrationRecord } from "@/lib/api-service";
-import { isDemoMode, getMockIntegrations } from "@/lib/demo-mock-data";
+import { getMockIntegrations } from "@/lib/demo-mock-data";
+import { useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
 const emptyIntegrations: IntegrationRecord[] = [];
 
@@ -64,15 +65,8 @@ export default function IntegrationsPage() {
   const [formError, setFormError] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<IntegrationRecord | null>(null);
 
-  // Demo mode state
-  const [demoMode, setDemoMode] = useState(false);
-  const [hasCheckedDemoMode, setHasCheckedDemoMode] = useState(false);
-
-  // Check demo mode on mount
-  useEffect(() => {
-    setDemoMode(isDemoMode());
-    setHasCheckedDemoMode(true);
-  }, []);
+  const user = useAuthStore((state) => state.user);
+  const isDemoSession = user?.id === "56bc14ee-5f16-4134-9828-a240f3c72240" || user?.email === "demo@narriv.ai";
 
   const t = useTranslations("Workspace.integrations");
 
@@ -94,14 +88,21 @@ export default function IntegrationsPage() {
   ], [t]);
 
   const integrationsQuery = useQuery({
-    queryKey: ["integrations", { platform: platformFilter, status: statusFilter, demoMode }],
-    queryFn: () => demoMode
-      ? Promise.resolve(getMockIntegrations())
-      : getIntegrations({
+    queryKey: ["integrations", { platform: platformFilter, status: statusFilter }],
+    queryFn: async () => {
+      try {
+        return await getIntegrations({
           platform: platformFilter || undefined,
           status: statusFilter || undefined,
-        }),
-    enabled: hasCheckedDemoMode,
+        });
+      } catch (err) {
+        if (isDemoSession) {
+          return getMockIntegrations();
+        }
+        throw err;
+      }
+    },
+    staleTime: 30 * 1000,
   });
 
   const createMutation = useMutation({
@@ -184,12 +185,12 @@ export default function IntegrationsPage() {
 
   return (
     <div className="space-y-6 pb-6">
-      {/* Demo Mode Banner */}
-      {demoMode && (
+      {/* Demo Workspace Banner */}
+      {isDemoSession && (
         <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
           <Sparkles size={16} className="text-[#8B5CFF]" />
           <p className="text-[13px] font-bold text-[#8B5CFF]">
-            Demo Mode — Showing sample data for demonstration purposes
+            Demo Workspace — Seeded sandbox workspace for evaluation
           </p>
         </div>
       )}

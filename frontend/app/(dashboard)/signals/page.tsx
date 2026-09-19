@@ -42,7 +42,7 @@ import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components
 import { AdvancedSearchModal, ActiveFiltersChips } from "./components/advanced-search-modal";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton } from "@/components/dashboard/dashboard-states";
 import { getDateRangeOptions, getSignals, type PaginationInfo, type Signal, getSignalsMeta, type SignalsMeta, bulkDeleteSignals, bulkAnalyzeSignals, bulkCreateAlertsFromSignals, searchSignals, fetchLatestSignals, type AdvancedSearchFilters, type SearchSignalsResponse } from "@/lib/api-service";
-import { isDemoMode, getMockSignals } from "@/lib/demo-mock-data";
+import { useAuthStore } from "@/store/useAuthStore";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Sentiment = "NEGATIVE" | "POSITIVE" | "NEUTRAL" | "MIXED";
@@ -927,15 +927,8 @@ export default function SignalsPage() {
     }
   };
 
-  // Demo mode state
-  const [demoMode, setDemoMode] = useState(false);
-  const [hasCheckedDemoMode, setHasCheckedDemoMode] = useState(false);
-
-  // Check demo mode on mount
-  useEffect(() => {
-    setDemoMode(isDemoMode());
-    setHasCheckedDemoMode(true);
-  }, []);
+  const user = useAuthStore((state) => state.user);
+  const isDemoSession = Boolean(user?.isDemo || user?.provider === "demo");
 
   // Advanced search state
   const [advancedSearchFilters, setAdvancedSearchFilters] = useState<AdvancedSearchFilters>({});
@@ -1009,7 +1002,7 @@ export default function SignalsPage() {
     activeFilter === "mixed" ? "mixed" : undefined;
 
   const signalsQuery = useQuery({
-    queryKey: ["signals", { keyword: deferredQuery, page, sentiment: apiSentimentFilter, demoMode }],
+    queryKey: ["signals", { keyword: deferredQuery, page, sentiment: apiSentimentFilter }],
     queryFn: async () => {
       const res = await getSignals({
         page,
@@ -1017,13 +1010,10 @@ export default function SignalsPage() {
         keyword: deferredQuery.trim() || undefined,
         sentiment: apiSentimentFilter,
       });
-      if (res && res.data && res.data.length > 0) {
-        return res;
-      }
-      return demoMode ? getMockSignals() : (res || { data: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0 } });
+      if (res) return res;
+      return { data: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0 } };
     },
     staleTime: 30 * 1000,
-    enabled: hasCheckedDemoMode,
   });
 
   const handleQueryChange = (value: string) => {
@@ -1123,7 +1113,7 @@ export default function SignalsPage() {
 
   return (
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
-      {demoMode && (
+      {isDemoSession && (
         <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
           <Sparkles size={16} className="text-[#8B5CFF]" />
           <p className="text-[13px] font-bold text-[#8B5CFF]">
