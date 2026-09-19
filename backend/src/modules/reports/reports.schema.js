@@ -27,7 +27,7 @@ export const sendReportEmailBodySchema = z.object({
 }).strict();
 
 export const createReportExportBodySchema = z.object({
-    format: z.enum(["json", "pdf"]).optional(),
+    format: z.enum(["json", "pdf", "csv", "xlsx"]).optional(),
 });
 
 

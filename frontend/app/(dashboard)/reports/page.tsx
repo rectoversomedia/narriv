@@ -32,7 +32,7 @@ import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton, formatPaginationSummary } from "@/components/dashboard/dashboard-states";
-import { getReports, getReportTemplates, createReportTemplate, updateReportTemplate, deleteReportTemplate, getReportsAnalytics, createReportExport, getReportExportStatus, getNarratives, getDashboardSummary, getReportSchedules, createReportSchedule, updateReportSchedule, deleteReportSchedule, toggleReportSchedule, generateReportFromTemplate, sendReportEmail, sendTestScheduleEmail, type PaginationInfo, type ReportRecord, type ReportsAnalyticsResponse, type NarrativeRecord, type DashboardSummary, type ReportTemplate, type ReportScheduleRecord } from "@/lib/api-service";
+import { getReports, getReportTemplates, createReportTemplate, updateReportTemplate, deleteReportTemplate, getReportsAnalytics, createReportExport, getReportExportStatus, downloadReportFile, getNarratives, getDashboardSummary, getReportSchedules, createReportSchedule, updateReportSchedule, deleteReportSchedule, toggleReportSchedule, generateReportFromTemplate, sendReportEmail, sendTestScheduleEmail, type PaginationInfo, type ReportRecord, type ReportsAnalyticsResponse, type NarrativeRecord, type DashboardSummary, type ReportTemplate, type ReportScheduleRecord } from "@/lib/api-service";
 import { getMockReports } from "@/lib/demo-mock-data";
 import { useAuthStore } from "@/store/useAuthStore";
 
@@ -343,7 +343,17 @@ function SummaryPoint({ color, title, text }: { color: string; title: string; te
   );
 }
 
-function ReportPreviewSidebar({ latestReport, onExportPdf, isPending }: { latestReport?: { id: string; title: string; status: string; sections?: string | unknown }; onExportPdf?: () => void; isPending?: boolean }) {
+function ReportPreviewSidebar({
+  latestReport,
+  onExportPdf,
+  onExportFile,
+  isPending,
+}: {
+  latestReport?: { id: string; title: string; status: string; sections?: string | unknown };
+  onExportPdf?: () => void;
+  onExportFile?: (format: "csv" | "xlsx") => void;
+  isPending?: boolean;
+}) {
   const tr = useTranslations("Reports");
 
   const reportTitle = latestReport?.title || tr("preview.executiveBrief");
@@ -408,13 +418,21 @@ function ReportPreviewSidebar({ latestReport, onExportPdf, isPending }: { latest
             )}
           </div>
 
-          <div className="mt-4 grid gap-2.5">
+          <div className="mt-4 grid gap-2">
             <Link href={`/reports/${latestReport.id}`} className="flex h-10 w-full items-center justify-center gap-2 rounded-[9px] bg-[#465FFF] text-[12px] font-black text-white shadow-[0_8px_20px_rgba(70,95,255,0.18)] transition hover:bg-[#3B20EA]">
               <Eye size={15} /> {tr("preview.viewPreview")}
             </Link>
-            <button type="button" onClick={onExportPdf} className="flex h-10 w-full items-center justify-center gap-2 rounded-[9px] border border-[#E6EAF2] bg-white text-[12px] font-black text-[#101334] transition hover:bg-[#F8FAFF]">
-              <Download size={15} /> {tr("preview.downloadPdf")}
-            </button>
+            <div className="grid grid-cols-3 gap-2">
+              <button type="button" onClick={onExportPdf} className="flex h-9 items-center justify-center gap-1 rounded-[8px] border border-[#E6EAF2] bg-white text-[11px] font-black text-[#101334] transition hover:bg-[#F8FAFF]">
+                <Download size={13} /> PDF
+              </button>
+              <button type="button" onClick={() => onExportFile?.("csv")} className="flex h-9 items-center justify-center gap-1 rounded-[8px] border border-[#E6EAF2] bg-white text-[11px] font-black text-[#101334] transition hover:bg-[#F8FAFF]">
+                <Download size={13} /> CSV
+              </button>
+              <button type="button" onClick={() => onExportFile?.("xlsx")} className="flex h-9 items-center justify-center gap-1 rounded-[8px] border border-[#E6EAF2] bg-white text-[11px] font-black text-[#101334] transition hover:bg-[#F8FAFF]">
+                <Download size={13} /> Excel
+              </button>
+            </div>
           </div>
         </>
       ) : (
@@ -497,7 +515,23 @@ function ProgressBar({ value, tone }: { value: number; tone: Tone }) {
   );
 }
 
-function ReportsTable({ rows, footerText, pagination, onPageChange, isFetching, onExport }: { rows: ReportRow[]; footerText: string; pagination?: PaginationInfo | null; onPageChange: (page: number) => void; isFetching?: boolean; onExport: (reportId: string) => void }) {
+function ReportsTable({
+  rows,
+  footerText,
+  pagination,
+  onPageChange,
+  isFetching,
+  onExport,
+  onExportFile,
+}: {
+  rows: ReportRow[];
+  footerText: string;
+  pagination?: PaginationInfo | null;
+  onPageChange: (page: number) => void;
+  isFetching?: boolean;
+  onExport: (reportId: string) => void;
+  onExportFile?: (reportId: string, format: "csv" | "xlsx") => void;
+}) {
   const tr = useTranslations("Reports");
   type TabValue = "all" | ReportStatus;
   const [activeTab, setActiveTab] = useState<TabValue>("all");
@@ -615,9 +649,36 @@ function ReportsTable({ rows, footerText, pagination, onPageChange, isFetching, 
                   <span className="mt-0.5 block text-[9.5px] font-bold text-[#8B95B8]">{report.createdTime}</span>
                 </td>
                 <td className="px-3 py-3.5 text-right align-middle">
-                  <button type="button" onClick={() => onExport(String(report.id))} disabled={isFetching} className="inline-flex items-center gap-1.5 rounded-md border border-[#DDE3EF] bg-white px-2 py-1.5 text-[10px] font-black text-[#68739F] transition hover:bg-[#EEF2FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50" aria-label={tr("exportAria", { title: report.title })}>
-                    <Download size={13} /> {tr("downloadReady")}
-                  </button>
+                  <div className="inline-flex items-center justify-end gap-1">
+                    <button
+                      type="button"
+                      onClick={() => onExportFile?.(String(report.id), "csv")}
+                      disabled={isFetching}
+                      className="inline-flex items-center gap-1 rounded-md border border-[#DDE3EF] bg-white px-2 py-1.5 text-[10px] font-black text-[#68739F] transition hover:bg-[#EEF2FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
+                      title="Unduh CSV"
+                    >
+                      <Download size={11} /> CSV
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onExportFile?.(String(report.id), "xlsx")}
+                      disabled={isFetching}
+                      className="inline-flex items-center gap-1 rounded-md border border-[#DDE3EF] bg-white px-2 py-1.5 text-[10px] font-black text-[#68739F] transition hover:bg-[#EEF2FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
+                      title="Unduh Excel"
+                    >
+                      <Download size={11} /> Excel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onExport(String(report.id))}
+                      disabled={isFetching}
+                      className="inline-flex items-center gap-1 rounded-md border border-[#DDE3EF] bg-white px-2 py-1.5 text-[10px] font-black text-[#68739F] transition hover:bg-[#EEF2FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
+                      aria-label={tr("exportAria", { title: report.title })}
+                      title="Unduh PDF"
+                    >
+                      <Download size={11} /> PDF
+                    </button>
+                  </div>
                 </td>
               </tr>
             )) : (
@@ -933,6 +994,16 @@ export default function ReportsPage() {
     },
     onError: () => showToast(tr("toast.exportInitFailed"), "error"),
   });
+
+  const handleExportFile = async (reportId: string, format: "csv" | "xlsx") => {
+    try {
+      showToast(format === "xlsx" ? "Mengunduh file Excel..." : "Mengunduh file CSV...");
+      await downloadReportFile(reportId, format);
+      showToast(`File ${format.toUpperCase()} berhasil diunduh`);
+    } catch {
+      showToast(`Gagal mengunduh ${format.toUpperCase()}`, "error");
+    }
+  };
   const reportsQuery = useQuery({
     queryKey: ["reports", { page, limit: reportsApiLimit }],
     queryFn: async () => {
@@ -1260,12 +1331,25 @@ export default function ReportsPage() {
           ) : (
             <>
               {isLiveUnavailable ? <DashboardErrorState title={tr("error.title")} description={tr("error.desc")} onRetry={() => void reportsQuery.refetch()} minHeight="min-h-[150px]" /> : null}
-              <ReportsTable rows={rows} footerText={footerText} pagination={reportsQuery.data?.pagination} onPageChange={setPage} isFetching={reportsQuery.isFetching || exportMutation.isPending} onExport={(reportId) => exportMutation.mutate({ reportId, format: "pdf" })} />
+              <ReportsTable
+                rows={rows}
+                footerText={footerText}
+                pagination={reportsQuery.data?.pagination}
+                onPageChange={setPage}
+                isFetching={reportsQuery.isFetching || exportMutation.isPending}
+                onExport={(reportId) => exportMutation.mutate({ reportId, format: "pdf" })}
+                onExportFile={handleExportFile}
+              />
             </>
           )}
         </div>
         <div className="space-y-4">
-          <ReportPreviewSidebar latestReport={reportsQuery.data?.data?.[0]} onExportPdf={() => { const firstRow = rows[0]; if (firstRow) exportMutation.mutate({ reportId: String(firstRow.id), format: "pdf" }); }} isPending={reportsQuery.isPending} />
+          <ReportPreviewSidebar
+            latestReport={reportsQuery.data?.data?.[0]}
+            onExportPdf={() => { const firstRow = rows[0]; if (firstRow) exportMutation.mutate({ reportId: String(firstRow.id), format: "pdf" }); }}
+            onExportFile={(fmt) => { const firstRow = rows[0]; if (firstRow) void handleExportFile(String(firstRow.id), fmt); }}
+            isPending={reportsQuery.isPending}
+          />
           <QuickActions
             onShare={() => setIsShareModalOpen(true)}
             onSchedule={() => setIsScheduleModalOpen(true)}

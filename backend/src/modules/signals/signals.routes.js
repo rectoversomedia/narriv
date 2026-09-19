@@ -9,6 +9,7 @@ import { logStructured } from "../../lib/logger.js";
 import { globalEvents } from "../app-notifications/app-notifications.events.js";
 import { recordAuditLog } from "../../lib/audit.js";
 import { wrapAsync } from "../../lib/sentry.js";
+import XLSX from "xlsx";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -137,6 +138,82 @@ router.post("/", validateRequest({ body: createSignalBodySchema }), async (req, 
     } catch (error) {
         logStructured("error", "Error creating signal:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// GET /api/signals/export - Export signals as CSV or XLSX
+router.get("/export", async (req, res) => {
+    try {
+        const workspaceIds = await getUserWorkspaceIds(req.user.id);
+        const { keyword, platform, startDate, endDate, sentiment, format = "csv" } = req.query;
+
+        let query = supabase
+            .from('signals')
+            .select('*')
+            .in('workspace_id', workspaceIds)
+            .order('captured_at', { ascending: false })
+            .limit(5000);
+
+        if (keyword) {
+            query = query.or(`title.ilike.%${keyword}%,content.ilike.%${keyword}%`);
+        }
+        if (platform) {
+            query = query.eq('platform', platform);
+        }
+        if (sentiment) {
+            query = query.ilike('sentiment', sentiment);
+        }
+        if (startDate) {
+            const dateStart = new Date(startDate);
+            if (!isNaN(dateStart.getTime())) {
+                query = query.gte('captured_at', dateStart.toISOString());
+            }
+        }
+        if (endDate) {
+            const dateEnd = new Date(endDate);
+            if (!isNaN(dateEnd.getTime())) {
+                query = query.lte('captured_at', dateEnd.toISOString());
+            }
+        }
+
+        const { data: signals, error } = await query;
+        if (error) {
+            logStructured("error", "Error fetching signals for export:", { error: error.message });
+            return res.status(500).json({ error: "Failed to export signals" });
+        }
+
+        const rows = (signals || []).map((s) => ({
+            ID: s.id,
+            Title: s.title || "",
+            Platform: s.platform || "",
+            Sentiment: s.sentiment || "",
+            Severity: s.severity || "",
+            "Source URL": s.source_url || "",
+            Author: s.author || "",
+            "Captured At": s.captured_at || s.created_at || "",
+            Content: (s.content || "").replace(/[\r\n]+/g, " ").slice(0, 1000),
+        }));
+
+        const normalizedFormat = String(format).toLowerCase() === "xlsx" ? "xlsx" : "csv";
+        const ws = XLSX.utils.json_to_sheet(rows.length > 0 ? rows : [{ Note: "No signals found" }]);
+
+        if (normalizedFormat === "xlsx") {
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Signals");
+            const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+
+            res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            res.setHeader("Content-Disposition", `attachment; filename="narriv-signals-${new Date().toISOString().split("T")[0]}.xlsx"`);
+            return res.send(buffer);
+        } else {
+            const csv = XLSX.utils.sheet_to_csv(ws);
+            res.setHeader("Content-Type", "text/csv; charset=utf-8");
+            res.setHeader("Content-Disposition", `attachment; filename="narriv-signals-${new Date().toISOString().split("T")[0]}.csv"`);
+            return res.send(csv);
+        }
+    } catch (error) {
+        logStructured("error", "Error in signals export:", { error: error?.message || error, stack: error?.stack });
+        return res.status(500).json({ error: "Internal server error" });
     }
 });
 

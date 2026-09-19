@@ -7,7 +7,7 @@ import { ArrowLeft, CalendarClock, Download, FileText, RefreshCcw, Sparkles } fr
 import { useTranslations } from "next-intl";
 import { DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
 import { useToast } from "@/components/ui/toast";
-import { createReportExport, getReportById, getReportExportStatus, type ReportDetailSection } from "@/lib/api-service";
+import { createReportExport, getReportById, getReportExportStatus, downloadReportFile, type ReportDetailSection } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
 
 function formatDate(value?: string | null) {
@@ -116,15 +116,47 @@ export default function ReportDetailPage() {
             <h1 className="text-[30px] font-black leading-tight tracking-[-0.045em] text-[#060A23]">{report.title}</h1>
             <p className="mt-3 max-w-[760px] text-[13px] font-semibold leading-6 text-[#68739F]">{textFromUnknown(report.summary) || tr("detail.defaultSummary")}</p>
           </div>
-          <button
-            type="button"
-            onClick={() => exportMutation.mutate({ format: "pdf" })}
-            disabled={exportMutation.isPending}
-            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-[9px] bg-[#465FFF] px-4 text-[12px] font-black text-white shadow-[0_10px_22px_rgba(70,95,255,0.20)] transition hover:bg-[#3B20EA] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {exportMutation.isPending ? <RefreshCcw size={15} className="animate-spin" /> : <Download size={15} />}
-            {tr("preview.downloadPdf")}
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  toast.info("Mengunduh CSV...");
+                  await downloadReportFile(reportId, "csv");
+                  toast.success("File CSV berhasil diunduh");
+                } catch {
+                  toast.error("Gagal mengunduh CSV");
+                }
+              }}
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-[9px] border border-[#DDE3EF] bg-white px-3.5 text-[12px] font-black text-[#101334] transition hover:bg-[#F8FAFF]"
+            >
+              <Download size={15} /> CSV
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  toast.info("Mengunduh Excel...");
+                  await downloadReportFile(reportId, "xlsx");
+                  toast.success("File Excel berhasil diunduh");
+                } catch {
+                  toast.error("Gagal mengunduh Excel");
+                }
+              }}
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-[9px] border border-[#DDE3EF] bg-white px-3.5 text-[12px] font-black text-[#101334] transition hover:bg-[#F8FAFF]"
+            >
+              <Download size={15} /> Excel
+            </button>
+            <button
+              type="button"
+              onClick={() => exportMutation.mutate({ format: "pdf" })}
+              disabled={exportMutation.isPending}
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-[9px] bg-[#465FFF] px-4 text-[12px] font-black text-white shadow-[0_10px_22px_rgba(70,95,255,0.20)] transition hover:bg-[#3B20EA] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {exportMutation.isPending ? <RefreshCcw size={15} className="animate-spin" /> : <Download size={15} />}
+              {tr("preview.downloadPdf")}
+            </button>
+          </div>
         </div>
       </header>
 

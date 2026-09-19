@@ -50,6 +50,7 @@
     "proxy-agent": "^6.5.0",
     "resend": "^6.12.4",
     "uuid": "^9.0.1",
+    "xlsx": "^0.18.5",
     "zod": "^3.23.8"
   },
   "devDependencies": {

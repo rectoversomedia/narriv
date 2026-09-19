@@ -24,6 +24,7 @@ import {
   Trash2,
   Zap,
   CheckCircle2,
+  Download,
   X,
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
@@ -41,7 +42,7 @@ import { CreateInvestigationModal } from "./components/create-investigation-moda
 import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components/create-action-plan-modal";
 import { AdvancedSearchModal, ActiveFiltersChips } from "./components/advanced-search-modal";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton } from "@/components/dashboard/dashboard-states";
-import { getDateRangeOptions, getSignals, type PaginationInfo, type Signal, getSignalsMeta, type SignalsMeta, bulkDeleteSignals, bulkAnalyzeSignals, bulkCreateAlertsFromSignals, searchSignals, fetchLatestSignals, type AdvancedSearchFilters, type SearchSignalsResponse } from "@/lib/api-service";
+import { getDateRangeOptions, getSignals, type PaginationInfo, type Signal, getSignalsMeta, type SignalsMeta, bulkDeleteSignals, bulkAnalyzeSignals, bulkCreateAlertsFromSignals, searchSignals, fetchLatestSignals, downloadSignalsExport, type AdvancedSearchFilters, type SearchSignalsResponse } from "@/lib/api-service";
 import { useAuthStore } from "@/store/useAuthStore";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
@@ -898,9 +899,25 @@ export default function SignalsPage() {
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isFetchingSignals, setIsFetchingSignals] = useState(false);
+  const [isExporting, setIsExporting] = useState<"csv" | "xlsx" | null>(null);
   const deferredQuery = useDeferredValue(query);
   const dateRange = getDateRangeOptions("24h");
   const queryClient = useQueryClient();
+
+  const handleExport = async (format: "csv" | "xlsx") => {
+    setIsExporting(format);
+    try {
+      await downloadSignalsExport(format, {
+        keyword: deferredQuery.trim() || undefined,
+        sentiment: apiSentimentFilter,
+      });
+      toastHook.success(`Signals exported to ${format.toUpperCase()} successfully!`);
+    } catch {
+      toastHook.error(`Failed to export signals to ${format.toUpperCase()}`);
+    } finally {
+      setIsExporting(null);
+    }
+  };
 
   const handleFetchLatestSignals = async () => {
     setIsFetchingSignals(true);
@@ -1137,6 +1154,26 @@ export default function SignalsPage() {
           <button onClick={() => setIsAdvancedSearchOpen(true)} className={cn("flex h-10 items-center justify-center gap-2 rounded-[8px] border px-4 text-[12px] font-black transition", isAdvancedSearchActive ? "border-[#465FFF] bg-[#465FFF]/10 text-[#465FFF]" : "border-[#DDE3EF] bg-white text-[#31406B] hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]")}>
             <Filter size={15} />
             {t("advancedSearch") || "Filters"}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleExport("csv")}
+            disabled={!!isExporting}
+            title="Export signals as CSV file"
+            className="flex h-10 items-center justify-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-black text-[#31406B] shadow-xs transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:opacity-50"
+          >
+            <Download size={14} className={isExporting === "csv" ? "animate-bounce text-[#465FFF]" : ""} />
+            CSV
+          </button>
+          <button
+            type="button"
+            onClick={() => handleExport("xlsx")}
+            disabled={!!isExporting}
+            title="Export signals as Excel spreadsheet (.xlsx)"
+            className="flex h-10 items-center justify-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-black text-[#31406B] shadow-xs transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:opacity-50"
+          >
+            <Download size={14} className={isExporting === "xlsx" ? "animate-bounce text-[#465FFF]" : ""} />
+            Excel
           </button>
           <button onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] sm:w-fit"><Flag size={15} />{t("createInvestigation")}</button>
         </div>

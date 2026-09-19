@@ -15,7 +15,7 @@ import { logStructured } from "../../lib/logger.js";
  * @param {Date}   [params.periodEnd] - End of reporting period (default: now).
  * @returns {Promise<object>} - The saved Report record with full content.
  */
-export async function generateReport({ workspaceId, title, periodStart, periodEnd }) {
+export async function generateReport({ workspaceId, title, periodStart, periodEnd, reportId = null, save = true }) {
     const now = new Date();
     const start = periodStart ? new Date(periodStart) : new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const end = periodEnd ? new Date(periodEnd) : now;
@@ -179,37 +179,56 @@ export async function generateReport({ workspaceId, title, periodStart, periodEn
     const reportSummary = summaryLines.join(". ") + ".";
     const reportTitle = title || `Intelligence Report — ${start.toISOString().split("T")[0]} to ${end.toISOString().split("T")[0]}`;
 
-    // ── 5. Save Report ───────────────────────────────────────────────────────
-    const { data: report, error: reportError } = await supabase
-        .from("reports")
-        .insert({
-            workspace_id: workspaceId,
-            title: reportTitle,
-            period_start: start.toISOString(),
-            period_end: end.toISOString(),
-            summary: reportSummary
-        })
-        .select()
-        .single();
+    // ── 5. Save Report (only if save !== false and not existing reportId) ─────
+    let savedReport = null;
+    if (!reportId && save !== false) {
+        const { data: report, error: reportError } = await supabase
+            .from("reports")
+            .insert({
+                workspace_id: workspaceId,
+                title: reportTitle,
+                type: "intelligence",
+                status: "ready",
+                content: {
+                    summary: reportSummary,
+                    period_start: start.toISOString(),
+                    period_end: end.toISOString(),
+                    sections: {
+                        dashboard_metrics: dashboardMetrics,
+                        alerts: alertsSummary,
+                        narratives: narrativesSummary
+                    }
+                }
+            })
+            .select()
+            .single();
 
-    if (reportError || !report) {
-        logStructured("error", "report_save_failed", { error: reportError?.message });
-        throw reportError || new Error("Failed to create report");
+        if (reportError) {
+            logStructured("warn", "report_save_warning", { error: reportError?.message });
+        } else {
+            savedReport = report;
+            logStructured("info", "report_saved", { reportId: report.id });
+        }
     }
 
-    logStructured("info", "report_saved", { reportId: report.id });
-
     return {
-        id: report.id,
-        title: report.title,
-        periodStart: report.period_start,
-        periodEnd: report.period_end,
-        summary: report.summary,
-        createdAt: report.created_at,
+        id: reportId || savedReport?.id || "temp-report",
+        title: reportTitle,
+        periodStart: start.toISOString(),
+        periodEnd: end.toISOString(),
+        summary: reportSummary,
+        createdAt: savedReport?.created_at || new Date().toISOString(),
         sections: {
             dashboard_metrics: dashboardMetrics,
             alerts: alertsSummary,
             narratives: narrativesSummary
-        }
+        },
+        topTopics: clustersList.map(n => ({
+            name: n.title,
+            mentions: n.signal_count || n.signalCount || 0,
+            sentiment: n.sentiment || "neutral",
+            severity: n.severity || "medium"
+        })),
+        topSignals: dashboardMetrics.top_signals || []
     };
 }

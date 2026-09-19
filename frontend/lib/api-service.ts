@@ -351,6 +351,36 @@ export async function getSignalById(
   }
 }
 
+export async function downloadSignalsExport(
+  format: "csv" | "xlsx",
+  filters: { keyword?: string; platform?: string; sentiment?: string; startDate?: string; endDate?: string } = {}
+): Promise<void> {
+  const token = typeof window !== "undefined" ? useAuthStore.getState().token : null;
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:3000";
+  const params = new URLSearchParams();
+  params.set("format", format);
+  if (filters.keyword) params.set("keyword", filters.keyword);
+  if (filters.platform) params.set("platform", filters.platform);
+  if (filters.sentiment) params.set("sentiment", filters.sentiment);
+  if (filters.startDate) params.set("startDate", filters.startDate);
+  if (filters.endDate) params.set("endDate", filters.endDate);
+
+  const res = await fetch(`${baseUrl}/signals/export?${params.toString()}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+
+  if (!res.ok) throw new Error("Failed to export signals");
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `narriv-signals-${new Date().toISOString().split("T")[0]}.${format}`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+
 // ---------------------------------------------------------------------------
 // Alerts
 // ---------------------------------------------------------------------------
@@ -1759,11 +1789,30 @@ export async function logoutSession(refreshToken: string): Promise<boolean> {
   }
 }
 
-export async function createReportExport(reportId: string, format: "json" | "pdf" = "json"): Promise<{ message: string; jobId: string }> {
+export async function createReportExport(reportId: string, format: "json" | "pdf" | "csv" | "xlsx" = "json"): Promise<{ message: string; jobId: string }> {
   return await apiClient<{ message: string; jobId: string }>(`/api/reports/${reportId}/export`, {
     method: "POST",
     body: JSON.stringify({ format }),
   });
+}
+
+export async function downloadReportFile(reportId: string, format: "csv" | "xlsx"): Promise<void> {
+  const token = typeof window !== "undefined" ? useAuthStore.getState().token : null;
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:3000";
+  const res = await fetch(`${baseUrl}/reports/${reportId}/export/file?format=${format}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+
+  if (!res.ok) throw new Error("Failed to export report");
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `narriv-report-${reportId.substring(0, 8)}.${format}`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
 }
 
 export async function getReportExportStatus(jobId: string): Promise<{ jobId: string; reportId: string; format: string; status: string; errorMessage?: string | null; signedUrl?: string | null }> {

@@ -158,6 +158,7 @@ app.use("/ingestion", rateLimit(RATE_LIMITS.ingestion), ingestionRoutes);
 app.use("/actions", rateLimit(RATE_LIMITS.api_default), apiSecurityHeaders, actionsRoutes);
 app.use("/feedback", rateLimit(RATE_LIMITS.feedback), apiSecurityHeaders, feedbackRoutes);
 app.use("/signals", signalsRoutes);
+app.use("/api/signals", signalsRoutes);
 app.use("/sources", sourcesRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use("/alerts", escalationMatrixRoutes);

@@ -164,6 +164,7 @@ export function createApp(): Express {
   app.use("/api/actions", rateLimit(RATE_LIMITS.ai_generation), apiSecurityHeaders, actionsRoutes);
   app.use("/api/feedback", rateLimit(RATE_LIMITS.feedback), apiSecurityHeaders, feedbackRoutes);
   app.use("/signals", signalsRoutes);
+  app.use("/api/signals", signalsRoutes);
   app.use("/sources", sourcesRoutes);
   app.use("/api/dashboard", dashboardRoutes);
   app.use("/api/alerts", escalationMatrixRoutes);
