@@ -6,7 +6,9 @@ import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CheckCircle2 } from "lucide-react";
+import { useToast } from "@/components/ui/toast";
 import { AuthInput, AuthShell, Divider, LanguageSelector, PasswordInput, PrimaryButton, SecurityFooter, SocialButtons } from "@/components/auth/auth-shell";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { loginWithPassword } from "@/lib/api-service";
@@ -23,9 +25,20 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const toast = useToast();
+  const isRegistered = searchParams.get("registered") === "true";
   const t = useTranslations("AuthDesign.login");
   const setSession = useAuthStore((state) => state.setSession);
   const [apiError, setApiError] = useState<string | null>(null);
+
+  const hasFiredRegisteredToast = useRef(false);
+
+  useEffect(() => {
+    if (isRegistered && !hasFiredRegisteredToast.current) {
+      hasFiredRegisteredToast.current = true;
+      toast.success("Account created successfully! Please sign in with your credentials.");
+    }
+  }, [isRegistered]);
 
   // Derive oauthError without a mounted guard — useSearchParams in a Suspense
   // boundary is safe in Next.js 15 App Router. Reading it directly avoids the
@@ -94,6 +107,13 @@ export function LoginForm() {
         <h1 className="text-[34px] font-bold leading-tight tracking-[-0.04em] text-[#111536]">{t("title")}</h1>
         <p className="mt-5 text-[19px] font-medium text-[#3E4975]">{t("subtitle")}</p>
       </div>
+
+      {isRegistered && (
+        <div className="mb-8 flex items-center gap-3 rounded-2xl border border-emerald-200/90 bg-emerald-50/90 px-4 py-3.5 text-[14px] font-medium text-emerald-900 shadow-sm">
+          <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
+          <span>Account created successfully! Please sign in with your credentials.</span>
+        </div>
+      )}
 
       <form
         method="post"
