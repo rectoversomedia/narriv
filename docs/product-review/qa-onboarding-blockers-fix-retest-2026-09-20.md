@@ -134,37 +134,94 @@ Pengujian dilakukan dari browser Chromium headed secara interaktif:
 
 ---
 
-## 4. Status Temuan Minor & Major Lainnya
+## 4. Status Temuan Minor & Major (Semua 5 Issue Telah Diperbaiki)
 
-Sesuai instruksi, berikut catatan status 5 issue non-blocker:
+Seluruh 5 issue non-blocker telah **SELESAI DIPERBAIKI (100% RESOLVED)** dengan commit terpisah dan diverifikasi ulang:
 
-| ID | Kategori | Ringkasan Issue | Status Saat Ini | Rekomendasi Selanjutnya |
-|:---:|:---:|:---|:---:|:---|
-| `BUG-NU-03` | **MAJOR** | Tombol *"Skip for now"* di Step 1 hanya memanggil `next()` alih-alih keluar ke Dashboard | **OPEN** | Ubah handler `Skip for now` di `onboarding/page.tsx` agar memanggil `completeOnboarding({ workspaceId, triggerIngestion: false })` dan redirect ke `/`. |
-| `BUG-NU-04` | **MINOR** | Data Nama & Perusahaan tidak ter-prefill di Onboarding Step 1 dari `/signup` | **OPEN** | Ambil data profil dari endpoint `/api/auth/me` atau sesi auth saat komponen onboarding di-mount. |
-| `BUG-NU-05` | **MINOR** | Ketiadaan toast konfirmasi sukses saat redirect dari `/signup` ke `/login` | **OPEN** | Tambahkan URL query param `/login?registered=true` dan tampilkan toast *"Account created successfully! Please sign in."*. |
-| `BUG-NU-06` | **MINOR** | Teks fallback bahasa Indonesia (*"Belum ada data volume..."*) pada grafik Sources di UI English | **OPEN** | Ganti teks di `frontend/app/(dashboard)/workspace/sources/page.tsx` dengan terjemahan bahasa Inggris. |
-| `BUG-NU-07` | **MINOR** | Teks empty state di `/signals` menyebut data sources terhubung padahal belum ada | **OPEN** | Kondisikan teks empty state dengan mengecek `sources.length > 0`. |
+| ID | Kategori | Ringkasan Issue | Status Sebelum | Status Sesudah | Hasil Verifikasi |
+|:---:|:---:|:---|:---:|:---:|:---|
+| `BUG-NU-03` | **MAJOR** | Tombol *"Skip for now"* di Step 1 hanya memanggil `next()` alih-alih keluar ke Dashboard | Gagal / Menjebak | **PASSED (FIXED)** | Mengklik *"Skip for now"* memanggil `createOnboardingWorkspace` + `completeOnboarding({ triggerIngestion: false })` dan langsung redirect ke `/` (Dashboard). Status `onboarding_completed: true` tersimpan permanen tanpa redirect loop. |
+| `BUG-NU-04` | **MINOR** | Data Nama & Perusahaan tidak ter-prefill di Onboarding Step 1 dari `/signup` | Kosong | **PASSED (FIXED)** | Nama Lengkap (`Rendra Pratama`) dan Perusahaan (`Mega Capital`) yang diisi saat registrasi otomatis ter-prefill di input Step 1 via sinkronisasi auth state dan sessionStorage fallback. |
+| `BUG-NU-05` | **MINOR** | Ketiadaan feedback sukses setelah submit signup berhasil dan redirect ke `/login` | Tanpa feedback | **PASSED (FIXED)** | Halaman login mendeteksi parameter `?registered=true`, menampilkan banner alert hijau di atas form serta toast notifikasi sukses *"Account created successfully! Please sign in with your credentials."* (dijaga dengan ref guard agar tidak re-render loop). |
+| `BUG-NU-06` | **MINOR** | Teks fallback bahasa Indonesia (*"Belum ada data volume..."*) pada grafik Sources di UI English | Bilingual bleed | **PASSED (FIXED)** | Teks grafik volume diubah menjadi bahasa Inggris yang konsisten: *"No volume data yet / Data will appear once sources are synced"*. |
+| `BUG-NU-07` | **MINOR** | Teks empty state di `/signals` menyebut data sources terhubung padahal belum ada | Menyesatkan | **PASSED (FIXED)** | Ketika workspace belum memiliki sumber data (`sources.length === 0`), ditampilkan empty state informatif *"No data sources connected"* disertai tombol ajakan aksi *"Connect Data Source"* yang mengarah ke `/workspace/sources`. |
 
 ---
 
-## 5. Ringkasan Commit Git
+## 5. Ringkasan Commit Git (Branch `fix/onboarding-blockers`)
 
-Semua perubahan dibuat dalam branch `fix/onboarding-blockers` dengan commit terpisah dan **TIDAK DI-PUSH** ke remote:
+Semua perbaikan dilakukan secara modular dan atomik dengan commit terpisah per issue di branch `fix/onboarding-blockers`. **Sesuai instruksi, branch TIDAK di-push dan BELUM di-merge ke `main`**:
 
-1. **Commit Fix 1 (`BUG-NU-01`):**  
-   Hash: `10e27f0`  
-   Message: `fix(onboarding): reuse existing workspace to prevent infinite redirect loop`  
-   Files:
-   - `backend/src/modules/onboarding/onboarding.controller.js`
-   - `backend/src/lib/workspace-access.js`
-   - `frontend/app/onboarding/page.tsx`
+1. **`10e27f0`** — `fix(onboarding): reuse existing workspace to prevent infinite redirect loop` (`BUG-NU-01`)
+2. **`a50d0f6`** — `fix(sources): add actor_id and input_config support to sources schema` (`BUG-NU-02`)
+3. **`0ae05a0`** — `docs(qa): document onboarding blockers fix and headed browser retest` (Dokumentasi Retest Blocker)
+4. **`2295521`** — `fix(onboarding): enable skip for now button to properly complete and exit onboarding` (`BUG-NU-03`)
+5. **`758c7f9`** — `fix(onboarding): prefill full name and company from signup in step 1` (`BUG-NU-04`)
+6. **`b944b94`** — `fix(auth): show confirmation feedback upon successful signup redirect` (`BUG-NU-05`)
+7. **`a7a04e1`** — `fix(sources): translate volume chart empty state to english` (`BUG-NU-06`)
+8. **`408b08c`** — `fix(signals): improve empty state message and provide connect source CTA` (`BUG-NU-07`)
 
-2. **Commit Fix 2 (`BUG-NU-02`):**  
-   Hash: `a50d0f6`  
-   Message: `fix(sources): add actor_id and input_config support to sources schema`  
-   Files:
-   - `supabase/migrations/027_add_actor_id_and_input_config_to_sources.sql`
+---
+
+## 6. Detail Verifikasi Visual 5 Issue (Retest New User: Rendra Pratama)
+
+Pengujian visual E2E dilakukan menggunakan `agent-browser --headed` (Chromium nyata) dengan akun pengguna baru yang benar-benar independen:
+- **Nama:** `Rendra Pratama`
+- **Email:** `rendra.pratama@megacapital.id`
+- **Perusahaan / Brand:** `Mega Capital`
+- **Peran:** `Head of Public Relations`
+- **Password:** `Mega2026!#Capital`
+
+### 6.1 Verifikasi `BUG-NU-05` (Feedback Sukses Signup)
+- Form registrasi diisi dan disubmit.
+- Sistem redirect ke `http://localhost:3001/login?registered=true`.
+- **Hasil:** Banner hijau konfirmasi tampil di atas formulir login:
+  *"Account created successfully! Please sign in with your credentials."*
+  Serta toast status sukses muncul tanpa memicu infinite re-render loop.
+- **Bukti Screenshot:** [`retest-minor-01-signup-toast.png`](file:///Users/mac/Desktop/MyThings/Work/narriv/docs/qa/screenshots/retest-minor-01-signup-toast.png)
+
+### 6.2 Verifikasi `BUG-NU-04` (Prefill Registrasi di Onboarding Step 1)
+- Pengguna login dengan kredensial `Rendra Pratama` dan diarahkan ke `/onboarding`.
+- Pada **Step 1: Profile & Goals**:
+  * Input **Full Name** otomatis terisi: `"Rendra Pratama"`
+  * Input **Company / Brand** otomatis terisi: `"Mega Capital"`
+- Pengguna tidak perlu mengetik ulang informasi yang sudah diisi saat registrasi.
+- **Bukti Screenshot:** [`retest-minor-02-step1-prefilled.png`](file:///Users/mac/Desktop/MyThings/Work/narriv/docs/qa/screenshots/retest-minor-02-step1-prefilled.png)
+
+### 6.3 Verifikasi `BUG-NU-03` (Tombol "Skip for now" Masuk Dashboard)
+- Pada Step 1, pengguna langsung menekan tombol *"Skip for now"*.
+- Sistem mengeksekusi inisialisasi workspace default dan menyelesaikan onboarding (`onboarding_completed: true`).
+- Pengguna secara instan dialihkan ke Dashboard utama (`http://localhost:3001/`).
+- Halaman dashboard tetap stabil menampilkan profil *"Rendra Pratama (Mega Capital)"* dan **sama sekali tidak terlempar kembali** ke `/onboarding`.
+- **Bukti Screenshot:** [`retest-minor-03-skipped-to-dashboard.png`](file:///Users/mac/Desktop/MyThings/Work/narriv/docs/qa/screenshots/retest-minor-03-skipped-to-dashboard.png)
+
+### 6.4 Verifikasi `BUG-NU-07` (Empty State Signals Tanpa Data Sources)
+- Pengguna membuka halaman `/signals`.
+- Karena pengguna baru saja melewati onboarding dan belum menghubungkan data sources:
+  * Judul empty state: **"No data sources connected"**
+  * Deskripsi: *"Connect your social media accounts, review platforms, or feeds to start discovering signals."*
+  * Tombol CTA: **"Connect Data Source ->"** (menavigasi langsung ke `/workspace/sources`).
+  * Teks lama yang menyesatkan (*"Data sources are connected..."*) sudah tidak muncul lagi.
+- **Bukti Screenshot:** [`retest-minor-04-signals-empty-state.png`](file:///Users/mac/Desktop/MyThings/Work/narriv/docs/qa/screenshots/retest-minor-04-signals-empty-state.png)
+
+### 6.5 Verifikasi `BUG-NU-06` (Konsistensi Bahasa Inggris pada Chart Sources)
+- Pengguna membuka halaman Data Sources (`/workspace/sources`).
+- Memeriksa panel grafik *"Signal Volume by Source (Last 7 Days)"*.
+- Teks fallback dalam kondisi belum ada data telah 100% berbahasa Inggris:
+  * Judul empty: **"No volume data yet"**
+  * Keterangan: *"Data will appear once sources are synced"*
+  * Tidak ada lagi teks bahasa Indonesia (*"Belum ada data volume..."*) yang bocor ke antarmuka English.
+- **Bukti Screenshot:** [`retest-minor-05-sources-volume-english.png`](file:///Users/mac/Desktop/MyThings/Work/narriv/docs/qa/screenshots/retest-minor-05-sources-volume-english.png)
+
+---
+
+## 7. Kesimpulan & Rekomendasi Siap Merge
+
+Dengan diselesaikannya 2 blocker utama (`BUG-NU-01`, `BUG-NU-02`) dan 5 issue minor/major (`BUG-NU-03` s/d `BUG-NU-07`):
+- **Total Masalah New User Experience:** 7 issue
+- **Total Berhasil Diperbaiki:** 7 issue (100% Fixed & Verified)
+- **Status Build Frontend & Backend:** Lolos lint & TypeScript check (`0 errors`)
+- **Status Branch `fix/onboarding-blockers`:** Siap untuk direview final oleh user sebelum di-merge ke `main`.
 
 ---
 *Laporan disusun secara objektif berdasarkan verifikasi nyata headed Chromium browser.*
