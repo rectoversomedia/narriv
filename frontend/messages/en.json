@@ -649,7 +649,10 @@
   "Signals": {
     "emptyState": {
       "title": "No live signals yet",
-      "desc": "Data sources are connected, but no signals match the current filters."
+      "desc": "No signals match the current filters. Try adjusting your search query or filters.",
+      "noSourcesTitle": "No data sources connected",
+      "noSourcesDesc": "Connect your social media accounts, review platforms, or feeds to start discovering signals.",
+      "connectSourceCta": "Connect Data Source"
     },
     "summary": {
       "title": "AI Signal Summary",

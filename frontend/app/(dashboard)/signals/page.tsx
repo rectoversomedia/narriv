@@ -42,7 +42,7 @@ import { CreateInvestigationModal } from "./components/create-investigation-moda
 import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components/create-action-plan-modal";
 import { AdvancedSearchModal, ActiveFiltersChips } from "./components/advanced-search-modal";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton } from "@/components/dashboard/dashboard-states";
-import { getDateRangeOptions, getSignals, type PaginationInfo, type Signal, getSignalsMeta, type SignalsMeta, bulkDeleteSignals, bulkAnalyzeSignals, bulkCreateAlertsFromSignals, searchSignals, fetchLatestSignals, downloadSignalsExport, type AdvancedSearchFilters, type SearchSignalsResponse } from "@/lib/api-service";
+import { getDateRangeOptions, getSignals, getSources, type PaginationInfo, type Signal, getSignalsMeta, type SignalsMeta, bulkDeleteSignals, bulkAnalyzeSignals, bulkCreateAlertsFromSignals, searchSignals, fetchLatestSignals, downloadSignalsExport, type AdvancedSearchFilters, type SearchSignalsResponse } from "@/lib/api-service";
 import { useAuthStore } from "@/store/useAuthStore";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
@@ -1012,6 +1012,15 @@ export default function SignalsPage() {
   const meta = metaQuery.data || undefined;
   const isMetaUnavailable = metaQuery.data === null || metaQuery.isError;
 
+  const sourcesQuery = useQuery({
+    queryKey: ["sources-signals-count"],
+    queryFn: () => getSources({ limit: 10 }),
+    staleTime: 60 * 1000,
+    enabled: !isDemoSession,
+  });
+  const totalSources = sourcesQuery.data?.pagination?.total ?? (sourcesQuery.data?.data ? sourcesQuery.data.data.length : 0);
+  const hasNoSources = !isDemoSession && sourcesQuery.data !== undefined && totalSources === 0;
+
   const apiSentimentFilter =
     activeFilter === "negative" ? "negative" :
     activeFilter === "positive" ? "positive" :
@@ -1257,7 +1266,23 @@ export default function SignalsPage() {
           ) : signalsQuery.isPending ? (
             <TableSkeleton rows={6} columns={6} className="xl:min-h-[610px]" />
           ) : signalsQuery.data && liveRows.length === 0 ? (
-            <DashboardEmptyState title={t("emptyState.title")} description={t("emptyState.desc")} icon="search" minHeight="min-h-[420px]" />
+            <DashboardEmptyState
+              title={hasNoSources ? t("emptyState.noSourcesTitle") : t("emptyState.title")}
+              description={hasNoSources ? t("emptyState.noSourcesDesc") : t("emptyState.desc")}
+              icon={hasNoSources ? "inbox" : "search"}
+              minHeight="min-h-[420px]"
+              action={
+                hasNoSources ? (
+                  <Link
+                    href="/workspace/sources"
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#465FFF] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#384ecc]"
+                  >
+                    {t("emptyState.connectSourceCta")}
+                    <ArrowRight size={14} />
+                  </Link>
+                ) : undefined
+              }
+            />
           ) : (
             <>
               {isLiveUnavailable ? <DashboardErrorState title={tSignals("errorTitle")} description={tSignals("errorDesc")} onRetry={() => { (signalsQuery as { refetch: () => unknown }).refetch(); }} minHeight="min-h-[150px]" /> : null}

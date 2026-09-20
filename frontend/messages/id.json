@@ -649,7 +649,10 @@
   "Signals": {
     "emptyState": {
       "title": "Belum ada sinyal live",
-      "desc": "Sumber data sudah terhubung, tetapi belum ada sinyal yang cocok dengan filter saat ini."
+      "desc": "Tidak ada sinyal yang cocok dengan filter saat ini. Coba sesuaikan kata kunci atau filter Anda.",
+      "noSourcesTitle": "Belum ada sumber data terhubung",
+      "noSourcesDesc": "Hubungkan akun media sosial, platform ulasan, atau feed Anda untuk mulai menemukan sinyal.",
+      "connectSourceCta": "Hubungkan Sumber Data"
     },
     "summary": {
       "title": "Ringkasan Sinyal AI",
