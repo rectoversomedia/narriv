@@ -480,8 +480,8 @@ function VolumeBars({ bars, isEmpty }: { bars: Array<{ label: string; value: str
           <BarChart3 size={24} className="text-[#A0ABC0]" />
         </div>
         <div className="text-center">
-          <p className="text-[13px] font-bold text-[#53608C]">Belum ada data volume</p>
-          <p className="mt-1 text-[11px] font-semibold text-[#A0ABC0]">Data akan muncul setelah source selesai di-sync</p>
+          <p className="text-[13px] font-bold text-[#53608C]">No volume data yet</p>
+          <p className="mt-1 text-[11px] font-semibold text-[#A0ABC0]">Data will appear once sources are synced</p>
         </div>
       </div>
     );
