@@ -239,6 +239,35 @@ export default function OnboardingPage() {
     setStep(prevStep as Step);
   }, [step]);
 
+  const handleSkip = useCallback(async () => {
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      const brandName = data.profile.company.trim() || "My Workspace";
+      const industry = data.profile.industry || "General";
+      const workspace = await createOnboardingWorkspace({
+        brandName,
+        industry,
+        timezone: "Asia/Jakarta",
+      });
+      if (!workspace?.id) throw new Error("Failed to configure workspace.");
+
+      const result = await completeOnboarding({ workspaceId: workspace.id, triggerIngestion: false });
+      if (result?.success) {
+        toast.success("Welcome to Narriv! You can configure more settings later.");
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 500);
+      } else {
+        throw new Error("Failed to complete onboarding.");
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to skip onboarding.";
+      toast.error(msg);
+      setIsSubmitting(false);
+    }
+  }, [data.profile, toast]);
+
   const handleSubmit = useCallback(async () => {
     setIsSubmitting(true);
     setSubmitError(null);
@@ -358,10 +387,11 @@ export default function OnboardingPage() {
                 {step === 1 ? (
                   <button
                     type="button"
-                    className="text-sm font-semibold text-[#68739F] transition-colors hover:text-[#2F20FF]"
-                    onClick={() => next()}
+                    className="text-sm font-semibold text-[#68739F] transition-colors hover:text-[#2F20FF] disabled:opacity-50"
+                    onClick={handleSkip}
+                    disabled={isSubmitting}
                   >
-                    Skip for now
+                    {isSubmitting ? "Skipping..." : "Skip for now"}
                   </button>
                 ) : (
                   <button
