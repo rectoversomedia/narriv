@@ -40,20 +40,30 @@ export const resolveWorkspaceIdForUser = async (userId, requestedWorkspaceId) =>
     return membership?.workspace_id || null;
   }
 
-  // Get the first workspace the user is a member of
-  const { data: membership, error } = await supabase
+  // Get workspaces the user is a member of, prioritizing completed workspaces, then owner role
+  const { data: memberships, error } = await supabase
     .from("workspace_members")
-    .select("workspace_id")
-    .eq("user_id", userId)
-    .limit(1)
-    .single();
+    .select("workspace_id, role, created_at, workspaces(onboarding_completed)")
+    .eq("user_id", userId);
 
-  if (error && error.code !== 'PGRST116') {
-    console.error("Error fetching user workspace:", error);
+  if (error) {
+    console.error("Error fetching user workspace memberships:", error);
   }
 
-  if (membership) {
-    return membership.workspace_id;
+  if (memberships && memberships.length > 0) {
+    const sorted = [...memberships].sort((a, b) => {
+      const aCompleted = a.workspaces?.onboarding_completed ? 1 : 0;
+      const bCompleted = b.workspaces?.onboarding_completed ? 1 : 0;
+      if (bCompleted !== aCompleted) return bCompleted - aCompleted;
+
+      const aOwner = a.role === "owner" ? 1 : 0;
+      const bOwner = b.role === "owner" ? 1 : 0;
+      if (bOwner !== aOwner) return bOwner - aOwner;
+
+      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+    });
+
+    return sorted[0].workspace_id;
   }
 
   // Create a new workspace for the user

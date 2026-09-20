@@ -279,7 +279,9 @@ export default function OnboardingPage() {
       setProcessingProgress(100);
 
       if (result?.success) {
-        setTimeout(() => router.push("/"), 800);
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 800);
       } else {
         throw new Error("Setup incomplete.");
       }

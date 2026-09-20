@@ -2,6 +2,7 @@ import supabase, { baseSupabaseAdmin } from "../../lib/supabase.js";
 import { badRequest, internalError } from "../../lib/api-error.js";
 import { logStructured } from "../../lib/logger.js";
 import { recordAuditLog } from "../../lib/audit.js";
+import { resolveWorkspaceIdForUser, getUserWorkspaceIds } from "../../lib/workspace-access.js";
 
 // Helper: verify workspace membership
 async function verifyWorkspaceAccess(userId, workspaceId) {
@@ -18,83 +19,125 @@ export async function createOnboardingWorkspace(req, res) {
     try {
         const { brandName, industry, timezone } = req.body;
 
-        // Create workspace
-        const { data: workspace, error: workspaceError } = await supabase
-            .from("workspaces")
-            .insert({
-                name: brandName,
-                slug: `workspace-${req.user.id}-${Date.now()}`,
-            })
-            .select()
-            .single();
+        // Reuse existing workspace if the user already has one (e.g. created during signup)
+        const existingWorkspaceId = await resolveWorkspaceIdForUser(req.user.id);
+        let workspace = null;
 
-        if (workspaceError) {
-            logStructured("error", "Error creating workspace:", { error: workspaceError?.message || workspaceError });
-            return internalError(res);
+        if (existingWorkspaceId) {
+            const { data: updatedWs, error: updateWsError } = await baseSupabaseAdmin
+                .from("workspaces")
+                .update({
+                    name: brandName,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq("id", existingWorkspaceId)
+                .select()
+                .single();
+
+            if (updateWsError) {
+                logStructured("warn", "Failed to update existing workspace name during onboarding:", { error: updateWsError?.message || updateWsError });
+                const { data: currentWs } = await baseSupabaseAdmin
+                    .from("workspaces")
+                    .select("*")
+                    .eq("id", existingWorkspaceId)
+                    .single();
+                workspace = currentWs;
+            } else {
+                workspace = updatedWs;
+            }
         }
 
-        // Create workspace settings
-        const { data: settings, error: settingsError } = await supabase
+        // Fallback: create workspace only if user had no existing workspace
+        if (!workspace) {
+            const { data: newWs, error: workspaceError } = await baseSupabaseAdmin
+                .from("workspaces")
+                .insert({
+                    name: brandName,
+                    slug: `workspace-${req.user.id}-${Date.now()}`,
+                })
+                .select()
+                .single();
+
+            if (workspaceError) {
+                logStructured("error", "Error creating workspace:", { error: workspaceError?.message || workspaceError });
+                return internalError(res);
+            }
+            workspace = newWs;
+        }
+
+        // Upsert workspace settings
+        const { data: settings, error: settingsError } = await baseSupabaseAdmin
             .from("workspace_settings")
-            .insert({
+            .upsert({
                 workspace_id: workspace.id,
                 brand_name: brandName,
                 industry: industry || null,
                 timezone: timezone || "Asia/Jakarta (GMT+7)",
-            })
+                updated_at: new Date().toISOString(),
+            }, { onConflict: "workspace_id" })
             .select()
             .single();
 
         if (settingsError) {
-            logStructured("error", "Error creating workspace settings:", { error: settingsError?.message || settingsError });
+            logStructured("error", "Error upserting workspace settings:", { error: settingsError?.message || settingsError });
             // Continue anyway, settings can be created later
         }
 
-        // Create notification settings
-        const { data: notificationSettings, error: nsError } = await supabase
+        // Upsert notification settings
+        const { data: notificationSettings, error: nsError } = await baseSupabaseAdmin
             .from("workspace_notification_settings")
-            .insert({
+            .upsert({
                 workspace_id: workspace.id,
-            })
+            }, { onConflict: "workspace_id" })
             .select()
             .single();
 
         if (nsError) {
-            logStructured("error", "Error creating notification settings:", { error: nsError?.message || nsError });
+            logStructured("error", "Error upserting notification settings:", { error: nsError?.message || nsError });
             // Continue anyway
         }
 
-        // Create member with user_id
-        const { data: member, error: memberError } = await supabase
+        // Ensure user is member
+        const { data: existingMember } = await baseSupabaseAdmin
             .from("workspace_members")
-            .insert({
-                workspace_id: workspace.id,
-                user_id: req.user.id,
-                role: "admin",
-            })
-            .select()
-            .single();
+            .select("id, role")
+            .eq("workspace_id", workspace.id)
+            .eq("user_id", req.user.id)
+            .maybeSingle();
 
-        if (memberError) {
-            logStructured("error", "Error creating workspace member:", { error: memberError?.message || memberError });
-            // Continue anyway
+        let member = existingMember;
+        if (!member) {
+            const { data: newMember, error: memberError } = await baseSupabaseAdmin
+                .from("workspace_members")
+                .insert({
+                    workspace_id: workspace.id,
+                    user_id: req.user.id,
+                    role: "admin",
+                })
+                .select()
+                .single();
+
+            if (memberError) {
+                logStructured("error", "Error creating workspace member:", { error: memberError?.message || memberError });
+            }
+            member = newMember;
         }
 
         await recordAuditLog({
             userId: req.user.id,
             workspaceId: workspace.id,
-            event: "onboarding_workspace_created",
+            event: "onboarding_workspace_configured",
             metadata: { workspaceId: workspace.id, brandName, industry },
         });
 
-        return res.status(201).json({
+        return res.status(200).json({
             ...workspace,
             settings: settings || null,
             notificationSettings: notificationSettings || null,
             members: member ? [member] : [],
         });
     } catch (error) {
-        logStructured("error", "Error creating onboarding workspace:", { error: error?.message || error, stack: error?.stack });
+        logStructured("error", "Error configuring onboarding workspace:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }
@@ -458,6 +501,7 @@ export async function completeOnboarding(req, res) {
             .update({
                 onboarding_completed: true,
                 onboarding_step: 100, // 100% complete
+                updated_at: new Date().toISOString(),
             })
             .eq("id", workspaceId)
             .select()
@@ -466,6 +510,19 @@ export async function completeOnboarding(req, res) {
         if (wsError) {
             logStructured("error", "Error updating workspace onboarding status:", { error: wsError?.message || wsError });
             return internalError(res);
+        }
+
+        // Defensively mark all workspaces for this user as completed to prevent any stale redirect loops
+        const userWsIds = await getUserWorkspaceIds(req.user.id);
+        if (userWsIds && userWsIds.length > 0) {
+            await baseSupabaseAdmin
+                .from("workspaces")
+                .update({
+                    onboarding_completed: true,
+                    onboarding_step: 100,
+                    updated_at: new Date().toISOString(),
+                })
+                .in("id", userWsIds);
         }
 
         // Create/update onboarding progress record (use baseSupabaseAdmin to bypass RLS)
