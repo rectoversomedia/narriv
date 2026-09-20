@@ -110,7 +110,7 @@ export interface RegisterResponse {
   verificationCode?: string; // Exposed in dev mode
 }
 
-export async function registerWithPassword(input: { name: string; email: string; password: string }): Promise<RegisterResponse> {
+export async function registerWithPassword(input: { name: string; email: string; password: string; company?: string; role?: string }): Promise<RegisterResponse> {
   return await apiClient<RegisterResponse>("/auth/register", {
     method: "POST",
     body: JSON.stringify(input),

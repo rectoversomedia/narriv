@@ -302,7 +302,7 @@ export const register = async (req, res) => {
             return res.status(429).json({ error: "Too many registration attempts. Try again later." });
         }
 
-        const { email, password, name } = req.body;
+        const { email, password, name, company, role } = req.body;
 
         if (!email || !password || !name) {
             return res.status(400).json({ error: "Name, email, and password are required." });
@@ -395,11 +395,12 @@ export const register = async (req, res) => {
         if (!workspaceSlug || workspaceSlug.length < 3) {
             workspaceSlug = `workspace-${user.id.substring(0, 8)}`;
         }
+        const workspaceBrandName = company && typeof company === "string" && company.trim().length > 0 ? company.trim() : `${user.name || "My"}'s Workspace`;
         const { error: wsError } = await baseSupabaseAdmin.from("workspaces").insert({
             id: workspaceId,
-            name: `${user.name || "My"}'s Workspace`,
+            name: workspaceBrandName,
             slug: workspaceSlug,
-            settings: { timezone: "Asia/Jakarta", language: "id" },
+            settings: { timezone: "Asia/Jakarta", language: "id", role: role || null },
         });
         if (wsError) {
             logStructured("error", "register_workspace_create_failed", { error: wsError.message, code: wsError.code });
@@ -421,7 +422,7 @@ export const register = async (req, res) => {
         // Create workspace settings
         const { error: wsSettingsError } = await baseSupabaseAdmin.from("workspace_settings").insert({
             workspace_id: workspaceId,
-            brand_name: user.name || "My Workspace",
+            brand_name: workspaceBrandName,
             timezone: "Asia/Jakarta",
             language: "id",
         });

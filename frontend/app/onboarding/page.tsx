@@ -48,6 +48,8 @@ import {
   createOnboardingKeywords,
   getSourceTemplates,
   completeOnboarding,
+  getCurrentUser,
+  getWorkspaceSettings,
 } from "@/lib/api-service";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -178,6 +180,52 @@ export default function OnboardingPage() {
     },
     team: [],
   });
+
+  // Prefill registration data (name, company, role)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const sessionName = sessionStorage.getItem("narriv_signup_name");
+      const sessionCompany = sessionStorage.getItem("narriv_signup_company");
+      const sessionRole = sessionStorage.getItem("narriv_signup_role");
+
+      if (sessionName || sessionCompany) {
+        setData((prev) => ({
+          ...prev,
+          profile: {
+            ...prev.profile,
+            name: prev.profile.name || sessionName || "",
+            company: prev.profile.company || sessionCompany || "",
+            role: prev.profile.role || sessionRole || prev.profile.role,
+          },
+        }));
+      }
+    }
+
+    // Also query current user and workspace settings from backend as authoritative source
+    getCurrentUser().then((u) => {
+      if (u?.name) {
+        setData((prev) => ({
+          ...prev,
+          profile: {
+            ...prev.profile,
+            name: prev.profile.name || u.name,
+          },
+        }));
+      }
+    });
+
+    getWorkspaceSettings().then((ws) => {
+      if (ws?.brandName && !ws.brandName.endsWith("'s Workspace")) {
+        setData((prev) => ({
+          ...prev,
+          profile: {
+            ...prev.profile,
+            company: prev.profile.company || ws.brandName || "",
+          },
+        }));
+      }
+    });
+  }, []);
 
   const updateProfile = useCallback((updates: Partial<ProfileData>) => {
     setData((prev) => ({ ...prev, profile: { ...prev.profile, ...updates } }));

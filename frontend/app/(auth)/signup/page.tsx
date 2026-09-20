@@ -50,7 +50,18 @@ export default function SignupPage() {
     setApiError(null);
 
     try {
-      const json = await registerWithPassword({ name: data.name, email: data.email, password: data.password });
+      const json = await registerWithPassword({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        company: data.company,
+        role: data.role,
+      });
+
+      // Store signup info temporarily for prefilling onboarding
+      sessionStorage.setItem("narriv_signup_name", data.name);
+      sessionStorage.setItem("narriv_signup_company", data.company);
+      if (data.role) sessionStorage.setItem("narriv_signup_role", data.role);
 
       // Store email temporarily for verify page
       sessionStorage.setItem("narriv_verify_email", json.email);
@@ -62,7 +73,7 @@ export default function SignupPage() {
         router.push("/verify-email");
       } else {
         // Auto-verified: redirect to login so user can get auth token for onboarding
-        router.push("/login");
+        router.push("/login?registered=true");
       }
     } catch (error) {
       const status = (error as { status?: number }).status;
