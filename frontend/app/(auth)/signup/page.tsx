@@ -100,7 +100,15 @@ export default function SignupPage() {
         <p className="mt-4 text-[19px] font-medium text-[#3E4975]">{t("subtitle")}</p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+      <form
+        method="post"
+        onSubmit={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          void handleSubmit(onSubmit)(event);
+        }}
+        noValidate
+      >
         <FieldGroup className="gap-6">
           <AuthInput label={t("fullName")} icon="user" autoComplete="name" placeholder={t("fullNamePlaceholder")} error={errors.name?.message} registration={register("name")} />
           <AuthInput label={t("email")} icon="email" type="email" autoComplete="email" placeholder={t("emailPlaceholder")} error={errors.email?.message} registration={register("email")} />
