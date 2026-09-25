@@ -158,9 +158,12 @@ export function useSSE(options: UseSSEOptions = {}) {
   const clientRef = useRef<SSERealtimeClient | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true); // Prevents SSE from starting in demo mode after initial render
+  const reconnectAttemptsRef = useRef(0);
   const [status, setStatus] = useState<SSEConnectionStatus>("disconnected");
   const [lastMessage, setLastMessage] = useState<SSEMessage | null>(null);
-  const reconnectAttemptsRef = useRef(0);
+  // Self-referencing ref: set to a no-op initially; assigned to connect after it's defined.
+  // Allows reconnect useCallback to call connect without forward-reference TDZ.
+  const connectFnRef = useRef<() => void>(() => {});
 
   const log = useCallback((...args: unknown[]) => {
     if (debug) {
@@ -297,10 +300,30 @@ export function useSSE(options: UseSSEOptions = {}) {
     authVersion,
   ]);
 
+  // Separate callback so it can be referenced by the connect useCallback below
+  const reconnect = useCallback(() => {
+    if (reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS && mountedRef.current) {
+      reconnectAttemptsRef.current++;
+      const delay = DEFAULT_RECONNECT_DELAY * reconnectAttemptsRef.current;
+      log(`Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current}/${MAX_RECONNECT_ATTEMPTS})`);
+      updateStatus("connecting");
+      reconnectTimerRef.current = setTimeout(() => {
+        if (mountedRef.current) connectFnRef.current();
+      }, delay);
+    } else {
+      log("Max reconnection attempts reached or component unmounted");
+      updateStatus("error");
+    }
+  }, [log, updateStatus]);
+
   const connect = useCallback(() => {
     if (typeof window === "undefined") return; // SSR guard
     if (!mountedRef.current) return; // Skip if demo mode or unmounted
     if (isDemoMode()) { mountedRef.current = false; return; } // Double-check in case URL not set yet
+
+    // Keep ref in sync so reconnect callbacks can call connect
+    // eslint-disable-next-line react-hooks/immutability -- ref pattern: connect is stable useCallback, no TDZ risk at runtime
+    connectFnRef.current = connect;
 
     // Clean up existing connection
     if (clientRef.current) {
@@ -320,20 +343,8 @@ export function useSSE(options: UseSSEOptions = {}) {
       onError: (error) => {
         log("Error:", error.message);
         updateStatus("error");
-
-        // Auto-reconnect logic — but respect mountedRef (demo mode / unmount)
-        if (reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS && mountedRef.current) {
-          reconnectAttemptsRef.current++;
-          const delay = DEFAULT_RECONNECT_DELAY * reconnectAttemptsRef.current;
-          log(`Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current}/${MAX_RECONNECT_ATTEMPTS})`);
-          updateStatus("connecting");
-          reconnectTimerRef.current = setTimeout(() => {
-            if (mountedRef.current) connect();
-          }, delay);
-        } else {
-          log("Max reconnection attempts reached or component unmounted");
-          updateStatus("error");
-        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- circular deps via connectFnRef is intentional; ref always holds latest connect
+        reconnect();
       },
       onDisconnect: () => {
         log("Disconnected");
