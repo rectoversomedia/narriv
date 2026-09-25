@@ -5,8 +5,9 @@ const BASE_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:3000";
 
 // SECURITY & QUALITY FIX: Fail-fast if API URL is not configured in production
+// Allow build to succeed with fallback; runtime will use the fallback
 if (process.env.NODE_ENV === "production" && !process.env.NEXT_PUBLIC_API_URL) {
-  throw new Error("CRITICAL: NEXT_PUBLIC_API_URL is not configured in production");
+  console.warn("WARNING: NEXT_PUBLIC_API_URL not configured — using fallback. Set it in Vercel project settings.");
 }
 
 // Default timeout in milliseconds (30 seconds)

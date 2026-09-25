@@ -3685,5 +3685,101 @@
     "exportEmail": "Export Email",
     "shareWhatsApp": "Share on WhatsApp",
     "exportComingSoon": "Export feature coming soon"
+  },
+  "Pricing": {
+    "title": "Simple and transparent pricing",
+    "subtitle": "Choose the plan that fits your team. All plans include a 14-day free trial.",
+    "badge": "Most Popular",
+    "monthly": "Monthly",
+    "annual": "Annual",
+    "mostPopular": "Best value",
+    "startTrial": "Start Free Trial",
+    "contactSales": "Contact Sales",
+    "compareTitle": "Compare Plans",
+    "compareSubtitle": "Find the perfect plan for your team's needs",
+    "faqTitle": "Frequently Asked Questions",
+    "faq1": {
+      "q": "Can I change plans later?",
+      "a": "Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately."
+    },
+    "faq2": {
+      "q": "What payment methods do you accept?",
+      "a": "We accept all major credit cards, bank transfers, and invoicing for annual plans."
+    },
+    "faq3": {
+      "q": "Is there a free trial?",
+      "a": "Yes! All plans include a 14-day free trial with full access to all features."
+    },
+    "faq4": {
+      "q": "What happens if I exceed my limits?",
+      "a": "We'll notify you when you're approaching your limit. You can upgrade anytime to avoid disruption."
+    },
+    "faq5": {
+      "q": "Do you offer custom enterprise plans?",
+      "a": "Yes, the Command plan includes custom integrations, dedicated infrastructure, and enterprise SLAs."
+    },
+    "ctaTitle": "Ready to get started?",
+    "ctaSubtitle": "Join thousands of teams using Narriv to monitor and respond to narratives.",
+    "ctaButton": "Start Your Free Trial",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "contact": "Contact Us"
+  },
+  "HelpCenter": {
+    "searchPlaceholder": "Search help articles...",
+    "title": "Help Center",
+    "subtitle": "Find answers and learn how to get the most out of Narriv",
+    "categoriesTitle": "Browse by Category",
+    "popularTitle": "Popular Articles",
+    "contactTitle": "Need more help?",
+    "contactDescription": "Can't find what you're looking for? Our team is ready to assist.",
+    "contactButton": "Contact Support",
+    "backToHelp": "Back to Help Center",
+    "wasHelpful": "Was this article helpful?",
+    "helpful": "Yes, it helped",
+    "notHelpful": "Not helpful",
+    "lastUpdated": "Last updated",
+    "categories": {
+      "gettingStarted": "Getting Started",
+      "dataSources": "Data Sources",
+      "signals": "Signals & Monitoring",
+      "alerts": "Alerts & Notifications",
+      "ai": "AI & Automation",
+      "reports": "Reports & Analytics",
+      "team": "Team Management",
+      "security": "Security & Compliance"
+    },
+    "topics": {
+      "quickStart": "Quick Start Guide",
+      "dashboard": "Dashboard Overview",
+      "workspaceSetup": "Setting Up Your Workspace",
+      "teamInvitation": "Inviting Team Members",
+      "addingSource": "Adding Your First Source",
+      "supportedPlatforms": "Supported Platforms",
+      "apifyIntegration": "Apify Integration",
+      "webhookSetup": "Webhook Setup",
+      "whatAreSignals": "What Are Signals?",
+      "filteringSearch": "Filtering & Search",
+      "sentimentAnalysis": "Sentiment Analysis",
+      "exportingData": "Exporting Data",
+      "alertTypes": "Alert Types Explained",
+      "customAlerts": "Creating Custom Alerts",
+      "escalationMatrix": "Escalation Matrix",
+      "notificationChannels": "Notification Channels",
+      "aiAnalysis": "AI Signal Analysis",
+      "actionPlans": "Generating Action Plans",
+      "narrativeClustering": "Narrative Clustering",
+      "aiVisibility": "AI Visibility Reports",
+      "reportTemplates": "Report Templates",
+      "scheduledReports": "Scheduled Reports",
+      "customReports": "Custom Reports",
+      "exportFormats": "Export Formats",
+      "rolesPermissions": "Roles & Permissions",
+      "workspaceSettings": "Workspace Settings",
+      "auditLogs": "Audit Logs",
+      "dataEncryption": "Data Encryption",
+      "gdprCompliance": "GDPR Compliance",
+      "apiSecurity": "API Security"
+    }
   }
 }
