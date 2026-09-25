@@ -175,14 +175,24 @@ export async function generateReport({ workspaceId, templateKey, options = {} })
         }
 
         // Create report record
+        const periodStart = options.dateRange?.start || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        const periodEnd = options.dateRange?.end || new Date().toISOString();
+        const summary = `Generated from ${template.name} template`;
+        const reportTitle = `${template.name} - ${new Date().toLocaleDateString("id-ID")}`;
+
         const { data: report, error: reportError } = await supabase
             .from("reports")
             .insert({
                 workspace_id: workspaceId,
-                title: `${template.name} - ${new Date().toLocaleDateString("id-ID")}`,
-                summary: `Generated from ${template.name} template`,
-                period_start: options.dateRange?.start || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-                period_end: options.dateRange?.end || new Date().toISOString(),
+                title: reportTitle,
+                type: templateKey || "executive_brief",
+                status: "ready",
+                content: {
+                    summary,
+                    period_start: periodStart,
+                    period_end: periodEnd,
+                    sections: generatedSections,
+                },
             })
             .select()
             .single();
@@ -201,6 +211,9 @@ export async function generateReport({ workspaceId, templateKey, options = {} })
             id: report.id,
             title: report.title,
             template: template.name,
+            summary,
+            periodStart,
+            periodEnd,
             sections: generatedSections,
             createdAt: report.created_at,
         };

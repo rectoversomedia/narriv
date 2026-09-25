@@ -100,7 +100,15 @@ export default function ReportDetailPage() {
   }
 
   const report = reportQuery.data;
-  const sections = Array.isArray(report.sections) ? report.sections : [];
+  const sections: ReportDetailSection[] = Array.isArray(report.sections)
+    ? report.sections
+    : report.sections && typeof report.sections === "object"
+    ? Object.entries(report.sections as Record<string, unknown>).map(([key, val]) => ({
+        id: key,
+        title: key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+        data: val,
+      }))
+    : [];
 
   return (
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
@@ -160,7 +168,7 @@ export default function ReportDetailPage() {
         </div>
       </header>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-4">
         <div className="rounded-[14px] border border-[#E6EAF2] bg-white p-4">
           <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8A94B8]">{tr("detail.reportId")}</p>
           <p className="mt-2 truncate text-[13px] font-black text-[#101334]" title={report.id}>{report.id}</p>
@@ -168,6 +176,10 @@ export default function ReportDetailPage() {
         <div className="rounded-[14px] border border-[#E6EAF2] bg-white p-4">
           <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8A94B8]">{tr("detail.createdAt")}</p>
           <p className="mt-2 text-[13px] font-black text-[#101334]">{formatDate(report.createdAt)}</p>
+        </div>
+        <div className="rounded-[14px] border border-[#E6EAF2] bg-white p-4">
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8A94B8]">{tr("table.period") || "Periode"}</p>
+          <p className="mt-2 text-[13px] font-black text-[#101334]">{report.periodStart ? `${formatDate(report.periodStart)} - ${formatDate(report.periodEnd)}` : "-"}</p>
         </div>
         <div className="rounded-[14px] border border-[#E6EAF2] bg-white p-4">
           <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8A94B8]">{tr("detail.sections")}</p>

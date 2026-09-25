@@ -66,19 +66,35 @@ const REPORT_TEMPLATES = {
 
 function toFrontendReport(report) {
     const template = REPORT_TEMPLATES[report.title] || {};
+    const sectionCount = Array.isArray(report.content?.sections)
+        ? `${report.content.sections.length} sections`
+        : template.sections || "Signals, clusters, insights";
     return {
         id: report.id,
         title: report.title,
         readiness: Number(template.readiness || 70),
-        sections: template.sections || "Signals, clusters, insights",
-        status: template.status || "In progress",
+        sections: sectionCount,
+        status: report.status || template.status || "In progress",
+        summary: report.content?.summary || report.summary || "",
+        periodStart: report.content?.period_start || report.period_start || null,
+        periodEnd: report.content?.period_end || report.period_end || null,
+        type: report.type || "intelligence",
     };
 }
 
 function buildPdfData(fullReport, reportId) {
-    const metrics = fullReport.sections.dashboard_metrics;
-    const alerts = fullReport.sections.alerts;
-    const narratives = fullReport.sections.narratives;
+    const isArraySections = Array.isArray(fullReport.sections);
+    const sectionsObj = !isArraySections && fullReport.sections ? fullReport.sections : {};
+    const metrics = sectionsObj.dashboard_metrics || {
+        total_signals: 0,
+        analyzed_signals: 0,
+        sentiment_percentages: { positive: 0, negative: 0, neutral: 0, mixed: 0 },
+        sentiment_distribution: { positive: 0, negative: 0, neutral: 0, mixed: 0 },
+        platform_distribution: [],
+        top_signals: [],
+    };
+    const alerts = sectionsObj.alerts || { total: 0, by_severity: { critical: 0, high: 0 }, items: [] };
+    const narratives = sectionsObj.narratives || { items: [] };
 
     return {
         metadata: {
@@ -756,21 +772,32 @@ router.post("/:id/export", validateRequest({ params: reportIdParamsSchema, body:
                 .update({ status: "running" })
                 .eq("id", exportJob.id);
 
+            const periodStart = report.content?.period_start || report.period_start;
+            const periodEnd = report.content?.period_end || report.period_end;
+            const summary = report.content?.summary || report.summary;
+
             const fullReport = await generateReport({
                 workspaceId: report.workspace_id,
                 title: report.title,
-                periodStart: report.period_start,
-                periodEnd: report.period_end,
+                periodStart,
+                periodEnd,
             });
 
+            const mergedReport = {
+                ...fullReport,
+                id: report.id,
+                title: report.title,
+                summary: summary || fullReport.summary,
+                periodStart: periodStart || fullReport.periodStart,
+                periodEnd: periodEnd || fullReport.periodEnd,
+                sections: Array.isArray(report.content?.sections) ? report.content.sections : fullReport.sections,
+                createdAt: report.created_at,
+                exportedAt: new Date().toISOString(),
+            };
+
             const payload = normalizedFormat === "pdf"
-                ? buildPdfData(fullReport, report.id)
-                : {
-                    ...fullReport,
-                    id: report.id,
-                    createdAt: report.created_at,
-                    exportedAt: new Date().toISOString(),
-                };
+                ? buildPdfData(mergedReport, report.id)
+                : mergedReport;
 
             const baseUrl = `${req.protocol}://${req.get("host")}`;
             await storeReportExportPayload({
@@ -860,7 +887,20 @@ router.get("/:id", async (req, res) => {
             save: false,
         });
 
-        return res.json({ ...fullReport, id: report.id, createdAt: report.created_at });
+        const sections = Array.isArray(report.content?.sections)
+            ? report.content.sections
+            : fullReport?.sections;
+
+        return res.json({
+            ...fullReport,
+            id: report.id,
+            title: report.title,
+            summary: report.content?.summary || fullReport?.summary || "",
+            periodStart: report.content?.period_start || report.period_start || fullReport?.periodStart,
+            periodEnd: report.content?.period_end || report.period_end || fullReport?.periodEnd,
+            sections,
+            createdAt: report.created_at,
+        });
     } catch (error) {
         logStructured("error", "Error fetching report:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
@@ -892,9 +932,18 @@ router.get("/:id/export/json", async (req, res) => {
             save: false,
         });
 
+        const sections = Array.isArray(report.content?.sections)
+            ? report.content.sections
+            : fullReport?.sections;
+
         const exportData = {
             ...fullReport,
             id: report.id,
+            title: report.title,
+            summary: report.content?.summary || fullReport?.summary || "",
+            periodStart: report.content?.period_start || report.period_start || fullReport?.periodStart,
+            periodEnd: report.content?.period_end || report.period_end || fullReport?.periodEnd,
+            sections,
             createdAt: report.created_at,
             exportedAt: new Date().toISOString(),
         };
@@ -934,7 +983,12 @@ router.get("/:id/export/pdf", async (req, res) => {
             save: false,
         });
 
-        return res.json(buildPdfData(fullReport, report.id));
+        return res.json(buildPdfData({
+            ...fullReport,
+            summary: report.content?.summary || fullReport.summary,
+            periodStart: report.content?.period_start || report.period_start || fullReport.periodStart,
+            periodEnd: report.content?.period_end || report.period_end || fullReport.periodEnd,
+        }, report.id));
     } catch (error) {
         logStructured("error", "Error exporting PDF-ready data:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
@@ -969,17 +1023,27 @@ router.get("/:id/export/file", async (req, res) => {
 
         const normalizedFormat = String(format).toLowerCase() === "xlsx" ? "xlsx" : "csv";
 
+        const metrics = fullReport?.sections?.dashboard_metrics || {};
+        const totalSignals = fullReport?.executiveSummary?.totalSignals ?? metrics.total_signals ?? (fullReport?.topSignals || []).length;
+        const posPercent = fullReport?.executiveSummary?.positivePercentage ?? metrics.sentiment_percentages?.positive ?? 0;
+        const negPercent = fullReport?.executiveSummary?.negativePercentage ?? metrics.sentiment_percentages?.negative ?? 0;
+        const neuPercent = fullReport?.executiveSummary?.neutralPercentage ?? metrics.sentiment_percentages?.neutral ?? 0;
+        const periodStartVal = report.content?.period_start || report.period_start || fullReport?.periodStart || "N/A";
+        const periodEndVal = report.content?.period_end || report.period_end || fullReport?.periodEnd || "N/A";
+        const summaryText = report.content?.summary || report.summary || fullReport?.summary || "N/A";
+
         // Summary sheet data
         const summaryRows = [
             { Property: "Report Title", Value: report.title || "Executive Intelligence Report" },
             { Property: "Report ID", Value: report.id },
+            { Property: "Summary", Value: summaryText },
             { Property: "Generated At", Value: new Date().toISOString() },
-            { Property: "Period Start", Value: report.period_start || "N/A" },
-            { Property: "Period End", Value: report.period_end || "N/A" },
-            { Property: "Total Signals", Value: fullReport?.executiveSummary?.totalSignals ?? 0 },
-            { Property: "Positive Sentiment %", Value: `${fullReport?.executiveSummary?.positivePercentage ?? 0}%` },
-            { Property: "Negative Sentiment %", Value: `${fullReport?.executiveSummary?.negativePercentage ?? 0}%` },
-            { Property: "Neutral Sentiment %", Value: `${fullReport?.executiveSummary?.neutralPercentage ?? 0}%` },
+            { Property: "Period Start", Value: periodStartVal },
+            { Property: "Period End", Value: periodEndVal },
+            { Property: "Total Signals", Value: totalSignals },
+            { Property: "Positive Sentiment %", Value: `${posPercent}%` },
+            { Property: "Negative Sentiment %", Value: `${negPercent}%` },
+            { Property: "Neutral Sentiment %", Value: `${neuPercent}%` },
         ];
 
         // Topics sheet data
@@ -999,9 +1063,18 @@ router.get("/:id/export/file", async (req, res) => {
             URL: s.source_url || "",
         }));
 
+        // Sections sheet data (if generated from template)
+        const sectionRows = (Array.isArray(report.content?.sections) ? report.content.sections : []).map(s => ({
+            Section: s.title || s.id || "",
+            Content: typeof s.data === "object" ? JSON.stringify(s.data) : String(s.data || s.summary || ""),
+        }));
+
         if (normalizedFormat === "xlsx") {
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), "Summary");
+            if (sectionRows.length > 0) {
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sectionRows), "Sections");
+            }
             if (topicRows.length > 0) {
                 XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(topicRows), "Top Topics");
             }
@@ -1014,10 +1087,14 @@ router.get("/:id/export/file", async (req, res) => {
             res.setHeader("Content-Disposition", `attachment; filename="narriv-report-${report.id.substring(0, 8)}.xlsx"`);
             return res.send(buffer);
         } else {
-            // For CSV, combine summary, topics, and signals
+            // For CSV, combine summary, sections, topics, and signals
             const lines = [];
             lines.push("--- REPORT SUMMARY ---");
             lines.push(XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(summaryRows)));
+            if (sectionRows.length > 0) {
+                lines.push("\n--- SECTIONS ---");
+                lines.push(XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(sectionRows)));
+            }
             if (topicRows.length > 0) {
                 lines.push("\n--- TOP TOPICS ---");
                 lines.push(XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(topicRows)));
