@@ -7,6 +7,10 @@ const withNextIntl = nextIntl();
 const appUrl = process.env.NEXT_PUBLIC_API_URL || "https://narriv.digital";
 
 const nextConfig: NextConfig = {
+  // Output .next to repo root so Vercel finds it
+  // Vercel builds from repo root, so .next must be at /vercel/path0/.next
+  distDir: "../.next",
+
   // Enable strict mode for better debugging
   reactStrictMode: true,
 
