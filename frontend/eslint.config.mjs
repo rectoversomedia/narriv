@@ -223,9 +223,8 @@ export default [
       "@typescript-eslint/triple-slash-reference": "off",
       "@next/next/no-img-element": "off",
       "react/no-unescaped-entities": "off",
-      // Downgrade strict react-hooks rules to warnings (these are patterns used intentionally)
-      "react-hooks/set-state-in-effect": "warn",
-      "react-hooks/purity": "warn",
+      // Note: set-state-in-effect and purity are not in the base react-hooks plugin
+      // Only exhaustive-deps is downgraded here as it fires on intentional SSE reconnect patterns
       "react-hooks/exhaustive-deps": "warn",
     },
     settings: {
