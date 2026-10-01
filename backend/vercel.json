@@ -1,16 +1,11 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "buildCommand": "node build.mjs",
-  "installCommand": "npm install --ignore-scripts",
-  "builds": [
-    {
-      "src": "src/index.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/src" }
+    {
+      "source": "/(.*)",
+      "destination": "/api/index.js"
+    }
   ],
   "crons": [
     {

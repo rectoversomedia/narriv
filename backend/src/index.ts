@@ -230,8 +230,8 @@ const app = createApp();
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
-// Start server if not in test mode
-if (process.env["NODE_ENV"] !== "test") {
+// Start server if not in test mode (skip in Vercel serverless environment)
+if (!process.env["VERCEL"] && process.env["NODE_ENV"] !== "test") {
   app.listen(PORT, () => {
     logStructured("info", "server_started", {
       port: PORT,
