@@ -140,4 +140,5 @@ const nextConfig: NextConfig = {
   },
 };
 
+// @ts-ignore
 export default withNextIntl(nextConfig);
