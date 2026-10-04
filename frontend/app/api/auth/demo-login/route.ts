@@ -9,6 +9,7 @@ export async function POST(request: NextRequest) {
     const response = await fetch(`${backendUrl}/auth/demo`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      body: "{}",
       credentials: "include", // so we receive the backend's Set-Cookie (for logging/debugging)
     });
 
