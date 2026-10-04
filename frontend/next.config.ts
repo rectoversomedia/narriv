@@ -140,5 +140,5 @@ const nextConfig: NextConfig = {
   },
 };
 
-// @ts-ignore
+// @ts-expect-error TypeScript resolves next from root node_modules (v15) which has different types than the actual v16 used by Vercel
 export default withNextIntl(nextConfig);

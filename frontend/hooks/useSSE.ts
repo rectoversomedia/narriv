@@ -322,7 +322,6 @@ export function useSSE(options: UseSSEOptions = {}) {
     if (isDemoMode()) { mountedRef.current = false; return; } // Double-check in case URL not set yet
 
     // Keep ref in sync so reconnect callbacks can call connect
-    // eslint-disable-next-line react-hooks/immutability -- ref pattern: connect is stable useCallback, no TDZ risk at runtime
     connectFnRef.current = connect;
 
     // Clean up existing connection
