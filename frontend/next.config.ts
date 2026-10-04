@@ -107,7 +107,37 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+
+  // Redirects for legacy and shorthand workspace routes
+  async redirects() {
+    return [
+      {
+        source: "/cases",
+        destination: "/workspace/cases",
+        permanent: false,
+      },
+      {
+        source: "/integrations",
+        destination: "/workspace/integrations",
+        permanent: false,
+      },
+      {
+        source: "/sources",
+        destination: "/workspace/sources",
+        permanent: false,
+      },
+      {
+        source: "/data-sources",
+        destination: "/workspace/sources",
+        permanent: false,
+      },
+      {
+        source: "/activity",
+        destination: "/workspace/activity",
+        permanent: false,
+      },
+    ];
+  },
 };
 
-// @ts-expect-error TypeScript resolves next from root node_modules (v15) which has different types than the actual v16 used by Vercel
 export default withNextIntl(nextConfig);

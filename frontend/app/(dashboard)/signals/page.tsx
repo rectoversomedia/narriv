@@ -813,7 +813,7 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
           <h3 className="text-[15px] font-black text-[#101334]">{t("title")}</h3>
           <p className="mt-1 text-[11px] font-bold text-[#68739F]">{t("desc")}</p>
         </div>
-        <Link href="/cases" className="text-[11px] font-black text-[#465FFF]">{t("viewAll")}</Link>
+        <Link href="/workspace/cases" className="text-[11px] font-black text-[#465FFF]">{t("viewAll")}</Link>
       </div>
 
       {!hasData ? (

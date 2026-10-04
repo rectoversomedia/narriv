@@ -65,7 +65,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
         {/* Floating Ask AI button */}
         <Link
           href="/ask"
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-[#465FFF] px-4 py-3 text-white shadow-[0_4px_20px_rgba(70,95,255,0.5)] transition-all hover:bg-[#3b50d8] hover:shadow-[0_6px_28px_rgba(70,95,255,0.65)] active:scale-95"
+          className="fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full bg-[#465FFF] px-4 py-3 text-white shadow-[0_4px_20px_rgba(70,95,255,0.5)] transition-all hover:bg-[#3b50d8] hover:shadow-[0_6px_28px_rgba(70,95,255,0.65)] active:scale-95 sm:right-6 lg:bottom-6 lg:right-6"
           aria-label="Open Ask AI"
         >
           <Bot size={18} />

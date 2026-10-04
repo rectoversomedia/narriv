@@ -2,11 +2,37 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import crypto from "crypto";
 
-const publicPaths = ["/login", "/signup", "/reset-password", "/verify-code", "/verify-email", "/oauth/callback", "/new-password"];
+const publicPaths = [
+  "/pricing",
+  "/help",
+  "/onboarding",
+  "/login",
+  "/signup",
+  "/reset-password",
+  "/verify-code",
+  "/verify-email",
+  "/oauth/callback",
+  "/new-password",
+  "/api/auth",
+];
+
+const authOnlyPaths = [
+  "/login",
+  "/signup",
+  "/reset-password",
+  "/new-password",
+  "/verify-code",
+  "/verify-email",
+];
+
 const staticAssetPrefixes = ["/_next/", "/favicon", "/mainapp", "/narriv-logo"];
 
 function isPublicPath(pathname: string): boolean {
   return publicPaths.some((p) => pathname === p || pathname.startsWith(p + "/"));
+}
+
+function isAuthOnlyPath(pathname: string): boolean {
+  return authOnlyPaths.some((p) => pathname === p || pathname.startsWith(p + "/"));
 }
 
 function isStaticAsset(pathname: string): boolean {
@@ -44,7 +70,7 @@ export function proxy(request: NextRequest) {
   const authenticated = authCookie?.value ? verifyJwt(authCookie.value, JWT_SECRET) : false;
 
   if (isPublicPath(pathname)) {
-    if (authenticated) {
+    if (authenticated && isAuthOnlyPath(pathname)) {
       return NextResponse.redirect(new URL("/", request.url));
     }
     return NextResponse.next();
