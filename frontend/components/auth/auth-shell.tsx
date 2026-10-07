@@ -69,27 +69,28 @@ function BrandPanel({ visual, email }: { visual: AuthVisual; email?: string }) {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(80,60,255,0.22),transparent_40%),radial-gradient(circle_at_80%_90%,rgba(60,40,200,0.18),transparent_35%),linear-gradient(180deg,#020733_0%,#040830_100%)]" />
       <div className="absolute inset-x-0 bottom-0 h-[25%] bg-[radial-gradient(ellipse_at_center_bottom,rgba(60,50,220,0.28),transparent_70%)]" />
 
-      {/* Top section: logo */}
-      <div className="relative z-10 shrink-0 text-center">
-        <NarrivLogo />
-      </div>
+      {/* Centered content — logo, headline, footer all centered as one group */}
+      <div className="relative z-10 flex h-full flex-col items-center justify-center">
+        {/* Logo */}
+        <div className="shrink-0">
+          <NarrivLogo />
+        </div>
 
-      {/* Center section: headline + description — vertically centered */}
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center text-center">
-        {isVerification ? (
-          <div>
-            <h1 className="text-[42px] font-bold leading-[1.15] tracking-[-0.04em] text-white">
-              {t("brand.verifyTitle")}
-            </h1>
-            <p className="mt-6 text-xl leading-relaxed text-white/70">
-              {t("brand.verifyDescription")}
-              <br />
-              <span className="font-semibold text-[#6B7FFF]">{email || t("sampleEmail")}</span>
-            </p>
-          </div>
-        ) : (
-          <div>
-            <div className="space-y-1">
+        {/* Tagline block — tight vertical rhythm */}
+        <div className="mt-6 space-y-1 text-center">
+          {isVerification ? (
+            <div>
+              <h1 className="text-[42px] font-bold leading-[1.15] tracking-[-0.04em] text-white">
+                {t("brand.verifyTitle")}
+              </h1>
+              <p className="mt-4 text-xl leading-relaxed text-white/70">
+                {t("brand.verifyDescription")}
+                <br />
+                <span className="font-semibold text-[#6B7FFF]">{email || t("sampleEmail")}</span>
+              </p>
+            </div>
+          ) : (
+            <>
               <p className="text-[42px] font-bold leading-[1.1] tracking-[-0.04em] text-white">
                 {t("brand.line1")}
               </p>
@@ -99,17 +100,17 @@ function BrandPanel({ visual, email }: { visual: AuthVisual; email?: string }) {
               <p className="bg-gradient-to-r from-[#8D4DFF] via-[#6B63FF] to-[#22B8FF] bg-clip-text text-[42px] font-bold leading-[1.1] tracking-[-0.04em] text-transparent">
                 {t("brand.line3")}
               </p>
-            </div>
-            <p className="mt-8 text-lg leading-relaxed text-white/60">
-              {visual === "features"
-                ? t("brand.featuresDescription")
-                : t("brand.description")}
-            </p>
-          </div>
-        )}
+              <p className="mt-5 text-lg leading-relaxed text-white/60">
+                {visual === "features"
+                  ? t("brand.featuresDescription")
+                  : t("brand.description")}
+              </p>
+            </>
+          )}
+        </div>
       </div>
 
-      {/* Bottom section: divider + footer */}
+      {/* Bottom: divider + footer */}
       <div className="relative z-10 shrink-0 space-y-6 text-center">
         <div className="h-px w-full bg-gradient-to-r from-transparent via-[rgba(100,80,255,0.35)] to-transparent" />
         <p className="text-sm font-medium tracking-wide text-white/35">
@@ -125,7 +126,7 @@ function NarrivLogo() {
     <img
       src="/logo-final-narriv.png"
       alt="Narriv"
-      className="mx-auto h-auto w-full max-w-[800px] object-contain"
+      className="mx-auto h-auto w-full max-w-[420px] object-contain"
     />
   );
 }

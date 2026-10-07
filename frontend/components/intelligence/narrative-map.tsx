@@ -294,10 +294,12 @@ export function NarrativeMap({ brandName, narratives, onNarrativeClick }: Narrat
     narrative: null,
   });
 
-  const WIDTH = 600;
-  const HEIGHT = 400;
-  const CENTER_X = WIDTH / 2;
-  const CENTER_Y = HEIGHT / 2;
+  // Responsive SVG dimensions — 600x400 base, scaled via viewBox
+  const BASE_WIDTH = 600;
+  const BASE_HEIGHT = 400;
+  const PADDING = 16; // safe zone so bubbles don't clip at rounded card corners
+  const CENTER_X = BASE_WIDTH / 2;
+  const CENTER_Y = BASE_HEIGHT / 2;
 
   const handleHover = useCallback(
     (narrative: NarrativeMapNarrative, x: number, y: number, visible: boolean) => {
@@ -311,36 +313,46 @@ export function NarrativeMap({ brandName, narratives, onNarrativeClick }: Narrat
   const minVol = Math.min(...volumes);
   const maxVol = Math.max(...volumes);
 
-  // Position surrounding bubbles in a radial layout
+  // Position surrounding bubbles in a radial layout, clamped to safe zone
   const totalBubbles = narratives.length;
-  const orbitRadius = Math.min(WIDTH, HEIGHT) / 2 - 80; // distance from center to bubble centers
+  const safeRadius = Math.min(BASE_WIDTH, BASE_HEIGHT) / 2 - MAX_SIZE / 2 - PADDING;
+
   const bubblePositions = narratives.map((narrative, i) => {
-    // Spread evenly in a circle, with slight randomization to avoid perfect overlap
     const baseAngle = (i / totalBubbles) * 2 * Math.PI;
-    const jitter = (i % 3 - 1) * 0.1; // small jitter to break symmetry
+    const jitter = ((i % 3) - 1) * 0.1;
     const angle = baseAngle + jitter;
 
     const r = getBubbleRadius(narrative.volume, minVol, maxVol);
-    const cx = CENTER_X + (orbitRadius - r) * Math.cos(angle);
-    const cy = CENTER_Y + (orbitRadius - r) * Math.sin(angle);
+    const rawX = CENTER_X + (safeRadius - r) * Math.cos(angle);
+    const rawY = CENTER_Y + (safeRadius - r) * Math.sin(angle);
 
-    return { narrative, cx, cy, r };
+    // Clamp bubble centers so bubbles stay inside SVG with padding
+    const maxX = BASE_WIDTH - r - PADDING;
+    const minX = r + PADDING;
+    const maxY = BASE_HEIGHT - r - PADDING;
+    const minY = r + PADDING;
+
+    return {
+      narrative,
+      cx: Math.min(Math.max(rawX, minX), maxX),
+      cy: Math.min(Math.max(rawY, minY), maxY),
+      r,
+    };
   });
 
   return (
-    <div className="relative inline-block" style={{ width: WIDTH, height: HEIGHT }}>
+    <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: `${BASE_WIDTH} / ${BASE_HEIGHT}` }}>
       <svg
-        width={WIDTH}
-        height={HEIGHT}
-        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-        style={{ background: "#0f172a", borderRadius: 16, display: "block" }}
+        viewBox={`0 0 ${BASE_WIDTH} ${BASE_HEIGHT}`}
+        className="w-full h-full"
+        style={{ background: "#0f172a", display: "block" }}
         aria-label={`Narrative map for ${brandName}`}
         role="img"
       >
         <GridPattern />
 
         {/* Grid background */}
-        <rect width={WIDTH} height={HEIGHT} fill="url(#narrative-map-grid)" />
+        <rect width={BASE_WIDTH} height={BASE_HEIGHT} fill="url(#narrative-map-grid)" />
 
         {/* Subtle radial gradient overlay */}
         <defs>
@@ -349,7 +361,7 @@ export function NarrativeMap({ brandName, narratives, onNarrativeClick }: Narrat
             <stop offset="100%" stopColor={BRAND_COLOR} stopOpacity="0" />
           </radialGradient>
         </defs>
-        <rect width={WIDTH} height={HEIGHT} fill="url(#center-glow)" />
+        <rect width={BASE_WIDTH} height={BASE_HEIGHT} fill="url(#center-glow)" />
 
         {/* Connection lines from center to bubbles */}
         {bubblePositions.map(({ cx, cy }) => (
@@ -437,7 +449,7 @@ export function NarrativeMap({ brandName, narratives, onNarrativeClick }: Narrat
         </g>
 
         {/* Tooltip */}
-        <Tooltip state={tooltip} containerWidth={WIDTH} containerHeight={HEIGHT} />
+        <Tooltip state={tooltip} containerWidth={BASE_WIDTH} containerHeight={BASE_HEIGHT} />
       </svg>
     </div>
   );
