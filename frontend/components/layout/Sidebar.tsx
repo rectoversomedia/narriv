@@ -49,15 +49,15 @@ export function Sidebar() {
       <aside className={`sidebar-gradient fixed inset-y-0 left-0 z-30 hidden overflow-y-auto px-4 py-6 text-white transition-[width,padding] duration-300 lg:block ${sidebarCollapsed ? "w-[72px] px-2" : "w-[240px]"}`}>
         <div className={`flex items-center gap-2 px-1 ${sidebarCollapsed ? "justify-center" : ""}`}>
           {sidebarCollapsed ? (
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full">
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full">
               <Image
                 src={customLogoUrl || "/logo-final-narriv.png"}
                 alt={brandName}
-                width={40}
-                height={40}
+                width={56}
+                height={56}
                 priority
                 unoptimized={Boolean(customLogoUrl)}
-                className="h-10 w-10 object-contain"
+                className="h-14 w-14 object-contain"
               />
             </span>
           ) : customLogoUrl ? (
@@ -78,14 +78,14 @@ export function Sidebar() {
               </span>
             </>
           ) : (
-            <div className="flex h-14 items-center px-3">
+            <div className="flex h-20 items-center px-3">
               <Image
                 src="/logo-narriv-putih.png"
                 alt={brandName}
                 width={200}
-                height={60}
+                height={80}
                 priority
-                className="h-14 w-auto max-w-[160px] object-contain"
+                className="h-20 w-auto max-w-[180px] object-contain"
               />
             </div>
           )}
