@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Proxy demo-login to backend so we can set the cookie on THIS domain (narriv.digital).
-// Backend can't set cookies for frontend domain due to cross-origin restriction.
 export async function POST(request: NextRequest) {
   try {
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || "https://narriv-api.vercel.app";

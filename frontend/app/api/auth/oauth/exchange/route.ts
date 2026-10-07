@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Proxy OAuth token exchange to backend and set cookie on THIS domain (narriv.digital).
-// The backend can't set cookies for the frontend domain due to cross-origin restrictions.
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
