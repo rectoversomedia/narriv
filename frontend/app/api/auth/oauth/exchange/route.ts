@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<Record<string, string>> }
+) {
   try {
     const body = await request.json();
     const { code } = body;
