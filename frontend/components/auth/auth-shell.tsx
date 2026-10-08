@@ -124,7 +124,7 @@ function NarrivLogo() {
     <img
       src="/logo-bulat-narriv-2026.png"
       alt="Narriv"
-      className="mx-auto h-[160px] w-[160px] object-contain"
+      className="mx-auto h-[320px] w-[320px] object-contain"
     />
   );
 }
