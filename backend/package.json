@@ -33,6 +33,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.132.1",
     "@supabase/supabase-js": "^2.45.0",
     "apify-client": "^2.23.0",
     "bcrypt": "^6.0.0",
