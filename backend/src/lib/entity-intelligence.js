@@ -10,6 +10,7 @@
  */
 
 import { baseSupabaseAdmin } from "./supabase.js";
+import { logStructured } from "./logger.js";
 
 function safeNumber(v, fallback = 0) {
     const n = Number(v);
@@ -51,10 +52,15 @@ export async function computeEntityIntelligence({ workspaceId, windowHours = 24,
     const [signalsWithAnalysis, clusters] = await Promise.all([
         baseSupabaseAdmin
             .from("signals")
-            .select("id, sentiment, captured_at, analysis:signal_analysis(stakeholder, impact, narrative_type, summary)")
+            .select("id, sentiment, captured_at")
             .eq("workspace_id", workspaceId)
             .gte("captured_at", sinceIso)
-            .then((r) => r.data || []),
+            .then((r) => {
+                if (r.error) {
+                    logStructured("warn", "entity_intelligence: signals query failed", { error: r.error.message });
+                }
+                return r.data || [];
+            }),
         baseSupabaseAdmin
             .from("narrative_clusters")
             .select("id, title, narrative_cluster_signals(signal_id)")
@@ -63,12 +69,23 @@ export async function computeEntityIntelligence({ workspaceId, windowHours = 24,
             .limit(50)
             .then((r) => r.data || []),
     ]);
+    // Fetch signal_analysis for the recent signal ids in a second tiny query
+    const recentSignalIds = (signalsWithAnalysis || []).map((s) => s.id);
+    const analysesBySignalId = new Map();
+    if (recentSignalIds.length > 0) {
+        const { data: analyses } = await baseSupabaseAdmin
+            .from("signal_analysis")
+            .select("signal_id, stakeholder, impact, narrative_type, summary")
+            .in("signal_id", recentSignalIds)
+            .limit(500);
+        for (const a of analyses || []) analysesBySignalId.set(a.signal_id, a);
+    }
 
     const entityMap = new Map();
     const evidence = [];
 
     for (const s of signalsWithAnalysis) {
-        const a = s.analysis;
+        const a = analysesBySignalId.get(s.id);
         if (!a || !a.stakeholder) continue;
         const key = entityKey(a);
         if (!entityMap.has(key)) {
