@@ -62,7 +62,8 @@ router.get("/narrative-intelligence", async (req, res) => {
         if (!workspaceId) {
             return res.status(403).json({ error: "no accessible workspace" });
         }
-        const windowHours = Math.min(Math.max(parseInt(req.query.windowHours, 10) || 24, 1), 2160);
+        const raw = req.body?.windowHours ?? req.query?.windowHours ?? 24;
+        const windowHours = Math.min(Math.max(parseInt(raw, 10) || 24, 1), 2160);
         const payload = await computeNarrativeIntelligence({ workspaceId, windowHours });
         res.json(payload);
     } catch (error) {
@@ -192,7 +193,10 @@ async function resolveWs(req, res) {
     return workspaceId;
 }
 
-const windowParam = (req) => Math.min(Math.max(parseInt(req.query.windowHours, 10) || 24, 1), 2160);
+const windowParam = (req) => {
+    const raw = req.body?.windowHours ?? req.query?.windowHours ?? 24;
+    return Math.min(Math.max(parseInt(raw, 10) || 24, 1), 2160);
+};
 
 router.get("/entity-intelligence", async (req, res) => {
     try {
