@@ -45,9 +45,14 @@ export function LoginForm() {
   // double-render pattern (spinner → form) that can corrupt React 19's hook chain.
   const oauthError = useMemo(() => {
     if (typeof window === "undefined") return null;
-    return searchParams.get("error") === "oauth_failed"
-      ? t("errors.loginFailed") || "Social login failed. Please try again or use password."
-      : null;
+    if (searchParams.get("error") !== "oauth_failed") return null;
+    if (typeof window !== "undefined") {
+      console.warn("[oauth] failed:", {
+        reason: searchParams.get("reason"),
+        error: searchParams.get("error"),
+      });
+    }
+    return t("errors.loginFailed") || "Social login failed. Please try again or use password.";
   }, [searchParams, t]);
 
   const displayError = useMemo(() => apiError ?? oauthError, [apiError, oauthError]);

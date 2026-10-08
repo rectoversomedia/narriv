@@ -1253,10 +1253,10 @@ export const googleCallback = async (req, res) => {
     try {
         const { code } = req.query;
         logStructured("info", "oauth_callback_start", { hasCode: !!code, state: req.query.state ? "(present)" : "(missing)" });
-        if (!code) return res.redirect(`${FRONTEND_URL}/login?error=oauth_failed`);
+        if (!code) return res.redirect(`${FRONTEND_URL}/login?error=oauth_failed&reason=missing_code`);
         if (!validateOAuthState(req)) {
             logStructured("warn", "oauth_state_invalid");
-            return res.redirect(`${FRONTEND_URL}/login?error=oauth_failed`);
+            return res.redirect(`${FRONTEND_URL}/login?error=oauth_failed&reason=state_invalid`);
         }
 
         logStructured("info", "oauth_state_valid_exchanging_code");
@@ -1303,7 +1303,7 @@ export const googleCallback = async (req, res) => {
         if (req.query.debug === "1") {
             return res.status(500).json({ error: "oauth_callback_failed", detail: msg });
         }
-        return res.redirect(`${FRONTEND_URL}/login?error=oauth_failed`);
+        return res.redirect(`${FRONTEND_URL}/login?error=oauth_failed&reason=callback_error`);
     }
 };
 
