@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { logStructured } from "./logger.js";
+import { routeCompletion, listTiers } from "./ai-routing.js";
 
 const apiKey = process.env.OPENAI_API_KEY;
 
@@ -19,3 +20,5 @@ export function getOpenAIClient() {
 export const AI_MODEL = process.env.AI_MODEL || "gpt-4o-mini";
 export const AI_TEMPERATURE = 0.2;
 export const AI_MAX_TOKENS = 1024;
+
+export { routeCompletion, listTiers };
