@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useToast } from "@/components/ui/toast";
+import { useQuery } from "@tanstack/react-query";
 import {
   FileText,
   Mail,
@@ -287,6 +288,53 @@ function DeltaChip({ delta }: { delta: string }) {
 // Main Page
 // ---------------------------------------------------------------------------
 
+function LiveExecutiveBrief() {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["brief", "live", 24],
+    queryFn: async () => (await import("@/lib/intelligence-api")).getExecutiveBrief(24),
+    staleTime: 60 * 1000,
+    retry: 1,
+  });
+
+  return (
+    <div className="border-b border-slate-200 bg-white px-6 py-5">
+      <div className="mx-auto max-w-screen-xl">
+        <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-5">
+          <div className="flex items-center justify-between">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Live executive brief</div>
+            {isLoading ? (
+              <span className="text-[12px] text-slate-500">Loading…</span>
+            ) : isError ? (
+              <span className="text-[12px] text-rose-600">Backend unavailable</span>
+            ) : data?.grounded ? (
+              <span className="text-[12px] text-emerald-600">Grounded in current data</span>
+            ) : (
+              <span className="text-[12px] text-slate-500">Insufficient data</span>
+            )}
+          </div>
+          {data && data.grounded ? (
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="rounded-lg border border-slate-200 bg-white p-3">
+                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">What changed</div>
+                <p className="mt-1 text-[12.5px] text-slate-800">{data.sections?.whatChanged?.summary || "—"}</p>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-white p-3">
+                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">Biggest risk</div>
+                <p className="mt-1 text-[12.5px] text-slate-800">{data.sections?.biggestRisk?.summary || "—"}</p>
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-white p-3">
+                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">Reputation</div>
+                <p className="mt-1 text-[12.5px] text-slate-800">{data.sections?.reputation?.summary || "—"}</p>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 export default function DailyIntelligenceBriefPage() {
   const t = useTranslations("brief");
   const { showToast } = useToast();
@@ -358,6 +406,9 @@ export default function DailyIntelligenceBriefPage() {
           </div>
         </div>
       </div>
+
+      {/* Live executive brief from backend intelligence API */}
+      <LiveExecutiveBrief />
 
       {/* Document body */}
       <div className="mx-auto max-w-screen-xl px-6 py-8">

@@ -18,6 +18,7 @@ import { getDashboardSummary, getDateRangeOptions, getWorkspaceSettings, type Da
 import { DashboardErrorState, MetricRowSkeleton } from "@/components/dashboard/dashboard-states";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Badge } from "@/components/ui/badge";
+import { TodaysIntelligenceStrip } from "@/components/intelligence/intelligence-panels";
 
 type SeriesPoint = {
   label: string;
@@ -458,6 +459,9 @@ export default function DashboardPage() {
           3 emerging risks detected. 1 opportunity identified. Net sentiment shifted +8% today.
         </p>
       </div>
+
+      {/* ── 1b. Real intelligence strip from backend ───────────────────────── */}
+      <TodaysIntelligenceStrip />
 
       {/* ── 2. Top Developments ───────────────────────────────────────────── */}
       <div>

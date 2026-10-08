@@ -268,44 +268,51 @@ export default function AskPage() {
     setInputValue("");
     setIsTyping(true);
 
-    // Simulate AI thinking delay
-    const delay = 1500 + Math.random() * 1000;
-
-    setTimeout(() => {
-      const categoryMatch = getKeywordResponse(trimmed);
-      let assistantMsg: Message;
-
-      if (categoryMatch) {
-        assistantMsg = buildAssistantMessage(categoryMatch.response, isDemoSession);
-      } else {
-        // Fallback generic response using loaded real or mock data
-        const totalSignals = dashboardSummary?.kpis.total_signals ?? 0;
-        const positivePct = dashboardSummary?.kpis.positive_percentage ?? 0;
-        const narrativeCount = narratives?.data.length ?? 0;
-        const topNarrative = narratives?.data[0];
-
-        assistantMsg = {
+    // Real backend: POST /api/ai/ask (grounded, evidence-first)
+    (async () => {
+      try {
+        const { askNarriv } = await import("@/lib/intelligence-api");
+        const result = await askNarriv(trimmed, 24);
+        const assistantMsg: Message = {
           id: crypto.randomUUID(),
           role: "assistant",
-          content: `Based on the current workspace data, here is what I found for "${trimmed}":\n\n**Overview:** Your workspace has captured ${totalSignals.toLocaleString()} total signals, with ${positivePct}% positive sentiment. I found ${narrativeCount} active narrative clusters.\n\n**Leading narrative:** "${topNarrative?.title ?? 'Service Quality Concerns'}" — ${topNarrative?.signalCount?.toLocaleString() ?? '1,247'} signals, ${topNarrative?.velocity ?? '+45%'} velocity, ${topNarrative?.confidence ?? 87}% confidence.\n\nI can help answer more specific questions about sentiment trends, competitor activity, AI visibility, or recommended actions. Try asking one of the suggested questions in the sidebar.`,
-          evidence: [topNarrative?.title ?? "Service Quality Concerns", "128 critical signals", "3 high-severity alerts"],
-          metrics: [
-            { label: "Total Signals", value: totalSignals.toLocaleString() },
-            { label: "Positive Sentiment", value: `${positivePct}%` },
-            { label: "Narrative Clusters", value: String(narrativeCount) },
-          ],
-          confidence: "medium",
-          links: [
-            { label: "View in Signals", href: "/signals" },
-            { label: "View Intelligence", href: "/intelligence" },
-          ],
+          content: result.answer || (result.error ? `I could not answer that: ${result.error}` : "Insufficient data to answer."),
+          evidence: (result.sources || []).map((s) => s.id || s.kind || "evidence"),
+          confidence: result.grounded ? "high" : "low",
+          links: [],
           isDemo: isDemoSession,
         };
+        setMessages((prev) => [...prev, assistantMsg]);
+      } catch (err) {
+        // Fallback to existing mock response if backend fails
+        const categoryMatch = getKeywordResponse(trimmed);
+        let assistantMsg: Message;
+        if (categoryMatch) {
+          assistantMsg = buildAssistantMessage(categoryMatch.response, isDemoSession);
+        } else {
+          const totalSignals = dashboardSummary?.kpis.total_signals ?? 0;
+          const positivePct = dashboardSummary?.kpis.positive_percentage ?? 0;
+          const narrativeCount = narratives?.data.length ?? 0;
+          const topNarrative = narratives?.data[0];
+          assistantMsg = {
+            id: crypto.randomUUID(),
+            role: "assistant",
+            content: `I could not reach the intelligence backend (${(err as Error).message || "unknown error"}). Falling back to a basic summary.\n\nYour workspace has ${totalSignals.toLocaleString()} signals (${positivePct}% positive) and ${narrativeCount} active narrative clusters.`,
+            evidence: [topNarrative?.title ?? "Service Quality Concerns"],
+            metrics: [
+              { label: "Total Signals", value: totalSignals.toLocaleString() },
+              { label: "Positive Sentiment", value: `${positivePct}%` },
+              { label: "Narrative Clusters", value: String(narrativeCount) },
+            ],
+            confidence: "low",
+            isDemo: isDemoSession,
+          };
+        }
+        setMessages((prev) => [...prev, assistantMsg]);
+      } finally {
+        setIsTyping(false);
       }
-
-      setIsTyping(false);
-      setMessages(prev => [...prev, assistantMsg]);
-    }, delay);
+    })();
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
