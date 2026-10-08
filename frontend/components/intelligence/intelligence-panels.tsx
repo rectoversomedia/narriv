@@ -283,7 +283,13 @@ export function EntityPanel({ windowHours = 168, limit = 5 }: { windowHours?: nu
       <ul className="mt-3 space-y-1.5">
         {data.entities.slice(0, limit).map((e) => (
           <li key={e.entity} className="flex items-center justify-between text-[13px]">
-            <span className="truncate text-slate-800">{e.entity}</span>
+            <a
+              href={`/signals?keyword=${encodeURIComponent(e.entity)}`}
+              className="truncate text-slate-800 transition hover:text-slate-900 hover:underline"
+              title={`View signals mentioning ${e.entity}`}
+            >
+              {e.entity}
+            </a>
             <span className="ml-3 flex items-center gap-2 text-[11px] font-semibold text-slate-500">
               <span>{e.mentions} mentions</span>
               {e.avgSentiment < 0 ? <span className="text-rose-600">neg</span> : e.avgSentiment > 0 ? <span className="text-emerald-600">pos</span> : null}
@@ -291,6 +297,12 @@ export function EntityPanel({ windowHours = 168, limit = 5 }: { windowHours?: nu
           </li>
         ))}
       </ul>
+      <a
+        href={`/signals?keyword=${encodeURIComponent(data.entities[0].entity)}`}
+        className="mt-3 inline-block text-[12px] font-semibold text-slate-600 hover:text-slate-900"
+      >
+        View top entity in signals →
+      </a>
     </div>
   );
 }
