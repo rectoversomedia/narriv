@@ -51,7 +51,7 @@ export async function computeEntityIntelligence({ workspaceId, windowHours = 24,
     const [signalsWithAnalysis, clusters] = await Promise.all([
         baseSupabaseAdmin
             .from("signals")
-            .select("id, sentiment, captured_at, analysis:sentence_analyses(stakeholder, impact, narrative_type, summary)")
+            .select("id, sentiment, captured_at, analysis:signal_analysis(stakeholder, impact, narrative_type, summary)")
             .eq("workspace_id", workspaceId)
             .gte("captured_at", sinceIso)
             .then((r) => r.data || []),
