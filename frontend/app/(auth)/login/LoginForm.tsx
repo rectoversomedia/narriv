@@ -99,11 +99,11 @@ export function LoginForm() {
 
   return (
     <AuthShell visual="dashboard" topAction={<LanguageSelector />}>
-      <div className="mb-12 lg:hidden">
+      <div className="mb-12 text-center lg:hidden">
         <p className="text-3xl font-bold tracking-[-0.04em] text-[#111536]">Narriv</p>
       </div>
 
-      <div className="mb-12">
+      <div className="mb-12 text-center">
         <h1 className="text-[34px] font-bold leading-tight tracking-[-0.04em] text-[#111536]">{t("title")}</h1>
         <p className="mt-5 text-[19px] font-medium text-[#3E4975]">{t("subtitle")}</p>
       </div>
