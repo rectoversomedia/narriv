@@ -7,8 +7,17 @@ import { analyzeBodySchema } from "./ai.module.schema.js";
 import { logStructured } from "../../lib/logger.js";
 import { computeNarrativeIntelligence } from "../../lib/narrative-intelligence.js";
 import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
-import { listTiers, routeCompletion } from "../../lib/ai-routing.js";
+import { listTiers, routeCompletion, routeForTask, listTasks } from "../../lib/ai-routing.js";
 import { getAnthropicClient, ANTHROPIC_MODEL } from "../../lib/anthropic-client.js";
+import { computeEntityIntelligence } from "../../lib/entity-intelligence.js";
+import { computeReputationIntelligence } from "../../lib/reputation-intelligence.js";
+import { computePredictiveSignals } from "../../lib/predictive-signals.js";
+import { deriveRecommendations } from "../../lib/recommendation-engine.js";
+import { computeTrend, sentimentVelocity } from "../../lib/trend-engine.js";
+import { getAiObservabilitySummary, recordAiEvent } from "../../lib/ai-observability.js";
+import { askNarriv } from "../../lib/ask-narriv.js";
+import { generateExecutiveBrief } from "../../lib/executive-briefing.js";
+import { computeGeoIntelligence } from "../../lib/geo-intelligence.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -161,6 +170,128 @@ router.post("/complete", async (req, res) => {
         logStructured("error", "[AI MODULE] complete error:", { error: error.message });
         res.status(500).json({ error: "Failed to complete" });
     }
+});
+
+// =========================================================
+// Phase 4: Intelligence Engine (additive endpoints)
+// All endpoints are auth-required, read-only, no external actions.
+// =========================================================
+
+async function resolveWs(req, res) {
+    const userId = req.user?.id || req.userId;
+    if (!userId) {
+        res.status(401).json({ error: "auth required" });
+        return null;
+    }
+    const requested = req.query.workspaceId || req.workspaceId || null;
+    const workspaceId = await resolveWorkspaceIdForUser(userId, requested);
+    if (!workspaceId) {
+        res.status(403).json({ error: "no accessible workspace" });
+        return null;
+    }
+    return workspaceId;
+}
+
+const windowParam = (req) => Math.min(Math.max(parseInt(req.query.windowHours, 10) || 24, 1), 168);
+
+router.get("/entity-intelligence", async (req, res) => {
+    try {
+        const ws = await resolveWs(req, res);
+        if (!ws) return;
+        const out = await computeEntityIntelligence({ workspaceId: ws, windowHours: windowParam(req) });
+        res.json(out);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.get("/reputation-intelligence", async (req, res) => {
+    try {
+        const ws = await resolveWs(req, res);
+        if (!ws) return;
+        const out = await computeReputationIntelligence({ workspaceId: ws, windowHours: windowParam(req) });
+        res.json(out);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.get("/predictive-signals", async (req, res) => {
+    try {
+        const ws = await resolveWs(req, res);
+        if (!ws) return;
+        const out = await computePredictiveSignals({ workspaceId: ws, windowHours: windowParam(req) });
+        res.json(out);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.get("/recommendations", async (req, res) => {
+    try {
+        const ws = await resolveWs(req, res);
+        if (!ws) return;
+        const win = windowParam(req);
+        const [narrative, rep, predictions] = await Promise.all([
+            computeNarrativeIntelligence({ workspaceId: ws, windowHours: win }),
+            computeReputationIntelligence({ workspaceId: ws, windowHours: win }),
+            computePredictiveSignals({ workspaceId: ws, windowHours: win }),
+        ]);
+        const signalCount = narrative.facts.find((f) => f.kind === "signal_count_window")?.value || 0;
+        const alertCount = narrative.facts.find((f) => f.kind === "alert_count_window")?.value || 0;
+        const negCount = narrative.facts.find((f) => f.kind === "sentiment_breakdown")?.value?.NEGATIVE || 0;
+        const out = deriveRecommendations({
+            riskScore: narrative.riskScore || 0,
+            riskBand: narrative.riskBand || "low",
+            reputationBand: rep.reputationBand || "neutral",
+            activeAlerts: alertCount,
+            emergingNarratives: narrative.inferences.find((i) => i.kind === "emerging_narratives")?.items?.length || 0,
+            negativeShare: signalCount > 0 ? negCount / signalCount : 0,
+            volumeRatio: narrative.inferences.find((i) => i.kind === "volume_ratio")?.ratio || 1,
+        });
+        res.json({ status: "ok", ...out, source: { narrativeRisk: narrative.riskScore, reputationBand: rep.reputationBand, predictiveSignalCount: predictions.signals.length } });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.get("/trend", async (req, res) => {
+    try {
+        const ws = await resolveWs(req, res);
+        if (!ws) return;
+        const win = windowParam(req);
+        const out = await computeTrend({ workspaceId: ws, windowHours: win });
+        res.json(out);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.get("/executive-brief", async (req, res) => {
+    try {
+        const ws = await resolveWs(req, res);
+        if (!ws) return;
+        const out = await generateExecutiveBrief({ workspaceId: ws, windowHours: windowParam(req) });
+        res.json(out);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.get("/geo-intelligence", async (req, res) => {
+    try {
+        const ws = await resolveWs(req, res);
+        if (!ws) return;
+        const out = await computeGeoIntelligence({ workspaceId: ws, windowHours: windowParam(req) });
+        res.json(out);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.get("/observability", async (req, res) => {
+    res.json(getAiObservabilitySummary());
+});
+
+router.get("/tasks", async (req, res) => {
+    res.json({ tasks: listTasks() });
+});
+
+router.post("/ask", async (req, res) => {
+    try {
+        const ws = await resolveWs(req, res);
+        if (!ws) return;
+        const question = req.body?.question;
+        const win = windowParam(req);
+        const out = await askNarriv({ workspaceId: ws, question, windowHours: win });
+        res.json(out);
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 export default router;

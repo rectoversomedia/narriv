@@ -94,6 +94,28 @@ export function routeCompletion({ complexity = "simple", provider = null, model 
     };
 }
 
+const TASK_COMPLEXITY = {
+    classification: "simple",
+    entity_extraction: "simple",
+    tagging: "simple",
+    summarization: "balanced",
+    generation: "balanced",
+    recommendation: "balanced",
+    narrative_synthesis: "complex",
+    risk_reasoning: "complex",
+    executive_briefing: "complex",
+    ask_narriv: "complex",
+};
+
+export function routeForTask(taskName, { provider = null, model = null } = {}) {
+    const complexity = TASK_COMPLEXITY[taskName] || "simple";
+    return routeCompletion({ complexity, provider, model });
+}
+
+export function listTasks() {
+    return Object.entries(TASK_COMPLEXITY).map(([task, complexity]) => ({ task, complexity }));
+}
+
 /**
  * List available tiers — for diagnostics or admin UIs.
  */
