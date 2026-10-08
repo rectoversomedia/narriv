@@ -102,11 +102,11 @@ router.get("/providers", async (req, res) => {
  */
 router.post("/complete", async (req, res) => {
     try {
-        const { complexity = "simple", provider = null, system = null, user, maxTokens = null } = req.body || {};
+        const { complexity = "simple", provider = null, model = null, system = null, user, maxTokens = null } = req.body || {};
         if (!user || typeof user !== "string") {
             return res.status(400).json({ error: "'user' field is required" });
         }
-        const route = routeCompletion({ complexity, provider });
+        const route = routeCompletion({ complexity, provider, model });
         const start = Date.now();
         let content = null;
         let error = null;

@@ -77,11 +77,14 @@ function resolve(complexity, explicitProvider) {
  * Populated by the caller after the call completes (we don't time here
  * to keep this module side-effect-free).
  */
-export function routeCompletion({ complexity = "simple", provider = null } = {}) {
+export function routeCompletion({ complexity = "simple", provider = null, model = null } = {}) {
     const tier = DEFAULTS[complexity] ? complexity : "simple";
     const r = resolve(tier, provider);
+    const finalModel = model || r.model;
     return {
         ...r,
+        model: finalModel,
+        provider: provider || r.provider || detectProviderFromModel(finalModel),
         meta: {
             complexity: tier,
             success: null,
