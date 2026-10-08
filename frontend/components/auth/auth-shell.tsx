@@ -69,12 +69,12 @@ function BrandPanel({ visual, email }: { visual: AuthVisual; email?: string }) {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(80,60,255,0.22),transparent_40%),radial-gradient(circle_at_80%_90%,rgba(60,40,200,0.18),transparent_35%),linear-gradient(180deg,#020733_0%,#040830_100%)]" />
       <div className="absolute inset-x-0 bottom-0 h-[25%] bg-[radial-gradient(ellipse_at_center_bottom,rgba(60,50,220,0.28),transparent_70%)]" />
 
-      {/* Content: logo/tagline at top, footer pinned at bottom */}
-      <div className="relative z-10 flex h-full flex-col items-center justify-between py-10">
-        {/* Logo + tagline */}
-        <div className="flex flex-col items-center text-center">
+      {/* Content: logo + tagline centered, footer pinned at bottom */}
+      <div className="relative z-10 flex h-full flex-col items-center py-10">
+        {/* Logo + tagline — vertically + horizontally centered */}
+        <div className="flex flex-1 flex-col items-center justify-center text-center">
           <NarrivLogo />
-          <div className="mt-6 space-y-0.5 text-center">
+          <div className="mt-8 space-y-0.5 text-center">
             {isVerification ? (
               <div>
                 <h1 className="text-[42px] font-bold leading-[1.15] tracking-[-0.04em] text-white">
@@ -122,9 +122,9 @@ function BrandPanel({ visual, email }: { visual: AuthVisual; email?: string }) {
 function NarrivLogo() {
   return (
     <img
-      src="/logo-p-narriv-2026.png"
+      src="/logo-bulat-narriv-2026.png"
       alt="Narriv"
-      className="mx-auto h-auto max-h-[240px] w-full max-w-[680px] object-contain"
+      className="mx-auto h-[160px] w-[160px] object-contain"
     />
   );
 }

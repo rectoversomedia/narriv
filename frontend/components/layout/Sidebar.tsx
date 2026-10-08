@@ -49,15 +49,15 @@ export function Sidebar() {
       <aside className={`sidebar-gradient fixed inset-y-0 left-0 z-30 hidden overflow-y-auto px-4 py-6 text-white transition-[width,padding] duration-300 lg:block ${sidebarCollapsed ? "w-[72px] px-2" : "w-[240px]"}`}>
         <div className={`flex items-center gap-2 px-1 ${sidebarCollapsed ? "justify-center" : ""}`}>
           {sidebarCollapsed ? (
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full">
               <Image
                 src={customLogoUrl || "/logo-bulat-narriv-2026.png"}
                 alt={brandName}
-                width={56}
-                height={56}
+                width={40}
+                height={40}
                 priority
                 unoptimized={Boolean(customLogoUrl)}
-                className="h-14 w-14 object-contain"
+                className="h-10 w-10 object-contain"
               />
             </span>
           ) : customLogoUrl ? (
@@ -66,11 +66,11 @@ export function Sidebar() {
                 <Image
                   src={customLogoUrl}
                   alt={brandName}
-                  width={48}
-                  height={48}
+                  width={40}
+                  height={40}
                   priority
                   unoptimized
-                  className="h-12 w-12 scale-[1.28] object-contain"
+                  className="h-10 w-10 scale-[1.28] object-contain"
                 />
               </span>
               <span className="text-[24px] font-bold tracking-[-0.05em] bg-clip-text text-transparent bg-linear-to-r from-white via-white to-white/70">
@@ -78,14 +78,14 @@ export function Sidebar() {
               </span>
             </>
           ) : (
-            <div className="flex h-16 items-center px-3">
+            <div className="flex h-10 items-center px-1">
               <Image
                 src="/logo-p-narriv-2026.png"
                 alt={brandName}
-                width={200}
-                height={80}
+                width={140}
+                height={40}
                 priority
-                className="h-16 w-auto max-w-[180px] object-contain"
+                className="h-10 w-auto max-w-[140px] object-contain"
               />
             </div>
           )}
