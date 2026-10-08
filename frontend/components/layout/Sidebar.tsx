@@ -41,7 +41,7 @@ export function Sidebar() {
   });
 
   const customLogoUrl = workspaceSettingsQuery.data?.logoUrl ? resolveBackendAssetUrl(workspaceSettingsQuery.data.logoUrl) : null;
-  const activeLogo = customLogoUrl || "/logo-narriv-putih.png";
+  const activeLogo = customLogoUrl || "/logo-p-narriv-2026.png";
   const brandName = workspaceSettingsQuery.data?.brandName || "Narriv";
 
   return (
@@ -51,7 +51,7 @@ export function Sidebar() {
           {sidebarCollapsed ? (
             <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full">
               <Image
-                src={customLogoUrl || "/logo-final-narriv.png"}
+                src={customLogoUrl || "/logo-bulat-narriv-2026.png"}
                 alt={brandName}
                 width={56}
                 height={56}
@@ -78,14 +78,14 @@ export function Sidebar() {
               </span>
             </>
           ) : (
-            <div className="flex h-20 items-center px-3">
+            <div className="flex h-16 items-center px-3">
               <Image
-                src="/logo-narriv-putih.png"
+                src="/logo-p-narriv-2026.png"
                 alt={brandName}
                 width={200}
                 height={80}
                 priority
-                className="h-20 w-auto max-w-[180px] object-contain"
+                className="h-16 w-auto max-w-[180px] object-contain"
               />
             </div>
           )}
@@ -169,7 +169,7 @@ export function Sidebar() {
           <button type="button" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} aria-label="Close menu" />
           <div className="absolute inset-x-3 bottom-3 max-h-[82dvh] overflow-y-auto rounded-[24px] bg-[#090D16] border border-border p-4 shadow-2xl">
             <div className="mb-4 flex items-center justify-between">
-              <Image src="/logo-narriv-putih.png" alt="Narriv" width={110} height={28} priority className="h-7 w-auto object-contain" />
+              <Image src="/logo-p-narriv-2026.png" alt="Narriv" width={110} height={28} priority className="h-7 w-auto object-contain" />
               <button type="button" onClick={() => setOpen(false)} className="rounded-xl border border-border p-2 text-white/60 hover:text-white hover:bg-white/5"><X size={18} /></button>
             </div>
             <div className="grid gap-2">

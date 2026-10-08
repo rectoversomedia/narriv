@@ -22,9 +22,9 @@ export const metadata: Metadata = {
   description: "Narriv membantu tim memantau sinyal publik, memahami narasi, dan menentukan aksi yang tepat.",
   applicationName: "Narriv",
   icons: {
-    icon: "/logo-final-narriv.png",
-    shortcut: "/favicon.ico",
-    apple: "/logo-final-narriv.png",
+    icon: "/logo-bulat-narriv-2026.png",
+    shortcut: "/logo-bulat-narriv-2026.png",
+    apple: "/logo-bulat-narriv-2026.png",
   },
   openGraph: {
     title: "Narriv | Narrative Intelligence",

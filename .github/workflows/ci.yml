@@ -12,7 +12,7 @@ env:
 jobs:
   lint:
     name: Lint & Type Check
-    runs-on: ubuntu-22.04
+    runs-on: macos-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
