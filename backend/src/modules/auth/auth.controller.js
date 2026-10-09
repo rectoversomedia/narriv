@@ -568,7 +568,8 @@ export const login = async (req, res) => {
 
         await writeAuditLog(user.id, "login", { email: user.email });
 
-        res.json({ token, refresh_token, user: { ...toSessionUser(user), workspace } });
+        // refreshToken is the field the frontend reads; refresh_token kept for older clients.
+        res.json({ token, refresh_token, refreshToken: refresh_token, user: { ...toSessionUser(user), workspace } });
     } catch (error) {
         logStructured("error", "Error logging in:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
@@ -579,9 +580,9 @@ export const refresh = async (req, res) => {
     try {
         if (!requireSecretsOrFail(res)) return;
 
-        const { refresh_token } = req.body;
+        const refresh_token = req.body?.refreshToken || req.body?.refresh_token;
         if (!refresh_token) {
-            return res.status(400).json({ error: "refresh_token is required." });
+            return res.status(400).json({ error: "refreshToken is required." });
         }
 
         const token_hash = hashRefreshToken(refresh_token);
@@ -624,7 +625,7 @@ export const refresh = async (req, res) => {
         const next = await issueRefreshToken(user.id);
         await writeAuditLog(user.id, "refresh_success");
 
-        return res.json({ token, refresh_token: next.refresh_token });
+        return res.json({ token, refresh_token: next.refresh_token, refreshToken: next.refresh_token });
     } catch (error) {
         logStructured("error", "Error refreshing session:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });
@@ -633,9 +634,9 @@ export const refresh = async (req, res) => {
 
 export const logout = async (req, res) => {
     try {
-        const { refresh_token } = req.body;
+        const refresh_token = req.body?.refreshToken || req.body?.refresh_token;
         if (!refresh_token) {
-            return res.status(400).json({ error: "refresh_token is required." });
+            return res.status(400).json({ error: "refreshToken is required." });
         }
 
         const token_hash = hashRefreshToken(refresh_token);
@@ -725,7 +726,6 @@ export const forgotPassword = async (req, res) => {
         }
 
         const reset_code = createResetCode();
-        const resetToken = crypto.randomBytes(32).toString("hex");
         const expires_at = new Date(Date.now() + PASSWORD_RESET_TTL_MINUTES * 60 * 1000);
 
         // Invalidate previous unused tokens
@@ -736,10 +736,13 @@ export const forgotPassword = async (req, res) => {
             .eq("user_id", user.id)
             .is("used_at", null);
 
+        // Store the hash of the emailed code: verifyResetCode compares the submitted
+        // code against token_hash (previously the hash of an unrelated random token
+        // was stored, so no reset code could ever be verified).
         await baseSupabaseAdmin.from("password_reset_tokens").insert({
             id: crypto.randomUUID(),
             user_id: user.id,
-            token_hash: hashResetSecret(resetToken),
+            token_hash: hashResetSecret(reset_code),
             expires_at: expires_at.toISOString(),
         });
 

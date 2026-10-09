@@ -32,12 +32,17 @@ export const registerBodySchema = z.object({
     password: passwordStrengthSchema,
 });
 
-export const refreshBodySchema = z.object({
-    refreshToken: z
-        .string({ required_error: "refreshToken is required." })
-        .trim()
-        .min(1, "refreshToken is required."),
-});
+// The frontend sends `refreshToken`; older clients send `refresh_token`.
+// Both are accepted and normalized to `refreshToken`.
+const refreshTokenBody = z
+    .object({
+        refreshToken: z.string().trim().min(1).optional(),
+        refresh_token: z.string().trim().min(1).optional(),
+    })
+    .refine((b) => b.refreshToken || b.refresh_token, { message: "refreshToken is required.", path: ["refreshToken"] })
+    .transform((b) => ({ refreshToken: b.refreshToken || b.refresh_token }));
+
+export const refreshBodySchema = refreshTokenBody;
 
 export const changePasswordBodySchema = z.object({
     currentPassword: z
@@ -94,9 +99,4 @@ export const resetPasswordBodySchema = z.object({
     newPassword: passwordStrengthSchema,
 });
 
-export const logoutBodySchema = z.object({
-    refreshToken: z
-        .string({ required_error: "refreshToken is required." })
-        .trim()
-        .min(1, "refreshToken is required."),
-});
+export const logoutBodySchema = refreshTokenBody;
