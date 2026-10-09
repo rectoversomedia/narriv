@@ -28,7 +28,7 @@ function urgencyFromBand(band) {
     return "monitor";
 }
 
-export function deriveRecommendations({ riskScore = 0, riskBand = "low", reputationBand = "neutral", activeAlerts = 0, emergingNarratives = 0, negativeShare = 0, volumeRatio = 1 }) {
+export function deriveRecommendations({ riskScore = 0, riskBand = "low", reputationBand = "neutral", activeAlerts = 0, emergingNarratives = 0, negativeShare = 0, volumeRatio = 1, risk = null }) {
     const out = [];
     const evidence = [];
 
@@ -133,9 +133,65 @@ export function deriveRecommendations({ riskScore = 0, riskBand = "low", reputat
         });
     }
 
-    for (const r of out) {
+    const grounded = risk ? out.map((r) => groundRecommendation(r, risk)) : out;
+    for (const r of grounded) {
         evidence.push({ type: "recommendation", action: r.action });
     }
 
-    return { recommendations: out, evidence };
+    return { recommendations: grounded, evidence };
+}
+
+// Evidence tag -> risk-model components whose records support it.
+const TAG_COMPONENTS = {
+    risk_score: ["negative_share", "severity", "active_alerts", "narrative_momentum"],
+    active_alerts: ["active_alerts"],
+    sentiment_breakdown: ["negative_share"],
+    reputation_intelligence: ["negative_share", "severity"],
+    narrative_clusters_table_query: ["narrative_momentum"],
+    emerging_narratives: ["narrative_momentum"],
+    volume_ratio: ["volume_change"],
+};
+
+const MONITOR_NEXT = {
+    escalate_internal: "Unresolved alert count and negative share in the next run.",
+    investigate: "Whether the cited signals are followed by more coverage from additional sources.",
+    prepare_clarification: "Negative share and the narratives behind the cited signals.",
+    monitor: "Velocity and signal count of the cited narrative clusters.",
+    prepare_statement: "Reputation band and negative share in the next run.",
+    brief_spokesperson: "Media pickup of the cited signals.",
+};
+
+/**
+ * Attach the real record IDs, the observed issue and limitations to a
+ * recommendation, and derive confidence from the evidence instead of a fixed
+ * number. Recommendations are suggestions only; nothing is executed.
+ */
+export function groundRecommendation(rec, risk) {
+    const keys = [...new Set((rec.evidence || []).flatMap((tag) => TAG_COMPONENTS[tag] || []))];
+    const components = (risk.components || []).filter((c) => keys.includes(c.key));
+    const sourceIds = [...new Set(components.flatMap((c) => c.evidenceIds || []))].slice(0, 10);
+    const observedIssue = components.filter((c) => c.contribution > 0).map((c) => c.reason).join(" ")
+        || "No elevated risk component; routine monitoring.";
+
+    const limitations = [...(risk.uncertainty?.reasons || [])];
+    let confidence = rec.confidence;
+    if (risk.uncertainty?.level === "high") confidence *= 0.7;
+    else if (risk.uncertainty?.level === "medium") confidence *= 0.85;
+    if (sourceIds.length === 0 && rec.action !== "monitor") {
+        confidence = Math.min(confidence, 0.4);
+        limitations.push("No individual records directly support this recommendation; it is based on aggregate metrics.");
+    }
+
+    return {
+        ...rec,
+        status: "suggested",
+        observedIssue,
+        whyItMatters: rec.reason,
+        recommendedAction: rec.action,
+        sourceIds,
+        confidence: Number(confidence.toFixed(2)),
+        confidenceBasis: `risk model ${risk.version}, uncertainty ${risk.uncertainty?.level || "unknown"}, ${sourceIds.length} supporting record(s)`,
+        limitations,
+        monitorNext: MONITOR_NEXT[rec.action] || "Re-run the intelligence brief after the next ingestion.",
+    };
 }

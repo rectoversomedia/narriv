@@ -3,7 +3,7 @@ import { analyzeCluster } from "../ai/ai.service.js";
 import { logStructured } from "../../lib/logger.js";
 
 // Helper to extract basic keywords (lowercase, basic stop words removed, bilingual EN + ID)
-function extractKeywords(text) {
+export function extractKeywords(text) {
     if (!text) return new Set();
     const stopWords = new Set([
         // English stop words
@@ -16,11 +16,30 @@ function extractKeywords(text) {
 }
 
 // Helper to calculate Jaccard Similarity between two sets
-function calculateSimilarity(setA, setB) {
+export function calculateSimilarity(setA, setB) {
     if (!setA || !setB || setA.size === 0 || setB.size === 0) return 0;
     const intersection = new Set([...setA].filter(x => setB.has(x)));
     const union = new Set([...setA, ...setB]);
     return intersection.size / union.size;
+}
+
+const MEMBERSHIP_LOG_LIMIT = 100;
+
+/**
+ * Why a signal belongs with a cluster (or seed signal): Jaccard similarity of
+ * keyword sets plus the shared keywords. Stored in narrative_clusters.metadata
+ * so cluster membership stays explainable without a schema change.
+ */
+export function explainMembership(signal, keywordSet, method, threshold) {
+    const shared = [...(signal.keywords || [])].filter((k) => keywordSet?.has(k)).sort().slice(0, 8);
+    return {
+        signalId: signal.id,
+        method,
+        similarity: Number(calculateSimilarity(signal.keywords, keywordSet).toFixed(3)),
+        threshold,
+        sharedKeywords: shared,
+        at: new Date().toISOString(),
+    };
 }
 
 export const runClustering = async (workspaceId) => {
@@ -80,7 +99,7 @@ export const runClustering = async (workspaceId) => {
     // 3. Fetch existing active clusters to see if unclustered signals match them
     const { data: existingClusters } = await supabase
         .from("narrative_clusters")
-        .select("id, title, description, keywords, signal_count, sentiment, impact")
+        .select("id, title, description, keywords, signal_count, sentiment, impact, metadata")
         .eq("workspace_id", workspaceId)
         .order("updated_at", { ascending: false })
         .limit(20);
@@ -103,7 +122,8 @@ export const runClustering = async (workspaceId) => {
         return {
             ...s,
             keywords: extractKeywords(textToAnalyze),
-            sentiment: latestAnalysis?.sentiment || s.sentiment || "neutral"
+            // AI sentiment lives in signal_analyses.analysis.
+            sentiment: latestAnalysis?.analysis?.sentiment || s.sentiment || "neutral"
         };
     });
 
@@ -136,10 +156,16 @@ export const runClustering = async (workspaceId) => {
                 // Increment cluster signal count
                 const newCount = (bestCluster.signal_count || 0) + 1;
                 bestCluster.signal_count = newCount;
+                const membership = [
+                    ...((bestCluster.metadata?.membership) || []),
+                    explainMembership(signal, bestCluster.keywordSet, "keyword_jaccard_attach", 0.20),
+                ].slice(-MEMBERSHIP_LOG_LIMIT);
+                bestCluster.metadata = { ...(bestCluster.metadata || {}), membership };
                 await supabase
                     .from("narrative_clusters")
                     .update({
                         signal_count: newCount,
+                        metadata: bestCluster.metadata,
                         updated_at: new Date().toISOString()
                     })
                     .eq("id", bestCluster.id);
@@ -226,6 +252,14 @@ export const runClustering = async (workspaceId) => {
                 signal_count: cluster.length,
                 keywords: allClusterKeywords,
                 lifecycle: "emerging",
+                metadata: {
+                    labeledBy: aiAnalysis ? "ai" : "heuristic_fallback",
+                    membership: cluster.length === 1
+                        ? [{ signalId: cluster[0].id, method: "single_high_severity_signal", similarity: null, threshold: null, sharedKeywords: [], at: new Date().toISOString() }]
+                        : cluster.map((m, idx) => idx === 0
+                            ? { signalId: m.id, method: "seed", similarity: 1, threshold, sharedKeywords: [...m.keywords].sort().slice(0, 8), at: new Date().toISOString() }
+                            : explainMembership(m, cluster[0].keywords, "keyword_jaccard_seed", threshold)),
+                },
                 updated_at: new Date().toISOString()
             })
             .select()

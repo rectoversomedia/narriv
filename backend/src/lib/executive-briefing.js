@@ -35,10 +35,12 @@ export async function generateExecutiveBrief({ workspaceId, windowHours = 24 }) 
         riskScore: biggestRisk,
         riskBand: biggestRiskBand,
         reputationBand: repBand,
-        activeAlerts: factAlertCount,
+        // Unresolved alerts only; factAlertCount includes resolved alerts.
+        activeAlerts: narrative.facts.find((f) => f.kind === "active_alerts")?.value || 0,
         emergingNarratives: topEmergent?.items?.length || 0,
         negativeShare: (narrative.facts.find((f) => f.kind === "sentiment_breakdown")?.value?.NEGATIVE || 0) / Math.max(1, factSignalCount),
         volumeRatio: narrative.inferences.find((i) => i.kind === "volume_ratio")?.ratio || 1,
+        risk: narrative.riskModel || null,
     });
 
     return {
@@ -52,7 +54,11 @@ export async function generateExecutiveBrief({ workspaceId, windowHours = 24 }) 
                 evidence: narrative.evidence.slice(0, 5),
             },
             biggestRisk: {
-                summary: `Risk score ${biggestRisk}/100 (${biggestRiskBand}).`,
+                summary: `Risk index ${biggestRisk}/100 (${biggestRiskBand}) — heuristic, not a probability.`,
+                drivers: (narrative.riskModel?.components || []).filter((c) => c.contribution > 0)
+                    .sort((a, b) => b.contribution - a.contribution)
+                    .map((c) => ({ key: c.key, contribution: c.contribution, reason: c.reason, evidenceIds: c.evidenceIds })),
+                uncertainty: narrative.riskModel?.uncertainty || null,
                 evidence: narrative.inferences.slice(0, 3),
             },
             emergingIssue: topEmergent
@@ -75,6 +81,6 @@ export async function generateExecutiveBrief({ workspaceId, windowHours = 24 }) 
             recommendedActions: recs.recommendations.slice(0, 5),
             whatToWatchNext: predictions.signals.slice(0, 3),
         },
-        disclaimer: "Brief is generated from current Narriv data. Every section is traceable to source IDs/queries in the `evidence` field. If data is insufficient, the section says so explicitly.",
+        disclaimer: "Generated deterministically from current Narriv data. Risk drivers and recommendations list the IDs of the records behind them; aggregate statements reference the query they come from. Scores are heuristic indices, not probabilities. Recommendations are suggestions and have not been acted on.",
     };
 }

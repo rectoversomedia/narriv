@@ -19,6 +19,8 @@
  * model. Treat all numbers as guidance for human review.
  */
 
+import { computeRisk } from "./risk-model.js";
+import { deriveRecommendations } from "./recommendation-engine.js";
 import { baseSupabaseAdmin } from "./supabase.js";
 
 const WINDOW_HOURS_DEFAULT = 24;
@@ -70,7 +72,7 @@ export async function computeNarrativeIntelligence({ workspaceId, windowHours = 
     const [signalsRecent, signalsPrev, alerts, clusters] = await Promise.all([
         baseSupabaseAdmin
             .from("signals")
-            .select("id, sentiment, platform, captured_at, source_id")
+            .select("id, sentiment, severity, platform, captured_at, source_id")
             .eq("workspace_id", workspaceId)
             .gte("captured_at", sinceIso)
             .then((r) => r.data || []),
@@ -133,27 +135,28 @@ export async function computeNarrativeIntelligence({ workspaceId, windowHours = 
     }
     facts.push({ kind: "sentiment_breakdown", value: sentimentCounts });
 
-    // Volume ratio (INFERENCE): current window vs prior window.
-    const ratio = signalsPrev.length > 0
-        ? signalsRecent.length / signalsPrev.length
-        : (signalsRecent.length > 0 ? 2 : 0);
-    const volumeSignal = {
+    // Explainable risk model: every component carries its reason and evidence IDs.
+    const risk = computeRisk({ signals: signalsRecent, priorCount: signalsPrev.length, alerts, clusters });
+    const volume = risk.components.find((c) => c.key === "volume_change");
+    const ratio = volume.inputs.ratio; // null when there is no baseline window
+
+    inferences.push({
         kind: "volume_ratio",
-        label: ratio >= 2
-            ? "Mention volume has doubled or more vs the prior window."
-            : ratio >= 1.25
-                ? "Mention volume is moderately elevated."
-                : ratio <= 0.5
-                    ? "Mention volume has dropped vs the prior window."
-                    : "Mention volume is stable.",
-        ratio: Number(ratio.toFixed(2)),
+        label: ratio === null
+            ? "No signals in the previous window; volume change cannot be assessed yet."
+            : ratio >= 2
+                ? "Mention volume has doubled or more vs the prior window."
+                : ratio >= 1.25
+                    ? "Mention volume is moderately elevated."
+                    : ratio <= 0.5
+                        ? "Mention volume has dropped vs the prior window."
+                        : "Mention volume is stable.",
+        ratio,
         current: signalsRecent.length,
         prior: signalsPrev.length,
-    };
-    inferences.push(volumeSignal);
+    });
     evidence.push({ type: "signals_table_query", since: sinceIso, count: signalsRecent.length });
 
-    // Negative sentiment share (INFERENCE).
     const negShare = clamp01(sentimentCounts.NEGATIVE / signalsRecent.length);
     inferences.push({
         kind: "negative_sentiment_share",
@@ -163,18 +166,13 @@ export async function computeNarrativeIntelligence({ workspaceId, windowHours = 
                 ? "A meaningful share of recent signals are negative."
                 : "Negative sentiment is not dominant in the window.",
         value: Number(negShare.toFixed(2)),
+        signalIds: risk.components.find((c) => c.key === "negative_share").evidenceIds,
     });
 
-    // Emerging narratives (FACT + INFERENCE): clusters with high momentum.
-    const emerging = clusters
-        .filter((c) => safeNumber(c.momentum, 0) > 0.6)
-        .slice(0, 5)
-        .map((c) => ({
-            clusterId: c.id,
-            title: c.title,
-            momentum: safeNumber(c.momentum, 0),
-            signalCount: safeNumber(c.signal_count, 0),
-        }));
+    // Emerging narratives: clusters above the (0-100) velocity threshold.
+    const emerging = risk.emergingClusters.slice(0, 5).map((c) => ({
+        clusterId: c.id, title: c.title, momentum: c.velocity, signalCount: c.signalCount,
+    }));
     if (emerging.length > 0) {
         inferences.push({
             kind: "emerging_narratives",
@@ -184,33 +182,26 @@ export async function computeNarrativeIntelligence({ workspaceId, windowHours = 
         for (const e of emerging) evidence.push({ type: "narrative_cluster", id: e.clusterId });
     }
 
-    // Active alerts (FACT).
     const activeAlerts = alerts.filter((a) => a.status !== "resolved");
     if (activeAlerts.length > 0) {
         facts.push({ kind: "active_alerts", value: activeAlerts.length });
         for (const a of activeAlerts.slice(0, 5)) evidence.push({ type: "alert", id: a.id });
     }
 
-    // Risk score (heuristic, label as INFERENCE — explicitly NOT validated).
-    const components = [
-        clamp01(ratio / 3) * 0.30,
-        negShare * 0.30,
-        clamp01(activeAlerts.length / 5) * 0.20,
-        clamp01(emerging.length / 3) * 0.20,
-    ];
-    const riskScore = Math.round(components.reduce((a, b) => a + b, 0) * 100);
-    const riskBand = riskScore >= 75 ? "critical" : riskScore >= 50 ? "high" : riskScore >= 25 ? "medium" : "low";
-
+    const riskScore = risk.score;
+    const riskBand = risk.band;
     inferences.push({
         kind: "risk_score",
-        label: "Heuristic composite risk score. NOT scientifically validated.",
+        label: "Heuristic composite risk index (0-100). Not a probability and not empirically calibrated.",
         score: riskScore,
         band: riskBand,
-        components: components.map((c) => Number(c.toFixed(3))),
+        modelVersion: risk.version,
+        components: risk.components,
+        uncertainty: risk.uncertainty,
     });
 
     // PREDICTIONS — labeled with confidence, time-bound.
-    if (ratio >= 2) {
+    if (ratio !== null && ratio >= 2) {
         predictions.push({
             kind: "volume_continuation",
             label: "If the current pace persists, volume in the next window is likely to be elevated.",
@@ -219,7 +210,7 @@ export async function computeNarrativeIntelligence({ workspaceId, windowHours = 
             evidence: ["volume_ratio", "signals_table_query"],
         });
     }
-    if (negShare >= 0.5 && ratio >= 1.25) {
+    if (negShare >= 0.5 && ratio !== null && ratio >= 1.25) {
         predictions.push({
             kind: "sentiment_escalation",
             label: "Concentrated negative sentiment combined with rising volume may indicate an emerging issue.",
@@ -229,40 +220,29 @@ export async function computeNarrativeIntelligence({ workspaceId, windowHours = 
         });
     }
 
-    // RECOMMENDATIONS — gated, never auto-execute.
-    if (riskBand === "high" || riskBand === "critical") {
-        recommendations.push({
-            action: "investigate",
-            label: "Investigate the high-risk signals contributing to the score.",
-            confidence: 0.7,
-            evidence: ["risk_score", "active_alerts"],
-            requiresApproval: true,
-        });
-    }
-    if (activeAlerts.length > 0) {
-        recommendations.push({
-            action: "review_alerts",
-            label: `Review the ${activeAlerts.length} active alert(s) in the alert center.`,
-            confidence: 0.8,
-            evidence: ["active_alerts"],
-            requiresApproval: true,
-        });
-    }
-    if (emerging.length > 0) {
-        recommendations.push({
-            action: "monitor",
-            label: `Continue monitoring the ${emerging.length} emerging narrative cluster(s) for further momentum.`,
-            confidence: 0.6,
-            evidence: ["emerging_narratives"],
-            requiresApproval: true,
-        });
-    }
+    // RECOMMENDATIONS — gated, never auto-executed; each cites real record IDs.
+    recommendations.push(...deriveRecommendations({
+        riskScore,
+        riskBand,
+        activeAlerts: activeAlerts.length,
+        emergingNarratives: emerging.length,
+        negativeShare: negShare,
+        volumeRatio: ratio ?? 1,
+        risk,
+    }).recommendations);
 
     return {
         label: "narrative_intelligence",
         status: "ok",
         riskScore,
         riskBand,
+        riskModel: {
+            version: risk.version,
+            components: risk.components,
+            uncertainty: risk.uncertainty,
+            limitations: risk.limitations,
+            sourceIds: risk.sourceIds,
+        },
         facts,
         inferences,
         predictions,
