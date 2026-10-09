@@ -1,11 +1,18 @@
 import express from "express";
-import { inspectSchema, runMigration, execSql, seedSourceTemplates } from "./migrate.controller.js";
+import { inspectSchema, runMigration, execSql, seedSourceTemplates, checkAuth } from "./migrate.controller.js";
 import { debugSchema } from "./debug.controller.js";
 import { testUserInsert } from "./migrate.controller.js";
 
 const router = express.Router();
 
-// Inspect current DB schema (public, no auth)
+// Every diagnostic/migration route touches the DB with the service-role key,
+// so all of them require the x-admin-secret header (fails closed when ADMIN_SECRET is unset).
+router.use((req, res, next) => {
+    if (!checkAuth(req, res)) return;
+    next();
+});
+
+// Inspect current DB schema
 router.get("/inspect", testUserInsert);
 
 // Debug: full schema + insert test

@@ -22,7 +22,8 @@ export const resolveWorkspaceIdForUser = async (userId, requestedWorkspaceId) =>
   if (!userId) return null;
   const normalizedRequestedId = requestedWorkspaceId === "demo-workspace" ? DEMO_WORKSPACE_ID : requestedWorkspaceId;
   if (String(userId).startsWith("demo")) {
-    return normalizedRequestedId || DEMO_WORKSPACE_ID;
+    // Demo sessions are pinned to the demo workspace; never honor a requested id.
+    return DEMO_WORKSPACE_ID;
   }
   if (normalizedRequestedId) {
     const { data: membership, error } = await supabase

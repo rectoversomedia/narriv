@@ -48,8 +48,8 @@ This deep-dive verification confirms the codebase is **production-ready** with t
 ### 1. JWT Secrets Generated
 Generated new 256-bit secure secrets for JWT authentication:
 ```
-JWT_SECRET=FzYnj3/eFieKq2TtjkKbkci2ognzYXeObJLxaO6Bd3xX5sLAbl3V5PEGpP61WlZK
-JWT_REFRESH_SECRET=nXENli+LSkGN7jRJLE/53NXQuPdYUNytzgykRD9Z1zQiHfugfDGLIvf3sVwiGCzQ
+JWT_SECRET=<redacted — these values were exposed; rotate and never commit secrets>
+JWT_REFRESH_SECRET=<redacted — these values were exposed; rotate and never commit secrets>
 ```
 
 ### 2. Vercel Configuration Fixed

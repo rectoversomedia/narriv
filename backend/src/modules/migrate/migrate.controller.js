@@ -9,7 +9,7 @@ const BCRYPT_SALT_ROUNDS = 12;
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
 
-function checkAuth(req, res) {
+export function checkAuth(req, res) {
     if (!ADMIN_SECRET) {
         res.status(500).json({ error: "ADMIN_SECRET not configured on server." });
         return false;
