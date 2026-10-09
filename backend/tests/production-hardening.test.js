@@ -12,6 +12,10 @@ const mockPrisma = {
 
 jest.unstable_mockModule('../src/lib/supabase.js', () => ({
   default: mockPrisma,
+  supabase: mockPrisma,
+  supabaseAdmin: mockPrisma,
+  baseSupabase: mockPrisma,
+  baseSupabaseAdmin: mockPrisma,
 }));
 
 await import('./setup.js');

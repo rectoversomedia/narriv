@@ -47,11 +47,20 @@ jest.unstable_mockModule('../src/lib/cache.js', () => ({
 }));
 
 // Mock Rate limiter
+const passThrough = () => (req, res, next) => next();
 jest.unstable_mockModule('../src/middlewares/rate-limit.js', () => ({
-  rateLimit: () => (req, res, next) => next(),
+  default: passThrough,
+  rateLimit: passThrough,
+  rateLimitWithPrefix: passThrough,
+  initializeRateLimiter: () => {},
+  getRateLimitStoreStatus: () => ({ redis: false }),
+  shutdownRateLimiter: async () => {},
+  // Any named limiter factory (rateLimiters.aiGeneration(), ...) passes through.
+  rateLimiters: new Proxy({}, { get: () => passThrough }),
   RATE_LIMITS: {
     auth: { windowMs: 1000, max: 100 },
     api: { windowMs: 1000, max: 100 },
+    api_default: { windowMs: 1000, max: 100 },
     ai_generation: { windowMs: 1000, max: 100 },
     ingestion: { windowMs: 1000, max: 100 },
     feedback: { windowMs: 1000, max: 100 },
