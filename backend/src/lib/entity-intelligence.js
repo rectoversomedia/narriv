@@ -74,11 +74,18 @@ export async function computeEntityIntelligence({ workspaceId, windowHours = 24,
     const analysesBySignalId = new Map();
     if (recentSignalIds.length > 0) {
         const { data: analyses } = await baseSupabaseAdmin
-            .from("signal_analysis")
-            .select("signal_id, stakeholder, impact, narrative_type, summary")
+            .from("signal_analyses")
+            .select("signal_id, analysis")
             .in("signal_id", recentSignalIds)
             .limit(500);
-        for (const a of analyses || []) analysesBySignalId.set(a.signal_id, a);
+        // AI fields are stored inside the `analysis` jsonb column.
+        for (const a of analyses || []) {
+            let fields = a.analysis || {};
+            if (typeof fields === "string") {
+                try { fields = JSON.parse(fields); } catch { fields = {}; }
+            }
+            analysesBySignalId.set(a.signal_id, { signal_id: a.signal_id, ...fields });
+        }
     }
 
     const entityMap = new Map();

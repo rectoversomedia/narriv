@@ -129,8 +129,15 @@ app.use(validateContentType);
 // Request logging
 app.use(requestLogger);
 
-// Request timeout
-app.use(requestTimeout(TIMEOUTS.default));
+// Request timeout (cron and AI backfill run sequential AI calls and need longer budgets)
+const defaultTimeout = requestTimeout(TIMEOUTS.default);
+const cronTimeout = requestTimeout(TIMEOUTS.ingestion);
+const aiBackfillTimeout = requestTimeout(TIMEOUTS.ai_generation);
+app.use((req, res, next) => {
+    if (req.path.startsWith("/cron/")) return cronTimeout(req, res, next);
+    if (req.path === "/ai/retroanalyze" || req.path === "/ai/cluster") return aiBackfillTimeout(req, res, next);
+    return defaultTimeout(req, res, next);
+});
 
 // Health endpoints (public, no auth needed)
 app.get("/", (req, res) => {
@@ -157,7 +164,7 @@ app.use("/auth", rateLimit(RATE_LIMITS.auth), authRoutes);
 app.use("/ai", rateLimit(RATE_LIMITS.ai_generation), apiSecurityHeaders, aiRoutes);
 // Background/backfill AI routes get a separate, higher quota so the
 // cron path is not blocked by interactive traffic.
-app.use("/ai", rateLimit({ ...RATE_LIMITS.ai_generation, prefix: "ai-bg", max: 30, windowMs: 60 * 1000 }), apiBackfillRoutes);
+app.use("/ai", rateLimit({ ...RATE_LIMITS.ai_generation, prefix: "ai-bg", max: 30, windowMs: 60 * 1000 }), aiBackfillRoutes);
 app.use("/ingestion", rateLimit(RATE_LIMITS.ingestion), ingestionRoutes);
 app.use("/actions", rateLimit(RATE_LIMITS.api_default), apiSecurityHeaders, actionsRoutes);
 app.use("/feedback", rateLimit(RATE_LIMITS.feedback), apiSecurityHeaders, feedbackRoutes);
@@ -182,7 +189,8 @@ app.use("/bulk", bulkRoutes);
 app.use("/search", searchRoutes);
 app.use("/realtime", realtimeRoutes);
 app.use("/subscriptions", subscriptionsRoutes);
-app.use("/api/cron", cronRoutes);
+// /api prefix is stripped above, so Vercel Cron's /api/cron/* arrives as /cron/*
+app.use("/cron", cronRoutes);
 app.use("/migrate", migrateRoutes);
 
 // Sentry error handler (must be before error handler)

@@ -12,7 +12,9 @@ import { logStructured } from "../../lib/logger.js";
 const router = Router();
 
 function verifyCronSecret(req) {
-    const secret = req.headers["x-cron-secret"];
+    // Vercel Cron sends `Authorization: Bearer <CRON_SECRET>`; manual callers may use x-cron-secret.
+    const auth = req.headers.authorization || "";
+    const secret = auth.startsWith("Bearer ") ? auth.slice(7) : req.headers["x-cron-secret"];
     const expected = process.env.CRON_SECRET;
     if (!expected) {
         logStructured("error", "cron_no_secret_configured", { path: req.path });
@@ -91,8 +93,9 @@ router.post("/health-check", async (req, res) => {
 
 export default router;
 
-// Hobby plan: single daily cron runs all jobs sequentially
-router.post("/daily", async (req, res) => {
+// Hobby plan: single daily cron runs all jobs sequentially.
+// Vercel Cron invokes with GET; POST is kept for manual triggers.
+const runDaily = async (req, res) => {
     if (!verifyCronSecret(req)) return res.status(401).json({ error: "Unauthorized" });
     const start = Date.now();
     const results = {};
@@ -159,4 +162,7 @@ router.post("/daily", async (req, res) => {
         logStructured("error", "cron_daily_failed", { error: error.message });
         res.status(500).json({ error: "Internal server error" });
     }
-});
+};
+
+router.get("/daily", runDaily);
+router.post("/daily", runDaily);

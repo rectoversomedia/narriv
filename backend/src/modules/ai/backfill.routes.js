@@ -20,6 +20,7 @@ import { baseSupabaseAdmin } from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
 import { runClustering } from "../clustering/clustering.service.js";
 import { analyzeSignal } from "./ai.service.js";
+import { saveAnalysis } from "./backfill.worker.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -45,14 +46,6 @@ function pickAnalysisText(signal) {
     if (title && content) return `${title}\n\n${content}`;
     if (content) return content;
     return title || "";
-}
-
-function pickPublishedAt(signal) {
-    return signal.published_at || signal.captured_at || null;
-}
-
-function pickPlatform(signal) {
-    return signal.platform || null;
 }
 
 /**
@@ -83,10 +76,10 @@ router.post("/retroanalyze", async (req, res) => {
         }
 
         // Fetch existing analysis ids
+        // signal_analyses has no workspace_id; the signal ids are already workspace-scoped.
         const { data: existing, error: exErr } = await baseSupabaseAdmin
-            .from("signal_analysis")
+            .from("signal_analyses")
             .select("signal_id")
-            .eq("workspace_id", ws)
             .in("signal_id", signals.map((s) => s.id));
         if (exErr) {
             logStructured("error", "retroanalyze: analysis query failed", { error: exErr.message });
@@ -108,31 +101,7 @@ router.post("/retroanalyze", async (req, res) => {
                     continue;
                 }
                 const result = await analyzeSignal(signal.title || null, text);
-                const sentiment = result?.sentiment || "neutral";
-                const narrativeType = result?.narrative_type || "general";
-                const impact = result?.impact || "low";
-                const stakeholder = result?.stakeholder || null;
-                const summary = result?.summary || null;
-                const recommendedAction = result?.recommended_action || null;
-                const confidence = typeof result?.confidence_score === "number" ? result.confidence_score : null;
-
-                const row = {
-                    workspace_id: ws,
-                    signal_id: signal.id,
-                    sentiment: String(sentiment).toLowerCase(),
-                    narrative_type: String(narrativeType).toLowerCase(),
-                    impact: String(impact).toLowerCase(),
-                    stakeholder: stakeholder ? String(stakeholder) : null,
-                    summary,
-                    recommended_action: recommendedAction,
-                    confidence_score: confidence,
-                    platform: pickPlatform(signal),
-                    published_at: pickPublishedAt(signal),
-                };
-
-                const { error: insErr } = await baseSupabaseAdmin
-                    .from("signal_analysis")
-                    .upsert(row, { onConflict: "signal_id" });
+                const { error: insErr } = await saveAnalysis(signal.id, result);
                 if (insErr) {
                     failed += 1;
                     failures.push({ signalId: signal.id, reason: insErr.message });

@@ -17,7 +17,7 @@ export function generateContentHash(title, content) {
 export async function getCachedAnalysis(contentHash) {
     try {
         const { data, error } = await supabase
-            .from('signal_analysis')
+            .from('signal_analyses')
             .select('*')
             .eq('content_hash', contentHash)
             .order('created_at', { ascending: false })
@@ -44,7 +44,7 @@ export async function cacheAnalysis(signalId, contentHash, analysisData) {
     try {
         // Check if cache entry already exists for this hash
         const { data: existing } = await supabase
-            .from('signal_analysis')
+            .from('signal_analyses')
             .select('id')
             .eq('content_hash', contentHash)
             .limit(1);
@@ -52,7 +52,7 @@ export async function cacheAnalysis(signalId, contentHash, analysisData) {
         if (existing && existing.length > 0) {
             // Update existing cache entry
             const { error } = await supabase
-                .from('signal_analysis')
+                .from('signal_analyses')
                 .update({
                     signal_id: signalId,
                     ...analysisData,
@@ -68,7 +68,7 @@ export async function cacheAnalysis(signalId, contentHash, analysisData) {
 
         // Create new cache entry
         const { data, error } = await supabase
-            .from('signal_analysis')
+            .from('signal_analyses')
             .insert({
                 signal_id: signalId,
                 content_hash: contentHash,
