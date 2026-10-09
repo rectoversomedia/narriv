@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import {
   cn,
 } from "@/lib/utils";
@@ -16,6 +17,7 @@ import {
   type ReputationIntelligencePayload,
   type RecommendationsPayload,
   type IntelligenceRecommendation,
+  type RiskModelExplanation,
 } from "@/lib/intelligence-api";
 import { Skeleton } from "@/components/ui/Skeleton";
 
@@ -129,8 +131,11 @@ export function TodaysIntelligenceStrip({ windowHours = 24 }: { windowHours?: nu
           <span className="text-[28px] font-bold leading-none text-slate-900">{riskScore}</span>
           <span className="text-[12px] text-slate-500">/100</span>
         </div>
-        <div className="mt-2">
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
           <Pill tone={riskPill.tone}>{riskPill.label}</Pill>
+          {narrative.data?.riskModel ? (
+            <span className="text-[11px] text-slate-500">{narrative.data.riskModel.uncertainty.level} uncertainty</span>
+          ) : null}
         </div>
       </div>
 
@@ -217,12 +222,67 @@ export function NarrativeLandscapePanel({ windowHours = 168 }: { windowHours?: n
             {items.slice(0, 4).map((it) => (
               <li key={it.clusterId} className="flex items-center justify-between rounded-md border border-slate-100 bg-slate-50/60 px-3 py-2 text-[13px]">
                 <span className="truncate text-slate-800">{it.title}</span>
-                <span className="ml-3 shrink-0 text-[11px] font-semibold text-slate-500">momentum {it.momentum.toFixed(2)}</span>
+                <span className="ml-3 shrink-0 text-[11px] font-semibold text-slate-500">velocity {Math.round(it.momentum)}/100</span>
               </li>
             ))}
           </ul>
         )}
       </div>
+
+      {narrative.data.riskModel ? <RiskExplanation model={narrative.data.riskModel} score={narrative.data.riskScore} /> : null}
+    </div>
+  );
+}
+
+const COMPONENT_LABEL: Record<string, string> = {
+  negative_share: "Negative sentiment",
+  severity: "Issue severity",
+  volume_change: "Volume change",
+  active_alerts: "Unresolved alerts",
+  narrative_momentum: "Narrative momentum",
+};
+
+/** Explains the risk index: contributing components, their evidence and the uncertainty. */
+function RiskExplanation({ model, score }: { model: RiskModelExplanation; score: number }) {
+  const drivers = model.components.filter((c) => c.contribution > 0).sort((a, b) => b.contribution - a.contribution);
+  return (
+    <div className="mt-4 border-t border-slate-100 pt-4">
+      <div className="flex items-center justify-between">
+        <div className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">Why this score ({score}/100)</div>
+        <span className="text-[11px] text-slate-400">{model.version} · heuristic index, not a probability</span>
+      </div>
+      {drivers.length === 0 ? (
+        <p className="mt-1.5 text-[13px] text-slate-500">No risk component is elevated in this window.</p>
+      ) : (
+        <ul className="mt-2 space-y-2">
+          {drivers.map((c) => (
+            <li key={c.key} className="text-[12px]">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-slate-800">{COMPONENT_LABEL[c.key] || c.key}</span>
+                <span className="font-semibold tabular-nums text-slate-600">+{c.contribution}</span>
+              </div>
+              <div className="mt-1 h-1.5 w-full rounded-full bg-slate-100">
+                <div className="h-1.5 rounded-full bg-[#465FFF]" style={{ width: `${Math.min(100, c.contribution * (100 / Math.max(1, c.weight * 100)))}%` }} />
+              </div>
+              <p className="mt-1 text-slate-600">{c.reason}</p>
+              {c.evidenceIds.length > 0 ? (
+                <p className="mt-0.5 text-[11px] text-slate-500">
+                  Evidence: {c.key === "active_alerts"
+                    ? c.evidenceIds.map((id, i) => (
+                        <span key={id}>{i > 0 ? ", " : ""}<Link href={`/alerts/${id}`} className="font-semibold text-[#465FFF] hover:underline">alert {id.slice(0, 8)}</Link></span>
+                      ))
+                    : `${c.evidenceIds.length} ${c.key === "narrative_momentum" ? "cluster" : "signal"} record(s) · ${c.evidenceIds.slice(0, 3).map((id) => id.slice(0, 8)).join(", ")}${c.evidenceIds.length > 3 ? "…" : ""}`}
+                </p>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      )}
+      {model.uncertainty.reasons.length > 0 ? (
+        <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
+          <span className="font-semibold">{model.uncertainty.level} uncertainty:</span> {model.uncertainty.reasons.join(" ")}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -369,9 +429,17 @@ export function RecommendedActionsPanel({ windowHours = 24, limit = 5 }: { windo
               </span>
             </div>
             <p className="mt-1 text-[12px] text-slate-600">{r.reason}</p>
+            {r.observedIssue ? <p className="mt-1 text-[12px] text-slate-500">Observed: {r.observedIssue}</p> : null}
             {r.expectedOutcome ? (
               <p className="mt-1 text-[12px] text-slate-500">Expected: {r.expectedOutcome}</p>
             ) : null}
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+              <span>Confidence {Math.round((r.confidence ?? 0) * 100)}%</span>
+              {r.sourceIds ? <span>{r.sourceIds.length ? `Based on ${r.sourceIds.length} source record(s)` : "Based on aggregate metrics only"}</span> : null}
+              {r.status === "suggested" ? <span>Suggested · not acted on</span> : null}
+            </div>
+            {r.limitations?.length ? <p className="mt-1 text-[11px] text-amber-700">{r.limitations[0]}</p> : null}
+            {r.monitorNext ? <p className="mt-1 text-[11px] text-slate-500">Watch next: {r.monitorNext}</p> : null}
           </li>
         ))}
       </ul>

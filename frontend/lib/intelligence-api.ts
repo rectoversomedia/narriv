@@ -42,6 +42,31 @@ export interface IntelligenceRecommendation {
   evidence: string[];
   confidence: number;
   requiresApproval: true;
+  // Evidence grounding (risk model v2+); optional for older responses.
+  status?: "suggested";
+  observedIssue?: string;
+  sourceIds?: string[];
+  confidenceBasis?: string;
+  limitations?: string[];
+  monitorNext?: string;
+}
+
+export interface RiskComponent {
+  key: "negative_share" | "severity" | "volume_change" | "active_alerts" | "narrative_momentum";
+  weight: number;
+  value: number;
+  contribution: number;
+  reason: string;
+  inputs: Record<string, unknown>;
+  evidenceIds: string[];
+}
+
+export interface RiskModelExplanation {
+  version: string;
+  components: RiskComponent[];
+  uncertainty: { level: "low" | "medium" | "high"; reasons: string[] };
+  limitations: string[];
+  sourceIds: string[];
 }
 
 export interface IntelligenceEvidence {
@@ -54,6 +79,7 @@ export interface NarrativeIntelligencePayload {
   status: "ok" | "insufficient_data";
   riskScore: number;
   riskBand: "low" | "medium" | "high" | "critical";
+  riskModel?: RiskModelExplanation;
   facts: IntelligenceFact[];
   inferences: IntelligenceInference[];
   predictions: IntelligencePrediction[];
