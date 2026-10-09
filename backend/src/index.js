@@ -136,6 +136,8 @@ const aiBackfillTimeout = requestTimeout(TIMEOUTS.ai_generation);
 app.use((req, res, next) => {
     if (req.path.startsWith("/cron/")) return cronTimeout(req, res, next);
     if (req.path === "/ai/retroanalyze" || req.path === "/ai/cluster") return aiBackfillTimeout(req, res, next);
+    // Interactive "Fetch latest signals" runs sequential AI analysis per article.
+    if (req.path === "/ingestion/fetch" || req.path.startsWith("/ingestion/rss/")) return aiBackfillTimeout(req, res, next);
     return defaultTimeout(req, res, next);
 });
 

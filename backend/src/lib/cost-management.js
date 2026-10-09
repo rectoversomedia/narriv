@@ -32,7 +32,9 @@ async function fetchUsageRows(workspaceId, sinceIso) {
         model: r.model,
         total_tokens: (r.input_tokens || 0) + (r.output_tokens || 0),
         call_count: 1,
-        cost: Number(r.cost || 0),
+        // token_usage.cost is NUMERIC(10,2) and rounds per-call costs to 0, so
+        // derive cost from the stored token counts instead.
+        cost: calculateCost(r.model, r.input_tokens || 0, r.output_tokens || 0),
     }));
     return { usage, error: null };
 }

@@ -72,7 +72,8 @@ export async function getTokenUsageSummary(workspaceId, days = 30) {
             const row = byDay.get(key) || { date, model: u.model, totalTokens: 0, callCount: 0, totalLatencyMs: 0, cost: 0 };
             row.totalTokens += (u.input_tokens || 0) + (u.output_tokens || 0);
             row.callCount += 1;
-            row.cost += Number(u.cost || 0);
+            // token_usage.cost is NUMERIC(10,2); derive the exact cost from tokens.
+            row.cost += calculateCost(u.model, u.input_tokens || 0, u.output_tokens || 0);
             byDay.set(key, row);
         }
         const daily = [...byDay.values()];
