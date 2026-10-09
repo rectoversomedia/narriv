@@ -154,7 +154,7 @@ export const createSource = async (req, res) => {
         const { data: existingSource, error: findError } = await supabase
             .from('sources')
             .select('*')
-            .overlaps('workspace_id', workspaceIds)
+            .in('workspace_id', workspaceIds)
             .neq('type', 'deleted')
             .eq('id', sourceId)
             .maybeSingle();
@@ -226,7 +226,7 @@ export const deleteSource = async (req, res) => {
         const { data: existingSource, error: findError } = await supabase
             .from('sources')
             .select('*')
-            .overlaps('workspace_id', workspaceIds)
+            .in('workspace_id', workspaceIds)
             .neq('type', 'deleted')
             .eq('id', sourceId)
             .maybeSingle();
