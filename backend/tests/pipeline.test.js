@@ -22,6 +22,7 @@ const { buildAnalysisRow, saveAnalysis, handleRetroanalyze, REAL_SIGNAL_FILTER }
 const { resolveWorkspaceIdForUser, DEMO_WORKSPACE_ID } = await import('../src/lib/workspace-access.js');
 const { recordTokenUsage, calculateCost } = await import('../src/lib/token-tracking.js');
 const { parseModelJson, keepKnownSources } = await import('../src/lib/ask-narriv.js');
+const rateLimitStore = await import('../src/lib/rate-limit-store.js');
 
 const WS_A = '11111111-1111-1111-1111-111111111111';
 const WS_B = '22222222-2222-2222-2222-222222222222';
@@ -359,5 +360,18 @@ describe('RSS URL SSRF guard', () => {
     global.fetch = jest.fn();
     await expect(ingestRssSignals({ workspaceId: WS_A, rssUrl: 'http://127.0.0.1:8080/admin' })).rejects.toThrow('public host');
     expect(global.fetch).not.toHaveBeenCalled();
+  });
+});
+
+describe('rate limit store', () => {
+  it('uses the memory store when the Redis client has no transactions (Redis disabled mock)', () => {
+    rateLimitStore.setRedis({ ping: async () => 'PONG' });
+    expect(rateLimitStore.isRedisAvailable()).toBe(false);
+  });
+
+  it('uses Redis when a real client is supplied', () => {
+    rateLimitStore.setRedis({ multi: () => ({}) });
+    expect(rateLimitStore.isRedisAvailable()).toBe(true);
+    rateLimitStore.setRedis(null);
   });
 });

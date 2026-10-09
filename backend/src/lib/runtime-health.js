@@ -36,6 +36,11 @@ export async function checkDatabaseHealth() {
 }
 
 export async function checkQueueHealth() {
+    // When Redis is disabled the exported client is a mock that always answers
+    // PONG; report that explicitly instead of a misleading healthy queue.
+    if (process.env.ENABLE_WORKERS !== "true" || !process.env.REDIS_URL) {
+        return ok("queue", { response: "disabled", detail: "Redis/BullMQ disabled; scheduled work runs via Vercel Cron" });
+    }
     try {
         const pong = await redisConnection.ping();
         return ok("queue", { response: pong });

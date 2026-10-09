@@ -43,6 +43,14 @@ startCleanup();
  * @param {object} redisClient - ioredis client instance
  */
 export function setRedis(redisClient) {
+    // The mock client used when Redis is disabled has no transactions; using
+    // it made every request log rate_limit_redis_error before falling back.
+    if (!redisClient || typeof redisClient.multi !== "function") {
+        redis = null;
+        useMemoryFallback = true;
+        logStructured("info", "rate_limit_memory_store", { reason: "redis client without multi() (Redis disabled)" });
+        return;
+    }
     redis = redisClient;
     useMemoryFallback = false;
     logStructured("info", "rate_limit_redis_connected");
