@@ -87,7 +87,7 @@ describe('runScheduledIngestion', () => {
       return { totalFetched: 5, newSignalsCreated: 2, skippedDuplicates: 3, analyzed: 2, analysisFailed: 0, insertFailed: 0, alerts: [] , workspaceId };
     });
 
-    const summary = await runScheduledIngestion({ ingest, budgetMs: 60000, trigger: 'test' });
+    const summary = await runScheduledIngestion({ ingest, budgetMs: 60000, trigger: 'test', pauseMs: 0 });
 
     expect(ingest).toHaveBeenCalledWith(expect.objectContaining({ workspaceId: WS_A, keyword: 'ok-keyword' }));
     expect(ingest).toHaveBeenCalledWith(expect.objectContaining({ workspaceId: WS_B, keyword: 'broken-feed' }));
@@ -96,9 +96,40 @@ describe('runScheduledIngestion', () => {
     const failed = summary.results.find((r) => r.keyword === 'broken-feed');
     expect(failed).toMatchObject({ status: 'failed', errorCategory: 'source_unavailable', workspaceId: WS_B });
 
-    const [log] = writesTo('cron_ingestion_logs', 'insert');
-    expect(log.payload).toMatchObject({ job_name: 'scheduled-rss-ingestion', status: 'completed_with_errors' });
-    expect(log.payload.metadata.runId).toBe(summary.runId);
+    const logs = writesTo('cron_ingestion_logs', 'insert');
+    expect(logs[0].payload).toMatchObject({ job_name: 'scheduled-rss-ingestion', status: 'running' });
+    const final = logs[logs.length - 1].payload;
+    expect(final).toMatchObject({ job_name: 'scheduled-rss-ingestion', status: 'completed_with_errors' });
+    expect(final.metadata.runId).toBe(summary.runId);
+    expect(final.metadata.finishedAt).toBeDefined();
+  });
+
+  it('finishes the claimed run row (start and finish on one record)', async () => {
+    respond = (q) => {
+      if (q.table === 'monitoring_keywords') return { data: [keywords[0]], error: null };
+      if (q.table === 'cron_ingestion_logs' && q.op === 'insert') return { data: [{ id: 'run-row-1' }], error: null };
+      if (q.table === 'cron_ingestion_logs' && q.op === 'select') return { data: [{ id: 'run-row-1' }], error: null };
+      return { data: null, error: null };
+    };
+    const ingest = jest.fn(async () => ({ totalFetched: 1, newSignalsCreated: 1, skippedDuplicates: 0, analyzed: 1 }));
+    const summary = await runScheduledIngestion({ ingest, pauseMs: 0 });
+    expect(summary.status).toBe('completed');
+    const [update] = writesTo('cron_ingestion_logs', 'update');
+    expect(update.filters).toContainEqual({ name: 'eq', args: ['id', 'run-row-1'] });
+    expect(update.payload.status).toBe('completed');
+  });
+
+  it('skips when another scheduled run already holds the lock', async () => {
+    respond = (q) => {
+      if (q.table === 'cron_ingestion_logs' && q.op === 'insert') return { data: [{ id: 'mine' }], error: null };
+      if (q.table === 'cron_ingestion_logs' && q.op === 'select') return { data: [{ id: 'earlier-run' }], error: null };
+      return { data: keywords, error: null };
+    };
+    const ingest = jest.fn();
+    const summary = await runScheduledIngestion({ ingest });
+    expect(summary.status).toBe('skipped_overlap');
+    expect(ingest).not.toHaveBeenCalled();
+    expect(writesTo('cron_ingestion_logs', 'update')[0].payload.status).toBe('skipped_overlap');
   });
 
   it('defers remaining keywords once the time budget is spent', async () => {
@@ -185,6 +216,13 @@ describe('analysis backfill idempotency', () => {
     expect(row).not.toHaveProperty('workspace_id');
   });
 
+  it('does not insert when an analysis appeared while the AI call was running', async () => {
+    respond = (q) => (q.table === 'signal_analyses' && q.op === 'select' ? { data: [{ id: 'a1' }], error: null } : { data: null, error: null });
+    const r = await saveAnalysis('sig-1', { sentiment: 'neutral' });
+    expect(r).toMatchObject({ skipped: true });
+    expect(writesTo('signal_analyses', 'insert')).toHaveLength(0);
+  });
+
   it('never overwrites an existing signal sentiment', async () => {
     await saveAnalysis('sig-1', { sentiment: 'positive' });
     const [update] = writesTo('signals', 'update');
@@ -194,7 +232,10 @@ describe('analysis backfill idempotency', () => {
   it('only selects real signals and skips already analyzed ones', async () => {
     respond = (q) => {
       if (q.table === 'signals' && q.op === 'select') return { data: [{ id: 'done', title: 't', content: 'c' }, { id: 'todo', title: 't', content: 'c' }], error: null };
-      if (q.table === 'signal_analyses' && q.op === 'select') return { data: [{ signal_id: 'done' }], error: null };
+      // Bulk "already analyzed" lookup uses in(); the per-signal pre-insert check uses eq().
+      if (q.table === 'signal_analyses' && q.op === 'select') {
+        return { data: q.filters.some((f) => f.name === 'in') ? [{ signal_id: 'done' }] : [], error: null };
+      }
       return { data: null, error: null };
     };
     analyzeSignal.mockResolvedValue({ sentiment: 'neutral' });
