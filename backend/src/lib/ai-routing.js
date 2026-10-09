@@ -53,10 +53,30 @@ const DEFAULTS = {
         temperature: 0.4,
         maxTokens: 4096,
     },
+    // Premium reasoning tier: OFF unless AI_MODEL_PREMIUM is set (e.g.
+    // "claude-opus-5-5"). When unset or its provider is not configured, the
+    // AI gateway falls back to "complex" and reports the fallback.
+    premium: {
+        model: process.env.AI_MODEL_PREMIUM || null,
+        provider: process.env.AI_PROVIDER_PREMIUM || null,
+        temperature: 0.3,
+        maxTokens: Number(process.env.AI_PREMIUM_MAX_TOKENS || 4096),
+    },
 };
 
+// Premium settings are read at call time so the tier can be enabled or
+// disabled via environment without a code change (and is testable).
+function tierConfig(name) {
+    if (name !== "premium") return DEFAULTS[name];
+    return {
+        ...DEFAULTS.premium,
+        model: process.env.AI_MODEL_PREMIUM || null,
+        provider: process.env.AI_PROVIDER_PREMIUM || null,
+    };
+}
+
 function resolve(complexity, explicitProvider) {
-    const c = DEFAULTS[complexity] || DEFAULTS.simple;
+    const c = tierConfig(complexity) || DEFAULTS.simple;
     const provider = explicitProvider || c.provider || detectProviderFromModel(c.model);
     return {
         provider,
@@ -105,10 +125,15 @@ const TASK_COMPLEXITY = {
     risk_reasoning: "complex",
     executive_briefing: "complex",
     ask_narriv: "complex",
+    // Phase 10 workload classes
+    routine_classification: "simple",
+    narrative_analysis: "balanced",
+    executive_synthesis: "complex",
+    reputation_investigation: "premium", // high-severity investigations; falls back to complex when premium is off
 };
 
-export function routeForTask(taskName, { provider = null, model = null } = {}) {
-    const complexity = TASK_COMPLEXITY[taskName] || "simple";
+export function routeForTask(taskName, { provider = null, model = null, tierOverride = null } = {}) {
+    const complexity = tierOverride || TASK_COMPLEXITY[taskName] || "simple";
     return routeCompletion({ complexity, provider, model });
 }
 
@@ -120,8 +145,8 @@ export function listTasks() {
  * List available tiers — for diagnostics or admin UIs.
  */
 export function listTiers() {
-    return Object.keys(DEFAULTS).map((k) => {
-        const c = DEFAULTS[k];
+    return Object.keys(DEFAULTS).filter((k) => tierConfig(k).model).map((k) => {
+        const c = tierConfig(k);
         return {
             name: k,
             model: c.model,

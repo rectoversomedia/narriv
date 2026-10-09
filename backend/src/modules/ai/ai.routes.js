@@ -8,6 +8,7 @@ import { logStructured } from "../../lib/logger.js";
 import { computeNarrativeIntelligence } from "../../lib/narrative-intelligence.js";
 import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { listTiers, routeCompletion, routeForTask, listTasks } from "../../lib/ai-routing.js";
+import { checkBudgetAllowance } from "../../lib/cost-management.js";
 import { ANTHROPIC_MODEL, createClaudeCompletion, isAnthropicConfigured, modelCapabilities } from "../../lib/anthropic-client.js";
 import { computeEntityIntelligence } from "../../lib/entity-intelligence.js";
 import { computeReputationIntelligence } from "../../lib/reputation-intelligence.js";
@@ -37,8 +38,15 @@ router.post("/analyze", rateLimiters.aiGeneration(), validateRequest({ body: ana
             return res.status(400).json({ error: "'content' field is required." });
         }
 
-        const result = await analyzeSignal(title || null, inputContent);
-        res.json({ result });
+        // Attribute cost to the caller's workspace and respect its AI budget.
+        const ws = await resolveWorkspaceIdForUser(req.user?.id || req.userId, req.query.workspaceId || null);
+        if (!ws) return res.status(403).json({ error: "no accessible workspace" });
+        const budget = await checkBudgetAllowance(ws).catch(() => ({ allowed: true }));
+        if (budget?.allowed === false) return res.status(429).json({ error: "budget_exceeded", detail: budget.reason });
+
+        const started = Date.now();
+        const result = await analyzeSignal(title || null, inputContent, { workspaceId: ws, operation: "interactive_analysis" });
+        res.json({ result, meta: { model: "gpt-4o-mini", latencyMs: Date.now() - started } });
     } catch (error) {
         logStructured("error", "[AI MODULE] Error:", { error: error.message?.message || error.message, stack: error.message?.stack });
         res.status(500).json({ error: error.message });
