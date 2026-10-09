@@ -11,6 +11,7 @@ import signalsRoutes from "./modules/signals/signals.routes.js";
 import sourcesRoutes from "./modules/sources/sources.routes.js";
 import ingestionRoutes from "./modules/ingestion/ingestion.routes.js";
 import aiRoutes from "./modules/ai/ai.routes.js";
+import aiBackfillRoutes from "./modules/ai/backfill.routes.js";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes.js";
 import alertsRoutes from "./modules/alerts/alerts.routes.js";
 import escalationMatrixRoutes from "./modules/alerts/escalation-matrix.routes.js";
@@ -154,6 +155,9 @@ app.get("/metrics", verifyToken, (req, res) => {
 // NOTE: /api prefix is stripped by middleware above, so register without /api
 app.use("/auth", rateLimit(RATE_LIMITS.auth), authRoutes);
 app.use("/ai", rateLimit(RATE_LIMITS.ai_generation), apiSecurityHeaders, aiRoutes);
+// Background/backfill AI routes get a separate, higher quota so the
+// cron path is not blocked by interactive traffic.
+app.use("/ai", rateLimit({ ...RATE_LIMITS.ai_generation, prefix: "ai-bg", max: 30, windowMs: 60 * 1000 }), apiBackfillRoutes);
 app.use("/ingestion", rateLimit(RATE_LIMITS.ingestion), ingestionRoutes);
 app.use("/actions", rateLimit(RATE_LIMITS.api_default), apiSecurityHeaders, actionsRoutes);
 app.use("/feedback", rateLimit(RATE_LIMITS.feedback), apiSecurityHeaders, feedbackRoutes);

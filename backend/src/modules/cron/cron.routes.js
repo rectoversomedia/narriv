@@ -126,6 +126,33 @@ router.post("/daily", async (req, res) => {
             results.cleanup = await cleanupExpiredReportExports(200);
         } catch (e) { results.cleanup = { error: e.message }; }
 
+        // 4. AI backfill: analyze signals that lack signal_analysis rows (Phase 7).
+        // Idempotent. Skips workspaces with no unanalyzed signals.
+        try {
+            const { handleRetroanalyze } = await import("../ai/backfill.worker.js");
+            const { data: ws3 } = await supabase.from("workspaces").select("id").limit(50);
+            if (ws3?.length) {
+                let totalProcessed = 0;
+                for (const w of ws3) {
+                    try { totalProcessed += (await handleRetroanalyze(w.id)).processed; } catch (_) {}
+                }
+                results.retroanalyze = { processed: totalProcessed };
+            }
+        } catch (e) { results.retroanalyze = { error: e.message }; }
+
+        // 5. Narrative clustering (Phase 7). Idempotent, safe to repeat.
+        try {
+            const { runClustering } = await import("../clustering/clustering.service.js");
+            const { data: ws4 } = await supabase.from("workspaces").select("id").limit(50);
+            if (ws4?.length) {
+                let totalClusters = 0;
+                for (const w of ws4) {
+                    try { totalClusters += (await runClustering(w.id))?.clustersCreated || 0; } catch (_) {}
+                }
+                results.cluster = { clusters: totalClusters };
+            }
+        } catch (e) { results.cluster = { error: e.message }; }
+
         logStructured("info", "cron_daily_done", { results, durationMs: Date.now() - start });
         res.json({ ok: true, results, durationMs: Date.now() - start });
     } catch (error) {
