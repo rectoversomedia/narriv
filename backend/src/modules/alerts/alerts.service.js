@@ -64,6 +64,70 @@ async function hasDuplicateAlert({ workspaceId, type, topicKey, windowStart }) {
     return Boolean(existing && existing.length > 0);
 }
 
+// AI sentiment lives in signal_analyses.analysis; fall back to signals.sentiment.
+export function signalSentiment(signal) {
+    const fromAnalysis = signal.analyses?.[0]?.analysis?.sentiment;
+    return String(fromAnalysis || signal.sentiment || "").toUpperCase();
+}
+
+/**
+ * Dispatch an alert to the workspace's active integrations and store the
+ * delivery summary in alerts.metadata.notification.
+ */
+export async function notifyAndRecord(alert) {
+    let result;
+    try {
+        result = await dispatchAlertToWebhooks(alert);
+    } catch (err) {
+        result = { dispatched: 0, total: 0, results: [], error: err.message };
+    }
+    const failed = (result.results || []).filter((r) => r.status === "failed");
+    const notification = {
+        status: result.error ? "error" : result.total === 0 ? "no_active_integrations" : failed.length > 0 ? "failed" : "delivered",
+        delivered: result.dispatched || 0,
+        total: result.total || 0,
+        failedIntegrationIds: failed.map((r) => r.integrationId),
+        attempts: (alert.metadata?.notification?.attempts || 0) + 1,
+        lastAttemptAt: new Date().toISOString(),
+    };
+    const { error } = await supabase
+        .from("alerts")
+        .update({ metadata: { ...(alert.metadata || {}), notification } })
+        .eq("id", alert.id)
+        .eq("workspace_id", alert.workspace_id);
+    if (error) logStructured("warn", "alert_notification_record_failed", { alertId: alert.id, error: error.message });
+    if (notification.status === "failed" || notification.status === "error") {
+        logStructured("warn", "alert_notification_failed", { alertId: alert.id, ...notification });
+    }
+    return notification;
+}
+
+/**
+ * Retry notifications for recent alerts whose last delivery failed.
+ * Bounded to 3 attempts per alert; scoped to one workspace.
+ */
+export async function retryFailedNotifications(workspaceId, { maxAttempts = 3, lookbackHours = 24 } = {}) {
+    const since = new Date(Date.now() - lookbackHours * 3600 * 1000).toISOString();
+    const { data: alerts, error } = await supabase
+        .from("alerts")
+        .select("*")
+        .eq("workspace_id", workspaceId)
+        .gte("created_at", since)
+        .in("metadata->notification->>status", ["failed", "error"])
+        .limit(50);
+    if (error) {
+        logStructured("warn", "alert_notification_retry_query_failed", { workspaceId, error: error.message });
+        return { retried: 0, error: error.message };
+    }
+    let retried = 0;
+    for (const alert of alerts || []) {
+        if ((alert.metadata?.notification?.attempts || 0) >= maxAttempts) continue;
+        await notifyAndRecord(alert);
+        retried += 1;
+    }
+    return { retried };
+}
+
 export async function detectAlerts(workspaceId) {
     const alerts = [];
     const now = new Date();
@@ -117,20 +181,14 @@ export async function detectAlerts(workspaceId) {
         if (totalCount < 2) continue;
 
         // Negative signals
-        const negativeSignals = signals.filter((s) => {
-            const sent = s.analyses?.[0]?.sentiment || s.sentiment || "";
-            return String(sent).toUpperCase() === "NEGATIVE";
-        });
+        const negativeSignals = signals.filter((s) => signalSentiment(s) === "NEGATIVE");
         const negativeCount = negativeSignals.length;
         const negativeRatio = (negativeCount / totalCount) * 100;
         const roundedRatio = Math.round(negativeRatio);
 
         // Recent 6-hour signals
         const recent6hSignals = signals.filter(s => new Date(s.captured_at) >= sixHoursAgo);
-        const recent6hNegatives = recent6hSignals.filter(s => {
-            const sent = s.analyses?.[0]?.sentiment || s.sentiment || "";
-            return String(sent).toUpperCase() === "NEGATIVE";
-        });
+        const recent6hNegatives = recent6hSignals.filter((s) => signalSentiment(s) === "NEGATIVE");
         const recent6hNegRatio = recent6hSignals.length > 0 
             ? (recent6hNegatives.length / recent6hSignals.length) * 100 
             : 0;
@@ -240,9 +298,9 @@ export async function detectAlerts(workspaceId) {
                 negativeRatio: roundedRatio,
             });
             globalEvents.emit("dashboard_update", workspaceId);
-            dispatchAlertToWebhooks(newAlert).catch((err) =>
-                logStructured("warn", "Webhook dispatch error on rules engine alert", { error: err.message, alertId: newAlert.id })
-            );
+            // Await delivery (serverless may freeze after the response) and record
+            // the outcome on the alert so failed notifications stay visible.
+            await notifyAndRecord(newAlert);
         } else if (createError) {
             logStructured("error", "Error creating alert from rules engine:", { error: createError.message });
         }

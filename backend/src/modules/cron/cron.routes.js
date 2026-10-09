@@ -127,6 +127,17 @@ const runDaily = async (req, res) => {
             }
         } catch (e) { results.escalate = { error: e.message }; }
 
+        // 2b. Retry failed alert notifications (bounded attempts per alert)
+        try {
+            const { retryFailedNotifications } = await import("../alerts/alerts.service.js");
+            const { data: wsN } = await supabase.from("workspaces").select("id").limit(50);
+            let retried = 0;
+            for (const w of wsN || []) {
+                try { retried += (await retryFailedNotifications(w.id)).retried || 0; } catch (_) {}
+            }
+            results.notificationRetries = { retried };
+        } catch (e) { results.notificationRetries = { error: e.message }; }
+
         // 3. Cleanup expired exports
         try {
             const { cleanupExpiredReportExports } = await import("../reports/report-export-storage.service.js");
