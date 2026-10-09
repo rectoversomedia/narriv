@@ -1,6 +1,6 @@
 {
   "summary": {
-    "riskModelVersion": "risk-v2",
+    "riskModelVersion": "risk-v2.1",
     "scenarios": 6,
     "bandAccuracy": "6/6",
     "invalidCitedIds": 0,

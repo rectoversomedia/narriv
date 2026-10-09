@@ -69,6 +69,15 @@ describe('risk model', () => {
     expect(velocity100(null)).toBeNull();
   });
 
+  it('merges duplicate clusters with the same title instead of double-counting momentum', () => {
+    const dup = [{ id: 'd1', title: 'Election 2024 Impact', velocity: 92.3 }, { id: 'd2', title: 'election 2024  impact', velocity: 90 }, { id: 'd3', title: 'AI Regulation', velocity: 85 }];
+    const r = computeRisk({ signals, clusters: dup });
+    expect(r.emergingClusters.map((c) => c.id)).toEqual(['d1', 'd3']);
+    expect(r.emergingClusters[0].duplicateIds).toEqual(['d2']);
+    expect(r.components.find((c) => c.key === 'narrative_momentum').inputs).toMatchObject({ emergingNarratives: 2, duplicateClusters: 1 });
+    expect(r.uncertainty.reasons.join(' ')).toMatch(/duplicate/);
+  });
+
   it('is deterministic and labels itself as a heuristic, not a probability', () => {
     const a = computeRisk({ signals, priorCount: 2, alerts, clusters });
     const b = computeRisk({ signals, priorCount: 2, alerts, clusters });

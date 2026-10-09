@@ -9,7 +9,7 @@
  * Inputs are plain arrays already scoped to one workspace by the caller.
  */
 
-export const RISK_MODEL_VERSION = "risk-v2";
+export const RISK_MODEL_VERSION = "risk-v2.1";
 
 // Weights sum to 1. Changing them changes every score: bump RISK_MODEL_VERSION.
 const WEIGHTS = {
@@ -120,13 +120,28 @@ export function computeRisk({ signals = [], priorCount = 0, alerts = [], cluster
         active.length ? `${active.length} unresolved alert(s) in the window.` : "No unresolved alerts in the window.",
         active.map((a) => a.id), { unresolved: active.length });
 
-    // 5. Narrative momentum: clusters with high velocity.
-    const emerging = clusters.filter((c) => (velocity100(c.velocity ?? c.momentum) ?? 0) >= EMERGING_VELOCITY);
+    // 5. Narrative momentum: clusters with high velocity. Clusters sharing a
+    // normalized title are one narrative (duplicates must not inflate risk).
+    const hot = clusters.filter((c) => (velocity100(c.velocity ?? c.momentum) ?? 0) >= EMERGING_VELOCITY);
+    const byTitle = new Map();
+    for (const c of hot) {
+        const key = String(c.title || c.id).trim().toLowerCase().replace(/\s+/g, " ");
+        const prev = byTitle.get(key);
+        const v = velocity100(c.velocity ?? c.momentum);
+        if (!prev) byTitle.set(key, { ...c, velocity: v, duplicateIds: [] });
+        else {
+            prev.duplicateIds.push(c.id);
+            if (v > prev.velocity) prev.velocity = v;
+        }
+    }
+    const emerging = [...byTitle.values()];
+    const duplicates = emerging.reduce((n, c) => n + c.duplicateIds.length, 0);
+    if (duplicates > 0) uncertainty.push(`${duplicates} duplicate narrative cluster(s) share a title with another cluster and were merged.`);
     add("narrative_momentum", emerging.length / 3,
         emerging.length
-            ? `${emerging.length} narrative cluster(s) with velocity >= ${EMERGING_VELOCITY}/100.`
+            ? `${emerging.length} distinct narrative(s) with velocity >= ${EMERGING_VELOCITY}/100.`
             : "No narrative clusters above the momentum threshold.",
-        emerging.map((c) => c.id), { emergingClusters: emerging.length, threshold: EMERGING_VELOCITY });
+        emerging.flatMap((c) => [c.id, ...c.duplicateIds]), { emergingNarratives: emerging.length, duplicateClusters: duplicates, threshold: EMERGING_VELOCITY });
 
     if (n < MIN_SIGNALS_FOR_CONFIDENCE) uncertainty.push(`Small sample: only ${n} signal(s) in the window.`);
     const unrated = signals.filter((s) => !s.sentiment).length;
@@ -144,6 +159,6 @@ export function computeRisk({ signals = [], priorCount = 0, alerts = [], cluster
         uncertainty: { level, reasons: uncertainty },
         limitations,
         sourceIds,
-        emergingClusters: emerging.map((c) => ({ id: c.id, title: c.title, velocity: velocity100(c.velocity ?? c.momentum), signalCount: c.signal_count ?? null })),
+        emergingClusters: emerging.map((c) => ({ id: c.id, title: c.title, velocity: c.velocity, signalCount: c.signal_count ?? null, duplicateIds: c.duplicateIds })),
     };
 }
