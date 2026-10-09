@@ -1,0 +1,99 @@
+{
+  "summary": {
+    "riskModelVersion": "risk-v2",
+    "scenarios": 6,
+    "bandAccuracy": "6/6",
+    "invalidCitedIds": 0,
+    "unsupportedRecommendations": 1,
+    "allDeterministic": true
+  },
+  "results": [
+    {
+      "scenario": "quiet_positive",
+      "score": 0,
+      "band": "low",
+      "bandOk": true,
+      "uncertainty": "medium",
+      "recommendations": [
+        "monitor"
+      ],
+      "citedIds": 0,
+      "invalidCitedIds": 0,
+      "unsupportedRecommendations": 0,
+      "deterministic": true
+    },
+    {
+      "scenario": "first_window_no_baseline",
+      "score": 0,
+      "band": "low",
+      "bandOk": true,
+      "uncertainty": "high",
+      "recommendations": [
+        "monitor"
+      ],
+      "citedIds": 0,
+      "invalidCitedIds": 0,
+      "unsupportedRecommendations": 0,
+      "deterministic": true
+    },
+    {
+      "scenario": "negative_spike_with_alert",
+      "score": 66,
+      "band": "high",
+      "bandOk": true,
+      "uncertainty": "low",
+      "recommendations": [
+        "investigate",
+        "prepare_clarification",
+        "monitor",
+        "investigate"
+      ],
+      "citedIds": 34,
+      "invalidCitedIds": 0,
+      "unsupportedRecommendations": 1,
+      "deterministic": true
+    },
+    {
+      "scenario": "resolved_alerts_only",
+      "score": 8,
+      "band": "low",
+      "bandOk": true,
+      "uncertainty": "medium",
+      "recommendations": [
+        "monitor"
+      ],
+      "citedIds": 2,
+      "invalidCitedIds": 0,
+      "unsupportedRecommendations": 0,
+      "deterministic": true
+    },
+    {
+      "scenario": "momentum_without_negativity",
+      "score": 5,
+      "band": "low",
+      "bandOk": true,
+      "uncertainty": "medium",
+      "recommendations": [
+        "monitor"
+      ],
+      "citedIds": 2,
+      "invalidCitedIds": 0,
+      "unsupportedRecommendations": 0,
+      "deterministic": true
+    },
+    {
+      "scenario": "unanalyzed_signals",
+      "score": 0,
+      "band": "low",
+      "bandOk": true,
+      "uncertainty": "high",
+      "recommendations": [
+        "monitor"
+      ],
+      "citedIds": 0,
+      "invalidCitedIds": 0,
+      "unsupportedRecommendations": 0,
+      "deterministic": true
+    }
+  ]
+}
