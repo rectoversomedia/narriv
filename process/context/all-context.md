@@ -1,6 +1,6 @@
 # Narriv - All Context
 
-Last updated: 2026-06-02
+Last updated: 2026-10-09
 
 This file is the root context entrypoint for the repo. Start here before substantial research, planning, review, testing, or implementation work.
 
@@ -36,7 +36,7 @@ No additional context groups exist yet. Promote a group when a durable domain ha
 |---|---|---|
 | general repo research | `process/context/all-context.md` | the relevant blueprint or source folder |
 | frontend UI, routes, Next.js behavior | `process/context/all-context.md` | `frontend/narriv_frontend_blueprint.md`, then `frontend/AGENTS.md` |
-| backend API, Prisma, workers, infra | `process/context/all-context.md` | `backend/narriv_backend_blueprint.md`, then relevant `backend/src/` files |
+| backend API, Supabase queries, workers, infra | `process/context/all-context.md` | `backend/narriv_backend_blueprint.md`, then relevant `backend/src/` files |
 | tests or verification | `process/context/all-context.md` | `process/context/tests/all-tests.md` |
 | production deployment or launch readiness | `process/context/all-context.md` | `process/general-plans/references/production-readiness-runbook.md`, then both blueprints |
 | plans or phase workflow | `process/context/all-context.md` | `process/context/planning/all-planning.md`, then `process/development-protocols/all-development-protocols.md` |
@@ -63,9 +63,8 @@ When context organization changes, update this router and run `vc-audit-context`
 
 ```text
 narriv/
-  backend/                    Express 5 API server, Prisma schema, workers, tests
+  backend/                    Express 5 API server (Vercel serverless), workers, tests
     src/                      API modules, middleware, lib helpers, BullMQ workers
-    prisma/                   Prisma schema, migrations, seed data
     tests/                    Jest + Supertest integration tests
     narriv_backend_blueprint.md
   frontend/                   Next.js 16 App Router dashboard app
@@ -82,16 +81,16 @@ narriv/
   .agents/                    Shared skills compatibility surface
 ```
 
-There is no root `package.json`. `frontend/` and `backend/` are separate npm packages with separate lockfiles.
+The root `package.json` is an npm workspaces monorepo (`frontend`, `backend`); dependencies such as `jest` are hoisted to the root `node_modules`. SQL migrations live in `supabase/migrations/` (root `migrations` is a symlink).
 
 ## Technology Stack
 
 ### Frontend
 
-- **Framework:** Next.js `16.2.7` with App Router and Turbopack dev server.
+- **Framework:** Next.js `16.2.10` with App Router and Turbopack dev server.
 - **Language:** TypeScript `^5`.
 - **React:** React `19.2.4` and React DOM `19.2.4`.
-- **Styling:** Tailwind CSS v4 with `@theme inline` in `globals.css`; shadcn-style/custom dashboard primitives.
+- **Styling:** Tailwind CSS `^3.4` (see `frontend/package.json`); shadcn-style/custom dashboard primitives.
 - **State:** Zustand persisted stores (`useAuthStore`, `useUiStore`).
 - **Data fetching:** Ky-backed `apiClient.ts`, typed `api-service.ts`, TanStack Query `^5.100.6`; native `fetch` is reserved for static local assets such as map JSON.
 - **Forms:** `react-hook-form` + Zod.
@@ -102,7 +101,7 @@ There is no root `package.json`. `frontend/` and `backend/` are separate npm pac
 
 - **Runtime:** Node.js ESM (`"type": "module"`).
 - **Framework:** Express `5.2.1` REST API.
-- **Database:** PostgreSQL via Prisma `5.22` and `@prisma/client`.
+- **Database:** Supabase PostgreSQL via `@supabase/supabase-js` (no Prisma). Always check real table/column names against the live schema; several historical bugs came from queries against columns that do not exist (e.g. `signal_analysis` vs `signal_analyses`, `momentum` vs `velocity`, `finished_at` vs `completed_at`).
 - **Queue/cache:** Redis via `ioredis`, BullMQ workers and scheduled jobs.
 - **AI:** OpenAI SDK `6.34.0`.
 - **Data collection:** Apify client.
@@ -125,7 +124,7 @@ Graphify identified these main product communities:
 
 ## Backend Architecture
 
-The backend is a modular Express API server with Prisma persistence and BullMQ workers.
+The backend is a modular Express API server with Supabase persistence, deployed as a single Vercel serverless function (`backend/api/index.js`). BullMQ workers exist but do not run on Vercel.
 
 Important modules:
 
@@ -139,7 +138,7 @@ Important modules:
 
 Important libraries:
 
-- `src/prisma.js` exports the Prisma client.
+- `src/lib/supabase.js` exports the Supabase clients (`supabaseAdmin`/default, `baseSupabaseAdmin`).
 - `src/lib/queue.js` defines queues and scheduled jobs.
 - `src/lib/redis.js` defines Redis connection behavior.
 - `src/lib/logger.js`, `metrics.js`, and `runtime-health.js` support observability.
@@ -173,7 +172,7 @@ Important surfaces:
 
 Backend:
 
-- `DATABASE_URL` required for PostgreSQL/Prisma.
+- `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SUPABASE_ANON_KEY` required; `CRON_SECRET` required for Vercel Cron routes; `ADMIN_SECRET` (optional) gates `/migrate/*` (closed when unset).
 - `JWT_SECRET` and `JWT_REFRESH_SECRET` required for auth.
 - `OPENAI_API_KEY` required for live AI features.
 - `REDIS_URL` required for BullMQ workers/queues.
@@ -192,6 +191,14 @@ Frontend:
 - Backend Phase 6 testing is ongoing: Jest/Supertest infrastructure exists; auth tests cover register, login, refresh, logout, lockout, password change, and forgot-password reset flow.
 - Current backend API coverage includes auth happy paths, auth/security negative cases, sources, Apify source presets and bootstrap, ingestion jobs, alerts, action plans/feedback, reports/exports, workspace settings, workspace members including registered-user email invites, cases, and integrations. Worker coverage includes ingestion processing/cancellation/retry/final-failure, AI analysis persistence/fallback failure logs, alert detection/escalation dispatch with partial workspace failure recovery, and notification event dispatch/unknown-event failure. Production hardening coverage includes HTTPS enforcement and CORS allowlist behavior. k6 load-test skeleton exists under `backend/tests/load/`; localhost smoke, baseline, and stress profiles have been run and reported passing.
 - Known production gaps include migration baseline, deployment runbook execution on the real VPS, persistent upload storage/backup verification, deeper DB/queue/memory load profiles, and final OAuth/email/manual QA against production domains.
+
+## Production Operations (verified 2026-10-09)
+
+- Vercel team `rectoverso-media`. Backend project `narriv-api` (root `backend`, Git-connected, auto-deploys `main`, serves `narriv-api.vercel.app`). Frontend project `frontend` (root `frontend`, serves `narriv.digital`/`www`) is NOT Git-connected: deploy with the Vercel CLI from the repo root. Project `narriv` is a stale duplicate whose builds fail.
+- Scheduler: Vercel Cron is the intended single scheduler — `/api/cron/ingest?slot=0|6|12|18` (real Google News RSS ingestion for workspaces with active `monitoring_keywords`) and `/api/cron/daily` (alerts, escalation, notification retries, backfill, clustering). Runs are recorded in `cron_ingestion_logs` (`job_name = scheduled-rss-ingestion`). Supabase `pg_cron` still runs a stub job and an hourly SQL alert engine until migration 028 is applied.
+- `GET /api/pipeline/status` gives per-workspace pipeline health (last ingestion/analysis/clustering/alert, failures, AI usage).
+- Tests: `cd backend && NODE_ENV=test node --experimental-vm-modules ../node_modules/jest/bin/jest.js` (tests/helpers/memory-db.js is the in-memory Supabase fake). Legacy suites `crud`, `actions-reports`, `workers` still use obsolete Prisma mocks and do not load.
+- GitHub Actions is blocked by an account billing lock.
 
 ## Context Update Protocol
 

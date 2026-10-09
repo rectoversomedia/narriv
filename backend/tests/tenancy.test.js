@@ -14,6 +14,8 @@ const ids = {
   alertA: '00000000-0000-4000-8000-0000000004a1', alertB: '00000000-0000-4000-8000-0000000004b1',
   caseB: '00000000-0000-4000-8000-0000000005b1', integrationB: '00000000-0000-4000-8000-0000000006b1',
   signalA: '00000000-0000-4000-8000-0000000007a1', signalB: '00000000-0000-4000-8000-0000000007b1',
+  planA: '00000000-0000-4000-8000-0000000008a1', planB: '00000000-0000-4000-8000-0000000008b1',
+  reportB: '00000000-0000-4000-8000-0000000009b1', exportB: '00000000-0000-4000-8000-0000000010b1',
 };
 
 const db = createMemoryDb();
@@ -40,6 +42,12 @@ function seed() {
   );
   db.table('cases').push({ id: ids.caseB, workspace_id: WS_B, title: 'B case', status: 'open', priority: 'high', created_at: now });
   db.table('integrations').push({ id: ids.integrationB, workspace_id: WS_B, name: 'B hook', platform: 'webhook', status: 'active', config: { url: 'https://b.example/hook' }, created_at: now });
+  db.table('action_plans').push(
+    { id: ids.planA, workspace_id: WS_A, title: 'A plan', status: 'active', priority: 'high', steps: [], created_at: now },
+    { id: ids.planB, workspace_id: WS_B, title: 'B plan', status: 'active', priority: 'high', steps: [], created_at: now },
+  );
+  db.table('reports').push({ id: ids.reportB, workspace_id: WS_B, title: 'B report', type: 'executive', status: 'ready', content: {}, created_at: now });
+  db.table('report_exports').push({ id: ids.exportB, workspace_id: WS_B, report_id: ids.reportB, status: 'completed', format: 'csv', created_at: now });
   db.table('signals').push(
     { id: ids.signalA, workspace_id: WS_A, title: 'A signal', platform: 'news', sentiment: 'NEGATIVE', captured_at: now, url: 'https://a.example/1' },
     { id: ids.signalB, workspace_id: WS_B, title: 'B signal', platform: 'news', sentiment: 'NEGATIVE', captured_at: now, url: 'https://b.example/1' },
@@ -125,6 +133,25 @@ describe('Workspace isolation across CRUD endpoints', () => {
       const del = await request(app).delete(`/workspace/integrations/${ids.integrationB}`).set(auth()).send({});
       expect([400, 403, 404]).toContain(del.status);
       expect(db.table('integrations').find((i) => i.id === ids.integrationB)).toBeDefined();
+    });
+  });
+
+  describe('action plans and reports', () => {
+    it('reads an own action plan but not another tenant plan', async () => {
+      expect((await request(app).get(`/api/action-plans/${ids.planA}`).set(auth())).status).toBe(200);
+      // This route answers out-of-scope ids with an empty shell (200) rather than 404;
+      // what matters is that none of the other tenant's plan is returned.
+      const foreign = await request(app).get(`/api/action-plans/${ids.planB}`).set(auth());
+      expect(idsIn(foreign.body)).not.toContain(ids.planB);
+      expect(idsIn(foreign.body)).not.toContain('B plan');
+      expect([403, 404]).toContain((await request(app).get(`/api/actions/${ids.planB}`).set(auth())).status);
+    });
+
+    it('hides another tenant report and export job', async () => {
+      expect([403, 404]).toContain((await request(app).get(`/api/reports/${ids.reportB}`).set(auth())).status);
+      expect([403, 404]).toContain((await request(app).get(`/api/reports/exports/${ids.exportB}`).set(auth())).status);
+      const list = await request(app).get('/api/reports').set(auth());
+      expect(idsIn(list.body)).not.toContain(ids.reportB);
     });
   });
 
