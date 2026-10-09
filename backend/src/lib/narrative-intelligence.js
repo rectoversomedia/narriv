@@ -89,9 +89,9 @@ export async function computeNarrativeIntelligence({ workspaceId, windowHours = 
             .then((r) => r.data || []),
         baseSupabaseAdmin
             .from("narrative_clusters")
-            .select("id, title, signal_count, sentiment_score, momentum, updated_at, created_at")
+            .select("id, title, signal_count, momentum:velocity, updated_at, created_at")
             .eq("workspace_id", workspaceId)
-            .order("momentum", { ascending: false })
+            .order("velocity", { ascending: false, nullsFirst: false })
             .limit(10)
             .then((r) => r.data || []),
     ]);

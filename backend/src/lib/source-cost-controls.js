@@ -287,7 +287,7 @@ async function getLastSyncTime(sourceId) {
     try {
         const { data: lastJob, error } = await supabase
             .from("ingestion_jobs")
-            .select("created_at, status, processed_count, error_message")
+            .select("created_at, completed_at, status, items_processed, error_message")
             .eq("source_id", sourceId)
             .eq("status", "completed")
             .order("created_at", { ascending: false })
@@ -300,9 +300,9 @@ async function getLastSyncTime(sourceId) {
 
         return {
             at: lastJob.created_at,
-            processedCount: lastJob.processed_count,
-            duration: lastJob.finished_at
-                ? new Date(lastJob.finished_at) - new Date(lastJob.created_at)
+            processedCount: lastJob.items_processed,
+            duration: lastJob.completed_at
+                ? new Date(lastJob.completed_at) - new Date(lastJob.created_at)
                 : null,
         };
     } catch {

@@ -42,9 +42,9 @@ export async function computeReputationIntelligence({ workspaceId, windowHours =
             .then((r) => r.data || []),
         baseSupabaseAdmin
             .from("narrative_clusters")
-            .select("id, title, momentum, sentiment_score")
+            .select("id, title, momentum:velocity")
             .eq("workspace_id", workspaceId)
-            .order("momentum", { ascending: false })
+            .order("velocity", { ascending: false, nullsFirst: false })
             .limit(10)
             .then((r) => r.data || []),
     ]);

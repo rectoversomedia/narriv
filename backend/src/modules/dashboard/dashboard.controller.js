@@ -133,7 +133,8 @@ export const getSummary = async (req, res) => {
                     sentiment,
                     region,
                     captured_at,
-                    published_at
+                    published_at,
+                    signal_analyses(id)
                 `)
                 .in("workspace_id", workspaceIds)
                 .order("captured_at", { ascending: false });
@@ -161,7 +162,8 @@ export const getSummary = async (req, res) => {
                         sentiment,
                         region,
                         captured_at,
-                        published_at
+                        published_at,
+                        signal_analyses(id)
                     `)
                     .in("workspace_id", workspaceIds)
                     .order("captured_at", { ascending: false });
@@ -172,13 +174,16 @@ export const getSummary = async (req, res) => {
 
             const totalSignals = signals?.length || 0;
 
-            let positive = 0, negative = 0, neutral = 0, mixed = 0, analyzedCount = 0;
+            // analyzedCount = signals with a persisted AI analysis; sentiment
+            // percentages use signals that carry a sentiment value.
+            let positive = 0, negative = 0, neutral = 0, mixed = 0, analyzedCount = 0, sentimentCount = 0;
             const platformsMap = {};
 
             signals?.forEach(signal => {
+                if (Array.isArray(signal.signal_analyses) && signal.signal_analyses.length > 0) analyzedCount++;
                 const sentiment = signal.sentiment;
                 if (sentiment) {
-                    analyzedCount++;
+                    sentimentCount++;
                     const s = sentiment.toLowerCase();
                     if (s.includes('positive')) positive++;
                     else if (s.includes('negative')) negative++;
@@ -323,10 +328,10 @@ export const getSummary = async (req, res) => {
                 kpis: {
                     total_signals: totalSignals,
                     analyzed_signals: analyzedCount,
-                    positive_percentage: analyzedCount ? Math.round((positive / analyzedCount) * 100) : 0,
-                    negative_percentage: analyzedCount ? Math.round((negative / analyzedCount) * 100) : 0,
-                    neutral_percentage: analyzedCount ? Math.round((neutral / analyzedCount) * 100) : 0,
-                    mixed_percentage: analyzedCount ? Math.round((mixed / analyzedCount) * 100) : 0
+                    positive_percentage: sentimentCount ? Math.round((positive / sentimentCount) * 100) : 0,
+                    negative_percentage: sentimentCount ? Math.round((negative / sentimentCount) * 100) : 0,
+                    neutral_percentage: sentimentCount ? Math.round((neutral / sentimentCount) * 100) : 0,
+                    mixed_percentage: sentimentCount ? Math.round((mixed / sentimentCount) * 100) : 0
                 },
                 trends,
                 sentiment_distribution: { positive, negative, neutral, mixed },

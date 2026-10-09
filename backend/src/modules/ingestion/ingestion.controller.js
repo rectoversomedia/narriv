@@ -5,10 +5,12 @@ import { recordAuditLog } from "../../lib/audit.js";
 import { logStructured } from "../../lib/logger.js";
 
 async function createAndQueueIngestionJob(source, userId) {
+  // Rows from supabase-js are snake_case (source.workspaceId was always undefined).
+  const workspaceId = source.workspace_id ?? source.workspaceId;
   const { data: job, error } = await supabaseAdmin
     .from("ingestion_jobs")
     .insert({
-      workspace_id: source.workspaceId,
+      workspace_id: workspaceId,
       source_id: source.id,
       status: "queued",
     })
@@ -22,7 +24,7 @@ async function createAndQueueIngestionJob(source, userId) {
   await recordAuditLog({
     userId,
     event: "ingestion_job_queued",
-    workspaceId: source.workspaceId,
+    workspaceId,
     metadata: { ingestionJobId: job.id, sourceId: source.id },
   });
 
@@ -160,7 +162,7 @@ export const cancelIngestion = async (req, res) => {
       .update({
         status: "cancelled",
         error_message: cancellationMessage,
-        finished_at: new Date().toISOString(),
+        completed_at: new Date().toISOString(),
       })
       .eq("id", jobId);
 

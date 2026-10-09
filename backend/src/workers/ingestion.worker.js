@@ -81,7 +81,7 @@ const ingestionWorker = new Worker(
                     .update({
                         status: "cancelled",
                         error_message: `Rate limited: ${syncCheck.reason}`,
-                        finished_at: new Date().toISOString(),
+                        completed_at: new Date().toISOString(),
                     })
                     .eq("id", jobId);
 
@@ -372,7 +372,7 @@ const ingestionWorker = new Worker(
 
             const { error: completionError } = await supabase
                 .from("ingestion_jobs")
-                .update({ status: "completed", error_message: null, finished_at: new Date().toISOString() })
+                .update({ status: "completed", error_message: null, completed_at: new Date().toISOString() })
                 .eq("id", jobId);
 
             if (completionError) {
@@ -427,7 +427,7 @@ const ingestionWorker = new Worker(
                     : {
                         status: "failed",
                         error_message: backgroundError.message,
-                        finished_at: new Date().toISOString(),
+                        completed_at: new Date().toISOString(),
                     })
                 .eq("id", jobId);
 
@@ -483,7 +483,7 @@ ingestionWorker.on("failed", async (job, err) => {
             .update({
                 status: "failed",
                 error_message: timeoutReason,
-                finished_at: new Date().toISOString(),
+                completed_at: new Date().toISOString(),
             })
             .eq("id", ingestionJobId);
 
