@@ -35,9 +35,27 @@ async function gatherContext(workspaceId, windowHours) {
     const [signals, alerts, clusters] = await Promise.all([
         baseSupabaseAdmin.from("signals").select("id, sentiment, platform, captured_at, title").eq("workspace_id", workspaceId).gte("captured_at", sinceIso).order("captured_at", { ascending: false }).limit(50).then((r) => r.data || []),
         baseSupabaseAdmin.from("alerts").select("id, severity, status, created_at").eq("workspace_id", workspaceId).gte("created_at", sinceIso).limit(20).then((r) => r.data || []),
-        baseSupabaseAdmin.from("narrative_clusters").select("id, title, momentum, signal_count, sentiment_score").eq("workspace_id", workspaceId).order("momentum", { ascending: false }).limit(10).then((r) => r.data || []),
+        baseSupabaseAdmin.from("narrative_clusters").select("id, title, velocity, signal_count, sentiment").eq("workspace_id", workspaceId).order("velocity", { ascending: false, nullsFirst: false }).limit(10).then((r) => r.data || []),
     ]);
     return { signals, alerts, clusters, sinceIso, windowHours };
+}
+
+// Models often wrap JSON in ```json fences; strip them before parsing.
+function parseModelJson(raw) {
+    const text = String(raw || "").trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+    try { return JSON.parse(text); } catch { /* fall through */ }
+    const start = text.indexOf("{");
+    const end = text.lastIndexOf("}");
+    if (start === -1 || end <= start) return null;
+    try { return JSON.parse(text.slice(start, end + 1)); } catch { return null; }
+}
+
+// Only keep cited sources whose ids were actually in the data context.
+function keepKnownSources(sources, ctx) {
+    const known = new Set([...ctx.signals, ...ctx.alerts, ...ctx.clusters].map((r) => r.id));
+    return (Array.isArray(sources) ? sources : [])
+        .map((src) => (typeof src === "string" ? { id: src } : src))
+        .filter((src) => src && known.has(src.id));
 }
 
 export async function askNarriv({ workspaceId, question, windowHours = 24 }) {
@@ -56,7 +74,7 @@ export async function askNarriv({ workspaceId, question, windowHours = 24 }) {
         `\n\nActive alerts (id | severity | status):\n` +
         ctx.alerts.map((a) => `  ${a.id} | ${a.severity || "?"} | ${a.status || "?"}`).join("\n") +
         `\n\nTop clusters (id | momentum | signal_count | title):\n` +
-        ctx.clusters.map((c) => `  ${c.id} | momentum=${c.momentum} | n=${c.signal_count} | ${c.title}`).join("\n");
+        ctx.clusters.map((c) => `  ${c.id} | momentum=${c.velocity ?? "?"} | n=${c.signal_count} | ${c.title}`).join("\n");
 
     if (dataIsEmpty) {
         return {
@@ -84,12 +102,10 @@ export async function askNarriv({ workspaceId, question, windowHours = 24 }) {
             ],
         });
         const raw = resp.choices?.[0]?.message?.content || "";
-        try {
-            const parsed = JSON.parse(raw);
-            content = parsed;
-        } catch {
-            content = { answer: raw, sources: [], grounded: false };
-        }
+        const parsed = parseModelJson(raw);
+        content = parsed && typeof parsed.answer === "string"
+            ? { ...parsed, sources: keepKnownSources(parsed.sources, ctx) }
+            : { answer: raw, sources: [], grounded: false };
         success = true;
     } catch (e) {
         error = e?.message || String(e);

@@ -36,7 +36,7 @@ export async function computePredictiveSignals({ workspaceId, windowHours = 24 }
         baseSupabaseAdmin.from("signals").select("id, sentiment, captured_at").eq("workspace_id", workspaceId).gte("captured_at", sinceIso).then((r) => r.data || []),
         baseSupabaseAdmin.from("signals").select("id").eq("workspace_id", workspaceId).lt("captured_at", sinceIso).gte("captured_at", prevSinceIso).then((r) => r.data || []),
         baseSupabaseAdmin.from("alerts").select("id, severity, status, created_at").eq("workspace_id", workspaceId).gte("created_at", sinceIso).then((r) => r.data || []),
-        baseSupabaseAdmin.from("narrative_clusters").select("id, title, momentum, sentiment_score, signal_count").eq("workspace_id", workspaceId).order("momentum", { ascending: false }).limit(10).then((r) => r.data || []),
+        baseSupabaseAdmin.from("narrative_clusters").select("id, title, momentum:velocity, signal_count").eq("workspace_id", workspaceId).order("velocity", { ascending: false, nullsFirst: false }).limit(10).then((r) => r.data || []),
     ]);
 
     const signals = [];
