@@ -47,6 +47,37 @@ export function buildWorkList(keywordRows, { maxKeywordsPerWorkspace = 3, maxWor
     return ordered.flatMap((workspaceId) => byWorkspace.get(workspaceId).map((keyword) => ({ workspaceId, keyword })));
 }
 
+const LOCK_WINDOW_MS = 10 * 60 * 1000;
+
+/**
+ * Claim the run: insert a "running" row, then let the earliest running row
+ * within the lock window win. Concurrent invocations (Vercel can deliver a
+ * cron more than once) therefore resolve to a single executor without a DB
+ * constraint. Returns { logId, acquired }.
+ */
+async function claimRun(runId, trigger) {
+    const { data: row, error } = await baseSupabaseAdmin
+        .from("cron_ingestion_logs")
+        .insert({ job_name: JOB_NAME, status: "running", metadata: { runId, trigger, startedAt: new Date().toISOString() } })
+        .select("id")
+        .single();
+    if (error || !row) {
+        logStructured("warn", "scheduled_ingestion_lock_insert_failed", { runId, error: error?.message });
+        return { logId: null, acquired: true, lockError: error?.message || "no row" };
+    }
+    const { data: running } = await baseSupabaseAdmin
+        .from("cron_ingestion_logs")
+        .select("id, created_at")
+        .eq("job_name", JOB_NAME)
+        .eq("status", "running")
+        .gte("created_at", new Date(Date.now() - LOCK_WINDOW_MS).toISOString())
+        .order("created_at", { ascending: true })
+        .order("id", { ascending: true })
+        .limit(1);
+    const leader = running?.[0]?.id;
+    return { logId: row.id, acquired: !leader || leader === row.id };
+}
+
 export async function runScheduledIngestion({
     budgetMs = 240000,
     perKeywordLimit = 8,
@@ -54,9 +85,19 @@ export async function runScheduledIngestion({
     maxWorkspaces = 25,
     trigger = "cron",
     ingest = ingestRssSignals,
+    pauseMs = 300,
 } = {}) {
     const runId = crypto.randomUUID();
     const start = Date.now();
+
+    const { logId, acquired, lockError } = await claimRun(runId, trigger);
+    if (!acquired) {
+        await baseSupabaseAdmin.from("cron_ingestion_logs")
+            .update({ status: "skipped_overlap", metadata: { runId, trigger, reason: "another scheduled run is in progress" } })
+            .eq("id", logId);
+        logStructured("info", "scheduled_ingestion_skipped_overlap", { runId, trigger });
+        return { runId, trigger, status: "skipped_overlap", workspaces: 0, keywords: 0, totals: {}, durationMs: Date.now() - start, results: [] };
+    }
 
     const { data: keywordRows, error: kwErr } = await baseSupabaseAdmin
         .from("monitoring_keywords")
@@ -85,6 +126,8 @@ export async function runScheduledIngestion({
             results.push({ workspaceId, keyword, status: "deferred" });
             continue;
         }
+        // Space out requests to the news source.
+        if (pauseMs > 0 && results.length > 0) await new Promise((r) => setTimeout(r, pauseMs));
         const itemStart = Date.now();
         try {
             const r = await ingest({ workspaceId, keyword, limit: perKeywordLimit });
@@ -117,14 +160,16 @@ export async function runScheduledIngestion({
     else if (totals.deferredKeywords > 0) status = "partial";
 
     const summary = { runId, trigger, status, workspaces: new Set(work.map((w) => w.workspaceId)).size, keywords: work.length, totals, durationMs };
-
-    const { error: logErr } = await baseSupabaseAdmin.from("cron_ingestion_logs").insert({
-        job_name: JOB_NAME,
+    const finalRow = {
         status,
         keywords_targeted: work.map((w) => w.keyword).slice(0, 100),
         sources_targeted: work.length,
-        metadata: { ...summary, results: results.slice(0, 100) },
-    });
+        metadata: { ...summary, startedAt: new Date(start).toISOString(), finishedAt: new Date().toISOString(), lockError: lockError || undefined, results: results.slice(0, 100) },
+    };
+    // Finish the claimed row (start + finish on one record); insert if the claim failed.
+    const { error: logErr } = logId
+        ? await baseSupabaseAdmin.from("cron_ingestion_logs").update(finalRow).eq("id", logId)
+        : await baseSupabaseAdmin.from("cron_ingestion_logs").insert({ job_name: JOB_NAME, ...finalRow });
     if (logErr) logStructured("warn", "scheduled_ingestion_log_failed", { runId, error: logErr.message });
 
     logStructured(status === "failed" ? "error" : "info", "scheduled_ingestion_done", summary);

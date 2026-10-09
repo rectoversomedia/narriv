@@ -47,6 +47,10 @@ export function buildAnalysisRow(signalId, result) {
  */
 export async function saveAnalysis(signalId, result) {
     const row = buildAnalysisRow(signalId, result);
+    // Re-check right before writing: ingestion may have analyzed this signal
+    // while the AI call was in flight (no unique constraint on signal_id).
+    const { data: existing } = await baseSupabaseAdmin.from("signal_analyses").select("id").eq("signal_id", signalId).limit(1);
+    if (existing && existing.length > 0) return { error: null, skipped: true };
     const { error } = await baseSupabaseAdmin.from("signal_analyses").insert(row);
     if (error) return { error };
     await baseSupabaseAdmin
