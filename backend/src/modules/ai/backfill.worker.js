@@ -11,6 +11,7 @@
 import { baseSupabaseAdmin } from "../../lib/supabase.js";
 import { analyzeSignal } from "../ai/ai.service.js";
 import { logStructured } from "../../lib/logger.js";
+import { checkBudgetAllowance } from "../../lib/cost-management.js";
 
 function pickText(signal) {
     const title = String(signal.title || "").trim();
@@ -68,8 +69,13 @@ export async function saveAnalysis(signalId, result) {
 // Only signals traceable to a real external record are eligible for AI analysis.
 export const REAL_SIGNAL_FILTER = "url.not.is.null,raw_document_id.not.is.null";
 
-export async function handleRetroanalyze(workspaceId, { limit = 100, deadline = null } = {}) {
+export async function handleRetroanalyze(workspaceId, { limit = 100, deadline = null, checkBudget = checkBudgetAllowance } = {}) {
     if (!workspaceId) return { found: 0, processed: 0, failed: 0, alreadyAnalyzed: 0 };
+    const budget = await checkBudget(workspaceId).catch(() => ({ allowed: true }));
+    if (budget?.allowed === false) {
+        logStructured("warn", "retroanalyze_skipped_budget", { workspaceId, reason: budget.reason });
+        return { found: 0, processed: 0, failed: 0, alreadyAnalyzed: 0, skipped: "budget_exceeded" };
+    }
 
     const { data: signals, error: sigErr } = await baseSupabaseAdmin
         .from("signals")

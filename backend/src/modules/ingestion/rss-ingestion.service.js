@@ -11,11 +11,27 @@ import crypto from "crypto";
 import supabaseAdmin from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
 import { assertPublicHttpUrl } from "../../lib/url-safety.js";
+import { checkBudgetAllowance } from "../../lib/cost-management.js";
 import { analyzeSignal } from "../ai/ai.service.js";
 import { runClustering } from "../clustering/clustering.service.js";
 import { detectAlerts } from "../alerts/alerts.service.js";
 
 export { assertPublicHttpUrl };
+
+// Max articles analyzed in parallel per ingestion call.
+const INGEST_CONCURRENCY = Math.max(1, Number(process.env.INGEST_CONCURRENCY || 4));
+
+/** Run `fn` over `items` with at most `limit` in flight. */
+export async function runWithConcurrency(items, limit, fn) {
+  let next = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) {
+      const item = items[next++];
+      await fn(item);
+    }
+  });
+  await Promise.all(workers);
+}
 
 const DEFAULT_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 NarrivNewsBot/1.0";
 const REQUEST_TIMEOUT_MS = 15000;
@@ -325,7 +341,15 @@ export async function ingestRssSignals({
   let insertFailed = 0;
 
   // Process and persist items
-  for (const item of fetchedItems) {
+  // Budget gate: when the workspace's AI budget is exhausted, articles are
+  // still stored (unanalyzed) so the backfill can analyze them later.
+  const budget = await checkBudgetAllowance(workspaceId).catch(() => ({ allowed: true }));
+  const aiAllowed = budget?.allowed !== false;
+  if (!aiAllowed) logStructured("warn", "ingestion_ai_skipped_budget", { workspaceId, reason: budget.reason });
+
+  // Items are processed with bounded concurrency (AI analysis dominates the
+  // per-item time); counters are updated on the single JS event loop.
+  const processItem = async (item) => {
     try {
       const externalId = generateExternalId(item.url, item.guid, item.title);
 
@@ -334,7 +358,7 @@ export async function ingestRssSignals({
       // keeps the check working even if legacy duplicates already exist.
       if (await existsInWorkspace(workspaceId, externalId, item.url)) {
         skippedDuplicates++;
-        continue;
+        return;
       }
 
       // 1. Insert to raw_documents
@@ -362,7 +386,7 @@ export async function ingestRssSignals({
       if (rawDocErr || !rawDoc) {
         logStructured("warn", "raw_doc_insert_failed", { error: rawDocErr?.message });
         insertFailed++;
-        continue;
+        return;
       }
       createdRawDocs.push(rawDoc);
 
@@ -372,6 +396,7 @@ export async function ingestRssSignals({
       let aiResult = null;
       let aiError = null;
       try {
+        if (!aiAllowed) throw new Error("budget_exceeded: AI analysis paused for this workspace");
         aiResult = await analyzeSignal(item.title, item.content, { workspaceId, operation: "ingestion_analysis" });
       } catch (aiErr) {
         aiError = aiErr;
@@ -421,7 +446,7 @@ export async function ingestRssSignals({
       if (signalErr || !signal) {
         logStructured("warn", "signal_insert_failed", { error: signalErr?.message });
         insertFailed++;
-        continue;
+        return;
       }
       createdSignals.push(signal);
 
@@ -455,7 +480,8 @@ export async function ingestRssSignals({
       insertFailed++;
       logStructured("warn", "rss_item_processing_failed", { error: itemErr.message, title: item.title });
     }
-  }
+  };
+  await runWithConcurrency(fetchedItems, INGEST_CONCURRENCY, processItem);
 
   // Update source sync status if sourceId is provided
   if (activeSource?.id) {

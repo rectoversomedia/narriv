@@ -15,9 +15,11 @@ jest.unstable_mockModule('../src/lib/supabase.js', () => supabaseModuleFor(fake)
 jest.unstable_mockModule('../src/modules/ai/ai.service.js', () => ({ analyzeSignal }));
 jest.unstable_mockModule('../src/modules/clustering/clustering.service.js', () => ({ runClustering }));
 jest.unstable_mockModule('../src/modules/alerts/alerts.service.js', () => ({ detectAlerts }));
+const checkBudgetAllowance = jest.fn(async () => ({ allowed: true }));
+jest.unstable_mockModule('../src/lib/cost-management.js', () => ({ checkBudgetAllowance }));
 
 const { buildWorkList, runScheduledIngestion } = await import('../src/modules/ingestion/scheduled-ingestion.js');
-const { existsInWorkspace, ingestRssSignals, assertPublicHttpUrl } = await import('../src/modules/ingestion/rss-ingestion.service.js');
+const { existsInWorkspace, ingestRssSignals, assertPublicHttpUrl, runWithConcurrency } = await import('../src/modules/ingestion/rss-ingestion.service.js');
 const { buildAnalysisRow, saveAnalysis, handleRetroanalyze, REAL_SIGNAL_FILTER } = await import('../src/modules/ai/backfill.worker.js');
 const { resolveWorkspaceIdForUser, DEMO_WORKSPACE_ID } = await import('../src/lib/workspace-access.js');
 const { recordTokenUsage, calculateCost } = await import('../src/lib/token-tracking.js');
@@ -220,6 +222,20 @@ describe('ingestRssSignals real-data behavior', () => {
     expect(writesTo('ai_analysis_failure_logs', 'insert')[0].payload).toMatchObject({ workspace_id: WS_A, signal_id: 'sig-1' });
   });
 
+  it('stores articles unanalyzed when the workspace AI budget is exhausted', async () => {
+    checkBudgetAllowance.mockResolvedValueOnce({ allowed: false, reason: 'Monthly budget exceeded.' });
+    respond = (q) => {
+      if (q.op === 'insert' && q.table === 'raw_documents') return { data: [{ id: 'raw-1' }], error: null };
+      if (q.op === 'insert' && q.table === 'signals') return { data: [{ id: 'sig-1', ...q.payload }], error: null };
+      if (q.op === 'insert' && q.table === 'ingestion_jobs') return { data: [{ id: 'job-1' }], error: null };
+      return { data: [], error: null };
+    };
+    const result = await ingestRssSignals({ workspaceId: WS_A, keyword: 'Bank A', limit: 5 });
+    expect(analyzeSignal).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ newSignalsCreated: 1, analyzed: 0, analysisFailed: 1 });
+    expect(writesTo('ai_analysis_failure_logs', 'insert')[0].payload.error_message).toMatch(/budget_exceeded/);
+  });
+
   it('does not insert anything when the article already exists', async () => {
     respond = (q) => (q.table === 'raw_documents' && q.op === 'select' ? { data: [{ id: 'existing' }], error: null } : { data: [{ id: 'job-1' }], error: null });
     const result = await ingestRssSignals({ workspaceId: WS_A, keyword: 'Bank A', limit: 5 });
@@ -232,6 +248,19 @@ describe('ingestRssSignals real-data behavior', () => {
     global.fetch = jest.fn(async () => ({ ok: false, status: 503, text: async () => '' }));
     await expect(ingestRssSignals({ workspaceId: WS_A, keyword: 'Bank A' })).rejects.toThrow();
     expect(writesTo('signals', 'insert')).toHaveLength(0);
+  });
+});
+
+describe('bounded concurrency', () => {
+  it('never runs more than the limit at once and processes every item', async () => {
+    let inFlight = 0; let peak = 0; const seen = [];
+    await runWithConcurrency([1, 2, 3, 4, 5, 6, 7], 3, async (n) => {
+      inFlight += 1; peak = Math.max(peak, inFlight);
+      await new Promise((r) => setTimeout(r, 5));
+      seen.push(n); inFlight -= 1;
+    });
+    expect(peak).toBe(3);
+    expect(seen.sort()).toEqual([1, 2, 3, 4, 5, 6, 7]);
   });
 });
 
@@ -281,6 +310,13 @@ describe('analysis backfill idempotency', () => {
     const r = await handleRetroanalyze(WS_A);
     expect(r).toMatchObject({ processed: 0, failed: 1 });
     expect(writesTo('signal_analyses', 'insert')).toHaveLength(0);
+  });
+
+  it('skips AI analysis entirely when the workspace budget is exhausted', async () => {
+    respond = (q) => (q.table === 'signals' ? { data: [{ id: 'todo', title: 't', content: 'c' }], error: null } : { data: [], error: null });
+    const r = await handleRetroanalyze(WS_A, { checkBudget: async () => ({ allowed: false, reason: 'exceeded' }) });
+    expect(r.skipped).toBe('budget_exceeded');
+    expect(analyzeSignal).not.toHaveBeenCalled();
   });
 
   it('defers work after the deadline', async () => {
