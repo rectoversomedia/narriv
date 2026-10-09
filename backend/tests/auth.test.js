@@ -1,364 +1,212 @@
 import { jest } from '@jest/globals';
 import request from 'supertest';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import { createMemoryDb } from './helpers/memory-db.js';
+import { supabaseModuleFor } from './helpers/fake-supabase.js';
 
-jest.unstable_mockModule('../src/middlewares/rate-limit.js', () => ({
-  rateLimit: () => (req, res, next) => next(),
-  RATE_LIMITS: {
-    auth: { windowMs: 1000, max: 100 },
-    api: { windowMs: 1000, max: 100 },
-    ai_generation: { windowMs: 1000, max: 100 },
-    ingestion: { windowMs: 1000, max: 100 },
-    feedback: { windowMs: 1000, max: 100 },
-    export: { windowMs: 1000, max: 100 },
-  }
+// Auth flows against an in-memory Supabase (users, refresh_tokens,
+// password_reset_tokens, ...). Assertions inspect the resulting table state.
+const db = createMemoryDb();
+jest.unstable_mockModule('../src/lib/supabase.js', () => supabaseModuleFor(db));
+
+// Capture outgoing emails instead of sending them.
+const sentEmails = [];
+jest.unstable_mockModule('../src/lib/email.js', () => ({
+  isEmailConfigured: () => false,
+  sendEmail: jest.fn(async (msg) => { sentEmails.push(msg); return { success: true }; }),
 }));
 
-const mockUsers = [];
-const mockPasswordResetTokens = [];
-const mockEmailVerificationTokens = [];
-
-function matchesTokenWhere(record, where = {}) {
-  if (where.userId && record.userId !== where.userId) return false;
-  if (where.tokenHash && record.tokenHash !== where.tokenHash) return false;
-  if (where.usedAt === null && record.usedAt !== null && record.usedAt !== undefined) return false;
-  if (where.verifiedAt?.not === null && !record.verifiedAt) return false;
-  if (where.expiresAt?.gt && !(record.expiresAt > where.expiresAt.gt)) return false;
-  return true;
-}
-
-const mockPrisma = {
-  user: {
-    findUnique: jest.fn(async ({ where }) => mockUsers.find(u => u.email === where.email || u.id === where.id) || null),
-    create: jest.fn(async ({ data }) => {
-      const user = { id: 'u1', ...data, refreshTokens: [], memberships: [] };
-      mockUsers.push(user);
-      return user;
-    }),
-    update: jest.fn(async ({ where, data }) => {
-      const userIndex = mockUsers.findIndex(u => u.id === where.id || u.email === where.email);
-      if (userIndex > -1) {
-        mockUsers[userIndex] = { ...mockUsers[userIndex], ...data };
-        return mockUsers[userIndex];
-      }
-      return null;
-    }),
-  },
-  workspace: {
-    create: jest.fn(async ({ data }) => {
-      return { id: 'w1', ...data };
-    })
-  },
-  workspaceMember: {
-    create: jest.fn(async ({ data }) => {
-      return { id: 'wm1', ...data };
-    })
-  },
-  refreshToken: {
-    create: jest.fn(async ({ data }) => {
-      return { id: 'rt1', ...data };
-    }),
-    findFirst: jest.fn(async ({ where }) => {
-      return {
-        id: 'rt1',
-        userId: 'u1',
-        tokenHash: where.tokenHash,
-        expiresAt: new Date(Date.now() + 10000),
-        user: { id: 'u1', email: 'test@example.com' }
-      };
-    }),
-    findUnique: jest.fn(async ({ where }) => ({
-      id: 'rt1',
-      userId: 'u1',
-      tokenHash: where.tokenHash,
-      expiresAt: new Date(Date.now() + 10000),
-      user: { id: 'u1', email: 'test@example.com' }
-    })),
-    update: jest.fn(async () => ({})),
-    updateMany: jest.fn(async () => ({ count: 1 })),
-    deleteMany: jest.fn(async () => ({ count: 1 })),
-  },
-
-  emailVerificationToken: {
-    updateMany: jest.fn(async ({ where = {}, data }) => {
-      let count = 0;
-      mockEmailVerificationTokens.forEach((record, index) => {
-        if (matchesTokenWhere(record, where)) {
-          mockEmailVerificationTokens[index] = { ...record, ...data };
-          count += 1;
-        }
-      });
-      return { count };
-    }),
-    create: jest.fn(async ({ data }) => {
-      const token = { id: `evt-${mockEmailVerificationTokens.length + 1}`, createdAt: new Date(), usedAt: null, verifiedAt: null, ...data };
-      mockEmailVerificationTokens.push(token);
-      return token;
-    }),
-    findMany: jest.fn(async ({ where = {}, orderBy, take } = {}) => {
-      const records = mockEmailVerificationTokens
-        .filter((record) => matchesTokenWhere(record, where))
-        .sort((a, b) => orderBy?.createdAt === 'desc' ? b.createdAt - a.createdAt : a.createdAt - b.createdAt);
-      return typeof take === 'number' ? records.slice(0, take) : records;
-    }),
-    update: jest.fn(async ({ where, data }) => {
-      const index = mockEmailVerificationTokens.findIndex((token) => token.id === where.id);
-      if (index === -1) return null;
-      mockEmailVerificationTokens[index] = { ...mockEmailVerificationTokens[index], ...data };
-      return mockEmailVerificationTokens[index];
-    }),
-  },
-  passwordResetToken: {
-    updateMany: jest.fn(async ({ where = {}, data }) => {
-      let count = 0;
-      mockPasswordResetTokens.forEach((record, index) => {
-        if (matchesTokenWhere(record, where)) {
-          mockPasswordResetTokens[index] = { ...record, ...data };
-          count += 1;
-        }
-      });
-      return { count };
-    }),
-    create: jest.fn(async ({ data }) => {
-      const token = { id: `prt-${mockPasswordResetTokens.length + 1}`, createdAt: new Date(), usedAt: null, verifiedAt: null, ...data };
-      mockPasswordResetTokens.push(token);
-      return token;
-    }),
-    findMany: jest.fn(async ({ where = {}, orderBy, take } = {}) => {
-      const records = mockPasswordResetTokens
-        .filter((record) => matchesTokenWhere(record, where))
-        .sort((a, b) => orderBy?.createdAt === 'desc' ? b.createdAt - a.createdAt : a.createdAt - b.createdAt);
-      return typeof take === 'number' ? records.slice(0, take) : records;
-    }),
-    findFirst: jest.fn(async ({ where = {}, include } = {}) => {
-      const record = mockPasswordResetTokens.find((token) => matchesTokenWhere(token, where)) || null;
-      if (!record) return null;
-      if (include?.user) return { ...record, user: mockUsers.find((user) => user.id === record.userId) || null };
-      return record;
-    }),
-    update: jest.fn(async ({ where, data }) => {
-      const index = mockPasswordResetTokens.findIndex((token) => token.id === where.id);
-      if (index === -1) return null;
-      mockPasswordResetTokens[index] = { ...mockPasswordResetTokens[index], ...data };
-      return mockPasswordResetTokens[index];
-    }),
-  },
-  auditLog: {
-    create: jest.fn(async () => ({}))
-  },
-  $transaction: jest.fn(async (cb) => cb(mockPrisma)),
-};
-
-jest.unstable_mockModule('../src/lib/supabase.js', () => ({
-  default: mockPrisma,
-}));
-
-// Mock setup modules
 await import('./setup.js');
-
 const app = (await import('../src/index.js')).default;
 
-describe('Auth Endpoints', () => {
-  beforeEach(() => {
-    mockUsers.length = 0; // Clear users array
-    mockPasswordResetTokens.length = 0;
-    mockEmailVerificationTokens.length = 0;
-    jest.clearAllMocks();
-  });
+const PASSWORD = 'Password123!';
+const sha256 = (v) => crypto.createHash('sha256').update(v).digest('hex');
 
-  it('should register a new user', async () => {
-    const res = await request(app)
-      .post('/auth/register')
-      .send({
-        email: 'test@example.com',
-        password: 'Password123!',
-        name: 'Test User'
-      });
-      
-    if (res.status !== 201) console.log(res.body);
+async function seedUser(overrides = {}) {
+  const user = {
+    id: crypto.randomUUID(),
+    email: 'test@example.com',
+    name: 'Test User',
+    password: await bcrypt.hash(PASSWORD, 4),
+    email_verified: true,
+    failed_login_attempts: 0,
+    locked_until: null,
+    ...overrides,
+  };
+  db.table('users').push(user);
+  return user;
+}
+
+function reset() {
+  for (const name of Object.keys(db.tables)) db.tables[name].length = 0;
+  db.clearFailures();
+  sentEmails.length = 0;
+}
+
+let ipCounter = 0;
+// Each test uses its own client IP so the in-process login/reset rate limiters do not interfere.
+const client = () => {
+  ipCounter += 1;
+  return (req) => req.set('X-Forwarded-For', `10.0.0.${ipCounter}`);
+};
+
+describe('Auth endpoints', () => {
+  beforeEach(reset);
+
+  it('registers a user with a hashed password, workspace and membership', async () => {
+    const res = await request(app).post('/auth/register').send({
+      email: 'New.User@Example.com', password: PASSWORD, name: 'New User', company: 'Acme',
+    });
 
     expect(res.status).toBe(201);
-    expect(res.body).toHaveProperty('requireVerification');
-    expect(res.body.requireVerification).toBe(true);
-    expect(res.body).toHaveProperty('email');
-    expect(res.body.email).toBe('test@example.com');
+    expect(res.body.email).toBe('new.user@example.com');
+    // Registration currently auto-verifies email (production bypass while email
+    // delivery is pending), so no verification step is required.
+    expect(res.body.requireVerification).toBe(false);
+    const [user] = db.table('users');
+    expect(user.email).toBe('new.user@example.com');
+    expect(user.password).not.toBe(PASSWORD);
+    expect(await bcrypt.compare(PASSWORD, user.password)).toBe(true);
+    expect(db.table('workspace_members')).toEqual([expect.objectContaining({ user_id: user.id })]);
   });
 
-  it('should login an existing user', async () => {
-    const hashedPassword = await bcrypt.hash('Password123!', 10);
-    mockUsers.push({
-      id: 'u1',
-      email: 'test@example.com',
-      password: hashedPassword,
-      emailVerified: new Date(),
-      failedLoginAttempts: 0,
-      lockedUntil: null
-    });
+  it('rejects a duplicate email', async () => {
+    await seedUser();
+    const res = await request(app).post('/auth/register').send({ email: 'test@example.com', password: PASSWORD, name: 'X' });
+    expect(res.status).toBe(400);
+    expect(db.table('users')).toHaveLength(1);
+  });
 
-    const res = await request(app)
-      .post('/auth/login')
-      .send({
-        email: 'test@example.com',
-        password: 'Password123!'
-      });
+  it('logs in and issues an access token plus a stored (hashed) refresh token', async () => {
+    const user = await seedUser({ failed_login_attempts: 2 });
+    const res = await request(app).post('/auth/login').send({ email: 'test@example.com', password: PASSWORD });
 
-    if (res.status !== 200) console.log(res.body);
-    
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('token');
+    expect(jwt.verify(res.body.token, process.env.JWT_SECRET).id).toBe(user.id);
+    expect(db.table('refresh_tokens')).toEqual([expect.objectContaining({ user_id: user.id, token_hash: expect.any(String) })]);
+    expect(db.table('refresh_tokens')[0].token_hash).not.toBe(res.body.refresh_token);
+    expect(db.table('users')[0].failed_login_attempts).toBe(0);
   });
 
-  it('should lockout user after too many failed attempts', async () => {
-    const hashedPassword = await bcrypt.hash('Password123!', 10);
-    mockUsers.push({
-      id: 'u2',
-      email: 'lockout@example.com',
-      password: hashedPassword,
-      emailVerified: new Date(),
-      failedLoginAttempts: 0,
-      lockedUntil: null
-    });
-
+  it('locks the account after 5 failed attempts', async () => {
+    await seedUser({ email: 'lockout@example.com' });
+    const send = client();
     for (let i = 0; i < 5; i++) {
-      await request(app).post('/auth/login').send({ email: 'lockout@example.com', password: 'WrongPassword123!' });
+      const r = await send(request(app).post('/auth/login')).send({ email: 'lockout@example.com', password: 'WrongPassword123!' });
+      expect(r.status).toBe(401);
     }
-
-    const res = await request(app)
-      .post('/auth/login')
-      .send({ email: 'lockout@example.com', password: 'WrongPassword123!' });
-      
+    const res = await send(request(app).post('/auth/login')).send({ email: 'lockout@example.com', password: PASSWORD });
     expect(res.status).toBe(429);
     expect(res.body.error).toMatch(/locked|Too many/i);
+    expect(new Date(db.table('users')[0].locked_until).getTime()).toBeGreaterThan(Date.now());
   });
 
-  it('should refresh token successfully', async () => {
-    const validRefreshToken = jwt.sign({ id: 'u1' }, process.env.JWT_REFRESH_SECRET);
+  it('rotates the refresh token on refresh', async () => {
+    await seedUser();
+    const login = await request(app).post('/auth/login').send({ email: 'test@example.com', password: PASSWORD });
+    const oldHash = db.table('refresh_tokens')[0].token_hash;
 
-    const res = await request(app)
-      .post('/auth/refresh')
-      .send({ refreshToken: validRefreshToken });
+    // Login must return the field the frontend stores (refreshToken).
+    expect(login.body.refreshToken).toBe(login.body.refresh_token);
+    // The frontend sends { refreshToken } (regression: this returned 400).
+    const res = await request(app).post('/auth/refresh').send({ refreshToken: login.body.refreshToken });
 
-    if (res.status !== 200) console.log(res.body);
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('token');
+    expect(res.body.token).toEqual(expect.any(String));
+    expect(res.body.refreshToken).toEqual(expect.any(String));
+    expect(db.table('refresh_tokens').map((t) => t.token_hash)).not.toContain(oldHash);
+    const reuse = await request(app).post('/auth/refresh').send({ refreshToken: login.body.refreshToken });
+    expect(reuse.status).toBe(401);
   });
 
-  it('should logout user successfully', async () => {
-    const validRefreshToken = jwt.sign({ id: 'u1' }, process.env.JWT_REFRESH_SECRET);
-
-    const res = await request(app)
-      .post('/auth/logout')
-      .send({ refreshToken: validRefreshToken });
-
-    if (res.status !== 200) console.log(res.body);
+  it('logs out by deleting the refresh token', async () => {
+    await seedUser();
+    const login = await request(app).post('/auth/login').send({ email: 'test@example.com', password: PASSWORD });
+    const res = await request(app).post('/auth/logout').send({ refreshToken: login.body.refreshToken });
     expect(res.status).toBe(200);
-    expect(mockPrisma.refreshToken.update).toHaveBeenCalled();
+    expect(db.table('refresh_tokens')).toHaveLength(0);
   });
 
-  it('should change password successfully', async () => {
-    const hashedPassword = await bcrypt.hash('Password123!', 10);
-    mockUsers.push({
-      id: 'u1',
-      email: 'test@example.com',
-      password: hashedPassword,
-      emailVerified: new Date(),
-      failedLoginAttempts: 0,
-      lockedUntil: null
-    });
+  it('still accepts the legacy refresh_token field', async () => {
+    await seedUser();
+    const login = await request(app).post('/auth/login').send({ email: 'test@example.com', password: PASSWORD });
+    const res = await request(app).post('/auth/logout').send({ refresh_token: login.body.refresh_token });
+    expect(res.status).toBe(200);
+    expect(db.table('refresh_tokens')).toHaveLength(0);
+  });
 
-    const token = jwt.sign({ id: 'u1', email: 'test@example.com' }, process.env.JWT_SECRET);
+  it('rejects refresh without a token', async () => {
+    const res = await request(app).post('/auth/refresh').send({});
+    expect(res.status).toBe(400);
+  });
+
+  it('changes the password, records history and revokes refresh tokens', async () => {
+    const user = await seedUser();
+    const login = await request(app).post('/auth/login').send({ email: 'test@example.com', password: PASSWORD });
+    const oldHash = db.table('users')[0].password;
 
     const res = await request(app)
       .post('/auth/change-password')
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        currentPassword: 'Password123!',
-        newPassword: 'NewPassword123!'
-      });
+      .set('Authorization', `Bearer ${login.body.token}`)
+      .send({ currentPassword: PASSWORD, newPassword: 'NewPassword456!' });
 
-    if (res.status !== 200) console.log(res.body);
     expect(res.status).toBe(200);
+    expect(await bcrypt.compare('NewPassword456!', db.table('users')[0].password)).toBe(true);
+    expect(db.table('password_history')).toEqual([expect.objectContaining({ user_id: user.id, password_hash: oldHash })]);
+    expect(db.table('refresh_tokens')).toHaveLength(0);
   });
 
-  it('should complete forgot-password, verify-code, and reset-password flow', async () => {
-    const hashedPassword = await bcrypt.hash('Password123!', 10);
-    mockUsers.push({
-      id: 'u1',
-      email: 'test@example.com',
-      password: hashedPassword,
-      emailVerified: new Date(),
-      failedLoginAttempts: 2,
-      lockedUntil: new Date(Date.now() + 10000),
-    });
+  it('completes forgot-password -> verify-code -> reset-password with the emailed code', async () => {
+    await seedUser({ failed_login_attempts: 3 });
+    const send = client();
 
-    const forgotRes = await request(app)
-      .post('/auth/forgot-password')
-      .send({ email: 'TEST@example.com' });
+    const forgot = await send(request(app).post('/auth/forgot-password')).send({ email: 'test@example.com' });
+    expect(forgot.status).toBe(200);
+    expect(forgot.body.success).toBe(true);
+    // The code is never exposed in the API response, only delivered by email.
+    expect(forgot.body.reset_code).toBeUndefined();
+    await new Promise((r) => setImmediate(r));
+    const emailed = sentEmails.find((m) => m.to === 'test@example.com');
+    const code = String(emailed?.html || emailed?.text || '').match(/\b\d{6}\b/)?.[0];
+    expect(code).toMatch(/^\d{6}$/);
+    // Regression: the stored hash must be the hash of the emailed code.
+    expect(db.table('password_reset_tokens')[0].token_hash).toBe(sha256(code));
 
-    expect(forgotRes.status).toBe(200);
-    expect(forgotRes.body).toMatchObject({ success: true });
-    expect(forgotRes.body.resetCode).toMatch(/^\d{6}$/);
-    expect(mockPrisma.passwordResetToken.create).toHaveBeenCalled();
+    const verify = await send(request(app).post('/auth/verify-reset-code')).send({ email: 'test@example.com', code });
+    expect(verify.status).toBe(200);
+    expect(verify.body.resetToken).toEqual(expect.any(String));
 
-    const verifyRes = await request(app)
-      .post('/auth/verify-reset-code')
-      .send({ email: 'test@example.com', code: forgotRes.body.resetCode });
-
-    expect(verifyRes.status).toBe(200);
-    expect(verifyRes.body.resetToken).toEqual(expect.any(String));
-
-    const resetRes = await request(app)
-      .post('/auth/reset-password')
-      .send({ resetToken: verifyRes.body.resetToken, newPassword: 'BrandNew123!' });
-
+    const resetRes = await send(request(app).post('/auth/reset-password')).send({ resetToken: verify.body.resetToken, newPassword: 'ResetPassword789!' });
     expect(resetRes.status).toBe(200);
-    expect(resetRes.body.success).toBe(true);
-    expect(mockPrisma.refreshToken.updateMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: { userId: 'u1', revokedAt: null },
-    }));
+    expect(db.table('password_reset_tokens')[0].used_at).toBeTruthy();
 
-    const loginRes = await request(app)
-      .post('/auth/login')
-      .send({ email: 'test@example.com', password: 'BrandNew123!' });
-
-    expect(loginRes.status).toBe(200);
-    expect(mockUsers[0].failedLoginAttempts).toBe(0);
-    expect(mockUsers[0].lockedUntil).toBeNull();
+    const login = await send(request(app).post('/auth/login')).send({ email: 'test@example.com', password: 'ResetPassword789!' });
+    expect(login.status).toBe(200);
   });
 
-  it('should return a generic forgot-password response for unknown emails', async () => {
-    const res = await request(app)
-      .post('/auth/forgot-password')
-      .send({ email: 'missing@example.com' });
-
+  it('returns a generic forgot-password response for unknown emails', async () => {
+    const res = await client()(request(app).post('/auth/forgot-password')).send({ email: 'missing@example.com' });
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ success: true });
-    expect(res.body.resetCode).toBeUndefined();
-    expect(mockPrisma.passwordResetToken.create).not.toHaveBeenCalled();
+    expect(res.body.success).toBe(true);
+    expect(db.table('password_reset_tokens')).toHaveLength(0);
   });
 
-  it('should reject invalid reset codes and tokens', async () => {
-    const hashedPassword = await bcrypt.hash('Password123!', 10);
-    mockUsers.push({ id: 'u1', email: 'test@example.com', password: hashedPassword, emailVerified: new Date(),
-      failedLoginAttempts: 0, lockedUntil: null });
+  it('rejects invalid reset codes and reset tokens', async () => {
+    await seedUser();
+    const send = client();
+    await send(request(app).post('/auth/forgot-password')).send({ email: 'test@example.com' });
 
-    await request(app)
-      .post('/auth/forgot-password')
-      .send({ email: 'test@example.com' });
+    await new Promise((r) => setImmediate(r));
+    const emailedCode = String(sentEmails[0]?.html || sentEmails[0]?.text || '').match(/\b\d{6}\b/)?.[0];
+    const wrongCode = emailedCode === '000000' ? '111111' : '000000';
+    const badCode = await send(request(app).post('/auth/verify-reset-code')).send({ email: 'test@example.com', code: wrongCode });
+    expect(badCode.status).toBe(400);
+    expect(badCode.body.code).toBe('INVALID_RESET_CODE');
 
-    const invalidCodeRes = await request(app)
-      .post('/auth/verify-reset-code')
-      .send({ email: 'test@example.com', code: '000000' });
-
-    expect(invalidCodeRes.status).toBe(400);
-    expect(invalidCodeRes.body.code).toBe('INVALID_RESET_CODE');
-
-    const invalidTokenRes = await request(app)
-      .post('/auth/reset-password')
-      .send({ resetToken: 'invalid-reset-token-value-0000000000000000', newPassword: 'BrandNew123!' });
-
-    expect(invalidTokenRes.status).toBe(400);
-    expect(invalidTokenRes.body.code).toBe('INVALID_RESET_TOKEN');
+    const badToken = await send(request(app).post('/auth/reset-password')).send({ resetToken: 'f'.repeat(64), newPassword: 'ResetPassword789!' });
+    expect(badToken.status).toBe(400);
+    expect(badToken.body.code).toBe('INVALID_RESET_TOKEN');
   });
 });

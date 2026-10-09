@@ -51,6 +51,31 @@ describe('analysis table references', () => {
   });
 });
 
+describe('known schema drift does not return', () => {
+  // Columns that do not exist in production and previously caused silent query failures.
+  const banned = [
+    [/narrative_clusters[\s\S]{0,200}select\([^)]*\b(sentiment_score)\b/, 'narrative_clusters.sentiment_score'],
+    [/select\(\s*["'][^"']*(?<![:\w])momentum(?!:)\b[^"']*["']\s*\)/, 'unaliased momentum column'],
+    [/\bfinished_at\b/, 'ingestion_jobs.finished_at'],
+    [/\bprocessed_count\b/, 'ingestion_jobs.processed_count'],
+  ];
+  it('source files do not reference removed columns', () => {
+    const hits = [];
+    const walk = (dir) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) walk(full);
+        else if (full.endsWith('.js')) {
+          const text = fs.readFileSync(full, 'utf8');
+          for (const [re, label] of banned) if (re.test(text)) hits.push(`${full}: ${label}`);
+        }
+      }
+    };
+    walk(path.resolve('src'));
+    expect(hits).toEqual([]);
+  });
+});
+
 describe('scheduled ingestion work list', () => {
   it('skips blank keywords, dedups case-insensitively and caps per workspace', () => {
     const work = buildWorkList([
