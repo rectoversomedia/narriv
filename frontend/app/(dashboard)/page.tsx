@@ -14,7 +14,7 @@ import { getMockNarratives } from "@/lib/demo-mock-data";
 import { useAuthStore } from "@/store/useAuthStore";
 
 import { useQuery } from "@tanstack/react-query";
-import { getDashboardSummary, getDateRangeOptions, getWorkspaceSettings, type DateRangeKey } from "@/lib/api-service";
+import { fetchDashboardSummaryStrict, getDashboardSummary, getDateRangeOptions, getWorkspaceSettings, type DateRangeKey } from "@/lib/api-service";
 import { DashboardErrorState, MetricRowSkeleton } from "@/components/dashboard/dashboard-states";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -253,7 +253,9 @@ export default function DashboardPage() {
 
   const dashboardQuery = useQuery({
     queryKey: ["dashboard-summary", timeRange],
-    queryFn: () => getDashboardSummary(dateRange),
+    // Live sessions use the strict fetch so failures surface as errors instead of empty data.
+    queryFn: () => (isDemoSession ? getDashboardSummary(dateRange) : fetchDashboardSummaryStrict(dateRange)),
+    retry: (count, err) => ![401, 403].includes((err as { status?: number })?.status ?? 0) && count < 2,
     staleTime: 15 * 1000,
     refetchInterval: isDemoSession ? 60000 : 15 * 1000, // Longer interval in demo session
     refetchIntervalInBackground: false,
@@ -265,7 +267,12 @@ export default function DashboardPage() {
     { label: t("pages.command.timeRange30d"), value: "30d" },
   ];
 
-  const isLiveUnavailable = dashboardQuery.data === null && !isDemoSession;
+  const liveError = !isDemoSession && dashboardQuery.isError ? (dashboardQuery.error as { status?: number } | null) : null;
+  const liveErrorKind: "auth" | "forbidden" | "server" | null = !liveError
+    ? null
+    : liveError.status === 401 ? "auth" : liveError.status === 403 ? "forbidden" : "server";
+  // React Query keeps the last good response when a refetch fails.
+  const isStaleData = Boolean(liveError && dashboardQuery.data);
   const summary = dashboardQuery.data;
 
   const activityData = summary?.trends?.length
@@ -375,42 +382,42 @@ export default function DashboardPage() {
   const today = new Date();
   const dateStr = today.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
-  const developments: Array<{ id: string; icon: typeof AlertTriangle; title: string; change: string; category: string; tone: Tone }> = [
+  const developments: Array<{ id: string; icon: typeof AlertTriangle; title: string; change: string; category: string; tone: Tone }> = isDemoSession ? [
     { id: "d1", icon: Activity, title: "Service quality mentions spiking on Reddit", change: "+38%", category: "Risk", tone: "red" },
     { id: "d2", icon: Zap, title: "New competitor mentioned in AI responses", change: "NEW", category: "Competitor", tone: "amber" },
     { id: "d3", icon: TrendingUp, title: "Feature launch driving positive momentum", change: "+67%", category: "Opportunity", tone: "green" },
     { id: "d4", icon: Bot, title: "AI visibility score improving across platforms", change: "+8pp", category: "AI Visibility", tone: "blue" },
-  ];
+  ] : [];
 
-  const scorecard = [
+  const scorecard = isDemoSession ? [
     { label: "Narrative Health", value: 74, delta: "+3", lowerIsBetter: false, tone: "green" as Tone },
     { label: "Reputation Score", value: 81, delta: "-1", lowerIsBetter: false, tone: "blue" as Tone },
     { label: "Risk Level", value: 27, delta: "+5", lowerIsBetter: true, tone: "red" as Tone },
     { label: "Narrative Momentum", value: 69, delta: "+8", lowerIsBetter: false, tone: "green" as Tone },
     { label: "Share of Narrative", value: "34%", delta: "+2pp", lowerIsBetter: false, tone: "blue" as Tone },
     { label: "AI Visibility", value: 72, delta: "+6", lowerIsBetter: false, tone: "purple" as Tone },
-  ];
+  ] : [];
 
-  const competitors = [
+  const competitors = isDemoSession ? [
     { name: "Bank Central Asia (BCA)", shareOfVoice: 38, sentiment: "green" as Tone, momentum: "+8%", aiVisibility: 74 },
     { name: "Bank Mandiri", shareOfVoice: 31, sentiment: "green" as Tone, momentum: "+5%", aiVisibility: 69 },
     { name: "Bank Rakyat Indonesia (BRI)", shareOfVoice: 21, sentiment: "slate" as Tone, momentum: "-2%", aiVisibility: 62 },
     { name: "Bank Negara Indonesia (BNI)", shareOfVoice: 10, sentiment: "slate" as Tone, momentum: "+1%", aiVisibility: 55 },
-  ];
+  ] : [];
 
-  const recommendedActions = [
+  const recommendedActions = isDemoSession ? [
     { id: "a1", priority: "Immediate" as const, text: "Monitor spike in negative service quality mentions on Reddit — consider response strategy", href: "/signals" },
     { id: "a2", priority: "High" as const, text: "Investigate sudden drop in positive sentiment (-8%) over the past 24 hours", href: "/signals" },
     { id: "a3", priority: "High" as const, text: "Review AI-generated content citing competitor comparison — assess opportunity", href: "/visibility" },
     { id: "a4", priority: "Medium" as const, text: "Prepare response to emerging \"app performance\" topic before it gains traction", href: "/intelligence" },
     { id: "a5", priority: "Low" as const, text: "Capitalize on positive loyalty program momentum with follow-up content", href: "/reports" },
-  ];
+  ] : [];
 
-  const aiPlatforms = [
+  const aiPlatforms = isDemoSession ? [
     { name: "ChatGPT", score: 72, change: "+6", tone: "green" as Tone },
     { name: "Gemini", score: 61, change: "+3", tone: "blue" as Tone },
     { name: "Perplexity", score: 58, change: "-2", tone: "red" as Tone },
-  ];
+  ] : [];
 
   const narratives: Array<{ id: string; title: string; status: "active"; sentiment: Tone; volume: string; growth: string }> =
     (summary?.top_topics && summary.top_topics.length > 0)
@@ -456,9 +463,37 @@ export default function DashboardPage() {
           <span className="text-[13px] font-semibold text-slate-400">{dateStr}</span>
         </div>
         <p className="text-[13px] font-medium leading-relaxed text-slate-500">
-          3 emerging risks detected. 1 opportunity identified. Net sentiment shifted +8% today.
+          {isDemoSession
+            ? "3 emerging risks detected. 1 opportunity identified. Net sentiment shifted +8% today."
+            : summary?.kpis
+              ? `${formatNumber(summary.kpis.total_signals)} signals in this period · ${formatNumber(summary.kpis.analyzed_signals)} analyzed · ${formatPercent(summary.kpis.negative_percentage)} negative.`
+              : dashboardQuery.isLoading ? "Loading live intelligence…" : "Live summary unavailable."}
         </p>
       </div>
+
+      {liveErrorKind && (
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-red-200 bg-red-50 px-4 py-3 text-[12px] font-semibold text-red-700">
+          <span>
+            {liveErrorKind === "auth"
+              ? "Your session has expired. Sign in again to load live data."
+              : liveErrorKind === "forbidden"
+                ? "You don't have access to this workspace's data."
+                : isStaleData
+                  ? `Latest refresh failed. Showing data from ${new Date(dashboardQuery.dataUpdatedAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}.`
+                  : "Live data could not be loaded. No estimates are shown in its place."}
+          </span>
+          {liveErrorKind === "server" && (
+            <button type="button" onClick={() => void dashboardQuery.refetch()} className="rounded-[6px] border border-red-200 bg-white px-2.5 py-1 text-[11px] font-bold text-red-700 hover:bg-red-100">
+              Retry
+            </button>
+          )}
+        </div>
+      )}
+      {isEmptyDashboard && !liveErrorKind && (
+        <div className="rounded-[10px] border border-slate-200 bg-slate-50 px-4 py-3 text-[12px] font-semibold text-slate-500">
+          No signals in this period yet. Data appears here after your sources and monitoring keywords are ingested.
+        </div>
+      )}
 
       {/* ── 1b. Real intelligence strip from backend ───────────────────────── */}
       <TodaysIntelligenceStrip />
@@ -467,6 +502,7 @@ export default function DashboardPage() {
       <div>
         <h2 className="mb-3 text-[13px] font-black uppercase tracking-[0.1em] text-slate-400">Top Developments</h2>
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+          {developments.length === 0 && <div className="w-full"><EmptyPanel compact label="Top developments appear once live risk and opportunity tracking has enough data." /></div>}
           {developments.map((d) => {
             const Icon = d.icon;
             const toneStyle = toneMap[d.tone] ?? toneMap.purple;
@@ -488,6 +524,7 @@ export default function DashboardPage() {
 
       {/* ── 3. Intelligence Scorecard ─────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+        {scorecard.length === 0 && <div className="col-span-full"><EmptyPanel compact label="Intelligence scores are not yet computed for live workspaces." /></div>}
         {scorecard.map((s) => {
           const isPositive = s.lowerIsBetter ? s.delta.startsWith("-") || s.delta === "0" : !s.delta.startsWith("-");
           const trendColor = isPositive ? "text-[#10B981]" : "text-[#EF4444]";
@@ -554,6 +591,9 @@ export default function DashboardPage() {
                   </Link>
                 }
               />
+              {competitors.length === 0 ? (
+                <div className="mt-3"><EmptyPanel label="Competitor tracking is not configured for this workspace yet." /></div>
+              ) : (
               <div className="mt-3 overflow-hidden rounded-[8px] border border-slate-100">
                 <table className="w-full text-[12px]">
                   <thead>
@@ -588,6 +628,7 @@ export default function DashboardPage() {
                   </tbody>
                 </table>
               </div>
+              )}
             </CardContent>
           </AppCard>
         </div>
@@ -607,6 +648,7 @@ export default function DashboardPage() {
                 }
               />
               <div className="mt-3 space-y-2.5">
+                {recommendedActions.length === 0 && <EmptyPanel compact label="Open Action Plans to review AI-generated responses for live alerts." />}
                 {recommendedActions.map((a) => (
                   <div key={a.id} className="flex flex-col gap-2 rounded-[8px] border border-slate-100 bg-white px-4 py-3 transition hover:border-[#465FFF]/20">
                     <div className="flex items-center justify-between gap-2">
@@ -637,6 +679,7 @@ export default function DashboardPage() {
                 }
               />
               <div className="mt-3 space-y-3">
+                {aiPlatforms.length === 0 && <EmptyPanel compact label="Run AI Visibility prompt tests to measure platform scores." />}
                 {aiPlatforms.map((p) => {
                   const platformStyle = toneMap[p.tone] ?? toneMap.purple;
                   const changePositive = !p.change.startsWith("-");
@@ -666,11 +709,15 @@ export default function DashboardPage() {
               <div className="space-y-2.5 text-[12px]">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-slate-400">Last updated</span>
-                  <span className="font-bold text-slate-700">{today.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</span>
+                  <span className="font-bold text-slate-700">{dashboardQuery.dataUpdatedAt ? new Date(dashboardQuery.dataUpdatedAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "—"}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-slate-400">Data coverage</span>
-                  <span className="font-bold text-slate-700">48 / 62 sources</span>
+                  <span className="font-bold text-slate-700">
+                    {sourcesData.length > 0
+                      ? `${sourcesData.filter((src) => src.status?.en === "Active").length} / ${sourcesData.length} sources active`
+                      : "—"}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-slate-400">Workspace</span>

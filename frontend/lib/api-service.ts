@@ -279,6 +279,19 @@ export async function getDashboardSummary(options: DateRangeOptions = {}): Promi
   return null;
 }
 
+/**
+ * Live dashboard summary without any fallback: errors propagate (with the
+ * HTTP `status` attached by apiClient) so the UI can tell an expired session,
+ * a forbidden workspace and a server failure apart from genuinely empty data.
+ */
+export async function fetchDashboardSummaryStrict(options: DateRangeOptions = {}): Promise<DashboardSummary> {
+  const params = new URLSearchParams();
+  if (options.startDate) params.set("startDate", options.startDate);
+  if (options.endDate) params.set("endDate", options.endDate);
+  const query = params.toString();
+  return apiClient<DashboardSummary>(`/api/dashboard/summary${query ? `?${query}` : ""}`);
+}
+
 // ---------------------------------------------------------------------------
 // Signals
 // ---------------------------------------------------------------------------
