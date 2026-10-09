@@ -149,17 +149,22 @@ export async function detectAlerts(workspaceId) {
 
         if (!isTriggered) continue;
 
-        // Deduplication check: check if an open alert for this topic already exists in last 12 hours
-        const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000);
-        const { data: existingAlerts } = await supabase
+        // Deduplication check: skip while an unresolved alert for this topic exists
+        // (looking back 7 days), so repeated scheduled runs do not re-raise it.
+        const dedupWindowStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const { data: existingAlerts, error: dedupErr } = await supabase
             .from('alerts')
             .select('id, status, created_at')
             .eq('workspace_id', workspaceId)
             .ilike('title', `%${topicKey}%`)
-            .gte('created_at', twelveHoursAgo.toISOString())
+            .gte('created_at', dedupWindowStart.toISOString())
             .neq('status', 'resolved')
             .limit(1);
 
+        if (dedupErr) {
+            logStructured("warn", "alert_rules_dedup_check_failed", { topicKey, error: dedupErr.message });
+            continue;
+        }
         if (existingAlerts && existingAlerts.length > 0) {
             logStructured("info", "alert_rules_duplicate_skipped", { topicKey, existingAlertId: existingAlerts[0].id });
             continue;

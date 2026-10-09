@@ -20,7 +20,7 @@ import { baseSupabaseAdmin } from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
 import { runClustering } from "../clustering/clustering.service.js";
 import { analyzeSignal } from "./ai.service.js";
-import { saveAnalysis } from "./backfill.worker.js";
+import { saveAnalysis, REAL_SIGNAL_FILTER } from "./backfill.worker.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -65,6 +65,7 @@ router.post("/retroanalyze", async (req, res) => {
             .from("signals")
             .select("id, title, content, platform, captured_at, published_at, source_id")
             .eq("workspace_id", ws)
+            .or(REAL_SIGNAL_FILTER)
             .order("captured_at", { ascending: false })
             .limit(limit);
         if (sigErr) {
@@ -100,7 +101,7 @@ router.post("/retroanalyze", async (req, res) => {
                     failures.push({ signalId: signal.id, reason: "no text content" });
                     continue;
                 }
-                const result = await analyzeSignal(signal.title || null, text);
+                const result = await analyzeSignal(signal.title || null, text, { workspaceId: ws, operation: "backfill_analysis" });
                 const { error: insErr } = await saveAnalysis(signal.id, result);
                 if (insErr) {
                     failed += 1;

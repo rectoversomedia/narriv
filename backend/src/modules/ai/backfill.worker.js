@@ -61,13 +61,17 @@ export async function saveAnalysis(signalId, result) {
  * Run retro-analysis for a single workspace. Safe to call repeatedly.
  * Returns { found, processed, failed, alreadyAnalyzed }.
  */
-export async function handleRetroanalyze(workspaceId, { limit = 100 } = {}) {
+// Only signals traceable to a real external record are eligible for AI analysis.
+export const REAL_SIGNAL_FILTER = "url.not.is.null,raw_document_id.not.is.null";
+
+export async function handleRetroanalyze(workspaceId, { limit = 100, deadline = null } = {}) {
     if (!workspaceId) return { found: 0, processed: 0, failed: 0, alreadyAnalyzed: 0 };
 
     const { data: signals, error: sigErr } = await baseSupabaseAdmin
         .from("signals")
         .select("id, title, content")
         .eq("workspace_id", workspaceId)
+        .or(REAL_SIGNAL_FILTER)
         .order("captured_at", { ascending: false })
         .limit(Math.min(Math.max(1, limit), 500));
     if (sigErr) {
@@ -92,11 +96,13 @@ export async function handleRetroanalyze(workspaceId, { limit = 100 } = {}) {
 
     let processed = 0;
     let failed = 0;
+    let deferred = 0;
     for (const signal of toProcess) {
+        if (deadline && Date.now() > deadline) { deferred += 1; continue; }
         try {
             const text = pickText(signal);
             if (!text) { failed += 1; continue; }
-            const result = await analyzeSignal(signal.title || null, text);
+            const result = await analyzeSignal(signal.title || null, text, { workspaceId, operation: "backfill_analysis" });
             const { error: insErr } = await saveAnalysis(signal.id, result);
             if (insErr) {
                 logStructured("warn", "cron_retroanalyze: insert failed", { error: insErr.message, signalId: signal.id });
@@ -104,9 +110,10 @@ export async function handleRetroanalyze(workspaceId, { limit = 100 } = {}) {
                 continue;
             }
             processed += 1;
-        } catch (_) {
+        } catch (err) {
+            logStructured("warn", "cron_retroanalyze: analysis failed", { error: err?.message, signalId: signal.id });
             failed += 1;
         }
     }
-    return { found: signals.length, alreadyAnalyzed: alreadyAnalyzed.size, processed, failed };
+    return { found: signals.length, alreadyAnalyzed: alreadyAnalyzed.size, processed, failed, deferred };
 }

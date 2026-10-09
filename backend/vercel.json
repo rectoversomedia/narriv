@@ -11,6 +11,27 @@
     {
       "path": "/api/cron/daily",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/ingest?slot=0",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/ingest?slot=6",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/ingest?slot=12",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/ingest?slot=18",
+      "schedule": "0 18 * * *"
     }
-  ]
+  ],
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 300
+    }
+  }
 }

@@ -11,6 +11,10 @@ import { logStructured } from "../../lib/logger.js";
 
 const router = Router();
 
+// Keep each invocation inside the 300s function limit.
+const DAILY_BACKFILL_BUDGET_MS = 150000;
+const INGEST_BUDGET_MS = 230000;
+
 function verifyCronSecret(req) {
     // Vercel Cron sends `Authorization: Bearer <CRON_SECRET>`; manual callers may use x-cron-secret.
     const auth = req.headers.authorization || "";
@@ -129,17 +133,26 @@ const runDaily = async (req, res) => {
             results.cleanup = await cleanupExpiredReportExports(200);
         } catch (e) { results.cleanup = { error: e.message }; }
 
-        // 4. AI backfill: analyze signals that lack signal_analysis rows (Phase 7).
-        // Idempotent. Skips workspaces with no unanalyzed signals.
+        // 4. AI backfill: analyze real signals that lack a signal_analyses row.
+        // Idempotent and time-bounded; anything left over is picked up next run.
         try {
             const { handleRetroanalyze } = await import("../ai/backfill.worker.js");
             const { data: ws3 } = await supabase.from("workspaces").select("id").limit(50);
             if (ws3?.length) {
-                let totalProcessed = 0;
+                const deadline = start + DAILY_BACKFILL_BUDGET_MS;
+                const totals = { processed: 0, failed: 0, deferred: 0 };
                 for (const w of ws3) {
-                    try { totalProcessed += (await handleRetroanalyze(w.id)).processed; } catch (_) {}
+                    try {
+                        const r = await handleRetroanalyze(w.id, { limit: 50, deadline });
+                        totals.processed += r.processed || 0;
+                        totals.failed += r.failed || 0;
+                        totals.deferred += r.deferred || 0;
+                    } catch (e) {
+                        totals.failed += 1;
+                        logStructured("warn", "cron_daily_retroanalyze_workspace_failed", { workspaceId: w.id, error: e.message });
+                    }
                 }
-                results.retroanalyze = { processed: totalProcessed };
+                results.retroanalyze = totals;
             }
         } catch (e) { results.retroanalyze = { error: e.message }; }
 
@@ -166,3 +179,20 @@ const runDaily = async (req, res) => {
 
 router.get("/daily", runDaily);
 router.post("/daily", runDaily);
+
+// Scheduled real-data ingestion (Vercel Cron, every 6 hours via four daily slots).
+const runIngest = async (req, res) => {
+    if (!verifyCronSecret(req)) return res.status(401).json({ error: "Unauthorized" });
+    try {
+        const { runScheduledIngestion } = await import("../ingestion/scheduled-ingestion.js");
+        const perKeywordLimit = Math.min(Math.max(parseInt(req.query.limit, 10) || 8, 1), 15);
+        const summary = await runScheduledIngestion({ budgetMs: INGEST_BUDGET_MS, perKeywordLimit, trigger: req.query.slot ? `vercel-cron:${req.query.slot}` : "manual" });
+        res.status(summary.status === "failed" ? 500 : 200).json(summary);
+    } catch (error) {
+        logStructured("error", "cron_ingest_failed", { error: error.message });
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+router.get("/ingest", runIngest);
+router.post("/ingest", runIngest);

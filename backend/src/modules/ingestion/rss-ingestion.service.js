@@ -123,9 +123,11 @@ export async function fetchRssFeed(url, options = {}) {
       const rawLink = item.link ? (typeof item.link === "string" ? item.link : item.link["@_href"] || item.link["#text"] || "") : "";
       const description = item.description || item["content:encoded"] || item.summary || "";
       const rawContent = typeof description === "string" ? description : description["#text"] || "";
-      const pubDateStr = item.pubDate || item.published || item.updated || new Date().toISOString();
-      const pubDate = new Date(pubDateStr);
-      const validDate = Number.isNaN(pubDate.getTime()) ? new Date() : pubDate;
+      // Publication time comes only from the feed; a missing/invalid date stays
+      // null rather than being replaced with the ingestion time.
+      const pubDateStr = item.pubDate || item.published || item.updated || null;
+      const pubDate = pubDateStr ? new Date(pubDateStr) : null;
+      const publishedAt = pubDate && !Number.isNaN(pubDate.getTime()) ? pubDate.toISOString() : null;
 
       const guid = item.guid ? (typeof item.guid === "string" ? item.guid : item.guid["#text"] || "") : rawLink;
 
@@ -136,7 +138,7 @@ export async function fetchRssFeed(url, options = {}) {
         url: rawLink.trim(),
         guid: String(guid).trim(),
         publisher: extractPublisher(item),
-        publishedAt: validDate.toISOString(),
+        publishedAt,
       };
     });
 
@@ -158,6 +160,28 @@ export async function fetchGoogleNewsRss(keyword, options = {}) {
   const items = await fetchRssFeed(rssUrl, options);
   const limit = options.limit || 15;
   return items.slice(0, limit);
+}
+
+/**
+ * True when this article already exists in the workspace (raw_documents by
+ * external id or URL, or a legacy signal with the same URL).
+ */
+export async function existsInWorkspace(workspaceId, externalId, url) {
+  const checks = [
+    supabaseAdmin.from("raw_documents").select("id").eq("workspace_id", workspaceId).eq("external_id", externalId).limit(1),
+  ];
+  if (url) {
+    checks.push(supabaseAdmin.from("raw_documents").select("id").eq("workspace_id", workspaceId).eq("url", url).limit(1));
+    checks.push(supabaseAdmin.from("signals").select("id").eq("workspace_id", workspaceId).eq("url", url).limit(1));
+  }
+  const results = await Promise.all(checks);
+  const failed = results.find((r) => r.error);
+  if (failed) {
+    // Fail closed: skipping an item is safer than inserting a possible duplicate.
+    logStructured("warn", "rss_dedup_check_failed", { error: failed.error.message, workspaceId });
+    return true;
+  }
+  return results.some((r) => (r.data || []).length > 0);
 }
 
 /**
@@ -289,21 +313,19 @@ export async function ingestRssSignals({
   const createdSignals = [];
   const createdRawDocs = [];
   let skippedDuplicates = 0;
+  let analyzed = 0;
+  let analysisFailed = 0;
+  let insertFailed = 0;
 
   // Process and persist items
   for (const item of fetchedItems) {
     try {
       const externalId = generateExternalId(item.url, item.guid, item.title);
 
-      // Check for deduplication in raw_documents or signals
-      const { data: existingDoc } = await supabaseAdmin
-        .from("raw_documents")
-        .select("id")
-        .eq("workspace_id", workspaceId)
-        .or(`external_id.eq.${externalId},url.eq.${item.url}`)
-        .maybeSingle();
-
-      if (existingDoc) {
+      // Deduplicate within the workspace by external id, then by URL. Separate
+      // .eq() filters avoid PostgREST or() parsing issues with URLs, and limit(1)
+      // keeps the check working even if legacy duplicates already exist.
+      if (await existsInWorkspace(workspaceId, externalId, item.url)) {
         skippedDuplicates++;
         continue;
       }
@@ -332,50 +354,30 @@ export async function ingestRssSignals({
 
       if (rawDocErr || !rawDoc) {
         logStructured("warn", "raw_doc_insert_failed", { error: rawDocErr?.message });
+        insertFailed++;
         continue;
       }
       createdRawDocs.push(rawDoc);
 
-      // 2. Perform AI Signal Analysis (GPT-4o-mini)
+      // 2. Perform AI Signal Analysis (GPT-4o-mini). On failure the signal is
+      // stored without an analysis so the backfill can retry it later; no
+      // heuristic result is ever persisted as an AI analysis.
       let aiResult = null;
+      let aiError = null;
       try {
-        aiResult = await analyzeSignal(item.title, item.content);
+        aiResult = await analyzeSignal(item.title, item.content, { workspaceId, operation: "ingestion_analysis" });
       } catch (aiErr) {
-        logStructured("warn", "ai_signal_analysis_failed_fallback", { error: aiErr.message, title: item.title });
-        // Deterministic fallback based on keyword heuristics
-        const lowerContent = `${item.title} ${item.content}`.toLowerCase();
-        let fallbackSentiment = "NEUTRAL";
-        let fallbackScore = 0.0;
-        let fallbackSeverity = "low";
-
-        if (lowerContent.includes("rugi") || lowerContent.includes("bocor") || lowerContent.includes("penipuan") || lowerContent.includes("gagal") || lowerContent.includes("krisis") || lowerContent.includes("turun")) {
-          fallbackSentiment = "NEGATIVE";
-          fallbackScore = -0.65;
-          fallbackSeverity = "medium";
-        } else if (lowerContent.includes("laba") || lowerContent.includes("naik") || lowerContent.includes("apresiasi") || lowerContent.includes("tumbuh") || lowerContent.includes("sukses") || lowerContent.includes("penghargaan")) {
-          fallbackSentiment = "POSITIVE";
-          fallbackScore = 0.75;
-          fallbackSeverity = "low";
-        }
-
-        aiResult = {
-          sentiment: fallbackSentiment.toLowerCase(),
-          narrative_type: "Industry News",
-          stakeholder: "Consumers & Banking Customers",
-          impact: fallbackSeverity,
-          summary: item.content.substring(0, 180),
-          recommended_action: "Monitor public discussion and evaluate customer impact.",
-          confidence_score: 0.8,
-        };
+        aiError = aiErr;
+        logStructured("warn", "ai_signal_analysis_failed", { error: aiErr.message, workspaceId });
       }
 
       // Map AI result to database values
-      const dbSentiment = String(aiResult?.sentiment || "NEUTRAL").toUpperCase();
-      const rawImpact = String(aiResult?.impact || "low").toLowerCase();
-      const dbSeverity = ["critical", "high", "medium", "low"].includes(rawImpact) ? rawImpact : "low";
-      const sentimentScore = typeof aiResult?.confidence_score === "number"
+      const dbSentiment = aiResult ? String(aiResult.sentiment || "NEUTRAL").toUpperCase() : null;
+      const rawImpact = String(aiResult?.impact || "").toLowerCase();
+      const dbSeverity = aiResult ? (["critical", "high", "medium", "low"].includes(rawImpact) ? rawImpact : "low") : null;
+      const sentimentScore = aiResult && typeof aiResult.confidence_score === "number"
         ? (dbSentiment === "NEGATIVE" ? -Math.abs(aiResult.confidence_score) : Math.abs(aiResult.confidence_score))
-        : 0.0;
+        : null;
 
       // 3. Insert to signals
       const { data: signal, error: signalErr } = await supabaseAdmin
@@ -411,13 +413,14 @@ export async function ingestRssSignals({
 
       if (signalErr || !signal) {
         logStructured("warn", "signal_insert_failed", { error: signalErr?.message });
+        insertFailed++;
         continue;
       }
       createdSignals.push(signal);
 
       // 4. Save analysis details to signal_analyses
       if (aiResult) {
-        await supabaseAdmin
+        const { error: analysisErr } = await supabaseAdmin
           .from("signal_analyses")
           .insert({
             signal_id: signal.id,
@@ -425,8 +428,24 @@ export async function ingestRssSignals({
             confidence: aiResult.confidence_score || 0.85,
             model: "gpt-4o-mini",
           });
+        if (analysisErr) {
+          analysisFailed++;
+          logStructured("warn", "signal_analysis_insert_failed", { error: analysisErr.message, signalId: signal.id });
+        } else {
+          analyzed++;
+        }
+      } else {
+        analysisFailed++;
+        await supabaseAdmin.from("ai_analysis_failure_logs").insert({
+          workspace_id: workspaceId,
+          signal_id: signal.id,
+          error_type: "ingestion_analysis",
+          error_message: String(aiError?.message || "AI analysis failed").slice(0, 500),
+          retry_count: 0,
+        });
       }
     } catch (itemErr) {
+      insertFailed++;
       logStructured("warn", "rss_item_processing_failed", { error: itemErr.message, title: item.title });
     }
   }
@@ -496,6 +515,9 @@ export async function ingestRssSignals({
     fetched: fetchedItems.length,
     created: createdSignals.length,
     skipped: skippedDuplicates,
+    analyzed,
+    analysisFailed,
+    insertFailed,
     clustersCreated: clusteringResult?.clustersCreated || 0,
     signalsAttached: clusteringResult?.signalsAttached || 0,
     alertsDetected: detectedAlerts?.length || 0,
@@ -510,6 +532,9 @@ export async function ingestRssSignals({
     newSignalsCreated: createdSignals.length,
     newRawDocsCreated: createdRawDocs.length,
     skippedDuplicates,
+    analyzed,
+    analysisFailed,
+    insertFailed,
     signals: createdSignals,
     clustering: clusteringResult,
     alerts: detectedAlerts,
