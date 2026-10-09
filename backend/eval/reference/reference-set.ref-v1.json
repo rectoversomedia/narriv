@@ -1,0 +1,875 @@
+{
+  "version": "ref-v1",
+  "createdAt": "2026-10-09T12:41:07.895Z",
+  "provenance": "Real Google News RSS articles ingested into the Narriv demo workspace; production gpt-4o-mini predictions captured at build time.",
+  "scope": "demo workspace only (no customer data)",
+  "reviewStatus": "unreviewed — fill review.* before computing semantic metrics",
+  "counts": {
+    "items": 26,
+    "bySentiment": {
+      "neutral": 7,
+      "negative": 4,
+      "positive": 15
+    },
+    "clusterPairs": 30,
+    "relatedPairs": 15
+  },
+  "items": [
+    {
+      "id": "01bf3745-2127-49c6-bb58-bb41c2a6f74c",
+      "title": "Haji Isam Gadai Saham ke Bank Mandiri Sebelum Beli Saham Bayan",
+      "snippet": "Haji Isam Gadai Saham ke Bank Mandiri Sebelum Beli Saham Bayan CNN Indonesia",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-10-09T11:41:47+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "neutral",
+        "impact": "medium",
+        "confidence": 0.7
+      },
+      "clusterIds": [
+        "06476517-8998-4e4c-8a6e-299438e9c825"
+      ],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "7bb8d2f1-5101-4322-bcff-8ebb4bfbe81d",
+      "title": "Usai Gadai Saham ke Bank Mandiri, Saham Haji Isam (JARR) Anjlok 4,5%",
+      "snippet": "Usai Gadai Saham ke Bank Mandiri, Saham Haji Isam (JARR) Anjlok 4,5% CNBC Indonesia",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-10-09T02:57:28+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "negative",
+        "impact": "medium",
+        "confidence": 0.85
+      },
+      "clusterIds": [
+        "06476517-8998-4e4c-8a6e-299438e9c825"
+      ],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "5472ce4f-f318-4c6c-9145-636303c1a316",
+      "title": "Kinerja 2025 Diakui, Bank Mandiri Taspen Raih Yearly Excellent Performance 2026",
+      "snippet": "Kinerja 2025 Diakui, Bank Mandiri Taspen Raih Yearly Excellent Performance 2026 JPNN.com",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-10-08T13:47:30+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "positive",
+        "impact": "medium",
+        "confidence": 0.85
+      },
+      "clusterIds": [
+        "e9f6104b-6604-45ad-ac1e-64143a0161dc"
+      ],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "a530e35e-51e9-4dda-8ca3-ae6fbc48b6ff",
+      "title": "Tabungan Bank Mandiri (BMRI) Susut Rp 4,76 Triliun, Bertepatan dengan Seruan “Tarik Dana”",
+      "snippet": "Tabungan Bank Mandiri (BMRI) Susut Rp 4,76 Triliun, Bertepatan dengan Seruan “Tarik Dana” investor.id",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-09-17T12:17:22+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "negative",
+        "impact": "high",
+        "confidence": 0.85
+      },
+      "clusterIds": [
+        "0d2db078-853c-4476-ab0b-3b8ef99c510c"
+      ],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "2a015aa3-d949-4fb9-8a56-72ffafe57f5d",
+      "title": "Berita Kanwil DJKN Jawa Barat",
+      "snippet": "Berita Kanwil DJKN Jawa Barat DJKN",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-09-17T07:50:46+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "neutral",
+        "impact": "low",
+        "confidence": 0.7
+      },
+      "clusterIds": [
+        "4335dfe6-419b-4ffb-aa9c-f975f52a7de3"
+      ],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "d202d5e8-b545-4372-9684-f8f578b0b043",
+      "title": "WINS Beri Jaminan Kredit Anak Usaha Rp65,11 Miliar ke Bank Mandiri - Bisnis.com",
+      "snippet": "WINS Beri Jaminan Kredit Anak Usaha Rp65,11 Miliar ke Bank Mandiri Bisnis.com - Market",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-10-08T11:13:03+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "neutral",
+        "impact": "medium",
+        "confidence": 0.75
+      },
+      "clusterIds": [
+        "0d16a7b1-e2c6-4fb2-b7d0-2ea8ed90169e"
+      ],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "c7fafec8-528c-4621-bd76-808573121f96",
+      "title": "Butuh Modal, Saham JARR dan PGUN Milik Pengendali Haji Isam Digadai ke Bank Mandiri",
+      "snippet": "Butuh Modal, Saham JARR dan PGUN Milik Pengendali Haji Isam Digadai ke Bank Mandiri kontan.co.id",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-10-07T09:09:52+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "negative",
+        "impact": "medium",
+        "confidence": 0.75
+      },
+      "clusterIds": [
+        "06476517-8998-4e4c-8a6e-299438e9c825"
+      ],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "0ce60fa9-1cac-43b9-87bf-d18aaa14c49d",
+      "title": "Kinerja 2025 Moncer, Bank Mandiri Taspen Sabet Penghargaan Bergengsi",
+      "snippet": "Kinerja 2025 Moncer, Bank Mandiri Taspen Sabet Penghargaan Bergengsi Industry.co.id",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-10-08T10:21:00+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "positive",
+        "impact": "medium",
+        "confidence": 0.85
+      },
+      "clusterIds": [
+        "e9f6104b-6604-45ad-ac1e-64143a0161dc"
+      ],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "b5e0a07e-bd7f-463a-8fb2-1fc191de8276",
+      "title": "HEBOH Bawa Keris Sambil Ancam Tusuk Pegawai Bank Mandiri di Pati, Eks Napiter Ini Langsung Diciduk Jatanras! - jateng.disway.id",
+      "snippet": "HEBOH Bawa Keris Sambil Ancam Tusuk Pegawai Bank Mandiri di Pati, Eks Napiter Ini Langsung Diciduk Jatanras! - jateng.disway.id DISWAY JATENG",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-09-17T08:48:00+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "negative",
+        "impact": "high",
+        "confidence": 0.85
+      },
+      "clusterIds": [
+        "39d1362e-d9da-4d8a-b6ed-a747ed12cbde"
+      ],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "3f9c1fa3-75a1-4f2a-bd36-594d612c4ea2",
+      "title": "Cek Setoran Awal Rekening Rupiah dan Valas Bank Mandiri",
+      "snippet": "Cek Setoran Awal Rekening Rupiah dan Valas Bank Mandiri kontan.co.id",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-09-17T04:27:19+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "neutral",
+        "impact": "low",
+        "confidence": 0.7
+      },
+      "clusterIds": [],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "23e85f04-608c-4a7e-997a-a3f2ca4f62a6",
+      "title": "Rekening Botok Diblokir Tanggal 21 Agustus dan Sudah Dibuka, Kenapa Baru Sekarang Geruduk Kantor Bank Mandiri?",
+      "snippet": "Rekening Botok Diblokir Tanggal 21 Agustus dan Sudah Dibuka, Kenapa Baru Sekarang Geruduk Kantor Bank Mandiri? AFU.id",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-09-15T07:47:33+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "neutral",
+        "impact": "medium",
+        "confidence": 0.75
+      },
+      "clusterIds": [],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "6fcd8015-a721-447c-b096-69e3f9cb07c2",
+      "title": "HUT ke-28, Bank Mandiri Berbagi Apresiasi Bersama Pekerja Rentan melalui Livin’ Mandiri Berbagi Rp28",
+      "snippet": "HUT ke-28, Bank Mandiri Berbagi Apresiasi Bersama Pekerja Rentan melalui Livin’ Mandiri Berbagi Rp28 Warta Ekonomi",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-10-08T07:42:00+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "positive",
+        "impact": "medium",
+        "confidence": 0.85
+      },
+      "clusterIds": [],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "5c1eb510-1f67-4cab-8b4f-6ae8b45114f5",
+      "title": "Pimpinan Baru Bank Mandiri Sambangi Kemenag Barsel, Layanan Keuangan Jadi Bahasan",
+      "snippet": "Pimpinan Baru Bank Mandiri Sambangi Kemenag Barsel, Layanan Keuangan Jadi Bahasan Kementerian Agama",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-09-15T23:06:08+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "neutral",
+        "impact": "medium",
+        "confidence": 0.75
+      },
+      "clusterIds": [],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "31b2ecf8-0f7f-41f5-a370-03eaeb8be7a2",
+      "title": "Kinerja Keuangan Mentereng, Bank Mandiri Taspen Sabet Apresiasi Kategori BUMN",
+      "snippet": "Kinerja Keuangan Mentereng, Bank Mandiri Taspen Sabet Apresiasi Kategori BUMN republika.co.id",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-10-08T10:15:17+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "positive",
+        "impact": "medium",
+        "confidence": 0.85
+      },
+      "clusterIds": [
+        "e9f6104b-6604-45ad-ac1e-64143a0161dc"
+      ],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "74ebda8c-8c54-4d56-a13e-9598434daeb8",
+      "title": "Bank Mandiri (BMRI) Disorot",
+      "snippet": "Bank Mandiri (BMRI) Disorot investor.id",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-09-16T23:15:00+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "neutral",
+        "impact": "medium",
+        "confidence": 0.7
+      },
+      "clusterIds": [
+        "4335dfe6-419b-4ffb-aa9c-f975f52a7de3"
+      ],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "1d044b68-2a4f-43d3-97f5-a902b7d7f53c",
+      "title": "Bank Mandiri Hadirkan Layanan Emas di Livin', Mulai Rp 10.000",
+      "snippet": "Bank Mandiri Hadirkan Layanan Emas di Livin', Mulai Rp 10.000 Kompas.com",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-10-09T07:42:00+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "positive",
+        "impact": "medium",
+        "confidence": 0.85
+      },
+      "clusterIds": [
+        "736d388e-65cc-4ab5-8bdb-6dc057bf9250"
+      ],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "58d128b2-e307-4c7e-adee-893b22cafb9f",
+      "title": "Bank Mandiri Perkuat Ekosistem Emas Terintegrasi di Livin' by Mandiri - detikFinance",
+      "snippet": "Bank Mandiri Perkuat Ekosistem Emas Terintegrasi di Livin' by Mandiri detikFinance - Berita Ekonomi Bisnis, dan Investasi Hari Ini",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-10-09T08:55:11+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "positive",
+        "impact": "medium",
+        "confidence": 0.85
+      },
+      "clusterIds": [
+        "736d388e-65cc-4ab5-8bdb-6dc057bf9250"
+      ],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "0a070758-f30d-41e6-897d-3b27ae721f73",
+      "title": "Rayakan HUT ke-28, Bank Mandiri Tebar Dividen Interim Rp 6,16 T",
+      "snippet": "Rayakan HUT ke-28, Bank Mandiri Tebar Dividen Interim Rp 6,16 T CNBC Indonesia",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-10-08T11:45:54+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "positive",
+        "impact": "medium",
+        "confidence": 0.85
+      },
+      "clusterIds": [
+        "0d16a7b1-e2c6-4fb2-b7d0-2ea8ed90169e"
+      ],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "d5e3adc8-cf67-4f53-bebf-0ba9eae5c462",
+      "title": "Dukung Industri Petrokimia, Chandra Asri Group dan Bank Mandiri Perkuat Kerja Sama Strategis",
+      "snippet": "Dukung Industri Petrokimia, Chandra Asri Group dan Bank Mandiri Perkuat Kerja Sama Strategis Chandra Asri",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-09-15T10:49:08+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "positive",
+        "impact": "medium",
+        "confidence": 0.85
+      },
+      "clusterIds": [
+        "b43a4b74-af85-4d5d-b5ae-e8d8bbdab3f9"
+      ],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "28058e93-b68c-45bc-b8d4-efff2ed33f1a",
+      "title": "Chandra Asri & Bank Mandiri Sinergi Perkuat Kerja Sama Industri Petrokimia",
+      "snippet": "Chandra Asri & Bank Mandiri Sinergi Perkuat Kerja Sama Industri Petrokimia detikFinance",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-09-15T13:26:42+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "positive",
+        "impact": "medium",
+        "confidence": 0.85
+      },
+      "clusterIds": [
+        "b43a4b74-af85-4d5d-b5ae-e8d8bbdab3f9"
+      ],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "8f289253-4a27-4a30-9836-8a49c9f8fe5e",
+      "title": "Unggul di Pilar Tata Kelola, Bank Mandiri Raih Katadata ESG Awards",
+      "snippet": "Unggul di Pilar Tata Kelola, Bank Mandiri Raih Katadata ESG Awards Katadata.co.id",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-09-17T11:28:00+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "positive",
+        "impact": "medium",
+        "confidence": 0.85
+      },
+      "clusterIds": [],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "962cdafa-c372-4659-9a72-7c7ca47bdf59",
+      "title": "Emiten Tambang Sinar Mas (GEMS) Gapai Kredit US$42 Juta dari Bank Mandiri",
+      "snippet": "Emiten Tambang Sinar Mas (GEMS) Gapai Kredit US$42 Juta dari Bank Mandiri Warta Ekonomi",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-09-17T07:04:00+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "positive",
+        "impact": "medium",
+        "confidence": 0.85
+      },
+      "clusterIds": [],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "439aa497-9d33-48a8-adae-e8715dbb1bef",
+      "title": "TPIA gandeng Bank Mandiri beri akses perbankan ke pelanggan",
+      "snippet": "TPIA gandeng Bank Mandiri beri akses perbankan ke pelanggan idnfinancials.com",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-09-15T09:05:00+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "positive",
+        "impact": "medium",
+        "confidence": 0.85
+      },
+      "clusterIds": [
+        "b43a4b74-af85-4d5d-b5ae-e8d8bbdab3f9"
+      ],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "9217c16c-8199-499a-b2b8-c5b526a12238",
+      "title": "Gandeng Bank Mandiri, Springhill Group Perkuat Akses KPR bagi Konsumen Yume Green dan Yume Lagoon",
+      "snippet": "Gandeng Bank Mandiri, Springhill Group Perkuat Akses KPR bagi Konsumen Yume Green dan Yume Lagoon Kompas.com",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-09-17T06:07:00+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "positive",
+        "impact": "medium",
+        "confidence": 0.85
+      },
+      "clusterIds": [
+        "b43a4b74-af85-4d5d-b5ae-e8d8bbdab3f9"
+      ],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "c3487123-0ffd-4264-a6b2-7012d476dbd3",
+      "title": "Pemkot Kupang menggandeng Bank Mandiri Taspen digitalisasi transaksi pasar",
+      "snippet": "Pemkot Kupang menggandeng Bank Mandiri Taspen digitalisasi transaksi pasar ANTARA News",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-09-16T07:05:48+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "positive",
+        "impact": "medium",
+        "confidence": 0.8
+      },
+      "clusterIds": [],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    },
+    {
+      "id": "f14edd55-6376-4e54-880c-5fbc5f2674f1",
+      "title": "Kapolres Lubuk Linggau Terima Silaturahmi Pimpinan Bank Mandiri, Perkuat Sinergi Jaga Keamanan Perbankan",
+      "snippet": "Kapolres Lubuk Linggau Terima Silaturahmi Pimpinan Bank Mandiri, Perkuat Sinergi Jaga Keamanan Perbankan tribratanews.sumsel.polri.go.id",
+      "urlHost": "news.google.com",
+      "publishedAt": "2026-09-17T07:26:00+00:00",
+      "production": {
+        "model": "gpt-4o-mini",
+        "sentiment": "positive",
+        "impact": "medium",
+        "confidence": 0.85
+      },
+      "clusterIds": [
+        "b43a4b74-af85-4d5d-b5ae-e8d8bbdab3f9"
+      ],
+      "review": {
+        "sentiment": null,
+        "severity": null,
+        "notes": null,
+        "reviewer": null,
+        "reviewedAt": null
+      }
+    }
+  ],
+  "clusterPairs": [
+    {
+      "a": "01bf3745-2127-49c6-bb58-bb41c2a6f74c",
+      "b": "7bb8d2f1-5101-4322-bcff-8ebb4bfbe81d",
+      "predictedSameNarrative": true,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "01bf3745-2127-49c6-bb58-bb41c2a6f74c",
+      "b": "5472ce4f-f318-4c6c-9145-636303c1a316",
+      "predictedSameNarrative": false,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "01bf3745-2127-49c6-bb58-bb41c2a6f74c",
+      "b": "a530e35e-51e9-4dda-8ca3-ae6fbc48b6ff",
+      "predictedSameNarrative": false,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "01bf3745-2127-49c6-bb58-bb41c2a6f74c",
+      "b": "2a015aa3-d949-4fb9-8a56-72ffafe57f5d",
+      "predictedSameNarrative": false,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "01bf3745-2127-49c6-bb58-bb41c2a6f74c",
+      "b": "d202d5e8-b545-4372-9684-f8f578b0b043",
+      "predictedSameNarrative": false,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "01bf3745-2127-49c6-bb58-bb41c2a6f74c",
+      "b": "c7fafec8-528c-4621-bd76-808573121f96",
+      "predictedSameNarrative": true,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "01bf3745-2127-49c6-bb58-bb41c2a6f74c",
+      "b": "0ce60fa9-1cac-43b9-87bf-d18aaa14c49d",
+      "predictedSameNarrative": false,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "01bf3745-2127-49c6-bb58-bb41c2a6f74c",
+      "b": "b5e0a07e-bd7f-463a-8fb2-1fc191de8276",
+      "predictedSameNarrative": false,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "01bf3745-2127-49c6-bb58-bb41c2a6f74c",
+      "b": "31b2ecf8-0f7f-41f5-a370-03eaeb8be7a2",
+      "predictedSameNarrative": false,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "01bf3745-2127-49c6-bb58-bb41c2a6f74c",
+      "b": "74ebda8c-8c54-4d56-a13e-9598434daeb8",
+      "predictedSameNarrative": false,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "01bf3745-2127-49c6-bb58-bb41c2a6f74c",
+      "b": "1d044b68-2a4f-43d3-97f5-a902b7d7f53c",
+      "predictedSameNarrative": false,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "01bf3745-2127-49c6-bb58-bb41c2a6f74c",
+      "b": "58d128b2-e307-4c7e-adee-893b22cafb9f",
+      "predictedSameNarrative": false,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "01bf3745-2127-49c6-bb58-bb41c2a6f74c",
+      "b": "0a070758-f30d-41e6-897d-3b27ae721f73",
+      "predictedSameNarrative": false,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "01bf3745-2127-49c6-bb58-bb41c2a6f74c",
+      "b": "d5e3adc8-cf67-4f53-bebf-0ba9eae5c462",
+      "predictedSameNarrative": false,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "01bf3745-2127-49c6-bb58-bb41c2a6f74c",
+      "b": "28058e93-b68c-45bc-b8d4-efff2ed33f1a",
+      "predictedSameNarrative": false,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "01bf3745-2127-49c6-bb58-bb41c2a6f74c",
+      "b": "439aa497-9d33-48a8-adae-e8715dbb1bef",
+      "predictedSameNarrative": false,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "01bf3745-2127-49c6-bb58-bb41c2a6f74c",
+      "b": "9217c16c-8199-499a-b2b8-c5b526a12238",
+      "predictedSameNarrative": false,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "7bb8d2f1-5101-4322-bcff-8ebb4bfbe81d",
+      "b": "c7fafec8-528c-4621-bd76-808573121f96",
+      "predictedSameNarrative": true,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "5472ce4f-f318-4c6c-9145-636303c1a316",
+      "b": "0ce60fa9-1cac-43b9-87bf-d18aaa14c49d",
+      "predictedSameNarrative": true,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "5472ce4f-f318-4c6c-9145-636303c1a316",
+      "b": "31b2ecf8-0f7f-41f5-a370-03eaeb8be7a2",
+      "predictedSameNarrative": true,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "2a015aa3-d949-4fb9-8a56-72ffafe57f5d",
+      "b": "74ebda8c-8c54-4d56-a13e-9598434daeb8",
+      "predictedSameNarrative": true,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "d202d5e8-b545-4372-9684-f8f578b0b043",
+      "b": "0a070758-f30d-41e6-897d-3b27ae721f73",
+      "predictedSameNarrative": true,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "0ce60fa9-1cac-43b9-87bf-d18aaa14c49d",
+      "b": "31b2ecf8-0f7f-41f5-a370-03eaeb8be7a2",
+      "predictedSameNarrative": true,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "1d044b68-2a4f-43d3-97f5-a902b7d7f53c",
+      "b": "58d128b2-e307-4c7e-adee-893b22cafb9f",
+      "predictedSameNarrative": true,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "d5e3adc8-cf67-4f53-bebf-0ba9eae5c462",
+      "b": "28058e93-b68c-45bc-b8d4-efff2ed33f1a",
+      "predictedSameNarrative": true,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "d5e3adc8-cf67-4f53-bebf-0ba9eae5c462",
+      "b": "439aa497-9d33-48a8-adae-e8715dbb1bef",
+      "predictedSameNarrative": true,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "d5e3adc8-cf67-4f53-bebf-0ba9eae5c462",
+      "b": "9217c16c-8199-499a-b2b8-c5b526a12238",
+      "predictedSameNarrative": true,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "d5e3adc8-cf67-4f53-bebf-0ba9eae5c462",
+      "b": "f14edd55-6376-4e54-880c-5fbc5f2674f1",
+      "predictedSameNarrative": true,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "28058e93-b68c-45bc-b8d4-efff2ed33f1a",
+      "b": "439aa497-9d33-48a8-adae-e8715dbb1bef",
+      "predictedSameNarrative": true,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    },
+    {
+      "a": "28058e93-b68c-45bc-b8d4-efff2ed33f1a",
+      "b": "9217c16c-8199-499a-b2b8-c5b526a12238",
+      "predictedSameNarrative": true,
+      "review": {
+        "sameNarrative": null,
+        "reviewer": null
+      }
+    }
+  ]
+}
