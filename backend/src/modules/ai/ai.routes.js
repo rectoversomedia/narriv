@@ -8,7 +8,7 @@ import { logStructured } from "../../lib/logger.js";
 import { computeNarrativeIntelligence } from "../../lib/narrative-intelligence.js";
 import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { listTiers, routeCompletion, routeForTask, listTasks } from "../../lib/ai-routing.js";
-import { getAnthropicClient, ANTHROPIC_MODEL } from "../../lib/anthropic-client.js";
+import { ANTHROPIC_MODEL, createClaudeCompletion, isAnthropicConfigured, modelCapabilities } from "../../lib/anthropic-client.js";
 import { computeEntityIntelligence } from "../../lib/entity-intelligence.js";
 import { computeReputationIntelligence } from "../../lib/reputation-intelligence.js";
 import { computePredictiveSignals } from "../../lib/predictive-signals.js";
@@ -80,7 +80,7 @@ router.get("/narrative-intelligence", async (req, res) => {
 router.get("/providers", async (req, res) => {
     try {
         const tiers = listTiers();
-        const anthropicConfigured = Boolean(process.env.ANTHROPIC_API_KEY) && process.env.ANTHROPIC_API_KEY !== "sk-ant-placeholder";
+        const anthropicConfigured = isAnthropicConfigured();
         const openaiConfigured = Boolean(process.env.OPENAI_API_KEY) && process.env.OPENAI_API_KEY !== "sk-placeholder";
         res.json({
             tiers,
@@ -92,6 +92,9 @@ router.get("/providers", async (req, res) => {
                 anthropic: {
                     configured: anthropicConfigured,
                     model: ANTHROPIC_MODEL,
+                    capabilities: modelCapabilities(ANTHROPIC_MODEL),
+                    // Premium model is available for opt-in routing only; no tier uses it by default.
+                    routedTiers: tiers.filter((t) => t.provider === "anthropic").map((t) => t.name),
                 },
             },
         });
@@ -116,36 +119,47 @@ router.post("/complete", async (req, res) => {
         if (!user || typeof user !== "string") {
             return res.status(400).json({ error: "'user' field is required" });
         }
+        // Only configured tier models may be requested (prevents arbitrary,
+        // potentially expensive model selection by any authenticated caller).
+        const allowedModels = new Set(listTiers().map((t) => t.model));
+        if (model && !allowedModels.has(model)) {
+            return res.status(400).json({ error: "model is not enabled", allowedModels: [...allowedModels] });
+        }
         const route = routeCompletion({ complexity, provider, model });
+        const cappedMaxTokens = Math.min(Number(maxTokens) || route.maxTokens, route.maxTokens);
         const start = Date.now();
         let content = null;
         let error = null;
+        let usage = null;
+        let servedModel = route.model;
         try {
             if (route.provider === "anthropic") {
-                const client = getAnthropicClient();
-                const resp = await client.messages.create({
+                const out = await createClaudeCompletion({
                     model: route.model,
-                    max_tokens: maxTokens || route.maxTokens,
+                    system,
+                    user,
+                    maxTokens: cappedMaxTokens,
                     temperature: route.temperature,
-                    system: system || undefined,
-                    messages: [{ role: "user", content: user }],
                 });
-                content = (resp.content || [])
-                    .map((b) => (b.type === "text" ? b.text : ""))
-                    .filter(Boolean)
-                    .join("\n");
+                usage = out.usage || null;
+                servedModel = out.model || route.model;
+                if (out.refusal) {
+                    return res.status(422).json({ error: "model_refused", category: out.refusal.category, route });
+                }
+                content = out.content;
             } else {
                 const { getOpenAIClient } = await import("../../lib/ai-client.js");
                 const client = getOpenAIClient();
                 const resp = await client.chat.completions.create({
                     model: route.model,
                     temperature: route.temperature,
-                    max_tokens: maxTokens || route.maxTokens,
+                    max_tokens: cappedMaxTokens,
                     messages: [
                         ...(system ? [{ role: "system", content: system }] : []),
                         { role: "user", content: user },
                     ],
                 });
+                usage = resp.usage || null;
                 content = resp.choices?.[0]?.message?.content || null;
             }
         } catch (e) {
@@ -166,7 +180,7 @@ router.post("/complete", async (req, res) => {
         if (error) {
             return res.status(502).json({ error: "upstream_ai_failed", detail: error, route });
         }
-        res.json({ content, route });
+        res.json({ content, route, model: servedModel, usage });
     } catch (error) {
         logStructured("error", "[AI MODULE] complete error:", { error: error.message });
         res.status(500).json({ error: "Failed to complete" });
@@ -236,16 +250,17 @@ router.get("/recommendations", async (req, res) => {
             computePredictiveSignals({ workspaceId: ws, windowHours: win }),
         ]);
         const signalCount = narrative.facts.find((f) => f.kind === "signal_count_window")?.value || 0;
-        const alertCount = narrative.facts.find((f) => f.kind === "alert_count_window")?.value || 0;
         const negCount = narrative.facts.find((f) => f.kind === "sentiment_breakdown")?.value?.NEGATIVE || 0;
         const out = deriveRecommendations({
             riskScore: narrative.riskScore || 0,
             riskBand: narrative.riskBand || "low",
             reputationBand: rep.reputationBand || "neutral",
-            activeAlerts: alertCount,
+            // Unresolved alerts only (alert_count_window also counts resolved ones).
+            activeAlerts: narrative.facts.find((f) => f.kind === "active_alerts")?.value || 0,
             emergingNarratives: narrative.inferences.find((i) => i.kind === "emerging_narratives")?.items?.length || 0,
             negativeShare: signalCount > 0 ? negCount / signalCount : 0,
             volumeRatio: narrative.inferences.find((i) => i.kind === "volume_ratio")?.ratio || 1,
+            risk: narrative.riskModel || null,
         });
         res.json({ status: "ok", ...out, source: { narrativeRisk: narrative.riskScore, reputationBand: rep.reputationBand, predictiveSignalCount: predictions.signals.length } });
     } catch (e) { res.status(500).json({ error: e.message }); }
