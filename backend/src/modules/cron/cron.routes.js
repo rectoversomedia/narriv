@@ -20,14 +20,23 @@ function verifyCronSecret(req) {
     const auth = req.headers.authorization || "";
     const secret = auth.startsWith("Bearer ") ? auth.slice(7) : req.headers["x-cron-secret"];
     const expected = process.env.CRON_SECRET;
+    // Caller identity without secrets: tells a Vercel scheduler call (vercel-cron/1.0)
+    // apart from manual requests when diagnosing scheduled runs.
+    const caller = {
+        path: req.path,
+        slot: req.query?.slot ?? null,
+        userAgent: String(req.headers["user-agent"] || "").slice(0, 80),
+        authScheme: auth ? auth.split(" ")[0] : (req.headers["x-cron-secret"] ? "x-cron-secret" : "none"),
+    };
     if (!expected) {
-        logStructured("error", "cron_no_secret_configured", { path: req.path });
+        logStructured("error", "cron_no_secret_configured", caller);
         return false;
     }
     if (!secret || secret !== expected) {
-        logStructured("warn", "cron_auth_failed", { path: req.path });
+        logStructured("warn", "cron_auth_failed", caller);
         return false;
     }
+    logStructured("info", "cron_auth_ok", caller);
     return true;
 }
 
