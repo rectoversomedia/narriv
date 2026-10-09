@@ -14,6 +14,29 @@ import { logStructured } from "./logger.js";
 import { calculateCost } from "./token-tracking.js";
 import { createNotification } from "../modules/app-notifications/app-notifications.controller.js";
 
+/**
+ * Read token_usage rows (one row per AI call) and normalize them to the
+ * per-record shape the aggregations below use.
+ */
+async function fetchUsageRows(workspaceId, sinceIso) {
+    const { data, error } = await supabase
+        .from("token_usage")
+        .select("created_at, model, input_tokens, output_tokens, cost")
+        .eq("workspace_id", workspaceId)
+        .gte("created_at", sinceIso)
+        .order("created_at", { ascending: false })
+        .limit(10000);
+    if (error) return { usage: null, error };
+    const usage = (data || []).map((r) => ({
+        date: String(r.created_at).slice(0, 10),
+        model: r.model,
+        total_tokens: (r.input_tokens || 0) + (r.output_tokens || 0),
+        call_count: 1,
+        cost: Number(r.cost || 0),
+    }));
+    return { usage, error: null };
+}
+
 // Cost alert thresholds
 const ALERT_THRESHOLDS = {
     WARNING: 0.7,   // 70% budget used
@@ -73,11 +96,7 @@ export async function getCurrentMonthSpending(workspaceId) {
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
 
-        const { data: usage, error } = await supabase
-            .from("token_usage")
-            .select("total_tokens, call_count, model")
-            .eq("workspace_id", workspaceId)
-            .gte("date", startOfMonth);
+        const { usage, error } = await fetchUsageRows(workspaceId, `${startOfMonth}T00:00:00.000Z`);
 
         if (error) throw error;
 
@@ -86,7 +105,7 @@ export async function getCurrentMonthSpending(workspaceId) {
         let totalCalls = 0;
 
         for (const record of usage || []) {
-            totalCost += calculateCost(record.model, record.total_tokens, 0);
+            totalCost += record.cost;
             totalTokens += record.total_tokens;
             totalCalls += record.call_count;
         }
@@ -271,12 +290,7 @@ export async function getCostBreakdown(workspaceId, days = 30) {
         since.setDate(since.getDate() - days);
         const sinceStr = since.toISOString().split("T")[0];
 
-        const { data: usage, error } = await supabase
-            .from("token_usage")
-            .select("date, model, total_tokens, call_count")
-            .eq("workspace_id", workspaceId)
-            .gte("date", sinceStr)
-            .order("date", { ascending: false });
+        const { usage, error } = await fetchUsageRows(workspaceId, since.toISOString());
 
         if (error) throw error;
 
@@ -288,7 +302,7 @@ export async function getCostBreakdown(workspaceId, days = 30) {
             }
             byModel[record.model].tokens += record.total_tokens;
             byModel[record.model].calls += record.call_count;
-            byModel[record.model].cost += calculateCost(record.model, record.total_tokens, 0);
+            byModel[record.model].cost += record.cost;
         }
 
         // Group by day
@@ -299,7 +313,7 @@ export async function getCostBreakdown(workspaceId, days = 30) {
             }
             byDay[record.date].tokens += record.total_tokens;
             byDay[record.date].calls += record.call_count;
-            byDay[record.date].cost += calculateCost(record.model, record.total_tokens, 0);
+            byDay[record.date].cost += record.cost;
         }
 
         const totalCost = Object.values(byModel).reduce((sum, m) => sum + m.cost, 0);

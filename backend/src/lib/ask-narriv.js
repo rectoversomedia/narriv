@@ -41,7 +41,7 @@ async function gatherContext(workspaceId, windowHours) {
 }
 
 // Models often wrap JSON in ```json fences; strip them before parsing.
-function parseModelJson(raw) {
+export function parseModelJson(raw) {
     const text = String(raw || "").trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
     try { return JSON.parse(text); } catch { /* fall through */ }
     const start = text.indexOf("{");
@@ -51,7 +51,7 @@ function parseModelJson(raw) {
 }
 
 // Only keep cited sources whose ids were actually in the data context.
-function keepKnownSources(sources, ctx) {
+export function keepKnownSources(sources, ctx) {
     const known = new Set([...ctx.signals, ...ctx.alerts, ...ctx.clusters].map((r) => r.id));
     return (Array.isArray(sources) ? sources : [])
         .map((src) => (typeof src === "string" ? { id: src } : src))

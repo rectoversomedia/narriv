@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { validateAIOutput } from "./ai.schema.js";
 import { logStructured } from "../../lib/logger.js";
 import { incrementAIFailure } from "../../lib/metrics.js";
+import { recordTokenUsage } from "../../lib/token-tracking.js";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
@@ -150,7 +151,7 @@ ${signalsContext}`;
  * @param {Array} messages - Array of { role, content } message objects.
  * @returns {Promise<string>} - The raw string content from the model.
  */
-async function callOpenAI(messages) {
+async function callOpenAI(messages, usageCtx = null) {
     const startedAt = Date.now();
     logStructured("info", "ai_provider_call_started", {
         provider: "openai",
@@ -170,6 +171,16 @@ async function callOpenAI(messages) {
             model: "gpt-4o-mini",
             latencyMs: Date.now() - startedAt,
         });
+        // Cost tracking is opt-in per call: only callers that know the workspace pass usageCtx.
+        if (usageCtx?.workspaceId) {
+            await recordTokenUsage({
+                workspaceId: usageCtx.workspaceId,
+                operation: usageCtx.operation || "signal_analysis",
+                model: "gpt-4o-mini",
+                inputTokens: response.usage?.prompt_tokens || 0,
+                outputTokens: response.usage?.completion_tokens || 0,
+            });
+        }
         return response.choices[0]?.message?.content || "{}";
     } catch (error) {
         incrementAIFailure();
@@ -209,7 +220,7 @@ function tryParseJSON(raw) {
  * @param {string} content - The signal content body.
  * @returns {Promise<object>} - The validated AI analysis object.
  */
-export const analyzeSignal = async (title, content) => {
+export const analyzeSignal = async (title, content, usageCtx = null) => {
     if (!OPENAI_API_KEY) {
         throw new Error("OpenAI API key is not configured. Set OPENAI_API_KEY in your .env file.");
     }
@@ -225,7 +236,7 @@ export const analyzeSignal = async (title, content) => {
 
     // ── Attempt 1 ──────────────────────────────────────────────────────────
     logStructured("info", "ai_analyze_signal_started", { title: title || "(none)" });
-    const rawContent = await callOpenAI(messages);
+    const rawContent = await callOpenAI(messages, usageCtx);
     const attempt1 = tryParseJSON(rawContent);
 
     let parsed;
@@ -250,7 +261,7 @@ Please return ONLY a valid JSON object with all required fields. No markdown. No
         ];
 
         logStructured("info", "ai_analyze_signal_retry");
-        const rawRetry = await callOpenAI(correctionMessages);
+        const rawRetry = await callOpenAI(correctionMessages, usageCtx);
         const attempt2 = tryParseJSON(rawRetry);
 
         if (!attempt2.ok) {
