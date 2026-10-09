@@ -8,6 +8,8 @@
 
 import { XMLParser } from "fast-xml-parser";
 import crypto from "crypto";
+import dns from "dns";
+import net from "net";
 import supabaseAdmin from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
 import { analyzeSignal } from "../ai/ai.service.js";
@@ -83,6 +85,34 @@ export function generateExternalId(url, guid, title) {
   return `rss_${crypto.createHash("sha256").update(source.trim()).digest("hex").substring(0, 24)}`;
 }
 
+function isPrivateAddress(ip) {
+  if (net.isIPv4(ip)) {
+    const [a, b] = ip.split(".").map(Number);
+    return a === 0 || a === 10 || a === 127 || (a === 100 && b >= 64 && b <= 127) ||
+      (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || a >= 224;
+  }
+  const v6 = ip.toLowerCase();
+  if (v6.startsWith("::ffff:")) return isPrivateAddress(v6.slice(7));
+  return v6 === "::" || v6 === "::1" || v6.startsWith("fc") || v6.startsWith("fd") || v6.startsWith("fe8") ||
+    v6.startsWith("fe9") || v6.startsWith("fea") || v6.startsWith("feb");
+}
+
+/**
+ * Reject caller-supplied feed URLs that are not public http(s) endpoints
+ * (SSRF guard): every resolved address must be public.
+ */
+export async function assertPublicHttpUrl(rawUrl, lookup = dns.promises.lookup) {
+  let parsed;
+  try { parsed = new URL(rawUrl); } catch { throw new Error("Invalid RSS URL"); }
+  if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("RSS URL must use http or https");
+  const host = parsed.hostname.replace(/^\[|\]$/g, "");
+  const addresses = net.isIP(host) ? [{ address: host }] : await lookup(host, { all: true });
+  if (!addresses.length || addresses.some((a) => isPrivateAddress(a.address))) {
+    throw new Error("RSS URL must point to a public host");
+  }
+  return parsed.toString();
+}
+
 /**
  * Fetch and parse an arbitrary RSS / Atom XML feed URL
  */
@@ -97,6 +127,8 @@ export async function fetchRssFeed(url, options = {}) {
         "Accept": "application/rss+xml, application/xml, text/xml, */*",
       },
       signal: controller.signal,
+      // Untrusted (caller-supplied) URLs must not redirect to an unchecked host.
+      redirect: options.untrusted ? "manual" : "follow",
     });
 
     if (!response.ok) {
@@ -289,7 +321,8 @@ export async function ingestRssSignals({
   let fetchedItems = [];
   try {
     if (rssUrl) {
-      fetchedItems = await fetchRssFeed(rssUrl, { limit });
+      const safeUrl = await assertPublicHttpUrl(rssUrl);
+      fetchedItems = await fetchRssFeed(safeUrl, { limit, untrusted: true });
     } else {
       fetchedItems = await fetchGoogleNewsRss(targetKeyword, { limit });
     }

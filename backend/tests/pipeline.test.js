@@ -17,7 +17,7 @@ jest.unstable_mockModule('../src/modules/clustering/clustering.service.js', () =
 jest.unstable_mockModule('../src/modules/alerts/alerts.service.js', () => ({ detectAlerts }));
 
 const { buildWorkList, runScheduledIngestion } = await import('../src/modules/ingestion/scheduled-ingestion.js');
-const { existsInWorkspace, ingestRssSignals } = await import('../src/modules/ingestion/rss-ingestion.service.js');
+const { existsInWorkspace, ingestRssSignals, assertPublicHttpUrl } = await import('../src/modules/ingestion/rss-ingestion.service.js');
 const { buildAnalysisRow, saveAnalysis, handleRetroanalyze, REAL_SIGNAL_FILTER } = await import('../src/modules/ai/backfill.worker.js');
 const { resolveWorkspaceIdForUser, DEMO_WORKSPACE_ID } = await import('../src/lib/workspace-access.js');
 const { recordTokenUsage, calculateCost } = await import('../src/lib/token-tracking.js');
@@ -267,5 +267,31 @@ describe('AI cost tracking', () => {
     expect(fake.calls).toHaveLength(0);
     respond = () => ({ data: null, error: { message: 'insert failed' } });
     await expect(recordTokenUsage({ workspaceId: WS_A, inputTokens: 1 })).resolves.toBeUndefined();
+  });
+});
+
+describe('RSS URL SSRF guard', () => {
+  const lookupTo = (address) => async () => [{ address }];
+
+  it.each([
+    ['http://127.0.0.1/feed', null],
+    ['http://169.254.169.254/latest/meta-data', null],
+    ['http://[::1]/feed', null],
+    ['file:///etc/passwd', null],
+    ['https://internal.example/feed', '10.0.0.5'],
+    ['https://cgnat.example/feed', '100.64.1.1'],
+    ['https://mapped.example/feed', '::ffff:192.168.1.1'],
+  ])('rejects %s', async (url, resolved) => {
+    await expect(assertPublicHttpUrl(url, lookupTo(resolved || '127.0.0.1'))).rejects.toThrow();
+  });
+
+  it('allows a public feed host', async () => {
+    await expect(assertPublicHttpUrl('https://news.example/rss', lookupTo('93.184.216.34'))).resolves.toBe('https://news.example/rss');
+  });
+
+  it('never fetches a rejected caller-supplied URL', async () => {
+    global.fetch = jest.fn();
+    await expect(ingestRssSignals({ workspaceId: WS_A, rssUrl: 'http://127.0.0.1:8080/admin' })).rejects.toThrow('public host');
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 });
