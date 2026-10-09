@@ -50,6 +50,11 @@ export function createMemoryDb(seed = {}) {
     for (const op of ['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'is', 'in', 'ilike']) {
       b[op] = (col, val) => addFilter((row) => compare(op, row[col], val));
     }
+    // Array-column overlap (Postgres &&); fails like PostgREST on non-array columns.
+    b.overlaps = (col, vals) => addFilter((row) => {
+      if (!Array.isArray(row[col])) throw new Error(`memory-db: overlaps on non-array column ${col}`);
+      return row[col].some((v) => vals.includes(v));
+    });
     b.not = (col, op, val) => addFilter((row) => !compare(op, row[col], val));
     b.filter = (col, op, val) => addFilter((row) => compare(op, row[col], val));
     b.or = (expr) => addFilter((row) => parseOr(expr).some(([c, o, v]) => (o === 'not' ? false : compare(o, row[c], v))));
@@ -67,6 +72,10 @@ export function createMemoryDb(seed = {}) {
     const matches = () => table(name).filter((row) => state.filters.every((f) => f(row)));
 
     function execute() {
+      try { return run(); } catch (err) { return { data: null, error: { message: err.message }, count: null }; }
+    }
+
+    function run() {
       const forced = failures.get(`${name}:${state.op}`);
       if (forced) return { data: null, error: forced, count: null };
       const rows = table(name);
