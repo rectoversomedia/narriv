@@ -96,7 +96,7 @@ async function measuredCost(sinceIso) {
         headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` },
     });
     const rows = await r.json();
-    const { calculateCost } = await import("../src/lib/token-tracking.js");
+    const { calculateCost } = await import("../src/lib/model-pricing.js");
     const cost = rows.reduce((s, x) => s + calculateCost(x.model, x.input_tokens, x.output_tokens), 0);
     return {
         available: true,
@@ -152,6 +152,10 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
     const premiumRouted = providers?.providers?.anthropic?.configured && (providers?.tiers || []).some((t) => t.name === "premium");
 
     const current = await runCurrentArm(token);
+    // Persist raw predictions first so post-processing failures cannot lose them.
+    const outDir = path.join(here, "results");
+    fs.mkdirSync(outDir, { recursive: true });
+    fs.writeFileSync(path.join(outDir, `predictions-${ref.version}-${startedAt.slice(0, 10)}.json`), JSON.stringify({ startedAt, current }, null, 2) + "\n");
     const report = {
         referenceSet: ref.version,
         items: items.length,
@@ -166,8 +170,6 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
         clusterPairs: clusterPairMetrics(),
         predictions: { current },
     };
-    const outDir = path.join(here, "results");
-    fs.mkdirSync(outDir, { recursive: true });
     const outFile = path.join(outDir, `model-eval-${ref.version}-${startedAt.slice(0, 10)}.json`);
     fs.writeFileSync(outFile, JSON.stringify(report, null, 2) + "\n");
     const { predictions, ...summary } = report;
