@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useToast } from "@/components/ui/toast";
 import { useQuery } from "@tanstack/react-query";
@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { NarrativeMap } from "@/components/intelligence/narrative-map";
 import { cn } from "@/lib/utils";
+import { isDemoMode } from "@/lib/demo-mock-data";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -328,6 +329,12 @@ function LiveExecutiveBrief() {
               </div>
             </div>
           ) : null}
+          {data && data.grounded ? <LiveBriefDetails data={data} /> : null}
+          {data && !data.grounded && !isLoading ? (
+            <p className="mt-3 text-[12.5px] text-slate-500">
+              There is not enough recent data in this workspace to produce a brief. It will appear after sources and monitoring keywords have been ingested.
+            </p>
+          ) : null}
         </div>
       </div>
     </div>
@@ -335,10 +342,81 @@ function LiveExecutiveBrief() {
 }
 
 
+type BriefDriver = { key: string; contribution: number; reason: string; evidenceIds: string[] };
+
+/** Grounded detail for the live brief: risk drivers, uncertainty, actions and what to watch. */
+function LiveBriefDetails({ data }: { data: import("@/lib/intelligence-api").ExecutiveBriefPayload }) {
+  const risk = data.sections?.biggestRisk as unknown as { drivers?: BriefDriver[]; uncertainty?: { level: string; reasons: string[] } | null };
+  const drivers = risk?.drivers || [];
+  const actions = data.sections?.recommendedActions || [];
+  const watch = data.sections?.whatToWatchNext || [];
+  return (
+    <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <div className="rounded-lg border border-slate-200 bg-white p-3">
+        <div className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">What drives the risk index</div>
+        {drivers.length === 0 ? (
+          <p className="mt-1 text-[12.5px] text-slate-500">No risk component is elevated.</p>
+        ) : (
+          <ul className="mt-1.5 space-y-1.5">
+            {drivers.map((d) => (
+              <li key={d.key} className="text-[12.5px] text-slate-700">
+                <span className="font-semibold tabular-nums text-slate-900">+{d.contribution}</span> {d.reason}
+                {d.evidenceIds?.length ? <span className="text-slate-400"> · {d.evidenceIds.length} record(s)</span> : null}
+              </li>
+            ))}
+          </ul>
+        )}
+        {risk?.uncertainty?.reasons?.length ? (
+          <p className="mt-2 text-[11.5px] text-amber-700">{risk.uncertainty.level} uncertainty: {risk.uncertainty.reasons.join(" ")}</p>
+        ) : null}
+        <p className="mt-2 text-[11px] text-slate-400">Heuristic index for prioritization, not a probability.</p>
+        {data.sections?.emergingIssue?.summary ? (
+          <p className="mt-2 text-[12.5px] text-slate-700"><span className="font-semibold">Emerging: </span>{data.sections.emergingIssue.summary}</p>
+        ) : null}
+      </div>
+      <div className="rounded-lg border border-slate-200 bg-white p-3">
+        <div className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">Recommended actions (suggested, require approval)</div>
+        {actions.length === 0 ? (
+          <p className="mt-1 text-[12.5px] text-slate-500">No actions suggested.</p>
+        ) : (
+          <ul className="mt-1.5 space-y-2">
+            {actions.map((a, i) => (
+              <li key={`${a.action}-${i}`} className="text-[12.5px]">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="font-semibold capitalize text-slate-900">{a.action.replace(/_/g, " ")}</span>
+                  <span className="rounded border border-slate-200 bg-slate-50 px-1.5 text-[10.5px] font-semibold text-slate-600">{a.priority}</span>
+                  <span className="rounded border border-slate-200 bg-slate-50 px-1.5 text-[10.5px] font-semibold text-slate-600">{a.urgency}</span>
+                </div>
+                <p className="mt-0.5 text-slate-600">{a.reason}</p>
+                <p className="mt-0.5 text-[11px] text-slate-500">
+                  Confidence {Math.round((a.confidence ?? 0) * 100)}%
+                  {a.sourceIds ? ` · ${a.sourceIds.length ? `${a.sourceIds.length} source record(s)` : "aggregate metrics only"}` : ""}
+                </p>
+                {a.limitations?.length ? <p className="mt-0.5 text-[11px] text-amber-700">{a.limitations[0]}</p> : null}
+              </li>
+            ))}
+          </ul>
+        )}
+        {watch.length ? (
+          <div className="mt-2 border-t border-slate-100 pt-2">
+            <div className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">What to watch next</div>
+            <ul className="mt-1 list-disc pl-4 text-[12px] text-slate-600">
+              {watch.map((w, i) => <li key={i}>{w.label}</li>)}
+            </ul>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export default function DailyIntelligenceBriefPage() {
   const t = useTranslations("brief");
   const { showToast } = useToast();
   const [dateRange, setDateRange] = useState<DateRange>("today");
+  // Read after mount (localStorage-backed) to avoid a hydration mismatch.
+  const [isDemo, setIsDemo] = useState(false);
+  useEffect(() => setIsDemo(isDemoMode()), []);
 
   const handleExport = (type: "pdf" | "email" | "whatsapp") => {
     const labels: Record<string, string> = {
@@ -410,7 +488,8 @@ export default function DailyIntelligenceBriefPage() {
       {/* Live executive brief from backend intelligence API */}
       <LiveExecutiveBrief />
 
-      {/* Document body */}
+      {/* Sample document: demo sandbox only. Live workspaces see the grounded brief above. */}
+      {isDemo && (
       <div className="mx-auto max-w-screen-xl px-6 py-8">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
 
@@ -774,6 +853,7 @@ export default function DailyIntelligenceBriefPage() {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }
