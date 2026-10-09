@@ -6,6 +6,7 @@
 
 import supabase from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
+import { assertPublicHttpUrl } from "../../lib/url-safety.js";
 import { sendSlackMessage, formatAlertForSlack } from "../../lib/notifications/slack.js";
 import { sendTeamsMessage, formatAlertForTeams } from "../../lib/notifications/teams.js";
 
@@ -70,8 +71,10 @@ export async function dispatchAlertToWebhooks(alert) {
                     const message = formatAlertForTeams(alert);
                     await sendTeamsMessage(url, message);
                 } else if (integration.platform === "webhook") {
-                    const response = await fetch(url, {
+                    const safeUrl = await assertPublicHttpUrl(url);
+                    const response = await fetch(safeUrl, {
                         method: "POST",
+                        redirect: "manual",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             event: "alert.created",
@@ -203,8 +206,10 @@ export async function testIntegrationConnection(integration) {
     }
 
     if (integration.platform === "webhook") {
-        const response = await fetch(url, {
+        const safeUrl = await assertPublicHttpUrl(url);
+        const response = await fetch(safeUrl, {
             method: "POST",
+            redirect: "manual",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 event: "integration.test",
