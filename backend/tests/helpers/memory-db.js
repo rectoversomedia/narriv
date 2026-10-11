@@ -101,6 +101,8 @@ export function createMemoryDb(seed = {}) {
       return row[col].some((v) => vals.includes(v));
     });
     b.not = (col, op, val) => addFilter((row) => !compare(op, row[col], val));
+    b.match = (obj) => addFilter((row) => Object.entries(obj || {}).every(([c, v]) => compare('eq', row[c], v)));
+    b.setHeader = () => b;
     b.filter = (col, op, val) => addFilter((row) => compare(op, row[col], val));
     b.or = (expr) => addFilter((row) => parseOr(expr).some(([c, o, v]) => (o === 'not' ? false : compare(o, row[c], v))));
     b.order = (col, { ascending = true } = {}) => { state.order.push([col, ascending]); return b; };

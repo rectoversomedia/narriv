@@ -35,18 +35,6 @@ async function analyzeWithRetry(title, content, signalId) {
     }
 }
 
-function buildSafeFallbackAnalysis() {
-    return {
-        sentiment: "neutral",
-        narrative_type: "Unclassified Signal",
-        stakeholder: "General Public",
-        impact: "low",
-        summary: "Automated analysis is temporarily unavailable. This signal was saved with a safe fallback summary.",
-        recommended_action: "Review this signal manually and re-run AI analysis when service is stable.",
-        confidence_score: 0.2,
-    };
-}
-
 const worker = new Worker(
     "ai-analysis",
     async (job) => {
@@ -86,20 +74,7 @@ const worker = new Worker(
                 reason: budgetCheck.reason,
             });
 
-            // Create a deferred analysis record
-            await supabase
-                .from("signal_analyses")
-                .insert({
-                    signal_id: signal.id,
-                    analysis: JSON.stringify({
-                        sentiment: "neutral",
-                        summary: "Analysis pending - budget limit reached. Will resume when budget resets.",
-                        recommended_action: "Wait for budget reset to process AI analysis.",
-                    }),
-                    confidence: 0,
-                    model: "gpt-4o-mini",
-                });
-
+            // Leave the signal unanalyzed; it is picked up again once budget allows.
             return { deferred: true, reason: budgetCheck.reason };
         }
 
@@ -145,14 +120,32 @@ const worker = new Worker(
             analysisResult.confidence_score = calibratedConfidence;
         } catch (error) {
             failureError = error;
-            logStructured("error", "worker_signal_analysis_failed_fallback", {
+            logStructured("error", "worker_signal_analysis_failed", {
                 worker: "ai-analysis-worker",
                 jobId: job.id,
                 signalId,
                 error: error.message,
             });
-            analysisResult = buildSafeFallbackAnalysis();
         }
+        }
+
+        // No fallback analysis: a failed analysis is logged and the signal stays
+        // unanalyzed (and retryable) instead of receiving invented sentiment.
+        if (failureError) {
+            const { error: failureLogError } = await supabase
+                .from("ai_analysis_failure_logs")
+                .insert({
+                    workspace_id: signal.workspace_id,
+                    signal_id: signal.id,
+                    error_message: failureError.message || "AI analysis failed",
+                    raw_attempt_1: failureError.details?.rawAttempt1 || null,
+                    raw_attempt_2: failureError.details?.rawAttempt2 || null,
+                });
+            if (failureLogError) {
+                logStructured("warn", "worker_failure_log_failed", { worker: "ai-analysis-worker", signalId, error: failureLogError.message });
+            }
+            workerMetrics.recordJob("ai-analysis", { success: false, durationMs: Date.now() - job.timestamp, jobId: job.id, error: failureError.message });
+            return { analyzed: false, reason: "ai_analysis_failed" };
         }
 
         try {

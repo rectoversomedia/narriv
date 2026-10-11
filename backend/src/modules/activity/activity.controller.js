@@ -15,28 +15,17 @@ function endOfDay(value) {
     return date;
 }
 
-function workspaceAuditScope(scopedWorkspaceId) {
-    return {
-        or: [
-            { workspace_id: scopedWorkspaceId },
-            {
-                metadata: {
-                    path: ["workspace_id"],
-                    value: scopedWorkspaceId,
-                },
-            },
-        ],
-    };
-}
+// Audit rows carry the workspace in workspace_id, or (legacy rows) in metadata.workspace_id.
+// Workspace ids are validated UUIDs from resolveWorkspaceIdForUser, safe to embed in the filter.
+const workspaceScopeFilter = (ws) => `workspace_id.eq.${ws},metadata->>workspace_id.eq.${ws}`;
 
-function mergeTodayRange(createdAt = {}) {
-    const todayStart = startOfDay(new Date());
-    const todayEnd = endOfDay(new Date());
-    const lowerBound = createdAt.gte && createdAt.gte > todayStart ? createdAt.gte : todayStart;
-    const upperBound = createdAt.lte && createdAt.lte < todayEnd ? createdAt.lte : todayEnd;
-
-    if (lowerBound > upperBound) return null;
-    return { gte: lowerBound, lte: upperBound };
+function applyFilters(query, { ws, eventType, userId, from, to }) {
+    let q = query.or(workspaceScopeFilter(ws));
+    if (eventType) q = q.eq("event", eventType);
+    if (userId) q = q.eq("user_id", userId);
+    if (from) q = q.gte("created_at", from.toISOString());
+    if (to) q = q.lte("created_at", to.toISOString());
+    return q;
 }
 
 export async function listActivityLogs(req, res) {
@@ -46,50 +35,37 @@ export async function listActivityLogs(req, res) {
             return forbidden(res, "Workspace access denied", "WORKSPACE_ACCESS_DENIED");
         }
 
-        const { eventType, userId, dateFrom, dateTo, page, limit } = req.query;
+        const { eventType, userId, dateFrom, dateTo } = req.query;
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 20;
         const skip = (page - 1) * limit;
+        const filters = {
+            ws: scopedWorkspaceId,
+            eventType,
+            userId,
+            from: dateFrom ? startOfDay(dateFrom) : null,
+            to: dateTo ? endOfDay(dateTo) : null,
+        };
+        const todayStart = startOfDay(new Date());
 
-        const where = workspaceAuditScope(scopedWorkspaceId);
-
-        if (eventType) {
-            where.event = eventType;
-        }
-
-        if (userId) {
-            where.user_id = userId;
-        }
-
-        if (dateFrom || dateTo) {
-            where.created_at = {};
-            if (dateFrom) where.created_at.gte = startOfDay(dateFrom);
-            if (dateTo) where.created_at.lte = endOfDay(dateTo);
-        }
-
-        const todayRange = mergeTodayRange(where.created_at);
-
-        const [logsResult, totalResult, actorsResult, eventsResult, todayCount] = await Promise.all([
-            supabase
-                .from("audit_logs")
-                .select("*, user:users(id, name, email)")
-                .setHeader("Prefer", "count=exact")
-                .match(where)
+        const [logsResult, summaryResult, todayResult] = await Promise.all([
+            applyFilters(supabase.from("audit_logs").select("*, user:users(id, name, email)", { count: "exact" }), filters)
                 .order("created_at", { ascending: false })
                 .range(skip, skip + limit - 1),
-            supabase.from("audit_logs").select("id", { count: "exact", head: true }).setHeader("Prefer", "count=exact").match(where),
-            supabase.rpc("group_by_audit_logs_user_id", { p_where: where }),
-            supabase.rpc("group_by_audit_logs_event", { p_where: where }),
-            todayRange
-                ? supabase.from("audit_logs").select("id", { count: "exact", head: true }).setHeader("Prefer", "count=exact").match({ ...where, created_at: todayRange })
-                : Promise.resolve({ count: 0 }),
+            // Distinct actors / event types over the filtered set (bounded scan).
+            applyFilters(supabase.from("audit_logs").select("user_id, event"), filters).limit(5000),
+            applyFilters(supabase.from("audit_logs").select("id", { count: "exact", head: true }), { ...filters, from: filters.from && filters.from > todayStart ? filters.from : todayStart }),
         ]);
 
-        const logs = logsResult.data || [];
-        const total = totalResult.count || 0;
-        const actors = actorsResult.data || [];
-        const events = eventsResult.data || [];
-        const today = todayCount.count || 0;
+        const queryError = logsResult.error || summaryResult.error || todayResult.error;
+        if (queryError) {
+            logStructured("error", "activity_logs_query_failed", { error: queryError.message });
+            return internalError(res);
+        }
 
-        const totalPages = Math.ceil(total / limit);
+        const logs = logsResult.data || [];
+        const total = logsResult.count ?? logs.length;
+        const summaryRows = summaryResult.data || [];
 
         return res.json({
             data: logs.map((log) => ({
@@ -104,11 +80,11 @@ export async function listActivityLogs(req, res) {
                 page,
                 limit,
                 total,
-                totalPages,
+                totalPages: Math.ceil(total / limit),
                 summary: {
-                    actors: actors.length,
-                    today,
-                    eventTypes: events.length,
+                    actors: new Set(summaryRows.map((r) => r.user_id).filter(Boolean)).size,
+                    today: todayResult.count || 0,
+                    eventTypes: new Set(summaryRows.map((r) => r.event).filter(Boolean)).size,
                 },
             },
         });
