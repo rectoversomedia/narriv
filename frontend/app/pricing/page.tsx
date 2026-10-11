@@ -334,7 +334,7 @@ export default function PricingPage() {
 
                 {/* CTA Button */}
                 <Link
-                  href={isCustom ? "/contact" : `/signup?plan=${plan.id}`}
+                  href={isCustom ? "/help#contact" : `/signup?plan=${plan.id}`}
                   className={`mt-8 block w-full rounded-xl py-3.5 text-center text-base font-bold transition ${
                     plan.popular
                       ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:scale-[1.02]"

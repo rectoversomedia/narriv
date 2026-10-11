@@ -205,20 +205,6 @@ function MetricCard({ label, value, helper, icon: Icon, tone }: { label: string;
   );
 }
 
-function MiniSparkline({ values, color }: { values: number[]; color: string }) {
-  const width = 150;
-  const height = 38;
-  const max = Math.max(...values);
-  const min = Math.min(...values);
-  const range = max - min || 1;
-  const path = values.map((value, index) => {
-    const x = (index / (values.length - 1)) * (width - 4) + 2;
-    const y = height - ((value - min) / range) * 26 - 6;
-    return `${index === 0 ? "M" : "L"} ${x} ${y}`;
-  }).join(" ");
-  return <svg className="chart-line-draw h-10 w-full" viewBox={`0 0 ${width} ${height}`} aria-hidden="true"><path d={path} fill="none" stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" /></svg>;
-}
-
 function Toggle({ active }: { active: boolean }) {
   return <span className={cn("relative h-5 w-9 rounded-full transition", active ? "bg-[#465FFF]" : "bg-[#CBD5E1]")}><span className={cn("absolute top-0.5 size-4 rounded-full bg-white shadow transition", active ? "left-4" : "left-0.5")} /></span>;
 }
@@ -271,7 +257,7 @@ function ConnectorCard({ source, selected, onSelect, onToggle, onDelete, onSync 
         )}
       </p>
       <div className="mt-4 grid grid-cols-2 gap-3 text-[11px] font-bold text-[#68739F]"><span>Health<br /><b className="text-[14px] text-[#101334]">{source.health}</b></span><span>Signals (24h)<br /><b className="text-[14px] text-[#101334]">{source.signals}</b></span></div>
-      <div className="mt-3"><MiniSparkline values={source.spark} color={style.color} /></div>
+      {/* No per-source time series is stored, so no trend line is drawn. */}
       <div className="mt-3 flex items-center justify-between gap-3 text-[10px] font-bold text-[#68739F]"><span>Last Sync</span><span>{source.lastSync}</span><button type="button" onClick={(e) => { e.stopPropagation(); onToggle?.(source); }} className="focus:outline-none"><Toggle active={source.active} /></button></div>
     </div>
   );
@@ -807,7 +793,7 @@ export default function SourcesPage() {
 
       <section className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-5">
         <MetricCard label={t("metricConnectedSources")} value={String(totalSources)} helper={t("metricActive", { count: activeSources })} icon={Database} tone="purple" />
-        <MetricCard label={t("metricLiveMonitoring")} value={activeSources > 0 ? "24/7" : "-"} helper={healthText(healthSummary, t)} icon={Play} tone="green" />
+        <MetricCard label={t("metricLiveMonitoring")} value={activeSources > 0 ? "Every 6h" : "-"} helper={healthText(healthSummary, t)} icon={Play} tone="green" />
         <MetricCard label={t("metricTotalDocuments")} value={formatCompact(totalDocuments)} helper={t("metricCoverage", { count: coverage?.coverageRate ?? 0 })} icon={Zap} tone="blue" />
         <MetricCard label={t("metricHealthWarning")} value={String(warningCount)} helper={t("metricCritical", { count: healthSummary?.critical ?? 0 })} icon={RefreshCw} tone="amber" />
         <MetricCard label={t("metricLastSync")} value={sourceHealthQuery.data?.sources.find((source) => source.health.lastSyncAt)?.health.lastSyncAt ? formatSourceTime(sourceHealthQuery.data.sources.find((source) => source.health.lastSyncAt)?.health.lastSyncAt ?? undefined) : "-"} helper={t("metricFromHealthApi")} icon={Clock3} tone="purple" />
@@ -978,7 +964,7 @@ export default function SourcesPage() {
         </div>
 
         <aside className="flex flex-col gap-4">
-          <Panel><CardContent className="p-5"><h2 className="text-[17px] font-black text-[#101334]">{t("healthTitle")}</h2><p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("healthDesc")}</p><div className="mt-5 grid items-center gap-5 sm:grid-cols-[128px_1fr] xl:grid-cols-1 2xl:grid-cols-[128px_1fr]"><HealthDonut total={healthSummary?.total ?? totalSources} /><div className="grid gap-3 text-[12px] font-bold text-[#53608C]"><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#10B981]" />{t("healthHealthy")}</span><b className="text-[#101334]">{healthSummary?.healthy ?? 0}</b></div><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#F59E0B]" />{t("healthWarning")}</span><b className="text-[#101334]">{healthSummary?.warning ?? 0}</b></div><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#EF4444]" />{t("healthCritical")}</span><b className="text-[#101334]">{healthSummary?.critical ?? 0}</b></div></div></div><div className="mt-5 rounded-[12px] border border-[#BFEBD9] bg-[#ECFDF6] p-4"><div className="flex items-start gap-3"><ShieldCheck size={20} className="text-[#10B981]" /><span><b className="block text-[13px] font-black text-[#0C9B69]">{healthSummary && healthSummary.critical > 0 ? t("healthNeedsAttention") : t("optimal")}</b><span className="text-[12px] font-semibold text-[#53608C]">{healthText(healthSummary, t)}</span></span></div></div></CardContent></Panel>
+          <Panel><CardContent className="p-5"><h2 className="text-[17px] font-black text-[#101334]">{t("healthTitle")}</h2><p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("healthDesc")}</p><div className="mt-5 grid items-center gap-5 sm:grid-cols-[128px_1fr] xl:grid-cols-1 2xl:grid-cols-[128px_1fr]"><HealthDonut total={healthSummary?.total ?? totalSources} /><div className="grid gap-3 text-[12px] font-bold text-[#53608C]"><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#10B981]" />{t("healthHealthy")}</span><b className="text-[#101334]">{healthSummary?.healthy ?? 0}</b></div><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#F59E0B]" />{t("healthWarning")}</span><b className="text-[#101334]">{healthSummary?.warning ?? 0}</b></div><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#EF4444]" />{t("healthCritical")}</span><b className="text-[#101334]">{healthSummary?.critical ?? 0}</b></div></div></div><div className="mt-5 rounded-[12px] border border-[#BFEBD9] bg-[#ECFDF6] p-4"><div className="flex items-start gap-3"><ShieldCheck size={20} className="text-[#10B981]" /><span><b className="block text-[13px] font-black text-[#0C9B69]">{healthSummary && healthSummary.total > 0 && healthSummary.healthy === healthSummary.total ? t("optimal") : t("healthNeedsAttention")}</b><span className="text-[12px] font-semibold text-[#53608C]">{healthText(healthSummary, t)}</span></span></div></div></CardContent></Panel>
 
           <Panel><CardContent className="p-5"><div className="mb-4 flex items-start justify-between"><div><h2 className="text-[17px] font-black text-[#101334]">{t("activity")}</h2><p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("activityDesc")}</p></div></div>{recentHealthEntries.length > 0 ? <div className="grid gap-3">{recentHealthEntries.map(([id, name, status, time, tone, Icon]) => { const TypedIcon = Icon as SourceIcon; const style = toneStyles[tone as Tone]; return <div key={id} className="flex items-center justify-between gap-3"><span className="flex min-w-0 items-center gap-3"><span className="flex size-7 items-center justify-center rounded-[7px]" style={{ color: style.color, backgroundColor: `rgba(${style.rgb}, .10)` }}><TypedIcon className="size-[15px]" /></span><span className="min-w-0"><b className="block truncate text-[12px] text-[#101334]">{name}</b><span className="text-[11px] font-semibold capitalize" style={{ color: style.color }}>{status}</span></span></span><span className="shrink-0 text-[10px] font-bold text-[#68739F]">{time}</span><Check size={13} style={{ color: style.color }} /></div>; })}</div> : <DashboardEmptyState title={toast("activity.emptyTitle")} description={toast("activity.emptyDesc")} icon="search" minHeight="min-h-[120px]" />}</CardContent></Panel>
 

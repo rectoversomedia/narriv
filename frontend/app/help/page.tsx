@@ -26,9 +26,6 @@ import {
   Clock,
 } from "lucide-react";
 
-import { videoWalkthroughs, type VideoWalkthrough } from "@/components/help/video-walkthroughs";
-import { VideoCard, VideoScriptOutline } from "@/components/help/VideoCard";
-import { VideoPlayer } from "@/components/help/VideoPlayer";
 import { X, BookOpen } from "lucide-react";
 import { sanitizeHtml } from "@/lib/utils";
 
@@ -145,14 +142,6 @@ const categories = [
   },
 ];
 
-const popularArticles = [
-  { title: "How to set up your first data source", views: 12500, slug: "first-data-source" },
-  { title: "Understanding sentiment analysis", views: 8900, slug: "understanding-sentiment" },
-  { title: "Creating effective alert rules", views: 7200, slug: "effective-alert-rules" },
-  { title: "API authentication guide", views: 6800, slug: "api-authentication" },
-  { title: "Team roles and permissions", views: 5400, slug: "team-roles" },
-  { title: "Scheduled reports setup", views: 4200, slug: "scheduled-reports-setup" },
-];
 
 interface Article {
   title: string;
@@ -283,14 +272,10 @@ function TopicList({
 
       <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100">
         {category.topics.map((topic) => (
-          <Link
-            key={topic.slug}
-            href={`/help/article/${topic.slug}`}
-            className="flex items-center justify-between p-5 hover:bg-slate-50 transition-colors"
-          >
+          <div key={topic.slug} className="flex items-center justify-between p-5">
             <span className="font-medium text-slate-900">{topic.title}</span>
-            <ChevronRight size={18} className="text-slate-400" />
-          </Link>
+            <span className="text-xs font-semibold text-slate-400">Guide not yet published</span>
+          </div>
         ))}
       </div>
     </div>
@@ -302,28 +287,21 @@ function SearchResults({
   results,
 }: {
   query: string;
-  results: typeof popularArticles;
+  results: Array<{ q: string; a: string }>;
 }) {
   return (
     <div className="max-w-4xl mx-auto">
       <p className="text-sm text-slate-500 mb-6">
-        {results.length} results for "{query}"
+        {results.length} matching answers for &quot;{query}&quot;
       </p>
-
       <div className="space-y-4">
         {results.map((result) => (
-          <Link
-            key={result.slug}
-            href={`/help/article/${result.slug}`}
-            className="block bg-white rounded-xl border border-slate-200 p-5 hover:border-slate-300 hover:shadow-md transition-all"
-          >
-            <h3 className="font-bold text-slate-900 hover:text-indigo-600">{result.title}</h3>
-            <p className="mt-1 text-sm text-slate-500 line-clamp-2">
-              Learn how to accomplish this task with our step-by-step guide...
-            </p>
-            <p className="mt-2 text-xs text-slate-400">{result.views.toLocaleString()} views</p>
-          </Link>
+          <div key={result.q} className="bg-white rounded-xl border border-slate-200 p-5">
+            <h3 className="font-bold text-slate-900">{result.q}</h3>
+            <p className="mt-2 text-sm text-slate-600">{result.a}</p>
+          </div>
         ))}
+        {results.length === 0 ? <p className="text-sm text-slate-500">No answers match. Contact support below.</p> : null}
       </div>
     </div>
   );
@@ -334,39 +312,39 @@ export default function HelpCenterPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<typeof categories[0] | null>(null);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
-  const [selectedVideo, setSelectedVideo] = useState<VideoWalkthrough | null>(null);
 
+  // Answers describe current product behavior only.
   const faqs = [
     {
       q: "How do I get started with Narriv?",
-      a: "Getting started is easy! First, sign up for an account and complete the onboarding flow. Then, add your first data source, configure your monitoring keywords, and set up alerts. Our AI will automatically analyze signals and generate insights.",
+      a: "Create an account and complete onboarding, then add monitoring keywords in Settings → Monitoring Keywords. Scheduled ingestion runs every 6 hours, collects news for your active keywords, and the AI analysis step classifies each new signal. Narratives, risk and recommendations are built from those stored signals.",
     },
     {
       q: "What data sources does Narriv support?",
-      a: "Narriv supports various data sources including Twitter/X, Facebook, Instagram, Reddit, news websites, blogs, forums, and custom webhooks. You can connect multiple sources to monitor your brand's narrative across the internet.",
+      a: "Scheduled ingestion collects online news for your active monitoring keywords. Additional connectors are listed on the Data Sources page with their real connection status; a connector only collects data once it is configured and healthy.",
     },
     {
       q: "How does AI sentiment analysis work?",
-      a: "Our AI uses advanced natural language processing to analyze signal content and determine sentiment (positive, negative, neutral, or mixed). The analysis includes confidence scores and key talking points to help you understand public perception.",
+      a: "Each new signal is analyzed by an AI model that assigns a sentiment and a confidence score. Signals that have not been analyzed yet are shown as \"Not analyzed\" rather than given a default sentiment. AI assessments are marked as such and should be reviewed alongside the linked sources.",
     },
     {
-      q: "Can I set up custom alerts?",
-      a: "Yes! Narriv's alert system automatically detects narrative trends and risk signals. You can also create custom alerts based on keywords, sentiment changes, or volume spikes. Alerts can be sent via email, Slack, Teams, or webhook.",
+      q: "How do alerts work?",
+      a: "Narriv raises alerts automatically when it detects qualifying spikes in negative coverage, with links to the signals involved. Notifications are delivered only through integrations you have configured on the Integrations page.",
     },
     {
       q: "How do I add team members?",
-      a: "Go to Workspace Settings > Team Members and click 'Invite Member'. Enter their email address and select a role (Admin, Editor, or Viewer). They'll receive an invitation email to join your workspace.",
+      a: "Go to Settings → User & Access Management and add a registered user by email. Roles are Owner, Admin and Analyst; only owners and admins can change members, settings and monitoring keywords.",
     },
     {
       q: "What export formats are available?",
-      a: "Narriv supports exporting data in multiple formats including CSV, JSON, and PDF. Reports can be scheduled for automatic delivery via email. Custom exports can be created using our API.",
+      a: "Signals can be exported as CSV or Excel from the Signals page, reports can be exported from the Reports page, and the Daily Brief can be printed or saved as PDF from your browser.",
     },
   ];
 
   // Simple search simulation
   const searchResults = searchQuery
-    ? popularArticles.filter((a) =>
-        a.title.toLowerCase().includes(searchQuery.toLowerCase())
+    ? faqs.filter((f) =>
+        `${f.q} ${f.a}`.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : [];
 
@@ -415,44 +393,6 @@ export default function HelpCenterPage() {
                     key={category.id}
                     category={category}
                     onClick={() => setSelectedCategory(category)}
-                  />
-                ))}
-              </div>
-            </section>
-
-            {/* Popular Articles */}
-            <section className="mx-auto max-w-6xl mt-16">
-              <h2 className="text-xl font-bold text-slate-900 mb-6">Popular Articles</h2>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {popularArticles.map((article) => (
-                  <Link
-                    key={article.slug}
-                    href={`/help/article/${article.slug}`}
-                    className="bg-white rounded-xl border border-slate-200 p-5 hover:border-slate-300 hover:shadow-md transition-all group"
-                  >
-                    <h3 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                      {article.title}
-                    </h3>
-                    <p className="mt-2 text-xs text-slate-400">
-                      {article.views.toLocaleString()} views
-                    </p>
-                  </Link>
-                ))}
-              </div>
-            </section>
-
-            {/* Video Tutorials */}
-            <section className="mx-auto max-w-6xl mt-16">
-              <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-                <Video size={20} className="text-indigo-500" />
-                Video Tutorials
-              </h2>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {videoWalkthroughs.map((video) => (
-                  <VideoCard
-                    key={video.id}
-                    video={video}
-                    onSelect={setSelectedVideo}
                   />
                 ))}
               </div>
@@ -511,127 +451,6 @@ export default function HelpCenterPage() {
           </>
         )}
       </main>
-
-      {/* Video Modal */}
-      {selectedVideo && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-          onClick={() => setSelectedVideo(null)}
-        >
-          <div
-            className="w-full max-w-5xl bg-white rounded-2xl overflow-hidden shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-4 border-b border-slate-200">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">{selectedVideo.title}</h2>
-                <p className="text-sm text-slate-500">Tutorial Video</p>
-              </div>
-              <button
-                onClick={() => setSelectedVideo(null)}
-                className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
-              >
-                <X className="w-5 h-5 text-slate-500" />
-              </button>
-            </div>
-
-            {/* Video Player */}
-            <div className="p-4">
-              <VideoPlayer video={selectedVideo} />
-            </div>
-
-            {/* Video Details */}
-            <div className="p-6 border-t border-slate-100">
-              <p className="text-slate-600">{selectedVideo.description}</p>
-
-              {/* Meta info */}
-              <div className="mt-4 flex flex-wrap items-center gap-6">
-                <div className="flex items-center gap-2 text-sm text-slate-500">
-                  <Clock className="w-4 h-4" />
-                  <span>Duration: {selectedVideo.duration}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-slate-500">
-                  <Users className="w-4 h-4" />
-                  <span>Target: {selectedVideo.targetAudience.join(", ")}</span>
-                </div>
-              </div>
-
-              {/* Target Audience */}
-              <div className="mt-4">
-                <h4 className="text-sm font-medium text-slate-900 flex items-center gap-2">
-                  <Users className="w-4 h-4 text-indigo-500" />
-                  Target Audience
-                </h4>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {selectedVideo.targetAudience.map((audience, idx) => (
-                    <span
-                      key={idx}
-                      className="px-3 py-1 bg-indigo-50 text-indigo-700 text-sm rounded-full"
-                    >
-                      {audience}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Key Topics */}
-              <div className="mt-4">
-                <h4 className="text-sm font-medium text-slate-900 flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-indigo-500" />
-                  Key Topics Covered
-                </h4>
-                <ul className="mt-2 space-y-1">
-                  {selectedVideo.keyTopics.map((topic, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-sm text-slate-600">
-                      <ChevronRight className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
-                      {topic}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Script Outline */}
-              <div className="mt-6 pt-4 border-t border-slate-100">
-                <h4 className="text-sm font-medium text-slate-900 mb-3">Script Outline Preview</h4>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {selectedVideo.scriptOutline.slice(0, 4).map((section, idx) => (
-                    <div key={idx} className="flex gap-3 p-3 bg-slate-50 rounded-lg">
-                      <div className="shrink-0 w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
-                        <span className="text-xs font-bold text-indigo-600">{section.timestamp}</span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-slate-900">{section.title}</p>
-                        <p className="text-xs text-slate-500 line-clamp-2">{section.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {selectedVideo.scriptOutline.length > 4 && (
-                  <p className="mt-3 text-sm text-slate-500 text-center">
-                    + {selectedVideo.scriptOutline.length - 4} more sections in the full video
-                  </p>
-                )}
-              </div>
-
-              {/* Prerequisites */}
-              {selectedVideo.prerequisites.length > 0 && (
-                <div className="mt-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
-                  <h4 className="text-sm font-medium text-amber-800">Prerequisites</h4>
-                  <ul className="mt-2 space-y-1">
-                    {selectedVideo.prerequisites.map((prereq, idx) => (
-                      <li key={idx} className="text-sm text-amber-700 flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
-                        {prereq}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Footer */}
       <footer className="border-t border-slate-200 bg-white px-6 py-8">

@@ -1780,9 +1780,9 @@ export default function ReportsPage() {
                           </div>
                         </div>
                         {template.isSystem ? (
-                          <button type="button" className="shrink-0 self-start sm:self-center rounded-[8px] bg-[#F5F7FC] px-3 py-1.5 text-[10px] font-black text-[#8A94B8] border border-[#E6EAF2] cursor-default">
+                          <span className="shrink-0 self-start sm:self-center rounded-[8px] bg-[#F5F7FC] px-3 py-1.5 text-[10px] font-black text-[#8A94B8] border border-[#E6EAF2]">
                             {tr("buttons.systemTemplate")}
-                          </button>
+                          </span>
                         ) : (
                           <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
                             <button type="button" onClick={() => { setEditingTemplate(template); setIsFormOpen(true); }} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#465FFF] transition hover:bg-[#F5F7FC]" aria-label={tr("actions.editTemplate")}>

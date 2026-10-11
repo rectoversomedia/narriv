@@ -354,13 +354,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
           ))}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#D1FAE5] bg-[#ECFDF5] px-3 py-1.5">
-            <span className="relative flex size-2">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#10B981] opacity-75" />
-              <span className="relative inline-flex size-2 rounded-full bg-[#10B981]" />
-            </span>
-            <span className="text-[10px] font-black text-[#065F46]">{tTimeRange("timeRange24h")}</span>
-          </div>
+          {/* The table is not time-limited (newest first), so no time-window badge is shown. */}
           <label className="relative block w-full sm:w-[220px]">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#8B95B8]" />
             <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder={tSignals("search")} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] pl-9 pr-3 text-[11px] font-bold text-[#101334] outline-none transition placeholder:text-[#8B95B8] focus:border-[#465FFF] focus:bg-white" />
@@ -574,13 +568,9 @@ function SourceDonut({ data, totalSignals }: { data?: SignalsMeta["sourceDistrib
           <h3 className="text-[15px] font-black text-[#101334]">{t("title")}</h3>
           <p className="mt-1 text-[11px] font-bold text-[#68739F]">{t("desc")}</p>
         </div>
-        <button type="button" className="inline-flex h-8 shrink-0 whitespace-nowrap items-center gap-1.5 rounded-full border border-[#D1FAE5] bg-[#ECFDF5] px-3 text-[9px] font-black text-[#065F46] shadow-[0_1px_3px_rgba(16,185,129,0.1)]">
-          <span className="relative flex size-1.5">
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#10B981] opacity-75" />
-            <span className="relative inline-flex size-1.5 rounded-full bg-[#10B981]" />
-          </span>
+        <span className="inline-flex h-8 shrink-0 whitespace-nowrap items-center rounded-full border border-[#E6EAF2] bg-[#F8FAFF] px-3 text-[9px] font-black text-[#53608C]">
           {t("timeframe")}
-        </button>
+        </span>
       </div>
 
       {!hasData ? (
