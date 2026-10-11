@@ -125,7 +125,8 @@ function buildApiSignalRows(apiSignals: Signal[], t: (key: string) => string): S
       title,
       sentimentTone,
       desc: signal.content || t("fallbackNoContent"),
-      tags: [signal.platform || t("fallbackUnknownSource")],
+      // Publisher (stored as author by ingestion) first, then the collection platform.
+      tags: [...(signal.author ? [signal.author] : []), signal.platform || t("fallbackUnknownSource")],
       sourceType: signal.platform || t("fallbackLiveSource"),
       sources: [source],
       sentiment,

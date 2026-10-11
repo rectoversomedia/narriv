@@ -198,6 +198,7 @@ export interface Signal {
   publishedAt: string | null;
   capturedAt: string;
   // Raw snake_case fields (always present in API rows) and evidence fields.
+  author?: string | null;
   captured_at?: string;
   published_at?: string | null;
   url?: string | null;
