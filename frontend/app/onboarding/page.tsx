@@ -699,7 +699,7 @@ function KeywordsStep({
 
   const add = (kw: string) => {
     const trimmed = kw.trim();
-    if (!trimmed || keywords.includes(trimmed) || keywords.length >= 50) return;
+    if (!trimmed || keywords.includes(trimmed) || keywords.length >= 25) return;
     onChange([...keywords, trimmed]);
     setInput("");
   };
