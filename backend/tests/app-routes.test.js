@@ -32,9 +32,12 @@ describe('cron authentication', () => {
   });
 
   it('runs the ingest handler with the Vercel Bearer secret', async () => {
-    const res = await request(app).get('/api/cron/ingest?slot=6').set('Authorization', 'Bearer test-cron-secret');
+    const res = await request(app).get('/api/cron/ingest?slot=6').set('Authorization', 'Bearer test-cron-secret').set('User-Agent', 'vercel-cron/1.0');
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ status: 'completed', keywords: 0, trigger: 'vercel-cron:6' });
+    // The slot parameter alone does not make a call look scheduler-initiated.
+    const manual = await request(app).get('/api/cron/ingest?slot=6').set('Authorization', 'Bearer test-cron-secret').set('User-Agent', 'curl/8.0');
+    expect(manual.body.trigger).toBe('manual:6');
     expect(fake.calls.some((c) => c.table === 'cron_ingestion_logs' && c.op === 'insert')).toBe(true);
   });
 

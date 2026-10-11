@@ -11,6 +11,7 @@ import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { baseSupabaseAdmin as db } from "../../lib/supabase.js";
 import { getTokenUsageSummary } from "../../lib/token-tracking.js";
 import { logStructured } from "../../lib/logger.js";
+import { schedulerHealth } from "../../lib/scheduler-health.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -59,6 +60,7 @@ router.get("/status", async (req, res) => {
                 lastRunStatus: runRows[0]?.status || null,
                 lastRunForWorkspace: wsRuns[0] || null,
                 lastSuccessfulIngestionForWorkspace: lastOk ? lastOk.at : null,
+                health: schedulerHealth(runRows),
             },
             ingestion: { lastRawDocumentAt: latest(rawDoc.data) },
             analysis: {

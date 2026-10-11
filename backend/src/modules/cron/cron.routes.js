@@ -8,6 +8,7 @@
 import { Router } from "express";
 import supabase from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
+import { ingestTrigger } from "../../lib/scheduler-health.js";
 
 const router = Router();
 
@@ -206,7 +207,7 @@ const runIngest = async (req, res) => {
     try {
         const { runScheduledIngestion } = await import("../ingestion/scheduled-ingestion.js");
         const perKeywordLimit = Math.min(Math.max(parseInt(req.query.limit, 10) || 8, 1), 15);
-        const summary = await runScheduledIngestion({ budgetMs: INGEST_BUDGET_MS, perKeywordLimit, trigger: req.query.slot ? `vercel-cron:${req.query.slot}` : "manual" });
+        const summary = await runScheduledIngestion({ budgetMs: INGEST_BUDGET_MS, perKeywordLimit, trigger: ingestTrigger({ userAgent: req.headers["user-agent"], slot: req.query.slot ?? null }) });
         res.status(summary.status === "failed" ? 500 : 200).json(summary);
     } catch (error) {
         logStructured("error", "cron_ingest_failed", { error: error.message });

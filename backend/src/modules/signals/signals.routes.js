@@ -395,6 +395,16 @@ router.get("/meta", async (req, res) => {
 
         if (negativeError) throw negativeError;
 
+        // Count positive signals in 24h (neutral/unanalyzed are not positive)
+        const { count: positiveCount, error: positiveError } = await supabase
+            .from('signals')
+            .select('*', { count: 'exact', head: true })
+            .in('workspace_id', workspaceIds)
+            .ilike('sentiment', 'POSITIVE')
+            .gte('captured_at', twentyFourHoursAgo);
+
+        if (positiveError) throw positiveError;
+
         // Count critical alerts in 24h
         const { count: criticalCount, error: criticalError } = await supabase
             .from('alerts')
@@ -411,6 +421,7 @@ router.get("/meta", async (req, res) => {
         const metrics = {
             totalSignals24h,
             negativeSignals24h,
+            positiveSignals24h: positiveCount || 0,
             criticalSignals24h: criticalAlerts24h
         };
 

@@ -98,6 +98,23 @@ describe('signal list items', () => {
   });
 });
 
+describe('signal summary metrics', () => {
+  it('counts only POSITIVE signals as positive (neutral and unanalyzed are excluded)', async () => {
+    seed();
+    const now = new Date().toISOString();
+    db.table('signals').push(
+      { id: 'p1', workspace_id: WS, title: 'a', content: 'c', sentiment: 'POSITIVE', captured_at: now },
+      { id: 'n1', workspace_id: WS, title: 'b', content: 'c', sentiment: 'NEGATIVE', captured_at: now },
+      { id: 'u1', workspace_id: WS, title: 'c', content: 'c', sentiment: 'NEUTRAL', captured_at: now },
+      { id: 'u2', workspace_id: WS, title: 'd', content: 'c', sentiment: null, captured_at: now },
+      { id: 'x1', workspace_id: OTHER_WS, title: 'e', content: 'c', sentiment: 'POSITIVE', captured_at: now },
+    );
+    const res = await request(app).get('/signals/meta').set(as(OWNER));
+    expect(res.status).toBe(200);
+    expect((res.body.data || res.body).metrics).toMatchObject({ totalSignals24h: 4, positiveSignals24h: 1, negativeSignals24h: 1 });
+  });
+});
+
 describe('RBAC on workspace management', () => {
   beforeEach(seed);
   const addMember = (who, role) => request(app).post('/workspace/members').set(as(who)).send({ workspaceId: WS, email: 'outsider@example.com', role });

@@ -15,9 +15,7 @@
  *   - Output includes a "grounded" boolean and a "sources" array.
  */
 
-import { getOpenAIClient } from "./ai-client.js";
-import { routeForTask, listTiers } from "./ai-routing.js";
-import { recordAiEvent } from "./ai-observability.js";
+import { runAiTask } from "./ai-gateway.js";
 import { logStructured } from "./logger.js";
 import { baseSupabaseAdmin } from "./supabase.js";
 
@@ -35,10 +33,17 @@ async function gatherContext(workspaceId, windowHours) {
     const [signals, alerts, clusters] = await Promise.all([
         baseSupabaseAdmin.from("signals").select("id, sentiment, platform, captured_at, title").eq("workspace_id", workspaceId).gte("captured_at", sinceIso).order("captured_at", { ascending: false }).limit(50).then((r) => r.data || []),
         baseSupabaseAdmin.from("alerts").select("id, severity, status, created_at").eq("workspace_id", workspaceId).gte("created_at", sinceIso).limit(20).then((r) => r.data || []),
-        baseSupabaseAdmin.from("narrative_clusters").select("id, title, velocity, signal_count, sentiment").eq("workspace_id", workspaceId).order("velocity", { ascending: false, nullsFirst: false }).limit(10).then((r) => r.data || []),
+        baseSupabaseAdmin.from("narrative_clusters").select("id, title, signal_count, sentiment, updated_at").eq("workspace_id", workspaceId).order("signal_count", { ascending: false, nullsFirst: false }).limit(10).then((r) => r.data || []),
     ]);
     return { signals, alerts, clusters, sinceIso, windowHours };
 }
+
+const ASK_ERRORS = {
+    budget_exceeded: "This workspace has reached its AI usage budget for the month.",
+    provider_error: "The AI provider failed to respond. Please try again shortly.",
+    malformed_output: "The AI response could not be verified, so it was discarded. Please try again.",
+    model_refused: "The AI model declined to answer this question.",
+};
 
 // Models often wrap JSON in ```json fences; strip them before parsing.
 export function parseModelJson(raw) {
@@ -58,11 +63,11 @@ export function keepKnownSources(sources, ctx) {
         .filter((src) => src && known.has(src.id));
 }
 
-export async function askNarriv({ workspaceId, question, windowHours = 24 }) {
+export async function askNarriv({ workspaceId, question, windowHours = 24 }, deps = {}) {
     if (!workspaceId) return { grounded: false, error: "workspaceId is required" };
     if (!question || typeof question !== "string") return { grounded: false, error: "question is required" };
 
-    const ctx = await gatherContext(workspaceId, windowHours);
+    const ctx = await (deps.gatherContext || gatherContext)(workspaceId, windowHours);
     const dataIsEmpty = ctx.signals.length === 0 && ctx.alerts.length === 0 && ctx.clusters.length === 0;
 
     const dataSection = `Window: last ${windowHours}h (since ${ctx.sinceIso})\n` +
@@ -73,8 +78,8 @@ export async function askNarriv({ workspaceId, question, windowHours = 24 }) {
         ctx.signals.slice(0, 10).map((s) => `  ${s.id} | ${s.sentiment || "?"} | ${s.platform || "?"} | ${(s.title || "").slice(0, 80)}`).join("\n") +
         `\n\nActive alerts (id | severity | status):\n` +
         ctx.alerts.map((a) => `  ${a.id} | ${a.severity || "?"} | ${a.status || "?"}`).join("\n") +
-        `\n\nTop clusters (id | momentum | signal_count | title):\n` +
-        ctx.clusters.map((c) => `  ${c.id} | momentum=${c.velocity ?? "?"} | n=${c.signal_count} | ${c.title}`).join("\n");
+        `\n\nLargest narrative clusters (id | signal_count | title):\n` +
+        ctx.clusters.map((c) => `  ${c.id} | n=${c.signal_count} | ${c.title}`).join("\n");
 
     if (dataIsEmpty) {
         return {
@@ -85,44 +90,27 @@ export async function askNarriv({ workspaceId, question, windowHours = 24 }) {
         };
     }
 
-    const route = routeForTask("ask_narriv");
-    const start = Date.now();
-    let content = null;
-    let error = null;
-    let success = false;
-    try {
-        const client = getOpenAIClient();
-        const resp = await client.chat.completions.create({
-            model: route.model,
-            temperature: route.temperature,
-            max_tokens: route.maxTokens,
-            messages: [
-                { role: "system", content: SYSTEM_PROMPT },
-                { role: "user", content: `DATA CONTEXT:\n${dataSection}\n\nQUESTION: ${question}\n\nRespond in JSON with keys: answer (string), sources (array of {id, kind}), grounded (boolean).` },
-            ],
-        });
-        const raw = resp.choices?.[0]?.message?.content || "";
-        const parsed = parseModelJson(raw);
-        content = parsed && typeof parsed.answer === "string"
-            ? { ...parsed, sources: keepKnownSources(parsed.sources, ctx) }
-            : { answer: raw, sources: [], grounded: false };
-        success = true;
-    } catch (e) {
-        error = e?.message || String(e);
-    }
-    const latencyMs = Date.now() - start;
-    recordAiEvent({
-        provider: route.provider,
-        model: route.model,
+    const out = await runAiTask({
         task: "ask_narriv",
-        complexity: route.meta?.complexity || "complex",
-        latencyMs,
-        success,
-        error,
-    });
-    logStructured("info", "[AskNarriv]", { workspaceId, question: question.slice(0, 80), latencyMs, success, error });
-    if (error) {
-        return { grounded: false, error, route: { provider: route.provider, model: route.model } };
+        workspaceId,
+        system: SYSTEM_PROMPT,
+        user: `DATA CONTEXT:\n${dataSection}\n\nQUESTION: ${question}\n\nRespond in JSON with keys: answer (string), sources (array of {id, kind}), grounded (boolean).`,
+        json: true,
+        validate: (o) => typeof o?.answer === "string" && o.answer.trim().length > 0,
+    }, deps);
+    const meta = { model: out.servedModel || out.model || null, latencyMs: out.latencyMs ?? null, costUsd: out.costUsd ?? null };
+    logStructured("info", "[AskNarriv]", { workspaceId, question: question.slice(0, 80), ok: out.ok, error: out.error || null, model: meta.model, latencyMs: meta.latencyMs });
+    if (!out.ok) {
+        // Never surface unverified model text or raw provider errors as an answer.
+        return { grounded: false, error: ASK_ERRORS[out.error] || "The AI service could not answer this question.", code: out.error, meta };
     }
-    return { ...content, data: { signals: ctx.signals.length, alerts: ctx.alerts.length, clusters: ctx.clusters.length, windowHours } };
+    const sources = keepKnownSources(out.data.sources, ctx);
+    // Grounded only when the model says so AND at least one cited id exists in this workspace's context.
+    return {
+        answer: out.data.answer,
+        sources,
+        grounded: out.data.grounded === true && sources.length > 0,
+        meta,
+        data: { signals: ctx.signals.length, alerts: ctx.alerts.length, clusters: ctx.clusters.length, windowHours },
+    };
 }
