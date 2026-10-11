@@ -49,7 +49,8 @@ export async function listActivityLogs(req, res) {
         const todayStart = startOfDay(new Date());
 
         const [logsResult, summaryResult, todayResult] = await Promise.all([
-            applyFilters(supabase.from("audit_logs").select("*, user:users(id, name, email)", { count: "exact" }), filters)
+            // No embed: production audit_logs has no FK to users, so actors are loaded separately.
+            applyFilters(supabase.from("audit_logs").select("*", { count: "exact" }), filters)
                 .order("created_at", { ascending: false })
                 .range(skip, skip + limit - 1),
             // Distinct actors / event types over the filtered set (bounded scan).
@@ -64,6 +65,11 @@ export async function listActivityLogs(req, res) {
         }
 
         const logs = logsResult.data || [];
+        const actorIds = [...new Set(logs.map((l) => l.user_id).filter(Boolean))];
+        const { data: actors } = actorIds.length
+            ? await supabase.from("users").select("id, name, email").in("id", actorIds)
+            : { data: [] };
+        const actorById = new Map((actors || []).map((u) => [u.id, u]));
         const total = logsResult.count ?? logs.length;
         const summaryRows = summaryResult.data || [];
 
@@ -71,7 +77,7 @@ export async function listActivityLogs(req, res) {
             data: logs.map((log) => ({
                 id: log.id,
                 user_id: log.user_id,
-                user: log.user,
+                user: actorById.get(log.user_id) || null,
                 event: log.event,
                 metadata: log.metadata,
                 created_at: log.created_at,
