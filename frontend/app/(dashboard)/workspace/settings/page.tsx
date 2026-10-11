@@ -25,7 +25,6 @@ import {
   Sliders,
   Lock,
   Plus,
-  Copy,
   Check,
   Trash,
   PlusCircle,
@@ -55,13 +54,6 @@ type TeamMember = {
   tone: string;
 };
 
-function toWorkspaceSlug(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "") || "workspace";
-}
 
 function initialsFromName(name: string, fallback: string) {
   return name.split(" ").filter(Boolean).map((word) => word[0]).join("").toUpperCase().slice(0, 2) || fallback;
@@ -261,8 +253,6 @@ export default function SettingsPage() {
   const [industry, setIndustry] = useState<string | null>(null);
   const [timezone, setTimezone] = useState<string | null>(null);
   const [language, setLanguage] = useState(ts("workspaceInfo.languageId"));
-  const [workspaceUrl, setWorkspaceUrl] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   const [workspaceLogo, setWorkspaceLogo] = useState<string | null>(null);
   const activeLogo = workspaceLogo || (workspaceSettingsQuery.data?.logoUrl ? resolveBackendAssetUrl(workspaceSettingsQuery.data.logoUrl) : "/logo-h-narriv-2026.png");
   const [logoError, setLogoError] = useState("");
@@ -363,25 +353,14 @@ export default function SettingsPage() {
     time1Day: ts("time1DayAgo"),
   };
   const liveMembers = membersQuery.data ? buildMemberRows(membersQuery.data, memberLabels) : null;
-  const fallbackMembers: TeamMember[] = [
-    { name: "Testing User", email: "tu@narriv.ai", role: memberLabels.owner, status: memberLabels.statusActive, permission: memberLabels.permFull, time: memberLabels.timeNow, initials: "TU", tone: "purple" },
-    { name: "Jane Doe", email: "jane@narriv.ai", role: memberLabels.admin, status: memberLabels.statusActive, permission: memberLabels.permFull, time: memberLabels.timeYesterday, initials: "JD", tone: "blue" },
-    { name: "John Smith", email: "john@narriv.ai", role: memberLabels.analyst, status: memberLabels.statusActive, permission: memberLabels.permWrite, time: memberLabels.time2Hours, initials: "JS", tone: "emerald" },
-    { name: "Alice Cooper", email: "alice@narriv.ai", role: memberLabels.viewer, status: memberLabels.statusInactive, permission: memberLabels.permRead, time: memberLabels.time1Day, initials: "AC", tone: "slate" },
-  ];
-  const members = memberOverrides ?? liveMembers ?? fallbackMembers;
+  // Never show placeholder people: no data means loading, error or empty.
+  const members = memberOverrides ?? liveMembers ?? [];
   const workspaceNameValue = workspaceName ?? workspaceSettingsQuery.data?.brandName ?? "Narriv Intelligence";
   const industryValue = industry ?? workspaceSettingsQuery.data?.industry ?? ts("workspaceInfo.industryTechnology");
   const timezoneValue = timezone ?? workspaceSettingsQuery.data?.timezone ?? "Asia/Jakarta (GMT+7)";
-  const workspaceUrlValue = workspaceUrl ?? toWorkspaceSlug(workspaceNameValue);
   const notifEmailValue = notifEmail ?? Boolean(workspaceSettingsQuery.data?.notificationEmail ?? true);
   const notifWhatsappValue = notifWhatsapp ?? Boolean(workspaceSettingsQuery.data?.whatsappPIC);
 
-  const handleCopyUrl = () => {
-    navigator.clipboard.writeText(`narriv.ai/workspace/${workspaceUrlValue}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   const handleSaveWorkspaceInfo = (e: FormEvent) => {
     e.preventDefault();
@@ -755,31 +734,6 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div>
-              <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#68739F]">
-                {ts("workspaceInfo.labelUrl")}
-              </label>
-              <div className="relative flex rounded-lg border border-[#DDE3EF] focus-within:border-[#465FFF] focus-within:ring-2 focus-within:ring-[#465FFF]/15">
-                <span className="flex items-center bg-slate-50 px-3 text-[11px] font-black text-slate-400 select-none border-r border-[#DDE3EF]">
-                  {ts("workspaceInfo.urlPrefix")}
-                </span>
-                <input
-                  type="text"
-                  value={workspaceUrlValue}
-                  onChange={(e) => setWorkspaceUrl(e.target.value)}
-                  className="h-10 flex-1 px-3 pr-10 text-[12px] font-bold text-[#101334] bg-white rounded-r-lg focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={handleCopyUrl}
-                  className="absolute right-3 top-3 text-slate-400 hover:text-[#465FFF]"
-                  title={ts("workspaceInfo.copyUrl")}
-                >
-                  {copied ? <Check size={15} className="text-emerald-500" /> : <Copy size={15} />}
-                </button>
-              </div>
-            </div>
-
             <button
               type="submit"
               disabled={isSavingInfo}
@@ -836,7 +790,9 @@ export default function SettingsPage() {
           <div className="flex-1 overflow-x-auto rounded-[12px] border border-[#EDF1F7] bg-white">
             {membersQuery.isPending ? (
               <TableSkeleton rows={4} columns={6} className="border-0 shadow-none" />
-            ) : membersQuery.data && members.length === 0 ? (
+            ) : membersQuery.isError || membersQuery.data === null ? (
+              <DashboardErrorState title="Members could not be loaded" description="The member list is unavailable right now. No changes were made." onRetry={() => void membersQuery.refetch()} minHeight="min-h-[220px]" />
+            ) : members.length === 0 ? (
               <DashboardEmptyState title={ts("membersEmptyTitle")} description={ts("membersEmptyDesc")} icon="inbox" minHeight="min-h-[280px]" />
             ) : (
             <table className="w-full min-w-[580px] border-collapse text-left">
