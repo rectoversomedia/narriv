@@ -30,142 +30,26 @@ interface SuggestedCategory {
   id: string;
   icon: typeof TrendingUp;
   question: string;
-  response: string;
 }
+
+// Neutral starter questions (no presupposed findings); answers always come
+// from the grounded backend.
+const SUGGESTED_CATEGORIES: SuggestedCategory[] = [
+  { id: "sentiment", icon: TrendingUp, question: "How has sentiment changed this week, and what is driving it?" },
+  { id: "spike", icon: Zap, question: "Has there been an unusual spike in mentions recently? What caused it?" },
+  { id: "complaints", icon: AlertTriangle, question: "What are the most common complaints in recent signals?" },
+  { id: "competitors", icon: Users, question: "Which competitors are mentioned most, and in what context?" },
+  { id: "actions", icon: Compass, question: "Which issues need a response first, based on the evidence?" },
+  { id: "risks", icon: BarChart2, question: "Summarize the main risks in the last 7 days with sources." },
+  { id: "changes", icon: Activity, question: "What changed compared with the previous period?" },
+];
 
 // ---------------------------------------------------------------------------
 // Response templates
 // ---------------------------------------------------------------------------
 
-const SUGGESTED_CATEGORIES: SuggestedCategory[] = [
-  {
-    id: "sentiment",
-    icon: TrendingUp,
-    question: "Why is negative sentiment increasing?",
-    response: `Based on today's signals, the primary driver is increased complaints around service disruption (128 mentions, +38% vs yesterday), primarily on social media and app review platforms. The second factor is the ongoing pricing sensitivity narrative on financial forums. **3 high-severity signals have been flagged.**\n\nThe sentiment shift began approximately 18 hours ago following a viral thread on Twitter/X regarding login failures. This has since been partially addressed by your social media response, but the thread remains active with 847 impressions in the last 6 hours.`,
-  },
-  {
-    id: "spike",
-    icon: Zap,
-    question: "What caused yesterday's spike?",
-    response: `The mention spike on August 26 was driven by a viral post on Twitter/X criticizing app login failures during peak hours. The post accumulated **2,847 impressions within 4 hours** and was amplified by 3 influencers in the fintech space (combined follower count: 1.2M).\n\nThe narrative then spread to Reddit r/indonesia and two local news sites, driving an additional 1,100+ mentions. Your social media team issued a response at 14:32 WIB which helped reduce the velocity by approximately 60%. The thread has since been partially addressed.`,
-  },
-  {
-    id: "complaints",
-    icon: AlertTriangle,
-    question: "What are consumers complaining about?",
-    response: `Current top complaint themes ranked by volume:\n\n1. **App stability & login issues** — 312 mentions, +41% vs 7d avg — primarily on Twitter/X and Google Play reviews\n2. **Pricing changes** — 187 mentions, stable — concentrated on Reddit and fintech forums\n3. **Customer support response time** — 94 mentions, +22% — spread across Twitter, Facebook, and email\n4. **Data privacy concerns** — 67 mentions, +8% — triggered by a trending Reddit thread\n\nPriority action: The app stability narrative has reached alert threshold. Recommend investigating infrastructure logs and preparing a customer-facing update.`,
-  },
-  {
-    id: "competitors",
-    icon: Users,
-    question: "Which competitor is gaining momentum?",
-    response: `**Bank Jago** showed the strongest momentum this week (+18 points on share-of-voice), driven by a new community banking campaign that gained traction on Instagram and TikTok. The campaign generated 42,000+ organic engagements in 72 hours.\n\n**GoPay** maintained stable share with no significant narrative shifts.\n\n**OVO's** AI visibility increased 12% following their new QR payment feature announcement, with positive framing in 68% of relevant mentions.\n\n**Recommendation:** Monitor the Bank Jago community banking angle — it represents a positioning narrative that may attract your customer segment.`,
-  },
-  {
-    id: "actions",
-    icon: Compass,
-    question: "What should we respond to today?",
-    response: `Priority actions based on current signals:\n\n**1. Investigate app stability complaints** — 3 critical signals flagged, volume trending upward. High risk of escalation if unresolved within 24h. Assign: Engineering + Comms.\n\n**2. Monitor EV affordability narrative** — growing 180% in 48h, potential brand positioning opportunity. Emerging on TikTok and Instagram with positive sentiment framing. Assign: Marketing.\n\n**3. Respond to customer service complaint thread on Reddit** — 94 upvotes, 47 comments requesting official response. Currently unanswered. Assign: Community Manager.\n\n**4. Review Bank Jago campaign** — their momentum may be eroding share-of-voice. Assess competitive positioning response. Assign: Strategy.`,
-  },
-  {
-    id: "ai-visibility",
-    icon: Eye,
-    question: "Why is AI visibility declining?",
-    response: `Your AI Visibility Score dropped 6 points this week (68 → 62). The primary cause is reduced mention frequency in AI responses for 'best digital bank Indonesia' queries.\n\n**Platform breakdown:**\n- ChatGPT: presence dropped from 38% → 29%\n- Claude: stable at 61%\n- Gemini: your strongest platform at 68% presence\n- Perplexity: declined from 44% → 31%\n\n**Competitor comparison:** Bank Jago appeared in 42% of relevant responses vs your 31%. OVO leads with 51% in the 'mobile payment' query category.\n\n**Root cause:** Recent reduction in published content and press mentions is reducing training data availability. Recommend increasing thought leadership output and PR activity.`,
-  },
-  {
-    id: "risks",
-    icon: BarChart2,
-    question: "Summarize today's risks",
-    response: `**High Severity (2):**\n- App stability complaints — 3 critical signals, +38% volume, potential viral escalation risk\n- Pricing sensitivity narrative — growing on financial forums, could affect conversion\n\n**Medium Severity (3):**\n- AI visibility decline — 6-point drop over 7 days, competitor gaining ground\n- Support response time complaints — 94 mentions, trending upward\n- Data privacy thread on Reddit — 67 mentions, moderate risk of amplification\n\n**Low Severity (1):**\n- New competitor campaign (Bank Jago) — positioning angle worth monitoring\n\n**Systemic note:** The app stability issue is the highest-priority risk. If unresolved, expect sentiment to deteriorate further in the next 24-48h.`,
-  },
-  {
-    id: "opportunities",
-    icon: Activity,
-    question: "What opportunity are we missing?",
-    response: `**EV Affordability Narrative — Emerging Opportunity**\nThis topic is growing 180% in 48h with predominantly positive sentiment (71%). Brands mentioned positively in this context are gaining brand lift. This aligns with your existing product positioning and could represent a high-impact content opportunity.\n\n**AI Visibility Gap — Content Opportunity**\nYour presence in 'mobile payment' queries (29%) significantly lags OVO (51%). Creating targeted FAQ content, partnerships with financial publications, and increasing press mentions could address this gap.\n\n**Customer Service Praise — Amplification Opportunity**\nSupport quality positive signals are up 15% this week. Sharing these stories via social and PR could counterbalance the stability complaints and demonstrate responsiveness.\n\n**Competitor Gap — Bank Jago Community Banking**\nTheir community banking campaign is resonating. Assess whether a comparable community-focused narrative could reclaim share-of-voice in that segment.`,
-  },
-  {
-    id: "changes",
-    icon: Activity,
-    question: "What changed in the last 7 days?",
-    response: `**Volume & Sentiment Shifts (7-day comparison):**\n\n- Total mentions: 8,421 → 12,847 (+53%) — driven by app update announcement and subsequent complaints\n- Positive sentiment: 38% → 42% — improved by loyalty program reception\n- Negative sentiment: 14% → 18% — driven by stability and pricing issues\n- Neutral sentiment: 40% → 32% — polarizing coverage increased\n\n**Top Narrative Changes:**\n- App stability emerged as dominant negative narrative (was not in top 5 last week)\n- EV affordability topic entered top 10 for first time (new opportunity)\n- Privacy policy concern resurfaced (+2% mentions)\n- Customer support praise increased (+15% — positive outlier)\n\n**AI Visibility:** Score 68 → 62 (-6 points), primarily driven by reduced content output and competitor gains in 'mobile payment' queries.\n\n**Source Performance:** Twitter/X remains top source (37.5%). Reddit mention share increased from 8% to 9.6%.`,
-  },
-];
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function getKeywordResponse(question: string): SuggestedCategory | null {
-  const lower = question.toLowerCase();
-  if (lower.includes("negative") && lower.includes("sentiment") || lower.includes("negative") || lower.includes("sentiment")) {
-    return SUGGESTED_CATEGORIES.find(c => c.id === "sentiment") ?? null;
-  }
-  if (lower.includes("spike") || lower.includes("yesterday") || lower.includes("what caused")) {
-    return SUGGESTED_CATEGORIES.find(c => c.id === "spike") ?? null;
-  }
-  if (lower.includes("complain")) {
-    return SUGGESTED_CATEGORIES.find(c => c.id === "complaints") ?? null;
-  }
-  if (lower.includes("competitor") || lower.includes("momentum") || lower.includes("gaining")) {
-    return SUGGESTED_CATEGORIES.find(c => c.id === "competitors") ?? null;
-  }
-  if (lower.includes("respond") || lower.includes("action") || lower.includes("priority") || lower.includes("should we do")) {
-    return SUGGESTED_CATEGORIES.find(c => c.id === "actions") ?? null;
-  }
-  if (lower.includes("ai visibility") || lower.includes("declining") || lower.includes("visibility drop")) {
-    return SUGGESTED_CATEGORIES.find(c => c.id === "ai-visibility") ?? null;
-  }
-  if (lower.includes("risk") || lower.includes("danger") || lower.includes("threat")) {
-    return SUGGESTED_CATEGORIES.find(c => c.id === "risks") ?? null;
-  }
-  if (lower.includes("opportun") || lower.includes("missing") || lower.includes("gap")) {
-    return SUGGESTED_CATEGORIES.find(c => c.id === "opportunities") ?? null;
-  }
-  if (lower.includes("7 day") || lower.includes("7-day") || lower.includes("last 7") || lower.includes("week")) {
-    return SUGGESTED_CATEGORIES.find(c => c.id === "changes") ?? null;
-  }
-  return null;
-}
-
-function buildAssistantMessage(response: string, isDemoSession: boolean = false): Message {
-  // Try to parse **bold** metrics
-  const boldPattern = /\*\*([^*]+)\*\*/g;
-  const evidence: string[] = [];
-  const metrics: Array<{ label: string; value: string }> = [];
-  let match;
-  let cleanContent = response;
-
-  while ((match = boldPattern.exec(response)) !== null) {
-    const item = match[1];
-    if (item.includes("+") || item.includes("%") || item.includes("points") || /\d/.test(item)) {
-      metrics.push({ label: item.split("—")[0].trim(), value: item.split("—")[1]?.trim() ?? "" });
-    } else {
-      evidence.push(item);
-    }
-    cleanContent = cleanContent.replace(match[0], "");
-  }
-
-  const confidence: Confidence =
-    evidence.length >= 3 || metrics.length >= 2 ? "high" :
-    evidence.length >= 1 || metrics.length >= 1 ? "medium" : "low";
-
-  return {
-    id: crypto.randomUUID(),
-    role: "assistant",
-    content: response,
-    evidence: evidence.slice(0, 4),
-    metrics: metrics.slice(0, 3),
-    confidence,
-    links: [
-      { label: "View Signals", href: "/signals" },
-      { label: "View Alerts", href: "/alerts" },
-    ],
-    isDemo: isDemoSession,
-  };
-}
+// Canned keyword-matched answers were removed: Ask Narriv only shows answers
+// returned by the grounded backend, or an explicit error.
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -272,42 +156,37 @@ export default function AskPage() {
     (async () => {
       try {
         const { askNarriv } = await import("@/lib/intelligence-api");
-        const result = await askNarriv(trimmed, 24);
+        // 7-day evidence window (24h often holds too few signals to answer).
+        const result = await askNarriv(trimmed, 168);
         const assistantMsg: Message = {
           id: crypto.randomUUID(),
           role: "assistant",
           content: result.answer || (result.error ? `I could not answer that: ${result.error}` : "Insufficient data to answer."),
           evidence: (result.sources || []).map((s) => s.id || s.kind || "evidence"),
-          confidence: result.grounded ? "high" : "low",
+          // Grounded + cited sources is the strongest signal we have; otherwise low.
+          confidence: result.grounded && (result.sources || []).length > 0 ? "medium" : "low",
           links: [],
           isDemo: isDemoSession,
         };
         setMessages((prev) => [...prev, assistantMsg]);
       } catch (err) {
-        // Fallback to existing mock response if backend fails
-        const categoryMatch = getKeywordResponse(trimmed);
-        let assistantMsg: Message;
-        if (categoryMatch) {
-          assistantMsg = buildAssistantMessage(categoryMatch.response, isDemoSession);
-        } else {
-          const totalSignals = dashboardSummary?.kpis.total_signals ?? 0;
-          const positivePct = dashboardSummary?.kpis.positive_percentage ?? 0;
-          const narrativeCount = narratives?.data.length ?? 0;
-          const topNarrative = narratives?.data[0];
-          assistantMsg = {
-            id: crypto.randomUUID(),
-            role: "assistant",
-            content: `I could not reach the intelligence backend (${(err as Error).message || "unknown error"}). Falling back to a basic summary.\n\nYour workspace has ${totalSignals.toLocaleString()} signals (${positivePct}% positive) and ${narrativeCount} active narrative clusters.`,
-            evidence: [topNarrative?.title ?? "Service Quality Concerns"],
-            metrics: [
-              { label: "Total Signals", value: totalSignals.toLocaleString() },
-              { label: "Positive Sentiment", value: `${positivePct}%` },
-              { label: "Narrative Clusters", value: String(narrativeCount) },
-            ],
-            confidence: "low",
-            isDemo: isDemoSession,
-          };
-        }
+        // Never answer with canned or synthesized facts: state what failed instead.
+        const status = (err as { status?: number })?.status;
+        const reason =
+          status === 401 ? "Your session has expired. Please sign in again."
+          : status === 403 ? "You don't have access to this workspace's data."
+          : status === 429 ? "Too many questions in a short time. Please wait a minute and try again."
+          : status && status >= 500 ? "The intelligence service had a problem answering. Please try again shortly."
+          : "The intelligence service could not be reached. Check your connection and try again.";
+        const assistantMsg: Message = {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: `I couldn't answer this question. ${reason}\n\nNo answer was generated, so nothing here should be treated as a finding.`,
+          evidence: [],
+          confidence: "low",
+          links: [],
+          isDemo: isDemoSession,
+        };
         setMessages((prev) => [...prev, assistantMsg]);
       } finally {
         setIsTyping(false);

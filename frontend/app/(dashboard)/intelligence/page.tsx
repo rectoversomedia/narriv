@@ -143,7 +143,6 @@ type DonutDatum = { name: string; value: number; tone: Tone };
 type LifecycleKey = "emerging" | "accelerating" | "peaking" | "declining" | "dormant";
 type LifecycleSeries = Record<LifecycleKey, number[]>;
 
-const emptyLifecycleSeries = [0, 0, 0, 0, 0, 0, 0];
 
 function text(value: LocalizedText, language: "en" | "id") {
   return value[language] || value.en;
@@ -272,6 +271,8 @@ function buildNarrativeShareData(clusters: Cluster[], labels: { noData: string; 
 }
 
 function classifyLifecycle(cluster: Cluster): LifecycleKey {
+  // "new" = first observations in the last 24h with none in the previous 24h.
+  if (cluster.growth === "new") return "emerging";
   const growth = parseGrowthPercent(cluster.growth);
   const priority = text(cluster.priority, "en").toLowerCase();
   if (growth < 0) return "declining";
@@ -297,7 +298,8 @@ function buildLifecycleFromClusters(clusters: Cluster[]) {
   const series = Object.fromEntries(
     (Object.keys(counts) as LifecycleKey[]).map((key) => {
       const count = counts[key];
-      return [key, count > 0 ? [Math.max(0, count - 2), Math.max(0, count - 1), count, count + 1, count, count + 2, count] : emptyLifecycleSeries];
+      // No per-stage history is stored, so no trend line is drawn (previously synthesized from the count).
+      return [key, [] as number[]];
     })
   ) as LifecycleSeries;
 
@@ -625,8 +627,10 @@ export default function IntelligencePage() {
   const aiSummaryData = buildDynamicAiSummary(clusters, lifecycle.counts, ti, language);
   const narrativeShareGradient = buildDonutGradient(narrativeShareData);
   const totalNarratives = narrativesQuery.data?.pagination.total ?? liveNarrativeRecords.length;
-  const averageConfidence = liveNarrativeRecords.length > 0
-    ? Math.round(liveNarrativeRecords.reduce((sum, record) => sum + (Number.isFinite(record.confidence) ? record.confidence : 0), 0) / liveNarrativeRecords.length)
+  // Average only persisted confidence values; narratives without analysed members are excluded.
+  const confidenceValues = liveNarrativeRecords.map((record) => record.confidence).filter((v): v is number => typeof v === "number" && Number.isFinite(v));
+  const averageConfidence = confidenceValues.length > 0
+    ? Math.round(confidenceValues.reduce((sum, v) => sum + v, 0) / confidenceValues.length)
     : null;
   const acceleratingCount = lifecycle.counts.accelerating;
   const highPotentialCount = liveNarrativeRecords.filter((record) => record.impact.toLowerCase().includes("high")).length;
@@ -969,7 +973,7 @@ export default function IntelligencePage() {
                           <p className="mt-2 text-[27px] font-black leading-none tracking-[-0.04em] text-[#101334]">{phase.count}</p>
                           <p className="mt-2 text-[10px] font-bold leading-snug text-[#737D9F]">{ti(`lifecycle.phases.${phase.key}.desc`)}</p>
                         </div>
-                        <Sparkline values={phase.values} color={toneStyle.color} />
+                        {phase.values.length > 1 ? <Sparkline values={phase.values} color={toneStyle.color} /> : null}
                       </div>
                     );
                   })}

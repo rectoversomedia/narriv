@@ -40,6 +40,7 @@ import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useToast } from "@/components/ui/toast";
 import { getWorkspaceMembers, getWorkspaceSettings, updateWorkspaceSettings, createWorkspaceMember, deleteWorkspaceMember, changePassword, uploadWorkspaceLogo, type CreateWorkspaceMemberInput, type UpdateWorkspaceSettingsInput, type WorkspaceMemberRecord } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
+import { MonitoringKeywordsPanel } from "@/components/dashboard/monitoring-keywords-panel";
 import { SubscriptionCard } from "@/components/dashboard/SubscriptionCard";
 import { UpgradeModal } from "@/components/dashboard/UpgradeModal";
 
@@ -309,9 +310,9 @@ export default function SettingsPage() {
 
   // State: Notifications
   const [notifEmail, setNotifEmail] = useState<boolean | null>(null);
-  const [notifSlack, setNotifSlack] = useState(true);
+  const [notifSlack, setNotifSlack] = useState(false);
   const [notifWhatsapp, setNotifWhatsapp] = useState<boolean | null>(null);
-  const [notifDaily, setNotifDaily] = useState(true);
+  const [notifDaily, setNotifDaily] = useState(false);
   const [notifCritical, setNotifCritical] = useState(false);
 
   // State: AI Preferences
@@ -918,6 +919,8 @@ export default function SettingsPage() {
         </Panel>
       </div>
 
+      <MonitoringKeywordsPanel />
+
       {/* Row 2: 4-Column Settings Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         
@@ -947,7 +950,10 @@ export default function SettingsPage() {
                 <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.slackAlerts")}</span>
                 <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("notifications.slackAlertsDesc")}</span>
               </div>
-              <Switch checked={notifSlack} onChange={setNotifSlack} />
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-black text-slate-400">{ts("notAvailable")}</span>
+                <Switch checked={notifSlack} onChange={setNotifSlack} disabled />
+              </div>
             </div>
 
             <div className="flex items-center justify-between">
@@ -963,7 +969,10 @@ export default function SettingsPage() {
                 <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.dailySummary")}</span>
                 <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("notifications.dailySummaryDesc")}</span>
               </div>
-              <Switch checked={notifDaily} onChange={setNotifDaily} />
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-black text-slate-400">{ts("notAvailable")}</span>
+                <Switch checked={notifDaily} onChange={setNotifDaily} disabled />
+              </div>
             </div>
 
             <div className="flex items-center justify-between">
@@ -971,7 +980,10 @@ export default function SettingsPage() {
                 <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.criticalOnly")}</span>
                 <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("notifications.criticalOnlyDesc")}</span>
               </div>
-              <Switch checked={notifCritical} onChange={setNotifCritical} />
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-black text-slate-400">{ts("notAvailable")}</span>
+                <Switch checked={notifCritical} onChange={setNotifCritical} disabled />
+              </div>
             </div>
 
             <div className="flex items-center justify-between border-t border-slate-100 pt-3.5">
@@ -1005,12 +1017,17 @@ export default function SettingsPage() {
             </div>
           </div>
 
+          <p className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[9.5px] font-semibold text-amber-800">
+            <span className="font-black">{ts("notConfigurable")}.</span> {ts("notConfigurableDesc")}
+          </p>
+
           <div className="space-y-3.5">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-black text-[#101334]">{ts("aiPrefs.sensitivity")}</span>
               <div className="relative">
                 <select
                   value={aiSensitivity}
+                  disabled
                   onChange={(e) => setAiSensitivity(e.target.value)}
                   className="h-8 appearance-none rounded-md border border-[#DDE3EF] bg-slate-50 px-2.5 pr-7 text-[10px] font-black text-slate-700 focus:outline-none"
                 >
@@ -1027,7 +1044,7 @@ export default function SettingsPage() {
                 <span className="block text-[11px] font-black text-[#101334]">{ts("aiPrefs.autoCategorization")}</span>
                 <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("aiPrefs.autoCategorizationDesc")}</span>
               </div>
-              <Switch checked={autoCat} onChange={setAutoCat} />
+              <Switch checked={autoCat} onChange={setAutoCat} disabled />
             </div>
 
             <div className="flex items-center justify-between">
@@ -1035,7 +1052,7 @@ export default function SettingsPage() {
                 <span className="block text-[11px] font-black text-[#101334]">{ts("aiPrefs.autoSentiment")}</span>
                 <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("aiPrefs.autoSentimentDesc")}</span>
               </div>
-              <Switch checked={autoSentiment} onChange={setAutoSentiment} />
+              <Switch checked={autoSentiment} onChange={setAutoSentiment} disabled />
             </div>
 
             <div className="flex items-center justify-between">
@@ -1043,6 +1060,7 @@ export default function SettingsPage() {
               <div className="relative">
                 <select
                   value={summaryStyle}
+                  disabled
                   onChange={(e) => setSummaryStyle(e.target.value)}
                   className="h-8 appearance-none rounded-md border border-[#DDE3EF] bg-slate-50 px-2.5 pr-7 text-[10px] font-black text-slate-700 focus:outline-none"
                 >
@@ -1059,7 +1077,7 @@ export default function SettingsPage() {
                 <span className="block text-[11px] font-black text-[#101334]">{ts("aiPrefs.enableRecs")}</span>
                 <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("aiPrefs.enableRecsDesc")}</span>
               </div>
-              <Switch checked={enableRecs} onChange={setEnableRecs} />
+              <Switch checked={enableRecs} onChange={setEnableRecs} disabled />
             </div>
 
             <div className="flex items-center justify-between">
@@ -1067,7 +1085,7 @@ export default function SettingsPage() {
                 <span className="block text-[11px] font-black text-[#101334]">{ts("aiPrefs.enablePredictive")}</span>
                 <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("aiPrefs.enablePredictiveDesc")}</span>
               </div>
-              <Switch checked={enablePredictive} onChange={setEnablePredictive} />
+              <Switch checked={enablePredictive} onChange={setEnablePredictive} disabled />
             </div>
           </div>
         </Panel>
@@ -1133,6 +1151,10 @@ export default function SettingsPage() {
             </div>
           </div>
 
+          <p className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[9.5px] font-semibold text-amber-800">
+            <span className="font-black">{ts("notConfigurable")}.</span> {ts("notConfigurableDesc")}
+          </p>
+
           <div className="space-y-3.5">
             <div className="flex items-center justify-between">
               <div>
@@ -1140,10 +1162,10 @@ export default function SettingsPage() {
                 <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("security.twoFaDesc")}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="rounded-md border border-[#CDEEDD] bg-[#F1FCF6] px-2 py-0.5 text-[9px] font-black text-[#10B981]">
-                  {ts("security.active")}
+                <span className="rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-[9px] font-black text-slate-500">
+                  {ts("notAvailable")}
                 </span>
-                <Switch checked={security2fa} onChange={setSecurity2fa} />
+                <Switch checked={false} onChange={setSecurity2fa} disabled />
               </div>
             </div>
 
@@ -1155,6 +1177,7 @@ export default function SettingsPage() {
               <div className="relative">
                 <select
                   value={sessionTimeout}
+                  disabled
                   onChange={(e) => setSessionTimeout(e.target.value)}
                   className="h-8 appearance-none rounded-md border border-[#DDE3EF] bg-slate-50 px-2.5 pr-7 text-[10px] font-black text-slate-700 focus:outline-none"
                 >
@@ -1181,7 +1204,7 @@ export default function SettingsPage() {
                 )}>
                   {ipRestrict ? ts("security.active") : ts("security.inactive")}
                 </span>
-                <Switch checked={ipRestrict} onChange={setIpRestrict} />
+                <Switch checked={ipRestrict} onChange={setIpRestrict} disabled />
               </div>
             </div>
 
@@ -1208,6 +1231,7 @@ export default function SettingsPage() {
               <div className="relative">
                 <select
                   value={dataRetention}
+                  disabled
                   onChange={(e) => setDataRetention(e.target.value)}
                   className="h-8 appearance-none rounded-md border border-[#DDE3EF] bg-slate-50 px-2.5 pr-7 text-[10px] font-black text-slate-700 focus:outline-none"
                 >

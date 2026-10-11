@@ -197,6 +197,13 @@ export interface Signal {
   sentiment: string | null;
   publishedAt: string | null;
   capturedAt: string;
+  // Raw snake_case fields (always present in API rows) and evidence fields.
+  captured_at?: string;
+  published_at?: string | null;
+  url?: string | null;
+  narratives?: Array<{ id: string; title: string }>;
+  analysisStatus?: "analyzed" | "unanalyzed";
+  analysisConfidence?: number | null;
 }
 
 export interface SignalAnalysis {
@@ -838,6 +845,48 @@ export async function updateWorkspaceSettings(input: UpdateWorkspaceSettingsInpu
   } catch {
     return null;
   }
+}
+
+export interface MonitoringKeyword {
+  id: string;
+  keyword: string;
+  isActive: boolean;
+  scheduled: boolean;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+export interface MonitoringKeywordsResponse {
+  data: MonitoringKeyword[];
+  limits: { maxActive: number; scheduledPerRun: number };
+  note: string;
+  canEdit?: boolean;
+}
+
+// Keyword calls throw (with the backend error message) so the UI can show
+// duplicate / limit / permission errors instead of failing silently.
+export async function getMonitoringKeywords(): Promise<MonitoringKeywordsResponse> {
+  return apiClient<MonitoringKeywordsResponse>("/api/workspace/keywords");
+}
+
+export async function createMonitoringKeyword(keyword: string): Promise<MonitoringKeywordsResponse> {
+  return apiClient<MonitoringKeywordsResponse>("/api/workspace/keywords", {
+    method: "POST",
+    body: JSON.stringify({ keyword }),
+  });
+}
+
+export async function updateMonitoringKeyword(id: string, input: { keyword?: string; isActive?: boolean }): Promise<MonitoringKeywordsResponse> {
+  return apiClient<MonitoringKeywordsResponse>(`/api/workspace/keywords/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function deleteMonitoringKeyword(id: string): Promise<MonitoringKeywordsResponse> {
+  return apiClient<MonitoringKeywordsResponse>(`/api/workspace/keywords/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
 }
 
 export async function getWorkspaceMembers(): Promise<WorkspaceMemberRecord[] | null> {
@@ -1588,9 +1637,15 @@ export interface NarrativeRecord {
   title: string;
   description: string;
   sourceCount: number;
-  confidence: number;
+  // Average persisted analysis confidence (0-100); null when no member is analysed.
+  confidence: number | null;
+  confidenceBasis?: string;
   impact: string;
+  // "+X%" | "-X%" (last 24h vs previous 24h), "new" (no prior observations) or "—".
   velocity: string;
+  momentum?: { last24h: number; prior24h: number; changePct: number | null; label: string; basis: string };
+  firstSeen?: string | null;
+  lastSeen?: string | null;
   recommendedFocus: string;
   signalCount: number;
   sentiment: string;

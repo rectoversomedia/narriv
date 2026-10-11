@@ -6,27 +6,7 @@ import { useDeferredValue, useEffect, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { useUiStore } from "@/store/useUiStore";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  AlertTriangle,
-  ArrowRight,
-  Briefcase,
-  Check,
-  FileText,
-  Flag,
-  Filter,
-  Info,
-  Loader2,
-  RotateCw,
-  Search,
-  ShieldCheck,
-  Sparkles,
-  Star,
-  Trash2,
-  Zap,
-  CheckCircle2,
-  Download,
-  X,
-} from "lucide-react";
+import { AlertTriangle, ArrowRight, Briefcase, Check, FileText, Flag, Filter, Info, Loader2, RotateCw, Search, ShieldCheck, Sparkles, Star, Trash2, Zap, CheckCircle2, Download, X, Globe, ExternalLink } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import {
   AppStore,
@@ -42,11 +22,11 @@ import { CreateInvestigationModal } from "./components/create-investigation-moda
 import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components/create-action-plan-modal";
 import { AdvancedSearchModal, ActiveFiltersChips } from "./components/advanced-search-modal";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton } from "@/components/dashboard/dashboard-states";
-import { getDateRangeOptions, getSignals, getSources, type PaginationInfo, type Signal, getSignalsMeta, type SignalsMeta, bulkDeleteSignals, bulkAnalyzeSignals, bulkCreateAlertsFromSignals, searchSignals, fetchLatestSignals, downloadSignalsExport, type AdvancedSearchFilters, type SearchSignalsResponse } from "@/lib/api-service";
+import { getNarratives, getDateRangeOptions, getSignals, getSources, type PaginationInfo, type Signal, getSignalsMeta, type SignalsMeta, bulkDeleteSignals, bulkAnalyzeSignals, bulkCreateAlertsFromSignals, searchSignals, fetchLatestSignals, downloadSignalsExport, type AdvancedSearchFilters, type SearchSignalsResponse } from "@/lib/api-service";
 import { useAuthStore } from "@/store/useAuthStore";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
-type Sentiment = "NEGATIVE" | "POSITIVE" | "NEUTRAL" | "MIXED";
+type Sentiment = "NEGATIVE" | "POSITIVE" | "NEUTRAL" | "MIXED" | "UNANALYZED";
 type SignalFilter = "all" | "negative" | "positive" | "neutral" | "mixed";
 type SourceKey = keyof typeof sourceIcons;
 
@@ -62,7 +42,11 @@ type SignalRow = {
   time: string;
   captured: string;
   relatedNarrative: string;
-  amplification: "low" | "medium" | "high";
+  // Persisted analysis status/confidence (no derived "amplification").
+  analysisStatus: "analyzed" | "unanalyzed";
+  analysisConfidence: number | null;
+  url: string | null;
+  narrativeCount: number;
 };
 
 const signalApiLimit = 20;
@@ -79,6 +63,7 @@ const toneStyles: Record<Tone, { color: string; rgb: string; soft: string; text:
 };
 
 const sourceIcons = {
+  web: <span className="flex size-5 items-center justify-center rounded-[5px] bg-white text-slate-500"><Globe className="size-3" /></span>,
   x: (
     <span className="flex size-5 items-center justify-center rounded-[5px] bg-[#111827] text-white">
       <svg viewBox="0 0 24 24" className="size-3 fill-current" aria-hidden="true">
@@ -111,7 +96,8 @@ function sourceFromPlatform(platform: string | null): SourceKey {
   if (value.includes("play") || value.includes("android")) return "playstore";
   if (value.includes("app") || value.includes("ios")) return "appstore";
   if (value.includes("ticket") || value.includes("support")) return "ticket";
-  return "x";
+  if (value === "x" || value.includes("twitter")) return "x";
+  return "web"; // news, RSS and unknown platforms
 }
 
 function sentimentFromApi(sentiment: string | null): Sentiment {
@@ -119,31 +105,20 @@ function sentimentFromApi(sentiment: string | null): Sentiment {
   if (value.includes("positive")) return "POSITIVE";
   if (value.includes("mixed")) return "MIXED";
   if (value.includes("neutral")) return "NEUTRAL";
-  return "NEGATIVE";
+  if (value.includes("negative")) return "NEGATIVE";
+  // Missing or unrecognised sentiment is never shown as negative.
+  return "UNANALYZED";
 }
 
 function buildApiSignalRows(apiSignals: Signal[], t: (key: string) => string): SignalRow[] {
-  // Narrative cluster assignments based on sentiment and platform
-  const narrativeClusters = [
-    "Digital Banking UX Quality",
-    "EV Affordability Debate",
-    "Sustainability Claims",
-    "BNI Mobile App Stability",
-    "GoPay Ecosystem",
-    "Bank Jago Community",
-  ];
-
-  return apiSignals.map((signal, index) => {
+  return apiSignals.map((signal) => {
     const sentiment = sentimentFromApi(signal.sentiment);
     const source = sourceFromPlatform(signal.platform);
-    const sentimentTone = sentiment === "NEGATIVE" ? "red" : sentiment === "POSITIVE" ? "green" : sentiment === "NEUTRAL" ? "slate" : "purple";
+    const sentimentTone = sentiment === "NEGATIVE" ? "red" : sentiment === "POSITIVE" ? "green" : sentiment === "MIXED" ? "purple" : "slate";
     const title = signal.title || signal.content.slice(0, 72) || t("fallbackUntitled");
-
-    // Amplification based on source type
-    const platformVal = signal.platform?.toLowerCase() ?? "";
-    const amplification: "low" | "medium" | "high" =
-      platformVal.includes("news") || platformVal.includes("tiktok") ? "high" :
-      platformVal.includes("twitter") || platformVal.includes("facebook") ? "medium" : "low";
+    const capturedAt = signal.capturedAt ?? signal.captured_at ?? null;
+    const publishedAt = signal.publishedAt ?? signal.published_at ?? null;
+    const narratives = signal.narratives ?? [];
 
     return {
       id: signal.id,
@@ -154,10 +129,14 @@ function buildApiSignalRows(apiSignals: Signal[], t: (key: string) => string): S
       sourceType: signal.platform || t("fallbackLiveSource"),
       sources: [source],
       sentiment,
-      time: compactTime(signal.publishedAt || signal.capturedAt),
-      captured: compactTime(signal.capturedAt),
-      relatedNarrative: narrativeClusters[index % narrativeClusters.length],
-      amplification,
+      time: compactTime(publishedAt || capturedAt),
+      captured: compactTime(capturedAt),
+      // Only persisted narrative membership is shown (never generated).
+      relatedNarrative: narratives[0]?.title ?? "—",
+      narrativeCount: narratives.length,
+      analysisStatus: signal.analysisStatus === "analyzed" ? "analyzed" : "unanalyzed",
+      analysisConfidence: typeof signal.analysisConfidence === "number" ? signal.analysisConfidence : null,
+      url: signal.url ?? null,
     };
   });
 }
@@ -302,8 +281,9 @@ function SentimentBadge({ sentiment }: { sentiment: Sentiment }) {
     POSITIVE: "bg-[#10B981]/10 text-[#0C9B69]",
     NEUTRAL: "bg-slate-100 text-slate-600",
     MIXED: "bg-[#8B5CFF]/10 text-[#8B5CFF]",
+    UNANALYZED: "border border-dashed border-slate-300 bg-white text-slate-500",
   };
-  return <span className={cn("rounded-full px-2 py-1 text-[9.5px] font-black tracking-[0.12em]", styles[sentiment])}>{sentiment}</span>;
+  return <span className={cn("rounded-full px-2 py-1 text-[9.5px] font-black tracking-[0.12em]", styles[sentiment])}>{sentiment === "UNANALYZED" ? "UNANALYZED" : sentiment}</span>;
 }
 
 function TagBadge({ tag }: { tag: string }) {
@@ -317,15 +297,15 @@ function TagBadge({ tag }: { tag: string }) {
   return <span className={cn("rounded-full px-2 py-1 text-[9px] font-black", styles[tag] ?? "bg-slate-100 text-slate-500")}>{tag}</span>;
 }
 
-function AmplificationBadge({ level }: { level: "low" | "medium" | "high" }) {
-  const styles: Record<string, { bg: string; text: string }> = {
-    low: { bg: "bg-slate-100", text: "text-slate-500" },
-    medium: { bg: "bg-[#F59E0B]/12", text: "text-[#D97706]" },
-    high: { bg: "bg-[#EF4444]/10", text: "text-[#EF4444]" },
-  };
-  const labels: Record<string, string> = { low: "Low", medium: "Medium", high: "High" };
-  const s = styles[level];
-  return <span className={cn("rounded-full px-2 py-1 text-[9px] font-black capitalize", s.bg, s.text)}>{labels[level]}</span>;
+function AnalysisBadge({ status, confidence }: { status: "analyzed" | "unanalyzed"; confidence: number | null }) {
+  if (status !== "analyzed") {
+    return <span className="rounded-full border border-dashed border-slate-300 px-2 py-1 text-[9px] font-black text-slate-500">Pending</span>;
+  }
+  return (
+    <span className="rounded-full bg-[#465FFF]/10 px-2 py-1 text-[9px] font-black text-[#465FFF]" title="AI analysis confidence (persisted)">
+      {confidence === null ? "Analyzed" : `${Math.round(confidence * 100)}% conf.`}
+    </span>
+  );
 }
 
 function SourceIconList({ row }: { row: SignalRow }) {
@@ -481,7 +461,14 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                     <div className="flex items-start gap-3">
                       <SentimentIcon sentiment={row.sentiment} tone={row.sentimentTone} />
                       <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2"><span className="text-[12.5px] font-black leading-snug text-[#101334]">{row.title}</span></div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-[12.5px] font-black leading-snug text-[#101334]">{row.title}</span>
+                          {row.url ? (
+                            <a href={row.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-0.5 text-[10px] font-bold text-[#465FFF] hover:underline" aria-label="Open original source">
+                              Source <ExternalLink size={10} />
+                            </a>
+                          ) : null}
+                        </div>
                         <p className="mt-1 text-[11px] font-bold leading-snug text-[#68739F]">{row.desc}</p>
                         <div className="mt-2 flex flex-wrap gap-1.5">{row.tags.map((tag) => <TagBadge key={tag} tag={tag} />)}</div>
                       </div>
@@ -490,9 +477,11 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                   <td className="px-3.5 py-4 align-middle"><SourceIconList row={row} /></td>
                   <td className="px-3.5 py-4 align-middle"><SentimentBadge sentiment={row.sentiment} /></td>
                   <td className="px-3.5 py-4 align-middle">
-                    <span className="block max-w-[120px] truncate text-[10.5px] font-bold text-[#465FFF]" title={row.relatedNarrative}>{row.relatedNarrative}</span>
+                    <span className={cn("block max-w-[120px] truncate text-[10.5px] font-bold", row.narrativeCount ? "text-[#465FFF]" : "text-slate-400")} title={row.relatedNarrative}>
+                      {row.relatedNarrative}{row.narrativeCount > 1 ? ` +${row.narrativeCount - 1}` : ""}
+                    </span>
                   </td>
-                  <td className="px-3.5 py-4 align-middle"><AmplificationBadge level={row.amplification} /></td>
+                  <td className="px-3.5 py-4 align-middle"><AnalysisBadge status={row.analysisStatus} confidence={row.analysisConfidence} /></td>
                   <td className="px-3.5 py-4 align-middle"><span className="block text-[11px] font-black text-[#31406B]">{row.time}</span></td>
                   <td className="px-3.5 py-4 align-middle"><span className="block text-[11px] font-black text-[#31406B]">{row.captured}</span></td>
                   <td className="px-3.5 py-4 text-right align-middle">
@@ -843,8 +832,43 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
   );
 }
 
-function RelatedNarrativesSection() {
+/** Live workspaces: real narrative clusters only (no sample cards). */
+function LiveRelatedNarratives() {
   const t = useTranslations("Signals");
+  const q = useQuery({ queryKey: ["signals-related-narratives"], queryFn: () => getNarratives({ limit: 3 }), staleTime: 60 * 1000 });
+  const items = q.data?.data ?? [];
+  return (
+    <div className="mt-6 rounded-[14px] border border-[#DDE3EF] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.03)]">
+      <div className="mb-4 flex items-center gap-2">
+        <h3 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{t("relatedNarratives")}</h3>
+        <span title="Narrative clusters built from your workspace's signals" className="cursor-help text-[#8B95B8]"><Info size={13} /></span>
+      </div>
+      {q.isLoading ? (
+        <p className="text-[12px] font-bold text-slate-400">Loading narratives…</p>
+      ) : q.data === null ? (
+        <p className="text-[12px] font-bold text-amber-600">Narratives could not be loaded.</p>
+      ) : items.length === 0 ? (
+        <p className="text-[12px] font-bold text-slate-500">No narrative clusters yet. They form once enough related signals are ingested.</p>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-3">
+          {items.map((n) => (
+            <Link key={n.id} href="/intelligence" className="rounded-[12px] border border-[#EDF1F7] bg-[#FBFCFF] p-4 transition hover:border-[#465FFF]/30">
+              <p className="line-clamp-2 text-[13px] font-black text-[#101334]">{n.title}</p>
+              <p className="mt-2 text-[11px] font-bold text-[#68739F]">
+                {n.signalCount} signal(s) · confidence {n.confidence === null ? "—" : `${n.confidence}%`} · 24h trend {n.velocity}
+              </p>
+              <p className="mt-1 text-[10.5px] font-bold capitalize text-slate-500">{n.sentiment}</p>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RelatedNarrativesSection({ isDemo = false }: { isDemo?: boolean }) {
+  const t = useTranslations("Signals");
+  if (!isDemo) return <LiveRelatedNarratives />;
   const narratives = getMockNarrativeCards().slice(0, 3);
 
   return (
@@ -1256,7 +1280,7 @@ export default function SignalsPage() {
                     onBulkCreateAlert={handleBulkCreateAlert}
                     isBulkProcessing={isBulkProcessing}
                   />
-                  <RelatedNarrativesSection />
+                  <RelatedNarrativesSection isDemo={isDemoSession} />
                   </>
                 )}
               </>
@@ -1287,7 +1311,7 @@ export default function SignalsPage() {
             <>
               {isLiveUnavailable ? <DashboardErrorState title={tSignals("errorTitle")} description={tSignals("errorDesc")} onRetry={() => { (signalsQuery as { refetch: () => unknown }).refetch(); }} minHeight="min-h-[150px]" /> : null}
               <SignalsTable activeFilter={activeFilter} setActiveFilter={handleFilterChange} query={query} setQuery={handleQueryChange} rows={rows} footerText={footerText} pagination={signalsQuery.data?.pagination} onPageChange={setPage} isFetching={signalsQuery.isFetching} className="flex-1" tTimeRange={tTimeRange} tSignals={tSignals} onInvestigate={handleInvestigate} onGenerateActionPlan={handleGenerateActionPlan} selectedIds={selectedIds} onSelectionChange={setSelectedIds} onBulkAnalyze={handleBulkAnalyze} onBulkDelete={handleBulkDelete} onBulkCreateAlert={handleBulkCreateAlert} isBulkProcessing={isBulkProcessing} />
-              <RelatedNarrativesSection />
+              <RelatedNarrativesSection isDemo={isDemoSession} />
             </>
           )}
         </div>
