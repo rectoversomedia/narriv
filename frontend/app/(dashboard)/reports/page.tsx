@@ -34,7 +34,7 @@ import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton, formatPaginationSummary } from "@/components/dashboard/dashboard-states";
 import { getReports, getReportTemplates, createReportTemplate, updateReportTemplate, deleteReportTemplate, getReportsAnalytics, createReportExport, getReportExportStatus, downloadReportFile, getNarratives, getDashboardSummary, getReportSchedules, createReportSchedule, updateReportSchedule, deleteReportSchedule, toggleReportSchedule, generateReportFromTemplate, sendReportEmail, sendTestScheduleEmail, type PaginationInfo, type ReportRecord, type ReportsAnalyticsResponse, type NarrativeRecord, type DashboardSummary, type ReportTemplate, type ReportScheduleRecord } from "@/lib/api-service";
 import { getMockReports } from "@/lib/demo-mock-data";
-import { useAuthStore } from "@/store/useAuthStore";
+import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type ReportStatus = "READY" | "REVIEW" | "DRAFT" | "SCHEDULED" | "ARCHIVED";
@@ -945,7 +945,7 @@ export default function ReportsPage() {
   const [mounted, setMounted] = useState(false);
 
   const user = useAuthStore((state) => state.user);
-  const isDemoSession = user?.id === "56bc14ee-5f16-4134-9828-a240f3c72240" || user?.email === "demo@narriv.ai";
+  const isDemoSession = isDemoUser(user);
 
   // Custom Template State
   const [editingTemplate, setEditingTemplate] = useState<Partial<ReportTemplate> | null>(null);

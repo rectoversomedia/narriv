@@ -11,7 +11,7 @@ import { CardContent } from "@/components/ui/card";
 import { quickActions, text, type Tone } from "@/lib/mock-data";
 import { useUiStore } from "@/store/useUiStore";
 import { getMockNarratives } from "@/lib/demo-mock-data";
-import { useAuthStore } from "@/store/useAuthStore";
+import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 
 import { useQuery } from "@tanstack/react-query";
 import { fetchDashboardSummaryStrict, getDashboardSummary, getDateRangeOptions, getWorkspaceSettings, type DateRangeKey } from "@/lib/api-service";
@@ -229,7 +229,7 @@ export default function DashboardPage() {
   const [timeRange, setTimeRange] = useState<DateRangeKey>("24h");
   const [selectedAction, setSelectedAction] = useState<QuickActionKey | null>(null);
   const user = useAuthStore((state) => state.user);
-  const isDemoSession = user?.id === "56bc14ee-5f16-4134-9828-a240f3c72240" || user?.email === "demo@narriv.ai";
+  const isDemoSession = isDemoUser(user);
   const dateRange = getDateRangeOptions(timeRange);
   const quickActionContent = getQuickActionContent((key) => tDrawer(key));
 

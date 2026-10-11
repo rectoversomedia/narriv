@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { getAlerts, getActivityLogs } from "@/lib/api-service";
-import { useAuthStore } from "@/store/useAuthStore";
+import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -156,7 +156,7 @@ export default function TimelinePage() {
   const t = useTranslations();
   const [range, setRange] = useState<DateRange>("30d");
   const user = useAuthStore((state) => state.user);
-  const isDemoSession = user?.id === "56bc14ee-5f16-4134-9828-a240f3c72240" || user?.email === "demo@narriv.ai";
+  const isDemoSession = isDemoUser(user);
   const [events, setEvents] = useState<TimelineEvent[]>([]);
 
   // Load real API data: activity logs + alerts

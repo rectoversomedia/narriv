@@ -6,7 +6,7 @@ import { Send, BotMessageSquare, TrendingUp, Zap, AlertTriangle, Users, Compass,
 import { CardContent } from "@/components/ui/card";
 import { getMockNarratives } from "@/lib/demo-mock-data";
 import { getNarratives, getDashboardSummary } from "@/lib/api-service";
-import { useAuthStore } from "@/store/useAuthStore";
+import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import type { NarrativeRecord, DashboardSummary } from "@/lib/api-service";
 
 // ---------------------------------------------------------------------------
@@ -105,7 +105,7 @@ export default function AskPage() {
   const t = useTranslations("DemoApp");
   const tAsk = useTranslations("askNarriv");
   const user = useAuthStore((state) => state.user);
-  const isDemoSession = user?.id === "56bc14ee-5f16-4134-9828-a240f3c72240" || user?.email === "demo@narriv.ai";
+  const isDemoSession = isDemoUser(user);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);

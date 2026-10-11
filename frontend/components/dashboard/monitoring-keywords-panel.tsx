@@ -15,6 +15,7 @@ import {
   type MonitoringKeywordsResponse,
 } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
+import { timeAgo } from "@/lib/intelligence-api";
 
 const QUERY_KEY = ["monitoring-keywords"];
 
@@ -80,7 +81,7 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
   const keywords = keywordsQuery.data?.data ?? [];
 
   return (
-    <section className={cn("rounded-[14px] border border-[#DDE3EF] bg-white p-6 shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)}>
+    <section id="keywords" className={cn("scroll-mt-24 rounded-[14px] border border-[#DDE3EF] bg-white p-6 shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)}>
       <div className="flex items-start gap-3">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#465FFF]">
           <Search size={18} strokeWidth={2.3} />
@@ -163,19 +164,11 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
                     </form>
                   ) : (
                     <>
-                      <span className={cn("min-w-0 flex-1 truncate text-[11.5px] font-black", k.isActive ? "text-[#101334]" : "text-slate-400 line-through")}>{k.keyword}</span>
-                      <span
-                        className={cn(
-                          "rounded-md border px-2 py-0.5 text-[9px] font-black",
-                          !k.isActive
-                            ? "border-slate-200 bg-slate-100 text-slate-500"
-                            : k.scheduled
-                              ? "border-[#CDEEDD] bg-[#F1FCF6] text-[#10B981]"
-                              : "border-amber-200 bg-amber-50 text-amber-700",
-                        )}
-                      >
-                        {!k.isActive ? t("inactive") : k.scheduled ? t("scheduled") : t("queued")}
+                      <span className="min-w-0 flex-1">
+                        <span className={cn("block truncate text-[11.5px] font-black", k.isActive ? "text-[#101334]" : "text-slate-400")}>{k.keyword}</span>
+                        <LastRunLine keyword={k} t={t} />
                       </span>
+                      <KeywordStatus keyword={k} t={t} />
                       {canEdit ? (
                         <span className="flex items-center gap-1">
                           <button
@@ -231,5 +224,38 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
         }}
       />
     </section>
+  );
+}
+
+const STATUS_STYLE: Record<string, string> = {
+  active: "border-[#CDEEDD] bg-[#F1FCF6] text-[#10B981]",
+  failing: "border-rose-200 bg-rose-50 text-rose-700",
+  paused: "border-slate-200 bg-slate-100 text-slate-500",
+  awaiting_first_run: "border-sky-200 bg-sky-50 text-sky-700",
+  not_in_rotation: "border-amber-200 bg-amber-50 text-amber-700",
+};
+
+type T = ReturnType<typeof useTranslations<"Workspace.settings.keywords">>;
+
+function KeywordStatus({ keyword, t }: { keyword: MonitoringKeyword; t: T }) {
+  const status = keyword.monitoringStatus ?? (!keyword.isActive ? "paused" : keyword.scheduled ? "awaiting_first_run" : "not_in_rotation");
+  return (
+    <span className={cn("shrink-0 rounded-md border px-2 py-0.5 text-[9px] font-black", STATUS_STYLE[status])}>
+      {t(`status_${status}`)}
+    </span>
+  );
+}
+
+function LastRunLine({ keyword, t }: { keyword: MonitoringKeyword; t: T }) {
+  const run = keyword.lastRun;
+  if (!run || !keyword.isActive) return null;
+  if (run.status === "failed") {
+    return <span className="block text-[9.5px] font-semibold text-rose-600">{t("lastRunFailed", { time: timeAgo(run.at), reason: run.errorCategory || "unknown" })}</span>;
+  }
+  if (run.status === "deferred") return null;
+  return (
+    <span className="block text-[9.5px] font-semibold text-slate-500">
+      {t("lastRun", { time: timeAgo(run.at), fetched: run.fetched ?? 0, inserted: run.inserted ?? 0, duplicates: run.deduplicated ?? 0 })}
+    </span>
   );
 }

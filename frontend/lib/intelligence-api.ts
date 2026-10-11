@@ -267,6 +267,11 @@ export interface PipelineStatusPayload {
     lastRunAt: string | null;
     lastRunStatus: string | null;
     lastSuccessfulIngestionForWorkspace: string | null;
+    lastRunForWorkspace?: {
+      at: string;
+      status: string;
+      results: Array<{ keyword?: string; status?: string; fetched?: number; inserted?: number; deduplicated?: number; analyzed?: number; analysisFailed?: number; errorCategory?: string }>;
+    } | null;
     health?: {
       slotsUtc: string[];
       lastScheduledRunAt: string | null;

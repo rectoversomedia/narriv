@@ -38,7 +38,7 @@ import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/compo
 import { getNarrativeById, getNarratives, getSources, triggerClustering, type NarrativeRecord, type NarrativeDetailRecord } from "@/lib/api-service";
 import { getMockNarratives } from "@/lib/demo-mock-data";
 import { getPipelineStatus, timeAgo } from "@/lib/intelligence-api";
-import { useAuthStore } from "@/store/useAuthStore";
+import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { useUiStore } from "@/store/useUiStore";
@@ -538,7 +538,7 @@ export default function IntelligencePage() {
   };
 
   const user = useAuthStore((state) => state.user);
-  const isDemoSession = Boolean(user?.isDemo || user?.provider === "demo");
+  const isDemoSession = isDemoUser(user);
 
   const periodMenuRef = useRef<HTMLDivElement | null>(null);
   const impactMenuRef = useRef<HTMLDivElement | null>(null);

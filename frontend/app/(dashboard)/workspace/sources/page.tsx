@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState, type ComponentType, type KeyboardEvent, type ReactNode } from "react";
 import Image from "next/image";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -40,7 +41,8 @@ import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { AddSourceModal } from "@/components/dashboard/add-source-modal";
 import { bootstrapDefaultSources, getSources, updateSource, deleteSource, runBatchSourceIngestion, runSourceIngestion, getSourceHealth, getSourceCoverage, fetchLatestSignals, type SourceRecord, type SourceHealthSummary } from "@/lib/api-service";
 import { getMockSources } from "@/lib/demo-mock-data";
-import { useAuthStore } from "@/store/useAuthStore";
+import { PipelineHealthPanel } from "@/components/dashboard/pipeline-health-panel";
+import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate" | "pink" | "black" | "orange";
 
@@ -576,7 +578,7 @@ export default function SourcesPage() {
   const toastHook = useToast();
 
   const user = useAuthStore((state) => state.user);
-  const isDemoSession = user?.id === "56bc14ee-5f16-4134-9828-a240f3c72240" || user?.email === "demo@narriv.ai";
+  const isDemoSession = isDemoUser(user);
 
   const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
     if (type === "error") { toastHook.error(message); return; }
@@ -763,13 +765,14 @@ export default function SourcesPage() {
       return [source.id, source.name, source.health.health, formatSourceTime(source.health.lastSyncAt ?? undefined), tone, Database] as const;
     });
 
-  const settings = [
-    [t("settingsKeyword"), t("settingsKeywordDesc"), KeyRound, "blue"],
-    [t("settingsDedup"), t("settingsDedupDesc"), Database, "purple"],
-    [t("settingsRateLimit"), t("settingsRateLimitDesc"), Clock3, "purple"],
-    [t("settingsRetention"), t("settingsRetentionDesc"), Bell, "orange"],
-    [t("settingsWebhooks"), t("settingsWebhooksDesc"), Webhook, "purple"],
-  ] as const;
+  // Each row states its real status; only rows with a working destination are links.
+  const settings: Array<{ title: string; desc: string; Icon: LucideIcon; tone: Tone; href?: string; status: string }> = [
+    { title: t("settingsKeyword"), desc: t("settingsKeywordDesc"), Icon: KeyRound, tone: "blue", href: "/workspace/settings#keywords", status: "Manage" },
+    { title: t("settingsDedup"), desc: t("settingsDedupDesc"), Icon: Database, tone: "purple", status: "Automatic" },
+    { title: t("settingsRateLimit"), desc: t("settingsRateLimitDesc"), Icon: Clock3, tone: "purple", status: "Managed by Narriv" },
+    { title: t("settingsRetention"), desc: t("settingsRetentionDesc"), Icon: Bell, tone: "orange", status: "Not configurable yet" },
+    { title: t("settingsWebhooks"), desc: t("settingsWebhooksDesc"), Icon: Webhook, tone: "purple", href: "/workspace/integrations", status: "Manage" },
+  ];
 
   return (
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
@@ -799,6 +802,8 @@ export default function SourcesPage() {
           <button type="button" onClick={() => setIsModalOpen(true)} disabled={bootstrapMutation.isPending} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#8B5CFF] px-4 text-[13px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] transition disabled:cursor-not-allowed disabled:opacity-70 sm:w-fit"><Plus size={15} />{bootstrapMutation.isPending ? toast("bootstrapInProgress") : t("add")}</button>
         </div>
       </header>
+
+      <PipelineHealthPanel />
 
       <section className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-5">
         <MetricCard label={t("metricConnectedSources")} value={String(totalSources)} helper={t("metricActive", { count: activeSources })} icon={Database} tone="purple" />
@@ -977,7 +982,20 @@ export default function SourcesPage() {
 
           <Panel><CardContent className="p-5"><div className="mb-4 flex items-start justify-between"><div><h2 className="text-[17px] font-black text-[#101334]">{t("activity")}</h2><p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("activityDesc")}</p></div></div>{recentHealthEntries.length > 0 ? <div className="grid gap-3">{recentHealthEntries.map(([id, name, status, time, tone, Icon]) => { const TypedIcon = Icon as SourceIcon; const style = toneStyles[tone as Tone]; return <div key={id} className="flex items-center justify-between gap-3"><span className="flex min-w-0 items-center gap-3"><span className="flex size-7 items-center justify-center rounded-[7px]" style={{ color: style.color, backgroundColor: `rgba(${style.rgb}, .10)` }}><TypedIcon className="size-[15px]" /></span><span className="min-w-0"><b className="block truncate text-[12px] text-[#101334]">{name}</b><span className="text-[11px] font-semibold capitalize" style={{ color: style.color }}>{status}</span></span></span><span className="shrink-0 text-[10px] font-bold text-[#68739F]">{time}</span><Check size={13} style={{ color: style.color }} /></div>; })}</div> : <DashboardEmptyState title={toast("activity.emptyTitle")} description={toast("activity.emptyDesc")} icon="search" minHeight="min-h-[120px]" />}</CardContent></Panel>
 
-          <Panel><CardContent className="p-5"><h2 className="text-[17px] font-black text-[#101334]">{t("settings")}</h2><p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("settingsDesc")}</p><div className="mt-4 grid gap-2.5">{settings.map(([title, desc, Icon, tone]) => { const TypedIcon = Icon as LucideIcon; const style = toneStyles[tone as Tone]; return <button key={title as string} type="button" onClick={() => showToast(toast("settingsUnavailable", { title: title as string }), "error")} className="flex items-center justify-between gap-3 rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-3 text-left transition hover:border-[#CBD5E1] hover:bg-white"><span className="flex min-w-0 items-center gap-3"><span className="flex size-8 items-center justify-center rounded-[8px]" style={{ color: style.color, backgroundColor: `rgba(${style.rgb}, .10)` }}><TypedIcon size={16} /></span><span><b className="block text-[12px] text-[#101334]">{title as string}</b><span className="text-[10px] font-semibold text-[#68739F]">{desc as string}</span></span></span><ChevronDown size={14} className="-rotate-90 text-[#53608C]" /></button>; })}</div></CardContent></Panel>
+          <Panel><CardContent className="p-5"><h2 className="text-[17px] font-black text-[#101334]">{t("settings")}</h2><p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("settingsDesc")}</p><div className="mt-4 grid gap-2.5">{settings.map(({ title, desc, Icon, tone, href, status }) => {
+            const style = toneStyles[tone];
+            const body = (
+              <>
+                <span className="flex min-w-0 items-center gap-3"><span className="flex size-8 shrink-0 items-center justify-center rounded-[8px]" style={{ color: style.color, backgroundColor: `rgba(${style.rgb}, .10)` }}><Icon size={16} /></span><span><b className="block text-[12px] text-[#101334]">{title}</b><span className="text-[10px] font-semibold text-[#68739F]">{desc}</span></span></span>
+                <span className={cn("shrink-0 text-[10px] font-black", href ? "text-[#465FFF]" : "text-slate-500")}>{status}{href ? " →" : ""}</span>
+              </>
+            );
+            return href ? (
+              <Link key={title} href={href} className="flex items-center justify-between gap-3 rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-3 text-left transition hover:border-[#CBD5E1] hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/30">{body}</Link>
+            ) : (
+              <div key={title} className="flex items-center justify-between gap-3 rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-3">{body}</div>
+            );
+          })}</div></CardContent></Panel>
         </aside>
       </section>
 

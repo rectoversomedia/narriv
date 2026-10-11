@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { getMockAlerts, getMockAlertsSummary } from "@/lib/demo-mock-data";
 import { getAlerts, getAlertsSummary } from "@/lib/api-service";
 import type { Alert, AlertsSummaryResponse } from "@/lib/api-service";
-import { useAuthStore } from "@/store/useAuthStore";
+import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -248,7 +248,7 @@ function AlertCard({ alert }: { alert: AlertEntry }) {
 export default function AlertCenterPage() {
   const t = useTranslations();
   const user = useAuthStore((state) => state.user);
-  const isDemoSession = Boolean(user?.isDemo || user?.provider === "demo");
+  const isDemoSession = isDemoUser(user);
   const [alerts, setAlerts] = useState<AlertEntry[]>([]);
   const [summary, setSummary] = useState<AlertsSummaryResponse | null>(null);
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("All");

@@ -70,7 +70,7 @@ import {
   type WorkspaceMemberRecord,
 } from "@/lib/api-service";
 import { getMockAlerts, getMockAlertsSummary } from "@/lib/demo-mock-data";
-import { useAuthStore } from "@/store/useAuthStore";
+import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type AlertStatus = "New" | "Investigating" | "Escalated" | "Resolved";
@@ -1066,7 +1066,7 @@ export default function AlertsPage() {
 
   // Members and escalation data feed live alert panels plus create/edit dropdowns.
   const user = useAuthStore((state) => state.user);
-  const isDemoSession = Boolean(user?.isDemo || user?.provider === "demo");
+  const isDemoSession = isDemoUser(user);
 
   const membersQuery = useQuery({
     queryKey: ["workspace-members"],

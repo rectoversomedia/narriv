@@ -373,7 +373,8 @@ export function Topbar() {
 
       <div className="flex flex-1 items-center justify-end gap-5">
         {/* Live connection status indicator */}
-        <LiveIndicator status={sseStatus} />
+        {/* Only claim live updates while the event stream is actually connected. */}
+        {sseStatus === "connected" ? <LiveIndicator status={sseStatus} /> : null}
         <button type="button" onClick={() => startTransition(toggleLanguage)} className="hidden items-center gap-2 rounded-[8px] border border-border px-3 py-2 text-xs font-bold text-(--text-soft) transition-all duration-200 hover:border-[#465FFF] hover:text-(--text) hover:shadow-[0_0_8px_rgba(70,95,255,0.1)] active:scale-[0.98] sm:flex" aria-label="Switch language">
           <Languages size={15} />
           <span key={language} className="inline-block min-w-5 animate-in fade-in slide-in-from-bottom-1 duration-200">

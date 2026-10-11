@@ -2,12 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { useToast } from "@/components/ui/toast";
 import { useQuery } from "@tanstack/react-query";
 import {
   FileText,
-  Mail,
-  MessageSquare,
   Download,
   ChevronDown,
   AlertTriangle,
@@ -31,7 +28,10 @@ import { isDemoMode } from "@/lib/demo-mock-data";
 // Types
 // ---------------------------------------------------------------------------
 
-type DateRange = "yesterday" | "today" | "last7days" | "last30days";
+type DateRange = "today" | "last7days" | "last30days";
+
+// Trailing evidence window for the live brief.
+const WINDOW_HOURS: Record<DateRange, number> = { today: 24, last7days: 168, last30days: 720 };
 
 // ---------------------------------------------------------------------------
 // Demo data
@@ -197,8 +197,7 @@ function DateRangeSelector({
   t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
   const options: { value: DateRange; label: string }[] = [
-    { value: "yesterday", label: "Yesterday" },
-    { value: "today", label: "Today" },
+    { value: "today", label: "Last 24 Hours" },
     { value: "last7days", label: "Last 7 Days" },
     { value: "last30days", label: "Last 30 Days" },
   ];
@@ -289,10 +288,10 @@ function DeltaChip({ delta }: { delta: string }) {
 // Main Page
 // ---------------------------------------------------------------------------
 
-function LiveExecutiveBrief() {
+function LiveExecutiveBrief({ windowHours }: { windowHours: number }) {
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["brief", "live", 24],
-    queryFn: async () => (await import("@/lib/intelligence-api")).getExecutiveBrief(24),
+    queryKey: ["brief", "live", windowHours],
+    queryFn: async () => (await import("@/lib/intelligence-api")).getExecutiveBrief(windowHours),
     staleTime: 60 * 1000,
     retry: 1,
   });
@@ -412,24 +411,13 @@ function LiveBriefDetails({ data }: { data: import("@/lib/intelligence-api").Exe
 
 export default function DailyIntelligenceBriefPage() {
   const t = useTranslations("brief");
-  const { showToast } = useToast();
   const [dateRange, setDateRange] = useState<DateRange>("today");
   // Read after mount (localStorage-backed) to avoid a hydration mismatch.
   const [isDemo, setIsDemo] = useState(false);
   useEffect(() => setIsDemo(isDemoMode()), []);
 
-  const handleExport = (type: "pdf" | "email" | "whatsapp") => {
-    const labels: Record<string, string> = {
-      pdf: t("exportPDF"),
-      email: t("exportEmail"),
-      whatsapp: t("shareWhatsApp"),
-    };
-    showToast({
-      title: labels[type],
-      description: t("exportComingSoon"),
-      tone: "info",
-    });
-  };
+  // Uses the browser's print dialog (Save as PDF). Nothing is sent anywhere.
+  const handlePrint = () => window.print();
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -447,37 +435,16 @@ export default function DailyIntelligenceBriefPage() {
               <DateRangeSelector value={dateRange} onChange={setDateRange} t={t as (key: string, opts?: Record<string, unknown>) => string} />
               <div className="flex gap-2">
                 <button
-                  onClick={() => handleExport("pdf")}
+                  type="button"
+                  onClick={handlePrint}
                   className={cn(
                     "flex h-9 items-center gap-1.5 rounded-[8px] border border-slate-200 bg-white px-3",
                     "text-[13px] font-medium text-[#101334] transition-colors",
-                    "hover:bg-slate-50 active:bg-slate-100"
+                    "hover:bg-slate-50 active:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/30"
                   )}
                 >
                   <Download className="h-4 w-4 text-slate-500" strokeWidth={2} />
-                  {t("exportPDF")}
-                </button>
-                <button
-                  onClick={() => handleExport("email")}
-                  className={cn(
-                    "flex h-9 items-center gap-1.5 rounded-[8px] border border-slate-200 bg-white px-3",
-                    "text-[13px] font-medium text-[#101334] transition-colors",
-                    "hover:bg-slate-50 active:bg-slate-100"
-                  )}
-                >
-                  <Mail className="h-4 w-4 text-slate-500" strokeWidth={2} />
-                  {t("exportEmail")}
-                </button>
-                <button
-                  onClick={() => handleExport("whatsapp")}
-                  className={cn(
-                    "flex h-9 items-center gap-1.5 rounded-[8px] border border-slate-200 bg-white px-3",
-                    "text-[13px] font-medium text-[#101334] transition-colors",
-                    "hover:bg-slate-50 active:bg-slate-100"
-                  )}
-                >
-                  <MessageSquare className="h-4 w-4 text-slate-500" strokeWidth={2} />
-                  {t("shareWhatsApp")}
+                  Print / Save as PDF
                 </button>
               </div>
             </div>
@@ -486,7 +453,7 @@ export default function DailyIntelligenceBriefPage() {
       </div>
 
       {/* Live executive brief from backend intelligence API */}
-      <LiveExecutiveBrief />
+      <LiveExecutiveBrief windowHours={WINDOW_HOURS[dateRange]} />
 
       {/* Sample document: demo sandbox only. Live workspaces see the grounded brief above. */}
       {isDemo && (

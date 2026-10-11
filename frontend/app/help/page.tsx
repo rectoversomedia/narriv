@@ -208,41 +208,12 @@ function ArticlePage({ article }: { article: Article }) {
             Can't find what you're looking for? Our support team is here to help.
           </p>
           <Link
-            href="/help/contact"
+            href="/help#contact"
             className="inline-flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
           >
             Contact Support
             <ChevronRight size={14} />
           </Link>
-        </div>
-        <div className="bg-slate-50 rounded-xl p-6">
-          <h3 className="font-bold text-slate-900 mb-4">Related Articles</h3>
-          <ul className="space-y-3">
-            <li>
-              <Link
-                href="/help/article/quick-start"
-                className="text-sm text-indigo-600 hover:text-indigo-700"
-              >
-                Getting Started Guide →
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/help/article/dashboard-overview"
-                className="text-sm text-indigo-600 hover:text-indigo-700"
-              >
-                Dashboard Overview →
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/help/article/api-authentication"
-                className="text-sm text-indigo-600 hover:text-indigo-700"
-              >
-                API Authentication →
-              </Link>
-            </li>
-          </ul>
         </div>
       </div>
     </div>
@@ -519,7 +490,7 @@ export default function HelpCenterPage() {
             </section>
 
             {/* Contact Support CTA */}
-            <section className="mx-auto max-w-4xl mt-16">
+            <section id="contact" className="mx-auto max-w-4xl mt-16 scroll-mt-24">
               <div className="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl p-8 text-center text-white">
                 <MessageCircle size={40} className="mx-auto mb-4 opacity-80" />
                 <h2 className="text-2xl font-bold">Still need help?</h2>
@@ -527,13 +498,6 @@ export default function HelpCenterPage() {
                   Our support team is available Monday to Friday, 9 AM to 6 PM WIB
                 </p>
                 <div className="mt-6 flex flex-wrap justify-center gap-4">
-                  <Link
-                    href="/help/contact"
-                    className="inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 font-bold text-indigo-600 hover:bg-white/90 transition-colors"
-                  >
-                    <MessageCircle size={18} />
-                    Live Chat
-                  </Link>
                   <a
                     href="mailto:support@narriv.ai"
                     className="inline-flex items-center gap-2 rounded-lg border-2 border-white/30 px-6 py-3 font-bold text-white hover:bg-white/10 transition-colors"
@@ -673,15 +637,9 @@ export default function HelpCenterPage() {
       <footer className="border-t border-slate-200 bg-white px-6 py-8">
         <div className="mx-auto max-w-6xl flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-6 text-sm text-slate-500">
-            <Link href="/help/contact" className="hover:text-slate-900">Contact</Link>
-            <Link href="/terms" className="hover:text-slate-900">Terms</Link>
-            <Link href="/privacy" className="hover:text-slate-900">Privacy</Link>
-            <Link href="/api-docs" className="hover:text-slate-900 flex items-center gap-1">
-              API Docs
-              <ExternalLink size={12} />
-            </Link>
+            <Link href="/help#contact" className="hover:text-slate-900">Contact</Link>
           </div>
-          <p className="text-sm text-slate-400">© 2024 Narriv. All rights reserved.</p>
+          <p className="text-sm text-slate-400">© {new Date().getFullYear()} Narriv. All rights reserved.</p>
         </div>
       </footer>
     </div>

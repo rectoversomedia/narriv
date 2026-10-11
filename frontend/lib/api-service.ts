@@ -852,6 +852,8 @@ export interface MonitoringKeyword {
   scheduled: boolean;
   createdAt: string;
   updatedAt: string | null;
+  monitoringStatus?: "active" | "failing" | "paused" | "awaiting_first_run" | "not_in_rotation";
+  lastRun?: { at: string; status: string; fetched: number | null; inserted: number | null; deduplicated: number | null; errorCategory: string | null } | null;
 }
 
 export interface MonitoringKeywordsResponse {
@@ -859,6 +861,7 @@ export interface MonitoringKeywordsResponse {
   limits: { maxActive: number; scheduledPerRun: number };
   note: string;
   canEdit?: boolean;
+  runHistoryAvailable?: boolean;
 }
 
 // Keyword calls throw (with the backend error message) so the UI can show

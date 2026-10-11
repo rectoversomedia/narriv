@@ -10,7 +10,7 @@ import { DashboardEmptyState, DashboardErrorState, TableSkeleton } from "@/compo
 import { useToast } from "@/components/ui/toast";
 import { createIntegration, deleteIntegration, getIntegrations, updateIntegration, testIntegration, type IntegrationRecord } from "@/lib/api-service";
 import { getMockIntegrations } from "@/lib/demo-mock-data";
-import { useAuthStore } from "@/store/useAuthStore";
+import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
 const emptyIntegrations: IntegrationRecord[] = [];
 
@@ -66,7 +66,7 @@ export default function IntegrationsPage() {
   const [deleteTarget, setDeleteTarget] = useState<IntegrationRecord | null>(null);
 
   const user = useAuthStore((state) => state.user);
-  const isDemoSession = user?.id === "56bc14ee-5f16-4134-9828-a240f3c72240" || user?.email === "demo@narriv.ai";
+  const isDemoSession = isDemoUser(user);
 
   const t = useTranslations("Workspace.integrations");
 

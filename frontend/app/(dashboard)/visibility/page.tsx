@@ -30,7 +30,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { DashboardErrorState, MetricRowSkeleton } from "@/components/dashboard/dashboard-states";
 import { getVisibility, getVisibilitySummary, getVisibilityTrends, getWorkspaceSettings, triggerVisibilityAnalysis, type VisibilityResponse } from "@/lib/api-service";
 import { getMockVisibility, getMockVisibilitySummary, getMockVisibilityTrends } from "@/lib/demo-mock-data";
-import { useAuthStore } from "@/store/useAuthStore";
+import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { useUiStore } from "@/store/useUiStore";
 import {
   OpenAILight,
@@ -507,7 +507,7 @@ export default function VisibilityPage() {
   const dateMenuRef = useRef<HTMLDivElement | null>(null);
 
   const user = useAuthStore((state) => state.user);
-  const isDemoSession = user?.id === "56bc14ee-5f16-4134-9828-a240f3c72240" || user?.email === "demo@narriv.ai";
+  const isDemoSession = isDemoUser(user);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {

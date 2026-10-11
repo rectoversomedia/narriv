@@ -23,7 +23,7 @@ import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components
 import { AdvancedSearchModal, ActiveFiltersChips } from "./components/advanced-search-modal";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton } from "@/components/dashboard/dashboard-states";
 import { getNarratives, getDateRangeOptions, getSignals, getSources, type PaginationInfo, type Signal, getSignalsMeta, type SignalsMeta, bulkDeleteSignals, bulkAnalyzeSignals, bulkCreateAlertsFromSignals, searchSignals, fetchLatestSignals, downloadSignalsExport, type AdvancedSearchFilters, type SearchSignalsResponse } from "@/lib/api-service";
-import { useAuthStore } from "@/store/useAuthStore";
+import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Sentiment = "NEGATIVE" | "POSITIVE" | "NEUTRAL" | "MIXED" | "UNANALYZED";
@@ -920,7 +920,7 @@ export default function SignalsPage() {
   };
 
   const user = useAuthStore((state) => state.user);
-  const isDemoSession = Boolean(user?.isDemo || user?.provider === "demo");
+  const isDemoSession = isDemoUser(user);
 
   // Advanced search state
   const [advancedSearchFilters, setAdvancedSearchFilters] = useState<AdvancedSearchFilters>({});

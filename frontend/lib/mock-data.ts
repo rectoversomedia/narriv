@@ -45,6 +45,7 @@ export const navGroups = [
     label: "Insight",
     items: [
       { key: "intelligence", href: "/intelligence", icon: BarChart3 },
+      { key: "askNarriv", href: "/ask", icon: MessageCircle },
       { key: "reports", href: "/reports", icon: FileText },
       { key: "brief", href: "/brief", icon: BarChart2 },
     ],
@@ -53,6 +54,7 @@ export const navGroups = [
     key: "action",
     label: "Response",
     items: [
+      { key: "actions", href: "/action-center", icon: Sparkles },
       { key: "actionCenter", href: "/action-plans", icon: CheckCircle2 },
       { key: "cases", href: "/workspace/cases", icon: Briefcase },
     ],

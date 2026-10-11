@@ -29,7 +29,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
 import { getMockActionPlans } from "@/lib/demo-mock-data";
-import { useAuthStore } from "@/store/useAuthStore";
+import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { getActionPlanById, getActionQueue, getFeedbackAccuracy, submitActionPlanFeedback, getActionPlansMetrics, getActionPlanLearning, type ActionPlanResponse, type ActionQueueRecord, type MetaPaginatedResponse } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
 import { CreateActionPlanModal } from "./components/create-action-plan-modal";
@@ -318,7 +318,7 @@ export default function ActionPlansPage() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
   const user = useAuthStore((state) => state.user);
-  const isDemoSession = Boolean(user?.isDemo || user?.provider === "demo");
+  const isDemoSession = isDemoUser(user);
 
   useEffect(() => {
     setCurrentPage(1);

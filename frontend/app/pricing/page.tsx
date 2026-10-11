@@ -526,7 +526,7 @@ export default function PricingPage() {
               <ArrowRight size={18} />
             </Link>
             <Link
-              href="/contact"
+              href="/help#contact"
               className="inline-flex items-center gap-2 rounded-xl border-2 border-white/30 px-8 py-4 text-base font-bold text-white hover:bg-white/10 transition"
             >
               <Headphones size={18} />
@@ -544,9 +544,7 @@ export default function PricingPage() {
             <span className="text-xl font-bold text-slate-900">Narriv</span>
           </div>
           <div className="flex items-center gap-8 text-sm text-slate-500">
-            <Link href="/terms" className="hover:text-slate-900">{t("terms")}</Link>
-            <Link href="/privacy" className="hover:text-slate-900">{t("privacy")}</Link>
-            <Link href="/contact" className="hover:text-slate-900">{t("contact")}</Link>
+            <Link href="/help#contact" className="hover:text-slate-900">{t("contact")}</Link>
           </div>
           <p className="text-sm text-slate-400">© {new Date().getFullYear()} Narriv. All rights reserved.</p>
         </div>
