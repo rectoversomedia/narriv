@@ -11,7 +11,11 @@
     "build": "npm run build --workspace=frontend",
     "dev:backend": "npm run dev --workspace=backend",
     "start:backend": "npm run start --workspace=backend",
-    "e2e:sandbox": "playwright test -c e2e-sandbox/playwright.config.mjs"
+    "e2e:sandbox": "playwright test -c e2e-sandbox/playwright.config.mjs",
+    "test:backend": "npm test --workspace=backend -- --forceExit",
+    "eval:intelligence": "node backend/eval/intelligence-eval.mjs --compare",
+    "check:frontend": "npm run lint --workspace=frontend && tsc -p frontend --noEmit && npm run build --workspace=frontend",
+    "check": "npm run test:backend && npm run eval:intelligence && npm run check:frontend && npm run e2e:sandbox"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

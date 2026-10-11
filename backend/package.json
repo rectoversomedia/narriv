@@ -18,7 +18,7 @@
     "build": "tsc",
     "build:bundle": "node build.mjs",
     "build:watch": "tsc --watch",
-    "test": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test": "cross-env NODE_ENV=test node --experimental-vm-modules scripts/run-jest.mjs",
     "load:smoke": "node tests/load/run-k6.js smoke",
     "load:baseline": "node tests/load/run-k6.js baseline",
     "load:stress": "node tests/load/run-k6.js stress",

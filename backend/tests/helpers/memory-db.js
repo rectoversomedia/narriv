@@ -13,7 +13,7 @@ import crypto from 'crypto';
 const isNullish = (v) => v === null || v === undefined || v === 'null';
 
 // Foreign-key column names that do not follow `<singular table>_id`.
-const FK_ALIASES = { narrative_clusters: ['cluster_id'] };
+const FK_ALIASES = { narrative_clusters: ['cluster_id'], user_profiles: ['user_id'] };
 const singular = (t) => t.replace(/s$/, '');
 const fkCandidates = (t) => [`${singular(t)}_id`, ...(FK_ALIASES[t] || [])];
 

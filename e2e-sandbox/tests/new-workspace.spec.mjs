@@ -36,3 +36,22 @@ test("unknown records show not-found states, not crashes", async ({ browser }) =
   expect(s.pageErrors).toEqual([]);
   await s.context.close();
 });
+
+test("legal pages are public, clearly marked drafts and not indexed", async ({ page }) => {
+  for (const [path, title] of [["/terms", "Terms of Service"], ["/privacy", "Privacy Policy"]]) {
+    await page.goto(path);
+    await expect(page.getByRole("heading", { name: title })).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator("[role=note]")).toContainText("DRAFT — not in effect");
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+  }
+});
+
+test("settings never shows placeholder team members", async ({ browser }) => {
+  const s = await signIn(browser, "owner");
+  await s.page.goto("/workspace/settings");
+  await expect(s.page.locator("body")).toContainText("Sandbox Analyst", { timeout: 90_000 });
+  for (const fake of ["Jane Doe", "John Smith", "Alice Cooper", "Testing User", "narriv.ai/workspace"]) {
+    await expect(s.page.locator("body")).not.toContainText(fake);
+  }
+  await s.context.close();
+});

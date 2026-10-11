@@ -28,6 +28,11 @@ export function seedData(now = Date.now()) {
       { id: OWNER_EMPTY, email: "new@sandbox.test", name: "New Customer" },
       { id: FOREIGN_OWNER, email: "other@sandbox.test", name: "Other Tenant" },
     ],
+    user_profiles: [
+      { id: OWNER, email: "owner@sandbox.test", name: "Sandbox Owner" },
+      { id: ANALYST, email: "analyst@sandbox.test", name: "Sandbox Analyst" },
+      { id: OWNER_EMPTY, email: "new@sandbox.test", name: "New Customer" },
+    ],
     workspaces: [
       { id: WS, name: "Sandbox Workspace", onboarding_completed: true, created_at: iso(500) },
       { id: WS_EMPTY, name: "New Workspace", onboarding_completed: true, created_at: iso(1) },
