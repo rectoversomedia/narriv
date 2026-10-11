@@ -145,6 +145,19 @@ describe('narrative detail evidence', () => {
   });
 });
 
+describe('reputation without observations', () => {
+  it('returns no score (not a 50/100 baseline) and the brief says so', async () => {
+    seed();
+    const { computeReputationIntelligence } = await import('../src/lib/reputation-intelligence.js');
+    const { generateExecutiveBrief } = await import('../src/lib/executive-briefing.js');
+    const rep = await computeReputationIntelligence({ workspaceId: WS, windowHours: 24 });
+    expect(rep).toMatchObject({ reputationScore: null, reputationBand: 'insufficient_data' });
+    const brief = await generateExecutiveBrief({ workspaceId: WS, windowHours: 24 });
+    expect(JSON.stringify(brief)).toContain('Reputation: not enough data in this window.');
+    expect(JSON.stringify(brief)).not.toMatch(/\(50\/100\)/);
+  });
+});
+
 describe('signal summary metrics', () => {
   it('counts only POSITIVE signals as positive (neutral and unanalyzed are excluded)', async () => {
     seed();
@@ -268,6 +281,18 @@ describe('monitoring keywords', () => {
     expect(by['Brand new']).toMatchObject({ monitoringStatus: 'awaiting_first_run', lastRun: null }); // other workspace's run is not used
     expect(by.Fourth.monitoringStatus).toBe('not_in_rotation');
     expect(by.Paused.monitoringStatus).toBe('paused');
+  });
+
+  it("marks as scheduled exactly the keywords the scheduler will ingest (paused excluded)", async () => {
+    const { buildWorkList } = await import('../src/modules/ingestion/scheduled-ingestion.js');
+    const kw = (n, active, t) => ({ id: `00000000-0000-4000-8000-0000000001${String(n).padStart(2, '0')}`, workspace_id: WS, keyword: `kw-${n}`, is_active: active, created_at: `2026-01-01T00:00:${t}Z` });
+    db.table('monitoring_keywords').push(kw(1, true, '01'), kw(2, false, '02'), kw(3, true, '03'), kw(4, true, '04'), kw(5, true, '05'));
+    const res = await request(app).get(`/workspace/keywords?workspaceId=${WS}`).set(as(OWNER));
+    const scheduled = res.body.data.filter((k) => k.scheduled).map((k) => k.keyword);
+    const activeRows = db.table('monitoring_keywords').filter((k) => k.is_active).sort((a, b) => a.created_at.localeCompare(b.created_at));
+    const work = buildWorkList(activeRows).filter((w) => w.workspaceId === WS).map((w) => w.keyword);
+    expect(scheduled).toEqual(['kw-1', 'kw-3', 'kw-4']);
+    expect(work).toEqual(scheduled);
   });
 
   it('enforces the active keyword limit', async () => {

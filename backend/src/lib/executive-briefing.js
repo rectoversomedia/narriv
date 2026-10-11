@@ -29,7 +29,7 @@ export async function generateExecutiveBrief({ workspaceId, windowHours = 24 }) 
     const topEntity = entities.entities?.[0]?.entity || null;
     const topEmergent = narrative.inferences.find((i) => i.kind === "emerging_narratives");
     const repBand = reputation.reputationBand || "neutral";
-    const repScore = reputation.reputationScore ?? 50;
+    const repScore = typeof reputation.reputationScore === "number" ? reputation.reputationScore : null;
 
     const recs = deriveRecommendations({
         riskScore: biggestRisk,
@@ -76,7 +76,7 @@ export async function generateExecutiveBrief({ workspaceId, windowHours = 24 }) 
             reputation: {
                 score: repScore,
                 band: repBand,
-                summary: `Reputation: ${repBand} (${repScore}/100).`,
+                summary: repScore === null ? "Reputation: not enough data in this window." : `Reputation: ${repBand} (${repScore}/100).`,
             },
             recommendedActions: recs.recommendations.slice(0, 5),
             whatToWatchNext: predictions.signals.slice(0, 3),

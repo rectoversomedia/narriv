@@ -119,8 +119,8 @@ export interface ReputationIntelligencePayload {
   status: string;
   generatedAt: string;
   windowHours: number;
-  reputationScore: number;
-  reputationBand: "strong" | "stable" | "at_risk" | "critical" | "neutral";
+  reputationScore: number | null;
+  reputationBand: "strong" | "stable" | "at_risk" | "critical" | "neutral" | "insufficient_data";
   facts: IntelligenceFact[];
   inferences: IntelligenceInference[];
   evidence: IntelligenceEvidence[];

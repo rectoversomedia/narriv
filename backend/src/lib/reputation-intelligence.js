@@ -62,12 +62,13 @@ export async function computeReputationIntelligence({ workspaceId, windowHours =
             label: "reputation_intelligence",
             generatedAt: new Date().toISOString(),
             windowHours,
-            reputationScore: 50,
-            reputationBand: "neutral",
+            // No observations: no score (never a default baseline).
+            reputationScore: null,
+            reputationBand: "insufficient_data",
             facts,
             inferences,
             evidence,
-            note: "No signals in the window — reputation is at neutral baseline.",
+            note: "No signals in the window, so reputation cannot be assessed.",
         };
     }
 

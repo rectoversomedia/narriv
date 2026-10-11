@@ -34,6 +34,7 @@ const REP_LABEL: Record<string, { label: string; tone: string }> = {
   at_risk: { label: "At risk", tone: "text-amber-700 bg-amber-50 border-amber-200" },
   critical: { label: "Critical", tone: "text-red-700 bg-red-50 border-red-200" },
   neutral: { label: "Neutral", tone: "text-slate-600 bg-slate-50 border-slate-200" },
+  insufficient_data: { label: "Not enough data", tone: "text-slate-500 bg-white border-dashed border-slate-300" },
 };
 
 function Pill({ tone, children }: { tone: string; children: React.ReactNode }) {
@@ -115,7 +116,7 @@ export function TodaysIntelligenceStrip({ windowHours = 24 }: { windowHours?: nu
 
   const repBand = (reputation.data?.reputationBand as string) || "neutral";
   const repPill = REP_LABEL[repBand] || REP_LABEL.neutral;
-  const repScore = reputation.data?.reputationScore ?? 50;
+  const repScore = typeof reputation.data?.reputationScore === "number" ? reputation.data.reputationScore : null;
 
   const grounded = brief.data?.grounded;
   const whatChanged = brief.data?.sections?.whatChanged?.summary;
@@ -142,8 +143,8 @@ export function TodaysIntelligenceStrip({ windowHours = 24 }: { windowHours?: nu
       <div className="rounded-xl border border-slate-200 bg-white p-4">
         <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Reputation</div>
         <div className="mt-1.5 flex items-baseline gap-2">
-          <span className="text-[28px] font-bold leading-none text-slate-900">{repScore}</span>
-          <span className="text-[12px] text-slate-500">/100</span>
+          <span className="text-[28px] font-bold leading-none text-slate-900">{repScore ?? "—"}</span>
+          {repScore !== null ? <span className="text-[12px] text-slate-500">/100</span> : null}
         </div>
         <div className="mt-2">
           <Pill tone={repPill.tone}>{repPill.label}</Pill>
