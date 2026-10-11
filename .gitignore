@@ -29,3 +29,7 @@ coverage/
 *.tsbuildinfo
 vercel_dist/
 supabase/.temp/
+
+# Playwright output (sandbox e2e)
+test-results/
+playwright-report/

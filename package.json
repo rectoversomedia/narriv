@@ -10,7 +10,8 @@
     "dev": "npm run dev --workspace=frontend",
     "build": "npm run build --workspace=frontend",
     "dev:backend": "npm run dev --workspace=backend",
-    "start:backend": "npm run start --workspace=backend"
+    "start:backend": "npm run start --workspace=backend",
+    "e2e:sandbox": "playwright test -c e2e-sandbox/playwright.config.mjs"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
