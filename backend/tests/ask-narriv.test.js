@@ -66,4 +66,20 @@ describe('askNarriv', () => {
     const out = dedupeClustersByTitle([{ id: 'a', title: 'Election Impact', signal_count: 3 }, { id: 'b', title: ' election impact', signal_count: 9 }, { id: 'c', title: 'Other', signal_count: 1 }]);
     expect(out.map((c) => c.id)).toEqual(['b', 'c']);
   });
+
+  it('offers the model only clusters with linked evidence, ranked by linked signals', async () => {
+    const now = new Date().toISOString();
+    db.table('signals').push({ id: 'sig-a', workspace_id: WS, title: 'A', sentiment: 'NEGATIVE', captured_at: now });
+    db.table('narrative_clusters').push(
+      { id: 'cl-seeded', workspace_id: WS, title: 'Seeded fixture', signal_count: 24, updated_at: now },
+      { id: 'cl-real', workspace_id: WS, title: 'Real narrative', signal_count: 1, updated_at: now },
+    );
+    db.table('narrative_cluster_signals').push({ cluster_id: 'cl-real', signal_id: 'sig-a' });
+    const openai = openaiReturning(JSON.stringify({ answer: 'ok', grounded: true, sources: [{ id: 'cl-real', kind: 'cluster' }] }));
+    const r = await askNarriv({ workspaceId: WS, question: 'q', windowHours: 168 }, { openai, checkBudget: async () => ({ allowed: true }), recordUsage: async () => {} });
+    const prompt = openai.chat.completions.create.mock.calls[0][0].messages.map((m) => m.content).join('\n');
+    expect(prompt).toContain('cl-real | n=1 | Real narrative');
+    expect(prompt).not.toContain('cl-seeded');
+    expect(r.sources).toEqual([{ id: 'cl-real', kind: 'cluster' }]);
+  });
 });

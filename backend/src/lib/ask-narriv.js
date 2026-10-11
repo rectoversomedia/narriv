@@ -33,7 +33,14 @@ async function gatherContext(workspaceId, windowHours) {
     const [signals, alerts, clusters] = await Promise.all([
         baseSupabaseAdmin.from("signals").select("id, sentiment, platform, captured_at, title").eq("workspace_id", workspaceId).gte("captured_at", sinceIso).order("captured_at", { ascending: false }).limit(50).then((r) => r.data || []),
         baseSupabaseAdmin.from("alerts").select("id, severity, status, created_at").eq("workspace_id", workspaceId).gte("created_at", sinceIso).limit(20).then((r) => r.data || []),
-        baseSupabaseAdmin.from("narrative_clusters").select("id, title, signal_count, sentiment, updated_at").eq("workspace_id", workspaceId).order("signal_count", { ascending: false, nullsFirst: false }).limit(10).then((r) => r.data || []),
+        // Linked member counts, not the stored counter: clusters without linked
+        // signals have no evidence and are not offered to the model.
+        baseSupabaseAdmin.from("narrative_clusters").select("id, title, sentiment, updated_at, narrative_cluster_signals(signal_id)").eq("workspace_id", workspaceId).order("updated_at", { ascending: false, nullsFirst: false }).limit(50)
+            .then((r) => (r.data || [])
+                .map(({ narrative_cluster_signals: links, ...c }) => ({ ...c, signal_count: (links || []).length }))
+                .filter((c) => c.signal_count > 0)
+                .sort((a, b) => b.signal_count - a.signal_count)
+                .slice(0, 10)),
     ]);
     return { signals, alerts, clusters: dedupeClustersByTitle(clusters), sinceIso, windowHours };
 }

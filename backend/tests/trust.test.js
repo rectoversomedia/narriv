@@ -64,6 +64,11 @@ describe('narrative items (no fabricated confidence or growth)', () => {
     expect(item.confidenceBasis).toMatch(/no analysed/);
   });
 
+  it('reports the linked signal count, not a stored counter without evidence', () => {
+    const item = toNarrativeItem({ id: 'c4', title: 'Seeded', signal_count: 24, narrative_cluster_signals: [] }, now);
+    expect(item).toMatchObject({ signalCount: 0, storedSignalCount: 24, hasEvidence: false });
+  });
+
   it('does not invent growth without observations', () => {
     const item = toNarrativeItem({ id: 'c3', title: 'T', narrative_cluster_signals: [] }, now);
     expect(item.velocity).toBe('—');

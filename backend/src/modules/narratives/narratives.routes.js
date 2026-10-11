@@ -46,7 +46,11 @@ export function toNarrativeItem(cluster, now = Date.now()) {
         firstSeen,
         lastSeen,
         recommendedFocus: cluster.main_narrative || cluster.description || "Prioritize stakeholder messaging and monitor escalation.",
-        signalCount: cluster.signal_count,
+        // Count only signals actually linked to the narrative; the stored counter can
+        // disagree (e.g. seeded clusters with no members) and is reported separately.
+        signalCount: Array.isArray(cluster.narrative_cluster_signals) ? signals.length : (cluster.signal_count ?? 0),
+        storedSignalCount: cluster.signal_count ?? null,
+        hasEvidence: signals.length > 0,
         memberSignals: signals.length,
         sentiment: cluster.sentiment || "neutral",
     };
