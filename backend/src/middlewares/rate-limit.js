@@ -18,9 +18,12 @@ export function rateLimit(options = {}) {
         max = 10,
         message = "Too many requests, please try again later",
         keyGenerator = (req) => req.user?.id || req.ip || "unknown",
-        prefix = "default",
+        prefix: explicitPrefix,
         failClosed = false, // When true, blocks requests if rate limiting fails
     } = options;
+    // Limiters without an explicit prefix must not share a counter with
+    // limiters that have a different budget (they used to share "default").
+    const prefix = explicitPrefix || `default-${max}-${windowMs}`;
 
     return async (req, res, next) => {
         const key = `${prefix}:${keyGenerator(req)}`;
