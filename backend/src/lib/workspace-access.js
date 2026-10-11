@@ -108,3 +108,61 @@ export const resolveScopedWorkspaceIds = async (userId, requestedWorkspaceId) =>
   if (allowedWorkspaceIds.includes(targetId)) return [targetId];
   return [];
 };
+
+// ---------------------------------------------------------------------------
+// Role-based access control (server-side). Roles in use: owner, admin, analyst.
+// Demo sessions have no membership row and therefore no management role.
+// ---------------------------------------------------------------------------
+
+export const MANAGER_ROLES = ["owner", "admin"];
+
+/** The caller's role in a workspace, or null when not a member. */
+export const getWorkspaceRole = async (userId, workspaceId) => {
+  if (!userId || !workspaceId || String(userId).startsWith("demo")) return null;
+  const { data, error } = await supabase
+    .from("workspace_members")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("workspace_id", workspaceId)
+    .limit(1);
+  if (error) {
+    console.error("Error resolving workspace role:", error);
+    return null;
+  }
+  return data?.[0]?.role || null;
+};
+
+export const workspaceHasOwner = async (workspaceId) => {
+  const { data } = await supabase
+    .from("workspace_members")
+    .select("id")
+    .eq("workspace_id", workspaceId)
+    .eq("role", "owner")
+    .limit(2);
+  return (data || []).length;
+};
+
+/**
+ * Express middleware: resolve the target workspace from body/query and require
+ * one of `allowedRoles`. Sets req.workspaceRole and req.scopedWorkspaceId.
+ */
+export function requireWorkspaceRole(allowedRoles) {
+  return async (req, res, next) => {
+    try {
+      const requested = req.body?.workspaceId ?? req.query?.workspaceId ?? null;
+      const workspaceId = await resolveWorkspaceIdForUser(req.user?.id, requested);
+      if (!workspaceId) {
+        return res.status(403).json({ error: "Workspace access denied", code: "WORKSPACE_ACCESS_DENIED" });
+      }
+      const role = await getWorkspaceRole(req.user?.id, workspaceId);
+      if (!role || !allowedRoles.includes(role)) {
+        return res.status(403).json({ error: "You do not have permission to perform this action.", code: "INSUFFICIENT_ROLE" });
+      }
+      req.workspaceRole = role;
+      req.scopedWorkspaceId = workspaceId;
+      return next();
+    } catch (err) {
+      return next(err);
+    }
+  };
+}

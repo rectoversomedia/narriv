@@ -1,7 +1,7 @@
 import supabase from "../../lib/supabase.js";
 import { badRequest, forbidden, internalError, notFound } from "../../lib/api-error.js";
 import { recordAuditLog } from "../../lib/audit.js";
-import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
+import { workspaceHasOwner, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { logStructured } from "../../lib/logger.js";
 
 function toSafeDefaults(workspaceId) {
@@ -190,6 +190,10 @@ export async function createWorkspaceMember(req, res) {
         if (!scopedWorkspaceId) {
             return forbidden(res, "Workspace access denied", "WORKSPACE_ACCESS_DENIED");
         }
+        // Only an owner may grant the owner role (admins cannot escalate).
+        if (role === "owner" && req.workspaceRole !== "owner") {
+            return forbidden(res, "Only an owner can grant the owner role.", "INSUFFICIENT_ROLE");
+        }
 
         const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : null;
 
@@ -272,7 +276,7 @@ export async function deleteWorkspaceMember(req, res) {
 
         const { data: member, error: findError } = await supabase
             .from("workspace_members")
-            .select("id")
+            .select("id, role")
             .eq("id", req.params.id)
             .eq("workspace_id", scopedWorkspaceId)
             .maybeSingle();
@@ -283,6 +287,14 @@ export async function deleteWorkspaceMember(req, res) {
 
         if (!member) {
             return notFound(res, "Workspace member not found", "WORKSPACE_MEMBER_NOT_FOUND");
+        }
+        if (member.role === "owner") {
+            if (req.workspaceRole !== "owner") {
+                return forbidden(res, "Only an owner can remove an owner.", "INSUFFICIENT_ROLE");
+            }
+            if ((await workspaceHasOwner(scopedWorkspaceId)) <= 1) {
+                return res.status(409).json({ error: "A workspace must keep at least one owner.", code: "LAST_OWNER" });
+            }
         }
 
         const { error: deleteError } = await supabase
@@ -308,6 +320,10 @@ export async function deleteWorkspace(req, res) {
         const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
         if (!scopedWorkspaceId) {
             return forbidden(res, "Workspace access denied", "WORKSPACE_ACCESS_DENIED");
+        }
+        // Owners may delete; admins only when the workspace has no owner.
+        if (req.workspaceRole !== "owner" && (await workspaceHasOwner(scopedWorkspaceId)) > 0) {
+            return forbidden(res, "Only an owner can delete this workspace.", "INSUFFICIENT_ROLE");
         }
 
         // Count tenant data across multiple tables

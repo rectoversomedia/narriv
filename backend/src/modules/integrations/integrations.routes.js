@@ -10,6 +10,7 @@ import {
     testIntegration,
 } from "./integrations.controller.js";
 import { wrapAsync } from "../../lib/sentry.js";
+import { requireWorkspaceRole, MANAGER_ROLES } from "../../lib/workspace-access.js";
 import {
     integrationsQuerySchema,
     createIntegrationBodySchema,
@@ -23,7 +24,7 @@ router.use(verifyToken);
 
 router.get("/", validateRequest({ query: integrationsQuerySchema }), listIntegrations);
 router.get("/:id", validateRequest({ params: updateIntegrationParamsSchema, query: integrationsQuerySchema }), getIntegration);
-router.post("/", validateRequest({ body: createIntegrationBodySchema }), createIntegration);
+router.post("/", validateRequest({ body: createIntegrationBodySchema }), requireWorkspaceRole(MANAGER_ROLES), createIntegration);
 router.post(
     "/:id/test",
     validateRequest({ params: updateIntegrationParamsSchema }),
@@ -32,11 +33,13 @@ router.post(
 router.patch(
     "/:id",
     validateRequest({ params: updateIntegrationParamsSchema, body: updateIntegrationBodySchema }),
+    requireWorkspaceRole(MANAGER_ROLES),
     updateIntegration
 );
 router.delete(
     "/:id",
     validateRequest({ params: deleteIntegrationParamsSchema, query: integrationsQuerySchema }),
+    requireWorkspaceRole(MANAGER_ROLES),
     deleteIntegration
 );
 

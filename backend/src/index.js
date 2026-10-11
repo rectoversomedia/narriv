@@ -35,6 +35,7 @@ import subscriptionsRoutes from "./modules/subscriptions/subscriptions.routes.js
 import cronRoutes from "./modules/cron/cron.routes.js";
 import migrateRoutes from "./modules/migrate/migrate.routes.js";
 import pipelineRoutes from "./modules/pipeline/pipeline.routes.js";
+import keywordsRoutes from "./modules/keywords/keywords.routes.js";
 
 // Import Libs
 import { scheduleAlertDetection, scheduleAlertEscalation, scheduleVisibilityScans } from "./lib/queue.js";
@@ -183,6 +184,7 @@ app.use("/reports", rateLimit(RATE_LIMITS.export), apiSecurityHeaders, reportsRo
 app.use("/action-plans", actionPlansRoutes);
 app.use("/workspace", sensitiveDataHeaders, workspaceSettingsRoutes);
 app.use("/workspace/activity", activityRoutes);
+app.use("/workspace/keywords", rateLimit(RATE_LIMITS.api_default), keywordsRoutes);
 app.use("/onboarding", onboardingRoutes);
 app.use("/workspace/cases", casesRoutes);
 app.use("/workspace/integrations", integrationsRoutes);

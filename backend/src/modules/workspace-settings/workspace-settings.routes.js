@@ -28,24 +28,26 @@ import {
 import { uploadWorkspaceLogo } from "./workspace-logo.controller.js";
 import { uploadLogoBodySchema } from "./workspace-logo.schema.js";
 import { getTokenUsageSummary } from "../../lib/token-tracking.js";
-import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
+import { resolveWorkspaceIdForUser, requireWorkspaceRole, MANAGER_ROLES } from "../../lib/workspace-access.js";
 import { wrapAsync } from "../../lib/sentry.js";
 
 const router = express.Router();
 router.use(verifyToken);
 
 router.get("/settings", validateRequest({ query: workspaceSettingsQuerySchema }), getWorkspaceSettings);
-router.patch("/settings", validateRequest({ body: updateWorkspaceSettingsBodySchema }), updateWorkspaceSettings);
+router.patch("/settings", validateRequest({ body: updateWorkspaceSettingsBodySchema }), requireWorkspaceRole(MANAGER_ROLES), updateWorkspaceSettings);
 router.get("/members", validateRequest({ query: workspaceMembersQuerySchema }), listWorkspaceMembers);
-router.post("/members", validateRequest({ body: createWorkspaceMemberBodySchema }), createWorkspaceMember);
+router.post("/members", validateRequest({ body: createWorkspaceMemberBodySchema }), requireWorkspaceRole(MANAGER_ROLES), createWorkspaceMember);
 router.delete(
     "/members/:id",
     validateRequest({ params: deleteWorkspaceMemberParamsSchema, query: workspaceMembersQuerySchema }),
+    requireWorkspaceRole(MANAGER_ROLES),
     deleteWorkspaceMember
 );
 router.delete(
     "/",
     validateRequest({ body: deleteWorkspaceBodySchema }),
+    requireWorkspaceRole(MANAGER_ROLES),
     deleteWorkspace
 );
 
@@ -58,6 +60,7 @@ router.get(
 router.patch(
     "/notification-settings",
     validateRequest({ body: updateNotificationSettingsBodySchema }),
+    requireWorkspaceRole(MANAGER_ROLES),
     updateNotificationSettings
 );
 
@@ -65,6 +68,7 @@ router.patch(
 router.post(
     "/logo",
     validateRequest({ body: uploadLogoBodySchema }),
+    requireWorkspaceRole(MANAGER_ROLES),
     uploadWorkspaceLogo
 );
 
