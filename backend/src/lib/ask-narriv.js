@@ -35,7 +35,21 @@ async function gatherContext(workspaceId, windowHours) {
         baseSupabaseAdmin.from("alerts").select("id, severity, status, created_at").eq("workspace_id", workspaceId).gte("created_at", sinceIso).limit(20).then((r) => r.data || []),
         baseSupabaseAdmin.from("narrative_clusters").select("id, title, signal_count, sentiment, updated_at").eq("workspace_id", workspaceId).order("signal_count", { ascending: false, nullsFirst: false }).limit(10).then((r) => r.data || []),
     ]);
-    return { signals, alerts, clusters, sinceIso, windowHours };
+    return { signals, alerts, clusters: dedupeClustersByTitle(clusters), sinceIso, windowHours };
+}
+
+// Duplicate cluster titles (same narrative clustered twice) would otherwise be
+// presented as separate narratives; keep the largest per normalized title.
+export function dedupeClustersByTitle(clusters) {
+    const seen = new Set();
+    return [...(clusters || [])]
+        .sort((a, b) => (b.signal_count || 0) - (a.signal_count || 0))
+        .filter((c) => {
+            const key = String(c.title || c.id).trim().toLowerCase();
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
 }
 
 const ASK_ERRORS = {

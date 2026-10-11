@@ -7,7 +7,7 @@ import { supabaseModuleFor } from './helpers/fake-supabase.js';
 process.env.OPENAI_API_KEY = process.env.OPENAI_API_KEY || 'test-openai-key'; // fake; client is injected
 const db = createMemoryDb();
 jest.unstable_mockModule('../src/lib/supabase.js', () => supabaseModuleFor(db));
-const { askNarriv } = await import('../src/lib/ask-narriv.js');
+const { askNarriv, dedupeClustersByTitle } = await import('../src/lib/ask-narriv.js');
 
 const WS = '11111111-1111-1111-1111-111111111111';
 const ctx = {
@@ -60,5 +60,10 @@ describe('askNarriv', () => {
     const r = await askNarriv({ workspaceId: WS, question: 'q' }, { ...deps(openai), gatherContext: async () => ({ ...ctx, signals: [], alerts: [], clusters: [] }) });
     expect(r.answer).toMatch(/no data/);
     expect(openai.chat.completions.create).not.toHaveBeenCalled();
+  });
+
+  it('merges duplicate narrative titles so one narrative is not presented twice', () => {
+    const out = dedupeClustersByTitle([{ id: 'a', title: 'Election Impact', signal_count: 3 }, { id: 'b', title: ' election impact', signal_count: 9 }, { id: 'c', title: 'Other', signal_count: 1 }]);
+    expect(out.map((c) => c.id)).toEqual(['b', 'c']);
   });
 });
