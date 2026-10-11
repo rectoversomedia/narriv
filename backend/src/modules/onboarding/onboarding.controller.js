@@ -107,12 +107,19 @@ export async function createOnboardingWorkspace(req, res) {
 
         let member = existingMember;
         if (!member) {
+            // First member of an ownerless workspace becomes its owner.
+            const { data: owners } = await baseSupabaseAdmin
+                .from("workspace_members")
+                .select("id")
+                .eq("workspace_id", workspace.id)
+                .eq("role", "owner")
+                .limit(1);
             const { data: newMember, error: memberError } = await baseSupabaseAdmin
                 .from("workspace_members")
                 .insert({
                     workspace_id: workspace.id,
                     user_id: req.user.id,
-                    role: "admin",
+                    role: (owners || []).length ? "admin" : "owner",
                 })
                 .select()
                 .single();

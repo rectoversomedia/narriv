@@ -91,7 +91,9 @@ export const resolveWorkspaceIdForUser = async (userId, requestedWorkspaceId) =>
     .insert({
       user_id: userId,
       workspace_id: workspace.id,
-      role: "admin",
+      // The creator of a new workspace is its owner (admin-only creation left
+      // workspaces without an owner, see tests/ownership.test.js).
+      role: "owner",
     });
 
   if (memberError) {

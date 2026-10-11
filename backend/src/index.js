@@ -33,6 +33,7 @@ import searchRoutes from "./modules/search/search.routes.js";
 import realtimeRoutes from "./modules/realtime/realtime.routes.js";
 import subscriptionsRoutes from "./modules/subscriptions/subscriptions.routes.js";
 import cronRoutes from "./modules/cron/cron.routes.js";
+import ownershipRoutes from "./modules/admin/ownership.routes.js";
 import migrateRoutes from "./modules/migrate/migrate.routes.js";
 import pipelineRoutes from "./modules/pipeline/pipeline.routes.js";
 import keywordsRoutes from "./modules/keywords/keywords.routes.js";
@@ -202,6 +203,7 @@ app.use("/pipeline", rateLimit(RATE_LIMITS.api_default), pipelineRoutes);
 // /api prefix is stripped above, so Vercel Cron's /api/cron/* arrives as /cron/*
 app.use("/cron", cronRoutes);
 app.use("/migrate", migrateRoutes);
+app.use("/admin/ownership", rateLimit({ ...RATE_LIMITS.auth, prefix: "admin-ownership" }), ownershipRoutes);
 
 // Sentry error handler (must be before error handler)
 if (process.env.SENTRY_DSN) {
