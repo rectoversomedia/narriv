@@ -114,8 +114,8 @@ export function CreateActionPlanModal({
       } else {
         toast.error(t("toast.errorDesc"), t("toast.errorTitle"));
       }
-    } catch {
-      toast.error(t("toast.errorDesc"), t("toast.errorTitle"));
+    } catch (error) {
+      toast.error(error instanceof Error && error.message ? error.message : t("toast.errorDesc"), t("toast.errorTitle"));
     } finally {
       setIsSubmitting(false);
     }

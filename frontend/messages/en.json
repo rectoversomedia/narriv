@@ -3349,7 +3349,7 @@
       "submit": "Generate Plan",
       "toast": {
         "successTitle": "Action plan created",
-        "successDesc": "The action plan has been generated successfully.",
+        "successDesc": "An AI draft was created from the selected evidence. Review and approve it before any external use.",
         "errorTitle": "Failed to create",
         "errorDesc": "An error occurred while generating the action plan."
       }

@@ -723,15 +723,12 @@ export async function getActionPlanById(id: string): Promise<ActionPlanResponse 
   }
 }
 
-export async function createActionPlan(input: CreateActionPlanInput): Promise<CreatedActionPlan | null> {
-  try {
-    return await apiClient<CreatedActionPlan>("/api/actions", {
-      method: "POST",
-      body: JSON.stringify(input),
-    });
-  } catch {
-    return null;
-  }
+// Throws with the backend's message (budget, AI unavailable, not found) so the UI can say why.
+export async function createActionPlan(input: CreateActionPlanInput): Promise<CreatedActionPlan> {
+  return apiClient<CreatedActionPlan>("/api/actions", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
 export async function updateActionPlanAssignment(id: string, input: AssignmentInput): Promise<ActionPlanResponse | null> {
@@ -1663,9 +1660,11 @@ export interface NarrativeDetailRecord extends NarrativeRecord {
     url?: string | null;
     sentiment: string;
     impact?: string | null;
+    analysisConfidence?: number | null;
     capturedAt?: string | null;
     publishedAt?: string | null;
   }>;
+  evidenceNote?: string | null;
 }
 
 export async function getNarratives(

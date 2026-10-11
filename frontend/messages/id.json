@@ -3321,7 +3321,7 @@
       "submit": "Hasilkan Rencana",
       "toast": {
         "successTitle": "Rencana aksi dibuat",
-        "successDesc": "Rencana aksi berhasil dihasilkan.",
+        "successDesc": "Draf AI dibuat dari bukti yang dipilih. Tinjau dan setujui sebelum digunakan secara eksternal.",
         "errorTitle": "Gagal membuat",
         "errorDesc": "Terjadi kesalahan saat menghasilkan rencana aksi."
       }

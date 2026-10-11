@@ -35,7 +35,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
-import { getNarrativeById, getNarratives, getSources, triggerClustering, type NarrativeRecord } from "@/lib/api-service";
+import { getNarrativeById, getNarratives, getSources, triggerClustering, type NarrativeRecord, type NarrativeDetailRecord } from "@/lib/api-service";
 import { getMockNarratives } from "@/lib/demo-mock-data";
 import { getPipelineStatus, timeAgo } from "@/lib/intelligence-api";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -43,6 +43,7 @@ import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { useUiStore } from "@/store/useUiStore";
 import { useToast } from "@/components/ui/toast";
+import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components/create-action-plan-modal";
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type LocalizedText = { en: string; id: string };
 
@@ -504,6 +505,7 @@ export default function IntelligencePage() {
   const [mapZoom, setMapZoom] = useState(1);
   const [isAllClustersModalOpen, setIsAllClustersModalOpen] = useState(false);
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
+  const [isPlanResponseOpen, setIsPlanResponseOpen] = useState(false);
   const [isLandscapeOpen, setIsLandscapeOpen] = useState(false);
   const [isSelectedActionsOpen, setIsSelectedActionsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -1185,36 +1187,7 @@ export default function IntelligencePage() {
                   </button>
                 </div>
               ) : narrativeDetailQuery.data ? (
-                <div className="grid gap-6">
-                  <div>
-                    <h3 className="text-sm font-black text-[#53608C]">{ti("analysisModal.sentimentBreakdown")}</h3>
-                    <div className="mt-3 flex gap-2">
-                      {Object.entries(narrativeDetailQuery.data.sentimentBreakdown || {}).map(([key, value]) => {
-                        const data = narrativeDetailQuery.data!;
-                        const total = Object.values(data.sentimentBreakdown || {}).reduce((sum, v) => sum + v, 0);
-                        const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                        return (
-                          <div key={key} className="flex-1 rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3 text-center">
-                            <p className="text-xs font-bold uppercase text-[#8A94B8]">{key}</p>
-                            <p className="mt-1 text-lg font-black text-[#101334]">{percentage}%</p>
-                            <p className="mt-0.5 text-[10px] font-semibold text-[#8A94B8]">{value} {ti("labels.signals", { count: "" }).trim()}</p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-black text-[#53608C]">{ti("analysisModal.relatedSignals")}</h3>
-                    <div className="mt-3 flex flex-col gap-2">
-                      {(narrativeDetailQuery.data.relatedSignals || []).slice(0, 5).map((sig) => (
-                        <div key={sig.id} className="rounded-lg border border-[#EEF1F7] p-3">
-                          <p className="text-sm font-bold text-[#101334]">{sig.title}</p>
-                          <p className="mt-1 text-xs font-medium text-[#737D9F] line-clamp-2">{sig.content || ti("analysisModal.noContent")}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                <NarrativeEvidence detail={narrativeDetailQuery.data} />
               ) : (
                 <div className="flex h-40 flex-col items-center justify-center text-center">
                   <Info size={24} className="text-[#8A94B8]" />
@@ -1222,9 +1195,26 @@ export default function IntelligencePage() {
                 </div>
               )}
             </div>
+            {selectedNarrativeId ? (
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#EEF1F7] p-4">
+                <p className="text-[11px] font-semibold text-[#737D9F]">Plans are generated as drafts from this narrative&apos;s evidence and need review before any external use.</p>
+                <button type="button" onClick={() => setIsPlanResponseOpen(true)} className="h-9 rounded-[9px] bg-[#465FFF] px-4 text-[12px] font-black text-white transition hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/40">
+                  Plan a response
+                </button>
+              </div>
+            ) : null}
           </Panel>
         </div>,
         document.body
+      ) : null}
+
+      {selectedNarrativeId ? (
+        <CreateActionPlanModal
+          open={isPlanResponseOpen}
+          onOpenChange={setIsPlanResponseOpen}
+          initialClusterId={selectedNarrativeId}
+          initialStrategyType="pr_response"
+        />
       ) : null}
 
       {mounted && isLandscapeOpen ? createPortal(
@@ -1306,6 +1296,85 @@ export default function IntelligencePage() {
         document.body
       ) : null}
 
+    </div>
+  );
+}
+
+const SENTIMENT_CHIP: Record<string, string> = {
+  positive: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  negative: "border-rose-200 bg-rose-50 text-rose-700",
+  neutral: "border-slate-200 bg-slate-50 text-slate-600",
+  mixed: "border-amber-200 bg-amber-50 text-amber-700",
+  unanalyzed: "border-dashed border-slate-300 bg-white text-slate-500",
+};
+
+function formatDate(iso?: string | null) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+}
+
+/** Narrative evidence: observed facts (counts, dates, linked sources) separate from model assessments. */
+function NarrativeEvidence({ detail }: { detail: NarrativeDetailRecord }) {
+  const signals = detail.relatedSignals || [];
+  const breakdown = detail.sentimentBreakdown || {};
+  const total = Object.values(breakdown).reduce((sum, v) => sum + v, 0);
+  const momentum = detail.momentum;
+  return (
+    <div className="grid gap-6">
+      <section aria-label="Observed facts">
+        <h3 className="text-sm font-black text-[#53608C]">Observed</h3>
+        <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold uppercase text-[#8A94B8]">Linked signals</dt><dd className="mt-1 text-lg font-black text-[#101334]">{signals.length}</dd></div>
+          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3" title={momentum?.basis}><dt className="text-[10px] font-bold uppercase text-[#8A94B8]">Last 24h vs prior</dt><dd className="mt-1 text-lg font-black text-[#101334]">{momentum ? `${momentum.last24h} vs ${momentum.prior24h}` : "—"}</dd></div>
+          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold uppercase text-[#8A94B8]">First seen</dt><dd className="mt-1 text-[12px] font-black text-[#101334]">{formatDate(detail.firstSeen)}</dd></div>
+          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold uppercase text-[#8A94B8]">Last seen</dt><dd className="mt-1 text-[12px] font-black text-[#101334]">{formatDate(detail.lastSeen)}</dd></div>
+        </dl>
+      </section>
+
+      <section aria-label="Model assessment">
+        <h3 className="text-sm font-black text-[#53608C]">AI assessment</h3>
+        <p className="mt-2 text-[12px] font-semibold text-[#58648C]">
+          Confidence: <span className="font-black text-[#101334]">{detail.confidence === null || detail.confidence === undefined ? "not available" : `${detail.confidence}%`}</span>
+          {detail.confidenceBasis ? <span className="text-[#8A94B8]"> · {detail.confidenceBasis}</span> : null}
+        </p>
+        {total > 0 ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {Object.entries(breakdown).filter(([, v]) => v > 0).map(([key, value]) => (
+              <span key={key} className={cn("rounded-md border px-2 py-1 text-[11px] font-black capitalize", SENTIMENT_CHIP[key] || SENTIMENT_CHIP.neutral)}>
+                {key} {Math.round((value / total) * 100)}% ({value})
+              </span>
+            ))}
+          </div>
+        ) : null}
+      </section>
+
+      <section aria-label="Evidence">
+        <h3 className="text-sm font-black text-[#53608C]">Evidence ({signals.length})</h3>
+        {signals.length === 0 ? (
+          <p className="mt-2 text-[12px] font-semibold text-[#8A94B8]">{detail.evidenceNote || "No linked signals."}</p>
+        ) : (
+          <ul className="mt-3 flex flex-col gap-2">
+            {signals.slice(0, 20).map((sig) => (
+              <li key={sig.id} className="rounded-lg border border-[#EEF1F7] p-3">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  {sig.url ? (
+                    <a href={sig.url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-[#101334] underline-offset-2 hover:text-[#465FFF] hover:underline">{sig.title}</a>
+                  ) : (
+                    <p className="text-sm font-bold text-[#101334]">{sig.title}</p>
+                  )}
+                  <span className={cn("shrink-0 rounded-md border px-1.5 py-0.5 text-[10px] font-black capitalize", SENTIMENT_CHIP[sig.sentiment] || SENTIMENT_CHIP.unanalyzed)}>
+                    {sig.sentiment === "unanalyzed" ? "Not analyzed" : sig.sentiment}
+                    {typeof sig.analysisConfidence === "number" ? ` · ${Math.round(sig.analysisConfidence * 100)}%` : ""}
+                  </span>
+                </div>
+                <p className="mt-1 text-[11px] font-semibold text-[#8A94B8]">{sig.platform || "Unknown source"} · {formatDate(sig.publishedAt || sig.capturedAt)}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+        {signals.length > 20 ? <p className="mt-2 text-[11px] font-semibold text-[#8A94B8]">Showing the 20 most recent of {signals.length} linked signals.</p> : null}
+      </section>
     </div>
   );
 }
