@@ -41,11 +41,59 @@ async function listKeywords(workspaceId) {
         .order("created_at", { ascending: true });
 }
 
-function present(rows) {
+/**
+ * Latest scheduled-ingestion result per keyword for this workspace, from
+ * cron_ingestion_logs (job scheduled-rss-ingestion). Keys are lowercased keywords.
+ */
+export async function latestKeywordRuns(workspaceId) {
+    const { data, error } = await supabase
+        .from("cron_ingestion_logs")
+        .select("created_at, status, metadata")
+        .eq("job_name", "scheduled-rss-ingestion")
+        .order("created_at", { ascending: false })
+        .limit(20);
+    if (error) return { runs: new Map(), error: error.message };
+    const runs = new Map();
+    for (const row of data || []) {
+        for (const r of row.metadata?.results || []) {
+            if (r.workspaceId !== workspaceId || !r.keyword) continue;
+            const key = String(r.keyword).trim().toLowerCase();
+            if (runs.has(key)) continue;
+            runs.set(key, {
+                at: row.created_at,
+                status: r.status,
+                fetched: r.fetched ?? null,
+                inserted: r.inserted ?? null,
+                deduplicated: r.deduplicated ?? null,
+                errorCategory: r.errorCategory ?? null,
+            });
+        }
+    }
+    return { runs, error: null };
+}
+
+/** active | paused | failing | awaiting_first_run | not_in_rotation */
+export function keywordMonitoringStatus({ isActive, scheduled, lastRun }) {
+    if (!isActive) return "paused";
+    if (!scheduled) return "not_in_rotation";
+    if (!lastRun) return "awaiting_first_run";
+    if (lastRun.status === "failed") return "failing";
+    return "active";
+}
+
+function present(rows, runs = new Map()) {
     const active = rows.filter((r) => r.is_active);
     const scheduledIds = new Set(active.slice(0, SCHEDULED_KEYWORDS_PER_WORKSPACE).map((r) => r.id));
     return {
-        data: rows.map((r) => ({ id: r.id, keyword: r.keyword, isActive: r.is_active, scheduled: scheduledIds.has(r.id), createdAt: r.created_at, updatedAt: r.updated_at })),
+        data: rows.map((r) => {
+            const scheduled = scheduledIds.has(r.id);
+            const lastRun = runs.get(String(r.keyword).trim().toLowerCase()) || null;
+            return {
+                id: r.id, keyword: r.keyword, isActive: r.is_active, scheduled, createdAt: r.created_at, updatedAt: r.updated_at,
+                lastRun,
+                monitoringStatus: keywordMonitoringStatus({ isActive: r.is_active, scheduled, lastRun }),
+            };
+        }),
         limits: { maxActive: MAX_ACTIVE_KEYWORDS, scheduledPerRun: SCHEDULED_KEYWORDS_PER_WORKSPACE },
         note: `Scheduled ingestion runs every 6 hours and processes the first ${SCHEDULED_KEYWORDS_PER_WORKSPACE} active keywords (oldest first).`,
     };
@@ -65,7 +113,8 @@ router.get("/", async (req, res) => {
         return res.status(500).json({ error: "Failed to load keywords" });
     }
     const role = await getWorkspaceRole(req.user.id, ws);
-    return res.json({ ...present(data || []), canEdit: MANAGER_ROLES.includes(role) });
+    const { runs, error: runsError } = await latestKeywordRuns(ws);
+    return res.json({ ...present(data || [], runs), canEdit: MANAGER_ROLES.includes(role), runHistoryAvailable: !runsError });
 });
 
 router.post("/", validateRequest({ body: createBody }), requireWorkspaceRole(MANAGER_ROLES), async (req, res) => {

@@ -243,6 +243,28 @@ describe('monitoring keywords', () => {
     expect(db.table('monitoring_keywords')).toHaveLength(1);
   });
 
+  it('reports per-keyword monitoring status from the latest scheduled run results', async () => {
+    db.table('monitoring_keywords').push(
+      { id: '00000000-0000-4000-8000-0000000000f1', workspace_id: WS, keyword: 'Healthy', is_active: true, created_at: '2026-01-01T00:00:01Z' },
+      { id: '00000000-0000-4000-8000-0000000000f2', workspace_id: WS, keyword: 'Broken', is_active: true, created_at: '2026-01-01T00:00:02Z' },
+      { id: '00000000-0000-4000-8000-0000000000f3', workspace_id: WS, keyword: 'Brand new', is_active: true, created_at: '2026-01-01T00:00:03Z' },
+      { id: '00000000-0000-4000-8000-0000000000f4', workspace_id: WS, keyword: 'Fourth', is_active: true, created_at: '2026-01-01T00:00:04Z' },
+      { id: '00000000-0000-4000-8000-0000000000f5', workspace_id: WS, keyword: 'Paused', is_active: false, created_at: '2026-01-01T00:00:05Z' },
+    );
+    db.table('cron_ingestion_logs').push({ job_name: 'scheduled-rss-ingestion', status: 'completed_with_errors', created_at: '2026-10-11T06:49:00Z', metadata: { results: [
+      { workspaceId: WS, keyword: 'healthy', status: 'ok', fetched: 8, inserted: 1, deduplicated: 7 },
+      { workspaceId: WS, keyword: 'Broken', status: 'failed', errorCategory: 'network' },
+      { workspaceId: OTHER_WS, keyword: 'Brand new', status: 'ok', fetched: 3, inserted: 3, deduplicated: 0 },
+    ] } });
+    const res = await request(app).get(`/workspace/keywords?workspaceId=${WS}`).set(as(OWNER));
+    const by = Object.fromEntries(res.body.data.map((k) => [k.keyword, k]));
+    expect(by.Healthy).toMatchObject({ monitoringStatus: 'active', lastRun: { fetched: 8, inserted: 1, deduplicated: 7 } });
+    expect(by.Broken).toMatchObject({ monitoringStatus: 'failing', lastRun: { errorCategory: 'network' } });
+    expect(by['Brand new']).toMatchObject({ monitoringStatus: 'awaiting_first_run', lastRun: null }); // other workspace's run is not used
+    expect(by.Fourth.monitoringStatus).toBe('not_in_rotation');
+    expect(by.Paused.monitoringStatus).toBe('paused');
+  });
+
   it('enforces the active keyword limit', async () => {
     for (let i = 0; i < 25; i++) db.table('monitoring_keywords').push({ id: `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`, workspace_id: WS, keyword: `kw ${i}`, is_active: true, created_at: `2026-01-01T00:00:${String(i).padStart(2, '0')}Z` });
     expect((await post(OWNER, 'one more')).status).toBe(422);
