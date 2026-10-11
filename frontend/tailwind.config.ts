@@ -60,6 +60,48 @@ const config: Config = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        control: "var(--radius-sm)",
+        card: "var(--radius-md)",
+        panel: "var(--radius-lg)",
+      },
+      // Weight scale: the UI used 900 for most labels and body copy, which made
+      // every page heavy. Headings top out at 700; emphasis at 600.
+      fontWeight: {
+        medium: "500",
+        semibold: "600",
+        bold: "600",
+        extrabold: "700",
+        black: "700",
+      },
+      textColor: {
+        navy: "var(--navy)",
+        body: "var(--text-body)",
+        subtle: "var(--text-subtle)",
+      },
+      borderColor: {
+        line: "var(--line)",
+        "line-soft": "var(--line-soft)",
+      },
+      boxShadow: {
+        card: "var(--shadow)",
+        raised: "var(--shadow-strong)",
+        focus: "var(--focus-ring)",
+      },
+      transitionTimingFunction: {
+        standard: "var(--ease-standard)",
+        emphasized: "var(--ease-emphasized)",
+      },
+      transitionDuration: {
+        fast: "120ms",
+        base: "180ms",
+        slow: "260ms",
+      },
+      zIndex: {
+        sticky: "30",
+        dropdown: "50",
+        overlay: "100",
+        modal: "200",
+        toast: "300",
       },
     },
   },

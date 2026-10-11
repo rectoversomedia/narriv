@@ -50,27 +50,37 @@
   --warning: #F59E0B;
   --danger: #EF4444;
   --radius: 0.75rem;
+
+  /* Design tokens (Narriv design system) */
+  --navy: #101334;          /* headings */
+  --text-body: #53608C;     /* body copy */
+  --text-subtle: #8A94B8;   /* captions, metadata */
+  --line: #E6EAF2;          /* card and table borders */
+  --line-soft: #EEF1F7;     /* inner dividers */
+  --badge-slate-bg: #F1F5F9;
+  --radius-sm: 8px;         /* inputs, buttons, chips */
+  --radius-md: 12px;        /* cards */
+  --radius-lg: 16px;        /* dialogs, page panels */
+  --shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow: 0 2px 12px rgba(16, 24, 40, 0.04);
+  --shadow-strong: 0 16px 40px rgba(16, 24, 40, 0.12);
+  --focus-ring: 0 0 0 3px rgba(70, 95, 255, 0.28);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 120ms;   /* hover, press */
+  --duration-base: 180ms;   /* dropdowns, tabs */
+  --duration-slow: 260ms;   /* dialogs, drawers */
+  --z-sticky: 30;
+  --z-dropdown: 50;
+  --z-overlay: 100;
+  --z-modal: 200;
+  --z-toast: 300;
   color-scheme: light;
 }
 
 @keyframes spin-reverse {
   from { transform: rotate(360deg); }
   to { transform: rotate(0deg); }
-}
-
-@keyframes soft-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
-}
-
-@keyframes scan-orbit {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-@keyframes progress-glow {
-  0%, 100% { box-shadow: 0 0 16px rgba(53, 30, 255, 0.25); }
-  50% { box-shadow: 0 0 32px rgba(53, 30, 255, 0.42); }
 }
 
 @keyframes chart-enter {
@@ -107,20 +117,50 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
-:where(button, a, input, select, textarea):focus-visible {
-  outline: 2px solid rgba(53, 30, 255, 0.72);
-  outline-offset: 3px;
+:where(button, a, input, select, textarea, summary, [role="button"], [tabindex]):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 ::selection {
-  background: rgba(53, 30, 255, 0.16);
+  background: rgba(70, 95, 255, 0.16);
 }
 
+/* Consistent interaction feedback for native controls. */
+:where(button, a, summary) {
+  transition-property: color, background-color, border-color, box-shadow, opacity;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
+}
+
+:where(button:disabled, [aria-disabled="true"]) {
+  cursor: not-allowed;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes dialog-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes typing-dot {
+  0%, 80%, 100% { opacity: 0.25; }
+  40% { opacity: 1; }
+}
+
+.fade-in { animation: fade-in var(--duration-base) var(--ease-standard) both; }
+.dialog-in { animation: dialog-in var(--duration-slow) var(--ease-emphasized) both; }
+.typing-dot { animation: typing-dot 1.2s ease-in-out infinite; }
+
 .app-card {
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(16px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
 }
 
 .app-card-hover {
@@ -129,8 +169,7 @@ button {
 
 .app-card-hover:hover {
   border-color: rgba(70, 95, 255, 0.25);
-  box-shadow: 0 0 20px rgba(70, 95, 255, 0.08), inset 0 0 12px rgba(70, 95, 255, 0.02);
-  transform: translateY(-2px);
+  box-shadow: var(--shadow-strong);
 }
 
 .sidebar-gradient {
@@ -141,16 +180,9 @@ button {
   border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+/* Progress bars fill once; no continuous decorative motion. */
 .animated-progress {
-  animation: progress-glow 2.6s ease-in-out infinite;
-}
-
-.orbit-spin {
-  animation: scan-orbit 16s linear infinite;
-}
-
-.soft-float {
-  animation: soft-float 4.5s ease-in-out infinite;
+  transition: width var(--duration-slow) var(--ease-emphasized);
 }
 
 .chart-enter {
@@ -179,6 +211,14 @@ button {
 .chart-bar-enter > *:nth-child(6) { animation-delay: 350ms; }
 
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
   .chart-enter,
   .chart-donut-enter,
   .chart-bar-enter > *,
@@ -195,7 +235,7 @@ button {
   }
 
   .form-input:focus {
-    @apply border-[#2F20FF] ring-2 ring-[#2F20FF]/20;
+    @apply border-[#465FFF] ring-2 ring-[#465FFF]/20;
   }
 
   .form-textarea {
@@ -203,7 +243,7 @@ button {
   }
 
   .form-textarea:focus {
-    @apply border-[#2F20FF] ring-2 ring-[#2F20FF]/20;
+    @apply border-[#465FFF] ring-2 ring-[#465FFF]/20;
   }
 
   .form-select {
@@ -211,6 +251,6 @@ button {
   }
 
   .form-select:focus {
-    @apply border-[#2F20FF] ring-2 ring-[#2F20FF]/20;
+    @apply border-[#465FFF] ring-2 ring-[#465FFF]/20;
   }
 }

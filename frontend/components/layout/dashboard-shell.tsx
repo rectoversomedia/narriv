@@ -7,7 +7,6 @@ import { useRouter, usePathname } from "next/navigation";
 import { Bot, ChevronUp } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
-import { Particles } from "@/components/ui/particles";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useUiStore } from "@/store/useUiStore";
 
@@ -54,23 +53,22 @@ export function DashboardShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-background text-foreground selection:bg-[#465FFF]/30">
-      <Particles particleCount={150} particleBaseSize={6} speed={0.08} particleColors={["#465FFF", "#8B5CFF", "#00F0FF"]} />
       <Sidebar />
       <div className={`flex min-h-screen flex-col transition-[padding] duration-300 ${sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-[240px]"}`}>
         <Topbar />
-        <main className="flex-1 px-4 pb-32 pt-6 sm:px-6 lg:px-6 2xl:px-8">
+        <main className="flex-1 px-4 pb-32 pt-6 sm:px-6 lg:px-6 lg:pb-10 2xl:px-8">
           <div className="relative z-10 w-full max-w-[1600px] mx-auto">{children}</div>
         </main>
 
-        {/* Floating Ask AI button */}
-        <Link
+        {/* Floating Ask AI button (not shown on the Ask page itself) */}
+        {pathname?.startsWith("/ask") ? null : <Link
           href="/ask"
-          className="fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full bg-[#465FFF] px-4 py-3 text-white shadow-[0_4px_20px_rgba(70,95,255,0.5)] transition-all hover:bg-[#3b50d8] hover:shadow-[0_6px_28px_rgba(70,95,255,0.65)] active:scale-95 sm:right-6 lg:bottom-6 lg:right-6"
+          className="fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full bg-[#465FFF] px-4 py-3 text-white shadow-sm transition-all hover:bg-[#3b50d8] shadow-sm active:scale-95 sm:right-6 lg:bottom-6 lg:right-6"
           aria-label="Open Ask AI"
         >
           <Bot size={18} />
           <span className="text-[13px] font-bold">Ask AI</span>
-        </Link>
+        </Link>}
       </div>
     </div>
   );
