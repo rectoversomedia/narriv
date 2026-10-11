@@ -10,16 +10,16 @@
       "liveBadge": "Sistem Intelijen Langsung",
       "loginHeadline": "Dari temuan ke aksi dalam hitungan menit, bukan hari.",
       "loginDescription": "Narriv memantau setiap sinyal narasi di lanskap brand kamu dan mengubah risiko yang muncul menjadi aksi terkoordinasi sebelum membesar.",
-      "loginCompliance": "SOC 2 Type II / GDPR / terenkripsi end-to-end",
+      "loginCompliance": "Koneksi terenkripsi (HTTPS) · Akses workspace berbasis peran",
       "signupHeadline": "Intelijen yang bertindak, bukan sekadar memberi peringatan.",
       "signupDescription": "Gabung dengan tim yang memakai Narriv untuk lebih cepat membaca narasi yang membentuk brand sebelum menjadi headline.",
-      "signupCompliance": "SOC 2 Type II / patuh GDPR / tanpa retensi data di paket gratis",
+      "signupCompliance": "Koneksi terenkripsi (HTTPS) · Akses workspace berbasis peran",
       "workEmail": "Email kerja",
       "password": "Password",
       "showPassword": "Tampilkan password",
       "hidePassword": "Sembunyikan password",
       "googleWorkspace": "Lanjutkan dengan Google Workspace",
-      "protected": "Dilindungi MFA, enkripsi end-to-end, dan audit log.",
+      "protected": "Data dipisahkan per workspace, dengan akses berbasis peran dan audit log.",
       "stats": {
         "confidence": "Skor keyakinan AI",
         "latency": "Jeda dari sinyal ke peringatan",
@@ -41,7 +41,7 @@
         "passwordRequired": "Password wajib diisi",
         "invalidCredentials": "Kredensial tidak valid. Coba lagi.",
         "loginFailed": "Login gagal. Coba lagi.",
-        "backendUnavailable": "Belum bisa terhubung ke backend API. Periksa API URL lalu coba lagi.",
+        "backendUnavailable": "Narriv tidak dapat dihubungi. Periksa koneksi Anda lalu coba lagi.",
         "googleUnavailable": "Login Google belum dikonfigurasi untuk build production ini."
       }
     },
@@ -83,7 +83,7 @@
         "passwordSymbol": "Tambahkan minimal satu simbol",
         "emailRegistered": "Email ini sudah terdaftar. Silakan masuk.",
         "registrationFailed": "Pendaftaran gagal. Coba lagi.",
-        "backendUnavailable": "Belum bisa terhubung ke backend API. Periksa API URL lalu coba lagi.",
+        "backendUnavailable": "Narriv tidak dapat dihubungi. Periksa koneksi Anda lalu coba lagi.",
         "googleUnavailable": "Daftar dengan Google belum dikonfigurasi untuk build production ini."
       }
     }
@@ -113,8 +113,8 @@
     },
     "security": {
       "priority": "Keamanan data Anda adalah prioritas kami.",
-      "encrypted": "Semua informasi terenkripsi secara end-to-end.",
-      "footer": "Aman & terenkripsi secara end-to-end"
+      "encrypted": "Informasi dikirim melalui koneksi terenkripsi (HTTPS).",
+      "footer": "Koneksi terenkripsi (HTTPS)"
     },
     "verification": {
       "cardTitle": "Periksa email Anda",
@@ -177,7 +177,7 @@
         "passwordRequired": "Kata sandi wajib diisi",
         "invalidCredentials": "Email atau kata sandi tidak sesuai.",
         "loginFailed": "Login gagal. Coba lagi.",
-        "backendUnavailable": "Belum bisa terhubung ke backend API. Periksa API URL lalu coba lagi.",
+        "backendUnavailable": "Narriv tidak dapat dihubungi. Periksa koneksi Anda lalu coba lagi.",
         "socialUnavailable": "Login sosial belum dikonfigurasi untuk build ini."
       }
     },
@@ -214,7 +214,7 @@
         "termsRequired": "Setujui syarat layanan untuk melanjutkan",
         "emailRegistered": "Email ini sudah terdaftar atau data belum valid.",
         "registrationFailed": "Pendaftaran gagal. Coba lagi.",
-        "backendUnavailable": "Belum bisa terhubung ke backend API. Periksa API URL lalu coba lagi.",
+        "backendUnavailable": "Narriv tidak dapat dihubungi. Periksa koneksi Anda lalu coba lagi.",
         "socialUnavailable": "Daftar dengan provider sosial belum dikonfigurasi untuk build ini."
       }
     },
@@ -518,7 +518,7 @@
     "subtitle": "Lihat apa yang sedang terjadi, isu mana yang perlu perhatian, bagaimana brand muncul di jawaban AI, dan apa langkah berikutnya.",
     "last7Days": "7 hari terakhir",
     "emptyTitle": "Belum Ada Data Beranda",
-    "emptyDesc": "Hubungkan server dan masuk dengan akun asli untuk memuat data ruang kerja.",
+    "emptyDesc": "Masuk dengan akun workspace Anda untuk memuat datanya.",
     "severity": {
       "high": "tinggi",
       "medium": "sedang",
@@ -558,11 +558,11 @@
       "feedback": "Masukan"
     },
     "narrativeTitle": "Belum ada temuan terbaru",
-    "narrativeDesc": "Temuan terbaru akan muncul di sini setelah sinkronisasi data berjalan.",
+    "narrativeDesc": "Temuan muncul di sini setelah putaran ingesti terjadwal berikutnya.",
     "narrativeRuleTitle": "Alur kerja aktif",
     "narrativeRuleDesc": "Temuan, peringatan, kemunculan di jawaban AI, rencana aksi, laporan, dan masukan tim dimuat dari data ruang kerja.",
     "alertTitle": "Hal yang Perlu Diperhatikan",
-    "alertDesc": "Peringatan prediktif dari sistem akan muncul di halaman Peringatan Prediktif.",
+    "alertDesc": "Peringatan terbuka tercantum di halaman Peringatan.",
     "reviewAlert": "Tinjau dan buat rencana",
     "creatingAction": "Membuat rencana...",
     "createActionFailed": "Rencana aksi belum bisa dibuat. Pembuatan AI mungkin belum tersedia atau konfigurasinya belum lengkap.",
@@ -585,10 +585,10 @@
     "connectedSources": "Sumber terhubung",
     "active": "aktif",
     "inactive": "Nonaktif",
-    "liveApiRecords": "Data dari server",
+    "liveApiRecords": "Data terhubung",
     "runningJobs": "Proses berjalan",
     "ingestionQueue": "Antrean sinkronisasi",
-    "sourceEndpoint": "Backend /sources",
+    "sourceEndpoint": "Sumber workspace",
     "sourceName": "Nama sumber",
     "sourcePlaceholder": "Brand, kata kunci, media, komunitas...",
     "sourceNameRequired": "Masukkan nama sumber.",
@@ -627,7 +627,7 @@
     "syncCompleted": "Sinkronisasi selesai",
     "syncCompletedDesc": "Temuan baru akan muncul setelah analisis selesai.",
     "syncFailed": "Sinkronisasi gagal",
-    "syncFailedDesc": "Sumber belum bisa disinkronkan. Periksa koneksi server lalu coba lagi.",
+    "syncFailedDesc": "Sumber tidak dapat disinkronkan. Coba lagi sebentar lagi.",
     "editSource": "Edit",
     "deleteSource": "Hapus",
     "save": "Simpan",
@@ -649,7 +649,7 @@
   "Signals": {
     "otherSentiment": "Netral / belum dianalisis",
     "emptyState": {
-      "title": "Belum ada sinyal live",
+      "title": "Belum ada sinyal",
       "desc": "Tidak ada sinyal yang cocok dengan filter saat ini. Coba sesuaikan kata kunci atau filter Anda.",
       "noSourcesTitle": "Belum ada sumber data terhubung",
       "noSourcesDesc": "Hubungkan akun media sosial, platform ulasan, atau feed Anda untuk mulai menemukan sinyal.",
@@ -793,9 +793,9 @@
     "footerLive": "{from}-{to} dari {total} sinyal",
     "footerUnavailable": "Data live belum bisa dimuat. Tidak ada baris contoh yang ditampilkan.",
     "errorTitle": "Data live belum bisa dimuat",
-    "errorDesc": "API client sudah mencoba refresh token. Tidak ada baris contoh yang ditampilkan agar tabel tetap akurat.",
+    "errorDesc": "Sinyal tidak dapat dimuat. Tidak ada baris yang ditampilkan agar data tetap akurat. Coba lagi.",
     "metaErrorTitle": "Metadata sinyal belum bisa dimuat",
-    "metaErrorDesc": "Panel ringkasan belum bisa dimuat dari API. Daftar sinyal tetap tersedia jika endpoint list merespons.",
+    "metaErrorDesc": "Angka ringkasan tidak dapat dimuat. Daftar sinyal mungkin masih tersedia di bawah.",
     "fallbackUntitled": "Temuan tanpa judul",
     "fallbackNoContent": "Ringkasan konten belum tersedia.",
     "fallbackUnknownSource": "Sumber Tidak Diketahui",
@@ -955,11 +955,11 @@
     },
     "error": {
       "title": "Data visibility belum tersedia",
-      "desc": "API client sudah mencoba refresh token. Data contoh tidak ditampilkan agar dashboard tetap akurat untuk production."
+      "desc": "Hasil visibilitas AI tidak dapat dimuat. Tidak ada data contoh yang ditampilkan. Coba lagi."
     },
     "empty": {
-      "title": "Belum ada data visibility live",
-      "desc": "Backend berhasil dihubungi, tetapi belum ada hasil AI visibility.",
+      "title": "Belum ada data visibilitas AI",
+      "desc": "Belum ada hasil visibilitas AI.",
       "noTrendData": "Data tren belum tersedia",
       "noCompetitorData": "Data kompetitor belum tersedia",
       "noTopicData": "Data topik belum tersedia",
@@ -1163,7 +1163,7 @@
       "notAcknowledged": "Belum dikonfirmasi",
       "liveRecord": "Data live",
       "errorTitle": "Daftar alert gagal dimuat",
-      "errorDesc": "Data fallback tidak ditampilkan agar tidak tertukar dengan data produksi.",
+      "errorDesc": "Peringatan tidak dapat dimuat. Tidak ada baris yang ditampilkan agar data tetap akurat.",
       "changeStatus": "Ubah status",
       "statusNew": "Tandai Baru",
       "statusInvestigating": "Tandai Investigating",
@@ -1240,8 +1240,8 @@
       "medium": "Sedang"
     },
     "empty": {
-      "title": "Belum ada alert live",
-      "desc": "Backend berhasil dihubungi, tetapi belum ada alert yang perlu ditampilkan.",
+      "title": "Belum ada peringatan",
+      "desc": "Belum ada peringatan untuk ditampilkan.",
       "noAlerts": "Tidak ada alert",
       "noAlertsDesc": "Tidak ada alert yang cocok dengan filter.",
       "noLiveAlerts": "Tidak ada alert live untuk ditampilkan",
@@ -1253,7 +1253,7 @@
     },
     "error": {
       "title": "Data live belum bisa dimuat",
-      "desc": "API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan data contoh."
+      "desc": "Peringatan tidak dapat dimuat. Coba lagi sebentar lagi."
     },
     "v2": {
       "header": {
@@ -1276,7 +1276,7 @@
         "presetQuiet": "Mode Senyap",
         "presetQuietDesc": "Hanya ringkasan harian, tanpa notifikasi real-time",
         "deliveryTitle": "Pengaturan pengiriman",
-        "deliveryDesc": "Toggle ini memperbarui endpoint notification settings workspace.",
+        "deliveryDesc": "Pengaturan ini memperbarui notifikasi workspace ini.",
         "rulesTitle": "Aturan notifikasi custom",
         "rulesDesc": "Aturan dievaluasi dari trigger, kondisi, channel, dan status aktif.",
         "triggerLabel": "Kapan",
@@ -1415,7 +1415,7 @@
         "responseWindow": "Jendela respons",
         "lifecycleState": "Status lifecycle",
         "noCriticalTitle": "Belum ada insiden kritis aktif",
-        "noCriticalDesc": "Insiden kritis akan muncul di sini ketika backend mengembalikan alert dengan severity kritis.",
+        "noCriticalDesc": "Insiden kritis muncul di sini saat peringatan dengan tingkat kritis dibuat.",
         "new": "Baru",
         "investigating": "Sedang Diselidiki",
         "resolved": "Selesai",
@@ -1659,7 +1659,7 @@
       "copyId": "Salin ID narasi"
     },
     "analysisModal": {
-      "errorDesc": "API client belum bisa memuat detail narasi ini. Coba lagi setelah koneksi live stabil.",
+      "errorDesc": "Narasi ini tidak dapat dimuat. Coba lagi.",
       "errorTitle": "Detail narasi belum bisa dimuat",
       "subtitle": "Analisis narasi terperinci dan perincian sentimen.",
       "sentimentBreakdown": "Perincian Sentimen",
@@ -1719,7 +1719,7 @@
       }
     },
     "footer": {
-      "apiIssues": "Koneksi API bermasalah",
+      "apiIssues": "Masalah koneksi",
       "dataCoverage": "Cakupan Data",
       "degraded": "Terdegradasi",
       "sourcesActive": "62 / 72 Sumber Aktif",
@@ -1756,12 +1756,12 @@
     },
     "mediumPriorityFallback": "Prioritas Sedang",
     "empty": {
-      "title": "Belum ada narasi live",
-      "desc": "Backend berhasil dihubungi, tetapi cluster narasi belum tersedia."
+      "title": "Belum ada narasi",
+      "desc": "Belum ada narasi yang teridentifikasi. Narasi muncul setelah cukup sinyal terkait terkumpul."
     },
     "error": {
       "title": "Narasi live belum bisa dimuat",
-      "desc": "API client sudah mencoba token refresh. Coba muat ulang data narasi live."
+      "desc": "Narasi tidak dapat dimuat. Coba lagi."
     }
   },
   "Reports": {
@@ -1850,10 +1850,10 @@
     "exportQueued": "Masuk antrean",
     "exportRunning": "Disiapkan",
     "exportCompleted": "Siap",
-    "exportUnavailableNoId": "Unduhan tersedia setelah laporan punya data dari server.",
+    "exportUnavailableNoId": "Simpan laporan sebelum mengekspornya.",
     "exportStorageUnavailable": "Penyimpanan laporan belum dikonfigurasi",
     "exportStorageUnavailableShort": "Storage belum siap",
-    "exportStorageUnavailableDesc": "Daftar laporan sudah tersambung, tetapi penyimpanan file unduhan belum siap.",
+    "exportStorageUnavailableDesc": "Ekspor sementara tidak tersedia. Coba lagi nanti.",
     "package": {
       "pdf": "PDF eksekutif",
       "ready": "Siap",
@@ -1865,8 +1865,8 @@
       "scheduleTime": "Jumat 09:00"
     },
     "exportReadiness": "Kesiapan unduhan",
-    "exportReadinessDesc": "Saat laporan diunduh, sistem akan menyiapkan file lalu mengecek apakah file sudah siap.",
-    "backendContract": "Koneksi data berikutnya",
+    "exportReadinessDesc": "Ekspor disiapkan di latar belakang; file tersedia setelah siap.",
+    "backendContract": "Status laporan",
     "backendContractDesc": "Daftar laporan, pembuatan file unduhan, dan pengecekan status file sudah tersambung.",
     "templates": {
       "weeklyTitle": "Ringkasan Intelijen Naratif Mingguan",
@@ -1946,8 +1946,8 @@
       "pdfDaily": "PDF · Harian",
       "ready": "Siap",
       "imageAlt": "Ilustrasi asisten laporan AI",
-      "liveFallback": "Laporan intelligence dari backend Narriv.",
-      "liveType": "Laporan · Live API",
+      "liveFallback": "Laporan intelijen Narriv.",
+      "liveType": "Laporan",
       "activePeriod": "Periode aktif",
       "liveCreated": "Data langsung",
       "latestReport": "Laporan terbaru",
@@ -2010,12 +2010,12 @@
       "created": "{count} dibuat"
     },
     "empty": {
-      "title": "Belum ada laporan live",
-      "desc": "Backend berhasil dihubungi, tetapi belum ada laporan yang tersedia."
+      "title": "Belum ada laporan",
+      "desc": "Belum ada laporan yang dibuat."
     },
     "error": {
       "title": "Data laporan belum bisa dimuat",
-      "desc": "API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan data contoh."
+      "desc": "Laporan tidak dapat dimuat. Coba lagi sebentar lagi."
     },
     "buttons": {
       "manageTemplates": "Kelola Template",
@@ -2122,7 +2122,7 @@
       "unavailableTitle": "Laporan tidak tersedia",
       "unavailableDesc": "Laporan tidak dapat dimuat atau kamu tidak memiliki akses.",
       "emptySectionsTitle": "Belum ada bagian laporan",
-      "emptySectionsDesc": "Backend mengembalikan data laporan, tetapi detail bagian belum tersedia."
+      "emptySectionsDesc": "Laporan ini belum memiliki bagian detail."
     },
     "metricsCard": {
       "templates": "Templates",
@@ -2141,7 +2141,7 @@
     },
     "liveMetrics": {
       "templates": "Templates",
-      "templatesHelper": "dari backend",
+      "templatesHelper": "tersedia",
       "reportsCreated": "Laporan Dibuat",
       "totalLive": "total live",
       "reportsCreatedHelper": "total live",
@@ -2151,7 +2151,7 @@
       "readyHelper": "siap"
     },
     "liveData": {
-      "fallback": "Data live belum bisa dimuat. Menampilkan data contoh."
+      "fallback": "Data laporan tidak dapat dimuat."
     },
     "paginationExtended": {
       "labelLive": "laporan live",
@@ -2168,7 +2168,7 @@
     "closeMenu": "Tutup menu",
     "support": "Dukungan",
     "productionMode": "Mode Data Langsung",
-    "productionDesc": "Aplikasi ini memakai data dari server dan menampilkan halaman kosong saat data belum tersedia.",
+    "productionDesc": "Data workspace live. Keadaan kosong muncul saat data belum tersedia.",
     "nav": {
       "command": "Beranda",
       "signals": "Temuan Naratif",
@@ -2203,7 +2203,7 @@
   "AlertDetail": {
     "backToAlerts": "Kembali ke peringatan",
     "responseWindow": "jendela respons",
-    "liveDetail": "Detail peringatan dari server.",
+    "liveDetail": "Detail peringatan",
     "notFoundTitle": "Peringatan tidak ditemukan",
     "notFoundDesc": "Peringatan ini tidak ada atau ruang kerja kamu tidak punya akses.",
     "recommendedStep": "Langkah berikutnya yang disarankan",
@@ -2267,7 +2267,7 @@
     },
     "empty": {
       "title": "Detail alert live belum bisa dimuat",
-      "desc": "API client sudah mencoba token refresh. Halaman ini menggunakan data contoh sementara."
+      "desc": "Peringatan ini tidak dapat dimuat. Coba lagi sebentar lagi."
     }
   },
   "Workspace": {
@@ -2429,7 +2429,7 @@
       "title": "Integrasi",
       "description": "Hubungkan channel eskalasi, webhook, dan tujuan ekspor untuk workspace ini.",
       "emptyTitle": "API Integrasi Belum Terhubung",
-      "emptyDesc": "Integrasi production akan muncul di sini setelah endpoint backend integrasi workspace tersedia.",
+      "emptyDesc": "Belum ada integrasi yang terhubung. Hubungkan channel untuk menerima peringatan.",
       "connected": "Terhubung",
       "notConnected": "Belum terhubung",
       "records": "data live",
@@ -2555,7 +2555,7 @@
       "title": "Pengaturan Ruang Kerja",
       "description": "Kelola profil ruang kerja, akses tim, kontak notifikasi, dan keamanan akun.",
       "emptyTitle": "Pengaturan Belum Terhubung",
-      "emptyDesc": "Profil ruang kerja, akses tim, pemantauan, dan pilihan peringatan dimuat dari data backend di sini.",
+      "emptyDesc": "Profil workspace, akses tim, pemantauan, dan preferensi peringatan muncul di sini.",
       "workspaceProfile": "Profil ruang kerja",
       "activeWorkspace": "ID ruang kerja",
       "brandName": "Nama brand",
@@ -2618,19 +2618,19 @@
       "pageHeaderTitle": "Settings",
       "pageHeaderSubtitle": "Kelola pengaturan workspace, integrasi, dan preferensi sistem Anda.",
       "loadFailedTitle": "Pengaturan live belum bisa dimuat",
-      "loadFailedDesc": "API client sudah mencoba token refresh. Form tetap bisa digunakan dengan nilai sementara.",
+      "loadFailedDesc": "Pengaturan workspace tidak dapat dimuat. Perubahan belum bisa disimpan sampai pengaturan dimuat. Coba lagi.",
       "membersLoadFailedTitle": "Daftar member live belum bisa dimuat",
-      "membersLoadFailedDesc": "API client sudah mencoba token refresh. Untuk sementara, tabel menampilkan member contoh.",
+      "membersLoadFailedDesc": "Anggota tidak dapat dimuat. Coba lagi.",
       "table": {
         "user": "User",
         "role": "Role",
         "permission": "Permission",
-        "lastActive": "Last Active",
+        "lastActive": "Bergabung",
         "status": "Status",
         "action": "Aksi"
       },
-      "membersEmptyTitle": "Belum ada member live",
-      "membersEmptyDesc": "Workspace ini belum memiliki member yang dikembalikan oleh backend.",
+      "membersEmptyTitle": "Belum ada anggota",
+      "membersEmptyDesc": "Workspace ini belum memiliki anggota.",
       "deactivateUser": "Nonaktifkan pengguna",
       "activateUser": "Aktifkan pengguna",
       "removeUser": "Hapus anggota",
@@ -2877,7 +2877,7 @@
         "title": "Security",
         "desc": "Keamanan dan enkripsi workspace.",
         "twoFa": "Two-Factor Auth (2FA)",
-        "twoFaDesc": "MFA wajib untuk semua anggota",
+        "twoFaDesc": "Masuk multi-faktor untuk anggota",
         "active": "Aktif",
         "inactive": "Nonaktif",
         "sessionTimeout": "Durasi Session",
@@ -3036,7 +3036,7 @@
         "negative": "Negatif",
         "totalMentions": "Total Mentions",
         "errorTitle": "Data live dashboard belum bisa dimuat",
-        "errorDesc": "API client sudah mencoba token refresh. Coba lagi atau periksa koneksi API dashboard.",
+        "errorDesc": "Dasbor tidak dapat dimuat. Coba lagi.",
         "openRelated": "Buka halaman terkait",
         "close": "Tutup",
         "emptyTrends": "Belum ada data tren sinyal untuk periode ini",
@@ -3167,7 +3167,7 @@
     }
   },
   "ActionPlans": {
-    "title": "Pusat Tindakan",
+    "title": "Rencana Aksi",
     "desc": "Kelola tindakan dan pantau progres penyelesaian issue penting secara terstruktur.",
     "newAction": "Buat Tindakan Baru",
     "search": "Cari tindakan...",
@@ -3287,15 +3287,15 @@
     "templateUsed": "Digunakan {count}",
     "manageAllTemplates": "Kelola Semua Template",
     "queueErrorTitle": "Daftar tindakan live belum bisa dimuat",
-    "queueErrorDesc": "API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan tindakan contoh.",
+    "queueErrorDesc": "Tindakan tidak dapat dimuat. Coba lagi sebentar lagi.",
     "planErrorTitle": "Detail tindakan live belum bisa dimuat",
-    "planErrorDesc": "Panel detail tetap memakai data contoh sampai backend tersedia.",
-    "emptyTitle": "Belum ada tindakan live",
-    "emptyDesc": "Backend berhasil dihubungi, tetapi belum ada action plan yang dibuat.",
+    "planErrorDesc": "Detail tindakan ini tidak dapat dimuat. Coba lagi.",
+    "emptyTitle": "Belum ada tindakan",
+    "emptyDesc": "Belum ada rencana aksi. Buat dari narasi, sinyal, atau peringatan.",
     "noMatchTitle": "Tidak ada tindakan yang cocok",
     "noMatchDesc": "Coba kata kunci, prioritas, atau status lain.",
     "filterAll": "Semua Tindakan",
-    "livePlanLabel": "Rencana Live API",
+    "livePlanLabel": "Rencana aksi",
     "liveOwnerLabel": "Tim Narriv",
     "unassignedOwner": "Belum ditugaskan",
     "liveRoleLabel": "Pemilik Aksi",
@@ -3460,10 +3460,10 @@
     "emptyDistributionDesc": "Tambahkan source untuk melihat distribusi.",
     "noCategoryMatch": "Tidak ada sumber di kategori ini",
     "noCategoryMatchDesc": "Coba pilih kategori lain atau tambahkan source baru.",
-    "noLiveSources": "Belum ada sumber live",
-    "noLiveSourcesDesc": "Backend berhasil dihubungi, tetapi belum ada sumber data yang dibuat.",
+    "noLiveSources": "Belum ada sumber",
+    "noLiveSourcesDesc": "Belum ada sumber yang ditambahkan.",
     "liveUnavailable": "Sumber live belum bisa dimuat",
-    "liveUnavailableDesc": "API client sudah mencoba token refresh. Untuk sementara, halaman menampilkan data contoh.",
+    "liveUnavailableDesc": "Sumber tidak dapat dimuat. Coba lagi sebentar lagi.",
     "healthHealthy": "Sehat",
     "healthWarning": "Peringatan",
     "healthCritical": "Bermasalah",
@@ -3478,7 +3478,7 @@
     },
     "error": {
       "title": "Gagal memuat data",
-      "desc": "Permintaan gagal. Coba lagi, atau periksa koneksi backend jika ini terus terjadi."
+      "desc": "Permintaan gagal. Coba lagi sebentar lagi."
     },
     "loading": {
       "title": "Memuat data dashboard",
@@ -3512,7 +3512,7 @@
     "filterTo": "Sampai Tanggal",
     "filterReset": "Reset",
     "errorTitle": "Gagal memuat activity log",
-    "errorDesc": "Audit log belum bisa diambil dari backend. Coba refresh atau periksa koneksi API.",
+    "errorDesc": "Log aktivitas tidak dapat dimuat. Coba lagi.",
     "emptyTitle": "Belum ada activity log",
     "emptyDesc": "Event audit akan muncul di sini setelah ada perubahan workspace atau aktivitas user.",
     "colEvent": "Event",

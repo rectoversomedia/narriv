@@ -10,16 +10,16 @@
       "liveBadge": "Live Intelligence System",
       "loginHeadline": "From signal to action in minutes, not days.",
       "loginDescription": "Narriv monitors every narrative signal across your brand landscape and turns emerging risks into coordinated action before they escalate.",
-      "loginCompliance": "SOC 2 Type II / GDPR / End-to-end encrypted",
+      "loginCompliance": "Encrypted connection (HTTPS) · Role-based workspace access",
       "signupHeadline": "Intelligence that acts, not just alerts.",
       "signupDescription": "Join teams that use Narriv to stay ahead of narratives shaping their brand before they become headlines.",
-      "signupCompliance": "SOC 2 Type II / GDPR Compliant / Zero data retention on free tier",
+      "signupCompliance": "Encrypted connection (HTTPS) · Role-based workspace access",
       "workEmail": "Work email",
       "password": "Password",
       "showPassword": "Show password",
       "hidePassword": "Hide password",
       "googleWorkspace": "Continue with Google Workspace",
-      "protected": "Protected by MFA, end-to-end encryption, and audit logging.",
+      "protected": "Workspace data is isolated per workspace, with role-based access and audit logging.",
       "stats": {
         "confidence": "AI confidence score",
         "latency": "Signal-to-alert latency",
@@ -41,7 +41,7 @@
         "passwordRequired": "Password is required",
         "invalidCredentials": "Invalid credentials. Please try again.",
         "loginFailed": "Login failed. Please try again.",
-        "backendUnavailable": "Unable to reach the backend API. Please check the API URL and try again.",
+        "backendUnavailable": "Narriv could not be reached. Check your connection and try again.",
         "googleUnavailable": "Google sign-in is not configured for this production build yet."
       }
     },
@@ -83,7 +83,7 @@
         "passwordSymbol": "Add at least one symbol",
         "emailRegistered": "This email is already registered. Sign in instead.",
         "registrationFailed": "Registration failed. Please try again.",
-        "backendUnavailable": "Unable to reach the backend API. Please check the API URL and try again.",
+        "backendUnavailable": "Narriv could not be reached. Check your connection and try again.",
         "googleUnavailable": "Google sign-up is not configured for this production build yet."
       }
     }
@@ -113,8 +113,8 @@
     },
     "security": {
       "priority": "Your data security is our priority.",
-      "encrypted": "All information is end-to-end encrypted.",
-      "footer": "Secure & end-to-end encrypted"
+      "encrypted": "Information is sent over an encrypted connection (HTTPS).",
+      "footer": "Encrypted connection (HTTPS)"
     },
     "verification": {
       "cardTitle": "Check your email",
@@ -177,7 +177,7 @@
         "passwordRequired": "Password is required",
         "invalidCredentials": "Email or password is incorrect.",
         "loginFailed": "Login failed. Please try again.",
-        "backendUnavailable": "Unable to reach the backend API. Check the API URL and try again.",
+        "backendUnavailable": "Narriv could not be reached. Check your connection and try again.",
         "socialUnavailable": "Social sign-in is not configured for this build."
       }
     },
@@ -214,7 +214,7 @@
         "termsRequired": "Accept the terms of service to continue",
         "emailRegistered": "This email is already registered or the data is invalid.",
         "registrationFailed": "Registration failed. Please try again.",
-        "backendUnavailable": "Unable to reach the backend API. Check the API URL and try again.",
+        "backendUnavailable": "Narriv could not be reached. Check your connection and try again.",
         "socialUnavailable": "Social sign-up is not configured for this build."
       }
     },
@@ -517,8 +517,8 @@
     "title": "Dashboard",
     "subtitle": "See what is happening, which issues need attention, how your brand appears in AI answers, and what your team should do next.",
     "last7Days": "Last 7 days",
-    "emptyTitle": "No Live Dashboard Data",
-    "emptyDesc": "Connect the backend API and sign in with a real account to load workspace data.",
+    "emptyTitle": "No dashboard data yet",
+    "emptyDesc": "Sign in with your workspace account to load its data.",
     "severity": {
       "high": "high",
       "medium": "medium",
@@ -558,11 +558,11 @@
       "feedback": "Feedback"
     },
     "narrativeTitle": "No recent finding yet",
-    "narrativeDesc": "Latest findings from the backend will appear here after ingestion runs.",
+    "narrativeDesc": "Findings appear here after the next scheduled ingestion run.",
     "narrativeRuleTitle": "Live workspace pipeline",
     "narrativeRuleDesc": "Findings, alerts, AI visibility, action plans, reports, and team feedback are loaded from your workspace data.",
     "alertTitle": "Decision Queue",
-    "alertDesc": "Open predictive alerts from the backend will appear in the Predictive Alerts page.",
+    "alertDesc": "Open alerts are listed on the Alerts page.",
     "reviewAlert": "Review and create a plan",
     "creatingAction": "Creating plan...",
     "createActionFailed": "Could not create an action plan. AI generation may be unavailable or missing configuration.",
@@ -585,10 +585,10 @@
     "connectedSources": "Connected sources",
     "active": "active",
     "inactive": "Inactive",
-    "liveApiRecords": "Live API records",
+    "liveApiRecords": "Connected records",
     "runningJobs": "Running jobs",
     "ingestionQueue": "Sync queue",
-    "sourceEndpoint": "Backend /sources",
+    "sourceEndpoint": "Workspace sources",
     "sourceName": "Source name",
     "sourcePlaceholder": "Brand, keyword, publication, community...",
     "sourceNameRequired": "Enter a source name.",
@@ -627,7 +627,7 @@
     "syncCompleted": "Auto sync completed",
     "syncCompletedDesc": "New findings will appear after analysis is complete.",
     "syncFailed": "Auto sync failed",
-    "syncFailedDesc": "The source could not be synced. Check the backend connection and try again.",
+    "syncFailedDesc": "The source could not be synced. Try again in a moment.",
     "editSource": "Edit",
     "deleteSource": "Delete",
     "save": "Save",
@@ -649,7 +649,7 @@
   "Signals": {
     "otherSentiment": "Neutral / unanalyzed",
     "emptyState": {
-      "title": "No live signals yet",
+      "title": "No signals yet",
       "desc": "No signals match the current filters. Try adjusting your search query or filters.",
       "noSourcesTitle": "No data sources connected",
       "noSourcesDesc": "Connect your social media accounts, review platforms, or feeds to start discovering signals.",
@@ -793,9 +793,9 @@
     "footerLive": "{from}-{to} of {total} signals",
     "footerUnavailable": "Live data unavailable. No fallback rows are shown.",
     "errorTitle": "Live data unavailable",
-    "errorDesc": "API client attempted token refresh. No fallback rows are shown so the table stays accurate.",
+    "errorDesc": "Signals could not be loaded. Nothing is shown rather than outdated rows. Try again.",
     "metaErrorTitle": "Signal metadata unavailable",
-    "metaErrorDesc": "Summary panels could not load from the API. The signal list remains available if the list endpoint responds.",
+    "metaErrorDesc": "Summary figures could not be loaded. The signal list may still be available below.",
     "fallbackUntitled": "Untitled signal",
     "fallbackNoContent": "No content summary available.",
     "fallbackUnknownSource": "Unknown Source",
@@ -955,11 +955,11 @@
     },
     "error": {
       "title": "Visibility data unavailable",
-      "desc": "API client attempted token refresh. No sample visibility data is shown, so the dashboard remains production-accurate."
+      "desc": "AI visibility results could not be loaded. No sample data is shown. Try again."
     },
     "empty": {
-      "title": "No live visibility data yet",
-      "desc": "Backend connected successfully, but no AI visibility results are available yet.",
+      "title": "No AI visibility data yet",
+      "desc": "No AI visibility results are available yet.",
       "noTrendData": "No trend data available",
       "noCompetitorData": "No competitor data available",
       "noTopicData": "No topic data available",
@@ -1093,7 +1093,7 @@
     "subtitle": "Find issues before they grow, then record team decisions so future suggestions get better.",
     "learningQueue": "Review Queue",
     "queue": "Alert Queue",
-    "noAlerts": "No live alerts found yet.",
+    "noAlerts": "No alerts found yet.",
     "createAction": "Create Action",
     "creatingAction": "Creating...",
     "createActionFailed": "Could not create an action plan for this alert. AI generation may be unavailable or missing configuration.",
@@ -1191,7 +1191,7 @@
       "notAcknowledged": "Not acknowledged",
       "liveRecord": "Live record",
       "errorTitle": "Alert list could not be loaded",
-      "errorDesc": "No fallback rows are shown so production data is not confused with sample data.",
+      "errorDesc": "Alerts could not be loaded. Nothing is shown rather than outdated rows.",
       "changeStatus": "Change status",
       "statusNew": "Mark as New",
       "statusInvestigating": "Mark as Investigating",
@@ -1268,11 +1268,11 @@
       "medium": "Medium"
     },
     "empty": {
-      "title": "No live alerts yet",
-      "desc": "Backend connected successfully, but no alerts to display yet.",
+      "title": "No alerts yet",
+      "desc": "There are no alerts to show yet.",
       "noAlerts": "No alerts found",
       "noAlertsDesc": "No alerts match your filter.",
-      "noLiveAlerts": "No live alerts to display",
+      "noLiveAlerts": "No alerts to display",
       "noAlertsDescOld": "There are currently no live alerts matching the active filter.",
       "dataUnavailable": "Live data unavailable",
       "dataUnavailableDesc": "Could not fetch live alerts. Showing fallback data for now.",
@@ -1281,7 +1281,7 @@
     },
     "error": {
       "title": "Live data unavailable",
-      "desc": "API client attempted token refresh. Showing sample data for now."
+      "desc": "Alerts could not be loaded. Try again in a moment."
     },
     "v2": {
       "criticalStatus": {
@@ -1394,7 +1394,7 @@
         "presetQuiet": "Quiet Mode",
         "presetQuietDesc": "Only daily summary, no real-time alerts",
         "deliveryTitle": "Delivery switches",
-        "deliveryDesc": "These toggles update the workspace notification settings endpoint.",
+        "deliveryDesc": "These switches update this workspace's notification settings.",
         "rulesTitle": "Custom notification rules",
         "rulesDesc": "Rules are evaluated by trigger, condition, channel, and enabled state.",
         "triggerLabel": "When",
@@ -1512,7 +1512,7 @@
         "responseWindow": "Response window",
         "lifecycleState": "Lifecycle state",
         "noCriticalTitle": "No critical incident is active",
-        "noCriticalDesc": "Critical incidents will appear here when the backend returns alerts with critical severity.",
+        "noCriticalDesc": "Critical incidents appear here when an alert is raised with critical severity.",
         "velocity": "Velocity",
         "veryHigh": "Very High",
         "viewDetails": "View Details"
@@ -1720,7 +1720,7 @@
       }
     },
     "footer": {
-      "apiIssues": "API connection issues",
+      "apiIssues": "Connection issues",
       "dataCoverage": "Data Coverage",
       "degraded": "Degraded",
       "sourcesActive": "62 / 72 Sources Active",
@@ -1753,7 +1753,7 @@
       "bulletRisk": "\"{topic}\" shows a strong {sentiment} sentiment trend."
     },
     "analysisModal": {
-      "errorDesc": "The API client could not load this narrative detail. Retry after checking the live connection.",
+      "errorDesc": "This narrative could not be loaded. Try again.",
       "errorTitle": "Narrative detail unavailable",
       "noData": "No detailed data available for this narrative.",
       "noContent": "No content summary available.",
@@ -1762,8 +1762,8 @@
       "subtitle": "Detailed narrative analysis and sentiment breakdown."
     },
     "empty": {
-      "desc": "Backend connected successfully, but no narrative clusters are available yet.",
-      "title": "No live narratives yet"
+      "desc": "No narratives have been identified yet. They appear once enough related signals are collected.",
+      "title": "No narratives yet"
     },
     "emptyCluster": {
       "aiRec": "Add signals or retry loading live data to populate this panel.",
@@ -1773,7 +1773,7 @@
     },
     "mediumPriorityFallback": "Medium Priority",
     "error": {
-      "desc": "The API client attempted token refresh. Retry loading live narrative data.",
+      "desc": "Narratives could not be loaded. Try again.",
       "title": "Live narratives unavailable"
     },
     "labels": {
@@ -1878,10 +1878,10 @@
     "exportQueued": "Queued",
     "exportRunning": "Preparing",
     "exportCompleted": "Ready",
-    "exportUnavailableNoId": "Export is unavailable until the report has a backend record.",
+    "exportUnavailableNoId": "Save the report before exporting it.",
     "exportStorageUnavailable": "Report storage is not configured",
     "exportStorageUnavailableShort": "Storage unavailable",
-    "exportStorageUnavailableDesc": "The backend accepted the report list, but export storage is not ready yet.",
+    "exportStorageUnavailableDesc": "Exports are temporarily unavailable. Try again later.",
     "package": {
       "pdf": "Executive PDF",
       "ready": "Ready",
@@ -1893,8 +1893,8 @@
       "scheduleTime": "Friday 09:00"
     },
     "exportReadiness": "Export readiness",
-    "exportReadinessDesc": "Report export now creates a backend export job, then checks whether the file is ready.",
-    "backendContract": "Next backend connection",
+    "exportReadinessDesc": "Exports are prepared in the background; the file becomes available when ready.",
+    "backendContract": "Report status",
     "backendContractDesc": "GET /api/reports, POST /api/reports/:id/export, and GET /api/reports/exports/:jobId are connected.",
     "templates": {
       "weeklyTitle": "Weekly Narrative Intelligence Brief",
@@ -1974,8 +1974,8 @@
       "pdfDaily": "PDF · Daily",
       "ready": "Ready",
       "imageAlt": "AI reports assistant illustration",
-      "liveFallback": "Intelligence report from Narriv backend.",
-      "liveType": "Report · Live API",
+      "liveFallback": "Narriv intelligence report.",
+      "liveType": "Report",
       "activePeriod": "Active period",
       "liveCreated": "Live data",
       "latestReport": "Latest report",
@@ -2038,12 +2038,12 @@
       "created": "{count} created"
     },
     "empty": {
-      "title": "No live reports yet",
-      "desc": "Backend connected successfully, but no reports available yet."
+      "title": "No reports yet",
+      "desc": "No reports have been created yet."
     },
     "error": {
       "title": "Report data unavailable",
-      "desc": "API client attempted token refresh. Showing sample data for now."
+      "desc": "Reports could not be loaded. Try again in a moment."
     },
     "buttons": {
       "manageTemplates": "Manage Templates",
@@ -2150,7 +2150,7 @@
       "unavailableTitle": "Report unavailable",
       "unavailableDesc": "The report could not be loaded or you may not have access to it.",
       "emptySectionsTitle": "No sections returned",
-      "emptySectionsDesc": "The backend returned the report shell, but no detailed sections were available."
+      "emptySectionsDesc": "This report has no detailed sections yet."
     },
     "metricsCard": {
       "templates": "Templates",
@@ -2169,7 +2169,7 @@
     },
     "liveMetrics": {
       "templates": "Templates",
-      "templatesHelper": "from backend",
+      "templatesHelper": "available",
       "reportsCreated": "Reports Created",
       "totalLive": "total live",
       "reportsCreatedHelper": "total live",
@@ -2179,7 +2179,7 @@
       "readyHelper": "ready"
     },
     "liveData": {
-      "fallback": "Live data unavailable. Showing sample data."
+      "fallback": "Report data could not be loaded."
     },
     "paginationExtended": {
       "labelLive": "live reports",
@@ -2196,7 +2196,7 @@
     "closeMenu": "Close menu",
     "support": "Support",
     "productionMode": "Production Mode",
-    "productionDesc": "This build uses live backend APIs and shows empty states when data is unavailable.",
+    "productionDesc": "Live workspace data. Empty states appear when data is not yet available.",
     "nav": {
       "command": "Dashboard",
       "signals": "Narrative Signals",
@@ -2231,7 +2231,7 @@
   "AlertDetail": {
     "backToAlerts": "Back to alerts",
     "responseWindow": "response window",
-    "liveDetail": "Live alert detail from the backend.",
+    "liveDetail": "Alert detail",
     "notFoundTitle": "Alert not found",
     "notFoundDesc": "This alert does not exist or your workspace cannot access it.",
     "recommendedStep": "Recommended next step",
@@ -2295,7 +2295,7 @@
     },
     "empty": {
       "title": "Alert details unavailable",
-      "desc": "API client attempted token refresh. Showing sample data for now."
+      "desc": "This alert could not be loaded. Try again in a moment."
     }
   },
   "Workspace": {
@@ -2457,7 +2457,7 @@
       "title": "Integrations",
       "description": "Connect escalation channels, webhooks and export destinations for this workspace.",
       "emptyTitle": "Integrations API Not Connected Yet",
-      "emptyDesc": "Production integrations will appear here after a backend workspace integrations endpoint is available.",
+      "emptyDesc": "No integrations are connected yet. Connect a channel to receive alerts.",
       "connected": "Connected",
       "notConnected": "Not connected",
       "records": "live records",
@@ -2583,7 +2583,7 @@
       "title": "Workspace Settings",
       "description": "Manage workspace profile, team access, notification contacts, and account security.",
       "emptyTitle": "Workspace Settings API Not Connected Yet",
-      "emptyDesc": "Workspace profile, team access, monitoring setup, and alert preferences load from backend data here.",
+      "emptyDesc": "Workspace profile, team access, monitoring and alert preferences appear here.",
       "workspaceProfile": "Workspace profile",
       "activeWorkspace": "Workspace ID",
       "brandName": "Brand name",
@@ -2646,19 +2646,19 @@
       "pageHeaderTitle": "Settings",
       "pageHeaderSubtitle": "Manage your workspace settings, integrations, and system preferences.",
       "loadFailedTitle": "Live settings could not be loaded",
-      "loadFailedDesc": "The API client already attempted a token refresh. The form is still usable with temporary values.",
+      "loadFailedDesc": "Workspace settings could not be loaded. Changes cannot be saved until they load. Try again.",
       "membersLoadFailedTitle": "Live member list could not be loaded",
-      "membersLoadFailedDesc": "The API client already attempted a token refresh. The table is showing sample members for now.",
+      "membersLoadFailedDesc": "Members could not be loaded. Try again.",
       "table": {
         "user": "User",
         "role": "Role",
         "permission": "Permission",
-        "lastActive": "Last Active",
+        "lastActive": "Joined",
         "status": "Status",
         "action": "Action"
       },
-      "membersEmptyTitle": "No live members yet",
-      "membersEmptyDesc": "This workspace has no members returned by the backend yet.",
+      "membersEmptyTitle": "No members yet",
+      "membersEmptyDesc": "This workspace has no members yet.",
       "deactivateUser": "Deactivate user",
       "activateUser": "Activate user",
       "removeUser": "Remove user",
@@ -2905,7 +2905,7 @@
         "title": "Security",
         "desc": "Workspace security and encryption.",
         "twoFa": "Two-Factor Auth (2FA)",
-        "twoFaDesc": "MFA required for all members",
+        "twoFaDesc": "Multi-factor sign-in for members",
         "active": "Active",
         "inactive": "Inactive",
         "sessionTimeout": "Session Timeout",
@@ -3064,7 +3064,7 @@
         "negative": "Negative",
         "totalMentions": "Total Mentions",
         "errorTitle": "Dashboard live data unavailable",
-        "errorDesc": "API client attempted token refresh. Retry or check the dashboard API connection.",
+        "errorDesc": "The dashboard could not be loaded. Try again.",
         "openRelated": "Open related page",
         "close": "Close",
         "emptyTrends": "No signal trend data for this period",
@@ -3195,7 +3195,7 @@
     }
   },
   "ActionPlans": {
-    "title": "Action Center",
+    "title": "Action Plans",
     "desc": "Manage actions and monitor progress on important issues in a structured way.",
     "newAction": "Create New Action",
     "search": "Search actions...",
@@ -3315,15 +3315,15 @@
     "templateUsed": "Used {count}",
     "manageAllTemplates": "Manage All Templates",
     "queueErrorTitle": "Live action list could not be loaded",
-    "queueErrorDesc": "API client attempted token refresh. Showing sample actions for now.",
+    "queueErrorDesc": "Actions could not be loaded. Try again in a moment.",
     "planErrorTitle": "Live action detail could not be loaded",
-    "planErrorDesc": "Detail panel still uses sample data until backend is available.",
-    "emptyTitle": "No live actions yet",
-    "emptyDesc": "Backend connected successfully, but no action plans have been created.",
+    "planErrorDesc": "This action's details could not be loaded. Try again.",
+    "emptyTitle": "No actions yet",
+    "emptyDesc": "No action plans have been created yet. Generate one from a narrative, signal or alert.",
     "noMatchTitle": "No actions match your filters",
     "noMatchDesc": "Try another search term, priority, or status filter.",
     "filterAll": "All Actions",
-    "livePlanLabel": "Live API Plan",
+    "livePlanLabel": "Action plan",
     "liveOwnerLabel": "Narriv Team",
     "unassignedOwner": "Unassigned",
     "liveRoleLabel": "Action Owner",
@@ -3488,10 +3488,10 @@
     "emptyDistributionDesc": "Add sources to see distribution.",
     "noCategoryMatch": "No sources in this category",
     "noCategoryMatchDesc": "Try selecting another category or add a new source.",
-    "noLiveSources": "No live sources yet",
-    "noLiveSourcesDesc": "Backend connected successfully, but no sources have been created yet.",
+    "noLiveSources": "No sources yet",
+    "noLiveSourcesDesc": "No sources have been added yet.",
     "liveUnavailable": "Live sources could not be loaded",
-    "liveUnavailableDesc": "API client attempted token refresh. Showing sample data for now.",
+    "liveUnavailableDesc": "Sources could not be loaded. Try again in a moment.",
     "healthHealthy": "Healthy",
     "healthWarning": "Warning",
     "healthCritical": "Critical",
@@ -3506,7 +3506,7 @@
     },
     "error": {
       "title": "Unable to load data",
-      "desc": "The request failed. Try again, or check the backend connection if this keeps happening."
+      "desc": "The request failed. Try again in a moment."
     },
     "loading": {
       "title": "Loading dashboard data",
@@ -3540,7 +3540,7 @@
     "filterTo": "To Date",
     "filterReset": "Reset",
     "errorTitle": "Failed to load activity log",
-    "errorDesc": "Audit logs could not be retrieved from the backend. Try refreshing or check API connection.",
+    "errorDesc": "The activity log could not be loaded. Try again.",
     "emptyTitle": "No activity logs yet",
     "emptyDesc": "Audit events will appear here once there are workspace changes or user activities.",
     "colEvent": "Event",
