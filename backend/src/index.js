@@ -182,7 +182,9 @@ app.use("/alerts", escalationMatrixRoutes);
 app.use("/alerts", alertsRoutes);
 app.use("/narratives", narrativesRoutes);
 app.use("/visibility", geoRoutes);
-app.use("/reports", rateLimit(RATE_LIMITS.export), apiSecurityHeaders, reportsRoutes);
+// Report reads use the default API limit; export, download and email routes
+// apply the export limit themselves (see reports.routes.js).
+app.use("/reports", rateLimit({ ...RATE_LIMITS.api_default, prefix: "reports-read" }), apiSecurityHeaders, reportsRoutes);
 app.use("/action-plans", actionPlansRoutes);
 app.use("/workspace", sensitiveDataHeaders, workspaceSettingsRoutes);
 app.use("/workspace/activity", activityRoutes);

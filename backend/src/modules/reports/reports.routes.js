@@ -8,6 +8,7 @@ import {
 } from "./report-export-storage.service.js";
 import { incrementExportFailure } from "../../lib/metrics.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
+import { rateLimiters } from "../../middlewares/rate-limit.js";
 import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
 import { createReportBodySchema, createReportExportBodySchema, reportIdParamsSchema, createReportTemplateSchema, updateReportTemplateSchema, createReportScheduleSchema, updateReportScheduleSchema, generateReportBodySchema, sendReportEmailBodySchema } from "./reports.schema.js";
@@ -22,7 +23,7 @@ const router = express.Router();
 
 // Signed export URLs are opened directly by the browser, so they cannot rely on
 // the frontend API client injecting an Authorization header.
-router.get("/exports/:jobId/download", async (req, res) => {
+router.get("/exports/:jobId/download", rateLimiters.export(), async (req, res) => {
     try {
         await cleanupExpiredReportExports();
         const { jobId } = req.params;
@@ -730,7 +731,7 @@ router.post("/generate", validateRequest({ body: generateReportBodySchema }), as
 });
 
 // POST /api/reports/:id/export - Create report export job
-router.post("/:id/export", validateRequest({ params: reportIdParamsSchema, body: createReportExportBodySchema }), async (req, res) => {
+router.post("/:id/export", rateLimiters.export(), validateRequest({ params: reportIdParamsSchema, body: createReportExportBodySchema }), async (req, res) => {
     try {
         await cleanupExpiredReportExports();
         const { id } = req.params;
@@ -908,7 +909,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // GET /api/reports/:id/export/json - Export full report as downloadable JSON
-router.get("/:id/export/json", async (req, res) => {
+router.get("/:id/export/json", rateLimiters.export(), async (req, res) => {
     try {
         const { id } = req.params;
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
@@ -959,7 +960,7 @@ router.get("/:id/export/json", async (req, res) => {
 });
 
 // GET /api/reports/:id/export/pdf - Export PDF-ready structured data
-router.get("/:id/export/pdf", async (req, res) => {
+router.get("/:id/export/pdf", rateLimiters.export(), async (req, res) => {
     try {
         const { id } = req.params;
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
@@ -996,7 +997,7 @@ router.get("/:id/export/pdf", async (req, res) => {
 });
 
 // GET /api/reports/:id/export/file - Download report as CSV or XLSX
-router.get("/:id/export/file", async (req, res) => {
+router.get("/:id/export/file", rateLimiters.export(), async (req, res) => {
     try {
         const { id } = req.params;
         const { format = "csv" } = req.query;
@@ -1115,7 +1116,7 @@ router.get("/:id/export/file", async (req, res) => {
 });
 
 // POST /api/reports/:id/send-email — Send report via email
-router.post("/:id/send-email", validateRequest({ params: reportIdParamsSchema, body: sendReportEmailBodySchema }), async (req, res) => {
+router.post("/:id/send-email", rateLimiters.export(), validateRequest({ params: reportIdParamsSchema, body: sendReportEmailBodySchema }), async (req, res) => {
     try {
         const { id } = req.params;
         const { recipientEmail, subject, body } = req.body;
