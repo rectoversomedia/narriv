@@ -34,49 +34,51 @@ function detectProviderFromModel(model) {
     return DEFAULT_PROVIDER;
 }
 
-const DEFAULTS = {
-    simple: {
-        model: process.env.AI_MODEL_SIMPLE || "gpt-4o-mini",
-        provider: process.env.AI_PROVIDER_SIMPLE || null,
-        temperature: 0.2,
-        maxTokens: 1024,
-    },
-    balanced: {
-        model: process.env.AI_MODEL_BALANCED || "gpt-4o-mini",
-        provider: process.env.AI_PROVIDER_BALANCED || null,
-        temperature: 0.3,
-        maxTokens: 2048,
-    },
-    complex: {
-        model: process.env.AI_MODEL_COMPLEX || "gpt-4o-mini",
-        provider: process.env.AI_PROVIDER_COMPLEX || null,
-        temperature: 0.4,
-        maxTokens: 4096,
-    },
-    // Premium reasoning tier: OFF unless AI_MODEL_PREMIUM is set (e.g.
-    // "claude-opus-5-5"). When unset or its provider is not configured, the
-    // AI gateway falls back to "complex" and reports the fallback.
-    premium: {
-        model: process.env.AI_MODEL_PREMIUM || null,
-        provider: process.env.AI_PROVIDER_PREMIUM || null,
-        temperature: 0.3,
-        maxTokens: Number(process.env.AI_PREMIUM_MAX_TOKENS || 4096),
-    },
+// Routing profiles. "openai" (default) keeps the economical model on every
+// tier and premium off. "claude" maps tiers to the Claude family:
+//   simple  -> Haiku 5.5   (routine classification and extraction)
+//   balanced/complex -> Sonnet 5.5 (contextual and narrative analysis)
+//   premium -> Opus 5.5    (strategic synthesis, executive intelligence)
+// Model ids verified against the Anthropic models API (2026-10-12).
+// Per-tier env overrides (AI_MODEL_<TIER>, AI_PROVIDER_<TIER>) always win.
+export const PROFILES = {
+    openai: { simple: "gpt-4o-mini", balanced: "gpt-4o-mini", complex: "gpt-4o-mini", premium: null },
+    claude: { simple: "claude-haiku-5-5", balanced: "claude-sonnet-5-5", complex: "claude-sonnet-5-5", premium: "claude-opus-5-5" },
 };
+const TIER_PARAMS = {
+    simple: { temperature: 0.2, maxTokens: 1024 },
+    balanced: { temperature: 0.3, maxTokens: 2048 },
+    complex: { temperature: 0.4, maxTokens: 4096 },
+    premium: { temperature: 0.3, maxTokens: null },
+};
+export const TIERS = Object.keys(TIER_PARAMS);
 
-// Premium settings are read at call time so the tier can be enabled or
-// disabled via environment without a code change (and is testable).
+export function activeProfile() {
+    const p = String(process.env.AI_ROUTING_PROFILE || "openai").toLowerCase();
+    return PROFILES[p] ? p : "openai";
+}
+
+// Read at call time so tiers can be changed via environment (and tested).
 function tierConfig(name) {
-    if (name !== "premium") return DEFAULTS[name];
+    if (!TIER_PARAMS[name]) return null;
+    const key = name.toUpperCase();
     return {
-        ...DEFAULTS.premium,
-        model: process.env.AI_MODEL_PREMIUM || null,
-        provider: process.env.AI_PROVIDER_PREMIUM || null,
+        model: process.env[`AI_MODEL_${key}`] || PROFILES[activeProfile()][name],
+        provider: process.env[`AI_PROVIDER_${key}`] || null,
+        temperature: TIER_PARAMS[name].temperature,
+        maxTokens: name === "premium" ? Number(process.env.AI_PREMIUM_MAX_TOKENS || 4096) : TIER_PARAMS[name].maxTokens,
     };
 }
 
+/** The economical OpenAI route for a tier: the fallback when a provider is unavailable. */
+export function openaiFallbackRoute(tier) {
+    const t = tier === "premium" ? "complex" : tier;
+    const params = TIER_PARAMS[t] || TIER_PARAMS.simple;
+    return { provider: "openai", model: PROFILES.openai[t] || "gpt-4o-mini", temperature: params.temperature, maxTokens: params.maxTokens, meta: { complexity: t, success: null, latencyMs: null, error: null } };
+}
+
 function resolve(complexity, explicitProvider) {
-    const c = tierConfig(complexity) || DEFAULTS.simple;
+    const c = tierConfig(complexity) || tierConfig("simple");
     const provider = explicitProvider || c.provider || detectProviderFromModel(c.model);
     return {
         provider,
@@ -98,7 +100,7 @@ function resolve(complexity, explicitProvider) {
  * to keep this module side-effect-free).
  */
 export function routeCompletion({ complexity = "simple", provider = null, model = null } = {}) {
-    const tier = DEFAULTS[complexity] ? complexity : "simple";
+    const tier = TIER_PARAMS[complexity] ? complexity : "simple";
     const r = resolve(tier, provider);
     const finalModel = model || r.model;
     return {
@@ -121,14 +123,16 @@ const TASK_COMPLEXITY = {
     summarization: "balanced",
     generation: "balanced",
     recommendation: "balanced",
-    narrative_synthesis: "complex",
-    risk_reasoning: "complex",
-    executive_briefing: "complex",
+    // Strategic synthesis runs on the premium tier when it is enabled and falls
+    // back to "complex" otherwise (no change while premium is off).
+    narrative_synthesis: "premium",
+    risk_reasoning: "premium",
+    executive_briefing: "premium",
     ask_narriv: "complex",
     // Phase 10 workload classes
     routine_classification: "simple",
     narrative_analysis: "balanced",
-    executive_synthesis: "complex",
+    executive_synthesis: "premium",
     reputation_investigation: "premium", // high-severity investigations; falls back to complex when premium is off
 };
 
@@ -145,7 +149,7 @@ export function listTasks() {
  * List available tiers — for diagnostics or admin UIs.
  */
 export function listTiers() {
-    return Object.keys(DEFAULTS).filter((k) => tierConfig(k).model).map((k) => {
+    return TIERS.filter((k) => tierConfig(k).model).map((k) => {
         const c = tierConfig(k);
         return {
             name: k,

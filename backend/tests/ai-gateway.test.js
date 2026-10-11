@@ -28,7 +28,9 @@ describe('task routing', () => {
   it('keeps production defaults: routine/narrative/executive tasks on the economical model', () => {
     expect(routeForTask('routine_classification').model).toBe('gpt-4o-mini');
     expect(routeForTask('narrative_analysis').model).toBe('gpt-4o-mini');
-    expect(routeForTask('executive_synthesis').model).toBe('gpt-4o-mini');
+    // Strategic synthesis is premium-tier; with premium off it is served by the economical model.
+    expect(routeForTask('executive_synthesis').meta.complexity).toBe('premium');
+    expect(resolveTaskRoute('executive_synthesis').route.model).toBe('gpt-4o-mini');
   });
 
   it('falls back from premium to complex when no premium model is configured, and says why', () => {

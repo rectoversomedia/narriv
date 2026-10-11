@@ -90,7 +90,15 @@ router.get("/providers", async (req, res) => {
         const tiers = listTiers();
         const anthropicConfigured = isAnthropicConfigured();
         const openaiConfigured = Boolean(process.env.OPENAI_API_KEY) && process.env.OPENAI_API_KEY !== "sk-placeholder";
+        const { resolveTierRoute } = await import("../../lib/ai-gateway.js");
+        const { activeProfile, TIERS } = await import("../../lib/ai-routing.js");
+        const effective = TIERS.map((t) => {
+            const { route, fallbackReason } = resolveTierRoute(t);
+            return { tier: t, provider: route.provider, model: route.model, servedAs: route.meta.complexity, fallbackReason };
+        });
         res.json({
+            profile: activeProfile(),
+            effective,
             tiers,
             providers: {
                 openai: {
@@ -123,72 +131,25 @@ router.get("/providers", async (req, res) => {
  */
 router.post("/complete", rateLimiters.aiGeneration(), async (req, res) => {
     try {
-        const { complexity = "simple", provider = null, model = null, system = null, user, maxTokens = null } = req.body || {};
+        const { complexity = "simple", system = null, user, maxTokens = null } = req.body || {};
         if (!user || typeof user !== "string") {
             return res.status(400).json({ error: "'user' field is required" });
         }
-        // Only configured tier models may be requested (prevents arbitrary,
-        // potentially expensive model selection by any authenticated caller).
-        const allowedModels = new Set(listTiers().map((t) => t.model));
-        if (model && !allowedModels.has(model)) {
-            return res.status(400).json({ error: "model is not enabled", allowedModels: [...allowedModels] });
+        if (!["simple", "balanced", "complex", "premium"].includes(complexity)) {
+            return res.status(400).json({ error: "complexity must be simple, balanced, complex or premium" });
         }
-        const route = routeCompletion({ complexity, provider, model });
-        const cappedMaxTokens = Math.min(Number(maxTokens) || route.maxTokens, route.maxTokens);
-        const start = Date.now();
-        let content = null;
-        let error = null;
-        let usage = null;
-        let servedModel = route.model;
-        try {
-            if (route.provider === "anthropic") {
-                const out = await createClaudeCompletion({
-                    model: route.model,
-                    system,
-                    user,
-                    maxTokens: cappedMaxTokens,
-                    temperature: route.temperature,
-                });
-                usage = out.usage || null;
-                servedModel = out.model || route.model;
-                if (out.refusal) {
-                    return res.status(422).json({ error: "model_refused", category: out.refusal.category, route });
-                }
-                content = out.content;
-            } else {
-                const { getOpenAIClient } = await import("../../lib/ai-client.js");
-                const client = getOpenAIClient();
-                const resp = await client.chat.completions.create({
-                    model: route.model,
-                    temperature: route.temperature,
-                    max_tokens: cappedMaxTokens,
-                    messages: [
-                        ...(system ? [{ role: "system", content: system }] : []),
-                        { role: "user", content: user },
-                    ],
-                });
-                usage = resp.usage || null;
-                content = resp.choices?.[0]?.message?.content || null;
-            }
-        } catch (e) {
-            error = e?.message || String(e);
+        // Workspace-scoped like every other AI call: budgets, metering and cost attribution.
+        const ws = await resolveWs(req, res);
+        if (!ws) return;
+        const { runAiTier } = await import("../../lib/ai-gateway.js");
+        const out = await runAiTier({ tier: complexity, workspaceId: ws, user, system, maxTokens, operation: "ai_complete" });
+        const route = { provider: out.provider, model: out.model, tier: out.tier, fallbackReason: out.fallbackReason ?? null };
+        if (!out.ok) {
+            if (out.error === "budget_exceeded" || out.error === "premium_budget_exceeded") return res.status(402).json({ error: out.error, detail: out.detail, route });
+            if (out.error === "model_refused") return res.status(422).json({ error: "model_refused", category: out.detail ?? null, route });
+            return res.status(502).json({ error: "upstream_ai_failed", route });
         }
-        const latencyMs = Date.now() - start;
-        route.meta.latencyMs = latencyMs;
-        route.meta.success = error == null;
-        route.meta.error = error;
-        logStructured("info", "[AI MODULE] completion", {
-            provider: route.provider,
-            model: route.model,
-            complexity,
-            latencyMs,
-            success: route.meta.success,
-            error: route.meta.error,
-        });
-        if (error) {
-            return res.status(502).json({ error: "upstream_ai_failed", detail: error, route });
-        }
-        res.json({ content, route, model: servedModel, usage });
+        res.json({ content: out.content, route, model: out.servedModel, usage: out.usage, latencyMs: out.latencyMs, costUsd: out.costUsd });
     } catch (error) {
         logStructured("error", "[AI MODULE] complete error:", { error: error.message });
         res.status(500).json({ error: "Failed to complete" });

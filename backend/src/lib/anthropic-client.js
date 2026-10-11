@@ -12,16 +12,18 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { logStructured } from "./logger.js";
 
-const apiKey = process.env.ANTHROPIC_API_KEY;
+// Read at call time so configuration changes (and tests) take effect without a reload.
+const currentKey = () => process.env.ANTHROPIC_API_KEY;
 
-if (!apiKey || apiKey === "sk-ant-placeholder") {
+if (!currentKey() || currentKey() === "sk-ant-placeholder") {
     logStructured("warn", "[AI] ANTHROPIC_API_KEY is not set or is a placeholder. Anthropic features will fail until configured.");
 }
 
 let clientInstance = null;
 
 export function isAnthropicConfigured() {
-    return Boolean(apiKey && apiKey !== "sk-ant-placeholder");
+    const key = currentKey();
+    return Boolean(key && key !== "sk-ant-placeholder");
 }
 
 export function getAnthropicClient() {
@@ -30,7 +32,7 @@ export function getAnthropicClient() {
             throw new Error("Anthropic is not configured: ANTHROPIC_API_KEY is missing.");
         }
         // Explicit timeout (ms) and retry budget; the SDK retries 408/409/429/5xx.
-        clientInstance = new Anthropic({ apiKey, timeout: 120_000, maxRetries: 2 });
+        clientInstance = new Anthropic({ apiKey: currentKey(), timeout: 120_000, maxRetries: 2 });
     }
     return clientInstance;
 }

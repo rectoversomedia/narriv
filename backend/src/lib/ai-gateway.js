@@ -13,7 +13,7 @@
  * handling. Returns a result object; never throws for provider failures.
  */
 
-import { routeForTask } from "./ai-routing.js";
+import { routeForTask, routeCompletion, openaiFallbackRoute } from "./ai-routing.js";
 import { getOpenAIClient } from "./ai-client.js";
 import { createClaudeCompletion, isAnthropicConfigured } from "./anthropic-client.js";
 import { recordTokenUsage, calculateCost, isPricedModel } from "./token-tracking.js";
@@ -46,20 +46,36 @@ export async function premiumSpendThisMonth(workspaceId, premiumModel, db = supa
     return { spend: (data || []).reduce((s, r) => s + calculateCost(r.model, r.input_tokens || 0, r.output_tokens || 0), 0), error: null };
 }
 
+/** Opus-class models count against the separate premium monthly cap. */
+export function isPremiumModel(model) {
+    return typeof model === "string" && model.startsWith("claude-opus");
+}
+
 /**
- * Resolve the route for a task, falling back from premium when it is not
- * usable. Returns { route, fallbackReason }.
+ * Make a route usable: premium without a model or provider falls back to the
+ * "complex" tier; any tier whose provider is not configured falls back to the
+ * economical OpenAI model for that tier. Returns { route, fallbackReason }.
  */
-export function resolveTaskRoute(task) {
-    const route = routeForTask(task);
+export function ensureUsableRoute(route, rerouteComplex) {
     if (route.meta.complexity === "premium" && (!route.model || !providerConfigured(route.provider))) {
-        const fallback = routeForTask(task, { tierOverride: "complex" });
-        return {
-            route: fallback,
-            fallbackReason: !route.model ? "premium model not configured (AI_MODEL_PREMIUM unset)" : `provider ${route.provider} not configured`,
-        };
+        const reason = !route.model ? "premium model not configured (AI_MODEL_PREMIUM unset)" : `provider ${route.provider} not configured`;
+        const next = ensureUsableRoute(rerouteComplex(), rerouteComplex);
+        return { route: next.route, fallbackReason: next.fallbackReason ? `${reason}; ${next.fallbackReason}` : reason };
+    }
+    if (!providerConfigured(route.provider)) {
+        return { route: openaiFallbackRoute(route.meta.complexity), fallbackReason: `provider ${route.provider} not configured; using ${openaiFallbackRoute(route.meta.complexity).model}` };
     }
     return { route, fallbackReason: null };
+}
+
+/** Resolve a task's route with fallbacks. Returns { route, fallbackReason }. */
+export function resolveTaskRoute(task) {
+    return ensureUsableRoute(routeForTask(task), () => routeForTask(task, { tierOverride: "complex" }));
+}
+
+/** Resolve a tier's route with fallbacks (used by POST /ai/complete). */
+export function resolveTierRoute(tier) {
+    return ensureUsableRoute(routeCompletion({ complexity: tier }), () => routeCompletion({ complexity: "complex" }));
 }
 
 /**
@@ -73,11 +89,22 @@ export function resolveTaskRoute(task) {
  * @param {(obj:any)=>boolean} [p.validate]  structural validator for JSON results
  */
 export async function runAiTask({ task, workspaceId, user, system = null, json = false, validate = null }, deps = {}) {
+    if (!workspaceId) return { ok: false, error: "workspaceId is required", task };
+    const { route, fallbackReason } = resolveTaskRoute(task);
+    return runRoute({ task, route, fallbackReason, workspaceId, user, system, json, validate }, deps);
+}
+
+/** Run one completion on a tier (budgets, metering and fallbacks as runAiTask). */
+export async function runAiTier({ tier, workspaceId, user, system = null, maxTokens = null, operation = "ai_complete" }, deps = {}) {
+    if (!workspaceId) return { ok: false, error: "workspaceId is required", task: operation };
+    const { route, fallbackReason } = resolveTierRoute(tier);
+    const capped = maxTokens ? { ...route, maxTokens: Math.min(Number(maxTokens) || route.maxTokens, route.maxTokens) } : route;
+    return runRoute({ task: operation, route: capped, fallbackReason, workspaceId, user, system, json: false, validate: null }, deps);
+}
+
+async function runRoute({ task, route, fallbackReason, workspaceId, user, system, json, validate }, deps = {}) {
     const openai = deps.openai || null;
     const claude = deps.claude || null;
-    if (!workspaceId) return { ok: false, error: "workspaceId is required", task };
-
-    const { route, fallbackReason } = resolveTaskRoute(task);
     const base = { task, provider: route.provider, model: route.model, tier: route.meta.complexity, fallbackReason };
 
     if (!isPricedModel(route.model)) {
@@ -89,7 +116,7 @@ export async function runAiTask({ task, workspaceId, user, system = null, json =
     if (allowance && allowance.allowed === false) {
         return { ...base, ok: false, error: "budget_exceeded", detail: allowance.reason };
     }
-    if (route.meta.complexity === "premium") {
+    if (route.meta.complexity === "premium" || isPremiumModel(route.model)) {
         const { spend, error } = await (deps.premiumSpend || premiumSpendThisMonth)(workspaceId, route.model);
         if (error || spend === null) return { ...base, ok: false, error: "premium_budget_unknown", detail: error };
         if (spend >= PREMIUM_MONTHLY_BUDGET_USD) {
@@ -105,7 +132,9 @@ export async function runAiTask({ task, workspaceId, user, system = null, json =
     let refusal = null;
     try {
         if (route.provider === "anthropic") {
-            const out = await createClaudeCompletion({ model: route.model, system, user, maxTokens: route.maxTokens }, ...(claude ? [claude] : []));
+            // Claude has no JSON mode here: ask for a bare JSON object; parseModelJson tolerates fences.
+            const claudeSystem = json ? `${system ? `${system}\n\n` : ""}Respond with a single JSON object only, no prose.` : system;
+            const out = await createClaudeCompletion({ model: route.model, system: claudeSystem, user, maxTokens: route.maxTokens }, ...(claude ? [claude] : []));
             servedModel = out.model || route.model;
             usage = { input: out.usage?.input_tokens || 0, output: out.usage?.output_tokens || 0 };
             if (out.refusal) refusal = out.refusal;
