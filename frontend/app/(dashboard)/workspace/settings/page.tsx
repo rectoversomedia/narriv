@@ -770,13 +770,17 @@ export default function SettingsPage() {
             </div>
 
             <div className="flex flex-wrap gap-2.5">
-              <button
-                type="button"
-                onClick={() => showToast(ts("toast.rolePermissionsInfo"), "info")}
-                className="flex h-9 items-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-slate-700 shadow-xs transition hover:bg-slate-50"
-              >
-                {ts("common.manageRoles")}
-              </button>
+              {/* Roles are enforced server-side; this explains them (there is no separate role editor). */}
+              <details className="relative">
+                <summary className="flex h-9 cursor-pointer list-none items-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-slate-700 shadow-xs transition hover:bg-slate-50">
+                  What each role can do
+                </summary>
+                <div className="absolute right-0 z-20 mt-2 w-[300px] rounded-[10px] border border-[#DDE3EF] bg-white p-3 text-[11px] font-semibold leading-relaxed text-slate-600 shadow-lg">
+                  <p><b className="text-[#101334]">Owner</b>: everything an admin can do, plus granting or removing the owner role. The last owner cannot be removed.</p>
+                  <p className="mt-2"><b className="text-[#101334]">Admin</b>: add and remove members (not owners), change workspace settings, monitoring keywords and integrations.</p>
+                  <p className="mt-2"><b className="text-[#101334]">Analyst</b>: view all workspace data, ask questions, and work on cases and action plans. Cannot change members, settings or keywords.</p>
+                </div>
+              </details>
               <button
                 type="button"
                 onClick={() => setShowInviteModal(true)}

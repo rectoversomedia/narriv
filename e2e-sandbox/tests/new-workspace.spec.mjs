@@ -50,6 +50,9 @@ test("settings never shows placeholder team members", async ({ browser }) => {
   const s = await signIn(browser, "owner");
   await s.page.goto("/workspace/settings");
   await expect(s.page.locator("body")).toContainText("Sandbox Analyst", { timeout: 90_000 });
+  await s.page.getByText("What each role can do").click();
+  await expect(s.page.locator("body")).toContainText("The last owner cannot be removed");
+  await expect(s.page.locator("body")).not.toContainText("manager will open");
   for (const fake of ["Jane Doe", "John Smith", "Alice Cooper", "Testing User", "narriv.ai/workspace"]) {
     await expect(s.page.locator("body")).not.toContainText(fake);
   }
