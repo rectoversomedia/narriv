@@ -1100,7 +1100,7 @@ export default function SignalsPage() {
         <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
           <Sparkles size={16} className="text-[#8B5CFF]" />
           <p className="text-[13px] font-bold text-[#8B5CFF]">
-            Demo Mode — Showing sample data for demonstration purposes
+            Demo workspace — some content on this page may be illustrative examples rather than live data
           </p>
         </div>
       )}
