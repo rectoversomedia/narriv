@@ -61,3 +61,28 @@ describe('action queue', () => {
     expect((foreign.body.data || []).some((p) => p.workspace_id === OTHER_WS || p.workspaceId === OTHER_WS)).toBe(false);
   });
 });
+
+describe('action plan status and owner', () => {
+  const PLAN = '00000000-0000-4000-8000-000000000811';
+  const OUTSIDER = '00000000-0000-4000-8000-000000000009';
+  beforeEach(() => {
+    db.table('action_plans').push({ id: PLAN, workspace_id: WS, title: 'Holding statement', type: 'pr_response', priority: 'medium', status: 'pending', strategy: '{}', created_at: '2026-06-01T00:00:00Z' });
+    db.table('users').push({ id: OUTSIDER, email: 'x@example.com', name: 'Outsider' });
+  });
+
+  it('records status and a workspace-member owner, with audit logs', async () => {
+    const res = await request(app).patch(`/action-plans/${PLAN}/assign`).set(as(OWNER)).send({ workflowStatus: 'in_progress', assignedTo: OWNER });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ workflowStatus: 'in_progress', assigned_to: OWNER });
+    expect(db.table('action_plans').find((p) => p.id === PLAN)).toMatchObject({ status: 'in_progress', assigned_to: OWNER });
+    expect(db.table('audit_logs').some((l) => l.event === 'action_plan_status_change' && l.metadata.previous_status === 'pending')).toBe(true);
+  });
+
+  it('refuses an owner who is not a workspace member and invalid statuses', async () => {
+    expect((await request(app).patch(`/action-plans/${PLAN}/assign`).set(as(OWNER)).send({ assignedTo: OUTSIDER })).status).toBe(422);
+    expect((await request(app).patch(`/action-plans/${PLAN}/assign`).set(as(OWNER)).send({ workflowStatus: 'published' })).status).toBe(400);
+    const plan = db.table('action_plans').find((p) => p.id === PLAN);
+    expect(plan.status).toBe('pending');
+    expect(plan.assigned_to).toBeUndefined();
+  });
+});

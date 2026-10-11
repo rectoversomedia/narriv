@@ -33,6 +33,7 @@ import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore"
 import { getActionPlanById, getActionQueue, getFeedbackAccuracy, submitActionPlanFeedback, getActionPlansMetrics, getActionPlanLearning, type ActionPlanResponse, type ActionQueueRecord, type MetaPaginatedResponse } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
 import { CreateActionPlanModal } from "./components/create-action-plan-modal";
+import { PlanWorkflowControls } from "./components/plan-workflow-controls";
 import { RejectActionPlanModal } from "./components/reject-action-plan-modal";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
@@ -589,6 +590,9 @@ export default function ActionPlansPage() {
                 ))}
               </div>
             </div>
+            {latestPlan?.id ? (
+              <PlanWorkflowControls key={`${latestPlan.id}-${latestPlan.workflowStatus ?? ""}-${latestPlan.assignedTo ?? ""}`} planId={latestPlan.id} status={latestPlan.workflowStatus} assignedTo={latestPlan.assignedTo} />
+            ) : null}
             <button type="button" onClick={() => setSelectedActionId("")} className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#F8FAFF] text-[12px] font-black text-[#465FFF] transition hover:bg-[#465FFF]/5">{t("backToQueue")} <ChevronRight size={14} /></button>
             <div className="mt-3 flex gap-2">
               <button type="button" onClick={() => { if (latestPlan?.id) feedbackMutation.mutate({ actionPlanId: latestPlan.id, action: "accepted" }); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[#10B981]/10 text-[11px] font-black text-[#0C9B69] transition hover:bg-[#10B981]/20 disabled:opacity-50"><Check size={14} /> {t("approve")}</button>

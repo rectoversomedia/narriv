@@ -22,6 +22,7 @@ const assignActionPlanBodySchema = z.object({
     assignedTeam: z.string().trim().min(1, "assignedTeam cannot be empty.").max(120, "assignedTeam is too long.").optional().nullable(),
     deadline: z.string().datetime("deadline must be a valid ISO datetime.").optional().nullable(),
     escalationLevel: z.enum(["low", "medium", "high", "critical"]).optional(),
+    workflowStatus: z.enum(["pending", "in_progress", "blocked", "done"]).optional(),
 });
 
 function parseOption(raw) {
@@ -455,12 +456,12 @@ router.post("/:id/feedback", validateRequest({ params: actionPlanIdParamsSchema,
 router.patch("/:id/assign", validateRequest({ params: assignActionPlanParamsSchema, body: assignActionPlanBodySchema }), async (req, res) => {
     try {
         const { id } = req.params;
-        const { assignedTo, assignedTeam, deadline, escalationLevel } = req.body;
+        const { assignedTo, assignedTeam, deadline, escalationLevel, workflowStatus } = req.body;
         const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
 
         const { data: existing, error: existingError } = await supabase
             .from("action_plans")
-            .select("id, workspace_id, priority")
+            .select("id, workspace_id, priority, status")
             .eq("id", id)
             .maybeSingle();
 
@@ -474,7 +475,21 @@ router.patch("/:id/assign", validateRequest({ params: assignActionPlanParamsSche
             updated_at: new Date().toISOString(),
         };
         if (assignedTo !== undefined) {
-            updatePayload.assigned_to = assignedTo ? (assignedTo.match(/^[0-9a-fA-F-]{36}$/) ? assignedTo : null) : null;
+            const candidate = assignedTo && /^[0-9a-fA-F-]{36}$/.test(assignedTo) ? assignedTo : null;
+            if (candidate) {
+                // The owner must be a member of the plan's workspace.
+                const { data: member } = await supabase
+                    .from("workspace_members")
+                    .select("user_id")
+                    .eq("workspace_id", existing.workspace_id)
+                    .eq("user_id", candidate)
+                    .maybeSingle();
+                if (!member) return res.status(422).json({ error: "The assignee is not a member of this workspace.", code: "ASSIGNEE_NOT_MEMBER" });
+            }
+            updatePayload.assigned_to = candidate;
+        }
+        if (workflowStatus) {
+            updatePayload.status = workflowStatus;
         }
         if (escalationLevel) {
             updatePayload.priority = escalationLevel;
@@ -503,6 +518,15 @@ router.patch("/:id/assign", validateRequest({ params: assignActionPlanParamsSche
                 escalation_level: escalationLevel ?? updated.priority,
             }
         });
+
+        if (workflowStatus && workflowStatus !== existing.status) {
+            await supabase.from("audit_logs").insert({
+                user_id: req.user.id,
+                workspace_id: updated.workspace_id,
+                event: "action_plan_status_change",
+                metadata: { target_type: "action_plan", action_plan_id: updated.id, workspace_id: updated.workspace_id, previous_status: existing.status, status: updated.status },
+            });
+        }
 
         if (escalationLevel && escalationLevel !== existing.priority) {
             await supabase.from("audit_logs").insert({

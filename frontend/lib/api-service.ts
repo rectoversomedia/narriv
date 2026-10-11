@@ -275,6 +275,8 @@ export interface AssignmentInput {
   assignedTeam?: string | null;
   deadline?: string | null;
   escalationLevel?: EscalationLevel;
+  // Action plans only: recorded workflow state.
+  workflowStatus?: "pending" | "in_progress" | "blocked" | "done";
 }
 
 // ---------------------------------------------------------------------------
@@ -910,8 +912,17 @@ export async function deleteMonitoringKeyword(id: string): Promise<MonitoringKey
 
 export async function getWorkspaceMembers(): Promise<WorkspaceMemberRecord[] | null> {
   try {
-    const response = await apiClient<{ data: WorkspaceMemberRecord[] }>("/api/workspace/members");
-    return response.data;
+    // The API returns snake_case rows; normalize to the camelCase record shape.
+    const response = await apiClient<{ data: Array<Record<string, unknown>> }>("/api/workspace/members");
+    return (response.data || []).map((m) => ({
+      ...(m as object),
+      id: String(m.id),
+      workspaceId: String(m.workspaceId ?? m.workspace_id ?? ""),
+      userId: String(m.userId ?? m.user_id ?? ""),
+      role: String(m.role ?? ""),
+      createdAt: String(m.createdAt ?? m.created_at ?? ""),
+      user: m.user && !Array.isArray(m.user) ? (m.user as WorkspaceMemberRecord["user"]) : undefined,
+    })) as WorkspaceMemberRecord[];
   } catch {
     return null;
   }
