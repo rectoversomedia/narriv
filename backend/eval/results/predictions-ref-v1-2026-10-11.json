@@ -1,0 +1,265 @@
+{
+  "startedAt": "2026-10-11T05:44:14.454Z",
+  "current": [
+    {
+      "id": "01bf3745-2127-49c6-bb58-bb41c2a6f74c",
+      "status": 200,
+      "latencyMs": 4129,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "neutral",
+      "impact": "medium",
+      "error": null
+    },
+    {
+      "id": "7bb8d2f1-5101-4322-bcff-8ebb4bfbe81d",
+      "status": 200,
+      "latencyMs": 3352,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "negative",
+      "impact": "medium",
+      "error": null
+    },
+    {
+      "id": "5472ce4f-f318-4c6c-9145-636303c1a316",
+      "status": 200,
+      "latencyMs": 3292,
+      "attempts": 2,
+      "model": "gpt-4o-mini",
+      "sentiment": "positive",
+      "impact": "medium",
+      "error": null
+    },
+    {
+      "id": "a530e35e-51e9-4dda-8ca3-ae6fbc48b6ff",
+      "status": 200,
+      "latencyMs": 2907,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "negative",
+      "impact": "high",
+      "error": null
+    },
+    {
+      "id": "2a015aa3-d949-4fb9-8a56-72ffafe57f5d",
+      "status": 200,
+      "latencyMs": 2220,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "neutral",
+      "impact": "low",
+      "error": null
+    },
+    {
+      "id": "d202d5e8-b545-4372-9684-f8f578b0b043",
+      "status": 200,
+      "latencyMs": 2788,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "neutral",
+      "impact": "medium",
+      "error": null
+    },
+    {
+      "id": "c7fafec8-528c-4621-bd76-808573121f96",
+      "status": 200,
+      "latencyMs": 2629,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "negative",
+      "impact": "medium",
+      "error": null
+    },
+    {
+      "id": "0ce60fa9-1cac-43b9-87bf-d18aaa14c49d",
+      "status": 200,
+      "latencyMs": 2579,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "positive",
+      "impact": "medium",
+      "error": null
+    },
+    {
+      "id": "b5e0a07e-bd7f-463a-8fb2-1fc191de8276",
+      "status": 200,
+      "latencyMs": 2245,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "negative",
+      "impact": "high",
+      "error": null
+    },
+    {
+      "id": "3f9c1fa3-75a1-4f2a-bd36-594d612c4ea2",
+      "status": 200,
+      "latencyMs": 2863,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "neutral",
+      "impact": "low",
+      "error": null
+    },
+    {
+      "id": "23e85f04-608c-4a7e-997a-a3f2ca4f62a6",
+      "status": 200,
+      "latencyMs": 2683,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "neutral",
+      "impact": "medium",
+      "error": null
+    },
+    {
+      "id": "6fcd8015-a721-447c-b096-69e3f9cb07c2",
+      "status": 200,
+      "latencyMs": 2261,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "positive",
+      "impact": "medium",
+      "error": null
+    },
+    {
+      "id": "5c1eb510-1f67-4cab-8b4f-6ae8b45114f5",
+      "status": 200,
+      "latencyMs": 2615,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "neutral",
+      "impact": "medium",
+      "error": null
+    },
+    {
+      "id": "31b2ecf8-0f7f-41f5-a370-03eaeb8be7a2",
+      "status": 200,
+      "latencyMs": 2740,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "positive",
+      "impact": "medium",
+      "error": null
+    },
+    {
+      "id": "74ebda8c-8c54-4d56-a13e-9598434daeb8",
+      "status": 200,
+      "latencyMs": 2619,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "neutral",
+      "impact": "medium",
+      "error": null
+    },
+    {
+      "id": "1d044b68-2a4f-43d3-97f5-a902b7d7f53c",
+      "status": 200,
+      "latencyMs": 2242,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "positive",
+      "impact": "medium",
+      "error": null
+    },
+    {
+      "id": "58d128b2-e307-4c7e-adee-893b22cafb9f",
+      "status": 200,
+      "latencyMs": 3519,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "positive",
+      "impact": "medium",
+      "error": null
+    },
+    {
+      "id": "0a070758-f30d-41e6-897d-3b27ae721f73",
+      "status": 200,
+      "latencyMs": 2357,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "positive",
+      "impact": "medium",
+      "error": null
+    },
+    {
+      "id": "d5e3adc8-cf67-4f53-bebf-0ba9eae5c462",
+      "status": 200,
+      "latencyMs": 2839,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "positive",
+      "impact": "medium",
+      "error": null
+    },
+    {
+      "id": "28058e93-b68c-45bc-b8d4-efff2ed33f1a",
+      "status": 200,
+      "latencyMs": 3041,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "positive",
+      "impact": "medium",
+      "error": null
+    },
+    {
+      "id": "8f289253-4a27-4a30-9836-8a49c9f8fe5e",
+      "status": 200,
+      "latencyMs": 2400,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "positive",
+      "impact": "medium",
+      "error": null
+    },
+    {
+      "id": "962cdafa-c372-4659-9a72-7c7ca47bdf59",
+      "status": 200,
+      "latencyMs": 2351,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "positive",
+      "impact": "medium",
+      "error": null
+    },
+    {
+      "id": "439aa497-9d33-48a8-adae-e8715dbb1bef",
+      "status": 200,
+      "latencyMs": 2649,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "positive",
+      "impact": "medium",
+      "error": null
+    },
+    {
+      "id": "9217c16c-8199-499a-b2b8-c5b526a12238",
+      "status": 200,
+      "latencyMs": 2668,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "positive",
+      "impact": "medium",
+      "error": null
+    },
+    {
+      "id": "c3487123-0ffd-4264-a6b2-7012d476dbd3",
+      "status": 200,
+      "latencyMs": 2595,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "positive",
+      "impact": "medium",
+      "error": null
+    },
+    {
+      "id": "f14edd55-6376-4e54-880c-5fbc5f2674f1",
+      "status": 200,
+      "latencyMs": 2704,
+      "attempts": 1,
+      "model": "gpt-4o-mini",
+      "sentiment": "positive",
+      "impact": "medium",
+      "error": null
+    }
+  ]
+}

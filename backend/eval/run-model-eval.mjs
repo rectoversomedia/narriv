@@ -63,28 +63,46 @@ const pct = (arr, q) => {
     return s[Math.min(s.length - 1, Math.floor(q * s.length))];
 };
 
-async function runCurrentArm(token) {
+const REQUEST_TIMEOUT_MS = Number(process.env.EVAL_REQUEST_TIMEOUT_MS || 60000);
+
+/** One analyze request with a hard timeout and one 429 retry (honoring retryAfter). */
+async function analyzeOnce(token, it) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+        const started = Date.now();
+        try {
+            const r = await fetch(`${API}/ai/analyze`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ title: it.title, content: it.snippet || it.title }),
+                signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+            });
+            const latencyMs = Date.now() - started;
+            const body = await r.json().catch(() => ({}));
+            if (r.status === 429 && attempt === 0) {
+                await sleep(((Number(body.retryAfter) || 60) + 2) * 1000);
+                continue;
+            }
+            return {
+                id: it.id, status: r.status, latencyMs, attempts: attempt + 1,
+                model: body.meta?.model || null,
+                sentiment: norm(body.result?.sentiment),
+                impact: norm(body.result?.impact),
+                error: r.ok ? null : body.error || `HTTP ${r.status}`,
+            };
+        } catch (e) {
+            return { id: it.id, status: null, latencyMs: Date.now() - started, attempts: attempt + 1, model: null, sentiment: null, impact: null, error: e?.name === "TimeoutError" ? `timeout after ${REQUEST_TIMEOUT_MS}ms` : String(e?.message || e) };
+        }
+    }
+}
+
+async function runCurrentArm(token, onProgress) {
     const out = [];
     for (const [i, it] of items.entries()) {
         if (i > 0) await sleep(PAUSE_MS);
-        const started = Date.now();
-        const r = await fetch(`${API}/ai/analyze`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ title: it.title, content: it.snippet || it.title }),
-        });
-        const latencyMs = Date.now() - started;
-        const body = await r.json().catch(() => ({}));
-        out.push({
-            id: it.id,
-            status: r.status,
-            latencyMs,
-            model: body.meta?.model || null,
-            sentiment: norm(body.result?.sentiment),
-            impact: norm(body.result?.impact),
-            error: r.ok ? null : body.error || `HTTP ${r.status}`,
-        });
-        process.stderr.write(`current ${i + 1}/${items.length} ${r.status} ${latencyMs}ms\n`);
+        const res = await analyzeOnce(token, it);
+        out.push(res);
+        onProgress?.(out);
+        process.stderr.write(`current ${i + 1}/${items.length} ${res.status ?? "ERR"} ${res.latencyMs}ms${res.error ? ` (${res.error})` : ""}\n`);
     }
     return out;
 }
@@ -151,11 +169,11 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
     const providers = await (await fetch(`${API}/ai/providers`, { headers: { Authorization: `Bearer ${token}` } })).json();
     const premiumRouted = providers?.providers?.anthropic?.configured && (providers?.tiers || []).some((t) => t.name === "premium");
 
-    const current = await runCurrentArm(token);
-    // Persist raw predictions first so post-processing failures cannot lose them.
+    // Persist predictions after every item so an interruption cannot lose them.
     const outDir = path.join(here, "results");
     fs.mkdirSync(outDir, { recursive: true });
-    fs.writeFileSync(path.join(outDir, `predictions-${ref.version}-${startedAt.slice(0, 10)}.json`), JSON.stringify({ startedAt, current }, null, 2) + "\n");
+    const predFile = path.join(outDir, `predictions-${ref.version}-${startedAt.slice(0, 10)}.json`);
+    const current = await runCurrentArm(token, (sofar) => fs.writeFileSync(predFile, JSON.stringify({ startedAt, current: sofar }, null, 2) + "\n"));
     const report = {
         referenceSet: ref.version,
         items: items.length,
