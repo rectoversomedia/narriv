@@ -5,6 +5,8 @@ import crypto from "crypto";
 const publicPaths = [
   "/pricing",
   "/help",
+  "/terms",
+  "/privacy",
   "/onboarding",
   "/login",
   "/signup",

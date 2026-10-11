@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { SUPPORT_EMAIL } from "@/lib/support";
 import {
   Search,
   Book,
@@ -434,18 +435,21 @@ export default function HelpCenterPage() {
               <div className="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl p-8 text-center text-white">
                 <MessageCircle size={40} className="mx-auto mb-4 opacity-80" />
                 <h2 className="text-2xl font-bold">Still need help?</h2>
-                <p className="mt-2 text-white/80">
-                  Our support team is available Monday to Friday, 9 AM to 6 PM WIB
-                </p>
-                <div className="mt-6 flex flex-wrap justify-center gap-4">
-                  <a
-                    href="mailto:support@narriv.ai"
-                    className="inline-flex items-center gap-2 rounded-lg border-2 border-white/30 px-6 py-3 font-bold text-white hover:bg-white/10 transition-colors"
-                  >
-                    <Mail size={18} />
-                    Email Support
-                  </a>
-                </div>
+                {SUPPORT_EMAIL ? (
+                  <div className="mt-6 flex flex-wrap justify-center gap-4">
+                    <a
+                      href={`mailto:${SUPPORT_EMAIL}`}
+                      className="inline-flex items-center gap-2 rounded-lg border-2 border-white/30 px-6 py-3 font-bold text-white hover:bg-white/10 transition-colors"
+                    >
+                      <Mail size={18} />
+                      Email Support ({SUPPORT_EMAIL})
+                    </a>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-white/80">
+                    A support mailbox has not been published yet. Please contact your Narriv account representative or your workspace owner.
+                  </p>
+                )}
               </div>
             </section>
           </>

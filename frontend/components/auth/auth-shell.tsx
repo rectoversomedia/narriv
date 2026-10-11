@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { SUPPORT_EMAIL } from "@/lib/support";
 import { useTranslations } from "next-intl";
 import type { ChangeEvent, ClipboardEvent, InputHTMLAttributes, KeyboardEvent, MouseEvent, ReactNode } from "react";
 import { useRef, useState } from "react";
@@ -173,7 +174,7 @@ export function HelpAction() {
     <div className="flex items-center gap-2 text-[15px] font-medium text-[#344054]">
       <HelpCircle size={20} className="text-[#344054]" />
       <span>{t("help.needHelp")}</span>
-      <Link href="mailto:support@narriv.ai" className="font-semibold text-[#2F20FF] hover:underline">
+      <Link href={SUPPORT_EMAIL ? `mailto:${SUPPORT_EMAIL}` : "/help#contact"} className="font-semibold text-[#2F20FF] hover:underline">
         {t("help.contact")}
       </Link>
     </div>
