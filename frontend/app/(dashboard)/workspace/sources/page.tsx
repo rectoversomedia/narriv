@@ -219,7 +219,7 @@ function ConnectorCard({ source, selected, onSelect, onToggle, onDelete, onSync 
   };
 
   return (
-    <div role="button" tabIndex={0} onClick={() => onSelect(source)} onKeyDown={handleKeyDown} className={cn("group rounded-[13px] border bg-white p-4 text-left transition hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(16,24,40,0.08)] focus:outline-none focus:ring-2 focus:ring-[#465FFF]/30", selected ? "border-[#465FFF] shadow-[0_12px_30px_rgba(70,95,255,0.08)]" : "border-[#E8ECF5]")}> 
+    <div role="button" tabIndex={0} onClick={() => onSelect(source)} onKeyDown={handleKeyDown} className={cn("group rounded-[13px] border bg-white p-4 text-left transition hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(16,24,40,0.08)] focus:outline-none focus:ring-2 focus:ring-[#465FFF]/30", selected ? "border-[#465FFF] shadow-sm" : "border-[#E8ECF5]")}> 
       <div className="flex items-start justify-between gap-3">
         <span className={cn("flex size-10 items-center justify-center rounded-[10px]", style.bg)} style={source.tone === "black" ? undefined : { backgroundColor: `rgba(${style.rgb}, .10)`, color: style.color }}><Icon className="size-[21px]" /></span>
         <div className="flex items-center gap-2">
@@ -280,7 +280,7 @@ function ConnectorListRow({ source, selected, onSelect, onToggle, onDelete, onSy
       onKeyDown={handleKeyDown}
       className={cn(
         "group grid grid-cols-[minmax(0,1fr)_120px_120px_140px_120px_auto] items-center gap-4 rounded-[12px] border bg-white px-4 py-3 text-left transition hover:border-[#CBD5E1] focus:outline-none focus:ring-2 focus:ring-[#465FFF]/30",
-        selected ? "border-[#465FFF] shadow-[0_8px_22px_rgba(70,95,255,0.06)]" : "border-[#E8ECF5]"
+        selected ? "border-[#465FFF] shadow-sm" : "border-[#E8ECF5]"
       )}
     >
       <div className="flex min-w-0 items-center gap-3">
@@ -773,19 +773,19 @@ export default function SourcesPage() {
       )}
 
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div><h1 className="text-[31px] font-black tracking-[-0.045em] text-[#060A23]">{t("title")}</h1><p className="mt-2 text-[14px] font-semibold text-[#68739F]">{t("desc")}</p></div>
+        <div><h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1><p className="mt-2 max-w-2xl text-[14px] font-medium leading-6 text-body">{t("desc")}</p></div>
         <div className="flex flex-wrap items-center gap-2.5">
           <button
             type="button"
             onClick={handleFetchLatestSignals}
             disabled={isFetchingSignals}
             title="Fetch latest live news signals from RSS & Google News"
-            className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[13px] font-black text-[#31406B] shadow-xs transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-70 sm:w-fit"
+            className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[13px] font-black text-[#31406B] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-70 sm:w-fit"
           >
             <RotateCw size={15} className={cn("text-[#465FFF]", isFetchingSignals && "animate-spin")} />
             {isFetchingSignals ? "Fetching Signals..." : "Fetch Latest Signals"}
           </button>
-          <button type="button" onClick={() => setIsModalOpen(true)} disabled={bootstrapMutation.isPending} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#8B5CFF] px-4 text-[13px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] transition disabled:cursor-not-allowed disabled:opacity-70 sm:w-fit"><Plus size={15} />{bootstrapMutation.isPending ? toast("bootstrapInProgress") : t("add")}</button>
+          <button type="button" onClick={() => setIsModalOpen(true)} disabled={bootstrapMutation.isPending} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B51E0] px-4 text-[13px] font-black text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-70 sm:w-fit"><Plus size={15} />{bootstrapMutation.isPending ? toast("bootstrapInProgress") : t("add")}</button>
         </div>
       </header>
 

@@ -242,7 +242,7 @@ export function WorldActivityMap({
           })}
         </ComposableMap>
       ) : (
-        <div className="h-full w-full animate-pulse bg-linear-to-br from-slate-50 via-white to-[#EEF2FF]" />
+        <div className="h-full w-full animate-pulse bg-gradient-to-br from-slate-50 via-white to-[#EEF2FF]" />
       )}
 
       {!hasActivity && geography && !mapLoadFailed ? (

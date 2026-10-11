@@ -88,9 +88,9 @@ function TypingIndicator({ text }: { text: string }) {
       <div className="flex flex-col gap-1.5 rounded-2xl rounded-tl-sm border border-slate-100 bg-white px-4 py-3 shadow-sm">
         <p className="text-[12px] font-semibold text-slate-400">{text}</p>
         <div className="flex items-center gap-1">
-          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-300 [animation-delay:0ms]" />
-          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-300 [animation-delay:150ms]" />
-          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-300 [animation-delay:300ms]" />
+          <span className="h-1.5 w-1.5 typing-dot rounded-full bg-slate-300 [animation-delay:0ms]" />
+          <span className="h-1.5 w-1.5 typing-dot rounded-full bg-slate-300 [animation-delay:150ms]" />
+          <span className="h-1.5 w-1.5 typing-dot rounded-full bg-slate-300 [animation-delay:300ms]" />
         </div>
       </div>
     </div>
@@ -112,6 +112,10 @@ export default function AskPage() {
   // Only show a model name after the backend reports which model actually answered.
   const [lastModel, setLastModel] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  // Suggestions start collapsed on small screens so the conversation has room.
+  useEffect(() => {
+    if (window.matchMedia("(max-width: 1023px)").matches) setSidebarOpen(false);
+  }, []);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -241,11 +245,12 @@ export default function AskPage() {
   }, [initialized, WELCOME_MESSAGE]);
 
   return (
-    <div className="flex h-[calc(100vh-140px)] min-h-0 overflow-hidden">
-      {/* ── Sidebar ── */}
+    <div className="relative flex h-[calc(100dvh-250px)] min-h-[420px] overflow-hidden rounded-card border border-line bg-white lg:h-[calc(100dvh-152px)]">
+      {/* ── Sidebar (overlay on small screens, column on desktop) ── */}
+      {sidebarOpen ? <button type="button" aria-label="Close suggestions" onClick={() => setSidebarOpen(false)} className="absolute inset-0 z-10 bg-navy/20 lg:hidden" /> : null}
       <aside
-        className={`shrink-0 border-r border-slate-100 bg-white transition-all duration-200 flex flex-col ${
-          sidebarOpen ? "w-60" : "w-0 overflow-hidden"
+        className={`flex shrink-0 flex-col border-r border-line-soft bg-white transition-[width] duration-base ease-standard ${
+          sidebarOpen ? "absolute inset-y-0 left-0 z-20 w-[85%] max-w-[300px] shadow-raised lg:static lg:w-64 lg:shadow-none" : "w-0 overflow-hidden"
         }`}
       >
         <div className="flex flex-col gap-1 p-4">
@@ -274,7 +279,10 @@ export default function AskPage() {
                   <button
                     key={cat.id}
                     type="button"
-                    onClick={() => sendMessage(cat.question)}
+                    onClick={() => {
+                      sendMessage(cat.question);
+                      if (window.matchMedia("(max-width: 1023px)").matches) setSidebarOpen(false);
+                    }}
                     className="flex items-start gap-2.5 rounded-xl border border-transparent px-3 py-2.5 text-left transition-all hover:border-[#465FFF]/15 hover:bg-[#465FFF]/5 active:scale-[0.98]"
                   >
                     <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[#465FFF]/10">
@@ -443,9 +451,9 @@ export default function AskPage() {
                 <div className="rounded-2xl rounded-tl-sm border border-slate-100 bg-white px-5 py-4 shadow-sm">
                   <p className="mb-2 text-[12px] font-semibold text-slate-400">{tAsk("thinking")}</p>
                   <div className="flex items-center gap-1">
-                    <span className="h-2 w-2 animate-bounce rounded-full bg-[#465FFF]/40 [animation-delay:0ms]" />
-                    <span className="h-2 w-2 animate-bounce rounded-full bg-[#465FFF]/40 [animation-delay:150ms]" />
-                    <span className="h-2 w-2 animate-bounce rounded-full bg-[#465FFF]/40 [animation-delay:300ms]" />
+                    <span className="h-2 w-2 typing-dot rounded-full bg-[#465FFF]/40 [animation-delay:0ms]" />
+                    <span className="h-2 w-2 typing-dot rounded-full bg-[#465FFF]/40 [animation-delay:150ms]" />
+                    <span className="h-2 w-2 typing-dot rounded-full bg-[#465FFF]/40 [animation-delay:300ms]" />
                   </div>
                 </div>
               </div>
@@ -479,7 +487,7 @@ export default function AskPage() {
               type="button"
               onClick={() => sendMessage(inputValue)}
               disabled={!inputValue.trim()}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#465FFF] text-white shadow-[0_4px_12px_rgba(70,95,255,0.25)] transition-all hover:bg-[#3b50d8] active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#465FFF] text-white shadow-sm transition-all hover:bg-[#3b50d8] active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-40"
               aria-label={tAsk("send")}
             >
               <Send size={16} />

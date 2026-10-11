@@ -83,7 +83,7 @@ export function Sidebar() {
                   className="h-10 w-10 scale-[1.28] object-contain"
                 />
               </span>
-              <span className="text-[24px] font-bold tracking-[-0.05em] bg-clip-text text-transparent bg-linear-to-r from-white via-white to-white/70">
+              <span className="text-[24px] font-bold tracking-[-0.05em] bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/70">
                 {brandName}
               </span>
             </>
@@ -137,7 +137,7 @@ export function Sidebar() {
           ))}
         </nav>
 
-        {sidebarCollapsed || !pipeline ? null : <div className="mt-8 rounded-[8px] border border-white/10 bg-white/2 p-4 backdrop-blur-md">
+        {sidebarCollapsed || !pipeline ? null : <div className="mt-8 rounded-[8px] border border-white/10 bg-white/[0.02] p-4 backdrop-blur-md">
           <div className="text-[11px] font-semibold text-white/90">Pipeline status</div>
           <dl className="mt-3 space-y-1.5 text-[11px]">
             <div className="flex justify-between gap-2"><dt className="text-white/50">Last ingestion</dt><dd className="font-bold text-white/90">{timeAgo(pipeline.scheduler.lastSuccessfulIngestionForWorkspace ?? pipeline.ingestion.lastRawDocumentAt)}</dd></div>

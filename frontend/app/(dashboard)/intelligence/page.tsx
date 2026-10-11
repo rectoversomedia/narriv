@@ -444,7 +444,7 @@ function TrendBadge({ value, tone, className }: { value: string; tone: Tone; cla
 
 function CompetitorDonut({ label, gradient, totalLabel }: { label: string; gradient: string; totalLabel: string }) {
   return (
-    <div className="chart-donut-enter relative flex size-[150px] shrink-0 items-center justify-center rounded-full shadow-[0_12px_24px_rgba(70,95,255,0.10)]" style={{ background: gradient }}>
+    <div className="chart-donut-enter relative flex size-[150px] shrink-0 items-center justify-center rounded-full shadow-sm" style={{ background: gradient }}>
       <div className="absolute size-[102px] rounded-full bg-white" />
       <div className="relative max-w-[86px] text-center">
         <p className="text-[12px] font-black leading-tight text-[#101334]">{totalLabel}</p>
@@ -727,8 +727,8 @@ export default function IntelligencePage() {
 
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-[32px] font-black tracking-[-0.04em] text-[#060A23]">{ti("pageTitle")}</h1>
-          <p className="mt-2 text-[15px] font-medium text-slate-500">{ti("pageSubtitle")}</p>
+          <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{ti("pageTitle")}</h1>
+          <p className="mt-2 max-w-2xl text-[14px] font-medium leading-6 text-body">{ti("pageSubtitle")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
           <button
@@ -990,7 +990,7 @@ export default function IntelligencePage() {
             <CardContent className="p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h3 className="text-[15px] font-black tracking-[-0.02em] text-[#101334]">{ti("growingClusters.title")}</h3>
-                <button type="button" onClick={() => setIsAllClustersModalOpen(true)} className="text-[11px] font-black text-[#465FFF] transition hover:text-[#351EFF]">
+                <button type="button" onClick={() => setIsAllClustersModalOpen(true)} className="text-[11px] font-black text-[#465FFF] transition hover:text-[#465FFF]">
                   {ti("growingClusters.viewAll")}
                 </button>
               </div>
@@ -1087,7 +1087,7 @@ export default function IntelligencePage() {
                   </div>
                 </div>
               </div>
-              <button type="button" onClick={() => setIsAnalysisOpen(true)} disabled={!selectedNarrativeId} className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-[9px] bg-gradient-to-r from-[#465FFF] to-[#8B5CFF] text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.22)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50">
+              <button type="button" onClick={() => setIsAnalysisOpen(true)} disabled={!selectedNarrativeId} className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-[9px] bg-[#465FFF] hover:bg-[#3B51E0] text-[12px] font-black text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50">
                 {ti("selectedNarrative.btnAnalysis")}
                 <ChevronRight size={14} />
               </button>
@@ -1117,7 +1117,7 @@ export default function IntelligencePage() {
                   })}
                 </div>
               </div>
-              <button type="button" onClick={() => setIsLandscapeOpen(true)} className="mt-3 flex w-full items-center justify-center gap-1.5 text-[11px] font-extrabold text-[#465FFF] transition hover:text-[#351EFF]">
+              <button type="button" onClick={() => setIsLandscapeOpen(true)} className="mt-3 flex w-full items-center justify-center gap-1.5 text-[11px] font-extrabold text-[#465FFF] transition hover:text-[#465FFF]">
                 {ti("competitorShare.viewLandscape")}
                 <ChevronRight size={13} />
               </button>

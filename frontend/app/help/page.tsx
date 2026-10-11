@@ -37,7 +37,6 @@ const categories = [
     color: "bg-blue-500",
     title: "Getting Started",
     description: "Learn the basics of Narriv",
-    articles: 8,
     topics: [
       { title: "Quick Start Guide", slug: "quick-start" },
       { title: "Dashboard Overview", slug: "dashboard-overview" },
@@ -51,7 +50,6 @@ const categories = [
     color: "bg-purple-500",
     title: "Data Sources",
     description: "Configure and manage data sources",
-    articles: 12,
     topics: [
       { title: "Adding Your First Source", slug: "adding-source" },
       { title: "Supported Platforms", slug: "supported-platforms" },
@@ -65,7 +63,6 @@ const categories = [
     color: "bg-green-500",
     title: "Signals & Monitoring",
     description: "Understanding signals and monitoring",
-    articles: 15,
     topics: [
       { title: "What Are Signals?", slug: "what-are-signals" },
       { title: "Filtering & Search", slug: "filtering-search" },
@@ -79,7 +76,6 @@ const categories = [
     color: "bg-red-500",
     title: "Alerts & Notifications",
     description: "Setting up and managing alerts",
-    articles: 10,
     topics: [
       { title: "Alert Types Explained", slug: "alert-types" },
       { title: "Creating Custom Alerts", slug: "custom-alerts" },
@@ -93,7 +89,6 @@ const categories = [
     color: "bg-indigo-500",
     title: "AI & Automation",
     description: "Leveraging AI features",
-    articles: 9,
     topics: [
       { title: "AI Signal Analysis", slug: "ai-analysis" },
       { title: "Generating Action Plans", slug: "action-plans" },
@@ -107,7 +102,6 @@ const categories = [
     color: "bg-amber-500",
     title: "Reports & Analytics",
     description: "Creating and managing reports",
-    articles: 7,
     topics: [
       { title: "Report Templates", slug: "report-templates" },
       { title: "Scheduled Reports", slug: "scheduled-reports" },
@@ -121,7 +115,6 @@ const categories = [
     color: "bg-teal-500",
     title: "Team Management",
     description: "Collaboration and access control",
-    articles: 6,
     topics: [
       { title: "Roles & Permissions", slug: "roles-permissions" },
       { title: "Workspace Settings", slug: "workspace-settings" },
@@ -134,7 +127,6 @@ const categories = [
     color: "bg-slate-600",
     title: "Security & Compliance",
     description: "Data security and privacy",
-    articles: 5,
     topics: [
       { title: "Data Encryption", slug: "data-encryption" },
       { title: "GDPR Compliance", slug: "gdpr-compliance" },
@@ -182,10 +174,10 @@ function ArticlePage({ article }: { article: Article }) {
           <p className="text-sm font-medium text-slate-900 mb-4">Was this article helpful?</p>
           <div className="flex items-center gap-4">
             <button className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
-              👍 Yes, helpful
+              Yes, helpful
             </button>
             <button className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
-              👎 Not helpful
+              Not helpful
             </button>
           </div>
         </div>
@@ -233,7 +225,6 @@ function CategoryCard({
             {category.title}
           </h3>
           <p className="mt-1 text-sm text-slate-500 line-clamp-2">{category.description}</p>
-          <p className="mt-2 text-xs text-slate-400">{category.articles} articles</p>
         </div>
         <ChevronRight
           size={20}

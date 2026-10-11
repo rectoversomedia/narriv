@@ -419,7 +419,7 @@ export default function OpportunitiesPage() {
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#465FFF]/10 text-[#465FFF]">
               <Search size={18} />
             </span>
-            <h1 className="text-[22px] font-black tracking-[-0.03em] text-slate-900">
+            <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">
               {t("title")}
             </h1>
             <span className="rounded-[6px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#8B5CFF]">

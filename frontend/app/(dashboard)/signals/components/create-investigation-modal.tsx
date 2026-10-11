@@ -180,7 +180,7 @@ export function CreateInvestigationModal({
             <button
               type="submit"
               disabled={isSubmitting || !title.trim()}
-              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-linear-to-r from-[#465FFF] to-[#5C4DFF] text-[12px] font-black text-white transition hover:opacity-90 disabled:opacity-50"
+              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] text-[12px] font-black text-white transition hover:opacity-90 disabled:opacity-50"
             >
               {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : null}
               {t("submit")}

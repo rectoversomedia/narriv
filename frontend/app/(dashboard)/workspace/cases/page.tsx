@@ -419,7 +419,7 @@ function CaseDetailSidebar({
                     resolution === (record.resolution || "")
                   }
                   onClick={() => resolutionMutation.mutate()}
-                  className="mt-2 flex h-9 items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_8px_16px_rgba(70,95,255,0.2)] transition hover:opacity-90 disabled:opacity-50"
+                  className="mt-2 flex h-9 items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:opacity-50"
                 >
                   {resolutionMutation.isPending && (
                     <RefreshCcw size={13} className="animate-spin" />
@@ -719,10 +719,10 @@ export default function CasesPage() {
       {/* ─── Header ─── */}
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="mt-3 text-[28px] font-black tracking-tight text-slate-900">
+          <h1 className="mt-3 text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">
             {t("header.title")}
           </h1>
-          <p className="mt-1 max-w-2xl text-sm font-medium leading-6 text-slate-500">
+          <p className="mt-1 max-w-2xl text-[14px] font-medium leading-6 text-body">
             {t("header.desc")}
           </p>
         </div>
@@ -741,7 +741,7 @@ export default function CasesPage() {
           </button>
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex h-10 items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#8B5CFF] px-4 text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] transition hover:opacity-90 sm:w-fit"
+            className="flex h-10 items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B51E0] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 sm:w-fit"
           >
             <Plus size={15} />
             {t("header.newCase")}
@@ -825,7 +825,7 @@ export default function CasesPage() {
             action={
               <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="inline-flex items-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 py-2.5 text-[12px] font-black text-white shadow-[0_8px_16px_rgba(70,95,255,0.2)] transition hover:opacity-90"
+                className="inline-flex items-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 py-2.5 text-[12px] font-black text-white shadow-sm transition hover:opacity-90"
               >
                 <Plus size={14} />
                 {t("header.newCase")}
@@ -1214,7 +1214,7 @@ export default function CasesPage() {
                     <button
                       type="submit"
                       disabled={createMutation.isPending}
-                      className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_8px_16px_rgba(70,95,255,0.2)] transition hover:opacity-90 disabled:opacity-50"
+                      className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:opacity-50"
                     >
                       {createMutation.isPending ? (
                         <RefreshCcw size={13} className="animate-spin" />

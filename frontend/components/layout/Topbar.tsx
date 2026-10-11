@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useRef, useState } from "react";
@@ -314,9 +315,13 @@ export function Topbar() {
 
   return (
     <header className="sticky top-0 z-[100] flex h-[88px] items-center justify-between border-b border-border bg-background/60 px-5 backdrop-blur-xl sm:px-8 lg:px-10 xl:px-12">
+      {/* Brand on small screens, where the sidebar is replaced by the bottom navigation. */}
+      <Link href="/" className="flex shrink-0 items-center lg:hidden" aria-label="Narriv dashboard">
+        <Image src="/logo-h-narriv-2026.png" alt="Narriv" width={96} height={36} priority className="h-8 w-auto object-contain" />
+      </Link>
       <div ref={searchRef} className="relative hidden w-full max-w-[530px] lg:block">
-        <label className="flex h-[48px] items-center gap-4 rounded-[8px] border border-border bg-slate-50 px-5 text-(--text-soft) focus-within:border-[#465FFF]/50 focus-within:shadow-[0_0_10px_rgba(70,95,255,0.15)] transition-all">
-          <Search size={20} className="text-(--text-muted)" />
+        <label className="flex h-[48px] items-center gap-4 rounded-[8px] border border-border bg-slate-50 px-5 text-[var(--text-soft)] focus-within:border-[#465FFF]/50 focus-within:shadow-[0_0_10px_rgba(70,95,255,0.15)] transition-all">
+          <Search size={20} className="text-[var(--text-muted)]" />
           <input
             ref={inputRef}
             type="text"
@@ -324,7 +329,7 @@ export function Topbar() {
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => { if (searchQuery.trim() && searchResults.length > 0) setSearchOpen(true); }}
             onKeyDown={(e) => { if (e.key === "Escape") { setSearchOpen(false); inputRef.current?.blur(); } }}
-            className="min-w-0 flex-1 bg-transparent text-[15px] font-semibold outline-none placeholder:text-(--text-muted) text-(--text)"
+            className="min-w-0 flex-1 bg-transparent text-[15px] font-semibold outline-none placeholder:text-[var(--text-muted)] text-[var(--text)]"
             placeholder={t("search")}
           />
           {searchQuery && (
@@ -375,7 +380,7 @@ export function Topbar() {
         {/* Live connection status indicator */}
         {/* Only claim live updates while the event stream is actually connected. */}
         {sseStatus === "connected" ? <LiveIndicator status={sseStatus} /> : null}
-        <button type="button" onClick={() => startTransition(toggleLanguage)} className="hidden items-center gap-2 rounded-[8px] border border-border px-3 py-2 text-xs font-bold text-(--text-soft) transition-all duration-200 hover:border-[#465FFF] hover:text-(--text) hover:shadow-[0_0_8px_rgba(70,95,255,0.1)] active:scale-[0.98] sm:flex" aria-label="Switch language">
+        <button type="button" onClick={() => startTransition(toggleLanguage)} className="hidden items-center gap-2 rounded-[8px] border border-border px-3 py-2 text-xs font-bold text-[var(--text-soft)] transition-all duration-200 hover:border-[#465FFF] hover:text-[var(--text)] hover:shadow-[0_0_8px_rgba(70,95,255,0.1)] active:scale-[0.98] sm:flex" aria-label="Switch language">
           <Languages size={15} />
           <span key={language} className="inline-block min-w-5 animate-in fade-in slide-in-from-bottom-1 duration-200">
             {language.toUpperCase()}
@@ -384,7 +389,7 @@ export function Topbar() {
         <Popover open={notificationsOpen} onOpenChange={handleNotificationsOpenChange}>
           <PopoverTrigger
             type="button"
-            className="relative inline-flex h-10 w-10 items-center justify-center rounded-[10px] text-(--text) transition hover:bg-slate-100 hover:text-[#465FFF]"
+            className="relative inline-flex h-10 w-10 items-center justify-center rounded-[10px] text-[var(--text)] transition hover:bg-slate-100 hover:text-[#465FFF]"
             aria-label={t("notifications")}
           >
             <Bell size={24} />
@@ -500,15 +505,15 @@ export function Topbar() {
         </Popover>
         <div className="hidden h-8 w-px bg-border sm:block" />
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-linear-to-tr from-[#465FFF] to-[#8B5CFF] text-[16px] font-bold text-white shadow-[0_0_12px_rgba(70,95,255,0.3)]">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-[#465FFF] to-[#8B5CFF] text-[16px] font-bold text-white shadow-[0_0_12px_rgba(70,95,255,0.3)]">
             {user?.name ? user.name.slice(0, 2).toUpperCase() : "TU"}
           </div>
           <div className="hidden sm:block">
-            <p className="text-[15px] font-bold text-(--text)">{user?.name || "User"}</p>
-            <p className="mt-1 text-[13px] font-semibold text-(--text-muted)">{user?.workspace || "Workspace"}</p>
+            <p className="text-[15px] font-bold text-[var(--text)]">{user?.name || "User"}</p>
+            <p className="mt-1 text-[13px] font-semibold text-[var(--text-muted)]">{user?.workspace || "Workspace"}</p>
           </div>
         </div>
-        <button type="button" onClick={handleLogout} className="rounded-xl p-2 text-(--text-muted) hover:bg-slate-100 hover:text-[#EF4444] transition-colors" aria-label={t("logout")} title={t("logout")}>
+        <button type="button" onClick={handleLogout} className="rounded-xl p-2 text-[var(--text-muted)] hover:bg-slate-100 hover:text-[#EF4444] transition-colors" aria-label={t("logout")} title={t("logout")}>
           <LogOut size={18} />
         </button>
       </div>

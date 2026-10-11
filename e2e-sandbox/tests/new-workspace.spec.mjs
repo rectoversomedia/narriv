@@ -9,11 +9,11 @@ test("new workspace shows honest empty states everywhere", async ({ browser }) =
   await expect(page.locator("body")).toContainText("No signals in this period yet", { timeout: 90_000 });
   await expect(page.locator("body")).toContainText("Not enough data"); // reputation, no 50/100 default
   await page.goto("/intelligence");
-  await expect(page.locator("body")).toContainText("No live narratives yet", { timeout: 60_000 });
+  await expect(page.locator("body")).toContainText("No narratives yet", { timeout: 60_000 });
   await page.goto("/brief");
   await expect(page.locator("body")).toContainText("Insufficient data", { timeout: 60_000 });
   await page.goto("/action-plans");
-  await expect(page.locator("body")).toContainText("No live actions yet", { timeout: 60_000 });
+  await expect(page.locator("body")).toContainText("No actions yet", { timeout: 60_000 });
   await page.goto("/workspace/settings");
   await expect(page.locator("section#keywords")).toContainText("No keywords yet", { timeout: 60_000 });
   await page.goto("/workspace/sources");

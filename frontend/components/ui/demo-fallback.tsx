@@ -57,7 +57,7 @@ export function DemoFallback({
           <Button
             type="button"
             onClick={handleActivateDemo}
-            className="h-9 rounded-lg bg-gradient-to-r from-[#8B5CFF] to-[#6B4DFF] px-4 text-[12px] font-bold text-white shadow-[0_4px_14px_rgba(139,92,255,0.25)] hover:from-[#7C4DFF] hover:to-[#5B3DFF]"
+            className="h-9 rounded-lg bg-gradient-to-r from-[#8B5CFF] to-[#6B4DFF] px-4 text-[12px] font-bold text-white shadow-sm hover:from-[#7C4DFF] hover:to-[#5B3DFF]"
           >
             <Sparkles size={13} />
             Try Demo Mode

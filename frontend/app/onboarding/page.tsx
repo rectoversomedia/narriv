@@ -393,7 +393,7 @@ export default function OnboardingPage() {
           <div className="h-6 w-px bg-[#D6DDEC]" />
           <button
             type="button"
-            className="flex h-9 items-center gap-2 rounded-full border border-[#D6DDEC] bg-white px-4 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#2F20FF] hover:text-[#2F20FF]"
+            className="flex h-9 items-center gap-2 rounded-full border border-[#D6DDEC] bg-white px-4 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#465FFF] hover:text-[#465FFF]"
           >
             Need help?
           </button>
@@ -435,7 +435,7 @@ export default function OnboardingPage() {
                 {step === 1 ? (
                   <button
                     type="button"
-                    className="text-sm font-semibold text-[#68739F] transition-colors hover:text-[#2F20FF] disabled:opacity-50"
+                    className="text-sm font-semibold text-[#68739F] transition-colors hover:text-[#465FFF] disabled:opacity-50"
                     onClick={handleSkip}
                     disabled={isSubmitting}
                   >
@@ -445,7 +445,7 @@ export default function OnboardingPage() {
                   <button
                     type="button"
                     onClick={back}
-                    className="flex h-11 items-center gap-2 rounded-xl border border-[#D6DDEC] bg-white px-6 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#2F20FF] hover:text-[#2F20FF]"
+                    className="flex h-11 items-center gap-2 rounded-xl border border-[#D6DDEC] bg-white px-6 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#465FFF] hover:text-[#465FFF]"
                   >
                     <ArrowLeft size={16} />
                     Back
@@ -455,7 +455,7 @@ export default function OnboardingPage() {
                 <button
                   type="button"
                   onClick={next}
-                  className="flex h-11 items-center gap-3 rounded-xl bg-gradient-to-r from-[#2F20FF] to-[#6B2EFF] px-8 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(47,32,255,0.3)] transition-all hover:shadow-[0_6px_20px_rgba(47,32,255,0.4)] active:scale-[0.98]"
+                  className="flex h-11 items-center gap-3 rounded-xl bg-gradient-to-r from-[#465FFF] to-[#8B5CFF] px-8 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-sm active:scale-[0.98]"
                 >
                   {step === 5 ? "Finish Setup" : "Continue"}
                   <ArrowRight size={16} />
@@ -494,9 +494,9 @@ function StepIndicator({ current }: { current: Step }) {
             <div
               className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all ${
                 s.num < current
-                  ? "bg-[#2F20FF] text-white"
+                  ? "bg-[#465FFF] text-white"
                   : s.num === current
-                  ? "border-2 border-[#2F20FF] bg-white text-[#2F20FF]"
+                  ? "border-2 border-[#465FFF] bg-white text-[#465FFF]"
                   : "border-2 border-[#D6DDEC] bg-white text-[#9BA3C2]"
               }`}
             >
@@ -504,7 +504,7 @@ function StepIndicator({ current }: { current: Step }) {
             </div>
             <span
               className={`text-xs font-semibold whitespace-nowrap hidden sm:block ${
-                s.num === current ? "text-[#2F20FF]" : s.num < current ? "text-[#3E4975]" : "text-[#9BA3C2]"
+                s.num === current ? "text-[#465FFF]" : s.num < current ? "text-[#3E4975]" : "text-[#9BA3C2]"
               }`}
             >
               {s.label}
@@ -512,7 +512,7 @@ function StepIndicator({ current }: { current: Step }) {
           </div>
           {i < steps.length - 1 && (
             <div
-              className={`mb-5 h-px w-8 sm:w-16 ${s.num < current ? "bg-[#2F20FF]" : "bg-[#E8EAF6]"}`}
+              className={`mb-5 h-px w-8 sm:w-16 ${s.num < current ? "bg-[#465FFF]" : "bg-[#E8EAF6]"}`}
             />
           )}
         </div>
@@ -648,13 +648,13 @@ function ProfileStep({
                 onClick={() => toggleGoal(goal.id)}
                 className={`flex items-start gap-4 rounded-xl border p-5 text-left transition-all ${
                   selected
-                    ? "border-[#2F20FF] bg-[#F8F6FF] shadow-[0_0_0_3px_rgba(47,32,255,0.08)]"
+                    ? "border-[#465FFF] bg-[#F8F6FF] shadow-[0_0_0_3px_rgba(47,32,255,0.08)]"
                     : "border-[#E8EAF6] bg-white hover:border-[#B8BDD8]"
                 }`}
               >
                 <div
                   className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 transition-all ${
-                    selected ? "border-[#2F20FF] bg-[#2F20FF]" : "border-[#D6DDEC] bg-white"
+                    selected ? "border-[#465FFF] bg-[#465FFF]" : "border-[#D6DDEC] bg-white"
                   }`}
                 >
                   {selected && <Check size={12} strokeWidth={3} className="text-white" />}
@@ -732,7 +732,7 @@ function KeywordsStep({
               type="button"
               onClick={() => add(input)}
               disabled={!input.trim()}
-              className="flex h-12 items-center gap-2 rounded-xl border border-[#D6DDEC] bg-white px-5 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#2F20FF] hover:text-[#2F20FF] disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex h-12 items-center gap-2 rounded-xl border border-[#D6DDEC] bg-white px-5 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#465FFF] hover:text-[#465FFF] disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Plus size={16} />
               {t("add")}
@@ -748,7 +748,7 @@ function KeywordsStep({
               type="button"
               onClick={() => add(s)}
               disabled={keywords.includes(s) || keywords.length >= 50}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#E8EAF6] bg-white px-3 py-1.5 text-xs font-semibold text-[#3E4975] transition-colors hover:border-[#2F20FF] hover:text-[#2F20FF] disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#E8EAF6] bg-white px-3 py-1.5 text-xs font-semibold text-[#3E4975] transition-colors hover:border-[#465FFF] hover:text-[#465FFF] disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {s}
             </button>
@@ -877,7 +877,7 @@ function SourcesStep({
                 onClick={() => toggleCategory(cat)}
                 className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-all ${
                   active
-                    ? "border-[#2F20FF] bg-[#2F20FF] text-white shadow-[0_2px_8px_rgba(47,32,255,0.25)]"
+                    ? "border-[#465FFF] bg-[#465FFF] text-white shadow-sm"
                     : "border-[#E8EAF6] bg-white text-[#3E4975] hover:border-[#B8BDD8]"
                 }`}
               >
@@ -923,7 +923,7 @@ function SourcesStep({
 
       <div className="flex items-center justify-between rounded-xl border border-[#E8EAF6] bg-[#FAFBFF] px-6 py-4">
         <div className="flex items-center gap-3">
-          <Database size={20} className="text-[#2F20FF]" />
+          <Database size={20} className="text-[#465FFF]" />
           <span className="text-sm font-bold text-[#111536]">
             {sources.length} source{sources.length !== 1 ? "s" : ""} selected
           </span>
@@ -933,7 +933,7 @@ function SourcesStep({
             {[...new Set(sources.map((s) => s.type))].map((type) => {
               const Icon = categoryIcons[type];
               return (
-                <span key={type} className="inline-flex items-center gap-1.5 rounded-full bg-[#2F20FF]/10 px-3 py-1 text-xs font-semibold text-[#2F20FF]">
+                <span key={type} className="inline-flex items-center gap-1.5 rounded-full bg-[#465FFF]/10 px-3 py-1 text-xs font-semibold text-[#465FFF]">
                   {Icon && <Icon size={12} />}
                   {type.charAt(0).toUpperCase() + type.slice(1)}
                 </span>
@@ -965,13 +965,13 @@ function SourceCard({
       onClick={onToggle}
       className={`flex items-start gap-4 rounded-xl border p-5 text-left transition-all ${
         active
-          ? "border-[#2F20FF] bg-[#F8F6FF] shadow-[0_0_0_3px_rgba(47,32,255,0.08)]"
+          ? "border-[#465FFF] bg-[#F8F6FF] shadow-[0_0_0_3px_rgba(47,32,255,0.08)]"
           : "border-[#E8EAF6] bg-white hover:border-[#B8BDD8]"
       }`}
     >
       <div
         className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
-          active ? "bg-[#2F20FF] text-white" : "bg-[#F0F2FA] text-[#68739F]"
+          active ? "bg-[#465FFF] text-white" : "bg-[#F0F2FA] text-[#68739F]"
         }`}
       >
         <Icon size={20} />
@@ -982,7 +982,7 @@ function SourceCard({
       </div>
       <div
         className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-all ${
-          active ? "border-[#2F20FF] bg-[#2F20FF]" : "border-[#D6DDEC] bg-white"
+          active ? "border-[#465FFF] bg-[#465FFF]" : "border-[#D6DDEC] bg-white"
         }`}
       >
         {active && <Check size={10} strokeWidth={3} className="text-white" />}
@@ -1033,7 +1033,7 @@ function NotificationsStep({
               onClick={() => onChange({ [key]: !data[key] })}
               className={`flex items-start gap-4 rounded-xl border p-5 text-left transition-all ${
                 data[key]
-                  ? "border-[#2F20FF] bg-[#F8F6FF] shadow-[0_0_0_3px_rgba(47,32,255,0.08)]"
+                  ? "border-[#465FFF] bg-[#F8F6FF] shadow-[0_0_0_3px_rgba(47,32,255,0.08)]"
                   : "border-[#E8EAF6] bg-white hover:border-[#B8BDD8]"
               }`}
             >
@@ -1065,10 +1065,10 @@ function NotificationsStep({
               type="button"
               onClick={() => onChange({ [key]: !data[key] })}
               className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-all ${
-                data[key] ? "border-[#2F20FF] bg-[#F8F6FF]" : "border-[#E8EAF6] bg-white hover:border-[#B8BDD8]"
+                data[key] ? "border-[#465FFF] bg-[#F8F6FF]" : "border-[#E8EAF6] bg-white hover:border-[#B8BDD8]"
               }`}
             >
-              <Icon size={18} className={data[key] ? "text-[#2F20FF]" : "text-[#68739F]"} />
+              <Icon size={18} className={data[key] ? "text-[#465FFF]" : "text-[#68739F]"} />
               <span className={`text-sm font-semibold ${data[key] ? "text-[#111536]" : "text-[#68739F]"}`}>
                 {label}
               </span>
@@ -1093,7 +1093,7 @@ function NotificationsStep({
               type="button"
               onClick={() => onChange({ [key]: !data[key] })}
               className={`flex items-center justify-between rounded-xl border p-5 text-left transition-all ${
-                data[key] ? "border-[#2F20FF] bg-[#F8F6FF]" : "border-[#E8EAF6] bg-white"
+                data[key] ? "border-[#465FFF] bg-[#F8F6FF]" : "border-[#E8EAF6] bg-white"
               }`}
             >
               <div>
@@ -1116,8 +1116,8 @@ function ToggleSwitch({ active, onChange }: { active: boolean; onChange: () => v
       role="switch"
       aria-checked={active}
       onClick={onChange}
-      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[#2F20FF] focus:ring-offset-2 ${
-        active ? "bg-[#2F20FF]" : "bg-[#D6DDEC]"
+      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[#465FFF] focus:ring-offset-2 ${
+        active ? "bg-[#465FFF]" : "bg-[#D6DDEC]"
       }`}
     >
       <span
@@ -1187,7 +1187,7 @@ function PreviewStep({ data }: { data: OnboardingData }) {
             {data.keywords.map((kw) => (
               <span
                 key={kw}
-                className="inline-flex items-center gap-1.5 rounded-full bg-[#2F20FF]/10 px-4 py-2 text-sm font-semibold text-[#2F20FF]"
+                className="inline-flex items-center gap-1.5 rounded-full bg-[#465FFF]/10 px-4 py-2 text-sm font-semibold text-[#465FFF]"
               >
                 <Hash size={13} />
                 {kw}
@@ -1227,7 +1227,7 @@ function PreviewStep({ data }: { data: OnboardingData }) {
                     key={label}
                     className="flex items-center gap-3 rounded-xl border border-[#E8EAF6] bg-[#FAFBFF] px-4 py-3"
                   >
-                    <Bell size={16} className="text-[#2F20FF]" />
+                    <Bell size={16} className="text-[#465FFF]" />
                     <span className="text-sm font-semibold text-[#111536]">{label}</span>
                   </div>
                 )
@@ -1288,10 +1288,10 @@ function ProcessingStep({
     <div className="flex flex-col items-center py-16 text-center">
       <div className="relative">
         <div
-          className="absolute inset-0 rounded-full border border-[#2F20FF]/20 animate-ping"
+          className="absolute inset-0 rounded-full border border-[#465FFF]/20 animate-ping"
           style={{ animationDuration: "2s" }}
         />
-        <div className="relative flex h-24 w-24 items-center justify-center rounded-full border-2 border-dashed border-[#2F20FF]/40 bg-white shadow-lg">
+        <div className="relative flex h-24 w-24 items-center justify-center rounded-full border-2 border-dashed border-[#465FFF]/40 bg-white shadow-lg">
           <img src="/logo-h-narriv-2026.png" alt="Narriv" width={144} height={96} className="object-contain" />
         </div>
       </div>
@@ -1305,7 +1305,7 @@ function ProcessingStep({
         </div>
         <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#F0F2FA]">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-[#2F20FF] to-[#6B2EFF] transition-all duration-500 ease-out"
+            className="h-full rounded-full bg-gradient-to-r from-[#465FFF] to-[#8B5CFF] transition-all duration-500 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>

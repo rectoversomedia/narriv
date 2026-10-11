@@ -51,7 +51,6 @@ type SignalRow = {
 
 const signalApiLimit = 20;
 
-const aiAgentImage = "/mainapp/signals-ai-agent.png";
 
 const toneStyles: Record<Tone, { color: string; rgb: string; soft: string; text: string; border: string }> = {
   blue: { color: "#465FFF", rgb: "70,95,255", soft: "bg-[#465FFF]/10", text: "text-[#465FFF]", border: "border-[#465FFF]/15" },
@@ -146,13 +145,6 @@ function Panel({ children, className }: { children: ReactNode; className?: strin
   return <section className={cn("rounded-[14px] border border-[#DDE3EF] bg-white shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)}>{children}</section>;
 }
 
-function SignalAgentImage() {
-  return (
-    <div className="relative flex h-[96px] w-[96px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#465FFF]/10 bg-linear-to-b from-[#EEF0FF] via-white to-[#F1EEFF] shadow-[inset_0_0_24px_rgba(70,95,255,0.10)]">
-      <Image src={aiAgentImage} alt="AI signals assistant illustration" width={96} height={96} sizes="96px" unoptimized className="relative h-full w-full object-cover" style={{ transform: "scale(1.35)" }} />
-    </div>
-  );
-}
 
 function SummaryPanel({ meta }: { meta?: SignalsMeta }) {
   const t = useTranslations("Signals.summary");
@@ -179,8 +171,7 @@ function SummaryPanel({ meta }: { meta?: SignalsMeta }) {
 
   return (
     <Panel className="overflow-hidden p-5">
-      <div className="grid gap-5 lg:grid-cols-[96px_1fr_1.35fr]">
-        <SignalAgentImage />
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{t("title")}</h2>
@@ -188,17 +179,13 @@ function SummaryPanel({ meta }: { meta?: SignalsMeta }) {
           </div>
           {hasData && aiSummary ? (
             <>
-              <p className="mt-3 text-[13.5px] font-black leading-relaxed text-[#101334]">{aiSummary.content[uiLanguage as 'en' | 'id'] || aiSummary.content.en}</p>
-              <p className="mt-2 max-w-[560px] text-[11.5px] font-bold leading-relaxed text-[#58648C]">{aiSummary.insight[uiLanguage as 'en' | 'id'] || aiSummary.insight.en}</p>
-              {/* AI narrative intelligence paragraph */}
-              <p className="mt-3 max-w-[560px] rounded-[10px] border border-[#8B5CFF]/15 bg-[#8B5CFF]/5 px-3 py-2 text-[11px] font-medium leading-relaxed text-[#465FFF] italic">
-                {tSignals("scoreTooltip")} — {tSignals("scoreExcellent")} scores indicate strong signal diversity with manageable negative volume.
-              </p>
+              <p className="mt-3 text-[14px] font-semibold leading-6 text-navy">{aiSummary.content[uiLanguage as 'en' | 'id'] || aiSummary.content.en}</p>
+              <p className="mt-2 max-w-[560px] text-[13px] font-medium leading-6 text-body">{aiSummary.insight[uiLanguage as 'en' | 'id'] || aiSummary.insight.en}</p>
             </>
           ) : (
             <>
-              <p className="mt-3 text-[13.5px] font-black leading-relaxed text-[#101334]">{t("noData")}</p>
-              <p className="mt-2 max-w-[560px] text-[11.5px] font-bold leading-relaxed text-[#58648C]">{t("noDataDesc")}</p>
+              <p className="mt-3 text-[14px] font-semibold leading-6 text-navy">{t("noData")}</p>
+              <p className="mt-2 max-w-[560px] text-[13px] font-medium leading-6 text-body">{t("noDataDesc")}</p>
             </>
           )}
         </div>
@@ -350,7 +337,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-wrap gap-2">
           {tabs.map((tab) => (
-            <button key={tab.value} type="button" onClick={() => setActiveFilter(tab.value)} className={cn("h-9 rounded-full px-4 text-[12px] font-black transition", activeFilter === tab.value ? "bg-[#465FFF] text-white shadow-[0_10px_22px_rgba(70,95,255,0.22)]" : "border border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B] hover:bg-white")}>{tab.label}</button>
+            <button key={tab.value} type="button" onClick={() => setActiveFilter(tab.value)} className={cn("h-9 rounded-full px-4 text-[12px] font-black transition", activeFilter === tab.value ? "bg-[#465FFF] text-white shadow-sm" : "border border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B] hover:bg-white")}>{tab.label}</button>
           ))}
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -367,13 +354,15 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
 
       <Panel className="overflow-hidden p-0 xl:min-h-[610px] flex flex-col">
         <div className="overflow-x-auto flex-1 flex flex-col">
-          <table className="w-full min-w-[600px] lg:min-w-full border-collapse text-left flex-1 h-full">
+          <table className="w-full min-w-[980px] border-collapse text-left">
             <thead>
               <tr className="border-b border-[#E6EAF2] bg-[#FBFCFF] text-[10px] font-black uppercase tracking-[0.17em] text-[#68739F]">
                 <th className="w-10 px-3.5 py-3">
                   <button
                     type="button"
                     onClick={handleSelectAll}
+                    aria-label="Select all signals"
+                    aria-pressed={allSelected}
                     className={cn(
                       "flex h-5 w-5 items-center justify-center rounded border transition",
                       allSelected ? "border-[#465FFF] bg-[#465FFF] text-white" :
@@ -384,7 +373,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                     {allSelected || someSelected ? <Check size={12} /> : null}
                   </button>
                 </th>
-                {[tSignals("headerSignal"), tSignals("headerSource"), tSignals("headerSentiment"), tSignals("headerRelatedNarrative"), tSignals("headerAmplification"), tSignals("headerPublished"), tSignals("headerCaptured"), tSignals("headerAction")].map((header) => <th key={header} className="px-3.5 py-3">{header}</th>)}
+                {[tSignals("headerSignal"), tSignals("headerSource"), tSignals("headerSentiment"), tSignals("headerRelatedNarrative"), tSignals("headerAmplification"), tSignals("headerPublished"), tSignals("headerCaptured"), tSignals("headerAction")].map((header) => <th key={header} scope="col" className="whitespace-nowrap px-3.5 py-3">{header}</th>)}
               </tr>
             </thead>
             <tbody className="divide-y divide-[#EDF1F7]">
@@ -394,6 +383,8 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                     <button
                       type="button"
                       onClick={() => handleSelectRow(row.id)}
+                      aria-label={`Select signal: ${row.title}`}
+                      aria-pressed={selectedIds.has(row.id)}
                       className={cn(
                         "flex h-5 w-5 items-center justify-center rounded border transition",
                         selectedIds.has(row.id) ? "border-[#465FFF] bg-[#465FFF] text-white" :
@@ -403,19 +394,19 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                       {selectedIds.has(row.id) ? <Check size={12} /> : null}
                     </button>
                   </td>
-                  <td className="max-w-[380px] px-3.5 py-4">
+                  <td className="min-w-[280px] max-w-[400px] px-3.5 py-4">
                     <div className="flex items-start gap-3">
                       <SentimentIcon sentiment={row.sentiment} tone={row.sentimentTone} />
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-[12.5px] font-black leading-snug text-[#101334]">{row.title}</span>
+                          <span className="text-[13px] font-semibold leading-snug text-navy">{row.title}</span>
                           {row.url ? (
                             <a href={row.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-0.5 text-[10px] font-bold text-[#465FFF] hover:underline" aria-label="Open original source">
                               Source <ExternalLink size={10} />
                             </a>
                           ) : null}
                         </div>
-                        <p className="mt-1 text-[11px] font-bold leading-snug text-[#68739F]">{row.desc}</p>
+                        <p className="mt-1 line-clamp-2 text-[12px] font-medium leading-snug text-body">{row.desc}</p>
                         <div className="mt-2 flex flex-wrap gap-1.5">{row.tags.map((tag) => <TagBadge key={tag} tag={tag} />)}</div>
                       </div>
                     </div>
@@ -436,7 +427,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                         type="button"
                         onClick={() => onGenerateActionPlan?.(row)}
                         title="Generate Action Plan for this signal"
-                        className="inline-flex h-8 items-center justify-center gap-1 rounded-[8px] border border-[#DDE3EF] bg-white px-2.5 text-[10.5px] font-black text-[#465FFF] shadow-xs transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]"
+                        className="inline-flex h-8 items-center justify-center gap-1 rounded-[8px] border border-[#DDE3EF] bg-white px-2.5 text-[10.5px] font-black text-[#465FFF] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]"
                       >
                         <Sparkles size={11} />
                         Plan
@@ -444,7 +435,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                       <button
                         type="button"
                         onClick={() => onInvestigate(row)}
-                        className="inline-flex h-8 items-center justify-center gap-1.5 rounded-[8px] bg-[#465FFF] px-2.5 text-[10.5px] font-black text-white shadow-[0_8px_18px_rgba(70,95,255,0.18)] transition hover:bg-[#3147E8]"
+                        className="inline-flex h-8 items-center justify-center gap-1.5 rounded-[8px] bg-[#465FFF] px-2.5 text-[10.5px] font-black text-white shadow-sm transition hover:bg-[#3147E8]"
                       >
                         <Flag size={11} />
                         {tSignals("investigate")}
@@ -535,7 +526,7 @@ function RecommendationPanel({ data }: { data?: SignalsMeta["recommendations"] }
       )}
       
       {hasData && (
-        <Link href="/action-plans" className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.22)]"><Briefcase size={14} />{t("action")}</Link>
+        <Link href="/action-plans" className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] text-[12px] font-black text-white shadow-sm"><Briefcase size={14} />{t("action")}</Link>
       )}
     </Panel>
   );
@@ -644,7 +635,7 @@ function TimelineChart({ data, labels }: { data?: SignalsMeta["timeline"]; label
       <p className="mt-1 text-[11px] font-bold text-[#68739F]">{t("desc")}</p>
 
       {isLoading ? (
-        <div className="relative mt-5 h-[170px] overflow-hidden rounded-[12px] bg-linear-to-b from-white to-[#F8FAFF]">
+        <div className="relative mt-5 h-[170px] overflow-hidden rounded-[12px] bg-gradient-to-b from-white to-[#F8FAFF]">
           <svg className="h-full w-full animate-pulse" viewBox={`0 0 ${width} ${height + 8}`} preserveAspectRatio="none" aria-hidden="true">
             {[34, 70, 106, 142].map((y) => (
               <line key={y} x1={padding} x2={width - padding} y1={y} y2={y} stroke="#EDF1F7" strokeWidth="1" />
@@ -666,7 +657,7 @@ function TimelineChart({ data, labels }: { data?: SignalsMeta["timeline"]; label
           </div>
         </div>
       ) : (
-        <div className="relative mt-5 h-[170px] overflow-hidden rounded-[12px] bg-linear-to-b from-white to-[#F8FAFF]">
+        <div className="relative mt-5 h-[170px] overflow-hidden rounded-[12px] bg-gradient-to-b from-white to-[#F8FAFF]">
           <svg
             className="chart-enter chart-line-draw h-full w-full"
             viewBox={`0 0 ${width} ${height + 8}`}
@@ -1114,14 +1105,14 @@ export default function SignalsPage() {
         </div>
       )}
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div><h1 className="text-[32px] font-black tracking-[-0.04em] text-[#060A23]">{t("title")}</h1><p className="mt-2 text-[15px] font-medium text-slate-500">{t("subtitle")}</p></div>
+        <div><h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1><p className="mt-2 max-w-2xl text-[14px] font-medium leading-6 text-body">{t("subtitle")}</p></div>
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={handleFetchLatestSignals}
             disabled={isFetchingSignals}
             title="Fetch latest news and signals from live RSS feeds"
-            className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#31406B] shadow-xs transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#31406B] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <RotateCw size={14} className={cn("text-[#465FFF]", isFetchingSignals && "animate-spin")} />
             {isFetchingSignals ? "Fetching Signals..." : "Fetch Latest Signals"}
@@ -1135,9 +1126,9 @@ export default function SignalsPage() {
             onClick={() => handleExport("csv")}
             disabled={!!isExporting}
             title="Export signals as CSV file"
-            className="flex h-10 items-center justify-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-black text-[#31406B] shadow-xs transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:opacity-50"
+            className="flex h-10 items-center justify-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-black text-[#31406B] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:opacity-50"
           >
-            <Download size={14} className={isExporting === "csv" ? "animate-bounce text-[#465FFF]" : ""} />
+            <Download size={14} className={isExporting === "csv" ? "animate-pulse text-[#465FFF]" : ""} />
             CSV
           </button>
           <button
@@ -1145,12 +1136,12 @@ export default function SignalsPage() {
             onClick={() => handleExport("xlsx")}
             disabled={!!isExporting}
             title="Export signals as Excel spreadsheet (.xlsx)"
-            className="flex h-10 items-center justify-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-black text-[#31406B] shadow-xs transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:opacity-50"
+            className="flex h-10 items-center justify-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-black text-[#31406B] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:opacity-50"
           >
-            <Download size={14} className={isExporting === "xlsx" ? "animate-bounce text-[#465FFF]" : ""} />
+            <Download size={14} className={isExporting === "xlsx" ? "animate-pulse text-[#465FFF]" : ""} />
             Excel
           </button>
-          <button onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] sm:w-fit"><Flag size={15} />{t("createInvestigation")}</button>
+          <button onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-sm sm:w-fit"><Flag size={15} />{t("createInvestigation")}</button>
         </div>
       </header>
 

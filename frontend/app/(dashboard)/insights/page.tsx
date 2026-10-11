@@ -107,13 +107,13 @@ export default function InsightsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="border-b border-slate-200 bg-white px-6 py-5">
-        <div className="mx-auto max-w-screen-xl">
+    <div className="flex flex-col gap-6">
+      <div>
+        <div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Insights</h1>
-              <p className="mt-1 text-sm text-slate-500">What is happening around your brand right now. Every panel is grounded in current Narriv data.</p>
+              <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">Insights</h1>
+              <p className="mt-1 max-w-2xl text-[14px] font-medium leading-6 text-body">What is happening around your brand right now. Every panel is grounded in current Narriv data.</p>
             </div>
             <div className="flex items-center gap-2">
               <div className="relative">
@@ -140,7 +140,7 @@ export default function InsightsPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-screen-xl space-y-4 px-6 py-6">
+      <div className="space-y-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           <NarrativeLandscapePanel windowHours={win.hours} />
           <ReputationPanel windowHours={win.hours} />

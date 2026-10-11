@@ -91,7 +91,7 @@ export default function SignupPage() {
       topAction={
         <p className="text-[15px] font-medium text-[#111536]">
           {t("alreadyHaveAccount")}{" "}
-          <Link href="/login" className="font-semibold text-[#2F20FF] hover:underline">{t("loginLink")}</Link>
+          <Link href="/login" className="font-semibold text-[#465FFF] hover:underline">{t("loginLink")}</Link>
         </p>
       }
     >
@@ -120,10 +120,10 @@ export default function SignupPage() {
           </div>
 
           <Field data-invalid={!!errors.terms} orientation="horizontal" className="items-start gap-3 text-[14px] font-medium text-[#111536]">
-            <input id="signup-terms" type="checkbox" aria-invalid={!!errors.terms || undefined} className="mt-0.5 h-[18px] w-[18px] accent-[#2F20FF]" {...register("terms")} />
+            <input id="signup-terms" type="checkbox" aria-invalid={!!errors.terms || undefined} className="mt-0.5 h-[18px] w-[18px] accent-[#465FFF]" {...register("terms")} />
             <FieldContent className="text-[14px] font-medium leading-6 text-[#111536]">
               <span>
-                {t("termsPrefix")} <button type="button" className="font-semibold text-[#2F20FF]">{t("terms")}</button> {t("termsMiddle")} <button type="button" className="font-semibold text-[#2F20FF]">{t("privacy")}</button>
+                {t("termsPrefix")} <button type="button" className="font-semibold text-[#465FFF]">{t("terms")}</button> {t("termsMiddle")} <button type="button" className="font-semibold text-[#465FFF]">{t("privacy")}</button>
               </span>
               <FieldError className="mt-1 text-[#F04438]">{errors.terms?.message}</FieldError>
             </FieldContent>

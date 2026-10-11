@@ -37,14 +37,14 @@ export default function ActionCenterPage() {
 
   if (recs.isLoading || brief.isLoading) {
     return (
-      <div className="space-y-4 p-6">
+      <div className="space-y-4">
         <Skeleton className="h-24 w-full rounded-xl" />
         <Skeleton className="h-72 w-full rounded-xl" />
       </div>
     );
   }
 
-  if (recs.error) return <DashboardErrorState title="Action Center unavailable" description="Could not load recommendations." onRetry={() => recs.refetch()} />;
+  if (recs.error) return <DashboardErrorState title="Recommendations unavailable" description="Could not load recommendations." onRetry={() => recs.refetch()} />;
 
   const data = recs.data as RecommendationsPayload | undefined;
   const briefData = brief.data as ExecutiveBriefPayload | undefined;
@@ -53,10 +53,10 @@ export default function ActionCenterPage() {
 
   if (list.length === 0) {
     return (
-      <div className="p-6">
+      <div>
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-900">Action Center</h1>
-          <p className="mt-1 text-sm text-slate-500">Recommended actions based on the latest intelligence. All actions require human approval.</p>
+          <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">Recommendations</h1>
+          <p className="mt-1 max-w-2xl text-[14px] font-medium leading-6 text-body">Recommended actions based on the latest intelligence. All actions require human approval.</p>
         </div>
         <DashboardEmptyState
           title="No actions needed right now"
@@ -67,10 +67,10 @@ export default function ActionCenterPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Action Center</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">Recommendations</h1>
+        <p className="mt-1 max-w-2xl text-[14px] font-medium leading-6 text-body">
           Recommended actions from the current intelligence window. Every action requires human approval before any external step.
         </p>
       </div>

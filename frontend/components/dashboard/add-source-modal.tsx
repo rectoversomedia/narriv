@@ -204,7 +204,7 @@ export function AddSourceModal({ open, onOpenChange, onSubmit, isPending }: AddS
             <button
               type="submit"
               disabled={isPending || !keyword.trim() || tiers.length === 0}
-              className="flex h-11 flex-1 items-center justify-center rounded-[10px] bg-gradient-to-r from-[#465FFF] to-[#8B5CFF] text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-11 flex-1 items-center justify-center rounded-[10px] bg-[#465FFF] hover:bg-[#3B51E0] text-[12px] font-black text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isPending ? t("deploying") : t("deploy")}
             </button>

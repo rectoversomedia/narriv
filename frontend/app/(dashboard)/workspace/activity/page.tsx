@@ -199,8 +199,8 @@ export default function ActivityPage() {
     <div className="space-y-6 pb-6">
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="mt-3 text-[28px] font-black tracking-tight text-slate-900">{t("title")}</h1>
-          <p className="mt-1 max-w-2xl text-sm font-medium leading-6 text-slate-500">
+          <h1 className="mt-3 text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1>
+          <p className="mt-1 max-w-2xl text-[14px] font-medium leading-6 text-body">
             {t("desc")}
           </p>
         </div>

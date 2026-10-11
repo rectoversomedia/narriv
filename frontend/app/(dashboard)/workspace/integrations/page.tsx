@@ -207,8 +207,8 @@ export default function IntegrationsPage() {
 
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="mt-3 text-[28px] font-black tracking-tight text-slate-900">{t("title")}</h1>
-          <p className="mt-1 max-w-2xl text-sm font-medium leading-6 text-slate-500">
+          <h1 className="mt-3 text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1>
+          <p className="mt-1 max-w-2xl text-[14px] font-medium leading-6 text-body">
             {t("description")}
           </p>
         </div>
@@ -414,7 +414,7 @@ export default function IntegrationsPage() {
                                 type="button"
                                 onClick={() => testMutation.mutate(item.id)}
                                 disabled={testMutation.isPending}
-                                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 shadow-xs transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50"
+                                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50"
                                 title="Test Webhook Connection"
                               >
                                 <Send size={12} className={testMutation.isPending ? "animate-pulse text-[#465FFF]" : ""} />

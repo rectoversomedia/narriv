@@ -26,7 +26,7 @@ function Tabs({ defaultValue, value, onValueChange, className, ...props }: React
 }
 
 function TabsList({ className, ...props }: React.ComponentProps<"div">) {
-  return <div data-slot="tabs-list" className={cn("inline-flex rounded-[10px] border border-white/5 bg-white/2 p-1 backdrop-blur-md", className)} {...props} />;
+  return <div data-slot="tabs-list" className={cn("inline-flex rounded-[10px] border border-white/5 bg-white/[0.02] p-1 backdrop-blur-md", className)} {...props} />;
 }
 
 function TabsTrigger({ value, className, ...props }: React.ComponentProps<"button"> & { value: string }) {

@@ -105,7 +105,7 @@ function TimelineEntry({ event }: { event: TimelineEvent }) {
       </div>
 
       {/* Card */}
-      <div className="mb-4 flex-1 rounded-[14px] border border-slate-200 bg-white p-4 shadow-xs">
+      <div className="mb-4 flex-1 rounded-[14px] border border-slate-200 bg-white p-4 shadow-sm">
         {/* Date + chips */}
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <span className="text-[12px] font-semibold text-[#68739F]">{event.dateLabel}</span>
@@ -211,11 +211,11 @@ export default function TimelinePage() {
   }, [isDemoSession]);
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-[22px] font-bold text-[#101334]">
+          <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">
             {t("timeline.title")}
           </h1>
           {isDemoSession && (
@@ -226,7 +226,7 @@ export default function TimelinePage() {
         </div>
 
         {/* Date range selector */}
-        <div className="flex rounded-[10px] border border-slate-200 bg-white p-1 shadow-xs">
+        <div className="flex rounded-[10px] border border-slate-200 bg-white p-1 shadow-sm">
           {DATE_RANGES.map(({ key, labelKey }) => (
             <button
               key={key}

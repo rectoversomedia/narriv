@@ -136,7 +136,7 @@ export function createApp(): Express {
 
   // Health endpoints (public, no auth needed)
   app.get("/", (_req: Request, res: Response) => {
-    res.send("API is running 🚀");
+    res.send("API is running");
   });
 
   app.get("/health", (_req: Request, res: Response) => {

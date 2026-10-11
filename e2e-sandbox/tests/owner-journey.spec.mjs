@@ -52,7 +52,7 @@ test.describe.serial("owner journey", () => {
   test("risk and recommendations cite evidence and say they are heuristic", async () => {
     const { page } = s;
     await page.goto("/action-center");
-    await expect(page.locator("body")).toContainText("Action Center", { timeout: 60_000 });
+    await expect(page.getByRole("heading", { name: "Recommendations" })).toBeVisible({ timeout: 60_000 });
     await expect(page.locator("body")).toContainText(/require[s]? human approval/i);
     await page.goto("/brief");
     await expect(page.locator("body")).toContainText("heuristic, not a probability", { timeout: 60_000 });

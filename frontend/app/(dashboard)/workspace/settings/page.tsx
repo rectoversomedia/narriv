@@ -104,7 +104,8 @@ function buildMemberRows(records: WorkspaceMemberRecord[], labels: { defaultName
       role,
       status: labels.statusActive,
       permission: roleToPermission(member.role),
-      time: labels.timeLive,
+      // Narriv records when a member joined, not their last activity.
+      time: member.createdAt && !Number.isNaN(new Date(member.createdAt).getTime()) ? new Date(member.createdAt).toLocaleDateString(undefined, { dateStyle: "medium" }) : "—",
       initials: initialsFromName(name, labels.defaultInitials),
       tone: role === labels.owner ? "purple" : role === labels.admin ? "blue" : role === labels.analyst ? "emerald" : "slate",
     };
@@ -510,8 +511,8 @@ export default function SettingsPage() {
     <div className="flex max-w-full flex-col gap-6 pb-12 text-[#101334]">
       {/* Header */}
       <div>
-        <h1 className="text-[31px] font-black tracking-[-0.045em] text-[#060A23]">{ts("pageHeaderTitle")}</h1>
-        <p className="mt-2 text-[14px] font-semibold text-[#68739F]">
+        <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{ts("pageHeaderTitle")}</h1>
+        <p className="mt-2 max-w-2xl text-[14px] font-medium leading-6 text-body">
           {ts("pageHeaderSubtitle")}
         </p>
       </div>
@@ -599,7 +600,7 @@ export default function SettingsPage() {
                   aria-label={ts("logo.changeLogo")}
                   onClick={handleLogoUpload}
                   disabled={uploadLogoMutation.isPending}
-                  className="mt-2.5 flex h-7 w-full items-center justify-center rounded-lg border border-[#DDE3EF] bg-white text-[#465FFF] shadow-xs transition hover:bg-slate-50 hover:text-[#31406B] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-2.5 flex h-7 w-full items-center justify-center rounded-lg border border-[#DDE3EF] bg-white text-[#465FFF] shadow-sm transition hover:bg-slate-50 hover:text-[#31406B] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {uploadLogoMutation.isPending ? <RefreshCw size={14} className="animate-spin" /> : <Upload size={14} strokeWidth={2.5} />}
                 </button>
@@ -772,7 +773,7 @@ export default function SettingsPage() {
             <div className="flex flex-wrap gap-2.5">
               {/* Roles are enforced server-side; this explains them (there is no separate role editor). */}
               <details className="relative">
-                <summary className="flex h-9 cursor-pointer list-none items-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-slate-700 shadow-xs transition hover:bg-slate-50">
+                <summary className="flex h-9 cursor-pointer list-none items-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-slate-700 shadow-sm transition hover:bg-slate-50">
                   What each role can do
                 </summary>
                 <div className="absolute right-0 z-20 mt-2 w-[300px] rounded-[10px] border border-[#DDE3EF] bg-white p-3 text-[11px] font-semibold leading-relaxed text-slate-600 shadow-lg">
@@ -784,7 +785,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => setShowInviteModal(true)}
-                className="flex h-9 items-center gap-1.5 rounded-[8px] bg-[#465FFF] px-3.5 text-[11px] font-black text-white shadow-[0_4px_12px_rgba(70,95,255,0.2)] transition hover:bg-[#3B20EA]"
+                className="flex h-9 items-center gap-1.5 rounded-[8px] bg-[#465FFF] px-3.5 text-[11px] font-black text-white shadow-sm transition hover:bg-[#3B20EA]"
               >
                 <Plus size={14} /> {ts("common.inviteMember")}
               </button>

@@ -297,9 +297,9 @@ function LiveExecutiveBrief({ windowHours }: { windowHours: number }) {
   });
 
   return (
-    <div className="border-b border-slate-200 bg-white px-6 py-5">
-      <div className="mx-auto max-w-screen-xl">
-        <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-5">
+    <div>
+      <div>
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-card">
           <div className="flex items-center justify-between">
             <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Live executive brief</div>
             {isLoading ? (
@@ -420,16 +420,16 @@ export default function DailyIntelligenceBriefPage() {
   const handlePrint = () => window.print();
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="flex flex-col gap-6">
       {/* Page header */}
-      <div className="border-b border-slate-200 bg-white px-6 py-5">
-        <div className="mx-auto max-w-screen-xl">
+      <div>
+        <div>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-[#465FFF]">
                 Intelligence
               </p>
-              <h1 className="text-[22px] font-bold text-[#101334]">{t("title")}</h1>
+              <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <DateRangeSelector value={dateRange} onChange={setDateRange} t={t as (key: string, opts?: Record<string, unknown>) => string} />
@@ -457,7 +457,7 @@ export default function DailyIntelligenceBriefPage() {
 
       {/* Sample document: demo sandbox only. Live workspaces see the grounded brief above. */}
       {isDemo && (
-      <div className="mx-auto max-w-screen-xl px-6 py-8">
+      <div>
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
 
           {/* Left column — narrative map + main document */}

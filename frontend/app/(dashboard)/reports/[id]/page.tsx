@@ -121,8 +121,8 @@ export default function ReportDetailPage() {
             <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#465FFF]/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#465FFF]">
               <Sparkles size={13} /> {tr("detail.liveReport")}
             </div>
-            <h1 className="text-[30px] font-black leading-tight tracking-[-0.045em] text-[#060A23]">{report.title}</h1>
-            <p className="mt-3 max-w-[760px] text-[13px] font-semibold leading-6 text-[#68739F]">{textFromUnknown(report.summary) || tr("detail.defaultSummary")}</p>
+            <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{report.title}</h1>
+            <p className="mt-3 max-w-2xl text-[14px] font-medium leading-6 text-body">{textFromUnknown(report.summary) || tr("detail.defaultSummary")}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -159,7 +159,7 @@ export default function ReportDetailPage() {
               type="button"
               onClick={() => exportMutation.mutate({ format: "pdf" })}
               disabled={exportMutation.isPending}
-              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-[9px] bg-[#465FFF] px-4 text-[12px] font-black text-white shadow-[0_10px_22px_rgba(70,95,255,0.20)] transition hover:bg-[#3B20EA] disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-[9px] bg-[#465FFF] px-4 text-[12px] font-black text-white shadow-sm transition hover:bg-[#3B20EA] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {exportMutation.isPending ? <RefreshCcw size={15} className="animate-spin" /> : <Download size={15} />}
               {tr("preview.downloadPdf")}

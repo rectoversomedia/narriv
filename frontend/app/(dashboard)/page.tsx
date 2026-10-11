@@ -170,7 +170,7 @@ function QuickActionDrawer({ actionKey, onClose, quickActionContent, tDrawer }: 
 
   return (
     <>
-      <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs transition-opacity" role="presentation" onMouseDown={onClose} />
+      <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm transition-opacity" role="presentation" onMouseDown={onClose} />
       <div ref={drawerRef} role="dialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={descriptionId} className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl animate-in slide-in-from-right duration-200">
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
@@ -351,10 +351,10 @@ export default function DashboardPage() {
           <div className="mx-auto w-20 h-20 rounded-full bg-gradient-to-tr from-[#465FFF] to-[#8B5CFF] flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(70,95,255,0.3)]">
             <Rocket size={36} className="text-white" />
           </div>
-          <h1 className="text-[32px] font-black text-slate-900 mb-3">
+          <h1 className="mb-3 text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">
             Welcome to Narriv!
           </h1>
-          <p className="text-[16px] font-semibold text-slate-500 mb-8 max-w-md mx-auto">
+          <p className="mt-1.5 max-w-2xl text-[14px] font-medium leading-6 text-body">
             Set up your monitoring workspace in just 3 steps. We&apos;ll help you configure sources and keywords to start tracking signals.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
@@ -373,7 +373,7 @@ export default function DashboardPage() {
           </div>
           <Link
             href="/onboarding"
-            className="inline-flex h-[52px] items-center gap-3 rounded-[10px] bg-gradient-to-r from-[#465FFF] to-[#8B5CFF] px-8 text-[15px] font-bold text-white shadow-[0_10px_24px_rgba(70,95,255,0.35)] transition hover:from-[#3b52d9] hover:to-[#764ee6] active:scale-[0.98]"
+            className="inline-flex h-[52px] items-center gap-3 rounded-[10px] bg-[#465FFF] hover:bg-[#3B51E0] px-8 text-[15px] font-bold text-white shadow-sm transition hover:from-[#3b52d9] hover:to-[#764ee6] active:scale-[0.98]"
           >
             <Rocket size={20} />
             Start Setup Wizard
@@ -466,7 +466,7 @@ export default function DashboardPage() {
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#465FFF]/10 text-[#465FFF]">
               <Sparkles size={18} />
             </span>
-            <h1 className="text-[22px] font-black tracking-[-0.03em] text-slate-900">
+            <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">
               Today&apos;s Intelligence
             </h1>
           </div>

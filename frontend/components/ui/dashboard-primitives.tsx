@@ -9,8 +9,8 @@ type CardProps = {
 export function SurfaceCard({ children, className = "" }: CardProps) {
   return (
     <section className={`theme-card theme-hover relative overflow-hidden rounded-[28px] border hover:-translate-y-0.5 hover:shadow-[var(--shadow-strong)] ${className}`}>
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/70 to-transparent" />
-      <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-white/70 via-transparent to-[#465FFF]/[0.025] opacity-70 dark:from-white/[0.03]" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/70 via-transparent to-[#465FFF]/[0.025] opacity-70 dark:from-white/[0.03]" />
       <div className="relative z-10">{children}</div>
     </section>
   );
@@ -73,10 +73,10 @@ export function StatusBadge({ children, tone = "blue" }: { children: ReactNode; 
 
 export function ProgressBar({ value, tone = "blue" }: { value: number; tone?: "blue" | "green" | "amber" | "red" }) {
   const tones = {
-    blue: "bg-linear-to-r from-[#465FFF] to-[#8FA4FF] shadow-[0_0_10px_rgba(70,95,255,0.4)]",
-    green: "bg-linear-to-r from-[#12B76A] to-[#6CE9A6] shadow-[0_0_10px_rgba(18,183,106,0.4)]",
-    amber: "bg-linear-to-r from-[#FDB022] to-[#FEDF89] shadow-[0_0_10px_rgba(253,176,34,0.4)]",
-    red: "bg-linear-to-r from-[#F97066] to-[#FDA29B] shadow-[0_0_10px_rgba(249,112,102,0.4)]",
+    blue: "bg-gradient-to-r from-[#465FFF] to-[#8FA4FF] shadow-[0_0_10px_rgba(70,95,255,0.4)]",
+    green: "bg-gradient-to-r from-[#12B76A] to-[#6CE9A6] shadow-[0_0_10px_rgba(18,183,106,0.4)]",
+    amber: "bg-gradient-to-r from-[#FDB022] to-[#FEDF89] shadow-[0_0_10px_rgba(253,176,34,0.4)]",
+    red: "bg-gradient-to-r from-[#F97066] to-[#FDA29B] shadow-[0_0_10px_rgba(249,112,102,0.4)]",
   };
 
   return (

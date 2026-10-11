@@ -271,7 +271,7 @@ export function UpgradeModal({ isOpen, onClose, feature, limit, currentPlan }: U
             </button>
             <Link
               href={`/pricing?plan=${selectedPlan}${feature ? `&feature=${feature}` : ""}${limit ? `&limit=${limit}` : ""}`}
-              className="flex items-center gap-2 rounded-lg bg-[#465FFF] px-4 py-2 text-sm font-bold text-white shadow-[0_4px_12px_rgba(70,95,255,0.3)] transition hover:bg-[#3b50d8]"
+              className="flex items-center gap-2 rounded-lg bg-[#465FFF] px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-[#3b50d8]"
             >
               {currentIndex < planOrder.indexOf(selectedPlan || "command") ? "Upgrade Now" : "Choose Plan"}
               <ArrowRight size={16} />

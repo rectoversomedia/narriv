@@ -139,7 +139,7 @@ function AssignmentCard({
             type="button"
             onClick={handleSaveAssignment}
             disabled={isSaving}
-            className="ml-auto flex h-10 items-center gap-2 rounded-[10px] bg-[#465FFF] px-4 text-[12px] font-black text-white shadow-[0_12px_22px_rgba(70,95,255,0.18)] transition hover:bg-[#3B4FE0] disabled:cursor-not-allowed disabled:opacity-50"
+            className="ml-auto flex h-10 items-center gap-2 rounded-[10px] bg-[#465FFF] px-4 text-[12px] font-black text-white shadow-sm transition hover:bg-[#3B4FE0] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Save size={14} />
             {isSaving ? td("assignment.saving") : td("assignment.save")}
@@ -275,7 +275,7 @@ export default function AlertDetailPage() {
       {alertQuery.isPending ? (
         <PanelSkeleton />
       ) : liveData ? (
-        <section className={`min-h-0 h-auto overflow-hidden rounded-[20px] border ${toneClass[tone].border} bg-linear-to-br ${toneClass[tone].panel} via-white to-white shadow-[0_2px_16px_rgba(16,24,40,0.04)]`}>
+        <section className={`min-h-0 h-auto overflow-hidden rounded-[20px] border ${toneClass[tone].border} bg-gradient-to-br ${toneClass[tone].panel} via-white to-white shadow-[0_2px_16px_rgba(16,24,40,0.04)]`}>
           <div className="p-5 sm:p-6">
             <div className="flex flex-wrap items-center gap-3">
               <StatusBadge tone={tone}>{liveData.severity ?? "alert"}</StatusBadge>
@@ -285,7 +285,7 @@ export default function AlertDetailPage() {
                 <button
                   type="button"
                   onClick={() => setIsActionPlanModalOpen(true)}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-[9px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-3.5 text-[11px] font-black text-white shadow-[0_8px_18px_rgba(70,95,255,0.22)] transition hover:opacity-90"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-[9px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-3.5 text-[11px] font-black text-white shadow-sm transition hover:opacity-90"
                 >
                   <Sparkles size={13} />
                   Generate Action Plan
@@ -293,7 +293,7 @@ export default function AlertDetailPage() {
                 <button
                   type="button"
                   onClick={() => setIsCaseModalOpen(true)}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-[9px] border border-[#DDE3EF] bg-white px-3.5 text-[11px] font-black text-[#31406B] shadow-xs transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-[9px] border border-[#DDE3EF] bg-white px-3.5 text-[11px] font-black text-[#31406B] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]"
                 >
                   <Flag size={13} className="text-[#465FFF]" />
                   Create Case
@@ -305,7 +305,7 @@ export default function AlertDetailPage() {
                     type="button"
                     onClick={() => statusMutation.mutate(status)}
                     disabled={statusMutation.isPending || currentStatus === status}
-                    className={`h-9 rounded-[9px] px-3 text-[11px] font-black transition ${currentStatus === status ? "bg-[#465FFF] text-white shadow-[0_8px_18px_rgba(70,95,255,0.18)]" : "border border-[#DDE3EF] bg-white text-[#53608C] hover:bg-[#F8FAFF]"}`}
+                    className={`h-9 rounded-[9px] px-3 text-[11px] font-black transition ${currentStatus === status ? "bg-[#465FFF] text-white shadow-sm" : "border border-[#DDE3EF] bg-white text-[#53608C] hover:bg-[#F8FAFF]"}`}
                   >
                     {status === "open" ? td("status.new") : status === "acknowledged" ? td("status.investigating") : td("status.resolved")}
                   </button>
@@ -321,7 +321,7 @@ export default function AlertDetailPage() {
                   </span>
                   <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#8A94B8]">{td("liveDetail")}</p>
                 </div>
-                <h1 className="text-[32px] font-black leading-tight tracking-[-0.05em] text-[#070B28]">{title}</h1>
+                <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{title}</h1>
                 <p className="mt-3 text-[13px] font-bold leading-6 text-[#53608C]">{td("issue.description", { issue })}</p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
@@ -378,7 +378,7 @@ export default function AlertDetailPage() {
                 <button
                   type="button"
                   onClick={() => setIsActionPlanModalOpen(true)}
-                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[9px] bg-[#10B981] px-4 text-[12px] font-black text-white shadow-[0_10px_20px_rgba(16,185,129,0.18)] transition hover:bg-[#0C9B69]"
+                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[9px] bg-[#10B981] px-4 text-[12px] font-black text-white shadow-sm transition hover:bg-[#0C9B69]"
                 >
                   <Sparkles size={14} />
                   {td("createAction")}

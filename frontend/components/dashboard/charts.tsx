@@ -22,7 +22,7 @@ import type { Tone } from "@/lib/mock-data";
 
 const toneColor: Record<Tone, string> = {
   blue: "#465FFF",
-  purple: "#351EFF",
+  purple: "#465FFF",
   green: "#12B76A",
   red: "#F04438",
   amber: "#F79009",
@@ -33,10 +33,10 @@ const chartTick = { fill: "#53608C", fontSize: 11, fontWeight: 700 };
 const tooltipContentStyle = { border: "1px solid #E1E6F2", borderRadius: 10, boxShadow: "0 18px 44px rgba(16,19,52,.12)" };
 const activityMargin = { left: -18, right: 8, top: 12, bottom: 0 };
 const aiMentionsMargin = { left: -16, right: 12, top: 16, bottom: 0 };
-const activityCursor = { stroke: "#351EFF", strokeWidth: 1 };
-const activityDot = { r: 3, fill: "#351EFF", stroke: "#fff", strokeWidth: 2 };
+const activityCursor = { stroke: "#465FFF", strokeWidth: 1 };
+const activityDot = { r: 3, fill: "#465FFF", stroke: "#fff", strokeWidth: 2 };
 const activityActiveDot = { r: 5 };
-const brandDot = { r: 4, fill: "#351EFF", stroke: "#fff", strokeWidth: 2 };
+const brandDot = { r: 4, fill: "#465FFF", stroke: "#fff", strokeWidth: 2 };
 const competitorDot = { r: 3, fill: "#38A7FF", stroke: "#fff", strokeWidth: 2 };
 const secondaryDot = { r: 3, fill: "#12B76A", stroke: "#fff", strokeWidth: 2 };
 
@@ -54,15 +54,15 @@ export function ActivityAreaChart({ data }: { data: SeriesPoint[] }) {
         <AreaChart data={data} margin={activityMargin}>
           <defs>
             <linearGradient id="activityFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#351EFF" stopOpacity={0.22} />
-              <stop offset="85%" stopColor="#351EFF" stopOpacity={0.02} />
+              <stop offset="0%" stopColor="#465FFF" stopOpacity={0.22} />
+              <stop offset="85%" stopColor="#465FFF" stopOpacity={0.02} />
             </linearGradient>
           </defs>
           <CartesianGrid stroke="#E6EAF4" vertical={false} />
           <XAxis dataKey="label" axisLine={false} tickLine={false} tick={chartTick} />
           <YAxis axisLine={false} tickLine={false} tick={chartTick} />
           <Tooltip cursor={activityCursor} contentStyle={tooltipContentStyle} />
-          <Area type="monotone" dataKey="value" stroke="#351EFF" strokeWidth={3} fill="url(#activityFill)" dot={activityDot} activeDot={activityActiveDot} isAnimationActive animationDuration={900} />
+          <Area type="monotone" dataKey="value" stroke="#465FFF" strokeWidth={3} fill="url(#activityFill)" dot={activityDot} activeDot={activityActiveDot} isAnimationActive animationDuration={900} />
         </AreaChart>
       </ResponsiveContainer>
     </div>
@@ -78,7 +78,7 @@ export function AiMentionsLineChart({ data }: { data: SeriesPoint[] }) {
           <XAxis dataKey="label" axisLine={false} tickLine={false} tick={chartTick} />
           <YAxis axisLine={false} tickLine={false} tick={chartTick} />
           <Tooltip contentStyle={tooltipContentStyle} />
-          <Line type="monotone" dataKey="value" name="Brand Anda" stroke="#351EFF" strokeWidth={3} dot={brandDot} isAnimationActive animationDuration={900} />
+          <Line type="monotone" dataKey="value" name="Brand Anda" stroke="#465FFF" strokeWidth={3} dot={brandDot} isAnimationActive animationDuration={900} />
           <Line type="monotone" dataKey="competitor" name="Kompetitor 1" stroke="#38A7FF" strokeWidth={2} strokeDasharray="5 4" dot={competitorDot} isAnimationActive animationDuration={900} />
           <Line type="monotone" dataKey="secondary" name="Kompetitor 2" stroke="#12B76A" strokeWidth={2} strokeDasharray="5 4" dot={secondaryDot} isAnimationActive animationDuration={900} />
         </LineChart>
@@ -129,7 +129,7 @@ export function PlatformBarChart({ data }: { data: Array<{ name: string; value: 
         <div key={item.name} className="grid grid-cols-[150px_1fr_92px] items-center gap-4">
           <p className="text-sm font-bold text-[#101334]">{item.name}</p>
           <div className="h-2 overflow-hidden rounded-full bg-[#EEF1F7]">
-            <div className="h-full rounded-full bg-[#351EFF]" style={{ width: `${(item.value / max) * 100}%` }} />
+            <div className="h-full rounded-full bg-[#465FFF]" style={{ width: `${(item.value / max) * 100}%` }} />
           </div>
           <p className="text-right text-sm font-bold text-[#34406C]">{item.value} <span className="text-xs text-[#53608C]">({item.percent})</span></p>
         </div>

@@ -23,7 +23,7 @@ export function H1({ children, className }: TypographyProps) {
   return (
     <h1 className={cn(
       "text-[32px] font-black tracking-[-0.04em] leading-tight",
-      "bg-clip-text text-transparent bg-linear-to-r from-slate-950 via-slate-900 to-slate-800",
+      "bg-clip-text text-transparent bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800",
       className
     )}>
       {children}

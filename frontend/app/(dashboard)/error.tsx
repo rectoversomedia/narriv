@@ -31,7 +31,7 @@ export default function DashboardError({
         <button
           type="button"
           onClick={reset}
-          className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-[#465FFF] px-5 text-sm font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.22)] transition hover:bg-[#3B20EA] sm:w-auto"
+          className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-[#465FFF] px-5 text-sm font-black text-white shadow-sm transition hover:bg-[#3B20EA] sm:w-auto"
         >
           <RefreshCcw size={16} />
           {t("retry")}

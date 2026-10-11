@@ -47,7 +47,6 @@ type ToneStyle = {
   border: string;
 };
 
-const aiAgentImage = "/mainapp/reports-ai-agent.png";
 
 const toneStyles: Record<Tone, ToneStyle> = {
   blue: { color: "#465FFF", rgb: "70,95,255", soft: "bg-[#465FFF]/10", text: "text-[#465FFF]", border: "border-[#465FFF]/15" },
@@ -141,7 +140,7 @@ function MetricCard({ label, value, helper, icon: Icon, tone }: { label: string;
 
   return (
     <Panel className="flex min-h-[88px] items-center gap-3.5 p-4">
-      <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-full border shadow-[0_10px_26px_rgba(70,95,255,0.05)]", style.soft, style.text, style.border)}>
+      <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-full border shadow-sm", style.soft, style.text, style.border)}>
         <Icon size={19} strokeWidth={2.35} />
       </span>
       <div className="min-w-0">
@@ -260,23 +259,6 @@ function SentimentChart({ dashboard }: { dashboard?: DashboardSummary | null }) 
   );
 }
 
-function ReportAgentImage() {
-  const tr = useTranslations("Reports");
-  return (
-    <div className="relative flex h-[96px] w-[96px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#465FFF]/10 bg-linear-to-b from-[#EEF0FF] via-white to-[#F1EEFF] shadow-[inset_0_0_24px_rgba(70,95,255,0.10)]">
-      <Image
-        src={aiAgentImage}
-        alt={tr("preview.imageAlt")}
-        width={96}
-        height={96}
-        sizes="96px"
-        unoptimized
-        className="relative h-full w-full object-cover"
-        style={{ transform: "scale(1.35)" }}
-      />
-    </div>
-  );
-}
 
 function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeRecord[] | null, dashboard?: DashboardSummary | null }) {
   const tr = useTranslations("Reports");
@@ -302,10 +284,7 @@ function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeReco
 
   return (
     <Panel className="p-5">
-      <div className="grid gap-5 md:grid-cols-[1fr_190px] lg:grid-cols-[96px_1fr_214px]">
-        <div className="flex justify-center md:justify-start">
-          <ReportAgentImage />
-        </div>
+      <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_220px]">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{tr("aiSummary.title")}</h2>
@@ -313,10 +292,10 @@ function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeReco
               <Sparkles size={12} /> {tr("aiSummary.generated")}
             </span>
           </div>
-          <p className="mt-3 max-w-[660px] text-[13.5px] font-black leading-relaxed text-[#101334]">
+          <p className="mt-3 max-w-[660px] text-[14px] font-semibold leading-6 text-navy">
             {bodyText}
           </p>
-          <div className="mt-5 grid gap-x-4 gap-y-3 lg:grid-cols-4">
+          <div className="mt-5 grid gap-x-5 gap-y-4 sm:grid-cols-2">
             <SummaryPoint color="#465FFF" title={tr("aiSummary.insightTitle")} text={insightText} />
             <SummaryPoint color="#EF4444" title={tr("aiSummary.riskTitle")} text={riskText} />
             <SummaryPoint color="#F59E0B" title={tr("aiSummary.movementTitle")} text={movementText} />
@@ -336,8 +315,8 @@ function SummaryPoint({ color, title, text }: { color: string; title: string; te
     <div className="flex gap-2.5">
       <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
       <div className="min-w-0">
-        <p className="text-[11px] font-black text-[#101334]">{title}</p>
-        <p className="mt-1 text-[11px] font-bold leading-normal text-[#58648C]">{text}</p>
+        <p className="text-[12px] font-bold text-navy">{title}</p>
+        <p className="mt-1 text-[12px] font-medium leading-5 text-body">{text}</p>
       </div>
     </div>
   );
@@ -419,7 +398,7 @@ function ReportPreviewSidebar({
           </div>
 
           <div className="mt-4 grid gap-2">
-            <Link href={`/reports/${latestReport.id}`} className="flex h-10 w-full items-center justify-center gap-2 rounded-[9px] bg-[#465FFF] text-[12px] font-black text-white shadow-[0_8px_20px_rgba(70,95,255,0.18)] transition hover:bg-[#3B20EA]">
+            <Link href={`/reports/${latestReport.id}`} className="flex h-10 w-full items-center justify-center gap-2 rounded-[9px] bg-[#465FFF] text-[12px] font-black text-white shadow-sm transition hover:bg-[#3B20EA]">
               <Eye size={15} /> {tr("preview.viewPreview")}
             </Link>
             <div className="grid grid-cols-3 gap-2">
@@ -613,7 +592,7 @@ function ReportsTable({
             className={cn(
               "h-7 rounded-[7px] px-3 text-[10.5px] font-black transition",
               activeTab === tab.value
-                ? "bg-[#465FFF] text-white shadow-[0_4px_12px_rgba(70,95,255,0.18)]"
+                ? "bg-[#465FFF] text-white shadow-sm"
                 : "border border-[#DDE3EF] bg-[#F8FAFF] text-[#58648C] hover:bg-white"
             )}
           >
@@ -841,7 +820,7 @@ function TimelineChart({ data }: { data: ReportsAnalyticsResponse["trend_timelin
       <p className="mt-1 text-[11px] font-bold text-[#68739F]">{tr("timeline.desc")}</p>
 
       {hasData ? (
-        <div className="relative mt-5 h-[190px] rounded-[12px] bg-linear-to-b from-white to-[#F8FAFF]">
+        <div className="relative mt-5 h-[190px] rounded-[12px] bg-gradient-to-b from-white to-[#F8FAFF]">
           {/* Y Axis */}
           <div className="absolute left-0 top-0 bottom-[22px] flex w-[38px] flex-col justify-between py-1 text-right text-[9px] font-bold text-[#8B95B8] pointer-events-none">
             {yTicks.slice().reverse().map((tick) => <span key={tick}>{tick}</span>)}
@@ -1309,8 +1288,8 @@ export default function ReportsPage() {
       {/* Header */}
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-[31px] font-black tracking-[-0.045em] text-[#060A23]">{t("pages.reports.title")}</h1>
-          <p className="mt-2 text-[14px] font-semibold text-[#68739F]">{t("pages.reports.desc")}</p>
+          <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("pages.reports.title")}</h1>
+          <p className="mt-2 max-w-2xl text-[14px] font-medium leading-6 text-body">{t("pages.reports.desc")}</p>
         </div>
         <div className="flex flex-wrap gap-3">
           <button type="button" onClick={() => setIsTemplatesModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:bg-[#F8FAFF] sm:w-auto">
@@ -1319,7 +1298,7 @@ export default function ReportsPage() {
           <button type="button" onClick={() => setIsScheduleModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:bg-[#F8FAFF] sm:w-auto">
             <CalendarClock size={14} /> {tr("buttons.scheduleSettings")}
           </button>
-          <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_12px_24px_rgba(70,95,255,0.24)] transition hover:opacity-90 sm:w-auto">
+          <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 sm:w-auto">
             <Plus size={15} /> {tr("buttons.createNew")}
           </button>
         </div>
@@ -1395,7 +1374,7 @@ export default function ReportsPage() {
               <div className="flex items-center gap-3">
                 <h2 id="reports-schedule-dialog-title" className="text-lg font-black text-[#101334]">{tr("scheduleModal.title")}</h2>
                 {!isScheduleFormOpen && (
-                  <button type="button" onClick={() => { setEditingSchedule(null); setIsScheduleFormOpen(true); }} className="flex h-7 items-center justify-center gap-1.5 rounded-[6px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-2.5 text-[10px] font-black text-white shadow-sm transition hover:opacity-90">
+                  <button type="button" onClick={() => { setEditingSchedule(null); setIsScheduleFormOpen(true); }} className="flex h-7 items-center justify-center gap-1.5 rounded-[6px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-2.5 text-[10px] font-black text-white shadow-sm transition hover:opacity-90">
                     <Plus size={12} /> {tr("scheduleModal.addSchedule")}
                   </button>
                 )}
@@ -1508,7 +1487,7 @@ export default function ReportsPage() {
                     <button type="button" onClick={() => { setIsScheduleFormOpen(false); setEditingSchedule(null); }} className="flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF]">
                       {tr("scheduleModal.cancel")}
                     </button>
-                    <button type="submit" disabled={createScheduleMutation.isPending || updateScheduleMutation.isPending} className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_8px_16px_rgba(70,95,255,0.2)] transition hover:opacity-90 disabled:opacity-50">
+                    <button type="submit" disabled={createScheduleMutation.isPending || updateScheduleMutation.isPending} className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:opacity-50">
                       {(createScheduleMutation.isPending || updateScheduleMutation.isPending) ? tr("scheduleModal.saving") : tr("scheduleModal.save")}
                     </button>
                   </div>
@@ -1678,7 +1657,7 @@ export default function ReportsPage() {
                     <button type="button" onClick={() => setIsShareModalOpen(false)} className="flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF]">
                       {tr("shareModal.cancel")}
                     </button>
-                    <button type="submit" disabled={shareReportMutation.isPending} className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_8px_16px_rgba(70,95,255,0.2)] transition hover:opacity-90 disabled:opacity-50">
+                    <button type="submit" disabled={shareReportMutation.isPending} className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:opacity-50">
                       {shareReportMutation.isPending ? tr("shareModal.sending") : tr("shareModal.send")}
                     </button>
                   </div>
@@ -1696,7 +1675,6 @@ export default function ReportsPage() {
       ) : null}
 
       {/* Screen Reader AI image slot */}
-      <div className="sr-only" aria-live="polite">AI image slot: {aiAgentImage}</div>
 
       {/* Modals */}
       {mounted && isTemplatesModalOpen ? createPortal(
@@ -1706,7 +1684,7 @@ export default function ReportsPage() {
               <div className="flex items-center gap-3">
                 <h2 id="reports-templates-dialog-title" className="text-lg font-black text-[#101334]">{tr("buttons.manageTemplates")}</h2>
                 {!isFormOpen && (
-                  <button type="button" onClick={() => { setEditingTemplate(null); setIsFormOpen(true); }} className="flex h-7 items-center justify-center gap-1.5 rounded-[6px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-2.5 text-[10px] font-black text-white shadow-sm transition hover:opacity-90">
+                  <button type="button" onClick={() => { setEditingTemplate(null); setIsFormOpen(true); }} className="flex h-7 items-center justify-center gap-1.5 rounded-[6px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-2.5 text-[10px] font-black text-white shadow-sm transition hover:opacity-90">
                     <Plus size={12} /> {tr("templateForm.addCustom")}
                   </button>
                 )}
@@ -1748,7 +1726,7 @@ export default function ReportsPage() {
                     <button type="button" onClick={() => setIsFormOpen(false)} className="flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF]">
                       {tr("templateForm.cancel")}
                     </button>
-                    <button type="submit" disabled={createTemplateMutation.isPending || updateTemplateMutation.isPending} className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_8px_16px_rgba(70,95,255,0.2)] transition hover:opacity-90 disabled:opacity-50">
+                    <button type="submit" disabled={createTemplateMutation.isPending || updateTemplateMutation.isPending} className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:opacity-50">
                       {(createTemplateMutation.isPending || updateTemplateMutation.isPending) ? tr("templateForm.saving") : tr("templateForm.save")}
                     </button>
                   </div>
@@ -1852,7 +1830,7 @@ export default function ReportsPage() {
                   <button type="button" onClick={() => setIsCreateModalOpen(false)} className="flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF]">
                     {tr("createModal.cancel")}
                   </button>
-                  <button type="submit" disabled={generateReportMutation.isPending || !templatesQuery.data?.data.length} className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-linear-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-[0_8px_16px_rgba(70,95,255,0.2)] transition hover:opacity-90 disabled:opacity-50">
+                  <button type="submit" disabled={generateReportMutation.isPending || !templatesQuery.data?.data.length} className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:opacity-50">
                     {generateReportMutation.isPending ? tr("createModal.generating") : tr("createModal.generate")}
                   </button>
                 </div>

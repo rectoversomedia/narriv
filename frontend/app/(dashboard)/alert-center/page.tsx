@@ -286,11 +286,11 @@ export default function AlertCenterPage() {
   });
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-[22px] font-bold text-[#101334]">
+          <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">
             {t("alertCenter.title")}
           </h1>
           {isDemoSession && (
@@ -305,7 +305,7 @@ export default function AlertCenterPage() {
           <span className="text-[12px] font-semibold text-[#68739F]">
             {t("alertCenter.filterSeverity")}:
           </span>
-          <div className="flex flex-wrap rounded-[10px] border border-slate-200 bg-white p-1 shadow-xs">
+          <div className="flex flex-wrap rounded-[10px] border border-slate-200 bg-white p-1 shadow-sm">
             {SEVERITY_FILTERS.map((s) => (
               <button
                 key={s}
@@ -323,7 +323,7 @@ export default function AlertCenterPage() {
           </div>
 
           {/* Status filter */}
-          <div className="flex flex-wrap rounded-[10px] border border-slate-200 bg-white p-1 shadow-xs">
+          <div className="flex flex-wrap rounded-[10px] border border-slate-200 bg-white p-1 shadow-sm">
             {STATUS_FILTERS.map((s) => (
               <button
                 key={s}

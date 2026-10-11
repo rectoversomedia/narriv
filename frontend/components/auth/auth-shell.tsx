@@ -174,7 +174,7 @@ export function HelpAction() {
     <div className="flex items-center gap-2 text-[15px] font-medium text-[#344054]">
       <HelpCircle size={20} className="text-[#344054]" />
       <span>{t("help.needHelp")}</span>
-      <Link href={SUPPORT_EMAIL ? `mailto:${SUPPORT_EMAIL}` : "/help#contact"} className="font-semibold text-[#2F20FF] hover:underline">
+      <Link href={SUPPORT_EMAIL ? `mailto:${SUPPORT_EMAIL}` : "/help#contact"} className="font-semibold text-[#465FFF] hover:underline">
         {t("help.contact")}
       </Link>
     </div>
@@ -202,7 +202,7 @@ export function AuthInput({ label, icon, error, registration, rightAddon, onValu
   return (
     <Field data-invalid={!!error}>
       <FieldLabel className="mb-1 block text-[15px] font-semibold text-[#111536]">{label}</FieldLabel>
-      <span className={`flex h-[59px] items-center gap-4 rounded-[8px] border bg-white px-5 transition focus-within:border-[#3D2DFF] focus-within:shadow-[0_0_0_3px_rgba(61,45,255,0.08)] ${error ? "border-[#F04438]" : "border-[#D6DDEC]"}`}>
+      <span className={`flex h-[59px] items-center gap-4 rounded-[8px] border bg-white px-5 transition focus-within:border-[#465FFF] focus-within:shadow-[0_0_0_3px_rgba(61,45,255,0.08)] ${error ? "border-[#F04438]" : "border-[#D6DDEC]"}`}>
         <Icon size={22} className="shrink-0 text-[#344054]" strokeWidth={1.8} />
         <Input
           {...props}
@@ -251,7 +251,7 @@ export function PrimaryButton({ children, loading }: { children: ReactNode; load
       type="submit"
       disabled={loading}
       size="lg"
-      className="flex h-[58px] w-full items-center justify-center rounded-[8px] bg-gradient-to-r from-[#2819FF] to-[#6B2EFF] text-[18px] font-semibold text-white shadow-[0_14px_34px_rgba(63,43,255,0.28)] transition hover:brightness-105 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+      className="flex h-[58px] w-full items-center justify-center rounded-[8px] bg-[#465FFF] hover:bg-[#3B51E0] text-[18px] font-semibold text-white shadow-sm transition hover:brightness-105 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
     >
       {children}
     </Button>
@@ -422,7 +422,7 @@ export function SecurityFooter() {
 export function InfoCallout({ title, text }: { title: string; text: string }) {
   return (
     <div className="flex items-center gap-5 rounded-[8px] border border-[#E0E4F1] bg-[#FBFAFF] p-5">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-[#2F20FF] text-[#2F20FF]">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-[#465FFF] text-[#465FFF]">
         <Info size={24} />
       </span>
       <span>
@@ -525,7 +525,7 @@ export function VerificationCodeInput({ value, onChange }: CodeInputProps) {
             if (event.currentTarget.value && index < 5) focusInput(index + 1);
           }}
           aria-label={t("verification.digitLabel", { digit: index + 1 })}
-          className="h-[74px] rounded-[10px] border border-[#D6DDEC] bg-white text-center text-[34px] font-semibold text-[#2F20FF] outline-none transition focus:border-[#2F20FF] focus:shadow-[0_0_0_3px_rgba(47,32,255,0.08)]"
+          className="h-[74px] rounded-[10px] border border-[#D6DDEC] bg-white text-center text-[34px] font-semibold text-[#465FFF] outline-none transition focus:border-[#465FFF] focus:shadow-[0_0_0_3px_rgba(47,32,255,0.08)]"
         />
       ))}
     </div>

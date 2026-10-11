@@ -121,12 +121,14 @@ function MetricCard({ label, value, subValue, helper, icon, tone, sparklineValue
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
             <IconHalo icon={icon} tone={tone} />
-            <p className="truncate text-[11px] font-extrabold uppercase tracking-wider text-[#68739F]">{label}</p>
+            <p className="text-[12px] font-semibold leading-tight text-body">{label}</p>
           </div>
-          <p className={cn("shrink-0 flex items-center gap-1 text-[10px] font-bold whitespace-nowrap tabular-nums", isNegative ? "text-[#EF4444]" : "text-[#10B981]")}>
-            <span className={cn("size-1.5 rounded-full", isNegative ? "bg-[#EF4444]" : "bg-[#10B981]")} />
-            {helper}
-          </p>
+          {helper && helper !== "-" ? (
+            <p className={cn("shrink-0 flex items-center gap-1 text-[11px] font-semibold whitespace-nowrap tabular-nums", isNegative ? "text-[#EF4444]" : "text-[#10B981]")}>
+              <span className={cn("size-1.5 rounded-full", isNegative ? "bg-[#EF4444]" : "bg-[#10B981]")} aria-hidden="true" />
+              {helper}
+            </p>
+          ) : null}
         </div>
 
         {/* Value + sparkline row */}
@@ -861,7 +863,7 @@ export default function VisibilityPage() {
         <div className="flex flex-wrap items-center gap-3">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-[28px] font-black leading-none tracking-[-0.03em] text-[#101334]">{t("title")}</h1>
+              <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1>
               <Badge variant="default" className="px-2 py-0.5 text-[9px] font-bold normal-case tracking-normal">
                 AI-Modeled Projection (Simulated via GPT-4o-mini)
               </Badge>
@@ -965,21 +967,10 @@ export default function VisibilityPage() {
           ) : null}
 
           <Panel className="border-[#D6DEFF] bg-gradient-to-r from-[#F6F8FF] to-[#F1F3FF]">
-            <CardContent className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_230px_260px] lg:items-center">
+            <CardContent className="grid gap-5 p-5 md:grid-cols-2 2xl:grid-cols-[minmax(0,1fr)_230px_260px] 2xl:items-center">
               <div className="flex items-start gap-4">
                 <div className="relative flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-purple-200 bg-[#F3ECFF] shadow-md sm:size-20">
                   <Bot className="size-8 text-purple-600" aria-hidden="true" />
-                  <Image
-                    src="/mainapp/ai-avatar.png"
-                    alt="AI Agent avatar"
-                    fill
-                    sizes="80px"
-                    loading="lazy"
-                    className="object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none";
-                    }}
-                  />
                 </div>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">

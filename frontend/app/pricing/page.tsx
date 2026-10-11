@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
@@ -288,7 +288,7 @@ export default function PricingPage() {
             return (
               <div
                 key={plan.id}
-                className={`relative rounded-2xl border p-8 ${
+                className={`relative rounded-2xl border p-6 sm:p-8 ${
                   plan.popular
                     ? "border-indigo-500 bg-gradient-to-b from-indigo-50 to-white shadow-xl shadow-indigo-100 ring-2 ring-indigo-500"
                     : "border-slate-200 bg-white shadow-lg"
@@ -321,7 +321,7 @@ export default function PricingPage() {
                     <div className="text-3xl font-black text-slate-900"><span>Custom</span></div>
                   ) : (
                     <>
-                      <div className="text-4xl font-black text-slate-900">
+                      <div className="text-3xl font-black text-slate-900 sm:text-4xl">
                         {formatPrice(price)}
                         <span className="text-base font-normal text-slate-400">/{plan.period}</span>
                       </div>
@@ -386,7 +386,7 @@ export default function PricingPage() {
           </div>
 
           <div className="mt-12 overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[640px]">
               <thead>
                 <tr className="border-b-2 border-slate-200">
                   <th className="py-4 pr-4 text-left text-sm font-bold text-slate-900">
@@ -408,8 +408,8 @@ export default function PricingPage() {
               </thead>
               <tbody>
                 {comparisonFeatures.map((category) => (
-                  <>
-                    <tr key={category.category} className="bg-slate-50">
+                  <Fragment key={category.category}>
+                    <tr className="bg-slate-50">
                       <td colSpan={5} className="py-3 px-4">
                         <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
                           <category.icon size={16} className="text-indigo-500" />
@@ -482,7 +482,7 @@ export default function PricingPage() {
                         </td>
                       </tr>
                     ))}
-                  </>
+                  </Fragment>
                 ))}
               </tbody>
             </table>

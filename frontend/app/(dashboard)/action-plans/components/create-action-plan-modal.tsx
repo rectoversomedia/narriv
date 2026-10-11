@@ -172,7 +172,7 @@ export function CreateActionPlanModal({
                     className={cn(
                       "group flex items-start gap-3 rounded-xl border p-3 text-left transition-all duration-200 hover:-translate-y-0.5",
                       isActive
-                        ? "border-[#465FFF] bg-[#465FFF]/5 shadow-[0_4px_12px_rgba(70,95,255,0.08)]"
+                        ? "border-[#465FFF] bg-[#465FFF]/5 shadow-sm"
                         : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
                     )}
                   >
@@ -248,7 +248,7 @@ export function CreateActionPlanModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-linear-to-r from-[#465FFF] to-[#5C4DFF] text-[12px] font-black text-white transition hover:opacity-90 disabled:opacity-50"
+              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] text-[12px] font-black text-white transition hover:opacity-90 disabled:opacity-50"
             >
               {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : null}
               {t("submit")}

@@ -145,13 +145,13 @@ export async function testIntegrationConnection(integration) {
 
     if (integration.platform === "slack") {
         const testPayload = {
-            text: "🔔 [Narriv Test] Webhook connection successful!",
+            text: "[Narriv Test] Webhook connection successful.",
             blocks: [
                 {
                     type: "header",
                     text: {
                         type: "plain_text",
-                        text: "✅ Narriv Webhook Connection Verified",
+                        text: "Narriv webhook connection verified",
                         emoji: true,
                     },
                 },
@@ -185,7 +185,7 @@ export async function testIntegrationConnection(integration) {
                                 items: [
                                     {
                                         type: "TextBlock",
-                                        text: "✅ Narriv Webhook Connection Verified",
+                                        text: "Narriv webhook connection verified",
                                         weight: "Bolder",
                                         size: "Medium",
                                     },

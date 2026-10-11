@@ -31,7 +31,7 @@ export function PageTitle({ title, description, action }: { title: string; descr
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-8">
       <div>
-        <h1 className="text-[34px] font-black tracking-[-0.04em] bg-clip-text text-transparent bg-linear-to-r from-slate-950 via-slate-900 to-slate-800">{title}</h1>
+        <h1 className="text-[34px] font-black tracking-[-0.04em] bg-clip-text text-transparent bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800">{title}</h1>
         <p className="mt-2 text-[15px] font-semibold text-slate-400">{description}</p>
       </div>
       {action}
@@ -45,7 +45,7 @@ export function PrimaryAction({ children, className = "" }: { children: ReactNod
       type="button"
       size="lg"
       className={cn(
-        "inline-flex h-[42px] items-center justify-center gap-2 rounded-[8px] border border-slate-200 bg-linear-to-r from-[#465FFF] to-[#8B5CFF] px-5 text-[14px] font-bold text-white shadow-[0_0_15px_rgba(70,95,255,0.3)] transition hover:from-[#3b52d9] hover:to-[#764ee6] active:scale-[0.98]",
+        "inline-flex h-[42px] items-center justify-center gap-2 rounded-[8px] border border-slate-200 bg-[#465FFF] hover:bg-[#3B51E0] px-5 text-[14px] font-bold text-white shadow-[0_0_15px_rgba(70,95,255,0.3)] transition hover:from-[#3b52d9] hover:to-[#764ee6] active:scale-[0.98]",
         className
       )}
     >
@@ -136,7 +136,7 @@ export function LineChartMock({ values }: { values: number[] }) {
       <div className="chart-bar-enter relative flex h-full items-end gap-2 z-10">
         {values.map((value, index) => (
           <div key={`${value}-${index}`} className="flex flex-1 flex-col items-center gap-2">
-            <div className="w-full rounded-t-full bg-linear-to-t from-[#465FFF] to-[#8B5CFF] shadow-[0_0_12px_rgba(70,95,255,0.2)]" style={{ height: `${Math.max(8, (value / max) * 150)}px` }} />
+            <div className="w-full rounded-t-full bg-gradient-to-t from-[#465FFF] to-[#8B5CFF] shadow-[0_0_12px_rgba(70,95,255,0.2)]" style={{ height: `${Math.max(8, (value / max) * 150)}px` }} />
             <span className="h-1.5 w-1.5 rounded-full bg-[#465FFF]" />
           </div>
         ))}
