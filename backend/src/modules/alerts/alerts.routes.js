@@ -354,8 +354,32 @@ router.get("/:id", async (req, res) => {
             return res.status(404).json({ error: "Alert not found" });
         }
 
+        // Evidence: the signals the alert was raised on, limited to the alert's own workspace.
+        const evidenceIds = Array.isArray(alert.metadata?.signal_ids) ? alert.metadata.signal_ids.filter((x) => typeof x === "string").slice(0, 50) : [];
+        let evidence = [];
+        if (evidenceIds.length) {
+            const { data: evidenceRows } = await supabase
+                .from("signals")
+                .select("id, title, url, platform, author, sentiment, captured_at, published_at")
+                .eq("workspace_id", alert.workspace_id)
+                .in("id", evidenceIds);
+            evidence = (evidenceRows || []).map((s) => ({
+                id: s.id,
+                title: s.title,
+                url: s.url || null,
+                publisher: s.author || null,
+                platform: s.platform || null,
+                sentiment: s.sentiment ? String(s.sentiment).toLowerCase() : "unanalyzed",
+                capturedAt: s.captured_at,
+                publishedAt: s.published_at,
+            }));
+        }
+
         res.json({
             ...alert,
+            evidence,
+            evidenceMissing: Math.max(0, evidenceIds.length - evidence.length),
+            triggeredBy: alert.metadata?.triggered_by || null,
             whatHappened: alert.what_happened || alert.description || null,
             whyItMatters: alert.why_it_matters || null,
             whatToDo: alert.what_to_do || null,

@@ -104,6 +104,16 @@ describe('Workspace isolation across CRUD endpoints', () => {
       expect((await request(app).get(`/api/alerts/${ids.alertB}`).set(auth())).status).toBe(404);
     });
 
+    it('returns alert evidence from its own workspace only', async () => {
+      db.table('alerts').find((x) => x.id === ids.alertA).metadata = { signal_ids: [ids.signalA, ids.signalB], triggered_by: 'test' };
+      const res = await request(app).get(`/api/alerts/${ids.alertA}`).set(auth());
+      expect(res.status).toBe(200);
+      expect(res.body.evidence.map((e) => e.id)).toEqual([ids.signalA]);
+      expect(res.body.evidence[0]).toMatchObject({ url: 'https://a.example/1', sentiment: 'negative' });
+      expect(res.body.evidenceMissing).toBe(1);
+      expect(JSON.stringify(res.body.evidence)).not.toContain('B signal');
+    });
+
     it('cannot change the status of another tenant alert', async () => {
       const res = await request(app).patch(`/api/alerts/${ids.alertB}`).set(auth()).send({ status: 'resolved' });
       expect([403, 404]).toContain(res.status);

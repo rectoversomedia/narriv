@@ -236,7 +236,21 @@ export interface MetaPaginatedResponse<T> {
   meta: { page: number; limit: number; total: number };
 }
 
+export interface AlertEvidence {
+  id: string;
+  title: string;
+  url: string | null;
+  publisher: string | null;
+  platform: string | null;
+  sentiment: string;
+  capturedAt: string | null;
+  publishedAt: string | null;
+}
+
 export interface Alert {
+  evidence?: AlertEvidence[];
+  evidenceMissing?: number;
+  triggeredBy?: string | null;
   id: string;
   title: string;
   whatHappened: string | null;
@@ -452,6 +466,9 @@ export async function getAlertById(id: string): Promise<Alert | null> {
     return {
       id: raw.id,
       title: raw.title,
+      evidence: Array.isArray(raw.evidence) ? raw.evidence : [],
+      evidenceMissing: typeof raw.evidenceMissing === "number" ? raw.evidenceMissing : 0,
+      triggeredBy: raw.triggeredBy ?? null,
       whatHappened: raw.whatHappened ?? raw.what_happened ?? raw.description ?? null,
       whyItMatters: raw.whyItMatters ?? raw.why_it_matters ?? null,
       whatToDo: raw.whatToDo ?? raw.what_to_do ?? null,

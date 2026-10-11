@@ -343,6 +343,31 @@ export default function AlertDetailPage() {
               ))}
             </div>
 
+            <section aria-label="Evidence" className="mt-6 rounded-[14px] border border-[#E6EAF2] bg-white/80 p-5">
+              <p className={`text-[10px] font-black uppercase tracking-[0.16em] ${toneClass[tone].text}`}>Evidence ({liveData.evidence?.length ?? 0})</p>
+              {liveData.evidence && liveData.evidence.length > 0 ? (
+                <ul className="mt-3 flex flex-col gap-2">
+                  {liveData.evidence.map((sig) => (
+                    <li key={sig.id} className="flex flex-wrap items-start justify-between gap-2 rounded-[10px] border border-[#EEF1F7] p-3">
+                      <span className="min-w-0">
+                        {sig.url ? (
+                          <a href={sig.url} target="_blank" rel="noopener noreferrer" className="text-[13px] font-bold text-[#101334] underline-offset-2 hover:text-[#465FFF] hover:underline">{sig.title}</a>
+                        ) : (
+                          <span className="text-[13px] font-bold text-[#101334]">{sig.title}</span>
+                        )}
+                        <span className="mt-0.5 block text-[11px] font-semibold text-[#8A94B8]">{[sig.publisher, sig.platform].filter(Boolean).join(" · ") || "Unknown source"} · {formatDateTime(sig.publishedAt || sig.capturedAt)}</span>
+                      </span>
+                      <span className="shrink-0 rounded-md border border-[#E6EAF2] px-1.5 py-0.5 text-[10px] font-black capitalize text-[#53608C]">{sig.sentiment === "unanalyzed" ? "Not analyzed" : sig.sentiment}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 text-[12px] font-semibold text-[#8A94B8]">No linked signals are stored for this alert.</p>
+              )}
+              {liveData.evidenceMissing ? <p className="mt-2 text-[11px] font-semibold text-[#8A94B8]">{liveData.evidenceMissing} referenced signal(s) are no longer available.</p> : null}
+              {liveData.triggeredBy ? <p className="mt-2 text-[11px] font-semibold text-[#8A94B8]">Raised by: {liveData.triggeredBy === "pg_cron_automated_rules" ? "database alert rules (legacy scheduler)" : liveData.triggeredBy}</p> : null}
+            </section>
+
             <div className="mt-6 rounded-[14px] border border-[#CFEFE3] bg-[#F4FFFA] p-5">
               <p className="flex items-center gap-2 text-[13px] font-black text-[#0C9B69]">
                 <CheckCircle2 size={17} />
