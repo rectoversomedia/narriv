@@ -21,15 +21,17 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const BASELINE = path.join(here, "intelligence-eval.baseline.json");
 
 const s = (id, sentiment, severity = "low") => ({ id, sentiment, severity });
+// Observed narrative momentum (distinct member signals, last 24h vs previous 24h).
+const m = (last24h, prior24h) => ({ last24h, prior24h, changePct: prior24h ? Math.round(((last24h - prior24h) / prior24h) * 100) : null });
 const SCENARIOS = [
     { name: "quiet_positive", expectBands: ["low"], input: { signals: [s("p1", "POSITIVE"), s("p2", "NEUTRAL"), s("p3", "POSITIVE")], priorCount: 3, alerts: [], clusters: [] } },
     { name: "first_window_no_baseline", expectBands: ["low", "medium"], input: { signals: [s("n1", "NEUTRAL"), s("n2", "POSITIVE")], priorCount: 0, alerts: [], clusters: [] } },
     { name: "negative_spike_with_alert", expectBands: ["high", "critical"], input: {
         signals: Array.from({ length: 12 }, (_, i) => s(`x${i}`, i < 9 ? "NEGATIVE" : "NEUTRAL", i < 4 ? "high" : "low")),
         priorCount: 4, alerts: [{ id: "al1", severity: "critical", status: "open" }, { id: "al2", severity: "high", status: "open" }],
-        clusters: [{ id: "cl1", velocity: 88 }, { id: "cl2", velocity: 91 }] } },
+        clusters: [{ id: "cl1", title: "Outage", momentum: m(6, 2) }, { id: "cl2", title: "Refunds", momentum: m(4, 0) }] } },
     { name: "resolved_alerts_only", expectBands: ["low", "medium"], input: { signals: [s("r1", "NEGATIVE"), s("r2", "NEUTRAL"), s("r3", "POSITIVE"), s("r4", "NEUTRAL")], priorCount: 4, alerts: [{ id: "old", severity: "critical", status: "resolved" }], clusters: [] } },
-    { name: "momentum_without_negativity", expectBands: ["low", "medium"], input: { signals: [s("m1", "POSITIVE"), s("m2", "POSITIVE"), s("m3", "NEUTRAL")], priorCount: 3, alerts: [], clusters: [{ id: "cm", velocity: 95 }, { id: "cl", velocity: 40 }] } },
+    { name: "momentum_without_negativity", expectBands: ["low", "medium"], input: { signals: [s("m1", "POSITIVE"), s("m2", "POSITIVE"), s("m3", "NEUTRAL")], priorCount: 3, alerts: [], clusters: [{ id: "cm", title: "Award", momentum: m(5, 1) }, { id: "cl", title: "Flat", momentum: m(3, 3) }] } },
     { name: "unanalyzed_signals", expectBands: ["low"], input: { signals: [s("u1", null), s("u2", null)], priorCount: 2, alerts: [], clusters: [] } },
 ];
 

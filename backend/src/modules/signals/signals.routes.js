@@ -16,6 +16,36 @@ router.use(verifyToken);
 
 
 // GET semua data dengan pagination dan filtering
+
+// List rows carry persisted narrative membership and analysis status. Nothing
+// here is inferred: narratives come only from narrative_cluster_signals in the
+// caller's workspaces; a signal without an analysis row is "unanalyzed".
+const SIGNAL_LIST_SELECT =
+    "*, narrative_cluster_signals(cluster:narrative_clusters(id, title, workspace_id)), analyses:signal_analyses(confidence, analysis)";
+
+// Strip PostgREST filter syntax characters from free-text search input.
+const sanitizeSearch = (v) => String(v).replace(/[,()*%\\]/g, " ").trim().slice(0, 100);
+
+export function toSignalListItem(row, workspaceIds = []) {
+    const { narrative_cluster_signals: links, analyses, ...signal } = row;
+    const narratives = (links || [])
+        .map((l) => l.cluster)
+        .filter((c) => c && (!workspaceIds.length || workspaceIds.includes(c.workspace_id)))
+        .map((c) => ({ id: c.id, title: c.title }));
+    const analysis = (analyses || [])[0] || null;
+    const rawConf = Number(analysis?.analysis?.confidence_score ?? analysis?.confidence);
+    return {
+        ...signal,
+        // camelCase aliases expected by the frontend Signal type (snake_case kept).
+        capturedAt: signal.captured_at,
+        publishedAt: signal.published_at,
+        sourceId: signal.source_id,
+        narratives,
+        analysisStatus: analysis ? "analyzed" : "unanalyzed",
+        analysisConfidence: Number.isFinite(rawConf) && rawConf >= 0 && rawConf <= 1 ? rawConf : null,
+    };
+}
+
 router.get("/", async (req, res) => {
     try {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
@@ -31,12 +61,13 @@ router.get("/", async (req, res) => {
         // Build dynamic query using Supabase
         let query = supabase
             .from('signals')
-            .select('*', { count: 'exact' })
+            .select(SIGNAL_LIST_SELECT, { count: 'exact' })
             .in('workspace_id', workspaceIds);
 
-        if (keyword) {
+        const term = keyword ? sanitizeSearch(keyword) : "";
+        if (term) {
             // Supabase uses ilike for case-insensitive contains
-            query = query.or(`title.ilike.%${keyword}%,content.ilike.%${keyword}%`);
+            query = query.or(`title.ilike.%${term}%,content.ilike.%${term}%`);
         }
 
         if (platform) {
@@ -74,9 +105,9 @@ router.get("/", async (req, res) => {
         if ((!signalsData || signalsData.length === 0) && (startDate || endDate) && (req.user?.isDemo || String(req.user?.id).startsWith("demo"))) {
             let fallbackQuery = supabase
                 .from('signals')
-                .select('*', { count: 'exact' })
+                .select(SIGNAL_LIST_SELECT, { count: 'exact' })
                 .in('workspace_id', workspaceIds);
-            if (keyword) fallbackQuery = fallbackQuery.or(`title.ilike.%${keyword}%,content.ilike.%${keyword}%`);
+            if (term) fallbackQuery = fallbackQuery.or(`title.ilike.%${term}%,content.ilike.%${term}%`);
             if (platform) fallbackQuery = fallbackQuery.eq('platform', platform);
             if (sentiment) fallbackQuery = fallbackQuery.ilike('sentiment', sentiment);
 
@@ -90,7 +121,7 @@ router.get("/", async (req, res) => {
         }
 
         res.json({
-            data: signalsData || [],
+            data: (signalsData || []).map((row) => toSignalListItem(row, workspaceIds)),
             pagination: {
                 page: safePage,
                 limit: safeLimit,

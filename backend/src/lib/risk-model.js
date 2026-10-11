@@ -9,7 +9,7 @@
  * Inputs are plain arrays already scoped to one workspace by the caller.
  */
 
-export const RISK_MODEL_VERSION = "risk-v2.1";
+export const RISK_MODEL_VERSION = "risk-v3";
 
 // Weights sum to 1. Changing them changes every score: bump RISK_MODEL_VERSION.
 const WEIGHTS = {
@@ -20,7 +20,6 @@ const WEIGHTS = {
     narrative_momentum: 0.15,
 };
 
-const EMERGING_VELOCITY = 70; // narrative_clusters.velocity is stored on a 0-100 scale
 const MIN_SIGNALS_FOR_CONFIDENCE = 10;
 const MAX_IDS = 10;
 
@@ -40,12 +39,14 @@ export function bandFor(score) {
     return score >= 75 ? "critical" : score >= 50 ? "high" : score >= 25 ? "medium" : "low";
 }
 
+import { isEmerging, EMERGING_MIN_SIGNALS_24H, EMERGING_MIN_GROWTH_PCT } from "./narrative-momentum.js";
+
 /**
  * @param {object} p
  * @param {Array<{id,sentiment,severity,source_id,platform}>} p.signals  current window
  * @param {number} p.priorCount   signal count in the previous window of equal length
  * @param {Array<{id,severity,status}>} p.alerts  alerts in the window
- * @param {Array<{id,title,velocity|momentum,signal_count}>} p.clusters
+ * @param {Array<{id,title,signal_count,momentum:{last24h,prior24h,changePct}}>} p.clusters  momentum from member observations
  */
 export function computeRisk({ signals = [], priorCount = 0, alerts = [], clusters = [] }) {
     const n = signals.length;
@@ -120,28 +121,28 @@ export function computeRisk({ signals = [], priorCount = 0, alerts = [], cluster
         active.length ? `${active.length} unresolved alert(s) in the window.` : "No unresolved alerts in the window.",
         active.map((a) => a.id), { unresolved: active.length });
 
-    // 5. Narrative momentum: clusters with high velocity. Clusters sharing a
-    // normalized title are one narrative (duplicates must not inflate risk).
-    const hot = clusters.filter((c) => (velocity100(c.velocity ?? c.momentum) ?? 0) >= EMERGING_VELOCITY);
+    // 5. Narrative momentum from timestamped member observations (last 24h vs
+    // previous 24h). Stored cluster velocity is not used: it is not derived
+    // from observations. Clusters sharing a normalized title count once.
+    const withMomentum = clusters.filter((c) => c.momentum);
+    const hot = withMomentum.filter((c) => isEmerging(c.momentum));
     const byTitle = new Map();
     for (const c of hot) {
         const key = String(c.title || c.id).trim().toLowerCase().replace(/\s+/g, " ");
         const prev = byTitle.get(key);
-        const v = velocity100(c.velocity ?? c.momentum);
-        if (!prev) byTitle.set(key, { ...c, velocity: v, duplicateIds: [] });
-        else {
-            prev.duplicateIds.push(c.id);
-            if (v > prev.velocity) prev.velocity = v;
-        }
+        if (!prev) byTitle.set(key, { ...c, duplicateIds: [] });
+        else prev.duplicateIds.push(c.id);
     }
     const emerging = [...byTitle.values()];
     const duplicates = emerging.reduce((n, c) => n + c.duplicateIds.length, 0);
     if (duplicates > 0) uncertainty.push(`${duplicates} duplicate narrative cluster(s) share a title with another cluster and were merged.`);
+    if (clusters.length > 0 && withMomentum.length === 0) uncertainty.push("Narrative momentum unavailable: no member observations for the tracked clusters.");
     add("narrative_momentum", emerging.length / 3,
         emerging.length
-            ? `${emerging.length} distinct narrative(s) with velocity >= ${EMERGING_VELOCITY}/100.`
-            : "No narrative clusters above the momentum threshold.",
-        emerging.flatMap((c) => [c.id, ...c.duplicateIds]), { emergingNarratives: emerging.length, duplicateClusters: duplicates, threshold: EMERGING_VELOCITY });
+            ? `${emerging.length} narrative(s) emerging: at least ${EMERGING_MIN_SIGNALS_24H} new signals in 24h and growth >= ${EMERGING_MIN_GROWTH_PCT}% vs the previous 24h (or newly appeared).`
+            : "No narrative meets the emerging criteria (fresh volume plus growth vs the previous 24h).",
+        emerging.flatMap((c) => [c.id, ...c.duplicateIds]),
+        { emergingNarratives: emerging.length, duplicateClusters: duplicates, clustersWithObservations: withMomentum.length, minSignals24h: EMERGING_MIN_SIGNALS_24H, minGrowthPct: EMERGING_MIN_GROWTH_PCT });
 
     if (n < MIN_SIGNALS_FOR_CONFIDENCE) uncertainty.push(`Small sample: only ${n} signal(s) in the window.`);
     const unrated = signals.filter((s) => !s.sentiment).length;
@@ -159,6 +160,6 @@ export function computeRisk({ signals = [], priorCount = 0, alerts = [], cluster
         uncertainty: { level, reasons: uncertainty },
         limitations,
         sourceIds,
-        emergingClusters: emerging.map((c) => ({ id: c.id, title: c.title, velocity: c.velocity, signalCount: c.signal_count ?? null, duplicateIds: c.duplicateIds })),
+        emergingClusters: emerging.map((c) => ({ id: c.id, title: c.title, momentum: c.momentum, signalCount: c.signal_count ?? null, duplicateIds: c.duplicateIds })),
     };
 }

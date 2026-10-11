@@ -10,7 +10,8 @@ const analyzeCluster = jest.fn();
 jest.unstable_mockModule('../src/lib/supabase.js', () => supabaseModuleFor(db));
 jest.unstable_mockModule('../src/modules/ai/ai.service.js', () => ({ analyzeCluster }));
 
-const { computeRisk, velocity100, bandFor, RISK_MODEL_VERSION } = await import('../src/lib/risk-model.js');
+const { computeRisk, bandFor, RISK_MODEL_VERSION } = await import('../src/lib/risk-model.js');
+const { narrativeMomentum } = await import('../src/lib/narrative-momentum.js');
 const { deriveRecommendations } = await import('../src/lib/recommendation-engine.js');
 const { computeNarrativeIntelligence } = await import('../src/lib/narrative-intelligence.js');
 const { runClustering, explainMembership, extractKeywords } = await import('../src/modules/clustering/clustering.service.js');
@@ -62,20 +63,41 @@ describe('risk model', () => {
     expect(r.components.find((c) => c.key === 'active_alerts').evidenceIds).toEqual(['a1']); // resolved alert excluded
   });
 
-  it('uses the 0-100 velocity scale for emerging narratives (regression: 0.6 threshold made all clusters emerging)', () => {
-    const r = computeRisk({ signals, clusters });
-    expect(r.emergingClusters.map((c) => c.id)).toEqual(['c1']);
-    expect(velocity100(0.8)).toBe(80);
-    expect(velocity100(null)).toBeNull();
+  const H = 3600 * 1000;
+  const obs = (n, hoursAgo, prefix) => Array.from({ length: n }, (_, i) => ({ id: `${prefix}${i}`, captured_at: new Date(NOW - hoursAgo * H).toISOString() }));
+  const NOW = Date.now();
+
+  it('counts a narrative as emerging only from observed growth (no stored velocity)', () => {
+    const growing = { id: 'g', title: 'Growing', momentum: narrativeMomentum([...obs(4, 2, 'g'), ...obs(2, 30, 'gp')], NOW) }; // 4 vs 2 => +100%
+    const flat = { id: 'f', title: 'Flat', momentum: narrativeMomentum([...obs(4, 2, 'f'), ...obs(4, 30, 'fp')], NOW) }; // 4 vs 4 => 0%
+    const fresh = { id: 'n', title: 'New', momentum: narrativeMomentum(obs(3, 1, 'n'), NOW) }; // new, 3 signals
+    const tiny = { id: 't', title: 'Tiny', momentum: narrativeMomentum(obs(2, 1, 't'), NOW) }; // below minimum volume
+    const legacy = { id: 'l', title: 'Seed', velocity: 95 }; // stored velocity only: ignored
+    const r = computeRisk({ signals, clusters: [growing, flat, fresh, tiny, legacy] });
+    expect(r.emergingClusters.map((c) => c.id).sort()).toEqual(['g', 'n']);
+    expect(growing.momentum).toMatchObject({ last24h: 4, prior24h: 2, changePct: 100, label: '+100%' });
+    expect(fresh.momentum).toMatchObject({ prior24h: 0, changePct: null, label: 'new' });
+  });
+
+  it('reports momentum as unavailable when clusters have no observations', () => {
+    const r = computeRisk({ signals, clusters: [{ id: 'x', title: 'No members', velocity: 90 }] });
+    expect(r.components.find((c) => c.key === 'narrative_momentum').contribution).toBe(0);
+    expect(r.uncertainty.reasons.join(' ')).toMatch(/momentum unavailable/i);
   });
 
   it('merges duplicate clusters with the same title instead of double-counting momentum', () => {
-    const dup = [{ id: 'd1', title: 'Election 2024 Impact', velocity: 92.3 }, { id: 'd2', title: 'election 2024  impact', velocity: 90 }, { id: 'd3', title: 'AI Regulation', velocity: 85 }];
+    const m = narrativeMomentum(obs(5, 1, 'd'), NOW);
+    const dup = [{ id: 'd1', title: 'Election 2024 Impact', momentum: m }, { id: 'd2', title: 'election 2024  impact', momentum: m }, { id: 'd3', title: 'AI Regulation', momentum: m }];
     const r = computeRisk({ signals, clusters: dup });
     expect(r.emergingClusters.map((c) => c.id)).toEqual(['d1', 'd3']);
     expect(r.emergingClusters[0].duplicateIds).toEqual(['d2']);
     expect(r.components.find((c) => c.key === 'narrative_momentum').inputs).toMatchObject({ emergingNarratives: 2, duplicateClusters: 1 });
     expect(r.uncertainty.reasons.join(' ')).toMatch(/duplicate/);
+  });
+
+  it('dedupes member signals and ignores observations outside the 48h window', () => {
+    const m = narrativeMomentum([{ id: 'a', captured_at: new Date(NOW - H).toISOString() }, { id: 'a', captured_at: new Date(NOW - H).toISOString() }, { id: 'old', captured_at: new Date(NOW - 72 * H).toISOString() }, { id: 'nots' }], NOW);
+    expect(m).toMatchObject({ last24h: 1, prior24h: 0, label: 'new' });
   });
 
   it('is deterministic and labels itself as a heuristic, not a probability', () => {

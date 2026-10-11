@@ -98,6 +98,9 @@ export async function computeEntityIntelligence({ workspaceId, windowHours = 24,
         if (!entityMap.has(key)) {
             entityMap.set(key, {
                 entity: key,
+                // Grouped by the analysis "stakeholder" field: an LLM-assigned
+                // stakeholder group, not a verified real-world named entity.
+                entityType: "stakeholder_group",
                 mentions: 0,
                 weightedScore: 0,
                 sentimentSum: 0,
@@ -153,5 +156,7 @@ export async function computeEntityIntelligence({ workspaceId, windowHours = 24,
         entities,
         competitive,
         evidence,
+        entityBasis: "stakeholder_group",
+        note: "Entities are stakeholder groups assigned during AI analysis (e.g. 'consumers', 'investors'), not verified named entities.",
     };
 }

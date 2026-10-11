@@ -13,6 +13,7 @@
  * returns an empty list with status "insufficient_data".
  */
 
+import { narrativeMomentum, isEmerging } from "./narrative-momentum.js";
 import { baseSupabaseAdmin } from "./supabase.js";
 
 function clamp01(n) {
@@ -36,7 +37,17 @@ export async function computePredictiveSignals({ workspaceId, windowHours = 24 }
         baseSupabaseAdmin.from("signals").select("id, sentiment, captured_at").eq("workspace_id", workspaceId).gte("captured_at", sinceIso).then((r) => r.data || []),
         baseSupabaseAdmin.from("signals").select("id").eq("workspace_id", workspaceId).lt("captured_at", sinceIso).gte("captured_at", prevSinceIso).then((r) => r.data || []),
         baseSupabaseAdmin.from("alerts").select("id, severity, status, created_at").eq("workspace_id", workspaceId).gte("created_at", sinceIso).then((r) => r.data || []),
-        baseSupabaseAdmin.from("narrative_clusters").select("id, title, momentum:velocity, signal_count").eq("workspace_id", workspaceId).order("velocity", { ascending: false, nullsFirst: false }).limit(10).then((r) => r.data || []),
+        baseSupabaseAdmin.from("narrative_clusters")
+            .select("id, title, signal_count, narrative_cluster_signals(signal:signals(id, captured_at))")
+            .eq("workspace_id", workspaceId)
+            .order("updated_at", { ascending: false })
+            .limit(50)
+            .then((r) => (r.data || []).map((c) => ({
+                id: c.id,
+                title: c.title,
+                signal_count: c.signal_count,
+                momentum: narrativeMomentum((c.narrative_cluster_signals || []).map((l) => l.signal).filter(Boolean)),
+            }))),
     ]);
 
     const signals = [];
@@ -87,15 +98,23 @@ export async function computePredictiveSignals({ workspaceId, windowHours = 24 }
         for (const a of alerts.slice(0, 5)) evidence.push({ type: "alert", id: a.id });
     }
 
-    const risingClusters = clusters.filter((c) => safeNumber(c.momentum, 0) > 0.6);
+    // Rising = emerging by observed growth; clusters with the same title count once.
+    const seenTitles = new Set();
+    const risingClusters = clusters.filter((c) => {
+        if (!isEmerging(c.momentum)) return false;
+        const key = String(c.title || c.id).trim().toLowerCase();
+        if (seenTitles.has(key)) return false;
+        seenTitles.add(key);
+        return true;
+    });
     if (risingClusters.length >= 2) {
         signals.push({
             signal: "narrative_expansion",
             label: "Multiple narratives are gaining momentum; expect broader coverage if the trend continues.",
             confidence: clamp01(0.4 + 0.1 * risingClusters.length),
             timeframe: "next 48-96h",
-            supporting: ["narrative_clusters_table_query"],
-            assumptions: ["Cluster momentum is computed consistently across the window"],
+            supporting: ["narrative_cluster_signals (captured_at, last 24h vs previous 24h)"],
+            assumptions: ["Growth in distinct member signals continues at a similar rate"],
         });
         for (const c of risingClusters.slice(0, 5)) evidence.push({ type: "narrative_cluster", id: c.id });
     }

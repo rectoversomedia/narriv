@@ -10,26 +10,28 @@ import { wrapAsync } from "../../lib/sentry.js";
 const router = express.Router();
 router.use(verifyToken);
 
-function toNarrativeItem(cluster) {
-    const signals = cluster.narrative_cluster_signals?.map((ncs) => ncs.signal) || [];
+// Member signals with their persisted analyses (used for confidence, source
+// count and momentum; nothing below is estimated without these records).
+export const NARRATIVE_LIST_SELECT =
+    "*, narrative_cluster_signals(signal:signals(id, platform, captured_at, published_at, analyses:signal_analyses(confidence, analysis)))";
+
+import { analysisConfidence, narrativeMomentum } from "../../lib/narrative-momentum.js";
+export { analysisConfidence, narrativeMomentum };
+
+export function toNarrativeItem(cluster, now = Date.now()) {
+    const signals = (cluster.narrative_cluster_signals || []).map((ncs) => ncs.signal).filter(Boolean);
     const uniquePlatforms = new Set(signals.map((signal) => signal.platform).filter(Boolean));
     const confidenceValues = signals
-        .flatMap((signal) => (signal.analyses || []).map((analysis) => analysis.confidence_score))
-        .filter((value) => typeof value === "number");
+        .flatMap((signal) => (signal.analyses || []).map(analysisConfidence))
+        .filter((value) => value !== null);
 
+    // null when no member has a persisted confidence (previously defaulted to 72).
     const avgConfidence = confidenceValues.length > 0
         ? Math.round((confidenceValues.reduce((sum, value) => sum + value, 0) / confidenceValues.length) * 100)
-        : 72;
-
-    const now = Date.now();
-    const last24hCount = signals.filter((signal) => {
-        if (!signal.captured_at) return false;
-        return now - new Date(signal.captured_at).getTime() <= 24 * 60 * 60 * 1000;
-    }).length;
-
-    const velocity = cluster.signal_count > 0
-        ? `+${Math.round((last24hCount / cluster.signal_count) * 100)}%`
-        : "+0%";
+        : null;
+    const momentum = narrativeMomentum(signals, now);
+    const firstSeen = signals.reduce((min, s) => (s.captured_at && (!min || s.captured_at < min) ? s.captured_at : min), null);
+    const lastSeen = signals.reduce((max, s) => (s.captured_at && (!max || s.captured_at > max) ? s.captured_at : max), null);
 
     return {
         id: cluster.id,
@@ -37,10 +39,15 @@ function toNarrativeItem(cluster) {
         description: cluster.description || cluster.main_narrative || "",
         sourceCount: uniquePlatforms.size || 0,
         confidence: avgConfidence,
+        confidenceBasis: confidenceValues.length ? `${confidenceValues.length} analysed member signal(s)` : "no analysed member signals",
         impact: (cluster.impact || "MEDIUM").toString(),
-        velocity,
+        velocity: momentum.label,
+        momentum,
+        firstSeen,
+        lastSeen,
         recommendedFocus: cluster.main_narrative || cluster.description || "Prioritize stakeholder messaging and monitor escalation.",
         signalCount: cluster.signal_count,
+        memberSignals: signals.length,
         sentiment: cluster.sentiment || "neutral",
     };
 }
@@ -66,7 +73,7 @@ router.get("/", async (req, res) => {
         // Build where conditions for Supabase
         let query = supabase
             .from("narrative_clusters")
-            .select("*", { count: "exact" })
+            .select(NARRATIVE_LIST_SELECT, { count: "exact" })
             .in("workspace_id", scopedWorkspaceIds)
             .order("updated_at", { ascending: false })
             .range(skip, skip + safeLimit - 1);
@@ -89,7 +96,7 @@ router.get("/", async (req, res) => {
         if ((!data || data.length === 0) && Number.isFinite(days) && days > 0 && (req.user?.isDemo || String(req.user?.id).startsWith("demo"))) {
             let fallbackQuery = supabase
                 .from("narrative_clusters")
-                .select("*", { count: "exact" })
+                .select(NARRATIVE_LIST_SELECT, { count: "exact" })
                 .in("workspace_id", scopedWorkspaceIds);
             if (sentiment) fallbackQuery = fallbackQuery.eq("sentiment", sentiment);
             if (impact) fallbackQuery = fallbackQuery.eq("impact", String(impact).toUpperCase());
@@ -104,7 +111,7 @@ router.get("/", async (req, res) => {
         }
 
         return res.json({
-            data: (data || []).map(toNarrativeItem),
+            data: (data || []).map((c) => toNarrativeItem(c)),
             pagination: {
                 page: safePage,
                 limit: safeLimit,
@@ -189,7 +196,8 @@ router.get("/:id", async (req, res) => {
                         url,
                         sentiment,
                         captured_at,
-                        published_at
+                        published_at,
+                        analyses:signal_analyses (confidence, analysis)
                     )
                 )
             `)

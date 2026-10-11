@@ -20,6 +20,7 @@
  */
 
 import { computeRisk } from "./risk-model.js";
+import { narrativeMomentum } from "./narrative-momentum.js";
 import { deriveRecommendations } from "./recommendation-engine.js";
 import { baseSupabaseAdmin } from "./supabase.js";
 
@@ -91,11 +92,16 @@ export async function computeNarrativeIntelligence({ workspaceId, windowHours = 
             .then((r) => r.data || []),
         baseSupabaseAdmin
             .from("narrative_clusters")
-            .select("id, title, signal_count, momentum:velocity, updated_at, created_at")
+            .select("id, title, signal_count, updated_at, created_at, narrative_cluster_signals(signal:signals(id, captured_at))")
             .eq("workspace_id", workspaceId)
-            .order("velocity", { ascending: false, nullsFirst: false })
-            .limit(10)
-            .then((r) => r.data || []),
+            .order("updated_at", { ascending: false })
+            .limit(50)
+            .then((r) => (r.data || []).map((c) => ({
+                id: c.id,
+                title: c.title,
+                signal_count: c.signal_count,
+                momentum: narrativeMomentum((c.narrative_cluster_signals || []).map((l) => l.signal).filter(Boolean)),
+            }))),
     ]);
 
     const evidence = [];
@@ -169,9 +175,10 @@ export async function computeNarrativeIntelligence({ workspaceId, windowHours = 
         signalIds: risk.components.find((c) => c.key === "negative_share").evidenceIds,
     });
 
-    // Emerging narratives: clusters above the (0-100) velocity threshold.
+    // Emerging narratives: fresh observations plus growth (see narrative-momentum.js).
     const emerging = risk.emergingClusters.slice(0, 5).map((c) => ({
-        clusterId: c.id, title: c.title, momentum: c.velocity, signalCount: c.signalCount,
+        clusterId: c.id, title: c.title, signalCount: c.signalCount,
+        last24h: c.momentum?.last24h ?? null, prior24h: c.momentum?.prior24h ?? null, growth: c.momentum?.label ?? null,
     }));
     if (emerging.length > 0) {
         inferences.push({
