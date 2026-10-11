@@ -2427,7 +2427,7 @@
     "integrations": {
       "eyebrow": "Workspace",
       "title": "Integrasi",
-      "description": "Hubungkan alat dan sumber yang mengirim data ke Narriv.",
+      "description": "Hubungkan channel eskalasi, webhook, dan tujuan ekspor untuk workspace ini.",
       "emptyTitle": "API Integrasi Belum Terhubung",
       "emptyDesc": "Integrasi production akan muncul di sini setelah endpoint backend integrasi workspace tersedia.",
       "connected": "Terhubung",

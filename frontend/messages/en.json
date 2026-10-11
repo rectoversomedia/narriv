@@ -2455,7 +2455,7 @@
     "integrations": {
       "eyebrow": "Workspace",
       "title": "Integrations",
-      "description": "Connect the tools and sources that send data into Narriv.",
+      "description": "Connect escalation channels, webhooks and export destinations for this workspace.",
       "emptyTitle": "Integrations API Not Connected Yet",
       "emptyDesc": "Production integrations will appear here after a backend workspace integrations endpoint is available.",
       "connected": "Connected",

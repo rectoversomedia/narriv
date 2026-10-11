@@ -207,9 +207,9 @@ export default function IntegrationsPage() {
 
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="mt-3 text-[28px] font-black tracking-tight text-slate-900">Integrations</h1>
+          <h1 className="mt-3 text-[28px] font-black tracking-tight text-slate-900">{t("title")}</h1>
           <p className="mt-1 max-w-2xl text-sm font-medium leading-6 text-slate-500">
-            Hubungkan workspace ke channel eskalasi, webhook, database export, dan sistem operasi tim.
+            {t("description")}
           </p>
         </div>
         <button
