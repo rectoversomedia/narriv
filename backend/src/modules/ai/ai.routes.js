@@ -27,7 +27,7 @@ router.use(verifyToken);
  * POST /ai/analyze
  * Analyzes a signal's title + content using OpenAI.
  * Body: { title?: string, content: string }
- * Rate limited: 20/minute
+ * Rate limited per user: RATE_LIMITS.ai_generation
  */
 router.post("/analyze", rateLimiters.aiGeneration(), validateRequest({ body: analyzeBodySchema }), async (req, res) => {
     try {
@@ -121,7 +121,7 @@ router.get("/providers", async (req, res) => {
  * new intelligence workloads. The existing 14 OpenAI call sites are
  * untouched.
  */
-router.post("/complete", async (req, res) => {
+router.post("/complete", rateLimiters.aiGeneration(), async (req, res) => {
     try {
         const { complexity = "simple", provider = null, model = null, system = null, user, maxTokens = null } = req.body || {};
         if (!user || typeof user !== "string") {
@@ -310,7 +310,7 @@ router.get("/tasks", async (req, res) => {
     res.json({ tasks: listTasks() });
 });
 
-router.post("/ask", async (req, res) => {
+router.post("/ask", rateLimiters.aiGeneration(), async (req, res) => {
     try {
         const ws = await resolveWs(req, res);
         if (!ws) return;

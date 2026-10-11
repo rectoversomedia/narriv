@@ -165,7 +165,9 @@ app.get("/metrics", verifyToken, (req, res) => {
 // Use Routes (with rate limiting on sensitive endpoints)
 // NOTE: /api prefix is stripped by middleware above, so register without /api
 app.use("/auth", rateLimit(RATE_LIMITS.auth), authRoutes);
-app.use("/ai", rateLimit(RATE_LIMITS.ai_generation), apiSecurityHeaders, aiRoutes);
+// Reads under /ai are deterministic DB computations; model-calling routes
+// (/ai/analyze, /ai/complete, /ai/ask) apply the per-user generation limit themselves.
+app.use("/ai", rateLimit({ ...RATE_LIMITS.api_default, prefix: "ai-read" }), apiSecurityHeaders, aiRoutes);
 // Background/backfill AI routes get a separate, higher quota so the
 // cron path is not blocked by interactive traffic.
 app.use("/ai", rateLimit({ ...RATE_LIMITS.ai_generation, prefix: "ai-bg", max: 30, windowMs: 60 * 1000 }), aiBackfillRoutes);
