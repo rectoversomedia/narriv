@@ -199,6 +199,8 @@ export interface AskNarrivPayload {
   sources?: Array<{ id: string; kind: string; [k: string]: unknown }>;
   data?: { signals: number; alerts: number; clusters: number; windowHours: number };
   error?: string;
+  code?: string;
+  meta?: { model: string | null; latencyMs: number | null; costUsd: number | null };
 }
 
 const I = (path: string, init?: RequestInit) =>
@@ -265,6 +267,16 @@ export interface PipelineStatusPayload {
     lastRunAt: string | null;
     lastRunStatus: string | null;
     lastSuccessfulIngestionForWorkspace: string | null;
+    health?: {
+      slotsUtc: string[];
+      lastScheduledRunAt: string | null;
+      lastScheduledRunStatus: string | null;
+      lastManualRunAt: string | null;
+      expectedSlotsLast24h: number;
+      missedSlotsLast24h: string[];
+      recentRuns: Array<{ at: string; status: string; trigger: string | null; durationMs: number | null; keywords: number | null }>;
+      basis: string;
+    };
   };
   ingestion: { lastRawDocumentAt: string | null };
   analysis: {

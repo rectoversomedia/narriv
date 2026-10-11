@@ -647,6 +647,7 @@
     "typeWeb": "Web"
   },
   "Signals": {
+    "otherSentiment": "Netral / belum dianalisis",
     "emptyState": {
       "title": "Belum ada sinyal live",
       "desc": "Tidak ada sinyal yang cocok dengan filter saat ini. Coba sesuaikan kata kunci atau filter Anda.",

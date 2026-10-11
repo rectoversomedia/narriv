@@ -161,36 +161,19 @@ function SummaryPanel({ meta }: { meta?: SignalsMeta }) {
   const total = meta?.metrics?.totalSignals24h ?? 0;
   const negative = meta?.metrics?.negativeSignals24h ?? 0;
   const critical = meta?.metrics?.criticalSignals24h ?? 0;
-  const positive = total > 0 ? Math.max(0, total - negative) : 0;
-  const ratio = negative > 0 ? (positive / negative).toFixed(1) : "—";
-  const emerging = Math.max(0, Math.floor(total * 0.08)); // estimate 8% emerging
+  // Positive comes from persisted sentiment; neutral and unanalyzed signals are not counted as positive.
+  const positive = meta?.metrics?.positiveSignals24h;
+  const ratio = positive !== undefined && negative > 0 ? (positive / negative).toFixed(1) : "—";
+  const other = positive !== undefined ? Math.max(0, total - positive - negative) : null;
 
   const hasData = total > 0;
   const aiSummary = meta?.aiSummary;
 
-  // Compute signal intelligence score (0-100)
-  const signalScore = (() => {
-    if (!hasData) return 0;
-    const negRatio = negative / Math.max(total, 1);
-    const criticalBonus = Math.min(critical * 5, 25);
-    return Math.min(100, Math.round(70 - negRatio * 40 + criticalBonus));
-  })();
-
-  const scoreLabel = signalScore >= 80 ? tSignals("scoreExcellent") :
-                     signalScore >= 60 ? tSignals("scoreHigh") :
-                     signalScore >= 40 ? tSignals("scoreModerate") :
-                     signalScore >= 20 ? tSignals("scoreLow") : tSignals("scoreCritical");
-
-  const scoreColor = signalScore >= 80 ? "#10B981" :
-                     signalScore >= 60 ? "#8B5CFF" :
-                     signalScore >= 40 ? "#F59E0B" :
-                     signalScore >= 20 ? "#F97316" : "#EF4444";
-
   const metricCards = [
     { label: t("total"), value: total.toLocaleString(uiLanguage), helper: t("trendLabel"), tone: "blue" as Tone },
     { label: t("critical"), value: critical.toLocaleString(uiLanguage), helper: t("alertBackedLabel"), tone: "amber" as Tone },
-    { label: tSignals("positiveNegativeRatio"), value: `${ratio}:1`, helper: `${positive} / ${negative}`, tone: positive >= negative ? "green" as Tone : "red" as Tone },
-    { label: tSignals("emergingSignals"), value: emerging.toLocaleString(uiLanguage), helper: t("trendLabel"), tone: "purple" as Tone },
+    { label: tSignals("positiveNegativeRatio"), value: ratio === "—" ? "—" : `${ratio}:1`, helper: `${positive ?? "—"} / ${negative}`, tone: (positive ?? 0) >= negative ? "green" as Tone : "red" as Tone },
+    { label: tSignals("otherSentiment"), value: other === null ? "—" : other.toLocaleString(uiLanguage), helper: t("trendLabel"), tone: "purple" as Tone },
   ];
 
   return (
@@ -220,38 +203,6 @@ function SummaryPanel({ meta }: { meta?: SignalsMeta }) {
         </div>
         <div className="grid gap-3 border-t border-[#EDF1F7] pt-4 md:grid-cols-2 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
           {metricCards.map((metric) => <MetricBlock key={metric.label} {...metric} />)}
-          {/* Signal Intelligence Score */}
-          <div className="col-span-2 rounded-[12px] border border-[#EDF1F7] bg-[#FBFCFF] p-3">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-1.5">
-                <p className="text-[11px] font-black text-[#68739F]">{tSignals("signalIntelligenceScore")}</p>
-                <span title={tSignals("scoreTooltip")} className="cursor-help text-[#8B95B8]"><Info size={11} /></span>
-              </div>
-              <span className="text-[10px] font-black capitalize" style={{ color: scoreColor }}>{scoreLabel}</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="relative h-10 w-10 shrink-0">
-                <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90">
-                  <circle cx="18" cy="18" r="15" fill="none" stroke="#EDF1F7" strokeWidth="3" />
-                  <circle
-                    cx="18" cy="18" r="15" fill="none"
-                    stroke={scoreColor}
-                    strokeWidth="3"
-                    strokeDasharray={`${(signalScore / 100) * 94.2} 94.2`}
-                    strokeLinecap="round"
-                    className="transition-all duration-700"
-                  />
-                </svg>
-                <span className="absolute inset-0 flex items-center justify-center text-[11px] font-black text-[#101334]">{signalScore}</span>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[12px] font-bold text-[#31406B]">{tSignals("scoreTooltip")}</p>
-                <div className="h-1.5 w-36 overflow-hidden rounded-full bg-[#EDF1F7]">
-                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${signalScore}%`, backgroundColor: scoreColor }} />
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </Panel>

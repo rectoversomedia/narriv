@@ -324,6 +324,7 @@ export interface SignalsMeta {
   metrics?: {
     totalSignals24h: number;
     negativeSignals24h: number;
+    positiveSignals24h?: number;
     criticalSignals24h: number;
   };
   aiSummary?: {

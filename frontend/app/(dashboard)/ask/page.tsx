@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { Send, BotMessageSquare, TrendingUp, Zap, AlertTriangle, Users, Compass, Eye, BarChart2, Activity, ChevronDown, ChevronRight } from "lucide-react";
 import { CardContent } from "@/components/ui/card";
-import { getMockNarratives, getMockDashboardSummary } from "@/lib/demo-mock-data";
+import { getMockNarratives } from "@/lib/demo-mock-data";
 import { getNarratives, getDashboardSummary } from "@/lib/api-service";
 import { useAuthStore } from "@/store/useAuthStore";
 import type { NarrativeRecord, DashboardSummary } from "@/lib/api-service";
@@ -109,6 +109,8 @@ export default function AskPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  // Only show a model name after the backend reports which model actually answered.
+  const [lastModel, setLastModel] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -128,7 +130,6 @@ export default function AskPage() {
       // Fallback to mock only if demo session and API fails
       if (isDemoSession) {
         setNarratives(getMockNarratives());
-        setDashboardSummary(getMockDashboardSummary());
       }
     });
   }, [isDemoSession]);
@@ -158,6 +159,7 @@ export default function AskPage() {
         const { askNarriv } = await import("@/lib/intelligence-api");
         // 7-day evidence window (24h often holds too few signals to answer).
         const result = await askNarriv(trimmed, 168);
+        if (result.meta?.model) setLastModel(result.meta.model);
         const assistantMsg: Message = {
           id: crypto.randomUUID(),
           role: "assistant",
@@ -209,15 +211,16 @@ export default function AskPage() {
 
   // Dynamic welcome message — uses loaded real or mock data
   const welcomeContent = useMemo(() => {
-    if (!dashboardSummary) return "Hello! I'm **Narriv**, your AI intelligence copilot. Loading your workspace data...";
-    return `Hello! I'm **Narriv**, your AI intelligence copilot. I can answer questions about your signals, narratives, competitors, AI visibility, and recommended actions — all grounded in your current workspace data.\n\n**${dashboardSummary.kpis.total_signals.toLocaleString()} signals** are loaded from your monitoring workspace. Try one of the suggested questions, or ask anything in your own words.`;
+    const intro = "Hello! I'm Narriv, your AI intelligence copilot. I answer questions using only your workspace's signals, alerts and narratives, and cite the records I used. If the data can't support an answer, I'll say so.";
+    const total = dashboardSummary?.kpis?.total_signals;
+    if (typeof total !== "number") return intro;
+    return `${intro}\n\nYour workspace currently holds ${total.toLocaleString()} signals. Try one of the suggested questions, or ask in your own words.`;
   }, [dashboardSummary]);
 
   const WELCOME_MESSAGE = useMemo<Message>(() => ({
     id: "welcome",
     role: "assistant",
     content: welcomeContent,
-    confidence: "high",
     links: [
       { label: "View Signals", href: "/signals" },
       { label: "View Dashboard", href: "/" },
@@ -231,7 +234,10 @@ export default function AskPage() {
     if (!initialized) {
       setMessages([WELCOME_MESSAGE]);
       setInitialized(true);
+      return;
     }
+    // Keep the welcome text current once workspace data arrives.
+    setMessages((prev) => (prev[0]?.id === "welcome" ? [WELCOME_MESSAGE, ...prev.slice(1)] : prev));
   }, [initialized, WELCOME_MESSAGE]);
 
   return (
@@ -302,10 +308,12 @@ export default function AskPage() {
               <BotMessageSquare size={18} className="text-[#465FFF]" />
               <h1 className="text-[15px] font-black text-slate-900">{tAsk("title")}</h1>
             </div>
-            <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold text-slate-500">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#12B76A]" />
-              GPT-4o
-            </span>
+            {lastModel && (
+              <span title="Model that produced the latest answer" className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold text-slate-500">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#12B76A]" />
+                {lastModel}
+              </span>
+            )}
           </div>
 
           {messages.length > 1 && (
@@ -343,7 +351,7 @@ export default function AskPage() {
                     <div className="mb-3 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="text-[12px] font-black text-slate-900">Narriv</span>
-                        <ConfidenceChip confidence={msg.confidence ?? "medium"} t={tAsk} />
+                        {msg.confidence && <ConfidenceChip confidence={msg.confidence} t={tAsk} />}
                       </div>
                       {msg.isDemo && (
                         <span className="inline-flex items-center gap-1 rounded-full border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-bold text-[#8B5CFF]">

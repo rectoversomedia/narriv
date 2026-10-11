@@ -11,6 +11,7 @@ import { useUiStore } from "@/store/useUiStore";
 
 import { useQuery } from "@tanstack/react-query";
 import { getWorkspaceSettings } from "@/lib/api-service";
+import { getPipelineStatus, timeAgo } from "@/lib/intelligence-api";
 
 function resolveBackendAssetUrl(url: string) {
   if (/^https?:\/\//.test(url)) return url;
@@ -33,6 +34,15 @@ export function Sidebar() {
   const sidebarCollapsed = useUiStore((state) => state.sidebarCollapsed);
   const toggleSidebar = useUiStore((state) => state.toggleSidebar);
   const mobileItems = navGroups.flatMap((group) => group.items).slice(0, 4);
+
+  // Real pipeline freshness (shared cache with the dashboard); no synthetic score.
+  const pipelineQuery = useQuery({
+    queryKey: ["pipeline-status"],
+    queryFn: getPipelineStatus,
+    staleTime: 60 * 1000,
+    retry: 1,
+  });
+  const pipeline = pipelineQuery.data;
 
   const workspaceSettingsQuery = useQuery({
     queryKey: ["workspace-settings"],
@@ -127,20 +137,22 @@ export function Sidebar() {
           ))}
         </nav>
 
-        {sidebarCollapsed ? null : <div className="mt-8 rounded-[8px] border border-white/10 bg-white/2 p-4 backdrop-blur-md">
-          <div className="flex items-center justify-between text-[11px] font-semibold text-white/90">
-            <span>{t("sidebar.scoreTitle")}</span>
-            <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full border border-white/40 text-[9px]">i</span>
-          </div>
-          <div className="mt-3 flex items-end gap-1">
-            <span className="text-[32px] font-bold leading-none text-[#8B5CFF] drop-shadow-[0_0_8px_rgba(139,92,255,0.3)]">86</span>
-            <span className="pb-0.5 text-xs text-white/50">/100</span>
-          </div>
-          <p className="mt-2 text-[12px] font-bold text-[#10B981]">{t("sidebar.good")}</p>
-          <p className="mt-1.5 text-[11px] text-white/60">{t("sidebar.scoreText")}</p>
-          <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/5">
-            <div className="h-full w-[78%] rounded-full bg-linear-to-r from-[#465FFF] to-[#8B5CFF] shadow-[0_0_8px_rgba(70,95,255,0.5)]" />
-          </div>
+        {sidebarCollapsed || !pipeline ? null : <div className="mt-8 rounded-[8px] border border-white/10 bg-white/2 p-4 backdrop-blur-md">
+          <div className="text-[11px] font-semibold text-white/90">Pipeline status</div>
+          <dl className="mt-3 space-y-1.5 text-[11px]">
+            <div className="flex justify-between gap-2"><dt className="text-white/50">Last ingestion</dt><dd className="font-bold text-white/90">{timeAgo(pipeline.scheduler.lastSuccessfulIngestionForWorkspace ?? pipeline.ingestion.lastRawDocumentAt)}</dd></div>
+            <div className="flex justify-between gap-2"><dt className="text-white/50">Last analysis</dt><dd className="font-bold text-white/90">{timeAgo(pipeline.analysis.lastAnalysisAt)}</dd></div>
+            {pipeline.scheduler.health ? (
+              <div className="flex justify-between gap-2" title={pipeline.scheduler.health.basis}>
+                <dt className="text-white/50">Scheduled runs (24h)</dt>
+                <dd className={pipeline.scheduler.health.missedSlotsLast24h.length ? "font-bold text-amber-300" : "font-bold text-white/90"}>
+                  {pipeline.scheduler.health.expectedSlotsLast24h - pipeline.scheduler.health.missedSlotsLast24h.length}/{pipeline.scheduler.health.expectedSlotsLast24h}
+                </dd>
+              </div>
+            ) : null}
+            <div className="flex justify-between gap-2"><dt className="text-white/50">Unresolved alerts</dt><dd className="font-bold text-white/90">{pipeline.alerts.unresolved ?? "—"}</dd></div>
+          </dl>
+          {pipeline.partial ? <p className="mt-2 text-[10px] text-amber-300/80">Some status checks failed; figures may be incomplete.</p> : null}
         </div>}
 
         {sidebarCollapsed ? null : <p className="mt-6 px-2 text-[11px] text-white/40">© {new Date().getFullYear()} Narriv</p>}

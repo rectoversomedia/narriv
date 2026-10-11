@@ -647,6 +647,7 @@
     "typeWeb": "Web"
   },
   "Signals": {
+    "otherSentiment": "Neutral / unanalyzed",
     "emptyState": {
       "title": "No live signals yet",
       "desc": "No signals match the current filters. Try adjusting your search query or filters.",
