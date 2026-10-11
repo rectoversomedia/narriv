@@ -12,7 +12,7 @@ const { askNarriv, dedupeClustersByTitle } = await import('../src/lib/ask-narriv
 const WS = '11111111-1111-1111-1111-111111111111';
 const ctx = {
   sinceIso: '2026-10-01T00:00:00Z', windowHours: 168,
-  signals: [{ id: 'sig-own', sentiment: 'NEGATIVE', platform: 'news', title: 'Outage report' }],
+  signals: [{ id: 'sig-own', sentiment: 'NEGATIVE', platform: 'news', title: 'Outage report', url: 'https://news.example/outage' }],
   alerts: [{ id: 'al-own', severity: 'high', status: 'open' }],
   clusters: [{ id: 'cl-own', title: 'Outage', signal_count: 4 }],
 };
@@ -24,7 +24,7 @@ describe('askNarriv', () => {
     const d = deps(openaiReturning(JSON.stringify({ answer: 'One outage narrative.', grounded: true, sources: [{ id: 'sig-own', kind: 'signal' }, { id: 'sig-other-workspace', kind: 'signal' }] })));
     const r = await askNarriv({ workspaceId: WS, question: 'What is happening?', windowHours: 168 }, d);
     expect(r).toMatchObject({ answer: 'One outage narrative.', grounded: true, meta: { model: 'gpt-4o-mini' } });
-    expect(r.sources).toEqual([{ id: 'sig-own', kind: 'signal' }]);
+    expect(r.sources).toEqual([{ id: 'sig-own', kind: 'signal', title: 'Outage report', url: 'https://news.example/outage' }]);
     expect(d.recordUsage).toHaveBeenCalledWith(expect.objectContaining({ workspaceId: WS, operation: 'ask_narriv', inputTokens: 50, outputTokens: 10 }));
   });
 
@@ -80,6 +80,6 @@ describe('askNarriv', () => {
     const prompt = openai.chat.completions.create.mock.calls[0][0].messages.map((m) => m.content).join('\n');
     expect(prompt).toContain('cl-real | n=1 | Real narrative');
     expect(prompt).not.toContain('cl-seeded');
-    expect(r.sources).toEqual([{ id: 'cl-real', kind: 'cluster' }]);
+    expect(r.sources).toEqual([{ id: 'cl-real', kind: 'narrative', title: 'Real narrative', url: null }]);
   });
 });

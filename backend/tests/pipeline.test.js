@@ -353,7 +353,7 @@ describe('Ask Narriv source grounding', () => {
 
   it('drops cited ids that were not in the workspace data context', () => {
     expect(keepKnownSources([{ id: 'sig-a', kind: 'signal' }, { id: 'other-ws-signal' }, 'cl-a'], ctx))
-      .toEqual([{ id: 'sig-a', kind: 'signal' }, { id: 'cl-a' }]);
+      .toEqual([{ id: 'sig-a', kind: 'signal', title: null, url: null }, { id: 'cl-a', kind: 'narrative', title: null, url: null }]);
   });
 });
 

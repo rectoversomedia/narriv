@@ -31,8 +31,8 @@ Rules:
 async function gatherContext(workspaceId, windowHours) {
     const sinceIso = new Date(Date.now() - windowHours * 3600 * 1000).toISOString();
     const [signals, alerts, clusters] = await Promise.all([
-        baseSupabaseAdmin.from("signals").select("id, sentiment, platform, captured_at, title").eq("workspace_id", workspaceId).gte("captured_at", sinceIso).order("captured_at", { ascending: false }).limit(50).then((r) => r.data || []),
-        baseSupabaseAdmin.from("alerts").select("id, severity, status, created_at").eq("workspace_id", workspaceId).gte("created_at", sinceIso).limit(20).then((r) => r.data || []),
+        baseSupabaseAdmin.from("signals").select("id, sentiment, platform, captured_at, title, url").eq("workspace_id", workspaceId).gte("captured_at", sinceIso).order("captured_at", { ascending: false }).limit(50).then((r) => r.data || []),
+        baseSupabaseAdmin.from("alerts").select("id, title, severity, status, created_at").eq("workspace_id", workspaceId).gte("created_at", sinceIso).limit(20).then((r) => r.data || []),
         // Linked member counts, not the stored counter: clusters without linked
         // signals have no evidence and are not offered to the model.
         baseSupabaseAdmin.from("narrative_clusters").select("id, title, sentiment, updated_at, narrative_cluster_signals(signal_id)").eq("workspace_id", workspaceId).order("updated_at", { ascending: false, nullsFirst: false }).limit(50)
@@ -76,12 +76,19 @@ export function parseModelJson(raw) {
     try { return JSON.parse(text.slice(start, end + 1)); } catch { return null; }
 }
 
-// Only keep cited sources whose ids were actually in the data context.
+// Only keep cited sources whose ids were actually in the data context, and
+// describe each from the stored record (never from model output).
 export function keepKnownSources(sources, ctx) {
-    const known = new Set([...ctx.signals, ...ctx.alerts, ...ctx.clusters].map((r) => r.id));
+    const known = new Map([
+        ...ctx.signals.map((r) => [r.id, { kind: "signal", title: r.title || null, url: r.url || null }]),
+        ...ctx.alerts.map((r) => [r.id, { kind: "alert", title: r.title || null, url: null }]),
+        ...ctx.clusters.map((r) => [r.id, { kind: "narrative", title: r.title || null, url: null }]),
+    ]);
+    const seen = new Set();
     return (Array.isArray(sources) ? sources : [])
         .map((src) => (typeof src === "string" ? { id: src } : src))
-        .filter((src) => src && known.has(src.id));
+        .filter((src) => src && known.has(src.id) && !seen.has(src.id) && seen.add(src.id))
+        .map((src) => ({ id: src.id, ...known.get(src.id) }));
 }
 
 export async function askNarriv({ workspaceId, question, windowHours = 24 }, deps = {}) {

@@ -19,7 +19,7 @@ interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
-  evidence?: string[];
+  evidence?: Array<{ id: string; kind?: string; title?: string | null; url?: string | null }>;
   metrics?: Array<{ label: string; value: string }>;
   confidence?: Confidence;
   links?: Array<{ label: string; href: string }>;
@@ -164,7 +164,7 @@ export default function AskPage() {
           id: crypto.randomUUID(),
           role: "assistant",
           content: result.answer || (result.error ? `I could not answer that: ${result.error}` : "Insufficient data to answer."),
-          evidence: (result.sources || []).map((s) => s.id || s.kind || "evidence"),
+          evidence: (result.sources || []).map((s) => ({ id: s.id, kind: s.kind, title: (s.title as string | null | undefined) ?? null, url: (s.url as string | null | undefined) ?? null })),
           // Grounded + cited sources is the strongest signal we have; otherwise low.
           confidence: result.grounded && (result.sources || []).length > 0 ? "medium" : "low",
           links: [],
@@ -393,12 +393,25 @@ export default function AskPage() {
                     {/* Evidence bullets */}
                     {msg.evidence && msg.evidence.length > 0 && (
                       <ul className="mt-3 space-y-1.5">
-                        {msg.evidence.map((e, i) => (
-                          <li key={i} className="flex items-start gap-2 text-[12px] font-semibold text-slate-500">
-                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#465FFF]/40" />
-                            {e}
-                          </li>
-                        ))}
+                        <li className="text-[10px] font-black uppercase tracking-wide text-slate-400">Sources cited</li>
+                        {msg.evidence.map((e) => {
+                          const label = e.title || e.id;
+                          const kind = e.kind === "alert" ? "Alert" : e.kind === "narrative" ? "Narrative" : e.kind === "signal" ? "Signal" : "Record";
+                          const href = e.kind === "signal" ? e.url : e.kind === "alert" ? `/alerts/${e.id}` : e.kind === "narrative" ? "/intelligence" : null;
+                          return (
+                            <li key={e.id} className="flex items-start gap-2 text-[12px] font-semibold text-slate-500">
+                              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#465FFF]/40" />
+                              <span className="min-w-0">
+                                <span className="mr-1.5 text-[10px] font-black uppercase text-slate-400">{kind}</span>
+                                {href ? (
+                                  <a href={href} {...(e.kind === "signal" ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="text-[#465FFF] underline-offset-2 hover:underline">{label}</a>
+                                ) : (
+                                  label
+                                )}
+                              </span>
+                            </li>
+                          );
+                        })}
                       </ul>
                     )}
 

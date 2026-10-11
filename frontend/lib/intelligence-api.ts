@@ -196,7 +196,7 @@ export interface ExecutiveBriefPayload {
 export interface AskNarrivPayload {
   grounded: boolean;
   answer?: string;
-  sources?: Array<{ id: string; kind: string; [k: string]: unknown }>;
+  sources?: Array<{ id: string; kind: string; title?: string | null; url?: string | null; [k: string]: unknown }>;
   data?: { signals: number; alerts: number; clusters: number; windowHours: number };
   error?: string;
   code?: string;
