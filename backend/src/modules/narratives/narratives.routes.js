@@ -216,59 +216,32 @@ router.get("/:id", async (req, res) => {
             return res.status(404).json({ error: "Narrative cluster not found" });
         }
 
+        // Evidence = only the signals actually linked to this narrative. Never
+        // substitute other workspace signals, and never default missing sentiment.
         const relatedSignals = (cluster.narrative_cluster_signals || [])
             .filter((ncs) => ncs.signal)
             .map((ncs) => {
-                const analyses = ncs.signal.analyses || [];
-                const latestAnalysis = analyses.sort((a, b) =>
-                    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                )[0];
+                const analysis = (ncs.signal.analyses || []).find((a) => a?.analysis) || (ncs.signal.analyses || [])[0] || null;
+                const sentiment = String(analysis?.analysis?.sentiment || ncs.signal.sentiment || "").toLowerCase();
                 return {
                     id: ncs.signal.id,
                     title: ncs.signal.title,
                     content: ncs.signal.content,
                     platform: ncs.signal.platform,
                     url: ncs.signal.url,
-                    sentiment: latestAnalysis?.sentiment || ncs.signal.sentiment || "unanalyzed",
-                    impact: latestAnalysis?.impact || null,
+                    sentiment: ["positive", "negative", "neutral", "mixed"].includes(sentiment) ? sentiment : "unanalyzed",
+                    impact: analysis?.analysis?.impact || null,
+                    analysisConfidence: analysisConfidence(analysis),
                     capturedAt: ncs.signal.captured_at,
                     publishedAt: ncs.signal.published_at
                 };
-            });
+            })
+            .sort((a, b) => String(b.capturedAt || "").localeCompare(String(a.capturedAt || "")));
 
-        const sentimentBreakdown = { positive: 0, neutral: 0, negative: 0, mixed: 0 };
-
-        // If no signals are explicitly linked via cluster signals, fetch recent workspace signals for rich modal context
-        if (relatedSignals.length === 0) {
-            const { data: recentSignals } = await supabase
-                .from("signals")
-                .select("id, title, content, platform, url, sentiment, captured_at, published_at")
-                .eq("workspace_id", cluster.workspace_id)
-                .limit(5);
-
-            if (recentSignals && recentSignals.length > 0) {
-                recentSignals.forEach((sig) => {
-                    relatedSignals.push({
-                        id: sig.id,
-                        title: sig.title,
-                        content: sig.content,
-                        platform: sig.platform,
-                        url: sig.url,
-                        sentiment: sig.sentiment || "neutral",
-                        impact: cluster.impact || "medium",
-                        capturedAt: sig.captured_at,
-                        publishedAt: sig.published_at,
-                    });
-                    const s = (sig.sentiment || "neutral").toLowerCase();
-                    sentimentBreakdown[s] = (sentimentBreakdown[s] || 0) + 1;
-                });
-            }
-        } else {
-            relatedSignals.forEach((signal) => {
-                const s = (signal.sentiment || "neutral").toLowerCase();
-                sentimentBreakdown[s] = (sentimentBreakdown[s] || 0) + 1;
-            });
-        }
+        const sentimentBreakdown = { positive: 0, neutral: 0, negative: 0, mixed: 0, unanalyzed: 0 };
+        relatedSignals.forEach((signal) => {
+            sentimentBreakdown[signal.sentiment] += 1;
+        });
 
         const trendMap = {};
         relatedSignals.forEach((signal) => {
@@ -286,7 +259,8 @@ router.get("/:id", async (req, res) => {
             ...toNarrativeItem(cluster),
             trends,
             sentimentBreakdown,
-            relatedSignals
+            relatedSignals,
+            evidenceNote: relatedSignals.length === 0 ? "No signals are linked to this narrative yet, so there is no evidence to show." : null,
         });
     } catch (error) {
         logStructured("error", "Error fetching narrative:", { error: error?.message || error, stack: error?.stack });

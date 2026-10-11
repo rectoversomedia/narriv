@@ -55,12 +55,16 @@ router.post("/", rateLimit(RATE_LIMITS.ai_generation), validateRequest({ body: c
         res.status(201).json(plan);
     } catch (error) {
         logStructured("error", "Error generating action plan:", { error: error?.message || error, stack: error?.stack });
-        if (error?.message === "Alert not found" || error?.message === "Narrative cluster not found") {
+        if (["Alert not found", "Narrative cluster not found", "Signal not found"].includes(error?.message)) {
             return notFound(res, error.message, "TARGET_NOT_FOUND");
         }
-        return internalError(res, "Failed to generate action plan", "ACTION_GENERATION_FAILED", {
-            reason: error?.message || "Unknown error",
-        });
+        if (error?.code === "BUDGET_EXCEEDED") {
+            return res.status(402).json({ error: "This workspace has reached its AI usage budget for the month.", code: "BUDGET_EXCEEDED" });
+        }
+        if (error?.code === "AI_GENERATION_FAILED") {
+            return res.status(503).json({ error: "The AI service could not generate a plan. Nothing was saved; please try again.", code: "AI_GENERATION_FAILED" });
+        }
+        return internalError(res, "Failed to generate action plan", "ACTION_GENERATION_FAILED");
     }
 });
 

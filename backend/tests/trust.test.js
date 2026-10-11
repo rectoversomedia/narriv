@@ -98,6 +98,48 @@ describe('signal list items', () => {
   });
 });
 
+describe('narrative detail evidence', () => {
+  const CL_EMPTY = '00000000-0000-4000-8000-0000000000e1';
+  const CL_LINKED = '00000000-0000-4000-8000-0000000000e2';
+  const CL_FOREIGN = '00000000-0000-4000-8000-0000000000e3';
+  beforeEach(() => {
+    seed();
+    const now = new Date().toISOString();
+    db.table('signals').push(
+      { id: 's-linked', workspace_id: WS, title: 'Linked', content: 'c', url: 'https://news.example/x', captured_at: now },
+      { id: 's-unanalyzed', workspace_id: WS, title: 'Pending', content: 'c', captured_at: now },
+      { id: 's-unrelated', workspace_id: WS, title: 'Unrelated', content: 'c', sentiment: 'NEGATIVE', captured_at: now },
+    );
+    db.table('signal_analyses').push({ id: 'an1', signal_id: 's-linked', confidence: 0.8, analysis: { sentiment: 'NEGATIVE', impact: 'high' } });
+    db.table('narrative_clusters').push(
+      { id: CL_EMPTY, workspace_id: WS, title: 'Empty', signal_count: 0 },
+      { id: CL_LINKED, workspace_id: WS, title: 'Linked', signal_count: 2 },
+      { id: CL_FOREIGN, workspace_id: OTHER_WS, title: 'Foreign', signal_count: 0 },
+    );
+    db.table('narrative_cluster_signals').push({ cluster_id: CL_LINKED, signal_id: 's-linked' }, { cluster_id: CL_LINKED, signal_id: 's-unanalyzed' });
+  });
+
+  it('does not substitute unrelated workspace signals as evidence', async () => {
+    const res = await request(app).get(`/narratives/${CL_EMPTY}`).set(as(OWNER));
+    expect(res.status).toBe(200);
+    expect(res.body.relatedSignals).toEqual([]);
+    expect(res.body.evidenceNote).toMatch(/No signals are linked/);
+  });
+
+  it('reports sentiment from the persisted analysis and counts unanalyzed honestly', async () => {
+    const res = await request(app).get(`/narratives/${CL_LINKED}`).set(as(OWNER));
+    expect(res.status).toBe(200);
+    const byId = Object.fromEntries(res.body.relatedSignals.map((x) => [x.id, x]));
+    expect(byId['s-linked']).toMatchObject({ sentiment: 'negative', impact: 'high', analysisConfidence: 0.8, url: 'https://news.example/x' });
+    expect(byId['s-unanalyzed']).toMatchObject({ sentiment: 'unanalyzed', analysisConfidence: null });
+    expect(res.body.sentimentBreakdown).toMatchObject({ negative: 1, unanalyzed: 1, neutral: 0 });
+  });
+
+  it("returns 404 for another workspace's narrative", async () => {
+    expect((await request(app).get(`/narratives/${CL_FOREIGN}`).set(as(OWNER))).status).toBe(404);
+  });
+});
+
 describe('signal summary metrics', () => {
   it('counts only POSITIVE signals as positive (neutral and unanalyzed are excluded)', async () => {
     seed();

@@ -2,6 +2,8 @@ import OpenAI from "openai";
 import supabase from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
 import { buildTemplateContext } from "./action-templates.js";
+import { checkBudgetAllowance } from "../../lib/cost-management.js";
+import { recordTokenUsage } from "../../lib/token-tracking.js";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
@@ -513,8 +515,9 @@ async function buildContext({ alertId, clusterId, signalId, workspaceId }) {
  * @param {string} [params.clusterId]
  * @returns {Promise<object>} - The saved ActionPlan with generated strategies.
  */
-export async function generateActionPlan({ workspaceId, strategyType, alertId, clusterId, signalId }) {
-    if (!OPENAI_API_KEY) {
+export async function generateActionPlan({ workspaceId, strategyType, alertId, clusterId, signalId }, deps = {}) {
+    const complete = deps.complete || callOpenAIWithRetry;
+    if (!deps.complete && !OPENAI_API_KEY) {
         throw new Error("OPENAI_API_KEY is not configured.");
     }
 
@@ -547,6 +550,35 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
         if (!cluster) throw new Error("Narrative cluster not found");
     }
 
+    const scopedSignalId = signalId || null;
+    if (scopedSignalId) {
+        const { data: signal } = await supabase
+            .from("signals")
+            .select("id")
+            .eq("id", scopedSignalId)
+            .eq("workspace_id", workspaceId)
+            .maybeSingle();
+        if (!signal) throw new Error("Signal not found");
+    }
+
+    const allowance = await (deps.checkBudget || checkBudgetAllowance)(workspaceId);
+    if (allowance && allowance.allowed === false) {
+        const err = new Error("AI budget exceeded");
+        err.code = "BUDGET_EXCEEDED";
+        throw err;
+    }
+
+    // Evidence the plan is based on (all workspace-verified above).
+    let evidenceSignalIds = scopedSignalId ? [scopedSignalId] : [];
+    if (scopedClusterId) {
+        const { data: links } = await supabase
+            .from("narrative_cluster_signals")
+            .select("signal_id")
+            .eq("cluster_id", scopedClusterId)
+            .limit(20);
+        evidenceSignalIds = [...new Set([...evidenceSignalIds, ...(links || []).map((l) => l.signal_id).filter(Boolean)])];
+    }
+
     // 1. Build context
     const context = await buildContext({ alertId: scopedAlertId, clusterId: scopedClusterId, signalId, workspaceId });
 
@@ -568,18 +600,34 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
     const fullContext = contextParts.join("\n\n");
 
     // 5. Generate 3 strategic options in parallel
-    const options = await Promise.all([
-        generateOption(strategyType, promptConfig, fullContext, "Option A (Conservative/Safe)"),
-        generateOption(strategyType, promptConfig, fullContext, "Option B (Balanced/Recommended)"),
-        generateOption(strategyType, promptConfig, fullContext, "Option C (Bold/Aggressive)")
+    const results = await Promise.all([
+        generateOption(strategyType, promptConfig, fullContext, "Option A (Conservative/Safe)", complete),
+        generateOption(strategyType, promptConfig, fullContext, "Option B (Balanced/Recommended)", complete),
+        generateOption(strategyType, promptConfig, fullContext, "Option C (Bold/Aggressive)", complete)
     ]);
+    const options = results.map((r) => r?.option || null);
+    const usage = results.reduce((acc, r) => ({ input: acc.input + (r?.usage?.input || 0), output: acc.output + (r?.usage?.output || 0) }), { input: 0, output: 0 });
+    if (usage.input || usage.output) {
+        await (deps.recordUsage || recordTokenUsage)({ workspaceId, operation: "action_plan_generation", model: "gpt-4o-mini", inputTokens: usage.input, outputTokens: usage.output });
+    }
+    // Never persist template text as if it were generated: no generated option, no plan.
+    if (!options.some(Boolean)) {
+        const err = new Error("AI generation failed");
+        err.code = "AI_GENERATION_FAILED";
+        throw err;
+    }
 
     const strategyPayload = {
         executive_summary: options[1]?.executive_summary || options[0]?.executive_summary || `${formatStrategyName(strategyType)} Action Plan`,
         ...(options[1] || options[0] || {}),
         conservative: options[0],
         balanced: options[1],
-        bold: options[2]
+        bold: options[2],
+        // AI output is a draft until a person reviews it; nothing is published or sent.
+        draft: true,
+        generatedBy: { provider: "openai", model: "gpt-4o-mini", at: new Date().toISOString() },
+        failedOptions: ["conservative", "balanced", "bold"].filter((_, i) => !options[i]),
+        evidence: { alertId: scopedAlertId, clusterId: scopedClusterId, signalIds: evidenceSignalIds },
     };
 
     // 3. Save to database
@@ -589,7 +637,7 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
             workspace_id: workspaceId,
             alert_id: scopedAlertId || null,
             cluster_id: scopedClusterId || null,
-            signal_id: signalId || null,
+            signal_id: scopedSignalId,
             title: `${formatStrategyName(strategyType)} Action Plan`,
             type: strategyType,
             strategy: JSON.stringify(strategyPayload),
@@ -608,6 +656,9 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
         title: actionPlan.title,
         strategyType,
         created_at: actionPlan.created_at,
+        draft: true,
+        evidence: strategyPayload.evidence,
+        failedOptions: strategyPayload.failedOptions,
         options: {
             conservative: options[0],
             balanced: options[1],
@@ -619,17 +670,18 @@ export async function generateActionPlan({ workspaceId, strategyType, alertId, c
 /**
  * Generates a single strategic option via OpenAI.
  */
-async function generateOption(strategyType, promptConfig, context, toneSuffix) {
+async function generateOption(strategyType, promptConfig, context, toneSuffix, complete = callOpenAIWithRetry) {
     try {
         const messages = [
             { role: "system", content: promptConfig.system },
             { role: "user", content: `${promptConfig.user(context)}\n\nGenerate this as: ${toneSuffix}` }
         ];
-        const response = await callOpenAIWithRetry(messages, { toneSuffix });
-
-        const raw = response.choices[0]?.message?.content || "{}";
+        const response = await complete(messages, { toneSuffix });
+        const usage = { input: response?.usage?.prompt_tokens || 0, output: response?.usage?.completion_tokens || 0 };
+        const raw = response?.choices?.[0]?.message?.content || "";
         const parsed = JSON.parse(raw);
-        return normalizeStrategyOutput(strategyType, parsed, toneSuffix);
+        if (!parsed || typeof parsed !== "object" || !parsed.executive_summary) return { option: null, usage };
+        return { option: normalizeStrategyOutput(strategyType, parsed, toneSuffix), usage };
     } catch (error) {
         logStructured("error", "generate_option_failed", {
             toneSuffix,
@@ -638,14 +690,8 @@ async function generateOption(strategyType, promptConfig, context, toneSuffix) {
             aborted: isAbortError(error),
             error: error?.message || "Unknown error",
         });
-        return normalizeStrategyOutput(
-            strategyType,
-            {
-                title: `${formatStrategyName(strategyType)} (${toneSuffix})`,
-                executive_summary: "Generated using backup template due to temporary AI service unavailability.",
-            },
-            toneSuffix
-        );
+        // No template fallback: a failed option is reported as failed, not filled in.
+        return { option: null, usage: null };
     }
 }
 

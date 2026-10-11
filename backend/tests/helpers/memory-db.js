@@ -4,9 +4,38 @@ import crypto from 'crypto';
 // for the operators the backend uses (eq/neq/gt/gte/lt/lte/is/in/not/filter/
 // ilike/or, order, limit, single/maybeSingle, insert/update/delete/upsert).
 // Tables are plain arrays so tests can seed and inspect state directly.
-// Embedded relations in select() strings are ignored (base rows are returned).
+// Embedded relations in select() strings (`alias:table(...)`, `table!inner(...)`)
+// are resolved after filtering by naming convention: a parent column
+// `<singular table>_id` gives a to-one object, otherwise child rows whose
+// `<singular parent>_id` equals the parent id give a to-many array. Embedded
+// columns are not projected and !inner does not filter parents.
 
 const isNullish = (v) => v === null || v === undefined || v === 'null';
+
+// Foreign-key column names that do not follow `<singular table>_id`.
+const FK_ALIASES = { narrative_clusters: ['cluster_id'] };
+const singular = (t) => t.replace(/s$/, '');
+const fkCandidates = (t) => [`${singular(t)}_id`, ...(FK_ALIASES[t] || [])];
+
+function splitTopLevel(str) {
+  const out = [];
+  let depth = 0; let cur = '';
+  for (const ch of str) {
+    if (ch === '(') depth += 1;
+    if (ch === ')') depth -= 1;
+    if (ch === ',' && depth === 0) { out.push(cur.trim()); cur = ''; } else cur += ch;
+  }
+  if (cur.trim()) out.push(cur.trim());
+  return out;
+}
+
+function parseEmbeds(cols) {
+  if (typeof cols !== 'string') return [];
+  return splitTopLevel(cols.replace(/\s+/g, ' ')).map((tok) => {
+    const m = tok.match(/^(?:(\w+):)?(\w+)(?:!\w+)?\s*\((.*)\)$/s);
+    return m ? { key: m[1] || m[2], table: m[2], inner: m[3] } : null;
+  }).filter(Boolean);
+}
 
 function compare(op, actual, expected) {
   switch (op) {
@@ -42,6 +71,22 @@ export function createMemoryDb(seed = {}) {
   const table = (name) => (tables[name] ||= []);
   const failures = new Map(); // `${table}:${op}` -> error
 
+  function attachEmbeds(parentTable, row, embeds) {
+    for (const e of embeds) {
+      const oneFk = fkCandidates(e.table).find((fk) => fk in row);
+      if (oneFk) {
+        const hit = table(e.table).find((x) => String(x.id) === String(row[oneFk]));
+        row[e.key] = hit ? attachEmbeds(e.table, { ...hit }, parseEmbeds(e.inner)) : null;
+      } else {
+        const childFks = fkCandidates(parentTable);
+        row[e.key] = table(e.table)
+          .filter((c) => childFks.some((fk) => c[fk] != null && String(c[fk]) === String(row.id)))
+          .map((c) => attachEmbeds(e.table, { ...c }, parseEmbeds(e.inner)));
+      }
+    }
+    return row;
+  }
+
   function from(name) {
     const state = { op: 'select', filters: [], order: [], limit: null, payload: null, options: {}, returning: false, head: false, count: null };
     const b = {};
@@ -61,7 +106,8 @@ export function createMemoryDb(seed = {}) {
     b.order = (col, { ascending = true } = {}) => { state.order.push([col, ascending]); return b; };
     b.limit = (n) => { state.limit = n; return b; };
     b.range = (from, to) => { state.range = [from, to]; return b; };
-    b.select = (_cols, opts = {}) => {
+    b.select = (cols, opts = {}) => {
+      state.embeds = parseEmbeds(cols);
       if (state.op === 'select') { state.head = Boolean(opts.head); state.count = opts.count || null; } else state.returning = true;
       return b;
     };
@@ -103,7 +149,7 @@ export function createMemoryDb(seed = {}) {
         tables[name] = rows.filter((r) => !hit.has(r));
         return { data: state.returning ? [...hit] : null, error: null };
       }
-      let out = matches().map((r) => ({ ...r }));
+      let out = matches().map((r) => attachEmbeds(name, { ...r }, state.embeds || []));
       for (const [col, asc] of [...state.order].reverse()) {
         out.sort((a, b) => (a[col] === b[col] ? 0 : (a[col] > b[col] ? 1 : -1) * (asc ? 1 : -1)));
       }
