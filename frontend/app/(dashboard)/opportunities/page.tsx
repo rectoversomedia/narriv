@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { isDemoMode } from "@/lib/demo-mock-data";
+import { DashboardEmptyState } from "@/components/dashboard/dashboard-states";
 import { Search, TrendingUp, Target, Zap, AlertTriangle, CheckCircle, Clock, Eye, Users, Lightbulb, BarChart3 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
@@ -368,6 +371,9 @@ function FilterChip({
 export default function OpportunitiesPage() {
   const t = useTranslations("opportunities");
   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
+  // Opportunities below are sample content; only the demo sandbox shows them.
+  const [isDemo, setIsDemo] = useState<boolean | null>(null);
+  useEffect(() => setIsDemo(isDemoMode()), []);
 
   const filters: FilterType[] = ["All", "Narrative", "Competitor", "Market", "SEO/GEO", "Content"];
 
@@ -384,6 +390,25 @@ export default function OpportunitiesPage() {
     { icon: Eye,       label: t("estImpact"),    value: "2.4M", tone: "blue" as const, helper: "reach estimate" },
     { icon: Target,    label: t("winRate"),      value: "67%", tone: "green"  as const, helper: undefined },
   ];
+
+  if (isDemo === null) return null;
+  if (!isDemo) {
+    return (
+      <div className="space-y-6 pb-6">
+        <DashboardEmptyState
+          icon="search"
+          title="Opportunity detection is not available yet"
+          description="Narriv does not yet generate opportunities from your workspace data, so nothing is shown here rather than sample content. Emerging narratives and recommended actions grounded in your signals are available in Narrative Intelligence and the Daily Brief."
+          action={
+            <div className="flex gap-2">
+              <Link href="/intelligence" className="rounded-[8px] border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-700 hover:bg-slate-50">Narrative Intelligence</Link>
+              <Link href="/brief" className="rounded-[8px] border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-700 hover:bg-slate-50">Daily Brief</Link>
+            </div>
+          }
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-6">

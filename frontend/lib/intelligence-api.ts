@@ -253,3 +253,51 @@ export async function getAiProviders() {
     providers: { openai: { configured: boolean; model: string | null }; anthropic: { configured: boolean; model: string } };
   };
 }
+
+// ---------------------------------------------------------------------------
+// Pipeline status (GET /api/pipeline/status) — data freshness and provenance
+// ---------------------------------------------------------------------------
+
+export interface PipelineStatusPayload {
+  workspaceId: string;
+  generatedAt: string;
+  scheduler: {
+    lastRunAt: string | null;
+    lastRunStatus: string | null;
+    lastSuccessfulIngestionForWorkspace: string | null;
+  };
+  ingestion: { lastRawDocumentAt: string | null };
+  analysis: {
+    lastAnalysisAt: string | null;
+    realSignals: number | null;
+    unanalyzedRealSignals: number | null;
+    analysisFailuresLast7d: number | null;
+  };
+  clustering: { lastClusterUpdateAt: string | null; clusters: number | null };
+  alerts: {
+    lastAlertAt: string | null;
+    unresolved: number | null;
+    notificationFailuresLast7d: number | null;
+    activeNotificationIntegrations: number | null;
+  };
+  aiUsageLast30d: { calls: number; tokens: number; estimatedCostUsd: number };
+  partial: boolean;
+  errors: string[];
+}
+
+export async function getPipelineStatus() {
+  return apiClient<PipelineStatusPayload>("/api/pipeline/status");
+}
+
+/** "3h ago" style relative time; null-safe. */
+export function timeAgo(iso: string | null | undefined): string {
+  if (!iso) return "never";
+  const diff = Date.now() - new Date(iso).getTime();
+  if (!Number.isFinite(diff)) return "unknown";
+  const m = Math.round(diff / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.round(m / 60);
+  if (h < 48) return `${h}h ago`;
+  return `${Math.round(h / 24)}d ago`;
+}

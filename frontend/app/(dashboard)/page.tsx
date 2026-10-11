@@ -19,6 +19,7 @@ import { DashboardErrorState, MetricRowSkeleton } from "@/components/dashboard/d
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Badge } from "@/components/ui/badge";
 import { TodaysIntelligenceStrip } from "@/components/intelligence/intelligence-panels";
+import { getPipelineStatus, timeAgo } from "@/lib/intelligence-api";
 
 type SeriesPoint = {
   label: string;
@@ -261,6 +262,15 @@ export default function DashboardPage() {
     refetchIntervalInBackground: false,
   });
 
+  // Pipeline freshness/provenance (real data only; demo sessions skip it).
+  const pipelineQuery = useQuery({
+    queryKey: ["pipeline-status"],
+    queryFn: getPipelineStatus,
+    enabled: !isDemoSession,
+    staleTime: 60 * 1000,
+    retry: 1,
+  });
+
   const timeRangeOptions: Array<{ label: string; value: DateRangeKey }> = [
     { label: t("pages.command.timeRange24h"), value: "24h" },
     { label: t("pages.command.timeRange7d"), value: "7d" },
@@ -498,6 +508,18 @@ export default function DashboardPage() {
       {/* ── 1b. Real intelligence strip from backend ───────────────────────── */}
       <TodaysIntelligenceStrip />
 
+      {/* ── 1c. Mentions & sentiment KPIs (dashboard summary for the selected period) */}
+      {metricsRow.length > 0 ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+          {metricsRow.map((m) => (
+            <div key={m.label} className="rounded-xl border border-slate-200 bg-white p-4">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{m.label}</div>
+              <div className="mt-1.5 text-[22px] font-bold leading-none tabular-nums text-slate-900">{m.value}</div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
       {/* ── 2. Top Developments ───────────────────────────────────────────── */}
       <div>
         <h2 className="mb-3 text-[13px] font-black uppercase tracking-[0.1em] text-slate-400">Top Developments</h2>
@@ -719,6 +741,31 @@ export default function DashboardPage() {
                       : "—"}
                   </span>
                 </div>
+                {!isDemoSession && pipelineQuery.data ? (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-slate-400">Last ingestion</span>
+                      <span className="font-bold text-slate-700">{timeAgo(pipelineQuery.data.ingestion.lastRawDocumentAt)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-slate-400">Awaiting AI analysis</span>
+                      <span className="font-bold text-slate-700">{pipelineQuery.data.analysis.unanalyzedRealSignals ?? "—"} signals</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-slate-400">Alert notifications</span>
+                      <span className={`font-bold ${pipelineQuery.data.alerts.activeNotificationIntegrations ? "text-slate-700" : "text-amber-600"}`}>
+                        {pipelineQuery.data.alerts.activeNotificationIntegrations ? `${pipelineQuery.data.alerts.activeNotificationIntegrations} channel(s)` : "Not configured"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-slate-400">AI cost (30 days)</span>
+                      <span className="font-bold tabular-nums text-slate-700">${pipelineQuery.data.aiUsageLast30d.estimatedCostUsd.toFixed(2)}</span>
+                    </div>
+                  </>
+                ) : null}
+                {!isDemoSession && pipelineQuery.isError ? (
+                  <p className="text-[11px] font-semibold text-amber-600">Pipeline status unavailable.</p>
+                ) : null}
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-slate-400">Workspace</span>
                   <span className={`inline-flex items-center gap-1.5 rounded-[6px] px-2 py-0.5 text-[11px] font-bold ${isDemoSession ? "bg-[#8B5CFF]/10 text-[#8B5CFF]" : "bg-[#10B981]/10 text-[#10B981]"}`}>

@@ -37,6 +37,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
 import { getNarrativeById, getNarratives, getSources, triggerClustering, type NarrativeRecord } from "@/lib/api-service";
 import { getMockNarratives } from "@/lib/demo-mock-data";
+import { getPipelineStatus, timeAgo } from "@/lib/intelligence-api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
@@ -597,6 +598,14 @@ export default function IntelligencePage() {
     enabled: Boolean(selectedNarrativeId && isAnalysisOpen),
     staleTime: 30 * 1000,
   });
+  // Data freshness comes from the pipeline status endpoint, not a fixed label.
+  const pipelineQuery = useQuery({
+    queryKey: ["pipeline-status"],
+    queryFn: getPipelineStatus,
+    staleTime: 60 * 1000,
+    retry: 1,
+  });
+
   const sourcesQuery = useQuery({
     queryKey: ["sources-intelligence-stats"],
     queryFn: () => getSources({ limit: 100 }),
@@ -674,8 +683,12 @@ export default function IntelligencePage() {
     {
       icon: RefreshCcw,
       title: ti("footer.updateFreq"),
-      value: ti("footer.realtime"),
-      detail: ti("footer.autoUpdated"),
+      value: "Scheduled every 6h",
+      detail: pipelineQuery.isPending
+        ? "..."
+        : pipelineQuery.isError
+          ? "Freshness unavailable"
+          : `Last ingestion ${timeAgo(pipelineQuery.data?.ingestion.lastRawDocumentAt)}`,
       tone: "blue" as Tone,
     },
     {
