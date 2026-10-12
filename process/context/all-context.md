@@ -1,6 +1,6 @@
 # Narriv - All Context
 
-Last updated: 2026-10-09
+Last updated: 2026-10-12
 
 This file is the root context entrypoint for the repo. Start here before substantial research, planning, review, testing, or implementation work.
 
@@ -16,7 +16,8 @@ Narriv is a Narrative Intelligence & Operational Response platform. It helps org
 | `process/context/tests/all-tests.md` | testing, verification, debugging test failures, execution planning |
 | `process/context/planning/all-planning.md` | plan-shape calibration, SIMPLE vs COMPLEX references, plan lifecycle routing |
 | `process/development-protocols/all-development-protocols.md` | workflow, RIPER-5, planning, execution, or process questions |
-| `process/general-plans/references/production-readiness-runbook.md` | production deployment, VPS, DNS, migration baseline, env, storage, backup, and QA gates |
+| `process/general-plans/references/production-operations-handoff.md` | how production actually runs (Vercel + Supabase), deploy/verify commands, open owner blockers |
+| `process/general-plans/references/production-readiness-runbook.md` | legacy VPS plan (superseded); generic DNS, migration baseline, env, storage, backup, and QA gates |
 | `frontend/narriv_frontend_blueprint.md` | frontend page inventory, UI contracts, API wiring status, frontend tracker |
 | `backend/narriv_backend_blueprint.md` | backend architecture, API map, schema summary, backend tracker |
 | `graphify-out/GRAPH_REPORT.md` | high-level product/community map generated from prior project analysis |
@@ -38,7 +39,7 @@ No additional context groups exist yet. Promote a group when a durable domain ha
 | frontend UI, routes, Next.js behavior | `process/context/all-context.md` | `frontend/narriv_frontend_blueprint.md`, then `frontend/AGENTS.md` |
 | backend API, Supabase queries, workers, infra | `process/context/all-context.md` | `backend/narriv_backend_blueprint.md`, then relevant `backend/src/` files |
 | tests or verification | `process/context/all-context.md` | `process/context/tests/all-tests.md` |
-| production deployment or launch readiness | `process/context/all-context.md` | `process/general-plans/references/production-readiness-runbook.md`, then both blueprints |
+| production deployment or launch readiness | `process/context/all-context.md` | `process/general-plans/references/production-operations-handoff.md`, then both blueprints |
 | plans or phase workflow | `process/context/all-context.md` | `process/context/planning/all-planning.md`, then `process/development-protocols/all-development-protocols.md` |
 | product area orientation | `process/context/all-context.md` | `graphify-out/GRAPH_REPORT.md` and the two blueprints |
 

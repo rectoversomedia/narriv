@@ -1,5 +1,7 @@
 # Narriv Production Readiness Runbook
 
+> Superseded for current operations by `production-operations-handoff.md` (2026-10-12). Production runs on Vercel + Supabase, not the VPS/Prisma setup described below; keep this file only for the generic QA and release checklists.
+
 Last updated: 2026-06-06
 
 This runbook is the operational checklist for making Narriv production-ready on a DigitalOcean VPS with Hostinger-managed DNS. It covers deployment, database migration safety, environment variables, storage, backup, monitoring, and final QA gates.
