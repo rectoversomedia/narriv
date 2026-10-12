@@ -38,6 +38,15 @@ describe('workspace settings', () => {
     expect(again.body).toMatchObject({ brand_name: 'Narriv Labs', timezone: 'Asia/Jakarta' });
     expect(db.table('audit_logs').some((l) => l.event === 'workspace_settings_updated')).toBe(true);
   });
+
+  it('stores label-style timezones as IANA ids and rejects unknown zones', async () => {
+    const labelled = await request(app).patch('/workspace/settings').set(as(OWNER)).send({ workspaceId: WS, timezone: 'Asia/Singapore (GMT+8)' });
+    expect(labelled.status).toBe(200);
+    expect(labelled.body.timezone).toBe('Asia/Singapore');
+    const bad = await request(app).patch('/workspace/settings').set(as(OWNER)).send({ workspaceId: WS, timezone: 'Mars/Olympus' });
+    expect(bad.status).toBe(400);
+    expect(bad.body.code).toBe('INVALID_TIMEZONE');
+  });
 });
 
 describe('cases', () => {

@@ -3,13 +3,14 @@ import { badRequest, forbidden, internalError, notFound } from "../../lib/api-er
 import { recordAuditLog } from "../../lib/audit.js";
 import { workspaceHasOwner, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { logStructured } from "../../lib/logger.js";
+import { DEFAULT_TIMEZONE, normalizeTimezone } from "../../lib/timezone.js";
 
 function toSafeDefaults(workspaceId) {
     return {
         workspace_id: workspaceId,
         brand_name: null,
         industry: null,
-        timezone: "UTC",
+        timezone: DEFAULT_TIMEZONE,
         notification_email: null,
         whatsapp_pic: null,
         logo_url: null,
@@ -56,7 +57,12 @@ export async function getWorkspaceSettings(req, res) {
 
 export async function updateWorkspaceSettings(req, res) {
     try {
-        const { workspaceId, brandName, industry, timezone, notificationEmail, whatsappPIC } = req.body;
+        const { workspaceId, brandName, industry, notificationEmail, whatsappPIC } = req.body;
+        let { timezone } = req.body;
+        if (timezone !== undefined && timezone !== null) {
+            timezone = normalizeTimezone(timezone);
+            if (!timezone) return badRequest(res, "timezone must be a valid IANA time zone, for example Asia/Jakarta.", "INVALID_TIMEZONE");
+        }
 
         const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
         if (!scopedWorkspaceId) {
@@ -98,7 +104,7 @@ export async function updateWorkspaceSettings(req, res) {
                     workspace_id: scopedWorkspaceId,
                     brand_name: brandName ?? null,
                     industry: industry ?? null,
-                    timezone: timezone ?? "UTC",
+                    timezone: timezone ?? DEFAULT_TIMEZONE,
                     notification_email: notificationEmail ?? null,
                     whatsapp_pic: whatsappPIC ?? null,
                 })
@@ -131,6 +137,13 @@ export async function updateWorkspaceSettings(req, res) {
         logStructured("error", "Error updating workspace settings:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
+}
+
+// "alex@narriv.ai" -> "a***@narriv.ai"
+export function maskEmail(email) {
+    if (typeof email !== "string" || !email.includes("@")) return null;
+    const [local, domain] = email.split("@");
+    return `${local.slice(0, 1)}***@${domain}`;
 }
 
 export async function listWorkspaceMembers(req, res) {
@@ -167,15 +180,21 @@ export async function listWorkspaceMembers(req, res) {
             members = fallbackRes.data || [];
         }
 
+        // Anonymous demo sessions share one workspace: never show them members'
+        // email addresses (names and roles stay so the page still makes sense).
+        const isDemoSession = String(req.user?.id || "").startsWith("demo");
         return res.json({
-            data: (members || []).map((member) => ({
-                id: member.id,
-                workspace_id: member.workspace_id,
-                user_id: member.user_id,
-                role: member.role,
-                created_at: member.created_at,
-                user: member.user_profiles || member.users || null,
-            }))
+            data: (members || []).map((member) => {
+                const user = member.user_profiles || member.users || null;
+                return {
+                    id: member.id,
+                    workspace_id: member.workspace_id,
+                    user_id: member.user_id,
+                    role: member.role,
+                    created_at: member.created_at,
+                    user: user && isDemoSession ? { ...user, email: maskEmail(user.email) } : user,
+                };
+            })
         });
     } catch (error) {
         logStructured("error", "Error listing workspace members:", { error: error?.message || error, stack: error?.stack });

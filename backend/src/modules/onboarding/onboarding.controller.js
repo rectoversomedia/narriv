@@ -2,6 +2,7 @@ import supabase, { baseSupabaseAdmin } from "../../lib/supabase.js";
 import { badRequest, internalError } from "../../lib/api-error.js";
 import { logStructured } from "../../lib/logger.js";
 import { recordAuditLog } from "../../lib/audit.js";
+import { DEFAULT_TIMEZONE, normalizeTimezone } from "../../lib/timezone.js";
 import { resolveWorkspaceIdForUser, getUserWorkspaceIds } from "../../lib/workspace-access.js";
 
 // Helper: verify workspace membership
@@ -72,7 +73,7 @@ export async function createOnboardingWorkspace(req, res) {
                 workspace_id: workspace.id,
                 brand_name: brandName,
                 industry: industry || null,
-                timezone: timezone || "Asia/Jakarta (GMT+7)",
+                timezone: normalizeTimezone(timezone) ?? DEFAULT_TIMEZONE,
                 updated_at: new Date().toISOString(),
             }, { onConflict: "workspace_id" })
             .select()
