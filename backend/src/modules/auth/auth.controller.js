@@ -94,6 +94,54 @@ function validateOAuthState(req) {
     return valid;
 }
 
+// The state's random part is also kept in an httpOnly cookie on the API host
+// when the flow starts, binding the callback to the browser that began it.
+const OAUTH_STATE_COOKIE = "narriv_oauth_state";
+
+function oauthStateNonce(state) {
+    return String(state || "").split(".")[0] || "";
+}
+
+function readCookie(req, name) {
+    const header = String(req.headers?.cookie || "");
+    for (const part of header.split(";")) {
+        const [k, ...v] = part.trim().split("=");
+        if (k === name) return decodeURIComponent(v.join("="));
+    }
+    return null;
+}
+
+/** "bound" = cookie matches the state; "mismatch" = cookie belongs to another flow; "absent" = no cookie. */
+export function oauthStateBinding(req) {
+    const cookie = readCookie(req, OAUTH_STATE_COOKIE);
+    if (!cookie) return "absent";
+    const nonce = oauthStateNonce(req.query?.state);
+    const a = Buffer.from(cookie);
+    const b = Buffer.from(nonce);
+    return a.length === b.length && a.length > 0 && crypto.timingSafeEqual(a, b) ? "bound" : "mismatch";
+}
+
+/**
+ * One-time exchange code derived from the (signed, single-flow) state, so a
+ * repeated delivery of the same callback (browser retry after a network change,
+ * Back button, double request) resolves to the same pending code instead of
+ * redeeming Google's single-use authorization code a second time.
+ */
+export function oauthExchangeCodeFor(provider, state) {
+    const mac = crypto.createHmac("sha256", JWT_SECRET).update(`oauth-exchange:${provider}:${state}`).digest("hex");
+    return `${provider}.${mac}`;
+}
+
+async function pendingOAuthExchangeExists(code) {
+    const { data, error } = await baseSupabaseAdmin
+        .from("refresh_tokens")
+        .select("id")
+        .eq("token_hash", hashOAuthExchangeCode(code))
+        .gt("expires_at", new Date().toISOString())
+        .limit(1);
+    return !error && Array.isArray(data) && data.length > 0;
+}
+
 function checkRateLimit(map, key, max, windowMs) {
     const now = Date.now();
     const item = map.get(key);
@@ -202,8 +250,8 @@ async function issueRefreshToken(user_id) {
     return { refresh_token: rawToken, expires_at };
 }
 
-async function storeOAuthExchange({ user_id, provider }) {
-    const code = `${provider}.${crypto.randomBytes(32).toString("hex")}`;
+async function storeOAuthExchange({ user_id, provider, code: presetCode }) {
+    const code = presetCode || `${provider}.${crypto.randomBytes(32).toString("hex")}`;
     const token_hash = hashOAuthExchangeCode(code);
     const expires_at = new Date(Date.now() + OAUTH_EXCHANGE_TTL_MS);
 
@@ -1248,7 +1296,16 @@ export const googleAuth = (req, res) => {
     authUrl.searchParams.set("redirect_uri", redirectUri);
     authUrl.searchParams.set("response_type", "code");
     authUrl.searchParams.set("scope", "email profile");
-    authUrl.searchParams.set("state", createOAuthState());
+    const state = createOAuthState();
+    authUrl.searchParams.set("state", state);
+    // SameSite=Lax: sent on the top-level redirect back from accounts.google.com.
+    res.cookie(OAUTH_STATE_COOKIE, oauthStateNonce(state), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: OAUTH_STATE_TTL_MS,
+        path: "/",
+    });
     res.redirect(authUrl.toString());
 };
 
@@ -1261,8 +1318,21 @@ export const googleCallback = async (req, res) => {
             logStructured("warn", "oauth_state_invalid");
             return res.redirect(`${FRONTEND_URL}/login?error=oauth_failed&reason=state_invalid`);
         }
+        const binding = oauthStateBinding(req);
+        if (binding === "mismatch") {
+            logStructured("warn", "oauth_state_cookie_mismatch");
+            return res.redirect(`${FRONTEND_URL}/login?error=oauth_failed&reason=state_invalid`);
+        }
 
-        logStructured("info", "oauth_state_valid_exchanging_code");
+        // Same flow delivered again to the browser that started it: reuse the
+        // pending one-time code (Google's code can only be redeemed once).
+        const exchangeCode = oauthExchangeCodeFor("google", String(req.query.state));
+        if (binding === "bound" && (await pendingOAuthExchangeExists(exchangeCode))) {
+            logStructured("info", "oauth_callback_replayed_reusing_exchange");
+            return res.redirect(`${FRONTEND_URL}/oauth/callback?code=${exchangeCode}`);
+        }
+
+        logStructured("info", "oauth_state_valid_exchanging_code", { binding });
         // Exchange code for token
         const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
             method: "POST",
@@ -1279,6 +1349,16 @@ export const googleCallback = async (req, res) => {
         if (!tokenResponse.ok) {
             const body = await tokenResponse.text();
             logStructured("error", "oauth_token_exchange_failed", { status: tokenResponse.status, body });
+            // A concurrent delivery of this flow may still be finishing: wait briefly for its code.
+            if (binding === "bound" && tokenResponse.status === 400 && body.includes("invalid_grant")) {
+                for (let attempt = 0; attempt < 6; attempt += 1) {
+                    await new Promise((resolve) => setTimeout(resolve, 500));
+                    if (await pendingOAuthExchangeExists(exchangeCode)) {
+                        logStructured("info", "oauth_callback_replayed_reusing_exchange", { waitedMs: (attempt + 1) * 500 });
+                        return res.redirect(`${FRONTEND_URL}/oauth/callback?code=${exchangeCode}`);
+                    }
+                }
+            }
             throw new Error("Failed to exchange Google token");
         }
         const tokenData = await tokenResponse.json();
@@ -1298,7 +1378,8 @@ export const googleCallback = async (req, res) => {
             provider: "google",
             providerAccountId: profile.id,
             email: profile.email.toLowerCase(),
-            name: profile.name
+            name: profile.name,
+            exchangeCode,
         });
     } catch (error) {
         const msg = error?.message || String(error);
@@ -1352,7 +1433,7 @@ export const exchangeOAuthCode = async (req, res) => {
 // ==========================================
 // Shared OAuth handler
 // ==========================================
-async function handleOAuthLogin(res, { provider, providerAccountId, email, name }) {
+async function handleOAuthLogin(res, { provider, providerAccountId, email, name, exchangeCode: presetExchangeCode }) {
     logStructured("info", "oauth_handleLogin_start", { provider, email });
     // 1. Check if OAuth account exists
     const { data: oauthAccount, error: oauthError } = await baseSupabaseAdmin
@@ -1515,8 +1596,9 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name 
 
     await writeAuditLog(user.id, "login_oauth", { provider, email }).catch(e => logStructured("warn", "audit_login_oauth_skip", { error: e?.message }));
 
-    const exchangeCode = await storeOAuthExchange({ user_id: user.id, provider });
-    logStructured("info", "oauth_complete_redirecting", { exchangeCode, redirectTo: `${FRONTEND_URL}/oauth/callback?code=***` });
+    const exchangeCode = await storeOAuthExchange({ user_id: user.id, provider, code: presetExchangeCode });
+    // Never log the exchange code itself: it is a bearer credential until redeemed.
+    logStructured("info", "oauth_complete_redirecting", { redirectTo: `${FRONTEND_URL}/oauth/callback?code=***` });
 
     // Redirect with a short-lived one-time code instead of tokens in the URL.
     return res.redirect(`${FRONTEND_URL}/oauth/callback?code=${exchangeCode}`);
