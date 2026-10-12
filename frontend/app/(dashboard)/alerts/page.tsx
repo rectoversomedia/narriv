@@ -983,7 +983,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                   </div>
                 </td>
                 <td className="px-3 py-3 align-middle"><span className={cn("rounded-[6px] px-2 py-1 text-[9px] font-black", alert.tone === "red" ? "bg-[#EF4444]/10 text-[#C81E1E]" : alert.tone === "amber" ? "bg-[#F59E0B]/12 text-[#A04606]" : "bg-[#10B981]/10 text-[#047857]")}>{alert.tags[0]}</span></td>
-                <td className="px-3 py-3 align-middle"><div className="flex items-center gap-1.5"><span className="flex size-6 items-center justify-center rounded-full bg-[#465FFF]/10 text-[9px] font-black text-[#3B52F5]">{alert.sourceLabel.slice(0, 2).toUpperCase()}</span><span className="text-[10px] font-black text-[#31406B]">{alert.sourceLabel}</span></div></td>
+                <td className="px-3 py-3 align-middle"><div className="flex items-center gap-1.5"><span className="flex size-6 items-center justify-center rounded-full bg-[#465FFF]/10 text-[9px] font-black text-[#2C3FC9]">{alert.sourceLabel.slice(0, 2).toUpperCase()}</span><span className="text-[10px] font-black text-[#31406B]">{alert.sourceLabel}</span></div></td>
                 <td className="px-3 py-3 align-middle"><SourceIconList label="" sources={alert.sources} extraSources={alert.extraSources} /></td>
                 <td className="px-3 py-3 align-middle text-[11px] font-black text-[#31406B]">{alert.escalationLevel}</td>
                 <td className="px-3 py-3 align-middle text-[10px] font-black text-[#31406B]">{alert.deadline}</td>
