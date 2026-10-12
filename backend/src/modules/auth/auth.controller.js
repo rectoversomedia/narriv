@@ -1351,7 +1351,8 @@ export const googleCallback = async (req, res) => {
             logStructured("error", "oauth_token_exchange_failed", { status: tokenResponse.status, body });
             // A concurrent delivery of this flow may still be finishing: wait briefly for its code.
             if (binding === "bound" && tokenResponse.status === 400 && body.includes("invalid_grant")) {
-                for (let attempt = 0; attempt < 6; attempt += 1) {
+                // Bounded (~1.5s plus lookups) so a genuinely stale callback still fails quickly.
+                for (let attempt = 0; attempt < 3; attempt += 1) {
                     await new Promise((resolve) => setTimeout(resolve, 500));
                     if (await pendingOAuthExchangeExists(exchangeCode)) {
                         logStructured("info", "oauth_callback_replayed_reusing_exchange", { waitedMs: (attempt + 1) * 500 });
