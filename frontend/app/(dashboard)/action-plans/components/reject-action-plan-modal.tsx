@@ -165,7 +165,7 @@ export function RejectActionPlanModal({
             <button
               type="submit"
               disabled={!isValid || isSubmitting}
-              className="flex items-center gap-1.5 rounded-xl bg-[#EF4444] px-4 py-2 text-xs font-black text-white shadow-sm transition hover:bg-[#DC2626] disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-xl bg-[#C81E1E] px-4 py-2 text-xs font-black text-white shadow-sm transition hover:bg-[#A51818] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSubmitting && <Loader2 size={13} className="animate-spin" />}
               {isSubmitting ? t("submitting") : t("confirm")}

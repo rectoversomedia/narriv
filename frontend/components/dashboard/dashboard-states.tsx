@@ -126,7 +126,7 @@ export function DashboardErrorState({
       minHeight={minHeight}
       action={
         onRetry ? (
-          <Button type="button" onClick={onRetry} className="h-10 rounded-[8px] bg-[#EF4444] px-4 text-sm font-black text-white hover:bg-[#dc3333]">
+          <Button type="button" onClick={onRetry} className="h-10 rounded-[8px] bg-[#C81E1E] px-4 text-sm font-black text-white hover:bg-[#A51818]">
             <RefreshCcw size={15} />
             {tp("retry")}
           </Button>

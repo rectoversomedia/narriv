@@ -378,7 +378,7 @@ export default function AlertDetailPage() {
                 <button
                   type="button"
                   onClick={() => setIsActionPlanModalOpen(true)}
-                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[9px] bg-[#10B981] px-4 text-[12px] font-black text-white shadow-sm transition hover:bg-[#0C9B69]"
+                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[9px] bg-[#047857] px-4 text-[12px] font-black text-white shadow-sm transition hover:bg-[#065F46]"
                 >
                   <Sparkles size={14} />
                   {td("createAction")}

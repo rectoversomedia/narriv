@@ -858,7 +858,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
           <button
             onClick={() => onBulkStatusChange("acknowledged")}
             disabled={isBulkUpdating}
-            className="flex items-center gap-1.5 rounded-[6px] bg-[#F59E0B] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#D97706] disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-[6px] bg-[#B45309] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#92400E] disabled:opacity-50"
           >
             {isBulkUpdating ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
             Acknowledge
@@ -866,7 +866,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
           <button
             onClick={() => onBulkStatusChange("resolved")}
             disabled={isBulkUpdating}
-            className="flex items-center gap-1.5 rounded-[6px] bg-[#10B981] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#0C9B69] disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-[6px] bg-[#047857] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#065F46] disabled:opacity-50"
           >
             {isBulkUpdating ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
             Resolve

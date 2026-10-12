@@ -19,10 +19,10 @@ import { isDemoMode } from "@/lib/demo-mock-data";
 
 
 const notificationToneClass = {
-  red: "bg-[#EF4444] text-white",
-  amber: "bg-[#F59E0B] text-white",
+  red: "bg-[#C81E1E] text-white",
+  amber: "bg-[#B45309] text-white",
   purple: "bg-[#8B5CFF] text-white",
-  green: "bg-[#10B981] text-white",
+  green: "bg-[#047857] text-white",
   blue: "bg-[#465FFF] text-white",
   slate: "bg-slate-500 text-white",
 };
@@ -395,7 +395,7 @@ export function Topbar() {
           >
             <Bell size={24} />
             {unreadCount > 0 ? (
-              <span className="absolute right-0.5 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#EF4444] px-1 text-[10px] font-black text-white ring-2 ring-white">
+              <span className="absolute right-0.5 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#C81E1E] px-1 text-[10px] font-black text-white ring-2 ring-white">
                 {unreadBadge}
               </span>
             ) : null}

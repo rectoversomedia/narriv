@@ -312,7 +312,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
           <button
             onClick={onBulkCreateAlert}
             disabled={isBulkProcessing}
-            className="flex items-center gap-1.5 rounded-[6px] bg-[#F59E0B] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#D97706] disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-[6px] bg-[#B45309] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#92400E] disabled:opacity-50"
           >
             {isBulkProcessing ? <Loader2 size={12} className="animate-spin" /> : <AlertTriangle size={12} />}
             Create Alert
@@ -320,7 +320,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
           <button
             onClick={onBulkDelete}
             disabled={isBulkProcessing}
-            className="flex items-center gap-1.5 rounded-[6px] bg-[#EF4444] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#DC2626] disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-[6px] bg-[#C81E1E] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#A51818] disabled:opacity-50"
           >
             {isBulkProcessing ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
             Delete
