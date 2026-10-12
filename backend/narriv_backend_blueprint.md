@@ -719,6 +719,7 @@ Optional RLS notes:
 - [ ] Test memory usage during large ingestion jobs
 
 ---
+- [x] **Dashboard sentiment trend and narrative member ids** — `GET /api/dashboard/summary` returns `sentiment_trend` (7 UTC days of stored-sentiment counts, unanalyzed kept separate, `null` on query error; `src/lib/sentiment-trend.js`). Narrative list items expose `memberSignalIds` (capped at 200) so clients derive relationships from shared evidence. Tests: `tests/sentiment-trend.test.js`, `tests/trust.test.js`. Completed 2026-10-12.
 
 ## Appendix: Frontend Development Status
 

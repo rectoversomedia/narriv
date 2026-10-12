@@ -1,3 +1,4 @@
+import { buildSentimentTrend, sentimentTrendStart } from "../../lib/sentiment-trend.js";
 import supabase from "../../lib/supabase.js";
 import { getUserWorkspaceIds } from "../../lib/workspace-access.js";
 import { cachedQuery, CACHE_KEYS, CACHE_TTL } from "../../lib/cache.js";
@@ -219,6 +220,18 @@ export const getSummary = async (req, res) => {
                 .map(([date, count]) => ({ date, count }))
                 .sort((a, b) => a.date.localeCompare(b.date));
 
+            // Real per-day sentiment for the last 7 days (independent of the requested range).
+            let sentiment_trend = null;
+            {
+                const { data: trendRows, error: trendError } = await supabase
+                    .from("signals")
+                    .select("sentiment, captured_at")
+                    .in("workspace_id", workspaceIds)
+                    .gte("captured_at", sentimentTrendStart())
+                    .limit(5000);
+                if (!trendError) sentiment_trend = buildSentimentTrend(trendRows || []);
+            }
+
             // Fetch narrative clusters for topics (skip if table/columns don't exist)
             let clusters = [];
             try {
@@ -334,6 +347,7 @@ export const getSummary = async (req, res) => {
                     mixed_percentage: sentimentCount ? Math.round((mixed / sentimentCount) * 100) : 0
                 },
                 trends,
+                sentiment_trend,
                 sentiment_distribution: { positive, negative, neutral, mixed },
                 platform_distribution,
                 latest_signals,

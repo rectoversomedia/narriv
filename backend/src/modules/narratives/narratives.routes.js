@@ -52,6 +52,9 @@ export function toNarrativeItem(cluster, now = Date.now()) {
         storedSignalCount: cluster.signal_count ?? null,
         hasEvidence: signals.length > 0,
         memberSignals: signals.length,
+        // Linked signal ids (capped) so clients can derive real relationships
+        // between narratives from shared evidence instead of inventing them.
+        memberSignalIds: [...new Set(signals.map((s) => s.id).filter(Boolean))].slice(0, 200),
         sentiment: cluster.sentiment || "neutral",
     };
 }
