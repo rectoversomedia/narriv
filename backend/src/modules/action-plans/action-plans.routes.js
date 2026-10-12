@@ -174,8 +174,9 @@ router.get("/metrics", async (req, res) => {
 
         if (error) throw error;
 
+        // null = no earlier period to compare against (not 0% and not +100%).
         const calculateTrend = (current, previous) => {
-            if (previous === 0) return current > 0 ? 100 : 0;
+            if (previous === 0) return null;
             return Math.round(((current - previous) / previous) * 100);
         };
 
@@ -185,6 +186,7 @@ router.get("/metrics", async (req, res) => {
             done: { current: 0, previous: 0, total: 0 },
             needsAttention: { current: 0, previous: 0, total: 0 }
         };
+        const created = { current: 0, previous: 0 };
 
         for (const plan of (allPlans || [])) {
             const isCurrent = new Date(plan.created_at) >= sevenDaysAgo;
@@ -200,6 +202,9 @@ router.get("/metrics", async (req, res) => {
             if (isInProgress) metrics.inProgress.total++;
             if (isDone) metrics.done.total++;
             if (isNeedsAttention) metrics.needsAttention.total++;
+
+            if (isCurrent) created.current++;
+            else if (isPrevious) created.previous++;
 
             if (isCurrent) {
                 if (isActive) metrics.active.current++;
@@ -221,10 +226,8 @@ router.get("/metrics", async (req, res) => {
             needsAttention: { value: metrics.needsAttention.total, trend: calculateTrend(metrics.needsAttention.current, metrics.needsAttention.previous) },
             resolution: {
                 value: (allPlans || []).length,
-                trend: calculateTrend(
-                    metrics.active.current + metrics.inProgress.current + metrics.done.current,
-                    metrics.active.previous + metrics.inProgress.previous + metrics.done.previous
-                )
+                // Plans created in the last 7 days vs the 7 days before.
+                trend: calculateTrend(created.current, created.previous)
             }
         });
 
