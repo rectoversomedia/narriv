@@ -5,7 +5,7 @@ type FeedbackTone = "success" | "error" | "info";
 const toneStyles: Record<FeedbackTone, string> = {
   success: "border-[#12B76A]/25 bg-[#12B76A]/10 text-[#027A48] dark:text-[#6CE9A6]",
   error: "border-[#F04438]/25 bg-[#F04438]/10 text-[#B42318] dark:text-[#FDA29B]",
-  info: "border-[#465FFF]/25 bg-[#465FFF]/10 text-[#465FFF]",
+  info: "border-[#465FFF]/25 bg-[#465FFF]/10 text-[#3B52F5]",
 };
 
 const icons = {

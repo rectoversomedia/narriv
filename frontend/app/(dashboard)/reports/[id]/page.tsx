@@ -42,7 +42,7 @@ function ReportSectionCard({ section, index }: { section: ReportDetailSection; i
   return (
     <section className="rounded-[16px] border border-[#E6EAF2] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.03)]">
       <div className="flex items-start gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[12px] font-black text-[#465FFF]">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[12px] font-black text-[#3B52F5]">
           {index + 1}
         </span>
         <div className="min-w-0 flex-1">
@@ -113,12 +113,12 @@ export default function ReportDetailPage() {
   return (
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
       <header className="rounded-[18px] border border-[#DDE3EF] bg-white p-5 shadow-[0_2px_14px_rgba(16,24,40,0.04)]">
-        <Link href="/reports" className="inline-flex items-center gap-2 text-[12px] font-black text-[#58648C] transition hover:text-[#465FFF]">
+        <Link href="/reports" className="inline-flex items-center gap-2 text-[12px] font-black text-[#58648C] transition hover:text-[#3B52F5]">
           <ArrowLeft size={15} /> {tr("detail.back")}
         </Link>
         <div className="mt-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#465FFF]/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#465FFF]">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#465FFF]/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#3B52F5]">
               <Sparkles size={13} /> {tr("detail.liveReport")}
             </div>
             <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{report.title}</h1>

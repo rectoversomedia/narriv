@@ -67,7 +67,7 @@ function ConfidenceChip({ confidence, t }: { confidence: Confidence; t: (key: st
     },
     low: {
       label: t("confidenceLow"),
-      className: "bg-slate-100 text-slate-500 border border-slate-200",
+      className: "bg-slate-100 text-[#5A6478] border border-slate-200",
     },
   };
   const { label, className } = map[confidence];
@@ -83,10 +83,10 @@ function TypingIndicator({ text }: { text: string }) {
   return (
     <div className="flex items-start gap-3 px-4">
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10">
-        <BotMessageSquare size={15} className="text-[#465FFF]" />
+        <BotMessageSquare size={15} className="text-[#3B52F5]" />
       </div>
       <div className="flex flex-col gap-1.5 rounded-2xl rounded-tl-sm border border-slate-100 bg-white px-4 py-3 shadow-sm">
-        <p className="text-[12px] font-semibold text-slate-500">{text}</p>
+        <p className="text-[12px] font-semibold text-[#5A6478]">{text}</p>
         <div className="flex items-center gap-1">
           <span className="h-1.5 w-1.5 typing-dot rounded-full bg-slate-300 [animation-delay:0ms]" />
           <span className="h-1.5 w-1.5 typing-dot rounded-full bg-slate-300 [animation-delay:150ms]" />
@@ -257,12 +257,12 @@ export default function AskPage() {
           {/* Title */}
           <div className="mb-3 flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#465FFF]/10">
-              <BotMessageSquare size={16} className="text-[#465FFF]" />
+              <BotMessageSquare size={16} className="text-[#3B52F5]" />
             </div>
             {sidebarOpen && (
               <div>
                 <p className="text-[14px] font-black text-slate-900">{tAsk("title")}</p>
-                <p className="text-[11px] font-semibold text-slate-500">{tAsk("subtitle")}</p>
+                <p className="text-[11px] font-semibold text-[#5A6478]">{tAsk("subtitle")}</p>
               </div>
             )}
           </div>
@@ -270,7 +270,7 @@ export default function AskPage() {
           {/* Suggested questions */}
           {sidebarOpen && (
             <div className="flex flex-col gap-1">
-              <p className="mb-1 px-1 text-[10px] font-black uppercase tracking-wider text-slate-500">
+              <p className="mb-1 px-1 text-[10px] font-black uppercase tracking-wider text-[#5A6478]">
                 Suggested
               </p>
               {SUGGESTED_CATEGORIES.map((cat) => {
@@ -286,7 +286,7 @@ export default function AskPage() {
                     className="flex items-start gap-2.5 rounded-xl border border-transparent px-3 py-2.5 text-left transition-all hover:border-[#465FFF]/15 hover:bg-[#465FFF]/5 active:scale-[0.98]"
                   >
                     <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[#465FFF]/10">
-                      <Icon size={12} className="text-[#465FFF]" />
+                      <Icon size={12} className="text-[#3B52F5]" />
                     </span>
                     <span className="text-[12px] font-semibold leading-snug text-slate-700">
                       {cat.question}
@@ -308,16 +308,16 @@ export default function AskPage() {
               type="button"
               onClick={() => setSidebarOpen(o => !o)}
               aria-label="Toggle sidebar"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-100 text-slate-500 transition hover:border-[#465FFF]/20 hover:text-[#465FFF] lg:hidden"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-100 text-[#5A6478] transition hover:border-[#465FFF]/20 hover:text-[#3B52F5] lg:hidden"
             >
               {sidebarOpen ? <ChevronDown size={14} className="rotate-90" /> : <ChevronRight size={14} />}
             </button>
             <div className="flex items-center gap-2">
-              <BotMessageSquare size={18} className="text-[#465FFF]" />
+              <BotMessageSquare size={18} className="text-[#3B52F5]" />
               <h1 className="text-[15px] font-black text-slate-900">{tAsk("title")}</h1>
             </div>
             {lastModel && (
-              <span title="Model that produced the latest answer" className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold text-slate-500">
+              <span title="Model that produced the latest answer" className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold text-[#5A6478]">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#12B76A]" />
                 {lastModel}
               </span>
@@ -328,7 +328,7 @@ export default function AskPage() {
             <button
               type="button"
               onClick={clearChat}
-              className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-[12px] font-bold text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700"
+              className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-[12px] font-bold text-[#5A6478] transition hover:border-red-200 hover:bg-red-50 hover:text-red-700"
             >
               Clear
             </button>
@@ -352,7 +352,7 @@ export default function AskPage() {
               return (
                 <div key={msg.id} className="flex items-start gap-3">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10">
-                    <BotMessageSquare size={14} className="text-[#465FFF]" />
+                    <BotMessageSquare size={14} className="text-[#3B52F5]" />
                   </div>
                   <div className="flex-1 rounded-2xl rounded-tl-sm border border-slate-100 bg-white px-5 py-4 shadow-sm">
                     {/* Demo badge */}
@@ -391,7 +391,7 @@ export default function AskPage() {
                       <div className="mt-3 grid grid-cols-3 gap-2">
                         {msg.metrics.map((m, i) => (
                           <div key={i} className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5 text-center">
-                            <p className="text-[11px] font-bold text-slate-500">{m.label}</p>
+                            <p className="text-[11px] font-bold text-[#5A6478]">{m.label}</p>
                             <p className="mt-0.5 text-[14px] font-black text-slate-900">{m.value || "—"}</p>
                           </div>
                         ))}
@@ -401,18 +401,18 @@ export default function AskPage() {
                     {/* Evidence bullets */}
                     {msg.evidence && msg.evidence.length > 0 && (
                       <ul className="mt-3 space-y-1.5">
-                        <li className="text-[10px] font-black uppercase tracking-wide text-slate-500">Sources cited</li>
+                        <li className="text-[10px] font-black uppercase tracking-wide text-[#5A6478]">Sources cited</li>
                         {msg.evidence.map((e) => {
                           const label = e.title || e.id;
                           const kind = e.kind === "alert" ? "Alert" : e.kind === "narrative" ? "Narrative" : e.kind === "signal" ? "Signal" : "Record";
                           const href = e.kind === "signal" ? e.url : e.kind === "alert" ? `/alerts/${e.id}` : e.kind === "narrative" ? "/intelligence" : null;
                           return (
-                            <li key={e.id} className="flex items-start gap-2 text-[12px] font-semibold text-slate-500">
+                            <li key={e.id} className="flex items-start gap-2 text-[12px] font-semibold text-[#5A6478]">
                               <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#465FFF]/40" />
                               <span className="min-w-0">
-                                <span className="mr-1.5 text-[10px] font-black uppercase text-slate-500">{kind}</span>
+                                <span className="mr-1.5 text-[10px] font-black uppercase text-[#5A6478]">{kind}</span>
                                 {href ? (
-                                  <a href={href} {...(e.kind === "signal" ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="text-[#465FFF] underline-offset-2 hover:underline">{label}</a>
+                                  <a href={href} {...(e.kind === "signal" ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="text-[#3B52F5] underline-offset-2 hover:underline">{label}</a>
                                 ) : (
                                   label
                                 )}
@@ -430,7 +430,7 @@ export default function AskPage() {
                           <a
                             key={link.href}
                             href={link.href}
-                            className="inline-flex items-center gap-1 text-[12px] font-bold text-[#465FFF] transition hover:text-[#6E44E8] hover:underline"
+                            className="inline-flex items-center gap-1 text-[12px] font-bold text-[#3B52F5] transition hover:text-[#6E44E8] hover:underline"
                           >
                             {link.label}
                             <ChevronRight size={12} />
@@ -446,10 +446,10 @@ export default function AskPage() {
             {isTyping && (
               <div className="flex items-start gap-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10">
-                  <BotMessageSquare size={14} className="text-[#465FFF]" />
+                  <BotMessageSquare size={14} className="text-[#3B52F5]" />
                 </div>
                 <div className="rounded-2xl rounded-tl-sm border border-slate-100 bg-white px-5 py-4 shadow-sm">
-                  <p className="mb-2 text-[12px] font-semibold text-slate-500">{tAsk("thinking")}</p>
+                  <p className="mb-2 text-[12px] font-semibold text-[#5A6478]">{tAsk("thinking")}</p>
                   <div className="flex items-center gap-1">
                     <span className="h-2 w-2 typing-dot rounded-full bg-[#465FFF]/40 [animation-delay:0ms]" />
                     <span className="h-2 w-2 typing-dot rounded-full bg-[#465FFF]/40 [animation-delay:150ms]" />
@@ -474,7 +474,7 @@ export default function AskPage() {
                 onKeyDown={handleKeyDown}
                 placeholder={tAsk("placeholder")}
                 rows={1}
-                className="w-full resize-none bg-transparent text-[13px] font-semibold text-slate-900 placeholder:text-slate-500 focus:outline-none"
+                className="w-full resize-none bg-transparent text-[13px] font-semibold text-slate-900 placeholder:text-[#5A6478] focus:outline-none"
                 style={{ minHeight: "20px", maxHeight: "120px" }}
                 onInput={e => {
                   const t = e.target as HTMLTextAreaElement;
@@ -493,7 +493,7 @@ export default function AskPage() {
               <Send size={16} />
             </button>
           </div>
-          <p className="mx-auto mt-2 max-w-3xl text-center text-[11px] font-semibold text-slate-500">
+          <p className="mx-auto mt-2 max-w-3xl text-center text-[11px] font-semibold text-[#5A6478]">
             Press Enter to send · Shift+Enter for new line
           </p>
         </div>

@@ -45,6 +45,8 @@ import { useUiStore } from "@/store/useUiStore";
 import { useToast } from "@/components/ui/toast";
 import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components/create-action-plan-modal";
 import { TopicMapCanvas } from "@/components/intelligence/topic-map-canvas";
+import { readableTone } from "@/lib/readable-tone";
+import { DemoBanner } from "@/components/ui/demo-banner";
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type LocalizedText = { en: string; id: string };
 
@@ -626,12 +628,7 @@ export default function IntelligencePage() {
     <div className="flex flex-col gap-4 pb-8 text-[#101334]">
       {/* Demo Mode Banner */}
       {isDemoSession && (
-        <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
-          <Sparkles size={16} className="text-[#6E44E8]" />
-          <p className="text-[13px] font-bold text-[#6E44E8]">
-            Demo workspace — some content on this page may be illustrative examples rather than live data
-          </p>
-        </div>
+        <DemoBanner />
       )}
 
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -647,7 +644,7 @@ export default function IntelligencePage() {
             className="flex h-10 items-center justify-center gap-2 rounded-[10px] border border-[#E5E9F3] bg-white px-3.5 text-xs font-extrabold text-[#475070] shadow-sm transition hover:bg-[#F8FAFF] disabled:opacity-60"
             title="Trigger dynamic narrative clustering"
           >
-            <RefreshCcw size={14} className={cn("text-[#465FFF]", isSyncingClusters && "animate-spin")} />
+            <RefreshCcw size={14} className={cn("text-[#3B52F5]", isSyncingClusters && "animate-spin")} />
             <span>{isSyncingClusters ? (language === "id" ? "Memproses..." : "Clustering...") : (language === "id" ? "Sinkronkan Kluster" : "Sync Clusters")}</span>
           </button>
 
@@ -670,7 +667,7 @@ export default function IntelligencePage() {
                   }}
                   className={cn(
                     "flex w-full items-center justify-between rounded-[9px] px-3 py-2.5 text-left text-[12px] font-black transition",
-                    selectedPeriod.key === option.key ? "bg-[#465FFF]/10 text-[#465FFF]" : "text-[#475070] hover:bg-[#F8FAFF]"
+                    selectedPeriod.key === option.key ? "bg-[#465FFF]/10 text-[#3B52F5]" : "text-[#475070] hover:bg-[#F8FAFF]"
                   )}
                 >
                   {ti(`periods.${option.key}`)}
@@ -708,14 +705,14 @@ export default function IntelligencePage() {
                 <div className="flex flex-wrap items-center gap-2">
                   {/* Impact filter (All Topics) */}
                   <div className="relative" ref={impactMenuRef}>
-                    <button type="button" onClick={() => { setIsImpactMenuOpen((o) => !o); setIsSentimentMenuOpen(false); }} aria-expanded={isImpactMenuOpen} className={cn("flex h-9 items-center gap-2 rounded-[9px] border bg-white px-3 text-[11px] font-extrabold shadow-sm transition hover:bg-[#F8FAFF]", impactFilter !== "all" ? "border-[#465FFF]/30 text-[#465FFF]" : "border-[#E5E9F3] text-[#4F5877]")}>
+                    <button type="button" onClick={() => { setIsImpactMenuOpen((o) => !o); setIsSentimentMenuOpen(false); }} aria-expanded={isImpactMenuOpen} className={cn("flex h-9 items-center gap-2 rounded-[9px] border bg-white px-3 text-[11px] font-extrabold shadow-sm transition hover:bg-[#F8FAFF]", impactFilter !== "all" ? "border-[#465FFF]/30 text-[#3B52F5]" : "border-[#E5E9F3] text-[#4F5877]")}>
                       {impactFilter === "all" ? ti("topicMap.allTopics") : ti(`topicMap.impact.${impactFilter}`)}
                       <ChevronDown size={13} className={cn("text-[#647099] transition", isImpactMenuOpen && "rotate-180")} />
                     </button>
                     {isImpactMenuOpen ? (
                       <div className="absolute left-0 top-full z-50 mt-2 min-w-[170px] overflow-hidden rounded-[12px] border border-[#E5E9F3] bg-white p-1.5 shadow-[0_16px_40px_rgba(16,24,40,0.12)]">
                         {impactOptions.map((opt) => (
-                          <button key={opt} type="button" onClick={() => { setImpactFilter(opt); setSelectedClusterId(null); setIsImpactMenuOpen(false); }} className={cn("flex w-full items-center justify-between rounded-[9px] px-3 py-2.5 text-left text-[12px] font-black transition", impactFilter === opt ? "bg-[#465FFF]/10 text-[#465FFF]" : "text-[#475070] hover:bg-[#F8FAFF]")}>
+                          <button key={opt} type="button" onClick={() => { setImpactFilter(opt); setSelectedClusterId(null); setIsImpactMenuOpen(false); }} className={cn("flex w-full items-center justify-between rounded-[9px] px-3 py-2.5 text-left text-[12px] font-black transition", impactFilter === opt ? "bg-[#465FFF]/10 text-[#3B52F5]" : "text-[#475070] hover:bg-[#F8FAFF]")}>
                             {opt === "all" ? ti("topicMap.allTopics") : ti(`topicMap.impact.${opt}`)}
                             {impactFilter === opt ? <Check size={14} /> : null}
                           </button>
@@ -725,7 +722,7 @@ export default function IntelligencePage() {
                   </div>
                   {/* Sentiment filter */}
                   <div className="relative" ref={sentimentMenuRef}>
-                    <button type="button" onClick={() => { setIsSentimentMenuOpen((o) => !o); setIsImpactMenuOpen(false); }} aria-expanded={isSentimentMenuOpen} className={cn("flex h-9 items-center gap-2 rounded-[9px] border bg-white px-3 text-[11px] font-extrabold shadow-sm transition hover:bg-[#F8FAFF]", sentimentFilter !== "all" ? "border-[#465FFF]/30 text-[#465FFF]" : "border-[#E5E9F3] text-[#4F5877]")}>
+                    <button type="button" onClick={() => { setIsSentimentMenuOpen((o) => !o); setIsImpactMenuOpen(false); }} aria-expanded={isSentimentMenuOpen} className={cn("flex h-9 items-center gap-2 rounded-[9px] border bg-white px-3 text-[11px] font-extrabold shadow-sm transition hover:bg-[#F8FAFF]", sentimentFilter !== "all" ? "border-[#465FFF]/30 text-[#3B52F5]" : "border-[#E5E9F3] text-[#4F5877]")}>
                       <Filter size={13} className="text-[#647099]" />
                       {sentimentFilter === "all" ? ti("topicMap.filter") : ti(`topicMap.sentiment.${sentimentFilter}`)}
                       <ChevronDown size={13} className={cn("text-[#647099] transition", isSentimentMenuOpen && "rotate-180")} />
@@ -733,7 +730,7 @@ export default function IntelligencePage() {
                     {isSentimentMenuOpen ? (
                       <div className="absolute left-0 top-full z-50 mt-2 min-w-[170px] overflow-hidden rounded-[12px] border border-[#E5E9F3] bg-white p-1.5 shadow-[0_16px_40px_rgba(16,24,40,0.12)]">
                         {sentimentOptions.map((opt) => (
-                          <button key={opt} type="button" onClick={() => { setSentimentFilter(opt); setSelectedClusterId(null); setIsSentimentMenuOpen(false); }} className={cn("flex w-full items-center justify-between rounded-[9px] px-3 py-2.5 text-left text-[12px] font-black transition", sentimentFilter === opt ? "bg-[#465FFF]/10 text-[#465FFF]" : "text-[#475070] hover:bg-[#F8FAFF]")}>
+                          <button key={opt} type="button" onClick={() => { setSentimentFilter(opt); setSelectedClusterId(null); setIsSentimentMenuOpen(false); }} className={cn("flex w-full items-center justify-between rounded-[9px] px-3 py-2.5 text-left text-[12px] font-black transition", sentimentFilter === opt ? "bg-[#465FFF]/10 text-[#3B52F5]" : "text-[#475070] hover:bg-[#F8FAFF]")}>
                             {opt === "all" ? ti("topicMap.filterAll") : ti(`topicMap.sentiment.${opt}`)}
                             {sentimentFilter === opt ? <Check size={14} /> : null}
                           </button>
@@ -843,7 +840,7 @@ export default function IntelligencePage() {
                     return (
                       <div key={phase.key} className="flex min-h-[150px] min-w-0 flex-col justify-between rounded-[12px] border border-[#EEF1F7] bg-[#FBFCFF] p-3">
                         <div>
-                          <p className="text-[10px] font-black uppercase tracking-[0.06em]" style={{ color: toneStyle.color }}>{ti(`lifecycle.phases.${phase.key}.title`)}</p>
+                          <p className="text-[10px] font-black uppercase tracking-[0.06em]" style={{ color: readableTone(toneStyle.color) }}>{ti(`lifecycle.phases.${phase.key}.title`)}</p>
                           <p className="mt-2 text-[27px] font-black leading-none tracking-[-0.04em] text-[#101334]">{phase.count}</p>
                           <p className="mt-2 text-[10px] font-bold leading-snug text-[#647099]">{ti(`lifecycle.phases.${phase.key}.desc`)}</p>
                         </div>
@@ -862,7 +859,7 @@ export default function IntelligencePage() {
             <CardContent className="p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h3 className="text-[15px] font-black tracking-[-0.02em] text-[#101334]">{ti("growingClusters.title")}</h3>
-                <button type="button" onClick={() => setIsAllClustersModalOpen(true)} className="text-[11px] font-black text-[#465FFF] transition hover:text-[#465FFF]">
+                <button type="button" onClick={() => setIsAllClustersModalOpen(true)} className="text-[11px] font-black text-[#3B52F5] transition hover:text-[#3B52F5]">
                   {ti("growingClusters.viewAll")}
                 </button>
               </div>
@@ -885,7 +882,7 @@ export default function IntelligencePage() {
                         <ClusterIcon tone={cluster.tone} />
                         <span className="min-w-0">
                           <span className="block truncate text-[12px] font-black text-[#101334]">{text(cluster.topic, language)}</span>
-                          <span className="mt-1 block text-[10px] font-bold text-[#647099]">{ti("labels.signals", { count: formatSignals(cluster.signals) })}</span>
+                          <span className="mt-1 block text-[10px] font-bold text-[#5F6B94]">{ti("labels.signals", { count: formatSignals(cluster.signals) })}</span>
                         </span>
                       </span>
                       <TrendBadge value={cluster.growth} tone={cluster.tone} className="shrink-0 px-2 py-0.5 text-[10px]" />
@@ -952,7 +949,7 @@ export default function IntelligencePage() {
               </div>
               <div className="mt-3 rounded-[12px] bg-[#F6F8FF] p-3">
                 <div className="flex items-start gap-2.5">
-                  <Sparkles size={15} className="mt-0.5 shrink-0 text-[#465FFF]" />
+                  <Sparkles size={15} className="mt-0.5 shrink-0 text-[#3B52F5]" />
                   <div>
                     <p className="text-[10px] font-black text-[#53608C]">{ti("selectedNarrative.aiRec")}</p>
                     <p className="mt-1 text-[11px] font-semibold leading-relaxed text-[#53608C]">{text(selectedCluster.aiRec, language)}</p>
@@ -989,7 +986,7 @@ export default function IntelligencePage() {
                   })}
                 </div>
               </div>
-              <button type="button" onClick={() => setIsLandscapeOpen(true)} className="mt-3 flex w-full items-center justify-center gap-1.5 text-[11px] font-extrabold text-[#465FFF] transition hover:text-[#465FFF]">
+              <button type="button" onClick={() => setIsLandscapeOpen(true)} className="mt-3 flex w-full items-center justify-center gap-1.5 text-[11px] font-extrabold text-[#3B52F5] transition hover:text-[#3B52F5]">
                 {ti("competitorShare.viewLandscape")}
                 <ChevronRight size={13} />
               </button>
@@ -1154,7 +1151,7 @@ export default function IntelligencePage() {
                         <ClusterIcon tone={cluster.tone} />
                         <span className="min-w-0">
                           <span className="block truncate text-[12px] font-black text-[#101334]">{text(cluster.topic, language)}</span>
-                          <span className="mt-1 block text-[10px] font-bold text-[#647099]">{ti("labels.signals", { count: formatSignals(cluster.signals) })}</span>
+                          <span className="mt-1 block text-[10px] font-bold text-[#5F6B94]">{ti("labels.signals", { count: formatSignals(cluster.signals) })}</span>
                         </span>
                       </span>
                       <TrendBadge value={cluster.growth} tone={cluster.tone} className="shrink-0 px-2 py-0.5 text-[10px]" />
@@ -1177,7 +1174,7 @@ const SENTIMENT_CHIP: Record<string, string> = {
   negative: "border-rose-200 bg-rose-50 text-rose-700",
   neutral: "border-slate-200 bg-slate-50 text-slate-600",
   mixed: "border-amber-200 bg-amber-50 text-amber-700",
-  unanalyzed: "border-dashed border-slate-300 bg-white text-slate-500",
+  unanalyzed: "border-dashed border-slate-300 bg-white text-[#5A6478]",
 };
 
 function formatDate(iso?: string | null) {
@@ -1231,7 +1228,7 @@ function NarrativeEvidence({ detail }: { detail: NarrativeDetailRecord }) {
               <li key={sig.id} className="rounded-lg border border-[#EEF1F7] p-3">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   {sig.url ? (
-                    <a href={sig.url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-[#101334] underline-offset-2 hover:text-[#465FFF] hover:underline">{sig.title}</a>
+                    <a href={sig.url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-[#101334] underline-offset-2 hover:text-[#3B52F5] hover:underline">{sig.title}</a>
                   ) : (
                     <p className="text-sm font-bold text-[#101334]">{sig.title}</p>
                   )}

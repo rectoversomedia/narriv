@@ -24,7 +24,7 @@ export function PlatformBarChart({ title, data, colors = DEFAULT_COLORS }: Platf
       <h3 className="text-slate-900 font-bold tracking-tight mb-4">{title}</h3>
       <div className="chart-enter flex-1 w-full">
         {activeData.length === 0 ? (
-          <div className="text-slate-500 w-full h-full flex items-center justify-center text-sm">
+          <div className="text-[#5A6478] w-full h-full flex items-center justify-center text-sm">
             No data available
           </div>
         ) : (

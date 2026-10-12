@@ -50,7 +50,7 @@ export function DemoFallback({
       </div>
       <div className="space-y-1">
         <p className="text-[15px] font-bold text-slate-900">{title}</p>
-        <p className="mx-auto max-w-md text-[12px] font-medium text-slate-500">{description}</p>
+        <p className="mx-auto max-w-md text-[12px] font-medium text-[#5A6478]">{description}</p>
       </div>
       <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
         {showTryDemo && (
@@ -91,7 +91,7 @@ interface CompactInlineProps {
 export function CompactInline({ message, onRetry, variant = "empty" }: CompactInlineProps) {
   const styles = {
     error: "border-[#EF4444]/20 bg-[#FEF2F2] text-[#991B1B]",
-    empty: "border-slate-200 bg-slate-50 text-slate-500",
+    empty: "border-slate-200 bg-slate-50 text-[#5A6478]",
   };
 
   return (

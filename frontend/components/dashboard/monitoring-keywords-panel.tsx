@@ -83,13 +83,13 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
   return (
     <section id="keywords" className={cn("scroll-mt-24 rounded-[14px] border border-[#DDE3EF] bg-white p-6 shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)}>
       <div className="flex items-start gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#465FFF]">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#3B52F5]">
           <Search size={18} strokeWidth={2.3} />
         </span>
         <div className="min-w-0">
           <h3 className="text-[13.5px] font-black text-[#101334]">{t("title")}</h3>
           <p className="text-[10px] font-semibold text-[#5F6B94]">{t("desc")}</p>
-          {keywordsQuery.data?.note ? <p className="mt-1 text-[10px] font-semibold text-slate-500">{keywordsQuery.data.note}</p> : null}
+          {keywordsQuery.data?.note ? <p className="mt-1 text-[10px] font-semibold text-[#5A6478]">{keywordsQuery.data.note}</p> : null}
         </div>
       </div>
 
@@ -128,11 +128,11 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
               </button>
             </form>
           ) : (
-            <p className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[10.5px] font-semibold text-slate-500">{t("readOnly")}</p>
+            <p className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[10.5px] font-semibold text-[#5A6478]">{t("readOnly")}</p>
           )}
 
           {keywords.length === 0 ? (
-            <p className="mt-4 text-[11px] font-semibold text-slate-500">{t("empty")}</p>
+            <p className="mt-4 text-[11px] font-semibold text-[#5A6478]">{t("empty")}</p>
           ) : (
             <ul className="mt-4 divide-y divide-[#EEF1F7]">
               {keywords.map((k) => (
@@ -158,14 +158,14 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
                       <button type="submit" disabled={busy} title={t("save")} className="rounded-md border border-[#DDE3EF] p-1.5 text-emerald-700 hover:bg-emerald-50">
                         <Check size={13} />
                       </button>
-                      <button type="button" onClick={() => setEditing(null)} title={t("cancel")} className="rounded-md border border-[#DDE3EF] p-1.5 text-slate-500 hover:bg-slate-50">
+                      <button type="button" onClick={() => setEditing(null)} title={t("cancel")} className="rounded-md border border-[#DDE3EF] p-1.5 text-[#5A6478] hover:bg-slate-50">
                         <X size={13} />
                       </button>
                     </form>
                   ) : (
                     <>
                       <span className="min-w-0 flex-1">
-                        <span className={cn("block truncate text-[11.5px] font-black", k.isActive ? "text-[#101334]" : "text-slate-500")}>{k.keyword}</span>
+                        <span className={cn("block truncate text-[11.5px] font-black", k.isActive ? "text-[#101334]" : "text-[#5A6478]")}>{k.keyword}</span>
                         <LastRunLine keyword={k} t={t} />
                       </span>
                       <KeywordStatus keyword={k} t={t} />
@@ -176,7 +176,7 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
                             disabled={busy}
                             onClick={() => updateMutation.mutate({ id: k.id, input: { isActive: !k.isActive } })}
                             title={k.isActive ? t("deactivate") : t("activate")}
-                            className="rounded-md border border-[#DDE3EF] p-1.5 text-slate-500 hover:bg-slate-50 disabled:opacity-50"
+                            className="rounded-md border border-[#DDE3EF] p-1.5 text-[#5A6478] hover:bg-slate-50 disabled:opacity-50"
                           >
                             {k.isActive ? <Pause size={12} /> : <Play size={12} />}
                           </button>
@@ -185,7 +185,7 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
                             disabled={busy}
                             onClick={() => setEditing({ id: k.id, value: k.keyword })}
                             title={t("rename")}
-                            className="rounded-md border border-[#DDE3EF] p-1.5 text-slate-500 hover:bg-slate-50 disabled:opacity-50"
+                            className="rounded-md border border-[#DDE3EF] p-1.5 text-[#5A6478] hover:bg-slate-50 disabled:opacity-50"
                           >
                             <Pencil size={12} />
                           </button>
@@ -194,7 +194,7 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
                             disabled={busy}
                             onClick={() => setToDelete(k)}
                             title={t("delete")}
-                            className="rounded-md border border-[#DDE3EF] p-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"
+                            className="rounded-md border border-[#DDE3EF] p-1.5 text-[#5A6478] hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"
                           >
                             <Trash2 size={12} />
                           </button>
@@ -230,7 +230,7 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
 const STATUS_STYLE: Record<string, string> = {
   active: "border-[#CDEEDD] bg-[#F1FCF6] text-[#047857]",
   failing: "border-rose-200 bg-rose-50 text-rose-700",
-  paused: "border-slate-200 bg-slate-100 text-slate-500",
+  paused: "border-slate-200 bg-slate-100 text-[#5A6478]",
   awaiting_first_run: "border-sky-200 bg-sky-50 text-sky-700",
   not_in_rotation: "border-amber-200 bg-amber-50 text-amber-700",
 };
@@ -254,7 +254,7 @@ function LastRunLine({ keyword, t }: { keyword: MonitoringKeyword; t: T }) {
   }
   if (run.status === "deferred") return null;
   return (
-    <span className="block text-[9.5px] font-semibold text-slate-500">
+    <span className="block text-[9.5px] font-semibold text-[#5A6478]">
       {t("lastRun", { time: timeAgo(run.at), fetched: run.fetched ?? 0, inserted: run.inserted ?? 0, duplicates: run.deduplicated ?? 0 })}
     </span>
   );

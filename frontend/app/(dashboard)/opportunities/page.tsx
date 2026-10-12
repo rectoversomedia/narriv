@@ -59,10 +59,10 @@ const OPPORTUNITY_TYPE_CONFIG: Record<
 };
 
 const PRIORITY_CONFIG: Record<Priority, { label: string; bg: string; text: string; border: string }> = {
-  Immediate: { label: "Immediate", bg: "bg-red-50",   text: "text-red-600",   border: "border-red-200"   },
+  Immediate: { label: "Immediate", bg: "bg-red-50",   text: "text-red-700",   border: "border-red-200"   },
   High:      { label: "High",      bg: "bg-amber-50",  text: "text-amber-700", border: "border-amber-200" },
   Medium:    { label: "Medium",    bg: "bg-blue-50",   text: "text-blue-600",  border: "border-blue-200"  },
-  Low:       { label: "Low",       bg: "bg-slate-50",  text: "text-slate-500", border: "border-slate-200" },
+  Low:       { label: "Low",       bg: "bg-slate-50",  text: "text-[#5A6478]", border: "border-slate-200" },
 };
 
 const CONFIDENCE_CONFIG: Record<Confidence, { variant: "green" | "amber" | "slate" }> = {
@@ -73,7 +73,7 @@ const CONFIDENCE_CONFIG: Record<Confidence, { variant: "green" | "amber" | "slat
 
 const TREND_CONFIG: Record<TrendDirection, { label: string; icon: typeof TrendingUp; color: string }> = {
   growing:   { label: "Growing",   icon: TrendingUp, color: "text-[#047857]" },
-  stable:    { label: "Stable",    icon: BarChart3,  color: "text-slate-500" },
+  stable:    { label: "Stable",    icon: BarChart3,  color: "text-[#5A6478]" },
   declining: { label: "Declining", icon: AlertTriangle, color: "text-red-700" },
 };
 
@@ -231,7 +231,7 @@ function OpportunityCard({ opp, t }: { opp: Opportunity; t: (key: string) => str
 
       {/* Why It Matters */}
       <div className="mb-3">
-        <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+        <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-[#5A6478]">
           {t("whyItMatters")}
         </p>
         <p className="text-[13px] leading-relaxed text-[#5F6B94]">{opp.whyItMatters}</p>
@@ -245,7 +245,7 @@ function OpportunityCard({ opp, t }: { opp: Opportunity; t: (key: string) => str
           priorityCfg.border
         )}
       >
-        <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+        <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-[#5A6478]">
           {t("recommendedAction")}
         </p>
         <p className="text-[13px] font-medium text-[#101334]">{opp.recommendedAction}</p>
@@ -255,15 +255,15 @@ function OpportunityCard({ opp, t }: { opp: Opportunity; t: (key: string) => str
       <div className="mt-auto grid grid-cols-2 gap-x-4 gap-y-2 border-t border-slate-100 pt-4">
         {/* Potential Impact */}
         <div className="flex items-center gap-1.5">
-          <Eye size={12} className="shrink-0 text-slate-500" />
-          <span className="text-[11px] text-slate-500">{t("potentialImpact")}:</span>
+          <Eye size={12} className="shrink-0 text-[#5A6478]" />
+          <span className="text-[11px] text-[#5A6478]">{t("potentialImpact")}:</span>
           <span className="text-[11px] font-bold text-[#101334]">{opp.potentialImpact}</span>
         </div>
 
         {/* Confidence */}
         <div className="flex items-center gap-1.5">
-          <Target size={12} className="shrink-0 text-slate-500" />
-          <span className="text-[11px] text-slate-500">{t("confidence")}:</span>
+          <Target size={12} className="shrink-0 text-[#5A6478]" />
+          <span className="text-[11px] text-[#5A6478]">{t("confidence")}:</span>
           <Badge variant={confidenceCfg.variant} className="text-[10px] px-1.5 py-0">
             {opp.confidence}
           </Badge>
@@ -272,14 +272,14 @@ function OpportunityCard({ opp, t }: { opp: Opportunity; t: (key: string) => str
         {/* Trend */}
         <div className="flex items-center gap-1.5">
           <TrendIcon size={12} className={cn("shrink-0", trendCfg.color)} />
-          <span className="text-[11px] text-slate-500">{t("trend")}:</span>
+          <span className="text-[11px] text-[#5A6478]">{t("trend")}:</span>
           <span className={cn("text-[11px] font-bold", trendCfg.color)}>{trendCfg.label}</span>
         </div>
 
         {/* Created */}
         <div className="flex items-center gap-1.5">
-          <Clock size={12} className="shrink-0 text-slate-500" />
-          <span className="text-[11px] text-slate-500">{t("created")}:</span>
+          <Clock size={12} className="shrink-0 text-[#5A6478]" />
+          <span className="text-[11px] text-[#5A6478]">{t("created")}:</span>
           <span className="text-[11px] font-bold text-[#101334]">
             {new Date(opp.createdAt).toLocaleDateString("en-GB", {
               day: "numeric",
@@ -326,10 +326,10 @@ function MetricCard({
           <span className={cn("flex h-7 w-7 items-center justify-center rounded-[7px]", style.bg, style.text)}>
             <Icon size={14} />
           </span>
-          <span className="text-[11px] font-semibold text-slate-500">{label}</span>
+          <span className="text-[11px] font-semibold text-[#5A6478]">{label}</span>
         </div>
         <p className="text-[22px] font-black tracking-[-0.02em] text-[#101334]">{value}</p>
-        {helper && <p className="text-[11px] font-medium text-slate-500">{helper}</p>}
+        {helper && <p className="text-[11px] font-medium text-[#5A6478]">{helper}</p>}
       </CardContent>
     </Card>
   );
@@ -416,7 +416,7 @@ export default function OpportunitiesPage() {
       <div className="flex flex-col gap-3 rounded-[14px] border border-slate-100 bg-[linear-gradient(135deg,#ffffff_0%,#f8fbff_52%,#fff7ed_100%)] p-4 shadow-[0_14px_38px_rgba(16,24,40,0.04)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#465FFF]/10 text-[#465FFF]">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#465FFF]/10 text-[#3B52F5]">
               <Search size={18} />
             </span>
             <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">
@@ -430,7 +430,7 @@ export default function OpportunitiesPage() {
 
         {/* Filter bar */}
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[12px] font-semibold text-slate-500">{t("filterType")}:</span>
+          <span className="text-[12px] font-semibold text-[#5A6478]">{t("filterType")}:</span>
           {filters.map((f) => (
             <FilterChip
               key={f}
@@ -455,7 +455,7 @@ export default function OpportunitiesPage() {
           <OpportunityCard key={opp.id} opp={opp} t={(key) => t(key)} />
         ))}
         {filteredOpportunities.length === 0 && (
-          <div className="col-span-full flex min-h-40 items-center justify-center rounded-[14px] border border-dashed border-slate-200 bg-slate-50/70 text-[13px] font-bold text-slate-500">
+          <div className="col-span-full flex min-h-40 items-center justify-center rounded-[14px] border border-dashed border-slate-200 bg-slate-50/70 text-[13px] font-bold text-[#5A6478]">
             No opportunities match this filter.
           </div>
         )}

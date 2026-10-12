@@ -9,7 +9,6 @@ import {
   ArrowRight,
   BarChart3,
   Bell,
-
   ChevronDown,
   CirclePlus,
   Clock3,
@@ -25,7 +24,6 @@ import {
   RefreshCw,
   RotateCw,
   ShieldCheck,
-  Sparkles,
   Trash2,
   Webhook,
   Zap,
@@ -45,6 +43,8 @@ import { PipelineHealthPanel } from "@/components/dashboard/pipeline-health-pane
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
 import { intlLocale } from "@/store/useUiStore";
+import { readableTone } from "@/lib/readable-tone";
+import { DemoBanner } from "@/components/ui/demo-banner";
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate" | "pink" | "black" | "orange";
 
 type Connector = {
@@ -71,12 +71,12 @@ type ToneStyle = {
 };
 
 const toneStyles: Record<Tone, ToneStyle> = {
-  blue: { color: "#465FFF", rgb: "70,95,255", bg: "bg-[#465FFF]/10 text-[#465FFF]" },
+  blue: { color: "#465FFF", rgb: "70,95,255", bg: "bg-[#465FFF]/10 text-[#3B52F5]" },
   purple: { color: "#8B5CFF", rgb: "139,92,255", bg: "bg-[#8B5CFF]/10 text-[#6E44E8]" },
   green: { color: "#10B981", rgb: "16,185,129", bg: "bg-[#10B981]/10 text-[#047857]" },
   red: { color: "#FF1D1D", rgb: "255,29,29", bg: "bg-[#FF1D1D]/10 text-[#FF1D1D]" },
-  amber: { color: "#F59E0B", rgb: "245,158,11", bg: "bg-[#F59E0B]/10 text-[#B45309]" },
-  slate: { color: "#64748B", rgb: "100,116,139", bg: "bg-slate-100 text-slate-500" },
+  amber: { color: "#F59E0B", rgb: "245,158,11", bg: "bg-[#F59E0B]/10 text-[#A04606]" },
+  slate: { color: "#64748B", rgb: "100,116,139", bg: "bg-slate-100 text-[#5A6478]" },
   pink: { color: "#E1306C", rgb: "225,48,108", bg: "bg-[#E1306C]/10 text-[#E1306C]" },
   black: { color: "#111827", rgb: "17,24,39", bg: "bg-[#111827] text-white" },
   orange: { color: "#F97316", rgb: "249,115,22", bg: "bg-[#F97316]/10 text-[#F97316]" },
@@ -207,7 +207,7 @@ function MetricCard({ label, value, helper, icon: Icon, tone }: { label: string;
 }
 
 function Toggle({ active }: { active: boolean }) {
-  return <span className={cn("relative h-5 w-9 rounded-full transition", active ? "bg-[#465FFF]" : "bg-[#CBD5E1]")}><span className={cn("absolute top-0.5 size-4 rounded-full bg-white shadow transition", active ? "left-4" : "left-0.5")} /></span>;
+  return <span className={cn("relative inline-block h-5 w-9 shrink-0 align-middle rounded-full transition", active ? "bg-[#465FFF]" : "bg-[#CBD5E1]")}><span className={cn("absolute top-0.5 size-4 rounded-full bg-white shadow transition", active ? "left-4" : "left-0.5")} /></span>;
 }
 
 function ConnectorCard({ source, selected, onSelect, onToggle, onDelete, onSync }: { source: Connector; selected: boolean; onSelect: (source: Connector) => void; onToggle?: (source: Connector) => void; onDelete?: (source: Connector) => void; onSync?: (source: Connector) => void }) {
@@ -240,7 +240,7 @@ function ConnectorCard({ source, selected, onSelect, onToggle, onDelete, onSync 
               <Trash2 size={13} />
             </button>
           )}
-          <span className={cn("rounded-full px-2.5 py-1 text-[9px] font-black", source.status === "Live" ? "bg-[#10B981]/12 text-[#047857]" : "bg-[#F59E0B]/12 text-[#B45309]")}>{source.status}</span>
+          <span className={cn("rounded-full px-2.5 py-1 text-[9px] font-black", source.status === "Live" ? "bg-[#10B981]/12 text-[#047857]" : "bg-[#F59E0B]/12 text-[#A04606]")}>{source.status}</span>
         </div>
       </div>
       <h3 className="mt-3 text-[13px] font-black text-[#101334]">
@@ -305,7 +305,7 @@ function ConnectorListRow({ source, selected, onSelect, onToggle, onDelete, onSy
         <span className="block text-[10px] uppercase tracking-wide text-[#647099]">Last Sync</span>
         <span className="text-[12px] font-black text-[#101334]">{source.lastSync}</span>
       </div>
-      <span className={cn("rounded-full px-2.5 py-1 text-center text-[9px] font-black", source.status === "Live" ? "bg-[#10B981]/12 text-[#047857]" : "bg-[#F59E0B]/12 text-[#B45309]")}>{source.status}</span>
+      <span className={cn("rounded-full px-2.5 py-1 text-center text-[9px] font-black", source.status === "Live" ? "bg-[#10B981]/12 text-[#047857]" : "bg-[#F59E0B]/12 text-[#A04606]")}>{source.status}</span>
       <div className="flex items-center gap-2">
         {onSync && (
           <button
@@ -403,7 +403,7 @@ function CategoryFilterDropdown({ value, options, onChange, label }: { value: st
                   )}
                 >
                   <span className="truncate">{option === ALL_CATEGORIES ? label : option}</span>
-                  {isActive && <Check size={12} className="shrink-0 text-[#465FFF]" />}
+                  {isActive && <Check size={12} className="shrink-0 text-[#3B52F5]" />}
                 </button>
               </li>
             );
@@ -756,12 +756,7 @@ export default function SourcesPage() {
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
       {/* Demo Workspace Banner */}
       {isDemoSession && (
-        <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
-          <Sparkles size={16} className="text-[#6E44E8]" />
-          <p className="text-[13px] font-bold text-[#6E44E8]">
-            Demo Workspace — Seeded sandbox workspace for evaluation
-          </p>
-        </div>
+        <DemoBanner />
       )}
 
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -774,7 +769,7 @@ export default function SourcesPage() {
             title="Fetch latest live news signals from RSS & Google News"
             className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[13px] font-black text-[#31406B] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-70 sm:w-fit"
           >
-            <RotateCw size={15} className={cn("text-[#465FFF]", isFetchingSignals && "animate-spin")} />
+            <RotateCw size={15} className={cn("text-[#3B52F5]", isFetchingSignals && "animate-spin")} />
             {isFetchingSignals ? "Fetching Signals..." : "Fetch Latest Signals"}
           </button>
           <button type="button" onClick={() => setIsModalOpen(true)} disabled={bootstrapMutation.isPending} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B51E0] px-4 text-[13px] font-black text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-70 sm:w-fit"><Plus size={15} />{bootstrapMutation.isPending ? toast("bootstrapInProgress") : t("add")}</button>
@@ -831,7 +826,7 @@ export default function SourcesPage() {
                     className={cn(
                       "flex size-9 items-center justify-center rounded-[8px] border transition",
                       viewMode === "grid"
-                        ? "border-[#465FFF]/40 bg-[#EEF0FF] text-[#465FFF]"
+                        ? "border-[#465FFF]/40 bg-[#EEF0FF] text-[#3B52F5]"
                         : "border-[#DDE3EF] bg-white text-[#53608C] hover:border-[#CBD5E1]"
                     )}
                   >
@@ -845,7 +840,7 @@ export default function SourcesPage() {
                     className={cn(
                       "flex size-9 items-center justify-center rounded-[8px] border transition",
                       viewMode === "list"
-                        ? "border-[#465FFF]/40 bg-[#EEF0FF] text-[#465FFF]"
+                        ? "border-[#465FFF]/40 bg-[#EEF0FF] text-[#3B52F5]"
                         : "border-[#DDE3EF] bg-white text-[#53608C] hover:border-[#CBD5E1]"
                     )}
                   >
@@ -922,7 +917,7 @@ export default function SourcesPage() {
                           type="button"
                           onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                           disabled={currentPage === 1}
-                          className="flex h-8 items-center justify-center rounded-[6px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#53608C] transition hover:bg-[#F4F6FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
+                          className="flex h-8 items-center justify-center rounded-[6px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#53608C] transition hover:bg-[#F4F6FF] hover:text-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {tPagination("prev")}
                         </button>
@@ -933,7 +928,7 @@ export default function SourcesPage() {
                           type="button"
                           onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                           disabled={currentPage === totalPages}
-                          className="flex h-8 items-center justify-center rounded-[6px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#53608C] transition hover:bg-[#F4F6FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
+                          className="flex h-8 items-center justify-center rounded-[6px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#53608C] transition hover:bg-[#F4F6FF] hover:text-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {tPagination("next")}
                         </button>
@@ -942,7 +937,7 @@ export default function SourcesPage() {
                   )}
                 </>
               )}
-              <button type="button" onClick={() => setIsModalOpen(true)} disabled={bootstrapMutation.isPending} className="mt-3 flex min-h-11 w-full items-center justify-between gap-3 rounded-[10px] border border-[#DDE3EF] bg-[#FBFCFF] px-4 py-2 text-left transition disabled:cursor-not-allowed disabled:opacity-70"><span className="flex min-w-0 items-center gap-3"><CirclePlus size={20} className="shrink-0 text-[#465FFF]" /><span className="min-w-0"><b className="block text-[13px] font-black text-[#465FFF]">{bootstrapMutation.isPending ? toast("bootstrapInProgress") : t("connect")}</b><span className="block text-[11px] font-semibold leading-snug text-[#5F6B94]">{t("connectDesc")}</span></span></span><ArrowRight size={16} className="shrink-0 text-[#53608C]" /></button>
+              <button type="button" onClick={() => setIsModalOpen(true)} disabled={bootstrapMutation.isPending} className="mt-3 flex min-h-11 w-full items-center justify-between gap-3 rounded-[10px] border border-[#DDE3EF] bg-[#FBFCFF] px-4 py-2 text-left transition disabled:cursor-not-allowed disabled:opacity-70"><span className="flex min-w-0 items-center gap-3"><CirclePlus size={20} className="shrink-0 text-[#3B52F5]" /><span className="min-w-0"><b className="block text-[13px] font-black text-[#3B52F5]">{bootstrapMutation.isPending ? toast("bootstrapInProgress") : t("connect")}</b><span className="block text-[11px] font-semibold leading-snug text-[#5F6B94]">{t("connectDesc")}</span></span></span><ArrowRight size={16} className="shrink-0 text-[#53608C]" /></button>
             </CardContent>
           </Panel>
 
@@ -958,14 +953,14 @@ export default function SourcesPage() {
         <aside className="flex flex-col gap-4">
           <Panel><CardContent className="p-5"><h2 className="text-[17px] font-black text-[#101334]">{t("healthTitle")}</h2><p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("healthDesc")}</p><div className="mt-5 grid items-center gap-5 sm:grid-cols-[128px_1fr] xl:grid-cols-1 2xl:grid-cols-[128px_1fr]"><HealthDonut total={healthSummary?.total ?? totalSources} /><div className="grid gap-3 text-[12px] font-bold text-[#53608C]"><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#10B981]" />{t("healthHealthy")}</span><b className="text-[#101334]">{healthSummary?.healthy ?? 0}</b></div><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#F59E0B]" />{t("healthWarning")}</span><b className="text-[#101334]">{healthSummary?.warning ?? 0}</b></div><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#EF4444]" />{t("healthCritical")}</span><b className="text-[#101334]">{healthSummary?.critical ?? 0}</b></div></div></div><div className="mt-5 rounded-[12px] border border-[#BFEBD9] bg-[#ECFDF6] p-4"><div className="flex items-start gap-3"><ShieldCheck size={20} className="text-[#047857]" /><span><b className="block text-[13px] font-black text-[#047857]">{healthSummary && healthSummary.total > 0 && healthSummary.healthy === healthSummary.total ? t("optimal") : t("healthNeedsAttention")}</b><span className="text-[12px] font-semibold text-[#53608C]">{healthText(healthSummary, t)}</span></span></div></div></CardContent></Panel>
 
-          <Panel><CardContent className="p-5"><div className="mb-4 flex items-start justify-between"><div><h2 className="text-[17px] font-black text-[#101334]">{t("activity")}</h2><p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("activityDesc")}</p></div></div>{recentHealthEntries.length > 0 ? <div className="grid gap-3">{recentHealthEntries.map(([id, name, status, time, tone, Icon]) => { const TypedIcon = Icon as SourceIcon; const style = toneStyles[tone as Tone]; return <div key={id} className="flex items-center justify-between gap-3"><span className="flex min-w-0 items-center gap-3"><span className="flex size-7 items-center justify-center rounded-[7px]" style={{ color: style.color, backgroundColor: `rgba(${style.rgb}, .10)` }}><TypedIcon className="size-[15px]" /></span><span className="min-w-0"><b className="block truncate text-[12px] text-[#101334]">{name}</b><span className="text-[11px] font-semibold capitalize" style={{ color: style.color }}>{status}</span></span></span><span className="shrink-0 text-[10px] font-bold text-[#5F6B94]">{time}</span><Check size={13} style={{ color: style.color }} /></div>; })}</div> : <DashboardEmptyState title={toast("activity.emptyTitle")} description={toast("activity.emptyDesc")} icon="search" minHeight="min-h-[120px]" />}</CardContent></Panel>
+          <Panel><CardContent className="p-5"><div className="mb-4 flex items-start justify-between"><div><h2 className="text-[17px] font-black text-[#101334]">{t("activity")}</h2><p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("activityDesc")}</p></div></div>{recentHealthEntries.length > 0 ? <div className="grid gap-3">{recentHealthEntries.map(([id, name, status, time, tone, Icon]) => { const TypedIcon = Icon as SourceIcon; const style = toneStyles[tone as Tone]; return <div key={id} className="flex items-center justify-between gap-3"><span className="flex min-w-0 items-center gap-3"><span className="flex size-7 items-center justify-center rounded-[7px]" style={{ color: style.color, backgroundColor: `rgba(${style.rgb}, .10)` }}><TypedIcon className="size-[15px]" /></span><span className="min-w-0"><b className="block truncate text-[12px] text-[#101334]">{name}</b><span className="text-[11px] font-semibold capitalize" style={{ color: readableTone(style.color) }}>{status}</span></span></span><span className="shrink-0 text-[10px] font-bold text-[#5F6B94]">{time}</span><Check size={13} style={{ color: style.color }} /></div>; })}</div> : <DashboardEmptyState title={toast("activity.emptyTitle")} description={toast("activity.emptyDesc")} icon="search" minHeight="min-h-[120px]" />}</CardContent></Panel>
 
           <Panel><CardContent className="p-5"><h2 className="text-[17px] font-black text-[#101334]">{t("settings")}</h2><p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("settingsDesc")}</p><div className="mt-4 grid gap-2.5">{settings.map(({ title, desc, Icon, tone, href, status }) => {
             const style = toneStyles[tone];
             const body = (
               <>
                 <span className="flex min-w-0 items-center gap-3"><span className="flex size-8 shrink-0 items-center justify-center rounded-[8px]" style={{ color: style.color, backgroundColor: `rgba(${style.rgb}, .10)` }}><Icon size={16} /></span><span><b className="block text-[12px] text-[#101334]">{title}</b><span className="text-[10px] font-semibold text-[#5F6B94]">{desc}</span></span></span>
-                <span className={cn("shrink-0 text-[10px] font-black", href ? "text-[#465FFF]" : "text-slate-500")}>{status}{href ? " →" : ""}</span>
+                <span className={cn("shrink-0 text-[10px] font-black", href ? "text-[#3B52F5]" : "text-[#5A6478]")}>{status}{href ? " →" : ""}</span>
               </>
             );
             return href ? (

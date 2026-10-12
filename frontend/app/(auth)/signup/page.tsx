@@ -91,7 +91,7 @@ export default function SignupPage() {
       topAction={
         <p className="text-[15px] font-medium text-[#111536]">
           {t("alreadyHaveAccount")}{" "}
-          <Link href="/login" className="font-semibold text-[#465FFF] hover:underline">{t("loginLink")}</Link>
+          <Link href="/login" className="font-semibold text-[#3B52F5] hover:underline">{t("loginLink")}</Link>
         </p>
       }
     >
@@ -123,7 +123,7 @@ export default function SignupPage() {
             <input id="signup-terms" type="checkbox" aria-labelledby="signup-terms-label" aria-invalid={!!errors.terms || undefined} className="mt-0.5 h-[18px] w-[18px] accent-[#465FFF]" {...register("terms")} />
             <FieldContent className="text-[14px] font-medium leading-6 text-[#111536]">
               <span id="signup-terms-label">
-                {t("termsPrefix")} <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#465FFF] hover:underline">{t("terms")}</a> {t("termsMiddle")} <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#465FFF] hover:underline">{t("privacy")}</a>
+                {t("termsPrefix")} <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#3B52F5] hover:underline">{t("terms")}</a> {t("termsMiddle")} <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#3B52F5] hover:underline">{t("privacy")}</a>
               </span>
               <FieldError className="mt-1 text-[#F04438]">{errors.terms?.message}</FieldError>
             </FieldContent>

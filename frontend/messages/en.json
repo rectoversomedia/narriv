@@ -3255,6 +3255,7 @@
     "metricActiveActions": "Active Actions",
     "metricActiveHelper": "{count} active right now",
     "metricTrendHelper": "{trend}% vs last 7 days",
+    "metricNoBaseline": "No earlier period to compare",
     "metricInProgress": "In Progress",
     "metricInProgressHelper": "{count} being worked on",
     "metricCompleted": "Completed",

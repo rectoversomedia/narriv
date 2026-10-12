@@ -36,6 +36,7 @@ import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSke
 import { getReports, getReportTemplates, createReportTemplate, updateReportTemplate, deleteReportTemplate, getReportsAnalytics, createReportExport, getReportExportStatus, downloadReportFile, getNarratives, getDashboardSummary, getReportSchedules, createReportSchedule, updateReportSchedule, deleteReportSchedule, toggleReportSchedule, generateReportFromTemplate, sendReportEmail, sendTestScheduleEmail, type PaginationInfo, type ReportRecord, type ReportsAnalyticsResponse, type NarrativeRecord, type DashboardSummary, type ReportTemplate, type ReportScheduleRecord } from "@/lib/api-service";
 import { getMockReports } from "@/lib/demo-mock-data";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
+import { DemoBanner } from "@/components/ui/demo-banner";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type ReportStatus = "READY" | "REVIEW" | "DRAFT" | "SCHEDULED" | "ARCHIVED";
@@ -50,12 +51,12 @@ type ToneStyle = {
 
 
 const toneStyles: Record<Tone, ToneStyle> = {
-  blue: { color: "#465FFF", rgb: "70,95,255", soft: "bg-[#465FFF]/10", text: "text-[#465FFF]", border: "border-[#465FFF]/15" },
+  blue: { color: "#465FFF", rgb: "70,95,255", soft: "bg-[#465FFF]/10", text: "text-[#3B52F5]", border: "border-[#465FFF]/15" },
   purple: { color: "#8B5CFF", rgb: "139,92,255", soft: "bg-[#8B5CFF]/10", text: "text-[#6E44E8]", border: "border-[#8B5CFF]/15" },
   green: { color: "#10B981", rgb: "16,185,129", soft: "bg-[#10B981]/10", text: "text-[#047857]", border: "border-[#10B981]/15" },
   red: { color: "#EF4444", rgb: "239,68,68", soft: "bg-[#EF4444]/10", text: "text-[#C81E1E]", border: "border-[#EF4444]/15" },
-  amber: { color: "#F59E0B", rgb: "245,158,11", soft: "bg-[#F59E0B]/10", text: "text-[#B45309]", border: "border-[#F59E0B]/15" },
-  slate: { color: "#64748B", rgb: "100,116,139", soft: "bg-slate-100", text: "text-slate-500", border: "border-slate-200" },
+  amber: { color: "#F59E0B", rgb: "245,158,11", soft: "bg-[#F59E0B]/10", text: "text-[#A04606]", border: "border-[#F59E0B]/15" },
+  slate: { color: "#64748B", rgb: "100,116,139", soft: "bg-slate-100", text: "text-[#5A6478]", border: "border-slate-200" },
 };
 
 type ReportRow = {
@@ -74,10 +75,10 @@ type ReportRow = {
 const reportsApiLimit = 10;
 
 const quickActions = [
-  { key: "shareStakeholder", descKey: "shareDesc", icon: Share2, color: "text-[#465FFF] bg-[#465FFF]/10" },
+  { key: "shareStakeholder", descKey: "shareDesc", icon: Share2, color: "text-[#3B52F5] bg-[#465FFF]/10" },
   { key: "scheduleReport", descKey: "scheduleDesc", icon: CalendarClock, color: "text-[#047857] bg-[#10B981]/10" },
   { key: "customReport", descKey: "customDesc", icon: Plus, color: "text-[#6E44E8] bg-[#8B5CFF]/10" },
-  { key: "viewHistory", descKey: "historyDesc", icon: Clock, color: "text-[#B45309] bg-[#F59E0B]/10" },
+  { key: "viewHistory", descKey: "historyDesc", icon: Clock, color: "text-[#A04606] bg-[#F59E0B]/10" },
 ];
 
 type FormatDistributionItem = { name: string; value: string; color: string };
@@ -280,7 +281,7 @@ function ReportPreviewSidebar({
         <>
           <div className="mt-4 rounded-[12px] border border-[#DDE3EF] bg-[#F8FAFF] p-4">
             <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[#465FFF]/10 text-[#465FFF]"><FileText size={18} /></span>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[#465FFF]/10 text-[#3B52F5]"><FileText size={18} /></span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-black text-[#101334]">{reportTitle}</p>
                 <p className="mt-0.5 text-[10px] font-bold text-[#5F6B94]">{tr("preview.latestReport")}</p>
@@ -396,9 +397,9 @@ function StatusBadge({ status }: { status: ReportStatus }) {
   const tr = useTranslations("Reports");
   const styles: Record<ReportStatus, string> = {
     READY: "bg-[#10B981]/10 text-[#047857]",
-    REVIEW: "bg-[#F59E0B]/10 text-[#B45309]",
+    REVIEW: "bg-[#F59E0B]/10 text-[#A04606]",
     DRAFT: "bg-[#8B5CFF]/10 text-[#6E44E8]",
-    SCHEDULED: "bg-[#465FFF]/10 text-[#465FFF]",
+    SCHEDULED: "bg-[#465FFF]/10 text-[#3B52F5]",
     ARCHIVED: "bg-slate-100 text-slate-600",
   };
   return <span className={cn("rounded-[7px] px-2 py-0.5 text-[9.5px] font-black tracking-[0.05em]", styles[status])}>{tr(`statusBadge.${status}`)}</span>;
@@ -546,11 +547,11 @@ function ReportsTable({
               <tr key={report.id} className="transition hover:bg-[#F8FAFF]">
                 <td className="min-w-[220px] px-3 py-3.5">
                   <div className="flex items-start gap-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[#465FFF]">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[#3B52F5]">
                       <FileText size={17} strokeWidth={2.3} />
                     </span>
                     <div className="min-w-0">
-                      <Link href={`/reports/${report.id}`} className="text-[12.5px] font-black leading-snug text-[#101334] hover:text-[#465FFF] transition-colors">
+                      <Link href={`/reports/${report.id}`} className="text-[12.5px] font-black leading-snug text-[#101334] hover:text-[#3B52F5] transition-colors">
                         {report.title}
                       </Link>
                       <p className="mt-0.5 text-[11px] font-bold leading-snug text-[#5F6B94]">{report.description}</p>
@@ -580,7 +581,7 @@ function ReportsTable({
                       type="button"
                       onClick={() => onExportFile?.(String(report.id), "csv")}
                       disabled={isFetching}
-                      className="inline-flex items-center gap-1 rounded-md border border-[#DDE3EF] bg-white px-1.5 py-1.5 text-[10px] font-black text-[#5F6B94] transition hover:bg-[#EEF2FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex items-center gap-1 rounded-md border border-[#DDE3EF] bg-white px-1.5 py-1.5 text-[10px] font-black text-[#5F6B94] transition hover:bg-[#EEF2FF] hover:text-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50"
                       title={`${tr("downloadReady")} CSV`}
                     >
                       CSV
@@ -589,7 +590,7 @@ function ReportsTable({
                       type="button"
                       onClick={() => onExportFile?.(String(report.id), "xlsx")}
                       disabled={isFetching}
-                      className="inline-flex items-center gap-1 rounded-md border border-[#DDE3EF] bg-white px-1.5 py-1.5 text-[10px] font-black text-[#5F6B94] transition hover:bg-[#EEF2FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex items-center gap-1 rounded-md border border-[#DDE3EF] bg-white px-1.5 py-1.5 text-[10px] font-black text-[#5F6B94] transition hover:bg-[#EEF2FF] hover:text-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50"
                       title={`${tr("downloadReady")} Excel`}
                     >
                       Excel
@@ -598,7 +599,7 @@ function ReportsTable({
                       type="button"
                       onClick={() => onExport(String(report.id))}
                       disabled={isFetching}
-                      className="inline-flex items-center gap-1 rounded-md border border-[#DDE3EF] bg-white px-1.5 py-1.5 text-[10px] font-black text-[#5F6B94] transition hover:bg-[#EEF2FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex items-center gap-1 rounded-md border border-[#DDE3EF] bg-white px-1.5 py-1.5 text-[10px] font-black text-[#5F6B94] transition hover:bg-[#EEF2FF] hover:text-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50"
                       aria-label={tr("exportAria", { title: report.title })}
                       title={`${tr("downloadReady")} PDF`}
                     >
@@ -809,7 +810,7 @@ function PopularReports({ reports, onViewAll }: { reports: PopularReportItem[]; 
         <div className="mt-5 space-y-3">
           {reports.length > 0 ? reports.slice(0, 5).map((report, idx) => (
             <div key={report.title} className="flex items-center gap-3">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[11px] font-black text-[#465FFF]">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[11px] font-black text-[#3B52F5]">
                 {idx + 1}
               </span>
               <div className="min-w-0 flex-1">
@@ -828,7 +829,7 @@ function PopularReports({ reports, onViewAll }: { reports: PopularReportItem[]; 
 
       {reports.length > 0 ? (
         <div className="mt-6 border-t border-[#EDF1F7] pt-4">
-          <button type="button" onClick={onViewAll} className="flex w-full items-center justify-between text-[11px] font-black text-[#465FFF] hover:text-[#3B20EA] transition-colors">
+          <button type="button" onClick={onViewAll} className="flex w-full items-center justify-between text-[11px] font-black text-[#3B52F5] hover:text-[#3B20EA] transition-colors">
             <span>{tr("popular.viewAll")}</span>
             <ArrowRight size={14} />
           </button>
@@ -1205,12 +1206,7 @@ export default function ReportsPage() {
   return (
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
       {isDemoSession && (
-        <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
-          <Sparkles size={16} className="text-[#6E44E8]" />
-          <p className="text-[13px] font-bold text-[#6E44E8]">
-            Demo Workspace — Seeded sandbox workspace for evaluation
-          </p>
-        </div>
+        <DemoBanner />
       )}
       {/* Header */}
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -1375,7 +1371,7 @@ export default function ReportsPage() {
                   {/* Email Recipients Section */}
                   <div className="rounded-[10px] border border-[#EEF1F7] bg-[#FAFBFF] p-4 space-y-3">
                     <div className="flex items-center gap-2 mb-2">
-                      <Mail size={14} className="text-[#465FFF]" />
+                      <Mail size={14} className="text-[#3B52F5]" />
                       <span className="text-[11px] font-black text-[#31406B]">{tr("scheduleModal.recipientsLabel")}</span>
                     </div>
                     <div>
@@ -1436,7 +1432,7 @@ export default function ReportsPage() {
                             </span>
                           </div>
                           <div className="flex flex-wrap gap-2 mt-2">
-                            <span className="flex items-center gap-1.5 text-[9.5px] bg-[#465FFF]/10 text-[#465FFF] px-2.5 py-1.5 rounded-[6px] font-black uppercase tracking-[0.05em]">
+                            <span className="flex items-center gap-1.5 text-[9.5px] bg-[#465FFF]/10 text-[#3B52F5] px-2.5 py-1.5 rounded-[6px] font-black uppercase tracking-[0.05em]">
                               <CalendarClock size={11} /> {tr(`scheduleModal.${schedule.cadence}`)}
                             </span>
                             {schedule.dayOfWeek && (
@@ -1444,7 +1440,7 @@ export default function ReportsPage() {
                                 {tr(`scheduleModal.${schedule.dayOfWeek}`)}
                               </span>
                             )}
-                            <span className="flex items-center gap-1.5 text-[9.5px] bg-[#F59E0B]/10 text-[#B45309] px-2.5 py-1.5 rounded-[6px] font-black">
+                            <span className="flex items-center gap-1.5 text-[9.5px] bg-[#F59E0B]/10 text-[#A04606] px-2.5 py-1.5 rounded-[6px] font-black">
                               {schedule.timeOfDay}
                             </span>
                             {schedule.timezone && (
@@ -1488,7 +1484,7 @@ export default function ReportsPage() {
                           <button type="button" onClick={() => toggleScheduleMutation.mutate(schedule.id)} className={cn("flex h-8 items-center justify-center gap-1.5 rounded-[8px] border px-2.5 text-[10px] font-black transition", schedule.enabled ? "border-[#FAD7D7] bg-white text-[#C81E1E] hover:bg-[#FFF4F4]" : "border-[#D1FAE5] bg-white text-[#047857] hover:bg-[#ECFDF5]")}>
                             {schedule.enabled ? tr("scheduleModal.disable") : tr("scheduleModal.enable")}
                           </button>
-                          <button type="button" onClick={() => { setEditingSchedule(schedule); setIsScheduleFormOpen(true); }} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#465FFF] transition hover:bg-[#F5F7FC]" aria-label={tr("actions.editSchedule")}>
+                          <button type="button" onClick={() => { setEditingSchedule(schedule); setIsScheduleFormOpen(true); }} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#3B52F5] transition hover:bg-[#F5F7FC]" aria-label={tr("actions.editSchedule")}>
                             <Edit2 size={13} />
                           </button>
                           <button type="button" onClick={() => { if (window.confirm(tr("confirm.deleteSchedule"))) deleteScheduleMutation.mutate(schedule.id); }} disabled={deleteScheduleMutation.isPending} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#FAD7D7] bg-white text-[#C81E1E] transition hover:bg-[#FFF4F4]" aria-label={tr("actions.deleteSchedule")}>
@@ -1530,7 +1526,7 @@ export default function ReportsPage() {
                 <div className="space-y-3">
                   {livePopularReports.map((report, idx) => (
                     <div key={report.title} className="flex items-center gap-3 rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-3 hover:border-[#DCE2F0] hover:bg-white transition">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[12px] font-black text-[#465FFF]">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[12px] font-black text-[#3B52F5]">
                         {idx + 1}
                       </span>
                       <div className="min-w-0 flex-1">
@@ -1676,7 +1672,7 @@ export default function ReportsPage() {
                           </div>
                           <p className="text-[11px] font-bold text-[#5F6B94] mt-1 leading-relaxed">{template.description}</p>
                           <div className="flex flex-wrap gap-2 mt-3">
-                            <span className="flex items-center gap-1.5 text-[9.5px] bg-[#465FFF]/10 text-[#465FFF] px-2.5 py-1.5 rounded-[6px] font-black uppercase tracking-[0.05em]">
+                            <span className="flex items-center gap-1.5 text-[9.5px] bg-[#465FFF]/10 text-[#3B52F5] px-2.5 py-1.5 rounded-[6px] font-black uppercase tracking-[0.05em]">
                               <FileText size={11} /> {template.format}
                             </span>
                             <span className="flex items-center gap-1.5 text-[9.5px] bg-[#8B5CFF]/10 text-[#6E44E8] px-2.5 py-1.5 rounded-[6px] font-black uppercase tracking-[0.05em]">
@@ -1690,7 +1686,7 @@ export default function ReportsPage() {
                           </span>
                         ) : (
                           <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
-                            <button type="button" onClick={() => { setEditingTemplate(template); setIsFormOpen(true); }} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#465FFF] transition hover:bg-[#F5F7FC]" aria-label={tr("actions.editTemplate")}>
+                            <button type="button" onClick={() => { setEditingTemplate(template); setIsFormOpen(true); }} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#3B52F5] transition hover:bg-[#F5F7FC]" aria-label={tr("actions.editTemplate")}>
                               <Edit2 size={13} />
                             </button>
                             <button type="button" onClick={() => { if (window.confirm(tr("confirm.deleteTemplate"))) deleteTemplateMutation.mutate(template.key); }} disabled={deleteTemplateMutation.isPending} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#FAD7D7] bg-white text-[#C81E1E] transition hover:bg-[#FFF4F4]" aria-label={tr("actions.deleteTemplate")}>

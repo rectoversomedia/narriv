@@ -296,7 +296,7 @@ export default function PricingPage() {
               >
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500 px-4 py-1.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/30">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-600 px-4 py-1.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/30">
                       <Zap size={14} />
                       <span>{t("mostPopular")}</span>
                     </span>
@@ -306,13 +306,13 @@ export default function PricingPage() {
                 {/* Plan Header */}
                 <div className="text-center">
                   <div className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl ${
-                    plan.popular ? "bg-indigo-500 text-white" : "bg-slate-100 text-slate-600"
+                    plan.popular ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600"
                   }`}>
                     <PlanIcon size={28} />
                   </div>
                   <h3 className="text-xl font-bold text-slate-900">{plan.name}</h3>
-                  <p className="mt-1 text-sm text-slate-500">{plan.tagline}</p>
-                  <p className="mt-2 text-xs text-slate-500">{plan.description}</p>
+                  <p className="mt-1 text-sm text-[#5A6478]">{plan.tagline}</p>
+                  <p className="mt-2 text-xs text-[#5A6478]">{plan.description}</p>
                 </div>
 
                 {/* Price */}
@@ -323,7 +323,7 @@ export default function PricingPage() {
                     <>
                       <div className="text-3xl font-black text-slate-900 sm:text-4xl">
                         {formatPrice(price)}
-                        <span className="text-base font-normal text-slate-500">/{plan.period}</span>
+                        <span className="text-base font-normal text-[#5A6478]">/{plan.period}</span>
                       </div>
                       {billingPeriod === "annual" && (
                         <span>Save {formatPrice(plan.price - price)}/month</span>
@@ -347,15 +347,15 @@ export default function PricingPage() {
                 {/* Limits */}
                 <div className="mt-6 space-y-3 border-t border-slate-100 pt-6">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">Intelligence Topics</span>
+                    <span className="text-[#5A6478]">Intelligence Topics</span>
                     <span className="font-semibold text-slate-900">{plan.limits.topics}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">Users</span>
+                    <span className="text-[#5A6478]">Users</span>
                     <span className="font-semibold text-slate-900">{plan.limits.users}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">Data Retention</span>
+                    <span className="text-[#5A6478]">Data Retention</span>
                     <span className="font-semibold text-slate-900">{plan.limits.retention}</span>
                   </div>
                 </div>
@@ -382,7 +382,7 @@ export default function PricingPage() {
         <div className="mx-auto max-w-6xl">
           <div className="text-center">
             <h2 className="text-3xl font-black text-slate-900">{t("compareTitle")}</h2>
-            <p className="mt-4 text-lg text-slate-500">{t("compareSubtitle")}</p>
+            <p className="mt-4 text-lg text-[#5A6478]">{t("compareSubtitle")}</p>
           </div>
 
           <div className="mt-12 overflow-x-auto">
@@ -427,7 +427,7 @@ export default function PricingPage() {
                                 <CheckIcon className="h-3.5 w-3.5" />
                               </span>
                             ) : (
-                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[#5A6478]">
                                 <XIcon className="h-3.5 w-3.5" />
                               </span>
                             )
@@ -442,7 +442,7 @@ export default function PricingPage() {
                                 <CheckIcon className="h-3.5 w-3.5" />
                               </span>
                             ) : (
-                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[#5A6478]">
                                 <XIcon className="h-3.5 w-3.5" />
                               </span>
                             )
@@ -457,7 +457,7 @@ export default function PricingPage() {
                                 <CheckIcon className="h-3.5 w-3.5" />
                               </span>
                             ) : (
-                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[#5A6478]">
                                 <XIcon className="h-3.5 w-3.5" />
                               </span>
                             )
@@ -472,7 +472,7 @@ export default function PricingPage() {
                                 <CheckIcon className="h-3.5 w-3.5" />
                               </span>
                             ) : (
-                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[#5A6478]">
                                 <XIcon className="h-3.5 w-3.5" />
                               </span>
                             )
@@ -543,10 +543,10 @@ export default function PricingPage() {
             <Building2 className="h-8 w-8 text-indigo-600" />
             <span className="text-xl font-bold text-slate-900">Narriv</span>
           </div>
-          <div className="flex items-center gap-8 text-sm text-slate-500">
+          <div className="flex items-center gap-8 text-sm text-[#5A6478]">
             <Link href="/help#contact" className="hover:text-slate-900">{t("contact")}</Link>
           </div>
-          <p className="text-sm text-slate-500">© {new Date().getFullYear()} Narriv. All rights reserved.</p>
+          <p className="text-sm text-[#5A6478]">© {new Date().getFullYear()} Narriv. All rights reserved.</p>
         </div>
       </footer>
     </div>

@@ -2232,7 +2232,8 @@ export async function bootstrapDefaultSources(options: Record<string, unknown> =
 
 export interface ActionPlanMetric {
   value: string | number;
-  trend: number;
+  /** % change vs the previous 7 days; null when there is no earlier period. */
+  trend: number | null;
 }
 
 export interface ActionPlanMetricsResponse {

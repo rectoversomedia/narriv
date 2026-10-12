@@ -16,7 +16,7 @@ export function PipelineHealthPanel({ className }: { className?: string }) {
     <section className={cn("rounded-[14px] border border-[#DDE3EF] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)} aria-labelledby="pipeline-health-title">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#465FFF]"><Activity size={18} /></span>
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#3B52F5]"><Activity size={18} /></span>
           <div>
             <h2 id="pipeline-health-title" className="text-[14px] font-black text-[#101334]">Ingestion &amp; analysis health</h2>
             <p className="text-[11px] font-semibold text-[#5F6B94]">From the scheduled ingestion log and stored analyses for this workspace.</p>
@@ -80,7 +80,7 @@ function PipelineHealthBody({ data }: { data: PipelineStatusPayload }) {
       {missed > 0 ? (
         <p className="mt-1 text-[12px] font-semibold text-amber-700">Missed scheduled slots: {health!.missedSlotsLast24h.map((iso) => new Date(iso).toISOString().slice(11, 16) + " UTC").join(", ")}.</p>
       ) : null}
-      {data.partial ? <p className="mt-1 text-[11px] font-semibold text-slate-500">Some status checks failed; figures may be incomplete.</p> : null}
+      {data.partial ? <p className="mt-1 text-[11px] font-semibold text-[#5A6478]">Some status checks failed; figures may be incomplete.</p> : null}
     </>
   );
 }

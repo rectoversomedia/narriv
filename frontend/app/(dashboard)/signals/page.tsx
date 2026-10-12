@@ -24,6 +24,7 @@ import { AdvancedSearchModal, ActiveFiltersChips } from "./components/advanced-s
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton } from "@/components/dashboard/dashboard-states";
 import { getNarratives, getDateRangeOptions, getSignals, getSources, type PaginationInfo, type Signal, getSignalsMeta, type SignalsMeta, bulkDeleteSignals, bulkAnalyzeSignals, bulkCreateAlertsFromSignals, searchSignals, fetchLatestSignals, downloadSignalsExport, type AdvancedSearchFilters, type SearchSignalsResponse } from "@/lib/api-service";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
+import { DemoBanner } from "@/components/ui/demo-banner";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Sentiment = "NEGATIVE" | "POSITIVE" | "NEUTRAL" | "MIXED" | "UNANALYZED";
@@ -53,16 +54,16 @@ const signalApiLimit = 20;
 
 
 const toneStyles: Record<Tone, { color: string; rgb: string; soft: string; text: string; border: string }> = {
-  blue: { color: "#465FFF", rgb: "70,95,255", soft: "bg-[#465FFF]/10", text: "text-[#465FFF]", border: "border-[#465FFF]/15" },
+  blue: { color: "#465FFF", rgb: "70,95,255", soft: "bg-[#465FFF]/10", text: "text-[#3B52F5]", border: "border-[#465FFF]/15" },
   purple: { color: "#8B5CFF", rgb: "139,92,255", soft: "bg-[#8B5CFF]/10", text: "text-[#6E44E8]", border: "border-[#8B5CFF]/15" },
   green: { color: "#10B981", rgb: "16,185,129", soft: "bg-[#10B981]/10", text: "text-[#047857]", border: "border-[#10B981]/15" },
   red: { color: "#EF4444", rgb: "239,68,68", soft: "bg-[#EF4444]/10", text: "text-[#C81E1E]", border: "border-[#EF4444]/15" },
-  amber: { color: "#F59E0B", rgb: "245,158,11", soft: "bg-[#F59E0B]/10", text: "text-[#B45309]", border: "border-[#F59E0B]/15" },
-  slate: { color: "#64748B", rgb: "100,116,139", soft: "bg-slate-100", text: "text-slate-500", border: "border-slate-200" },
+  amber: { color: "#F59E0B", rgb: "245,158,11", soft: "bg-[#F59E0B]/10", text: "text-[#A04606]", border: "border-[#F59E0B]/15" },
+  slate: { color: "#64748B", rgb: "100,116,139", soft: "bg-slate-100", text: "text-[#5A6478]", border: "border-slate-200" },
 };
 
 const sourceIcons = {
-  web: <span className="flex size-5 items-center justify-center rounded-[5px] bg-white text-slate-500"><Globe className="size-3" /></span>,
+  web: <span className="flex size-5 items-center justify-center rounded-[5px] bg-white text-[#5A6478]"><Globe className="size-3" /></span>,
   x: (
     <span className="flex size-5 items-center justify-center rounded-[5px] bg-[#111827] text-white">
       <svg viewBox="0 0 24 24" className="size-3 fill-current" aria-hidden="true">
@@ -220,7 +221,7 @@ function SentimentBadge({ sentiment }: { sentiment: Sentiment }) {
     POSITIVE: "bg-[#10B981]/10 text-[#047857]",
     NEUTRAL: "bg-slate-100 text-slate-600",
     MIXED: "bg-[#8B5CFF]/10 text-[#6E44E8]",
-    UNANALYZED: "border border-dashed border-slate-300 bg-white text-slate-500",
+    UNANALYZED: "border border-dashed border-slate-300 bg-white text-[#5A6478]",
   };
   return <span className={cn("rounded-full px-2 py-1 text-[9.5px] font-black tracking-[0.12em]", styles[sentiment])}>{sentiment === "UNANALYZED" ? "UNANALYZED" : sentiment}</span>;
 }
@@ -229,19 +230,19 @@ function TagBadge({ tag }: { tag: string }) {
   const styles: Record<string, string> = {
     "Reputation Risk": "bg-[#EF4444]/10 text-[#C81E1E]",
     "Customer Experience": "bg-[#F97316]/10 text-[#F97316]",
-    "Operational Risk": "bg-[#F59E0B]/12 text-[#B45309]",
+    "Operational Risk": "bg-[#F59E0B]/12 text-[#A04606]",
     "Marketing Opportunity": "bg-[#10B981]/10 text-[#047857]",
-    "+1": "bg-[#EEF2FF] text-[#465FFF]",
+    "+1": "bg-[#EEF2FF] text-[#3B52F5]",
   };
-  return <span className={cn("rounded-full px-2 py-1 text-[9px] font-black", styles[tag] ?? "bg-slate-100 text-slate-500")}>{tag}</span>;
+  return <span className={cn("rounded-full px-2 py-1 text-[9px] font-black", styles[tag] ?? "bg-slate-100 text-[#5A6478]")}>{tag}</span>;
 }
 
 function AnalysisBadge({ status, confidence }: { status: "analyzed" | "unanalyzed"; confidence: number | null }) {
   if (status !== "analyzed") {
-    return <span className="rounded-full border border-dashed border-slate-300 px-2 py-1 text-[9px] font-black text-slate-500">Pending</span>;
+    return <span className="rounded-full border border-dashed border-slate-300 px-2 py-1 text-[9px] font-black text-[#5A6478]">Pending</span>;
   }
   return (
-    <span className="rounded-full bg-[#465FFF]/10 px-2 py-1 text-[9px] font-black text-[#465FFF]" title="AI analysis confidence (persisted)">
+    <span className="rounded-full bg-[#465FFF]/10 px-2 py-1 text-[9px] font-black text-[#3B52F5]" title="AI analysis confidence (persisted)">
       {confidence === null ? "Analyzed" : `${Math.round(confidence * 100)}% conf.`}
     </span>
   );
@@ -298,7 +299,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
       {/* Bulk Actions Toolbar */}
       {selectedIds.size > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-[10px] border border-[#465FFF]/20 bg-[#EEF2FF] px-4 py-2.5">
-          <span className="text-[12px] font-black text-[#465FFF]">{selectedIds.size} selected</span>
+          <span className="text-[12px] font-black text-[#3B52F5]">{selectedIds.size} selected</span>
           <div className="h-4 w-px bg-[#465FFF]/20" />
           <button
             onClick={onBulkAnalyze}
@@ -326,7 +327,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
           </button>
           <button
             onClick={() => onSelectionChange(new Set())}
-            className="ml-auto flex items-center gap-1 rounded-[6px] px-2 py-1.5 text-[11px] font-bold text-[#5F6B94] transition hover:bg-[#465FFF]/10 hover:text-[#465FFF]"
+            className="ml-auto flex items-center gap-1 rounded-[6px] px-2 py-1.5 text-[11px] font-bold text-[#5F6B94] transition hover:bg-[#465FFF]/10 hover:text-[#3B52F5]"
           >
             <X size={12} />
             Clear
@@ -401,7 +402,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-[13px] font-semibold leading-snug text-navy">{row.title}</span>
                           {row.url ? (
-                            <a href={row.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-0.5 text-[10px] font-bold text-[#465FFF] hover:underline" aria-label="Open original source">
+                            <a href={row.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-0.5 text-[10px] font-bold text-[#3B52F5] hover:underline" aria-label="Open original source">
                               Source <ExternalLink size={10} />
                             </a>
                           ) : null}
@@ -414,7 +415,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                   <td className="px-3.5 py-4 align-middle"><SourceIconList row={row} /></td>
                   <td className="px-3.5 py-4 align-middle"><SentimentBadge sentiment={row.sentiment} /></td>
                   <td className="px-3.5 py-4 align-middle">
-                    <span className={cn("block max-w-[120px] truncate text-[10.5px] font-bold", row.narrativeCount ? "text-[#465FFF]" : "text-slate-500")} title={row.relatedNarrative}>
+                    <span className={cn("block max-w-[120px] truncate text-[10.5px] font-bold", row.narrativeCount ? "text-[#3B52F5]" : "text-[#5A6478]")} title={row.relatedNarrative}>
                       {row.relatedNarrative}{row.narrativeCount > 1 ? ` +${row.narrativeCount - 1}` : ""}
                     </span>
                   </td>
@@ -427,7 +428,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                         type="button"
                         onClick={() => onGenerateActionPlan?.(row)}
                         title="Generate Action Plan for this signal"
-                        className="inline-flex h-8 items-center justify-center gap-1 rounded-[8px] border border-[#DDE3EF] bg-white px-2.5 text-[10.5px] font-black text-[#465FFF] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]"
+                        className="inline-flex h-8 items-center justify-center gap-1 rounded-[8px] border border-[#DDE3EF] bg-white px-2.5 text-[10.5px] font-black text-[#3B52F5] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]"
                       >
                         <Sparkles size={11} />
                         Plan
@@ -488,7 +489,7 @@ function FollowUpPanel({ data }: { data?: SignalsMeta["followUps"] }) {
       )}
 
       {hasData && (
-        <Link href="/action-plans" className="mt-3 flex h-9 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-[#FBFCFF] text-[11px] font-black text-[#465FFF]">{t("action")} <ArrowRight size={13} /></Link>
+        <Link href="/action-plans" className="mt-3 flex h-9 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-[#FBFCFF] text-[11px] font-black text-[#3B52F5]">{t("action")} <ArrowRight size={13} /></Link>
       )}
     </Panel>
   );
@@ -518,7 +519,7 @@ function RecommendationPanel({ data }: { data?: SignalsMeta["recommendations"] }
               <div key={item.title} className="grid grid-cols-[32px_minmax(0,1fr)] gap-3 rounded-[11px] border border-[#EDF1F7] bg-[#FBFCFF] p-3 sm:grid-cols-[32px_minmax(0,1fr)_auto]">
                 <span className={cn("flex h-8 w-8 items-center justify-center rounded-[9px]", style.soft, style.text)}><Icon size={15} /></span>
                 <span className="min-w-0"><span className="block truncate text-[11.5px] font-black text-[#101334]">{item.title}</span><span className="mt-1 block text-[10px] font-bold text-[#5F6B94]">{item.desc}</span></span>
-                <span className={cn("col-start-2 h-fit w-fit rounded-full px-2 py-1 text-[8.5px] font-black sm:col-start-auto", item.tone === "red" || item.tone === "purple" ? "bg-[#EF4444]/10 text-[#C81E1E]" : item.tone === "blue" ? "bg-[#F59E0B]/12 text-[#B45309]" : "bg-[#10B981]/10 text-[#047857]")}>{item.badge}</span>
+                <span className={cn("col-start-2 h-fit w-fit rounded-full px-2 py-1 text-[8.5px] font-black sm:col-start-auto", item.tone === "red" || item.tone === "purple" ? "bg-[#EF4444]/10 text-[#C81E1E]" : item.tone === "blue" ? "bg-[#F59E0B]/12 text-[#A04606]" : "bg-[#10B981]/10 text-[#047857]")}>{item.badge}</span>
               </div>
             );
           })}
@@ -735,7 +736,7 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
           <h3 className="text-[15px] font-black text-[#101334]">{t("title")}</h3>
           <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{t("desc")}</p>
         </div>
-        <Link href="/workspace/cases" className="text-[11px] font-black text-[#465FFF]">{t("viewAll")}</Link>
+        <Link href="/workspace/cases" className="text-[11px] font-black text-[#3B52F5]">{t("viewAll")}</Link>
       </div>
 
       {!hasData ? (
@@ -755,7 +756,7 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
                   <span className="block truncate text-[12px] font-black text-[#101334]">{item.title}</span>
                   <span className="mt-1 block text-[10px] font-bold text-[#5F6B94]">{item.meta}</span>
                 </span>
-                <span className={cn("col-start-2 h-fit w-fit rounded-full px-2 py-1 text-[9px] font-black sm:col-start-auto", item.badge === "Investigating" || item.badge === "open" ? "bg-[#465FFF]/10 text-[#465FFF]" : "bg-[#F59E0B]/12 text-[#B45309]")}>{item.badge}</span>
+                <span className={cn("col-start-2 h-fit w-fit rounded-full px-2 py-1 text-[9px] font-black sm:col-start-auto", item.badge === "Investigating" || item.badge === "open" ? "bg-[#465FFF]/10 text-[#3B52F5]" : "bg-[#F59E0B]/12 text-[#A04606]")}>{item.badge}</span>
               </div>
             );
           })}
@@ -777,11 +778,11 @@ function LiveRelatedNarratives() {
         <span title="Narrative clusters built from your workspace's signals" className="cursor-help text-[#647099]"><Info size={13} /></span>
       </div>
       {q.isLoading ? (
-        <p className="text-[12px] font-bold text-slate-500">Loading narratives…</p>
+        <p className="text-[12px] font-bold text-[#5A6478]">Loading narratives…</p>
       ) : q.data === null ? (
         <p className="text-[12px] font-bold text-amber-700">Narratives could not be loaded.</p>
       ) : items.length === 0 ? (
-        <p className="text-[12px] font-bold text-slate-500">No narrative clusters yet. They form once enough related signals are ingested.</p>
+        <p className="text-[12px] font-bold text-[#5A6478]">No narrative clusters yet. They form once enough related signals are ingested.</p>
       ) : (
         <div className="grid gap-4 md:grid-cols-3">
           {items.map((n) => (
@@ -790,7 +791,7 @@ function LiveRelatedNarratives() {
               <p className="mt-2 text-[11px] font-bold text-[#5F6B94]">
                 {n.signalCount} signal(s) · confidence {n.confidence === null ? "—" : `${n.confidence}%`} · 24h trend {n.velocity}
               </p>
-              <p className="mt-1 text-[10.5px] font-bold capitalize text-slate-500">{n.sentiment}</p>
+              <p className="mt-1 text-[10.5px] font-bold capitalize text-[#5A6478]">{n.sentiment}</p>
             </Link>
           ))}
         </div>
@@ -1097,12 +1098,7 @@ export default function SignalsPage() {
   return (
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
       {isDemoSession && (
-        <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
-          <Sparkles size={16} className="text-[#6E44E8]" />
-          <p className="text-[13px] font-bold text-[#6E44E8]">
-            Demo workspace — some content on this page may be illustrative examples rather than live data
-          </p>
-        </div>
+        <DemoBanner />
       )}
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div><h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1><p className="mt-2 max-w-2xl text-[14px] font-medium leading-6 text-body">{t("subtitle")}</p></div>
@@ -1114,10 +1110,10 @@ export default function SignalsPage() {
             title="Fetch latest news and signals from live RSS feeds"
             className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#31406B] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <RotateCw size={14} className={cn("text-[#465FFF]", isFetchingSignals && "animate-spin")} />
+            <RotateCw size={14} className={cn("text-[#3B52F5]", isFetchingSignals && "animate-spin")} />
             {isFetchingSignals ? "Fetching Signals..." : "Fetch Latest Signals"}
           </button>
-          <button onClick={() => setIsAdvancedSearchOpen(true)} className={cn("flex h-10 items-center justify-center gap-2 rounded-[8px] border px-4 text-[12px] font-black transition", isAdvancedSearchActive ? "border-[#465FFF] bg-[#465FFF]/10 text-[#465FFF]" : "border-[#DDE3EF] bg-white text-[#31406B] hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]")}>
+          <button onClick={() => setIsAdvancedSearchOpen(true)} className={cn("flex h-10 items-center justify-center gap-2 rounded-[8px] border px-4 text-[12px] font-black transition", isAdvancedSearchActive ? "border-[#465FFF] bg-[#465FFF]/10 text-[#3B52F5]" : "border-[#DDE3EF] bg-white text-[#31406B] hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]")}>
             <Filter size={15} />
             {t("advancedSearch") || "Filters"}
           </button>
@@ -1128,7 +1124,7 @@ export default function SignalsPage() {
             title="Export signals as CSV file"
             className="flex h-10 items-center justify-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-black text-[#31406B] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:opacity-50"
           >
-            <Download size={14} className={isExporting === "csv" ? "animate-pulse text-[#465FFF]" : ""} />
+            <Download size={14} className={isExporting === "csv" ? "animate-pulse text-[#3B52F5]" : ""} />
             CSV
           </button>
           <button
@@ -1138,7 +1134,7 @@ export default function SignalsPage() {
             title="Export signals as Excel spreadsheet (.xlsx)"
             className="flex h-10 items-center justify-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-black text-[#31406B] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:opacity-50"
           >
-            <Download size={14} className={isExporting === "xlsx" ? "animate-pulse text-[#465FFF]" : ""} />
+            <Download size={14} className={isExporting === "xlsx" ? "animate-pulse text-[#3B52F5]" : ""} />
             Excel
           </button>
           <button onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-sm sm:w-fit"><Flag size={15} />{t("createInvestigation")}</button>

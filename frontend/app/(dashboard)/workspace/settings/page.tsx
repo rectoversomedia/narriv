@@ -533,7 +533,7 @@ export default function SettingsPage() {
             </div>
             <div>
               <p className="text-[13px] font-bold text-slate-900">{ts("loadFailedTitle")}</p>
-              <p className="text-[11px] font-medium text-slate-500">{ts("loadFailedDesc")}</p>
+              <p className="text-[11px] font-medium text-[#5A6478]">{ts("loadFailedDesc")}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -556,7 +556,7 @@ export default function SettingsPage() {
             </div>
             <div>
               <p className="text-[13px] font-bold text-slate-900">{ts("membersLoadFailedTitle")}</p>
-              <p className="text-[11px] font-medium text-slate-500">{ts("membersLoadFailedDesc")}</p>
+              <p className="text-[11px] font-medium text-[#5A6478]">{ts("membersLoadFailedDesc")}</p>
             </div>
           </div>
           <button
@@ -575,7 +575,7 @@ export default function SettingsPage() {
         {/* Card A: Informasi Workspace */}
         <Panel className="flex flex-col gap-5">
           <div className="flex items-start gap-4">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#465FFF]">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#3B52F5]">
               <Building size={20} strokeWidth={2.3} />
             </span>
             <div>
@@ -590,7 +590,7 @@ export default function SettingsPage() {
               <div className="flex flex-col items-center">
                 <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl bg-slate-950 border border-slate-800 shadow-inner">
                   <Image src={activeLogo} alt={ts("workspaceInfo.logoAlt")} width={60} height={60} unoptimized={activeLogo.startsWith("http")} className={cn("object-contain transition-opacity", uploadLogoMutation.isPending && "opacity-45")} />
-                  {uploadLogoMutation.isPending ? <span className="absolute inset-x-2 bottom-2 rounded-full bg-white/95 px-2 py-1 text-center text-[8px] font-black uppercase tracking-wide text-[#465FFF] shadow-sm">{ts("workspaceInfo.logoUploading")}</span> : null}
+                  {uploadLogoMutation.isPending ? <span className="absolute inset-x-2 bottom-2 rounded-full bg-white/95 px-2 py-1 text-center text-[8px] font-black uppercase tracking-wide text-[#3B52F5] shadow-sm">{ts("workspaceInfo.logoUploading")}</span> : null}
                 </div>
                 <input
                   ref={logoInputRef}
@@ -606,11 +606,11 @@ export default function SettingsPage() {
                   aria-label={ts("logo.changeLogo")}
                   onClick={handleLogoUpload}
                   disabled={uploadLogoMutation.isPending}
-                  className="mt-2.5 flex h-7 w-full items-center justify-center rounded-lg border border-[#DDE3EF] bg-white text-[#465FFF] shadow-sm transition hover:bg-slate-50 hover:text-[#31406B] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-2.5 flex h-7 w-full items-center justify-center rounded-lg border border-[#DDE3EF] bg-white text-[#3B52F5] shadow-sm transition hover:bg-slate-50 hover:text-[#31406B] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {uploadLogoMutation.isPending ? <RefreshCw size={14} className="animate-spin" /> : <Upload size={14} strokeWidth={2.5} />}
                 </button>
-                <span className="mt-1 text-center text-[9px] font-semibold text-slate-500">{ts("logo.formatHint")}</span>
+                <span className="mt-1 text-center text-[9px] font-semibold text-[#5A6478]">{ts("logo.formatHint")}</span>
                 {logoError ? <span className="mt-1 text-center text-[9px] font-bold text-[#C81E1E]">{logoError}</span> : null}
               </div>
 
@@ -768,7 +768,7 @@ export default function SettingsPage() {
         <Panel className="flex flex-col gap-4 h-full">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-start gap-4">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#465FFF]">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#3B52F5]">
                 <Users size={20} strokeWidth={2.3} />
               </span>
               <div>
@@ -807,7 +807,8 @@ export default function SettingsPage() {
             ) : members.length === 0 ? (
               <DashboardEmptyState title={ts("membersEmptyTitle")} description={ts("membersEmptyDesc")} icon="inbox" minHeight="min-h-[280px]" />
             ) : (
-            <table className="w-full min-w-[580px] border-collapse text-left">
+            <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={ts("membersCard.title")}>
+              <table className="w-full min-w-[580px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-[#E6EAF2] bg-[#FBFCFF] text-[10px] font-black uppercase tracking-[0.1em] text-[#5F6B94]">
                   <th className="px-4 py-3">{ts("table.user")}</th>
@@ -831,7 +832,7 @@ export default function SettingsPage() {
                         </span>
                         <div>
                           <span className="block font-black text-[#101334]">{member.name}</span>
-                          <span className="block text-[10px] text-slate-500 font-semibold">{member.email}</span>
+                          <span className="block text-[10px] text-[#5A6478] font-semibold">{member.email}</span>
                         </div>
                       </div>
                     </td>
@@ -841,7 +842,7 @@ export default function SettingsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-slate-600">{member.permission}</td>
-                    <td className="px-4 py-3 text-slate-500 font-semibold">{member.time}</td>
+                    <td className="px-4 py-3 text-[#5A6478] font-semibold">{member.time}</td>
                     <td className="px-4 py-3">
                       <span className={cn(
                         "inline-flex items-center rounded-full px-2.5 py-0.5 text-[9.5px] font-black border",
@@ -863,7 +864,7 @@ export default function SettingsPage() {
                             setMemberOverrides(updated);
                             showToast(ts("memberStatusChanged", { name: member.name, action }));
                           }}
-                          className="rounded-md border border-[#DDE3EF] bg-white p-1 text-slate-500 hover:text-[#465FFF] hover:bg-[#EEF2FF]"
+                          className="rounded-md border border-[#DDE3EF] bg-white p-1 text-[#5A6478] hover:text-[#3B52F5] hover:bg-[#EEF2FF]"
                           title={member.status === memberLabels.statusActive ? ts("deactivateUser") : ts("activateUser")}
                         >
                           <UserCheck size={14} />
@@ -871,7 +872,7 @@ export default function SettingsPage() {
                           <button
                             type="button"
                             onClick={() => setMemberToDelete(member)}
-                            className="ml-1 rounded-md border border-[#DDE3EF] bg-white p-1 text-slate-500 hover:text-rose-600 hover:bg-rose-50"
+                            className="ml-1 rounded-md border border-[#DDE3EF] bg-white p-1 text-[#5A6478] hover:text-rose-600 hover:bg-rose-50"
                             title={ts("removeUser")}
                         >
                           <Trash size={14} />
@@ -882,6 +883,7 @@ export default function SettingsPage() {
                 ))}
               </tbody>
             </table>
+            </div>
             )}
           </div>
         </Panel>
@@ -908,7 +910,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.emailAlerts")}</span>
-                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("notifications.emailAlertsDesc")}</span>
+                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("notifications.emailAlertsDesc")}</span>
               </div>
               <Switch label={ts("notifications.emailAlerts")} checked={notifEmailValue} onChange={setNotifEmail} />
             </div>
@@ -916,10 +918,10 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.slackAlerts")}</span>
-                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("notifications.slackAlertsDesc")}</span>
+                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("notifications.slackAlertsDesc")}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[9px] font-black text-slate-500">{ts("notAvailable")}</span>
+                <span className="text-[9px] font-black text-[#5A6478]">{ts("notAvailable")}</span>
                 <Switch label={ts("notifications.slackAlerts")} checked={notifSlack} onChange={setNotifSlack} disabled />
               </div>
             </div>
@@ -927,7 +929,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.whatsappAlerts")}</span>
-                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("notifications.whatsappAlertsDesc")}</span>
+                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("notifications.whatsappAlertsDesc")}</span>
               </div>
               <Switch label={ts("notifications.whatsappAlerts")} checked={notifWhatsappValue} onChange={setNotifWhatsapp} />
             </div>
@@ -935,10 +937,10 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.dailySummary")}</span>
-                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("notifications.dailySummaryDesc")}</span>
+                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("notifications.dailySummaryDesc")}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[9px] font-black text-slate-500">{ts("notAvailable")}</span>
+                <span className="text-[9px] font-black text-[#5A6478]">{ts("notAvailable")}</span>
                 <Switch label={ts("notifications.dailySummary")} checked={notifDaily} onChange={setNotifDaily} disabled />
               </div>
             </div>
@@ -946,26 +948,26 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.criticalOnly")}</span>
-                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("notifications.criticalOnlyDesc")}</span>
+                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("notifications.criticalOnlyDesc")}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[9px] font-black text-slate-500">{ts("notAvailable")}</span>
+                <span className="text-[9px] font-black text-[#5A6478]">{ts("notAvailable")}</span>
                 <Switch label={ts("notifications.criticalOnly")} checked={notifCritical} onChange={setNotifCritical} disabled />
               </div>
             </div>
 
             <div className="flex items-center justify-between border-t border-slate-100 pt-3.5">
               <div className="flex items-center gap-2">
-                <Clock size={14} className="text-slate-500" />
+                <Clock size={14} className="text-[#5A6478]" />
                 <div>
                   <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.quietHours")}</span>
-                  <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("notifications.quietHoursDesc")}</span>
+                  <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("notifications.quietHoursDesc")}</span>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => showToast(ts("toast.quietHoursInfo"), "info")}
-                className="text-[10px] font-black text-[#465FFF] hover:underline"
+                className="text-[10px] font-black text-[#3B52F5] hover:underline"
               >
                 {ts("quietHoursTime")}
               </button>
@@ -1003,14 +1005,14 @@ export default function SettingsPage() {
                   <option value="Medium">{ts("sensitivityMedium")}</option>
                   <option value="High">{ts("sensitivityHigh")}</option>
                 </select>
-                <ChevronDown size={11} className="pointer-events-none absolute right-2 top-2.5 text-slate-500" />
+                <ChevronDown size={11} className="pointer-events-none absolute right-2 top-2.5 text-[#5A6478]" />
               </div>
             </div>
 
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("aiPrefs.autoCategorization")}</span>
-                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("aiPrefs.autoCategorizationDesc")}</span>
+                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("aiPrefs.autoCategorizationDesc")}</span>
               </div>
               <Switch label={ts("aiPrefs.autoCategorization")} checked={autoCat} onChange={setAutoCat} disabled />
             </div>
@@ -1018,7 +1020,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("aiPrefs.autoSentiment")}</span>
-                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("aiPrefs.autoSentimentDesc")}</span>
+                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("aiPrefs.autoSentimentDesc")}</span>
               </div>
               <Switch label={ts("aiPrefs.autoSentiment")} checked={autoSentiment} onChange={setAutoSentiment} disabled />
             </div>
@@ -1036,14 +1038,14 @@ export default function SettingsPage() {
                   <option value="Detailed">{ts("summaryDetailed")}</option>
                   <option value="Short">{ts("summaryShort")}</option>
                 </select>
-                <ChevronDown size={11} className="pointer-events-none absolute right-2 top-2.5 text-slate-500" />
+                <ChevronDown size={11} className="pointer-events-none absolute right-2 top-2.5 text-[#5A6478]" />
               </div>
             </div>
 
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("aiPrefs.enableRecs")}</span>
-                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("aiPrefs.enableRecsDesc")}</span>
+                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("aiPrefs.enableRecsDesc")}</span>
               </div>
               <Switch label={ts("aiPrefs.enableRecs")} checked={enableRecs} onChange={setEnableRecs} disabled />
             </div>
@@ -1051,7 +1053,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("aiPrefs.enablePredictive")}</span>
-                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("aiPrefs.enablePredictiveDesc")}</span>
+                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("aiPrefs.enablePredictiveDesc")}</span>
               </div>
               <Switch label={ts("aiPrefs.enablePredictive")} checked={enablePredictive} onChange={setEnablePredictive} disabled />
             </div>
@@ -1061,7 +1063,7 @@ export default function SettingsPage() {
         {/* Card 3: Integrations & API */}
         <Panel className="flex flex-col gap-4.5">
           <div className="flex items-start gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#465FFF]">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#3B52F5]">
               <Layers size={18} strokeWidth={2.3} />
             </span>
             <div>
@@ -1090,7 +1092,7 @@ export default function SettingsPage() {
                     <span className="text-[#5F6B94]"><Icon size={16} /></span>
                     <div>
                       <span className="block text-[11px] font-black text-[#101334]">{item.label}</span>
-                      <span className="block text-[9px] text-slate-500 font-semibold">{item.sub}</span>
+                      <span className="block text-[9px] text-[#5A6478] font-semibold">{item.sub}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1099,7 +1101,7 @@ export default function SettingsPage() {
                         {item.badge}
                       </span>
                     )}
-                    <ArrowRight size={13} className="text-slate-500" />
+                    <ArrowRight size={13} className="text-[#5A6478]" />
                   </div>
                 </button>
               );
@@ -1110,7 +1112,7 @@ export default function SettingsPage() {
         {/* Card 4: Security */}
         <Panel className="flex flex-col gap-4.5">
           <div className="flex items-start gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#465FFF]">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#3B52F5]">
               <Shield size={18} strokeWidth={2.3} />
             </span>
             <div>
@@ -1127,10 +1129,10 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("security.twoFa")}</span>
-                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("security.twoFaDesc")}</span>
+                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("security.twoFaDesc")}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-[9px] font-black text-slate-500">
+                <span className="rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-[9px] font-black text-[#5A6478]">
                   {ts("notAvailable")}
                 </span>
                 <Switch label={ts("security.twoFa")} checked={false} onChange={setSecurity2fa} disabled />
@@ -1140,7 +1142,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("security.sessionTimeout")}</span>
-                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("security.sessionTimeoutDesc")}</span>
+                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("security.sessionTimeoutDesc")}</span>
               </div>
               <div className="relative">
                 <select aria-label={ts("security.sessionTimeout")}
@@ -1154,21 +1156,21 @@ export default function SettingsPage() {
                   <option value="1 jam">{ts("sessionTimeout1h")}</option>
                   <option value="12 jam">{ts("sessionTimeout12h")}</option>
                 </select>
-                <ChevronDown size={11} className="pointer-events-none absolute right-2 top-2.5 text-slate-500" />
+                <ChevronDown size={11} className="pointer-events-none absolute right-2 top-2.5 text-[#5A6478]" />
               </div>
             </div>
 
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("security.ipRestriction")}</span>
-                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("security.ipRestrictionDesc")}</span>
+                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("security.ipRestrictionDesc")}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className={cn(
                   "rounded-md border px-2 py-0.5 text-[9px] font-black",
                   ipRestrict 
                     ? "border-[#CDEEDD] bg-[#F1FCF6] text-[#047857]" 
-                    : "border-slate-200 bg-slate-100 text-slate-500"
+                    : "border-slate-200 bg-slate-100 text-[#5A6478]"
                 )}>
                   {ipRestrict ? ts("security.active") : ts("security.inactive")}
                 </span>
@@ -1182,19 +1184,19 @@ export default function SettingsPage() {
               className="flex w-full items-center justify-between border-t border-slate-100 pt-3.5 text-left"
             >
               <div className="flex items-center gap-2">
-                <Lock size={14} className="text-slate-500" />
+                <Lock size={14} className="text-[#5A6478]" />
                 <div>
                   <span className="block text-[11px] font-black text-[#101334]">{ts("security.auditLog")}</span>
-                  <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("security.auditLogDesc")}</span>
+                  <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("security.auditLogDesc")}</span>
                 </div>
               </div>
-              <ArrowRight size={13} className="text-slate-500" />
+              <ArrowRight size={13} className="text-[#5A6478]" />
             </button>
 
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("retentionTitle")}</span>
-                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("retentionDesc")}</span>
+                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("retentionDesc")}</span>
               </div>
               <div className="relative">
                 <select aria-label={ts("retentionTitle")}
@@ -1208,7 +1210,7 @@ export default function SettingsPage() {
                   <option value="365 hari">{ts("retention365")}</option>
                   <option value="Selamanya">{ts("retentionForever")}</option>
                 </select>
-                <ChevronDown size={11} className="pointer-events-none absolute right-2 top-2.5 text-slate-500" />
+                <ChevronDown size={11} className="pointer-events-none absolute right-2 top-2.5 text-[#5A6478]" />
               </div>
             </div>
           </div>
@@ -1221,7 +1223,7 @@ export default function SettingsPage() {
         {/* Card A: Billing & Usage */}
         <Panel className="flex flex-col gap-6">
           <div className="flex items-start gap-4">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#465FFF]">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#3B52F5]">
               <CreditCard size={20} strokeWidth={2.3} />
             </span>
             <div>
@@ -1242,7 +1244,7 @@ export default function SettingsPage() {
                 <button
                   type="button"
                   onClick={() => showToast(ts("billing.subscribe"), "info")}
-                  className="mt-4 w-full rounded-lg border border-indigo-200 bg-white py-2 text-center text-[11px] font-black text-[#465FFF] shadow-sm transition hover:bg-indigo-50/30"
+                  className="mt-4 w-full rounded-lg border border-indigo-200 bg-white py-2 text-center text-[11px] font-black text-[#3B52F5] shadow-sm transition hover:bg-indigo-50/30"
                 >
                   {ts("billingCard.managePlan")}
                 </button>
@@ -1257,7 +1259,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#5F6B94]">{ts("billingCard.nextBilling")}</span>
-                  <span className="text-[#101334]">{ts("billingCard.billingDateFormat")} <span className="text-[10px] text-slate-500 font-semibold">{ts("billingCard.billingDaysLeft")}</span></span>
+                  <span className="text-[#101334]">{ts("billingCard.billingDateFormat")} <span className="text-[10px] text-[#5A6478] font-semibold">{ts("billingCard.billingDaysLeft")}</span></span>
                 </div>
               </div>
             </div>
@@ -1271,7 +1273,7 @@ export default function SettingsPage() {
                   </span>
                   <div className="mt-1.5 flex items-baseline gap-2">
                     <span className="text-[25px] font-black text-[#101334]">128.452</span>
-                    <span className="text-[11px] font-bold text-slate-500">{ts("billingCard.usageTotalSignals")}</span>
+                    <span className="text-[11px] font-bold text-[#5A6478]">{ts("billingCard.usageTotalSignals")}</span>
                   </div>
                   <span className="mt-1 block text-[10.5px] font-black text-emerald-700 flex items-center gap-0.5">
                     <TrendingUp size={12} /> {ts("billingCard.usageChange")}
@@ -1285,7 +1287,7 @@ export default function SettingsPage() {
                     <option value="30">{ts("billingCard.period30")}</option>
                     <option value="60">{ts("billingCard.period60")}</option>
                   </select>
-                  <ChevronDown size={11} className="pointer-events-none absolute right-2 top-2 text-slate-500" />
+                  <ChevronDown size={11} className="pointer-events-none absolute right-2 top-2 text-[#5A6478]" />
                 </div>
               </div>
 
@@ -1332,7 +1334,7 @@ export default function SettingsPage() {
                             style={{ bottom: `${percent + 18}%` }}
                             className="absolute z-30 flex flex-col items-center bg-slate-950 px-2.5 py-1.5 rounded-lg shadow-xl text-[9px] font-black text-white whitespace-nowrap animate-in fade-in zoom-in-95 duration-100"
                           >
-                            <span className="text-slate-500 font-bold">{chartDates[idx]}</span>
+                            <span className="text-[#5A6478] font-bold">{chartDates[idx]}</span>
                             <span className="mt-0.5 text-[10px] text-[#00F0FF]">{val.toLocaleString(intlLocale())} {ts("billingCard.signalsUnit")}</span>
                           </div>
                         )}
@@ -1343,7 +1345,7 @@ export default function SettingsPage() {
               </div>
 
               {/* X axis dates */}
-              <div className="mt-2 flex justify-between px-1 text-[9px] font-black text-slate-500">
+              <div className="mt-2 flex justify-between px-1 text-[9px] font-black text-[#5A6478]">
                 {chartDates.slice(0, 7).map((d) => <span key={d}>{d}</span>)}
               </div>
             </div>
@@ -1359,7 +1361,7 @@ export default function SettingsPage() {
             ].map((metric) => (
               <div key={metric.label} className="rounded-xl border border-slate-100 bg-[#FBFCFF] p-4">
                 <div className="flex items-center justify-between text-[11px] font-black">
-                  <span className="text-slate-500">{metric.label}</span>
+                  <span className="text-[#5A6478]">{metric.label}</span>
                   <span className="text-[#101334]">{metric.usage}</span>
                 </div>
                 <div className="mt-2.5 h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
@@ -1378,7 +1380,7 @@ export default function SettingsPage() {
             </span>
             <div>
               <h2 className="text-base font-black text-rose-600">{ts("danger.title")}</h2>
-              <p className="text-[11px] font-bold text-slate-500">
+              <p className="text-[11px] font-bold text-[#5A6478]">
                 {ts("danger.desc")}
               </p>
             </div>
@@ -1388,7 +1390,7 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0 flex-1">
                 <span className="block text-[11.5px] font-black text-slate-800">{ts("danger.pauseTitle")}</span>
-                <span className="mt-1 block text-[10px] text-slate-500 font-semibold leading-normal">
+                <span className="mt-1 block text-[10px] text-[#5A6478] font-semibold leading-normal">
                   {ts("danger.pauseDesc")}
                 </span>
               </div>
@@ -1404,7 +1406,7 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between border-t border-slate-100/80 pt-4">
               <div className="min-w-0 flex-1">
                 <span className="block text-[11.5px] font-black text-slate-800">{ts("danger.resetTitle")}</span>
-                <span className="mt-1 block text-[10px] text-slate-500 font-semibold leading-normal">
+                <span className="mt-1 block text-[10px] text-[#5A6478] font-semibold leading-normal">
                   {ts("danger.resetDesc")}
                 </span>
               </div>
@@ -1420,7 +1422,7 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between border-t border-slate-100/80 pt-4">
               <div className="min-w-0 flex-1">
                 <span className="block text-[11.5px] font-black text-[#D32F2F]">{ts("danger.deleteTitle")}</span>
-                <span className="mt-1 block text-[10px] text-slate-500 font-semibold leading-normal">
+                <span className="mt-1 block text-[10px] text-[#5A6478] font-semibold leading-normal">
                   {ts("danger.deleteDesc")}
                 </span>
               </div>
@@ -1442,18 +1444,18 @@ export default function SettingsPage() {
           <div className="w-full max-w-md rounded-2xl border border-slate-100 bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-[#465FFF]">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-[#3B52F5]">
                   <PlusCircle size={18} />
                 </span>
                 <div>
                   <h3 className="text-base font-black text-[#101334]">{ts("invite.modalTitle")}</h3>
-                  <p className="text-[10px] font-semibold text-slate-500">{ts("invite.subtitle")}</p>
+                  <p className="text-[10px] font-semibold text-[#5A6478]">{ts("invite.subtitle")}</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowInviteModal(false)}
-                className="rounded-lg border border-slate-100 p-1.5 text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+                className="rounded-lg border border-slate-100 p-1.5 text-[#5A6478] hover:bg-slate-50 hover:text-slate-700"
               >
                 <X size={15} />
               </button>

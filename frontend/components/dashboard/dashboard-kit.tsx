@@ -7,11 +7,11 @@ import { cn } from "@/lib/utils";
 import type { Tone } from "@/lib/mock-data";
 
 export const toneMap: Record<Tone, { bg: string; text: string; soft: string; badge: "default" | "green" | "amber" | "red" | "purple" | "slate" }> = {
-  blue: { bg: "bg-[#465FFF]/15", text: "text-[#465FFF]", soft: "bg-[#465FFF]", badge: "default" },
+  blue: { bg: "bg-[#465FFF]/15", text: "text-[#3B52F5]", soft: "bg-[#465FFF]", badge: "default" },
   purple: { bg: "bg-[#8B5CFF]/15", text: "text-[#6E44E8]", soft: "bg-[#8B5CFF]", badge: "purple" },
   green: { bg: "bg-[#10B981]/15", text: "text-[#047857]", soft: "bg-[#10B981]", badge: "green" },
   red: { bg: "bg-[#EF4444]/15", text: "text-[#C81E1E]", soft: "bg-[#EF4444]", badge: "red" },
-  amber: { bg: "bg-[#F59E0B]/15", text: "text-[#B45309]", soft: "bg-[#F59E0B]", badge: "amber" },
+  amber: { bg: "bg-[#F59E0B]/15", text: "text-[#A04606]", soft: "bg-[#F59E0B]", badge: "amber" },
   slate: { bg: "bg-slate-100", text: "text-slate-600", soft: "bg-slate-500", badge: "slate" },
 };
 
@@ -32,7 +32,7 @@ export function PageTitle({ title, description, action }: { title: string; descr
     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-8">
       <div>
         <h1 className="text-[34px] font-black tracking-[-0.04em] bg-clip-text text-transparent bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800">{title}</h1>
-        <p className="mt-2 text-[15px] font-semibold text-slate-500">{description}</p>
+        <p className="mt-2 text-[15px] font-semibold text-[#5A6478]">{description}</p>
       </div>
       {action}
     </div>
@@ -78,7 +78,7 @@ export function MetricTile({ label, value, helper, icon: Icon, tone }: { label: 
           <Icon size={20} strokeWidth={2.1} />
         </div>
         <div className="min-w-0 flex-1 overflow-hidden">
-          <p className="text-[13px] font-bold text-slate-500 truncate">{label}</p>
+          <p className="text-[13px] font-bold text-[#5A6478] truncate">{label}</p>
           <p className="mt-1.5 text-[28px] font-black leading-none tracking-[-0.03em] text-slate-900 drop-shadow-[0_0_8px_rgba(255,255,255,0.08)] tabular-nums">{value}</p>
           <p className={cn("mt-2.5 text-[12px] font-bold flex items-center gap-1 tabular-nums", isNegative ? "text-[#C81E1E]" : "text-[#047857]")}>
             <span className={cn("inline-block h-1.5 w-1.5 rounded-full", isNegative ? "bg-[#EF4444]" : "bg-[#10B981]")} />
@@ -96,7 +96,7 @@ export function SectionHeader({ title, description, action, actionPlacement = "s
       <div className="mb-4 flex flex-col gap-3">
         <div className="min-w-0">
           <h2 className="text-[16px] font-bold tracking-[-0.02em] text-slate-900">{title}</h2>
-          {description ? <p className="mt-1 text-[12px] font-semibold text-slate-500">{description}</p> : null}
+          {description ? <p className="mt-1 text-[12px] font-semibold text-[#5A6478]">{description}</p> : null}
         </div>
         {action ? <div className="flex w-full items-center">{action}</div> : null}
       </div>
@@ -107,7 +107,7 @@ export function SectionHeader({ title, description, action, actionPlacement = "s
     <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
         <h2 className="text-[20px] font-bold tracking-[-0.02em] text-slate-900">{title}</h2>
-        {description ? <p className="mt-1 text-[13px] font-semibold text-slate-500">{description}</p> : null}
+        {description ? <p className="mt-1 text-[13px] font-semibold text-[#5A6478]">{description}</p> : null}
       </div>
       {action ? <div className="flex w-full shrink-0 items-center sm:w-auto sm:justify-end">{action}</div> : null}
     </div>
@@ -151,7 +151,7 @@ export function DonutMock({ center, label }: { center: string; label: string }) 
       <div className="absolute h-[112px] w-[112px] rounded-full bg-background" />
       <div className="relative text-center z-10">
         <p className="text-[26px] font-black text-slate-900">{center}</p>
-        <p className="mt-0.5 text-[11px] font-semibold text-slate-500">{label}</p>
+        <p className="mt-0.5 text-[11px] font-semibold text-[#5A6478]">{label}</p>
       </div>
     </div>
   );

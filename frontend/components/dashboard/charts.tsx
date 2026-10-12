@@ -8,8 +8,6 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  Line,
-  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -18,7 +16,6 @@ import {
   YAxis,
 } from "recharts";
 import type { Tone } from "@/lib/mock-data";
-
 
 const toneColor: Record<Tone, string> = {
   blue: "#465FFF",
@@ -64,24 +61,6 @@ export function ActivityAreaChart({ data }: { data: SeriesPoint[] }) {
           <Tooltip cursor={activityCursor} contentStyle={tooltipContentStyle} />
           <Area type="monotone" dataKey="value" stroke="#465FFF" strokeWidth={3} fill="url(#activityFill)" dot={activityDot} activeDot={activityActiveDot} isAnimationActive animationDuration={900} />
         </AreaChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
-export function AiMentionsLineChart({ data }: { data: SeriesPoint[] }) {
-  return (
-    <div className="chart-enter h-[280px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={aiMentionsMargin}>
-          <CartesianGrid stroke="#E6EAF4" vertical={false} />
-          <XAxis dataKey="label" axisLine={false} tickLine={false} tick={chartTick} />
-          <YAxis axisLine={false} tickLine={false} tick={chartTick} />
-          <Tooltip contentStyle={tooltipContentStyle} />
-          <Line type="monotone" dataKey="value" name="Brand Anda" stroke="#465FFF" strokeWidth={3} dot={brandDot} isAnimationActive animationDuration={900} />
-          <Line type="monotone" dataKey="competitor" name="Kompetitor 1" stroke="#38A7FF" strokeWidth={2} strokeDasharray="5 4" dot={competitorDot} isAnimationActive animationDuration={900} />
-          <Line type="monotone" dataKey="secondary" name="Kompetitor 2" stroke="#12B76A" strokeWidth={2} strokeDasharray="5 4" dot={secondaryDot} isAnimationActive animationDuration={900} />
-        </LineChart>
       </ResponsiveContainer>
     </div>
   );
@@ -134,19 +113,6 @@ export function PlatformBarChart({ data }: { data: Array<{ name: string; value: 
           <p className="text-right text-sm font-bold text-[#34406C]">{item.value} <span className="text-xs text-[#53608C]">({item.percent})</span></p>
         </div>
       ))}
-    </div>
-  );
-}
-
-export function MiniSparkline({ tone = "purple" }: { tone?: Tone }) {
-  const values = [8, 14, 10, 19, 13, 23, 15];
-  return (
-    <div className="chart-enter h-7 w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={values.map((value, index) => ({ index, value }))} margin={{ left: 0, right: 0, top: 3, bottom: 3 }}>
-          <Line type="monotone" dataKey="value" stroke={toneColor[tone]} strokeWidth={2} dot={false} isAnimationActive animationDuration={650} />
-        </LineChart>
-      </ResponsiveContainer>
     </div>
   );
 }

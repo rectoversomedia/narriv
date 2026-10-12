@@ -101,10 +101,10 @@ const PRIORITY_CONFIG: Record<
   ActionPriority,
   { label: string; bg: string; text: string }
 > = {
-  immediate: { label: "Immediate", bg: "bg-red-50", text: "text-red-600" },
+  immediate: { label: "Immediate", bg: "bg-red-50", text: "text-red-700" },
   high: { label: "High", bg: "bg-amber-50", text: "text-amber-700" },
   medium: { label: "Medium", bg: "bg-blue-50", text: "text-blue-600" },
-  low: { label: "Low", bg: "bg-slate-50", text: "text-slate-500" },
+  low: { label: "Low", bg: "bg-slate-50", text: "text-[#5A6478]" },
 };
 
 // ---------------------------------------------------------------------------
@@ -198,7 +198,7 @@ export function NarrativeCard({
       ? "text-green-700"
       : growth < 0
         ? "text-red-700"
-        : "text-slate-500";
+        : "text-[#5A6478]";
 
   const handleClick = () => {
     if (onClick) {
@@ -289,7 +289,7 @@ export function NarrativeCard({
         <MetricPill
           label="Momentum"
           value={`${momentum}`}
-          valueColor="text-[#465FFF]"
+          valueColor="text-[#3B52F5]"
         />
       </div>
 
@@ -318,13 +318,13 @@ export function NarrativeCard({
           "border-slate-200"
         )}
       >
-        <div className="mb-1.5 flex items-center justify-between">
+        <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1.5">
           <span className="text-[12px] font-semibold text-[#101334]">
             Recommended Action
           </span>
           <span
             className={cn(
-              "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+              "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
               priorityCfg.bg,
               priorityCfg.text,
               "border border-current/20"
@@ -386,7 +386,7 @@ export function NarrativeCard({
                 {relatedEntities.map((entity) => (
                   <span
                     key={entity}
-                    className="rounded-full bg-[#465FFF]/10 px-2 py-0.5 text-[11px] font-medium text-[#465FFF]"
+                    className="rounded-full bg-[#465FFF]/10 px-2 py-0.5 text-[11px] font-medium text-[#3B52F5]"
                   >
                     {entity}
                   </span>

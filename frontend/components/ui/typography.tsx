@@ -78,7 +78,7 @@ export function P({ children, className }: TypographyProps) {
 export function Caption({ children, className }: TypographyProps) {
   return (
     <p className={cn(
-      "text-[12px] font-medium text-slate-500",
+      "text-[12px] font-medium text-[#5A6478]",
       className
     )}>
       {children}
@@ -89,7 +89,7 @@ export function Caption({ children, className }: TypographyProps) {
 export function Label({ children, className }: TypographyProps) {
   return (
     <span className={cn(
-      "text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500",
+      "text-[11px] font-semibold uppercase tracking-[0.08em] text-[#5A6478]",
       className
     )}>
       {children}
@@ -173,7 +173,7 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
             </svg>
           )}
           {item.href ? (
-            <a href={item.href} className="text-slate-500 hover:text-slate-700 transition-colors">
+            <a href={item.href} className="text-[#5A6478] hover:text-slate-700 transition-colors">
               {item.label}
             </a>
           ) : (

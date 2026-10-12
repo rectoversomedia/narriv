@@ -21,7 +21,7 @@ export function SectionHeader({ eyebrow, title, description, action }: { eyebrow
     <div className="theme-card relative overflow-hidden rounded-[30px] border p-5 shadow-[var(--shadow)] sm:p-7 lg:flex lg:items-end lg:justify-between lg:gap-8">
       <div className="pointer-events-none absolute right-0 top-0 h-28 w-72 rounded-full bg-[#465FFF]/10 blur-3xl" />
       <div className="relative max-w-[760px] space-y-3">
-        {eyebrow ? <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#465FFF]">{eyebrow}</p> : null}
+        {eyebrow ? <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#3B52F5]">{eyebrow}</p> : null}
         <h1 className="theme-text text-[32px] font-semibold leading-[1.05] tracking-[-0.04em] sm:text-[42px]">{title}</h1>
         {description ? <p className="theme-muted max-w-[680px] text-[15px] leading-7">{description}</p> : null}
       </div>
@@ -61,7 +61,7 @@ export function InnerPanel({ children, className = "" }: CardProps) {
 
 export function StatusBadge({ children, tone = "blue" }: { children: ReactNode; tone?: "blue" | "green" | "amber" | "red" | "slate" }) {
   const tones = {
-    blue: "border-[#465FFF]/30 bg-[#465FFF]/10 text-[#465FFF] shadow-[0_0_10px_rgba(70,95,255,0.1)]",
+    blue: "border-[#465FFF]/30 bg-[#465FFF]/10 text-[#3B52F5] shadow-[0_0_10px_rgba(70,95,255,0.1)]",
     green: "border-[#12B76A]/30 bg-[#12B76A]/10 text-[#027A48] shadow-[0_0_10px_rgba(18,183,106,0.1)]",
     amber: "border-[#FDB022]/30 bg-[#FDB022]/10 text-[#B54708] shadow-[0_0_10px_rgba(253,176,34,0.1)]",
     red: "border-[#F97066]/30 bg-[#F97066]/10 text-[#B42318] shadow-[0_0_10px_rgba(249,112,102,0.1)]",

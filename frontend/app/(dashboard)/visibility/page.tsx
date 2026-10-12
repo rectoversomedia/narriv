@@ -20,7 +20,6 @@ import {
   CheckCircle,
   AlertCircle,
   RefreshCcw,
-  Sparkles,
   Bot,
   X,
   type LucideIcon,
@@ -40,6 +39,7 @@ import {
   ClaudeAI
 } from "@ridemountainpig/svgl-react";
 import { cn } from "@/lib/utils";
+import { DemoBanner } from "@/components/ui/demo-banner";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 
@@ -851,12 +851,7 @@ export default function VisibilityPage() {
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
       {/* Demo Workspace Banner */}
       {isDemoSession && (
-        <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
-          <Sparkles size={16} className="text-[#6E44E8]" />
-          <p className="text-[13px] font-bold text-[#6E44E8]">
-            Demo Workspace — Seeded sandbox workspace for evaluation
-          </p>
-        </div>
+        <DemoBanner />
       )}
 
       {/* Header section */}
@@ -898,10 +893,10 @@ export default function VisibilityPage() {
                     onClick={() => { setSelectedDays(days); setIsDateMenuOpen(false); }}
                     className={cn(
                       "flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold transition hover:bg-[#F8FAFF]",
-                      selectedDays === days ? "text-[#465FFF]" : "text-[#31406B]"
+                      selectedDays === days ? "text-[#3B52F5]" : "text-[#31406B]"
                     )}
                   >
-                    {selectedDays === days ? <CheckCircle size={13} className="text-[#465FFF]" /> : <span className="size-[13px]" />}
+                    {selectedDays === days ? <CheckCircle size={13} className="text-[#3B52F5]" /> : <span className="size-[13px]" />}
                     {t(`dateRange.${days}d`)}
                   </button>
                 ))}
@@ -1139,7 +1134,7 @@ export default function VisibilityPage() {
                   <div className="rounded-[10px] bg-[#F6F8FF] border border-[#D9E1FC] p-4">
                     <div className="flex items-center justify-between">
                       <p className="text-[10px] font-black uppercase text-[#647099] tracking-[0.04em]">{t("sandbox.responseTitle")}</p>
-                      <span className="text-[9px] font-bold text-[#465FFF]">Live Simulation (GPT-4o-mini)</span>
+                      <span className="text-[9px] font-bold text-[#3B52F5]">Live Simulation (GPT-4o-mini)</span>
                     </div>
                     <p className="mt-2 text-[12px] font-semibold leading-relaxed text-[#53608C]">{simulatedResponse}</p>
                     <div className="mt-4 flex items-center justify-between">

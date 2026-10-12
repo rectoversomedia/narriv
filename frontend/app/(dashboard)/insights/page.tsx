@@ -39,21 +39,21 @@ function TrendMini({ windowHours }: { windowHours: number }) {
   if (!t || t.note) {
     return (
       <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-5 text-sm text-slate-600">
-        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">
           <Activity size={14} /> Trend
         </div>
         <p className="mt-2 text-[15px] font-medium text-slate-700">Insufficient data</p>
-        <p className="mt-1 text-[13px] text-slate-500">Need at least two consecutive time windows to compute a trend.</p>
+        <p className="mt-1 text-[13px] text-[#5A6478]">Need at least two consecutive time windows to compute a trend.</p>
       </div>
     );
   }
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5">
-      <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+      <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">
         <Activity size={14} /> Trend
       </div>
       <p className="mt-2 text-[15px] font-semibold text-slate-900 capitalize">{String(t.status || "—").toLowerCase()}</p>
-      <div className="mt-2 text-[12px] text-slate-500">
+      <div className="mt-2 text-[12px] text-[#5A6478]">
         {t.ratio != null ? <>Ratio {t.ratio.toFixed(2)}x</> : null}
         {t.acceleration != null ? <> · Acceleration {t.acceleration.toFixed(2)}</> : null}
       </div>
@@ -73,24 +73,24 @@ function GeoPanel({ windowHours }: { windowHours: number }) {
   if (!data || data.status === "no_data" || data.status === "insufficient_data") {
     return (
       <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-5 text-sm text-slate-600">
-        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">
           <Globe2 size={14} /> GEO intelligence
         </div>
         <p className="mt-2 text-[15px] font-medium text-slate-700">No GEO data yet</p>
-        <p className="mt-1 text-[13px] text-slate-500">Run a GEO check or ingest AI search results to enable this panel.</p>
+        <p className="mt-1 text-[13px] text-[#5A6478]">Run a GEO check or ingest AI search results to enable this panel.</p>
       </div>
     );
   }
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5">
-      <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+      <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">
         <Globe2 size={14} /> GEO intelligence
       </div>
       <p className="mt-2 text-[15px] font-semibold text-slate-900">Live data</p>
       <ul className="mt-3 space-y-1 text-[12px] text-slate-600">
         {Object.entries(data.counts || {}).map(([k, v]) => (
           <li key={k} className="flex justify-between">
-            <span className="text-slate-500">{k}</span>
+            <span className="text-[#5A6478]">{k}</span>
             <span className="font-semibold text-slate-700">{v}</span>
           </li>
         ))}
@@ -127,7 +127,7 @@ export default function InsightsPage() {
                     <option key={w.id} value={w.id}>{w.label}</option>
                   ))}
                 </select>
-                <ChevronDown size={14} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-500" />
+                <ChevronDown size={14} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#5A6478]" />
               </div>
               <button
                 type="button"

@@ -203,7 +203,7 @@ export function AdvancedSearchModal({
         {/* Header */}
         <div className="flex items-start justify-between gap-4 border-b border-[#EDF1F7] p-5">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#465FFF]/10 text-[#465FFF]">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#465FFF]/10 text-[#3B52F5]">
               <Filter size={20} />
             </span>
             <div>
@@ -237,7 +237,7 @@ export function AdvancedSearchModal({
                     className={cn(
                       "rounded-lg border px-3 py-2 text-[11px] font-bold transition",
                       platform === opt.value
-                        ? "border-[#465FFF] bg-[#465FFF]/10 text-[#465FFF]"
+                        ? "border-[#465FFF] bg-[#465FFF]/10 text-[#3B52F5]"
                         : "border-[#EDF1F7] bg-white text-[#58648C] hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]"
                     )}
                   >
@@ -302,7 +302,7 @@ export function AdvancedSearchModal({
                     className={cn(
                       "rounded-lg border px-3 py-2 text-[11px] font-bold transition",
                       datePreset === opt.value
-                        ? "border-[#465FFF] bg-[#465FFF]/10 text-[#465FFF]"
+                        ? "border-[#465FFF] bg-[#465FFF]/10 text-[#3B52F5]"
                         : "border-[#EDF1F7] bg-white text-[#58648C] hover:border-[#465FFF]/30"
                     )}
                   >
@@ -315,7 +315,7 @@ export function AdvancedSearchModal({
                   className={cn(
                     "rounded-lg border px-3 py-2 text-[11px] font-bold transition",
                     datePreset === "custom"
-                      ? "border-[#465FFF] bg-[#465FFF]/10 text-[#465FFF]"
+                      ? "border-[#465FFF] bg-[#465FFF]/10 text-[#3B52F5]"
                       : "border-[#EDF1F7] bg-white text-[#58648C] hover:border-[#465FFF]/30"
                   )}
                 >
@@ -349,7 +349,7 @@ export function AdvancedSearchModal({
             {/* Source ID */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-[12px] font-black text-[#31406B]">
-                <span className="flex h-5 w-5 items-center justify-center rounded bg-[#F59E0B]/10 text-[10px] font-black text-[#B45309]">#</span>
+                <span className="flex h-5 w-5 items-center justify-center rounded bg-[#F59E0B]/10 text-[10px] font-black text-[#A04606]">#</span>
                 {t("sourceId")}
               </label>
               <input
@@ -392,7 +392,7 @@ export function AdvancedSearchModal({
                     className={cn(
                       "rounded-lg border px-2 py-1.5 text-[10px] font-bold transition",
                       language === opt.value
-                        ? "border-[#465FFF] bg-[#465FFF]/10 text-[#465FFF]"
+                        ? "border-[#465FFF] bg-[#465FFF]/10 text-[#3B52F5]"
                         : "border-[#EDF1F7] bg-white text-[#58648C] hover:border-[#465FFF]/30"
                     )}
                   >
@@ -516,7 +516,7 @@ export function ActiveFiltersChips({ filters, onRemove, onClearAll }: ActiveFilt
       {chips.map((chip) => (
         <span
           key={chip.key}
-          className="inline-flex items-center gap-1.5 rounded-full border border-[#465FFF]/20 bg-[#EEF2FF] px-2.5 py-1 text-[11px] font-bold text-[#465FFF]"
+          className="inline-flex items-center gap-1.5 rounded-full border border-[#465FFF]/20 bg-[#EEF2FF] px-2.5 py-1 text-[11px] font-bold text-[#3B52F5]"
         >
           <span className="text-[#647099]">{chip.label}:</span>
           <span className="capitalize">{chip.value}</span>
@@ -532,7 +532,7 @@ export function ActiveFiltersChips({ filters, onRemove, onClearAll }: ActiveFilt
       <button
         type="button"
         onClick={onClearAll}
-        className="text-[11px] font-bold text-[#5F6B94] transition hover:text-[#465FFF]"
+        className="text-[11px] font-bold text-[#5F6B94] transition hover:text-[#3B52F5]"
       >
         {t("clearAll")}
       </button>

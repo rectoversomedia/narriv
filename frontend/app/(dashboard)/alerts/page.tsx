@@ -72,6 +72,7 @@ import {
 import { getMockAlerts, getMockAlertsSummary } from "@/lib/demo-mock-data";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { intlLocale } from "@/store/useUiStore";
+import { DemoBanner } from "@/components/ui/demo-banner";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type AlertStatus = "New" | "Investigating" | "Escalated" | "Resolved";
@@ -129,12 +130,12 @@ type NotificationRuleDraft = {
 };
 
 const toneStyles: Record<Tone, ToneStyle> = {
-  blue: { color: "#465FFF", rgb: "70,95,255", soft: "bg-[#465FFF]/10", text: "text-[#465FFF]", border: "border-[#465FFF]/15" },
+  blue: { color: "#465FFF", rgb: "70,95,255", soft: "bg-[#465FFF]/10", text: "text-[#3B52F5]", border: "border-[#465FFF]/15" },
   purple: { color: "#8B5CFF", rgb: "139,92,255", soft: "bg-[#8B5CFF]/10", text: "text-[#6E44E8]", border: "border-[#8B5CFF]/15" },
   green: { color: "#10B981", rgb: "16,185,129", soft: "bg-[#10B981]/10", text: "text-[#047857]", border: "border-[#10B981]/15" },
   red: { color: "#EF4444", rgb: "239,68,68", soft: "bg-[#EF4444]/10", text: "text-[#C81E1E]", border: "border-[#EF4444]/15" },
-  amber: { color: "#F59E0B", rgb: "245,158,11", soft: "bg-[#F59E0B]/10", text: "text-[#B45309]", border: "border-[#F59E0B]/15" },
-  slate: { color: "#64748B", rgb: "100,116,139", soft: "bg-slate-100", text: "text-slate-500", border: "border-slate-200" },
+  amber: { color: "#F59E0B", rgb: "245,158,11", soft: "bg-[#F59E0B]/10", text: "text-[#A04606]", border: "border-[#F59E0B]/15" },
+  slate: { color: "#64748B", rgb: "100,116,139", soft: "bg-slate-100", text: "text-[#5A6478]", border: "border-slate-200" },
 };
 
 const sourceIcons = {
@@ -144,7 +145,7 @@ const sourceIcons = {
   facebook: <Facebook className="size-3.5" />,
   appstore: <AppStore className="size-3.5" />,
   googleplay: <GooglePlay className="size-3.5" />,
-  support: <Headphones className="size-3.5 text-[#465FFF]" strokeWidth={2.4} />,
+  support: <Headphones className="size-3.5 text-[#3B52F5]" strokeWidth={2.4} />,
   discourse: <Discourse className="size-3.5" />,
 };
 
@@ -304,8 +305,8 @@ function AlertIcon({ tone }: { tone: AlertRow["tone"] }) {
 
 function StatusBadge({ status }: { status: AlertStatus }) {
   const styles: Record<AlertStatus, string> = {
-    New: "bg-[#8B5CFF]/10 text-[#465FFF]",
-    Investigating: "bg-[#465FFF]/10 text-[#465FFF]",
+    New: "bg-[#8B5CFF]/10 text-[#3B52F5]",
+    Investigating: "bg-[#465FFF]/10 text-[#3B52F5]",
     Escalated: "bg-[#F97316]/12 text-[#F97316]",
     Resolved: "bg-[#10B981]/10 text-[#047857]",
   };
@@ -484,7 +485,7 @@ function CriticalIncident({
           </div>
         </div>
         {alert ? (
-          <Link href={`/alerts/${alert.id}`} className="inline-flex items-center gap-1 rounded-full border border-[#F4D8D8] bg-white px-3 py-1.5 text-[11px] font-black text-[#465FFF] shadow-sm transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF]">
+          <Link href={`/alerts/${alert.id}`} className="inline-flex items-center gap-1 rounded-full border border-[#F4D8D8] bg-white px-3 py-1.5 text-[11px] font-black text-[#3B52F5] shadow-sm transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF]">
             {ta("v2.incident.viewDetails")} <ArrowRight size={13} />
           </Link>
         ) : (
@@ -524,7 +525,7 @@ function CriticalIncident({
             <div className="min-w-0">
               <p className="mb-2 text-[9px] font-black text-[#5F6B94]">{ta("v2.incident.owner")}</p>
               <div className="inline-flex min-h-[30px] max-w-full items-center gap-1.5 rounded-[7px] border border-[#E6EAF2] bg-white px-2 text-[9px] font-black leading-none text-[#101334]">
-                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[#465FFF]">O</span>
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[#3B52F5]">O</span>
                 <span className="truncate">{alert.sourceLabel || ta("table.unassigned")}</span>
               </div>
             </div>
@@ -586,7 +587,7 @@ function DeliveryStatus({ ta, integrations, isLoading }: { ta: ReturnType<typeof
         )}
         {extraCount > 0 ? <p className="text-[10px] font-black text-[#53608C]">+{extraCount} {ta("v2.delivery.moreChannels")}</p> : null}
       </div>
-      <Link href="/workspace/integrations" className="mt-5 inline-flex items-center gap-1 self-start text-[11px] font-black text-[#465FFF] hover:underline">{ta("v2.delivery.viewAllChannels")} <ArrowRight size={13} /></Link>
+      <Link href="/workspace/integrations" className="mt-5 inline-flex items-center gap-1 self-start text-[11px] font-black text-[#3B52F5] hover:underline">{ta("v2.delivery.viewAllChannels")} <ArrowRight size={13} /></Link>
     </Panel>
   );
 }
@@ -650,7 +651,7 @@ function CriticalDeliveryStatus({ alerts, total, ta, onViewAll, isLoading }: { a
     <Panel className="p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
         <h3 className="text-[15px] font-black text-[#101334]">{ta("v2.criticalStatus.title")}</h3>
-        <button type="button" onClick={onViewAll} className="inline-flex items-center gap-1 text-[8.5px] font-black leading-none text-[#465FFF] whitespace-nowrap hover:underline">{ta("v2.criticalStatus.viewAll")} <ArrowRight size={11} /></button>
+        <button type="button" onClick={onViewAll} className="inline-flex items-center gap-1 text-[8.5px] font-black leading-none text-[#3B52F5] whitespace-nowrap hover:underline">{ta("v2.criticalStatus.viewAll")} <ArrowRight size={11} /></button>
       </div>
       <div className="overflow-hidden rounded-[10px] border border-[#F4D8D8]">
         <div className="flex items-center justify-between gap-3 bg-[#FFF2F2] px-3 py-2">
@@ -685,8 +686,8 @@ function EscalationMatrix({ ta, levels, isLoading }: { ta: ReturnType<typeof use
       <div className="mt-4 space-y-2">
         {levels.map((item, index) => (
           <div key={`${item.id}-${item.level}`}>
-            <div className={cn("grid grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-3 rounded-[9px] px-3 py-2", item.isActive ? "bg-[#F8FAFF]" : "bg-[#F8FAFF]/55 opacity-70")}>
-              <span className={cn("rounded-[6px] px-2 py-1 text-center text-[10px] font-black", item.isActive ? "bg-[#EEEAFE] text-[#6B4DE6]" : "bg-slate-100 text-slate-500")}>{item.level}</span>
+            <div className={cn("grid grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-3 rounded-[9px] px-3 py-2", item.isActive ? "bg-[#F8FAFF]" : "bg-white ring-1 ring-inset ring-[#EEF1F7]")}>
+              <span className={cn("rounded-[6px] px-2 py-1 text-center text-[10px] font-black", item.isActive ? "bg-[#EEEAFE] text-[#6B4DE6]" : "bg-slate-100 text-[#5A6478]")}>{item.level}</span>
               <div className="min-w-0">
                 <p className="truncate text-[11px] font-black text-[#101334]">{item.roleName}</p>
                 <p className="mt-0.5 text-[9px] font-bold text-[#5F6B94]">{item.isActive ? ta("v2.escalationMatrix.activeLabel") : ta("v2.escalationMatrix.standbyLabel")}</p>
@@ -696,7 +697,7 @@ function EscalationMatrix({ ta, levels, isLoading }: { ta: ReturnType<typeof use
                 {item.isActive ? <CircleCheck size={14} className="text-[#047857]" /> : <span className="size-3.5 rounded-full border-2 border-[#C7D0E5]" />}
               </p>
             </div>
-            {index < levels.length - 1 ? <ArrowDown size={14} className="mx-14 my-1 text-[#465FFF]" /> : null}
+            {index < levels.length - 1 ? <ArrowDown size={14} className="mx-14 my-1 text-[#3B52F5]" /> : null}
           </div>
         ))}
       </div>
@@ -733,7 +734,7 @@ function AlertJourney({ alert, ta, onViewTimeline }: { alert: AlertRow; ta: Retu
           <h3 className="text-[15px] font-black text-[#101334]">{ta("v2.journey.title")}</h3>
           <p className="mt-1 truncate text-[10px] font-bold text-[#53608C]">{alert.title}</p>
         </div>
-        <button type="button" onClick={onViewTimeline} className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#DDE3EF] bg-[#F8FAFF] px-3 py-1.5 text-[9px] font-black leading-none text-[#465FFF] transition hover:border-[#C9D4F6] hover:bg-white">{ta("v2.journey.viewFull")} <ArrowRight size={11} /></button>
+        <button type="button" onClick={onViewTimeline} className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#DDE3EF] bg-[#F8FAFF] px-3 py-1.5 text-[9px] font-black leading-none text-[#3B52F5] transition hover:border-[#C9D4F6] hover:bg-white">{ta("v2.journey.viewFull")} <ArrowRight size={11} /></button>
       </div>
       <div className="relative space-y-4 pl-1 before:absolute before:left-[70px] before:top-2 before:h-[calc(100%-16px)] before:border-l before:border-[#DDE5F4]">
         {steps.map(([time, title, desc, Icon, tone]) => (
@@ -768,14 +769,14 @@ function EscalationFlow({ ta, levels }: { ta: ReturnType<typeof useTranslations<
   return (
     <Panel className="p-4">
       <h3 className="text-[15px] font-black text-[#101334]">{ta("v2.flow.title")} <span className="text-[11px] font-bold text-[#53608C]">{ta("v2.flow.desc")}</span></h3>
-      <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1fr)_20px_minmax(0,1fr)_20px_minmax(0,1.25fr)_20px_minmax(0,1fr)_20px_minmax(0,1fr)_20px_minmax(0,1fr)]">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-[minmax(0,1fr)_20px_minmax(0,1fr)_20px_minmax(0,1.25fr)_20px_minmax(0,1fr)_20px_minmax(0,1fr)_20px_minmax(0,1fr)]">
         {steps.map(([Icon, title, desc, tone], index) => (
           <div key={title} className="contents">
             <div className={cn("flex min-h-[70px] items-center gap-3 rounded-[10px] border border-[#E6EAF2] bg-[#FBFCFF] p-3", index === 2 && "bg-[#F2EEFF]")}> 
               <ChannelIcon tone={tone as Tone}><Icon size={17} /></ChannelIcon>
-              <div><p className="text-[11px] font-black text-[#465FFF]">{title}</p><p className="mt-1 text-[9px] font-bold text-[#53608C]">{desc}</p></div>
+              <div className="min-w-0"><p className="text-[11px] font-black text-[#3B52F5]">{title}</p><p className="mt-1 text-[9px] font-bold text-[#53608C]">{desc}</p></div>
             </div>
-            {index < steps.length - 1 ? <div className="hidden items-center justify-center text-[#465FFF] xl:flex"><ChevronRight size={18} /></div> : null}
+            {index < steps.length - 1 ? <div className="hidden items-center justify-center text-[#3B52F5] 2xl:flex"><ChevronRight size={18} /></div> : null}
           </div>
         ))}
       </div>
@@ -791,16 +792,16 @@ function AlertPagination({ page, totalPages, onPageChange, ta }: { page: number;
   });
   return (
     <div className="flex items-center gap-2">
-      <button type="button" disabled={page <= 1} onClick={() => onPageChange(Math.max(1, page - 1))} className="flex size-9 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#647099] transition hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-40" aria-label={ta("pagination.previous")}>
+      <button type="button" disabled={page <= 1} onClick={() => onPageChange(Math.max(1, page - 1))} className="flex size-9 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#647099] transition hover:text-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-40" aria-label={ta("pagination.previous")}>
         <ChevronDown size={14} className="rotate-90" />
       </button>
       {pages.map((item, index) => (
         <div key={item} className="contents">
           {index > 0 && item - pages[index - 1] > 1 ? <span className="px-1 text-[11px] font-black text-[#647099]">...</span> : null}
-        <button key={item} type="button" onClick={() => onPageChange(item)} className={cn("flex size-9 items-center justify-center rounded-[8px] border text-[12px] font-black transition", page === item ? "border-[#465FFF] bg-white text-[#465FFF] shadow-sm" : "border-[#E6EAF2] bg-white text-[#31406B] hover:border-[#C9D4F6]")}>{item}</button>
+        <button key={item} type="button" onClick={() => onPageChange(item)} className={cn("flex size-9 items-center justify-center rounded-[8px] border text-[12px] font-black transition", page === item ? "border-[#465FFF] bg-white text-[#3B52F5] shadow-sm" : "border-[#E6EAF2] bg-white text-[#31406B] hover:border-[#C9D4F6]")}>{item}</button>
         </div>
       ))}
-      <button type="button" disabled={page >= safeTotal} onClick={() => onPageChange(Math.min(safeTotal, page + 1))} className="flex size-9 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#31406B] transition hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-40" aria-label={ta("pagination.next")}>
+      <button type="button" disabled={page >= safeTotal} onClick={() => onPageChange(Math.min(safeTotal, page + 1))} className="flex size-9 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#31406B] transition hover:text-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-40" aria-label={ta("pagination.next")}>
         <ChevronDown size={14} className="-rotate-90" />
       </button>
     </div>
@@ -841,7 +842,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
       {/* Bulk Actions Toolbar */}
       {selectedAlerts.size > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-2 rounded-[10px] border border-[#465FFF]/20 bg-[#EEF2FF] px-4 py-2.5">
-          <span className="text-[12px] font-black text-[#465FFF]">{selectedAlerts.size} selected</span>
+          <span className="text-[12px] font-black text-[#3B52F5]">{selectedAlerts.size} selected</span>
           <div className="h-4 w-px bg-[#465FFF]/20" />
           <button
             onClick={() => onBulkStatusChange("open")}
@@ -869,7 +870,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
           </button>
           <button
             onClick={() => onSelectionChange(new Set())}
-            className="ml-auto flex items-center gap-1 rounded-[6px] px-2 py-1.5 text-[11px] font-bold text-[#5F6B94] transition hover:bg-[#465FFF]/10 hover:text-[#465FFF]"
+            className="ml-auto flex items-center gap-1 rounded-[6px] px-2 py-1.5 text-[11px] font-bold text-[#5F6B94] transition hover:bg-[#465FFF]/10 hover:text-[#3B52F5]"
           >
             <X size={12} />
             Clear
@@ -887,7 +888,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#5F6B94]" />
             <input type="search" value={searchQuery ?? ""} onChange={(e) => onSearchChange(e.target.value)} placeholder={ta("filter.search")} className="h-10 w-full min-w-[220px] rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-10 text-[13px] font-bold text-[#101334] outline-none transition placeholder:text-[#647099] focus:border-[#465FFF] focus:bg-white" />
           </label>
-          <button type="button" onClick={onOpenFilterModal} className={cn("inline-flex h-10 items-center gap-2 rounded-[8px] border px-4 text-[11px] font-black transition", activeFilterCount > 0 ? "border-[#465FFF]/30 bg-[#EEF2FF] text-[#465FFF]" : "border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B] hover:border-[#C9D4F6]")}>
+          <button type="button" onClick={onOpenFilterModal} className={cn("inline-flex h-10 items-center gap-2 rounded-[8px] border px-4 text-[11px] font-black transition", activeFilterCount > 0 ? "border-[#465FFF]/30 bg-[#EEF2FF] text-[#3B52F5]" : "border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B] hover:border-[#C9D4F6]")}>
             <SlidersHorizontal size={14} />
             {ta("filter.title")}
             {activeFilterCount > 0 ? <span className="rounded-full bg-[#465FFF] px-1.5 py-0.5 text-[9px] leading-none text-white">{activeFilterCount}</span> : null}
@@ -973,13 +974,13 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                   <div className="flex items-start gap-3">
                     <AlertIcon tone={alert.tone} />
                     <div className="min-w-0">
-                      <Link href={`/alerts/${alert.id}`} className="text-[12px] font-black leading-snug text-[#101334] hover:text-[#465FFF]">{alert.title}</Link>
+                      <Link href={`/alerts/${alert.id}`} className="text-[12px] font-black leading-snug text-[#101334] hover:text-[#3B52F5]">{alert.title}</Link>
                       <p className="mt-1 line-clamp-2 text-[10px] font-bold leading-snug text-[#5F6B94]">{alert.description}</p>
                     </div>
                   </div>
                 </td>
-                <td className="px-3 py-3 align-middle"><span className={cn("rounded-[6px] px-2 py-1 text-[9px] font-black", alert.tone === "red" ? "bg-[#EF4444]/10 text-[#C81E1E]" : alert.tone === "amber" ? "bg-[#F59E0B]/12 text-[#B45309]" : "bg-[#10B981]/10 text-[#047857]")}>{alert.tags[0]}</span></td>
-                <td className="px-3 py-3 align-middle"><div className="flex items-center gap-1.5"><span className="flex size-6 items-center justify-center rounded-full bg-[#465FFF]/10 text-[9px] font-black text-[#465FFF]">{alert.sourceLabel.slice(0, 2).toUpperCase()}</span><span className="text-[10px] font-black text-[#31406B]">{alert.sourceLabel}</span></div></td>
+                <td className="px-3 py-3 align-middle"><span className={cn("rounded-[6px] px-2 py-1 text-[9px] font-black", alert.tone === "red" ? "bg-[#EF4444]/10 text-[#C81E1E]" : alert.tone === "amber" ? "bg-[#F59E0B]/12 text-[#A04606]" : "bg-[#10B981]/10 text-[#047857]")}>{alert.tags[0]}</span></td>
+                <td className="px-3 py-3 align-middle"><div className="flex items-center gap-1.5"><span className="flex size-6 items-center justify-center rounded-full bg-[#465FFF]/10 text-[9px] font-black text-[#3B52F5]">{alert.sourceLabel.slice(0, 2).toUpperCase()}</span><span className="text-[10px] font-black text-[#31406B]">{alert.sourceLabel}</span></div></td>
                 <td className="px-3 py-3 align-middle"><SourceIconList label="" sources={alert.sources} extraSources={alert.extraSources} /></td>
                 <td className="px-3 py-3 align-middle text-[11px] font-black text-[#31406B]">{alert.escalationLevel}</td>
                 <td className="px-3 py-3 align-middle text-[10px] font-black text-[#31406B]">{alert.deadline}</td>
@@ -987,11 +988,11 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                 <td className="px-3 py-3 align-middle"><StatusBadge status={alert.status} /></td>
                 <td className="px-3 py-3 align-middle text-[10px] font-black text-[#31406B]">{alert.time}</td>
                 <td className="relative px-3 py-3 text-right align-middle">
-                  <button type="button" aria-label={`Open actions for ${alert.title}`} onClick={() => setOpenMenuId(openMenuId === alert.id ? null : alert.id)} className="rounded-md p-1 text-[#5F6B94] transition hover:bg-[#EEF2FF] hover:text-[#465FFF]"><MoreVertical size={16} /></button>
+                  <button type="button" aria-label={`Open actions for ${alert.title}`} onClick={() => setOpenMenuId(openMenuId === alert.id ? null : alert.id)} className="rounded-md p-1 text-[#5F6B94] transition hover:bg-[#EEF2FF] hover:text-[#3B52F5]"><MoreVertical size={16} /></button>
                   {openMenuId === alert.id ? (
                     <div ref={menuRef} className="absolute right-3 top-full z-50 mt-1 w-48 rounded-[10px] border border-[#E6EAF2] bg-white py-1 shadow-[0_12px_36px_rgba(16,24,40,0.12)]">
                       <p className="px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-[#647099]">{ta("table.changeStatus")}</p>
-                      <button type="button" onClick={() => { onStatusChange(alert.id, "open"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]"><Bell size={13} className="text-[#465FFF]" /> {ta("table.statusNew")}</button>
+                      <button type="button" onClick={() => { onStatusChange(alert.id, "open"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]"><Bell size={13} className="text-[#3B52F5]" /> {ta("table.statusNew")}</button>
                       <button type="button" onClick={() => { onStatusChange(alert.id, "acknowledged"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]"><Check size={13} className="text-[#047857]" /> {ta("table.statusInvestigating")}</button>
                       <button type="button" onClick={() => { onStatusChange(alert.id, "resolved"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]"><ShieldCheck size={13} className="text-[#047857]" /> {ta("table.statusResolved")}</button>
                     </div>
@@ -1437,12 +1438,7 @@ export default function AlertsPage() {
   return (
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
       {isDemoSession && (
-        <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
-          <Sparkles size={16} className="text-[#6E44E8]" />
-          <p className="text-[13px] font-bold text-[#6E44E8]">
-            Demo workspace — some content on this page may be illustrative examples rather than live data
-          </p>
-        </div>
+        <DemoBanner />
       )}
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
@@ -1471,7 +1467,7 @@ export default function AlertsPage() {
             </div>
             <div>
               <p className="text-[13px] font-bold text-slate-900">Alert metrics unavailable</p>
-              <p className="text-[11px] font-medium text-slate-500">Backend data couldn't be loaded. Activate Demo Mode to explore with sample alerts.</p>
+              <p className="text-[11px] font-medium text-[#5A6478]">Backend data couldn't be loaded. Activate Demo Mode to explore with sample alerts.</p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -1547,12 +1543,12 @@ export default function AlertsPage() {
                   {criticalRows.map((item) => (
                     <div key={item.id} className="grid gap-3 rounded-[12px] border border-[#F4D8D8] bg-[#FFFDFD] p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                       <div className="min-w-0">
-                        <Link href={`/alerts/${item.id}`} className="text-[12px] font-black text-[#101334] hover:text-[#465FFF]">{item.title}</Link>
+                        <Link href={`/alerts/${item.id}`} className="text-[12px] font-black text-[#101334] hover:text-[#3B52F5]">{item.title}</Link>
                         <p className="mt-1 line-clamp-2 text-[10px] font-bold text-[#5F6B94]">{item.description}</p>
                       </div>
                       <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                         <StatusBadge status={item.status} />
-                        <span className="rounded-[8px] bg-[#EEF2FF] px-2 py-1 text-[9px] font-black text-[#465FFF]">{item.sourceLabel}</span>
+                        <span className="rounded-[8px] bg-[#EEF2FF] px-2 py-1 text-[9px] font-black text-[#3B52F5]">{item.sourceLabel}</span>
                         <span className="text-[10px] font-black text-[#31406B]">{item.time}</span>
                       </div>
                     </div>
@@ -1603,7 +1599,7 @@ export default function AlertsPage() {
               <div className="absolute right-8 top-3 size-28 rounded-full bg-[#465FFF]/10 blur-2xl" />
               <div className="relative flex items-start justify-between gap-4">
                 <div>
-                  <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#DDE3EF] bg-white/80 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-[#465FFF]">
+                  <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#DDE3EF] bg-white/80 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-[#3B52F5]">
                     <Bell size={12} /> {ta("v2.notificationRulesModal.badge")}
                   </div>
                   <h2 className="text-lg font-black tracking-[-0.03em] text-[#101334]">{ta("v2.notificationRulesModal.title")}</h2>
@@ -1672,7 +1668,7 @@ export default function AlertsPage() {
                         <p className="text-[13px] font-black text-[#101334]">{ta("v2.notificationRulesModal.rulesTitle")}</p>
                         <p className="mt-0.5 text-[10px] font-bold text-[#647099]">{ta("v2.notificationRulesModal.rulesDesc")}</p>
                       </div>
-                      <button type="button" onClick={addNotificationRule} disabled={notificationRuleDraft.length >= 20} className="inline-flex h-9 items-center justify-center gap-2 rounded-[9px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#465FFF] transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-50">
+                      <button type="button" onClick={addNotificationRule} disabled={notificationRuleDraft.length >= 20} className="inline-flex h-9 items-center justify-center gap-2 rounded-[9px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#3B52F5] transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-50">
                         <Plus size={14} /> {ta("v2.notificationRulesModal.addRule")}
                       </button>
                     </div>
@@ -1875,7 +1871,7 @@ export default function AlertsPage() {
               </div>
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] p-3">
                 <p className="text-[11px] font-bold text-[#5F6B94]">{ta("v2.escalationMatrix.limitHint")}</p>
-                <button type="button" onClick={addEscalationLevel} disabled={escalationDraft.length >= 5} className="inline-flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#465FFF] transition hover:border-[#C9D4F6] disabled:cursor-not-allowed disabled:opacity-50">
+                <button type="button" onClick={addEscalationLevel} disabled={escalationDraft.length >= 5} className="inline-flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#3B52F5] transition hover:border-[#C9D4F6] disabled:cursor-not-allowed disabled:opacity-50">
                   <Plus size={14} /> {ta("v2.escalationMatrix.addLevel")}
                 </button>
               </div>
@@ -2011,7 +2007,7 @@ export default function AlertsPage() {
                 {/* ── Assignment & Sources ── */}
                 <div className="rounded-[10px] border border-[#E6EAF2] bg-[#FBFCFF]">
                   <button type="button" onClick={() => setIsCreateAdvancedOpen((open) => !open)} className="flex w-full items-center justify-between px-3.5 py-2.5 text-[11px] font-black text-[#31406B]">
-                    <span className="flex items-center gap-2"><Settings size={13} className="text-[#465FFF]" />{ta("v2.header.escalationMatrix").replace("Escalation Matrix", "Assignment & Sources").replace("Matriks Eskalasi", "Penugasan & Sumber")}</span>
+                    <span className="flex items-center gap-2"><Settings size={13} className="text-[#3B52F5]" />{ta("v2.header.escalationMatrix").replace("Escalation Matrix", "Assignment & Sources").replace("Matriks Eskalasi", "Penugasan & Sumber")}</span>
                     <ChevronRight size={14} className={cn("text-[#647099] transition-transform", isCreateAdvancedOpen && "rotate-90")} />
                   </button>
                   {isCreateAdvancedOpen && (
@@ -2079,7 +2075,7 @@ export default function AlertsPage() {
                                       setSelectedSources((prev) => prev.filter((s) => s !== src.name));
                                     }
                                   }}
-                                  className="size-3.5 rounded border-[#DDE3EF] text-[#465FFF] accent-[#465FFF]"
+                                  className="size-3.5 rounded border-[#DDE3EF] text-[#3B52F5] accent-[#465FFF]"
                                 />
                                 <span className="truncate">{src.name}</span>
                                 <span className="ml-auto shrink-0 rounded-full bg-[#F1F4FB] px-1.5 py-0.5 text-[9px] font-black text-[#5F6B94]">{src.type}</span>
@@ -2094,9 +2090,9 @@ export default function AlertsPage() {
                         {selectedSources.length > 0 && (
                           <div className="mt-1.5 flex flex-wrap gap-1">
                             {selectedSources.map((s) => (
-                              <span key={s} className="inline-flex items-center gap-1 rounded-full bg-[#465FFF]/10 px-2 py-0.5 text-[10px] font-black text-[#465FFF]">
+                              <span key={s} className="inline-flex items-center gap-1 rounded-full bg-[#465FFF]/10 px-2 py-0.5 text-[10px] font-black text-[#3B52F5]">
                                 {s}
-                                <button type="button" onClick={() => setSelectedSources((prev) => prev.filter((x) => x !== s))} className="ml-0.5 text-[#465FFF]/60 hover:text-[#465FFF]">
+                                <button type="button" onClick={() => setSelectedSources((prev) => prev.filter((x) => x !== s))} className="ml-0.5 text-[#3B52F5]/60 hover:text-[#3B52F5]">
                                   <X size={10} />
                                 </button>
                               </span>
@@ -2132,7 +2128,7 @@ export default function AlertsPage() {
               <div className="absolute right-6 top-4 size-24 rounded-full bg-[#465FFF]/10 blur-2xl" />
               <div className="relative flex items-start justify-between gap-4">
                 <div>
-                  <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#DDE3EF] bg-white/80 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-[#465FFF]">
+                  <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#DDE3EF] bg-white/80 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-[#3B52F5]">
                     <SlidersHorizontal size={12} /> {ta("filter.badge")}
                   </div>
                   <h2 className="text-lg font-black tracking-[-0.03em] text-[#101334]">{ta("filter.title")}</h2>
@@ -2150,7 +2146,7 @@ export default function AlertsPage() {
                     <p className="text-[12px] font-black text-[#101334]">{ta("table.severity")}</p>
                     <p className="mt-0.5 text-[10px] font-bold text-[#647099]">{ta("filter.severityDesc")}</p>
                   </div>
-                  {severityFilter ? <span className="rounded-full bg-[#465FFF]/10 px-2 py-1 text-[9px] font-black text-[#465FFF]">{severityFilter}</span> : null}
+                  {severityFilter ? <span className="rounded-full bg-[#465FFF]/10 px-2 py-1 text-[9px] font-black text-[#3B52F5]">{severityFilter}</span> : null}
                 </div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                   {[
@@ -2177,7 +2173,7 @@ export default function AlertsPage() {
                     <p className="text-[12px] font-black text-[#101334]">{ta("table.status")}</p>
                     <p className="mt-0.5 text-[10px] font-bold text-[#647099]">{ta("filter.statusDesc")}</p>
                   </div>
-                  {statusFilter ? <span className="rounded-full bg-[#465FFF]/10 px-2 py-1 text-[9px] font-black text-[#465FFF]">{statusFilter}</span> : null}
+                  {statusFilter ? <span className="rounded-full bg-[#465FFF]/10 px-2 py-1 text-[9px] font-black text-[#3B52F5]">{statusFilter}</span> : null}
                 </div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {[

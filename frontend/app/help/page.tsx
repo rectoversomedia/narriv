@@ -148,7 +148,7 @@ interface Article {
 function ArticlePage({ article }: { article: Article }) {
   return (
     <div className="max-w-4xl mx-auto">
-      <Link href="/help" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 mb-6">
+      <Link href="/help" className="inline-flex items-center gap-2 text-sm text-[#5A6478] hover:text-slate-900 mb-6">
         <ArrowLeft size={16} />
         Back to Help Center
       </Link>
@@ -162,7 +162,7 @@ function ArticlePage({ article }: { article: Article }) {
 
         <h1 className="text-3xl font-black text-slate-900 mb-4">{article.title}</h1>
 
-        <p className="text-sm text-slate-500 mb-8">Last updated: {article.lastUpdated}</p>
+        <p className="text-sm text-[#5A6478] mb-8">Last updated: {article.lastUpdated}</p>
 
         <div
           className="prose prose-slate max-w-none"
@@ -224,7 +224,7 @@ function CategoryCard({
           <h3 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
             {category.title}
           </h3>
-          <p className="mt-1 text-sm text-slate-500 line-clamp-2">{category.description}</p>
+          <p className="mt-1 text-sm text-[#5A6478] line-clamp-2">{category.description}</p>
         </div>
         <ChevronRight
           size={20}
@@ -246,7 +246,7 @@ function TopicList({
     <div className="max-w-4xl mx-auto">
       <button
         onClick={onBack}
-        className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 mb-6"
+        className="inline-flex items-center gap-2 text-sm text-[#5A6478] hover:text-slate-900 mb-6"
       >
         <ArrowLeft size={16} />
         All Categories
@@ -258,7 +258,7 @@ function TopicList({
         </div>
         <div>
           <h1 className="text-2xl font-black text-slate-900">{category.title}</h1>
-          <p className="text-slate-500">{category.description}</p>
+          <p className="text-[#5A6478]">{category.description}</p>
         </div>
       </div>
 
@@ -266,7 +266,7 @@ function TopicList({
         {category.topics.map((topic) => (
           <div key={topic.slug} className="flex items-center justify-between p-5">
             <span className="font-medium text-slate-900">{topic.title}</span>
-            <span className="text-xs font-semibold text-slate-500">Guide not yet published</span>
+            <span className="text-xs font-semibold text-[#5A6478]">Guide not yet published</span>
           </div>
         ))}
       </div>
@@ -283,7 +283,7 @@ function SearchResults({
 }) {
   return (
     <div className="max-w-4xl mx-auto">
-      <p className="text-sm text-slate-500 mb-6">
+      <p className="text-sm text-[#5A6478] mb-6">
         {results.length} matching answers for &quot;{query}&quot;
       </p>
       <div className="space-y-4">
@@ -293,7 +293,7 @@ function SearchResults({
             <p className="mt-2 text-sm text-slate-600">{result.a}</p>
           </div>
         ))}
-        {results.length === 0 ? <p className="text-sm text-slate-500">No answers match. Contact support below.</p> : null}
+        {results.length === 0 ? <p className="text-sm text-[#5A6478]">No answers match. Contact support below.</p> : null}
       </div>
     </div>
   );
@@ -406,7 +406,7 @@ export default function HelpCenterPage() {
                       <span className="font-medium text-slate-900">{faq.q}</span>
                       <ChevronDown
                         size={18}
-                        className={`shrink-0 text-slate-500 transition-transform ${
+                        className={`shrink-0 text-[#5A6478] transition-transform ${
                           expandedFaq === idx ? "rotate-180" : ""
                         }`}
                       />
@@ -450,10 +450,10 @@ export default function HelpCenterPage() {
       {/* Footer */}
       <footer className="border-t border-slate-200 bg-white px-6 py-8">
         <div className="mx-auto max-w-6xl flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-6 text-sm text-slate-500">
+          <div className="flex items-center gap-6 text-sm text-[#5A6478]">
             <Link href="/help#contact" className="hover:text-slate-900">Contact</Link>
           </div>
-          <p className="text-sm text-slate-500">© {new Date().getFullYear()} Narriv. All rights reserved.</p>
+          <p className="text-sm text-[#5A6478]">© {new Date().getFullYear()} Narriv. All rights reserved.</p>
         </div>
       </footer>
     </div>

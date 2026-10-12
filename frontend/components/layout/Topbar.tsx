@@ -59,7 +59,7 @@ const typeLabel: Record<string, string> = {
 const typeColor: Record<string, string> = {
   alert: "bg-[#EF4444]/10 text-[#C81E1E]",
   narrative: "bg-[#8B5CFF]/10 text-[#6E44E8]",
-  nav: "bg-[#465FFF]/10 text-[#465FFF]",
+  nav: "bg-[#465FFF]/10 text-[#3B52F5]",
 };
 
 const notificationsQueryKey = ["notifications"] as const;
@@ -92,11 +92,11 @@ function getNotificationMeta(type: string) {
 function NotificationState({ icon: Icon, title, description, action }: { icon: LucideIcon; title: string; description: string; action?: React.ReactNode }) {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-10 text-center">
-      <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-500">
+      <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-[#5A6478]">
         <Icon size={20} />
       </span>
       <p className="mt-3 text-sm font-black text-slate-800">{title}</p>
-      <p className="mt-1 max-w-[260px] text-xs font-semibold leading-relaxed text-slate-500">{description}</p>
+      <p className="mt-1 max-w-[260px] text-xs font-semibold leading-relaxed text-[#5A6478]">{description}</p>
       {action}
     </div>
   );
@@ -333,7 +333,7 @@ export function Topbar() {
             placeholder={t("search")}
           />
           {searchQuery && (
-            <button type="button" onClick={() => { setSearchQuery(""); setSearchOpen(false); }} className="text-slate-500 hover:text-slate-600">
+            <button type="button" onClick={() => { setSearchQuery(""); setSearchOpen(false); }} className="text-[#5A6478] hover:text-slate-600">
               <X size={16} />
             </button>
           )}
@@ -353,14 +353,14 @@ export function Topbar() {
                     {typeLabel[result.type]}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13px] font-bold text-slate-900 group-hover:text-[#465FFF]">{result.title}</span>
-                    <span className="block truncate text-[11px] font-semibold text-slate-500">{result.subtitle}</span>
+                    <span className="block truncate text-[13px] font-bold text-slate-900 group-hover:text-[#3B52F5]">{result.title}</span>
+                    <span className="block truncate text-[11px] font-semibold text-[#5A6478]">{result.subtitle}</span>
                   </span>
                 </button>
               ))}
             </div>
             <div className="border-t border-slate-100 bg-slate-50/80 px-3 py-2">
-              <p className="text-center text-[11px] font-bold text-slate-500">
+              <p className="text-center text-[11px] font-bold text-[#5A6478]">
                 {searchResults.length} hasil ditemukan
               </p>
             </div>
@@ -370,8 +370,8 @@ export function Topbar() {
         {searchOpen && searchQuery.trim().length >= 2 && searchResults.length === 0 && (
           <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-[14px] border border-slate-200 bg-white p-6 text-center shadow-[0_24px_70px_rgba(15,23,42,0.16)]">
             <Search size={24} className="mx-auto text-slate-300" />
-            <p className="mt-2 text-[13px] font-bold text-slate-500">Tidak ada hasil untuk &quot;{searchQuery}&quot;</p>
-            <p className="mt-1 text-[11px] font-semibold text-slate-500">Coba kata kunci lain</p>
+            <p className="mt-2 text-[13px] font-bold text-[#5A6478]">Tidak ada hasil untuk &quot;{searchQuery}&quot;</p>
+            <p className="mt-1 text-[11px] font-semibold text-[#5A6478]">Coba kata kunci lain</p>
           </div>
         )}
       </div>
@@ -389,7 +389,7 @@ export function Topbar() {
         <Popover open={notificationsOpen} onOpenChange={handleNotificationsOpenChange}>
           <PopoverTrigger
             type="button"
-            className="relative inline-flex h-10 w-10 items-center justify-center rounded-[10px] text-[var(--text)] transition hover:bg-slate-100 hover:text-[#465FFF]"
+            className="relative inline-flex h-10 w-10 items-center justify-center rounded-[10px] text-[var(--text)] transition hover:bg-slate-100 hover:text-[#3B52F5]"
             aria-label={t("notifications")}
           >
             <Bell size={24} />
@@ -412,7 +412,7 @@ export function Topbar() {
                       </span>
                     ) : null}
                   </div>
-                  <PopoverDescription className="mt-1 text-xs font-semibold text-slate-500">
+                  <PopoverDescription className="mt-1 text-xs font-semibold text-[#5A6478]">
                     {unreadCount > 0 ? t("notificationsUnread", { count: unreadCount }) : t("notificationsAllCaughtUp")}
                   </PopoverDescription>
                 </div>
@@ -420,7 +420,7 @@ export function Topbar() {
                   type="button"
                   onClick={() => markAllRead.mutate()}
                   disabled={unreadCount === 0 || markAllRead.isPending}
-                  className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold text-[#465FFF] transition hover:bg-[#465FFF]/5 disabled:cursor-not-allowed disabled:text-slate-300"
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold text-[#3B52F5] transition hover:bg-[#465FFF]/5 disabled:cursor-not-allowed disabled:text-slate-300"
                 >
                   <CheckCheck size={13} />
                   {markAllRead.isPending ? t("notificationsMarking") : t("notificationsMarkAll")}
@@ -453,7 +453,7 @@ export function Topbar() {
                     <button
                       type="button"
                       onClick={() => notificationsQuery.refetch()}
-                      className="mt-4 inline-flex h-9 items-center justify-center gap-2 rounded-[10px] border border-slate-200 bg-white px-3 text-[12px] font-black text-[#465FFF] transition hover:bg-[#465FFF]/5"
+                      className="mt-4 inline-flex h-9 items-center justify-center gap-2 rounded-[10px] border border-slate-200 bg-white px-3 text-[12px] font-black text-[#3B52F5] transition hover:bg-[#465FFF]/5"
                     >
                       <RotateCw size={13} />
                       {t("notificationsRetry")}
@@ -477,14 +477,14 @@ export function Topbar() {
                   >
                     <span className={`mt-2 h-2.5 w-2.5 rounded-full ${notification.isRead ? "bg-slate-300" : notificationToneClass[meta.dotTone]}`} />
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-black text-slate-950 group-hover:text-[#465FFF]">{notification.title}</span>
-                      <span className="mt-1 block text-xs font-semibold text-slate-500 line-clamp-2">{notification.message}</span>
+                      <span className="block truncate text-sm font-black text-slate-950 group-hover:text-[#3B52F5]">{notification.title}</span>
+                      <span className="mt-1 block text-xs font-semibold text-[#5A6478] line-clamp-2">{notification.message}</span>
                     </span>
                     <span className="shrink-0 text-right">
                       <Badge variant={meta.badgeVariant} className="rounded-full text-[10px] font-black">
                         {meta.label}
                       </Badge>
-                      <span className="mt-2 block text-[11px] font-bold text-slate-500">
+                      <span className="mt-2 block text-[11px] font-bold text-[#5A6478]">
                         {formatNotificationTime(notification.createdAt, notificationNow || Date.now(), language === "id" ? "id" : "en")}
                       </span>
                     </span>
@@ -496,7 +496,7 @@ export function Topbar() {
               <Link
                 href="/workspace/activity"
                 onClick={() => setNotificationsOpen(false)}
-                className="flex h-10 w-full items-center justify-center rounded-[10px] border border-slate-200 bg-white text-xs font-black text-[#465FFF] transition hover:bg-[#465FFF]/5"
+                className="flex h-10 w-full items-center justify-center rounded-[10px] border border-slate-200 bg-white text-xs font-black text-[#3B52F5] transition hover:bg-[#465FFF]/5"
               >
                 {t("notificationsViewAll")}
               </Link>

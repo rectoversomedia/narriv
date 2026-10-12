@@ -112,7 +112,7 @@ export default function VerifyCodePage() {
         <p className="mt-4 text-[19px] font-medium leading-8 text-[#3E4975]">
           {t("subtitle")}
           <br />
-          <span className="font-bold text-[#465FFF]">{email || t("email")}</span>
+          <span className="font-bold text-[#3B52F5]">{email || t("email")}</span>
         </p>
       </div>
 
@@ -124,12 +124,12 @@ export default function VerifyCodePage() {
       </form>
 
       <p className="mt-12 text-center text-[17px] font-medium text-[#3E4975]">
-        {t("expiresIn")} <span className="font-bold text-[#465FFF]">{isMounted ? formatTime(timeLeft) : "--:--"}</span>
+        {t("expiresIn")} <span className="font-bold text-[#3B52F5]">{isMounted ? formatTime(timeLeft) : "--:--"}</span>
       </p>
 
       <div className="mt-11 grid gap-9">
         <InfoCallout title={t("infoTitle")} text={t("infoText")} />
-        <button type="button" onClick={handleResend} disabled={!isMounted || isResending || resendCooldown > 0 || !email} className="mx-auto flex items-center gap-3 text-[16px] font-medium text-[#3E4975] transition hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-60">
+        <button type="button" onClick={handleResend} disabled={!isMounted || isResending || resendCooldown > 0 || !email} className="mx-auto flex items-center gap-3 text-[16px] font-medium text-[#3E4975] transition hover:text-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-60">
           <RefreshCw key={isResending ? "spin" : "static"} size={16} className={cn("text-[#3E4975]", isResending && "animate-spin")} />
           {isResending ? t("resending") : t("resendCode")} 
           {isMounted && resendCooldown > 0 && !isResending && <span className="font-bold">({formatTime(resendCooldown)})</span>}

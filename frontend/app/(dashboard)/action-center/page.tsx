@@ -77,19 +77,19 @@ export default function ActionCenterPage() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">
             <ShieldCheck size={14} className="text-emerald-700" /> Approval required
           </div>
           <p className="mt-2 text-[13px] text-slate-700">Narriv does not execute external actions. Recommendations are guidance for human review.</p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">
             <Clock size={14} className="text-sky-600" /> Time horizon
           </div>
           <p className="mt-2 text-[13px] text-slate-700">Window: last 24h. Refreshed every 60s when the tab is active.</p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">
             <CheckCircle2 size={14} className="text-emerald-700" /> Evidence
           </div>
           <p className="mt-2 text-[13px] text-slate-700">Every recommendation cites the evidence used to derive it.</p>
@@ -99,7 +99,7 @@ export default function ActionCenterPage() {
       <div className="rounded-xl border border-slate-200 bg-white">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <h2 className="text-[15px] font-semibold text-slate-900">{list.length} recommendation(s)</h2>
-          <button type="button" onClick={() => { recs.refetch(); brief.refetch(); }} className="flex items-center gap-1.5 text-[12px] font-semibold text-slate-500 hover:text-slate-900">
+          <button type="button" onClick={() => { recs.refetch(); brief.refetch(); }} className="flex items-center gap-1.5 text-[12px] font-semibold text-[#5A6478] hover:text-slate-900">
             <RefreshCcw size={12} /> Refresh
           </button>
         </div>
@@ -109,12 +109,12 @@ export default function ActionCenterPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <ChevronRight size={14} className="shrink-0 text-slate-500" />
+                    <ChevronRight size={14} className="shrink-0 text-[#5A6478]" />
                     <h3 className="text-[14px] font-semibold capitalize text-slate-900">{r.action.replace(/_/g, " ")}</h3>
                   </div>
                   <p className="mt-1 text-[13px] text-slate-600">{r.reason}</p>
                   {r.expectedOutcome ? (
-                    <p className="mt-1.5 text-[12px] text-slate-500">
+                    <p className="mt-1.5 text-[12px] text-[#5A6478]">
                       <span className="font-semibold">Expected outcome:</span> {r.expectedOutcome}
                     </p>
                   ) : null}
@@ -133,7 +133,7 @@ export default function ActionCenterPage() {
                   <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold tracking-wide", URGENCY_TONE[r.urgency] || URGENCY_TONE.monitor)}>
                     {r.urgency}
                   </span>
-                  <span className="text-[10.5px] text-slate-500">Confidence {Math.round(r.confidence * 100)}%</span>
+                  <span className="text-[10.5px] text-[#5A6478]">Confidence {Math.round(r.confidence * 100)}%</span>
                 </div>
               </div>
             </li>
@@ -143,7 +143,7 @@ export default function ActionCenterPage() {
 
       {topRec.length > 0 ? (
         <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-5">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">From executive brief</div>
+          <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">From executive brief</div>
           <p className="mt-1 text-[13px] text-slate-700">These top actions also appear in your daily brief.</p>
         </div>
       ) : null}

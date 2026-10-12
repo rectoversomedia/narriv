@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Cable, CheckCircle2, Cloud, Filter, Link2, Plus, RefreshCcw, Send, Sparkles, Trash2, TriangleAlert, Zap } from "lucide-react";
+import { Cable, CheckCircle2, Cloud, Filter, Link2, Plus, RefreshCcw, Send, Trash2, TriangleAlert, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { DashboardEmptyState, DashboardErrorState, TableSkeleton } from "@/components/dashboard/dashboard-states";
@@ -13,6 +13,7 @@ import { getMockIntegrations } from "@/lib/demo-mock-data";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
 import { intlLocale } from "@/store/useUiStore";
+import { DemoBanner } from "@/components/ui/demo-banner";
 const emptyIntegrations: IntegrationRecord[] = [];
 
 function platformLabel(platform: string, options: { value: string; label: string }[]) {
@@ -198,12 +199,7 @@ export default function IntegrationsPage() {
     <div className="space-y-6 pb-6">
       {/* Demo Workspace Banner */}
       {isDemoSession && (
-        <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
-          <Sparkles size={16} className="text-[#6E44E8]" />
-          <p className="text-[13px] font-bold text-[#6E44E8]">
-            Demo Workspace — Seeded sandbox workspace for evaluation
-          </p>
-        </div>
+        <DemoBanner />
       )}
 
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -232,7 +228,7 @@ export default function IntegrationsPage() {
               <div className="flex items-center gap-3">
                 <span className={cn(
                   "flex h-10 w-10 items-center justify-center rounded-xl",
-                  metric.tone === "blue" && "bg-[#465FFF]/10 text-[#465FFF]",
+                  metric.tone === "blue" && "bg-[#465FFF]/10 text-[#3B52F5]",
                   metric.tone === "green" && "bg-[#10B981]/10 text-[#047857]",
                   metric.tone === "purple" && "bg-[#8B5CFF]/10 text-[#6E44E8]",
                   metric.tone === "red" && "bg-[#EF4444]/10 text-[#C81E1E]"
@@ -240,11 +236,11 @@ export default function IntegrationsPage() {
                   <Icon size={18} />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{metric.label}</p>
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">{metric.label}</p>
                   <p className="mt-1 text-2xl font-black tracking-[-0.04em] text-slate-950">{metric.value.toLocaleString(intlLocale())}</p>
                 </div>
               </div>
-              <p className="mt-3 text-[11px] font-bold text-slate-500">{metric.helper}</p>
+              <p className="mt-3 text-[11px] font-bold text-[#5A6478]">{metric.helper}</p>
             </div>
           );
         })}
@@ -253,18 +249,18 @@ export default function IntegrationsPage() {
       <div className="grid gap-6 xl:grid-cols-[0.9fr_1.4fr]">
         <section className="rounded-[16px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="mb-5 flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#465FFF]/10 text-[#465FFF]">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#465FFF]/10 text-[#3B52F5]">
               <Plus size={19} />
             </span>
             <div>
               <h2 className="text-base font-black text-slate-950">{t("form.title")}</h2>
-              <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">{t("form.desc")}</p>
+              <p className="mt-1 text-xs font-semibold leading-5 text-[#5A6478]">{t("form.desc")}</p>
             </div>
           </div>
 
           <form onSubmit={handleCreate} className="space-y-4">
             <label className="grid gap-1.5">
-              <span className="text-[11px] font-black text-slate-500">{t("form.name")}</span>
+              <span className="text-[11px] font-black text-[#5A6478]">{t("form.name")}</span>
               <input
                 value={name}
                 onChange={(event) => { setName(event.target.value); setFormError(""); }}
@@ -274,7 +270,7 @@ export default function IntegrationsPage() {
             </label>
 
             <label className="grid gap-1.5">
-              <span className="text-[11px] font-black text-slate-500">{t("form.platform")}</span>
+              <span className="text-[11px] font-black text-[#5A6478]">{t("form.platform")}</span>
               <select
                 value={platform}
                 onChange={(event) => setPlatform(event.target.value)}
@@ -285,7 +281,7 @@ export default function IntegrationsPage() {
             </label>
 
             <label className="grid gap-1.5">
-              <span className="text-[11px] font-black text-slate-500">Config JSON</span>
+              <span className="text-[11px] font-black text-[#5A6478]">Config JSON</span>
               <textarea
                 value={configJson}
                 onChange={(event) => { setConfigJson(event.target.value); setFormError(""); }}
@@ -309,13 +305,13 @@ export default function IntegrationsPage() {
 
         <section className="space-y-4">
           <div className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-3 flex items-center gap-2 text-[12px] font-black uppercase tracking-[0.12em] text-slate-500">
+            <div className="mb-3 flex items-center gap-2 text-[12px] font-black uppercase tracking-[0.12em] text-[#5A6478]">
               <Filter size={14} />
               {t("filter.filterTitle")}
             </div>
             <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
               <label className="grid gap-1.5">
-                <span className="text-[11px] font-black text-slate-500">{t("filter.platform")}</span>
+                <span className="text-[11px] font-black text-[#5A6478]">{t("filter.platform")}</span>
                 <select
                   value={platformFilter}
                   onChange={(event) => setPlatformFilter(event.target.value)}
@@ -326,7 +322,7 @@ export default function IntegrationsPage() {
                 </select>
               </label>
               <label className="grid gap-1.5">
-                <span className="text-[11px] font-black text-slate-500">{t("filter.status")}</span>
+                <span className="text-[11px] font-black text-[#5A6478]">{t("filter.status")}</span>
                 <select
                   value={statusFilter}
                   onChange={(event) => setStatusFilter(event.target.value)}
@@ -366,11 +362,11 @@ export default function IntegrationsPage() {
                 <table className="w-full min-w-[860px] text-left text-sm">
                   <thead className="border-b border-slate-100 bg-slate-50">
                     <tr>
-                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{t("table.integration")}</th>
-                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{t("table.status")}</th>
-                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{t("table.config")}</th>
-                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{t("table.lastSync")}</th>
-                      <th className="px-6 py-4 text-right text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{t("table.action")}</th>
+                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">{t("table.integration")}</th>
+                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">{t("table.status")}</th>
+                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">{t("table.config")}</th>
+                      <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">{t("table.lastSync")}</th>
+                      <th className="px-6 py-4 text-right text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">{t("table.action")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -383,7 +379,7 @@ export default function IntegrationsPage() {
                             </span>
                             <div>
                               <p className="font-black text-slate-950">{item.name}</p>
-                              <p className="mt-1 text-xs font-semibold text-slate-500">{platformLabel(item.platform, platformOptions)} · {item.id.slice(0, 8)}</p>
+                              <p className="mt-1 text-xs font-semibold text-[#5A6478]">{platformLabel(item.platform, platformOptions)} · {item.id.slice(0, 8)}</p>
                               {item.errorMessage ? <p className="mt-1 text-xs font-bold text-[#C81E1E]">{item.errorMessage}</p> : null}
                             </div>
                           </div>
@@ -407,7 +403,7 @@ export default function IntegrationsPage() {
                         </td>
                         <td className="px-6 py-4 align-top">
                           <p className="font-bold text-slate-700">{formatDateTime(item.lastSyncAt, t("table.neverSynced"))}</p>
-                          <p className="mt-1 text-xs font-semibold text-slate-500">Created {formatDateTime(item.createdAt, t("table.neverSynced"))}</p>
+                          <p className="mt-1 text-xs font-semibold text-[#5A6478]">Created {formatDateTime(item.createdAt, t("table.neverSynced"))}</p>
                         </td>
                         <td className="px-6 py-4 text-right align-top">
                           <div className="flex items-center justify-end gap-2">
@@ -419,14 +415,14 @@ export default function IntegrationsPage() {
                                 className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50"
                                 title="Test Webhook Connection"
                               >
-                                <Send size={12} className={testMutation.isPending ? "animate-pulse text-[#465FFF]" : ""} />
+                                <Send size={12} className={testMutation.isPending ? "animate-pulse text-[#3B52F5]" : ""} />
                                 <span>Test</span>
                               </button>
                             )}
                             <button
                               type="button"
                               onClick={() => setDeleteTarget(item)}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-red-50 hover:text-red-700"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#5A6478] transition hover:bg-red-50 hover:text-red-700"
                               aria-label={`Disconnect ${item.name} integration`}
                             >
                               <Trash2 size={16} />

@@ -113,7 +113,7 @@ export function ResponsiveTable<T>({
             <svg className="h-12 w-12 text-slate-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
             </svg>
-            <p className="text-slate-500 font-medium">{emptyMessage}</p>
+            <p className="text-[#5A6478] font-medium">{emptyMessage}</p>
           </div>
         ) : (
           data.map((item) => {
@@ -140,7 +140,7 @@ export function ResponsiveTable<T>({
                       className={cn(
                         "mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded border transition",
                         isSelected
-                          ? "border-blue-500 bg-blue-500 text-white"
+                          ? "border-blue-500 bg-blue-600 text-white"
                           : "border-slate-300 bg-white hover:border-blue-500"
                       )}
                     >
@@ -161,7 +161,7 @@ export function ResponsiveTable<T>({
                     .filter((col) => col.key !== primaryColumn?.key && col.key !== (hasSelectable ? selectionKey : undefined))
                     .map((col) => (
                       <div key={col.key} className="space-y-1">
-                        <p className="text-xs font-medium text-slate-500">{col.header}</p>
+                        <p className="text-xs font-medium text-[#5A6478]">{col.header}</p>
                         <div className="text-slate-700">
                           {col.render ? col.render(item, 0) : String((item as Record<string, unknown>)[col.key] ?? "-")}
                         </div>
@@ -187,7 +187,7 @@ export function ResponsiveTable<T>({
                     className={cn(
                       "flex h-5 w-5 items-center justify-center rounded border transition",
                       allSelected
-                        ? "border-blue-500 bg-blue-500 text-white"
+                        ? "border-blue-500 bg-blue-600 text-white"
                         : someSelected
                         ? "border-blue-500 bg-blue-500/20"
                         : "border-slate-300 bg-white hover:border-blue-500"
@@ -205,7 +205,7 @@ export function ResponsiveTable<T>({
                 <th
                   key={col.key}
                   className={cn(
-                    "px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500",
+                    "px-4 py-3 text-xs font-semibold uppercase tracking-wider text-[#5A6478]",
                     col.headerClassName
                   )}
                 >
@@ -224,7 +224,7 @@ export function ResponsiveTable<T>({
                     <svg className="h-12 w-12 text-slate-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                     </svg>
-                    <p className="text-slate-500 font-medium">{emptyMessage}</p>
+                    <p className="text-[#5A6478] font-medium">{emptyMessage}</p>
                   </div>
                 </td>
               </tr>
@@ -253,7 +253,7 @@ export function ResponsiveTable<T>({
                           className={cn(
                             "flex h-5 w-5 items-center justify-center rounded border transition",
                             isSelected
-                              ? "border-blue-500 bg-blue-500 text-white"
+                              ? "border-blue-500 bg-blue-600 text-white"
                               : "border-slate-300 bg-white hover:border-blue-500"
                           )}
                         >

@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
  */
 export const pageTitleClass = "text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]";
 export const pageDescriptionClass = "mt-1.5 max-w-2xl text-[14px] font-medium leading-6 text-body";
-export const pageEyebrowClass = "mb-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#465FFF]";
+export const pageEyebrowClass = "mb-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#3B52F5]";
 
 export function PageHeader({ eyebrow, title, description, actions, className }: { eyebrow?: ReactNode; title: ReactNode; description?: ReactNode; actions?: ReactNode; className?: string }) {
   return (

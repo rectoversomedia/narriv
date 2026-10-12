@@ -39,7 +39,7 @@ export function VideoCard({ video, variant = "compact", onSelect }: VideoCardPro
           <h3 className="font-medium text-slate-900 group-hover:text-indigo-600 transition-colors">
             {video.title}
           </h3>
-          <p className="mt-1 text-xs text-slate-500 line-clamp-2">
+          <p className="mt-1 text-xs text-[#5A6478] line-clamp-2">
             {video.description}
           </p>
         </div>
@@ -57,7 +57,7 @@ export function VideoCard({ video, variant = "compact", onSelect }: VideoCardPro
         <p className="mt-2 text-sm text-slate-600">{video.description}</p>
 
         {/* Meta info */}
-        <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-slate-500">
+        <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-[#5A6478]">
           <div className="flex items-center gap-1.5">
             <Clock className="w-4 h-4" />
             <span>{video.duration}</span>
@@ -132,7 +132,7 @@ export function VideoScriptOutline({ video }: VideoScriptOutlineProps) {
               <p className="mt-1 text-sm text-slate-600">{section.description}</p>
               <ul className="mt-2 space-y-1">
                 {section.keyPoints.map((point, pIdx) => (
-                  <li key={pIdx} className="text-sm text-slate-500 flex items-start gap-2">
+                  <li key={pIdx} className="text-sm text-[#5A6478] flex items-start gap-2">
                     <span className="text-indigo-400 shrink-0">→</span>
                     {point}
                   </li>

@@ -3227,6 +3227,7 @@
     "metricActiveActions": "Tindakan Aktif",
     "metricActiveHelper": "{count} aktif saat ini",
     "metricTrendHelper": "{trend}% vs 7 hari lalu",
+    "metricNoBaseline": "Belum ada periode sebelumnya untuk dibandingkan",
     "metricInProgress": "Dalam Progres",
     "metricInProgressHelper": "{count} sedang dikerjakan",
     "metricCompleted": "Selesai",

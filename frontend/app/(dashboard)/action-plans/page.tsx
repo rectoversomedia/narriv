@@ -35,6 +35,8 @@ import { cn } from "@/lib/utils";
 import { CreateActionPlanModal } from "./components/create-action-plan-modal";
 import { PlanWorkflowControls } from "./components/plan-workflow-controls";
 import { RejectActionPlanModal } from "./components/reject-action-plan-modal";
+import { readableTone } from "@/lib/readable-tone";
+import { DemoBanner } from "@/components/ui/demo-banner";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Priority = "high" | "medium" | "low" | "done";
@@ -62,12 +64,12 @@ type ActionItem = {
 };
 
 const toneStyles: Record<Tone, ToneStyle> = {
-  blue: { color: "#465FFF", rgb: "70,95,255", soft: "bg-[#465FFF]/10 text-[#465FFF]" },
+  blue: { color: "#465FFF", rgb: "70,95,255", soft: "bg-[#465FFF]/10 text-[#3B52F5]" },
   purple: { color: "#8B5CFF", rgb: "139,92,255", soft: "bg-[#8B5CFF]/10 text-[#6E44E8]" },
   green: { color: "#10B981", rgb: "16,185,129", soft: "bg-[#10B981]/10 text-[#047857]" },
   red: { color: "#EF4444", rgb: "239,68,68", soft: "bg-[#EF4444]/10 text-[#C81E1E]" },
-  amber: { color: "#F59E0B", rgb: "245,158,11", soft: "bg-[#F59E0B]/10 text-[#B45309]" },
-  slate: { color: "#64748B", rgb: "100,116,139", soft: "bg-slate-100 text-slate-500" },
+  amber: { color: "#F59E0B", rgb: "245,158,11", soft: "bg-[#F59E0B]/10 text-[#A04606]" },
+  slate: { color: "#64748B", rgb: "100,116,139", soft: "bg-slate-100 text-[#5A6478]" },
 };
 
 function normalizePriority(record: ActionQueueRecord): Exclude<Priority, "done"> {
@@ -132,7 +134,7 @@ function Panel({ children, className }: { children: ReactNode; className?: strin
   );
 }
 
-function MetricCard({ label, value, helper, trend, icon: Icon, tone, negative = false }: { label: string; value: string; helper?: string; trend?: number; icon: LucideIcon; tone: Tone; negative?: boolean }) {
+function MetricCard({ label, value, helper, trend, icon: Icon, tone, negative = false }: { label: string; value: string; helper?: string; trend?: number | null; icon: LucideIcon; tone: Tone; negative?: boolean }) {
   const style = toneStyles[tone];
   const isTrendNegative = trend != null && trend < 0;
   const isNegativeDisplay = negative || isTrendNegative;
@@ -145,14 +147,13 @@ function MetricCard({ label, value, helper, trend, icon: Icon, tone, negative = 
         <span className="min-w-0">
           <span className="block text-[12px] font-extrabold text-[#5F6B94]">{label}</span>
           <span className="mt-1 block text-[27px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</span>
-          {trend != null ? (
+          {/* Arrows only for a measured, non-zero change; everything else is plain context. */}
+          {trend != null && trend !== 0 ? (
             <span className={cn("mt-2 flex items-center gap-1 text-[11px] font-black", isNegativeDisplay ? "text-[#C81E1E]" : "text-[#047857]")}>
-              {trend >= 0 ? "▲" : "▼"} {helper}
+              <span aria-hidden="true">{trend > 0 ? "▲" : "▼"}</span> {helper}
             </span>
           ) : helper ? (
-            <span className={cn("mt-2 flex items-center gap-1 text-[11px] font-black", negative ? "text-[#C81E1E]" : "text-[#047857]")}>
-              {negative ? "▼" : "▲"} {helper}
-            </span>
+            <span className="mt-2 block text-[11px] font-bold text-[#5F6B94]">{helper}</span>
           ) : null}
         </span>
       </CardContent>
@@ -161,7 +162,7 @@ function MetricCard({ label, value, helper, trend, icon: Icon, tone, negative = 
 }
 
 function StatusPill({ status, t }: { status: ActionStatus; t: (key: string) => string }) {
-  const style = status === "done" ? "bg-[#10B981]/12 text-[#047857]" : status === "in-progress" ? "bg-[#F59E0B]/12 text-[#B45309]" : "bg-[#EF4444]/10 text-[#C81E1E]";
+  const style = status === "done" ? "bg-[#10B981]/12 text-[#047857]" : status === "in-progress" ? "bg-[#F59E0B]/12 text-[#A04606]" : "bg-[#EF4444]/10 text-[#C81E1E]";
   const label = status === "done" ? t("statusDone") : status === "in-progress" ? t("statusInProgress") : t("statusActive");
   return <span className={cn("rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.08em]", style)}>{label}</span>;
 }
@@ -176,7 +177,7 @@ function Avatar({ name }: { name: string }) {
   return (
     <span
       aria-label={name}
-      className="flex size-7 shrink-0 items-center justify-center rounded-full border-2 border-white bg-[#EEF1FF] text-[9px] font-black text-[#465FFF] shadow-sm"
+      className="flex size-7 shrink-0 items-center justify-center rounded-full border-2 border-white bg-[#EEF1FF] text-[9px] font-black text-[#3B52F5] shadow-sm"
     >
       {initials}
     </span>
@@ -209,7 +210,7 @@ function ActionCard({ action, selected, onSelect, t }: { action: ActionItem; sel
       </div>
       <div className="mt-3 flex flex-col gap-1 text-[11px] font-semibold text-[#5F6B94]">
         <span>{action.issue}</span>
-        <span>{t("impactLabel")} <b className="font-black" style={{ color: style.color }}>{action.impact}</b></span>
+        <span>{t("impactLabel")} <b className="font-black" style={{ color: readableTone(style.color) }}>{action.impact}</b></span>
         <span>{action.response}</span>
       </div>
       <div className="mt-4 flex items-center justify-between gap-3">
@@ -278,7 +279,7 @@ function FilterDropdown({ isOpen, onClose, filterPriority, setFilterPriority, fi
       <div className="flex items-center justify-between">
         <h3 className="text-[13px] font-black text-[#101334]">{t("filterModal.title")}</h3>
         {activeCount > 0 && (
-          <button type="button" onClick={() => { setFilterPriority("all"); setFilterStatus("all"); }} className="text-[11px] font-bold text-[#465FFF]">{t("filterModal.clearAll")}</button>
+          <button type="button" onClick={() => { setFilterPriority("all"); setFilterStatus("all"); }} className="text-[11px] font-bold text-[#3B52F5]">{t("filterModal.clearAll")}</button>
         )}
       </div>
       <div className="mt-4 space-y-3">
@@ -306,6 +307,7 @@ function FilterDropdown({ isOpen, onClose, filterPriority, setFilterPriority, fi
 
 export default function ActionPlansPage() {
   const t = useTranslations("ActionPlans");
+  const trendHelper = (trend: number | null) => (trend == null ? t("metricNoBaseline") : t("metricTrendHelper", { trend: Math.abs(trend) }));
   const tPagination = useTranslations("DashboardStates.pagination");
   const queryClient = useQueryClient();
   const toastHook = useToast();
@@ -417,19 +419,14 @@ export default function ActionPlansPage() {
   return (
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
       {isDemoSession && (
-        <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
-          <Sparkles size={16} className="text-[#6E44E8]" />
-          <p className="text-[13px] font-bold text-[#6E44E8]">
-            Demo workspace — some content on this page may be illustrative examples rather than live data
-          </p>
-        </div>
+        <DemoBanner />
       )}
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1>
           <p className="mt-2 max-w-2xl text-[14px] font-medium leading-6 text-body">{t("desc")}</p>
         </div>
-        <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#465FFF] px-4 text-[13px] font-black text-white shadow-sm transition hover:brightness-105 sm:w-fit">
+        <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[8px] bg-[#465FFF] px-4 text-[13px] font-black text-white shadow-sm transition hover:brightness-105 sm:w-fit">
           <Plus size={15} />
           {t("newAction")}
         </button>
@@ -457,11 +454,11 @@ export default function ActionPlansPage() {
       />
 
       <section className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-5">
-        <MetricCard label={t("metricActiveActions")} value={metricsQuery.data ? String(metricsQuery.data.active.value) : String(activeCount)} trend={metricsQuery.data?.active.trend} helper={metricsQuery.data ? t("metricTrendHelper", { trend: Math.abs(metricsQuery.data.active.trend) }) : t("metricActiveHelper", { count: activeCount })} icon={Target} tone="blue" />
-        <MetricCard label={t("metricInProgress")} value={metricsQuery.data ? String(metricsQuery.data.inProgress.value) : String(inProgressCount)} trend={metricsQuery.data?.inProgress.trend} helper={metricsQuery.data ? t("metricTrendHelper", { trend: Math.abs(metricsQuery.data.inProgress.trend) }) : t("metricInProgressHelper", { count: inProgressCount })} icon={Sparkles} tone="amber" />
-        <MetricCard label={t("metricCompleted")} value={metricsQuery.data ? String(metricsQuery.data.done.value) : String(completedCount)} trend={metricsQuery.data?.done.trend} helper={metricsQuery.data ? t("metricTrendHelper", { trend: Math.abs(metricsQuery.data.done.trend) }) : t("metricCompletedHelper", { count: completedCount })} icon={Check} tone="green" />
-        <MetricCard label={t("metricNeedsAttention")} value={metricsQuery.data ? String(metricsQuery.data.needsAttention.value) : String(needsAttentionCount)} trend={metricsQuery.data?.needsAttention.trend} helper={metricsQuery.data ? t("metricTrendHelper", { trend: Math.abs(metricsQuery.data.needsAttention.trend) }) : t("metricNeedsAttentionHelper", { count: needsAttentionCount })} icon={Flag} tone="red" negative={needsAttentionCount > 0} />
-        <MetricCard label={t("metricAvgResolution")} value={metricsQuery.data ? String(metricsQuery.data.resolution.value) : (actionItems.length > 0 ? String(actionItems.length) : "—")} trend={metricsQuery.data?.resolution.trend} helper={metricsQuery.data ? t("metricTrendHelper", { trend: Math.abs(metricsQuery.data.resolution.trend) }) : t("metricAvgResolutionHelper", { count: actionItems.length })} icon={Clock3} tone="blue" />
+        <MetricCard label={t("metricActiveActions")} value={metricsQuery.data ? String(metricsQuery.data.active.value) : String(activeCount)} trend={metricsQuery.data?.active.trend} helper={metricsQuery.data ? trendHelper(metricsQuery.data.active.trend) : t("metricActiveHelper", { count: activeCount })} icon={Target} tone="blue" />
+        <MetricCard label={t("metricInProgress")} value={metricsQuery.data ? String(metricsQuery.data.inProgress.value) : String(inProgressCount)} trend={metricsQuery.data?.inProgress.trend} helper={metricsQuery.data ? trendHelper(metricsQuery.data.inProgress.trend) : t("metricInProgressHelper", { count: inProgressCount })} icon={Sparkles} tone="amber" />
+        <MetricCard label={t("metricCompleted")} value={metricsQuery.data ? String(metricsQuery.data.done.value) : String(completedCount)} trend={metricsQuery.data?.done.trend} helper={metricsQuery.data ? trendHelper(metricsQuery.data.done.trend) : t("metricCompletedHelper", { count: completedCount })} icon={Check} tone="green" />
+        <MetricCard label={t("metricNeedsAttention")} value={metricsQuery.data ? String(metricsQuery.data.needsAttention.value) : String(needsAttentionCount)} trend={metricsQuery.data?.needsAttention.trend} helper={metricsQuery.data ? trendHelper(metricsQuery.data.needsAttention.trend) : t("metricNeedsAttentionHelper", { count: needsAttentionCount })} icon={Flag} tone="red" negative={needsAttentionCount > 0} />
+        <MetricCard label={t("metricAvgResolution")} value={metricsQuery.data ? String(metricsQuery.data.resolution.value) : (actionItems.length > 0 ? String(actionItems.length) : "—")} trend={metricsQuery.data?.resolution.trend} helper={metricsQuery.data ? trendHelper(metricsQuery.data.resolution.trend) : t("metricAvgResolutionHelper", { count: actionItems.length })} icon={Clock3} tone="blue" />
       </section>
 
       {isQueueUnavailable ? <DashboardErrorState title={t("queueErrorTitle")} description={t("queueErrorDesc")} onRetry={() => void actionQueueQuery.refetch()} minHeight="min-h-[150px]" /> : null}
@@ -476,7 +473,7 @@ export default function ActionPlansPage() {
                 <input aria-label={t("search")} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="min-w-0 flex-1 bg-transparent text-[12px] font-semibold outline-none placeholder:text-[#647099]" placeholder={t("search")} />
               </label>
               <div className="relative">
-                <button type="button" aria-expanded={isFilterOpen} aria-controls="action-filter-menu" onClick={() => setIsFilterOpen(!isFilterOpen)} className={cn("flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border px-4 text-[12px] font-black sm:flex-none", isFilterOpen || filterPriority !== "all" || filterStatus !== "all" ? "border-[#465FFF] bg-[#465FFF]/5 text-[#465FFF]" : "border-[#DDE3EF] bg-white text-[#101334]")}><Funnel size={14} />{t("filter")}{(filterPriority !== "all" || filterStatus !== "all") ? <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#465FFF] text-[8px] text-white">{(filterPriority !== "all" ? 1 : 0) + (filterStatus !== "all" ? 1 : 0)}</span> : null}</button>
+                <button type="button" aria-expanded={isFilterOpen} aria-controls="action-filter-menu" onClick={() => setIsFilterOpen(!isFilterOpen)} className={cn("flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border px-4 text-[12px] font-black sm:flex-none", isFilterOpen || filterPriority !== "all" || filterStatus !== "all" ? "border-[#465FFF] bg-[#465FFF]/5 text-[#3B52F5]" : "border-[#DDE3EF] bg-white text-[#101334]")}><Funnel size={14} />{t("filter")}{(filterPriority !== "all" || filterStatus !== "all") ? <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#465FFF] text-[8px] text-white">{(filterPriority !== "all" ? 1 : 0) + (filterStatus !== "all" ? 1 : 0)}</span> : null}</button>
                 <FilterDropdown isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} filterPriority={filterPriority} setFilterPriority={setFilterPriority} filterStatus={filterStatus} setFilterStatus={setFilterStatus} t={t} />
               </div>
             </div>
@@ -508,7 +505,7 @@ export default function ActionPlansPage() {
                       type="button"
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                       disabled={validPage === 1}
-                      className="flex h-8 items-center justify-center rounded-[6px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#53608C] transition hover:bg-[#F4F6FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-8 items-center justify-center rounded-[6px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#53608C] transition hover:bg-[#F4F6FF] hover:text-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {tPagination("prev")}
                     </button>
@@ -519,7 +516,7 @@ export default function ActionPlansPage() {
                       type="button"
                       onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                       disabled={validPage === totalPages}
-                      className="flex h-8 items-center justify-center rounded-[6px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#53608C] transition hover:bg-[#F4F6FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-8 items-center justify-center rounded-[6px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#53608C] transition hover:bg-[#F4F6FF] hover:text-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {tPagination("next")}
                     </button>
@@ -535,7 +532,7 @@ export default function ActionPlansPage() {
         <Panel>
           <CardContent className="p-5">
             <div className="flex items-start gap-3">
-              <Sparkles size={20} className="mt-0.5 text-[#465FFF]" />
+              <Sparkles size={20} className="mt-0.5 text-[#3B52F5]" />
               <div>
                 <h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{t("detail")}</h2>
                 <p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("detailDesc")}</p>
@@ -565,8 +562,8 @@ export default function ActionPlansPage() {
               </div>
             ) : (<>
             <div className="mt-5 flex flex-wrap gap-2">
-              <span className={cn("rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em]", selectedPriority === "high" ? "bg-[#EF4444]/10 text-[#C81E1E]" : selectedPriority === "medium" ? "bg-[#F59E0B]/12 text-[#B45309]" : "bg-[#10B981]/12 text-[#047857]")}>{t(`lanes.${selectedPriority}`)}</span>
-              <span className={cn("rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em]", selectedStatus === "active" ? "bg-[#EF4444]/10 text-[#C81E1E]" : selectedStatus === "in-progress" ? "bg-[#F59E0B]/12 text-[#B45309]" : "bg-[#10B981]/12 text-[#047857]")}>{selectedStatusLabel}</span>
+              <span className={cn("rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em]", selectedPriority === "high" ? "bg-[#EF4444]/10 text-[#C81E1E]" : selectedPriority === "medium" ? "bg-[#F59E0B]/12 text-[#A04606]" : "bg-[#10B981]/12 text-[#047857]")}>{t(`lanes.${selectedPriority}`)}</span>
+              <span className={cn("rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em]", selectedStatus === "active" ? "bg-[#EF4444]/10 text-[#C81E1E]" : selectedStatus === "in-progress" ? "bg-[#F59E0B]/12 text-[#A04606]" : "bg-[#10B981]/12 text-[#047857]")}>{selectedStatusLabel}</span>
               <span className="rounded-full bg-[#EEF1F7] px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-[#53608C]">{selectedDue}</span>
             </div>
             <h3 className="mt-4 text-[18px] font-black text-[#101334]">{selectedAction?.title ?? latestPlan?.id ?? t("detail")}</h3>
@@ -575,7 +572,7 @@ export default function ActionPlansPage() {
               {[selectedIssue, selectedImpact, selectedStatusLabel, selectedDue].map((item, index) => (
                 <div key={index} className="rounded-[10px] bg-[#FBFCFF] p-3">
                   <p className="text-[10px] font-black text-[#647099]">{[t("categoryLabel"), t("impactFieldLabel"), t("statusFieldLabel"), t("dueDateLabel")][index]}</p>
-                  <p className="mt-1 text-[11px] font-black text-[#465FFF]">{item}</p>
+                  <p className="mt-1 text-[11px] font-black text-[#3B52F5]">{item}</p>
                 </div>
               ))}
             </div>
@@ -593,7 +590,7 @@ export default function ActionPlansPage() {
             {latestPlan?.id ? (
               <PlanWorkflowControls key={`${latestPlan.id}-${latestPlan.workflowStatus ?? ""}-${latestPlan.assignedTo ?? ""}`} planId={latestPlan.id} status={latestPlan.workflowStatus} assignedTo={latestPlan.assignedTo} />
             ) : null}
-            <button type="button" onClick={() => setSelectedActionId("")} className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#F8FAFF] text-[12px] font-black text-[#465FFF] transition hover:bg-[#465FFF]/5">{t("backToQueue")} <ChevronRight size={14} /></button>
+            <button type="button" onClick={() => setSelectedActionId("")} className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#F8FAFF] text-[12px] font-black text-[#3B52F5] transition hover:bg-[#465FFF]/5">{t("backToQueue")} <ChevronRight size={14} /></button>
             <div className="mt-3 flex gap-2">
               <button type="button" onClick={() => { if (latestPlan?.id) feedbackMutation.mutate({ actionPlanId: latestPlan.id, action: "accepted" }); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[#10B981]/10 text-[11px] font-black text-[#047857] transition hover:bg-[#10B981]/20 disabled:opacity-50"><Check size={14} /> {t("approve")}</button>
               <button type="button" onClick={() => { if (latestPlan?.id) setIsRejectModalOpen(true); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[#EF4444]/10 text-[11px] font-black text-[#C81E1E] transition hover:bg-[#EF4444]/20 disabled:opacity-50"><X size={14} /> {t("reject")}</button>
@@ -605,7 +602,7 @@ export default function ActionPlansPage() {
         <Panel>
           <CardContent className="p-5">
                <div className="flex items-start gap-3">
-                <BarChart3 size={20} className="mt-0.5 text-[#465FFF]" />
+                <BarChart3 size={20} className="mt-0.5 text-[#3B52F5]" />
                 <div>
                   <h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{t("performance")}</h2>
                   <p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("performanceDesc")}</p>
@@ -642,12 +639,12 @@ export default function ActionPlansPage() {
                 </div>
                 {accuracy && Object.keys(accuracy.by_type).length > 0 ? (
                   <div className="mt-5">
-                    <div className="mb-2 flex items-center justify-between text-[12px] font-black text-[#101334]"><span>{t("accuracyPerCategory")}</span><span className="flex gap-3 text-[10px] text-[#53608C]"><b className="text-[#465FFF]">{t("total")}</b><b className="text-[#047857]">{t("accuracy")}</b></span></div>
+                    <div className="mb-2 flex items-center justify-between text-[12px] font-black text-[#101334]"><span>{t("accuracyPerCategory")}</span><span className="flex gap-3 text-[10px] text-[#53608C]"><b className="text-[#3B52F5]">{t("total")}</b><b className="text-[#047857]">{t("accuracy")}</b></span></div>
                     <div className="grid gap-2">
                       {Object.entries(accuracy.by_type).map(([key, value]) => (
                         <div key={key} className="flex items-center justify-between rounded-[8px] border border-[#E9EDF5] bg-white px-3 py-2 text-[11px]">
                           <span className="font-bold capitalize text-[#101334]">{key.replace(/_/g, " ")}</span>
-                          <span className="flex items-center gap-3 text-[#53608C]"><span className="font-black text-[#465FFF]">{value.total}</span><span className="font-black text-[#047857]">{Math.round(value.accuracy * 100)}%</span></span>
+                          <span className="flex items-center gap-3 text-[#53608C]"><span className="font-black text-[#3B52F5]">{value.total}</span><span className="font-black text-[#047857]">{Math.round(value.accuracy * 100)}%</span></span>
                         </div>
                       ))}
                     </div>
@@ -661,14 +658,14 @@ export default function ActionPlansPage() {
                 )}
               </>
             )}
-            <Link href="/alerts" className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#F8FAFF] text-[12px] font-black text-[#465FFF] transition hover:bg-[#465FFF]/5">{t("viewFullAnalytics")} <ChevronRight size={14} /></Link>
+            <Link href="/alerts" className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#F8FAFF] text-[12px] font-black text-[#3B52F5] transition hover:bg-[#465FFF]/5">{t("viewFullAnalytics")} <ChevronRight size={14} /></Link>
           </CardContent>
         </Panel>
 
         <Panel>
           <CardContent className="p-5">
             <div className="flex items-start gap-3">
-              <Lightbulb size={20} className="mt-0.5 text-[#465FFF]" />
+              <Lightbulb size={20} className="mt-0.5 text-[#3B52F5]" />
               <div>
                 <h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{t("learning")}</h2>
                 <p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("learningDesc")}</p>
@@ -696,7 +693,7 @@ export default function ActionPlansPage() {
                         const Icon = insight.icon === "trending-down" ? TrendingDown : insight.icon === "trending-up" ? TrendingUp : Timer;
                         return (
                           <div key={insight.titleKey} className="flex items-center justify-between gap-4 rounded-[9px] bg-[#FBFCFF] p-3 text-[11px] font-semibold text-[#53608C]">
-                            <span className="flex items-center gap-2"><Icon size={15} className="text-[#465FFF]" />{t(insight.titleKey)}</span>
+                            <span className="flex items-center gap-2"><Icon size={15} className="text-[#3B52F5]" />{t(insight.titleKey)}</span>
                             <b className="shrink-0 text-[#53608C]">{t(insight.valueKey)}</b>
                           </div>
                         );
@@ -717,7 +714,7 @@ export default function ActionPlansPage() {
                     </div>
                   </div>
                 )}
-                <Link href="/workspace/settings" className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#F8FAFF] text-[12px] font-black text-[#465FFF] transition hover:bg-[#465FFF]/5">{t("manageAllTemplates")} <ChevronRight size={14} /></Link>
+                <Link href="/workspace/settings" className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#F8FAFF] text-[12px] font-black text-[#3B52F5] transition hover:bg-[#465FFF]/5">{t("manageAllTemplates")} <ChevronRight size={14} /></Link>
               </>
             )}
           </CardContent>

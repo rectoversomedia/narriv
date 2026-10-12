@@ -11,7 +11,7 @@ interface EmptyStateProps {
 export function EmptyState({ title, description, icon = "inbox", action }: EmptyStateProps) {
   return (
     <div className="flex min-h-[320px] flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--card)]/50 p-8 text-center">
-      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#465FFF]/10 text-[#465FFF]">
+      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#465FFF]/10 text-[#3B52F5]">
         {icon === "inbox" && <Inbox size={28} />}
         {icon === "search" && <FileSearch size={28} />}
         {icon === "alert" && <AlertCircle size={28} />}

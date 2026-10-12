@@ -34,13 +34,13 @@ const statusConfig: Record<SSEConnectionStatus, {
     label: "Offline",
     dotClass: "bg-slate-400",
     pulseClass: "bg-slate-400",
-    textClass: "text-slate-500",
+    textClass: "text-[#5A6478]",
   },
   error: {
     label: "Error",
     dotClass: "bg-red-500",
     pulseClass: "bg-red-500",
-    textClass: "text-red-600",
+    textClass: "text-red-700",
   },
 };
 
@@ -93,7 +93,7 @@ export function LiveIndicator({
           ? "bg-emerald-50 text-emerald-700"
           : status === "connecting"
             ? "bg-amber-50 text-amber-700"
-            : "bg-slate-100 text-slate-500"
+            : "bg-slate-100 text-[#5A6478]"
       } ${className}`}
       role="status"
       aria-label={`Connection status: ${config.label}`}

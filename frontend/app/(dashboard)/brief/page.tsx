@@ -50,7 +50,7 @@ const EXECUTIVE_SUMMARY = {
 const KEY_DEVELOPMENTS = [
   {
     severity: "CRITICAL",
-    color: "text-red-600",
+    color: "text-red-700",
     bg: "bg-red-50",
     border: "border-red-200",
     dot: "bg-red-500",
@@ -147,27 +147,27 @@ const AI_VISIBILITY = [
 const RECOMMENDED_ACTIONS = [
   {
     priority: "IMMEDIATE",
-    priorityColor: "bg-red-500",
+    priorityColor: "bg-red-600",
     text: "Investigate and respond to app login failure complaints",
   },
   {
     priority: "HIGH",
-    priorityColor: "bg-amber-500",
+    priorityColor: "bg-amber-700",
     text: "Publish content addressing battery safety misconceptions",
   },
   {
     priority: "HIGH",
-    priorityColor: "bg-amber-500",
+    priorityColor: "bg-amber-700",
     text: "Increase authoritative coverage around digital security",
   },
   {
     priority: "MEDIUM",
-    priorityColor: "bg-blue-500",
+    priorityColor: "bg-blue-600",
     text: "Create educational content on EV charging accessibility",
   },
   {
     priority: "MEDIUM",
-    priorityColor: "bg-blue-500",
+    priorityColor: "bg-blue-600",
     text: "Benchmark and improve AI visibility for key category prompts",
   },
 ];
@@ -221,7 +221,7 @@ function DateRangeSelector({
         ))}
       </select>
       <ChevronDown
-        className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+        className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5A6478]"
         strokeWidth={2}
       />
     </div>
@@ -231,7 +231,7 @@ function DateRangeSelector({
 function SectionDivider({ label }: { label: string }) {
   return (
     <div className="mb-5 flex items-center gap-3">
-      <span className="text-[13px] font-bold uppercase tracking-widest text-[#465FFF]">
+      <span className="text-[13px] font-bold uppercase tracking-widest text-[#3B52F5]">
         {label}
       </span>
       <div className="flex-1 border-t border-slate-200" />
@@ -241,10 +241,10 @@ function SectionDivider({ label }: { label: string }) {
 
 function SeverityBadge({ severity }: { severity: string }) {
   const config: Record<string, { bg: string; text: string }> = {
-    CRITICAL: { bg: "bg-red-50", text: "text-red-600" },
+    CRITICAL: { bg: "bg-red-50", text: "text-red-700" },
     HIGH: { bg: "bg-amber-50", text: "text-amber-700" },
     MEDIUM: { bg: "bg-blue-50", text: "text-blue-600" },
-    LOW: { bg: "bg-slate-50", text: "text-slate-500" },
+    LOW: { bg: "bg-slate-50", text: "text-[#5A6478]" },
   };
   const cfg = config[severity] ?? config.LOW;
   return (
@@ -265,7 +265,7 @@ function DirectionIcon({ direction }: { direction: "growing" | "declining" | "st
     return <ArrowUp className="h-4 w-4 flex-shrink-0 text-green-700" strokeWidth={2.5} />;
   if (direction === "declining")
     return <ArrowDown className="h-4 w-4 flex-shrink-0 text-red-700" strokeWidth={2.5} />;
-  return <ArrowRight className="h-4 w-4 flex-shrink-0 text-slate-500" strokeWidth={2.5} />;
+  return <ArrowRight className="h-4 w-4 flex-shrink-0 text-[#5A6478]" strokeWidth={2.5} />;
 }
 
 function DeltaChip({ delta }: { delta: string }) {
@@ -275,7 +275,7 @@ function DeltaChip({ delta }: { delta: string }) {
     <span
       className={cn(
         "rounded-full px-2 py-0.5 text-[11px] font-bold",
-        isNeutral && "bg-slate-100 text-slate-500",
+        isNeutral && "bg-slate-100 text-[#5A6478]",
         isPositive && "bg-green-50 text-green-700",
         !isPositive && !isNeutral && "bg-red-50 text-red-700"
       )}
@@ -302,36 +302,36 @@ function LiveExecutiveBrief({ windowHours }: { windowHours: number }) {
       <div>
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-card">
           <div className="flex items-center justify-between">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Live executive brief</div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">Live executive brief</div>
             {isLoading ? (
-              <span className="text-[12px] text-slate-500">Loading…</span>
+              <span className="text-[12px] text-[#5A6478]">Loading…</span>
             ) : isError ? (
               <span className="text-[12px] text-rose-600">Backend unavailable</span>
             ) : data?.grounded ? (
               <span className="text-[12px] text-emerald-700">Grounded in current data</span>
             ) : (
-              <span className="text-[12px] text-slate-500">Insufficient data</span>
+              <span className="text-[12px] text-[#5A6478]">Insufficient data</span>
             )}
           </div>
           {data && data.grounded ? (
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="rounded-lg border border-slate-200 bg-white p-3">
-                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">What changed</div>
+                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#5A6478]">What changed</div>
                 <p className="mt-1 text-[12.5px] text-slate-800">{data.sections?.whatChanged?.summary || "—"}</p>
               </div>
               <div className="rounded-lg border border-slate-200 bg-white p-3">
-                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">Biggest risk</div>
+                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#5A6478]">Biggest risk</div>
                 <p className="mt-1 text-[12.5px] text-slate-800">{data.sections?.biggestRisk?.summary || "—"}</p>
               </div>
               <div className="rounded-lg border border-slate-200 bg-white p-3">
-                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">Reputation</div>
+                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#5A6478]">Reputation</div>
                 <p className="mt-1 text-[12.5px] text-slate-800">{data.sections?.reputation?.summary || "—"}</p>
               </div>
             </div>
           ) : null}
           {data && data.grounded ? <LiveBriefDetails data={data} /> : null}
           {data && !data.grounded && !isLoading ? (
-            <p className="mt-3 text-[12.5px] text-slate-500">
+            <p className="mt-3 text-[12.5px] text-[#5A6478]">
               There is not enough recent data in this workspace to produce a brief. It will appear after sources and monitoring keywords have been ingested.
             </p>
           ) : null}
@@ -353,15 +353,15 @@ function LiveBriefDetails({ data }: { data: import("@/lib/intelligence-api").Exe
   return (
     <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
       <div className="rounded-lg border border-slate-200 bg-white p-3">
-        <div className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">What drives the risk index</div>
+        <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#5A6478]">What drives the risk index</div>
         {drivers.length === 0 ? (
-          <p className="mt-1 text-[12.5px] text-slate-500">No risk component is elevated.</p>
+          <p className="mt-1 text-[12.5px] text-[#5A6478]">No risk component is elevated.</p>
         ) : (
           <ul className="mt-1.5 space-y-1.5">
             {drivers.map((d) => (
               <li key={d.key} className="text-[12.5px] text-slate-700">
                 <span className="font-semibold tabular-nums text-slate-900">+{d.contribution}</span> {d.reason}
-                {d.evidenceIds?.length ? <span className="text-slate-500"> · {d.evidenceIds.length} record(s)</span> : null}
+                {d.evidenceIds?.length ? <span className="text-[#5A6478]"> · {d.evidenceIds.length} record(s)</span> : null}
               </li>
             ))}
           </ul>
@@ -369,15 +369,15 @@ function LiveBriefDetails({ data }: { data: import("@/lib/intelligence-api").Exe
         {risk?.uncertainty?.reasons?.length ? (
           <p className="mt-2 text-[11.5px] text-amber-700">{risk.uncertainty.level} uncertainty: {risk.uncertainty.reasons.join(" ")}</p>
         ) : null}
-        <p className="mt-2 text-[11px] text-slate-500">Heuristic index for prioritization, not a probability.</p>
+        <p className="mt-2 text-[11px] text-[#5A6478]">Heuristic index for prioritization, not a probability.</p>
         {data.sections?.emergingIssue?.summary ? (
           <p className="mt-2 text-[12.5px] text-slate-700"><span className="font-semibold">Emerging: </span>{data.sections.emergingIssue.summary}</p>
         ) : null}
       </div>
       <div className="rounded-lg border border-slate-200 bg-white p-3">
-        <div className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">Recommended actions (suggested, require approval)</div>
+        <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#5A6478]">Recommended actions (suggested, require approval)</div>
         {actions.length === 0 ? (
-          <p className="mt-1 text-[12.5px] text-slate-500">No actions suggested.</p>
+          <p className="mt-1 text-[12.5px] text-[#5A6478]">No actions suggested.</p>
         ) : (
           <ul className="mt-1.5 space-y-2">
             {actions.map((a, i) => (
@@ -388,7 +388,7 @@ function LiveBriefDetails({ data }: { data: import("@/lib/intelligence-api").Exe
                   <span className="rounded border border-slate-200 bg-slate-50 px-1.5 text-[10.5px] font-semibold text-slate-600">{a.urgency}</span>
                 </div>
                 <p className="mt-0.5 text-slate-600">{a.reason}</p>
-                <p className="mt-0.5 text-[11px] text-slate-500">
+                <p className="mt-0.5 text-[11px] text-[#5A6478]">
                   Confidence {Math.round((a.confidence ?? 0) * 100)}%
                   {a.sourceIds ? ` · ${a.sourceIds.length ? `${a.sourceIds.length} source record(s)` : "aggregate metrics only"}` : ""}
                 </p>
@@ -399,7 +399,7 @@ function LiveBriefDetails({ data }: { data: import("@/lib/intelligence-api").Exe
         )}
         {watch.length ? (
           <div className="mt-2 border-t border-slate-100 pt-2">
-            <div className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-500">What to watch next</div>
+            <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#5A6478]">What to watch next</div>
             <ul className="mt-1 list-disc pl-4 text-[12px] text-slate-600">
               {watch.map((w, i) => <li key={i}>{w.label}</li>)}
             </ul>
@@ -427,7 +427,7 @@ export default function DailyIntelligenceBriefPage() {
         <div>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-[#465FFF]">
+              <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-[#3B52F5]">
                 Intelligence
               </p>
               <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1>
@@ -444,7 +444,7 @@ export default function DailyIntelligenceBriefPage() {
                     "hover:bg-slate-50 active:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/30"
                   )}
                 >
-                  <Download className="h-4 w-4 text-slate-500" strokeWidth={2} />
+                  <Download className="h-4 w-4 text-[#5A6478]" strokeWidth={2} />
                   Print / Save as PDF
                 </button>
               </div>
@@ -471,18 +471,18 @@ export default function DailyIntelligenceBriefPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="mb-1 flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-[#465FFF]" strokeWidth={2} />
-                      <span className="text-[11px] font-semibold uppercase tracking-widest text-[#465FFF]">
+                      <FileText className="h-4 w-4 text-[#8EA0FF]" strokeWidth={2} />
+                      <span className="text-[11px] font-semibold uppercase tracking-widest text-[#8EA0FF]">
                         Narriv
                       </span>
                     </div>
                     <h2 className="text-[18px] font-bold text-white">{t("title")}</h2>
-                    <p className="mt-1 text-[13px] text-slate-500">
+                    <p className="mt-1 text-[13px] text-slate-400">
                       {DEMO_DATE_FORMATTED} &mdash; Demo
                     </p>
                   </div>
                   <div className="text-right">
-                    <span className="inline-block rounded-[6px] bg-[#465FFF]/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#465FFF]">
+                    <span className="inline-block rounded-[6px] bg-[#465FFF]/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#8EA0FF]">
                       Confidential
                     </span>
                   </div>
@@ -499,25 +499,25 @@ export default function DailyIntelligenceBriefPage() {
                     {/* KPI row */}
                     <div className="grid grid-cols-3 gap-3">
                       <div className="rounded-[10px] border border-slate-200 bg-slate-50 p-4 text-center">
-                        <p className="text-[11px] font-semibold text-slate-500">Critical Alerts</p>
+                        <p className="text-[11px] font-semibold text-[#5A6478]">Critical Alerts</p>
                         <p className="mt-1 text-[24px] font-bold text-red-700">
                           {EXECUTIVE_SUMMARY.criticalAlerts}
                         </p>
-                        <p className="text-[11px] text-slate-500">active</p>
+                        <p className="text-[11px] text-[#5A6478]">active</p>
                       </div>
                       <div className="rounded-[10px] border border-slate-200 bg-slate-50 p-4 text-center">
-                        <p className="text-[11px] font-semibold text-slate-500">Net Sentiment</p>
+                        <p className="text-[11px] font-semibold text-[#5A6478]">Net Sentiment</p>
                         <p className="mt-1 text-[24px] font-bold text-green-700">
                           +{EXECUTIVE_SUMMARY.netSentimentShift}%
                         </p>
-                        <p className="text-[11px] text-slate-500">shift positive</p>
+                        <p className="text-[11px] text-[#5A6478]">shift positive</p>
                       </div>
                       <div className="rounded-[10px] border border-slate-200 bg-slate-50 p-4 text-center">
-                        <p className="text-[11px] font-semibold text-slate-500">AI Visibility</p>
-                        <p className="mt-1 text-[24px] font-bold text-[#465FFF]">
+                        <p className="text-[11px] font-semibold text-[#5A6478]">AI Visibility</p>
+                        <p className="mt-1 text-[24px] font-bold text-[#3B52F5]">
                           {EXECUTIVE_SUMMARY.aiVisibility}
                         </p>
-                        <p className="text-[11px] text-slate-500">score</p>
+                        <p className="text-[11px] text-[#5A6478]">score</p>
                       </div>
                     </div>
                     <p className="text-[14px] leading-relaxed text-[#5F6B94]">
@@ -561,7 +561,7 @@ export default function DailyIntelligenceBriefPage() {
                               {dev.title}
                             </span>
                           </div>
-                          <div className="flex flex-wrap gap-3 text-[12px] text-slate-500">
+                          <div className="flex flex-wrap gap-3 text-[12px] text-[#5A6478]">
                             <span>{dev.signals} signals</span>
                             <span className="font-medium text-slate-700">{dev.growth}</span>
                             <span>{dev.time}</span>
@@ -628,7 +628,7 @@ export default function DailyIntelligenceBriefPage() {
                               "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
                               comp.tone === "positive" && "bg-green-50 text-green-700",
                               comp.tone === "negative" && "bg-red-50 text-red-700",
-                              comp.tone === "neutral" && "bg-slate-100 text-slate-500"
+                              comp.tone === "neutral" && "bg-slate-100 text-[#5A6478]"
                             )}
                           >
                             {comp.sentiment}
@@ -638,7 +638,7 @@ export default function DailyIntelligenceBriefPage() {
                           <p>
                             <span className="font-medium text-[#101334]">AI:</span> {comp.ai}
                           </p>
-                          {comp.note && <p className="text-slate-500">{comp.note}</p>}
+                          {comp.note && <p className="text-[#5A6478]">{comp.note}</p>}
                         </div>
                       </div>
                     ))}
@@ -648,20 +648,20 @@ export default function DailyIntelligenceBriefPage() {
                 {/* AI Visibility Changes */}
                 <section>
                   <SectionDivider label={t("aiVisibilityChanges")} />
-                  <div className="rounded-[10px] border border-slate-200 overflow-hidden">
-                    <table className="w-full">
+                  <div className="overflow-x-auto rounded-[10px] border border-slate-200">
+                    <table className="w-full min-w-[360px]">
                       <thead>
                         <tr className="bg-slate-50">
-                          <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                          <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-[#5A6478]">
                             Platform
                           </th>
-                          <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                          <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-[#5A6478]">
                             Previous
                           </th>
-                          <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                          <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-[#5A6478]">
                             Current
                           </th>
-                          <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                          <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-[#5A6478]">
                             Change
                           </th>
                         </tr>
@@ -672,7 +672,7 @@ export default function DailyIntelligenceBriefPage() {
                             <td className="px-4 py-3 text-[14px] font-medium text-[#101334]">
                               {row.engine}
                             </td>
-                            <td className="px-4 py-3 text-center text-[14px] text-slate-500">
+                            <td className="px-4 py-3 text-center text-[14px] text-[#5A6478]">
                               {row.from}%
                             </td>
                             <td className="px-4 py-3 text-center text-[14px] font-semibold text-[#101334]">
@@ -684,7 +684,7 @@ export default function DailyIntelligenceBriefPage() {
                                   "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-bold",
                                   row.delta > 0 && "bg-green-50 text-green-700",
                                   row.delta < 0 && "bg-red-50 text-red-700",
-                                  row.delta === 0 && "bg-slate-100 text-slate-500"
+                                  row.delta === 0 && "bg-slate-100 text-[#5A6478]"
                                 )}
                               >
                                 {row.delta > 0 ? (
@@ -748,7 +748,7 @@ export default function DailyIntelligenceBriefPage() {
             <div className="overflow-hidden rounded-[16px] border border-slate-200 bg-white shadow-sm">
               <div className="border-b border-slate-100 px-5 py-4">
                 <h3 className="text-[14px] font-bold text-[#101334]">Narrative Landscape</h3>
-                <p className="mt-0.5 text-[12px] text-slate-500">
+                <p className="mt-0.5 text-[12px] text-[#5A6478]">
                   Brand narratives sized by signal volume, colored by sentiment
                 </p>
               </div>
@@ -765,12 +765,12 @@ export default function DailyIntelligenceBriefPage() {
                         className="h-2.5 w-2.5 rounded-full"
                         style={{ backgroundColor: item.color }}
                       />
-                      <span className="text-[11px] text-slate-500">{item.label}</span>
+                      <span className="text-[11px] text-[#5A6478]">{item.label}</span>
                     </div>
                   ))}
                 </div>
-                <div className="flex items-center gap-2 mb-4 text-[11px] text-slate-500">
-                  <span className="font-semibold text-slate-500">Legend:</span>
+                <div className="flex items-center gap-2 mb-4 text-[11px] text-[#5A6478]">
+                  <span className="font-semibold text-[#5A6478]">Legend:</span>
                   <ArrowUp className="h-3 w-3 text-green-700" strokeWidth={2.5} />
                   <span>Growing</span>
                   <span className="text-slate-300">·</span>
@@ -802,7 +802,7 @@ export default function DailyIntelligenceBriefPage() {
                   { label: "AI Visibility", value: "72", delta: "-6", positive: false },
                 ].map((stat) => (
                   <div key={stat.label} className="flex items-center justify-between">
-                    <span className="text-[13px] text-slate-500">{stat.label}</span>
+                    <span className="text-[13px] text-[#5A6478]">{stat.label}</span>
                     <div className="flex items-center gap-2">
                       <span className="text-[14px] font-bold text-[#101334]">{stat.value}</span>
                       <span

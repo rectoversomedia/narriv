@@ -154,7 +154,7 @@ export function LoginForm() {
               <input id="remember-me" type="checkbox" defaultChecked className="h-[19px] w-[19px] accent-[#465FFF]" />
               <FieldLabel htmlFor="remember-me" className="text-[16px] font-semibold text-[#111536]">{t("rememberMe")}</FieldLabel>
             </Field>
-            <Link href="/reset-password" className="text-[16px] font-semibold text-[#465FFF] hover:underline">
+            <Link href="/reset-password" className="text-[16px] font-semibold text-[#3B52F5] hover:underline">
               {t("forgotPassword")}
             </Link>
           </div>
@@ -170,7 +170,7 @@ export function LoginForm() {
 
       <p className="mt-10 text-center text-[16px] font-medium text-[#3E4975]">
         {t("noAccount")}{" "}
-        <Link href="/signup" className="font-semibold text-[#465FFF] hover:underline">
+        <Link href="/signup" className="font-semibold text-[#3B52F5] hover:underline">
           {t("signUp")}
         </Link>
       </p>

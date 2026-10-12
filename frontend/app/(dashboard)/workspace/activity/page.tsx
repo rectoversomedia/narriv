@@ -223,32 +223,32 @@ export default function ActivityPage() {
               <div className="flex items-center gap-3">
                 <span className={cn(
                   "flex h-10 w-10 items-center justify-center rounded-xl",
-                  metric.tone === "blue" && "bg-[#465FFF]/10 text-[#465FFF]",
+                  metric.tone === "blue" && "bg-[#465FFF]/10 text-[#3B52F5]",
                   metric.tone === "purple" && "bg-[#8B5CFF]/10 text-[#6E44E8]",
                   metric.tone === "green" && "bg-[#10B981]/10 text-[#047857]",
-                  metric.tone === "amber" && "bg-[#F59E0B]/10 text-[#B45309]"
+                  metric.tone === "amber" && "bg-[#F59E0B]/10 text-[#A04606]"
                 )}>
                   <Icon size={18} />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{metric.label}</p>
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">{metric.label}</p>
                   <p className="mt-1 text-2xl font-black tracking-[-0.04em] text-slate-950">{metric.value.toLocaleString(uiLanguage === "id" ? "id-ID" : "en-US")}</p>
                 </div>
               </div>
-              <p className="mt-3 text-[11px] font-bold text-slate-500">{metric.helper}</p>
+              <p className="mt-3 text-[11px] font-bold text-[#5A6478]">{metric.helper}</p>
             </div>
           );
         })}
       </section>
 
       <section className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="mb-3 flex items-center gap-2 text-[12px] font-black uppercase tracking-[0.12em] text-slate-500">
+        <div className="mb-3 flex items-center gap-2 text-[12px] font-black uppercase tracking-[0.12em] text-[#5A6478]">
           <Filter size={14} />
           {t("filterTitle")}
         </div>
-        <div className="grid gap-3 md:grid-cols-[1.2fr_1fr_1fr_auto] md:items-end">
+        <div className="grid gap-3 sm:grid-cols-2 sm:items-end lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
           <label className="grid gap-1.5">
-            <span className="text-[11px] font-black text-slate-500">{t("filterEvent")}</span>
+            <span className="text-[11px] font-black text-[#5A6478]">{t("filterEvent")}</span>
             <select
               value={eventType}
               onChange={(event) => { setEventType(event.target.value); setPage(1); }}
@@ -258,7 +258,7 @@ export default function ActivityPage() {
             </select>
           </label>
           <label className="grid gap-1.5">
-            <span className="text-[11px] font-black text-slate-500">{t("filterFrom")}</span>
+            <span className="text-[11px] font-black text-[#5A6478]">{t("filterFrom")}</span>
             <input
               type="date"
               value={dateFrom}
@@ -267,7 +267,7 @@ export default function ActivityPage() {
             />
           </label>
           <label className="grid gap-1.5">
-            <span className="text-[11px] font-black text-slate-500">{t("filterTo")}</span>
+            <span className="text-[11px] font-black text-[#5A6478]">{t("filterTo")}</span>
             <input
               type="date"
               value={dateTo}
@@ -306,10 +306,10 @@ export default function ActivityPage() {
             <table className="w-full min-w-[860px] text-left text-sm">
               <thead className="border-b border-slate-100 bg-slate-50">
                 <tr>
-                  <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{t("colEvent")}</th>
-                  <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{t("colActor")}</th>
-                  <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{t("colMeta")}</th>
-                  <th className="px-6 py-4 text-right text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{t("colTime")}</th>
+                  <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">{t("colEvent")}</th>
+                  <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">{t("colActor")}</th>
+                  <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">{t("colMeta")}</th>
+                  <th className="px-6 py-4 text-right text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">{t("colTime")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -324,20 +324,20 @@ export default function ActivityPage() {
                           <Badge variant={eventVariant(log.event)} className="rounded-full normal-case tracking-normal">
                             {formatEventName(log.event, t)}
                           </Badge>
-                          <p className="mt-2 text-[11px] font-bold text-slate-500">ID: {log.id.slice(0, 8)}</p>
+                          <p className="mt-2 text-[11px] font-bold text-[#5A6478]">ID: {log.id.slice(0, 8)}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 align-top">
                       <p className="font-black text-slate-900">{actorName(log)}</p>
-                      <p className="mt-1 text-xs font-semibold text-slate-500">{log.user?.email || log.userId || t("systemGenerated")}</p>
+                      <p className="mt-1 text-xs font-semibold text-[#5A6478]">{log.user?.email || log.userId || t("systemGenerated")}</p>
                     </td>
                     <td className="max-w-[360px] px-6 py-4 align-top">
                       <p className="line-clamp-2 text-sm font-semibold leading-6 text-slate-600">{metadataSummary(log.metadata, t)}</p>
                     </td>
                     <td className="px-6 py-4 text-right align-top">
                       <p className="font-black text-slate-900">{formatRelativeTime(log.createdAt, uiLanguage, t)}</p>
-                      <p className="mt-1 text-xs font-semibold text-slate-500">{formatDateTime(log.createdAt, uiLanguage)}</p>
+                      <p className="mt-1 text-xs font-semibold text-[#5A6478]">{formatDateTime(log.createdAt, uiLanguage)}</p>
                     </td>
                   </tr>
                 ))}

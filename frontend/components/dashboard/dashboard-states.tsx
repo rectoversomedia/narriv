@@ -13,7 +13,7 @@ type StateTone = "blue" | "purple" | "green" | "amber" | "red" | "slate";
 const toneStyles: Record<StateTone, { bg: string; text: string; ring: string; button: string }> = {
   blue: {
     bg: "bg-[#465FFF]/10",
-    text: "text-[#465FFF]",
+    text: "text-[#3B52F5]",
     ring: "ring-[#465FFF]/15",
     button: "bg-[#465FFF] hover:bg-[#3b52d9]",
   },
@@ -31,7 +31,7 @@ const toneStyles: Record<StateTone, { bg: string; text: string; ring: string; bu
   },
   amber: {
     bg: "bg-[#F59E0B]/10",
-    text: "text-[#B45309]",
+    text: "text-[#A04606]",
     ring: "ring-[#F59E0B]/15",
     button: "bg-[#F59E0B] hover:bg-[#d98b08]",
   },
@@ -43,7 +43,7 @@ const toneStyles: Record<StateTone, { bg: string; text: string; ring: string; bu
   },
   slate: {
     bg: "bg-slate-100",
-    text: "text-slate-500",
+    text: "text-[#5A6478]",
     ring: "ring-slate-200",
     button: "bg-slate-900 hover:bg-slate-800",
   },
@@ -74,7 +74,7 @@ function StateShell({ title, description, icon: Icon, tone = "purple", action, c
         <Icon size={27} strokeWidth={2.1} />
       </div>
       <h3 className="text-[18px] font-black tracking-[-0.02em] text-slate-950">{title}</h3>
-      {description ? <p className="mt-2 max-w-[440px] text-sm font-semibold leading-6 text-slate-500">{description}</p> : null}
+      {description ? <p className="mt-2 max-w-[440px] text-sm font-semibold leading-6 text-[#5A6478]">{description}</p> : null}
       {action ? <div className="mt-5">{action}</div> : null}
     </div>
   );

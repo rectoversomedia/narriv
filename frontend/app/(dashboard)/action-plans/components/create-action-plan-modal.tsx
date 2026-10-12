@@ -134,25 +134,25 @@ export function CreateActionPlanModal({
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#465FFF]/10 text-[#465FFF]">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#465FFF]/10 text-[#3B52F5]">
               <Sparkles size={20} />
             </span>
             <div>
               <h3 id={titleId} className="text-lg font-black text-slate-900">{t("title")}</h3>
-              <p id={descriptionId} className="text-xs font-semibold text-slate-500">{t("desc")}</p>
+              <p id={descriptionId} className="text-xs font-semibold text-[#5A6478]">{t("desc")}</p>
             </div>
           </div>
-          <button type="button" onClick={() => onOpenChange(false)} className="rounded-full p-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700">
+          <button type="button" onClick={() => onOpenChange(false)} className="rounded-full p-1 text-[#5A6478] transition hover:bg-slate-100 hover:text-slate-700">
             <X size={16} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
           {selectedSignalId && (
-            <div className="flex items-center gap-2.5 rounded-xl border border-[#465FFF]/20 bg-[#465FFF]/5 p-3 text-[12px] text-[#465FFF]">
-              <Sparkles size={16} className="shrink-0 text-[#465FFF]" />
+            <div className="flex items-center gap-2.5 rounded-xl border border-[#465FFF]/20 bg-[#465FFF]/5 p-3 text-[12px] text-[#3B52F5]">
+              <Sparkles size={16} className="shrink-0 text-[#3B52F5]" />
               <div className="min-w-0">
-                <span className="block text-[10px] font-black uppercase tracking-wider text-[#465FFF]/70">Prefilled Context: Signal</span>
+                <span className="block text-[10px] font-black uppercase tracking-wider text-[#3B52F5]/70">Prefilled Context: Signal</span>
                 <span className="block truncate font-bold text-slate-800">{initialSignalTitle || `#${selectedSignalId.slice(0, 8)}`}</span>
               </div>
             </div>
@@ -176,12 +176,12 @@ export function CreateActionPlanModal({
                         : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
                     )}
                   >
-                    <span className={cn("mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors", isActive ? "bg-[#465FFF] text-white" : "bg-slate-100 text-slate-500 group-hover:bg-[#465FFF]/10 group-hover:text-[#465FFF]")}>
+                    <span className={cn("mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors", isActive ? "bg-[#465FFF] text-white" : "bg-slate-100 text-[#5A6478] group-hover:bg-[#465FFF]/10 group-hover:text-[#3B52F5]")}>
                       <Icon size={14} strokeWidth={2.5} />
                     </span>
                     <div>
-                      <p className={cn("text-[13px] font-black transition-colors", isActive ? "text-[#465FFF]" : "text-slate-700")}>{t(`strategy.${st.value}`)}</p>
-                      <p className="mt-0.5 text-[11px] font-semibold text-slate-500">{t(st.descriptionKey)}</p>
+                      <p className={cn("text-[13px] font-black transition-colors", isActive ? "text-[#3B52F5]" : "text-slate-700")}>{t(`strategy.${st.value}`)}</p>
+                      <p className="mt-0.5 text-[11px] font-semibold text-[#5A6478]">{t(st.descriptionKey)}</p>
                     </div>
                   </button>
                 );
@@ -234,7 +234,7 @@ export function CreateActionPlanModal({
             </select>
           </div>
 
-          <p className="text-[11px] font-semibold text-slate-500">{t("hint")}</p>
+          <p className="text-[11px] font-semibold text-[#5A6478]">{t("hint")}</p>
 
           <div className="mt-2 flex gap-3">
             <button

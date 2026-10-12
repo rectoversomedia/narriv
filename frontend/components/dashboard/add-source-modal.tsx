@@ -89,7 +89,7 @@ export function AddSourceModal({ open, onOpenChange, onSubmit, isPending }: AddS
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[#465FFF]/10 text-[#465FFF]">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[#465FFF]/10 text-[#3B52F5]">
               <Database size={20} strokeWidth={2.5} />
             </span>
             <div>

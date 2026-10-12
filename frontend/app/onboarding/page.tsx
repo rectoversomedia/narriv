@@ -393,7 +393,7 @@ export default function OnboardingPage() {
           <div className="h-6 w-px bg-[#D6DDEC]" />
           <button
             type="button"
-            className="flex h-9 items-center gap-2 rounded-full border border-[#D6DDEC] bg-white px-4 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#465FFF] hover:text-[#465FFF]"
+            className="flex h-9 items-center gap-2 rounded-full border border-[#D6DDEC] bg-white px-4 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#465FFF] hover:text-[#3B52F5]"
           >
             Need help?
           </button>
@@ -435,7 +435,7 @@ export default function OnboardingPage() {
                 {step === 1 ? (
                   <button
                     type="button"
-                    className="text-sm font-semibold text-[#5F6B94] transition-colors hover:text-[#465FFF] disabled:opacity-50"
+                    className="text-sm font-semibold text-[#5F6B94] transition-colors hover:text-[#3B52F5] disabled:opacity-50"
                     onClick={handleSkip}
                     disabled={isSubmitting}
                   >
@@ -445,7 +445,7 @@ export default function OnboardingPage() {
                   <button
                     type="button"
                     onClick={back}
-                    className="flex h-11 items-center gap-2 rounded-xl border border-[#D6DDEC] bg-white px-6 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#465FFF] hover:text-[#465FFF]"
+                    className="flex h-11 items-center gap-2 rounded-xl border border-[#D6DDEC] bg-white px-6 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#465FFF] hover:text-[#3B52F5]"
                   >
                     <ArrowLeft size={16} />
                     Back
@@ -496,7 +496,7 @@ function StepIndicator({ current }: { current: Step }) {
                 s.num < current
                   ? "bg-[#465FFF] text-white"
                   : s.num === current
-                  ? "border-2 border-[#465FFF] bg-white text-[#465FFF]"
+                  ? "border-2 border-[#465FFF] bg-white text-[#3B52F5]"
                   : "border-2 border-[#D6DDEC] bg-white text-[#647099]"
               }`}
             >
@@ -504,7 +504,7 @@ function StepIndicator({ current }: { current: Step }) {
             </div>
             <span
               className={`text-xs font-semibold whitespace-nowrap hidden lg:block ${
-                s.num === current ? "text-[#465FFF]" : s.num < current ? "text-[#3E4975]" : "text-[#647099]"
+                s.num === current ? "text-[#3B52F5]" : s.num < current ? "text-[#3E4975]" : "text-[#647099]"
               }`}
             >
               {s.label}
@@ -732,7 +732,7 @@ function KeywordsStep({
               type="button"
               onClick={() => add(input)}
               disabled={!input.trim()}
-              className="flex h-12 items-center gap-2 rounded-xl border border-[#D6DDEC] bg-white px-5 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#465FFF] hover:text-[#465FFF] disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex h-12 items-center gap-2 rounded-xl border border-[#D6DDEC] bg-white px-5 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#465FFF] hover:text-[#3B52F5] disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <Plus size={16} />
               {t("add")}
@@ -748,7 +748,7 @@ function KeywordsStep({
               type="button"
               onClick={() => add(s)}
               disabled={keywords.includes(s) || keywords.length >= 50}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#E8EAF6] bg-white px-3 py-1.5 text-xs font-semibold text-[#3E4975] transition-colors hover:border-[#465FFF] hover:text-[#465FFF] disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#E8EAF6] bg-white px-3 py-1.5 text-xs font-semibold text-[#3E4975] transition-colors hover:border-[#465FFF] hover:text-[#3B52F5] disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {s}
             </button>
@@ -923,7 +923,7 @@ function SourcesStep({
 
       <div className="flex items-center justify-between rounded-xl border border-[#E8EAF6] bg-[#FAFBFF] px-6 py-4">
         <div className="flex items-center gap-3">
-          <Database size={20} className="text-[#465FFF]" />
+          <Database size={20} className="text-[#3B52F5]" />
           <span className="text-sm font-bold text-[#111536]">
             {sources.length} source{sources.length !== 1 ? "s" : ""} selected
           </span>
@@ -933,7 +933,7 @@ function SourcesStep({
             {[...new Set(sources.map((s) => s.type))].map((type) => {
               const Icon = categoryIcons[type];
               return (
-                <span key={type} className="inline-flex items-center gap-1.5 rounded-full bg-[#465FFF]/10 px-3 py-1 text-xs font-semibold text-[#465FFF]">
+                <span key={type} className="inline-flex items-center gap-1.5 rounded-full bg-[#465FFF]/10 px-3 py-1 text-xs font-semibold text-[#3B52F5]">
                   {Icon && <Icon size={12} />}
                   {type.charAt(0).toUpperCase() + type.slice(1)}
                 </span>
@@ -1068,7 +1068,7 @@ function NotificationsStep({
                 data[key] ? "border-[#465FFF] bg-[#F8F6FF]" : "border-[#E8EAF6] bg-white hover:border-[#B8BDD8]"
               }`}
             >
-              <Icon size={18} className={data[key] ? "text-[#465FFF]" : "text-[#5F6B94]"} />
+              <Icon size={18} className={data[key] ? "text-[#3B52F5]" : "text-[#5F6B94]"} />
               <span className={`text-sm font-semibold ${data[key] ? "text-[#111536]" : "text-[#5F6B94]"}`}>
                 {label}
               </span>
@@ -1187,7 +1187,7 @@ function PreviewStep({ data }: { data: OnboardingData }) {
             {data.keywords.map((kw) => (
               <span
                 key={kw}
-                className="inline-flex items-center gap-1.5 rounded-full bg-[#465FFF]/10 px-4 py-2 text-sm font-semibold text-[#465FFF]"
+                className="inline-flex items-center gap-1.5 rounded-full bg-[#465FFF]/10 px-4 py-2 text-sm font-semibold text-[#3B52F5]"
               >
                 <Hash size={13} />
                 {kw}
@@ -1227,7 +1227,7 @@ function PreviewStep({ data }: { data: OnboardingData }) {
                     key={label}
                     className="flex items-center gap-3 rounded-xl border border-[#E8EAF6] bg-[#FAFBFF] px-4 py-3"
                   >
-                    <Bell size={16} className="text-[#465FFF]" />
+                    <Bell size={16} className="text-[#3B52F5]" />
                     <span className="text-sm font-semibold text-[#111536]">{label}</span>
                   </div>
                 )

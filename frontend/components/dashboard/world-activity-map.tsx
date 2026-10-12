@@ -11,6 +11,7 @@ import {
   type GeographiesProps,
 } from "@vnedyalk0v/react19-simple-maps";
 import type { GlobalActivitySummary } from "@/lib/api-service";
+import { readableTone } from "@/lib/readable-tone";
 
 const geoUrl = "/maps/world-110m.json";
 type GeographyInput = GeographiesProps["geography"];
@@ -141,7 +142,7 @@ export function WorldActivityMap({
       onMouseLeave={handleMouseLeave}
     >
       {mapLoadFailed ? (
-        <div className="flex h-full items-center justify-center text-xs font-bold text-slate-500">
+        <div className="flex h-full items-center justify-center text-xs font-bold text-[#5A6478]">
           {mapErrorLabel}
         </div>
       ) : geography ? (
@@ -169,15 +170,15 @@ export function WorldActivityMap({
                           <span className="text-[13px] font-black text-[#101334]">{name}</span>
                           {data ? (
                             <>
-                              <span className="text-xs font-black" style={{ color: style.color }}>
+                              <span className="text-xs font-black" style={{ color: readableTone(style.color) }}>
                                 {data.signals.toLocaleString()} signals
                               </span>
-                              <span className="text-[11px] font-semibold text-slate-500">
+                              <span className="text-[11px] font-semibold text-[#5A6478]">
                                 {style.label} activity · {formatTime(data.latest_at)}
                               </span>
                             </>
                           ) : (
-                            <span className="text-[11px] font-semibold text-slate-500">{emptyLabel}</span>
+                            <span className="text-[11px] font-semibold text-[#5A6478]">{emptyLabel}</span>
                           )}
                         </div>
                       );
@@ -221,10 +222,10 @@ export function WorldActivityMap({
                     setTooltipContent(
                       <div className="flex flex-col gap-1">
                         <span className="text-[13px] font-black text-[#101334]">{marker.name}</span>
-                        <span className="text-xs font-black" style={{ color: style.color }}>
+                        <span className="text-xs font-black" style={{ color: readableTone(style.color) }}>
                           {marker.signals.toLocaleString()} signals
                         </span>
-                        <span className="text-[11px] font-semibold text-slate-500">{formatTime(marker.latest_at)}</span>
+                        <span className="text-[11px] font-semibold text-[#5A6478]">{formatTime(marker.latest_at)}</span>
                       </div>
                     );
                   }}
@@ -246,7 +247,7 @@ export function WorldActivityMap({
       )}
 
       {!hasActivity && geography && !mapLoadFailed ? (
-        <div className="absolute inset-x-4 top-4 rounded-[12px] border border-dashed border-[#CBD5E1] bg-white/85 px-4 py-3 text-center text-[12px] font-bold text-slate-500 shadow-sm backdrop-blur">
+        <div className="absolute inset-x-4 top-4 rounded-[12px] border border-dashed border-[#CBD5E1] bg-white/85 px-4 py-3 text-center text-[12px] font-bold text-[#5A6478] shadow-sm backdrop-blur">
           {emptyLabel}
         </div>
       ) : null}
@@ -267,7 +268,7 @@ export function WorldActivityMap({
       </div>
 
       {activity?.updated_at ? (
-        <div className="absolute right-4 top-4 rounded-full border border-slate-100 bg-white/90 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 shadow-sm">
+        <div className="absolute right-4 top-4 rounded-full border border-slate-100 bg-white/90 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#5A6478] shadow-sm">
           Live · {formatTime(activity.updated_at)}
         </div>
       ) : null}

@@ -45,23 +45,23 @@ type Tone = "blue" | "purple" | "green" | "amber" | "red" | "slate";
 
 /* ─── Styles ─── */
 const statusStyles: Record<CaseStatus, string> = {
-  open: "bg-[#F59E0B]/10 text-[#B45309]",
-  in_progress: "bg-[#465FFF]/10 text-[#465FFF]",
+  open: "bg-[#F59E0B]/10 text-[#A04606]",
+  in_progress: "bg-[#465FFF]/10 text-[#3B52F5]",
   resolved: "bg-[#10B981]/10 text-[#047857]",
   closed: "bg-[#64748B]/10 text-[#475569]",
 };
 
 const priorityStyles: Record<CasePriority, string> = {
   critical: "bg-[#EF4444]/10 text-[#C81E1E]",
-  high: "bg-[#F59E0B]/10 text-[#B45309]",
-  medium: "bg-[#465FFF]/10 text-[#465FFF]",
+  high: "bg-[#F59E0B]/10 text-[#A04606]",
+  medium: "bg-[#465FFF]/10 text-[#3B52F5]",
   low: "bg-[#64748B]/10 text-[#475569]",
 };
 
 const toneMap: Record<string, { bg: string; text: string; ring: string }> = {
   blue: {
     bg: "bg-[#465FFF]/10",
-    text: "text-[#465FFF]",
+    text: "text-[#3B52F5]",
     ring: "ring-[#465FFF]/15",
   },
   purple: {
@@ -76,7 +76,7 @@ const toneMap: Record<string, { bg: string; text: string; ring: string }> = {
   },
   amber: {
     bg: "bg-[#F59E0B]/10",
-    text: "text-[#B45309]",
+    text: "text-[#A04606]",
     ring: "ring-[#F59E0B]/15",
   },
   red: {
@@ -84,7 +84,7 @@ const toneMap: Record<string, { bg: string; text: string; ring: string }> = {
     text: "text-[#C81E1E]",
     ring: "ring-[#EF4444]/15",
   },
-  slate: { bg: "bg-slate-100", text: "text-slate-500", ring: "ring-slate-200" },
+  slate: { bg: "bg-slate-100", text: "text-[#5A6478]", ring: "ring-slate-200" },
 };
 
 /* ─── Helpers ─── */
@@ -172,7 +172,7 @@ function MetricCard({
           <Icon size={18} />
         </span>
         <div className="min-w-0">
-          <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">
+          <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">
             {label}
           </p>
           <p className="mt-1 text-2xl font-black tracking-[-0.04em] text-slate-950">
@@ -180,7 +180,7 @@ function MetricCard({
           </p>
         </div>
       </div>
-      <p className="mt-3 text-[11px] font-bold text-slate-500">{helper}</p>
+      <p className="mt-3 text-[11px] font-bold text-[#5A6478]">{helper}</p>
     </div>
   );
 }
@@ -385,7 +385,7 @@ function CaseDetailSidebar({
                     {tDetail("source")}
                   </p>
                   <div className="mt-2 flex items-center gap-2">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#465FFF]/10 text-[#465FFF]">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#465FFF]/10 text-[#3B52F5]">
                       <ArrowUpRight size={12} />
                     </span>
                     <span className="text-[12px] font-black text-[#101334]">
@@ -839,25 +839,25 @@ export default function CasesPage() {
             <table className="w-full min-w-[960px] text-left text-sm">
               <thead className="border-b border-slate-100 bg-slate-50">
                 <tr>
-                  <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">
+                  <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">
                     {t("table.case")}
                   </th>
-                  <th className="px-4 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">
+                  <th className="px-4 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">
                     {t("table.status")}
                   </th>
-                  <th className="px-4 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">
+                  <th className="px-4 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">
                     {t("table.priority")}
                   </th>
-                  <th className="px-4 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">
+                  <th className="px-4 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">
                     {t("table.assignee")}
                   </th>
-                  <th className="px-4 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">
+                  <th className="px-4 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">
                     {t("table.deadline")}
                   </th>
-                  <th className="px-4 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">
+                  <th className="px-4 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">
                     {t("table.created")}
                   </th>
-                  <th className="px-4 py-4 text-right text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">
+                  <th className="px-4 py-4 text-right text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">
                     {t("table.action")}
                   </th>
                 </tr>
@@ -874,7 +874,7 @@ export default function CasesPage() {
                       {/* Case */}
                       <td className="px-6 py-4 align-top">
                         <div className="flex items-center gap-3">
-                          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[#465FFF]">
+                          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[#3B52F5]">
                             <FileText size={15} />
                           </span>
                           <div className="min-w-0">
@@ -1018,7 +1018,7 @@ export default function CasesPage() {
                         <p className="text-[11px] font-black text-slate-900">
                           {formatRelativeTime(item.createdAt, locale)}
                         </p>
-                        <p className="mt-1 text-[10px] font-semibold text-slate-500">
+                        <p className="mt-1 text-[10px] font-semibold text-[#5A6478]">
                           {formatDateTime(item.createdAt, locale)}
                         </p>
                       </td>
@@ -1032,7 +1032,7 @@ export default function CasesPage() {
                               title: item.title,
                             })}
                             onClick={() => setDetailCaseId(item.id)}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#647099] transition hover:bg-[#F0F3FF] hover:text-[#465FFF]"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#647099] transition hover:bg-[#F0F3FF] hover:text-[#3B52F5]"
                           >
                             <Eye size={15} />
                           </button>
@@ -1059,7 +1059,7 @@ export default function CasesPage() {
         {/* Footer — total + pagination */}
         {meta && (
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 p-4">
-            <span className="text-[11px] font-bold text-slate-500">
+            <span className="text-[11px] font-bold text-[#5A6478]">
               {t("pagination.total", { total: meta.total })}
             </span>
             {meta.totalPages > 1 && (

@@ -91,7 +91,7 @@ export function RejectActionPlanModal({
               <h3 id={titleId} className="text-base font-black text-slate-900">
                 {t("title")}
               </h3>
-              <p id={descriptionId} className="text-xs font-semibold text-slate-500">
+              <p id={descriptionId} className="text-xs font-semibold text-[#5A6478]">
                 {t("desc")}
               </p>
             </div>
@@ -100,7 +100,7 @@ export function RejectActionPlanModal({
             type="button"
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
-            className="rounded-full p-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+            className="rounded-full p-1 text-[#5A6478] transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
           >
             <X size={16} />
           </button>
@@ -108,7 +108,7 @@ export function RejectActionPlanModal({
 
         {planTitle && (
           <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50/80 p-3">
-            <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+            <p className="text-[10px] font-black uppercase tracking-wider text-[#5A6478]">
               {t("planTitleLabel")}
             </p>
             <p className="mt-0.5 text-xs font-bold text-slate-700 line-clamp-1">
@@ -124,7 +124,7 @@ export function RejectActionPlanModal({
               className="text-[12px] font-black text-slate-700 flex items-center justify-between"
             >
               <span>{t("reasonLabel")} <span className="text-[#C81E1E]">*</span></span>
-              <span className="text-[10px] font-medium text-slate-500">{reason.length}/1000</span>
+              <span className="text-[10px] font-medium text-[#5A6478]">{reason.length}/1000</span>
             </label>
             <textarea
               id={textareaId}
@@ -139,7 +139,7 @@ export function RejectActionPlanModal({
               onBlur={() => setTouched(true)}
               placeholder={t("reasonPlaceholder")}
               disabled={isSubmitting}
-              className={`w-full rounded-xl border p-3 text-xs text-slate-800 placeholder:text-slate-500 transition focus:outline-none focus:ring-2 disabled:bg-slate-50 disabled:opacity-60 ${
+              className={`w-full rounded-xl border p-3 text-xs text-slate-800 placeholder:text-[#5A6478] transition focus:outline-none focus:ring-2 disabled:bg-slate-50 disabled:opacity-60 ${
                 showError
                   ? "border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/20"
                   : "border-slate-200 focus:border-[#465FFF] focus:ring-[#465FFF]/15"

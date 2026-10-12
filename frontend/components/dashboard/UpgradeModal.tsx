@@ -122,7 +122,7 @@ export function UpgradeModal({ isOpen, onClose, feature, limit, currentPlan }: U
             <h2 className="text-xl font-black text-slate-900">
               {feature ? `Unlock ${feature}` : limit ? `Upgrade for More ${limit}` : "Upgrade Your Plan"}
             </h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-[#5A6478]">
               {feature
                 ? `This feature requires a higher plan. Choose a plan that includes ${feature}.`
                 : limit
@@ -133,7 +133,7 @@ export function UpgradeModal({ isOpen, onClose, feature, limit, currentPlan }: U
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-600"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-[#5A6478] hover:bg-slate-100 hover:text-slate-600"
           >
             <X size={20} />
           </button>
@@ -180,7 +180,7 @@ export function UpgradeModal({ isOpen, onClose, feature, limit, currentPlan }: U
                     <h3 className={cn("text-sm font-black", colors.text)}>
                       {plan.name}
                     </h3>
-                    <p className="text-[10px] text-slate-500">{plan.tagline}</p>
+                    <p className="text-[10px] text-[#5A6478]">{plan.tagline}</p>
                   </div>
                 </div>
 
@@ -189,25 +189,25 @@ export function UpgradeModal({ isOpen, onClose, feature, limit, currentPlan }: U
                   <span className="text-2xl font-black text-slate-900">
                     {formatPrice(plan.priceIdr)}
                   </span>
-                  <span className="text-xs text-slate-500">/month</span>
+                  <span className="text-xs text-[#5A6478]">/month</span>
                 </div>
 
                 {/* Limits */}
                 <div className="space-y-1.5 mb-4">
                   <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-500">Members</span>
+                    <span className="text-[#5A6478]">Members</span>
                     <span className="font-semibold text-slate-700">
                       {plan.maxMembers === -1 ? "∞" : plan.maxMembers}
                     </span>
                   </div>
                   <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-500">Topics</span>
+                    <span className="text-[#5A6478]">Topics</span>
                     <span className="font-semibold text-slate-700">
                       {plan.maxTopics === -1 ? "∞" : plan.maxTopics}
                     </span>
                   </div>
                   <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-500">Signals/mo</span>
+                    <span className="text-[#5A6478]">Signals/mo</span>
                     <span className="font-semibold text-slate-700">
                       {plan.maxSignalsPerMonth === -1 ? "∞" : `${(plan.maxSignalsPerMonth / 1000)}K`}
                     </span>
@@ -225,7 +225,7 @@ export function UpgradeModal({ isOpen, onClose, feature, limit, currentPlan }: U
                   {(plan.features?.length || 0) > 3 && (
                     <div className="flex items-center gap-1.5">
                       <Check size={12} className="text-slate-300" />
-                      <span className="text-[10px] text-slate-500">
+                      <span className="text-[10px] text-[#5A6478]">
                         +{(plan.features?.length || 0) - 3} more
                       </span>
                     </div>
@@ -244,7 +244,7 @@ export function UpgradeModal({ isOpen, onClose, feature, limit, currentPlan }: U
                     Selected
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 py-2 text-xs font-bold text-slate-500 hover:border-slate-300">
+                  <div className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 py-2 text-xs font-bold text-[#5A6478] hover:border-slate-300">
                     Select
                   </div>
                 )}
@@ -255,9 +255,9 @@ export function UpgradeModal({ isOpen, onClose, feature, limit, currentPlan }: U
 
         {/* Footer */}
         <div className="sticky bottom-0 flex items-center justify-between border-t border-slate-100 bg-white px-6 py-4">
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-[#5A6478]">
             Need help choosing?{" "}
-            <Link href="/pricing" className="text-[#465FFF] hover:underline">
+            <Link href="/pricing" className="text-[#3B52F5] hover:underline">
               Compare all plans
             </Link>
           </p>

@@ -174,7 +174,7 @@ export function HelpAction() {
     <div className="flex items-center gap-2 text-[15px] font-medium text-[#344054]">
       <HelpCircle size={20} className="text-[#344054]" />
       <span>{t("help.needHelp")}</span>
-      <Link href={SUPPORT_EMAIL ? `mailto:${SUPPORT_EMAIL}` : "/help#contact"} className="font-semibold text-[#465FFF] hover:underline">
+      <Link href={SUPPORT_EMAIL ? `mailto:${SUPPORT_EMAIL}` : "/help#contact"} className="font-semibold text-[#3B52F5] hover:underline">
         {t("help.contact")}
       </Link>
     </div>
@@ -422,7 +422,7 @@ export function SecurityFooter() {
 export function InfoCallout({ title, text }: { title: string; text: string }) {
   return (
     <div className="flex items-center gap-5 rounded-[8px] border border-[#E0E4F1] bg-[#FBFAFF] p-5">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-[#465FFF] text-[#465FFF]">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-[#465FFF] text-[#3B52F5]">
         <Info size={24} />
       </span>
       <span>
@@ -525,7 +525,7 @@ export function VerificationCodeInput({ value, onChange }: CodeInputProps) {
             if (event.currentTarget.value && index < 5) focusInput(index + 1);
           }}
           aria-label={t("verification.digitLabel", { digit: index + 1 })}
-          className="h-[74px] rounded-[10px] border border-[#D6DDEC] bg-white text-center text-[34px] font-semibold text-[#465FFF] outline-none transition focus:border-[#465FFF] focus:shadow-[0_0_0_3px_rgba(47,32,255,0.08)]"
+          className="h-[74px] rounded-[10px] border border-[#D6DDEC] bg-white text-center text-[34px] font-semibold text-[#3B52F5] outline-none transition focus:border-[#465FFF] focus:shadow-[0_0_0_3px_rgba(47,32,255,0.08)]"
         />
       ))}
     </div>

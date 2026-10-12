@@ -40,7 +40,7 @@ const toneStyles: Record<ToastTone, { shell: string; icon: string; Icon: typeof 
   },
   info: {
     shell: "border-[#D7E2FF] bg-[#F5F7FF] text-[#3446B5]",
-    icon: "bg-[#465FFF]/10 text-[#465FFF]",
+    icon: "bg-[#465FFF]/10 text-[#3B52F5]",
     Icon: Info,
   },
 };

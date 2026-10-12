@@ -27,7 +27,7 @@ type DetailTone = "red" | "amber" | "blue" | "green" | "slate";
 const toneClass: Record<DetailTone, { badge: string; bubble: string; border: string; panel: string; text: string }> = {
   red: { badge: "bg-[#EF4444]/10 text-[#C81E1E]", bubble: "bg-[#EF4444]/10 text-[#C81E1E]", border: "border-[#F4D8D8]", panel: "from-[#FFF4F4]", text: "text-[#C81E1E]" },
   amber: { badge: "bg-[#F59E0B]/12 text-[#B7791F]", bubble: "bg-[#F59E0B]/12 text-[#B7791F]", border: "border-[#F7DFC0]", panel: "from-[#FFF9ED]", text: "text-[#B7791F]" },
-  blue: { badge: "bg-[#465FFF]/10 text-[#465FFF]", bubble: "bg-[#465FFF]/10 text-[#465FFF]", border: "border-[#DDE5FF]", panel: "from-[#F5F7FF]", text: "text-[#465FFF]" },
+  blue: { badge: "bg-[#465FFF]/10 text-[#3B52F5]", bubble: "bg-[#465FFF]/10 text-[#3B52F5]", border: "border-[#DDE5FF]", panel: "from-[#F5F7FF]", text: "text-[#3B52F5]" },
   green: { badge: "bg-[#10B981]/10 text-[#047857]", bubble: "bg-[#10B981]/10 text-[#047857]", border: "border-[#CFEFE3]", panel: "from-[#F4FFFA]", text: "text-[#047857]" },
   slate: { badge: "bg-slate-100 text-slate-600", bubble: "bg-slate-100 text-slate-600", border: "border-[#E3E8F2]", panel: "from-[#F8FAFC]", text: "text-slate-600" },
 };
@@ -267,7 +267,7 @@ export default function AlertDetailPage() {
 
   return (
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
-      <Link href="/alerts" className="inline-flex items-center gap-2 text-[13px] font-black text-[#5F6B94] transition hover:text-[#465FFF]">
+      <Link href="/alerts" className="inline-flex items-center gap-2 text-[13px] font-black text-[#5F6B94] transition hover:text-[#3B52F5]">
         <ArrowLeft size={16} />
         {td("nav.back")}
       </Link>
@@ -295,7 +295,7 @@ export default function AlertDetailPage() {
                   onClick={() => setIsCaseModalOpen(true)}
                   className="inline-flex h-9 items-center gap-1.5 rounded-[9px] border border-[#DDE3EF] bg-white px-3.5 text-[11px] font-black text-[#31406B] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]"
                 >
-                  <Flag size={13} className="text-[#465FFF]" />
+                  <Flag size={13} className="text-[#3B52F5]" />
                   Create Case
                 </button>
                 <div className="mx-1 hidden h-4 w-px bg-slate-200 sm:block" />
@@ -351,7 +351,7 @@ export default function AlertDetailPage() {
                     <li key={sig.id} className="flex flex-wrap items-start justify-between gap-2 rounded-[10px] border border-[#EEF1F7] p-3">
                       <span className="min-w-0">
                         {sig.url ? (
-                          <a href={sig.url} target="_blank" rel="noopener noreferrer" className="text-[13px] font-bold text-[#101334] underline-offset-2 hover:text-[#465FFF] hover:underline">{sig.title}</a>
+                          <a href={sig.url} target="_blank" rel="noopener noreferrer" className="text-[13px] font-bold text-[#101334] underline-offset-2 hover:text-[#3B52F5] hover:underline">{sig.title}</a>
                         ) : (
                           <span className="text-[13px] font-bold text-[#101334]">{sig.title}</span>
                         )}

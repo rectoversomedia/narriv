@@ -97,7 +97,7 @@ export function PlanUsageBar() {
       {planKey !== "command" && (
         <div>
           <div className="flex justify-between text-xs mb-1">
-            <span className="text-slate-500">Intelligence Topics</span>
+            <span className="text-[#5A6478]">Intelligence Topics</span>
             <span className="text-slate-700 font-medium">
               {usage.topicsUsed} / {usage.topicsLimit === -1 ? "∞" : usage.topicsLimit}
             </span>
@@ -115,7 +115,7 @@ export function PlanUsageBar() {
       {planKey !== "command" && (
         <div>
           <div className="flex justify-between text-xs mb-1">
-            <span className="text-slate-500">Team Members</span>
+            <span className="text-[#5A6478]">Team Members</span>
             <span className="text-slate-700 font-medium">
               {usage.membersUsed} / {usage.membersLimit === -1 ? "∞" : usage.membersLimit}
             </span>

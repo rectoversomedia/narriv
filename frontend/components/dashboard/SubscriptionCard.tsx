@@ -72,7 +72,7 @@ function UsageBar({ label, used, limit, icon: Icon, color }: UsageBarProps) {
         </div>
         <span className={cn(
           "text-[11px] font-bold",
-          isExceeded ? "text-red-600" : isWarning ? "text-amber-700" : "text-slate-500"
+          isExceeded ? "text-red-700" : isWarning ? "text-amber-700" : "text-[#5A6478]"
         )}>
           {isUnlimited ? (
             <span className="text-emerald-700">Unlimited</span>
@@ -190,7 +190,7 @@ export function SubscriptionCard({ onUpgradeClick }: SubscriptionCardProps) {
                 </span>
               )}
             </div>
-            <p className="text-[10px] text-slate-500">
+            <p className="text-[10px] text-[#5A6478]">
               {subscription.plan?.tagline || "Your current plan"}
             </p>
           </div>
@@ -229,7 +229,7 @@ export function SubscriptionCard({ onUpgradeClick }: SubscriptionCardProps) {
       {/* Trial/Billing Info */}
       {(subscription.trialEndsAt || subscription.expiresAt) && (
         <div className="mt-4 rounded-lg bg-white/60 p-2.5">
-          <p className="text-[10px] font-semibold text-slate-500">
+          <p className="text-[10px] font-semibold text-[#5A6478]">
             {subscription.trialEndsAt ? (
               <>Trial ends: {new Date(subscription.trialEndsAt).toLocaleDateString()}</>
             ) : subscription.expiresAt ? (
