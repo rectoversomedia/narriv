@@ -2999,10 +2999,10 @@
     "metrics": {
       "totalSignals": "Total Sinyal",
       "analyzedSignals": "Sinyal Dianalisis",
-      "positiveSent": "Sent. Positif",
-      "negativeSent": "Sent. Negatif",
-      "neutralSent": "Sent. Netral",
-      "mixedSent": "Sent. Campuran"
+      "positiveSent": "Positif",
+      "negativeSent": "Negatif",
+      "neutralSent": "Netral",
+      "mixedSent": "Campuran"
     },
     "pages": {
       "command": {

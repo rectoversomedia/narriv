@@ -659,7 +659,7 @@ function FormatDonut({ distribution }: { distribution: Array<{ name: string; val
     <Panel className="p-4">
       <h3 className="text-[15px] font-black text-[#101334]">{tr("formatDonut.title")}</h3>
       <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{tr("formatDonut.desc")}</p>
-      <div className="mt-5 grid gap-5 sm:grid-cols-[136px_1fr] md:grid-cols-1 xl:grid-cols-[136px_1fr]">
+      <div className="mt-5 grid gap-5 sm:grid-cols-[136px_minmax(0,1fr)] md:grid-cols-1 xl:grid-cols-[136px_minmax(0,1fr)]">
         {hasData ? (
           <>
             <div className="chart-donut-enter relative mx-auto flex h-[136px] w-[136px] items-center justify-center rounded-full" style={{ background: gradient }}>
@@ -1283,7 +1283,7 @@ export default function ReportsPage() {
       </div>
 
       {/* Bottom Distribution charts */}
-      <div className="grid gap-4 lg:grid-cols-[0.95fr_1.15fr_0.9fr]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.15fr)_minmax(0,0.9fr)]">
         <FormatDonut distribution={liveFormatDistribution} />
         <TimelineChart data={liveTrendTimeline} />
             <PopularReports reports={livePopularReports} onViewAll={() => setIsPopularModalOpen(true)} />

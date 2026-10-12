@@ -176,9 +176,9 @@ function MentionsTrendChart({ datasets, dates, fallbackDates, maxValue, emptyTex
   const getY = (val: number) => paddingTop + (1 - val / maxVal) * (height - paddingTop - paddingBottom);
 
   return (
-    <div className="relative w-full overflow-x-auto">
+    <div className="relative w-full overflow-x-auto overflow-y-hidden" tabIndex={0} role="region" aria-label="AI mentions trend chart">
       <div className="min-w-[500px]">
-        <svg className="chart-enter chart-line-draw w-full h-[180px]" viewBox={`0 0 ${width} ${height}`}>
+        <svg className="chart-enter chart-line-draw block w-full h-[180px]" viewBox={`0 0 ${width} ${height}`}>
           {tickValues.map((yVal) => {
             const y = getY(yVal);
             return (
@@ -251,9 +251,9 @@ function CompetitorVsChart({ datasets, dates, fallbackDates, emptyText }: { data
   const targetX = getX(targetIdx);
 
   return (
-    <div className="relative w-full overflow-x-auto">
+    <div className="relative w-full overflow-x-auto overflow-y-hidden" tabIndex={0} role="region" aria-label="Brand versus competitor chart">
       <div className="min-w-[500px]">
-        <svg className="chart-enter chart-line-draw w-full h-[180px]" viewBox={`0 0 ${width} ${height}`}>
+        <svg className="chart-enter chart-line-draw block w-full h-[180px]" viewBox={`0 0 ${width} ${height}`}>
           {[0, Math.round(maxVal / 2), maxVal].map((yVal) => {
             const y = getY(yVal);
             return (
@@ -1018,7 +1018,7 @@ export default function VisibilityPage() {
           </Panel>
 
           {/* Row 1 Grid: Mentions Trend & Top Topics */}
-          <div className="grid gap-4 md:grid-cols-[1.2fr_1fr]">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
             <Panel>
               <CardContent className="p-5">
                 <div className="mb-4 flex items-center justify-between gap-3">
@@ -1084,7 +1084,7 @@ export default function VisibilityPage() {
           </div>
 
           {/* Row 2 Grid: Sandbox & Visibility vs Competitors */}
-          <div className="grid gap-4 md:grid-cols-[1.2fr_1fr]">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
             <Panel>
               <CardContent className="p-5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1130,7 +1130,7 @@ export default function VisibilityPage() {
                   </p>
                 ) : null}
 
-                <div className="mt-4 grid gap-4 sm:grid-cols-[1.2fr_1fr]">
+                <div className="mt-4 grid gap-4 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
                   <div className="rounded-[10px] bg-[#F6F8FF] border border-[#D9E1FC] p-4">
                     <div className="flex items-center justify-between">
                       <p className="text-[10px] font-black uppercase text-[#647099] tracking-[0.04em]">{t("sandbox.responseTitle")}</p>

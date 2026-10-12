@@ -572,7 +572,7 @@ function SourceDonut({ data, totalSignals }: { data?: SignalsMeta["sourceDistrib
           <p className="text-[10px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
         </div>
       ) : (
-        <div className="mt-5 grid gap-5 sm:grid-cols-[136px_1fr] md:grid-cols-1 xl:grid-cols-[136px_1fr]">
+        <div className="mt-5 grid gap-5 sm:grid-cols-[136px_minmax(0,1fr)] md:grid-cols-1 xl:grid-cols-[136px_minmax(0,1fr)]">
           <div className="chart-donut-enter relative mx-auto flex h-[136px] w-[136px] items-center justify-center rounded-full" style={{ background: `conic-gradient(${conicGradient})` }}>
             <span className="absolute h-[88px] w-[88px] rounded-full bg-white" />
             <span className="relative text-center">
@@ -1251,7 +1251,7 @@ export default function SignalsPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[0.92fr_1.08fr_1.18fr]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)_minmax(0,1.18fr)]">
         <SourceDonut data={meta?.sourceDistribution} totalSignals={meta?.totalSignals} />
         <TimelineChart data={meta?.timeline} labels={meta?.timelineLabels} />
         <InvestigationQueue data={meta?.investigationQueue} />

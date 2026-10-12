@@ -507,16 +507,17 @@ function DistributionPanel({ total, legend }: { total: number; legend: Array<{ l
       <CardContent className="p-5">
         <h2 className="text-[17px] font-black text-[#101334]">{t("distribution")}</h2>
         <p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("distributionDesc")}</p>
-        <div className="mt-5 grid items-center gap-6 sm:grid-cols-[170px_1fr]">
+        {/* Side by side only where the card is wide enough; it sits in a narrow column at lg/xl. */}
+        <div className="mt-5 grid items-center justify-items-center gap-6 sm:grid-cols-[170px_minmax(0,1fr)] sm:justify-items-stretch lg:grid-cols-1 lg:justify-items-center 2xl:grid-cols-[170px_minmax(0,1fr)] 2xl:justify-items-stretch">
           <DistributionDonut total={total} />
-          <div className="grid gap-3 text-[12px] font-bold text-[#53608C]">
+          <div className="grid w-full gap-3 text-[12px] font-bold text-[#53608C]">
             {legend.map(({ label, value, tone }) => (
-              <div key={label} className="flex items-center justify-between gap-3">
-                <span className="flex items-center gap-2">
-                  <span className="size-2.5 rounded-full" style={{ backgroundColor: toneStyles[tone].color }} />
-                  {label}
+              <div key={label} className="flex min-w-0 items-center justify-between gap-3">
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: toneStyles[tone].color }} />
+                  <span className="truncate">{label}</span>
                 </span>
-                <b className="text-[#101334]">{value}</b>
+                <b className="shrink-0 text-[#101334]">{value}</b>
               </div>
             ))}
           </div>
@@ -536,9 +537,7 @@ function buildCoverageBars(coverage: Awaited<ReturnType<typeof getSourceCoverage
         height: Math.max(8, Math.round((item.documents / maxDocuments) * 100)),
         color: toneStyles[["black", "pink", "blue", "red", "green", "purple", "orange"][index % 7] as Tone].color,
       }))
-    : [
-        { label: "Belum\nAda", value: "0", height: 8, color: "#94A3B8" },
-      ];
+    : [];
 }
 
 function buildCoverageLegend(coverage: Awaited<ReturnType<typeof getSourceCoverage>> | undefined) {
@@ -941,8 +940,8 @@ export default function SourcesPage() {
             </CardContent>
           </Panel>
 
-          <div className="grid gap-4 xl:grid-cols-[1.05fr_1fr]">
-            <Panel><CardContent className="p-5"><div className="mb-4 flex items-start justify-between"><div><h2 className="text-[17px] font-black text-[#101334]">{t("volume")}</h2><p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("volumeDesc")}</p></div><button type="button" onClick={() => showToast(toast("liveApiRefreshing"), "success")} className="flex h-9 items-center gap-2 rounded-[8px] border border-[#DDE3EF] px-3 text-[11px] font-black text-[#53608C] transition hover:border-[#CBD5E1]">Live API<ChevronDown size={12} /></button></div><VolumeBars bars={coverageBars} /></CardContent></Panel>
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
+            <Panel><CardContent className="p-5"><div className="mb-4 flex items-start justify-between"><div><h2 className="text-[17px] font-black text-[#101334]">{t("volume")}</h2><p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("volumeDesc")}</p></div><button type="button" onClick={() => void sourceCoverageQuery.refetch()} disabled={sourceCoverageQuery.isFetching} className="flex h-9 items-center gap-2 rounded-[8px] border border-[#DDE3EF] px-3 text-[11px] font-black text-[#53608C] transition hover:border-[#CBD5E1] disabled:opacity-60"><RotateCw size={12} className={sourceCoverageQuery.isFetching ? "animate-spin" : undefined} />Refresh</button></div><VolumeBars bars={coverageBars} /></CardContent></Panel>
             <DistributionPanel
               total={totalSources}
               legend={coverageLegend.length > 0 ? coverageLegend : [{ label: t("noSourcesLegend"), value: "0 (0%)", tone: "slate" as Tone }]}
@@ -951,7 +950,7 @@ export default function SourcesPage() {
         </div>
 
         <aside className="flex flex-col gap-4">
-          <Panel><CardContent className="p-5"><h2 className="text-[17px] font-black text-[#101334]">{t("healthTitle")}</h2><p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("healthDesc")}</p><div className="mt-5 grid items-center gap-5 sm:grid-cols-[128px_1fr] xl:grid-cols-1 2xl:grid-cols-[128px_1fr]"><HealthDonut total={healthSummary?.total ?? totalSources} /><div className="grid gap-3 text-[12px] font-bold text-[#53608C]"><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#10B981]" />{t("healthHealthy")}</span><b className="text-[#101334]">{healthSummary?.healthy ?? 0}</b></div><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#F59E0B]" />{t("healthWarning")}</span><b className="text-[#101334]">{healthSummary?.warning ?? 0}</b></div><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#EF4444]" />{t("healthCritical")}</span><b className="text-[#101334]">{healthSummary?.critical ?? 0}</b></div></div></div><div className="mt-5 rounded-[12px] border border-[#BFEBD9] bg-[#ECFDF6] p-4"><div className="flex items-start gap-3"><ShieldCheck size={20} className="text-[#047857]" /><span><b className="block text-[13px] font-black text-[#047857]">{healthSummary && healthSummary.total > 0 && healthSummary.healthy === healthSummary.total ? t("optimal") : t("healthNeedsAttention")}</b><span className="text-[12px] font-semibold text-[#53608C]">{healthText(healthSummary, t)}</span></span></div></div></CardContent></Panel>
+          <Panel><CardContent className="p-5"><h2 className="text-[17px] font-black text-[#101334]">{t("healthTitle")}</h2><p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("healthDesc")}</p><div className="mt-5 grid items-center gap-5 sm:grid-cols-[128px_minmax(0,1fr)] xl:grid-cols-1 2xl:grid-cols-[128px_minmax(0,1fr)]"><HealthDonut total={healthSummary?.total ?? totalSources} /><div className="grid gap-3 text-[12px] font-bold text-[#53608C]"><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#10B981]" />{t("healthHealthy")}</span><b className="text-[#101334]">{healthSummary?.healthy ?? 0}</b></div><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#F59E0B]" />{t("healthWarning")}</span><b className="text-[#101334]">{healthSummary?.warning ?? 0}</b></div><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#EF4444]" />{t("healthCritical")}</span><b className="text-[#101334]">{healthSummary?.critical ?? 0}</b></div></div></div><div className="mt-5 rounded-[12px] border border-[#BFEBD9] bg-[#ECFDF6] p-4"><div className="flex items-start gap-3"><ShieldCheck size={20} className="text-[#047857]" /><span><b className="block text-[13px] font-black text-[#047857]">{healthSummary && healthSummary.total > 0 && healthSummary.healthy === healthSummary.total ? t("optimal") : t("healthNeedsAttention")}</b><span className="text-[12px] font-semibold text-[#53608C]">{healthText(healthSummary, t)}</span></span></div></div></CardContent></Panel>
 
           <Panel><CardContent className="p-5"><div className="mb-4 flex items-start justify-between"><div><h2 className="text-[17px] font-black text-[#101334]">{t("activity")}</h2><p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("activityDesc")}</p></div></div>{recentHealthEntries.length > 0 ? <div className="grid gap-3">{recentHealthEntries.map(([id, name, status, time, tone, Icon]) => { const TypedIcon = Icon as SourceIcon; const style = toneStyles[tone as Tone]; return <div key={id} className="flex items-center justify-between gap-3"><span className="flex min-w-0 items-center gap-3"><span className="flex size-7 items-center justify-center rounded-[7px]" style={{ color: style.color, backgroundColor: `rgba(${style.rgb}, .10)` }}><TypedIcon className="size-[15px]" /></span><span className="min-w-0"><b className="block truncate text-[12px] text-[#101334]">{name}</b><span className="text-[11px] font-semibold capitalize" style={{ color: readableTone(style.color) }}>{status}</span></span></span><span className="shrink-0 text-[10px] font-bold text-[#5F6B94]">{time}</span><Check size={13} style={{ color: style.color }} /></div>; })}</div> : <DashboardEmptyState title={toast("activity.emptyTitle")} description={toast("activity.emptyDesc")} icon="search" minHeight="min-h-[120px]" />}</CardContent></Panel>
 

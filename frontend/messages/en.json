@@ -3027,10 +3027,10 @@
     "metrics": {
       "totalSignals": "Total Signals",
       "analyzedSignals": "Analyzed Signals",
-      "positiveSent": "Positive Sent.",
-      "negativeSent": "Negative Sent.",
-      "neutralSent": "Neutral Sent.",
-      "mixedSent": "Mixed Sent."
+      "positiveSent": "Positive",
+      "negativeSent": "Negative",
+      "neutralSent": "Neutral",
+      "mixedSent": "Mixed"
     },
     "pages": {
       "command": {

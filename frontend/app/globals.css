@@ -3,6 +3,14 @@
 @tailwind utilities;
 
 @layer base {
+  /* Grids without an explicit column template get an implicit "auto" track,
+     which grows to the content's min-content width and pushes cards past the
+     viewport on small screens. Implicit tracks shrink instead; explicit
+     grid-cols-* templates are unaffected. */
+  .grid {
+    grid-auto-columns: minmax(0, 1fr);
+  }
+
   * {
     @apply border-border;
   }

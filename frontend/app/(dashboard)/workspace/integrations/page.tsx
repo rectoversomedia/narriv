@@ -246,7 +246,7 @@ export default function IntegrationsPage() {
         })}
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.4fr]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.4fr)]">
         <section className="rounded-[16px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="mb-5 flex items-start gap-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#465FFF]/10 text-[#3B52F5]">
@@ -309,7 +309,7 @@ export default function IntegrationsPage() {
               <Filter size={14} />
               {t("filter.filterTitle")}
             </div>
-            <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
+            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
               <label className="grid gap-1.5">
                 <span className="text-[11px] font-black text-[#5A6478]">{t("filter.platform")}</span>
                 <select

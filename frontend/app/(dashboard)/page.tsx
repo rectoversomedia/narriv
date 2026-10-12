@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { TodaysIntelligenceStrip } from "@/components/intelligence/intelligence-panels";
 import { getPipelineStatus, timeAgo } from "@/lib/intelligence-api";
 import { DemoBanner } from "@/components/ui/demo-banner";
+import { SignalSentimentPanel } from "@/components/dashboard/signal-sentiment-panel";
 
 type QuickActionKey = "newAlert" | "report" | "analyze" | "sources" | "settings" | "help";
 
@@ -262,20 +263,10 @@ export default function DashboardPage() {
 
   // Format percentage with 1 decimal place
   const formatPercent = (num: number | undefined | null): string => {
-    if (num === undefined || num === null) return "0%";
+    if (num === undefined || num === null) return "—";
     return `${num.toFixed(1)}%`;
   };
 
-  const metricsRow = summary?.kpis
-    ? [
-        { label: t("metrics.totalSignals"), value: formatNumber(summary.kpis.total_signals), helper: "Live", icon: BarChart3, tone: "blue" as const },
-        { label: t("metrics.analyzedSignals"), value: formatNumber(summary.kpis.analyzed_signals), helper: "Live", icon: BarChart3, tone: "purple" as const },
-        { label: t("metrics.positiveSent"), value: formatPercent(summary.kpis.positive_percentage), helper: "Live", icon: BarChart3, tone: "green" as const },
-        { label: t("metrics.negativeSent"), value: formatPercent(summary.kpis.negative_percentage), helper: "Live", icon: BarChart3, tone: "red" as const },
-        { label: t("metrics.neutralSent"), value: formatPercent(summary.kpis.neutral_percentage), helper: "Live", icon: BarChart3, tone: "slate" as const },
-        { label: t("metrics.mixedSent"), value: formatPercent(summary.kpis.mixed_percentage), helper: "Live", icon: BarChart3, tone: "amber" as const },
-      ]
-    : [];
 
   const alertsRow = summary?.latest_signals?.length
     ? summary.latest_signals.slice(0, 4).map((sig) => ({
@@ -471,16 +462,19 @@ export default function DashboardPage() {
       {/* ── 1b. Real intelligence strip from backend ───────────────────────── */}
       <TodaysIntelligenceStrip />
 
-      {/* ── 1c. Mentions & sentiment KPIs (dashboard summary for the selected period) */}
-      {metricsRow.length > 0 ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-          {metricsRow.map((m) => (
-            <div key={m.label} className="rounded-xl border border-slate-200 bg-white p-4">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">{m.label}</div>
-              <div className="mt-1.5 text-[22px] font-bold leading-none tabular-nums text-slate-900">{m.value}</div>
-            </div>
-          ))}
-        </div>
+      {/* ── 1c. Signal volume and sentiment share (dashboard summary for the selected period) */}
+      {summary?.kpis ? (
+        <SignalSentimentPanel
+          kpis={summary.kpis}
+          labels={{
+            totalSignals: t("metrics.totalSignals"),
+            analyzedSignals: t("metrics.analyzedSignals"),
+            positive: t("metrics.positiveSent"),
+            negative: t("metrics.negativeSent"),
+            neutral: t("metrics.neutralSent"),
+            mixed: t("metrics.mixedSent"),
+          }}
+        />
       ) : null}
 
       {/* ── 2. Top Developments ───────────────────────────────────────────── */}
@@ -532,7 +526,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── 4. Two-column layout ──────────────────────────────────────────── */}
-      <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
 
         {/* Left column: Top Narratives + Competitor Snapshot */}
         <div className="flex flex-col gap-6">
@@ -582,8 +576,8 @@ export default function DashboardPage() {
               {competitors.length === 0 ? (
                 <div className="mt-3"><EmptyPanel label="Competitor tracking is not configured for this workspace yet." /></div>
               ) : (
-              <div className="mt-3 overflow-hidden rounded-[8px] border border-slate-100">
-                <table className="w-full text-[12px]">
+              <div className="mt-3 overflow-x-auto rounded-[8px] border border-slate-100" tabIndex={0} role="region" aria-label="Competitor snapshot">
+                <table className="w-full min-w-[460px] text-[12px]">
                   <thead>
                     <tr className="border-b border-slate-100 bg-slate-50">
                       <th className="px-3 py-2 text-left font-bold text-[#5A6478]">Competitor</th>

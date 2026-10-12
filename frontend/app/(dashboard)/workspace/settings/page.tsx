@@ -570,7 +570,7 @@ export default function SettingsPage() {
       ) : null}
 
       {/* Row 1: Workspace & User Management */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_1.45fr]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1.45fr)]">
         
         {/* Card A: Informasi Workspace */}
         <Panel className="flex flex-col gap-5">
@@ -586,7 +586,7 @@ export default function SettingsPage() {
 
           <form onSubmit={handleSaveWorkspaceInfo} className="grid gap-4">
             {/* Logo and inputs side-by-side or stacked */}
-            <div className="grid gap-5 sm:grid-cols-[100px_1fr]">
+            <div className="grid gap-5 sm:grid-cols-[100px_minmax(0,1fr)]">
               <div className="flex flex-col items-center">
                 <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl bg-slate-950 border border-slate-800 shadow-inner">
                   <Image src={activeLogo} alt={ts("workspaceInfo.logoAlt")} width={60} height={60} unoptimized={activeLogo.startsWith("http")} className={cn("object-contain transition-opacity", uploadLogoMutation.isPending && "opacity-45")} />
@@ -1218,7 +1218,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Row 3: Billing & Usage & Danger Zone */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[2fr_1.1fr]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1.1fr)]">
         
         {/* Card A: Billing & Usage */}
         <Panel className="flex flex-col gap-6">
