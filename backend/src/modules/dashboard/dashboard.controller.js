@@ -1,4 +1,5 @@
 import { buildSentimentTrend, sentimentTrendStart } from "../../lib/sentiment-trend.js";
+import { rankClustersByEvidence } from "../../lib/dashboard-topics.js";
 import supabase from "../../lib/supabase.js";
 import { getUserWorkspaceIds } from "../../lib/workspace-access.js";
 import { cachedQuery, CACHE_KEYS, CACHE_TTL } from "../../lib/cache.js";
@@ -237,12 +238,12 @@ export const getSummary = async (req, res) => {
             try {
                 const { data, error } = await supabase
                     .from("narrative_clusters")
-                    .select("title, signal_count")
+                    .select("title, sentiment, signal_count, narrative_cluster_signals(signal_id)")
                     .in("workspace_id", workspaceIds)
-                    .order("signal_count", { ascending: false })
-                    .limit(10);
+                    .order("updated_at", { ascending: false })
+                    .limit(50);
 
-                if (!error) clusters = data || [];
+                if (!error) clusters = rankClustersByEvidence(data || []);
             } catch (e) {
                 // Table or columns don't exist yet
             }
@@ -250,9 +251,9 @@ export const getSummary = async (req, res) => {
             const top_topics = (clusters || []).slice(0, 5).map(c => {
                 return {
                     name: { en: c.title || "Unknown", id: c.title || "Unknown" },
-                    mentions: String(c.signal_count || 0),
+                    mentions: String(c.signal_count),
                     delta: null,   // Real delta requires historical snapshots — track in a future migration
-                    tone: null
+                    tone: ["positive", "negative", "neutral", "mixed"].includes(String(c.sentiment).toLowerCase()) ? String(c.sentiment).toLowerCase() : null
                 };
             });
 
@@ -260,7 +261,7 @@ export const getSummary = async (req, res) => {
                 const tones = ["purple", "blue", "green", "amber", "red", "slate"];
                 return {
                     label: c.title || "Unknown",
-                    value: String(c.signal_count || 0),
+                    value: String(c.signal_count),
                     tone: tones[index % tones.length]
                 };
             });
