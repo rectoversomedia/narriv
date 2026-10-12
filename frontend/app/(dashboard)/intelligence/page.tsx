@@ -696,7 +696,7 @@ export default function IntelligencePage() {
             <CardContent className="p-4">
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <h2 className="flex items-center gap-2 text-[17px] font-black tracking-[-0.02em] text-[#101334]">
+                  <h2 className="flex items-center gap-2 text-[16px] font-black tracking-[-0.02em] text-[#101334]">
                     {ti("topicMap.title")}
                     <Info size={14} className="text-[#647099]" />
                   </h2>
@@ -805,7 +805,7 @@ export default function IntelligencePage() {
             <Panel>
               <CardContent className="flex h-full flex-col justify-between p-5">
                 <div>
-                  <h3 className="flex items-center gap-2 text-[15px] font-black tracking-[-0.02em] text-[#101334]">
+                  <h3 className="flex items-center gap-2 text-[16px] font-black tracking-[-0.02em] text-[#101334]">
                     <Sparkles size={16} className="text-[#6E44E8]" />
                     {ti("aiSummary.title")}
                   </h3>
@@ -830,7 +830,7 @@ export default function IntelligencePage() {
 
             <Panel>
               <CardContent className="p-5">
-                <h3 className="flex items-center gap-2 text-[15px] font-black tracking-[-0.02em] text-[#101334]">
+                <h3 className="flex items-center gap-2 text-[16px] font-black tracking-[-0.02em] text-[#101334]">
                   {ti("lifecycle.title")}
                   <Info size={13} className="text-[#647099]" />
                 </h3>
@@ -858,7 +858,7 @@ export default function IntelligencePage() {
           <Panel>
             <CardContent className="p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <h3 className="text-[15px] font-black tracking-[-0.02em] text-[#101334]">{ti("growingClusters.title")}</h3>
+                <h3 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{ti("growingClusters.title")}</h3>
                 <button type="button" onClick={() => setIsAllClustersModalOpen(true)} className="text-[11px] font-black text-[#3B52F5] transition hover:text-[#3B52F5]">
                   {ti("growingClusters.viewAll")}
                 </button>
@@ -922,7 +922,7 @@ export default function IntelligencePage() {
                 <ClusterIcon tone={selectedCluster.tone} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-3">
-                    <h3 className="text-[15px] font-black leading-tight tracking-[-0.02em] text-[#101334]">{text(selectedCluster.topic, language)}</h3>
+                    <h3 className="text-[16px] font-black leading-tight tracking-[-0.02em] text-[#101334]">{text(selectedCluster.topic, language)}</h3>
                     <TrendBadge value={text(selectedCluster.priority, language)} tone={selectedCluster.priorityTone} className="shrink-0 px-2.5 py-1 text-[9px]" />
                   </div>
                   <p className="mt-2 text-[12px] font-semibold leading-relaxed text-[#53608C]">{text(selectedCluster.description, language)}</p>
@@ -965,7 +965,7 @@ export default function IntelligencePage() {
 
           <Panel>
             <CardContent className="p-4">
-              <h3 className="mb-3 flex items-center gap-2 text-[15px] font-black tracking-[-0.02em] text-[#101334]">
+              <h3 className="mb-3 flex items-center gap-2 text-[16px] font-black tracking-[-0.02em] text-[#101334]">
                 {ti("competitorShare.title")}
                 <Info size={13} className="text-[#647099]" />
               </h3>

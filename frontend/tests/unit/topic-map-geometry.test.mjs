@@ -58,3 +58,29 @@ test("radius grows with signal volume and is bounded", () => {
   assert.ok(radiusFor(24, 24) > radiusFor(2, 24));
   assert.equal(radiusFor(0, 0), 34);
 });
+
+test("fitLayout keeps every node large enough for an inside label, in bounds and apart", async () => {
+  const { fitLayout, labelBox, MIN_LABEL_RADIUS } = await import("../../lib/topic-map-geometry.ts");
+  const nodes = Array.from({ length: 9 }, (_, i) => ({ id: `n${i}`, signals: 9 - i }));
+  for (const [w, h] of [[320, 360], [520, 420], [900, 520], [1200, 560]]) {
+    const { nodes: shown, placed } = fitLayout(nodes, w, h);
+    assert.ok(shown.length >= 1);
+    for (const p of placed) {
+      assert.ok(p.r >= MIN_LABEL_RADIUS || shown.length === 1, `r ${p.r} at ${w}x${h}`);
+      assert.ok(p.x - p.r >= 0 && p.x + p.r <= w && p.y - p.r >= 0 && p.y + p.r <= h, `in bounds at ${w}x${h}`);
+      const box = labelBox(p.r);
+      // All four corners of the label box lie inside the circle.
+      assert.ok(Math.hypot(box.width / 2, box.height / 2) <= p.r + 0.5, `label box fits r=${p.r}`);
+    }
+    for (let i = 0; i < placed.length; i += 1) for (let j = i + 1; j < placed.length; j += 1) {
+      assert.ok(Math.hypot(placed[i].x - placed[j].x, placed[i].y - placed[j].y) >= placed[i].r + placed[j].r, `no overlap at ${w}x${h}`);
+    }
+  }
+});
+
+test("wide, short containers fit more readable nodes with the row layout", async () => {
+  const { fitLayout } = await import("../../lib/topic-map-geometry.ts");
+  const nodes = Array.from({ length: 8 }, (_, i) => ({ id: `n${i}`, signals: 8 - i }));
+  const { nodes: shown } = fitLayout(nodes, 700, 320);
+  assert.ok(shown.length >= 4, `only ${shown.length} nodes fit in 700x320`);
+});

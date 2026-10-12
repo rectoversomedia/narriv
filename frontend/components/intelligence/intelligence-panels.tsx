@@ -111,7 +111,8 @@ export function TodaysIntelligenceStrip({ windowHours = 24 }: { windowHours?: nu
   }
 
   const riskBand = (narrative.data?.riskBand as string) || "low";
-  const riskScore = narrative.data?.riskScore ?? 0;
+  // null = not computed (insufficient data), shown as "—", never as 0.
+  const riskScore = typeof narrative.data?.riskScore === "number" ? narrative.data.riskScore : null;
   const riskPill = RISK_LABEL[riskBand] || RISK_LABEL.low;
 
   const repBand = (reputation.data?.reputationBand as string) || "neutral";
@@ -128,45 +129,49 @@ export function TodaysIntelligenceStrip({ windowHours = 24 }: { windowHours?: nu
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <div className="rounded-xl border border-slate-200 bg-white p-4">
         <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">Risk score</div>
-        <div className="mt-1.5 flex items-baseline gap-2">
-          <span className="text-[28px] font-bold leading-none text-slate-900">{riskScore}</span>
-          <span className="text-[12px] text-[#5A6478]">/100</span>
+        <p className="mt-0.5 text-[11px] leading-snug text-[#5A6478]">Threat to reputation in the last {windowHours} hours. Lower is better.</p>
+        <div className="mt-2 flex items-baseline gap-2">
+          <span className="text-[28px] font-bold leading-none text-slate-900">{riskScore ?? "—"}</span>
+          {riskScore !== null ? <span className="text-[12px] text-[#5A6478]">/100</span> : null}
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          <Pill tone={riskPill.tone}>{riskPill.label}</Pill>
-          {narrative.data?.riskModel ? (
-            <span className="text-[11px] text-[#5A6478]">{narrative.data.riskModel.uncertainty.level} uncertainty</span>
+          {riskScore !== null ? <Pill tone={riskPill.tone}>{riskPill.label}</Pill> : <span className="text-[11px] text-[#5A6478]">Not enough data</span>}
+          {riskScore !== null && narrative.data?.riskModel ? (
+            <span className="text-[11px] text-[#5A6478]">Uncertainty: {narrative.data.riskModel.uncertainty.level}</span>
           ) : null}
         </div>
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-4">
         <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">Reputation</div>
-        <div className="mt-1.5 flex items-baseline gap-2">
+        <p className="mt-0.5 text-[11px] leading-snug text-[#5A6478]">Overall tone of coverage. Higher is better.</p>
+        <div className="mt-2 flex items-baseline gap-2">
           <span className="text-[28px] font-bold leading-none text-slate-900">{repScore ?? "—"}</span>
           {repScore !== null ? <span className="text-[12px] text-[#5A6478]">/100</span> : null}
         </div>
         <div className="mt-2">
-          <Pill tone={repPill.tone}>{repPill.label}</Pill>
+          {repScore !== null ? <Pill tone={repPill.tone}>{repPill.label}</Pill> : <span className="text-[11px] text-[#5A6478]">Not enough data</span>}
         </div>
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-4">
         <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">What changed</div>
-        <p className="mt-1.5 text-[13px] leading-snug text-slate-700 line-clamp-3">
+        <p className="mt-0.5 text-[11px] leading-snug text-[#5A6478]">New activity in the last {windowHours} hours.</p>
+        <p className="mt-2 text-[13px] leading-snug text-slate-700 line-clamp-3">
           {whatChanged || (grounded === false ? "Insufficient data" : "No changes detected in this window.")}
         </p>
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-4">
         <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">Top recommendation</div>
+        <p className="mt-0.5 text-[11px] leading-snug text-[#5A6478]">Suggested next step; needs human approval.</p>
         {topRec ? (
           <>
-            <p className="mt-1.5 text-[13px] font-semibold leading-snug text-slate-900">{topRec.action.replace(/_/g, " ")}</p>
+            <p className="mt-2 text-[13px] font-semibold leading-snug text-slate-900 first-letter:uppercase">{topRec.action.replace(/_/g, " ")}</p>
             <p className="mt-1 text-[12px] leading-snug text-slate-600 line-clamp-2">{topRec.reason}</p>
             <div className="mt-2 flex items-center gap-1.5">
-              <Pill tone="text-slate-700 bg-slate-50 border-slate-200">{topRec.priority}</Pill>
-              <Pill tone="text-slate-700 bg-slate-50 border-slate-200">{topRec.urgency}</Pill>
+              <Pill tone="text-slate-700 bg-slate-50 border-slate-200">Priority: {topRec.priority}</Pill>
+              <Pill tone="text-slate-700 bg-slate-50 border-slate-200">Urgency: {topRec.urgency}</Pill>
             </div>
           </>
         ) : (

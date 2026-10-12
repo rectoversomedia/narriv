@@ -6,7 +6,6 @@ import Link from "next/link";
 import {
   Check,
   X,
-  Sparkles,
   Zap,
   Building2,
   Users,
@@ -235,17 +234,10 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 px-6 py-20 text-white">
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-20 left-20 h-72 w-72 rounded-full bg-blue-500 blur-3xl" />
-          <div className="absolute bottom-10 right-20 h-96 w-96 rounded-full bg-purple-500 blur-3xl" />
-        </div>
+      <header className="relative overflow-hidden bg-[#101334] px-6 py-20 text-white">
         <div className="relative z-10 mx-auto max-w-5xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur-sm mb-6">
-            <Sparkles size={16} />
-            <span>{t("badge")}</span>
-          </div>
-          <h1 className="text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl">{t("title")}</h1>
+          <p className="mb-4 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#A5B4FC]">Pricing</p>
+          <h1 className="text-[34px] font-bold leading-tight tracking-[-0.02em] sm:text-[42px]">{t("title")}</h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-300 sm:text-xl">{t("subtitle")}</p>
 
           {/* Billing Toggle */}
@@ -290,7 +282,7 @@ export default function PricingPage() {
                 key={plan.id}
                 className={`relative rounded-2xl border p-6 sm:p-8 ${
                   plan.popular
-                    ? "border-indigo-500 bg-gradient-to-b from-indigo-50 to-white shadow-xl shadow-indigo-100 ring-2 ring-indigo-500"
+                    ? "border-[#465FFF] bg-white shadow-md ring-2 ring-[#465FFF]"
                     : "border-slate-200 bg-white shadow-lg"
                 }`}
               >
@@ -318,12 +310,13 @@ export default function PricingPage() {
                 {/* Price */}
                 <div className="mt-6 text-center">
                   {isCustom ? (
-                    <div className="text-3xl font-black text-slate-900"><span>Custom</span></div>
+                    <div className="text-[26px] font-bold leading-tight text-slate-900 xl:text-[28px]"><span>Custom</span></div>
                   ) : (
                     <>
-                      <div className="text-3xl font-black text-slate-900 sm:text-4xl">
-                        {formatPrice(price)}
-                        <span className="text-base font-normal text-[#5A6478]">/{plan.period}</span>
+                      {/* Price and period wrap as a unit so long rupiah amounts never overflow the card. */}
+                      <div className="flex flex-wrap items-baseline justify-center gap-x-1 text-[26px] font-bold leading-tight tabular-nums text-slate-900 xl:text-[28px]">
+                        <span className="whitespace-nowrap">{formatPrice(price)}</span>
+                        <span className="text-[14px] font-normal text-[#5A6478]">/{plan.period}</span>
                       </div>
                       {billingPeriod === "annual" && (
                         <span>Save {formatPrice(plan.price - price)}/month</span>
@@ -337,7 +330,7 @@ export default function PricingPage() {
                   href={isCustom ? "/help#contact" : `/signup?plan=${plan.id}`}
                   className={`mt-8 block w-full rounded-xl py-3.5 text-center text-base font-bold transition ${
                     plan.popular
-                      ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:scale-[1.02]"
+                      ? "bg-[#465FFF] text-white shadow-sm hover:bg-[#3B52F5]"
                       : "border-2 border-slate-200 text-slate-900 hover:border-indigo-500 hover:text-indigo-600"
                   }`}
                 >
@@ -514,7 +507,7 @@ export default function PricingPage() {
 
       {/* CTA */}
       <section className="px-6 py-20">
-        <div className="mx-auto max-w-4xl rounded-3xl bg-gradient-to-br from-indigo-600 to-purple-600 px-8 py-16 text-center text-white">
+        <div className="mx-auto max-w-4xl rounded-3xl bg-[#101334] px-8 py-16 text-center text-white">
           <h2 className="text-3xl font-black tracking-tight sm:text-4xl">{t("ctaTitle")}</h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-white/80">{t("ctaSubtitle")}</p>
           <div className="mt-10 flex flex-wrap justify-center gap-4">

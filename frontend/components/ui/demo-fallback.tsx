@@ -41,7 +41,7 @@ export function DemoFallback({
   return (
     <div
       className={
-        "flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[#8B5CFF]/30 bg-gradient-to-br from-white to-[#F8F5FF] px-6 py-8 text-center " +
+        "flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[#8B5CFF]/30 bg-[#FBFAFF] px-6 py-8 text-center " +
         (className ?? "")
       }
     >
@@ -57,7 +57,7 @@ export function DemoFallback({
           <Button
             type="button"
             onClick={handleActivateDemo}
-            className="h-9 rounded-lg bg-gradient-to-r from-[#8B5CFF] to-[#6B4DFF] px-4 text-[12px] font-bold text-white shadow-sm hover:from-[#7C4DFF] hover:to-[#5B3DFF]"
+            className="h-9 rounded-lg bg-[#6E44E8] px-4 text-[12px] font-bold text-white shadow-sm hover:bg-[#5B35D6]"
           >
             <Sparkles size={13} />
             Try Demo Mode

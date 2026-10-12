@@ -231,7 +231,8 @@
       "infoTitle": "Tidak menerima email?",
       "infoText": "Periksa folder spam atau junk email Anda.",
       "errors": {
-        "invalidEmail": "Masukkan email yang valid"
+        "invalidEmail": "Masukkan email yang valid",
+        "requestFailed": "Reset password belum bisa dimulai. Coba lagi sebentar."
       }
     },
     "newPassword": {
@@ -1381,7 +1382,8 @@
         "of": "{val1} dari {val2}",
         "criticalIncidents": "Insiden Kritis",
         "target": "Target: {val}",
-        "vsPrevious7Days": "{val} vs 7 hari sebelumnya"
+        "vsPrevious7Days": "{val} vs 7 hari sebelumnya",
+        "noBaseline": "Belum ada minggu sebelumnya untuk dibandingkan"
       },
       "incident": {
         "title": "Insiden Kritis",
@@ -3708,7 +3710,7 @@
   },
   "actions": {
     "title": "Pusat Aksi",
-    "open": "Aksi Terbuka",
+    "open": "Terbuka",
     "inProgress": "Sedang Dikerjakan",
     "completedThisWeek": "Selesai Minggu Ini",
     "avgResolution": "Rata-rata Penyelesaian",
@@ -3722,9 +3724,7 @@
     "markDone": "Tandai Selesai",
     "dismiss": "Abaikan",
     "overdue": "Terlambat",
-    "open": "Terbuka",
     "completed": "Selesai",
-    "inProgress": "Sedang Dikerjakan",
     "dismissed": "Diabaikan",
     "high": "Tinggi",
     "medium": "Sedang",

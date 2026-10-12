@@ -455,7 +455,7 @@ export default function OnboardingPage() {
                 <button
                   type="button"
                   onClick={next}
-                  className="flex h-11 items-center gap-3 rounded-xl bg-gradient-to-r from-[#465FFF] to-[#8B5CFF] px-8 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-sm active:scale-[0.98]"
+                  className="flex h-11 items-center gap-3 rounded-xl bg-[#465FFF] hover:bg-[#3B52F5] px-8 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-sm active:scale-[0.98]"
                 >
                   {step === 5 ? "Finish Setup" : "Continue"}
                   <ArrowRight size={16} />
@@ -791,9 +791,9 @@ function KeywordsStep({
 function KeywordPill({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
     <span className="inline-flex items-center gap-2 rounded-full border border-[#E8EAF6] bg-white px-4 py-2 text-sm font-semibold text-[#3E4975] shadow-sm">
-      <span className="h-1.5 w-1.5 rounded-full bg-[#10B981] animate-pulse" />
+      <span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" aria-hidden="true" />
       {label}
-      <button type="button" onClick={onRemove} className="text-[#647099] hover:text-[#C81E1E] transition-colors">
+      <button type="button" onClick={onRemove} aria-label={`Remove ${label}`} className="text-[#647099] hover:text-[#C81E1E] transition-colors">
         <X size={14} />
       </button>
     </span>
@@ -1287,11 +1287,7 @@ function ProcessingStep({
   return (
     <div className="flex flex-col items-center py-16 text-center">
       <div className="relative">
-        <div
-          className="absolute inset-0 rounded-full border border-[#465FFF]/20 animate-ping"
-          style={{ animationDuration: "2s" }}
-        />
-        <div className="relative flex h-24 w-24 items-center justify-center rounded-full border-2 border-dashed border-[#465FFF]/40 bg-white shadow-lg">
+        <div className="relative flex h-24 w-24 items-center justify-center rounded-full border border-[#E6EAF2] bg-white shadow-sm">
           <img src="/logo-h-narriv-2026.png" alt="Narriv" width={144} height={96} className="object-contain" />
         </div>
       </div>

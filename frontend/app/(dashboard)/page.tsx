@@ -136,7 +136,7 @@ function QuickActionDrawer({ actionKey, onClose, quickActionContent, tDrawer }: 
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#465FFF]/10 text-[#3B52F5]">
                 <Icon size={18} />
               </span>
-              <h2 id={titleId} className="text-[15px] font-black text-slate-900">{content.title}</h2>
+              <h2 id={titleId} className="text-[16px] font-black text-slate-900">{content.title}</h2>
             </div>
             <button ref={closeButtonRef} type="button" aria-label={tDrawer("pages.command.close")} onClick={onClose} className="rounded-lg border border-slate-100 p-1.5 text-[#5A6478] transition hover:bg-slate-50 hover:text-slate-700">
               <X size={15} />
@@ -295,7 +295,7 @@ export default function DashboardPage() {
     return (
       <div className="min-h-[calc(100vh-200px)] flex items-center justify-center">
         <div className="max-w-xl text-center">
-          <div className="mx-auto w-20 h-20 rounded-full bg-gradient-to-tr from-[#465FFF] to-[#8B5CFF] flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(70,95,255,0.3)]">
+          <div className="mx-auto w-20 h-20 rounded-full bg-[#465FFF] flex items-center justify-center mb-6">
             <Rocket size={36} className="text-white" />
           </div>
           <h1 className="mb-3 text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">
@@ -320,7 +320,7 @@ export default function DashboardPage() {
           </div>
           <Link
             href="/onboarding"
-            className="inline-flex h-[52px] items-center gap-3 rounded-[10px] bg-[#465FFF] hover:bg-[#3B51E0] px-8 text-[15px] font-bold text-white shadow-sm transition hover:from-[#3b52d9] hover:to-[#764ee6] active:scale-[0.98]"
+            className="inline-flex h-[52px] items-center gap-3 rounded-[10px] bg-[#465FFF] hover:bg-[#3B51E0] px-8 text-[15px] font-bold text-white shadow-sm transition active:scale-[0.98]"
           >
             <Rocket size={20} />
             Start Setup Wizard
@@ -416,7 +416,7 @@ export default function DashboardPage() {
         <DemoBanner />
       )}
       {/* ── 1. Executive Summary Bar ──────────────────────────────────────── */}
-      <div className="flex flex-col gap-3 rounded-[14px] border border-slate-100 bg-[linear-gradient(135deg,#ffffff_0%,#f8fbff_52%,#fff7ed_100%)] p-4 shadow-[0_14px_38px_rgba(16,24,40,0.04)]">
+      <div className="flex flex-col gap-3 rounded-[14px] border border-slate-100 bg-white p-4 shadow-[0_14px_38px_rgba(16,24,40,0.04)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#465FFF]/10 text-[#3B52F5]">

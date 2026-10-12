@@ -7,11 +7,11 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: "border-[#465FFF]/20 bg-[#465FFF]/10 text-[#3B52F5] shadow-[0_0_8px_rgba(70,95,255,0.15)]",
-        green: "border-[#10B981]/20 bg-[#10B981]/10 text-[#047857] shadow-[0_0_8px_rgba(16,185,129,0.15)]",
-        amber: "border-[#F59E0B]/20 bg-[#F59E0B]/10 text-[#A04606] shadow-[0_0_8px_rgba(245,158,11,0.15)]",
-        red: "border-[#EF4444]/20 bg-[#EF4444]/10 text-[#C81E1E] shadow-[0_0_8px_rgba(239,68,68,0.15)]",
-        purple: "border-[#8B5CFF]/20 bg-[#8B5CFF]/10 text-[#6E44E8] shadow-[0_0_8px_rgba(139,92,255,0.15)]",
+        default: "border-[#465FFF]/20 bg-[#465FFF]/10 text-[#3B52F5]",
+        green: "border-[#10B981]/20 bg-[#10B981]/10 text-[#047857]",
+        amber: "border-[#F59E0B]/20 bg-[#F59E0B]/10 text-[#A04606]",
+        red: "border-[#EF4444]/20 bg-[#EF4444]/10 text-[#C81E1E]",
+        purple: "border-[#8B5CFF]/20 bg-[#8B5CFF]/10 text-[#6E44E8]",
         slate: "border-slate-200 bg-slate-100 text-slate-600",
       },
     },

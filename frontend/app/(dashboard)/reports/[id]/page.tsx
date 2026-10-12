@@ -129,11 +129,10 @@ export default function ReportDetailPage() {
               type="button"
               onClick={async () => {
                 try {
-                  toast.info("Mengunduh CSV...");
                   await downloadReportFile(reportId, "csv");
-                  toast.success("File CSV berhasil diunduh");
+                  toast.success(tr("downloadStarted"));
                 } catch {
-                  toast.error("Gagal mengunduh CSV");
+                  toast.error(tr("downloadFailed"));
                 }
               }}
               className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-[9px] border border-[#DDE3EF] bg-white px-3.5 text-[12px] font-black text-[#101334] transition hover:bg-[#F8FAFF]"
@@ -144,11 +143,10 @@ export default function ReportDetailPage() {
               type="button"
               onClick={async () => {
                 try {
-                  toast.info("Mengunduh Excel...");
                   await downloadReportFile(reportId, "xlsx");
-                  toast.success("File Excel berhasil diunduh");
+                  toast.success(tr("downloadStarted"));
                 } catch {
-                  toast.error("Gagal mengunduh Excel");
+                  toast.error(tr("downloadFailed"));
                 }
               }}
               className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-[9px] border border-[#DDE3EF] bg-white px-3.5 text-[12px] font-black text-[#101334] transition hover:bg-[#F8FAFF]"
@@ -194,7 +192,7 @@ export default function ReportDetailPage() {
       ) : (
         <section className="flex min-h-[260px] flex-col items-center justify-center rounded-[16px] border border-dashed border-[#DDE3EF] bg-white p-8 text-center">
           <CalendarClock size={28} className="text-[#647099]" />
-          <h2 className="mt-4 text-[17px] font-black text-[#101334]">{tr("detail.emptySectionsTitle")}</h2>
+          <h2 className="mt-4 text-[16px] font-black text-[#101334]">{tr("detail.emptySectionsTitle")}</h2>
           <p className="mt-2 max-w-[460px] text-[13px] font-semibold leading-6 text-[#5F6B94]">{tr("detail.emptySectionsDesc")}</p>
         </section>
       )}

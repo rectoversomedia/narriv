@@ -125,7 +125,7 @@ export function Sidebar() {
                       href={item.href}
                       title={t(`nav.${item.key}`)}
                       aria-label={t(`nav.${item.key}`)}
-                      className={`flex h-[40px] items-center gap-3 rounded-[6px] text-[13px] font-semibold transition ${sidebarCollapsed ? "justify-center px-0" : "px-3"} ${active ? "bg-[#465FFF] text-white shadow-[0_0_12px_rgba(70,95,255,0.4)]" : "text-white/70 hover:bg-white/5"}`}
+                      className={`flex h-[40px] items-center gap-3 rounded-[6px] text-[13px] font-semibold transition ${sidebarCollapsed ? "justify-center px-0" : "px-3"} ${active ? "bg-[#465FFF] text-white" : "text-white/70 hover:bg-white/5"}`}
                     >
                       <Icon size={18} strokeWidth={2} className="shrink-0" />
                       {sidebarCollapsed ? null : t(`nav.${item.key}`)}
@@ -167,7 +167,7 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex h-10 items-center justify-center rounded-xl transition ${active ? "bg-[#465FFF] text-white shadow-[0_0_10px_rgba(70,95,255,0.3)]" : "text-white/60 hover:text-white"}`}
+              className={`flex h-10 items-center justify-center rounded-xl transition ${active ? "bg-[#465FFF] text-white" : "text-white/60 hover:text-white"}`}
             >
               <Icon size={20} />
             </Link>

@@ -224,7 +224,7 @@ function OpportunityCard({ opp, t }: { opp: Opportunity; t: (key: string) => str
       </div>
 
       {/* Title */}
-      <h3 className="mb-2 text-[15px] font-bold leading-snug text-[#101334]">{opp.title}</h3>
+      <h3 className="mb-2 text-[16px] font-bold leading-snug text-[#101334]">{opp.title}</h3>
 
       {/* Description */}
       <p className="mb-4 text-[13px] leading-relaxed text-[#5F6B94]">{opp.description}</p>
@@ -413,7 +413,7 @@ export default function OpportunitiesPage() {
   return (
     <div className="space-y-6 pb-6">
       {/* Header */}
-      <div className="flex flex-col gap-3 rounded-[14px] border border-slate-100 bg-[linear-gradient(135deg,#ffffff_0%,#f8fbff_52%,#fff7ed_100%)] p-4 shadow-[0_14px_38px_rgba(16,24,40,0.04)]">
+      <div className="flex flex-col gap-3 rounded-[14px] border border-slate-100 bg-white p-4 shadow-[0_14px_38px_rgba(16,24,40,0.04)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#465FFF]/10 text-[#3B52F5]">

@@ -349,7 +349,7 @@ export default function HelpCenterPage() {
             <Book size={16} />
             Knowledge Base
           </div>
-          <h1 className="text-4xl font-black tracking-tight sm:text-5xl">How can we help you?</h1>
+          <h1 className="text-[32px] font-bold leading-tight tracking-[-0.02em] sm:text-[40px]">How can we help you?</h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-slate-300">
             Search our knowledge base or browse categories below
           </p>
@@ -423,7 +423,7 @@ export default function HelpCenterPage() {
 
             {/* Contact Support CTA */}
             <section id="contact" className="mx-auto max-w-4xl mt-16 scroll-mt-24">
-              <div className="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl p-8 text-center text-white">
+              <div className="bg-[#101334] rounded-2xl p-8 text-center text-white">
                 <MessageCircle size={40} className="mx-auto mb-4 opacity-80" />
                 <h2 className="text-2xl font-bold">Still need help?</h2>
                 {SUPPORT_EMAIL ? (

@@ -175,7 +175,7 @@ function SummaryPanel({ meta }: { meta?: SignalsMeta }) {
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{t("title")}</h2>
+            <h2 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{t("title")}</h2>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black text-[#6E44E8]"><Sparkles size={12} /> {t("aiGenerated")}</span>
           </div>
           {hasData && aiSummary ? (
@@ -347,7 +347,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#647099]" />
             <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder={tSignals("search")} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] pl-9 pr-3 text-[11px] font-bold text-[#101334] outline-none transition placeholder:text-[#647099] focus:border-[#465FFF] focus:bg-white" />
           </label>
-          <span className="inline-flex h-9 items-center rounded-[8px] border border-[#DDE3EF] bg-gradient-to-r from-white to-[#FAFBFF] px-3 text-[11px] font-black text-[#31406B] shadow-[0_1px_4px_rgba(16,24,40,0.04)]">
+          <span className="inline-flex h-9 items-center rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#31406B] shadow-[0_1px_4px_rgba(16,24,40,0.04)]">
             {tSignals("sortLatest")}
           </span>
         </div>
@@ -463,7 +463,7 @@ function FollowUpPanel({ data }: { data?: SignalsMeta["followUps"] }) {
 
   return (
     <Panel className="p-4">
-      <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{t("title")}</h2>
+      <h2 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{t("title")}</h2>
       <p className="mt-1 text-[11.5px] font-bold text-[#5F6B94]">{t("desc")}</p>
       
       {!hasData && data !== undefined ? (
@@ -501,7 +501,7 @@ function RecommendationPanel({ data }: { data?: SignalsMeta["recommendations"] }
 
   return (
     <Panel className="p-4">
-      <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{t("title")}</h2>
+      <h2 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{t("title")}</h2>
       <p className="mt-1 text-[11.5px] font-bold text-[#5F6B94]">{t("desc")}</p>
       
       {!hasData && data !== undefined ? (
@@ -557,7 +557,7 @@ function SourceDonut({ data, totalSignals }: { data?: SignalsMeta["sourceDistrib
     <Panel className="p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-[15px] font-black text-[#101334]">{t("title")}</h3>
+          <h3 className="text-[16px] font-black text-[#101334]">{t("title")}</h3>
           <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{t("desc")}</p>
         </div>
         <span className="inline-flex h-8 shrink-0 whitespace-nowrap items-center rounded-full border border-[#E6EAF2] bg-[#F8FAFF] px-3 text-[9px] font-black text-[#53608C]">
@@ -632,11 +632,11 @@ function TimelineChart({ data, labels }: { data?: SignalsMeta["timeline"]; label
 
   return (
     <Panel className="p-4">
-      <h3 className="text-[15px] font-black text-[#101334]">{t("title")} <span className="text-[11px] font-bold text-[#5F6B94]">{t("period")}</span></h3>
+      <h3 className="text-[16px] font-black text-[#101334]">{t("title")} <span className="text-[11px] font-bold text-[#5F6B94]">{t("period")}</span></h3>
       <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{t("desc")}</p>
 
       {isLoading ? (
-        <div className="relative mt-5 h-[170px] overflow-hidden rounded-[12px] bg-gradient-to-b from-white to-[#F8FAFF]">
+        <div className="relative mt-5 h-[170px] overflow-hidden rounded-[12px] bg-[#FBFCFF]">
           <svg className="h-full w-full animate-pulse" viewBox={`0 0 ${width} ${height + 8}`} preserveAspectRatio="none" aria-hidden="true">
             {[34, 70, 106, 142].map((y) => (
               <line key={y} x1={padding} x2={width - padding} y1={y} y2={y} stroke="#EDF1F7" strokeWidth="1" />
@@ -658,7 +658,7 @@ function TimelineChart({ data, labels }: { data?: SignalsMeta["timeline"]; label
           </div>
         </div>
       ) : (
-        <div className="relative mt-5 h-[170px] overflow-hidden rounded-[12px] bg-gradient-to-b from-white to-[#F8FAFF]">
+        <div className="relative mt-5 h-[170px] overflow-hidden rounded-[12px] bg-[#FBFCFF]">
           <svg
             className="chart-enter chart-line-draw h-full w-full"
             viewBox={`0 0 ${width} ${height + 8}`}
@@ -733,7 +733,7 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
     <Panel className="p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-[15px] font-black text-[#101334]">{t("title")}</h3>
+          <h3 className="text-[16px] font-black text-[#101334]">{t("title")}</h3>
           <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{t("desc")}</p>
         </div>
         <Link href="/workspace/cases" className="text-[11px] font-black text-[#3B52F5]">{t("viewAll")}</Link>
@@ -1137,7 +1137,7 @@ export default function SignalsPage() {
             <Download size={14} className={isExporting === "xlsx" ? "animate-pulse text-[#3B52F5]" : ""} />
             Excel
           </button>
-          <button onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-sm sm:w-fit"><Flag size={15} />{t("createInvestigation")}</button>
+          <button onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 text-[12px] font-black text-white shadow-sm sm:w-fit"><Flag size={15} />{t("createInvestigation")}</button>
         </div>
       </header>
 

@@ -98,7 +98,7 @@ export default function ActionCenterPage() {
 
       <div className="rounded-xl border border-slate-200 bg-white">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <h2 className="text-[15px] font-semibold text-slate-900">{list.length} recommendation(s)</h2>
+          <h2 className="text-[16px] font-semibold text-slate-900">{list.length} recommendation(s)</h2>
           <button type="button" onClick={() => { recs.refetch(); brief.refetch(); }} className="flex items-center gap-1.5 text-[12px] font-semibold text-[#5A6478] hover:text-slate-900">
             <RefreshCcw size={12} /> Refresh
           </button>

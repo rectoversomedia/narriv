@@ -419,7 +419,7 @@ function CaseDetailSidebar({
                     resolution === (record.resolution || "")
                   }
                   onClick={() => resolutionMutation.mutate()}
-                  className="mt-2 flex h-9 items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:opacity-50"
+                  className="mt-2 flex h-9 items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:opacity-50"
                 >
                   {resolutionMutation.isPending && (
                     <RefreshCcw size={13} className="animate-spin" />
@@ -827,7 +827,7 @@ export default function CasesPage() {
             action={
               <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="inline-flex items-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 py-2.5 text-[12px] font-black text-white shadow-sm transition hover:opacity-90"
+                className="inline-flex items-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 py-2.5 text-[12px] font-black text-white shadow-sm transition hover:opacity-90"
               >
                 <Plus size={14} />
                 {t("header.newCase")}
@@ -1218,7 +1218,7 @@ export default function CasesPage() {
                     <button
                       type="submit"
                       disabled={createMutation.isPending}
-                      className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:opacity-50"
+                      className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:opacity-50"
                     >
                       {createMutation.isPending ? (
                         <RefreshCcw size={13} className="animate-spin" />

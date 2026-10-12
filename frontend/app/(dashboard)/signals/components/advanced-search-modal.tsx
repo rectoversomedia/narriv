@@ -458,7 +458,7 @@ export function AdvancedSearchModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex h-10 flex-[1.5] items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:opacity-50"
+              className="flex h-10 flex-[1.5] items-center justify-center gap-2 rounded-lg bg-[#465FFF] hover:bg-[#3B52F5] text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:opacity-50"
             >
               {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
               {t("apply")}

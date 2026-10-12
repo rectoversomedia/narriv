@@ -526,7 +526,7 @@ export default function SettingsPage() {
       <SubscriptionCard onUpgradeClick={() => setShowUpgradeModal(true)} />
 
       {workspaceSettingsQuery.data === null ? (
-        <div className="rounded-[12px] border border-dashed border-[#8B5CFF]/30 bg-gradient-to-br from-white to-[#F8F5FF] px-5 py-4 flex items-center justify-between gap-4">
+        <div className="rounded-[12px] border border-dashed border-[#8B5CFF]/30 bg-[#FBFAFF] px-5 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#8B5CFF]/10 text-[#6E44E8] shrink-0">
               <Sparkles size={18} />

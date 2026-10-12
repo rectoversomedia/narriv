@@ -231,7 +231,8 @@
       "infoTitle": "Didn't receive the email?",
       "infoText": "Check your spam or junk email folder.",
       "errors": {
-        "invalidEmail": "Enter a valid email"
+        "invalidEmail": "Enter a valid email",
+        "requestFailed": "Password reset could not be started. Please try again shortly."
       }
     },
     "newPassword": {
@@ -1571,7 +1572,8 @@
         "totalAlerts": "Total Alerts",
         "vsPrevious7Days": "{val} vs previous 7 days",
         "vs30Days": "▲ {val} vs last 30 days",
-        "warningAlerts": "Warning Alerts"
+        "warningAlerts": "Warning Alerts",
+        "noBaseline": "No earlier week to compare"
       },
       "stakeholder": {
         "acknowledged": "Acknowledged",
@@ -3640,7 +3642,7 @@
   },
   "actions": {
     "title": "Action Center",
-    "open": "Open Actions",
+    "open": "Open",
     "inProgress": "In Progress",
     "completedThisWeek": "Completed This Week",
     "avgResolution": "Avg Resolution",
@@ -3654,9 +3656,7 @@
     "markDone": "Mark Done",
     "dismiss": "Dismiss",
     "overdue": "Overdue",
-    "open": "Open",
     "completed": "Completed",
-    "inProgress": "In Progress",
     "dismissed": "Dismissed",
     "high": "High",
     "medium": "Medium",

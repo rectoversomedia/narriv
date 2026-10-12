@@ -78,9 +78,9 @@ function BrandPanel({ visual, email }: { visual: AuthVisual; email?: string }) {
           <div className="mt-8 space-y-0.5 text-center">
             {isVerification ? (
               <div>
-                <h1 className="text-[42px] font-bold leading-[1.15] tracking-[-0.04em] text-white">
+                <p className="text-[42px] font-bold leading-[1.15] tracking-[-0.04em] text-white">
                   {t("brand.verifyTitle")}
-                </h1>
+                </p>
                 <p className="mt-4 text-xl leading-relaxed text-white/70">
                   {t("brand.verifyDescription")}
                   <br />
@@ -356,7 +356,7 @@ function DemoButton() {
       type="button"
       onClick={handleDemoLogin}
       disabled={isLoading}
-      className="relative flex h-[58px] w-full items-center justify-center gap-3 rounded-[8px] border border-[#D6DDEC] bg-gradient-to-r from-[#10B981]/10 to-[#059669]/10 text-[18px] font-semibold text-[#047857] transition hover:border-[#10B981] hover:from-[#10B981]/20 hover:to-[#059669]/20 disabled:opacity-50 disabled:cursor-not-allowed"
+      className="relative flex h-[58px] w-full items-center justify-center gap-3 rounded-[8px] border border-[#D6DDEC] bg-[#10B981]/10 text-[18px] font-semibold text-[#047857] transition hover:border-[#10B981] hover:bg-[#10B981]/15 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {isLoading ? (
         <span className="absolute left-9 flex h-6 w-6 items-center justify-center">

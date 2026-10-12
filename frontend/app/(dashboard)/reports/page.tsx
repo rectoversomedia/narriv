@@ -214,7 +214,7 @@ function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeReco
       <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_220px]">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{tr("aiSummary.title")}</h2>
+            <h2 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{tr("aiSummary.title")}</h2>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black text-[#6E44E8]">
               <Sparkles size={12} /> {tr("aiSummary.generated")}
             </span>
@@ -270,7 +270,7 @@ function ReportPreviewSidebar({
 
   return (
     <Panel className="p-4">
-      <h3 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{tr("preview.title")}</h3>
+      <h3 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{tr("preview.title")}</h3>
       <p className="mt-1 text-[11.5px] font-bold text-[#5F6B94]">{tr("preview.desc")}</p>
       
       {isPending ? (
@@ -364,7 +364,7 @@ function QuickActions({ onShare, onSchedule, onCreate, onViewHistory }: { onShar
   };
   return (
     <Panel className="p-4">
-      <h3 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{tr("quickActions.title")}</h3>
+      <h3 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{tr("quickActions.title")}</h3>
       <div className="mt-4 space-y-2">
         {quickActions.map((action) => {
           const Icon = action.icon;
@@ -467,7 +467,7 @@ function ReportsTable({
     <Panel className="p-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{tr("table.title")}</h2>
+          <h2 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{tr("table.title")}</h2>
           <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{tr("table.desc")}</p>
         </div>
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
@@ -657,7 +657,7 @@ function FormatDonut({ distribution }: { distribution: Array<{ name: string; val
 
   return (
     <Panel className="p-4">
-      <h3 className="text-[15px] font-black text-[#101334]">{tr("formatDonut.title")}</h3>
+      <h3 className="text-[16px] font-black text-[#101334]">{tr("formatDonut.title")}</h3>
       <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{tr("formatDonut.desc")}</p>
       <div className="mt-5 grid gap-5 sm:grid-cols-[136px_minmax(0,1fr)] md:grid-cols-1 xl:grid-cols-[136px_minmax(0,1fr)]">
         {hasData ? (
@@ -743,7 +743,7 @@ function TimelineChart({ data }: { data: ReportsAnalyticsResponse["trend_timelin
 
   return (
     <Panel className="p-4">
-      <h3 className="text-[15px] font-black text-[#101334]">{tr("timeline.title")} <span className="text-[11px] font-bold text-[#5F6B94]">{tr("timeline.period")}</span></h3>
+      <h3 className="text-[16px] font-black text-[#101334]">{tr("timeline.title")} <span className="text-[11px] font-bold text-[#5F6B94]">{tr("timeline.period")}</span></h3>
       <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{tr("timeline.desc")}</p>
 
       {hasData ? (
@@ -804,7 +804,7 @@ function PopularReports({ reports, onViewAll }: { reports: PopularReportItem[]; 
   return (
     <Panel className="p-4 flex flex-col justify-between">
       <div>
-        <h3 className="text-[15px] font-black text-[#101334]">{tr("popular.title")}</h3>
+        <h3 className="text-[16px] font-black text-[#101334]">{tr("popular.title")}</h3>
         <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{tr("popular.desc")}</p>
         
         <div className="mt-5 space-y-3">
@@ -1221,7 +1221,7 @@ export default function ReportsPage() {
           <button type="button" onClick={() => setIsScheduleModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:bg-[#F8FAFF] sm:w-auto">
             <CalendarClock size={14} /> {tr("buttons.scheduleSettings")}
           </button>
-          <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 sm:w-auto">
+          <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 sm:w-auto">
             <Plus size={15} /> {tr("buttons.createNew")}
           </button>
         </div>
@@ -1297,7 +1297,7 @@ export default function ReportsPage() {
               <div className="flex items-center gap-3">
                 <h2 id="reports-schedule-dialog-title" className="text-lg font-black text-[#101334]">{tr("scheduleModal.title")}</h2>
                 {!isScheduleFormOpen && (
-                  <button type="button" onClick={() => { setEditingSchedule(null); setIsScheduleFormOpen(true); }} className="flex h-7 items-center justify-center gap-1.5 rounded-[6px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-2.5 text-[10px] font-black text-white shadow-sm transition hover:opacity-90">
+                  <button type="button" onClick={() => { setEditingSchedule(null); setIsScheduleFormOpen(true); }} className="flex h-7 items-center justify-center gap-1.5 rounded-[6px] bg-[#465FFF] hover:bg-[#3B52F5] px-2.5 text-[10px] font-black text-white shadow-sm transition hover:opacity-90">
                     <Plus size={12} /> {tr("scheduleModal.addSchedule")}
                   </button>
                 )}
@@ -1410,7 +1410,7 @@ export default function ReportsPage() {
                     <button type="button" onClick={() => { setIsScheduleFormOpen(false); setEditingSchedule(null); }} className="flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF]">
                       {tr("scheduleModal.cancel")}
                     </button>
-                    <button type="submit" disabled={createScheduleMutation.isPending || updateScheduleMutation.isPending} className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:opacity-50">
+                    <button type="submit" disabled={createScheduleMutation.isPending || updateScheduleMutation.isPending} className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:opacity-50">
                       {(createScheduleMutation.isPending || updateScheduleMutation.isPending) ? tr("scheduleModal.saving") : tr("scheduleModal.save")}
                     </button>
                   </div>
@@ -1580,7 +1580,7 @@ export default function ReportsPage() {
                     <button type="button" onClick={() => setIsShareModalOpen(false)} className="flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF]">
                       {tr("shareModal.cancel")}
                     </button>
-                    <button type="submit" disabled={shareReportMutation.isPending} className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:opacity-50">
+                    <button type="submit" disabled={shareReportMutation.isPending} className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:opacity-50">
                       {shareReportMutation.isPending ? tr("shareModal.sending") : tr("shareModal.send")}
                     </button>
                   </div>
@@ -1607,7 +1607,7 @@ export default function ReportsPage() {
               <div className="flex items-center gap-3">
                 <h2 id="reports-templates-dialog-title" className="text-lg font-black text-[#101334]">{tr("buttons.manageTemplates")}</h2>
                 {!isFormOpen && (
-                  <button type="button" onClick={() => { setEditingTemplate(null); setIsFormOpen(true); }} className="flex h-7 items-center justify-center gap-1.5 rounded-[6px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-2.5 text-[10px] font-black text-white shadow-sm transition hover:opacity-90">
+                  <button type="button" onClick={() => { setEditingTemplate(null); setIsFormOpen(true); }} className="flex h-7 items-center justify-center gap-1.5 rounded-[6px] bg-[#465FFF] hover:bg-[#3B52F5] px-2.5 text-[10px] font-black text-white shadow-sm transition hover:opacity-90">
                     <Plus size={12} /> {tr("templateForm.addCustom")}
                   </button>
                 )}
@@ -1649,7 +1649,7 @@ export default function ReportsPage() {
                     <button type="button" onClick={() => setIsFormOpen(false)} className="flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF]">
                       {tr("templateForm.cancel")}
                     </button>
-                    <button type="submit" disabled={createTemplateMutation.isPending || updateTemplateMutation.isPending} className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:opacity-50">
+                    <button type="submit" disabled={createTemplateMutation.isPending || updateTemplateMutation.isPending} className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:opacity-50">
                       {(createTemplateMutation.isPending || updateTemplateMutation.isPending) ? tr("templateForm.saving") : tr("templateForm.save")}
                     </button>
                   </div>
@@ -1753,7 +1753,7 @@ export default function ReportsPage() {
                   <button type="button" onClick={() => setIsCreateModalOpen(false)} className="flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF]">
                     {tr("createModal.cancel")}
                   </button>
-                  <button type="submit" disabled={generateReportMutation.isPending || !templatesQuery.data?.data.length} className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:opacity-50">
+                  <button type="submit" disabled={generateReportMutation.isPending || !templatesQuery.data?.data.length} className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:opacity-50">
                     {generateReportMutation.isPending ? tr("createModal.generating") : tr("createModal.generate")}
                   </button>
                 </div>

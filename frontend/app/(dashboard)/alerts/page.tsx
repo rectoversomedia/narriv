@@ -220,10 +220,12 @@ function buildMetricCards(ta: ReturnType<typeof useTranslations<"Alerts">>, summ
 
   const delta = prev7 > 0 ? `${((last7 - prev7) / prev7 * 100).toFixed(1)}%` : "0%";
   const deltaSign = trendDelta >= 0 ? "+" : "";
-  const deltaLabel = trendDelta >= 0 ? ta("v2.metrics.vsPrevious7Days", { val: `${deltaSign}${delta}` }) : ta("v2.metrics.vsPrevious7Days", { val: delta });
+  // No alerts in the previous week means there is nothing to compare against.
+  const hasBaseline = prev7 > 0;
+  const deltaLabel = !hasBaseline ? ta("v2.metrics.noBaseline") : trendDelta >= 0 ? ta("v2.metrics.vsPrevious7Days", { val: `${deltaSign}${delta}` }) : ta("v2.metrics.vsPrevious7Days", { val: delta });
 
   return [
-    { label: ta("v2.metrics.totalAlerts"), value: String(total), helper: deltaLabel, helperTone: trendDelta >= 0 ? "green" : "red", icon: Bell, tone: "purple", spark },
+    { label: ta("v2.metrics.totalAlerts"), value: String(total), helper: deltaLabel, helperTone: !hasBaseline ? "blue" : trendDelta >= 0 ? "green" : "red", icon: Bell, tone: "purple", spark },
     { label: ta("v2.metrics.criticalAlerts"), value: String(critical), helper: ta("v2.metrics.severityBreakdown", { val: `${critical}/${total}` }), helperTone: critical > 0 ? "red" : "green", icon: AlertTriangle, tone: "red", spark: [] },
     { label: ta("v2.metrics.warningAlerts"), value: String(high + medium), helper: ta("v2.metrics.severityBreakdown", { val: `${high + medium}/${total}` }), helperTone: high + medium > 0 ? "amber" : "green", icon: AlertTriangle, tone: "amber", spark: [] },
     { label: ta("v2.metrics.infoAlerts"), value: String(info + low), helper: ta("v2.metrics.severityBreakdown", { val: `${info + low}/${total}` }), helperTone: "blue", icon: HelpCircle, tone: "blue", spark: [] },
@@ -251,7 +253,8 @@ function MetricCard({ metric }: { metric: Metric }) {
           <p className={cn("mt-1.5 text-[11px] font-semibold leading-tight", helperStyle.text)}>{metric.helper}</p>
         </div>
       </div>
-      {metric.spark.length > 1 ? (
+      {/* A flat series carries no information and reads as a stray underline. */}
+      {metric.spark.length > 1 && Math.max(...metric.spark) !== Math.min(...metric.spark) ? (
         <div className="absolute inset-x-3 bottom-0" aria-hidden="true">
           <Sparkline values={metric.spark} tone={metric.tone} id={`metric-${metric.label.replace(/\W/g, "")}`} className="h-7" />
         </div>
@@ -475,12 +478,12 @@ function CriticalIncident({
     : [];
 
   return (
-    <Panel className="min-h-0 h-auto border-[#FAD7D7] bg-gradient-to-br from-[#FFF4F4] via-white to-white p-5">
+    <Panel className="min-h-0 h-auto border-[#FAD7D7] bg-[#FFF8F8] p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="flex size-8 items-center justify-center rounded-full bg-[#EF4444]/10 text-[#C81E1E] ring-4 ring-[#EF4444]/5"><AlertTriangle size={17} fill="#EF4444" /></span>
           <div>
-            <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{ta("v2.incident.title")}</h2>
+            <h2 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{ta("v2.incident.title")}</h2>
             <p className="mt-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#C81E1E]">{ta("v2.incident.totalCritical", { count: totalCritical })}</p>
           </div>
         </div>
@@ -564,7 +567,7 @@ function DeliveryStatus({ ta, integrations, isLoading }: { ta: ReturnType<typeof
 
   return (
     <Panel className="flex min-h-[252px] flex-col p-4">
-      <h3 className="text-[15px] font-black text-[#101334]">{ta("v2.delivery.title")} <span className="text-[11px] font-bold text-[#53608C]">{ta("v2.delivery.thisAlert")}</span></h3>
+      <h3 className="text-[16px] font-black text-[#101334]">{ta("v2.delivery.title")} <span className="text-[11px] font-bold text-[#53608C]">{ta("v2.delivery.thisAlert")}</span></h3>
       <div className="mt-4 flex-1 space-y-4">
         {isLoading ? (
           Array.from({ length: 4 }, (_, index) => <div key={index} className="h-8 animate-pulse rounded-[8px] bg-[#F1F4FB]" />)
@@ -609,7 +612,7 @@ function StakeholderEngagement({ ta, summary, memberCount, isLoading }: { ta: Re
     <Panel className="p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-[15px] font-black text-[#101334]">{ta("v2.stakeholder.title")}</h3>
+          <h3 className="text-[16px] font-black text-[#101334]">{ta("v2.stakeholder.title")}</h3>
           <p className="mt-1 text-[10px] font-bold text-[#5F6B94]">{ta("v2.stakeholder.desc")}</p>
         </div>
         {isLoading ? <span className="size-3.5 rounded-full border-2 border-[#465FFF] border-r-transparent" /> : null}
@@ -650,7 +653,7 @@ function CriticalDeliveryStatus({ alerts, total, ta, onViewAll, isLoading }: { a
   return (
     <Panel className="p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h3 className="text-[15px] font-black text-[#101334]">{ta("v2.criticalStatus.title")}</h3>
+        <h3 className="text-[16px] font-black text-[#101334]">{ta("v2.criticalStatus.title")}</h3>
         <button type="button" onClick={onViewAll} className="inline-flex items-center gap-1 text-[8.5px] font-black leading-none text-[#3B52F5] whitespace-nowrap hover:underline">{ta("v2.criticalStatus.viewAll")} <ArrowRight size={11} /></button>
       </div>
       <div className="overflow-hidden rounded-[10px] border border-[#F4D8D8]">
@@ -678,7 +681,7 @@ function EscalationMatrix({ ta, levels, isLoading }: { ta: ReturnType<typeof use
     <Panel className="p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-[15px] font-black text-[#101334]">{ta("v2.escalationMatrix.panelTitle")}</h3>
+          <h3 className="text-[16px] font-black text-[#101334]">{ta("v2.escalationMatrix.panelTitle")}</h3>
           <p className="mt-1 text-[10px] font-bold text-[#5F6B94]">{ta("v2.escalationMatrix.desc")}</p>
         </div>
         {isLoading ? <span className="size-3.5 rounded-full border-2 border-[#465FFF] border-r-transparent" /> : null}
@@ -731,7 +734,7 @@ function AlertJourney({ alert, ta, onViewTimeline }: { alert: AlertRow; ta: Retu
     <Panel className="p-4">
       <div className="mb-4 flex items-start justify-between gap-5">
         <div className="min-w-0">
-          <h3 className="text-[15px] font-black text-[#101334]">{ta("v2.journey.title")}</h3>
+          <h3 className="text-[16px] font-black text-[#101334]">{ta("v2.journey.title")}</h3>
           <p className="mt-1 truncate text-[10px] font-bold text-[#53608C]">{alert.title}</p>
         </div>
         <button type="button" onClick={onViewTimeline} className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#DDE3EF] bg-[#F8FAFF] px-3 py-1.5 text-[9px] font-black leading-none text-[#3B52F5] transition hover:border-[#C9D4F6] hover:bg-white">{ta("v2.journey.viewFull")} <ArrowRight size={11} /></button>
@@ -768,7 +771,7 @@ function EscalationFlow({ ta, levels }: { ta: ReturnType<typeof useTranslations<
 
   return (
     <Panel className="p-4">
-      <h3 className="text-[15px] font-black text-[#101334]">{ta("v2.flow.title")} <span className="text-[11px] font-bold text-[#53608C]">{ta("v2.flow.desc")}</span></h3>
+      <h3 className="text-[16px] font-black text-[#101334]">{ta("v2.flow.title")} <span className="text-[11px] font-bold text-[#53608C]">{ta("v2.flow.desc")}</span></h3>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-[minmax(0,1fr)_20px_minmax(0,1fr)_20px_minmax(0,1.25fr)_20px_minmax(0,1fr)_20px_minmax(0,1fr)_20px_minmax(0,1fr)]">
         {steps.map(([Icon, title, desc, tone], index) => (
           <div key={title} className="contents">
@@ -1448,7 +1451,7 @@ export default function AlertsPage() {
         <div className="flex flex-wrap gap-3">
           <button type="button" onClick={openNotificationRulesModal} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF] sm:w-auto"><Settings size={14} />{ta("v2.header.notificationRules")}</button>
           <button type="button" onClick={openEscalationModal} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF] sm:w-auto"><Users size={14} />{ta("v2.header.escalationMatrix")}</button>
-          <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#4B2BFF] px-4 text-[12px] font-black text-white shadow-sm sm:w-auto"><Plus size={15} />{ta("v2.header.createAlert")}</button>
+          <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 text-[12px] font-black text-white shadow-sm sm:w-auto"><Plus size={15} />{ta("v2.header.createAlert")}</button>
         </div>
       </header>
 
@@ -1460,7 +1463,7 @@ export default function AlertsPage() {
         )}
       </section>
       {summaryQuery.isError || (!summaryQuery.isLoading && !summaryQuery.data) ? (
-        <div className="rounded-[12px] border border-dashed border-[#8B5CFF]/30 bg-gradient-to-br from-white to-[#F8F5FF] px-5 py-4 flex items-center justify-between gap-4">
+        <div className="rounded-[12px] border border-dashed border-[#8B5CFF]/30 bg-[#FBFAFF] px-5 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#8B5CFF]/10 text-[#6E44E8] shrink-0">
               <Sparkles size={18} />
@@ -1480,7 +1483,7 @@ export default function AlertsPage() {
                   window.location.href = url.toString();
                 }
               }}
-              className="h-8 rounded-lg bg-gradient-to-r from-[#8B5CFF] to-[#6B4DFF] px-3 text-[11px] font-bold text-white shadow-sm hover:from-[#7C4DFF] hover:to-[#5B3DFF]"
+              className="h-8 rounded-lg bg-[#6E44E8] px-3 text-[11px] font-bold text-white shadow-sm hover:bg-[#5B35D6]"
             >
               Try Demo
             </button>
@@ -1595,7 +1598,7 @@ export default function AlertsPage() {
       {isNotificationRulesModalOpen && createPortal(
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#101334]/50 p-4 backdrop-blur-sm" onClick={closeNotificationRulesModal}>
           <div className="relative z-10 flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-[18px] border border-[#DDE5F4] bg-white text-[#101334] shadow-[0_24px_70px_rgba(16,24,40,0.22)]" onClick={(event) => event.stopPropagation()}>
-            <div className="relative overflow-hidden border-b border-[#E7ECF6] bg-gradient-to-br from-[#F8FAFF] via-white to-[#EEF2FF] p-5">
+            <div className="relative overflow-hidden border-b border-[#E7ECF6] bg-[#F8FAFF] p-5">
               <div className="absolute right-8 top-3 size-28 rounded-full bg-[#465FFF]/10 blur-2xl" />
               <div className="relative flex items-start justify-between gap-4">
                 <div>
@@ -1771,7 +1774,7 @@ export default function AlertsPage() {
                 <button type="button" onClick={closeNotificationRulesModal} disabled={isSavingNotificationRules} className="h-10 rounded-[10px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-60">
                   {ta("v2.notificationRulesModal.cancel")}
                 </button>
-                <button type="button" onClick={handleSaveNotificationRules} disabled={isSavingNotificationRules || isLoadingNotificationRules} className="h-10 rounded-[10px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-5 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
+                <button type="button" onClick={handleSaveNotificationRules} disabled={isSavingNotificationRules || isLoadingNotificationRules} className="h-10 rounded-[10px] bg-[#465FFF] hover:bg-[#3B52F5] px-5 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
                   {isSavingNotificationRules ? ta("v2.notificationRulesModal.saving") : ta("v2.notificationRulesModal.save")}
                 </button>
               </div>
@@ -1880,7 +1883,7 @@ export default function AlertsPage() {
               <button type="button" onClick={closeEscalationModal} disabled={isSavingEscalation} className="flex h-9 items-center justify-center rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-60">
                 {ta("v2.escalationMatrix.cancel")}
               </button>
-              <button type="button" onClick={handleSaveEscalationMatrix} disabled={isSavingEscalation} className="flex h-9 items-center justify-center rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
+              <button type="button" onClick={handleSaveEscalationMatrix} disabled={isSavingEscalation} className="flex h-9 items-center justify-center rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
                 {isSavingEscalation ? ta("v2.escalationMatrix.saving") : ta("v2.escalationMatrix.save")}
               </button>
             </div>
@@ -2109,7 +2112,7 @@ export default function AlertsPage() {
                   <button type="button" onClick={closeCreateModal} className="flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF]">
                     {taCreate("cancel")}
                   </button>
-                  <button type="submit" disabled={isCreatingAlert} className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
+                  <button type="submit" disabled={isCreatingAlert} className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
                     {isCreatingAlert ? `${taCreate("submit")}...` : taCreate("submit")}
                   </button>
                 </div>
@@ -2124,7 +2127,7 @@ export default function AlertsPage() {
       {isFilterModalOpen && createPortal(
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#101334]/50 p-4 backdrop-blur-sm" onClick={() => setIsFilterModalOpen(false)}>
           <div className="relative z-10 flex w-full max-w-xl flex-col overflow-hidden rounded-[18px] border border-[#DDE5F4] bg-white text-[#101334] shadow-[0_24px_70px_rgba(16,24,40,0.22)]" onClick={(e) => e.stopPropagation()}>
-            <div className="relative overflow-hidden border-b border-[#E7ECF6] bg-gradient-to-br from-[#F8FAFF] via-white to-[#EEF2FF] p-5">
+            <div className="relative overflow-hidden border-b border-[#E7ECF6] bg-[#F8FAFF] p-5">
               <div className="absolute right-6 top-4 size-24 rounded-full bg-[#465FFF]/10 blur-2xl" />
               <div className="relative flex items-start justify-between gap-4">
                 <div>
@@ -2202,7 +2205,7 @@ export default function AlertsPage() {
                 <button type="button" onClick={() => setIsFilterModalOpen(false)} className="h-10 rounded-[10px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:bg-[#F8FAFF]">
                   {ta("filter.cancel")}
                 </button>
-                <button type="button" onClick={() => setIsFilterModalOpen(false)} className="h-10 rounded-[10px] bg-gradient-to-r from-[#465FFF] to-[#5C4DFF] px-5 text-[12px] font-black text-white shadow-sm transition hover:opacity-90">
+                <button type="button" onClick={() => setIsFilterModalOpen(false)} className="h-10 rounded-[10px] bg-[#465FFF] hover:bg-[#3B52F5] px-5 text-[12px] font-black text-white shadow-sm transition hover:opacity-90">
                   {ta("filter.apply")}
                 </button>
               </div>

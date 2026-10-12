@@ -10,6 +10,11 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      // `font-sans` must resolve to Poppins (next/font variable), otherwise it
+      // resets a subtree to the system stack.
+      fontFamily: {
+        sans: ["var(--font-sans)", "Arial", "Helvetica", "sans-serif"],
+      },
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",

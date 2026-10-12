@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { deriveEdges, edgeEndpoints, layoutNodes, type PlacedNode } from "@/lib/topic-map-geometry";
+import { deriveEdges, edgeEndpoints, fitLayout, labelBox, type PlacedNode } from "@/lib/topic-map-geometry";
 import { cn } from "@/lib/utils";
 
 export type TopicMapNode = {
@@ -14,9 +14,7 @@ export type TopicMapNode = {
   memberSignalIds: string[];
 };
 
-// Fewer nodes on narrow containers so outside labels never collide.
-const maxNodesFor = (width: number) => (width < 440 ? 5 : width < 640 ? 6 : 8);
-const LABEL_INSIDE_MIN_RADIUS = 52;
+const MAX_NODES = 8;
 
 /**
  * Narrative map in one pixel coordinate space: nodes and connectors are laid
@@ -51,10 +49,13 @@ export function TopicMapCanvas({
     return () => observer.disconnect();
   }, []);
 
-  const maxNodes = maxNodesFor(size.width);
-  const visible = useMemo(() => nodes.slice().sort((a, b) => b.signals - a.signals).slice(0, maxNodes), [nodes, maxNodes]);
-  // Leave room under small nodes for their outside label.
-  const placed = useMemo(() => layoutNodes(visible, size.width, Math.max(0, size.height - 24), 36), [visible, size]);
+  // Every label sits inside its circle: show as many of the largest narratives
+  // as fit at a readable size (bottom 24px is kept for the caption line).
+  const { nodes: visible, placed } = useMemo(
+    // Phones get larger minimum circles so titles stay distinguishable.
+    () => fitLayout(nodes.slice().sort((a, b) => b.signals - a.signals).slice(0, MAX_NODES), size.width, Math.max(0, size.height - 24), 24, size.width < 480 ? 48 : 40),
+    [nodes, size],
+  );
   const byId = useMemo(() => new Map(placed.map((p) => [p.id, p])), [placed]);
   const edges = useMemo(() => deriveEdges(visible), [visible]);
 
@@ -87,11 +88,11 @@ export function TopicMapCanvas({
         {visible.map((node) => {
           const p = byId.get(node.id);
           if (!p) return null;
-          return <MapNodeButton key={node.id} node={node} placed={p} selected={selectedId === node.id} onSelect={onSelect} signalLabel={signalLabel} labelWidth={size.width < 440 ? 112 : 136} />;
+          return <MapNodeButton key={node.id} node={node} placed={p} selected={selectedId === node.id} onSelect={onSelect} signalLabel={signalLabel} />;
         })}
       </div>
 
-      <div className="pointer-events-none absolute bottom-2 left-3 right-3 flex flex-wrap justify-between gap-2 text-[11px] font-medium text-subtle">
+      <div className="pointer-events-none absolute bottom-2 left-14 right-3 flex flex-wrap justify-between gap-x-4 gap-y-1 text-[11px] font-medium text-subtle">
         <span>{nodes.length > visible.length ? `Showing the ${visible.length} largest of ${nodes.length} narratives.` : null}</span>
         <span>{visible.length > 1 && edges.length === 0 ? "No narratives share evidence in this period, so no connections are drawn." : null}</span>
       </div>
@@ -99,9 +100,9 @@ export function TopicMapCanvas({
   );
 }
 
-function MapNodeButton({ node, placed, selected, onSelect, signalLabel, labelWidth }: { node: TopicMapNode; placed: PlacedNode; selected: boolean; onSelect: (id: string) => void; signalLabel: (count: number) => string; labelWidth: number }) {
-  const labelInside = placed.r >= LABEL_INSIDE_MIN_RADIUS;
+function MapNodeButton({ node, placed, selected, onSelect, signalLabel }: { node: TopicMapNode; placed: PlacedNode; selected: boolean; onSelect: (id: string) => void; signalLabel: (count: number) => string }) {
   const d = placed.r * 2;
+  const box = labelBox(placed.r);
   return (
     <button
       type="button"
@@ -113,26 +114,23 @@ function MapNodeButton({ node, placed, selected, onSelect, signalLabel, labelWid
       style={{ left: placed.x - placed.r, top: placed.y - placed.r, width: d, height: d, zIndex: selected ? 2 : 1 }}
     >
       <span
-        className="absolute inset-0 flex flex-col items-center justify-center rounded-full border-[1.5px] bg-white px-2 text-center transition-shadow duration-fast ease-standard group-hover:shadow-raised group-focus-visible:ring-2 group-focus-visible:ring-[#465FFF] group-focus-visible:ring-offset-2"
+        className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-full border-[1.5px] bg-white transition-shadow duration-fast ease-standard group-hover:shadow-raised group-focus-visible:ring-2 group-focus-visible:ring-[#465FFF] group-focus-visible:ring-offset-2"
         style={{
           borderColor: selected ? node.color : `rgba(${node.rgb}, 0.45)`,
           boxShadow: selected ? `0 0 0 4px rgba(${node.rgb}, 0.16)` : "var(--shadow)",
         }}
       >
-        {labelInside ? (
-          <>
-            <span className="line-clamp-3 text-[11px] font-semibold leading-[1.25] text-navy">{node.title}</span>
-            <span className="mt-1 text-[10px] font-medium text-subtle">{signalLabel(node.signals)}</span>
-          </>
-        ) : (
-          <span className="text-[12px] font-bold text-navy">{node.signals}</span>
-        )}
-      </span>
-      {labelInside ? null : (
-        <span className="absolute left-1/2 top-full mt-1.5 -translate-x-1/2 text-center" style={{ width: labelWidth }}>
-          <span className="line-clamp-2 rounded bg-white/90 px-1 text-[11px] font-semibold leading-tight text-navy">{node.title}</span>
+        {/* Label box is sized so its corners stay inside the circle. */}
+        <span className="flex flex-col items-center justify-center overflow-hidden text-center" style={{ width: box.width, maxHeight: box.height }}>
+          <span
+            className="font-semibold leading-[1.25] text-navy"
+            style={{ fontSize: box.fontSize, display: "-webkit-box", WebkitLineClamp: box.lines, WebkitBoxOrient: "vertical", overflow: "hidden", overflowWrap: "anywhere" }}
+          >
+            {node.title}
+          </span>
+          <span className="mt-0.5 shrink-0 font-medium text-subtle" style={{ fontSize: box.fontSize - 1 }}>{signalLabel(node.signals)}</span>
         </span>
-      )}
+      </span>
     </button>
   );
 }

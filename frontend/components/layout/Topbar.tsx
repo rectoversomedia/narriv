@@ -39,15 +39,15 @@ type SearchResult = {
 };
 
 const navLinks = [
-  { title: "Dashboard", href: "/", subtitle: "Command Center" },
-  { title: "Signals", href: "/signals", subtitle: "Sinyal digital" },
-  { title: "Alerts", href: "/alerts", subtitle: "Alert prioritas" },
-  { title: "Visibility", href: "/visibility", subtitle: "AI Visibility" },
-  { title: "Intelligence", href: "/intelligence", subtitle: "Peta narasi" },
-  { title: "Reports", href: "/reports", subtitle: "Laporan" },
-  { title: "Action Plans", href: "/action-plans", subtitle: "Pusat tindakan" },
-  { title: "Sources", href: "/workspace/sources", subtitle: "Sumber data" },
-  { title: "Settings", href: "/workspace/settings", subtitle: "Pengaturan" },
+  { title: "Dashboard", href: "/", subtitle: { en: "Command center", id: "Pusat komando" } },
+  { title: "Signals", href: "/signals", subtitle: { en: "Digital signals", id: "Sinyal digital" } },
+  { title: "Alerts", href: "/alerts", subtitle: { en: "Priority alerts", id: "Alert prioritas" } },
+  { title: "Visibility", href: "/visibility", subtitle: { en: "AI visibility", id: "Visibilitas AI" } },
+  { title: "Intelligence", href: "/intelligence", subtitle: { en: "Narrative map", id: "Peta narasi" } },
+  { title: "Reports", href: "/reports", subtitle: { en: "Reports", id: "Laporan" } },
+  { title: "Action Plans", href: "/action-plans", subtitle: { en: "Action center", id: "Pusat tindakan" } },
+  { title: "Sources", href: "/workspace/sources", subtitle: { en: "Data sources", id: "Sumber data" } },
+  { title: "Settings", href: "/workspace/settings", subtitle: { en: "Settings", id: "Pengaturan" } },
 ];
 
 const typeLabel: Record<string, string> = {
@@ -269,8 +269,9 @@ export function Topbar() {
           }
         });
         navLinks.forEach((nav) => {
-          if (nav.title.toLowerCase().includes(q) || nav.subtitle.toLowerCase().includes(q)) {
-            results.push({ type: "nav", id: nav.href, title: nav.title, subtitle: nav.subtitle, href: nav.href });
+          const subtitle = nav.subtitle[language === "id" ? "id" : "en"];
+          if (nav.title.toLowerCase().includes(q) || subtitle.toLowerCase().includes(q)) {
+            results.push({ type: "nav", id: nav.href, title: nav.title, subtitle, href: nav.href });
           }
         });
         setSearchResults(results.slice(0, 8));
@@ -320,7 +321,7 @@ export function Topbar() {
         <Image src="/logo-h-narriv-2026.png" alt="Narriv" width={96} height={36} priority className="h-8 w-auto object-contain" />
       </Link>
       <div ref={searchRef} className="relative hidden w-full max-w-[530px] lg:block">
-        <label className="flex h-[48px] items-center gap-4 rounded-[8px] border border-border bg-slate-50 px-5 text-[var(--text-soft)] focus-within:border-[#465FFF]/50 focus-within:shadow-[0_0_10px_rgba(70,95,255,0.15)] transition-all">
+        <label className="flex h-[48px] items-center gap-4 rounded-[8px] border border-border bg-slate-50 px-5 text-[var(--text-soft)] focus-within:border-[#465FFF]/50 focus-within: transition-all">
           <Search size={20} className="text-[var(--text-muted)]" />
           <input
             ref={inputRef}
@@ -380,7 +381,7 @@ export function Topbar() {
         {/* Live connection status indicator */}
         {/* Only claim live updates while the event stream is actually connected. */}
         {sseStatus === "connected" ? <LiveIndicator status={sseStatus} /> : null}
-        <button type="button" onClick={() => startTransition(toggleLanguage)} className="hidden items-center gap-2 rounded-[8px] border border-border px-3 py-2 text-xs font-bold text-[var(--text-soft)] transition-all duration-200 hover:border-[#465FFF] hover:text-[var(--text)] hover:shadow-[0_0_8px_rgba(70,95,255,0.1)] active:scale-[0.98] sm:flex" aria-label="Switch language">
+        <button type="button" onClick={() => startTransition(toggleLanguage)} className="hidden items-center gap-2 rounded-[8px] border border-border px-3 py-2 text-xs font-bold text-[var(--text-soft)] transition-all duration-200 hover:border-[#465FFF] hover:text-[var(--text)] hover: active:scale-[0.98] sm:flex" aria-label="Switch language">
           <Languages size={15} />
           <span key={language} className="inline-block min-w-5 animate-in fade-in slide-in-from-bottom-1 duration-200">
             {language.toUpperCase()}
@@ -394,7 +395,7 @@ export function Topbar() {
           >
             <Bell size={24} />
             {unreadCount > 0 ? (
-              <span className="absolute right-0.5 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#EF4444] px-1 text-[10px] font-black text-white shadow-[0_0_8px_rgba(239,68,68,0.35)] ring-2 ring-white">
+              <span className="absolute right-0.5 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#EF4444] px-1 text-[10px] font-black text-white ring-2 ring-white">
                 {unreadBadge}
               </span>
             ) : null}
@@ -505,7 +506,7 @@ export function Topbar() {
         </Popover>
         <div className="hidden h-8 w-px bg-border sm:block" />
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-[#465FFF] to-[#8B5CFF] text-[16px] font-bold text-white shadow-[0_0_12px_rgba(70,95,255,0.3)]">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#465FFF] text-[16px] font-bold text-white">
             {user?.name ? user.name.slice(0, 2).toUpperCase() : "TU"}
           </div>
           <div className="hidden sm:block">

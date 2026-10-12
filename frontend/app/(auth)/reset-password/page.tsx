@@ -40,7 +40,7 @@ export default function ResetPasswordPage() {
       setSubmitted(true);
       router.push("/verify-code");
     } catch {
-      setApiError("Reset password belum bisa dimulai. Coba lagi sebentar.");
+      setApiError(t("errors.requestFailed"));
     }
   };
 
@@ -49,7 +49,7 @@ export default function ResetPasswordPage() {
       <CenterIcon variant="lock" />
 
       <div className="mx-auto mb-11 max-w-[560px] text-center">
-        <h1 className="text-[38px] font-bold leading-tight tracking-[-0.04em] text-[#111536]">{t("title")}</h1>
+        <h1 className="text-[34px] font-bold leading-tight tracking-[-0.04em] text-[#111536]">{t("title")}</h1>
         <p className="mt-5 text-[19px] font-medium leading-8 text-[#3E4975]">
           {t("subtitle")}
         </p>

@@ -61,10 +61,10 @@ export function InnerPanel({ children, className = "" }: CardProps) {
 
 export function StatusBadge({ children, tone = "blue" }: { children: ReactNode; tone?: "blue" | "green" | "amber" | "red" | "slate" }) {
   const tones = {
-    blue: "border-[#465FFF]/30 bg-[#465FFF]/10 text-[#3B52F5] shadow-[0_0_10px_rgba(70,95,255,0.1)]",
-    green: "border-[#12B76A]/30 bg-[#12B76A]/10 text-[#027A48] shadow-[0_0_10px_rgba(18,183,106,0.1)]",
-    amber: "border-[#FDB022]/30 bg-[#FDB022]/10 text-[#B54708] shadow-[0_0_10px_rgba(253,176,34,0.1)]",
-    red: "border-[#F97066]/30 bg-[#F97066]/10 text-[#B42318] shadow-[0_0_10px_rgba(249,112,102,0.1)]",
+    blue: "border-[#465FFF]/30 bg-[#465FFF]/10 text-[#3B52F5]",
+    green: "border-[#12B76A]/30 bg-[#12B76A]/10 text-[#027A48]",
+    amber: "border-[#FDB022]/30 bg-[#FDB022]/10 text-[#B54708]",
+    red: "border-[#F97066]/30 bg-[#F97066]/10 text-[#B42318]",
     slate: "theme-border theme-muted bg-[var(--badge-slate-bg)]",
   };
 
@@ -73,10 +73,10 @@ export function StatusBadge({ children, tone = "blue" }: { children: ReactNode; 
 
 export function ProgressBar({ value, tone = "blue" }: { value: number; tone?: "blue" | "green" | "amber" | "red" }) {
   const tones = {
-    blue: "bg-gradient-to-r from-[#465FFF] to-[#8FA4FF] shadow-[0_0_10px_rgba(70,95,255,0.4)]",
-    green: "bg-gradient-to-r from-[#12B76A] to-[#6CE9A6] shadow-[0_0_10px_rgba(18,183,106,0.4)]",
-    amber: "bg-gradient-to-r from-[#FDB022] to-[#FEDF89] shadow-[0_0_10px_rgba(253,176,34,0.4)]",
-    red: "bg-gradient-to-r from-[#F97066] to-[#FDA29B] shadow-[0_0_10px_rgba(249,112,102,0.4)]",
+    blue: "bg-[#465FFF]",
+    green: "bg-[#12B76A]",
+    amber: "bg-[#F59E0B]",
+    red: "bg-[#EF4444]",
   };
 
   return (

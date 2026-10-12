@@ -345,7 +345,7 @@ function DonutChartVisibility({ center, label, segments }: { center: string; lab
     : "conic-gradient(#E8ECF5_0_100%)";
 
   return (
-    <div className="chart-donut-enter relative mx-auto flex size-[150px] items-center justify-center rounded-full shadow-[0_0_20px_rgba(70,95,255,0.08)]" style={{ background: gradient }}>
+    <div className="chart-donut-enter relative mx-auto flex size-[150px] items-center justify-center rounded-full" style={{ background: gradient }}>
       <div className="absolute size-[104px] rounded-full bg-white" />
       <div className="relative text-center z-10">
         <p className="text-[24px] font-black text-[#101334]">{center}</p>
@@ -962,7 +962,7 @@ export default function VisibilityPage() {
             />
           ) : null}
 
-          <Panel className="border-[#D6DEFF] bg-gradient-to-r from-[#F6F8FF] to-[#F1F3FF]">
+          <Panel className="border-[#D6DEFF] bg-[#F6F8FF]">
             <CardContent className="grid gap-5 p-5 md:grid-cols-2 2xl:grid-cols-[minmax(0,1fr)_230px_260px] 2xl:items-center">
               <div className="flex items-start gap-4">
                 <div className="relative flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-purple-200 bg-[#F3ECFF] shadow-md sm:size-20">
@@ -975,7 +975,7 @@ export default function VisibilityPage() {
                       {t("execSummary.aiGenerated")}
                     </Badge>
                   </div>
-                  <h2 className="mt-1.5 text-[17px] font-black tracking-[-0.02em] text-[#101334]">{execHeading}</h2>
+                  <h2 className="mt-1.5 text-[16px] font-black tracking-[-0.02em] text-[#101334]">{execHeading}</h2>
                   <p className="mt-2 max-w-[620px] text-[12px] font-semibold leading-relaxed text-[#53608C]">{execBody}</p>
                 </div>
               </div>
@@ -1023,7 +1023,7 @@ export default function VisibilityPage() {
               <CardContent className="p-5">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
-                    <h3 className="text-[15px] font-black tracking-[-0.02em] text-[#101334]">{t("mentionsTrend.title")}</h3>
+                    <h3 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{t("mentionsTrend.title")}</h3>
                     <p className="text-[11px] font-bold text-[#647099]">{t("mentionsTrend.desc")}</p>
                   </div>
                   <div className="flex rounded-lg bg-[#F5F7FC] p-0.5">
@@ -1047,7 +1047,7 @@ export default function VisibilityPage() {
             <Panel>
               <CardContent className="p-5 flex flex-col justify-between h-full">
                 <div>
-                  <h3 className="mb-4 text-[15px] font-black tracking-[-0.02em] text-[#101334]">{t("topTopics.title")}</h3>
+                  <h3 className="mb-4 text-[16px] font-black tracking-[-0.02em] text-[#101334]">{t("topTopics.title")}</h3>
                   <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={t("topTopics.title")}>
                     <table className="w-full text-left text-[11px] font-bold text-[#53608C]">
                       <thead>
@@ -1088,7 +1088,7 @@ export default function VisibilityPage() {
             <Panel>
               <CardContent className="p-5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-[15px] font-black tracking-[-0.02em] text-[#101334]">{t("sandbox.title")}</h3>
+                  <h3 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{t("sandbox.title")}</h3>
                   <Badge variant="default" className="px-2 py-0.5 text-[9px] font-bold normal-case tracking-normal">
                     AI-Modeled via GPT-4o-mini
                   </Badge>
@@ -1169,7 +1169,7 @@ export default function VisibilityPage() {
 
             <Panel>
               <CardContent className="p-5">
-                <h3 className="mb-4 text-[15px] font-black tracking-[-0.02em] text-[#101334]">{t("competitorVs.title")}</h3>
+                <h3 className="mb-4 text-[16px] font-black tracking-[-0.02em] text-[#101334]">{t("competitorVs.title")}</h3>
                 <CompetitorVsChart datasets={competitorTrendDatasets} dates={trendDates.length > 1 ? trendDates : undefined} fallbackDates={chartFallbackDates} emptyText={tEmpty("noCompetitorData")} />
                 <div className="mt-4 flex flex-wrap justify-center gap-4 text-[10px] font-bold text-[#53608C]">
                   {competitorTrendDatasets.map((dataset) => (
@@ -1185,7 +1185,7 @@ export default function VisibilityPage() {
         <aside className="flex flex-col gap-4">
           <Panel>
             <CardContent className="p-5">
-              <h3 className="mb-4 flex items-center gap-1.5 text-[15px] font-black tracking-[-0.02em] text-[#101334]">
+              <h3 className="mb-4 flex items-center gap-1.5 text-[16px] font-black tracking-[-0.02em] text-[#101334]">
                 {t("topPlatforms.title")}
                 <Info size={13} className="text-[#647099]" />
               </h3>
@@ -1212,7 +1212,7 @@ export default function VisibilityPage() {
 
           <Panel>
             <CardContent className="p-5">
-              <h3 className="mb-4 flex items-center gap-1.5 text-[15px] font-black tracking-[-0.02em] text-[#101334]">
+              <h3 className="mb-4 flex items-center gap-1.5 text-[16px] font-black tracking-[-0.02em] text-[#101334]">
                 {t("competitorShare.title")}
                 <Info size={13} className="text-[#647099]" />
               </h3>
@@ -1246,7 +1246,7 @@ export default function VisibilityPage() {
             <CardContent className="p-5 flex flex-col justify-between h-full">
               <div>
                 <div className="mb-4 flex items-center justify-between gap-3">
-                  <h3 className="flex items-center gap-1.5 text-[15px] font-black tracking-[-0.02em] text-[#101334]">
+                  <h3 className="flex items-center gap-1.5 text-[16px] font-black tracking-[-0.02em] text-[#101334]">
                     {t("latestMentions.title")}
                     <Info size={13} className="text-[#647099]" />
                   </h3>
@@ -1280,7 +1280,7 @@ export default function VisibilityPage() {
       <Panel>
         <CardContent className="p-5">
           <div className="mb-5">
-            <h3 className="text-[15px] font-black tracking-[-0.02em] text-[#101334]">{t("citationIntelligence")}</h3>
+            <h3 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{t("citationIntelligence")}</h3>
             <p className="text-[11px] font-bold text-[#647099] mt-1">{t("whereDoesAI")}</p>
           </div>
           <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={t("citationIntelligence")}>
@@ -1357,7 +1357,7 @@ export default function VisibilityPage() {
       <Panel>
         <CardContent className="p-5">
           <div className="mb-5">
-            <h3 className="text-[15px] font-black tracking-[-0.02em] text-[#101334]">{t("aiReputation")}</h3>
+            <h3 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{t("aiReputation")}</h3>
             <p className="text-[11px] font-bold text-[#647099] mt-1">{t("aiReputationDesc")}</p>
           </div>
           <div className="flex flex-col gap-3">
@@ -1415,7 +1415,7 @@ export default function VisibilityPage() {
       <Panel>
         <CardContent className="p-5">
           <div className="mb-5">
-            <h3 className="text-[15px] font-black tracking-[-0.02em] text-[#101334]">{t("shareOfAIAnswer")}</h3>
+            <h3 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{t("shareOfAIAnswer")}</h3>
             <p className="text-[11px] font-bold text-[#647099] mt-1">{t("shareOfAIAnswerDesc")}</p>
           </div>
           <div className="flex flex-col gap-6">

@@ -45,7 +45,7 @@ export function PrimaryAction({ children, className = "" }: { children: ReactNod
       type="button"
       size="lg"
       className={cn(
-        "inline-flex h-[42px] items-center justify-center gap-2 rounded-[8px] border border-slate-200 bg-[#465FFF] hover:bg-[#3B51E0] px-5 text-[14px] font-bold text-white shadow-[0_0_15px_rgba(70,95,255,0.3)] transition hover:from-[#3b52d9] hover:to-[#764ee6] active:scale-[0.98]",
+        "inline-flex h-[42px] items-center justify-center gap-2 rounded-[8px] border border-slate-200 bg-[#465FFF] hover:bg-[#3B51E0] px-5 text-[14px] font-bold text-white transition active:scale-[0.98]",
         className
       )}
     >
@@ -74,12 +74,12 @@ export function MetricTile({ label, value, helper, icon: Icon, tone }: { label: 
   return (
     <AppCard>
       <CardContent className="flex min-h-[96px] items-center gap-4 p-4">
-        <div className={cn("flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full border border-slate-100 shadow-[0_0_8px_rgba(0,0,0,0.15)]", styles.bg, styles.text)}>
+        <div className={cn("flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full border border-slate-100", styles.bg, styles.text)}>
           <Icon size={20} strokeWidth={2.1} />
         </div>
         <div className="min-w-0 flex-1 overflow-hidden">
           <p className="text-[13px] font-bold text-[#5A6478] truncate">{label}</p>
-          <p className="mt-1.5 text-[28px] font-black leading-none tracking-[-0.03em] text-slate-900 drop-shadow-[0_0_8px_rgba(255,255,255,0.08)] tabular-nums">{value}</p>
+          <p className="mt-1.5 text-[28px] font-black leading-none tracking-[-0.03em] text-slate-900 drop- tabular-nums">{value}</p>
           <p className={cn("mt-2.5 text-[12px] font-bold flex items-center gap-1 tabular-nums", isNegative ? "text-[#C81E1E]" : "text-[#047857]")}>
             <span className={cn("inline-block h-1.5 w-1.5 rounded-full", isNegative ? "bg-[#EF4444]" : "bg-[#10B981]")} />
             {helper}
@@ -106,7 +106,7 @@ export function SectionHeader({ title, description, action, actionPlacement = "s
   return (
     <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
-        <h2 className="text-[20px] font-bold tracking-[-0.02em] text-slate-900">{title}</h2>
+        <h2 className="text-[16px] font-bold tracking-[-0.02em] text-slate-900">{title}</h2>
         {description ? <p className="mt-1 text-[13px] font-semibold text-[#5A6478]">{description}</p> : null}
       </div>
       {action ? <div className="flex w-full shrink-0 items-center sm:w-auto sm:justify-end">{action}</div> : null}
@@ -136,7 +136,7 @@ export function LineChartMock({ values }: { values: number[] }) {
       <div className="chart-bar-enter relative flex h-full items-end gap-2 z-10">
         {values.map((value, index) => (
           <div key={`${value}-${index}`} className="flex flex-1 flex-col items-center gap-2">
-            <div className="w-full rounded-t-full bg-gradient-to-t from-[#465FFF] to-[#8B5CFF] shadow-[0_0_12px_rgba(70,95,255,0.2)]" style={{ height: `${Math.max(8, (value / max) * 150)}px` }} />
+            <div className="w-full rounded-t-full bg-[#465FFF]" style={{ height: `${Math.max(8, (value / max) * 150)}px` }} />
             <span className="h-1.5 w-1.5 rounded-full bg-[#465FFF]" />
           </div>
         ))}
@@ -147,7 +147,7 @@ export function LineChartMock({ values }: { values: number[] }) {
 
 export function DonutMock({ center, label }: { center: string; label: string }) {
   return (
-    <div className="chart-donut-enter relative mx-auto flex h-[160px] w-[160px] items-center justify-center rounded-full bg-[conic-gradient(#465FFF_0_45%,#8B5CFF_45%_76%,#10B981_76%_93%,#F59E0B_93%_100%)] shadow-[0_0_20px_rgba(70,95,255,0.15)]">
+    <div className="chart-donut-enter relative mx-auto flex h-[160px] w-[160px] items-center justify-center rounded-full bg-[conic-gradient(#465FFF_0_45%,#8B5CFF_45%_76%,#10B981_76%_93%,#F59E0B_93%_100%)]">
       <div className="absolute h-[112px] w-[112px] rounded-full bg-background" />
       <div className="relative text-center z-10">
         <p className="text-[26px] font-black text-slate-900">{center}</p>
@@ -167,5 +167,5 @@ export function MiniSpark({ tone = "purple" }: { tone?: Tone }) {
 
 export function IconBubble({ icon: Icon, tone = "purple", className = "" }: { icon: LucideIcon; tone?: Tone; className?: string }) {
   const styles = toneMap[tone] ?? toneMap.purple;
-  return <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] border border-slate-100 shadow-[0_0_8px_rgba(0,0,0,0.15)]", styles.bg, styles.text, className)}><Icon size={22} /></div>;
+  return <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] border border-slate-100", styles.bg, styles.text, className)}><Icon size={22} /></div>;
 }

@@ -200,10 +200,8 @@ export function SubscriptionCard({ onUpgradeClick }: SubscriptionCardProps) {
           href="/pricing"
           onClick={onUpgradeClick}
           className={cn(
-            "flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-bold transition-all",
-            "bg-gradient-to-r shadow-sm hover:shadow",
-            gradientClass,
-            "text-white hover:opacity-90"
+            "flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-bold transition-colors",
+            "bg-[#465FFF] text-white shadow-sm hover:bg-[#3B52F5]"
           )}
         >
           <Sparkles size={12} />

@@ -39,7 +39,7 @@ function TabsTrigger({ value, className, ...props }: React.ComponentProps<"butto
       onClick={() => context?.setValue(value)}
       className={cn(
         "rounded-[8px] px-3.5 py-2 text-sm font-semibold text-slate-950 transition-all hover:text-[#3B52F5] cursor-pointer",
-        active && "bg-[#465FFF] text-white shadow-[0_0_12px_rgba(70,95,255,0.35)]",
+        active && "bg-[#465FFF] text-white",
         className,
       )}
       {...props}

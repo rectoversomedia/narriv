@@ -105,3 +105,84 @@ export function edgeEndpoints(a: PlacedNode, b: PlacedNode, gap = 3): { x1: numb
   const uy = dy / dist;
   return { x1: a.x + ux * (a.r + gap), y1: a.y + uy * (a.r + gap), x2: b.x - ux * (b.r + gap), y2: b.y - uy * (b.r + gap) };
 }
+
+/** Smallest radius that can hold a readable title inside the circle. */
+export const MIN_LABEL_RADIUS = 40;
+
+const overlaps = (a: PlacedNode, b: PlacedNode, gap: number) => Math.hypot(a.x - b.x, a.y - b.y) < a.r + b.r + gap;
+
+/**
+ * Largest number of nodes (taking the biggest first) whose layout keeps every
+ * circle big enough for an inside label, inside the container and not
+ * overlapping. Fewer, readable nodes beat many tiny ones.
+ */
+/**
+ * Row layout for wide or short containers: nodes fill a grid of equal cells
+ * (largest first, last row centred); radius scales with volume up to the cell.
+ */
+export function gridLayout(nodes: MapNodeInput[], width: number, height: number, padding = 28, minR = MIN_LABEL_RADIUS): PlacedNode[] | null {
+  if (nodes.length === 0) return [];
+  const sorted = nodes.slice().sort((a, b) => b.signals - a.signals || a.id.localeCompare(b.id));
+  const maxSignals = sorted[0].signals;
+  let best: PlacedNode[] | null = null;
+  let bestR = 0;
+  for (let rows = 1; rows <= Math.min(4, sorted.length); rows += 1) {
+    const cols = Math.ceil(sorted.length / rows);
+    const cellW = (width - 2 * padding) / cols;
+    const cellH = (height - 2 * padding) / rows;
+    const cellR = Math.min(cellW, cellH) / 2 - 6;
+    if (cellR < minR) continue;
+    const maxR = Math.min(MAX_RADIUS, cellR);
+    const placed = sorted.map((node, i) => {
+      const row = Math.floor(i / cols);
+      const inRow = row === rows - 1 ? sorted.length - row * cols : cols;
+      const col = i % cols;
+      const offset = ((cols - inRow) * cellW) / 2;
+      return {
+        id: node.id,
+        x: padding + offset + cellW * (col + 0.5),
+        y: padding + (height - 2 * padding - rows * cellH) / 2 + cellH * (row + 0.5),
+        r: Math.round(radiusFor(node.signals, maxSignals, minR, maxR)),
+      };
+    });
+    if (maxR > bestR) { best = placed; bestR = maxR; }
+  }
+  return best;
+}
+
+function layoutFits(placed: PlacedNode[], width: number, height: number, minR: number): boolean {
+  return (
+    placed.every((p) => p.r >= minR && p.x - p.r >= 0 && p.y - p.r >= 0 && p.x + p.r <= width && p.y + p.r <= height) &&
+    placed.every((p, i) => placed.slice(i + 1).every((q) => !overlaps(p, q, 8)))
+  );
+}
+
+export function fitLayout<T extends MapNodeInput>(nodes: T[], width: number, height: number, padding = 28, minR = MIN_LABEL_RADIUS): { nodes: T[]; placed: PlacedNode[] } {
+  const sorted = nodes.slice().sort((a, b) => b.signals - a.signals || a.id.localeCompare(b.id));
+  for (let count = sorted.length; count >= 1; count -= 1) {
+    const subset = sorted.slice(0, count);
+    // Prefer the ring (largest in the centre); fall back to rows when the
+    // container is too wide or short for a readable ring.
+    const ring = layoutNodes(subset, width, height, padding);
+    if (layoutFits(ring, width, height, minR)) return { nodes: subset, placed: ring };
+    const rows = gridLayout(subset, width, height, padding, minR);
+    if (rows && layoutFits(rows, width, height, minR)) return { nodes: subset, placed: rows };
+    if (count === 1) return { nodes: subset, placed: ring.map((p) => ({ ...p, r: Math.max(p.r, Math.min(minR, Math.min(width, height) / 2)) })) };
+  }
+  return { nodes: [], placed: [] };
+}
+
+/**
+ * Text box that stays inside a circle of radius r: a centred rectangle whose
+ * corners lie within the circle. Lines and font size scale with the radius.
+ */
+export function labelBox(r: number): { width: number; height: number; lines: number; fontSize: number } {
+  const fontSize = r >= 56 ? 11 : 10;
+  const lines = r >= 56 ? 3 : 2;
+  const lineHeight = fontSize * 1.25;
+  // Title lines + one count line + gap.
+  const height = lineHeight * (lines + 1) + 4;
+  const halfH = Math.min(height / 2, r * 0.8);
+  const width = Math.floor(2 * Math.sqrt(Math.max(0, r * r - halfH * halfH)) - 6);
+  return { width, height: Math.round(halfH * 2), lines, fontSize };
+}
