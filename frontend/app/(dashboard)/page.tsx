@@ -429,7 +429,7 @@ export default function DashboardPage() {
     { name: "Perplexity", score: 58, change: "-2", tone: "red" as Tone },
   ] : [];
 
-  const narratives: Array<{ id: string; title: string; status: "active"; sentiment: Tone; volume: string; growth: string }> =
+  const narratives: Array<{ id: string; title: string; status: "active"; sentiment: Tone; volume: string; growth: string | null }> =
     (summary?.top_topics && summary.top_topics.length > 0)
       ? summary.top_topics.map((t, i) => ({
           id: `topic-${i}`,
@@ -437,7 +437,8 @@ export default function DashboardPage() {
           status: "active" as const,
           sentiment: (t.tone === "positive" ? "green" : t.tone === "negative" ? "red" : t.tone === "mixed" ? "amber" : "blue") as Tone,
           volume: t.mentions,
-          growth: t.delta ?? "+0%",
+          // No historical snapshots yet: show nothing rather than an invented +0%.
+          growth: t.delta ?? null,
         }))
       : isDemoSession
         ? getMockNarratives().data.map((n) => ({
@@ -529,7 +530,7 @@ export default function DashboardPage() {
             const Icon = d.icon;
             const toneStyle = toneMap[d.tone] ?? toneMap.purple;
             return (
-              <div key={d.id} className="flex min-w-[220px] max-w-[260px] flex-col gap-2.5 rounded-[10px] border border-slate-100 bg-white p-4 shadow-sm transition hover:border-slate-200 hover:shadow-md">
+              <div key={d.id} className="flex min-w-[220px] flex-1 basis-0 flex-col gap-2.5 rounded-[10px] border border-slate-100 bg-white p-4 shadow-sm transition hover:border-slate-200 hover:shadow-md">
                 <div className="flex items-start justify-between gap-2">
                   <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] ${toneStyle.bg} ${toneStyle.text}`}>
                     <Icon size={15} />
@@ -590,7 +591,7 @@ export default function DashboardPage() {
                       <span className={`h-2 w-2 shrink-0 rounded-full ${sentimentColor.soft}`} />
                       <p className="flex-1 text-[13px] font-bold text-slate-800 truncate">{n.title}</p>
                       <span className="hidden text-[11px] font-semibold text-slate-400 sm:block">{n.volume}</span>
-                      <span className="rounded-[6px] bg-slate-50 px-2 py-0.5 text-[11px] font-bold text-slate-600">{n.growth}</span>
+                      {n.growth ? <span className="rounded-[6px] bg-slate-50 px-2 py-0.5 text-[11px] font-bold text-slate-600">{n.growth}</span> : null}
                     </div>
                   );
                 })}

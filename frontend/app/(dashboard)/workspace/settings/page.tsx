@@ -565,7 +565,7 @@ export default function SettingsPage() {
       ) : null}
 
       {/* Row 1: Workspace & User Management */}
-      <div className="grid gap-6 xl:grid-cols-[1.1fr_1.45fr]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_1.45fr]">
         
         {/* Card A: Informasi Workspace */}
         <Panel className="flex flex-col gap-5">
@@ -1209,7 +1209,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Row 3: Billing & Usage & Danger Zone */}
-      <div className="grid gap-6 xl:grid-cols-[2fr_1.1fr]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[2fr_1.1fr]">
         
         {/* Card A: Billing & Usage */}
         <Panel className="flex flex-col gap-6">

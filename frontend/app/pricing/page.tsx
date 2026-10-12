@@ -34,8 +34,8 @@ const plans = [
     tagline: "Validate the value.",
     icon: Rocket,
     price: 5_000_000,
-    period: "bulan",
-    description: "Perfect untuk pilot projects dan proof of concept",
+    period: "month",
+    description: "Pilot projects and proofs of concept",
     popular: false,
     limits: {
       topics: 5,
@@ -62,7 +62,7 @@ const plans = [
     tagline: "Understand what matters.",
     icon: Brain,
     price: 25_000_000,
-    period: "bulan",
+    period: "month",
     description: "Corporate communications, brand, and reputation teams",
     popular: true,
     limits: {
@@ -92,7 +92,7 @@ const plans = [
     tagline: "Turn intelligence into action.",
     icon: Target,
     price: 50_000_000,
-    period: "bulan",
+    period: "month",
     description: "Large organizations managing multiple brands, products, and issues",
     popular: false,
     limits: {
@@ -122,7 +122,7 @@ const plans = [
     tagline: "Operationalize intelligence.",
     icon: Crown,
     price: 100_000_000,
-    period: "bulan+",
+    period: "month+",
     description: "Banks, telcos, ministries, and enterprise organizations",
     popular: false,
     limits: {
@@ -326,7 +326,7 @@ export default function PricingPage() {
                         <span className="text-base font-normal text-slate-400">/{plan.period}</span>
                       </div>
                       {billingPeriod === "annual" && (
-                        <span>Save {formatPrice(plan.price - price)}/bulan</span>
+                        <span>Save {formatPrice(plan.price - price)}/month</span>
                       )}
                     </>
                   )}

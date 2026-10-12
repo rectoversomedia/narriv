@@ -654,8 +654,9 @@ export default function VisibilityPage() {
     });
   })();
 
-  function computeDelta(current: number, previous: number, isPercentage = true): string {
-    if (previous === 0) return current > 0 ? "+∞" : "0";
+  // No baseline (previous = 0) means no meaningful change; callers show "-".
+  function computeDelta(current: number, previous: number, isPercentage = true): string | null {
+    if (previous === 0) return current > 0 ? null : "0";
     const change = ((current - previous) / Math.abs(previous)) * 100;
     const sign = change >= 0 ? "+" : "";
     if (isPercentage) {

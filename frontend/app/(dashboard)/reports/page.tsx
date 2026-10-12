@@ -163,7 +163,7 @@ function SentimentChart({ dashboard }: { dashboard?: DashboardSummary | null }) 
   return (
     <div className="flex h-full min-h-[160px] flex-col border-t border-line-soft pt-4 md:border-l md:border-t-0 md:pl-5 md:pt-0">
       <h4 className="text-[12px] font-bold text-navy">{tr("sentimentChart.title")}</h4>
-      <p className="mt-0.5 text-[10px] font-medium text-subtle">Signals per day</p>
+      <p className="mt-0.5 text-[10px] font-medium text-subtle">Signals per day (UTC days)</p>
       <div className="mt-2">
         {!days ? (
           <p className="mt-6 text-[11px] font-medium text-subtle">Sentiment trend is not available right now.</p>
@@ -544,7 +544,7 @@ function ReportsTable({
           <tbody className="divide-y divide-[#EDF1F7]">
             {visibleRows.length > 0 ? visibleRows.map((report) => (
               <tr key={report.id} className="transition hover:bg-[#F8FAFF]">
-                <td className="px-3 py-3.5">
+                <td className="min-w-[220px] px-3 py-3.5">
                   <div className="flex items-start gap-3">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[#465FFF]">
                       <FileText size={17} strokeWidth={2.3} />
@@ -575,34 +575,34 @@ function ReportsTable({
                   <span className="mt-0.5 block text-[9.5px] font-bold text-[#8B95B8]">{report.createdTime}</span>
                 </td>
                 <td className="px-3 py-3.5 text-right align-middle">
-                  <div className="inline-flex items-center justify-end gap-1">
+                  <div className="inline-flex items-center justify-end gap-1 whitespace-nowrap">
                     <button
                       type="button"
                       onClick={() => onExportFile?.(String(report.id), "csv")}
                       disabled={isFetching}
-                      className="inline-flex items-center gap-1 rounded-md border border-[#DDE3EF] bg-white px-2 py-1.5 text-[10px] font-black text-[#68739F] transition hover:bg-[#EEF2FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
-                      title="Unduh CSV"
+                      className="inline-flex items-center gap-1 rounded-md border border-[#DDE3EF] bg-white px-1.5 py-1.5 text-[10px] font-black text-[#68739F] transition hover:bg-[#EEF2FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
+                      title={`${tr("downloadReady")} CSV`}
                     >
-                      <Download size={11} /> CSV
+                      CSV
                     </button>
                     <button
                       type="button"
                       onClick={() => onExportFile?.(String(report.id), "xlsx")}
                       disabled={isFetching}
-                      className="inline-flex items-center gap-1 rounded-md border border-[#DDE3EF] bg-white px-2 py-1.5 text-[10px] font-black text-[#68739F] transition hover:bg-[#EEF2FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
-                      title="Unduh Excel"
+                      className="inline-flex items-center gap-1 rounded-md border border-[#DDE3EF] bg-white px-1.5 py-1.5 text-[10px] font-black text-[#68739F] transition hover:bg-[#EEF2FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
+                      title={`${tr("downloadReady")} Excel`}
                     >
-                      <Download size={11} /> Excel
+                      Excel
                     </button>
                     <button
                       type="button"
                       onClick={() => onExport(String(report.id))}
                       disabled={isFetching}
-                      className="inline-flex items-center gap-1 rounded-md border border-[#DDE3EF] bg-white px-2 py-1.5 text-[10px] font-black text-[#68739F] transition hover:bg-[#EEF2FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex items-center gap-1 rounded-md border border-[#DDE3EF] bg-white px-1.5 py-1.5 text-[10px] font-black text-[#68739F] transition hover:bg-[#EEF2FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
                       aria-label={tr("exportAria", { title: report.title })}
-                      title="Unduh PDF"
+                      title={`${tr("downloadReady")} PDF`}
                     >
-                      <Download size={11} /> PDF
+                      PDF
                     </button>
                   </div>
                 </td>
@@ -841,6 +841,7 @@ function PopularReports({ reports, onViewAll }: { reports: PopularReportItem[]; 
 export default function ReportsPage() {
   const t = useTranslations("DemoApp");
   const tr = useTranslations("Reports");
+  const tds = useTranslations("DashboardStates");
   const toastHook = useToast();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -1196,7 +1197,7 @@ export default function ReportsPage() {
     : [];
   const liveTrendTimeline = analytics?.trend_timeline ?? [];
   const footerText = reportsQuery.data?.pagination
-    ? formatPaginationSummary(reportsQuery.data.pagination, tr("paginationExtended.labelLive"))
+    ? formatPaginationSummary(reportsQuery.data.pagination, tr("paginationExtended.labelLive"), (values) => tds("pagination.summary", values))
     : isLiveUnavailable
       ? tr("liveData.fallback")
       : tr("paginationExtended.sampleSummary");

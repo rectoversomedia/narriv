@@ -147,6 +147,17 @@ const sourceIcons = {
   discourse: <Discourse className="size-3.5" />,
 };
 
+// 87186 -> "60d 13h"; 200 -> "3h 20m"; 45 -> "45m".
+function formatMinutes(totalMinutes: number) {
+  const minutes = Math.max(0, Math.round(totalMinutes));
+  const days = Math.floor(minutes / 1440);
+  const hours = Math.floor((minutes % 1440) / 60);
+  const mins = minutes % 60;
+  if (days > 0) return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
+  if (hours > 0) return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  return `${mins}m`;
+}
+
 function makeLinePath(values: number[], width: number, height: number, padding: number) {
   const max = Math.max(...values);
   const min = Math.min(...values);
@@ -218,7 +229,7 @@ function buildMetricCards(ta: ReturnType<typeof useTranslations<"Alerts">>, summ
     { label: ta("v2.metrics.acknowledgedAlerts"), value: String(acknowledgedCount), helper: ta("v2.metrics.ackRate", { val: String(acknowledgmentRate) }), helperTone: acknowledgmentRate >= 80 ? "green" : "blue", icon: Users, tone: "purple", spark: [] },
     { label: ta("v2.metrics.escalated"), value: String(escalatedCount), helper: ta("v2.metrics.overdue", { val: String(overdueCount) }), helperTone: overdueCount > 0 ? "red" : "green", icon: AlertTriangle, tone: "red", spark: [] },
     { label: ta("v2.metrics.resolved"), value: String(resolved), helper: ta("v2.metrics.of", { val1: String(resolved), val2: String(total) }), helperTone: "green", icon: CircleCheck, tone: "green", spark: [] },
-    { label: ta("v2.metrics.avgResponseTime"), value: avgResponseMinutes !== null ? `${avgResponseMinutes}m` : "-", helper: ta("v2.metrics.target", { val: slaTargetMinutes !== null ? `${slaTargetMinutes}m` : "-" }), helperTone: avgResponseMinutes !== null && slaTargetMinutes !== null && avgResponseMinutes > slaTargetMinutes ? "red" : "blue", icon: HelpCircle, tone: "blue", spark: [] },
+    { label: ta("v2.metrics.avgResponseTime"), value: avgResponseMinutes !== null ? formatMinutes(avgResponseMinutes) : "-", helper: ta("v2.metrics.target", { val: slaTargetMinutes !== null ? formatMinutes(slaTargetMinutes) : "-" }), helperTone: avgResponseMinutes !== null && slaTargetMinutes !== null && avgResponseMinutes > slaTargetMinutes ? "red" : "blue", icon: HelpCircle, tone: "blue", spark: [] },
   ];
 }
 

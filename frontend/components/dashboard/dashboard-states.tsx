@@ -260,9 +260,14 @@ export function DashboardPagination({
   );
 }
 
-export function formatPaginationSummary(pagination: PaginationInfo, label: string) {
+// `format` renders the localized DashboardStates "pagination.summary" message.
+export function formatPaginationSummary(
+  pagination: PaginationInfo,
+  label: string,
+  format: (values: { start: number; end: number; total: number; label: string }) => string,
+) {
   const start = pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1;
   const end = Math.min(pagination.page * pagination.limit, pagination.total);
 
-  return `Menampilkan ${start}-${end} dari ${pagination.total} ${label}`;
+  return format({ start, end, total: pagination.total, label });
 }

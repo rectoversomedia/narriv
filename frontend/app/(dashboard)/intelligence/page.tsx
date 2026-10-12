@@ -803,7 +803,8 @@ export default function IntelligencePage() {
             </CardContent>
           </Panel>
 
-          <div className="grid gap-4 lg:grid-cols-[350px_minmax(0,1fr)]">
+          {/* Stacked: beside the summary the five lifecycle cards were crushed to ~28px. */}
+          <div className="grid grid-cols-1 gap-4">
             <Panel>
               <CardContent className="flex h-full flex-col justify-between p-5">
                 <div>
@@ -836,11 +837,11 @@ export default function IntelligencePage() {
                   {ti("lifecycle.title")}
                   <Info size={13} className="text-[#98A2B3]" />
                 </h3>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                   {lifecycleCards.map((phase) => {
                     const toneStyle = toneStyles[phase.tone];
                     return (
-                      <div key={phase.key} className="flex min-h-[182px] flex-col justify-between rounded-[12px] border border-[#EEF1F7] bg-[#FBFCFF] p-3">
+                      <div key={phase.key} className="flex min-h-[150px] min-w-0 flex-col justify-between rounded-[12px] border border-[#EEF1F7] bg-[#FBFCFF] p-3">
                         <div>
                           <p className="text-[10px] font-black uppercase tracking-[0.06em]" style={{ color: toneStyle.color }}>{ti(`lifecycle.phases.${phase.key}.title`)}</p>
                           <p className="mt-2 text-[27px] font-black leading-none tracking-[-0.04em] text-[#101334]">{phase.count}</p>

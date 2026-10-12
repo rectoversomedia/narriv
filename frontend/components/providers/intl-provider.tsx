@@ -28,6 +28,9 @@ export function IntlProvider({ children }: { children: ReactNode }) {
   return (
     <NextIntlClientProvider
       locale={activeLang}
+      // Business default (matches the workspace default). Only next-intl
+      // formatters use it; backend day buckets stay in UTC.
+      timeZone="Asia/Jakarta"
       messages={messages[activeLang] as unknown as Record<string, string>}
     >
       {children}
