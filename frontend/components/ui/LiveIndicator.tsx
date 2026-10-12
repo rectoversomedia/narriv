@@ -22,13 +22,13 @@ const statusConfig: Record<SSEConnectionStatus, {
     label: "Connecting",
     dotClass: "bg-amber-500",
     pulseClass: "bg-amber-500",
-    textClass: "text-amber-600",
+    textClass: "text-amber-700",
   },
   connected: {
     label: "Live",
     dotClass: "bg-emerald-500",
     pulseClass: "bg-emerald-500",
-    textClass: "text-emerald-600",
+    textClass: "text-emerald-700",
   },
   disconnected: {
     label: "Offline",

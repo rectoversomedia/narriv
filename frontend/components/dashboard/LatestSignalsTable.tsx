@@ -32,16 +32,16 @@ export function LatestSignalsTable({ signals }: LatestSignalsTableProps) {
     <div className="cyber-card rounded-xl border border-slate-100 w-full h-[350px] overflow-hidden flex flex-col">
       <div className="border-b border-slate-100 p-5 flex justify-between items-center bg-slate-50">
         <h3 className="text-slate-900 font-bold tracking-tight">Latest Signals</h3>
-        <Activity className="text-slate-400 w-4 h-4" />
+        <Activity className="text-slate-500 w-4 h-4" />
       </div>
       <div className="p-0 flex-1 overflow-auto">
         {signals.length === 0 ? (
-          <div className="text-slate-400 w-full h-full flex items-center justify-center text-sm">
+          <div className="text-slate-500 w-full h-full flex items-center justify-center text-sm">
             No signals found
           </div>
         ) : (
           <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 sticky top-0 text-xs uppercase text-slate-400">
+            <thead className="bg-slate-50 sticky top-0 text-xs uppercase text-slate-500">
               <tr>
                 <th scope="col" className="px-4 py-3 font-semibold">Title</th>
                 <th scope="col" className="px-4 py-3 font-semibold">Platform</th>
@@ -67,7 +67,7 @@ export function LatestSignalsTable({ signals }: LatestSignalsTableProps) {
                       {signal.sentiment}
                     </span>
                   </td>
-                  <td className="px-4 py-3.5 text-xs text-slate-400">
+                  <td className="px-4 py-3.5 text-xs text-slate-500">
                     {new Date(signal.published_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' })}
                   </td>
                 </tr>

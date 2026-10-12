@@ -54,10 +54,10 @@ const signalApiLimit = 20;
 
 const toneStyles: Record<Tone, { color: string; rgb: string; soft: string; text: string; border: string }> = {
   blue: { color: "#465FFF", rgb: "70,95,255", soft: "bg-[#465FFF]/10", text: "text-[#465FFF]", border: "border-[#465FFF]/15" },
-  purple: { color: "#8B5CFF", rgb: "139,92,255", soft: "bg-[#8B5CFF]/10", text: "text-[#8B5CFF]", border: "border-[#8B5CFF]/15" },
-  green: { color: "#10B981", rgb: "16,185,129", soft: "bg-[#10B981]/10", text: "text-[#10B981]", border: "border-[#10B981]/15" },
-  red: { color: "#EF4444", rgb: "239,68,68", soft: "bg-[#EF4444]/10", text: "text-[#EF4444]", border: "border-[#EF4444]/15" },
-  amber: { color: "#F59E0B", rgb: "245,158,11", soft: "bg-[#F59E0B]/10", text: "text-[#F59E0B]", border: "border-[#F59E0B]/15" },
+  purple: { color: "#8B5CFF", rgb: "139,92,255", soft: "bg-[#8B5CFF]/10", text: "text-[#6E44E8]", border: "border-[#8B5CFF]/15" },
+  green: { color: "#10B981", rgb: "16,185,129", soft: "bg-[#10B981]/10", text: "text-[#047857]", border: "border-[#10B981]/15" },
+  red: { color: "#EF4444", rgb: "239,68,68", soft: "bg-[#EF4444]/10", text: "text-[#C81E1E]", border: "border-[#EF4444]/15" },
+  amber: { color: "#F59E0B", rgb: "245,158,11", soft: "bg-[#F59E0B]/10", text: "text-[#B45309]", border: "border-[#F59E0B]/15" },
   slate: { color: "#64748B", rgb: "100,116,139", soft: "bg-slate-100", text: "text-slate-500", border: "border-slate-200" },
 };
 
@@ -75,7 +75,7 @@ const sourceIcons = {
   facebook: <span className="flex size-5 items-center justify-center rounded-[5px] bg-white"><Facebook className="size-3" /></span>,
   playstore: <span className="flex size-5 items-center justify-center rounded-[5px] bg-white"><GooglePlay className="size-3" /></span>,
   appstore: <span className="flex size-5 items-center justify-center rounded-[5px] bg-white"><AppStore className="size-3" /></span>,
-  ticket: <span className="flex size-5 items-center justify-center rounded-[5px] bg-[#8B5CFF]/10 text-[#8B5CFF]"><FileText size={12} /></span>,
+  ticket: <span className="flex size-5 items-center justify-center rounded-[5px] bg-[#8B5CFF]/10 text-[#6E44E8]"><FileText size={12} /></span>,
 };
 
 
@@ -175,7 +175,7 @@ function SummaryPanel({ meta }: { meta?: SignalsMeta }) {
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{t("title")}</h2>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black text-[#8B5CFF]"><Sparkles size={12} /> {t("aiGenerated")}</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black text-[#6E44E8]"><Sparkles size={12} /> {t("aiGenerated")}</span>
           </div>
           {hasData && aiSummary ? (
             <>
@@ -201,7 +201,7 @@ function MetricBlock({ label, value, helper, tone }: { label: string; value: str
   const style = toneStyles[tone];
   return (
     <div className={cn("min-w-0 rounded-[12px] border p-3", style.border, style.soft)}>
-      <p className="text-[11px] font-extrabold text-[#68739F]">{label}</p>
+      <p className="text-[11px] font-extrabold text-[#5F6B94]">{label}</p>
       <p className="mt-2 text-[25px] font-black leading-none tracking-[-0.045em] text-[#101334]">{value}</p>
       <p className={cn("mt-2 text-[10px] font-black", style.text)}>{helper}</p>
     </div>
@@ -216,10 +216,10 @@ function SentimentIcon({ sentiment, tone }: { sentiment: Sentiment; tone: Signal
 
 function SentimentBadge({ sentiment }: { sentiment: Sentiment }) {
   const styles: Record<Sentiment, string> = {
-    NEGATIVE: "bg-[#EF4444]/10 text-[#EF4444]",
-    POSITIVE: "bg-[#10B981]/10 text-[#0C9B69]",
+    NEGATIVE: "bg-[#EF4444]/10 text-[#C81E1E]",
+    POSITIVE: "bg-[#10B981]/10 text-[#047857]",
     NEUTRAL: "bg-slate-100 text-slate-600",
-    MIXED: "bg-[#8B5CFF]/10 text-[#8B5CFF]",
+    MIXED: "bg-[#8B5CFF]/10 text-[#6E44E8]",
     UNANALYZED: "border border-dashed border-slate-300 bg-white text-slate-500",
   };
   return <span className={cn("rounded-full px-2 py-1 text-[9.5px] font-black tracking-[0.12em]", styles[sentiment])}>{sentiment === "UNANALYZED" ? "UNANALYZED" : sentiment}</span>;
@@ -227,10 +227,10 @@ function SentimentBadge({ sentiment }: { sentiment: Sentiment }) {
 
 function TagBadge({ tag }: { tag: string }) {
   const styles: Record<string, string> = {
-    "Reputation Risk": "bg-[#EF4444]/10 text-[#EF4444]",
+    "Reputation Risk": "bg-[#EF4444]/10 text-[#C81E1E]",
     "Customer Experience": "bg-[#F97316]/10 text-[#F97316]",
-    "Operational Risk": "bg-[#F59E0B]/12 text-[#D97706]",
-    "Marketing Opportunity": "bg-[#10B981]/10 text-[#0C9B69]",
+    "Operational Risk": "bg-[#F59E0B]/12 text-[#B45309]",
+    "Marketing Opportunity": "bg-[#10B981]/10 text-[#047857]",
     "+1": "bg-[#EEF2FF] text-[#465FFF]",
   };
   return <span className={cn("rounded-full px-2 py-1 text-[9px] font-black", styles[tag] ?? "bg-slate-100 text-slate-500")}>{tag}</span>;
@@ -250,7 +250,7 @@ function AnalysisBadge({ status, confidence }: { status: "analyzed" | "unanalyze
 function SourceIconList({ row }: { row: SignalRow }) {
   return (
     <div>
-      <p className="mb-2 text-[10px] font-black text-[#68739F]">{row.sourceType}</p>
+      <p className="mb-2 text-[10px] font-black text-[#5F6B94]">{row.sourceType}</p>
       <div className="flex items-center gap-1.5">
         {row.sources.map((source) => <span key={source} className="flex size-5 items-center justify-center rounded-[6px] border border-[#E6EAF2] bg-white">{sourceIcons[source]}</span>)}
       </div>
@@ -326,7 +326,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
           </button>
           <button
             onClick={() => onSelectionChange(new Set())}
-            className="ml-auto flex items-center gap-1 rounded-[6px] px-2 py-1.5 text-[11px] font-bold text-[#68739F] transition hover:bg-[#465FFF]/10 hover:text-[#465FFF]"
+            className="ml-auto flex items-center gap-1 rounded-[6px] px-2 py-1.5 text-[11px] font-bold text-[#5F6B94] transition hover:bg-[#465FFF]/10 hover:text-[#465FFF]"
           >
             <X size={12} />
             Clear
@@ -343,8 +343,8 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
         <div className="flex flex-wrap items-center gap-2">
           {/* The table is not time-limited (newest first), so no time-window badge is shown. */}
           <label className="relative block w-full sm:w-[220px]">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#8B95B8]" />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder={tSignals("search")} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] pl-9 pr-3 text-[11px] font-bold text-[#101334] outline-none transition placeholder:text-[#8B95B8] focus:border-[#465FFF] focus:bg-white" />
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#647099]" />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder={tSignals("search")} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] pl-9 pr-3 text-[11px] font-bold text-[#101334] outline-none transition placeholder:text-[#647099] focus:border-[#465FFF] focus:bg-white" />
           </label>
           <span className="inline-flex h-9 items-center rounded-[8px] border border-[#DDE3EF] bg-gradient-to-r from-white to-[#FAFBFF] px-3 text-[11px] font-black text-[#31406B] shadow-[0_1px_4px_rgba(16,24,40,0.04)]">
             {tSignals("sortLatest")}
@@ -356,7 +356,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
         <div className="overflow-x-auto flex-1 flex flex-col">
           <table className="w-full min-w-[980px] border-collapse text-left">
             <thead>
-              <tr className="border-b border-[#E6EAF2] bg-[#FBFCFF] text-[10px] font-black uppercase tracking-[0.17em] text-[#68739F]">
+              <tr className="border-b border-[#E6EAF2] bg-[#FBFCFF] text-[10px] font-black uppercase tracking-[0.17em] text-[#5F6B94]">
                 <th className="w-10 px-3.5 py-3">
                   <button
                     type="button"
@@ -414,7 +414,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                   <td className="px-3.5 py-4 align-middle"><SourceIconList row={row} /></td>
                   <td className="px-3.5 py-4 align-middle"><SentimentBadge sentiment={row.sentiment} /></td>
                   <td className="px-3.5 py-4 align-middle">
-                    <span className={cn("block max-w-[120px] truncate text-[10.5px] font-bold", row.narrativeCount ? "text-[#465FFF]" : "text-slate-400")} title={row.relatedNarrative}>
+                    <span className={cn("block max-w-[120px] truncate text-[10.5px] font-bold", row.narrativeCount ? "text-[#465FFF]" : "text-slate-500")} title={row.relatedNarrative}>
                       {row.relatedNarrative}{row.narrativeCount > 1 ? ` +${row.narrativeCount - 1}` : ""}
                     </span>
                   </td>
@@ -448,7 +448,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
           </table>
         </div>
         <div className="flex flex-col items-center justify-between gap-3 border-t border-[#EDF1F7] px-4 py-3 sm:flex-row">
-          <p className="text-[11px] font-bold text-[#68739F]">{footerText}</p>
+          <p className="text-[11px] font-bold text-[#5F6B94]">{footerText}</p>
           <DashboardPagination pagination={pagination} onPageChange={onPageChange} disabled={isFetching} />
         </div>
       </Panel>
@@ -463,13 +463,13 @@ function FollowUpPanel({ data }: { data?: SignalsMeta["followUps"] }) {
   return (
     <Panel className="p-4">
       <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{t("title")}</h2>
-      <p className="mt-1 text-[11.5px] font-bold text-[#68739F]">{t("desc")}</p>
+      <p className="mt-1 text-[11.5px] font-bold text-[#5F6B94]">{t("desc")}</p>
       
       {!hasData && data !== undefined ? (
         <div className="mt-4 flex flex-col items-center justify-center gap-2 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-6 text-center">
           <ShieldCheck size={24} className="text-[#A0ABC0]" />
           <p className="text-[12px] font-bold text-[#58648C]">{t("emptyTitle")}</p>
-          <p className="text-[10px] font-semibold text-[#8B95B8]">{t("emptyDesc")}</p>
+          <p className="text-[10px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
         </div>
       ) : (
         <div className="mt-4 space-y-2.5">
@@ -501,13 +501,13 @@ function RecommendationPanel({ data }: { data?: SignalsMeta["recommendations"] }
   return (
     <Panel className="p-4">
       <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{t("title")}</h2>
-      <p className="mt-1 text-[11.5px] font-bold text-[#68739F]">{t("desc")}</p>
+      <p className="mt-1 text-[11.5px] font-bold text-[#5F6B94]">{t("desc")}</p>
       
       {!hasData && data !== undefined ? (
         <div className="mt-4 flex flex-col items-center justify-center gap-2 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-6 text-center">
           <Sparkles size={24} className="text-[#A0ABC0]" />
           <p className="text-[12px] font-bold text-[#58648C]">{t("emptyTitle")}</p>
-          <p className="text-[10px] font-semibold text-[#8B95B8]">{t("emptyDesc")}</p>
+          <p className="text-[10px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
         </div>
       ) : (
         <div className="mt-4 space-y-2.5">
@@ -517,8 +517,8 @@ function RecommendationPanel({ data }: { data?: SignalsMeta["recommendations"] }
             return (
               <div key={item.title} className="grid grid-cols-[32px_minmax(0,1fr)] gap-3 rounded-[11px] border border-[#EDF1F7] bg-[#FBFCFF] p-3 sm:grid-cols-[32px_minmax(0,1fr)_auto]">
                 <span className={cn("flex h-8 w-8 items-center justify-center rounded-[9px]", style.soft, style.text)}><Icon size={15} /></span>
-                <span className="min-w-0"><span className="block truncate text-[11.5px] font-black text-[#101334]">{item.title}</span><span className="mt-1 block text-[10px] font-bold text-[#68739F]">{item.desc}</span></span>
-                <span className={cn("col-start-2 h-fit w-fit rounded-full px-2 py-1 text-[8.5px] font-black sm:col-start-auto", item.tone === "red" || item.tone === "purple" ? "bg-[#EF4444]/10 text-[#EF4444]" : item.tone === "blue" ? "bg-[#F59E0B]/12 text-[#D97706]" : "bg-[#10B981]/10 text-[#0C9B69]")}>{item.badge}</span>
+                <span className="min-w-0"><span className="block truncate text-[11.5px] font-black text-[#101334]">{item.title}</span><span className="mt-1 block text-[10px] font-bold text-[#5F6B94]">{item.desc}</span></span>
+                <span className={cn("col-start-2 h-fit w-fit rounded-full px-2 py-1 text-[8.5px] font-black sm:col-start-auto", item.tone === "red" || item.tone === "purple" ? "bg-[#EF4444]/10 text-[#C81E1E]" : item.tone === "blue" ? "bg-[#F59E0B]/12 text-[#B45309]" : "bg-[#10B981]/10 text-[#047857]")}>{item.badge}</span>
               </div>
             );
           })}
@@ -557,7 +557,7 @@ function SourceDonut({ data, totalSignals }: { data?: SignalsMeta["sourceDistrib
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-[15px] font-black text-[#101334]">{t("title")}</h3>
-          <p className="mt-1 text-[11px] font-bold text-[#68739F]">{t("desc")}</p>
+          <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{t("desc")}</p>
         </div>
         <span className="inline-flex h-8 shrink-0 whitespace-nowrap items-center rounded-full border border-[#E6EAF2] bg-[#F8FAFF] px-3 text-[9px] font-black text-[#53608C]">
           {t("timeframe")}
@@ -568,7 +568,7 @@ function SourceDonut({ data, totalSignals }: { data?: SignalsMeta["sourceDistrib
         <div className="mt-5 flex flex-col items-center justify-center gap-2 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-6 text-center">
           <AlertTriangle size={24} className="text-[#A0ABC0]" />
           <p className="text-[12px] font-bold text-[#58648C]">{t("emptyTitle")}</p>
-          <p className="text-[10px] font-semibold text-[#8B95B8]">{t("emptyDesc")}</p>
+          <p className="text-[10px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
         </div>
       ) : (
         <div className="mt-5 grid gap-5 sm:grid-cols-[136px_1fr] md:grid-cols-1 xl:grid-cols-[136px_1fr]">
@@ -576,14 +576,14 @@ function SourceDonut({ data, totalSignals }: { data?: SignalsMeta["sourceDistrib
             <span className="absolute h-[88px] w-[88px] rounded-full bg-white" />
             <span className="relative text-center">
               <b className="block text-[22px] font-black text-[#101334]">{total.toLocaleString()}</b>
-              <span className="text-[10px] font-bold text-[#68739F]">{t("totalLabel")}</span>
+              <span className="text-[10px] font-bold text-[#5F6B94]">{t("totalLabel")}</span>
             </span>
           </div>
           <div className="space-y-2.5 self-center">
             {items.map((item) => (
               <div key={item.name} className="flex items-center justify-between gap-3 text-[11px] font-bold">
                 <span className="flex items-center gap-2 text-[#31406B]"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />{item.name}</span>
-                <span className="text-[#68739F]">{item.value}</span>
+                <span className="text-[#5F6B94]">{item.value}</span>
               </div>
             ))}
           </div>
@@ -631,8 +631,8 @@ function TimelineChart({ data, labels }: { data?: SignalsMeta["timeline"]; label
 
   return (
     <Panel className="p-4">
-      <h3 className="text-[15px] font-black text-[#101334]">{t("title")} <span className="text-[11px] font-bold text-[#68739F]">{t("period")}</span></h3>
-      <p className="mt-1 text-[11px] font-bold text-[#68739F]">{t("desc")}</p>
+      <h3 className="text-[15px] font-black text-[#101334]">{t("title")} <span className="text-[11px] font-bold text-[#5F6B94]">{t("period")}</span></h3>
+      <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{t("desc")}</p>
 
       {isLoading ? (
         <div className="relative mt-5 h-[170px] overflow-hidden rounded-[12px] bg-gradient-to-b from-white to-[#F8FAFF]">
@@ -649,11 +649,11 @@ function TimelineChart({ data, labels }: { data?: SignalsMeta["timeline"]; label
       ) : !hasData || !hasNonZero ? (
         <div className="mt-5 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDF1F7]">
-            <AlertTriangle size={18} className="text-[#8B95B8]" />
+            <AlertTriangle size={18} className="text-[#647099]" />
           </div>
           <div>
             <p className="text-[12px] font-bold text-[#58648C]">{t("emptyTitle")}</p>
-            <p className="mt-1 text-[10px] font-semibold text-[#8B95B8]">{t("emptyDesc")}</p>
+            <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
           </div>
         </div>
       ) : (
@@ -715,7 +715,7 @@ function TimelineChart({ data, labels }: { data?: SignalsMeta["timeline"]; label
             })()}
           </svg>
 
-          <div className="absolute inset-x-3 bottom-1 flex justify-between text-[10px] font-bold text-[#68739F]">
+          <div className="absolute inset-x-3 bottom-1 flex justify-between text-[10px] font-bold text-[#5F6B94]">
             {sampledIndices.map((i) => <span key={i}>{points[i]?.label ?? ""}</span>)}
           </div>
         </div>
@@ -733,7 +733,7 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-[15px] font-black text-[#101334]">{t("title")}</h3>
-          <p className="mt-1 text-[11px] font-bold text-[#68739F]">{t("desc")}</p>
+          <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{t("desc")}</p>
         </div>
         <Link href="/workspace/cases" className="text-[11px] font-black text-[#465FFF]">{t("viewAll")}</Link>
       </div>
@@ -742,7 +742,7 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
         <div className="mt-4 flex flex-col items-center justify-center gap-2 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-6 text-center">
           <ShieldCheck size={24} className="text-[#A0ABC0]" />
           <p className="text-[12px] font-bold text-[#58648C]">{t("emptyTitle")}</p>
-          <p className="text-[10px] font-semibold text-[#8B95B8]">{t("emptyDesc")}</p>
+          <p className="text-[10px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
         </div>
       ) : (
         <div className="mt-4 space-y-3">
@@ -753,9 +753,9 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
                 <span className={cn("flex h-8 w-8 items-center justify-center rounded-[9px]", style.soft, style.text)}><Zap size={15} /></span>
                 <span className="min-w-0">
                   <span className="block truncate text-[12px] font-black text-[#101334]">{item.title}</span>
-                  <span className="mt-1 block text-[10px] font-bold text-[#68739F]">{item.meta}</span>
+                  <span className="mt-1 block text-[10px] font-bold text-[#5F6B94]">{item.meta}</span>
                 </span>
-                <span className={cn("col-start-2 h-fit w-fit rounded-full px-2 py-1 text-[9px] font-black sm:col-start-auto", item.badge === "Investigating" || item.badge === "open" ? "bg-[#465FFF]/10 text-[#465FFF]" : "bg-[#F59E0B]/12 text-[#D97706]")}>{item.badge}</span>
+                <span className={cn("col-start-2 h-fit w-fit rounded-full px-2 py-1 text-[9px] font-black sm:col-start-auto", item.badge === "Investigating" || item.badge === "open" ? "bg-[#465FFF]/10 text-[#465FFF]" : "bg-[#F59E0B]/12 text-[#B45309]")}>{item.badge}</span>
               </div>
             );
           })}
@@ -774,12 +774,12 @@ function LiveRelatedNarratives() {
     <div className="mt-6 rounded-[14px] border border-[#DDE3EF] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.03)]">
       <div className="mb-4 flex items-center gap-2">
         <h3 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{t("relatedNarratives")}</h3>
-        <span title="Narrative clusters built from your workspace's signals" className="cursor-help text-[#8B95B8]"><Info size={13} /></span>
+        <span title="Narrative clusters built from your workspace's signals" className="cursor-help text-[#647099]"><Info size={13} /></span>
       </div>
       {q.isLoading ? (
-        <p className="text-[12px] font-bold text-slate-400">Loading narratives…</p>
+        <p className="text-[12px] font-bold text-slate-500">Loading narratives…</p>
       ) : q.data === null ? (
-        <p className="text-[12px] font-bold text-amber-600">Narratives could not be loaded.</p>
+        <p className="text-[12px] font-bold text-amber-700">Narratives could not be loaded.</p>
       ) : items.length === 0 ? (
         <p className="text-[12px] font-bold text-slate-500">No narrative clusters yet. They form once enough related signals are ingested.</p>
       ) : (
@@ -787,7 +787,7 @@ function LiveRelatedNarratives() {
           {items.map((n) => (
             <Link key={n.id} href="/intelligence" className="rounded-[12px] border border-[#EDF1F7] bg-[#FBFCFF] p-4 transition hover:border-[#465FFF]/30">
               <p className="line-clamp-2 text-[13px] font-black text-[#101334]">{n.title}</p>
-              <p className="mt-2 text-[11px] font-bold text-[#68739F]">
+              <p className="mt-2 text-[11px] font-bold text-[#5F6B94]">
                 {n.signalCount} signal(s) · confidence {n.confidence === null ? "—" : `${n.confidence}%`} · 24h trend {n.velocity}
               </p>
               <p className="mt-1 text-[10.5px] font-bold capitalize text-slate-500">{n.sentiment}</p>
@@ -808,7 +808,7 @@ function RelatedNarrativesSection({ isDemo = false }: { isDemo?: boolean }) {
     <div className="mt-6 rounded-[14px] border border-[#DDE3EF] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.03)]">
       <div className="mb-4 flex items-center gap-2">
         <h3 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{t("relatedNarratives")}</h3>
-        <span title="Related narratives are clustered from signals with similar themes and sources" className="cursor-help text-[#8B95B8]"><Info size={13} /></span>
+        <span title="Related narratives are clustered from signals with similar themes and sources" className="cursor-help text-[#647099]"><Info size={13} /></span>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         {narratives.map((narrative) => (
@@ -1098,8 +1098,8 @@ export default function SignalsPage() {
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
       {isDemoSession && (
         <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
-          <Sparkles size={16} className="text-[#8B5CFF]" />
-          <p className="text-[13px] font-bold text-[#8B5CFF]">
+          <Sparkles size={16} className="text-[#6E44E8]" />
+          <p className="text-[13px] font-bold text-[#6E44E8]">
             Demo workspace — some content on this page may be illustrative examples rather than live data
           </p>
         </div>

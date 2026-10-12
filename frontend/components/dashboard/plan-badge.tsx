@@ -25,7 +25,7 @@ const PLAN_CONFIG: Record<PlanKey, {
   decision: {
     name: "DECISION",
     icon: Target,
-    color: "text-amber-600",
+    color: "text-amber-700",
     bgColor: "bg-amber-100",
   },
   command: {

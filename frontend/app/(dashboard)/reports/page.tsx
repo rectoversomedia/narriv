@@ -51,10 +51,10 @@ type ToneStyle = {
 
 const toneStyles: Record<Tone, ToneStyle> = {
   blue: { color: "#465FFF", rgb: "70,95,255", soft: "bg-[#465FFF]/10", text: "text-[#465FFF]", border: "border-[#465FFF]/15" },
-  purple: { color: "#8B5CFF", rgb: "139,92,255", soft: "bg-[#8B5CFF]/10", text: "text-[#8B5CFF]", border: "border-[#8B5CFF]/15" },
-  green: { color: "#10B981", rgb: "16,185,129", soft: "bg-[#10B981]/10", text: "text-[#10B981]", border: "border-[#10B981]/15" },
-  red: { color: "#EF4444", rgb: "239,68,68", soft: "bg-[#EF4444]/10", text: "text-[#EF4444]", border: "border-[#EF4444]/15" },
-  amber: { color: "#F59E0B", rgb: "245,158,11", soft: "bg-[#F59E0B]/10", text: "text-[#F59E0B]", border: "border-[#F59E0B]/15" },
+  purple: { color: "#8B5CFF", rgb: "139,92,255", soft: "bg-[#8B5CFF]/10", text: "text-[#6E44E8]", border: "border-[#8B5CFF]/15" },
+  green: { color: "#10B981", rgb: "16,185,129", soft: "bg-[#10B981]/10", text: "text-[#047857]", border: "border-[#10B981]/15" },
+  red: { color: "#EF4444", rgb: "239,68,68", soft: "bg-[#EF4444]/10", text: "text-[#C81E1E]", border: "border-[#EF4444]/15" },
+  amber: { color: "#F59E0B", rgb: "245,158,11", soft: "bg-[#F59E0B]/10", text: "text-[#B45309]", border: "border-[#F59E0B]/15" },
   slate: { color: "#64748B", rgb: "100,116,139", soft: "bg-slate-100", text: "text-slate-500", border: "border-slate-200" },
 };
 
@@ -75,9 +75,9 @@ const reportsApiLimit = 10;
 
 const quickActions = [
   { key: "shareStakeholder", descKey: "shareDesc", icon: Share2, color: "text-[#465FFF] bg-[#465FFF]/10" },
-  { key: "scheduleReport", descKey: "scheduleDesc", icon: CalendarClock, color: "text-[#10B981] bg-[#10B981]/10" },
-  { key: "customReport", descKey: "customDesc", icon: Plus, color: "text-[#8B5CFF] bg-[#8B5CFF]/10" },
-  { key: "viewHistory", descKey: "historyDesc", icon: Clock, color: "text-[#F59E0B] bg-[#F59E0B]/10" },
+  { key: "scheduleReport", descKey: "scheduleDesc", icon: CalendarClock, color: "text-[#047857] bg-[#10B981]/10" },
+  { key: "customReport", descKey: "customDesc", icon: Plus, color: "text-[#6E44E8] bg-[#8B5CFF]/10" },
+  { key: "viewHistory", descKey: "historyDesc", icon: Clock, color: "text-[#B45309] bg-[#F59E0B]/10" },
 ];
 
 type FormatDistributionItem = { name: string; value: string; color: string };
@@ -145,9 +145,9 @@ function MetricCard({ label, value, helper, icon: Icon, tone }: { label: string;
         <Icon size={19} strokeWidth={2.35} />
       </span>
       <div className="min-w-0">
-        <span className="block text-[10px] font-extrabold text-[#68739F]">{label}</span>
+        <span className="block text-[10px] font-extrabold text-[#5F6B94]">{label}</span>
         <span className="mt-0.5 block text-[24px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</span>
-        <span className={cn("mt-1.5 flex items-center gap-1 text-[10px] font-black", isTrend ? "text-[#10B981]" : "text-[#58648C]")}>
+        <span className={cn("mt-1.5 flex items-center gap-1 text-[10px] font-black", isTrend ? "text-[#047857]" : "text-[#58648C]")}>
           {isTrend && <span className="h-1 w-1 rounded-full bg-[#10B981]" />}
           {helper}
         </span>
@@ -214,7 +214,7 @@ function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeReco
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{tr("aiSummary.title")}</h2>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black text-[#8B5CFF]">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black text-[#6E44E8]">
               <Sparkles size={12} /> {tr("aiSummary.generated")}
             </span>
           </div>
@@ -270,11 +270,11 @@ function ReportPreviewSidebar({
   return (
     <Panel className="p-4">
       <h3 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{tr("preview.title")}</h3>
-      <p className="mt-1 text-[11.5px] font-bold text-[#68739F]">{tr("preview.desc")}</p>
+      <p className="mt-1 text-[11.5px] font-bold text-[#5F6B94]">{tr("preview.desc")}</p>
       
       {isPending ? (
         <div className="mt-4 flex h-[200px] items-center justify-center">
-          <RefreshCcw className="animate-spin text-[#8A94B8]" size={20} />
+          <RefreshCcw className="animate-spin text-[#647099]" size={20} />
         </div>
       ) : latestReport ? (
         <>
@@ -283,7 +283,7 @@ function ReportPreviewSidebar({
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[#465FFF]/10 text-[#465FFF]"><FileText size={18} /></span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-black text-[#101334]">{reportTitle}</p>
-                <p className="mt-0.5 text-[10px] font-bold text-[#68739F]">{tr("preview.latestReport")}</p>
+                <p className="mt-0.5 text-[10px] font-bold text-[#5F6B94]">{tr("preview.latestReport")}</p>
               </div>
               {reportStatus && <StatusBadge status={reportStatus} />}
             </div>
@@ -312,14 +312,14 @@ function ReportPreviewSidebar({
                 <div className="min-w-0 space-y-2.5 self-center">
                   {reportSections.slice(0, 4).map((section) => (
                     <div key={section} className="flex items-center justify-between gap-2 text-[9.5px] font-black text-[#31406B]">
-                      <span className="flex min-w-0 items-center gap-2"><CheckCircle2 size={13} className="shrink-0 text-[#10B981]" /> <span className="truncate">{section}</span></span>
-                      <span className="text-[#10B981]">{tr("preview.ready")}</span>
+                      <span className="flex min-w-0 items-center gap-2"><CheckCircle2 size={13} className="shrink-0 text-[#047857]" /> <span className="truncate">{section}</span></span>
+                      <span className="text-[#047857]">{tr("preview.ready")}</span>
                     </div>
                   ))}
                 </div>
               </div>
             ) : (
-              <div className="mt-3 text-[10px] font-bold text-[#8A94B8]">{tr("preview.noSections")}</div>
+              <div className="mt-3 text-[10px] font-bold text-[#647099]">{tr("preview.noSections")}</div>
             )}
           </div>
 
@@ -346,7 +346,7 @@ function ReportPreviewSidebar({
             <FileText size={28} className="text-[#DDE3EF]" />
           </div>
           <p className="text-[12px] font-bold text-[#53608C]">{tr("preview.emptyTitle")}</p>
-          <p className="mt-1 text-[10px] font-bold text-[#8A94B8]">{tr("preview.emptyDesc")}</p>
+          <p className="mt-1 text-[10px] font-bold text-[#647099]">{tr("preview.emptyDesc")}</p>
         </div>
       )}
     </Panel>
@@ -383,7 +383,7 @@ function QuickActions({ onShare, onSchedule, onCreate, onViewHistory }: { onShar
                   <span className="mt-0.5 block truncate text-[9.5px] font-bold text-[#58648C]">{tr(`quickActions.${action.descKey}`)}</span>
                 </div>
               </div>
-              <ArrowRight size={13} className="text-[#8B95B8] shrink-0" />
+              <ArrowRight size={13} className="text-[#647099] shrink-0" />
             </button>
           );
         })}
@@ -395,9 +395,9 @@ function QuickActions({ onShare, onSchedule, onCreate, onViewHistory }: { onShar
 function StatusBadge({ status }: { status: ReportStatus }) {
   const tr = useTranslations("Reports");
   const styles: Record<ReportStatus, string> = {
-    READY: "bg-[#10B981]/10 text-[#10B981]",
-    REVIEW: "bg-[#F59E0B]/10 text-[#F59E0B]",
-    DRAFT: "bg-[#8B5CFF]/10 text-[#8B5CFF]",
+    READY: "bg-[#10B981]/10 text-[#047857]",
+    REVIEW: "bg-[#F59E0B]/10 text-[#B45309]",
+    DRAFT: "bg-[#8B5CFF]/10 text-[#6E44E8]",
     SCHEDULED: "bg-[#465FFF]/10 text-[#465FFF]",
     ARCHIVED: "bg-slate-100 text-slate-600",
   };
@@ -467,17 +467,17 @@ function ReportsTable({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{tr("table.title")}</h2>
-          <p className="mt-1 text-[11px] font-bold text-[#68739F]">{tr("table.desc")}</p>
+          <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{tr("table.desc")}</p>
         </div>
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           <label className="relative block w-full sm:w-[180px]">
-            <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-[#8B95B8]" />
+            <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-[#647099]" />
             <input
               type="search"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder={tr("filter.search")}
-              className="h-8 w-full rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] pl-8 pr-3 text-[10px] font-bold text-[#101334] outline-none transition placeholder:text-[#8B95B8] focus:border-[#465FFF] focus:bg-white"
+              className="h-8 w-full rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] pl-8 pr-3 text-[10px] font-bold text-[#101334] outline-none transition placeholder:text-[#647099] focus:border-[#465FFF] focus:bg-white"
             />
           </label>
           <div className="relative flex-1 sm:flex-none">
@@ -531,7 +531,7 @@ function ReportsTable({
       <div className="mt-4 overflow-x-auto">
         <table className="w-full min-w-[780px] border-collapse text-left">
           <thead>
-            <tr className="border-b border-[#E6EAF2] text-[9.5px] font-black uppercase tracking-[0.15em] text-[#68739F]">
+            <tr className="border-b border-[#E6EAF2] text-[9.5px] font-black uppercase tracking-[0.15em] text-[#5F6B94]">
               <th className="px-3 py-3 w-[280px]">{tr("table.report")}</th>
               <th className="px-3 py-3">{tr("table.type")}</th>
               <th className="px-3 py-3">{tr("table.period")}</th>
@@ -553,12 +553,12 @@ function ReportsTable({
                       <Link href={`/reports/${report.id}`} className="text-[12.5px] font-black leading-snug text-[#101334] hover:text-[#465FFF] transition-colors">
                         {report.title}
                       </Link>
-                      <p className="mt-0.5 text-[11px] font-bold leading-snug text-[#68739F]">{report.description}</p>
+                      <p className="mt-0.5 text-[11px] font-bold leading-snug text-[#5F6B94]">{report.description}</p>
                     </div>
                   </div>
                 </td>
                 <td className="px-3 py-3.5 align-middle text-[11px] font-black text-[#31406B]">{report.type}</td>
-                <td className="px-3 py-3.5 align-middle text-[11px] font-bold text-[#68739F]">{report.period}</td>
+                <td className="px-3 py-3.5 align-middle text-[11px] font-bold text-[#5F6B94]">{report.period}</td>
                 <td className="px-3 py-3.5 align-middle"><StatusBadge status={report.status} /></td>
                 <td className="px-3 py-3.5 align-middle">
                   {report.progress !== null ? (
@@ -567,12 +567,12 @@ function ReportsTable({
                       <span className="text-[10px] font-black text-[#31406B]">{report.progress}%</span>
                     </div>
                   ) : (
-                    <span className="text-[#8B95B8] text-[11px]">-</span>
+                    <span className="text-[#647099] text-[11px]">-</span>
                   )}
                 </td>
                 <td className="px-3 py-3.5 align-middle">
                   <span className="block text-[11px] font-black text-[#31406B]">{report.created}</span>
-                  <span className="mt-0.5 block text-[9.5px] font-bold text-[#8B95B8]">{report.createdTime}</span>
+                  <span className="mt-0.5 block text-[9.5px] font-bold text-[#647099]">{report.createdTime}</span>
                 </td>
                 <td className="px-3 py-3.5 text-right align-middle">
                   <div className="inline-flex items-center justify-end gap-1 whitespace-nowrap">
@@ -580,7 +580,7 @@ function ReportsTable({
                       type="button"
                       onClick={() => onExportFile?.(String(report.id), "csv")}
                       disabled={isFetching}
-                      className="inline-flex items-center gap-1 rounded-md border border-[#DDE3EF] bg-white px-1.5 py-1.5 text-[10px] font-black text-[#68739F] transition hover:bg-[#EEF2FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex items-center gap-1 rounded-md border border-[#DDE3EF] bg-white px-1.5 py-1.5 text-[10px] font-black text-[#5F6B94] transition hover:bg-[#EEF2FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
                       title={`${tr("downloadReady")} CSV`}
                     >
                       CSV
@@ -589,7 +589,7 @@ function ReportsTable({
                       type="button"
                       onClick={() => onExportFile?.(String(report.id), "xlsx")}
                       disabled={isFetching}
-                      className="inline-flex items-center gap-1 rounded-md border border-[#DDE3EF] bg-white px-1.5 py-1.5 text-[10px] font-black text-[#68739F] transition hover:bg-[#EEF2FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex items-center gap-1 rounded-md border border-[#DDE3EF] bg-white px-1.5 py-1.5 text-[10px] font-black text-[#5F6B94] transition hover:bg-[#EEF2FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
                       title={`${tr("downloadReady")} Excel`}
                     >
                       Excel
@@ -598,7 +598,7 @@ function ReportsTable({
                       type="button"
                       onClick={() => onExport(String(report.id))}
                       disabled={isFetching}
-                      className="inline-flex items-center gap-1 rounded-md border border-[#DDE3EF] bg-white px-1.5 py-1.5 text-[10px] font-black text-[#68739F] transition hover:bg-[#EEF2FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex items-center gap-1 rounded-md border border-[#DDE3EF] bg-white px-1.5 py-1.5 text-[10px] font-black text-[#5F6B94] transition hover:bg-[#EEF2FF] hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-50"
                       aria-label={tr("exportAria", { title: report.title })}
                       title={`${tr("downloadReady")} PDF`}
                     >
@@ -611,7 +611,7 @@ function ReportsTable({
               <tr>
                 <td colSpan={7} className="px-3 py-10 text-center">
                   <p className="text-[13px] font-black text-[#101334]">{tr("noMatch")}</p>
-                  <p className="mt-1 text-[11px] font-bold text-[#68739F]">{tr("noMatchDesc")}</p>
+                  <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{tr("noMatchDesc")}</p>
                 </td>
               </tr>
             )}
@@ -621,7 +621,7 @@ function ReportsTable({
 
       {/* Table Footer */}
       <div className="mt-3 flex flex-col items-center justify-between gap-3 border-t border-[#EDF1F7] pt-3 sm:flex-row">
-        <p className="text-[11px] font-bold text-[#68739F]">{footerText}</p>
+        <p className="text-[11px] font-bold text-[#5F6B94]">{footerText}</p>
         <DashboardPagination pagination={pagination} onPageChange={onPageChange} disabled={isFetching} />
       </div>
     </Panel>
@@ -657,7 +657,7 @@ function FormatDonut({ distribution }: { distribution: Array<{ name: string; val
   return (
     <Panel className="p-4">
       <h3 className="text-[15px] font-black text-[#101334]">{tr("formatDonut.title")}</h3>
-      <p className="mt-1 text-[11px] font-bold text-[#68739F]">{tr("formatDonut.desc")}</p>
+      <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{tr("formatDonut.desc")}</p>
       <div className="mt-5 grid gap-5 sm:grid-cols-[136px_1fr] md:grid-cols-1 xl:grid-cols-[136px_1fr]">
         {hasData ? (
           <>
@@ -665,7 +665,7 @@ function FormatDonut({ distribution }: { distribution: Array<{ name: string; val
               <span className="absolute h-[88px] w-[88px] rounded-full bg-white" />
               <span className="relative text-center">
                 <b className="block text-[22px] font-black text-[#101334]">{totalForPercent}</b>
-                <span className="text-[10px] font-bold text-[#68739F]">{tr("formatDonut.total")}</span>
+                <span className="text-[10px] font-bold text-[#5F6B94]">{tr("formatDonut.total")}</span>
               </span>
             </div>
             <div className="space-y-2.5 self-center">
@@ -678,7 +678,7 @@ function FormatDonut({ distribution }: { distribution: Array<{ name: string; val
                       <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
                       {item.name}
                     </span>
-                    <span className="text-[#68739F]">{num} ({pct}%)</span>
+                    <span className="text-[#5F6B94]">{num} ({pct}%)</span>
                   </div>
                 );
               })}
@@ -690,7 +690,7 @@ function FormatDonut({ distribution }: { distribution: Array<{ name: string; val
               <FileText size={32} className="text-[#DDE3EF]" />
             </div>
             <p className="text-[13px] font-bold text-[#53608C]">{tr("formatDonut.noData")}</p>
-            <p className="mt-1 text-[11px] font-bold text-[#8A94B8]">{tr("formatDonut.noDataDesc")}</p>
+            <p className="mt-1 text-[11px] font-bold text-[#647099]">{tr("formatDonut.noDataDesc")}</p>
           </div>
         )}
       </div>
@@ -742,13 +742,13 @@ function TimelineChart({ data }: { data: ReportsAnalyticsResponse["trend_timelin
 
   return (
     <Panel className="p-4">
-      <h3 className="text-[15px] font-black text-[#101334]">{tr("timeline.title")} <span className="text-[11px] font-bold text-[#68739F]">{tr("timeline.period")}</span></h3>
-      <p className="mt-1 text-[11px] font-bold text-[#68739F]">{tr("timeline.desc")}</p>
+      <h3 className="text-[15px] font-black text-[#101334]">{tr("timeline.title")} <span className="text-[11px] font-bold text-[#5F6B94]">{tr("timeline.period")}</span></h3>
+      <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{tr("timeline.desc")}</p>
 
       {hasData ? (
         <div className="relative mt-5 h-[190px] rounded-[12px] bg-gradient-to-b from-white to-[#F8FAFF]">
           {/* Y Axis */}
-          <div className="absolute left-0 top-0 bottom-[22px] flex w-[38px] flex-col justify-between py-1 text-right text-[9px] font-bold text-[#8B95B8] pointer-events-none">
+          <div className="absolute left-0 top-0 bottom-[22px] flex w-[38px] flex-col justify-between py-1 text-right text-[9px] font-bold text-[#647099] pointer-events-none">
             {yTicks.slice().reverse().map((tick) => <span key={tick}>{tick}</span>)}
           </div>
 
@@ -781,7 +781,7 @@ function TimelineChart({ data }: { data: ReportsAnalyticsResponse["trend_timelin
           </div>
 
           {/* X Axis Labels */}
-          <div className="absolute inset-x-0 bottom-0 flex justify-between pl-[40px] text-[9px] font-bold text-[#68739F]">
+          <div className="absolute inset-x-0 bottom-0 flex justify-between pl-[40px] text-[9px] font-bold text-[#5F6B94]">
             {xLabels.map((item) => <span key={item.index}>{item.label}</span>)}
           </div>
         </div>
@@ -791,7 +791,7 @@ function TimelineChart({ data }: { data: ReportsAnalyticsResponse["trend_timelin
             <RefreshCcw size={28} className="text-[#DDE3EF]" />
           </div>
           <p className="text-[13px] font-bold text-[#53608C]">{tr("timeline.noData")}</p>
-          <p className="mt-1 text-[11px] font-bold text-[#8A94B8]">{tr("timeline.noDataDesc")}</p>
+          <p className="mt-1 text-[11px] font-bold text-[#647099]">{tr("timeline.noDataDesc")}</p>
         </div>
       )}
     </Panel>
@@ -804,7 +804,7 @@ function PopularReports({ reports, onViewAll }: { reports: PopularReportItem[]; 
     <Panel className="p-4 flex flex-col justify-between">
       <div>
         <h3 className="text-[15px] font-black text-[#101334]">{tr("popular.title")}</h3>
-        <p className="mt-1 text-[11px] font-bold text-[#68739F]">{tr("popular.desc")}</p>
+        <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{tr("popular.desc")}</p>
         
         <div className="mt-5 space-y-3">
           {reports.length > 0 ? reports.slice(0, 5).map((report, idx) => (
@@ -815,12 +815,12 @@ function PopularReports({ reports, onViewAll }: { reports: PopularReportItem[]; 
               <div className="min-w-0 flex-1">
                 <span className="block truncate text-[12px] font-black text-[#101334]">{report.title}</span>
               </div>
-              <span className="text-[11px] font-bold text-[#68739F] shrink-0">{report.views}</span>
+              <span className="text-[11px] font-bold text-[#5F6B94] shrink-0">{report.views}</span>
             </div>
           )) : (
             <div className="flex flex-col items-center justify-center py-6 text-center">
               <FileText size={24} className="text-[#DDE3EF] mb-2" />
-              <p className="text-[11px] font-bold text-[#8A94B8]">{tr("popular.noData")}</p>
+              <p className="text-[11px] font-bold text-[#647099]">{tr("popular.noData")}</p>
             </div>
           )}
         </div>
@@ -1206,8 +1206,8 @@ export default function ReportsPage() {
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
       {isDemoSession && (
         <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
-          <Sparkles size={16} className="text-[#8B5CFF]" />
-          <p className="text-[13px] font-bold text-[#8B5CFF]">
+          <Sparkles size={16} className="text-[#6E44E8]" />
+          <p className="text-[13px] font-bold text-[#6E44E8]">
             Demo Workspace — Seeded sandbox workspace for evaluation
           </p>
         </div>
@@ -1306,7 +1306,7 @@ export default function ReportsPage() {
                   </button>
                 )}
               </div>
-              <button type="button" onClick={() => { setIsScheduleModalOpen(false); setIsScheduleFormOpen(false); }} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+              <button type="button" onClick={() => { setIsScheduleModalOpen(false); setIsScheduleFormOpen(false); }} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
                 <X size={20} />
               </button>
             </div>
@@ -1379,16 +1379,16 @@ export default function ReportsPage() {
                       <span className="text-[11px] font-black text-[#31406B]">{tr("scheduleModal.recipientsLabel")}</span>
                     </div>
                     <div>
-                      <label className="mb-1 block text-[10px] font-bold text-[#8A94B8]">{tr("scheduleModal.toLabel")}</label>
+                      <label className="mb-1 block text-[10px] font-bold text-[#647099]">{tr("scheduleModal.toLabel")}</label>
                       <input name="recipients" defaultValue={editingSchedule?.recipients?.join(", ") || ""} placeholder="email@example.com, email2@example.com" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF]" />
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div>
-                        <label className="mb-1 block text-[10px] font-bold text-[#8A94B8]">{tr("scheduleModal.ccLabel")}</label>
+                        <label className="mb-1 block text-[10px] font-bold text-[#647099]">{tr("scheduleModal.ccLabel")}</label>
                         <input name="ccRecipients" defaultValue={editingSchedule?.ccRecipients?.join(", ") || ""} placeholder="cc@example.com" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF]" />
                       </div>
                       <div>
-                        <label className="mb-1 block text-[10px] font-bold text-[#8A94B8]">{tr("scheduleModal.bccLabel")}</label>
+                        <label className="mb-1 block text-[10px] font-bold text-[#647099]">{tr("scheduleModal.bccLabel")}</label>
                         <input name="bccRecipients" defaultValue={editingSchedule?.bccRecipients?.join(", ") || ""} placeholder="bcc@example.com" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF]" />
                       </div>
                     </div>
@@ -1399,7 +1399,7 @@ export default function ReportsPage() {
                         type="button"
                         onClick={() => sendTestEmailMutation.mutate(editingSchedule.id!)}
                         disabled={sendTestEmailMutation.isPending}
-                        className="flex w-full items-center justify-center gap-2 rounded-[6px] bg-white px-4 py-2 text-[11px] font-black text-[#10B981] border border-[#10B981]/30 transition hover:bg-[#10B981]/10 disabled:opacity-50"
+                        className="flex w-full items-center justify-center gap-2 rounded-[6px] bg-white px-4 py-2 text-[11px] font-black text-[#047857] border border-[#10B981]/30 transition hover:bg-[#10B981]/10 disabled:opacity-50"
                       >
                         {sendTestEmailMutation.isPending ? (
                           <RefreshCcw size={13} className="animate-spin" />
@@ -1423,7 +1423,7 @@ export default function ReportsPage() {
                 <div className="grid gap-3">
                   {schedulesQuery.isPending ? (
                     <div className="flex h-40 items-center justify-center">
-                      <RefreshCcw className="animate-spin text-[#8A94B8]" size={24} />
+                      <RefreshCcw className="animate-spin text-[#647099]" size={24} />
                     </div>
                   ) : schedulesQuery.data && schedulesQuery.data.data.length > 0 ? (
                     schedulesQuery.data.data.map((schedule) => (
@@ -1431,7 +1431,7 @@ export default function ReportsPage() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <h3 className="font-black text-[#101334] text-[13px] truncate">{schedule.name}</h3>
-                            <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black", schedule.enabled ? "bg-[#10B981]/10 text-[#10B981]" : "bg-[#EF4444]/10 text-[#EF4444]")}>
+                            <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black", schedule.enabled ? "bg-[#10B981]/10 text-[#047857]" : "bg-[#EF4444]/10 text-[#C81E1E]")}>
                               {schedule.enabled ? tr("scheduleModal.enabled") : tr("scheduleModal.disabled")}
                             </span>
                           </div>
@@ -1440,11 +1440,11 @@ export default function ReportsPage() {
                               <CalendarClock size={11} /> {tr(`scheduleModal.${schedule.cadence}`)}
                             </span>
                             {schedule.dayOfWeek && (
-                              <span className="flex items-center gap-1.5 text-[9.5px] bg-[#8B5CFF]/10 text-[#8B5CFF] px-2.5 py-1.5 rounded-[6px] font-black">
+                              <span className="flex items-center gap-1.5 text-[9.5px] bg-[#8B5CFF]/10 text-[#6E44E8] px-2.5 py-1.5 rounded-[6px] font-black">
                                 {tr(`scheduleModal.${schedule.dayOfWeek}`)}
                               </span>
                             )}
-                            <span className="flex items-center gap-1.5 text-[9.5px] bg-[#F59E0B]/10 text-[#F59E0B] px-2.5 py-1.5 rounded-[6px] font-black">
+                            <span className="flex items-center gap-1.5 text-[9.5px] bg-[#F59E0B]/10 text-[#B45309] px-2.5 py-1.5 rounded-[6px] font-black">
                               {schedule.timeOfDay}
                             </span>
                             {schedule.timezone && (
@@ -1456,22 +1456,22 @@ export default function ReportsPage() {
                           {/* Recipients display */}
                           {schedule.recipients && schedule.recipients.length > 0 && (
                             <div className="flex items-center gap-1.5 mt-2">
-                              <Mail size={11} className="text-[#8B95B8] shrink-0" />
-                              <span className="text-[9.5px] font-bold text-[#8A94B8] truncate">
+                              <Mail size={11} className="text-[#647099] shrink-0" />
+                              <span className="text-[9.5px] font-bold text-[#647099] truncate">
                                 {schedule.recipients.slice(0, 2).join(", ")}
                                 {schedule.recipients.length > 2 && ` +${schedule.recipients.length - 2}`}
                               </span>
                               {(schedule.ccRecipients?.length ?? 0) > 0 && (
-                                <span className="text-[9.5px] font-bold text-[#8B95B8]">
+                                <span className="text-[9.5px] font-bold text-[#647099]">
                                   {" "}(CC: {schedule.ccRecipients!.length})
                                 </span>
                               )}
                             </div>
                           )}
-                          <div className="flex items-center gap-3 mt-2 text-[10px] font-bold text-[#8A94B8]">
+                          <div className="flex items-center gap-3 mt-2 text-[10px] font-bold text-[#647099]">
                             <span>{tr("scheduleModal.lastRun")}: {schedule.lastRunAt ? new Date(schedule.lastRunAt).toLocaleString() : tr("scheduleModal.never")}</span>
                           </div>
-                          <div className="text-[10px] font-bold text-[#10B981] mt-0.5">
+                          <div className="text-[10px] font-bold text-[#047857] mt-0.5">
                             {tr("scheduleModal.nextRun")}: {schedule.nextRunAt ? new Date(schedule.nextRunAt).toLocaleString() : tr("scheduleModal.never")}
                           </div>
                         </div>
@@ -1480,18 +1480,18 @@ export default function ReportsPage() {
                             type="button"
                             onClick={() => sendTestEmailMutation.mutate(schedule.id)}
                             disabled={sendTestEmailMutation.isPending}
-                            className="flex h-8 items-center justify-center gap-1.5 rounded-[8px] border border-[#10B981]/30 bg-white px-2.5 text-[10px] font-black text-[#10B981] transition hover:bg-[#ECFDF5] disabled:opacity-50"
+                            className="flex h-8 items-center justify-center gap-1.5 rounded-[8px] border border-[#10B981]/30 bg-white px-2.5 text-[10px] font-black text-[#047857] transition hover:bg-[#ECFDF5] disabled:opacity-50"
                             title={tr("scheduleModal.sendTestEmail")}
                           >
                             <Mail size={13} />
                           </button>
-                          <button type="button" onClick={() => toggleScheduleMutation.mutate(schedule.id)} className={cn("flex h-8 items-center justify-center gap-1.5 rounded-[8px] border px-2.5 text-[10px] font-black transition", schedule.enabled ? "border-[#FAD7D7] bg-white text-[#EF4444] hover:bg-[#FFF4F4]" : "border-[#D1FAE5] bg-white text-[#10B981] hover:bg-[#ECFDF5]")}>
+                          <button type="button" onClick={() => toggleScheduleMutation.mutate(schedule.id)} className={cn("flex h-8 items-center justify-center gap-1.5 rounded-[8px] border px-2.5 text-[10px] font-black transition", schedule.enabled ? "border-[#FAD7D7] bg-white text-[#C81E1E] hover:bg-[#FFF4F4]" : "border-[#D1FAE5] bg-white text-[#047857] hover:bg-[#ECFDF5]")}>
                             {schedule.enabled ? tr("scheduleModal.disable") : tr("scheduleModal.enable")}
                           </button>
                           <button type="button" onClick={() => { setEditingSchedule(schedule); setIsScheduleFormOpen(true); }} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#465FFF] transition hover:bg-[#F5F7FC]" aria-label={tr("actions.editSchedule")}>
                             <Edit2 size={13} />
                           </button>
-                          <button type="button" onClick={() => { if (window.confirm(tr("confirm.deleteSchedule"))) deleteScheduleMutation.mutate(schedule.id); }} disabled={deleteScheduleMutation.isPending} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#FAD7D7] bg-white text-[#EF4444] transition hover:bg-[#FFF4F4]" aria-label={tr("actions.deleteSchedule")}>
+                          <button type="button" onClick={() => { if (window.confirm(tr("confirm.deleteSchedule"))) deleteScheduleMutation.mutate(schedule.id); }} disabled={deleteScheduleMutation.isPending} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#FAD7D7] bg-white text-[#C81E1E] transition hover:bg-[#FFF4F4]" aria-label={tr("actions.deleteSchedule")}>
                             <Trash2 size={13} />
                           </button>
                         </div>
@@ -1499,9 +1499,9 @@ export default function ReportsPage() {
                     ))
                   ) : (
                     <div className="flex h-40 flex-col items-center justify-center text-center">
-                      <CalendarClock size={24} className="text-[#8B95B8] mb-3" />
+                      <CalendarClock size={24} className="text-[#647099] mb-3" />
                       <p className="text-[13px] font-bold text-[#53608C]">{tr("scheduleModal.empty")}</p>
-                      <p className="text-[11px] font-bold text-[#8A94B8] mt-1">{tr("scheduleModal.emptyDesc")}</p>
+                      <p className="text-[11px] font-bold text-[#647099] mt-1">{tr("scheduleModal.emptyDesc")}</p>
                     </div>
                   )}
                 </div>
@@ -1519,9 +1519,9 @@ export default function ReportsPage() {
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div>
                 <h2 id="reports-popular-dialog-title" className="text-lg font-black text-[#101334]">{tr("popular.title")}</h2>
-                <p className="mt-1 text-[11px] font-bold text-[#68739F]">{tr("popular.desc")}</p>
+                <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{tr("popular.desc")}</p>
               </div>
-              <button type="button" onClick={() => setIsPopularModalOpen(false)} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+              <button type="button" onClick={() => setIsPopularModalOpen(false)} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
                 <X size={20} />
               </button>
             </div>
@@ -1536,7 +1536,7 @@ export default function ReportsPage() {
                       <div className="min-w-0 flex-1">
                         <span className="block truncate text-[13px] font-black text-[#101334]">{report.title}</span>
                       </div>
-                      <span className="text-[12px] font-bold text-[#68739F] shrink-0">{report.views}</span>
+                      <span className="text-[12px] font-bold text-[#5F6B94] shrink-0">{report.views}</span>
                     </div>
                   ))}
                 </div>
@@ -1559,9 +1559,9 @@ export default function ReportsPage() {
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div>
                 <h2 id="reports-share-dialog-title" className="text-lg font-black text-[#101334]">{tr("shareModal.title")}</h2>
-                <p className="mt-1 text-[11px] font-bold text-[#68739F]">{tr("shareModal.desc")}</p>
+                <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{tr("shareModal.desc")}</p>
               </div>
-              <button type="button" onClick={() => setIsShareModalOpen(false)} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+              <button type="button" onClick={() => setIsShareModalOpen(false)} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
                 <X size={20} />
               </button>
             </div>
@@ -1569,7 +1569,7 @@ export default function ReportsPage() {
               {rows.length > 0 ? (
                 <form onSubmit={handleShareReport} className="space-y-4">
                   <div className="rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-3">
-                    <p className="text-[10px] font-bold text-[#8A94B8]">{tr("shareModal.title")}</p>
+                    <p className="text-[10px] font-bold text-[#647099]">{tr("shareModal.title")}</p>
                     <p className="mt-1 text-[12px] font-black text-[#101334] truncate">{rows[0].title}</p>
                   </div>
                   <div>
@@ -1616,7 +1616,7 @@ export default function ReportsPage() {
                   </button>
                 )}
               </div>
-              <button type="button" onClick={() => { setIsTemplatesModalOpen(false); setIsFormOpen(false); }} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+              <button type="button" onClick={() => { setIsTemplatesModalOpen(false); setIsFormOpen(false); }} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
                 <X size={20} />
               </button>
             </div>
@@ -1634,7 +1634,7 @@ export default function ReportsPage() {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("templateForm.formatLabel")}</label>
-                      <div className="flex h-9 w-full items-center rounded-[8px] border border-[#DDE3EF] bg-[#F5F7FC] px-3 text-[12px] font-bold text-[#8A94B8]">
+                      <div className="flex h-9 w-full items-center rounded-[8px] border border-[#DDE3EF] bg-[#F5F7FC] px-3 text-[12px] font-bold text-[#647099]">
                         PDF
                       </div>
                       <input type="hidden" name="format" value="PDF" />
@@ -1662,7 +1662,7 @@ export default function ReportsPage() {
                 <div className="grid gap-3">
                   {templatesQuery.isPending ? (
                     <div className="flex h-40 items-center justify-center">
-                      <RefreshCcw className="animate-spin text-[#8A94B8]" size={24} />
+                      <RefreshCcw className="animate-spin text-[#647099]" size={24} />
                     </div>
                   ) : templatesQuery.data && templatesQuery.data.data.length > 0 ? (
                     templatesQuery.data.data.map((template) => (
@@ -1674,18 +1674,18 @@ export default function ReportsPage() {
                               {template.sectionCount} Sections
                             </span>
                           </div>
-                          <p className="text-[11px] font-bold text-[#68739F] mt-1 leading-relaxed">{template.description}</p>
+                          <p className="text-[11px] font-bold text-[#5F6B94] mt-1 leading-relaxed">{template.description}</p>
                           <div className="flex flex-wrap gap-2 mt-3">
                             <span className="flex items-center gap-1.5 text-[9.5px] bg-[#465FFF]/10 text-[#465FFF] px-2.5 py-1.5 rounded-[6px] font-black uppercase tracking-[0.05em]">
                               <FileText size={11} /> {template.format}
                             </span>
-                            <span className="flex items-center gap-1.5 text-[9.5px] bg-[#8B5CFF]/10 text-[#8B5CFF] px-2.5 py-1.5 rounded-[6px] font-black uppercase tracking-[0.05em]">
+                            <span className="flex items-center gap-1.5 text-[9.5px] bg-[#8B5CFF]/10 text-[#6E44E8] px-2.5 py-1.5 rounded-[6px] font-black uppercase tracking-[0.05em]">
                               <CalendarClock size={11} /> {template.cadence}
                             </span>
                           </div>
                         </div>
                         {template.isSystem ? (
-                          <span className="shrink-0 self-start sm:self-center rounded-[8px] bg-[#F5F7FC] px-3 py-1.5 text-[10px] font-black text-[#8A94B8] border border-[#E6EAF2]">
+                          <span className="shrink-0 self-start sm:self-center rounded-[8px] bg-[#F5F7FC] px-3 py-1.5 text-[10px] font-black text-[#647099] border border-[#E6EAF2]">
                             {tr("buttons.systemTemplate")}
                           </span>
                         ) : (
@@ -1693,7 +1693,7 @@ export default function ReportsPage() {
                             <button type="button" onClick={() => { setEditingTemplate(template); setIsFormOpen(true); }} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#465FFF] transition hover:bg-[#F5F7FC]" aria-label={tr("actions.editTemplate")}>
                               <Edit2 size={13} />
                             </button>
-                            <button type="button" onClick={() => { if (window.confirm(tr("confirm.deleteTemplate"))) deleteTemplateMutation.mutate(template.key); }} disabled={deleteTemplateMutation.isPending} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#FAD7D7] bg-white text-[#EF4444] transition hover:bg-[#FFF4F4]" aria-label={tr("actions.deleteTemplate")}>
+                            <button type="button" onClick={() => { if (window.confirm(tr("confirm.deleteTemplate"))) deleteTemplateMutation.mutate(template.key); }} disabled={deleteTemplateMutation.isPending} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#FAD7D7] bg-white text-[#C81E1E] transition hover:bg-[#FFF4F4]" aria-label={tr("actions.deleteTemplate")}>
                               <Trash2 size={13} />
                             </button>
                           </div>
@@ -1702,7 +1702,7 @@ export default function ReportsPage() {
                     ))
                   ) : (
                     <div className="flex h-40 flex-col items-center justify-center text-center">
-                      <FileText size={24} className="text-[#8B95B8] mb-3" />
+                      <FileText size={24} className="text-[#647099] mb-3" />
                       <p className="text-sm font-bold text-[#53608C]">{tr("empty.title")}</p>
                     </div>
                   )}
@@ -1720,9 +1720,9 @@ export default function ReportsPage() {
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div>
                 <h2 id="reports-create-dialog-title" className="text-lg font-black text-[#101334]">{tr("createModal.title")}</h2>
-                <p className="mt-1 text-[11px] font-bold text-[#68739F]">{tr("createModal.desc")}</p>
+                <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{tr("createModal.desc")}</p>
               </div>
-              <button type="button" onClick={() => setIsCreateModalOpen(false)} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+              <button type="button" onClick={() => setIsCreateModalOpen(false)} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
                 <X size={20} />
               </button>
             </div>
@@ -1737,18 +1737,18 @@ export default function ReportsPage() {
                     ))}
                   </select>
                   {!templatesQuery.isPending && (!templatesQuery.data || templatesQuery.data.data.length === 0) && (
-                    <p className="mt-1.5 text-[10px] font-bold text-[#EF4444]">{tr("createModal.noTemplates")}</p>
+                    <p className="mt-1.5 text-[10px] font-bold text-[#C81E1E]">{tr("createModal.noTemplates")}</p>
                   )}
                 </div>
                 <div>
                   <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("createModal.dateRangeLabel")}</label>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
-                      <label className="mb-1 block text-[10px] font-bold text-[#8A94B8]">{tr("createModal.startLabel")}</label>
+                      <label className="mb-1 block text-[10px] font-bold text-[#647099]">{tr("createModal.startLabel")}</label>
                       <input name="startDate" type="date" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
                     </div>
                     <div>
-                      <label className="mb-1 block text-[10px] font-bold text-[#8A94B8]">{tr("createModal.endLabel")}</label>
+                      <label className="mb-1 block text-[10px] font-bold text-[#647099]">{tr("createModal.endLabel")}</label>
                       <input name="endDate" type="date" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white" />
                     </div>
                   </div>

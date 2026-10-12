@@ -72,10 +72,10 @@ function UsageBar({ label, used, limit, icon: Icon, color }: UsageBarProps) {
         </div>
         <span className={cn(
           "text-[11px] font-bold",
-          isExceeded ? "text-red-600" : isWarning ? "text-amber-600" : "text-slate-500"
+          isExceeded ? "text-red-600" : isWarning ? "text-amber-700" : "text-slate-500"
         )}>
           {isUnlimited ? (
-            <span className="text-emerald-600">Unlimited</span>
+            <span className="text-emerald-700">Unlimited</span>
           ) : (
             <>{formatNumber(used)} / {formatNumber(limit)}</>
           )}

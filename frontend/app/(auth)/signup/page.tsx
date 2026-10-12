@@ -120,10 +120,10 @@ export default function SignupPage() {
           </div>
 
           <Field data-invalid={!!errors.terms} orientation="horizontal" className="items-start gap-3 text-[14px] font-medium text-[#111536]">
-            <input id="signup-terms" type="checkbox" aria-invalid={!!errors.terms || undefined} className="mt-0.5 h-[18px] w-[18px] accent-[#465FFF]" {...register("terms")} />
+            <input id="signup-terms" type="checkbox" aria-labelledby="signup-terms-label" aria-invalid={!!errors.terms || undefined} className="mt-0.5 h-[18px] w-[18px] accent-[#465FFF]" {...register("terms")} />
             <FieldContent className="text-[14px] font-medium leading-6 text-[#111536]">
-              <span>
-                {t("termsPrefix")} <button type="button" className="font-semibold text-[#465FFF]">{t("terms")}</button> {t("termsMiddle")} <button type="button" className="font-semibold text-[#465FFF]">{t("privacy")}</button>
+              <span id="signup-terms-label">
+                {t("termsPrefix")} <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#465FFF] hover:underline">{t("terms")}</a> {t("termsMiddle")} <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#465FFF] hover:underline">{t("privacy")}</a>
               </span>
               <FieldError className="mt-1 text-[#F04438]">{errors.terms?.message}</FieldError>
             </FieldContent>

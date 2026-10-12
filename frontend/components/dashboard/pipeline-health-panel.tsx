@@ -19,7 +19,7 @@ export function PipelineHealthPanel({ className }: { className?: string }) {
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#465FFF]"><Activity size={18} /></span>
           <div>
             <h2 id="pipeline-health-title" className="text-[14px] font-black text-[#101334]">Ingestion &amp; analysis health</h2>
-            <p className="text-[11px] font-semibold text-[#68739F]">From the scheduled ingestion log and stored analyses for this workspace.</p>
+            <p className="text-[11px] font-semibold text-[#5F6B94]">From the scheduled ingestion log and stored analyses for this workspace.</p>
           </div>
         </div>
         <button type="button" onClick={() => query.refetch()} disabled={query.isFetching} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#DDE3EF] px-3 text-[11px] font-black text-slate-600 hover:bg-slate-50 disabled:opacity-50">
@@ -41,8 +41,8 @@ export function PipelineHealthPanel({ className }: { className?: string }) {
 function Stat({ label, value, hint, tone = "default" }: { label: string; value: string; hint?: string; tone?: "default" | "warn" | "bad" }) {
   return (
     <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3" title={hint}>
-      <dt className="text-[10px] font-bold uppercase tracking-wide text-[#8A94B8]">{label}</dt>
-      <dd className={cn("mt-1 text-[15px] font-black", tone === "bad" ? "text-rose-600" : tone === "warn" ? "text-amber-600" : "text-[#101334]")}>{value}</dd>
+      <dt className="text-[10px] font-bold uppercase tracking-wide text-[#647099]">{label}</dt>
+      <dd className={cn("mt-1 text-[15px] font-black", tone === "bad" ? "text-rose-600" : tone === "warn" ? "text-amber-700" : "text-[#101334]")}>{value}</dd>
     </div>
   );
 }

@@ -19,25 +19,25 @@ const toneStyles: Record<StateTone, { bg: string; text: string; ring: string; bu
   },
   purple: {
     bg: "bg-[#8B5CFF]/10",
-    text: "text-[#8B5CFF]",
+    text: "text-[#6E44E8]",
     ring: "ring-[#8B5CFF]/15",
     button: "bg-[#8B5CFF] hover:bg-[#764ee6]",
   },
   green: {
     bg: "bg-[#10B981]/10",
-    text: "text-[#10B981]",
+    text: "text-[#047857]",
     ring: "ring-[#10B981]/15",
     button: "bg-[#10B981] hover:bg-[#0ea371]",
   },
   amber: {
     bg: "bg-[#F59E0B]/10",
-    text: "text-[#F59E0B]",
+    text: "text-[#B45309]",
     ring: "ring-[#F59E0B]/15",
     button: "bg-[#F59E0B] hover:bg-[#d98b08]",
   },
   red: {
     bg: "bg-[#EF4444]/10",
-    text: "text-[#EF4444]",
+    text: "text-[#C81E1E]",
     ring: "ring-[#EF4444]/15",
     button: "bg-[#EF4444] hover:bg-[#dc3333]",
   },
@@ -233,7 +233,7 @@ export function DashboardPagination({
 
   return (
     <nav className="flex flex-wrap items-center justify-center gap-2 sm:justify-end" aria-label="Pagination">
-      <span className="text-[11px] font-black text-[#68739F]" aria-live="polite">
+      <span className="text-[11px] font-black text-[#5F6B94]" aria-live="polite">
         {tp("pagination.pageInfo", { page: total === 0 ? 0 : page, totalPages })}
       </span>
       <div className="flex items-center gap-1.5">

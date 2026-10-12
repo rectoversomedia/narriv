@@ -141,7 +141,7 @@ export function WorldActivityMap({
       onMouseLeave={handleMouseLeave}
     >
       {mapLoadFailed ? (
-        <div className="flex h-full items-center justify-center text-xs font-bold text-slate-400">
+        <div className="flex h-full items-center justify-center text-xs font-bold text-slate-500">
           {mapErrorLabel}
         </div>
       ) : geography ? (
@@ -177,7 +177,7 @@ export function WorldActivityMap({
                               </span>
                             </>
                           ) : (
-                            <span className="text-[11px] font-semibold text-slate-400">{emptyLabel}</span>
+                            <span className="text-[11px] font-semibold text-slate-500">{emptyLabel}</span>
                           )}
                         </div>
                       );

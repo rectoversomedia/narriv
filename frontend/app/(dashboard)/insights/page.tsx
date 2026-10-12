@@ -118,6 +118,7 @@ export default function InsightsPage() {
             <div className="flex items-center gap-2">
               <div className="relative">
                 <select
+                  aria-label="Time window"
                   value={windowId}
                   onChange={(e) => setWindowId(e.target.value)}
                   className="appearance-none rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-[13px] font-semibold text-slate-700 focus:border-slate-400 focus:outline-none"
@@ -126,7 +127,7 @@ export default function InsightsPage() {
                     <option key={w.id} value={w.id}>{w.label}</option>
                   ))}
                 </select>
-                <ChevronDown size={14} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400" />
+                <ChevronDown size={14} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-500" />
               </div>
               <button
                 type="button"

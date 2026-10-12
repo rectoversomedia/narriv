@@ -133,7 +133,7 @@ export function UpgradeModal({ isOpen, onClose, feature, limit, currentPlan }: U
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-600"
           >
             <X size={20} />
           </button>
@@ -218,14 +218,14 @@ export function UpgradeModal({ isOpen, onClose, feature, limit, currentPlan }: U
                 <div className="space-y-1 mb-4">
                   {plan.features?.slice(0, 3).map((feat: string) => (
                     <div key={feat} className="flex items-center gap-1.5">
-                      <Check size={12} className="text-emerald-500" />
+                      <Check size={12} className="text-emerald-700" />
                       <span className="text-[10px] text-slate-600 truncate">{feat.replace(/_/g, " ")}</span>
                     </div>
                   ))}
                   {(plan.features?.length || 0) > 3 && (
                     <div className="flex items-center gap-1.5">
                       <Check size={12} className="text-slate-300" />
-                      <span className="text-[10px] text-slate-400">
+                      <span className="text-[10px] text-slate-500">
                         +{(plan.features?.length || 0) - 3} more
                       </span>
                     </div>

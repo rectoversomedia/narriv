@@ -6,7 +6,7 @@ export function DashboardSkeleton() {
     <div className="space-y-6 animate-pulse pb-10">
       <div>
         <h1 className="text-slate-900 text-3xl font-black tracking-tight flex items-center gap-2">
-          <Cpu className="text-slate-400 w-8 h-8" />
+          <Cpu className="text-slate-500 w-8 h-8" />
           <div className="bg-slate-200 h-8 rounded w-48"></div>
         </h1>
         <div className="bg-slate-100 h-4 rounded w-96 mt-4"></div>

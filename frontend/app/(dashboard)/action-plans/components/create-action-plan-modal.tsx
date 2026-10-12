@@ -142,7 +142,7 @@ export function CreateActionPlanModal({
               <p id={descriptionId} className="text-xs font-semibold text-slate-500">{t("desc")}</p>
             </div>
           </div>
-          <button type="button" onClick={() => onOpenChange(false)} className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
+          <button type="button" onClick={() => onOpenChange(false)} className="rounded-full p-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700">
             <X size={16} />
           </button>
         </div>
@@ -234,7 +234,7 @@ export function CreateActionPlanModal({
             </select>
           </div>
 
-          <p className="text-[11px] font-semibold text-slate-400">{t("hint")}</p>
+          <p className="text-[11px] font-semibold text-slate-500">{t("hint")}</p>
 
           <div className="mt-2 flex gap-3">
             <button

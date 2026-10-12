@@ -57,8 +57,8 @@ const typeLabel: Record<string, string> = {
 };
 
 const typeColor: Record<string, string> = {
-  alert: "bg-[#EF4444]/10 text-[#EF4444]",
-  narrative: "bg-[#8B5CFF]/10 text-[#8B5CFF]",
+  alert: "bg-[#EF4444]/10 text-[#C81E1E]",
+  narrative: "bg-[#8B5CFF]/10 text-[#6E44E8]",
   nav: "bg-[#465FFF]/10 text-[#465FFF]",
 };
 
@@ -92,11 +92,11 @@ function getNotificationMeta(type: string) {
 function NotificationState({ icon: Icon, title, description, action }: { icon: LucideIcon; title: string; description: string; action?: React.ReactNode }) {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-10 text-center">
-      <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-400">
+      <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-500">
         <Icon size={20} />
       </span>
       <p className="mt-3 text-sm font-black text-slate-800">{title}</p>
-      <p className="mt-1 max-w-[260px] text-xs font-semibold leading-relaxed text-slate-400">{description}</p>
+      <p className="mt-1 max-w-[260px] text-xs font-semibold leading-relaxed text-slate-500">{description}</p>
       {action}
     </div>
   );
@@ -333,7 +333,7 @@ export function Topbar() {
             placeholder={t("search")}
           />
           {searchQuery && (
-            <button type="button" onClick={() => { setSearchQuery(""); setSearchOpen(false); }} className="text-slate-400 hover:text-slate-600">
+            <button type="button" onClick={() => { setSearchQuery(""); setSearchOpen(false); }} className="text-slate-500 hover:text-slate-600">
               <X size={16} />
             </button>
           )}
@@ -354,13 +354,13 @@ export function Topbar() {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13px] font-bold text-slate-900 group-hover:text-[#465FFF]">{result.title}</span>
-                    <span className="block truncate text-[11px] font-semibold text-slate-400">{result.subtitle}</span>
+                    <span className="block truncate text-[11px] font-semibold text-slate-500">{result.subtitle}</span>
                   </span>
                 </button>
               ))}
             </div>
             <div className="border-t border-slate-100 bg-slate-50/80 px-3 py-2">
-              <p className="text-center text-[11px] font-bold text-slate-400">
+              <p className="text-center text-[11px] font-bold text-slate-500">
                 {searchResults.length} hasil ditemukan
               </p>
             </div>
@@ -371,7 +371,7 @@ export function Topbar() {
           <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-[14px] border border-slate-200 bg-white p-6 text-center shadow-[0_24px_70px_rgba(15,23,42,0.16)]">
             <Search size={24} className="mx-auto text-slate-300" />
             <p className="mt-2 text-[13px] font-bold text-slate-500">Tidak ada hasil untuk &quot;{searchQuery}&quot;</p>
-            <p className="mt-1 text-[11px] font-semibold text-slate-400">Coba kata kunci lain</p>
+            <p className="mt-1 text-[11px] font-semibold text-slate-500">Coba kata kunci lain</p>
           </div>
         )}
       </div>
@@ -484,7 +484,7 @@ export function Topbar() {
                       <Badge variant={meta.badgeVariant} className="rounded-full text-[10px] font-black">
                         {meta.label}
                       </Badge>
-                      <span className="mt-2 block text-[11px] font-bold text-slate-400">
+                      <span className="mt-2 block text-[11px] font-bold text-slate-500">
                         {formatNotificationTime(notification.createdAt, notificationNow || Date.now(), language === "id" ? "id" : "en")}
                       </span>
                     </span>
@@ -513,7 +513,7 @@ export function Topbar() {
             <p className="mt-1 text-[13px] font-semibold text-[var(--text-muted)]">{user?.workspace || "Workspace"}</p>
           </div>
         </div>
-        <button type="button" onClick={handleLogout} className="rounded-xl p-2 text-[var(--text-muted)] hover:bg-slate-100 hover:text-[#EF4444] transition-colors" aria-label={t("logout")} title={t("logout")}>
+        <button type="button" onClick={handleLogout} className="rounded-xl p-2 text-[var(--text-muted)] hover:bg-slate-100 hover:text-[#C81E1E] transition-colors" aria-label={t("logout")} title={t("logout")}>
           <LogOut size={18} />
         </button>
       </div>

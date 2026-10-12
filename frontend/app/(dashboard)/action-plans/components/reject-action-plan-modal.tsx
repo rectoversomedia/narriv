@@ -84,7 +84,7 @@ export function RejectActionPlanModal({
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EF4444]/10 text-[#EF4444]">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EF4444]/10 text-[#C81E1E]">
               <AlertCircle size={20} />
             </span>
             <div>
@@ -100,7 +100,7 @@ export function RejectActionPlanModal({
             type="button"
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
-            className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+            className="rounded-full p-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
           >
             <X size={16} />
           </button>
@@ -108,7 +108,7 @@ export function RejectActionPlanModal({
 
         {planTitle && (
           <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50/80 p-3">
-            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+            <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">
               {t("planTitleLabel")}
             </p>
             <p className="mt-0.5 text-xs font-bold text-slate-700 line-clamp-1">
@@ -123,8 +123,8 @@ export function RejectActionPlanModal({
               htmlFor={textareaId}
               className="text-[12px] font-black text-slate-700 flex items-center justify-between"
             >
-              <span>{t("reasonLabel")} <span className="text-[#EF4444]">*</span></span>
-              <span className="text-[10px] font-medium text-slate-400">{reason.length}/1000</span>
+              <span>{t("reasonLabel")} <span className="text-[#C81E1E]">*</span></span>
+              <span className="text-[10px] font-medium text-slate-500">{reason.length}/1000</span>
             </label>
             <textarea
               id={textareaId}
@@ -139,14 +139,14 @@ export function RejectActionPlanModal({
               onBlur={() => setTouched(true)}
               placeholder={t("reasonPlaceholder")}
               disabled={isSubmitting}
-              className={`w-full rounded-xl border p-3 text-xs text-slate-800 placeholder:text-slate-400 transition focus:outline-none focus:ring-2 disabled:bg-slate-50 disabled:opacity-60 ${
+              className={`w-full rounded-xl border p-3 text-xs text-slate-800 placeholder:text-slate-500 transition focus:outline-none focus:ring-2 disabled:bg-slate-50 disabled:opacity-60 ${
                 showError
                   ? "border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/20"
                   : "border-slate-200 focus:border-[#465FFF] focus:ring-[#465FFF]/15"
               }`}
             />
             {showError && (
-              <p className="text-[11px] font-semibold text-[#EF4444] flex items-center gap-1 mt-1">
+              <p className="text-[11px] font-semibold text-[#C81E1E] flex items-center gap-1 mt-1">
                 <AlertCircle size={12} />
                 {t("reasonRequired")}
               </p>

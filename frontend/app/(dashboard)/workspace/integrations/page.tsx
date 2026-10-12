@@ -12,6 +12,7 @@ import { createIntegration, deleteIntegration, getIntegrations, updateIntegratio
 import { getMockIntegrations } from "@/lib/demo-mock-data";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
+import { intlLocale } from "@/store/useUiStore";
 const emptyIntegrations: IntegrationRecord[] = [];
 
 function platformLabel(platform: string, options: { value: string; label: string }[]) {
@@ -27,7 +28,7 @@ function statusVariant(status: string): "green" | "amber" | "red" | "slate" {
 
 function formatDateTime(value: string | null, neverSyncedLabel: string) {
   if (!value) return neverSyncedLabel;
-  return new Intl.DateTimeFormat("id-ID", {
+  return new Intl.DateTimeFormat(intlLocale(), {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
@@ -198,8 +199,8 @@ export default function IntegrationsPage() {
       {/* Demo Workspace Banner */}
       {isDemoSession && (
         <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
-          <Sparkles size={16} className="text-[#8B5CFF]" />
-          <p className="text-[13px] font-bold text-[#8B5CFF]">
+          <Sparkles size={16} className="text-[#6E44E8]" />
+          <p className="text-[13px] font-bold text-[#6E44E8]">
             Demo Workspace — Seeded sandbox workspace for evaluation
           </p>
         </div>
@@ -232,15 +233,15 @@ export default function IntegrationsPage() {
                 <span className={cn(
                   "flex h-10 w-10 items-center justify-center rounded-xl",
                   metric.tone === "blue" && "bg-[#465FFF]/10 text-[#465FFF]",
-                  metric.tone === "green" && "bg-[#10B981]/10 text-[#10B981]",
-                  metric.tone === "purple" && "bg-[#8B5CFF]/10 text-[#8B5CFF]",
-                  metric.tone === "red" && "bg-[#EF4444]/10 text-[#EF4444]"
+                  metric.tone === "green" && "bg-[#10B981]/10 text-[#047857]",
+                  metric.tone === "purple" && "bg-[#8B5CFF]/10 text-[#6E44E8]",
+                  metric.tone === "red" && "bg-[#EF4444]/10 text-[#C81E1E]"
                 )}>
                   <Icon size={18} />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-400">{metric.label}</p>
-                  <p className="mt-1 text-2xl font-black tracking-[-0.04em] text-slate-950">{metric.value.toLocaleString("id-ID")}</p>
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{metric.label}</p>
+                  <p className="mt-1 text-2xl font-black tracking-[-0.04em] text-slate-950">{metric.value.toLocaleString(intlLocale())}</p>
                 </div>
               </div>
               <p className="mt-3 text-[11px] font-bold text-slate-500">{metric.helper}</p>
@@ -308,7 +309,7 @@ export default function IntegrationsPage() {
 
         <section className="space-y-4">
           <div className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-3 flex items-center gap-2 text-[12px] font-black uppercase tracking-[0.12em] text-slate-400">
+            <div className="mb-3 flex items-center gap-2 text-[12px] font-black uppercase tracking-[0.12em] text-slate-500">
               <Filter size={14} />
               {t("filter.filterTitle")}
             </div>
@@ -383,13 +384,14 @@ export default function IntegrationsPage() {
                             <div>
                               <p className="font-black text-slate-950">{item.name}</p>
                               <p className="mt-1 text-xs font-semibold text-slate-500">{platformLabel(item.platform, platformOptions)} · {item.id.slice(0, 8)}</p>
-                              {item.errorMessage ? <p className="mt-1 text-xs font-bold text-[#EF4444]">{item.errorMessage}</p> : null}
+                              {item.errorMessage ? <p className="mt-1 text-xs font-bold text-[#C81E1E]">{item.errorMessage}</p> : null}
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 align-top">
                           <Badge variant={statusVariant(item.status)} className="mb-2 rounded-full normal-case tracking-normal">{item.status}</Badge>
                           <select
+                            aria-label={`${t("filter.status")}: ${item.name}`}
                             value={item.status}
                             onChange={(event) => updateStatusMutation.mutate({ id: item.id, status: event.target.value })}
                             disabled={updateStatusMutation.isPending}
@@ -405,7 +407,7 @@ export default function IntegrationsPage() {
                         </td>
                         <td className="px-6 py-4 align-top">
                           <p className="font-bold text-slate-700">{formatDateTime(item.lastSyncAt, t("table.neverSynced"))}</p>
-                          <p className="mt-1 text-xs font-semibold text-slate-400">Created {formatDateTime(item.createdAt, t("table.neverSynced"))}</p>
+                          <p className="mt-1 text-xs font-semibold text-slate-500">Created {formatDateTime(item.createdAt, t("table.neverSynced"))}</p>
                         </td>
                         <td className="px-6 py-4 text-right align-top">
                           <div className="flex items-center justify-end gap-2">
@@ -424,7 +426,7 @@ export default function IntegrationsPage() {
                             <button
                               type="button"
                               onClick={() => setDeleteTarget(item)}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-500"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-red-50 hover:text-red-700"
                               aria-label={`Disconnect ${item.name} integration`}
                             >
                               <Trash2 size={16} />

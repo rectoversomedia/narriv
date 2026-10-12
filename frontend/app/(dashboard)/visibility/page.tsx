@@ -124,7 +124,7 @@ function MetricCard({ label, value, subValue, helper, icon, tone, sparklineValue
             <p className="text-[12px] font-semibold leading-tight text-body">{label}</p>
           </div>
           {helper && helper !== "-" ? (
-            <p className={cn("shrink-0 flex items-center gap-1 text-[11px] font-semibold whitespace-nowrap tabular-nums", isNegative ? "text-[#EF4444]" : "text-[#10B981]")}>
+            <p className={cn("shrink-0 flex items-center gap-1 text-[11px] font-semibold whitespace-nowrap tabular-nums", isNegative ? "text-[#C81E1E]" : "text-[#047857]")}>
               <span className={cn("size-1.5 rounded-full", isNegative ? "bg-[#EF4444]" : "bg-[#10B981]")} aria-hidden="true" />
               {helper}
             </p>
@@ -136,7 +136,7 @@ function MetricCard({ label, value, subValue, helper, icon, tone, sparklineValue
           <div className="min-w-0 flex-1">
             <p className="text-[24px] font-black leading-none tracking-[-0.04em] text-[#101334] tabular-nums truncate">{value}</p>
             {subValue ? (
-              <p className="mt-1 text-[10.5px] font-bold text-[#8A94B8] tabular-nums truncate">{subValue}</p>
+              <p className="mt-1 text-[10.5px] font-bold text-[#647099] tabular-nums truncate">{subValue}</p>
             ) : null}
           </div>
           {sparklineValues.length >= 2 ? (
@@ -164,7 +164,7 @@ function MentionsTrendChart({ datasets, dates, fallbackDates, maxValue, emptyTex
   if (!hasData) {
     return (
       <div className="flex h-[180px] items-center justify-center rounded-[10px] border border-dashed border-[#D9DEEA] bg-[#F8FAFF]">
-        <p className="text-[12px] font-bold text-[#8A94B8]">{emptyText}</p>
+        <p className="text-[12px] font-bold text-[#647099]">{emptyText}</p>
       </div>
     );
   }
@@ -238,7 +238,7 @@ function CompetitorVsChart({ datasets, dates, fallbackDates, emptyText }: { data
   if (!hasData) {
     return (
       <div className="flex h-[180px] items-center justify-center rounded-[10px] border border-dashed border-[#D9DEEA] bg-[#F8FAFF]">
-        <p className="text-[12px] font-bold text-[#8A94B8]">{emptyText}</p>
+        <p className="text-[12px] font-bold text-[#647099]">{emptyText}</p>
       </div>
     );
   }
@@ -328,7 +328,7 @@ function TopicTypeBadge({ type }: { type: string }) {
 function TopicDirection({ val }: { val: string }) {
   const isUp = val.startsWith("▲") || val.startsWith("+") || val.includes("↑") || parseFloat(val) > 0;
   return (
-    <span className={cn("inline-flex items-center gap-1 text-[11px] font-bold", isUp ? "text-[#10B981]" : "text-[#EF4444]")}>
+    <span className={cn("inline-flex items-center gap-1 text-[11px] font-bold", isUp ? "text-[#047857]" : "text-[#C81E1E]")}>
       {isUp ? "↑" : "↓"} {val.replace(/[▲▼↑↓+-]/g, "").trim()}
     </span>
   );
@@ -349,7 +349,7 @@ function DonutChartVisibility({ center, label, segments }: { center: string; lab
       <div className="absolute size-[104px] rounded-full bg-white" />
       <div className="relative text-center z-10">
         <p className="text-[24px] font-black text-[#101334]">{center}</p>
-        <p className="mt-0.5 text-[9px] font-bold text-[#8A94B8]">{label}</p>
+        <p className="mt-0.5 text-[9px] font-bold text-[#647099]">{label}</p>
       </div>
     </div>
   );
@@ -852,8 +852,8 @@ export default function VisibilityPage() {
       {/* Demo Workspace Banner */}
       {isDemoSession && (
         <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
-          <Sparkles size={16} className="text-[#8B5CFF]" />
-          <p className="text-[13px] font-bold text-[#8B5CFF]">
+          <Sparkles size={16} className="text-[#6E44E8]" />
+          <p className="text-[13px] font-bold text-[#6E44E8]">
             Demo Workspace — Seeded sandbox workspace for evaluation
           </p>
         </div>
@@ -882,12 +882,12 @@ export default function VisibilityPage() {
         <div className="flex w-full flex-wrap gap-2.5 md:w-auto">
           <div className="relative" ref={dateMenuRef}>
             <button type="button" aria-label={t("ariaLabels.dateFilter")} onClick={() => setIsDateMenuOpen((open) => !open)} className="flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#D9DEEA] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:bg-[#F8FAFF] sm:flex-none">
-              <CalendarDays size={14} className="text-[#8A94B8]" />
+              <CalendarDays size={14} className="text-[#647099]" />
               {visibilityTrends?.period
                 ? `${formatChartDate(visibilityTrends.period.from, language)} - ${formatChartDate(visibilityTrends.period.to, language)}`
                 : t("last7Days")
               }
-              <ChevronDown size={12} className={cn("text-[#8A94B8] transition", isDateMenuOpen && "rotate-180")} />
+              <ChevronDown size={12} className={cn("text-[#647099] transition", isDateMenuOpen && "rotate-180")} />
             </button>
             {isDateMenuOpen ? (
               <div className="absolute right-0 top-full z-50 mt-1 w-44 rounded-[10px] border border-[#E6EAF2] bg-white py-1 shadow-[0_12px_36px_rgba(16,24,40,0.12)]">
@@ -935,7 +935,7 @@ export default function VisibilityPage() {
             }}
             className="flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#D9DEEA] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:bg-[#F8FAFF] sm:flex-none"
           >
-            <Download size={14} className="text-[#8A94B8]" />
+            <Download size={14} className="text-[#647099]" />
             {t("export")}
           </button>
         </div>
@@ -987,15 +987,15 @@ export default function VisibilityPage() {
 
               <div className="flex flex-col gap-3 border-t border-[#D9DDF2] pt-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
                 <div>
-                  <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#8A94B8]">
-                    <TrendingUp size={11} className="text-[#10B981]" />
+                  <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#647099]">
+                    <TrendingUp size={11} className="text-[#047857]" />
                     {t("execSummary.opportunity")}
                   </div>
                   <p className="mt-1 text-[11px] font-black leading-tight text-[#101334]">{execOpportunityValue}</p>
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#8A94B8]">
-                    <AlertCircle size={11} className="text-[#EF4444]" />
+                  <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#647099]">
+                    <AlertCircle size={11} className="text-[#C81E1E]" />
                     {t("execSummary.risk")}
                   </div>
                   <p className="mt-1 text-[11px] font-black leading-tight text-[#101334]">{execRiskValue}</p>
@@ -1003,18 +1003,18 @@ export default function VisibilityPage() {
               </div>
 
               <div className="border-t border-[#D9DDF2] pt-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
-                <p className="text-[10px] font-black uppercase tracking-[0.04em] text-[#8A94B8]">{t("execSummary.recActions")}</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.04em] text-[#647099]">{t("execSummary.recActions")}</p>
                 <div className="mt-2.5 flex flex-col gap-2">
                   {geoActions.length === 0 ? (
-                    <p className="text-[11px] font-bold text-[#8A94B8]">{tEmpty("noActionData")}</p>
+                    <p className="text-[11px] font-bold text-[#647099]">{tEmpty("noActionData")}</p>
                   ) : geoActions.map((action, idx) => (
                     <div key={idx} className="flex items-start gap-2 text-[11px] font-semibold text-[#53608C]">
-                      <CheckCircle size={13} className="mt-0.5 shrink-0 text-[#8B5CFF]" />
+                      <CheckCircle size={13} className="mt-0.5 shrink-0 text-[#6E44E8]" />
                       <span>{action}</span>
                     </div>
                   ))}
                 </div>
-                <button type="button" onClick={() => setIsActionsModalOpen(true)} className="mt-3 flex min-h-9 w-full items-center justify-center gap-1 rounded-[8px] bg-white px-3 py-2 text-center text-[11px] font-black leading-tight text-[#8B5CFF] shadow-sm transition hover:bg-[#F8FAFF]">
+                <button type="button" onClick={() => setIsActionsModalOpen(true)} className="mt-3 flex min-h-9 w-full items-center justify-center gap-1 rounded-[8px] bg-white px-3 py-2 text-center text-[11px] font-black leading-tight text-[#6E44E8] shadow-sm transition hover:bg-[#F8FAFF]">
                   <span className="min-w-0 break-words">{t("execSummary.viewAll")}</span>
                   <ChevronRight size={13} />
                 </button>
@@ -1029,13 +1029,13 @@ export default function VisibilityPage() {
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
                     <h3 className="text-[15px] font-black tracking-[-0.02em] text-[#101334]">{t("mentionsTrend.title")}</h3>
-                    <p className="text-[11px] font-bold text-[#8A94B8]">{t("mentionsTrend.desc")}</p>
+                    <p className="text-[11px] font-bold text-[#647099]">{t("mentionsTrend.desc")}</p>
                   </div>
                   <div className="flex rounded-lg bg-[#F5F7FC] p-0.5">
-                    <button type="button" onClick={() => setSelectedDays(7)} className={cn("rounded-md px-2.5 py-1 text-[10px] font-black transition", selectedDays === 7 ? "bg-white text-[#101334] shadow-sm" : "text-[#8A94B8] hover:text-[#101334]")}>
+                    <button type="button" onClick={() => setSelectedDays(7)} className={cn("rounded-md px-2.5 py-1 text-[10px] font-black transition", selectedDays === 7 ? "bg-white text-[#101334] shadow-sm" : "text-[#647099] hover:text-[#101334]")}>
                       {t("mentionsTrend.days7")}
                     </button>
-                    <button type="button" onClick={() => setSelectedDays(30)} className={cn("rounded-md px-2.5 py-1 text-[10px] font-black transition", selectedDays === 30 ? "bg-white text-[#101334] shadow-sm" : "text-[#8A94B8] hover:text-[#101334]")}>
+                    <button type="button" onClick={() => setSelectedDays(30)} className={cn("rounded-md px-2.5 py-1 text-[10px] font-black transition", selectedDays === 30 ? "bg-white text-[#101334] shadow-sm" : "text-[#647099] hover:text-[#101334]")}>
                       {t("mentionsTrend.days30")}
                     </button>
                   </div>
@@ -1053,10 +1053,10 @@ export default function VisibilityPage() {
               <CardContent className="p-5 flex flex-col justify-between h-full">
                 <div>
                   <h3 className="mb-4 text-[15px] font-black tracking-[-0.02em] text-[#101334]">{t("topTopics.title")}</h3>
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={t("topTopics.title")}>
                     <table className="w-full text-left text-[11px] font-bold text-[#53608C]">
                       <thead>
-                        <tr className="border-b border-[#EEF1F7] text-[10px] font-black uppercase text-[#8A94B8]">
+                        <tr className="border-b border-[#EEF1F7] text-[10px] font-black uppercase text-[#647099]">
                           <th className="pb-2.5">{t("topTopics.headers.topic")}</th>
                           <th className="pb-2.5 text-right">{t("topTopics.headers.mentions")}</th>
                           <th className="pb-2.5 text-center">{t("topTopics.headers.direction")}</th>
@@ -1066,7 +1066,7 @@ export default function VisibilityPage() {
                       <tbody>
                         {topTopicsData.length === 0 ? (
                           <tr>
-                            <td colSpan={4} className="py-6 text-center text-[12px] font-bold text-[#8A94B8]">{tEmpty("noTopicData")}</td>
+                            <td colSpan={4} className="py-6 text-center text-[12px] font-bold text-[#647099]">{tEmpty("noTopicData")}</td>
                           </tr>
                         ) : topTopicsData.map((item, idx) => (
                           <tr key={`${item.topic}-${idx}`} className="border-b border-[#F5F7FC] last:border-0 hover:bg-[#FDFEFF]">
@@ -1080,7 +1080,7 @@ export default function VisibilityPage() {
                     </table>
                   </div>
                 </div>
-                <button type="button" onClick={() => router.push("/intelligence")} className="mt-4 flex items-center justify-center gap-1 text-[11px] font-black text-[#8B5CFF] hover:underline">
+                <button type="button" onClick={() => router.push("/intelligence")} className="mt-4 flex items-center justify-center gap-1 text-[11px] font-black text-[#6E44E8] hover:underline">
                   {t("topTopics.viewAll")}
                   <ChevronRight size={13} />
                 </button>
@@ -1098,14 +1098,14 @@ export default function VisibilityPage() {
                     AI-Modeled via GPT-4o-mini
                   </Badge>
                 </div>
-                <p className="text-[11px] font-bold text-[#8A94B8] mt-1">
+                <p className="text-[11px] font-bold text-[#647099] mt-1">
                   {language === "id"
                     ? "Simulasikan respons model AI live terhadap query dan pantau keterlihatan brand secara transparan."
                     : "Simulate live AI model responses to queries and transparently monitor brand visibility."}
                 </p>
                 <div className="mt-4 flex gap-2">
                   <div className="relative flex-1">
-                    <Search className="absolute left-3.5 top-3 size-4 text-[#8A94B8]" />
+                    <Search className="absolute left-3.5 top-3 size-4 text-[#647099]" />
                     <input
                       type="text"
                       value={sandboxQuery}
@@ -1130,7 +1130,7 @@ export default function VisibilityPage() {
                   </button>
                 </div>
                 {workspaceSettingsQuery.isPending || !sandboxBrandName ? (
-                  <p className="mt-2 text-[11px] font-semibold text-[#8A94B8]">
+                  <p className="mt-2 text-[11px] font-semibold text-[#647099]">
                     {workspaceSettingsQuery.isPending ? t("sandbox.brandLoading") : t("sandbox.brandMissing")}
                   </p>
                 ) : null}
@@ -1138,13 +1138,13 @@ export default function VisibilityPage() {
                 <div className="mt-4 grid gap-4 sm:grid-cols-[1.2fr_1fr]">
                   <div className="rounded-[10px] bg-[#F6F8FF] border border-[#D9E1FC] p-4">
                     <div className="flex items-center justify-between">
-                      <p className="text-[10px] font-black uppercase text-[#8A94B8] tracking-[0.04em]">{t("sandbox.responseTitle")}</p>
+                      <p className="text-[10px] font-black uppercase text-[#647099] tracking-[0.04em]">{t("sandbox.responseTitle")}</p>
                       <span className="text-[9px] font-bold text-[#465FFF]">Live Simulation (GPT-4o-mini)</span>
                     </div>
                     <p className="mt-2 text-[12px] font-semibold leading-relaxed text-[#53608C]">{simulatedResponse}</p>
                     <div className="mt-4 flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-[#8A94B8]">{t("sandbox.confidence")}</span>
-                      <span className="text-[11px] font-black text-[#10B981]">{confidence}%</span>
+                      <span className="text-[10px] font-bold text-[#647099]">{t("sandbox.confidence")}</span>
+                      <span className="text-[11px] font-black text-[#047857]">{confidence}%</span>
                     </div>
                     <div className="mt-1.5 h-1.5 w-full rounded-full bg-[#E5E9FC] overflow-hidden">
                       <div className="h-full bg-[#10B981] rounded-full transition-all duration-300" style={{ width: `${confidence}%` }} />
@@ -1153,14 +1153,14 @@ export default function VisibilityPage() {
 
                   <div className="flex flex-col justify-between">
                     <div>
-                      <p className="text-[10px] font-black uppercase text-[#8A94B8] tracking-[0.04em]">{t("sandbox.analysisMeta")}</p>
+                      <p className="text-[10px] font-black uppercase text-[#647099] tracking-[0.04em]">{t("sandbox.analysisMeta")}</p>
                       {sandboxMeta.length === 0 ? (
-                        <p className="mt-2.5 rounded-[10px] border border-dashed border-[#D9DEEA] bg-[#F8FAFF] p-3 text-[11px] font-semibold leading-relaxed text-[#8A94B8]">{t("sandbox.metaEmpty")}</p>
+                        <p className="mt-2.5 rounded-[10px] border border-dashed border-[#D9DEEA] bg-[#F8FAFF] p-3 text-[11px] font-semibold leading-relaxed text-[#647099]">{t("sandbox.metaEmpty")}</p>
                       ) : (
                         <div className="mt-2.5 space-y-2">
                           {sandboxMeta.map((item) => (
                             <div key={item.label} className="rounded-[9px] border border-[#F0F2F7] bg-white px-3 py-2">
-                              <p className="text-[9px] font-black uppercase tracking-[0.04em] text-[#8A94B8]">{item.label}</p>
+                              <p className="text-[9px] font-black uppercase tracking-[0.04em] text-[#647099]">{item.label}</p>
                               <p className="mt-1 break-words text-[11px] font-bold text-[#53608C]">{item.value}</p>
                             </div>
                           ))}
@@ -1192,11 +1192,11 @@ export default function VisibilityPage() {
             <CardContent className="p-5">
               <h3 className="mb-4 flex items-center gap-1.5 text-[15px] font-black tracking-[-0.02em] text-[#101334]">
                 {t("topPlatforms.title")}
-                <Info size={13} className="text-[#98A2B3]" />
+                <Info size={13} className="text-[#647099]" />
               </h3>
               <div className="space-y-4">
                 {topPlatforms.length === 0 ? (
-                  <p className="text-[12px] font-bold text-[#8A94B8] text-center py-4">{tEmpty("noPlatformData")}</p>
+                  <p className="text-[12px] font-bold text-[#647099] text-center py-4">{tEmpty("noPlatformData")}</p>
                 ) : topPlatforms.map((plat) => (
                   <div key={plat.name} className="space-y-1.5">
                     <div className="flex items-center justify-between gap-3 text-[12px] font-bold text-[#53608C]">
@@ -1204,7 +1204,7 @@ export default function VisibilityPage() {
                         <plat.logo className="size-[18px] shrink-0" />
                         <span className="truncate">{plat.name}</span>
                       </span>
-                      <span className="shrink-0">{plat.mentions} <span className="text-[#8A94B8] font-semibold">({plat.pct})</span></span>
+                      <span className="shrink-0">{plat.mentions} <span className="text-[#647099] font-semibold">({plat.pct})</span></span>
                     </div>
                     <div className="h-2 w-full rounded-full bg-[#EEF1F7] overflow-hidden">
                       <div className="h-full bg-[#8B5CFF] rounded-full" style={{ width: plat.width }} />
@@ -1219,7 +1219,7 @@ export default function VisibilityPage() {
             <CardContent className="p-5">
               <h3 className="mb-4 flex items-center gap-1.5 text-[15px] font-black tracking-[-0.02em] text-[#101334]">
                 {t("competitorShare.title")}
-                <Info size={13} className="text-[#98A2B3]" />
+                <Info size={13} className="text-[#647099]" />
               </h3>
               <div className="grid items-center gap-4 sm:grid-cols-[150px_minmax(0,1fr)] xl:grid-cols-[150px_minmax(0,1fr)]">
                 {shareOfVoiceLeg.length > 0 ? (
@@ -1241,7 +1241,7 @@ export default function VisibilityPage() {
                     </div>
                   </>
                 ) : (
-                  <p className="text-[12px] font-bold text-[#8A94B8] text-center py-4 sm:col-span-2">{tEmpty("noSovData")}</p>
+                  <p className="text-[12px] font-bold text-[#647099] text-center py-4 sm:col-span-2">{tEmpty("noSovData")}</p>
                 )}
               </div>
             </CardContent>
@@ -1253,15 +1253,15 @@ export default function VisibilityPage() {
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <h3 className="flex items-center gap-1.5 text-[15px] font-black tracking-[-0.02em] text-[#101334]">
                     {t("latestMentions.title")}
-                    <Info size={13} className="text-[#98A2B3]" />
+                    <Info size={13} className="text-[#647099]" />
                   </h3>
-                  <button type="button" onClick={() => setIsMentionsModalOpen(true)} className="whitespace-nowrap text-[10px] font-black text-[#8B5CFF] hover:underline">
+                  <button type="button" onClick={() => setIsMentionsModalOpen(true)} className="whitespace-nowrap text-[10px] font-black text-[#6E44E8] hover:underline">
                     {t("latestMentions.viewAll")}
                   </button>
                 </div>
                 <div className="space-y-4">
                   {latestMentions.length === 0 ? (
-                    <p className="text-[12px] font-bold text-[#8A94B8] text-center py-4">{tEmpty("noMentionData")}</p>
+                    <p className="text-[12px] font-bold text-[#647099] text-center py-4">{tEmpty("noMentionData")}</p>
                   ) : latestMentions.map((item, idx) => (
                     <div key={idx} className="flex gap-3 border-b border-[#F0F2F7] pb-3 last:border-0 last:pb-0">
                       <span className="flex size-8 shrink-0 items-center justify-center rounded-[8px] border border-[#EEF1F7] bg-white">
@@ -1269,7 +1269,7 @@ export default function VisibilityPage() {
                       </span>
                       <div className="min-w-0">
                         <p className="text-[11px] font-black text-[#101334]">{item.platform}</p>
-                        <p className="text-[9px] font-semibold text-[#8A94B8] mt-0.5">{item.time}</p>
+                        <p className="text-[9px] font-semibold text-[#647099] mt-0.5">{item.time}</p>
                         <p className="text-[11px] font-semibold leading-relaxed text-[#53608C] mt-1.5 italic">{item.quote}</p>
                       </div>
                     </div>
@@ -1286,12 +1286,12 @@ export default function VisibilityPage() {
         <CardContent className="p-5">
           <div className="mb-5">
             <h3 className="text-[15px] font-black tracking-[-0.02em] text-[#101334]">{t("citationIntelligence")}</h3>
-            <p className="text-[11px] font-bold text-[#8A94B8] mt-1">{t("whereDoesAI")}</p>
+            <p className="text-[11px] font-bold text-[#647099] mt-1">{t("whereDoesAI")}</p>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={t("citationIntelligence")}>
             <table className="w-full text-left text-[11px] font-bold text-[#53608C]">
               <thead>
-                <tr className="border-b border-[#EEF1F7] text-[10px] font-black uppercase text-[#8A94B8]">
+                <tr className="border-b border-[#EEF1F7] text-[10px] font-black uppercase text-[#647099]">
                   <th className="pb-2.5 pr-4">{t("sourceDomain")}</th>
                   <th className="pb-2.5 pr-4">{t("sourceType")}</th>
                   <th className="pb-2.5 pr-4 text-right">{t("citationFreq")}</th>
@@ -1316,7 +1316,7 @@ export default function VisibilityPage() {
                   if (citations.length === 0) {
                     return (
                       <tr>
-                        <td colSpan={6} className="py-8 text-center text-[12px] font-bold text-[#8A94B8]">
+                        <td colSpan={6} className="py-8 text-center text-[12px] font-bold text-[#647099]">
                           {language === "id"
                             ? "Belum ada sitasi sumber yang diekstraksi dari respons AI. Jalankan simulasi pada AI Search Sandbox untuk mendeteksi domain rujukan nyata."
                             : "No source citations extracted from AI responses yet. Run a simulation in the AI Search Sandbox to extract genuine reference domains."}
@@ -1339,11 +1339,11 @@ export default function VisibilityPage() {
                           <div className="h-1.5 w-20 rounded-full bg-[#EEF1F7] overflow-hidden">
                             <div className="h-full rounded-full bg-[#8B5CFF]" style={{ width: `${row.authority}%` }} />
                           </div>
-                          <span className="text-[10px] font-black text-[#8A94B8]">{row.authority}</span>
+                          <span className="text-[10px] font-black text-[#647099]">{row.authority}</span>
                         </div>
                       </td>
                       <td className="py-3 pr-4 text-right font-black text-[#101334]">{row.brandC}</td>
-                      <td className="py-3 text-right text-[#EF4444] font-bold">{row.compC}</td>
+                      <td className="py-3 text-right text-[#C81E1E] font-bold">{row.compC}</td>
                     </tr>
                   ));
                 })()}
@@ -1363,7 +1363,7 @@ export default function VisibilityPage() {
         <CardContent className="p-5">
           <div className="mb-5">
             <h3 className="text-[15px] font-black tracking-[-0.02em] text-[#101334]">{t("aiReputation")}</h3>
-            <p className="text-[11px] font-bold text-[#8A94B8] mt-1">{t("aiReputationDesc")}</p>
+            <p className="text-[11px] font-bold text-[#647099] mt-1">{t("aiReputationDesc")}</p>
           </div>
           <div className="flex flex-col gap-3">
             {[
@@ -1421,7 +1421,7 @@ export default function VisibilityPage() {
         <CardContent className="p-5">
           <div className="mb-5">
             <h3 className="text-[15px] font-black tracking-[-0.02em] text-[#101334]">{t("shareOfAIAnswer")}</h3>
-            <p className="text-[11px] font-bold text-[#8A94B8] mt-1">{t("shareOfAIAnswerDesc")}</p>
+            <p className="text-[11px] font-bold text-[#647099] mt-1">{t("shareOfAIAnswerDesc")}</p>
           </div>
           <div className="flex flex-col gap-6">
             {[
@@ -1482,9 +1482,9 @@ export default function VisibilityPage() {
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div>
                 <h2 className="text-lg font-black text-[#101334]">{t("execSummary.recActions")}</h2>
-                <p className="mt-1 text-[11px] font-bold text-[#68739F]">{geoActions.length} {language === "id" ? "rekomendasi" : "recommendations"}</p>
+                <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{geoActions.length} {language === "id" ? "rekomendasi" : "recommendations"}</p>
               </div>
-              <button type="button" onClick={() => setIsActionsModalOpen(false)} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+              <button type="button" onClick={() => setIsActionsModalOpen(false)} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
                 <X size={20} />
               </button>
             </div>
@@ -1493,7 +1493,7 @@ export default function VisibilityPage() {
                 <div className="space-y-3">
                   {geoActions.map((action, idx) => (
                     <div key={idx} className="flex items-start gap-3 rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-4 hover:border-[#DCE2F0] hover:bg-white transition">
-                      <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#8B5CFF]/10 text-[#8B5CFF]">
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#8B5CFF]/10 text-[#6E44E8]">
                         <CheckCircle size={15} />
                       </span>
                       <div className="min-w-0">
@@ -1521,9 +1521,9 @@ export default function VisibilityPage() {
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div>
                 <h2 className="text-lg font-black text-[#101334]">{t("latestMentions.title")}</h2>
-                <p className="mt-1 text-[11px] font-bold text-[#68739F]">{allMentions.length} {language === "id" ? "prompt tercatat" : "prompts recorded"}</p>
+                <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{allMentions.length} {language === "id" ? "prompt tercatat" : "prompts recorded"}</p>
               </div>
-              <button type="button" onClick={() => setIsMentionsModalOpen(false)} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+              <button type="button" onClick={() => setIsMentionsModalOpen(false)} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
                 <X size={20} />
               </button>
             </div>
@@ -1537,7 +1537,7 @@ export default function VisibilityPage() {
                       </span>
                       <div className="min-w-0">
                         <p className="text-[11px] font-black text-[#101334]">{item.platform}</p>
-                        <p className="text-[9px] font-semibold text-[#8A94B8] mt-0.5">{item.time}</p>
+                        <p className="text-[9px] font-semibold text-[#647099] mt-0.5">{item.time}</p>
                         <p className="text-[11px] font-semibold leading-relaxed text-[#53608C] mt-1.5 italic">{item.quote}</p>
                       </div>
                     </div>

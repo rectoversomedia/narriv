@@ -224,14 +224,14 @@ export default function ActivityPage() {
                 <span className={cn(
                   "flex h-10 w-10 items-center justify-center rounded-xl",
                   metric.tone === "blue" && "bg-[#465FFF]/10 text-[#465FFF]",
-                  metric.tone === "purple" && "bg-[#8B5CFF]/10 text-[#8B5CFF]",
-                  metric.tone === "green" && "bg-[#10B981]/10 text-[#10B981]",
-                  metric.tone === "amber" && "bg-[#F59E0B]/10 text-[#F59E0B]"
+                  metric.tone === "purple" && "bg-[#8B5CFF]/10 text-[#6E44E8]",
+                  metric.tone === "green" && "bg-[#10B981]/10 text-[#047857]",
+                  metric.tone === "amber" && "bg-[#F59E0B]/10 text-[#B45309]"
                 )}>
                   <Icon size={18} />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-400">{metric.label}</p>
+                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{metric.label}</p>
                   <p className="mt-1 text-2xl font-black tracking-[-0.04em] text-slate-950">{metric.value.toLocaleString(uiLanguage === "id" ? "id-ID" : "en-US")}</p>
                 </div>
               </div>
@@ -242,7 +242,7 @@ export default function ActivityPage() {
       </section>
 
       <section className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="mb-3 flex items-center gap-2 text-[12px] font-black uppercase tracking-[0.12em] text-slate-400">
+        <div className="mb-3 flex items-center gap-2 text-[12px] font-black uppercase tracking-[0.12em] text-slate-500">
           <Filter size={14} />
           {t("filterTitle")}
         </div>
@@ -324,7 +324,7 @@ export default function ActivityPage() {
                           <Badge variant={eventVariant(log.event)} className="rounded-full normal-case tracking-normal">
                             {formatEventName(log.event, t)}
                           </Badge>
-                          <p className="mt-2 text-[11px] font-bold text-slate-400">ID: {log.id.slice(0, 8)}</p>
+                          <p className="mt-2 text-[11px] font-bold text-slate-500">ID: {log.id.slice(0, 8)}</p>
                         </div>
                       </div>
                     </td>

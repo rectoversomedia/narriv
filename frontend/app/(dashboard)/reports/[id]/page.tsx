@@ -47,7 +47,7 @@ function ReportSectionCard({ section, index }: { section: ReportDetailSection; i
         </span>
         <div className="min-w-0 flex-1">
           <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{title}</h2>
-          <p className={cn("mt-3 whitespace-pre-line text-[13px] font-semibold leading-6 text-[#53608C]", !body && "text-[#8A94B8]")}>
+          <p className={cn("mt-3 whitespace-pre-line text-[13px] font-semibold leading-6 text-[#53608C]", !body && "text-[#647099]")}>
             {body || "-"}
           </p>
         </div>
@@ -170,19 +170,19 @@ export default function ReportDetailPage() {
 
       <div className="grid gap-4 sm:grid-cols-4">
         <div className="rounded-[14px] border border-[#E6EAF2] bg-white p-4">
-          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8A94B8]">{tr("detail.reportId")}</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#647099]">{tr("detail.reportId")}</p>
           <p className="mt-2 truncate text-[13px] font-black text-[#101334]" title={report.id}>{report.id}</p>
         </div>
         <div className="rounded-[14px] border border-[#E6EAF2] bg-white p-4">
-          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8A94B8]">{tr("detail.createdAt")}</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#647099]">{tr("detail.createdAt")}</p>
           <p className="mt-2 text-[13px] font-black text-[#101334]">{formatDate(report.createdAt)}</p>
         </div>
         <div className="rounded-[14px] border border-[#E6EAF2] bg-white p-4">
-          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8A94B8]">{tr("table.period") || "Periode"}</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#647099]">{tr("table.period") || "Periode"}</p>
           <p className="mt-2 text-[13px] font-black text-[#101334]">{report.periodStart ? `${formatDate(report.periodStart)} - ${formatDate(report.periodEnd)}` : "-"}</p>
         </div>
         <div className="rounded-[14px] border border-[#E6EAF2] bg-white p-4">
-          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8A94B8]">{tr("detail.sections")}</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#647099]">{tr("detail.sections")}</p>
           <p className="mt-2 inline-flex items-center gap-2 text-[13px] font-black text-[#101334]"><FileText size={15} /> {sections.length}</p>
         </div>
       </div>
@@ -193,9 +193,9 @@ export default function ReportDetailPage() {
         </div>
       ) : (
         <section className="flex min-h-[260px] flex-col items-center justify-center rounded-[16px] border border-dashed border-[#DDE3EF] bg-white p-8 text-center">
-          <CalendarClock size={28} className="text-[#8A94B8]" />
+          <CalendarClock size={28} className="text-[#647099]" />
           <h2 className="mt-4 text-[17px] font-black text-[#101334]">{tr("detail.emptySectionsTitle")}</h2>
-          <p className="mt-2 max-w-[460px] text-[13px] font-semibold leading-6 text-[#68739F]">{tr("detail.emptySectionsDesc")}</p>
+          <p className="mt-2 max-w-[460px] text-[13px] font-semibold leading-6 text-[#5F6B94]">{tr("detail.emptySectionsDesc")}</p>
         </section>
       )}
     </div>

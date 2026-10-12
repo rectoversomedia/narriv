@@ -387,7 +387,7 @@ export default function OnboardingPage() {
         </div>
 
         <div className="flex items-center gap-4">
-          <span className="text-sm font-semibold text-[#68739F]">
+          <span className="text-sm font-semibold text-[#5F6B94]">
             {step === "processing" ? 5 : step} of 5
           </span>
           <div className="h-6 w-px bg-[#D6DDEC]" />
@@ -435,7 +435,7 @@ export default function OnboardingPage() {
                 {step === 1 ? (
                   <button
                     type="button"
-                    className="text-sm font-semibold text-[#68739F] transition-colors hover:text-[#465FFF] disabled:opacity-50"
+                    className="text-sm font-semibold text-[#5F6B94] transition-colors hover:text-[#465FFF] disabled:opacity-50"
                     onClick={handleSkip}
                     disabled={isSubmitting}
                   >
@@ -465,8 +465,8 @@ export default function OnboardingPage() {
           )}
         </div>
 
-        <p className="mt-6 flex items-center justify-center gap-2 text-center text-sm font-medium text-[#9BA3C2]">
-          <ShieldCheck size={15} className="text-[#10B981]" />
+        <p className="mt-6 flex items-center justify-center gap-2 text-center text-sm font-medium text-[#647099]">
+          <ShieldCheck size={15} className="text-[#047857]" />
           Your data is safe with Narriv. We protect your privacy and information security.
         </p>
       </main>
@@ -497,14 +497,14 @@ function StepIndicator({ current }: { current: Step }) {
                   ? "bg-[#465FFF] text-white"
                   : s.num === current
                   ? "border-2 border-[#465FFF] bg-white text-[#465FFF]"
-                  : "border-2 border-[#D6DDEC] bg-white text-[#9BA3C2]"
+                  : "border-2 border-[#D6DDEC] bg-white text-[#647099]"
               }`}
             >
               {s.num < current ? <Check size={14} strokeWidth={3} /> : s.num}
             </div>
             <span
               className={`text-xs font-semibold whitespace-nowrap hidden lg:block ${
-                s.num === current ? "text-[#465FFF]" : s.num < current ? "text-[#3E4975]" : "text-[#9BA3C2]"
+                s.num === current ? "text-[#465FFF]" : s.num < current ? "text-[#3E4975]" : "text-[#647099]"
               }`}
             >
               {s.label}
@@ -549,15 +549,15 @@ function ProfileStep({
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-[#111536]">{t("title")}</h1>
-        <p className="mt-1.5 text-sm font-medium text-[#68739F]">{t("desc")}</p>
+        <p className="mt-1.5 text-sm font-medium text-[#5F6B94]">{t("desc")}</p>
       </div>
 
       {/* Personal Info */}
       <div className="space-y-5">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-[#9BA3C2]">Personal Information</h2>
+        <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">Personal Information</h2>
         <div className="grid gap-5 lg:grid-cols-2">
-          <FormField label={t("name")} required>
-            <input
+          <FormField label={t("name")} required htmlFor="onb-name">
+            <input id="onb-name"
               type="text"
               value={data.name}
               onChange={(e) => onChange({ name: e.target.value })}
@@ -567,8 +567,8 @@ function ProfileStep({
             />
           </FormField>
 
-          <FormField label={t("role")} required>
-            <Select
+          <FormField label={t("role")} required htmlFor="onb-role">
+            <Select id="onb-role"
               value={data.role}
               onChange={(v) => onChange({ role: v })}
               placeholder="Select your role"
@@ -585,10 +585,10 @@ function ProfileStep({
 
       {/* Company Info */}
       <div className="space-y-5">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-[#9BA3C2]">Company / Brand</h2>
+        <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">Company / Brand</h2>
         <div className="grid gap-5 lg:grid-cols-2">
-          <FormField label={t("company")} required>
-            <input
+          <FormField label={t("company")} required htmlFor="onb-company">
+            <input id="onb-company"
               type="text"
               value={data.company}
               onChange={(e) => onChange({ company: e.target.value })}
@@ -598,8 +598,8 @@ function ProfileStep({
             />
           </FormField>
 
-          <FormField label={t("industry")} required>
-            <Select
+          <FormField label={t("industry")} required htmlFor="onb-industry">
+            <Select id="onb-industry"
               value={data.industry}
               onChange={(v) => onChange({ industry: v })}
               placeholder="Select your industry"
@@ -611,8 +611,8 @@ function ProfileStep({
           </FormField>
         </div>
 
-        <FormField label={t("mainGoal")}>
-          <textarea
+        <FormField label={t("mainGoal")} htmlFor="onb-goal">
+          <textarea id="onb-goal"
             value={data.mainGoal}
             onChange={(e) => {
               if (e.target.value.length <= mainGoalMax) {
@@ -623,7 +623,7 @@ function ProfileStep({
             rows={4}
             className="form-textarea"
           />
-          <p className="mt-1.5 text-right text-xs font-medium text-[#9BA3C2]">
+          <p className="mt-1.5 text-right text-xs font-medium text-[#647099]">
             {data.mainGoal.length}/{mainGoalMax}
           </p>
         </FormField>
@@ -635,7 +635,7 @@ function ProfileStep({
       <div className="space-y-5">
         <div>
           <h2 className="text-base font-bold text-[#111536]">{t("goalsTitle")}</h2>
-          <p className="mt-1 text-sm font-medium text-[#68739F]">{t("goalsDesc")}</p>
+          <p className="mt-1 text-sm font-medium text-[#5F6B94]">{t("goalsDesc")}</p>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
@@ -666,7 +666,7 @@ function ProfileStep({
                       {t(goal.labelKey as any)}
                     </p>
                   </div>
-                  <p className="mt-1 text-xs font-medium text-[#68739F] leading-relaxed">
+                  <p className="mt-1 text-xs font-medium text-[#5F6B94] leading-relaxed">
                     {t(goal.descKey as any)}
                   </p>
                 </div>
@@ -675,7 +675,7 @@ function ProfileStep({
           })}
         </div>
 
-        <p className="text-xs font-medium text-[#9BA3C2]">
+        <p className="text-xs font-medium text-[#647099]">
           Select 1–3 goals. You can change this anytime in Settings.
         </p>
       </div>
@@ -714,13 +714,13 @@ function KeywordsStep({
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-[#111536]">{t("title")}</h1>
-        <p className="mt-1.5 text-sm font-medium text-[#68739F]">{t("desc")}</p>
+        <p className="mt-1.5 text-sm font-medium text-[#5F6B94]">{t("desc")}</p>
       </div>
 
       <div className="space-y-3">
-        <FormField label={t("inputLabel")}>
+        <FormField label={t("inputLabel")} htmlFor="onb-keyword">
           <div className="flex gap-3">
-            <input
+            <input id="onb-keyword"
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -741,7 +741,7 @@ function KeywordsStep({
         </FormField>
 
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-[#9BA3C2]">{t("examples")}</span>
+          <span className="text-xs font-semibold text-[#647099]">{t("examples")}</span>
           {suggestions.map((s) => (
             <button
               key={s}
@@ -758,14 +758,14 @@ function KeywordsStep({
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-[#9BA3C2]">{t("yourKeywords")}</h2>
-          <span className="text-xs font-semibold text-[#9BA3C2]">{keywords.length}/50</span>
+          <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{t("yourKeywords")}</h2>
+          <span className="text-xs font-semibold text-[#647099]">{keywords.length}/50</span>
         </div>
 
         {keywords.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#E8EAF6] py-12 text-center">
             <Hash size={32} className="text-[#D6DDEC]" />
-            <p className="mt-3 text-sm font-semibold text-[#9BA3C2]">No keywords added yet</p>
+            <p className="mt-3 text-sm font-semibold text-[#647099]">No keywords added yet</p>
             <p className="mt-1 text-xs font-medium text-[#C4C9E2]">Type a keyword above and press Enter to add</p>
           </div>
         ) : (
@@ -778,10 +778,10 @@ function KeywordsStep({
       </div>
 
       <div className="flex items-start gap-3 rounded-xl border border-[#F0EFFF] bg-[#FAF8FF] p-4">
-        <Lightbulb size={18} className="mt-0.5 shrink-0 text-[#8B5CFF]" />
+        <Lightbulb size={18} className="mt-0.5 shrink-0 text-[#6E44E8]" />
         <div>
           <p className="text-sm font-bold text-[#111536]">{t("tipTitle")}</p>
-          <p className="mt-0.5 text-xs font-medium text-[#68739F] leading-relaxed">{t("tipText")}</p>
+          <p className="mt-0.5 text-xs font-medium text-[#5F6B94] leading-relaxed">{t("tipText")}</p>
         </div>
       </div>
     </div>
@@ -793,7 +793,7 @@ function KeywordPill({ label, onRemove }: { label: string; onRemove: () => void 
     <span className="inline-flex items-center gap-2 rounded-full border border-[#E8EAF6] bg-white px-4 py-2 text-sm font-semibold text-[#3E4975] shadow-sm">
       <span className="h-1.5 w-1.5 rounded-full bg-[#10B981] animate-pulse" />
       {label}
-      <button type="button" onClick={onRemove} className="text-[#9BA3C2] hover:text-[#EF4444] transition-colors">
+      <button type="button" onClick={onRemove} className="text-[#647099] hover:text-[#C81E1E] transition-colors">
         <X size={14} />
       </button>
     </span>
@@ -861,11 +861,11 @@ function SourcesStep({
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-[#111536]">{t("title")}</h1>
-        <p className="mt-1.5 text-sm font-medium text-[#68739F]">{t("desc")}</p>
+        <p className="mt-1.5 text-sm font-medium text-[#5F6B94]">{t("desc")}</p>
       </div>
 
       <div className="space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-[#9BA3C2]">Quick Select by Category</h2>
+        <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">Quick Select by Category</h2>
         <div className="flex flex-wrap gap-3">
           {categories.map((cat) => {
             const Icon = categoryIcons[cat] || Globe2;
@@ -891,7 +891,7 @@ function SourcesStep({
       </div>
 
       <div className="space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-[#9BA3C2]">{t("choose")}</h2>
+        <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{t("choose")}</h2>
 
         {loading ? (
           <div className="grid gap-4 lg:grid-cols-2">
@@ -971,14 +971,14 @@ function SourceCard({
     >
       <div
         className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
-          active ? "bg-[#465FFF] text-white" : "bg-[#F0F2FA] text-[#68739F]"
+          active ? "bg-[#465FFF] text-white" : "bg-[#F0F2FA] text-[#5F6B94]"
         }`}
       >
         <Icon size={20} />
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-bold text-[#111536]">{title}</p>
-        <p className="mt-1 text-xs font-medium text-[#68739F] leading-relaxed">{desc}</p>
+        <p className="mt-1 text-xs font-medium text-[#5F6B94] leading-relaxed">{desc}</p>
       </div>
       <div
         className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-all ${
@@ -1020,11 +1020,11 @@ function NotificationsStep({
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-[#111536]">{t("title")}</h1>
-        <p className="mt-1.5 text-sm font-medium text-[#68739F]">{t("desc")}</p>
+        <p className="mt-1.5 text-sm font-medium text-[#5F6B94]">{t("desc")}</p>
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-[#9BA3C2]">{t("alertTypes")}</h2>
+        <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{t("alertTypes")}</h2>
         <div className="grid gap-3 lg:grid-cols-2">
           {alertTypes.map(({ key, label, desc, icon: Icon, color }) => (
             <button
@@ -1045,7 +1045,7 @@ function NotificationsStep({
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-[#111536]">{label}</p>
-                <p className="mt-1 text-xs font-medium text-[#68739F] leading-relaxed">{desc}</p>
+                <p className="mt-1 text-xs font-medium text-[#5F6B94] leading-relaxed">{desc}</p>
               </div>
               <ToggleSwitch
                 active={data[key]}
@@ -1057,7 +1057,7 @@ function NotificationsStep({
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-[#9BA3C2]">{t("channels")}</h2>
+        <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{t("channels")}</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {channels.map(({ key, label, icon: Icon }) => (
             <button
@@ -1068,8 +1068,8 @@ function NotificationsStep({
                 data[key] ? "border-[#465FFF] bg-[#F8F6FF]" : "border-[#E8EAF6] bg-white hover:border-[#B8BDD8]"
               }`}
             >
-              <Icon size={18} className={data[key] ? "text-[#465FFF]" : "text-[#68739F]"} />
-              <span className={`text-sm font-semibold ${data[key] ? "text-[#111536]" : "text-[#68739F]"}`}>
+              <Icon size={18} className={data[key] ? "text-[#465FFF]" : "text-[#5F6B94]"} />
+              <span className={`text-sm font-semibold ${data[key] ? "text-[#111536]" : "text-[#5F6B94]"}`}>
                 {label}
               </span>
               <div className="ml-auto">
@@ -1081,7 +1081,7 @@ function NotificationsStep({
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-[#9BA3C2]">{t("frequency")}</h2>
+        <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{t("frequency")}</h2>
         <div className="grid gap-3 sm:grid-cols-3">
           {[
             { key: "dailyEnabled" as const, title: t("daily"), sub: "Every day, 08:00" },
@@ -1098,7 +1098,7 @@ function NotificationsStep({
             >
               <div>
                 <p className="text-sm font-bold text-[#111536]">{title}</p>
-                <p className="mt-1 text-xs font-medium text-[#68739F]">{sub}</p>
+                <p className="mt-1 text-xs font-medium text-[#5F6B94]">{sub}</p>
               </div>
               <ToggleSwitch active={data[key]} onChange={() => onChange({ [key]: !data[key] })} />
             </button>
@@ -1170,9 +1170,9 @@ function PreviewStep({ data }: { data: OnboardingData }) {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-[#111536]">{t("title")}</h1>
-          <p className="mt-1.5 text-sm font-medium text-[#68739F]">{t("desc")}</p>
+          <p className="mt-1.5 text-sm font-medium text-[#5F6B94]">{t("desc")}</p>
         </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#10B981]/12 px-4 py-2 text-xs font-bold text-[#10B981]">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#10B981]/12 px-4 py-2 text-xs font-bold text-[#047857]">
           <CheckCircle2 size={14} />
           Ready
         </span>
@@ -1180,7 +1180,7 @@ function PreviewStep({ data }: { data: OnboardingData }) {
 
       {data.keywords.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-[#9BA3C2]">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">
             Keywords you&apos;ll monitor
           </h2>
           <div className="flex flex-wrap gap-2">
@@ -1199,7 +1199,7 @@ function PreviewStep({ data }: { data: OnboardingData }) {
 
       {data.sources.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-[#9BA3C2]">Data Sources</h2>
+          <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">Data Sources</h2>
           <div className="flex flex-wrap gap-2">
             {[...new Set(data.sources.map((s) => s.type))].map((type) => (
               <span
@@ -1216,7 +1216,7 @@ function PreviewStep({ data }: { data: OnboardingData }) {
 
       {activeAlertTypes.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-[#9BA3C2]">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">
             Alerts &amp; Notifications
           </h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -1245,7 +1245,7 @@ function PreviewStep({ data }: { data: OnboardingData }) {
         <div className="divide-y divide-[#F0F2FA]">
           {summaryRows.map(({ label, value }) => (
             <div key={label} className="flex items-center justify-between px-6 py-4">
-              <span className="text-sm font-medium text-[#68739F]">{label}</span>
+              <span className="text-sm font-medium text-[#5F6B94]">{label}</span>
               <span className="text-sm font-semibold text-[#111536]">{value}</span>
             </div>
           ))}
@@ -1253,10 +1253,10 @@ function PreviewStep({ data }: { data: OnboardingData }) {
       </div>
 
       <div className="flex items-start gap-4 rounded-xl border border-[#10B981]/20 bg-[#F0FFF8] p-6">
-        <CheckCircle2 size={24} className="mt-0.5 shrink-0 text-[#10B981]" />
+        <CheckCircle2 size={24} className="mt-0.5 shrink-0 text-[#047857]" />
         <div>
           <p className="text-base font-bold text-[#111536]">{t("readyTitle")}</p>
-          <p className="mt-1 text-sm font-medium text-[#68739F]">{t("readyText")}</p>
+          <p className="mt-1 text-sm font-medium text-[#5F6B94]">{t("readyText")}</p>
         </div>
       </div>
     </div>
@@ -1297,11 +1297,11 @@ function ProcessingStep({
       </div>
 
       <h1 className="mt-10 text-2xl font-bold tracking-tight text-[#111536]">{t("title")}</h1>
-      <p className="mt-3 max-w-md text-sm font-medium text-[#68739F] leading-relaxed">{t("desc")}</p>
+      <p className="mt-3 max-w-md text-sm font-medium text-[#5F6B94] leading-relaxed">{t("desc")}</p>
 
       <div className="mt-8 w-full max-w-md">
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-semibold text-[#9BA3C2]">{progress}%</span>
+          <span className="text-xs font-semibold text-[#647099]">{progress}%</span>
         </div>
         <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#F0F2FA]">
           <div
@@ -1320,7 +1320,7 @@ function ProcessingStep({
               >
                 {s.done && <Check size={11} strokeWidth={3} className="text-white" />}
               </div>
-              <span className={`text-xs font-semibold ${s.done ? "text-[#10B981]" : "text-[#9BA3C2]"}`}>
+              <span className={`text-xs font-semibold ${s.done ? "text-[#047857]" : "text-[#647099]"}`}>
                 {s.label}
               </span>
             </div>
@@ -1330,11 +1330,11 @@ function ProcessingStep({
 
       {submitError && (
         <div className="mt-8 flex flex-col items-center gap-3">
-          <p className="text-sm font-semibold text-[#EF4444]">{submitError}</p>
+          <p className="text-sm font-semibold text-[#C81E1E]">{submitError}</p>
           <button
             type="button"
             onClick={onRetry}
-            className="rounded-xl border border-[#EF4444] bg-white px-6 py-3 text-sm font-semibold text-[#EF4444] transition-colors hover:bg-[#FFF5F5]"
+            className="rounded-xl border border-[#EF4444] bg-white px-6 py-3 text-sm font-semibold text-[#C81E1E] transition-colors hover:bg-[#FFF5F5]"
           >
             Try Again
           </button>
@@ -1349,18 +1349,20 @@ function ProcessingStep({
 function FormField({
   label,
   required,
+  htmlFor,
   children,
 }: {
   label: string;
   required?: boolean;
+  htmlFor?: string;
   children: ReactNode;
 }) {
   return (
     <div className="space-y-2">
-      <label className="block">
+      <label className="block" htmlFor={htmlFor}>
         <span className="text-sm font-semibold text-[#3E4975]">
           {label}
-          {required && <span className="ml-1 text-[#EF4444]">*</span>}
+          {required && <span className="ml-1 text-[#C81E1E]">*</span>}
         </span>
       </label>
       {children}
@@ -1369,11 +1371,13 @@ function FormField({
 }
 
 function Select({
+  id,
   value,
   onChange,
   placeholder,
   children,
 }: {
+  id?: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
@@ -1382,6 +1386,7 @@ function Select({
   return (
     <div className="relative">
       <select
+        id={id}
         value={value}
         onChange={(e: ChangeEvent<HTMLSelectElement>) => onChange(e.target.value)}
         className="form-select w-full appearance-none pr-10"
@@ -1391,7 +1396,7 @@ function Select({
       </select>
       <ChevronDown
         size={16}
-        className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#9BA3C2]"
+        className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#647099]"
       />
     </div>
   );

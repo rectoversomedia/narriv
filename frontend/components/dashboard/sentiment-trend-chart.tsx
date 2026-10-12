@@ -60,7 +60,7 @@ export function SentimentTrendChart({ days, labels, locale = "en-GB" }: { days: 
   return (
     <div ref={ref} className="relative w-full select-none">
       {width > 0 ? (
-        <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Daily sentiment counts for the last 7 days">
+        <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} role="group" aria-label="Daily sentiment counts for the last 7 days">
           {ticks.map((t) => (
             <g key={t}>
               <line x1={M.left} x2={width - M.right} y1={yFor(t)} y2={yFor(t)} stroke="#EEF1F7" strokeWidth={1} />
@@ -96,7 +96,7 @@ export function SentimentTrendChart({ days, labels, locale = "en-GB" }: { days: 
                 height={plotH}
                 fill="transparent"
                 tabIndex={0}
-                role="button"
+                role="img"
                 aria-label={`${shortDate(d.date, locale)}: ${d.total > 0 ? `${d.positive} ${labels.positive}, ${d.neutral} ${labels.neutral}, ${d.negative} ${labels.negative}` : labels.noSignals}`}
                 onMouseEnter={() => setActive(i)}
                 onMouseLeave={() => setActive(null)}

@@ -60,7 +60,7 @@ const OPPORTUNITY_TYPE_CONFIG: Record<
 
 const PRIORITY_CONFIG: Record<Priority, { label: string; bg: string; text: string; border: string }> = {
   Immediate: { label: "Immediate", bg: "bg-red-50",   text: "text-red-600",   border: "border-red-200"   },
-  High:      { label: "High",      bg: "bg-amber-50",  text: "text-amber-600", border: "border-amber-200" },
+  High:      { label: "High",      bg: "bg-amber-50",  text: "text-amber-700", border: "border-amber-200" },
   Medium:    { label: "Medium",    bg: "bg-blue-50",   text: "text-blue-600",  border: "border-blue-200"  },
   Low:       { label: "Low",       bg: "bg-slate-50",  text: "text-slate-500", border: "border-slate-200" },
 };
@@ -72,9 +72,9 @@ const CONFIDENCE_CONFIG: Record<Confidence, { variant: "green" | "amber" | "slat
 };
 
 const TREND_CONFIG: Record<TrendDirection, { label: string; icon: typeof TrendingUp; color: string }> = {
-  growing:   { label: "Growing",   icon: TrendingUp, color: "text-[#10B981]" },
+  growing:   { label: "Growing",   icon: TrendingUp, color: "text-[#047857]" },
   stable:    { label: "Stable",    icon: BarChart3,  color: "text-slate-500" },
-  declining: { label: "Declining", icon: AlertTriangle, color: "text-red-500" },
+  declining: { label: "Declining", icon: AlertTriangle, color: "text-red-700" },
 };
 
 // ---------------------------------------------------------------------------
@@ -227,14 +227,14 @@ function OpportunityCard({ opp, t }: { opp: Opportunity; t: (key: string) => str
       <h3 className="mb-2 text-[15px] font-bold leading-snug text-[#101334]">{opp.title}</h3>
 
       {/* Description */}
-      <p className="mb-4 text-[13px] leading-relaxed text-[#68739F]">{opp.description}</p>
+      <p className="mb-4 text-[13px] leading-relaxed text-[#5F6B94]">{opp.description}</p>
 
       {/* Why It Matters */}
       <div className="mb-3">
-        <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+        <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-slate-500">
           {t("whyItMatters")}
         </p>
-        <p className="text-[13px] leading-relaxed text-[#68739F]">{opp.whyItMatters}</p>
+        <p className="text-[13px] leading-relaxed text-[#5F6B94]">{opp.whyItMatters}</p>
       </div>
 
       {/* Recommended Action — highlighted */}
@@ -245,7 +245,7 @@ function OpportunityCard({ opp, t }: { opp: Opportunity; t: (key: string) => str
           priorityCfg.border
         )}
       >
-        <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+        <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-slate-500">
           {t("recommendedAction")}
         </p>
         <p className="text-[13px] font-medium text-[#101334]">{opp.recommendedAction}</p>
@@ -255,15 +255,15 @@ function OpportunityCard({ opp, t }: { opp: Opportunity; t: (key: string) => str
       <div className="mt-auto grid grid-cols-2 gap-x-4 gap-y-2 border-t border-slate-100 pt-4">
         {/* Potential Impact */}
         <div className="flex items-center gap-1.5">
-          <Eye size={12} className="shrink-0 text-slate-400" />
-          <span className="text-[11px] text-slate-400">{t("potentialImpact")}:</span>
+          <Eye size={12} className="shrink-0 text-slate-500" />
+          <span className="text-[11px] text-slate-500">{t("potentialImpact")}:</span>
           <span className="text-[11px] font-bold text-[#101334]">{opp.potentialImpact}</span>
         </div>
 
         {/* Confidence */}
         <div className="flex items-center gap-1.5">
-          <Target size={12} className="shrink-0 text-slate-400" />
-          <span className="text-[11px] text-slate-400">{t("confidence")}:</span>
+          <Target size={12} className="shrink-0 text-slate-500" />
+          <span className="text-[11px] text-slate-500">{t("confidence")}:</span>
           <Badge variant={confidenceCfg.variant} className="text-[10px] px-1.5 py-0">
             {opp.confidence}
           </Badge>
@@ -272,14 +272,14 @@ function OpportunityCard({ opp, t }: { opp: Opportunity; t: (key: string) => str
         {/* Trend */}
         <div className="flex items-center gap-1.5">
           <TrendIcon size={12} className={cn("shrink-0", trendCfg.color)} />
-          <span className="text-[11px] text-slate-400">{t("trend")}:</span>
+          <span className="text-[11px] text-slate-500">{t("trend")}:</span>
           <span className={cn("text-[11px] font-bold", trendCfg.color)}>{trendCfg.label}</span>
         </div>
 
         {/* Created */}
         <div className="flex items-center gap-1.5">
-          <Clock size={12} className="shrink-0 text-slate-400" />
-          <span className="text-[11px] text-slate-400">{t("created")}:</span>
+          <Clock size={12} className="shrink-0 text-slate-500" />
+          <span className="text-[11px] text-slate-500">{t("created")}:</span>
           <span className="text-[11px] font-bold text-[#101334]">
             {new Date(opp.createdAt).toLocaleDateString("en-GB", {
               day: "numeric",
@@ -312,8 +312,8 @@ function MetricCard({
 }) {
   const toneStyles: Record<string, { bg: string; text: string }> = {
     blue:   { bg: "bg-blue-50",   text: "text-blue-600"   },
-    green:  { bg: "bg-green-50",  text: "text-green-600"  },
-    amber:  { bg: "bg-amber-50",  text: "text-amber-600"  },
+    green:  { bg: "bg-green-50",  text: "text-green-700"  },
+    amber:  { bg: "bg-amber-50",  text: "text-amber-700"  },
     purple: { bg: "bg-purple-50", text: "text-purple-600" },
     slate:  { bg: "bg-slate-50",  text: "text-slate-600"  },
   };
@@ -326,10 +326,10 @@ function MetricCard({
           <span className={cn("flex h-7 w-7 items-center justify-center rounded-[7px]", style.bg, style.text)}>
             <Icon size={14} />
           </span>
-          <span className="text-[11px] font-semibold text-slate-400">{label}</span>
+          <span className="text-[11px] font-semibold text-slate-500">{label}</span>
         </div>
         <p className="text-[22px] font-black tracking-[-0.02em] text-[#101334]">{value}</p>
-        {helper && <p className="text-[11px] font-medium text-slate-400">{helper}</p>}
+        {helper && <p className="text-[11px] font-medium text-slate-500">{helper}</p>}
       </CardContent>
     </Card>
   );
@@ -422,7 +422,7 @@ export default function OpportunitiesPage() {
             <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">
               {t("title")}
             </h1>
-            <span className="rounded-[6px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#8B5CFF]">
+            <span className="rounded-[6px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#6E44E8]">
               Demo
             </span>
           </div>
@@ -430,7 +430,7 @@ export default function OpportunitiesPage() {
 
         {/* Filter bar */}
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[12px] font-semibold text-slate-400">{t("filterType")}:</span>
+          <span className="text-[12px] font-semibold text-slate-500">{t("filterType")}:</span>
           {filters.map((f) => (
             <FilterChip
               key={f}
@@ -455,7 +455,7 @@ export default function OpportunitiesPage() {
           <OpportunityCard key={opp.id} opp={opp} t={(key) => t(key)} />
         ))}
         {filteredOpportunities.length === 0 && (
-          <div className="col-span-full flex min-h-40 items-center justify-center rounded-[14px] border border-dashed border-slate-200 bg-slate-50/70 text-[13px] font-bold text-slate-400">
+          <div className="col-span-full flex min-h-40 items-center justify-center rounded-[14px] border border-dashed border-slate-200 bg-slate-50/70 text-[13px] font-bold text-slate-500">
             No opportunities match this filter.
           </div>
         )}

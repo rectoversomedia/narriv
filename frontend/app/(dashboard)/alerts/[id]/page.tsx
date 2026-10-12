@@ -25,10 +25,10 @@ import { DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashb
 type DetailTone = "red" | "amber" | "blue" | "green" | "slate";
 
 const toneClass: Record<DetailTone, { badge: string; bubble: string; border: string; panel: string; text: string }> = {
-  red: { badge: "bg-[#EF4444]/10 text-[#EF4444]", bubble: "bg-[#EF4444]/10 text-[#EF4444]", border: "border-[#F4D8D8]", panel: "from-[#FFF4F4]", text: "text-[#EF4444]" },
+  red: { badge: "bg-[#EF4444]/10 text-[#C81E1E]", bubble: "bg-[#EF4444]/10 text-[#C81E1E]", border: "border-[#F4D8D8]", panel: "from-[#FFF4F4]", text: "text-[#C81E1E]" },
   amber: { badge: "bg-[#F59E0B]/12 text-[#B7791F]", bubble: "bg-[#F59E0B]/12 text-[#B7791F]", border: "border-[#F7DFC0]", panel: "from-[#FFF9ED]", text: "text-[#B7791F]" },
   blue: { badge: "bg-[#465FFF]/10 text-[#465FFF]", bubble: "bg-[#465FFF]/10 text-[#465FFF]", border: "border-[#DDE5FF]", panel: "from-[#F5F7FF]", text: "text-[#465FFF]" },
-  green: { badge: "bg-[#10B981]/10 text-[#0C9B69]", bubble: "bg-[#10B981]/10 text-[#0C9B69]", border: "border-[#CFEFE3]", panel: "from-[#F4FFFA]", text: "text-[#0C9B69]" },
+  green: { badge: "bg-[#10B981]/10 text-[#047857]", bubble: "bg-[#10B981]/10 text-[#047857]", border: "border-[#CFEFE3]", panel: "from-[#F4FFFA]", text: "text-[#047857]" },
   slate: { badge: "bg-slate-100 text-slate-600", bubble: "bg-slate-100 text-slate-600", border: "border-[#E3E8F2]", panel: "from-[#F8FAFC]", text: "text-slate-600" },
 };
 
@@ -85,7 +85,7 @@ function DetailStat({ icon: Icon, label, value, tone = "slate" }: { icon: typeof
         <span className={`flex size-8 items-center justify-center rounded-full ${toneClass[tone].bubble}`}>
           <Icon size={15} strokeWidth={2.4} />
         </span>
-        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8A94B8]">{label}</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#647099]">{label}</p>
       </div>
       <p className="mt-3 truncate text-[15px] font-black text-[#101334]" title={value}>{value}</p>
     </div>
@@ -133,7 +133,7 @@ function AssignmentCard({
           </span>
           <div>
             <h2 className="text-[18px] font-black tracking-[-0.03em] text-[#101334]">{td("assignment.title")}</h2>
-            <p className="mt-1 text-[11px] font-bold text-[#68739F]">{td("assignment.desc")}</p>
+            <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{td("assignment.desc")}</p>
           </div>
           <button
             type="button"
@@ -267,7 +267,7 @@ export default function AlertDetailPage() {
 
   return (
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
-      <Link href="/alerts" className="inline-flex items-center gap-2 text-[13px] font-black text-[#68739F] transition hover:text-[#465FFF]">
+      <Link href="/alerts" className="inline-flex items-center gap-2 text-[13px] font-black text-[#5F6B94] transition hover:text-[#465FFF]">
         <ArrowLeft size={16} />
         {td("nav.back")}
       </Link>
@@ -280,7 +280,7 @@ export default function AlertDetailPage() {
             <div className="flex flex-wrap items-center gap-3">
               <StatusBadge tone={tone}>{liveData.severity ?? "alert"}</StatusBadge>
               <StatusBadge tone="slate">{source}</StatusBadge>
-              <span className="rounded-[8px] border border-[#E6EAF2] bg-white px-3 py-1.5 text-[10px] font-black text-[#68739F]">#{params.id}</span>
+              <span className="rounded-[8px] border border-[#E6EAF2] bg-white px-3 py-1.5 text-[10px] font-black text-[#5F6B94]">#{params.id}</span>
               <div className="ml-auto flex flex-wrap items-center gap-2">
                 <button
                   type="button"
@@ -319,7 +319,7 @@ export default function AlertDetailPage() {
                   <span className={`flex size-11 items-center justify-center rounded-full ring-4 ring-white ${toneClass[tone].bubble}`}>
                     <ShieldAlert size={22} strokeWidth={2.4} />
                   </span>
-                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#8A94B8]">{td("liveDetail")}</p>
+                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#647099]">{td("liveDetail")}</p>
                 </div>
                 <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{title}</h1>
                 <p className="mt-3 text-[13px] font-bold leading-6 text-[#53608C]">{td("issue.description", { issue })}</p>
@@ -355,21 +355,21 @@ export default function AlertDetailPage() {
                         ) : (
                           <span className="text-[13px] font-bold text-[#101334]">{sig.title}</span>
                         )}
-                        <span className="mt-0.5 block text-[11px] font-semibold text-[#8A94B8]">{[sig.publisher, sig.platform].filter(Boolean).join(" · ") || "Unknown source"} · {formatDateTime(sig.publishedAt || sig.capturedAt)}</span>
+                        <span className="mt-0.5 block text-[11px] font-semibold text-[#647099]">{[sig.publisher, sig.platform].filter(Boolean).join(" · ") || "Unknown source"} · {formatDateTime(sig.publishedAt || sig.capturedAt)}</span>
                       </span>
                       <span className="shrink-0 rounded-md border border-[#E6EAF2] px-1.5 py-0.5 text-[10px] font-black capitalize text-[#53608C]">{sig.sentiment === "unanalyzed" ? "Not analyzed" : sig.sentiment}</span>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="mt-2 text-[12px] font-semibold text-[#8A94B8]">No linked signals are stored for this alert.</p>
+                <p className="mt-2 text-[12px] font-semibold text-[#647099]">No linked signals are stored for this alert.</p>
               )}
-              {liveData.evidenceMissing ? <p className="mt-2 text-[11px] font-semibold text-[#8A94B8]">{liveData.evidenceMissing} referenced signal(s) are no longer available.</p> : null}
-              {liveData.triggeredBy ? <p className="mt-2 text-[11px] font-semibold text-[#8A94B8]">Raised by: {liveData.triggeredBy === "pg_cron_automated_rules" ? "database alert rules (legacy scheduler)" : liveData.triggeredBy}</p> : null}
+              {liveData.evidenceMissing ? <p className="mt-2 text-[11px] font-semibold text-[#647099]">{liveData.evidenceMissing} referenced signal(s) are no longer available.</p> : null}
+              {liveData.triggeredBy ? <p className="mt-2 text-[11px] font-semibold text-[#647099]">Raised by: {liveData.triggeredBy === "pg_cron_automated_rules" ? "database alert rules (legacy scheduler)" : liveData.triggeredBy}</p> : null}
             </section>
 
             <div className="mt-6 rounded-[14px] border border-[#CFEFE3] bg-[#F4FFFA] p-5">
-              <p className="flex items-center gap-2 text-[13px] font-black text-[#0C9B69]">
+              <p className="flex items-center gap-2 text-[13px] font-black text-[#047857]">
                 <CheckCircle2 size={17} />
                 {td("recommendation.title")}
               </p>
@@ -386,7 +386,7 @@ export default function AlertDetailPage() {
                 <button
                   type="button"
                   onClick={() => setIsCaseModalOpen(true)}
-                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[9px] border border-[#CFEFE3] bg-white px-4 text-[12px] font-black text-[#0C9B69] transition hover:bg-[#F4FFFA]"
+                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[9px] border border-[#CFEFE3] bg-white px-4 text-[12px] font-black text-[#047857] transition hover:bg-[#F4FFFA]"
                 >
                   <Flag size={14} />
                   Escalate to Case

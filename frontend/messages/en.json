@@ -2819,7 +2819,7 @@
         "subtitle": "Add a new collaborator to your workspace.",
         "email": "Email",
         "emailLabel": "Work Email",
-        "emailPlaceholder": "Example: aldi@narriv.ai",
+        "emailPlaceholder": "Example: name@company.com",
         "emailInvalid": "Invalid email format.",
         "nameRequired": "Name is required.",
         "nameMinLength": "Name must be at least 2 characters.",

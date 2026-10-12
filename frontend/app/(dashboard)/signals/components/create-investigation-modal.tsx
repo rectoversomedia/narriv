@@ -122,7 +122,7 @@ export function CreateInvestigationModal({
               <p id={descriptionId} className="text-xs font-semibold text-slate-500">{t("desc")}</p>
             </div>
           </div>
-          <button type="button" onClick={() => onOpenChange(false)} className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
+          <button type="button" onClick={() => onOpenChange(false)} className="rounded-full p-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700">
             <X size={16} />
           </button>
         </div>

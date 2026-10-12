@@ -161,7 +161,7 @@ export function ResponsiveTable<T>({
                     .filter((col) => col.key !== primaryColumn?.key && col.key !== (hasSelectable ? selectionKey : undefined))
                     .map((col) => (
                       <div key={col.key} className="space-y-1">
-                        <p className="text-xs font-medium text-slate-400">{col.header}</p>
+                        <p className="text-xs font-medium text-slate-500">{col.header}</p>
                         <div className="text-slate-700">
                           {col.render ? col.render(item, 0) : String((item as Record<string, unknown>)[col.key] ?? "-")}
                         </div>

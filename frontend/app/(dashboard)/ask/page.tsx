@@ -86,7 +86,7 @@ function TypingIndicator({ text }: { text: string }) {
         <BotMessageSquare size={15} className="text-[#465FFF]" />
       </div>
       <div className="flex flex-col gap-1.5 rounded-2xl rounded-tl-sm border border-slate-100 bg-white px-4 py-3 shadow-sm">
-        <p className="text-[12px] font-semibold text-slate-400">{text}</p>
+        <p className="text-[12px] font-semibold text-slate-500">{text}</p>
         <div className="flex items-center gap-1">
           <span className="h-1.5 w-1.5 typing-dot rounded-full bg-slate-300 [animation-delay:0ms]" />
           <span className="h-1.5 w-1.5 typing-dot rounded-full bg-slate-300 [animation-delay:150ms]" />
@@ -262,7 +262,7 @@ export default function AskPage() {
             {sidebarOpen && (
               <div>
                 <p className="text-[14px] font-black text-slate-900">{tAsk("title")}</p>
-                <p className="text-[11px] font-semibold text-slate-400">{tAsk("subtitle")}</p>
+                <p className="text-[11px] font-semibold text-slate-500">{tAsk("subtitle")}</p>
               </div>
             )}
           </div>
@@ -270,7 +270,7 @@ export default function AskPage() {
           {/* Suggested questions */}
           {sidebarOpen && (
             <div className="flex flex-col gap-1">
-              <p className="mb-1 px-1 text-[10px] font-black uppercase tracking-wider text-slate-400">
+              <p className="mb-1 px-1 text-[10px] font-black uppercase tracking-wider text-slate-500">
                 Suggested
               </p>
               {SUGGESTED_CATEGORIES.map((cat) => {
@@ -308,7 +308,7 @@ export default function AskPage() {
               type="button"
               onClick={() => setSidebarOpen(o => !o)}
               aria-label="Toggle sidebar"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-100 text-slate-400 transition hover:border-[#465FFF]/20 hover:text-[#465FFF] lg:hidden"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-100 text-slate-500 transition hover:border-[#465FFF]/20 hover:text-[#465FFF] lg:hidden"
             >
               {sidebarOpen ? <ChevronDown size={14} className="rotate-90" /> : <ChevronRight size={14} />}
             </button>
@@ -328,7 +328,7 @@ export default function AskPage() {
             <button
               type="button"
               onClick={clearChat}
-              className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-[12px] font-bold text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-500"
+              className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-[12px] font-bold text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700"
             >
               Clear
             </button>
@@ -362,7 +362,7 @@ export default function AskPage() {
                         {msg.confidence && <ConfidenceChip confidence={msg.confidence} t={tAsk} />}
                       </div>
                       {msg.isDemo && (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-bold text-[#8B5CFF]">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-bold text-[#6E44E8]">
                           DEMO
                         </span>
                       )}
@@ -391,7 +391,7 @@ export default function AskPage() {
                       <div className="mt-3 grid grid-cols-3 gap-2">
                         {msg.metrics.map((m, i) => (
                           <div key={i} className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5 text-center">
-                            <p className="text-[11px] font-bold text-slate-400">{m.label}</p>
+                            <p className="text-[11px] font-bold text-slate-500">{m.label}</p>
                             <p className="mt-0.5 text-[14px] font-black text-slate-900">{m.value || "—"}</p>
                           </div>
                         ))}
@@ -401,7 +401,7 @@ export default function AskPage() {
                     {/* Evidence bullets */}
                     {msg.evidence && msg.evidence.length > 0 && (
                       <ul className="mt-3 space-y-1.5">
-                        <li className="text-[10px] font-black uppercase tracking-wide text-slate-400">Sources cited</li>
+                        <li className="text-[10px] font-black uppercase tracking-wide text-slate-500">Sources cited</li>
                         {msg.evidence.map((e) => {
                           const label = e.title || e.id;
                           const kind = e.kind === "alert" ? "Alert" : e.kind === "narrative" ? "Narrative" : e.kind === "signal" ? "Signal" : "Record";
@@ -410,7 +410,7 @@ export default function AskPage() {
                             <li key={e.id} className="flex items-start gap-2 text-[12px] font-semibold text-slate-500">
                               <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#465FFF]/40" />
                               <span className="min-w-0">
-                                <span className="mr-1.5 text-[10px] font-black uppercase text-slate-400">{kind}</span>
+                                <span className="mr-1.5 text-[10px] font-black uppercase text-slate-500">{kind}</span>
                                 {href ? (
                                   <a href={href} {...(e.kind === "signal" ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="text-[#465FFF] underline-offset-2 hover:underline">{label}</a>
                                 ) : (
@@ -430,7 +430,7 @@ export default function AskPage() {
                           <a
                             key={link.href}
                             href={link.href}
-                            className="inline-flex items-center gap-1 text-[12px] font-bold text-[#465FFF] transition hover:text-[#8B5CFF] hover:underline"
+                            className="inline-flex items-center gap-1 text-[12px] font-bold text-[#465FFF] transition hover:text-[#6E44E8] hover:underline"
                           >
                             {link.label}
                             <ChevronRight size={12} />
@@ -449,7 +449,7 @@ export default function AskPage() {
                   <BotMessageSquare size={14} className="text-[#465FFF]" />
                 </div>
                 <div className="rounded-2xl rounded-tl-sm border border-slate-100 bg-white px-5 py-4 shadow-sm">
-                  <p className="mb-2 text-[12px] font-semibold text-slate-400">{tAsk("thinking")}</p>
+                  <p className="mb-2 text-[12px] font-semibold text-slate-500">{tAsk("thinking")}</p>
                   <div className="flex items-center gap-1">
                     <span className="h-2 w-2 typing-dot rounded-full bg-[#465FFF]/40 [animation-delay:0ms]" />
                     <span className="h-2 w-2 typing-dot rounded-full bg-[#465FFF]/40 [animation-delay:150ms]" />
@@ -474,7 +474,7 @@ export default function AskPage() {
                 onKeyDown={handleKeyDown}
                 placeholder={tAsk("placeholder")}
                 rows={1}
-                className="w-full resize-none bg-transparent text-[13px] font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                className="w-full resize-none bg-transparent text-[13px] font-semibold text-slate-900 placeholder:text-slate-500 focus:outline-none"
                 style={{ minHeight: "20px", maxHeight: "120px" }}
                 onInput={e => {
                   const t = e.target as HTMLTextAreaElement;
@@ -493,7 +493,7 @@ export default function AskPage() {
               <Send size={16} />
             </button>
           </div>
-          <p className="mx-auto mt-2 max-w-3xl text-center text-[11px] font-semibold text-slate-400">
+          <p className="mx-auto mt-2 max-w-3xl text-center text-[11px] font-semibold text-slate-500">
             Press Enter to send · Shift+Enter for new line
           </p>
         </div>

@@ -71,6 +71,7 @@ import {
 } from "@/lib/api-service";
 import { getMockAlerts, getMockAlertsSummary } from "@/lib/demo-mock-data";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
+import { intlLocale } from "@/store/useUiStore";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type AlertStatus = "New" | "Investigating" | "Escalated" | "Resolved";
@@ -129,10 +130,10 @@ type NotificationRuleDraft = {
 
 const toneStyles: Record<Tone, ToneStyle> = {
   blue: { color: "#465FFF", rgb: "70,95,255", soft: "bg-[#465FFF]/10", text: "text-[#465FFF]", border: "border-[#465FFF]/15" },
-  purple: { color: "#8B5CFF", rgb: "139,92,255", soft: "bg-[#8B5CFF]/10", text: "text-[#8B5CFF]", border: "border-[#8B5CFF]/15" },
-  green: { color: "#10B981", rgb: "16,185,129", soft: "bg-[#10B981]/10", text: "text-[#10B981]", border: "border-[#10B981]/15" },
-  red: { color: "#EF4444", rgb: "239,68,68", soft: "bg-[#EF4444]/10", text: "text-[#EF4444]", border: "border-[#EF4444]/15" },
-  amber: { color: "#F59E0B", rgb: "245,158,11", soft: "bg-[#F59E0B]/10", text: "text-[#F59E0B]", border: "border-[#F59E0B]/15" },
+  purple: { color: "#8B5CFF", rgb: "139,92,255", soft: "bg-[#8B5CFF]/10", text: "text-[#6E44E8]", border: "border-[#8B5CFF]/15" },
+  green: { color: "#10B981", rgb: "16,185,129", soft: "bg-[#10B981]/10", text: "text-[#047857]", border: "border-[#10B981]/15" },
+  red: { color: "#EF4444", rgb: "239,68,68", soft: "bg-[#EF4444]/10", text: "text-[#C81E1E]", border: "border-[#EF4444]/15" },
+  amber: { color: "#F59E0B", rgb: "245,158,11", soft: "bg-[#F59E0B]/10", text: "text-[#B45309]", border: "border-[#F59E0B]/15" },
   slate: { color: "#64748B", rgb: "100,116,139", soft: "bg-slate-100", text: "text-slate-500", border: "border-slate-200" },
 };
 
@@ -277,14 +278,14 @@ function MetricCardSkeleton() {
 function SourceIconList({ label, sources, extraSources }: { label: string; sources: SourceKey[]; extraSources: number }) {
   return (
     <div>
-      <p className="mb-2 text-[9px] font-black text-[#68739F]">{label}</p>
+      <p className="mb-2 text-[9px] font-black text-[#5F6B94]">{label}</p>
       <div className="flex items-center gap-1.5">
         {sources.map((source) => (
           <span key={source} className="flex size-[22px] items-center justify-center rounded-[6px] border border-[#E6EAF2] bg-white shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
             {sourceIcons[source]}
           </span>
         ))}
-        {extraSources > 0 ? <span className="rounded-full bg-[#F1F4FB] px-1.5 py-0.5 text-[9px] font-black text-[#68739F]">+{extraSources}</span> : null}
+        {extraSources > 0 ? <span className="rounded-full bg-[#F1F4FB] px-1.5 py-0.5 text-[9px] font-black text-[#5F6B94]">+{extraSources}</span> : null}
       </div>
     </div>
   );
@@ -306,7 +307,7 @@ function StatusBadge({ status }: { status: AlertStatus }) {
     New: "bg-[#8B5CFF]/10 text-[#465FFF]",
     Investigating: "bg-[#465FFF]/10 text-[#465FFF]",
     Escalated: "bg-[#F97316]/12 text-[#F97316]",
-    Resolved: "bg-[#10B981]/10 text-[#0C9B69]",
+    Resolved: "bg-[#10B981]/10 text-[#047857]",
   };
 
   return <span className={cn("rounded-[8px] px-2.5 py-1 text-[10px] font-black", styles[status])}>{status}</span>;
@@ -437,11 +438,11 @@ function mapAlertRecordToRow(alert: Alert, ta: ReturnType<typeof useTranslations
     sources: shownSources.length > 0 ? shownSources : ["x"],
     extraSources: Math.max(0, alertSources.length - shownSources.length),
     escalationLevel: alert.escalationLevel || "-",
-    deadline: deadline && !Number.isNaN(deadline.getTime()) ? deadline.toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "-",
+    deadline: deadline && !Number.isNaN(deadline.getTime()) ? deadline.toLocaleString(intlLocale(), { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "-",
     ack: normalizedStatus === "open" ? ta("table.notAcknowledged") : ta("table.acknowledged"),
     impact: alert.severity === "critical" || alert.severity === "high" ? "High" : "Medium",
     status: optimisticStatuses[alert.id] ?? mappedStatus,
-    time: Number.isNaN(createdAt.getTime()) ? "-" : createdAt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+    time: Number.isNaN(createdAt.getTime()) ? "-" : createdAt.toLocaleTimeString(intlLocale(), { hour: "2-digit", minute: "2-digit" }),
     tone: alert.severity === "critical" ? "red" : alert.severity === "high" ? "amber" : "green",
   };
 }
@@ -476,10 +477,10 @@ function CriticalIncident({
     <Panel className="min-h-0 h-auto border-[#FAD7D7] bg-gradient-to-br from-[#FFF4F4] via-white to-white p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="flex size-8 items-center justify-center rounded-full bg-[#EF4444]/10 text-[#EF4444] ring-4 ring-[#EF4444]/5"><AlertTriangle size={17} fill="#EF4444" /></span>
+          <span className="flex size-8 items-center justify-center rounded-full bg-[#EF4444]/10 text-[#C81E1E] ring-4 ring-[#EF4444]/5"><AlertTriangle size={17} fill="#EF4444" /></span>
           <div>
             <h2 className="text-[17px] font-black tracking-[-0.03em] text-[#101334]">{ta("v2.incident.title")}</h2>
-            <p className="mt-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#EF4444]">{ta("v2.incident.totalCritical", { count: totalCritical })}</p>
+            <p className="mt-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#C81E1E]">{ta("v2.incident.totalCritical", { count: totalCritical })}</p>
           </div>
         </div>
         {alert ? (
@@ -507,28 +508,28 @@ function CriticalIncident({
               <h3 className="text-[18px] sm:text-[20px] font-black leading-snug tracking-[-0.03em] text-[#070B28] line-clamp-2">{alert.title}</h3>
               <p className="mt-1.5 line-clamp-2 text-[12px] font-semibold leading-5 text-[#31406B]">{alert.description}</p>
             </div>
-            <span className="shrink-0 rounded-[7px] bg-[#EF4444]/10 px-3 py-1 text-[10px] font-black tracking-[0.12em] text-[#EF4444]">{ta("v2.incident.critical")}</span>
+            <span className="shrink-0 rounded-[7px] bg-[#EF4444]/10 px-3 py-1 text-[10px] font-black tracking-[0.12em] text-[#C81E1E]">{ta("v2.incident.critical")}</span>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
             {stats.map(([label, value, helper, tone]) => (
               <div key={label} className="min-w-0 rounded-[12px] border border-[#F4D8D8] bg-white/75 p-2.5 shadow-[0_1px_3px_rgba(16,24,40,0.03)]">
-                <p className="truncate text-[9px] font-black uppercase tracking-wider text-[#8A94B8]" title={label}>{label}</p>
+                <p className="truncate text-[9px] font-black uppercase tracking-wider text-[#647099]" title={label}>{label}</p>
                 <p className={cn("mt-1.5 truncate text-[14px] font-black leading-tight tracking-[-0.02em]", toneStyles[tone].text)} title={value}>{value}</p>
-                <p className="mt-1.5 truncate text-[9px] font-bold text-[#68739F]" title={helper}>{helper}</p>
+                <p className="mt-1.5 truncate text-[9px] font-bold text-[#5F6B94]" title={helper}>{helper}</p>
               </div>
             ))}
           </div>
           <div className="mt-5 grid gap-3 border-t border-[#F2DCDC] pt-3.5 sm:grid-cols-3">
             <SourceIconList label={ta("v2.incident.source")} sources={alert.sources} extraSources={alert.extraSources} />
             <div className="min-w-0">
-              <p className="mb-2 text-[9px] font-black text-[#68739F]">{ta("v2.incident.owner")}</p>
+              <p className="mb-2 text-[9px] font-black text-[#5F6B94]">{ta("v2.incident.owner")}</p>
               <div className="inline-flex min-h-[30px] max-w-full items-center gap-1.5 rounded-[7px] border border-[#E6EAF2] bg-white px-2 text-[9px] font-black leading-none text-[#101334]">
                 <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[#465FFF]">O</span>
                 <span className="truncate">{alert.sourceLabel || ta("table.unassigned")}</span>
               </div>
             </div>
             <div className="min-w-0">
-              <p className="mb-2 text-[9px] font-black text-[#68739F]">{ta("v2.incident.status")}</p>
+              <p className="mb-2 text-[9px] font-black text-[#5F6B94]">{ta("v2.incident.status")}</p>
               <div className="flex flex-wrap items-center gap-2"><StatusBadge status={alert.status} /><span className="text-[9px] font-black text-[#31406B]">{ta("v2.incident.since", { time: alert.time })}</span></div>
             </div>
           </div>
@@ -536,7 +537,7 @@ function CriticalIncident({
       ) : (
         <div className="mt-5 rounded-[14px] border border-dashed border-[#F4D8D8] bg-white/70 p-6">
           <p className="text-[15px] font-black text-[#101334]">{ta("v2.incident.noCriticalTitle")}</p>
-          <p className="mt-2 max-w-xl text-[12px] font-semibold leading-5 text-[#68739F]">{ta("v2.incident.noCriticalDesc")}</p>
+          <p className="mt-2 max-w-xl text-[12px] font-semibold leading-5 text-[#5F6B94]">{ta("v2.incident.noCriticalDesc")}</p>
         </div>
       )}
     </Panel>
@@ -572,15 +573,15 @@ function DeliveryStatus({ ta, integrations, isLoading }: { ta: ReturnType<typeof
               <ChannelIcon tone={channel.visual.tone}>{channel.visual.icon}</ChannelIcon>
               <div className="min-w-0">
                 <p className="truncate text-[12px] font-black text-[#101334]">{channel.name}</p>
-                <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-[#8A94B8]">{channel.platform}</p>
+                <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-[#647099]">{channel.platform}</p>
               </div>
-              <div className="text-right"><p className="inline-flex items-center gap-1 text-[10px] font-black text-[#0C9B69]"><CheckCircle2 size={11} aria-hidden="true" />{ta("v2.delivery.active")}</p><p className="text-[9px] font-bold text-[#31406B]">{channel.lastSyncAt ? new Date(channel.lastSyncAt).toLocaleDateString("id-ID", { day: "2-digit", month: "short" }) : ta("v2.delivery.ready")}</p></div>
+              <div className="text-right"><p className="inline-flex items-center gap-1 text-[10px] font-black text-[#047857]"><CheckCircle2 size={11} aria-hidden="true" />{ta("v2.delivery.active")}</p><p className="text-[9px] font-bold text-[#31406B]">{channel.lastSyncAt ? new Date(channel.lastSyncAt).toLocaleDateString(intlLocale(), { day: "2-digit", month: "short" }) : ta("v2.delivery.ready")}</p></div>
             </div>
           ))
         ) : (
           <div className="rounded-[10px] border border-dashed border-[#DDE3EF] bg-[#FBFCFF] p-4">
             <p className="text-[12px] font-black text-[#101334]">{ta("v2.delivery.noChannels")}</p>
-            <p className="mt-1 text-[10px] font-bold text-[#8A94B8]">{ta("v2.delivery.noChannelsDesc")}</p>
+            <p className="mt-1 text-[10px] font-bold text-[#647099]">{ta("v2.delivery.noChannelsDesc")}</p>
           </div>
         )}
         {extraCount > 0 ? <p className="text-[10px] font-black text-[#53608C]">+{extraCount} {ta("v2.delivery.moreChannels")}</p> : null}
@@ -608,7 +609,7 @@ function StakeholderEngagement({ ta, summary, memberCount, isLoading }: { ta: Re
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-[15px] font-black text-[#101334]">{ta("v2.stakeholder.title")}</h3>
-          <p className="mt-1 text-[10px] font-bold text-[#68739F]">{ta("v2.stakeholder.desc")}</p>
+          <p className="mt-1 text-[10px] font-bold text-[#5F6B94]">{ta("v2.stakeholder.desc")}</p>
         </div>
         {isLoading ? <span className="size-3.5 rounded-full border-2 border-[#465FFF] border-r-transparent" /> : null}
       </div>
@@ -654,7 +655,7 @@ function CriticalDeliveryStatus({ alerts, total, ta, onViewAll, isLoading }: { a
       <div className="overflow-hidden rounded-[10px] border border-[#F4D8D8]">
         <div className="flex items-center justify-between gap-3 bg-[#FFF2F2] px-3 py-2">
           <p className="truncate text-[12px] font-black text-[#101334]">{isLoading ? ta("v2.criticalStatus.loading") : alert?.title ?? ta("v2.criticalStatus.noCritical")}</p>
-          <span className="rounded-[6px] bg-[#EF4444]/10 px-2 py-0.5 text-[9px] font-black text-[#EF4444]">{ta("v2.incident.critical")}</span>
+          <span className="rounded-[6px] bg-[#EF4444]/10 px-2 py-0.5 text-[9px] font-black text-[#C81E1E]">{ta("v2.incident.critical")}</span>
         </div>
         <div className="divide-y divide-[#F1E5E5]">
           {rows.map(([label, value, Icon, tone]) => (
@@ -677,7 +678,7 @@ function EscalationMatrix({ ta, levels, isLoading }: { ta: ReturnType<typeof use
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-[15px] font-black text-[#101334]">{ta("v2.escalationMatrix.panelTitle")}</h3>
-          <p className="mt-1 text-[10px] font-bold text-[#68739F]">{ta("v2.escalationMatrix.desc")}</p>
+          <p className="mt-1 text-[10px] font-bold text-[#5F6B94]">{ta("v2.escalationMatrix.desc")}</p>
         </div>
         {isLoading ? <span className="size-3.5 rounded-full border-2 border-[#465FFF] border-r-transparent" /> : null}
       </div>
@@ -688,11 +689,11 @@ function EscalationMatrix({ ta, levels, isLoading }: { ta: ReturnType<typeof use
               <span className={cn("rounded-[6px] px-2 py-1 text-center text-[10px] font-black", item.isActive ? "bg-[#EEEAFE] text-[#6B4DE6]" : "bg-slate-100 text-slate-500")}>{item.level}</span>
               <div className="min-w-0">
                 <p className="truncate text-[11px] font-black text-[#101334]">{item.roleName}</p>
-                <p className="mt-0.5 text-[9px] font-bold text-[#68739F]">{item.isActive ? ta("v2.escalationMatrix.activeLabel") : ta("v2.escalationMatrix.standbyLabel")}</p>
+                <p className="mt-0.5 text-[9px] font-bold text-[#5F6B94]">{item.isActive ? ta("v2.escalationMatrix.activeLabel") : ta("v2.escalationMatrix.standbyLabel")}</p>
               </div>
               <p className="flex items-center gap-2 text-[10px] font-bold text-[#31406B]">
                 {ta("v2.escalationMatrix.sla", { time: formatSlaMinutes(item.slaMinutes, ta) })}
-                {item.isActive ? <CircleCheck size={14} className="text-[#10B981]" /> : <span className="size-3.5 rounded-full border-2 border-[#C7D0E5]" />}
+                {item.isActive ? <CircleCheck size={14} className="text-[#047857]" /> : <span className="size-3.5 rounded-full border-2 border-[#C7D0E5]" />}
               </p>
             </div>
             {index < levels.length - 1 ? <ArrowDown size={14} className="mx-14 my-1 text-[#465FFF]" /> : null}
@@ -790,12 +791,12 @@ function AlertPagination({ page, totalPages, onPageChange, ta }: { page: number;
   });
   return (
     <div className="flex items-center gap-2">
-      <button type="button" disabled={page <= 1} onClick={() => onPageChange(Math.max(1, page - 1))} className="flex size-9 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#8B95B8] transition hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-40" aria-label={ta("pagination.previous")}>
+      <button type="button" disabled={page <= 1} onClick={() => onPageChange(Math.max(1, page - 1))} className="flex size-9 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#647099] transition hover:text-[#465FFF] disabled:cursor-not-allowed disabled:opacity-40" aria-label={ta("pagination.previous")}>
         <ChevronDown size={14} className="rotate-90" />
       </button>
       {pages.map((item, index) => (
         <div key={item} className="contents">
-          {index > 0 && item - pages[index - 1] > 1 ? <span className="px-1 text-[11px] font-black text-[#8B95B8]">...</span> : null}
+          {index > 0 && item - pages[index - 1] > 1 ? <span className="px-1 text-[11px] font-black text-[#647099]">...</span> : null}
         <button key={item} type="button" onClick={() => onPageChange(item)} className={cn("flex size-9 items-center justify-center rounded-[8px] border text-[12px] font-black transition", page === item ? "border-[#465FFF] bg-white text-[#465FFF] shadow-sm" : "border-[#E6EAF2] bg-white text-[#31406B] hover:border-[#C9D4F6]")}>{item}</button>
         </div>
       ))}
@@ -868,7 +869,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
           </button>
           <button
             onClick={() => onSelectionChange(new Set())}
-            className="ml-auto flex items-center gap-1 rounded-[6px] px-2 py-1.5 text-[11px] font-bold text-[#68739F] transition hover:bg-[#465FFF]/10 hover:text-[#465FFF]"
+            className="ml-auto flex items-center gap-1 rounded-[6px] px-2 py-1.5 text-[11px] font-bold text-[#5F6B94] transition hover:bg-[#465FFF]/10 hover:text-[#465FFF]"
           >
             <X size={12} />
             Clear
@@ -879,12 +880,12 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h2 className="text-[18px] font-black tracking-[-0.03em] text-[#101334]">{ta("table.title")}</h2>
-          <p className="mt-1 text-[11px] font-bold text-[#68739F]">{ta("table.desc")}</p>
+          <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{ta("table.desc")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <label className="relative block">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#68739F]" />
-            <input type="search" value={searchQuery ?? ""} onChange={(e) => onSearchChange(e.target.value)} placeholder={ta("filter.search")} className="h-10 w-full min-w-[220px] rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-10 text-[13px] font-bold text-[#101334] outline-none transition placeholder:text-[#8B95B8] focus:border-[#465FFF] focus:bg-white" />
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#5F6B94]" />
+            <input type="search" value={searchQuery ?? ""} onChange={(e) => onSearchChange(e.target.value)} placeholder={ta("filter.search")} className="h-10 w-full min-w-[220px] rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-10 text-[13px] font-bold text-[#101334] outline-none transition placeholder:text-[#647099] focus:border-[#465FFF] focus:bg-white" />
           </label>
           <button type="button" onClick={onOpenFilterModal} className={cn("inline-flex h-10 items-center gap-2 rounded-[8px] border px-4 text-[11px] font-black transition", activeFilterCount > 0 ? "border-[#465FFF]/30 bg-[#EEF2FF] text-[#465FFF]" : "border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B] hover:border-[#C9D4F6]")}>
             <SlidersHorizontal size={14} />
@@ -896,11 +897,13 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
       <div className="mt-4 overflow-x-auto">
         <table className="w-full min-w-[980px] border-collapse text-left">
           <thead>
-            <tr className="border-b border-[#E6EAF2] text-[9px] font-black uppercase tracking-[0.18em] text-[#68739F]">
+            <tr className="border-b border-[#E6EAF2] text-[9px] font-black uppercase tracking-[0.18em] text-[#5F6B94]">
               <th className="w-10 px-3 py-3">
                 <button
                   type="button"
                   onClick={handleSelectAll}
+                  aria-label="Select all alerts"
+                  aria-pressed={allSelected}
                   className={cn(
                     "flex h-5 w-5 items-center justify-center rounded border transition",
                     allSelected ? "border-[#465FFF] bg-[#465FFF] text-white" :
@@ -930,10 +933,10 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                 <td colSpan={10} className="px-6 py-12 text-center">
                   <div className="flex flex-col items-center justify-center">
                     <div className="flex size-12 items-center justify-center rounded-full bg-[#FFF2F2]">
-                      <AlertTriangle size={24} className="text-[#EF4444]" />
+                      <AlertTriangle size={24} className="text-[#C81E1E]" />
                     </div>
                     <p className="mt-3 text-[13px] font-bold text-[#B42318]">{ta("table.errorTitle")}</p>
-                    <p className="mt-1 text-[11px] font-semibold text-[#8A94B8]">{ta("table.errorDesc")}</p>
+                    <p className="mt-1 text-[11px] font-semibold text-[#647099]">{ta("table.errorDesc")}</p>
                   </div>
                 </td>
               </tr>
@@ -944,8 +947,8 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                     <div className="flex size-12 items-center justify-center rounded-full bg-[#F5F7FC]">
                       <AlertTriangle size={24} className="text-[#DDE3EF]" />
                     </div>
-                    <p className="mt-3 text-[13px] font-bold text-[#68739F]">{ta("empty.noAlerts")}</p>
-                    <p className="mt-1 text-[11px] font-semibold text-[#8A94B8]">{ta("empty.noAlertsDesc")}</p>
+                    <p className="mt-3 text-[13px] font-bold text-[#5F6B94]">{ta("empty.noAlerts")}</p>
+                    <p className="mt-1 text-[11px] font-semibold text-[#647099]">{ta("empty.noAlertsDesc")}</p>
                   </div>
                 </td>
               </tr>
@@ -955,6 +958,8 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                   <button
                     type="button"
                     onClick={() => handleSelectRow(alert.id)}
+                    aria-label={`Select alert: ${alert.title}`}
+                    aria-pressed={selectedAlerts.has(alert.id)}
                     className={cn(
                       "flex h-5 w-5 items-center justify-center rounded border transition",
                       selectedAlerts.has(alert.id) ? "border-[#465FFF] bg-[#465FFF] text-white" :
@@ -969,11 +974,11 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                     <AlertIcon tone={alert.tone} />
                     <div className="min-w-0">
                       <Link href={`/alerts/${alert.id}`} className="text-[12px] font-black leading-snug text-[#101334] hover:text-[#465FFF]">{alert.title}</Link>
-                      <p className="mt-1 line-clamp-2 text-[10px] font-bold leading-snug text-[#68739F]">{alert.description}</p>
+                      <p className="mt-1 line-clamp-2 text-[10px] font-bold leading-snug text-[#5F6B94]">{alert.description}</p>
                     </div>
                   </div>
                 </td>
-                <td className="px-3 py-3 align-middle"><span className={cn("rounded-[6px] px-2 py-1 text-[9px] font-black", alert.tone === "red" ? "bg-[#EF4444]/10 text-[#EF4444]" : alert.tone === "amber" ? "bg-[#F59E0B]/12 text-[#D97706]" : "bg-[#10B981]/10 text-[#0C9B69]")}>{alert.tags[0]}</span></td>
+                <td className="px-3 py-3 align-middle"><span className={cn("rounded-[6px] px-2 py-1 text-[9px] font-black", alert.tone === "red" ? "bg-[#EF4444]/10 text-[#C81E1E]" : alert.tone === "amber" ? "bg-[#F59E0B]/12 text-[#B45309]" : "bg-[#10B981]/10 text-[#047857]")}>{alert.tags[0]}</span></td>
                 <td className="px-3 py-3 align-middle"><div className="flex items-center gap-1.5"><span className="flex size-6 items-center justify-center rounded-full bg-[#465FFF]/10 text-[9px] font-black text-[#465FFF]">{alert.sourceLabel.slice(0, 2).toUpperCase()}</span><span className="text-[10px] font-black text-[#31406B]">{alert.sourceLabel}</span></div></td>
                 <td className="px-3 py-3 align-middle"><SourceIconList label="" sources={alert.sources} extraSources={alert.extraSources} /></td>
                 <td className="px-3 py-3 align-middle text-[11px] font-black text-[#31406B]">{alert.escalationLevel}</td>
@@ -982,13 +987,13 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                 <td className="px-3 py-3 align-middle"><StatusBadge status={alert.status} /></td>
                 <td className="px-3 py-3 align-middle text-[10px] font-black text-[#31406B]">{alert.time}</td>
                 <td className="relative px-3 py-3 text-right align-middle">
-                  <button type="button" aria-label={`Open actions for ${alert.title}`} onClick={() => setOpenMenuId(openMenuId === alert.id ? null : alert.id)} className="rounded-md p-1 text-[#68739F] transition hover:bg-[#EEF2FF] hover:text-[#465FFF]"><MoreVertical size={16} /></button>
+                  <button type="button" aria-label={`Open actions for ${alert.title}`} onClick={() => setOpenMenuId(openMenuId === alert.id ? null : alert.id)} className="rounded-md p-1 text-[#5F6B94] transition hover:bg-[#EEF2FF] hover:text-[#465FFF]"><MoreVertical size={16} /></button>
                   {openMenuId === alert.id ? (
                     <div ref={menuRef} className="absolute right-3 top-full z-50 mt-1 w-48 rounded-[10px] border border-[#E6EAF2] bg-white py-1 shadow-[0_12px_36px_rgba(16,24,40,0.12)]">
-                      <p className="px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-[#8B95B8]">{ta("table.changeStatus")}</p>
+                      <p className="px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-[#647099]">{ta("table.changeStatus")}</p>
                       <button type="button" onClick={() => { onStatusChange(alert.id, "open"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]"><Bell size={13} className="text-[#465FFF]" /> {ta("table.statusNew")}</button>
-                      <button type="button" onClick={() => { onStatusChange(alert.id, "acknowledged"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]"><Check size={13} className="text-[#10B981]" /> {ta("table.statusInvestigating")}</button>
-                      <button type="button" onClick={() => { onStatusChange(alert.id, "resolved"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]"><ShieldCheck size={13} className="text-[#0C9B69]" /> {ta("table.statusResolved")}</button>
+                      <button type="button" onClick={() => { onStatusChange(alert.id, "acknowledged"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]"><Check size={13} className="text-[#047857]" /> {ta("table.statusInvestigating")}</button>
+                      <button type="button" onClick={() => { onStatusChange(alert.id, "resolved"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]"><ShieldCheck size={13} className="text-[#047857]" /> {ta("table.statusResolved")}</button>
                     </div>
                   ) : null}
                 </td>
@@ -998,7 +1003,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
         </table>
       </div>
       <div className="mt-3 flex flex-col items-center justify-between gap-3 border-t border-[#EDF1F7] pt-3 sm:flex-row">
-        <p className="text-[11px] font-bold text-[#68739F]">{footerText}</p>
+        <p className="text-[11px] font-bold text-[#5F6B94]">{footerText}</p>
         <AlertPagination page={page} totalPages={totalPages} onPageChange={onPageChange} ta={ta} />
       </div>
     </Panel>
@@ -1433,8 +1438,8 @@ export default function AlertsPage() {
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
       {isDemoSession && (
         <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
-          <Sparkles size={16} className="text-[#8B5CFF]" />
-          <p className="text-[13px] font-bold text-[#8B5CFF]">
+          <Sparkles size={16} className="text-[#6E44E8]" />
+          <p className="text-[13px] font-bold text-[#6E44E8]">
             Demo workspace — some content on this page may be illustrative examples rather than live data
           </p>
         </div>
@@ -1461,7 +1466,7 @@ export default function AlertsPage() {
       {summaryQuery.isError || (!summaryQuery.isLoading && !summaryQuery.data) ? (
         <div className="rounded-[12px] border border-dashed border-[#8B5CFF]/30 bg-gradient-to-br from-white to-[#F8F5FF] px-5 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#8B5CFF]/10 text-[#8B5CFF] shrink-0">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#8B5CFF]/10 text-[#6E44E8] shrink-0">
               <Sparkles size={18} />
             </div>
             <div>
@@ -1523,7 +1528,7 @@ export default function AlertsPage() {
                 <h2 className="text-lg font-black text-[#101334]">{ta("v2.criticalStatus.modalTitle")}</h2>
                 <p className="mt-1 text-[11px] font-bold text-[#8A4B4B]">{ta("v2.criticalStatus.modalDesc")}</p>
               </div>
-              <button type="button" onClick={() => setIsCriticalStatusModalOpen(false)} className="rounded-full bg-white p-2 text-[#98A2B3] shadow-sm transition hover:text-[#53608C]">
+              <button type="button" onClick={() => setIsCriticalStatusModalOpen(false)} className="rounded-full bg-white p-2 text-[#647099] shadow-sm transition hover:text-[#53608C]">
                 <X size={20} />
               </button>
             </div>
@@ -1535,7 +1540,7 @@ export default function AlertsPage() {
               ) : criticalRows.length === 0 ? (
                 <div className="rounded-[12px] border border-dashed border-[#F4D8D8] bg-[#FFFDFD] p-8 text-center">
                   <p className="text-[13px] font-black text-[#101334]">{ta("v2.criticalStatus.noCritical")}</p>
-                  <p className="mt-1 text-[11px] font-bold text-[#8A94B8]">{ta("v2.criticalStatus.noCriticalDesc")}</p>
+                  <p className="mt-1 text-[11px] font-bold text-[#647099]">{ta("v2.criticalStatus.noCriticalDesc")}</p>
                 </div>
               ) : (
                 <div className="space-y-2.5">
@@ -1543,7 +1548,7 @@ export default function AlertsPage() {
                     <div key={item.id} className="grid gap-3 rounded-[12px] border border-[#F4D8D8] bg-[#FFFDFD] p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                       <div className="min-w-0">
                         <Link href={`/alerts/${item.id}`} className="text-[12px] font-black text-[#101334] hover:text-[#465FFF]">{item.title}</Link>
-                        <p className="mt-1 line-clamp-2 text-[10px] font-bold text-[#68739F]">{item.description}</p>
+                        <p className="mt-1 line-clamp-2 text-[10px] font-bold text-[#5F6B94]">{item.description}</p>
                       </div>
                       <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                         <StatusBadge status={item.status} />
@@ -1566,9 +1571,9 @@ export default function AlertsPage() {
             <div className="flex items-start justify-between gap-4 border-b border-[#EEF1F7] bg-[#F8FAFF] p-5">
               <div className="min-w-0">
                 <h2 className="text-lg font-black text-[#101334]">{ta("v2.journey.modalTitle")}</h2>
-                <p className="mt-1 truncate text-[11px] font-bold text-[#68739F]">{primaryAlert.title}</p>
+                <p className="mt-1 truncate text-[11px] font-bold text-[#5F6B94]">{primaryAlert.title}</p>
               </div>
-              <button type="button" onClick={() => setIsJourneyModalOpen(false)} className="rounded-full bg-white p-2 text-[#98A2B3] shadow-sm transition hover:text-[#53608C]">
+              <button type="button" onClick={() => setIsJourneyModalOpen(false)} className="rounded-full bg-white p-2 text-[#647099] shadow-sm transition hover:text-[#53608C]">
                 <X size={20} />
               </button>
             </div>
@@ -1602,9 +1607,9 @@ export default function AlertsPage() {
                     <Bell size={12} /> {ta("v2.notificationRulesModal.badge")}
                   </div>
                   <h2 className="text-lg font-black tracking-[-0.03em] text-[#101334]">{ta("v2.notificationRulesModal.title")}</h2>
-                  <p className="mt-1 text-[11px] font-bold text-[#68739F]">{ta("v2.notificationRulesModal.desc")}</p>
+                  <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{ta("v2.notificationRulesModal.desc")}</p>
                 </div>
-                <button type="button" onClick={closeNotificationRulesModal} disabled={isSavingNotificationRules} className="rounded-full bg-white/80 p-2 text-[#98A2B3] shadow-sm transition hover:bg-white hover:text-[#53608C] disabled:cursor-not-allowed disabled:opacity-60">
+                <button type="button" onClick={closeNotificationRulesModal} disabled={isSavingNotificationRules} className="rounded-full bg-white/80 p-2 text-[#647099] shadow-sm transition hover:bg-white hover:text-[#53608C] disabled:cursor-not-allowed disabled:opacity-60">
                   <X size={20} />
                 </button>
               </div>
@@ -1620,7 +1625,7 @@ export default function AlertsPage() {
                   <aside className="space-y-3">
                     <div className="rounded-[14px] border border-[#E6EAF2] bg-[#FBFCFF] p-4">
                       <p className="text-[12px] font-black text-[#101334]">{ta("v2.notificationRulesModal.deliveryTitle")}</p>
-                      <p className="mt-1 text-[10px] font-bold leading-snug text-[#8A94B8]">{ta("v2.notificationRulesModal.deliveryDesc")}</p>
+                      <p className="mt-1 text-[10px] font-bold leading-snug text-[#647099]">{ta("v2.notificationRulesModal.deliveryDesc")}</p>
                       <div className="mt-4 space-y-2">
                         {([
                           ["emailEnabled", "emailEnabled"],
@@ -1631,7 +1636,7 @@ export default function AlertsPage() {
                           <label key={key} className="flex items-center justify-between gap-3 rounded-[10px] border border-[#E6EAF2] bg-white px-3 py-2.5">
                             <span>
                               <span className="block text-[11px] font-black text-[#101334]">{ta(`v2.notificationRulesModal.toggles.${labelKey}`)}</span>
-                              <span className="mt-0.5 block text-[9px] font-bold text-[#8A94B8]">{ta(`v2.notificationRulesModal.toggleDesc.${labelKey}`)}</span>
+                              <span className="mt-0.5 block text-[9px] font-bold text-[#647099]">{ta(`v2.notificationRulesModal.toggleDesc.${labelKey}`)}</span>
                             </span>
                             <input
                               type="checkbox"
@@ -1654,7 +1659,7 @@ export default function AlertsPage() {
                         ] as const).map(([preset, titleKey, descKey]) => (
                           <button key={preset} type="button" onClick={() => applyNotificationPreset(preset)} className="w-full rounded-[11px] border border-[#DDE3EF] bg-[#FBFCFF] p-3 text-left transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF]">
                             <span className="block text-[11px] font-black text-[#101334]">{ta(`v2.notificationRulesModal.${titleKey}`)}</span>
-                            <span className="mt-1 block text-[9px] font-bold leading-snug text-[#8A94B8]">{ta(`v2.notificationRulesModal.${descKey}`)}</span>
+                            <span className="mt-1 block text-[9px] font-bold leading-snug text-[#647099]">{ta(`v2.notificationRulesModal.${descKey}`)}</span>
                           </button>
                         ))}
                       </div>
@@ -1665,7 +1670,7 @@ export default function AlertsPage() {
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EEF1F7] p-4">
                       <div>
                         <p className="text-[13px] font-black text-[#101334]">{ta("v2.notificationRulesModal.rulesTitle")}</p>
-                        <p className="mt-0.5 text-[10px] font-bold text-[#8A94B8]">{ta("v2.notificationRulesModal.rulesDesc")}</p>
+                        <p className="mt-0.5 text-[10px] font-bold text-[#647099]">{ta("v2.notificationRulesModal.rulesDesc")}</p>
                       </div>
                       <button type="button" onClick={addNotificationRule} disabled={notificationRuleDraft.length >= 20} className="inline-flex h-9 items-center justify-center gap-2 rounded-[9px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#465FFF] transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-50">
                         <Plus size={14} /> {ta("v2.notificationRulesModal.addRule")}
@@ -1682,13 +1687,13 @@ export default function AlertsPage() {
                       {notificationRuleDraft.length === 0 ? (
                         <div className="rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#FBFCFF] p-8 text-center">
                           <p className="text-[13px] font-black text-[#101334]">{ta("v2.notificationRulesModal.noRules")}</p>
-                          <p className="mt-1 text-[10px] font-bold text-[#8A94B8]">{ta("v2.notificationRulesModal.noRulesDesc")}</p>
+                          <p className="mt-1 text-[10px] font-bold text-[#647099]">{ta("v2.notificationRulesModal.noRulesDesc")}</p>
                         </div>
                       ) : notificationRuleDraft.map((rule, index) => (
                         <div key={rule.id} className="rounded-[12px] border border-[#E6EAF2] bg-[#FBFCFF] p-3">
                           <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_76px_36px] md:items-end">
                             <label className="block">
-                              <span className="mb-1.5 block text-[10px] font-black text-[#68739F]">{ta("v2.notificationRulesModal.triggerLabel")}</span>
+                              <span className="mb-1.5 block text-[10px] font-black text-[#5F6B94]">{ta("v2.notificationRulesModal.triggerLabel")}</span>
                               <select
                                 value={rule.trigger}
                                 onChange={(event) => updateNotificationRuleDraft(index, { trigger: event.target.value as NotificationRuleTrigger })}
@@ -1706,7 +1711,7 @@ export default function AlertsPage() {
                               </select>
                             </label>
                             <label className="block">
-                              <span className="mb-1.5 block text-[10px] font-black text-[#68739F]">{ta("v2.notificationRulesModal.conditionLabel")}</span>
+                              <span className="mb-1.5 block text-[10px] font-black text-[#5F6B94]">{ta("v2.notificationRulesModal.conditionLabel")}</span>
                               <select
                                 value={rule.condition}
                                 onChange={(event) => updateNotificationRuleDraft(index, { condition: event.target.value })}
@@ -1721,7 +1726,7 @@ export default function AlertsPage() {
                               </select>
                             </label>
                             <label className="block">
-                              <span className="mb-1.5 block text-[10px] font-black text-[#68739F]">{ta("v2.notificationRulesModal.actionLabel")}</span>
+                              <span className="mb-1.5 block text-[10px] font-black text-[#5F6B94]">{ta("v2.notificationRulesModal.actionLabel")}</span>
                               <select
                                 value={rule.channels[0] ?? "standard"}
                                 onChange={(event) => updateNotificationRuleDraft(index, { channels: [event.target.value] })}
@@ -1750,7 +1755,7 @@ export default function AlertsPage() {
                             <button
                               type="button"
                               onClick={() => removeNotificationRule(index)}
-                              className="flex h-10 items-center justify-center rounded-[8px] border border-[#F3D4D4] bg-white text-[#EF4444] transition hover:bg-[#FFF5F5]"
+                              className="flex h-10 items-center justify-center rounded-[8px] border border-[#F3D4D4] bg-white text-[#C81E1E] transition hover:bg-[#FFF5F5]"
                               aria-label={ta("v2.notificationRulesModal.removeRule")}
                             >
                               <X size={15} />
@@ -1765,7 +1770,7 @@ export default function AlertsPage() {
             </div>
 
             <div className="flex flex-col-reverse gap-2 border-t border-[#EEF1F7] bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-[10px] font-bold text-[#8A94B8]">{ta("v2.notificationRulesModal.limitHint")}</p>
+              <p className="text-[10px] font-bold text-[#647099]">{ta("v2.notificationRulesModal.limitHint")}</p>
               <div className="flex gap-2">
                 <button type="button" onClick={closeNotificationRulesModal} disabled={isSavingNotificationRules} className="h-10 rounded-[10px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-60">
                   {ta("v2.notificationRulesModal.cancel")}
@@ -1786,14 +1791,14 @@ export default function AlertsPage() {
             <div className="flex items-start justify-between gap-4 border-b border-[#EEF1F7] p-5">
               <div>
                 <h2 className="text-lg font-black text-[#101334]">{ta("v2.escalationMatrix.modalTitle")}</h2>
-                <p className="mt-1 text-[11px] font-bold text-[#68739F]">{ta("v2.escalationMatrix.modalDesc")}</p>
+                <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{ta("v2.escalationMatrix.modalDesc")}</p>
               </div>
-              <button type="button" onClick={closeEscalationModal} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]" aria-label={ta("v2.escalationMatrix.cancel")}>
+              <button type="button" onClick={closeEscalationModal} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]" aria-label={ta("v2.escalationMatrix.cancel")}>
                 <X size={20} />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-5">
-              <div className="mb-3 grid grid-cols-[78px_minmax(0,1fr)_120px_86px_36px] gap-2 px-2 text-[9px] font-black uppercase tracking-[0.16em] text-[#68739F] max-md:hidden">
+              <div className="mb-3 grid grid-cols-[78px_minmax(0,1fr)_120px_86px_36px] gap-2 px-2 text-[9px] font-black uppercase tracking-[0.16em] text-[#5F6B94] max-md:hidden">
                 <span>{ta("v2.escalationMatrix.levelLabel")}</span>
                 <span>{ta("v2.escalationMatrix.ownerLabel")}</span>
                 <span>{ta("v2.escalationMatrix.timeLabel")}</span>
@@ -1804,7 +1809,7 @@ export default function AlertsPage() {
                 {escalationDraft.map((item, index) => (
                   <div key={`${item.order}-${index}`} className="grid gap-2 rounded-[10px] border border-[#E6EAF2] bg-[#FBFCFF] p-2.5 md:grid-cols-[78px_minmax(0,1fr)_120px_86px_36px] md:items-center">
                     <label className="block">
-                      <span className="mb-1 block text-[10px] font-black text-[#68739F] md:hidden">{ta("v2.escalationMatrix.levelLabel")}</span>
+                      <span className="mb-1 block text-[10px] font-black text-[#5F6B94] md:hidden">{ta("v2.escalationMatrix.levelLabel")}</span>
                       <input
                         value={item.level}
                         maxLength={10}
@@ -1814,7 +1819,7 @@ export default function AlertsPage() {
                       />
                     </label>
                     <label className="block">
-                      <span className="mb-1 block text-[10px] font-black text-[#68739F] md:hidden">{ta("v2.escalationMatrix.ownerLabel")}</span>
+                      <span className="mb-1 block text-[10px] font-black text-[#5F6B94] md:hidden">{ta("v2.escalationMatrix.ownerLabel")}</span>
                       <select
                         value={item.roleName}
                         onChange={(event) => updateEscalationDraft(index, { roleName: event.target.value })}
@@ -1832,11 +1837,11 @@ export default function AlertsPage() {
                         ))}
                       </select>
                       {!membersQuery.isLoading && ownerOptions.length === 0 ? (
-                        <p className="mt-1 text-[9px] font-bold text-[#EF4444]">{ta("v2.escalationMatrix.noOwners")}</p>
+                        <p className="mt-1 text-[9px] font-bold text-[#C81E1E]">{ta("v2.escalationMatrix.noOwners")}</p>
                       ) : null}
                     </label>
                     <label className="block">
-                      <span className="mb-1 block text-[10px] font-black text-[#68739F] md:hidden">{ta("v2.escalationMatrix.timeLabel")}</span>
+                      <span className="mb-1 block text-[10px] font-black text-[#5F6B94] md:hidden">{ta("v2.escalationMatrix.timeLabel")}</span>
                       <input
                         value={item.slaMinutes}
                         min={1}
@@ -1860,7 +1865,7 @@ export default function AlertsPage() {
                       type="button"
                       onClick={() => removeEscalationLevel(index)}
                       disabled={escalationDraft.length <= 1}
-                      className="flex h-10 items-center justify-center rounded-[8px] border border-[#F3D4D4] bg-white text-[#EF4444] transition hover:bg-[#FFF5F5] disabled:cursor-not-allowed disabled:opacity-40"
+                      className="flex h-10 items-center justify-center rounded-[8px] border border-[#F3D4D4] bg-white text-[#C81E1E] transition hover:bg-[#FFF5F5] disabled:cursor-not-allowed disabled:opacity-40"
                       aria-label={ta("v2.escalationMatrix.removeLevel")}
                     >
                       <X size={15} />
@@ -1869,7 +1874,7 @@ export default function AlertsPage() {
                 ))}
               </div>
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] p-3">
-                <p className="text-[11px] font-bold text-[#68739F]">{ta("v2.escalationMatrix.limitHint")}</p>
+                <p className="text-[11px] font-bold text-[#5F6B94]">{ta("v2.escalationMatrix.limitHint")}</p>
                 <button type="button" onClick={addEscalationLevel} disabled={escalationDraft.length >= 5} className="inline-flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#465FFF] transition hover:border-[#C9D4F6] disabled:cursor-not-allowed disabled:opacity-50">
                   <Plus size={14} /> {ta("v2.escalationMatrix.addLevel")}
                 </button>
@@ -1895,9 +1900,9 @@ export default function AlertsPage() {
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div>
                 <h2 className="text-lg font-black text-[#101334]">{ta("v2.header.createAlert")}</h2>
-                <p className="mt-1 text-[11px] font-bold text-[#68739F]">{taCreate("desc")}</p>
+                <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{taCreate("desc")}</p>
               </div>
-              <button type="button" onClick={closeCreateModal} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+              <button type="button" onClick={closeCreateModal} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
                 <X size={20} />
               </button>
             </div>
@@ -2007,7 +2012,7 @@ export default function AlertsPage() {
                 <div className="rounded-[10px] border border-[#E6EAF2] bg-[#FBFCFF]">
                   <button type="button" onClick={() => setIsCreateAdvancedOpen((open) => !open)} className="flex w-full items-center justify-between px-3.5 py-2.5 text-[11px] font-black text-[#31406B]">
                     <span className="flex items-center gap-2"><Settings size={13} className="text-[#465FFF]" />{ta("v2.header.escalationMatrix").replace("Escalation Matrix", "Assignment & Sources").replace("Matriks Eskalasi", "Penugasan & Sumber")}</span>
-                    <ChevronRight size={14} className={cn("text-[#8B95B8] transition-transform", isCreateAdvancedOpen && "rotate-90")} />
+                    <ChevronRight size={14} className={cn("text-[#647099] transition-transform", isCreateAdvancedOpen && "rotate-90")} />
                   </button>
                   {isCreateAdvancedOpen && (
                     <div className="space-y-3 border-t border-[#E6EAF2] px-3.5 pb-3.5 pt-3">
@@ -2077,12 +2082,12 @@ export default function AlertsPage() {
                                   className="size-3.5 rounded border-[#DDE3EF] text-[#465FFF] accent-[#465FFF]"
                                 />
                                 <span className="truncate">{src.name}</span>
-                                <span className="ml-auto shrink-0 rounded-full bg-[#F1F4FB] px-1.5 py-0.5 text-[9px] font-black text-[#68739F]">{src.type}</span>
+                                <span className="ml-auto shrink-0 rounded-full bg-[#F1F4FB] px-1.5 py-0.5 text-[9px] font-black text-[#5F6B94]">{src.type}</span>
                               </label>
                             ))}
                           </div>
                         ) : (
-                          <p className="rounded-[8px] border border-dashed border-[#DDE3EF] bg-[#FBFCFF] px-3 py-2.5 text-[11px] font-semibold text-[#8B95B8]">
+                          <p className="rounded-[8px] border border-dashed border-[#DDE3EF] bg-[#FBFCFF] px-3 py-2.5 text-[11px] font-semibold text-[#647099]">
                             No sources configured yet. Add sources in the Sources page.
                           </p>
                         )}
@@ -2131,9 +2136,9 @@ export default function AlertsPage() {
                     <SlidersHorizontal size={12} /> {ta("filter.badge")}
                   </div>
                   <h2 className="text-lg font-black tracking-[-0.03em] text-[#101334]">{ta("filter.title")}</h2>
-                  <p className="mt-1 text-[11px] font-bold text-[#68739F]">{ta("filter.desc")}</p>
+                  <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{ta("filter.desc")}</p>
                 </div>
-                <button type="button" onClick={() => setIsFilterModalOpen(false)} className="rounded-full bg-white/80 p-2 text-[#98A2B3] shadow-sm transition hover:bg-white hover:text-[#53608C]">
+                <button type="button" onClick={() => setIsFilterModalOpen(false)} className="rounded-full bg-white/80 p-2 text-[#647099] shadow-sm transition hover:bg-white hover:text-[#53608C]">
                 <X size={20} />
               </button>
               </div>
@@ -2143,7 +2148,7 @@ export default function AlertsPage() {
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
                     <p className="text-[12px] font-black text-[#101334]">{ta("table.severity")}</p>
-                    <p className="mt-0.5 text-[10px] font-bold text-[#8A94B8]">{ta("filter.severityDesc")}</p>
+                    <p className="mt-0.5 text-[10px] font-bold text-[#647099]">{ta("filter.severityDesc")}</p>
                   </div>
                   {severityFilter ? <span className="rounded-full bg-[#465FFF]/10 px-2 py-1 text-[9px] font-black text-[#465FFF]">{severityFilter}</span> : null}
                 </div>
@@ -2170,7 +2175,7 @@ export default function AlertsPage() {
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
                     <p className="text-[12px] font-black text-[#101334]">{ta("table.status")}</p>
-                    <p className="mt-0.5 text-[10px] font-bold text-[#8A94B8]">{ta("filter.statusDesc")}</p>
+                    <p className="mt-0.5 text-[10px] font-bold text-[#647099]">{ta("filter.statusDesc")}</p>
                   </div>
                   {statusFilter ? <span className="rounded-full bg-[#465FFF]/10 px-2 py-1 text-[9px] font-black text-[#465FFF]">{statusFilter}</span> : null}
                 </div>
@@ -2194,7 +2199,7 @@ export default function AlertsPage() {
               </div>
             </div>
             <div className="flex flex-col-reverse gap-2 border-t border-[#EEF1F7] bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
-              <button type="button" onClick={() => { setSearchQuery(""); setSeverityFilter(""); setStatusFilter(""); setPage(1); }} className="inline-flex h-10 items-center justify-center rounded-[10px] border border-[#E6EAF2] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:border-[#F3B4B4] hover:bg-[#FFF7F7] hover:text-[#EF4444]">
+              <button type="button" onClick={() => { setSearchQuery(""); setSeverityFilter(""); setStatusFilter(""); setPage(1); }} className="inline-flex h-10 items-center justify-center rounded-[10px] border border-[#E6EAF2] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:border-[#F3B4B4] hover:bg-[#FFF7F7] hover:text-[#C81E1E]">
                 {ta("filter.clearFilter")}
               </button>
               <div className="flex gap-2">

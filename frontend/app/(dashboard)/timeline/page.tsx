@@ -108,7 +108,7 @@ function TimelineEntry({ event }: { event: TimelineEvent }) {
       <div className="mb-4 flex-1 rounded-[14px] border border-slate-200 bg-white p-4 shadow-sm">
         {/* Date + chips */}
         <div className="mb-2 flex flex-wrap items-center gap-2">
-          <span className="text-[12px] font-semibold text-[#68739F]">{event.dateLabel}</span>
+          <span className="text-[12px] font-semibold text-[#5F6B94]">{event.dateLabel}</span>
           <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
             {event.category}
           </span>
@@ -123,7 +123,7 @@ function TimelineEntry({ event }: { event: TimelineEvent }) {
         </h3>
 
         {/* Description */}
-        <p className="mb-3 text-[13px] leading-relaxed text-[#68739F]">{event.description}</p>
+        <p className="mb-3 text-[13px] leading-relaxed text-[#5F6B94]">{event.description}</p>
 
         {/* Metrics row */}
         <div className="mb-3 flex flex-wrap gap-2">
@@ -132,7 +132,7 @@ function TimelineEntry({ event }: { event: TimelineEvent }) {
               key={m.label}
               className="flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1"
             >
-              <span className="text-[11px] text-[#68739F]">{m.label}</span>
+              <span className="text-[11px] text-[#5F6B94]">{m.label}</span>
               <span className="text-[11px] font-bold text-[#101334]">{m.value}</span>
             </div>
           ))}
@@ -141,7 +141,7 @@ function TimelineEntry({ event }: { event: TimelineEvent }) {
         {/* Source */}
         <div className="flex items-center gap-1.5">
           <span className="h-1.5 w-1.5 rounded-full bg-slate-300" />
-          <span className="text-[11px] text-[#68739F]">Source: {event.source}</span>
+          <span className="text-[11px] text-[#5F6B94]">Source: {event.source}</span>
         </div>
       </div>
     </div>
@@ -235,7 +235,7 @@ export default function TimelinePage() {
                 "rounded-[7px] px-3 py-1.5 text-[12px] font-semibold transition-all duration-150",
                 range === key
                   ? "bg-[#465FFF] text-white shadow-sm"
-                  : "text-[#68739F] hover:bg-slate-50 hover:text-[#101334]",
+                  : "text-[#5F6B94] hover:bg-slate-50 hover:text-[#101334]",
               )}
             >
               {t(labelKey)}
@@ -251,7 +251,7 @@ export default function TimelinePage() {
         ))}
         {events.length === 0 && (
           <div className="flex flex-col items-center justify-center rounded-[14px] border border-dashed border-slate-300 py-16">
-            <p className="text-[14px] text-[#68739F]">No timeline events found.</p>
+            <p className="text-[14px] text-[#5F6B94]">No timeline events found.</p>
           </div>
         )}
       </div>

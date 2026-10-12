@@ -96,7 +96,7 @@ export function AddSourceModal({ open, onOpenChange, onSubmit, isPending }: AddS
               <h3 id={titleId} className="text-[16px] font-black text-[#101334]">
                 {t("title")}
               </h3>
-              <p id={descriptionId} className="mt-0.5 text-[11px] font-semibold text-[#68739F]">
+              <p id={descriptionId} className="mt-0.5 text-[11px] font-semibold text-[#5F6B94]">
                 {t("desc")}
               </p>
             </div>
@@ -105,7 +105,7 @@ export function AddSourceModal({ open, onOpenChange, onSubmit, isPending }: AddS
             type="button"
             aria-label={t("cancel")}
             onClick={() => onOpenChange(false)}
-            className="rounded-full p-1.5 text-[#8A94B8] transition hover:bg-[#F5F7FC] hover:text-[#53608C]"
+            className="rounded-full p-1.5 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]"
           >
             <X size={16} strokeWidth={2.5} />
           </button>
@@ -125,14 +125,14 @@ export function AddSourceModal({ open, onOpenChange, onSubmit, isPending }: AddS
               placeholder={t("keywordPlaceholder")}
               className="w-full rounded-[10px] border border-[#DDE3EF] bg-[#FBFCFF] px-4 py-2.5 text-[13px] font-bold text-[#101334] outline-none transition placeholder:font-semibold placeholder:text-[#A0ABC0] focus:border-[#465FFF] focus:bg-white focus:ring-4 focus:ring-[#465FFF]/10"
             />
-            <p className="mt-1.5 text-[10px] font-bold text-[#8B95B8]">
+            <p className="mt-1.5 text-[10px] font-bold text-[#647099]">
               {t("keywordHint")}
             </p>
           </div>
 
           <div className="rounded-[12px] border border-[#EEF1F7] bg-[#F8FAFF] p-4">
             <h4 className="text-[12px] font-black text-[#101334]">{t("categoryTitle")}</h4>
-            <p className="mt-1 text-[10px] font-semibold text-[#8B95B8]">{t("categoryDesc")}</p>
+            <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("categoryDesc")}</p>
             
             <div className="mt-4 flex flex-col gap-3">
               {/* Tier 1 */}
@@ -149,7 +149,7 @@ export function AddSourceModal({ open, onOpenChange, onSubmit, isPending }: AddS
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[12px] font-black text-[#101334]">{t("socialTitle")}</p>
-                  <p className="mt-1 text-[10px] font-semibold leading-relaxed text-[#68739F]">{t("socialDesc")}</p>
+                  <p className="mt-1 text-[10px] font-semibold leading-relaxed text-[#5F6B94]">{t("socialDesc")}</p>
                 </div>
               </label>
 
@@ -167,7 +167,7 @@ export function AddSourceModal({ open, onOpenChange, onSubmit, isPending }: AddS
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[12px] font-black text-[#101334]">{t("videoTitle")}</p>
-                  <p className="mt-1 text-[10px] font-semibold leading-relaxed text-[#68739F]">{t("videoDesc")}</p>
+                  <p className="mt-1 text-[10px] font-semibold leading-relaxed text-[#5F6B94]">{t("videoDesc")}</p>
                 </div>
               </label>
 
@@ -185,7 +185,7 @@ export function AddSourceModal({ open, onOpenChange, onSubmit, isPending }: AddS
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[12px] font-black text-[#101334]">{t("ecommerceTitle")}</p>
-                  <p className="mt-1 text-[10px] font-semibold leading-relaxed text-[#68739F]">{t("ecommerceDesc")}</p>
+                  <p className="mt-1 text-[10px] font-semibold leading-relaxed text-[#5F6B94]">{t("ecommerceDesc")}</p>
                 </div>
               </label>
 

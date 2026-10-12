@@ -78,7 +78,7 @@ export default function ActionCenterPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="rounded-xl border border-slate-200 bg-white p-5">
           <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-            <ShieldCheck size={14} className="text-emerald-600" /> Approval required
+            <ShieldCheck size={14} className="text-emerald-700" /> Approval required
           </div>
           <p className="mt-2 text-[13px] text-slate-700">Narriv does not execute external actions. Recommendations are guidance for human review.</p>
         </div>
@@ -90,7 +90,7 @@ export default function ActionCenterPage() {
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-5">
           <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-            <CheckCircle2 size={14} className="text-emerald-600" /> Evidence
+            <CheckCircle2 size={14} className="text-emerald-700" /> Evidence
           </div>
           <p className="mt-2 text-[13px] text-slate-700">Every recommendation cites the evidence used to derive it.</p>
         </div>
@@ -109,7 +109,7 @@ export default function ActionCenterPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <ChevronRight size={14} className="shrink-0 text-slate-400" />
+                    <ChevronRight size={14} className="shrink-0 text-slate-500" />
                     <h3 className="text-[14px] font-semibold capitalize text-slate-900">{r.action.replace(/_/g, " ")}</h3>
                   </div>
                   <p className="mt-1 text-[13px] text-slate-600">{r.reason}</p>

@@ -54,15 +54,15 @@ export function PlanWorkflowControls({ planId, status, assignedTo }: { planId: s
   return (
     <div className="mt-5 rounded-[10px] border border-[#E8ECF5] p-3">
       <p className="text-[12px] font-black text-[#101334]">Track this action</p>
-      <p className="mt-0.5 text-[10px] font-semibold text-[#8A94B8]">AI-generated content is a draft. Narriv does not publish or send anything on your behalf.</p>
+      <p className="mt-0.5 text-[10px] font-semibold text-[#647099]">AI-generated content is a draft. Narriv does not publish or send anything on your behalf.</p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <label className="text-[10px] font-black text-[#8A94B8]">
+        <label className="text-[10px] font-black text-[#647099]">
           Status
           <select value={nextStatus} onChange={(e) => setNextStatus(e.target.value as WorkflowStatus)} className="mt-1 h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-2 text-[12px] font-bold text-[#101334] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/30">
             {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         </label>
-        <label className="text-[10px] font-black text-[#8A94B8]">
+        <label className="text-[10px] font-black text-[#647099]">
           Owner
           <select value={owner} onChange={(e) => setOwner(e.target.value)} disabled={members.isLoading} className="mt-1 h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-2 text-[12px] font-bold text-[#101334] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/30">
             <option value="">Unassigned</option>

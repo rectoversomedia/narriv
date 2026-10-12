@@ -102,7 +102,7 @@ const PRIORITY_CONFIG: Record<
   { label: string; bg: string; text: string }
 > = {
   immediate: { label: "Immediate", bg: "bg-red-50", text: "text-red-600" },
-  high: { label: "High", bg: "bg-amber-50", text: "text-amber-600" },
+  high: { label: "High", bg: "bg-amber-50", text: "text-amber-700" },
   medium: { label: "Medium", bg: "bg-blue-50", text: "text-blue-600" },
   low: { label: "Low", bg: "bg-slate-50", text: "text-slate-500" },
 };
@@ -122,7 +122,7 @@ function MetricPill({
 }) {
   return (
     <div className="flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1">
-      <span className="text-[11px] text-[#68739F]">{label}</span>
+      <span className="text-[11px] text-[#5F6B94]">{label}</span>
       <span className={cn("text-[11px] font-bold", valueColor)}>{value}</span>
     </div>
   );
@@ -143,7 +143,7 @@ function ConfidenceBar({ value }: { value: number }) {
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between">
-        <span className="text-[11px] text-[#68739F]">AI Confidence</span>
+        <span className="text-[11px] text-[#5F6B94]">AI Confidence</span>
         <span className="text-[11px] font-bold text-[#101334]">{value}%</span>
       </div>
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
@@ -195,9 +195,9 @@ export function NarrativeCard({
     growth >= 0 ? `+${growth.toFixed(1)}%` : `${growth.toFixed(1)}%`;
   const growthColor =
     growth > 0
-      ? "text-green-600"
+      ? "text-green-700"
       : growth < 0
-        ? "text-red-500"
+        ? "text-red-700"
         : "text-slate-500";
 
   const handleClick = () => {
@@ -243,7 +243,7 @@ export function NarrativeCard({
       </h3>
 
       {/* Summary */}
-      <p className="mb-3 text-[14px] leading-relaxed text-[#68739F]">{summary}</p>
+      <p className="mb-3 text-[14px] leading-relaxed text-[#5F6B94]">{summary}</p>
 
       {/* Sentiment + emotion row */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -253,7 +253,7 @@ export function NarrativeCard({
             className="h-2 w-2 rounded-full"
             style={{ backgroundColor: sentimentCfg.dotColor }}
           />
-          <span className="text-[12px] font-medium text-[#68739F]">
+          <span className="text-[12px] font-medium text-[#5F6B94]">
             {sentimentCfg.label}
           </span>
         </div>
@@ -284,7 +284,7 @@ export function NarrativeCard({
         <MetricPill
           label="Velocity"
           value={`${velocity}`}
-          valueColor="text-[#8B5CFF]"
+          valueColor="text-[#6E44E8]"
         />
         <MetricPill
           label="Momentum"
@@ -302,11 +302,11 @@ export function NarrativeCard({
       <div className="mb-3 space-y-2">
         <div>
           <p className="text-[12px] font-semibold text-[#101334]">Why It Matters</p>
-          <p className="text-[13px] text-[#68739F]">{whyItMatters}</p>
+          <p className="text-[13px] text-[#5F6B94]">{whyItMatters}</p>
         </div>
         <div>
           <p className="text-[12px] font-semibold text-[#101334]">Possible Impact</p>
-          <p className="text-[13px] text-[#68739F]">{possibleImpact}</p>
+          <p className="text-[13px] text-[#5F6B94]">{possibleImpact}</p>
         </div>
       </div>
 
@@ -340,7 +340,7 @@ export function NarrativeCard({
       {expanded && (
         <div className="mt-3 border-t border-slate-100 pt-3 space-y-3">
           {/* Meta info */}
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[12px] text-[#68739F]">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[12px] text-[#5F6B94]">
             <span>First detected:</span>
             <span className="font-medium text-[#101334]">
               {new Date(firstDetected).toLocaleDateString("en-US", {
@@ -403,7 +403,7 @@ export function NarrativeCard({
                 {relatedCompetitors.map((comp) => (
                   <span
                     key={comp}
-                    className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-600"
+                    className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700"
                   >
                     {comp}
                   </span>

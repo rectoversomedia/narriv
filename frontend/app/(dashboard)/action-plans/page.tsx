@@ -63,10 +63,10 @@ type ActionItem = {
 
 const toneStyles: Record<Tone, ToneStyle> = {
   blue: { color: "#465FFF", rgb: "70,95,255", soft: "bg-[#465FFF]/10 text-[#465FFF]" },
-  purple: { color: "#8B5CFF", rgb: "139,92,255", soft: "bg-[#8B5CFF]/10 text-[#8B5CFF]" },
-  green: { color: "#10B981", rgb: "16,185,129", soft: "bg-[#10B981]/10 text-[#10B981]" },
-  red: { color: "#EF4444", rgb: "239,68,68", soft: "bg-[#EF4444]/10 text-[#EF4444]" },
-  amber: { color: "#F59E0B", rgb: "245,158,11", soft: "bg-[#F59E0B]/10 text-[#F59E0B]" },
+  purple: { color: "#8B5CFF", rgb: "139,92,255", soft: "bg-[#8B5CFF]/10 text-[#6E44E8]" },
+  green: { color: "#10B981", rgb: "16,185,129", soft: "bg-[#10B981]/10 text-[#047857]" },
+  red: { color: "#EF4444", rgb: "239,68,68", soft: "bg-[#EF4444]/10 text-[#C81E1E]" },
+  amber: { color: "#F59E0B", rgb: "245,158,11", soft: "bg-[#F59E0B]/10 text-[#B45309]" },
   slate: { color: "#64748B", rgb: "100,116,139", soft: "bg-slate-100 text-slate-500" },
 };
 
@@ -143,14 +143,14 @@ function MetricCard({ label, value, helper, trend, icon: Icon, tone, negative = 
           <Icon size={22} strokeWidth={2.2} />
         </span>
         <span className="min-w-0">
-          <span className="block text-[12px] font-extrabold text-[#68739F]">{label}</span>
+          <span className="block text-[12px] font-extrabold text-[#5F6B94]">{label}</span>
           <span className="mt-1 block text-[27px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</span>
           {trend != null ? (
-            <span className={cn("mt-2 flex items-center gap-1 text-[11px] font-black", isNegativeDisplay ? "text-[#EF4444]" : "text-[#10B981]")}>
+            <span className={cn("mt-2 flex items-center gap-1 text-[11px] font-black", isNegativeDisplay ? "text-[#C81E1E]" : "text-[#047857]")}>
               {trend >= 0 ? "▲" : "▼"} {helper}
             </span>
           ) : helper ? (
-            <span className={cn("mt-2 flex items-center gap-1 text-[11px] font-black", negative ? "text-[#EF4444]" : "text-[#10B981]")}>
+            <span className={cn("mt-2 flex items-center gap-1 text-[11px] font-black", negative ? "text-[#C81E1E]" : "text-[#047857]")}>
               {negative ? "▼" : "▲"} {helper}
             </span>
           ) : null}
@@ -161,7 +161,7 @@ function MetricCard({ label, value, helper, trend, icon: Icon, tone, negative = 
 }
 
 function StatusPill({ status, t }: { status: ActionStatus; t: (key: string) => string }) {
-  const style = status === "done" ? "bg-[#10B981]/12 text-[#0C9B69]" : status === "in-progress" ? "bg-[#F59E0B]/12 text-[#F59E0B]" : "bg-[#EF4444]/10 text-[#EF4444]";
+  const style = status === "done" ? "bg-[#10B981]/12 text-[#047857]" : status === "in-progress" ? "bg-[#F59E0B]/12 text-[#B45309]" : "bg-[#EF4444]/10 text-[#C81E1E]";
   const label = status === "done" ? t("statusDone") : status === "in-progress" ? t("statusInProgress") : t("statusActive");
   return <span className={cn("rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-[0.08em]", style)}>{label}</span>;
 }
@@ -207,7 +207,7 @@ function ActionCard({ action, selected, onSelect, t }: { action: ActionItem; sel
         <h3 className="text-[13px] font-black leading-5 text-[#101334]">{action.title}</h3>
         <StatusPill status={action.status} t={t} />
       </div>
-      <div className="mt-3 flex flex-col gap-1 text-[11px] font-semibold text-[#68739F]">
+      <div className="mt-3 flex flex-col gap-1 text-[11px] font-semibold text-[#5F6B94]">
         <span>{action.issue}</span>
         <span>{t("impactLabel")} <b className="font-black" style={{ color: style.color }}>{action.impact}</b></span>
         <span>{action.response}</span>
@@ -217,7 +217,7 @@ function ActionCard({ action, selected, onSelect, t }: { action: ActionItem; sel
           <Avatar name={action.owner} />
           <span>
             <span className="block text-[11px] font-black text-[#101334]">{action.owner}</span>
-            <span className="block text-[9px] font-semibold text-[#68739F]">{action.role}</span>
+            <span className="block text-[9px] font-semibold text-[#5F6B94]">{action.role}</span>
           </span>
         </span>
         <span className="text-[10px] font-black text-[#53608C]">{action.due}</span>
@@ -283,7 +283,7 @@ function FilterDropdown({ isOpen, onClose, filterPriority, setFilterPriority, fi
       </div>
       <div className="mt-4 space-y-3">
         <div>
-          <p className="mb-2 text-[11px] font-bold text-[#68739F]">{t("filterModal.priority")}</p>
+          <p className="mb-2 text-[11px] font-bold text-[#5F6B94]">{t("filterModal.priority")}</p>
           <div className="flex flex-wrap gap-1.5">
             {priorities.map((p) => (
               <button key={p.value} type="button" onClick={() => setFilterPriority(p.value)} className={cn("rounded-full px-3 py-1.5 text-[10px] font-black transition", filterPriority === p.value ? "bg-[#465FFF] text-white" : "bg-[#F8FAFF] text-[#53608C] hover:bg-[#EEF0FF]")}>{p.label}</button>
@@ -291,7 +291,7 @@ function FilterDropdown({ isOpen, onClose, filterPriority, setFilterPriority, fi
           </div>
         </div>
         <div>
-          <p className="mb-2 text-[11px] font-bold text-[#68739F]">{t("filterModal.status")}</p>
+          <p className="mb-2 text-[11px] font-bold text-[#5F6B94]">{t("filterModal.status")}</p>
           <div className="flex flex-wrap gap-1.5">
             {statuses.map((s) => (
               <button key={s.value} type="button" onClick={() => setFilterStatus(s.value)} className={cn("rounded-full px-3 py-1.5 text-[10px] font-black transition", filterStatus === s.value ? "bg-[#465FFF] text-white" : "bg-[#F8FAFF] text-[#53608C] hover:bg-[#EEF0FF]")}>{s.label}</button>
@@ -418,8 +418,8 @@ export default function ActionPlansPage() {
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
       {isDemoSession && (
         <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
-          <Sparkles size={16} className="text-[#8B5CFF]" />
-          <p className="text-[13px] font-bold text-[#8B5CFF]">
+          <Sparkles size={16} className="text-[#6E44E8]" />
+          <p className="text-[13px] font-bold text-[#6E44E8]">
             Demo workspace — some content on this page may be illustrative examples rather than live data
           </p>
         </div>
@@ -471,9 +471,9 @@ export default function ActionPlansPage() {
         <CardContent className="p-3">
           <div className="flex flex-col gap-3 border-b border-[#EEF1F7] pb-3 xl:flex-row xl:items-center xl:justify-end">
             <div className="flex w-full flex-wrap gap-3 xl:w-auto">
-              <label className="flex h-10 w-full min-w-[240px] items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-[#FBFCFF] px-3 text-[#8A94B8] sm:w-[260px]">
+              <label className="flex h-10 w-full min-w-[240px] items-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-[#FBFCFF] px-3 text-[#647099] sm:w-[260px]">
                 <Search size={15} />
-                <input aria-label={t("search")} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="min-w-0 flex-1 bg-transparent text-[12px] font-semibold outline-none placeholder:text-[#8A94B8]" placeholder={t("search")} />
+                <input aria-label={t("search")} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="min-w-0 flex-1 bg-transparent text-[12px] font-semibold outline-none placeholder:text-[#647099]" placeholder={t("search")} />
               </label>
               <div className="relative">
                 <button type="button" aria-expanded={isFilterOpen} aria-controls="action-filter-menu" onClick={() => setIsFilterOpen(!isFilterOpen)} className={cn("flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border px-4 text-[12px] font-black sm:flex-none", isFilterOpen || filterPriority !== "all" || filterStatus !== "all" ? "border-[#465FFF] bg-[#465FFF]/5 text-[#465FFF]" : "border-[#DDE3EF] bg-white text-[#101334]")}><Funnel size={14} />{t("filter")}{(filterPriority !== "all" || filterStatus !== "all") ? <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#465FFF] text-[8px] text-white">{(filterPriority !== "all" ? 1 : 0) + (filterStatus !== "all" ? 1 : 0)}</span> : null}</button>
@@ -495,7 +495,7 @@ export default function ActionPlansPage() {
               </div>
               {totalFilteredItems > pageSize && (
                 <div className="mt-6 flex items-center justify-between border-t border-[#E8ECF5] pt-4">
-                  <span className="text-[12px] font-bold text-[#68739F]">
+                  <span className="text-[12px] font-bold text-[#5F6B94]">
                     {tPagination("summary", {
                       start: (validPage - 1) * pageSize + 1,
                       end: Math.min(validPage * pageSize, totalFilteredItems),
@@ -538,17 +538,17 @@ export default function ActionPlansPage() {
               <Sparkles size={20} className="mt-0.5 text-[#465FFF]" />
               <div>
                 <h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{t("detail")}</h2>
-                <p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("detailDesc")}</p>
+                <p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("detailDesc")}</p>
               </div>
             </div>
             {!selectedActionId ? (
               <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDF1F7]">
-                  <Sparkles size={18} className="text-[#8B95B8]" />
+                  <Sparkles size={18} className="text-[#647099]" />
                 </div>
                 <div>
                   <p className="text-[12px] font-bold text-[#58648C]">{t("detailEmptyTitle")}</p>
-                  <p className="mt-1 text-[10px] font-semibold text-[#8B95B8]">{t("detailEmptyDesc")}</p>
+                  <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("detailEmptyDesc")}</p>
                 </div>
               </div>
             ) : actionPlanQuery.isPending ? (
@@ -556,17 +556,17 @@ export default function ActionPlansPage() {
             ) : !hasActionPlanData(latestPlan) ? (
               <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDF1F7]">
-                  <Sparkles size={18} className="text-[#8B95B8]" />
+                  <Sparkles size={18} className="text-[#647099]" />
                 </div>
                 <div>
                   <p className="text-[12px] font-bold text-[#58648C]">{t("detailNoPlanTitle")}</p>
-                  <p className="mt-1 text-[10px] font-semibold text-[#8B95B8]">{t("detailNoPlanDesc")}</p>
+                  <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("detailNoPlanDesc")}</p>
                 </div>
               </div>
             ) : (<>
             <div className="mt-5 flex flex-wrap gap-2">
-              <span className={cn("rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em]", selectedPriority === "high" ? "bg-[#EF4444]/10 text-[#EF4444]" : selectedPriority === "medium" ? "bg-[#F59E0B]/12 text-[#F59E0B]" : "bg-[#10B981]/12 text-[#0C9B69]")}>{t(`lanes.${selectedPriority}`)}</span>
-              <span className={cn("rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em]", selectedStatus === "active" ? "bg-[#EF4444]/10 text-[#EF4444]" : selectedStatus === "in-progress" ? "bg-[#F59E0B]/12 text-[#F59E0B]" : "bg-[#10B981]/12 text-[#0C9B69]")}>{selectedStatusLabel}</span>
+              <span className={cn("rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em]", selectedPriority === "high" ? "bg-[#EF4444]/10 text-[#C81E1E]" : selectedPriority === "medium" ? "bg-[#F59E0B]/12 text-[#B45309]" : "bg-[#10B981]/12 text-[#047857]")}>{t(`lanes.${selectedPriority}`)}</span>
+              <span className={cn("rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em]", selectedStatus === "active" ? "bg-[#EF4444]/10 text-[#C81E1E]" : selectedStatus === "in-progress" ? "bg-[#F59E0B]/12 text-[#B45309]" : "bg-[#10B981]/12 text-[#047857]")}>{selectedStatusLabel}</span>
               <span className="rounded-full bg-[#EEF1F7] px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-[#53608C]">{selectedDue}</span>
             </div>
             <h3 className="mt-4 text-[18px] font-black text-[#101334]">{selectedAction?.title ?? latestPlan?.id ?? t("detail")}</h3>
@@ -574,7 +574,7 @@ export default function ActionPlansPage() {
             <div className="mt-5 grid gap-3 sm:grid-cols-4">
               {[selectedIssue, selectedImpact, selectedStatusLabel, selectedDue].map((item, index) => (
                 <div key={index} className="rounded-[10px] bg-[#FBFCFF] p-3">
-                  <p className="text-[10px] font-black text-[#8A94B8]">{[t("categoryLabel"), t("impactFieldLabel"), t("statusFieldLabel"), t("dueDateLabel")][index]}</p>
+                  <p className="text-[10px] font-black text-[#647099]">{[t("categoryLabel"), t("impactFieldLabel"), t("statusFieldLabel"), t("dueDateLabel")][index]}</p>
                   <p className="mt-1 text-[11px] font-black text-[#465FFF]">{item}</p>
                 </div>
               ))}
@@ -584,8 +584,8 @@ export default function ActionPlansPage() {
               <div className="mt-2 grid gap-2">
                 {(detailSteps ?? []).slice(0, 3).map(([item, owner]) => (
                   <div key={item} className="flex items-center justify-between rounded-[8px] border border-[#E8ECF5] px-3 py-2 text-[12px] font-semibold text-[#53608C]">
-                    <span className="flex items-center gap-2"><CircleCheck size={16} className="text-[#10B981]" />{item}</span>
-                    <span className="text-[10px] font-black text-[#68739F]">{owner}</span>
+                    <span className="flex items-center gap-2"><CircleCheck size={16} className="text-[#047857]" />{item}</span>
+                    <span className="text-[10px] font-black text-[#5F6B94]">{owner}</span>
                   </div>
                 ))}
               </div>
@@ -595,8 +595,8 @@ export default function ActionPlansPage() {
             ) : null}
             <button type="button" onClick={() => setSelectedActionId("")} className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#F8FAFF] text-[12px] font-black text-[#465FFF] transition hover:bg-[#465FFF]/5">{t("backToQueue")} <ChevronRight size={14} /></button>
             <div className="mt-3 flex gap-2">
-              <button type="button" onClick={() => { if (latestPlan?.id) feedbackMutation.mutate({ actionPlanId: latestPlan.id, action: "accepted" }); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[#10B981]/10 text-[11px] font-black text-[#0C9B69] transition hover:bg-[#10B981]/20 disabled:opacity-50"><Check size={14} /> {t("approve")}</button>
-              <button type="button" onClick={() => { if (latestPlan?.id) setIsRejectModalOpen(true); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[#EF4444]/10 text-[11px] font-black text-[#EF4444] transition hover:bg-[#EF4444]/20 disabled:opacity-50"><X size={14} /> {t("reject")}</button>
+              <button type="button" onClick={() => { if (latestPlan?.id) feedbackMutation.mutate({ actionPlanId: latestPlan.id, action: "accepted" }); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[#10B981]/10 text-[11px] font-black text-[#047857] transition hover:bg-[#10B981]/20 disabled:opacity-50"><Check size={14} /> {t("approve")}</button>
+              <button type="button" onClick={() => { if (latestPlan?.id) setIsRejectModalOpen(true); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[#EF4444]/10 text-[11px] font-black text-[#C81E1E] transition hover:bg-[#EF4444]/20 disabled:opacity-50"><X size={14} /> {t("reject")}</button>
             </div>
             </>)}
           </CardContent>
@@ -608,17 +608,17 @@ export default function ActionPlansPage() {
                 <BarChart3 size={20} className="mt-0.5 text-[#465FFF]" />
                 <div>
                   <h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{t("performance")}</h2>
-                  <p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("performanceDesc")}</p>
+                  <p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("performanceDesc")}</p>
                 </div>
               </div>
             {!selectedActionId ? (
               <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDF1F7]">
-                  <BarChart3 size={18} className="text-[#8B95B8]" />
+                  <BarChart3 size={18} className="text-[#647099]" />
                 </div>
                 <div>
                   <p className="text-[12px] font-bold text-[#58648C]">{t("performanceEmptyTitle")}</p>
-                  <p className="mt-1 text-[10px] font-semibold text-[#8B95B8]">{t("performanceEmptyDesc")}</p>
+                  <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("performanceEmptyDesc")}</p>
                 </div>
               </div>
             ) : feedbackAccuracyQuery.isPending ? (
@@ -626,28 +626,28 @@ export default function ActionPlansPage() {
             ) : !hasLearningData ? (
               <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDF1F7]">
-                  <Lightbulb size={18} className="text-[#8B95B8]" />
+                  <Lightbulb size={18} className="text-[#647099]" />
                 </div>
                 <div>
                   <p className="text-[12px] font-bold text-[#58648C]">{t("learningNoDataTitle")}</p>
-                  <p className="mt-1 text-[10px] font-semibold text-[#8B95B8]">{t("learningNoDataDesc")}</p>
+                  <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("learningNoDataDesc")}</p>
                 </div>
               </div>
             ) : (
               <>
                 <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-[10px] bg-[#FBFCFF] p-4"><p className="text-[11px] font-bold text-[#8A94B8]">{t("aiAccuracy")}</p><p className="mt-1 text-[22px] font-black text-[#101334]">{accuracyScorePercent != null ? `${accuracyScorePercent}%` : "—"}</p><p className="text-[11px] font-black text-[#8A94B8]">{t("aiAccuracyHelper")}</p></div>
-                  <div className="rounded-[10px] bg-[#FBFCFF] p-4"><p className="text-[11px] font-bold text-[#8A94B8]">{t("acceptanceRate")}</p><p className="mt-1 text-[22px] font-black text-[#101334]">{acceptanceRatePercent != null ? `${acceptanceRatePercent}%` : "—"}</p><p className="text-[11px] font-black text-[#10B981]">{t("acceptanceRateHelper")}</p></div>
-                  <div className="rounded-[10px] bg-[#FBFCFF] p-4"><p className="text-[11px] font-bold text-[#8A94B8]">{t("rejectionRate")}</p><p className="mt-1 text-[22px] font-black text-[#101334]">{rejectionRatePercent != null ? `${rejectionRatePercent}%` : "—"}</p><p className="text-[11px] font-black text-[#EF4444]">{t("rejectionRateHelper")}</p></div>
+                  <div className="rounded-[10px] bg-[#FBFCFF] p-4"><p className="text-[11px] font-bold text-[#647099]">{t("aiAccuracy")}</p><p className="mt-1 text-[22px] font-black text-[#101334]">{accuracyScorePercent != null ? `${accuracyScorePercent}%` : "—"}</p><p className="text-[11px] font-black text-[#647099]">{t("aiAccuracyHelper")}</p></div>
+                  <div className="rounded-[10px] bg-[#FBFCFF] p-4"><p className="text-[11px] font-bold text-[#647099]">{t("acceptanceRate")}</p><p className="mt-1 text-[22px] font-black text-[#101334]">{acceptanceRatePercent != null ? `${acceptanceRatePercent}%` : "—"}</p><p className="text-[11px] font-black text-[#047857]">{t("acceptanceRateHelper")}</p></div>
+                  <div className="rounded-[10px] bg-[#FBFCFF] p-4"><p className="text-[11px] font-bold text-[#647099]">{t("rejectionRate")}</p><p className="mt-1 text-[22px] font-black text-[#101334]">{rejectionRatePercent != null ? `${rejectionRatePercent}%` : "—"}</p><p className="text-[11px] font-black text-[#C81E1E]">{t("rejectionRateHelper")}</p></div>
                 </div>
                 {accuracy && Object.keys(accuracy.by_type).length > 0 ? (
                   <div className="mt-5">
-                    <div className="mb-2 flex items-center justify-between text-[12px] font-black text-[#101334]"><span>{t("accuracyPerCategory")}</span><span className="flex gap-3 text-[10px] text-[#53608C]"><b className="text-[#465FFF]">{t("total")}</b><b className="text-[#10B981]">{t("accuracy")}</b></span></div>
+                    <div className="mb-2 flex items-center justify-between text-[12px] font-black text-[#101334]"><span>{t("accuracyPerCategory")}</span><span className="flex gap-3 text-[10px] text-[#53608C]"><b className="text-[#465FFF]">{t("total")}</b><b className="text-[#047857]">{t("accuracy")}</b></span></div>
                     <div className="grid gap-2">
                       {Object.entries(accuracy.by_type).map(([key, value]) => (
                         <div key={key} className="flex items-center justify-between rounded-[8px] border border-[#E9EDF5] bg-white px-3 py-2 text-[11px]">
                           <span className="font-bold capitalize text-[#101334]">{key.replace(/_/g, " ")}</span>
-                          <span className="flex items-center gap-3 text-[#53608C]"><span className="font-black text-[#465FFF]">{value.total}</span><span className="font-black text-[#10B981]">{Math.round(value.accuracy * 100)}%</span></span>
+                          <span className="flex items-center gap-3 text-[#53608C]"><span className="font-black text-[#465FFF]">{value.total}</span><span className="font-black text-[#047857]">{Math.round(value.accuracy * 100)}%</span></span>
                         </div>
                       ))}
                     </div>
@@ -656,7 +656,7 @@ export default function ActionPlansPage() {
                   <div className="mt-5 flex flex-col items-center justify-center gap-2 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-6 text-center">
                     <BarChart3 size={20} className="text-[#A0ABC0]" />
                     <p className="text-[12px] font-bold text-[#58648C]">{t("noFeedback")}</p>
-                    <p className="text-[10px] font-semibold text-[#8B95B8]">{t("noFeedbackDesc")}</p>
+                    <p className="text-[10px] font-semibold text-[#647099]">{t("noFeedbackDesc")}</p>
                   </div>
                 )}
               </>
@@ -671,17 +671,17 @@ export default function ActionPlansPage() {
               <Lightbulb size={20} className="mt-0.5 text-[#465FFF]" />
               <div>
                 <h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{t("learning")}</h2>
-                <p className="mt-1 text-[12px] font-semibold text-[#68739F]">{t("learningDesc")}</p>
+                <p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("learningDesc")}</p>
               </div>
             </div>
             {!selectedActionId ? (
               <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDF1F7]">
-                  <Lightbulb size={18} className="text-[#8B95B8]" />
+                  <Lightbulb size={18} className="text-[#647099]" />
                 </div>
                 <div>
                   <p className="text-[12px] font-bold text-[#58648C]">{t("learningEmptyTitle")}</p>
-                  <p className="mt-1 text-[10px] font-semibold text-[#8B95B8]">{t("learningEmptyDesc")}</p>
+                  <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("learningEmptyDesc")}</p>
                 </div>
               </div>
             ) : actionPlanLearningQuery.isPending ? (
@@ -710,7 +710,7 @@ export default function ActionPlansPage() {
                     <div className="mt-3 grid gap-2.5">
                       {actionPlanLearningQuery.data.templates.map((template) => (
                         <div key={template.nameKey} className="flex items-center justify-between rounded-[9px] border border-[#EEF1F7] px-3 py-2.5 text-[12px] font-semibold text-[#53608C]">
-                          <span className="flex items-center gap-2"><ListChecks size={15} className="text-[#EF4444]" />{t(template.nameKey)}</span>
+                          <span className="flex items-center gap-2"><ListChecks size={15} className="text-[#C81E1E]" />{t(template.nameKey)}</span>
                           <span className="text-[10px] font-black">{t("templateUsed", { count: template.usageCount + "x" })}</span>
                         </div>
                       ))}

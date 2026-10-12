@@ -45,15 +45,15 @@ type Tone = "blue" | "purple" | "green" | "amber" | "red" | "slate";
 
 /* ─── Styles ─── */
 const statusStyles: Record<CaseStatus, string> = {
-  open: "bg-[#F59E0B]/10 text-[#D97706]",
+  open: "bg-[#F59E0B]/10 text-[#B45309]",
   in_progress: "bg-[#465FFF]/10 text-[#465FFF]",
-  resolved: "bg-[#10B981]/10 text-[#059669]",
+  resolved: "bg-[#10B981]/10 text-[#047857]",
   closed: "bg-[#64748B]/10 text-[#475569]",
 };
 
 const priorityStyles: Record<CasePriority, string> = {
-  critical: "bg-[#EF4444]/10 text-[#DC2626]",
-  high: "bg-[#F59E0B]/10 text-[#D97706]",
+  critical: "bg-[#EF4444]/10 text-[#C81E1E]",
+  high: "bg-[#F59E0B]/10 text-[#B45309]",
   medium: "bg-[#465FFF]/10 text-[#465FFF]",
   low: "bg-[#64748B]/10 text-[#475569]",
 };
@@ -66,22 +66,22 @@ const toneMap: Record<string, { bg: string; text: string; ring: string }> = {
   },
   purple: {
     bg: "bg-[#8B5CFF]/10",
-    text: "text-[#8B5CFF]",
+    text: "text-[#6E44E8]",
     ring: "ring-[#8B5CFF]/15",
   },
   green: {
     bg: "bg-[#10B981]/10",
-    text: "text-[#10B981]",
+    text: "text-[#047857]",
     ring: "ring-[#10B981]/15",
   },
   amber: {
     bg: "bg-[#F59E0B]/10",
-    text: "text-[#F59E0B]",
+    text: "text-[#B45309]",
     ring: "ring-[#F59E0B]/15",
   },
   red: {
     bg: "bg-[#EF4444]/10",
-    text: "text-[#EF4444]",
+    text: "text-[#C81E1E]",
     ring: "ring-[#EF4444]/15",
   },
   slate: { bg: "bg-slate-100", text: "text-slate-500", ring: "ring-slate-200" },
@@ -172,7 +172,7 @@ function MetricCard({
           <Icon size={18} />
         </span>
         <div className="min-w-0">
-          <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-400">
+          <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">
             {label}
           </p>
           <p className="mt-1 text-2xl font-black tracking-[-0.04em] text-slate-950">
@@ -271,7 +271,7 @@ function CaseDetailSidebar({
             type="button"
             aria-label={tDetail("close")}
             onClick={onClose}
-            className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]"
+            className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]"
           >
             <X size={20} />
           </button>
@@ -340,7 +340,7 @@ function CaseDetailSidebar({
               {/* Info grid */}
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-[10px] bg-[#F8FAFF] p-3">
-                  <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#8A94B8]">
+                  <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#647099]">
                     {t("table.assignee")}
                   </p>
                   <p className="mt-2 text-[13px] font-black text-[#101334]">
@@ -350,7 +350,7 @@ function CaseDetailSidebar({
                   </p>
                 </div>
                 <div className="rounded-[10px] bg-[#F8FAFF] p-3">
-                  <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#8A94B8]">
+                  <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#647099]">
                     {t("table.deadline")}
                   </p>
                   <p className="mt-2 text-[13px] font-black text-[#101334]">
@@ -361,7 +361,7 @@ function CaseDetailSidebar({
                   </p>
                 </div>
                 <div className="rounded-[10px] bg-[#F8FAFF] p-3">
-                  <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#8A94B8]">
+                  <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#647099]">
                     {tDetail("created")}
                   </p>
                   <p className="mt-2 text-[13px] font-black text-[#101334]">
@@ -369,7 +369,7 @@ function CaseDetailSidebar({
                   </p>
                 </div>
                 <div className="rounded-[10px] bg-[#F8FAFF] p-3">
-                  <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#8A94B8]">
+                  <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#647099]">
                     {tDetail("updated")}
                   </p>
                   <p className="mt-2 text-[13px] font-black text-[#101334]">
@@ -381,7 +381,7 @@ function CaseDetailSidebar({
               {/* Source info */}
               {record.sourceType && (
                 <div className="rounded-[10px] border border-[#E6EAF2] bg-white p-3">
-                  <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#8A94B8]">
+                  <p className="text-[9px] font-black uppercase tracking-[0.14em] text-[#647099]">
                     {tDetail("source")}
                   </p>
                   <div className="mt-2 flex items-center gap-2">
@@ -391,7 +391,7 @@ function CaseDetailSidebar({
                     <span className="text-[12px] font-black text-[#101334]">
                       {record.sourceType}
                       {record.sourceId && (
-                        <span className="ml-1 text-[10px] font-bold text-[#68739F]">
+                        <span className="ml-1 text-[10px] font-bold text-[#5F6B94]">
                           #{record.sourceId.slice(0, 8)}
                         </span>
                       )}
@@ -764,17 +764,18 @@ export default function CasesPage() {
       <section className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#8B95B8]" />
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#647099]" />
             <input
               type="search"
               aria-label={t("filter.search")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t("filter.search")}
-              className="h-10 w-full rounded-[8px] border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm font-bold text-slate-700 outline-none transition placeholder:text-[#8B95B8] focus:border-[#465FFF] focus:ring-2 focus:ring-[#465FFF]/15"
+              className="h-10 w-full rounded-[8px] border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm font-bold text-slate-700 outline-none transition placeholder:text-[#647099] focus:border-[#465FFF] focus:ring-2 focus:ring-[#465FFF]/15"
             />
           </div>
           <select
+            aria-label={t("table.status")}
             value={statusFilter}
             onChange={(e) => {
               setStatusFilter(e.target.value);
@@ -789,6 +790,7 @@ export default function CasesPage() {
             <option value="closed">{tStatus("closed")}</option>
           </select>
           <select
+            aria-label={t("table.priority")}
             value={priorityFilter}
             onChange={(e) => {
               setPriorityFilter(e.target.value);
@@ -880,7 +882,7 @@ export default function CasesPage() {
                               {item.title}
                             </p>
                             {item.description && (
-                              <p className="mt-0.5 text-[10px] font-bold text-[#68739F] line-clamp-1">
+                              <p className="mt-0.5 text-[10px] font-bold text-[#5F6B94] line-clamp-1">
                                 {item.description}
                               </p>
                             )}
@@ -968,7 +970,7 @@ export default function CasesPage() {
                       {/* Assignee */}
                       <td className="px-4 py-4 align-top">
                         <div className="flex items-center gap-2">
-                          <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#8B5CFF]/10 text-[10px] font-black text-[#8B5CFF]">
+                          <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#8B5CFF]/10 text-[10px] font-black text-[#6E44E8]">
                             {(item.assignedTo ||
                               item.assignedTeam ||
                               "?")[0].toUpperCase()}
@@ -989,15 +991,15 @@ export default function CasesPage() {
                               size={12}
                               className={
                                 deadlineInfo.isPast
-                                  ? "text-[#EF4444]"
-                                  : "text-[#8B95B8]"
+                                  ? "text-[#C81E1E]"
+                                  : "text-[#647099]"
                               }
                             />
                             <span
                               className={cn(
                                 "text-[11px] font-bold",
                                 deadlineInfo.isPast
-                                  ? "text-[#EF4444]"
+                                  ? "text-[#C81E1E]"
                                   : "text-[#31406B]",
                               )}
                             >
@@ -1005,7 +1007,7 @@ export default function CasesPage() {
                             </span>
                           </div>
                         ) : (
-                          <span className="text-[11px] font-bold text-[#8B95B8]">
+                          <span className="text-[11px] font-bold text-[#647099]">
                             {t("table.noDeadline")}
                           </span>
                         )}
@@ -1030,7 +1032,7 @@ export default function CasesPage() {
                               title: item.title,
                             })}
                             onClick={() => setDetailCaseId(item.id)}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#8A94B8] transition hover:bg-[#F0F3FF] hover:text-[#465FFF]"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#647099] transition hover:bg-[#F0F3FF] hover:text-[#465FFF]"
                           >
                             <Eye size={15} />
                           </button>
@@ -1040,7 +1042,7 @@ export default function CasesPage() {
                               title: item.title,
                             })}
                             onClick={() => setDeleteId(item.id)}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#8A94B8] transition hover:bg-[#FFF4F4] hover:text-[#EF4444]"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#647099] transition hover:bg-[#FFF4F4] hover:text-[#C81E1E]"
                           >
                             <Trash2 size={15} />
                           </button>
@@ -1107,7 +1109,7 @@ export default function CasesPage() {
                   </h2>
                   <p
                     id={dialogDescId}
-                    className="mt-1 text-[11px] font-bold text-[#68739F]"
+                    className="mt-1 text-[11px] font-bold text-[#5F6B94]"
                   >
                     {tCreate("desc")}
                   </p>
@@ -1117,7 +1119,7 @@ export default function CasesPage() {
                   type="button"
                   aria-label={tCreate("close")}
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]"
+                  className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]"
                 >
                   <X size={20} />
                 </button>
@@ -1156,6 +1158,7 @@ export default function CasesPage() {
                         {tCreate("priorityLabel")}
                       </label>
                       <select
+                        aria-label={tCreate("priorityLabel")}
                         name="priority"
                         className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white"
                       >
@@ -1181,6 +1184,7 @@ export default function CasesPage() {
                       {tCreate("assignedToLabel")}
                     </label>
                     <select
+                      aria-label={tCreate("assignedToLabel")}
                       name="assignedTo"
                       className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white"
                     >

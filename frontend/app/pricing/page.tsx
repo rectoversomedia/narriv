@@ -312,7 +312,7 @@ export default function PricingPage() {
                   </div>
                   <h3 className="text-xl font-bold text-slate-900">{plan.name}</h3>
                   <p className="mt-1 text-sm text-slate-500">{plan.tagline}</p>
-                  <p className="mt-2 text-xs text-slate-400">{plan.description}</p>
+                  <p className="mt-2 text-xs text-slate-500">{plan.description}</p>
                 </div>
 
                 {/* Price */}
@@ -323,7 +323,7 @@ export default function PricingPage() {
                     <>
                       <div className="text-3xl font-black text-slate-900 sm:text-4xl">
                         {formatPrice(price)}
-                        <span className="text-base font-normal text-slate-400">/{plan.period}</span>
+                        <span className="text-base font-normal text-slate-500">/{plan.period}</span>
                       </div>
                       {billingPeriod === "annual" && (
                         <span>Save {formatPrice(plan.price - price)}/month</span>
@@ -364,7 +364,7 @@ export default function PricingPage() {
                 <div className="mt-6 space-y-3">
                   {plan.included.map((feature) => (
                     <div key={feature} className="flex items-start gap-3">
-                      <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-600">
+                      <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-700">
                         <CheckIcon className="h-3 w-3" />
                       </div>
                       <span className="text-sm text-slate-600">{feature}</span>
@@ -423,11 +423,11 @@ export default function PricingPage() {
                         <td className="px-4 py-4 text-center">
                           {typeof item.pilot === "boolean" ? (
                             item.pilot ? (
-                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-600">
+                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-700">
                                 <CheckIcon className="h-3.5 w-3.5" />
                               </span>
                             ) : (
-                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-500">
                                 <XIcon className="h-3.5 w-3.5" />
                               </span>
                             )
@@ -442,7 +442,7 @@ export default function PricingPage() {
                                 <CheckIcon className="h-3.5 w-3.5" />
                               </span>
                             ) : (
-                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-500">
                                 <XIcon className="h-3.5 w-3.5" />
                               </span>
                             )
@@ -453,11 +453,11 @@ export default function PricingPage() {
                         <td className="px-4 py-4 text-center">
                           {typeof item.decision === "boolean" ? (
                             item.decision ? (
-                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-600">
+                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-700">
                                 <CheckIcon className="h-3.5 w-3.5" />
                               </span>
                             ) : (
-                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-500">
                                 <XIcon className="h-3.5 w-3.5" />
                               </span>
                             )
@@ -468,11 +468,11 @@ export default function PricingPage() {
                         <td className="px-4 py-4 text-center">
                           {typeof item.command === "boolean" ? (
                             item.command ? (
-                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-600">
+                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-700">
                                 <CheckIcon className="h-3.5 w-3.5" />
                               </span>
                             ) : (
-                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-500">
                                 <XIcon className="h-3.5 w-3.5" />
                               </span>
                             )
@@ -546,7 +546,7 @@ export default function PricingPage() {
           <div className="flex items-center gap-8 text-sm text-slate-500">
             <Link href="/help#contact" className="hover:text-slate-900">{t("contact")}</Link>
           </div>
-          <p className="text-sm text-slate-400">© {new Date().getFullYear()} Narriv. All rights reserved.</p>
+          <p className="text-sm text-slate-500">© {new Date().getFullYear()} Narriv. All rights reserved.</p>
         </div>
       </footer>
     </div>

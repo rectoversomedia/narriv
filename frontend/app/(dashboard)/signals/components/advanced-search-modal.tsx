@@ -208,13 +208,13 @@ export function AdvancedSearchModal({
             </span>
             <div>
               <h3 id={titleId} className="text-lg font-black text-[#101334]">{t("title")}</h3>
-              <p id={descriptionId} className="text-xs font-semibold text-[#68739F]">{t("description")}</p>
+              <p id={descriptionId} className="text-xs font-semibold text-[#5F6B94]">{t("description")}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="rounded-full p-1.5 text-[#68739F] transition hover:bg-[#EDF1F7] hover:text-[#101334]"
+            className="rounded-full p-1.5 text-[#5F6B94] transition hover:bg-[#EDF1F7] hover:text-[#101334]"
           >
             <X size={16} />
           </button>
@@ -225,7 +225,7 @@ export function AdvancedSearchModal({
             {/* Platform Filter */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-[12px] font-black text-[#31406B]">
-                <Database size={14} className="text-[#8B95B8]" />
+                <Database size={14} className="text-[#647099]" />
                 {t("platform")}
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -250,16 +250,16 @@ export function AdvancedSearchModal({
             {/* Sentiment Filter */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-[12px] font-black text-[#31406B]">
-                <span className="flex h-5 w-5 items-center justify-center rounded bg-[#8B5CFF]/10 text-[10px] font-black text-[#8B5CFF]">S</span>
+                <span className="flex h-5 w-5 items-center justify-center rounded bg-[#8B5CFF]/10 text-[10px] font-black text-[#6E44E8]">S</span>
                 {t("sentiment")}
               </label>
               <div className="flex flex-wrap gap-2">
                 {SENTIMENTS.map((opt) => {
                   const colors: Record<string, string> = {
-                    positive: "bg-[#10B981]/10 text-[#0C9B69] border-[#10B981]/20",
-                    negative: "bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]/20",
+                    positive: "bg-[#10B981]/10 text-[#047857] border-[#10B981]/20",
+                    negative: "bg-[#EF4444]/10 text-[#C81E1E] border-[#EF4444]/20",
                     neutral: "bg-slate-100 text-slate-600 border-slate-200",
-                    mixed: "bg-[#8B5CFF]/10 text-[#8B5CFF] border-[#8B5CFF]/20",
+                    mixed: "bg-[#8B5CFF]/10 text-[#6E44E8] border-[#8B5CFF]/20",
                   };
                   const activeClass = colors[opt.value] || "";
                   return (
@@ -284,7 +284,7 @@ export function AdvancedSearchModal({
             {/* Date Range */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-[12px] font-black text-[#31406B]">
-                <Calendar size={14} className="text-[#8B95B8]" />
+                <Calendar size={14} className="text-[#647099]" />
                 {t("dateRange")}
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -325,7 +325,7 @@ export function AdvancedSearchModal({
               {datePreset === "custom" && (
                 <div className="flex gap-3 pt-2">
                   <div className="flex-1 space-y-1">
-                    <label className="text-[10px] font-bold text-[#68739F]">{t("from")}</label>
+                    <label className="text-[10px] font-bold text-[#5F6B94]">{t("from")}</label>
                     <input
                       type="date"
                       value={dateFrom}
@@ -334,7 +334,7 @@ export function AdvancedSearchModal({
                     />
                   </div>
                   <div className="flex-1 space-y-1">
-                    <label className="text-[10px] font-bold text-[#68739F]">{t("to")}</label>
+                    <label className="text-[10px] font-bold text-[#5F6B94]">{t("to")}</label>
                     <input
                       type="date"
                       value={dateTo}
@@ -349,7 +349,7 @@ export function AdvancedSearchModal({
             {/* Source ID */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-[12px] font-black text-[#31406B]">
-                <span className="flex h-5 w-5 items-center justify-center rounded bg-[#F59E0B]/10 text-[10px] font-black text-[#F59E0B]">#</span>
+                <span className="flex h-5 w-5 items-center justify-center rounded bg-[#F59E0B]/10 text-[10px] font-black text-[#B45309]">#</span>
                 {t("sourceId")}
               </label>
               <input
@@ -357,14 +357,14 @@ export function AdvancedSearchModal({
                 value={sourceId}
                 onChange={(e) => setSourceId(e.target.value)}
                 placeholder={t("sourceIdPlaceholder")}
-                className="w-full rounded-lg border border-[#EDF1F7] px-3 py-2 text-[12px] font-medium outline-none transition focus:border-[#465FFF] placeholder:text-[#8B95B8]"
+                className="w-full rounded-lg border border-[#EDF1F7] px-3 py-2 text-[12px] font-medium outline-none transition focus:border-[#465FFF] placeholder:text-[#647099]"
               />
             </div>
 
             {/* Topics */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-[12px] font-black text-[#31406B]">
-                <Tag size={14} className="text-[#8B95B8]" />
+                <Tag size={14} className="text-[#647099]" />
                 {t("topics")}
               </label>
               <input
@@ -372,15 +372,15 @@ export function AdvancedSearchModal({
                 value={topics}
                 onChange={(e) => setTopics(e.target.value)}
                 placeholder={t("topicsPlaceholder")}
-                className="w-full rounded-lg border border-[#EDF1F7] px-3 py-2 text-[12px] font-medium outline-none transition focus:border-[#465FFF] placeholder:text-[#8B95B8]"
+                className="w-full rounded-lg border border-[#EDF1F7] px-3 py-2 text-[12px] font-medium outline-none transition focus:border-[#465FFF] placeholder:text-[#647099]"
               />
-              <p className="text-[10px] font-medium text-[#8B95B8]">{t("topicsHint")}</p>
+              <p className="text-[10px] font-medium text-[#647099]">{t("topicsHint")}</p>
             </div>
 
             {/* Language */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-[12px] font-black text-[#31406B]">
-                <Globe size={14} className="text-[#8B95B8]" />
+                <Globe size={14} className="text-[#647099]" />
                 {t("language")}
               </label>
               <div className="grid grid-cols-4 gap-2">
@@ -405,7 +405,7 @@ export function AdvancedSearchModal({
             {/* Narrative Type */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-[12px] font-black text-[#31406B]">
-                <span className="flex h-5 w-5 items-center justify-center rounded bg-[#8B5CFF]/10 text-[10px] font-black text-[#8B5CFF]">N</span>
+                <span className="flex h-5 w-5 items-center justify-center rounded bg-[#8B5CFF]/10 text-[10px] font-black text-[#6E44E8]">N</span>
                 {t("filterNarrativeType")}
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -425,7 +425,7 @@ export function AdvancedSearchModal({
                       className={cn(
                         "rounded-lg border px-3 py-2 text-[11px] font-bold transition",
                         isActive
-                          ? "border-[#8B5CFF] bg-[#8B5CFF]/10 text-[#8B5CFF]"
+                          ? "border-[#8B5CFF] bg-[#8B5CFF]/10 text-[#6E44E8]"
                           : "border-[#EDF1F7] bg-white text-[#58648C] hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]"
                       )}
                     >
@@ -518,7 +518,7 @@ export function ActiveFiltersChips({ filters, onRemove, onClearAll }: ActiveFilt
           key={chip.key}
           className="inline-flex items-center gap-1.5 rounded-full border border-[#465FFF]/20 bg-[#EEF2FF] px-2.5 py-1 text-[11px] font-bold text-[#465FFF]"
         >
-          <span className="text-[#8B95B8]">{chip.label}:</span>
+          <span className="text-[#647099]">{chip.label}:</span>
           <span className="capitalize">{chip.value}</span>
           <button
             type="button"
@@ -532,7 +532,7 @@ export function ActiveFiltersChips({ filters, onRemove, onClearAll }: ActiveFilt
       <button
         type="button"
         onClick={onClearAll}
-        className="text-[11px] font-bold text-[#68739F] transition hover:text-[#465FFF]"
+        className="text-[11px] font-bold text-[#5F6B94] transition hover:text-[#465FFF]"
       >
         {t("clearAll")}
       </button>

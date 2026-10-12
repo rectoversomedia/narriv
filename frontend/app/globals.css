@@ -19,7 +19,7 @@
   --secondary: #8B5CFF;
   --secondary-foreground: #FFFFFF;
   --muted: #F1F5F9;
-  --muted-foreground: #68739F;
+  --muted-foreground: #5F6B94;
   --accent: rgba(70, 95, 255, 0.08);
   --accent-foreground: #465FFF;
   --destructive: #EF4444;
@@ -41,7 +41,7 @@
   --app-bg: #F8FAFC;
   --text: #111536;
   --text-soft: #3E4975;
-  --text-muted: #68739F;
+  --text-muted: #5F6B94;
   --surface: #FFFFFF;
   --surface-soft: #F8FAFC;
   --accent-blue: #465FFF;
@@ -54,7 +54,7 @@
   /* Design tokens (Narriv design system) */
   --navy: #101334;          /* headings */
   --text-body: #53608C;     /* body copy */
-  --text-subtle: #8A94B8;   /* captions, metadata */
+  --text-subtle: #647099;   /* captions, metadata */
   --line: #E6EAF2;          /* card and table borders */
   --line-soft: #EEF1F7;     /* inner dividers */
   --badge-slate-bg: #F1F5F9;

@@ -9,7 +9,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { AppCard, IconBubble, MetricTile, SectionHeader, toneMap } from "@/components/dashboard/dashboard-kit";
 import { CardContent } from "@/components/ui/card";
 import { quickActions, text, type Tone } from "@/lib/mock-data";
-import { useUiStore } from "@/store/useUiStore";
+import { useUiStore, intlLocale } from "@/store/useUiStore";
 import { getMockNarratives } from "@/lib/demo-mock-data";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 
@@ -122,7 +122,7 @@ function getQuickActionContent(t: (key: string) => string): Record<QuickActionKe
 
 function EmptyPanel({ label, compact = false }: { label: string; compact?: boolean }) {
   return (
-    <div className={`flex items-center justify-center rounded-[10px] border border-dashed border-slate-200 bg-slate-50/70 px-4 text-center text-[12px] font-bold text-slate-400 ${compact ? "min-h-16 py-4" : "min-h-24 py-6"}`}>
+    <div className={`flex items-center justify-center rounded-[10px] border border-dashed border-slate-200 bg-slate-50/70 px-4 text-center text-[12px] font-bold text-slate-500 ${compact ? "min-h-16 py-4" : "min-h-24 py-6"}`}>
       {label}
     </div>
   );
@@ -180,7 +180,7 @@ function QuickActionDrawer({ actionKey, onClose, quickActionContent, tDrawer }: 
               </span>
               <h2 id={titleId} className="text-[15px] font-black text-slate-900">{content.title}</h2>
             </div>
-            <button ref={closeButtonRef} type="button" aria-label={tDrawer("pages.command.close")} onClick={onClose} className="rounded-lg border border-slate-100 p-1.5 text-slate-400 transition hover:bg-slate-50 hover:text-slate-700">
+            <button ref={closeButtonRef} type="button" aria-label={tDrawer("pages.command.close")} onClick={onClose} className="rounded-lg border border-slate-100 p-1.5 text-slate-500 transition hover:bg-slate-50 hover:text-slate-700">
               <X size={15} />
             </button>
           </div>
@@ -204,7 +204,7 @@ function QuickActionDrawer({ actionKey, onClose, quickActionContent, tDrawer }: 
                     </span>
                     <div>
                       <p className="text-[13px] font-black text-slate-900">{item.label}</p>
-                      <p className="mt-0.5 text-[11px] font-semibold text-slate-400">{item.desc}</p>
+                      <p className="mt-0.5 text-[11px] font-semibold text-slate-500">{item.desc}</p>
                     </div>
                   </button>
                 ))}
@@ -325,7 +325,7 @@ export default function DashboardPage() {
         id: sig.id,
         title: sig.title || "Unknown signal",
         source: sig.platform,
-        time: new Date(sig.published_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+        time: new Date(sig.published_at).toLocaleTimeString(intlLocale(), { hour: "2-digit", minute: "2-digit" }),
         tone: sig.sentiment.toLowerCase().includes("negative") ? "red" : sig.sentiment.toLowerCase().includes("positive") ? "green" : "blue",
       }))
     : [];
@@ -379,7 +379,7 @@ export default function DashboardPage() {
             Start Setup Wizard
             <ArrowRight size={18} />
           </Link>
-          <p className="mt-6 text-[13px] font-semibold text-slate-400">
+          <p className="mt-6 text-[13px] font-semibold text-slate-500">
             Takes about 7 minutes to complete
           </p>
         </div>
@@ -453,13 +453,26 @@ export default function DashboardPage() {
 
   const priorityBadgeClass: Record<string, string> = {
     Immediate: "bg-red-50 text-red-600 border-red-200",
-    High: "bg-amber-50 text-amber-600 border-amber-200",
+    High: "bg-amber-50 text-amber-700 border-amber-200",
     Medium: "bg-blue-50 text-blue-600 border-blue-200",
     Low: "bg-slate-50 text-slate-500 border-slate-200",
   };
 
+  // Demo sessions read the real demo workspace summary; the sections built from
+  // sample values below are labelled "Illustrative" so they are never read as
+  // measurements of this workspace.
+  const illustrativeNote = "Illustrative example, not measured from this workspace";
+
   return (
     <div className="space-y-8 pb-6">
+      {isDemoSession && (
+        <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
+          <Sparkles size={16} className="text-[#6E44E8]" />
+          <p className="text-[13px] font-bold text-[#6E44E8]">
+            Demo workspace — sections marked Illustrative show example values rather than live data
+          </p>
+        </div>
+      )}
       {/* ── 1. Executive Summary Bar ──────────────────────────────────────── */}
       <div className="flex flex-col gap-3 rounded-[14px] border border-slate-100 bg-[linear-gradient(135deg,#ffffff_0%,#f8fbff_52%,#fff7ed_100%)] p-4 shadow-[0_14px_38px_rgba(16,24,40,0.04)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -471,12 +484,10 @@ export default function DashboardPage() {
               Today&apos;s Intelligence
             </h1>
           </div>
-          <span className="text-[13px] font-semibold text-slate-400">{dateStr}</span>
+          <span className="text-[13px] font-semibold text-slate-500">{dateStr}</span>
         </div>
         <p className="text-[13px] font-medium leading-relaxed text-slate-500">
-          {isDemoSession
-            ? "3 emerging risks detected. 1 opportunity identified. Net sentiment shifted +8% today."
-            : summary?.kpis
+          {summary?.kpis
               ? `${formatNumber(summary.kpis.total_signals)} signals in this period · ${formatNumber(summary.kpis.analyzed_signals)} analyzed · ${formatPercent(summary.kpis.negative_percentage)} negative.`
               : dashboardQuery.isLoading ? "Loading live intelligence…" : "Live summary unavailable."}
         </p>
@@ -523,7 +534,7 @@ export default function DashboardPage() {
 
       {/* ── 2. Top Developments ───────────────────────────────────────────── */}
       <div>
-        <h2 className="mb-3 text-[13px] font-black uppercase tracking-[0.1em] text-slate-400">Top Developments</h2>
+        <h2 className="mb-3 text-[13px] font-black uppercase tracking-[0.1em] text-slate-500">Top Developments{isDemoSession ? <span className="ml-2 rounded-[6px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-1.5 py-0.5 align-middle text-[10px] font-black uppercase tracking-wider text-[#6E44E8]">Illustrative</span> : null}</h2>
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
           {developments.length === 0 && <div className="w-full"><EmptyPanel compact label="Top developments appear once live risk and opportunity tracking has enough data." /></div>}
           {developments.map((d) => {
@@ -546,16 +557,19 @@ export default function DashboardPage() {
       </div>
 
       {/* ── 3. Intelligence Scorecard ─────────────────────────────────────── */}
+      {isDemoSession && scorecard.length > 0 ? (
+        <p className="-mb-5 text-[12px] font-semibold text-slate-500">Scorecard{<span className="ml-2 rounded-[6px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-1.5 py-0.5 align-middle text-[10px] font-black uppercase tracking-wider text-[#6E44E8]">Illustrative</span>}</p>
+      ) : null}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         {scorecard.length === 0 && <div className="col-span-full"><EmptyPanel compact label="Intelligence scores are not yet computed for live workspaces." /></div>}
         {scorecard.map((s) => {
           const isPositive = s.lowerIsBetter ? s.delta.startsWith("-") || s.delta === "0" : !s.delta.startsWith("-");
-          const trendColor = isPositive ? "text-[#10B981]" : "text-[#EF4444]";
+          const trendColor = isPositive ? "text-[#047857]" : "text-[#C81E1E]";
           const scoreStyle = toneMap[s.tone] ?? toneMap.purple;
           return (
             <AppCard key={s.label}>
               <CardContent className="flex flex-col gap-1 p-4">
-                <p className="text-[11px] font-bold text-slate-400">{s.label}</p>
+                <p className="text-[11px] font-bold text-slate-500">{s.label}</p>
                 <p className={`text-[26px] font-black tracking-[-0.03em] tabular-nums ${scoreStyle.text}`}>{s.value}</p>
                 <p className={`text-[12px] font-bold tabular-nums ${trendColor}`}>
                   {s.delta}
@@ -578,7 +592,7 @@ export default function DashboardPage() {
                 title="Today&apos;s Top Narratives"
                 description="Most active narrative clusters in the last 24 hours"
                 action={
-                  <Link href="/intelligence" className="flex items-center gap-1 text-[11px] font-bold text-[#465FFF] transition-all hover:text-[#8B5CFF] hover:underline">
+                  <Link href="/intelligence" className="flex items-center gap-1 text-[11px] font-bold text-[#465FFF] transition-all hover:text-[#6E44E8] hover:underline">
                     View all <ArrowRight size={12} />
                   </Link>
                 }
@@ -590,7 +604,7 @@ export default function DashboardPage() {
                     <div key={n.id} className="flex items-center gap-3 rounded-[8px] border border-slate-100 bg-white px-4 py-3 transition hover:border-[#465FFF]/20 hover:bg-[#465FFF]/2">
                       <span className={`h-2 w-2 shrink-0 rounded-full ${sentimentColor.soft}`} />
                       <p className="flex-1 text-[13px] font-bold text-slate-800 truncate">{n.title}</p>
-                      <span className="hidden text-[11px] font-semibold text-slate-400 sm:block">{n.volume}</span>
+                      <span className="hidden text-[11px] font-semibold text-slate-500 sm:block">{n.volume}</span>
                       {n.growth ? <span className="rounded-[6px] bg-slate-50 px-2 py-0.5 text-[11px] font-bold text-slate-600">{n.growth}</span> : null}
                     </div>
                   );
@@ -607,9 +621,9 @@ export default function DashboardPage() {
             <CardContent className="p-5">
               <SectionHeader
                 title="Competitor Snapshot"
-                description="Share of voice and sentiment vs. key competitors"
+                description={isDemoSession ? illustrativeNote : "Share of voice and sentiment vs. key competitors"}
                 action={
-                  <Link href="/visibility" className="flex items-center gap-1 text-[11px] font-bold text-[#465FFF] transition-all hover:text-[#8B5CFF] hover:underline">
+                  <Link href="/visibility" className="flex items-center gap-1 text-[11px] font-bold text-[#465FFF] transition-all hover:text-[#6E44E8] hover:underline">
                     View all <ArrowRight size={12} />
                   </Link>
                 }
@@ -621,11 +635,11 @@ export default function DashboardPage() {
                 <table className="w-full text-[12px]">
                   <thead>
                     <tr className="border-b border-slate-100 bg-slate-50">
-                      <th className="px-3 py-2 text-left font-bold text-slate-400">Competitor</th>
-                      <th className="px-3 py-2 text-right font-bold text-slate-400">Voice Share</th>
-                      <th className="px-3 py-2 text-center font-bold text-slate-400">Sentiment</th>
-                      <th className="px-3 py-2 text-right font-bold text-slate-400">Momentum</th>
-                      <th className="px-3 py-2 text-right font-bold text-slate-400">AI Visibility</th>
+                      <th className="px-3 py-2 text-left font-bold text-slate-500">Competitor</th>
+                      <th className="px-3 py-2 text-right font-bold text-slate-500">Voice Share</th>
+                      <th className="px-3 py-2 text-center font-bold text-slate-500">Sentiment</th>
+                      <th className="px-3 py-2 text-right font-bold text-slate-500">Momentum</th>
+                      <th className="px-3 py-2 text-right font-bold text-slate-500">AI Visibility</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -643,7 +657,7 @@ export default function DashboardPage() {
                               {sentimentLabel}
                             </span>
                           </td>
-                          <td className={`px-3 py-2.5 text-right font-bold tabular-nums ${momentumPositive ? "text-[#10B981]" : "text-[#EF4444]"}`}>{c.momentum}</td>
+                          <td className={`px-3 py-2.5 text-right font-bold tabular-nums ${momentumPositive ? "text-[#047857]" : "text-[#C81E1E]"}`}>{c.momentum}</td>
                           <td className="px-3 py-2.5 text-right font-bold tabular-nums text-slate-700">{c.aiVisibility}</td>
                         </tr>
                       );
@@ -663,9 +677,9 @@ export default function DashboardPage() {
             <CardContent className="p-5">
               <SectionHeader
                 title="Recommended Actions"
-                description="Prioritized response items for today"
+                description={isDemoSession ? illustrativeNote : "Prioritized response items for today"}
                 action={
-                  <Link href="/action-plans" className="flex items-center gap-1 text-[11px] font-bold text-[#465FFF] transition-all hover:text-[#8B5CFF] hover:underline">
+                  <Link href="/action-plans" className="flex items-center gap-1 text-[11px] font-bold text-[#465FFF] transition-all hover:text-[#6E44E8] hover:underline">
                     View all <ArrowRight size={12} />
                   </Link>
                 }
@@ -678,7 +692,7 @@ export default function DashboardPage() {
                       <span className={`rounded-[6px] border px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ${priorityBadgeClass[a.priority]}`}>
                         {a.priority}
                       </span>
-                      <Link href={a.href} className="flex items-center gap-0.5 text-[10px] font-bold text-[#465FFF] transition hover:text-[#8B5CFF]">
+                      <Link href={a.href} className="flex items-center gap-0.5 text-[10px] font-bold text-[#465FFF] transition hover:text-[#6E44E8]">
                         View <ChevronRight size={10} />
                       </Link>
                     </div>
@@ -694,9 +708,9 @@ export default function DashboardPage() {
             <CardContent className="p-5">
               <SectionHeader
                 title="AI Visibility Changes"
-                description="Platform visibility scores vs. last week"
+                description={isDemoSession ? illustrativeNote : "Platform visibility scores vs. last week"}
                 action={
-                  <Link href="/visibility" className="flex items-center gap-1 text-[11px] font-bold text-[#465FFF] transition-all hover:text-[#8B5CFF] hover:underline">
+                  <Link href="/visibility" className="flex items-center gap-1 text-[11px] font-bold text-[#465FFF] transition-all hover:text-[#6E44E8] hover:underline">
                     Details <ArrowRight size={12} />
                   </Link>
                 }
@@ -716,7 +730,7 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-[15px] font-black tabular-nums text-slate-900">{p.score}</span>
-                        <span className={`text-[11px] font-bold tabular-nums ${changePositive ? "text-[#10B981]" : "text-[#EF4444]"}`}>{p.change}</span>
+                        <span className={`text-[11px] font-bold tabular-nums ${changePositive ? "text-[#047857]" : "text-[#C81E1E]"}`}>{p.change}</span>
                       </div>
                     </div>
                   );
@@ -731,11 +745,11 @@ export default function DashboardPage() {
               <SectionHeader title="Data Status" />
               <div className="space-y-2.5 text-[12px]">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-slate-400">Last updated</span>
+                  <span className="font-semibold text-slate-500">Last updated</span>
                   <span className="font-bold text-slate-700">{dashboardQuery.dataUpdatedAt ? new Date(dashboardQuery.dataUpdatedAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "—"}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-slate-400">Data coverage</span>
+                  <span className="font-semibold text-slate-500">Data coverage</span>
                   <span className="font-bold text-slate-700">
                     {sourcesData.length > 0
                       ? `${sourcesData.filter((src) => src.status?.en === "Active").length} / ${sourcesData.length} sources active`
@@ -745,31 +759,31 @@ export default function DashboardPage() {
                 {!isDemoSession && pipelineQuery.data ? (
                   <>
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-slate-400">Last ingestion</span>
+                      <span className="font-semibold text-slate-500">Last ingestion</span>
                       <span className="font-bold text-slate-700">{timeAgo(pipelineQuery.data.ingestion.lastRawDocumentAt)}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-slate-400">Awaiting AI analysis</span>
+                      <span className="font-semibold text-slate-500">Awaiting AI analysis</span>
                       <span className="font-bold text-slate-700">{pipelineQuery.data.analysis.unanalyzedRealSignals ?? "—"} signals</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-slate-400">Alert notifications</span>
-                      <span className={`font-bold ${pipelineQuery.data.alerts.activeNotificationIntegrations ? "text-slate-700" : "text-amber-600"}`}>
+                      <span className="font-semibold text-slate-500">Alert notifications</span>
+                      <span className={`font-bold ${pipelineQuery.data.alerts.activeNotificationIntegrations ? "text-slate-700" : "text-amber-700"}`}>
                         {pipelineQuery.data.alerts.activeNotificationIntegrations ? `${pipelineQuery.data.alerts.activeNotificationIntegrations} channel(s)` : "Not configured"}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-slate-400">AI cost (30 days)</span>
+                      <span className="font-semibold text-slate-500">AI cost (30 days)</span>
                       <span className="font-bold tabular-nums text-slate-700">${pipelineQuery.data.aiUsageLast30d.estimatedCostUsd.toFixed(2)}</span>
                     </div>
                   </>
                 ) : null}
                 {!isDemoSession && pipelineQuery.isError ? (
-                  <p className="text-[11px] font-semibold text-amber-600">Pipeline status unavailable.</p>
+                  <p className="text-[11px] font-semibold text-amber-700">Pipeline status unavailable.</p>
                 ) : null}
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-slate-400">Workspace</span>
-                  <span className={`inline-flex items-center gap-1.5 rounded-[6px] px-2 py-0.5 text-[11px] font-bold ${isDemoSession ? "bg-[#8B5CFF]/10 text-[#8B5CFF]" : "bg-[#10B981]/10 text-[#10B981]"}`}>
+                  <span className="font-semibold text-slate-500">Workspace</span>
+                  <span className={`inline-flex items-center gap-1.5 rounded-[6px] px-2 py-0.5 text-[11px] font-bold ${isDemoSession ? "bg-[#8B5CFF]/10 text-[#6E44E8]" : "bg-[#10B981]/10 text-[#047857]"}`}>
                     <span className={`h-1.5 w-1.5 rounded-full ${isDemoSession ? "bg-[#8B5CFF]" : "bg-[#10B981]"}`} />
                     {isDemoSession ? "Demo Sandbox" : "Live Production"}
                   </span>
@@ -790,11 +804,11 @@ export default function DashboardPage() {
       </div>
 
       {/* ── 5. Footer strip ───────────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-slate-100 bg-slate-50 px-5 py-3 text-[12px] font-semibold text-slate-400">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-slate-100 bg-slate-50 px-5 py-3 text-[12px] font-semibold text-slate-500">
         <span>Last refresh: {today.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</span>
         <div className="flex items-center gap-3">
           {isDemoSession && (
-            <span className="rounded-[6px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#8B5CFF]">
+            <span className="rounded-[6px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#6E44E8]">
               Demo Sandbox
             </span>
           )}

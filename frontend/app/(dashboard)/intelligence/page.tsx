@@ -326,9 +326,9 @@ function MetricCard({ label, value, helper, icon, tone }: { label: string; value
       <CardContent className="flex min-h-[88px] items-center gap-4 p-4">
         <IconHalo icon={icon} tone={tone} />
         <div className="min-w-0">
-          <p className="truncate text-[12px] font-extrabold leading-none text-[#68739F]">{label}</p>
+          <p className="truncate text-[12px] font-extrabold leading-none text-[#5F6B94]">{label}</p>
           <p className="mt-2 text-[27px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</p>
-          <p className="mt-2 flex items-center gap-1 text-[11px] font-black text-[#10B981]">
+          <p className="mt-2 flex items-center gap-1 text-[11px] font-black text-[#047857]">
             <span className="size-1.5 rounded-full bg-[#10B981]" />
             {helper.replace("▲ ", "")}
           </p>
@@ -392,7 +392,7 @@ function CompetitorDonut({ label, gradient, totalLabel }: { label: string; gradi
       <div className="absolute size-[102px] rounded-full bg-white" />
       <div className="relative max-w-[86px] text-center">
         <p className="text-[12px] font-black leading-tight text-[#101334]">{totalLabel}</p>
-        <p className="mt-0.5 text-[10px] font-bold leading-tight text-[#737D9F]">{label}</p>
+        <p className="mt-0.5 text-[10px] font-bold leading-tight text-[#647099]">{label}</p>
       </div>
     </div>
   );
@@ -627,8 +627,8 @@ export default function IntelligencePage() {
       {/* Demo Mode Banner */}
       {isDemoSession && (
         <div className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3">
-          <Sparkles size={16} className="text-[#8B5CFF]" />
-          <p className="text-[13px] font-bold text-[#8B5CFF]">
+          <Sparkles size={16} className="text-[#6E44E8]" />
+          <p className="text-[13px] font-bold text-[#6E44E8]">
             Demo workspace — some content on this page may be illustrative examples rather than live data
           </p>
         </div>
@@ -653,9 +653,9 @@ export default function IntelligencePage() {
 
           <div className="relative w-full sm:w-fit" ref={periodMenuRef}>
             <button type="button" onClick={() => setIsPeriodMenuOpen((open) => !open)} aria-expanded={isPeriodMenuOpen} className="flex h-10 w-full items-center justify-center gap-2 rounded-[10px] border border-[#E5E9F3] bg-white px-4 text-xs font-extrabold text-[#475070] shadow-sm transition hover:bg-[#F8FAFF] sm:w-fit">
-              <Calendar size={15} className="text-[#8A94B8]" />
+              <Calendar size={15} className="text-[#647099]" />
               {ti(`periods.${selectedPeriod.key}`)}
-              <ChevronDown size={14} className={cn("text-[#8A94B8] transition", isPeriodMenuOpen && "rotate-180")} />
+              <ChevronDown size={14} className={cn("text-[#647099] transition", isPeriodMenuOpen && "rotate-180")} />
             </button>
           {isPeriodMenuOpen ? (
             <div className="absolute right-0 top-full z-50 mt-2 w-full min-w-[190px] overflow-hidden rounded-[12px] border border-[#E5E9F3] bg-white p-1.5 shadow-[0_16px_40px_rgba(16,24,40,0.12)] sm:w-[210px]">
@@ -701,16 +701,16 @@ export default function IntelligencePage() {
                 <div>
                   <h2 className="flex items-center gap-2 text-[17px] font-black tracking-[-0.02em] text-[#101334]">
                     {ti("topicMap.title")}
-                    <Info size={14} className="text-[#98A2B3]" />
+                    <Info size={14} className="text-[#647099]" />
                   </h2>
-                  <p className="mt-1 text-[12px] font-semibold text-[#737D9F]">{ti("topicMap.desc")}</p>
+                  <p className="mt-1 text-[12px] font-semibold text-[#647099]">{ti("topicMap.desc")}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {/* Impact filter (All Topics) */}
                   <div className="relative" ref={impactMenuRef}>
                     <button type="button" onClick={() => { setIsImpactMenuOpen((o) => !o); setIsSentimentMenuOpen(false); }} aria-expanded={isImpactMenuOpen} className={cn("flex h-9 items-center gap-2 rounded-[9px] border bg-white px-3 text-[11px] font-extrabold shadow-sm transition hover:bg-[#F8FAFF]", impactFilter !== "all" ? "border-[#465FFF]/30 text-[#465FFF]" : "border-[#E5E9F3] text-[#4F5877]")}>
                       {impactFilter === "all" ? ti("topicMap.allTopics") : ti(`topicMap.impact.${impactFilter}`)}
-                      <ChevronDown size={13} className={cn("text-[#8A94B8] transition", isImpactMenuOpen && "rotate-180")} />
+                      <ChevronDown size={13} className={cn("text-[#647099] transition", isImpactMenuOpen && "rotate-180")} />
                     </button>
                     {isImpactMenuOpen ? (
                       <div className="absolute left-0 top-full z-50 mt-2 min-w-[170px] overflow-hidden rounded-[12px] border border-[#E5E9F3] bg-white p-1.5 shadow-[0_16px_40px_rgba(16,24,40,0.12)]">
@@ -726,9 +726,9 @@ export default function IntelligencePage() {
                   {/* Sentiment filter */}
                   <div className="relative" ref={sentimentMenuRef}>
                     <button type="button" onClick={() => { setIsSentimentMenuOpen((o) => !o); setIsImpactMenuOpen(false); }} aria-expanded={isSentimentMenuOpen} className={cn("flex h-9 items-center gap-2 rounded-[9px] border bg-white px-3 text-[11px] font-extrabold shadow-sm transition hover:bg-[#F8FAFF]", sentimentFilter !== "all" ? "border-[#465FFF]/30 text-[#465FFF]" : "border-[#E5E9F3] text-[#4F5877]")}>
-                      <Filter size={13} className="text-[#8A94B8]" />
+                      <Filter size={13} className="text-[#647099]" />
                       {sentimentFilter === "all" ? ti("topicMap.filter") : ti(`topicMap.sentiment.${sentimentFilter}`)}
-                      <ChevronDown size={13} className={cn("text-[#8A94B8] transition", isSentimentMenuOpen && "rotate-180")} />
+                      <ChevronDown size={13} className={cn("text-[#647099] transition", isSentimentMenuOpen && "rotate-180")} />
                     </button>
                     {isSentimentMenuOpen ? (
                       <div className="absolute left-0 top-full z-50 mt-2 min-w-[170px] overflow-hidden rounded-[12px] border border-[#E5E9F3] bg-white p-1.5 shadow-[0_16px_40px_rgba(16,24,40,0.12)]">
@@ -780,26 +780,26 @@ export default function IntelligencePage() {
 
               <div className="mt-3 flex flex-wrap items-center gap-x-9 gap-y-2 border-t border-[#EEF1F7] pt-3 text-[10px] font-extrabold text-[#53608C]">
                 <div className="flex items-center gap-2">
-                  <span className="text-[#8A94B8]">{ti("topicMap.intensity")}</span>
+                  <span className="text-[#647099]">{ti("topicMap.intensity")}</span>
                   <span className="size-1.5 rounded-full bg-[#C9D0E2]" />
                   <span className="size-2 rounded-full bg-[#B3BDD4]" />
                   <span className="size-2.5 rounded-full bg-[#98A2B8]" />
                   <span className="size-3.5 rounded-full border border-[#9AA4BE] bg-white" />
-                  <span className="text-[#8A94B8]">{ti("topicMap.high")}</span>
+                  <span className="text-[#647099]">{ti("topicMap.high")}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-[#8A94B8]">{ti("topicMap.sentimentLabel")}</span>
+                  <span className="text-[#647099]">{ti("topicMap.sentimentLabel")}</span>
                   <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#10B981]" />{ti("topicMap.pos")}</span>
                   <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#CBD5E1]" />{ti("topicMap.neu")}</span>
                   <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#EF4444]" />{ti("topicMap.neg")}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-[#8A94B8]">{ti("topicMap.connStrength")}</span>
+                  <span className="text-[#647099]">{ti("topicMap.connStrength")}</span>
                   <span className="flex items-center gap-1.5"><span className="w-9 border-b border-dashed border-[#B9C2D6]" />{ti("topicMap.weak")}</span>
                   <span className="flex items-center gap-1.5"><span className="w-9 border-b border-[#8A94B8]" />{ti("topicMap.strong")}</span>
                 </div>
               </div>
-              <p className="mt-2 text-[10px] font-semibold text-[#98A2B3]">{ti("topicMap.tip")}</p>
+              <p className="mt-2 text-[10px] font-semibold text-[#647099]">{ti("topicMap.tip")}</p>
             </CardContent>
           </Panel>
 
@@ -809,7 +809,7 @@ export default function IntelligencePage() {
               <CardContent className="flex h-full flex-col justify-between p-5">
                 <div>
                   <h3 className="flex items-center gap-2 text-[15px] font-black tracking-[-0.02em] text-[#101334]">
-                    <Sparkles size={16} className="text-[#8B5CFF]" />
+                    <Sparkles size={16} className="text-[#6E44E8]" />
                     {ti("aiSummary.title")}
                   </h3>
                   <div className="mt-4 rounded-[11px] border border-[#8B5CFF]/10 bg-[#8B5CFF]/7 p-3 text-[11px] font-bold leading-relaxed text-[#7654E7]">
@@ -835,7 +835,7 @@ export default function IntelligencePage() {
               <CardContent className="p-5">
                 <h3 className="flex items-center gap-2 text-[15px] font-black tracking-[-0.02em] text-[#101334]">
                   {ti("lifecycle.title")}
-                  <Info size={13} className="text-[#98A2B3]" />
+                  <Info size={13} className="text-[#647099]" />
                 </h3>
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                   {lifecycleCards.map((phase) => {
@@ -845,7 +845,7 @@ export default function IntelligencePage() {
                         <div>
                           <p className="text-[10px] font-black uppercase tracking-[0.06em]" style={{ color: toneStyle.color }}>{ti(`lifecycle.phases.${phase.key}.title`)}</p>
                           <p className="mt-2 text-[27px] font-black leading-none tracking-[-0.04em] text-[#101334]">{phase.count}</p>
-                          <p className="mt-2 text-[10px] font-bold leading-snug text-[#737D9F]">{ti(`lifecycle.phases.${phase.key}.desc`)}</p>
+                          <p className="mt-2 text-[10px] font-bold leading-snug text-[#647099]">{ti(`lifecycle.phases.${phase.key}.desc`)}</p>
                         </div>
                         {phase.values.length > 1 ? <Sparkline values={phase.values} color={toneStyle.color} /> : null}
                       </div>
@@ -885,7 +885,7 @@ export default function IntelligencePage() {
                         <ClusterIcon tone={cluster.tone} />
                         <span className="min-w-0">
                           <span className="block truncate text-[12px] font-black text-[#101334]">{text(cluster.topic, language)}</span>
-                          <span className="mt-1 block text-[10px] font-bold text-[#8A94B8]">{ti("labels.signals", { count: formatSignals(cluster.signals) })}</span>
+                          <span className="mt-1 block text-[10px] font-bold text-[#647099]">{ti("labels.signals", { count: formatSignals(cluster.signals) })}</span>
                         </span>
                       </span>
                       <TrendBadge value={cluster.growth} tone={cluster.tone} className="shrink-0 px-2 py-0.5 text-[10px]" />
@@ -900,7 +900,7 @@ export default function IntelligencePage() {
             <CardContent className="p-4">
               <div className="mb-3 flex items-center justify-between gap-3 relative" ref={actionsMenuRef}>
                 <p className="text-[11px] font-black text-[#53608C]">{ti("selectedNarrative.title")}</p>
-                <button type="button" onClick={() => setIsSelectedActionsOpen((v) => !v)} disabled={!selectedNarrativeId} aria-label={ti("selectedNarrative.moreActions")} aria-expanded={isSelectedActionsOpen} className="rounded-full p-1 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C] disabled:cursor-not-allowed disabled:opacity-40">
+                <button type="button" onClick={() => setIsSelectedActionsOpen((v) => !v)} disabled={!selectedNarrativeId} aria-label={ti("selectedNarrative.moreActions")} aria-expanded={isSelectedActionsOpen} className="rounded-full p-1 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C] disabled:cursor-not-allowed disabled:opacity-40">
                   <MoreHorizontal size={16} />
                 </button>
                 {isSelectedActionsOpen && selectedNarrativeId ? (
@@ -945,7 +945,7 @@ export default function IntelligencePage() {
                 <div className="mt-3 flex flex-wrap gap-2">
                   {selectedCluster.related.map((item) => (
                     <span key={`${text(item.topic, language)}-${item.growth}`} className="rounded-full bg-[#F5F7FC] px-2.5 py-1 text-[10px] font-bold text-[#53608C]">
-                      {text(item.topic, language)} <span className="ml-1 text-[#EF4444]">{item.growth}</span>
+                      {text(item.topic, language)} <span className="ml-1 text-[#C81E1E]">{item.growth}</span>
                     </span>
                   ))}
                 </div>
@@ -970,7 +970,7 @@ export default function IntelligencePage() {
             <CardContent className="p-4">
               <h3 className="mb-3 flex items-center gap-2 text-[15px] font-black tracking-[-0.02em] text-[#101334]">
                 {ti("competitorShare.title")}
-                <Info size={13} className="text-[#98A2B3]" />
+                <Info size={13} className="text-[#647099]" />
               </h3>
               <div className="grid items-center justify-items-center gap-4 sm:grid-cols-[156px_minmax(0,1fr)] sm:justify-items-stretch xl:grid-cols-[156px_minmax(0,1fr)]">
                 <CompetitorDonut label={ti("competitorShare.totalShare")} gradient={narrativeShareGradient} totalLabel={ti("labels.total")} />
@@ -1009,17 +1009,17 @@ export default function IntelligencePage() {
                   <Icon size={17} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#8A94B8]">{item.title}</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#647099]">{item.title}</p>
                   <p className="mt-1 text-[12px] font-black text-[#101334]">{item.value}</p>
                   {item.progress ? (
                     <div className="mt-2 flex items-center gap-2">
                       <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#EEF1F7]">
                         <span className="block h-full rounded-full bg-[#10B981] transition-all duration-500" style={{ width: `${item.progressValue ?? 0}%` }} />
                       </span>
-                      <span className="text-[10px] font-bold text-[#8A94B8]">{item.detail}</span>
+                      <span className="text-[10px] font-bold text-[#647099]">{item.detail}</span>
                     </div>
                   ) : (
-                    <p className="mt-1 text-[10px] font-bold text-[#8A94B8]">{item.detail}</p>
+                    <p className="mt-1 text-[10px] font-bold text-[#647099]">{item.detail}</p>
                   )}
                 </div>
               </div>
@@ -1038,22 +1038,22 @@ export default function IntelligencePage() {
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div>
                 <h2 className="text-lg font-black text-[#101334]">{text(selectedCluster.topic, language)}</h2>
-                <p className="mt-1 text-xs font-bold text-[#737D9F]">{ti("analysisModal.subtitle")}</p>
+                <p className="mt-1 text-xs font-bold text-[#647099]">{ti("analysisModal.subtitle")}</p>
               </div>
-              <button type="button" onClick={() => setIsAnalysisOpen(false)} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+              <button type="button" onClick={() => setIsAnalysisOpen(false)} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
                 <X size={20} />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-5">
               {narrativeDetailQuery.isPending ? (
                 <div className="flex h-40 items-center justify-center">
-                  <RefreshCcw className="animate-spin text-[#8A94B8]" size={24} />
+                  <RefreshCcw className="animate-spin text-[#647099]" size={24} />
                 </div>
               ) : narrativeDetailQuery.data === null || narrativeDetailQuery.isError ? (
                 <div className="flex h-48 flex-col items-center justify-center text-center">
-                  <Info size={24} className="text-[#8A94B8]" />
+                  <Info size={24} className="text-[#647099]" />
                   <p className="mt-2 text-sm font-black text-[#53608C]">{ti("analysisModal.errorTitle")}</p>
-                  <p className="mt-1 max-w-sm text-xs font-semibold leading-relaxed text-[#8A94B8]">{ti("analysisModal.errorDesc")}</p>
+                  <p className="mt-1 max-w-sm text-xs font-semibold leading-relaxed text-[#647099]">{ti("analysisModal.errorDesc")}</p>
                   <button type="button" onClick={() => void narrativeDetailQuery.refetch()} className="mt-4 rounded-[8px] border border-[#D9DEEA] bg-white px-4 py-2 text-[11px] font-black text-[#53608C] transition hover:bg-[#F8FAFF]">
                     {ti("retry")}
                   </button>
@@ -1062,14 +1062,14 @@ export default function IntelligencePage() {
                 <NarrativeEvidence detail={narrativeDetailQuery.data} />
               ) : (
                 <div className="flex h-40 flex-col items-center justify-center text-center">
-                  <Info size={24} className="text-[#8A94B8]" />
+                  <Info size={24} className="text-[#647099]" />
                   <p className="mt-2 text-sm font-bold text-[#53608C]">{ti("analysisModal.noData")}</p>
                 </div>
               )}
             </div>
             {selectedNarrativeId ? (
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#EEF1F7] p-4">
-                <p className="text-[11px] font-semibold text-[#737D9F]">Plans are generated as drafts from this narrative&apos;s evidence and need review before any external use.</p>
+                <p className="text-[11px] font-semibold text-[#647099]">Plans are generated as drafts from this narrative&apos;s evidence and need review before any external use.</p>
                 <button type="button" onClick={() => setIsPlanResponseOpen(true)} className="h-9 rounded-[9px] bg-[#465FFF] px-4 text-[12px] font-black text-white transition hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/40">
                   Plan a response
                 </button>
@@ -1094,7 +1094,7 @@ export default function IntelligencePage() {
           <Panel className="flex w-full max-w-2xl flex-col shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <h2 className="text-lg font-black text-[#101334]">{ti("competitorShare.title")}</h2>
-              <button type="button" onClick={() => setIsLandscapeOpen(false)} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+              <button type="button" onClick={() => setIsLandscapeOpen(false)} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
                 <X size={20} />
               </button>
             </div>
@@ -1125,9 +1125,9 @@ export default function IntelligencePage() {
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div>
                 <h2 className="text-lg font-black text-[#101334]">{ti("growingClusters.modalTitle")}</h2>
-                <p className="mt-1 text-xs font-bold text-[#737D9F]">{ti("growingClusters.modalSubtitle")}</p>
+                <p className="mt-1 text-xs font-bold text-[#647099]">{ti("growingClusters.modalSubtitle")}</p>
               </div>
-              <button type="button" onClick={() => setIsAllClustersModalOpen(false)} className="rounded-full p-2 text-[#98A2B3] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
+              <button type="button" onClick={() => setIsAllClustersModalOpen(false)} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
                 <X size={20} />
               </button>
             </div>
@@ -1154,7 +1154,7 @@ export default function IntelligencePage() {
                         <ClusterIcon tone={cluster.tone} />
                         <span className="min-w-0">
                           <span className="block truncate text-[12px] font-black text-[#101334]">{text(cluster.topic, language)}</span>
-                          <span className="mt-1 block text-[10px] font-bold text-[#8A94B8]">{ti("labels.signals", { count: formatSignals(cluster.signals) })}</span>
+                          <span className="mt-1 block text-[10px] font-bold text-[#647099]">{ti("labels.signals", { count: formatSignals(cluster.signals) })}</span>
                         </span>
                       </span>
                       <TrendBadge value={cluster.growth} tone={cluster.tone} className="shrink-0 px-2 py-0.5 text-[10px]" />
@@ -1197,10 +1197,10 @@ function NarrativeEvidence({ detail }: { detail: NarrativeDetailRecord }) {
       <section aria-label="Observed facts">
         <h3 className="text-sm font-black text-[#53608C]">Observed</h3>
         <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold uppercase text-[#8A94B8]">Linked signals</dt><dd className="mt-1 text-lg font-black text-[#101334]">{signals.length}</dd></div>
-          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3" title={momentum?.basis}><dt className="text-[10px] font-bold uppercase text-[#8A94B8]">Last 24h vs prior</dt><dd className="mt-1 text-lg font-black text-[#101334]">{momentum ? `${momentum.last24h} vs ${momentum.prior24h}` : "—"}</dd></div>
-          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold uppercase text-[#8A94B8]">First seen</dt><dd className="mt-1 text-[12px] font-black text-[#101334]">{formatDate(detail.firstSeen)}</dd></div>
-          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold uppercase text-[#8A94B8]">Last seen</dt><dd className="mt-1 text-[12px] font-black text-[#101334]">{formatDate(detail.lastSeen)}</dd></div>
+          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold uppercase text-[#647099]">Linked signals</dt><dd className="mt-1 text-lg font-black text-[#101334]">{signals.length}</dd></div>
+          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3" title={momentum?.basis}><dt className="text-[10px] font-bold uppercase text-[#647099]">Last 24h vs prior</dt><dd className="mt-1 text-lg font-black text-[#101334]">{momentum ? `${momentum.last24h} vs ${momentum.prior24h}` : "—"}</dd></div>
+          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold uppercase text-[#647099]">First seen</dt><dd className="mt-1 text-[12px] font-black text-[#101334]">{formatDate(detail.firstSeen)}</dd></div>
+          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold uppercase text-[#647099]">Last seen</dt><dd className="mt-1 text-[12px] font-black text-[#101334]">{formatDate(detail.lastSeen)}</dd></div>
         </dl>
       </section>
 
@@ -1208,7 +1208,7 @@ function NarrativeEvidence({ detail }: { detail: NarrativeDetailRecord }) {
         <h3 className="text-sm font-black text-[#53608C]">AI assessment</h3>
         <p className="mt-2 text-[12px] font-semibold text-[#58648C]">
           Confidence: <span className="font-black text-[#101334]">{detail.confidence === null || detail.confidence === undefined ? "not available" : `${detail.confidence}%`}</span>
-          {detail.confidenceBasis ? <span className="text-[#8A94B8]"> · {detail.confidenceBasis}</span> : null}
+          {detail.confidenceBasis ? <span className="text-[#647099]"> · {detail.confidenceBasis}</span> : null}
         </p>
         {total > 0 ? (
           <div className="mt-3 flex flex-wrap gap-2">
@@ -1224,7 +1224,7 @@ function NarrativeEvidence({ detail }: { detail: NarrativeDetailRecord }) {
       <section aria-label="Evidence">
         <h3 className="text-sm font-black text-[#53608C]">Evidence ({signals.length})</h3>
         {signals.length === 0 ? (
-          <p className="mt-2 text-[12px] font-semibold text-[#8A94B8]">{detail.evidenceNote || "No linked signals."}</p>
+          <p className="mt-2 text-[12px] font-semibold text-[#647099]">{detail.evidenceNote || "No linked signals."}</p>
         ) : (
           <ul className="mt-3 flex flex-col gap-2">
             {signals.slice(0, 20).map((sig) => (
@@ -1240,12 +1240,12 @@ function NarrativeEvidence({ detail }: { detail: NarrativeDetailRecord }) {
                     {typeof sig.analysisConfidence === "number" ? ` · ${Math.round(sig.analysisConfidence * 100)}%` : ""}
                   </span>
                 </div>
-                <p className="mt-1 text-[11px] font-semibold text-[#8A94B8]">{sig.platform || "Unknown source"} · {formatDate(sig.publishedAt || sig.capturedAt)}</p>
+                <p className="mt-1 text-[11px] font-semibold text-[#647099]">{sig.platform || "Unknown source"} · {formatDate(sig.publishedAt || sig.capturedAt)}</p>
               </li>
             ))}
           </ul>
         )}
-        {signals.length > 20 ? <p className="mt-2 text-[11px] font-semibold text-[#8A94B8]">Showing the 20 most recent of {signals.length} linked signals.</p> : null}
+        {signals.length > 20 ? <p className="mt-2 text-[11px] font-semibold text-[#647099]">Showing the 20 most recent of {signals.length} linked signals.</p> : null}
       </section>
     </div>
   );

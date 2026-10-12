@@ -27,7 +27,7 @@ export function TrendChart({ data }: TrendChartProps) {
       <h3 className="text-slate-900 font-bold tracking-tight mb-4">Signal Volume Trends</h3>
       <div className="chart-enter w-full h-[260px] flex-1">
         {data.length === 0 ? (
-          <div className="text-slate-400 w-full h-full flex items-center justify-center text-sm">
+          <div className="text-slate-500 w-full h-full flex items-center justify-center text-sm">
             No data available
           </div>
         ) : (

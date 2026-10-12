@@ -115,7 +115,7 @@ export function LoginForm() {
 
       {isRegistered && (
         <div className="mb-8 flex items-center gap-3 rounded-2xl border border-emerald-200/90 bg-emerald-50/90 px-4 py-3.5 text-[14px] font-medium text-emerald-900 shadow-sm">
-          <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
+          <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-700" />
           <span>Account created successfully! Please sign in with your credentials.</span>
         </div>
       )}

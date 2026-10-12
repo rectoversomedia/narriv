@@ -250,7 +250,7 @@ function RiskExplanation({ model, score }: { model: RiskModelExplanation; score:
     <div className="mt-4 border-t border-slate-100 pt-4">
       <div className="flex items-center justify-between">
         <div className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">Why this score ({score}/100)</div>
-        <span className="text-[11px] text-slate-400">{model.version} · heuristic index, not a probability</span>
+        <span className="text-[11px] text-slate-500">{model.version} · heuristic index, not a probability</span>
       </div>
       {drivers.length === 0 ? (
         <p className="mt-1.5 text-[13px] text-slate-500">No risk component is elevated in this window.</p>
@@ -353,7 +353,7 @@ export function EntityPanel({ windowHours = 168, limit = 5 }: { windowHours?: nu
             </a>
             <span className="ml-3 flex items-center gap-2 text-[11px] font-semibold text-slate-500">
               <span>{e.mentions} mentions</span>
-              {e.avgSentiment < 0 ? <span className="text-rose-600">neg</span> : e.avgSentiment > 0 ? <span className="text-emerald-600">pos</span> : null}
+              {e.avgSentiment < 0 ? <span className="text-rose-600">neg</span> : e.avgSentiment > 0 ? <span className="text-emerald-700">pos</span> : null}
             </span>
           </li>
         ))}

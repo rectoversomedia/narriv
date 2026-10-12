@@ -42,6 +42,7 @@ import { cn } from "@/lib/utils";
 import { MonitoringKeywordsPanel } from "@/components/dashboard/monitoring-keywords-panel";
 import { SubscriptionCard } from "@/components/dashboard/SubscriptionCard";
 import { UpgradeModal } from "@/components/dashboard/UpgradeModal";
+import { intlLocale } from "@/store/useUiStore";
 
 type TeamMember = {
   name: string;
@@ -122,10 +123,13 @@ function Panel({ children, className }: { children: ReactNode; className?: strin
 }
 
 // Custom Switch Toggle Component
-function Switch({ checked, onChange, disabled = false }: { checked: boolean; onChange: (val: boolean) => void; disabled?: boolean }) {
+function Switch({ checked, onChange, label, disabled = false }: { checked: boolean; onChange: (val: boolean) => void; label: string; disabled?: boolean }) {
   return (
     <button
       type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cn(
@@ -358,7 +362,8 @@ export default function SettingsPage() {
   const members = memberOverrides ?? liveMembers ?? [];
   const workspaceNameValue = workspaceName ?? workspaceSettingsQuery.data?.brandName ?? "Narriv Intelligence";
   const industryValue = industry ?? workspaceSettingsQuery.data?.industry ?? ts("workspaceInfo.industryTechnology");
-  const timezoneValue = timezone ?? workspaceSettingsQuery.data?.timezone ?? "Asia/Jakarta (GMT+7)";
+  // Stored values are IANA ids; older rows hold labels like "Asia/Jakarta (GMT+7)".
+  const timezoneValue = (timezone ?? workspaceSettingsQuery.data?.timezone ?? "Asia/Jakarta").replace(/\s*\(.*\)\s*$/, "");
   const notifEmailValue = notifEmail ?? Boolean(workspaceSettingsQuery.data?.notificationEmail ?? true);
   const notifWhatsappValue = notifWhatsapp ?? Boolean(workspaceSettingsQuery.data?.whatsappPIC);
 
@@ -523,7 +528,7 @@ export default function SettingsPage() {
       {workspaceSettingsQuery.data === null ? (
         <div className="rounded-[12px] border border-dashed border-[#8B5CFF]/30 bg-gradient-to-br from-white to-[#F8F5FF] px-5 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#8B5CFF]/10 text-[#8B5CFF] shrink-0">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#8B5CFF]/10 text-[#6E44E8] shrink-0">
               <Sparkles size={18} />
             </div>
             <div>
@@ -546,7 +551,7 @@ export default function SettingsPage() {
       {membersQuery.data === null ? (
         <div className="rounded-[12px] border border-dashed border-amber-300 bg-amber-50 px-5 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-amber-600 shrink-0">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-amber-700 shrink-0">
               <Users size={18} />
             </div>
             <div>
@@ -575,7 +580,7 @@ export default function SettingsPage() {
             </span>
             <div>
               <h2 className="text-base font-black text-[#101334]">{ts("workspaceInfo.title")}</h2>
-              <p className="text-[11px] font-bold text-[#68739F]">{ts("workspaceInfo.description")}</p>
+              <p className="text-[11px] font-bold text-[#5F6B94]">{ts("workspaceInfo.description")}</p>
             </div>
           </div>
 
@@ -592,6 +597,7 @@ export default function SettingsPage() {
                   type="file"
                   accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
                   className="sr-only"
+                  aria-label={ts("logo.changeLogo")}
                   onChange={handleLogoFileChange}
                 />
                 <button
@@ -604,30 +610,31 @@ export default function SettingsPage() {
                 >
                   {uploadLogoMutation.isPending ? <RefreshCw size={14} className="animate-spin" /> : <Upload size={14} strokeWidth={2.5} />}
                 </button>
-                <span className="mt-1 text-center text-[9px] font-semibold text-slate-400">{ts("logo.formatHint")}</span>
-                {logoError ? <span className="mt-1 text-center text-[9px] font-bold text-[#EF4444]">{logoError}</span> : null}
+                <span className="mt-1 text-center text-[9px] font-semibold text-slate-500">{ts("logo.formatHint")}</span>
+                {logoError ? <span className="mt-1 text-center text-[9px] font-bold text-[#C81E1E]">{logoError}</span> : null}
               </div>
 
               <div className="space-y-3.5">
                 <div>
-                  <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#68739F]">
+                  <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#5F6B94]">
                     {ts("workspaceInfo.labelName")}
                   </label>
                   <input
+                    aria-label={ts("workspaceInfo.labelName")}
                     type="text"
                     value={workspaceNameValue}
                     onChange={(e) => { setWorkspaceName(e.target.value); setWorkspaceErrors({}); }}
                     className={cn("h-10 w-full rounded-lg border px-3 text-[12px] font-bold text-[#101334] focus:border-[#465FFF] focus:outline-none focus:ring-2 focus:ring-[#465FFF]/15", workspaceErrors.name ? "border-[#EF4444]" : "border-[#DDE3EF]")}
                   />
-                  {workspaceErrors.name && <p className="mt-1 text-[9px] font-bold text-[#EF4444]">{workspaceErrors.name}</p>}
+                  {workspaceErrors.name && <p className="mt-1 text-[9px] font-bold text-[#C81E1E]">{workspaceErrors.name}</p>}
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#68739F]">
+                  <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#5F6B94]">
                     {ts("workspaceInfo.labelIndustry")}
                   </label>
                   <div className="relative">
-                    <select
+                    <select aria-label={ts("workspaceInfo.labelIndustry")}
                       value={industryValue}
                       onChange={(e) => setIndustry(e.target.value)}
                       className="h-10 w-full appearance-none rounded-lg border border-[#DDE3EF] bg-white px-3 pr-8 text-[12px] font-bold text-[#101334] focus:border-[#465FFF] focus:outline-none"
@@ -638,7 +645,7 @@ export default function SettingsPage() {
                       <option value="Retail">{ts("workspaceInfo.industryRetail")}</option>
                       <option value="Government">{ts("workspaceInfo.industryGovernment")}</option>
                     </select>
-                    <ChevronDown size={14} className="pointer-events-none absolute right-3 top-3.5 text-[#68739F]" />
+                    <ChevronDown size={14} className="pointer-events-none absolute right-3 top-3.5 text-[#5F6B94]" />
                   </div>
                 </div>
               </div>
@@ -655,7 +662,7 @@ export default function SettingsPage() {
                     onChange={(e) => { setCurrentPassword(e.target.value); setPasswordErrors((prev) => ({ ...prev, current: undefined })); }}
                     className={cn("h-9 w-full rounded-md border bg-slate-50 px-3 text-[10px] font-semibold text-slate-700 outline-none focus:border-[#465FFF]", passwordErrors.current ? "border-[#EF4444]" : "border-[#DDE3EF]")}
                   />
-                  {passwordErrors.current && <p className="mt-1 text-[9px] font-bold text-[#EF4444]">{passwordErrors.current}</p>}
+                  {passwordErrors.current && <p className="mt-1 text-[9px] font-bold text-[#C81E1E]">{passwordErrors.current}</p>}
                 </div>
                 <div>
                   <input
@@ -665,7 +672,7 @@ export default function SettingsPage() {
                     onChange={(e) => { setNewPassword(e.target.value); setPasswordErrors((prev) => ({ ...prev, newPass: undefined })); }}
                     className={cn("h-9 w-full rounded-md border bg-slate-50 px-3 text-[10px] font-semibold text-slate-700 outline-none focus:border-[#465FFF]", passwordErrors.newPass ? "border-[#EF4444]" : "border-[#DDE3EF]")}
                   />
-                  {passwordErrors.newPass && <p className="mt-1 text-[9px] font-bold text-[#EF4444]">{passwordErrors.newPass}</p>}
+                  {passwordErrors.newPass && <p className="mt-1 text-[9px] font-bold text-[#C81E1E]">{passwordErrors.newPass}</p>}
                 </div>
                 <button
                   type="button"
@@ -698,30 +705,30 @@ export default function SettingsPage() {
 
             <div className="grid gap-3.5 sm:grid-cols-2">
               <div>
-                <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#68739F]">
+                <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#5F6B94]">
                   {ts("workspaceInfo.labelTimezone")}
                 </label>
                 <div className="relative">
-                  <select
+                  <select aria-label={ts("workspaceInfo.labelTimezone")}
                     value={timezoneValue}
                     onChange={(e) => setTimezone(e.target.value)}
                     className="h-10 w-full appearance-none rounded-lg border border-[#DDE3EF] bg-white px-3 pr-8 text-[12px] font-bold text-[#101334] focus:border-[#465FFF] focus:outline-none"
                   >
-                    <option value="Asia/Jakarta (GMT+7)">Asia/Jakarta (GMT+7)</option>
-                    <option value="Asia/Singapore (GMT+8)">Asia/Singapore (GMT+8)</option>
-                    <option value="UTC (GMT+0)">UTC (GMT+0)</option>
-                    <option value="America/New_York (GMT-5)">America/New_York (GMT-5)</option>
+                    <option value="Asia/Jakarta">Asia/Jakarta (GMT+7)</option>
+                    <option value="Asia/Singapore">Asia/Singapore (GMT+8)</option>
+                    <option value="UTC">UTC (GMT+0)</option>
+                    <option value="America/New_York">America/New_York (GMT-5/-4)</option>
                   </select>
-                  <ChevronDown size={14} className="pointer-events-none absolute right-3 top-3.5 text-[#68739F]" />
+                  <ChevronDown size={14} className="pointer-events-none absolute right-3 top-3.5 text-[#5F6B94]" />
                 </div>
               </div>
 
               <div>
-                <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#68739F]">
+                <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#5F6B94]">
                   {ts("workspaceInfo.labelLanguage")}
                 </label>
                 <div className="relative">
-                  <select
+                  <select aria-label={ts("workspaceInfo.labelLanguage")}
                     value={language}
                     onChange={(e) => setLanguage(e.target.value)}
                     className="h-10 w-full appearance-none rounded-lg border border-[#DDE3EF] bg-white px-3 pr-8 text-[12px] font-bold text-[#101334] focus:border-[#465FFF] focus:outline-none"
@@ -730,7 +737,7 @@ export default function SettingsPage() {
                     <option value="English (US)">{ts("workspaceInfo.languageEnUs")}</option>
                     <option value="English (UK)">{ts("workspaceInfo.languageEnUk")}</option>
                   </select>
-                  <ChevronDown size={14} className="pointer-events-none absolute right-3 top-3.5 text-[#68739F]" />
+                  <ChevronDown size={14} className="pointer-events-none absolute right-3 top-3.5 text-[#5F6B94]" />
                 </div>
               </div>
             </div>
@@ -766,7 +773,7 @@ export default function SettingsPage() {
               </span>
               <div>
                 <h2 className="text-base font-black text-[#101334]">{ts("membersCard.title")}</h2>
-                <p className="text-[11px] font-bold text-[#68739F]">{ts("membersCard.desc")}</p>
+                <p className="text-[11px] font-bold text-[#5F6B94]">{ts("membersCard.desc")}</p>
               </div>
             </div>
 
@@ -802,7 +809,7 @@ export default function SettingsPage() {
             ) : (
             <table className="w-full min-w-[580px] border-collapse text-left">
               <thead>
-                <tr className="border-b border-[#E6EAF2] bg-[#FBFCFF] text-[10px] font-black uppercase tracking-[0.1em] text-[#68739F]">
+                <tr className="border-b border-[#E6EAF2] bg-[#FBFCFF] text-[10px] font-black uppercase tracking-[0.1em] text-[#5F6B94]">
                   <th className="px-4 py-3">{ts("table.user")}</th>
                   <th className="px-4 py-3">{ts("table.role")}</th>
                   <th className="px-4 py-3">{ts("table.permission")}</th>
@@ -824,7 +831,7 @@ export default function SettingsPage() {
                         </span>
                         <div>
                           <span className="block font-black text-[#101334]">{member.name}</span>
-                          <span className="block text-[10px] text-slate-400 font-semibold">{member.email}</span>
+                          <span className="block text-[10px] text-slate-500 font-semibold">{member.email}</span>
                         </div>
                       </div>
                     </td>
@@ -856,7 +863,7 @@ export default function SettingsPage() {
                             setMemberOverrides(updated);
                             showToast(ts("memberStatusChanged", { name: member.name, action }));
                           }}
-                          className="rounded-md border border-[#DDE3EF] bg-white p-1 text-slate-400 hover:text-[#465FFF] hover:bg-[#EEF2FF]"
+                          className="rounded-md border border-[#DDE3EF] bg-white p-1 text-slate-500 hover:text-[#465FFF] hover:bg-[#EEF2FF]"
                           title={member.status === memberLabels.statusActive ? ts("deactivateUser") : ts("activateUser")}
                         >
                           <UserCheck size={14} />
@@ -864,7 +871,7 @@ export default function SettingsPage() {
                           <button
                             type="button"
                             onClick={() => setMemberToDelete(member)}
-                            className="ml-1 rounded-md border border-[#DDE3EF] bg-white p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                            className="ml-1 rounded-md border border-[#DDE3EF] bg-white p-1 text-slate-500 hover:text-rose-600 hover:bg-rose-50"
                             title={ts("removeUser")}
                         >
                           <Trash size={14} />
@@ -888,12 +895,12 @@ export default function SettingsPage() {
         {/* Card 1: Notifikasi */}
         <Panel className="flex flex-col gap-4.5">
           <div className="flex items-start gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-[#8B5CFF]">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-[#6E44E8]">
               <Bell size={18} strokeWidth={2.3} />
             </span>
             <div>
               <h3 className="text-[13.5px] font-black text-[#101334]">{ts("notifications.title")}</h3>
-              <p className="text-[10px] font-semibold text-[#68739F]">{ts("notifications.desc")}</p>
+              <p className="text-[10px] font-semibold text-[#5F6B94]">{ts("notifications.desc")}</p>
             </div>
           </div>
 
@@ -901,58 +908,58 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.emailAlerts")}</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("notifications.emailAlertsDesc")}</span>
+                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("notifications.emailAlertsDesc")}</span>
               </div>
-              <Switch checked={notifEmailValue} onChange={setNotifEmail} />
+              <Switch label={ts("notifications.emailAlerts")} checked={notifEmailValue} onChange={setNotifEmail} />
             </div>
 
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.slackAlerts")}</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("notifications.slackAlertsDesc")}</span>
+                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("notifications.slackAlertsDesc")}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[9px] font-black text-slate-400">{ts("notAvailable")}</span>
-                <Switch checked={notifSlack} onChange={setNotifSlack} disabled />
+                <span className="text-[9px] font-black text-slate-500">{ts("notAvailable")}</span>
+                <Switch label={ts("notifications.slackAlerts")} checked={notifSlack} onChange={setNotifSlack} disabled />
               </div>
             </div>
 
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.whatsappAlerts")}</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("notifications.whatsappAlertsDesc")}</span>
+                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("notifications.whatsappAlertsDesc")}</span>
               </div>
-              <Switch checked={notifWhatsappValue} onChange={setNotifWhatsapp} />
+              <Switch label={ts("notifications.whatsappAlerts")} checked={notifWhatsappValue} onChange={setNotifWhatsapp} />
             </div>
 
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.dailySummary")}</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("notifications.dailySummaryDesc")}</span>
+                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("notifications.dailySummaryDesc")}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[9px] font-black text-slate-400">{ts("notAvailable")}</span>
-                <Switch checked={notifDaily} onChange={setNotifDaily} disabled />
+                <span className="text-[9px] font-black text-slate-500">{ts("notAvailable")}</span>
+                <Switch label={ts("notifications.dailySummary")} checked={notifDaily} onChange={setNotifDaily} disabled />
               </div>
             </div>
 
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.criticalOnly")}</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("notifications.criticalOnlyDesc")}</span>
+                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("notifications.criticalOnlyDesc")}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[9px] font-black text-slate-400">{ts("notAvailable")}</span>
-                <Switch checked={notifCritical} onChange={setNotifCritical} disabled />
+                <span className="text-[9px] font-black text-slate-500">{ts("notAvailable")}</span>
+                <Switch label={ts("notifications.criticalOnly")} checked={notifCritical} onChange={setNotifCritical} disabled />
               </div>
             </div>
 
             <div className="flex items-center justify-between border-t border-slate-100 pt-3.5">
               <div className="flex items-center gap-2">
-                <Clock size={14} className="text-slate-400" />
+                <Clock size={14} className="text-slate-500" />
                 <div>
                   <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.quietHours")}</span>
-                  <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("notifications.quietHoursDesc")}</span>
+                  <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("notifications.quietHoursDesc")}</span>
                 </div>
               </div>
               <button
@@ -969,12 +976,12 @@ export default function SettingsPage() {
         {/* Card 2: AI Preferences */}
         <Panel className="flex flex-col gap-4.5">
           <div className="flex items-start gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-[#8B5CFF]">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-[#6E44E8]">
               <Sparkles size={18} strokeWidth={2.3} />
             </span>
             <div>
               <h3 className="text-[13.5px] font-black text-[#101334]">{ts("aiPrefs.title")}</h3>
-              <p className="text-[10px] font-semibold text-[#68739F]">{ts("aiPrefs.desc")}</p>
+              <p className="text-[10px] font-semibold text-[#5F6B94]">{ts("aiPrefs.desc")}</p>
             </div>
           </div>
 
@@ -986,7 +993,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-black text-[#101334]">{ts("aiPrefs.sensitivity")}</span>
               <div className="relative">
-                <select
+                <select aria-label={ts("aiPrefs.sensitivity")}
                   value={aiSensitivity}
                   disabled
                   onChange={(e) => setAiSensitivity(e.target.value)}
@@ -1003,23 +1010,23 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("aiPrefs.autoCategorization")}</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("aiPrefs.autoCategorizationDesc")}</span>
+                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("aiPrefs.autoCategorizationDesc")}</span>
               </div>
-              <Switch checked={autoCat} onChange={setAutoCat} disabled />
+              <Switch label={ts("aiPrefs.autoCategorization")} checked={autoCat} onChange={setAutoCat} disabled />
             </div>
 
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("aiPrefs.autoSentiment")}</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("aiPrefs.autoSentimentDesc")}</span>
+                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("aiPrefs.autoSentimentDesc")}</span>
               </div>
-              <Switch checked={autoSentiment} onChange={setAutoSentiment} disabled />
+              <Switch label={ts("aiPrefs.autoSentiment")} checked={autoSentiment} onChange={setAutoSentiment} disabled />
             </div>
 
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-black text-[#101334]">{ts("aiPrefs.summaryStyle")}</span>
               <div className="relative">
-                <select
+                <select aria-label={ts("aiPrefs.summaryStyle")}
                   value={summaryStyle}
                   disabled
                   onChange={(e) => setSummaryStyle(e.target.value)}
@@ -1036,17 +1043,17 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("aiPrefs.enableRecs")}</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("aiPrefs.enableRecsDesc")}</span>
+                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("aiPrefs.enableRecsDesc")}</span>
               </div>
-              <Switch checked={enableRecs} onChange={setEnableRecs} disabled />
+              <Switch label={ts("aiPrefs.enableRecs")} checked={enableRecs} onChange={setEnableRecs} disabled />
             </div>
 
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("aiPrefs.enablePredictive")}</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("aiPrefs.enablePredictiveDesc")}</span>
+                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("aiPrefs.enablePredictiveDesc")}</span>
               </div>
-              <Switch checked={enablePredictive} onChange={setEnablePredictive} disabled />
+              <Switch label={ts("aiPrefs.enablePredictive")} checked={enablePredictive} onChange={setEnablePredictive} disabled />
             </div>
           </div>
         </Panel>
@@ -1059,7 +1066,7 @@ export default function SettingsPage() {
             </span>
             <div>
               <h3 className="text-[13.5px] font-black text-[#101334]">{ts("integrationsApi.title")}</h3>
-              <p className="text-[10px] font-semibold text-[#68739F]">{ts("integrationsApi.desc")}</p>
+              <p className="text-[10px] font-semibold text-[#5F6B94]">{ts("integrationsApi.desc")}</p>
             </div>
           </div>
 
@@ -1080,10 +1087,10 @@ export default function SettingsPage() {
                   className="flex w-full items-center justify-between rounded-lg p-2.5 text-left transition hover:bg-slate-50"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-[#68739F]"><Icon size={16} /></span>
+                    <span className="text-[#5F6B94]"><Icon size={16} /></span>
                     <div>
                       <span className="block text-[11px] font-black text-[#101334]">{item.label}</span>
-                      <span className="block text-[9px] text-slate-400 font-semibold">{item.sub}</span>
+                      <span className="block text-[9px] text-slate-500 font-semibold">{item.sub}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1092,7 +1099,7 @@ export default function SettingsPage() {
                         {item.badge}
                       </span>
                     )}
-                    <ArrowRight size={13} className="text-slate-400" />
+                    <ArrowRight size={13} className="text-slate-500" />
                   </div>
                 </button>
               );
@@ -1108,7 +1115,7 @@ export default function SettingsPage() {
             </span>
             <div>
               <h3 className="text-[13.5px] font-black text-[#101334]">{ts("security.title")}</h3>
-              <p className="text-[10px] font-semibold text-[#68739F]">{ts("security.desc")}</p>
+              <p className="text-[10px] font-semibold text-[#5F6B94]">{ts("security.desc")}</p>
             </div>
           </div>
 
@@ -1120,23 +1127,23 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("security.twoFa")}</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("security.twoFaDesc")}</span>
+                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("security.twoFaDesc")}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-[9px] font-black text-slate-500">
                   {ts("notAvailable")}
                 </span>
-                <Switch checked={false} onChange={setSecurity2fa} disabled />
+                <Switch label={ts("security.twoFa")} checked={false} onChange={setSecurity2fa} disabled />
               </div>
             </div>
 
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("security.sessionTimeout")}</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("security.sessionTimeoutDesc")}</span>
+                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("security.sessionTimeoutDesc")}</span>
               </div>
               <div className="relative">
-                <select
+                <select aria-label={ts("security.sessionTimeout")}
                   value={sessionTimeout}
                   disabled
                   onChange={(e) => setSessionTimeout(e.target.value)}
@@ -1154,18 +1161,18 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("security.ipRestriction")}</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("security.ipRestrictionDesc")}</span>
+                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("security.ipRestrictionDesc")}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className={cn(
                   "rounded-md border px-2 py-0.5 text-[9px] font-black",
                   ipRestrict 
-                    ? "border-[#CDEEDD] bg-[#F1FCF6] text-[#10B981]" 
+                    ? "border-[#CDEEDD] bg-[#F1FCF6] text-[#047857]" 
                     : "border-slate-200 bg-slate-100 text-slate-500"
                 )}>
                   {ipRestrict ? ts("security.active") : ts("security.inactive")}
                 </span>
-                <Switch checked={ipRestrict} onChange={setIpRestrict} disabled />
+                <Switch label={ts("security.ipRestriction")} checked={ipRestrict} onChange={setIpRestrict} disabled />
               </div>
             </div>
 
@@ -1175,22 +1182,22 @@ export default function SettingsPage() {
               className="flex w-full items-center justify-between border-t border-slate-100 pt-3.5 text-left"
             >
               <div className="flex items-center gap-2">
-                <Lock size={14} className="text-slate-400" />
+                <Lock size={14} className="text-slate-500" />
                 <div>
                   <span className="block text-[11px] font-black text-[#101334]">{ts("security.auditLog")}</span>
-                  <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("security.auditLogDesc")}</span>
+                  <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("security.auditLogDesc")}</span>
                 </div>
               </div>
-              <ArrowRight size={13} className="text-slate-400" />
+              <ArrowRight size={13} className="text-slate-500" />
             </button>
 
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("retentionTitle")}</span>
-                <span className="block text-[9.5px] text-slate-400 font-semibold">{ts("retentionDesc")}</span>
+                <span className="block text-[9.5px] text-slate-500 font-semibold">{ts("retentionDesc")}</span>
               </div>
               <div className="relative">
-                <select
+                <select aria-label={ts("retentionTitle")}
                   value={dataRetention}
                   disabled
                   onChange={(e) => setDataRetention(e.target.value)}
@@ -1219,7 +1226,7 @@ export default function SettingsPage() {
             </span>
             <div>
               <h2 className="text-base font-black text-[#101334]">{ts("billingCard.title")}</h2>
-              <p className="text-[11px] font-bold text-[#68739F]">{ts("billingCard.desc")}</p>
+              <p className="text-[11px] font-bold text-[#5F6B94]">{ts("billingCard.desc")}</p>
             </div>
           </div>
 
@@ -1231,7 +1238,7 @@ export default function SettingsPage() {
                   <Sparkles size={24} />
                 </div>
                 <h4 className="mt-3 text-[18px] font-black text-[#101334]">{ts("billingCard.planEnterprise")}</h4>
-                <p className="mt-1 text-[11px] font-semibold text-[#68739F]">{ts("billingCard.planDesc")}</p>
+                <p className="mt-1 text-[11px] font-semibold text-[#5F6B94]">{ts("billingCard.planDesc")}</p>
                 <button
                   type="button"
                   onClick={() => showToast(ts("billing.subscribe"), "info")}
@@ -1243,14 +1250,14 @@ export default function SettingsPage() {
 
               <div className="border-t border-slate-100 pt-3 text-[11px] font-bold space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-[#68739F]">{ts("billingCard.statusLabel")}</span>
-                  <span className="rounded-full bg-emerald-50 border border-emerald-100/50 px-2.5 py-0.5 text-[9.5px] font-black text-emerald-600">
+                  <span className="text-[#5F6B94]">{ts("billingCard.statusLabel")}</span>
+                  <span className="rounded-full bg-emerald-50 border border-emerald-100/50 px-2.5 py-0.5 text-[9.5px] font-black text-emerald-700">
                     {ts("security.active")}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#68739F]">{ts("billingCard.nextBilling")}</span>
-                  <span className="text-[#101334]">{ts("billingCard.billingDateFormat")} <span className="text-[10px] text-slate-400 font-semibold">{ts("billingCard.billingDaysLeft")}</span></span>
+                  <span className="text-[#5F6B94]">{ts("billingCard.nextBilling")}</span>
+                  <span className="text-[#101334]">{ts("billingCard.billingDateFormat")} <span className="text-[10px] text-slate-500 font-semibold">{ts("billingCard.billingDaysLeft")}</span></span>
                 </div>
               </div>
             </div>
@@ -1259,19 +1266,19 @@ export default function SettingsPage() {
             <div className="lg:col-span-2 flex flex-col justify-between rounded-2xl border border-slate-100 bg-white p-4.5">
               <div className="flex items-start justify-between">
                 <div>
-                  <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-[#68739F]">
+                  <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-[#5F6B94]">
                     {ts("billingCard.usageTitle")}
                   </span>
                   <div className="mt-1.5 flex items-baseline gap-2">
                     <span className="text-[25px] font-black text-[#101334]">128.452</span>
-                    <span className="text-[11px] font-bold text-slate-400">{ts("billingCard.usageTotalSignals")}</span>
+                    <span className="text-[11px] font-bold text-slate-500">{ts("billingCard.usageTotalSignals")}</span>
                   </div>
-                  <span className="mt-1 block text-[10.5px] font-black text-emerald-600 flex items-center gap-0.5">
+                  <span className="mt-1 block text-[10.5px] font-black text-emerald-700 flex items-center gap-0.5">
                     <TrendingUp size={12} /> {ts("billingCard.usageChange")}
                   </span>
                 </div>
                 <div className="relative">
-                  <select
+                  <select aria-label={ts("billingCard.usageChange")}
                     defaultValue="30"
                     className="h-7 rounded-md border border-[#DDE3EF] bg-white px-2.5 pr-7 text-[10px] font-black text-slate-700 focus:outline-none"
                   >
@@ -1325,8 +1332,8 @@ export default function SettingsPage() {
                             style={{ bottom: `${percent + 18}%` }}
                             className="absolute z-30 flex flex-col items-center bg-slate-950 px-2.5 py-1.5 rounded-lg shadow-xl text-[9px] font-black text-white whitespace-nowrap animate-in fade-in zoom-in-95 duration-100"
                           >
-                            <span className="text-slate-400 font-bold">{chartDates[idx]}</span>
-                            <span className="mt-0.5 text-[10px] text-[#00F0FF]">{val.toLocaleString("id-ID")} {ts("billingCard.signalsUnit")}</span>
+                            <span className="text-slate-500 font-bold">{chartDates[idx]}</span>
+                            <span className="mt-0.5 text-[10px] text-[#00F0FF]">{val.toLocaleString(intlLocale())} {ts("billingCard.signalsUnit")}</span>
                           </div>
                         )}
                       </div>
@@ -1336,7 +1343,7 @@ export default function SettingsPage() {
               </div>
 
               {/* X axis dates */}
-              <div className="mt-2 flex justify-between px-1 text-[9px] font-black text-slate-400">
+              <div className="mt-2 flex justify-between px-1 text-[9px] font-black text-slate-500">
                 {chartDates.slice(0, 7).map((d) => <span key={d}>{d}</span>)}
               </div>
             </div>
@@ -1381,7 +1388,7 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0 flex-1">
                 <span className="block text-[11.5px] font-black text-slate-800">{ts("danger.pauseTitle")}</span>
-                <span className="mt-1 block text-[10px] text-slate-400 font-semibold leading-normal">
+                <span className="mt-1 block text-[10px] text-slate-500 font-semibold leading-normal">
                   {ts("danger.pauseDesc")}
                 </span>
               </div>
@@ -1397,7 +1404,7 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between border-t border-slate-100/80 pt-4">
               <div className="min-w-0 flex-1">
                 <span className="block text-[11.5px] font-black text-slate-800">{ts("danger.resetTitle")}</span>
-                <span className="mt-1 block text-[10px] text-slate-400 font-semibold leading-normal">
+                <span className="mt-1 block text-[10px] text-slate-500 font-semibold leading-normal">
                   {ts("danger.resetDesc")}
                 </span>
               </div>
@@ -1413,7 +1420,7 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between border-t border-slate-100/80 pt-4">
               <div className="min-w-0 flex-1">
                 <span className="block text-[11.5px] font-black text-[#D32F2F]">{ts("danger.deleteTitle")}</span>
-                <span className="mt-1 block text-[10px] text-slate-400 font-semibold leading-normal">
+                <span className="mt-1 block text-[10px] text-slate-500 font-semibold leading-normal">
                   {ts("danger.deleteDesc")}
                 </span>
               </div>
@@ -1440,13 +1447,13 @@ export default function SettingsPage() {
                 </span>
                 <div>
                   <h3 className="text-base font-black text-[#101334]">{ts("invite.modalTitle")}</h3>
-                  <p className="text-[10px] font-semibold text-slate-400">{ts("invite.subtitle")}</p>
+                  <p className="text-[10px] font-semibold text-slate-500">{ts("invite.subtitle")}</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowInviteModal(false)}
-                className="rounded-lg border border-slate-100 p-1.5 text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+                className="rounded-lg border border-slate-100 p-1.5 text-slate-500 hover:bg-slate-50 hover:text-slate-700"
               >
                 <X size={15} />
               </button>
@@ -1454,10 +1461,11 @@ export default function SettingsPage() {
 
             <form onSubmit={handleInviteSubmit} className="mt-5 space-y-4">
               <div>
-                <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#68739F]">
+                <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#5F6B94]">
                   {ts("invite.nameLabel")}
                 </label>
                 <input
+                  aria-label={ts("invite.nameLabel")}
                   type="text"
                   required
                   placeholder={ts("invite.namePlaceholder")}
@@ -1465,14 +1473,15 @@ export default function SettingsPage() {
                   onChange={(e) => { setInviteName(e.target.value); setInviteErrors((prev) => ({ ...prev, name: undefined })); }}
                   className={cn("h-10 w-full rounded-lg border px-3 text-[12px] font-bold text-[#101334] focus:border-[#465FFF] focus:outline-none focus:ring-2 focus:ring-[#465FFF]/15", inviteErrors.name ? "border-[#EF4444]" : "border-[#DDE3EF]")}
                 />
-                {inviteErrors.name && <p className="mt-1 text-[9px] font-bold text-[#EF4444]">{inviteErrors.name}</p>}
+                {inviteErrors.name && <p className="mt-1 text-[9px] font-bold text-[#C81E1E]">{inviteErrors.name}</p>}
               </div>
 
               <div>
-                <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#68739F]">
+                <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#5F6B94]">
                   {ts("invite.emailLabel")}
                 </label>
                 <input
+                  aria-label={ts("invite.emailLabel")}
                   type="email"
                   required
                   placeholder={ts("invite.emailPlaceholder")}
@@ -1480,15 +1489,15 @@ export default function SettingsPage() {
                   onChange={(e) => { setInviteEmail(e.target.value); setInviteErrors((prev) => ({ ...prev, email: undefined })); }}
                   className={cn("h-10 w-full rounded-lg border px-3 text-[12px] font-bold text-[#101334] focus:border-[#465FFF] focus:outline-none focus:ring-2 focus:ring-[#465FFF]/15", inviteErrors.email ? "border-[#EF4444]" : "border-[#DDE3EF]")}
                 />
-                {inviteErrors.email && <p className="mt-1 text-[9px] font-bold text-[#EF4444]">{inviteErrors.email}</p>}
+                {inviteErrors.email && <p className="mt-1 text-[9px] font-bold text-[#C81E1E]">{inviteErrors.email}</p>}
               </div>
 
               <div>
-                <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#68739F]">
+                <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#5F6B94]">
                   {ts("invite.roleLabel")}
                 </label>
                 <div className="relative">
-                  <select
+                  <select aria-label={ts("invite.roleLabel")}
                     value={inviteRole}
                     onChange={(e) => setInviteRole(e.target.value)}
                     className="h-10 w-full appearance-none rounded-lg border border-[#DDE3EF] bg-white px-3 pr-8 text-[12px] font-bold text-[#101334] focus:border-[#465FFF] focus:outline-none"
@@ -1497,7 +1506,7 @@ export default function SettingsPage() {
                     <option value="Analyst">{ts("invite.roleOptionAnalyst")}</option>
                     <option value="Viewer">{ts("invite.roleOptionViewer")}</option>
                   </select>
-                  <ChevronDown size={14} className="pointer-events-none absolute right-3 top-3.5 text-[#68739F]" />
+                  <ChevronDown size={14} className="pointer-events-none absolute right-3 top-3.5 text-[#5F6B94]" />
                 </div>
               </div>
 

@@ -30,12 +30,12 @@ const ToastContext = createContext<ToastApi | null>(null);
 const toneStyles: Record<ToastTone, { shell: string; icon: string; Icon: typeof CheckCircle2 }> = {
   success: {
     shell: "border-[#CDEEDD] bg-[#F1FCF6] text-[#047857]",
-    icon: "bg-[#10B981]/10 text-[#10B981]",
+    icon: "bg-[#10B981]/10 text-[#047857]",
     Icon: CheckCircle2,
   },
   error: {
     shell: "border-[#FAD1D1] bg-[#FFF5F5] text-[#B42318]",
-    icon: "bg-[#EF4444]/10 text-[#EF4444]",
+    icon: "bg-[#EF4444]/10 text-[#C81E1E]",
     Icon: XCircle,
   },
   info: {

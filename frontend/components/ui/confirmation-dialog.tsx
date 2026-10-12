@@ -28,7 +28,7 @@ const toneStyles: Record<ConfirmationTone, { border: string; icon: string; title
   },
   warning: {
     border: "border-amber-200",
-    icon: "bg-amber-50 text-amber-600",
+    icon: "bg-amber-50 text-amber-700",
     title: "text-amber-700",
     button: "bg-amber-600 hover:bg-amber-700",
   },
@@ -112,10 +112,10 @@ export function ConfirmationDialog({
             </span>
             <div>
               <h3 id={titleId} className={cn("text-base font-black", styles.title)}>{title}</h3>
-              <p className="text-[10px] font-semibold text-slate-400">{t("notice")}</p>
+              <p className="text-[10px] font-semibold text-slate-500">{t("notice")}</p>
             </div>
           </div>
-          <button type="button" aria-label={t("close")} onClick={() => onOpenChange(false)} className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
+          <button type="button" aria-label={t("close")} onClick={() => onOpenChange(false)} className="rounded-full p-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700">
             <X size={15} />
           </button>
         </div>

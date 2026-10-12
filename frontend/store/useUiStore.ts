@@ -25,3 +25,9 @@ export const useUiStore = create<UiState>()(
     { name: "narriv-ui-settings" },
   ),
 );
+
+// BCP 47 locale for Intl/Date formatting that follows the UI language. Read at
+// format time (not reactive); components re-render on language change anyway.
+export function intlLocale(): "id-ID" | "en-US" {
+  return useUiStore.getState().language === "id" ? "id-ID" : "en-US";
+}

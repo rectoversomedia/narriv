@@ -61,7 +61,7 @@ const KEY_DEVELOPMENTS = [
   },
   {
     severity: "HIGH",
-    color: "text-amber-600",
+    color: "text-amber-700",
     bg: "bg-amber-50",
     border: "border-amber-200",
     dot: "bg-amber-500",
@@ -205,6 +205,7 @@ function DateRangeSelector({
   return (
     <div className="relative inline-block">
       <select
+        aria-label="Date range"
         value={value}
         onChange={(e) => onChange(e.target.value as DateRange)}
         className={cn(
@@ -220,7 +221,7 @@ function DateRangeSelector({
         ))}
       </select>
       <ChevronDown
-        className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+        className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
         strokeWidth={2}
       />
     </div>
@@ -241,7 +242,7 @@ function SectionDivider({ label }: { label: string }) {
 function SeverityBadge({ severity }: { severity: string }) {
   const config: Record<string, { bg: string; text: string }> = {
     CRITICAL: { bg: "bg-red-50", text: "text-red-600" },
-    HIGH: { bg: "bg-amber-50", text: "text-amber-600" },
+    HIGH: { bg: "bg-amber-50", text: "text-amber-700" },
     MEDIUM: { bg: "bg-blue-50", text: "text-blue-600" },
     LOW: { bg: "bg-slate-50", text: "text-slate-500" },
   };
@@ -261,10 +262,10 @@ function SeverityBadge({ severity }: { severity: string }) {
 
 function DirectionIcon({ direction }: { direction: "growing" | "declining" | "stable" }) {
   if (direction === "growing")
-    return <ArrowUp className="h-4 w-4 flex-shrink-0 text-green-600" strokeWidth={2.5} />;
+    return <ArrowUp className="h-4 w-4 flex-shrink-0 text-green-700" strokeWidth={2.5} />;
   if (direction === "declining")
-    return <ArrowDown className="h-4 w-4 flex-shrink-0 text-red-500" strokeWidth={2.5} />;
-  return <ArrowRight className="h-4 w-4 flex-shrink-0 text-slate-400" strokeWidth={2.5} />;
+    return <ArrowDown className="h-4 w-4 flex-shrink-0 text-red-700" strokeWidth={2.5} />;
+  return <ArrowRight className="h-4 w-4 flex-shrink-0 text-slate-500" strokeWidth={2.5} />;
 }
 
 function DeltaChip({ delta }: { delta: string }) {
@@ -275,8 +276,8 @@ function DeltaChip({ delta }: { delta: string }) {
       className={cn(
         "rounded-full px-2 py-0.5 text-[11px] font-bold",
         isNeutral && "bg-slate-100 text-slate-500",
-        isPositive && "bg-green-50 text-green-600",
-        !isPositive && !isNeutral && "bg-red-50 text-red-500"
+        isPositive && "bg-green-50 text-green-700",
+        !isPositive && !isNeutral && "bg-red-50 text-red-700"
       )}
     >
       {delta}
@@ -307,7 +308,7 @@ function LiveExecutiveBrief({ windowHours }: { windowHours: number }) {
             ) : isError ? (
               <span className="text-[12px] text-rose-600">Backend unavailable</span>
             ) : data?.grounded ? (
-              <span className="text-[12px] text-emerald-600">Grounded in current data</span>
+              <span className="text-[12px] text-emerald-700">Grounded in current data</span>
             ) : (
               <span className="text-[12px] text-slate-500">Insufficient data</span>
             )}
@@ -360,7 +361,7 @@ function LiveBriefDetails({ data }: { data: import("@/lib/intelligence-api").Exe
             {drivers.map((d) => (
               <li key={d.key} className="text-[12.5px] text-slate-700">
                 <span className="font-semibold tabular-nums text-slate-900">+{d.contribution}</span> {d.reason}
-                {d.evidenceIds?.length ? <span className="text-slate-400"> · {d.evidenceIds.length} record(s)</span> : null}
+                {d.evidenceIds?.length ? <span className="text-slate-500"> · {d.evidenceIds.length} record(s)</span> : null}
               </li>
             ))}
           </ul>
@@ -368,7 +369,7 @@ function LiveBriefDetails({ data }: { data: import("@/lib/intelligence-api").Exe
         {risk?.uncertainty?.reasons?.length ? (
           <p className="mt-2 text-[11.5px] text-amber-700">{risk.uncertainty.level} uncertainty: {risk.uncertainty.reasons.join(" ")}</p>
         ) : null}
-        <p className="mt-2 text-[11px] text-slate-400">Heuristic index for prioritization, not a probability.</p>
+        <p className="mt-2 text-[11px] text-slate-500">Heuristic index for prioritization, not a probability.</p>
         {data.sections?.emergingIssue?.summary ? (
           <p className="mt-2 text-[12.5px] text-slate-700"><span className="font-semibold">Emerging: </span>{data.sections.emergingIssue.summary}</p>
         ) : null}
@@ -476,7 +477,7 @@ export default function DailyIntelligenceBriefPage() {
                       </span>
                     </div>
                     <h2 className="text-[18px] font-bold text-white">{t("title")}</h2>
-                    <p className="mt-1 text-[13px] text-slate-400">
+                    <p className="mt-1 text-[13px] text-slate-500">
                       {DEMO_DATE_FORMATTED} &mdash; Demo
                     </p>
                   </div>
@@ -499,29 +500,29 @@ export default function DailyIntelligenceBriefPage() {
                     <div className="grid grid-cols-3 gap-3">
                       <div className="rounded-[10px] border border-slate-200 bg-slate-50 p-4 text-center">
                         <p className="text-[11px] font-semibold text-slate-500">Critical Alerts</p>
-                        <p className="mt-1 text-[24px] font-bold text-red-500">
+                        <p className="mt-1 text-[24px] font-bold text-red-700">
                           {EXECUTIVE_SUMMARY.criticalAlerts}
                         </p>
-                        <p className="text-[11px] text-slate-400">active</p>
+                        <p className="text-[11px] text-slate-500">active</p>
                       </div>
                       <div className="rounded-[10px] border border-slate-200 bg-slate-50 p-4 text-center">
                         <p className="text-[11px] font-semibold text-slate-500">Net Sentiment</p>
-                        <p className="mt-1 text-[24px] font-bold text-green-600">
+                        <p className="mt-1 text-[24px] font-bold text-green-700">
                           +{EXECUTIVE_SUMMARY.netSentimentShift}%
                         </p>
-                        <p className="text-[11px] text-slate-400">shift positive</p>
+                        <p className="text-[11px] text-slate-500">shift positive</p>
                       </div>
                       <div className="rounded-[10px] border border-slate-200 bg-slate-50 p-4 text-center">
                         <p className="text-[11px] font-semibold text-slate-500">AI Visibility</p>
                         <p className="mt-1 text-[24px] font-bold text-[#465FFF]">
                           {EXECUTIVE_SUMMARY.aiVisibility}
                         </p>
-                        <p className="text-[11px] text-slate-400">score</p>
+                        <p className="text-[11px] text-slate-500">score</p>
                       </div>
                     </div>
-                    <p className="text-[14px] leading-relaxed text-[#68739F]">
+                    <p className="text-[14px] leading-relaxed text-[#5F6B94]">
                       {EXECUTIVE_SUMMARY.criticalAlerts} critical alerts active. Net sentiment shifted{" "}
-                      <span className="font-semibold text-green-600">
+                      <span className="font-semibold text-green-700">
                         +{EXECUTIVE_SUMMARY.netSentimentShift}% positive
                       </span>{" "}
                       driven by brand campaign lift. AI visibility stable at{" "}
@@ -592,7 +593,7 @@ export default function DailyIntelligenceBriefPage() {
                     {RISKS.map((risk, i) => (
                       <li key={i} className="flex items-start gap-3">
                         <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-400" strokeWidth={2} />
-                        <span className="text-[14px] leading-relaxed text-[#68739F]">{risk}</span>
+                        <span className="text-[14px] leading-relaxed text-[#5F6B94]">{risk}</span>
                       </li>
                     ))}
                   </ul>
@@ -605,7 +606,7 @@ export default function DailyIntelligenceBriefPage() {
                     {OPPORTUNITIES.map((opp, i) => (
                       <li key={i} className="flex items-start gap-3">
                         <Lightbulb className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-400" strokeWidth={2} />
-                        <span className="text-[14px] leading-relaxed text-[#68739F]">{opp}</span>
+                        <span className="text-[14px] leading-relaxed text-[#5F6B94]">{opp}</span>
                       </li>
                     ))}
                   </ul>
@@ -625,19 +626,19 @@ export default function DailyIntelligenceBriefPage() {
                           <span
                             className={cn(
                               "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
-                              comp.tone === "positive" && "bg-green-50 text-green-600",
-                              comp.tone === "negative" && "bg-red-50 text-red-500",
+                              comp.tone === "positive" && "bg-green-50 text-green-700",
+                              comp.tone === "negative" && "bg-red-50 text-red-700",
                               comp.tone === "neutral" && "bg-slate-100 text-slate-500"
                             )}
                           >
                             {comp.sentiment}
                           </span>
                         </div>
-                        <div className="space-y-1 text-[13px] text-[#68739F]">
+                        <div className="space-y-1 text-[13px] text-[#5F6B94]">
                           <p>
                             <span className="font-medium text-[#101334]">AI:</span> {comp.ai}
                           </p>
-                          {comp.note && <p className="text-slate-400">{comp.note}</p>}
+                          {comp.note && <p className="text-slate-500">{comp.note}</p>}
                         </div>
                       </div>
                     ))}
@@ -681,9 +682,9 @@ export default function DailyIntelligenceBriefPage() {
                               <span
                                 className={cn(
                                   "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-bold",
-                                  row.delta > 0 && "bg-green-50 text-green-600",
-                                  row.delta < 0 && "bg-red-50 text-red-500",
-                                  row.delta === 0 && "bg-slate-100 text-slate-400"
+                                  row.delta > 0 && "bg-green-50 text-green-700",
+                                  row.delta < 0 && "bg-red-50 text-red-700",
+                                  row.delta === 0 && "bg-slate-100 text-slate-500"
                                 )}
                               >
                                 {row.delta > 0 ? (
@@ -728,7 +729,7 @@ export default function DailyIntelligenceBriefPage() {
                               {action.priority}
                             </span>
                           </div>
-                          <p className="text-[14px] leading-relaxed text-[#68739F]">
+                          <p className="text-[14px] leading-relaxed text-[#5F6B94]">
                             {action.text}
                           </p>
                         </div>
@@ -768,12 +769,12 @@ export default function DailyIntelligenceBriefPage() {
                     </div>
                   ))}
                 </div>
-                <div className="flex items-center gap-2 mb-4 text-[11px] text-slate-400">
+                <div className="flex items-center gap-2 mb-4 text-[11px] text-slate-500">
                   <span className="font-semibold text-slate-500">Legend:</span>
-                  <ArrowUp className="h-3 w-3 text-green-500" strokeWidth={2.5} />
+                  <ArrowUp className="h-3 w-3 text-green-700" strokeWidth={2.5} />
                   <span>Growing</span>
                   <span className="text-slate-300">·</span>
-                  <svg width="12" height="12" viewBox="0 0 12 12" className="text-green-500">
+                  <svg width="12" height="12" viewBox="0 0 12 12" className="text-green-700">
                     <path
                       d="M6 2 L10 7 L8.5 7 L8.5 10 L3.5 10 L3.5 7 L2 7 Z"
                       fill="currentColor"
@@ -807,7 +808,7 @@ export default function DailyIntelligenceBriefPage() {
                       <span
                         className={cn(
                           "text-[11px] font-bold",
-                          stat.positive ? "text-green-600" : "text-red-500"
+                          stat.positive ? "text-green-700" : "text-red-700"
                         )}
                       >
                         {stat.delta}

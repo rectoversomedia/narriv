@@ -2791,7 +2791,7 @@
         "subtitle": "Tambahkan kolaborator baru ke workspace Anda.",
         "email": "Email",
         "emailLabel": "Email Kerja",
-        "emailPlaceholder": "Contoh: aldi@narriv.ai",
+        "emailPlaceholder": "Contoh: nama@perusahaan.com",
         "emailInvalid": "Format email tidak valid.",
         "nameRequired": "Nama wajib diisi.",
         "nameMinLength": "Nama minimal 2 karakter.",

@@ -88,7 +88,7 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
         </span>
         <div className="min-w-0">
           <h3 className="text-[13.5px] font-black text-[#101334]">{t("title")}</h3>
-          <p className="text-[10px] font-semibold text-[#68739F]">{t("desc")}</p>
+          <p className="text-[10px] font-semibold text-[#5F6B94]">{t("desc")}</p>
           {keywordsQuery.data?.note ? <p className="mt-1 text-[10px] font-semibold text-slate-500">{keywordsQuery.data.note}</p> : null}
         </div>
       </div>
@@ -155,7 +155,7 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
                         aria-label={t("rename")}
                         className="h-8 min-w-0 flex-1 rounded-md border border-[#DDE3EF] bg-white px-2 text-[11px] font-semibold text-slate-700 focus:outline-none"
                       />
-                      <button type="submit" disabled={busy} title={t("save")} className="rounded-md border border-[#DDE3EF] p-1.5 text-emerald-600 hover:bg-emerald-50">
+                      <button type="submit" disabled={busy} title={t("save")} className="rounded-md border border-[#DDE3EF] p-1.5 text-emerald-700 hover:bg-emerald-50">
                         <Check size={13} />
                       </button>
                       <button type="button" onClick={() => setEditing(null)} title={t("cancel")} className="rounded-md border border-[#DDE3EF] p-1.5 text-slate-500 hover:bg-slate-50">
@@ -165,7 +165,7 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
                   ) : (
                     <>
                       <span className="min-w-0 flex-1">
-                        <span className={cn("block truncate text-[11.5px] font-black", k.isActive ? "text-[#101334]" : "text-slate-400")}>{k.keyword}</span>
+                        <span className={cn("block truncate text-[11.5px] font-black", k.isActive ? "text-[#101334]" : "text-slate-500")}>{k.keyword}</span>
                         <LastRunLine keyword={k} t={t} />
                       </span>
                       <KeywordStatus keyword={k} t={t} />
@@ -194,7 +194,7 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
                             disabled={busy}
                             onClick={() => setToDelete(k)}
                             title={t("delete")}
-                            className="rounded-md border border-[#DDE3EF] p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"
+                            className="rounded-md border border-[#DDE3EF] p-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"
                           >
                             <Trash2 size={12} />
                           </button>
@@ -228,7 +228,7 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
 }
 
 const STATUS_STYLE: Record<string, string> = {
-  active: "border-[#CDEEDD] bg-[#F1FCF6] text-[#10B981]",
+  active: "border-[#CDEEDD] bg-[#F1FCF6] text-[#047857]",
   failing: "border-rose-200 bg-rose-50 text-rose-700",
   paused: "border-slate-200 bg-slate-100 text-slate-500",
   awaiting_first_run: "border-sky-200 bg-sky-50 text-sky-700",

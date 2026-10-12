@@ -266,7 +266,7 @@ function TopicList({
         {category.topics.map((topic) => (
           <div key={topic.slug} className="flex items-center justify-between p-5">
             <span className="font-medium text-slate-900">{topic.title}</span>
-            <span className="text-xs font-semibold text-slate-400">Guide not yet published</span>
+            <span className="text-xs font-semibold text-slate-500">Guide not yet published</span>
           </div>
         ))}
       </div>
@@ -362,7 +362,7 @@ export default function HelpCenterPage() {
               placeholder="Search for answers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-white/20 bg-white/10 py-4 pl-12 pr-4 text-white placeholder:text-slate-400 backdrop-blur-sm focus:border-indigo-400 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 transition-all"
+              className="w-full rounded-xl border border-white/20 bg-white/10 py-4 pl-12 pr-4 text-white placeholder:text-slate-300 backdrop-blur-sm focus:border-indigo-400 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 transition-all"
             />
           </div>
         </div>
@@ -406,7 +406,7 @@ export default function HelpCenterPage() {
                       <span className="font-medium text-slate-900">{faq.q}</span>
                       <ChevronDown
                         size={18}
-                        className={`shrink-0 text-slate-400 transition-transform ${
+                        className={`shrink-0 text-slate-500 transition-transform ${
                           expandedFaq === idx ? "rotate-180" : ""
                         }`}
                       />
@@ -453,7 +453,7 @@ export default function HelpCenterPage() {
           <div className="flex items-center gap-6 text-sm text-slate-500">
             <Link href="/help#contact" className="hover:text-slate-900">Contact</Link>
           </div>
-          <p className="text-sm text-slate-400">© {new Date().getFullYear()} Narriv. All rights reserved.</p>
+          <p className="text-sm text-slate-500">© {new Date().getFullYear()} Narriv. All rights reserved.</p>
         </div>
       </footer>
     </div>

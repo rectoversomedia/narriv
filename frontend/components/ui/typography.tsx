@@ -89,7 +89,7 @@ export function Caption({ children, className }: TypographyProps) {
 export function Label({ children, className }: TypographyProps) {
   return (
     <span className={cn(
-      "text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400",
+      "text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500",
       className
     )}>
       {children}

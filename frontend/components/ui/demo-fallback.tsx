@@ -45,7 +45,7 @@ export function DemoFallback({
         (className ?? "")
       }
     >
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#8B5CFF]/10 text-[#8B5CFF]">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#8B5CFF]/10 text-[#6E44E8]">
         <Sparkles size={22} strokeWidth={2.2} />
       </div>
       <div className="space-y-1">

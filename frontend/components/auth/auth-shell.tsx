@@ -209,7 +209,7 @@ export function AuthInput({ label, icon, error, registration, rightAddon, onValu
           {...registration}
           aria-invalid={!!error || undefined}
           onChange={handleChange}
-          className={`h-auto min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 py-0 text-[17px] font-medium text-[#27325F] shadow-none outline-none placeholder:text-[#68739F] focus-visible:border-0 focus-visible:ring-0 aria-invalid:border-0 aria-invalid:ring-0 ${className}`}
+          className={`h-auto min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 py-0 text-[17px] font-medium text-[#27325F] shadow-none outline-none placeholder:text-[#5F6B94] focus-visible:border-0 focus-visible:ring-0 aria-invalid:border-0 aria-invalid:ring-0 ${className}`}
         />
         {rightAddon}
       </span>
@@ -356,7 +356,7 @@ function DemoButton() {
       type="button"
       onClick={handleDemoLogin}
       disabled={isLoading}
-      className="relative flex h-[58px] w-full items-center justify-center gap-3 rounded-[8px] border border-[#D6DDEC] bg-gradient-to-r from-[#10B981]/10 to-[#059669]/10 text-[18px] font-semibold text-[#059669] transition hover:border-[#10B981] hover:from-[#10B981]/20 hover:to-[#059669]/20 disabled:opacity-50 disabled:cursor-not-allowed"
+      className="relative flex h-[58px] w-full items-center justify-center gap-3 rounded-[8px] border border-[#D6DDEC] bg-gradient-to-r from-[#10B981]/10 to-[#059669]/10 text-[18px] font-semibold text-[#047857] transition hover:border-[#10B981] hover:from-[#10B981]/20 hover:to-[#059669]/20 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {isLoading ? (
         <span className="absolute left-9 flex h-6 w-6 items-center justify-center">
@@ -427,7 +427,7 @@ export function InfoCallout({ title, text }: { title: string; text: string }) {
       </span>
       <span>
         <span className="block text-[16px] font-bold text-[#111536]">{title}</span>
-        <span className="mt-1 block text-[15px] text-[#68739F]">{text}</span>
+        <span className="mt-1 block text-[15px] text-[#5F6B94]">{text}</span>
       </span>
     </div>
   );

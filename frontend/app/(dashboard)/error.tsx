@@ -16,17 +16,17 @@ export default function DashboardError({
   return (
     <div className="flex min-h-[520px] items-center justify-center px-4 py-10">
       <section className="max-w-xl rounded-[18px] border border-[#FDE2E2] bg-white p-6 text-center shadow-[0_18px_52px_rgba(15,23,42,0.08)] sm:p-8">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-xl border border-[#EF4444]/20 bg-[#EF4444]/10 text-[#EF4444]">
+        <div className="mx-auto flex size-12 items-center justify-center rounded-xl border border-[#EF4444]/20 bg-[#EF4444]/10 text-[#C81E1E]">
           <AlertTriangle size={22} />
         </div>
         <h1 className="mt-5 text-2xl font-black tracking-[-0.03em] text-[#101334]">
           {t("title")}
         </h1>
-        <p className="mt-3 text-sm font-semibold leading-6 text-[#68739F]">
+        <p className="mt-3 text-sm font-semibold leading-6 text-[#5F6B94]">
           {message}
         </p>
         {error.digest ? (
-          <p className="mt-2 text-xs font-semibold text-[#8A94B8]">{t("digest", { digest: error.digest })}</p>
+          <p className="mt-2 text-xs font-semibold text-[#647099]">{t("digest", { digest: error.digest })}</p>
         ) : null}
         <button
           type="button"
