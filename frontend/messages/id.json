@@ -89,7 +89,7 @@
     }
   },
   "AuthDesign": {
-    "sampleEmail": "nama@perusahaan.com",
+    "sampleEmail": "alamat email Anda",
     "brand": {
       "line1": "AI Visibility.",
       "line2": "Actionable Intelligence.",
@@ -258,7 +258,7 @@
     "verifyCode": {
       "title": "Verifikasi kode Anda",
       "subtitle": "Masukkan kode 6 digit yang telah kami kirimkan ke",
-      "email": "nama@perusahaan.com",
+      "email": "alamat email Anda",
       "expiresIn": "Kode akan kedaluwarsa dalam",
       "infoTitle": "Tidak menerima kode?",
       "infoText": "Periksa folder spam atau junk email Anda.",
@@ -1616,11 +1616,11 @@
     },
     "topicMap": {
       "title": "Peta Topik",
-      "desc": "Visualisasikan bagaimana narasi saling terhubung dan memengaruhi satu sama lain.",
+      "desc": "Ukuran lingkaran menunjukkan sinyal terkait; garis menghubungkan narasi yang berbagi bukti.",
       "allTopics": "Semua Topik",
       "filter": "Filter",
       "filterAll": "Semua Sentimen",
-      "intensity": "Intensitas",
+      "intensity": "Ukuran",
       "sentimentLabel": "Sentimen",
       "sentiment": {
         "positive": "Positif",
@@ -1633,14 +1633,14 @@
         "medium": "Dampak Sedang",
         "low": "Dampak Rendah"
       },
-      "connStrength": "Kekuatan Koneksi",
+      "connStrength": "Bukti bersama",
       "pos": "Positif",
       "neu": "Netral",
       "neg": "Negatif",
-      "weak": "Lemah",
-      "strong": "Kuat",
-      "tip": "Klik pada cluster untuk mengeksplorasi insight detail dan narasi terkait.",
-      "high": "Tinggi",
+      "weak": "Sebagian",
+      "strong": "Sebagian besar",
+      "tip": "Pilih narasi untuk melihat bukti dan detailnya.",
+      "high": "Lebih banyak sinyal",
       "expandMap": "Perbesar peta",
       "mapControl": "Kontrol peta",
       "zoomIn": "Perbesar",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -44,6 +44,7 @@ import { useTranslations } from "next-intl";
 import { useUiStore } from "@/store/useUiStore";
 import { useToast } from "@/components/ui/toast";
 import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components/create-action-plan-modal";
+import { TopicMapCanvas } from "@/components/intelligence/topic-map-canvas";
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type LocalizedText = { en: string; id: string };
 
@@ -54,8 +55,7 @@ type Cluster = {
   growth: string;
   tone: Tone;
   sentiment: "positive" | "negative" | "neutral" | "mixed";
-  x: number;
-  y: number;
+  memberSignalIds: string[];
   color: string;
   size?: "high" | "large" | "medium" | "small";
   priority: LocalizedText;
@@ -65,7 +65,6 @@ type Cluster = {
   aiRec: LocalizedText;
 };
 
-type NarrativeConnection = { from: string; to: string; strength: "weak" | "strong" };
 type ImpactFilter = "all" | "critical" | "high" | "medium" | "low";
 type SentimentFilter = "all" | "positive" | "negative" | "neutral";
 
@@ -98,41 +97,7 @@ const toneStyles: Record<Tone, ToneStyle> = {
   slate: { color: "#64748B", rgb: "100,116,139", badge: "slate" },
 };
 
-const mapSpecks: Array<{ x: number; y: number; tone: Tone; size: number; opacity: number }> = [
-  { x: 18, y: 26, tone: "blue", size: 12, opacity: 0.42 },
-  { x: 22, y: 53, tone: "blue", size: 10, opacity: 0.38 },
-  { x: 28, y: 34, tone: "red", size: 8, opacity: 0.2 },
-  { x: 32, y: 63, tone: "purple", size: 11, opacity: 0.26 },
-  { x: 38, y: 19, tone: "red", size: 8, opacity: 0.18 },
-  { x: 42, y: 68, tone: "red", size: 12, opacity: 0.28 },
-  { x: 47, y: 30, tone: "red", size: 8, opacity: 0.16 },
-  { x: 54, y: 20, tone: "purple", size: 9, opacity: 0.2 },
-  { x: 58, y: 39, tone: "green", size: 11, opacity: 0.32 },
-  { x: 63, y: 60, tone: "amber", size: 8, opacity: 0.22 },
-  { x: 69, y: 28, tone: "green", size: 12, opacity: 0.28 },
-  { x: 76, y: 41, tone: "purple", size: 11, opacity: 0.32 },
-  { x: 82, y: 56, tone: "blue", size: 12, opacity: 0.36 },
-  { x: 86, y: 31, tone: "purple", size: 10, opacity: 0.28 },
-  { x: 15, y: 69, tone: "blue", size: 11, opacity: 0.34 },
-  { x: 24, y: 74, tone: "amber", size: 7, opacity: 0.18 },
-  { x: 35, y: 78, tone: "blue", size: 8, opacity: 0.18 },
-  { x: 51, y: 76, tone: "red", size: 9, opacity: 0.18 },
-  { x: 66, y: 73, tone: "amber", size: 8, opacity: 0.2 },
-  { x: 79, y: 70, tone: "blue", size: 9, opacity: 0.26 },
-  { x: 13, y: 39, tone: "blue", size: 9, opacity: 0.34 },
-  { x: 30, y: 22, tone: "amber", size: 8, opacity: 0.22 },
-  { x: 45, y: 16, tone: "red", size: 11, opacity: 0.15 },
-  { x: 60, y: 17, tone: "green", size: 9, opacity: 0.24 },
-  { x: 73, y: 18, tone: "green", size: 8, opacity: 0.18 },
-  { x: 90, y: 49, tone: "blue", size: 9, opacity: 0.28 },
-];
 
-const nodeSizeClasses = {
-  high: "size-[92px] text-[10px] sm:size-[116px] sm:text-[11px]",
-  large: "size-[82px] text-[9px] sm:size-[96px] sm:text-[10px]",
-  medium: "size-[72px] text-[8px] sm:size-[84px] sm:text-[9px]",
-  small: "size-[60px] text-[8px] sm:size-[70px] sm:text-[8px]",
-};
 
 const sentimentColor = {
   positive: "#10B981",
@@ -157,8 +122,7 @@ function buildEmptyCluster(t: ReturnType<typeof useTranslations<"Intelligence">>
     growth: "0%",
     tone: "slate",
     sentiment: "neutral",
-    x: 50,
-    y: 50,
+    memberSignalIds: [],
     color: "#94A3B8",
     size: "medium",
     priority: { en: t("emptyCluster.priority"), id: t("emptyCluster.priority") },
@@ -192,7 +156,6 @@ function buildNarrativeClusters(records: NarrativeRecord[], labels: { sources: (
   return records.map((record, index) => {
     const tone = sentimentToTone(record.sentiment);
     const priorityTone = impactToPriorityTone(record.impact);
-    const mapSpeck = mapSpecks[index % mapSpecks.length];
     const sentimentHex = sentimentColor[tone === "green" ? "positive" : tone === "red" ? "negative" : "neutral"];
 
     return {
@@ -218,32 +181,13 @@ function buildNarrativeClusters(records: NarrativeRecord[], labels: { sources: (
         en: record.recommendedFocus,
         id: record.recommendedFocus,
       },
-      x: mapSpeck.x,
-      y: mapSpeck.y,
+      memberSignalIds: record.memberSignalIds ?? [],
       color: sentimentHex,
       size: (record.signalCount > 1000 ? "high" : record.signalCount > 500 ? "large" : record.signalCount > 100 ? "medium" : "small") as Cluster["size"],
     };
   }) as Cluster[];
 }
 
-function buildNarrativeConnections(clusters: Cluster[]): NarrativeConnection[] {
-  if (clusters.length < 2) return [];
-
-  const ranked = clusters.slice().sort((a, b) => b.signals - a.signals);
-  const hub = ranked[0];
-  const hubConnections = ranked.slice(1, 8).map((cluster, index) => ({
-    from: hub.id,
-    to: cluster.id,
-    strength: index < 4 || Math.abs(parseGrowthPercent(cluster.growth)) >= 25 ? "strong" : "weak",
-  } satisfies NarrativeConnection));
-
-  const lateralConnections: NarrativeConnection[] = [];
-  for (let index = 1; index < Math.min(ranked.length - 1, 6); index += 2) {
-    lateralConnections.push({ from: ranked[index].id, to: ranked[index + 1].id, strength: "weak" });
-  }
-
-  return [...hubConnections, ...lateralConnections];
-}
 
 function parseGrowthPercent(value: string) {
   const parsed = Number.parseFloat(value.replace(/[^0-9.-]/g, ""));
@@ -454,40 +398,6 @@ function CompetitorDonut({ label, gradient, totalLabel }: { label: string; gradi
   );
 }
 
-function MapNode({ cluster, selected, language, signalLabel, onSelect }: { cluster: Cluster; selected: boolean; language: "en" | "id"; signalLabel: string; onSelect: (cluster: Cluster) => void }) {
-  const toneStyle = toneStyles[cluster.tone];
-  const style = {
-    left: `${cluster.x}%`,
-    top: `${cluster.y}%`,
-    zIndex: selected ? 20 : 10,
-    borderColor: selected ? toneStyle.color : `rgba(${toneStyle.rgb}, 0.28)`,
-    boxShadow: selected ? `0 0 0 10px rgba(${toneStyle.rgb}, .13), 0 18px 42px rgba(${toneStyle.rgb}, .22)` : "0 10px 26px rgba(16,24,40,.07)",
-  } satisfies CSSProperties;
-
-  return (
-    <button
-      type="button"
-      aria-pressed={selected}
-      onClick={() => onSelect(cluster)}
-      className={cn(
-        "absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border bg-white/95 text-center outline-none backdrop-blur transition duration-300 hover:-translate-y-[52%] hover:shadow-[0_18px_42px_rgba(16,24,40,0.1)]",
-        nodeSizeClasses[cluster.size ?? "medium"]
-      )}
-      style={style}
-    >
-      {selected ? <span className="absolute -inset-3 rounded-full opacity-20 blur-xl" style={{ backgroundColor: toneStyle.color }} /> : null}
-      <span
-        className="absolute right-[17%] top-[17%] size-2 rounded-full border border-white shadow-sm"
-        style={{ backgroundColor: sentimentColor[cluster.sentiment === "mixed" ? "neutral" : cluster.sentiment] }}
-      />
-      <span className="relative px-2 font-black leading-tight text-[#101334]">{text(cluster.topic, language)}</span>
-      <span className="relative mt-1 text-[9px] font-bold text-[#8A94B8]">{signalLabel}</span>
-      <span className="relative mt-1.5 rounded-full px-2 py-0.5 text-[8px] font-black" style={{ backgroundColor: `rgba(${toneStyle.rgb}, .1)`, color: toneStyle.color }}>
-        {cluster.growth}
-      </span>
-    </button>
-  );
-}
 
 export default function IntelligencePage() {
   const ti = useTranslations("Intelligence");
@@ -595,7 +505,6 @@ export default function IntelligencePage() {
   const selectedCluster = clusters.find((cluster) => cluster.id === selectedClusterId) ?? clusters[0] ?? emptyCluster;
   const selectedNarrativeId = selectedCluster.id === "empty" ? null : selectedCluster.id;
   const selectedLifecycleKey = selectedNarrativeId ? classifyLifecycle(selectedCluster) : null;
-  const narrativeConnections = buildNarrativeConnections(clusters);
   const narrativeDetailQuery = useQuery({
     queryKey: ["narrative-detail", selectedNarrativeId],
     queryFn: () => selectedNarrativeId ? getNarrativeById(selectedNarrativeId) : null,
@@ -784,7 +693,7 @@ export default function IntelligencePage() {
       {isLiveUnavailable ? <DashboardErrorState title={ti("error.title")} description={ti("error.desc")} onRetry={() => void narrativesQuery.refetch()} minHeight="min-h-[150px]" /> : null}
       {!isLiveUnavailable && narrativesQuery.data && liveClusters.length === 0 ? <DashboardEmptyState title={ti("empty.title")} description={ti("empty.desc")} icon="search" minHeight="min-h-[180px]" /> : null}
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_408px]">
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_408px]">
         <div className="flex min-w-0 flex-col gap-4">
           <Panel className="overflow-hidden">
             <CardContent className="p-4">
@@ -840,59 +749,21 @@ export default function IntelligencePage() {
               </div>
 
               <div className={cn("relative overflow-hidden rounded-[12px] bg-[#FEFEFF] transition-all duration-300", isMapExpanded ? "min-h-[600px] sm:min-h-[700px] xl:min-h-[850px]" : "min-h-[350px] sm:min-h-[382px] xl:min-h-[559px]")}>
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_48%,rgba(139,92,255,0.08),transparent_28%),radial-gradient(circle_at_24%_40%,rgba(16,185,129,0.05),transparent_18%),radial-gradient(circle_at_72%_28%,rgba(245,158,11,0.06),transparent_18%)]" />
-                
-                <div className="absolute inset-0 transition-transform duration-300 origin-center" style={{ transform: `scale(${mapZoom})` }}>
-                  <div className="absolute left-1/2 top-1/2 size-[380px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-[#E8ECF5]" />
-                  <div className="absolute left-1/2 top-1/2 size-[210px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-[#EDF0F7]" />
-
-                  {mapSpecks.map((speck, index) => {
-                    const toneStyle = toneStyles[speck.tone];
-                    return (
-                      <span
-                        key={`${speck.x}-${speck.y}-${index}`}
-                        className="absolute rounded-full border"
-                        style={{
-                          left: `${speck.x}%`,
-                          top: `${speck.y}%`,
-                          width: speck.size,
-                          height: speck.size,
-                          opacity: speck.opacity,
-                          borderColor: toneStyle.color,
-                          backgroundColor: `rgba(${toneStyle.rgb}, .08)`,
-                        }}
-                      />
-                    );
-                  })}
-
-                  <svg className="chart-enter chart-line-draw absolute inset-0 size-full" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-                    {narrativeConnections.map((connection, index) => {
-                      const from = clusters.find((cluster) => cluster.id === connection.from);
-                      const to = clusters.find((cluster) => cluster.id === connection.to);
-                      if (!from || !to) return null;
-
-                      const highlighted = selectedCluster.id === connection.from || selectedCluster.id === connection.to;
-                      return (
-                        <line
-                          key={`${connection.from}-${connection.to}-${index}`}
-                          x1={from.x}
-                          y1={from.y}
-                          x2={to.x}
-                          y2={to.y}
-                          stroke={highlighted ? selectedTone.color : "#E6EAF4"}
-                          strokeDasharray={connection.strength === "weak" ? "1.1 1.2" : undefined}
-                          strokeLinecap="round"
-                          strokeWidth={highlighted ? 0.34 : 0.2}
-                          opacity={highlighted ? 0.68 : 0.76}
-                        />
-                      );
-                    })}
-                  </svg>
-
-                  {clusters.map((cluster) => (
-                    <MapNode key={cluster.id} cluster={cluster} selected={selectedCluster.id === cluster.id} language={language} signalLabel={ti("labels.signals", { count: formatSignals(cluster.signals) })} onSelect={(item) => setSelectedClusterId(item.id)} />
-                  ))}
-                </div>
+                <TopicMapCanvas
+                  nodes={clusters.map((cluster) => ({
+                    id: cluster.id,
+                    title: text(cluster.topic, language),
+                    signals: cluster.signals,
+                    growth: cluster.growth,
+                    color: toneStyles[cluster.tone].color,
+                    rgb: toneStyles[cluster.tone].rgb,
+                    memberSignalIds: cluster.memberSignalIds,
+                  }))}
+                  selectedId={selectedCluster.id === "empty" ? null : selectedCluster.id}
+                  onSelect={(id) => setSelectedClusterId(id)}
+                  zoom={mapZoom}
+                  signalLabel={(count) => ti("labels.signals", { count: formatSignals(count) })}
+                />
 
                 <div className="absolute bottom-5 left-5 z-30 flex flex-col gap-1 rounded-[9px] border border-[#E7EBF4] bg-white p-1 shadow-[0_10px_24px_rgba(16,24,40,0.08)]">
                   <button type="button" onClick={() => setMapZoom((z) => Math.min(2, +(z + 0.25).toFixed(2)))} className="flex size-7 items-center justify-center rounded-[6px] text-[#53608C] transition hover:bg-[#F5F7FC]" aria-label={ti("topicMap.zoomIn")}>
@@ -985,7 +856,7 @@ export default function IntelligencePage() {
           </div>
         </div>
 
-        <aside className="grid content-start gap-4">
+        <aside className="grid min-w-0 grid-cols-1 content-start gap-4">
           <Panel>
             <CardContent className="p-4">
               <div className="mb-3 flex items-center justify-between gap-3">

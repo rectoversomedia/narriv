@@ -73,6 +73,8 @@ export interface DashboardSummary {
   kpis: DashboardKPIs;
   trends: TrendPoint[];
   sentiment_distribution: { positive: number; negative: number; neutral: number; mixed: number };
+  // Daily stored-sentiment counts for the last 7 UTC days (every day present).
+  sentiment_trend?: Array<{ date: string; positive: number; neutral: number; negative: number; mixed: number; unanalyzed: number; total: number }> | null;
   platform_distribution: PlatformCount[];
   latest_signals: LatestSignal[];
   global_activity?: GlobalActivitySummary;
@@ -1676,6 +1678,7 @@ export interface NarrativeRecord {
   momentum?: { last24h: number; prior24h: number; changePct: number | null; label: string; basis: string };
   firstSeen?: string | null;
   lastSeen?: string | null;
+  memberSignalIds?: string[];
   recommendedFocus: string;
   signalCount: number;
   sentiment: string;

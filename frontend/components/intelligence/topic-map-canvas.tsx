@@ -1,0 +1,138 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import { deriveEdges, edgeEndpoints, layoutNodes, type PlacedNode } from "@/lib/topic-map-geometry";
+import { cn } from "@/lib/utils";
+
+export type TopicMapNode = {
+  id: string;
+  title: string;
+  signals: number;
+  growth: string;
+  color: string; // sentiment colour (hex)
+  rgb: string; // "r, g, b" of the sentiment colour
+  memberSignalIds: string[];
+};
+
+// Fewer nodes on narrow containers so outside labels never collide.
+const maxNodesFor = (width: number) => (width < 440 ? 5 : width < 640 ? 6 : 8);
+const LABEL_INSIDE_MIN_RADIUS = 52;
+
+/**
+ * Narrative map in one pixel coordinate space: nodes and connectors are laid
+ * out from the measured container, so connectors end exactly on node edges at
+ * any size or zoom. Connectors only join narratives that share linked signals.
+ */
+export function TopicMapCanvas({
+  nodes,
+  selectedId,
+  onSelect,
+  zoom,
+  signalLabel,
+  className,
+}: {
+  nodes: TopicMapNode[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  zoom: number;
+  signalLabel: (count: number) => string;
+  className?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => setSize({ width: el.clientWidth, height: el.clientHeight });
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const maxNodes = maxNodesFor(size.width);
+  const visible = useMemo(() => nodes.slice().sort((a, b) => b.signals - a.signals).slice(0, maxNodes), [nodes, maxNodes]);
+  // Leave room under small nodes for their outside label.
+  const placed = useMemo(() => layoutNodes(visible, size.width, Math.max(0, size.height - 24), 36), [visible, size]);
+  const byId = useMemo(() => new Map(placed.map((p) => [p.id, p])), [placed]);
+  const edges = useMemo(() => deriveEdges(visible), [visible]);
+
+  return (
+    <div ref={ref} className={cn("absolute inset-0", className)}>
+      <div className="absolute inset-0 origin-center transition-transform duration-slow ease-standard" style={{ transform: `scale(${zoom})` }}>
+        {size.width > 0 ? (
+          <svg className="absolute inset-0" width={size.width} height={size.height} viewBox={`0 0 ${size.width} ${size.height}`} aria-hidden="true">
+            {edges.map((edge) => {
+              const a = byId.get(edge.from);
+              const b = byId.get(edge.to);
+              if (!a || !b) return null;
+              const e = edgeEndpoints(a, b);
+              if (!e) return null;
+              const highlighted = selectedId === edge.from || selectedId === edge.to;
+              return (
+                <line
+                  key={`${edge.from}-${edge.to}`}
+                  {...e}
+                  stroke={highlighted ? "#465FFF" : "#C9D1E3"}
+                  strokeWidth={edge.strength === "strong" ? 2 : 1.25}
+                  strokeDasharray={edge.strength === "weak" ? "4 4" : undefined}
+                  strokeLinecap="round"
+                />
+              );
+            })}
+          </svg>
+        ) : null}
+
+        {visible.map((node) => {
+          const p = byId.get(node.id);
+          if (!p) return null;
+          return <MapNodeButton key={node.id} node={node} placed={p} selected={selectedId === node.id} onSelect={onSelect} signalLabel={signalLabel} labelWidth={size.width < 440 ? 112 : 136} />;
+        })}
+      </div>
+
+      <div className="pointer-events-none absolute bottom-2 left-3 right-3 flex flex-wrap justify-between gap-2 text-[11px] font-medium text-subtle">
+        <span>{nodes.length > visible.length ? `Showing the ${visible.length} largest of ${nodes.length} narratives.` : null}</span>
+        <span>{visible.length > 1 && edges.length === 0 ? "No narratives share evidence in this period, so no connections are drawn." : null}</span>
+      </div>
+    </div>
+  );
+}
+
+function MapNodeButton({ node, placed, selected, onSelect, signalLabel, labelWidth }: { node: TopicMapNode; placed: PlacedNode; selected: boolean; onSelect: (id: string) => void; signalLabel: (count: number) => string; labelWidth: number }) {
+  const labelInside = placed.r >= LABEL_INSIDE_MIN_RADIUS;
+  const d = placed.r * 2;
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      aria-label={`${node.title}, ${signalLabel(node.signals)}`}
+      title={node.title}
+      onClick={() => onSelect(node.id)}
+      className="group absolute rounded-full focus:outline-none"
+      style={{ left: placed.x - placed.r, top: placed.y - placed.r, width: d, height: d, zIndex: selected ? 2 : 1 }}
+    >
+      <span
+        className="absolute inset-0 flex flex-col items-center justify-center rounded-full border-[1.5px] bg-white px-2 text-center transition-shadow duration-fast ease-standard group-hover:shadow-raised group-focus-visible:ring-2 group-focus-visible:ring-[#465FFF] group-focus-visible:ring-offset-2"
+        style={{
+          borderColor: selected ? node.color : `rgba(${node.rgb}, 0.45)`,
+          boxShadow: selected ? `0 0 0 4px rgba(${node.rgb}, 0.16)` : "var(--shadow)",
+        }}
+      >
+        {labelInside ? (
+          <>
+            <span className="line-clamp-3 text-[11px] font-semibold leading-[1.25] text-navy">{node.title}</span>
+            <span className="mt-1 text-[10px] font-medium text-subtle">{signalLabel(node.signals)}</span>
+          </>
+        ) : (
+          <span className="text-[12px] font-bold text-navy">{node.signals}</span>
+        )}
+      </span>
+      {labelInside ? null : (
+        <span className="absolute left-1/2 top-full mt-1.5 -translate-x-1/2 text-center" style={{ width: labelWidth }}>
+          <span className="line-clamp-2 rounded bg-white/90 px-1 text-[11px] font-semibold leading-tight text-navy">{node.title}</span>
+        </span>
+      )}
+    </button>
+  );
+}

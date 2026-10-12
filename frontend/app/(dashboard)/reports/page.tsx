@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
+import { SentimentTrendChart } from "@/components/dashboard/sentiment-trend-chart";
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton, formatPaginationSummary } from "@/components/dashboard/dashboard-states";
 import { getReports, getReportTemplates, createReportTemplate, updateReportTemplate, deleteReportTemplate, getReportsAnalytics, createReportExport, getReportExportStatus, downloadReportFile, getNarratives, getDashboardSummary, getReportSchedules, createReportSchedule, updateReportSchedule, deleteReportSchedule, toggleReportSchedule, generateReportFromTemplate, sendReportEmail, sendTestScheduleEmail, type PaginationInfo, type ReportRecord, type ReportsAnalyticsResponse, type NarrativeRecord, type DashboardSummary, type ReportTemplate, type ReportScheduleRecord } from "@/lib/api-service";
@@ -157,103 +158,28 @@ function MetricCard({ label, value, helper, icon: Icon, tone }: { label: string;
 
 function SentimentChart({ dashboard }: { dashboard?: DashboardSummary | null }) {
   const tr = useTranslations("Reports");
-  
-  // Straight flat lines for empty state instead of fake curves
-  let posPath = "M 10 70 L 150 70";
-  let neuPath = "M 10 70 L 150 70";
-  let negPath = "M 10 70 L 150 70";
-  let posEnd = 70, neuEnd = 70, negEnd = 70;
-  
-  const labels = ["-", "-", "-", "-"];
-
-  if (dashboard?.trends && dashboard.trends.length > 0) {
-    const totalPos = dashboard.sentiment_distribution.positive || 1;
-    const totalNeu = dashboard.sentiment_distribution.neutral || 1;
-    const totalNeg = dashboard.sentiment_distribution.negative || 1;
-    const total = totalPos + totalNeu + totalNeg || 1;
-    
-    // Use last 4 points max
-    const points = dashboard.trends.slice(-4);
-    if (points.length > 1) {
-      const maxVal = Math.max(...points.map(t => t.count), 1);
-      const w = 140, h = 80;
-      
-      // Calculate variance and scale lines
-      const generatePath = (ratio: number, offset: number) => {
-         const mapped = points.map((p, i) => {
-           const x = 10 + (i * (w / Math.max(1, points.length - 1)));
-           const scaled = Math.min(1, Math.max(0.1, ((p.count / maxVal) * ratio) + offset));
-           const y = h - 10 - (scaled * (h - 20));
-           return { x, y };
-         });
-         
-         const pathStr = mapped.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
-         return { path: pathStr, endY: mapped[mapped.length - 1].y, endX: mapped[mapped.length - 1].x };
-      };
-      
-      const pos = generatePath(totalPos / total, 0.4);
-      const neu = generatePath(totalNeu / total, 0.2);
-      const neg = generatePath(totalNeg / total, 0.6);
-      
-      posPath = pos.path; posEnd = pos.endY;
-      neuPath = neu.path; neuEnd = neu.endY;
-      negPath = neg.path; negEnd = neg.endY;
-      
-      labels.length = 0;
-      points.forEach(p => {
-        labels.push(new Date(p.date).toLocaleDateString("id-ID", { day: "numeric", month: "short" }));
-      });
-      while (labels.length < 4) labels.unshift("");
-    }
-  }
-
+  const days = dashboard?.sentiment_trend ?? null;
+  const hasSignals = Boolean(days?.some((d) => d.total > 0));
   return (
-    <div className="flex flex-col justify-between h-full min-h-[160px] border-l border-[#D8DEEF] pl-5">
-      <h4 className="text-[11px] font-extrabold text-[#101334]">{tr("sentimentChart.title")}</h4>
-      
-      <div className="relative flex-1 mt-2 min-h-[90px]">
-        {/* Y Axis Grid/Labels */}
-        <div className="absolute inset-0 flex flex-col justify-between text-[8px] font-bold text-[#8B95B8] pointer-events-none">
-          <div className="flex items-center justify-between border-b border-dashed border-[#EDF1F7] pb-1">
-            <span>100%</span>
-            <span className="w-full border-t border-dashed border-[#EDF1F7] mx-2" />
-          </div>
-          <div className="flex items-center justify-between border-b border-dashed border-[#EDF1F7] py-1">
-            <span>50%</span>
-            <span className="w-full border-t border-dashed border-[#EDF1F7] mx-2" />
-          </div>
-          <div className="flex items-center justify-between pt-1">
-            <span>0%</span>
-            <span className="w-full border-t border-dashed border-[#EDF1F7] mx-2" />
-          </div>
-        </div>
-
-        {/* SVG Lines */}
-        <svg className="chart-enter chart-line-draw absolute inset-0 w-full h-full" viewBox="0 0 160 80" preserveAspectRatio="none">
-          {/* Positif (Green) */}
-          <path d={posPath} fill="none" stroke="#10B981" strokeWidth="2.2" strokeLinecap="round" />
-          <circle cx="150" cy={posEnd} r="3" fill="#10B981" />
-
-          {/* Netral (Blue) */}
-          <path d={neuPath} fill="none" stroke="#465FFF" strokeWidth="2.2" strokeLinecap="round" />
-          <circle cx="150" cy={neuEnd} r="3" fill="#465FFF" />
-
-          {/* Negatif (Red) */}
-          <path d={negPath} fill="none" stroke="#EF4444" strokeWidth="2.2" strokeLinecap="round" />
-          <circle cx="150" cy={negEnd} r="3" fill="#EF4444" />
-        </svg>
+    <div className="flex h-full min-h-[160px] flex-col border-t border-line-soft pt-4 md:border-l md:border-t-0 md:pl-5 md:pt-0">
+      <h4 className="text-[12px] font-bold text-navy">{tr("sentimentChart.title")}</h4>
+      <p className="mt-0.5 text-[10px] font-medium text-subtle">Signals per day</p>
+      <div className="mt-2">
+        {!days ? (
+          <p className="mt-6 text-[11px] font-medium text-subtle">Sentiment trend is not available right now.</p>
+        ) : !hasSignals ? (
+          <p className="mt-6 text-[11px] font-medium text-subtle">No signals were captured in the last 7 days.</p>
+        ) : (
+          <SentimentTrendChart
+            days={days}
+            labels={{ positive: tr("sentimentChart.positive"), neutral: tr("sentimentChart.neutral"), negative: tr("sentimentChart.negative"), mixed: "Mixed", unanalyzed: "Not analyzed", noSignals: "No signals captured" }}
+          />
+        )}
       </div>
-
-      {/* X Axis Labels */}
-      <div className="flex justify-between text-[8px] font-bold text-[#8B95B8] mt-1.5">
-        {labels.map((label, i) => <span key={i}>{label}</span>)}
-      </div>
-
-      {/* Legend */}
-      <div className="flex items-center gap-3 text-[8.5px] font-black text-[#58648C] mt-2">
-        <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-[#10B981]" />{tr("sentimentChart.positive")}</span>
-        <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-[#465FFF]" />{tr("sentimentChart.neutral")}</span>
-        <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-[#EF4444]" />{tr("sentimentChart.negative")}</span>
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-semibold text-body">
+        <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded-full bg-[#10B981]" />{tr("sentimentChart.positive")}</span>
+        <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded-full bg-[#465FFF]" />{tr("sentimentChart.neutral")}</span>
+        <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded-full bg-[#EF4444]" />{tr("sentimentChart.negative")}</span>
       </div>
     </div>
   );

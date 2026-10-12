@@ -89,7 +89,7 @@
     }
   },
   "AuthDesign": {
-    "sampleEmail": "name@company.com",
+    "sampleEmail": "your email address",
     "brand": {
       "line1": "AI Visibility.",
       "line2": "Actionable Intelligence.",
@@ -258,7 +258,7 @@
     "verifyCode": {
       "title": "Verify your code",
       "subtitle": "Enter the 6-digit code we sent to",
-      "email": "name@company.com",
+      "email": "your email address",
       "expiresIn": "Code expires in",
       "infoTitle": "Didn't receive the code?",
       "infoText": "Check your spam or junk email folder.",
@@ -1638,25 +1638,25 @@
     "last7Days": "Last 7 days (May 12 - May 18, 2025)",
     "topicMap": {
       "title": "Topic Map",
-      "desc": "Visualize how narratives connect and influence each other.",
+      "desc": "Circle size reflects linked signals; lines join narratives that share evidence.",
       "allTopics": "All Topics",
       "filter": "Filter",
-      "intensity": "Intensity",
+      "intensity": "Size",
       "sentiment": {
         "negative": "Negative",
         "neutral": "Neutral",
         "positive": "Positive"
       },
-      "connStrength": "Connection Strength",
+      "connStrength": "Shared evidence",
       "pos": "Positive",
       "neu": "Neutral",
       "neg": "Negative",
-      "weak": "Weak",
-      "strong": "Strong",
-      "tip": "Tip: Click on any cluster to explore detailed insights and related narratives.",
+      "weak": "Some",
+      "strong": "Most",
+      "tip": "Select a narrative to see its evidence and details.",
       "expandMap": "Expand map",
       "filterAll": "All Sentiments",
-      "high": "High",
+      "high": "More signals",
       "impact": {
         "critical": "Critical Impact",
         "high": "High Impact",
