@@ -503,7 +503,7 @@ function StepIndicator({ current }: { current: Step }) {
               {s.num < current ? <Check size={14} strokeWidth={3} /> : s.num}
             </div>
             <span
-              className={`text-xs font-semibold whitespace-nowrap hidden sm:block ${
+              className={`text-xs font-semibold whitespace-nowrap hidden lg:block ${
                 s.num === current ? "text-[#465FFF]" : s.num < current ? "text-[#3E4975]" : "text-[#9BA3C2]"
               }`}
             >
@@ -512,7 +512,7 @@ function StepIndicator({ current }: { current: Step }) {
           </div>
           {i < steps.length - 1 && (
             <div
-              className={`mb-5 h-px w-8 sm:w-16 ${s.num < current ? "bg-[#465FFF]" : "bg-[#E8EAF6]"}`}
+              className={`h-px w-8 sm:w-16 lg:mb-5 ${s.num < current ? "bg-[#465FFF]" : "bg-[#E8EAF6]"}`}
             />
           )}
         </div>

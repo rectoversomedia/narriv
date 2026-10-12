@@ -123,8 +123,12 @@ export default function VerifyEmailPage() {
         <h1 className="text-[34px] font-bold leading-tight tracking-[-0.04em] text-[#111536]">{t("title")}</h1>
         <p className="mt-4 text-[19px] font-medium leading-8 text-[#3E4975]">
           {t("subtitle")}
-          <br />
-          <span className="font-bold text-[#465FFF]">{email || t("email")}</span>
+          {email ? (
+            <>
+              <br />
+              <span className="font-bold text-[#465FFF]">{email}</span>
+            </>
+          ) : null}
         </p>
       </div>
 

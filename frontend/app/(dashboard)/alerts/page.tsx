@@ -1484,8 +1484,9 @@ export default function AlertsPage() {
       ) : null}
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_336px]">
-        <div className="grid min-w-0 items-start gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(250px,0.7fr)_minmax(250px,0.7fr)]">
-          <CriticalIncident alert={highlightedCriticalAlert} totalCritical={totalCriticalAlerts} isLoading={criticalAlertsQuery.isLoading} ta={ta} />
+        {/* The incident card spans the full row until there is room for three readable columns. */}
+        <div className="grid min-w-0 items-start gap-4 md:grid-cols-2 2xl:grid-cols-[minmax(0,1.55fr)_minmax(250px,0.7fr)_minmax(250px,0.7fr)]">
+          <div className="min-w-0 md:col-span-2 2xl:col-span-1"><CriticalIncident alert={highlightedCriticalAlert} totalCritical={totalCriticalAlerts} isLoading={criticalAlertsQuery.isLoading} ta={ta} /></div>
           <DeliveryStatus ta={ta} integrations={integrationsQuery.data?.data ?? []} isLoading={integrationsQuery.isLoading} />
           <StakeholderEngagement ta={ta} summary={summary} memberCount={membersQuery.data ? membersQuery.data.length : null} isLoading={summaryQuery.isLoading || membersQuery.isLoading} />
         </div>
