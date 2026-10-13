@@ -6,7 +6,9 @@ import { validateRequest } from "../../middlewares/validate-request.js";
 import { analyzeBodySchema } from "./ai.module.schema.js";
 import { logStructured } from "../../lib/logger.js";
 import { computeNarrativeIntelligence } from "../../lib/narrative-intelligence.js";
-import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
+import { resolveWorkspaceIdForUser, requireWorkspaceRole, MANAGER_ROLES } from "../../lib/workspace-access.js";
+import { getOpenAIClient } from "../../lib/ai-client.js";
+import { PROFILES } from "../../lib/ai-routing.js";
 import { listTiers, routeCompletion, routeForTask, listTasks } from "../../lib/ai-routing.js";
 import { checkBudgetAllowance } from "../../lib/cost-management.js";
 import { ANTHROPIC_MODEL, createClaudeCompletion, isAnthropicConfigured, modelCapabilities } from "../../lib/anthropic-client.js";
@@ -96,8 +98,20 @@ router.get("/providers", async (req, res) => {
             const { route, fallbackReason } = resolveTierRoute(t);
             return { tier: t, provider: route.provider, model: route.model, servedAs: route.meta.complexity, fallbackReason };
         });
+        // What each Narriv workflow actually calls. Only Ask Narriv goes through
+        // the routing profile; the others are fixed OpenAI calls in their services.
+        const askRoute = resolveTierRoute("complex").route;
+        const workflows = [
+            { workflow: "ask_narriv", provider: askRoute.provider, model: askRoute.model, routed: true },
+            { workflow: "signal_analysis_and_sentiment", provider: "openai", model: "gpt-4o-mini", routed: false },
+            { workflow: "action_plans_and_recommendations", provider: "openai", model: "gpt-4o-mini", routed: false },
+            { workflow: "ai_visibility", provider: "openai", model: "gpt-4o-mini", routed: false },
+            { workflow: "narrative_clustering", provider: null, model: null, routed: false, note: "deterministic, no language model" },
+            { workflow: "reports", provider: null, model: null, routed: false, note: "built from stored records, no language model" },
+        ];
         res.json({
             profile: activeProfile(),
+            workflows,
             effective,
             tiers,
             providers: {
@@ -121,6 +135,100 @@ router.get("/providers", async (req, res) => {
 });
 
 /**
+ * POST /ai/providers/check — owner/admin connectivity test. Sends a fixed
+ * one-word prompt (no user or client data) with a 5-token cap to each
+ * configured provider and reports ok / error category / latency. Keys never
+ * leave the server; provider error text is reduced to a category.
+ */
+export function categorizeProviderError(err) {
+    const status = Number(err?.status || err?.response?.status || 0);
+    const msg = String(err?.message || "").toLowerCase();
+    if (status === 401 || /invalid.*(api key|x-api-key)|authentication/.test(msg)) return "authentication_failed";
+    if (/credit balance|billing|quota|insufficient/.test(msg)) return "billing_or_quota";
+    if (status === 403) return "permission_denied";
+    if (status === 404 || /model.*not.*found|not_found/.test(msg)) return "model_not_found";
+    if (status === 429) return "rate_limited";
+    if (status >= 500) return "provider_unavailable";
+    if (/timeout|timed out|abort/.test(msg)) return "timeout";
+    return "request_failed";
+}
+
+const PING = "Reply with the single word OK.";
+
+router.post("/providers/check", rateLimiters.aiGeneration(), requireWorkspaceRole(MANAGER_ROLES), async (req, res) => {
+    const results = {};
+    const openaiKey = process.env.OPENAI_API_KEY;
+    if (!openaiKey || openaiKey === "sk-placeholder") {
+        results.openai = { configured: false };
+    } else {
+        const model = "gpt-4o-mini";
+        const t = Date.now();
+        try {
+            const r = await getOpenAIClient().chat.completions.create({ model, messages: [{ role: "user", content: PING }], max_tokens: 5, temperature: 0 });
+            results.openai = { configured: true, ok: true, model: r.model || model, latencyMs: Date.now() - t, reply: String(r.choices?.[0]?.message?.content || "").slice(0, 20) };
+        } catch (err) {
+            results.openai = { configured: true, ok: false, model, latencyMs: Date.now() - t, error: categorizeProviderError(err), status: err?.status || null };
+        }
+    }
+    if (!isAnthropicConfigured()) {
+        results.anthropic = { configured: false };
+    } else {
+        // The low-cost tier of the Claude profile; never the premium model.
+        const model = PROFILES.claude.simple;
+        const t = Date.now();
+        try {
+            // Haiku 5.5 thinks by default; low effort and a small cap keep the ping to a fraction of a cent.
+            const r = await createClaudeCompletion({ model, user: PING, maxTokens: 64, effort: "low" });
+            results.anthropic = { configured: true, ok: true, model: r.model || model, latencyMs: Date.now() - t, reply: String(r.content || "").slice(0, 20) };
+        } catch (err) {
+            results.anthropic = { configured: true, ok: false, model, latencyMs: Date.now() - t, error: categorizeProviderError(err), status: err?.status || null };
+        }
+    }
+    // Apify: read-only account check (no actor run, no cost). Usage and limits
+    // answer whether the account can run scraping before any is attempted.
+    const apifyToken = process.env.APIFY_TOKEN || process.env.APIFY_API_TOKEN;
+    if (!apifyToken) {
+        results.apify = { configured: false };
+    } else {
+        const t = Date.now();
+        try {
+            const headers = { Authorization: `Bearer ${apifyToken}` };
+            const [meRes, limRes] = await Promise.all([
+                fetch("https://api.apify.com/v2/users/me", { headers, signal: AbortSignal.timeout(15000) }),
+                fetch("https://api.apify.com/v2/users/me/limits", { headers, signal: AbortSignal.timeout(15000) }),
+            ]);
+            if (!meRes.ok) {
+                results.apify = { configured: true, ok: false, latencyMs: Date.now() - t, status: meRes.status, error: meRes.status === 401 ? "authentication_failed" : "request_failed" };
+            } else {
+                const me = (await meRes.json())?.data || {};
+                const lim = limRes.ok ? (await limRes.json())?.data || {} : {};
+                const used = lim.current?.monthlyUsageUsd ?? null;
+                const max = lim.limits?.maxMonthlyUsageUsd ?? me.plan?.maxMonthlyUsageUsd ?? null;
+                results.apify = {
+                    configured: true,
+                    ok: true,
+                    latencyMs: Date.now() - t,
+                    plan: me.plan?.id ?? null,
+                    monthlyUsageUsd: used,
+                    monthlyLimitUsd: max,
+                    cycleEnd: lim.monthlyUsageCycle?.endAt ?? null,
+                    remainingUsd: typeof used === "number" && typeof max === "number" ? Math.max(0, Math.round((max - used) * 100) / 100) : null,
+                };
+            }
+        } catch (err) {
+            results.apify = { configured: true, ok: false, latencyMs: Date.now() - t, error: categorizeProviderError(err) };
+        }
+    }
+    logStructured("info", "ai_provider_check", {
+        apify: results.apify.ok ?? results.apify.configured,
+        openai: results.openai.ok ?? results.openai.configured,
+        anthropic: results.anthropic.ok ?? results.anthropic.configured,
+        anthropicError: results.anthropic.error || null,
+    });
+    res.json({ checkedAt: new Date().toISOString(), profile: (await import("../../lib/ai-routing.js")).activeProfile(), results });
+});
+
+/**
  * POST /ai/complete
  * Generic completion endpoint using the routing layer.
  * Body: { complexity?: "simple"|"balanced"|"complex", provider?: "openai"|"anthropic", system?: string, user: string, maxTokens?: number }
@@ -129,7 +237,9 @@ router.get("/providers", async (req, res) => {
  * new intelligence workloads. The existing 14 OpenAI call sites are
  * untouched.
  */
-router.post("/complete", rateLimiters.aiGeneration(), async (req, res) => {
+// Owner/admin only: an open completion endpoint would let any session (including
+// the public demo login) run arbitrary prompts at Narriv's cost.
+router.post("/complete", rateLimiters.aiGeneration(), requireWorkspaceRole(MANAGER_ROLES), async (req, res) => {
     try {
         const { complexity = "simple", system = null, user, maxTokens = null } = req.body || {};
         if (!user || typeof user !== "string") {

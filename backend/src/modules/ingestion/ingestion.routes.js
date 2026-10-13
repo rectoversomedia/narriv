@@ -2,7 +2,9 @@ import express from "express";
 import { triggerIngestion, triggerBatchIngestion, getIngestionStatus, cancelIngestion } from "./ingestion.controller.js";
 import { handleWebhook } from "./custom-sources.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
-import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
+import { MANAGER_ROLES, requireWorkspaceRole } from "../../lib/workspace-access.js";
+import { runScheduledIngestion } from "./scheduled-ingestion.js";
+import { baseSupabaseAdmin } from "../../lib/supabase.js";
 import supabaseAdmin from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
 import { addAnalysisJob } from "../../lib/queue.js";
@@ -19,20 +21,19 @@ import { ingestRssSignals } from "./rss-ingestion.service.js";
 const router = express.Router();
 router.use(verifyToken);
 
-// POST /ingestion/fetch — On-demand RSS / Google News live ingestion
-router.post("/fetch", async (req, res) => {
+// POST /ingestion/fetch — On-demand Google News ingestion (owner/admin; each run
+// costs AI analysis). Feed URLs are never taken from the browser: only the
+// keyword or a configured source of this workspace (no server-side fetch of
+// arbitrary URLs).
+router.post("/fetch", requireWorkspaceRole(MANAGER_ROLES), async (req, res) => {
     try {
-        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, req.body?.workspaceId);
-        if (!scopedWorkspaceId) {
-            return res.status(403).json({ error: "Workspace access denied" });
-        }
-
-        const { keyword, sourceId, rssUrl, limit } = req.body || {};
+        const scopedWorkspaceId = req.scopedWorkspaceId;
+        const { keyword, sourceId, limit } = req.body || {};
         const result = await ingestRssSignals({
             workspaceId: scopedWorkspaceId,
             sourceId: sourceId || null,
             keyword: keyword || null,
-            rssUrl: rssUrl || null,
+            rssUrl: null,
             limit: Math.min(Math.max(1, Number(limit) || 10), 30),
             userId: req.user.id,
         });
@@ -45,19 +46,16 @@ router.post("/fetch", async (req, res) => {
 });
 
 // POST /ingestion/rss/:sourceId — Ingest from specific source
-router.post("/rss/:sourceId", async (req, res) => {
+router.post("/rss/:sourceId", requireWorkspaceRole(MANAGER_ROLES), async (req, res) => {
     try {
         const { sourceId } = req.params;
-        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, req.body?.workspaceId);
-        if (!scopedWorkspaceId) {
-            return res.status(403).json({ error: "Workspace access denied" });
-        }
-
-        const { url, maxItems, keyword } = req.body || {};
+        const scopedWorkspaceId = req.scopedWorkspaceId;
+        // The feed URL comes from the stored source config, never the request.
+        const { maxItems, keyword } = req.body || {};
         const result = await ingestRssSignals({
             workspaceId: scopedWorkspaceId,
             sourceId,
-            rssUrl: url || null,
+            rssUrl: null,
             keyword: keyword || null,
             limit: Math.min(Math.max(1, Number(maxItems) || 10), 30),
             userId: req.user.id,
@@ -74,13 +72,62 @@ router.post("/rss/:sourceId", async (req, res) => {
     }
 });
 
+// POST /ingestion/run-keywords — "Run monitoring now" for this workspace's
+// active keywords, through the same pipeline and log as the scheduled runs.
+// Owner/admin only; bounded (3 keywords x 8 articles) and one run per
+// workspace per cooldown window, because every article costs AI analysis.
+export const MANUAL_RUN_COOLDOWN_MS = 10 * 60 * 1000;
+router.post("/run-keywords", requireWorkspaceRole(MANAGER_ROLES), async (req, res) => {
+    try {
+        const workspaceId = req.scopedWorkspaceId;
+        const { data: active, error: kwError } = await baseSupabaseAdmin
+            .from("monitoring_keywords")
+            .select("id")
+            .eq("workspace_id", workspaceId)
+            .eq("is_active", true)
+            .limit(1);
+        if (kwError) throw kwError;
+        if (!active || active.length === 0) {
+            return res.status(400).json({ status: "no_keywords", error: "Add at least one active monitoring keyword before running monitoring." });
+        }
+
+        const since = new Date(Date.now() - MANUAL_RUN_COOLDOWN_MS).toISOString();
+        const { data: recent } = await baseSupabaseAdmin
+            .from("cron_ingestion_logs")
+            .select("created_at, metadata")
+            .eq("job_name", "scheduled-rss-ingestion")
+            .gte("created_at", since)
+            .order("created_at", { ascending: false })
+            .limit(50);
+        const lastManual = (recent || []).find((r) => r.metadata?.workspaceId === workspaceId);
+        if (lastManual) {
+            const retryAt = new Date(new Date(lastManual.created_at).getTime() + MANUAL_RUN_COOLDOWN_MS).toISOString();
+            return res.status(429).json({ status: "cooldown", error: "A monitoring run for this workspace started less than 10 minutes ago.", retryAt });
+        }
+
+        const result = await runScheduledIngestion({
+            workspaceId,
+            trigger: `manual:${req.user.id}`,
+            budgetMs: 90000,
+            perKeywordLimit: 8,
+            maxKeywordsPerWorkspace: 3,
+        });
+        return res.json(result);
+    } catch (err) {
+        logStructured("error", "manual_keyword_run_failed", { error: err?.message || err });
+        return res.status(500).json({ status: "failed", error: "Monitoring run failed to start." });
+    }
+});
+
 router.post(
     "/run",
+    requireWorkspaceRole(MANAGER_ROLES),
     validateRequest({ body: batchTriggerIngestionBodySchema }),
     triggerBatchIngestion
 );
 router.post(
     "/run/:sourceId",
+    requireWorkspaceRole(MANAGER_ROLES),
     validateRequest({ params: triggerIngestionParamsSchema }),
     triggerIngestion
 );

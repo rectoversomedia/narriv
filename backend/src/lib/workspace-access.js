@@ -1,25 +1,50 @@
 import supabase from "./supabase.js";
+import { selectedWorkspaceId } from "./request-context.js";
 
 export const DEMO_WORKSPACE_ID = "56bc14ee-5f16-4134-9828-a240f3c72240";
 
+/** Default workspace: onboarding-completed first, then owned, then newest. */
+export function pickDefaultMembership(memberships) {
+  return [...memberships].sort((a, b) => {
+    const aCompleted = a.workspaces?.onboarding_completed ? 1 : 0;
+    const bCompleted = b.workspaces?.onboarding_completed ? 1 : 0;
+    if (bCompleted !== aCompleted) return bCompleted - aCompleted;
+    const aOwner = a.role === "owner" ? 1 : 0;
+    const bOwner = b.role === "owner" ? 1 : 0;
+    if (bOwner !== aOwner) return bOwner - aOwner;
+    return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+  })[0];
+}
+
+/**
+ * The workspace(s) a request may read. Always exactly one for a member: the
+ * workspace selected via X-Workspace-Id (if the user is a member of it) or the
+ * user's default workspace. Never the union of all memberships, so a user who
+ * belongs to several client workspaces never sees them mixed.
+ */
 export const getUserWorkspaceIds = async (userId) => {
   if (!userId) return [];
   if (String(userId).startsWith("demo")) return [DEMO_WORKSPACE_ID];
   const { data: memberships, error } = await supabase
     .from("workspace_members")
-    .select("workspace_id")
+    .select("workspace_id, role, created_at, workspaces(onboarding_completed)")
     .eq("user_id", userId);
 
   if (error) {
     console.error("Error fetching workspace memberships:", error);
     return [];
   }
+  if (!memberships || memberships.length === 0) return [];
 
-  return memberships.map((membership) => membership.workspace_id);
+  const selected = selectedWorkspaceId();
+  if (selected) return memberships.some((m) => m.workspace_id === selected) ? [selected] : [];
+  return [pickDefaultMembership(memberships).workspace_id];
 };
 
-export const resolveWorkspaceIdForUser = async (userId, requestedWorkspaceId) => {
+export const resolveWorkspaceIdForUser = async (userId, requestedWorkspaceIdArg) => {
   if (!userId) return null;
+  // An explicit id wins; otherwise the workspace selected for this request.
+  const requestedWorkspaceId = requestedWorkspaceIdArg || selectedWorkspaceId();
   const normalizedRequestedId = requestedWorkspaceId === "demo-workspace" ? DEMO_WORKSPACE_ID : requestedWorkspaceId;
   if (String(userId).startsWith("demo")) {
     // Demo sessions are pinned to the demo workspace; never honor a requested id.
@@ -52,19 +77,7 @@ export const resolveWorkspaceIdForUser = async (userId, requestedWorkspaceId) =>
   }
 
   if (memberships && memberships.length > 0) {
-    const sorted = [...memberships].sort((a, b) => {
-      const aCompleted = a.workspaces?.onboarding_completed ? 1 : 0;
-      const bCompleted = b.workspaces?.onboarding_completed ? 1 : 0;
-      if (bCompleted !== aCompleted) return bCompleted - aCompleted;
-
-      const aOwner = a.role === "owner" ? 1 : 0;
-      const bOwner = b.role === "owner" ? 1 : 0;
-      if (bOwner !== aOwner) return bOwner - aOwner;
-
-      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
-    });
-
-    return sorted[0].workspace_id;
+    return pickDefaultMembership(memberships).workspace_id;
   }
 
   // Create a new workspace for the user

@@ -4,6 +4,9 @@ import { logStructured } from "./logger.js";
 // Check if Redis is available
 const isRedisDisabled = process.env.ENABLE_WORKERS !== 'true' || !process.env.REDIS_URL;
 
+/** Background workers (BullMQ) run only with ENABLE_WORKERS=true and REDIS_URL; not on Vercel. */
+export const workersEnabled = () => process.env.ENABLE_WORKERS === 'true' && Boolean(process.env.REDIS_URL);
+
 // Lazy-loaded queues
 let _aiAnalysisQueue = null;
 let _alertDetectionQueue = null;

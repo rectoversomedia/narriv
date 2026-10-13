@@ -34,7 +34,18 @@ export const isApifyConfigured = () => Boolean(APIFY_TOKEN);
  * Test fixtures are no longer generated at this layer. Tests that
  * previously depended on mock data should inject fixtures directly.
  */
-export const runActorAndFetchDataset = async (actorId, inputConfig = {}) => {
+// Cost and time bounds applied to every actor run. maxItems / maxTotalChargeUsd
+// are enforced by Apify itself (pay-per-result / pay-per-event actors), so a
+// run cannot bill beyond them; timeout stops the run on Apify's side.
+export const APIFY_MAX_ITEMS = 100;
+export const apifyRunOptions = (maxItems) => ({
+    maxItems: Math.max(1, Math.min(Number(maxItems) || 50, APIFY_MAX_ITEMS)),
+    maxTotalChargeUsd: Number(process.env.APIFY_MAX_CHARGE_USD || 0.5),
+    timeout: Number(process.env.APIFY_RUN_TIMEOUT_SECS || 240),
+    waitSecs: Number(process.env.APIFY_RUN_TIMEOUT_SECS || 240) + 30,
+});
+
+export const runActorAndFetchDataset = async (actorId, inputConfig = {}, maxItems = 50) => {
     if (isMockMode || !client) {
         logStructured("error", "apify_not_configured", { actorId, mode: "REFUSED" });
         throw new ApifyConfigurationError(
@@ -45,9 +56,10 @@ export const runActorAndFetchDataset = async (actorId, inputConfig = {}) => {
     logStructured("info", "apify_actor_running", { actorId, mode: "LIVE" });
 
     try {
-        const run = await client.actor(actorId).call(inputConfig);
-        logStructured("info", "apify_run_completed", { datasetId: run.defaultDatasetId });
-        const { items } = await client.dataset(run.defaultDatasetId).listItems();
+        const options = apifyRunOptions(maxItems);
+        const run = await client.actor(actorId).call(inputConfig, options);
+        logStructured("info", "apify_run_completed", { datasetId: run.defaultDatasetId, status: run.status, maxItems: options.maxItems });
+        const { items } = await client.dataset(run.defaultDatasetId).listItems({ limit: options.maxItems });
         logStructured("info", "apify_items_fetched", { itemCount: items.length });
         return items;
     } catch (error) {

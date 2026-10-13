@@ -55,26 +55,29 @@ const LOCK_WINDOW_MS = 10 * 60 * 1000;
  * cron more than once) therefore resolve to a single executor without a DB
  * constraint. Returns { logId, acquired }.
  */
-async function claimRun(runId, trigger) {
+async function claimRun(runId, trigger, workspaceId = null) {
     const { data: row, error } = await baseSupabaseAdmin
         .from("cron_ingestion_logs")
-        .insert({ job_name: JOB_NAME, status: "running", metadata: { runId, trigger, startedAt: new Date().toISOString() } })
+        .insert({ job_name: JOB_NAME, status: "running", metadata: { runId, trigger, workspaceId: workspaceId || undefined, startedAt: new Date().toISOString() } })
         .select("id")
         .single();
     if (error || !row) {
         logStructured("warn", "scheduled_ingestion_lock_insert_failed", { runId, error: error?.message });
         return { logId: null, acquired: true, lockError: error?.message || "no row" };
     }
-    const { data: running } = await baseSupabaseAdmin
+    // A manual single-workspace run never takes (or blocks) the scheduler lock.
+    if (workspaceId) return { logId: row.id, acquired: true };
+    const { data: runningRows } = await baseSupabaseAdmin
         .from("cron_ingestion_logs")
-        .select("id, created_at")
+        .select("id, created_at, metadata")
         .eq("job_name", JOB_NAME)
         .eq("status", "running")
         .gte("created_at", new Date(Date.now() - LOCK_WINDOW_MS).toISOString())
         .order("created_at", { ascending: true })
         .order("id", { ascending: true })
-        .limit(1);
-    const leader = running?.[0]?.id;
+        .limit(20);
+    const running = (runningRows || []).filter((r) => !r.metadata?.workspaceId);
+    const leader = running[0]?.id;
     return { logId: row.id, acquired: !leader || leader === row.id };
 }
 
@@ -86,11 +89,12 @@ export async function runScheduledIngestion({
     trigger = "cron",
     ingest = ingestRssSignals,
     pauseMs = 300,
+    workspaceId = null, // set for an admin's manual run of one workspace
 } = {}) {
     const runId = crypto.randomUUID();
     const start = Date.now();
 
-    const { logId, acquired, lockError } = await claimRun(runId, trigger);
+    const { logId, acquired, lockError } = await claimRun(runId, trigger, workspaceId);
     if (!acquired) {
         await baseSupabaseAdmin.from("cron_ingestion_logs")
             .update({ status: "skipped_overlap", metadata: { runId, trigger, reason: "another scheduled run is in progress" } })
@@ -99,10 +103,12 @@ export async function runScheduledIngestion({
         return { runId, trigger, status: "skipped_overlap", workspaces: 0, keywords: 0, totals: {}, durationMs: Date.now() - start, results: [] };
     }
 
-    const { data: keywordRows, error: kwErr } = await baseSupabaseAdmin
+    let keywordQuery = baseSupabaseAdmin
         .from("monitoring_keywords")
         .select("workspace_id, keyword")
-        .eq("is_active", true)
+        .eq("is_active", true);
+    if (workspaceId) keywordQuery = keywordQuery.eq("workspace_id", workspaceId);
+    const { data: keywordRows, error: kwErr } = await keywordQuery
         .order("created_at", { ascending: true })
         .limit(1000);
 
@@ -159,7 +165,7 @@ export async function runScheduledIngestion({
     else if (totals.failedKeywords > 0 || totals.analysisFailed > 0 || totals.insertFailed > 0) status = "completed_with_errors";
     else if (totals.deferredKeywords > 0) status = "partial";
 
-    const summary = { runId, trigger, status, workspaces: new Set(work.map((w) => w.workspaceId)).size, keywords: work.length, totals, durationMs };
+    const summary = { runId, trigger, workspaceId: workspaceId || undefined, status, workspaces: new Set(work.map((w) => w.workspaceId)).size, keywords: work.length, totals, durationMs };
     const finalRow = {
         status,
         keywords_targeted: work.map((w) => w.keyword).slice(0, 100),

@@ -70,6 +70,8 @@ jest.unstable_mockModule('../src/middlewares/rate-limit.js', () => ({
 
 // Mock Queue initialization to avoid Redis connections
 jest.unstable_mockModule('../src/lib/queue.js', () => ({
+  // Tests exercise the worker path, as when ENABLE_WORKERS=true with Redis.
+  workersEnabled: () => process.env.TEST_WORKERS_DISABLED !== '1',
   aiAnalysisQueue: { add: jest.fn() },
   addAnalysisJob: jest.fn(),
   alertDetectionQueue: { add: jest.fn() },

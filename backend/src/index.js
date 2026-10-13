@@ -55,6 +55,8 @@ import { securityHeaders, sensitiveDataHeaders, apiSecurityHeaders } from "./mid
 import { initializeRateLimiter } from "./middlewares/rate-limit.js";
 import { sanitizeInput, validateContentType } from "./middlewares/sanitize.js";
 import { flushAllAuditLogs } from "./lib/audit-enhanced.js";
+import { workspaceContextMiddleware } from "./lib/request-context.js";
+import workspacesRoutes from "./modules/workspaces/workspaces.routes.js";
 
 dotenv.config();
 
@@ -114,7 +116,7 @@ app.use(cors({
         return callback(null, false);
     },
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Request-ID"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Request-ID", "X-Workspace-Id"],
     credentials: true,
     maxAge: 86400,
 }));
@@ -131,6 +133,7 @@ app.use(validateContentType);
 
 // Request logging
 app.use(requestLogger);
+app.use(workspaceContextMiddleware);
 
 // Request timeout (cron and AI backfill run sequential AI calls and need longer budgets)
 const defaultTimeout = requestTimeout(TIMEOUTS.default);
@@ -140,7 +143,7 @@ app.use((req, res, next) => {
     if (req.path.startsWith("/cron/")) return cronTimeout(req, res, next);
     if (req.path === "/ai/retroanalyze" || req.path === "/ai/cluster") return aiBackfillTimeout(req, res, next);
     // Interactive "Fetch latest signals" runs sequential AI analysis per article.
-    if (req.path === "/ingestion/fetch" || req.path.startsWith("/ingestion/rss/")) return aiBackfillTimeout(req, res, next);
+    if (req.path === "/ingestion/fetch" || req.path === "/ingestion/run-keywords" || req.path.startsWith("/ingestion/rss/")) return aiBackfillTimeout(req, res, next);
     return defaultTimeout(req, res, next);
 });
 
@@ -187,6 +190,7 @@ app.use("/visibility", geoRoutes);
 // apply the export limit themselves (see reports.routes.js).
 app.use("/reports", rateLimit({ ...RATE_LIMITS.api_default, prefix: "reports-read" }), apiSecurityHeaders, reportsRoutes);
 app.use("/action-plans", actionPlansRoutes);
+app.use("/workspaces", rateLimit({ ...RATE_LIMITS.api_default, prefix: "workspaces" }), workspacesRoutes);
 app.use("/workspace", sensitiveDataHeaders, workspaceSettingsRoutes);
 app.use("/workspace/activity", activityRoutes);
 app.use("/workspace/keywords", rateLimit(RATE_LIMITS.api_default), keywordsRoutes);

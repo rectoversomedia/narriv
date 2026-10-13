@@ -1,8 +1,17 @@
 import supabaseAdmin from "../../lib/supabase.js";
-import { addIngestionJob, cancelIngestionQueueJob } from "../../lib/queue.js";
+import { addIngestionJob, cancelIngestionQueueJob, workersEnabled } from "../../lib/queue.js";
 import { getUserWorkspaceIds } from "../../lib/workspace-access.js";
 import { recordAuditLog } from "../../lib/audit.js";
 import { logStructured } from "../../lib/logger.js";
+
+
+// Apify source runs execute in the background worker. Without workers (the
+// Vercel deployment) a queued job would never run, so say so instead of
+// answering "Ingestion started" for a job that stays queued forever.
+export const WORKERS_DISABLED_RESPONSE = {
+  error: "Source runs need the background worker, which is not running in this deployment. Use keyword monitoring (Run monitoring now) for live data.",
+  code: "WORKERS_DISABLED",
+};
 
 async function createAndQueueIngestionJob(source, userId) {
   // Rows from supabase-js are snake_case (source.workspaceId was always undefined).
@@ -34,6 +43,7 @@ async function createAndQueueIngestionJob(source, userId) {
 
 export const triggerIngestion = async (req, res) => {
   try {
+    if (!workersEnabled()) return res.status(503).json(WORKERS_DISABLED_RESPONSE);
     const { sourceId } = req.params;
     const workspaceIds = await getUserWorkspaceIds(req.user.id);
 
@@ -61,6 +71,7 @@ export const triggerIngestion = async (req, res) => {
 
 export const triggerBatchIngestion = async (req, res) => {
   try {
+    if (!workersEnabled()) return res.status(503).json(WORKERS_DISABLED_RESPONSE);
     const requestedSourceIds = Array.from(new Set(req.body.sourceIds));
     const workspaceIds = await getUserWorkspaceIds(req.user.id);
 
