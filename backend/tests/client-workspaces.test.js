@@ -10,9 +10,14 @@ import { supabaseModuleFor } from './helpers/fake-supabase.js';
 const db = createMemoryDb();
 jest.unstable_mockModule('../src/lib/supabase.js', () => supabaseModuleFor(db));
 const ingestCalls = [];
+const failingKeywords = new Set();
+let ingestDelayMs = 0;
 jest.unstable_mockModule('../src/modules/ingestion/rss-ingestion.service.js', () => ({
   ingestRssSignals: jest.fn(async (args) => {
     ingestCalls.push(args);
+    if (ingestDelayMs) await new Promise((r) => setTimeout(r, ingestDelayMs));
+    // Same error shape as an unreachable Google News feed.
+    if (failingKeywords.has(args.keyword)) throw new Error('Google News RSS fetch failed: HTTP 503');
     return { totalFetched: 4, newSignalsCreated: 3, skippedDuplicates: 1, analyzed: 3, analysisFailed: 0, insertFailed: 0, clustering: { clustersCreated: 1 }, alerts: [] };
   }),
 }));
@@ -32,6 +37,8 @@ const demo = () => ({ Authorization: `Bearer ${jwt.sign({ id: 'demo_x', email: '
 beforeEach(() => {
   for (const name of Object.keys(db.tables)) db.tables[name].length = 0;
   ingestCalls.length = 0;
+  failingKeywords.clear();
+  ingestDelayMs = 0;
   delete process.env.TEST_WORKERS_DISABLED;
   db.table('workspaces').push(
     { id: WS_A, name: 'Client A', onboarding_completed: true, created_at: '2026-10-01T00:00:00Z' },
@@ -138,6 +145,41 @@ describe('ingestion controls', () => {
     expect(again.body.status).toBe('cooldown');
     // Another workspace is not affected by A's cooldown.
     expect((await request(app).post('/ingestion/run-keywords').set(as(ADMIN)).set('X-Workspace-Id', WS_B).send({})).status).toBe(200);
+  });
+
+  const seedKeywords = (...words) => words.forEach((keyword, i) => db.table('monitoring_keywords').push({ id: `kw-${i}`, workspace_id: WS_A, keyword, is_active: true, created_at: `2026-10-01T00:0${i}:00Z` }));
+
+  it('two simultaneous runs for one workspace: one runs, the other is told it is in progress', async () => {
+    seedKeywords('Bank A');
+    ingestDelayMs = 150;
+    const [a, b] = await Promise.all([
+      request(app).post('/ingestion/run-keywords').set(as(ADMIN)).set('X-Workspace-Id', WS_A).send({}),
+      request(app).post('/ingestion/run-keywords').set(as(ADMIN)).set('X-Workspace-Id', WS_A).send({}),
+    ]);
+    expect([a.status, b.status].sort()).toEqual([200, 429]);
+    expect(ingestCalls).toHaveLength(1); // the keyword was fetched once, not twice
+  });
+
+  it('an upstream failure for one keyword is reported per keyword; the others still save', async () => {
+    seedKeywords('Bank A', 'Down topic');
+    failingKeywords.add('Down topic');
+    const res = await request(app).post('/ingestion/run-keywords').set(as(ADMIN)).set('X-Workspace-Id', WS_A).send({});
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('completed_with_errors');
+    const byKeyword = Object.fromEntries(res.body.results.map((r) => [r.keyword, r]));
+    expect(byKeyword['Bank A']).toMatchObject({ status: 'ok', inserted: 3 });
+    expect(byKeyword['Down topic']).toMatchObject({ status: 'failed', errorCategory: 'source_unavailable' });
+    expect(res.body.totals).toMatchObject({ inserted: 3, failedKeywords: 1 });
+  });
+
+  it('when every keyword fails the run is failed and existing articles are untouched', async () => {
+    seedKeywords('Down 1', 'Down 2');
+    failingKeywords.add('Down 1'); failingKeywords.add('Down 2');
+    db.table('signals').push({ id: 'existing-1', workspace_id: WS_A, title: 'Earlier article', url: 'https://news.example/earlier' });
+    const res = await request(app).post('/ingestion/run-keywords').set(as(ADMIN)).set('X-Workspace-Id', WS_A).send({});
+    expect(res.body.status).toBe('failed');
+    expect(res.body.totals).toMatchObject({ inserted: 0, failedKeywords: 2 });
+    expect(db.table('signals').map((x) => x.id)).toEqual(['existing-1']);
   });
 
   it('run-keywords is refused to analysts and demo sessions', async () => {

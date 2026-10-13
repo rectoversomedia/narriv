@@ -276,9 +276,34 @@ const RUN_STATUS_TEXT: Record<MonitoringRunResponse["status"], string> = {
  * this workspace's active keywords through the same pipeline as the scheduled
  * runs (dedup, storage, AI analysis, clustering) and reports what happened.
  */
+type RunError = Error & { status?: number; code?: string; info?: { retryAt?: string; status?: string } };
+
+/** What to tell the user for each way a run request can end without a result. */
+function describeRunError(err: RunError): { tone: "error" | "info"; text: string } {
+  if (err.code === "CLIENT_TIMEOUT") {
+    return { tone: "info", text: "The run is taking longer than expected. It continues on the server; the keyword list below refreshes in a minute with the real result." };
+  }
+  if (err.status === 429) {
+    const at = err.info?.retryAt ? new Date(err.info.retryAt) : null;
+    return { tone: "info", text: at ? `A run for this workspace started less than 10 minutes ago. You can run again at ${at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.` : err.message };
+  }
+  if (err.status === 400) return { tone: "info", text: "Add or resume at least one keyword before running monitoring." };
+  if (err.status === 403) return { tone: "error", text: "Only workspace owners and admins can run monitoring." };
+  return { tone: "error", text: err.message || "The monitoring run failed." };
+}
+
 function RunMonitoringNow({ onDone }: { onDone: () => void }) {
-  const mutation = useMutation({ mutationFn: runKeywordMonitoring, onSuccess: onDone });
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: runKeywordMonitoring,
+    onSuccess: onDone,
+    onError: (err: RunError) => {
+      // The server keeps working after the browser stops waiting: pick up its result later.
+      if (err.code === "CLIENT_TIMEOUT") setTimeout(() => void queryClient.invalidateQueries(), 60_000);
+    },
+  });
   const result = mutation.data;
+  const failure = mutation.isError ? describeRunError(mutation.error as RunError) : null;
   return (
     <div className="mt-4 rounded-lg border border-[#DDE3EF] bg-[#FBFCFF] p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -296,18 +321,18 @@ function RunMonitoringNow({ onDone }: { onDone: () => void }) {
           {mutation.isPending ? "Running…" : "Run now"}
         </button>
       </div>
-      {mutation.isError ? (
-        <p role="alert" className="mt-2 text-[10.5px] font-semibold text-[#C81E1E]">{mutation.error instanceof Error ? mutation.error.message : "The monitoring run failed."}</p>
+      {failure ? (
+        <p role={failure.tone === "error" ? "alert" : "status"} className={cn("mt-2 text-[10.5px] font-semibold", failure.tone === "error" ? "text-[#C81E1E]" : "text-[#31406B]")}>{failure.text}</p>
       ) : null}
       {result ? (
         <div className="mt-2 text-[10.5px] font-semibold text-[#31406B]" role="status">
           <p>
-            {RUN_STATUS_TEXT[result.status] ?? result.status}: {result.totals.fetched} articles found, {result.totals.inserted} new signals stored, {result.totals.deduplicated} duplicates skipped, {result.totals.analyzed} analysed.
+            {RUN_STATUS_TEXT[result.status] ?? result.status} in {Math.max(1, Math.round(result.durationMs / 1000))} s: {result.totals.fetched} articles found, {result.totals.inserted} new saved, {result.totals.deduplicated} already saved (skipped), {result.totals.analyzed} analysed{result.totals.analysisFailed ? `, ${result.totals.analysisFailed} analysis failures` : ""}{result.totals.failedKeywords ? `, ${result.totals.failedKeywords} keyword(s) failed` : ""}.
           </p>
           <ul className="mt-1 space-y-0.5">
             {result.results.filter((r) => r.keyword).map((r) => (
               <li key={r.keyword} className={r.status === "failed" ? "text-[#C81E1E]" : "text-[#5A6478]"}>
-                &ldquo;{r.keyword}&rdquo;: {r.status === "ok" ? `${r.fetched ?? 0} found, ${r.inserted ?? 0} new` : r.status === "deferred" ? "not reached in this run" : `failed (${r.errorCategory || "error"})`}
+                &ldquo;{r.keyword}&rdquo;: {r.status === "ok" ? `${r.fetched ?? 0} found, ${r.inserted ?? 0} new, ${r.deduplicated ?? 0} already saved` : r.status === "deferred" ? "not reached in this run (time limit)" : `failed (${r.errorCategory || "error"})`}
               </li>
             ))}
           </ul>

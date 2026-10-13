@@ -112,6 +112,10 @@ router.post("/run-keywords", requireWorkspaceRole(MANAGER_ROLES), async (req, re
             perKeywordLimit: 8,
             maxKeywordsPerWorkspace: 3,
         });
+        if (result.status === "skipped_overlap") {
+            // A simultaneous request for this workspace won the race and is running.
+            return res.status(429).json({ status: "cooldown", error: "A monitoring run for this workspace is already in progress." });
+        }
         return res.json(result);
     } catch (err) {
         logStructured("error", "manual_keyword_run_failed", { error: err?.message || err });

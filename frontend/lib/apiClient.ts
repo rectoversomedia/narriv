@@ -1,6 +1,8 @@
 import ky from "ky";
 import { isDemoSession, useAuthStore } from "@/store/useAuthStore";
 import { useWorkspaceStore } from "@/store/useWorkspaceStore";
+import { timingOptions, toClientError } from "@/lib/http-timeout";
+export type { ClientError } from "@/lib/http-timeout";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:3000";
@@ -14,12 +16,6 @@ if (process.env.NODE_ENV === "production" && !process.env.NEXT_PUBLIC_API_URL) {
 // Default timeout in milliseconds (30 seconds)
 const DEFAULT_TIMEOUT = 30 * 1000;
 
-// Create timeout abort controller helper
-function createTimeoutSignal(timeoutMs: number): AbortSignal {
-  const controller = new AbortController();
-  setTimeout(() => controller.abort(), timeoutMs);
-  return controller.signal;
-}
 
 const client = ky.create({
   prefix: BASE_URL,
@@ -60,27 +56,28 @@ export async function apiClient<T>(
     return headers;
   };
 
-  // Create timeout signal for this request
-  const timeoutSignal = createTimeoutSignal(timeout);
-
+  // ky applies its own timeout (10 s by default) unless one is passed per
+  // request, so the per-call `timeout` must go to ky itself. Without this every
+  // call longer than 10 s failed in the browser while the server finished it.
   const send = (accessToken: string | null) => client(kyPath, {
     ...requestOptions,
     headers: buildHeaders(accessToken),
-    throwHttpErrors: false,
-    signal: timeoutSignal,
+    ...timingOptions(timeout),
   });
 
-  let response = await send(token);
+  let response: Response;
+  try {
+    response = await send(token);
+  } catch (err) {
+    throw toClientError(err, timeout);
+  }
 
   if (refreshOnUnauthorized && response.status === 401 && authState?.refreshToken) {
-    // Create new timeout for refresh request
-    const refreshTimeoutSignal = createTimeoutSignal(timeout);
     const refreshResponse = await client("auth/refresh", {
       method: "POST",
       json: { refreshToken: authState.refreshToken },
-      throwHttpErrors: false,
-      signal: refreshTimeoutSignal,
-    });
+      ...timingOptions(timeout),
+    }).catch((err) => { throw toClientError(err, timeout); });
 
     if (refreshResponse.ok) {
       const refreshed = await refreshResponse.json() as { token: string; refreshToken?: string };
@@ -88,14 +85,11 @@ export async function apiClient<T>(
       store.setToken(refreshed.token);
       if (refreshed.refreshToken) store.setRefreshToken(refreshed.refreshToken);
 
-      // Create new timeout for retry request
-      const retryTimeoutSignal = createTimeoutSignal(timeout);
       response = await client(kyPath, {
         ...requestOptions,
         headers: buildHeaders(refreshed.token),
-        throwHttpErrors: false,
-        signal: retryTimeoutSignal,
-      });
+        ...timingOptions(timeout),
+      }).catch((err) => { throw toClientError(err, timeout); });
     }
   }
 

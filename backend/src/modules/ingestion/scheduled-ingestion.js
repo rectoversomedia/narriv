@@ -65,8 +65,21 @@ async function claimRun(runId, trigger, workspaceId = null) {
         logStructured("warn", "scheduled_ingestion_lock_insert_failed", { runId, error: error?.message });
         return { logId: null, acquired: true, lockError: error?.message || "no row" };
     }
-    // A manual single-workspace run never takes (or blocks) the scheduler lock.
-    if (workspaceId) return { logId: row.id, acquired: true };
+    // A manual single-workspace run never takes (or blocks) the scheduler lock,
+    // but only one may run per workspace: if another request for the same
+    // workspace logged its run first (double click, second tab), stand down.
+    if (workspaceId) {
+        const { data: recent } = await baseSupabaseAdmin
+            .from("cron_ingestion_logs")
+            .select("id, created_at, metadata")
+            .eq("job_name", JOB_NAME)
+            .gte("created_at", new Date(Date.now() - LOCK_WINDOW_MS).toISOString())
+            .order("created_at", { ascending: true })
+            .order("id", { ascending: true })
+            .limit(50);
+        const first = (recent || []).find((r) => r.metadata?.workspaceId === workspaceId);
+        return { logId: row.id, acquired: !first || first.id === row.id };
+    }
     const { data: runningRows } = await baseSupabaseAdmin
         .from("cron_ingestion_logs")
         .select("id, created_at, metadata")

@@ -57,6 +57,8 @@ const DEFAULT_BUDGETS = {
 /**
  * Get workspace budget configuration
  */
+let budgetColumnsMissingLogged = false;
+
 export async function getWorkspaceBudget(workspaceId) {
     try {
         const { data: settings, error } = await supabase
@@ -79,7 +81,17 @@ export async function getWorkspaceBudget(workspaceId) {
             autoThrottle: settings?.cost_auto_throttle ?? tierDefaults.autoThrottle,
         };
     } catch (error) {
-        logStructured("error", "get_workspace_budget_failed", { workspaceId, error: error.message });
+        // The optional budget columns are not provisioned in every database;
+        // tier defaults apply then, which is expected rather than an error.
+        const missingColumn = /does not exist|42703/.test(String(error?.message || error?.code || ""));
+        if (missingColumn) {
+            if (!budgetColumnsMissingLogged) {
+                budgetColumnsMissingLogged = true;
+                logStructured("info", "workspace_budget_columns_missing_using_defaults", { workspaceId });
+            }
+        } else {
+            logStructured("error", "get_workspace_budget_failed", { workspaceId, error: error.message });
+        }
         return {
             workspaceId,
             tier: "basic",
