@@ -14,6 +14,7 @@ process/general-plans/*
 !process/general-plans/references/
 process/general-plans/references/*
 !process/general-plans/references/production-readiness-runbook.md
+!process/general-plans/references/production-operations-handoff.md
 pnpm-lock.yaml
 yarn.lock
 .vercel
