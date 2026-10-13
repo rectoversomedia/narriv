@@ -886,6 +886,72 @@ export interface MonitoringKeywordsResponse {
   runHistoryAvailable?: boolean;
 }
 
+// --- Client workspaces -----------------------------------------------------
+
+export interface WorkspaceSummary {
+  id: string;
+  name: string;
+  role: "owner" | "admin" | "analyst" | "viewer" | null;
+  createdAt?: string;
+  isDemo?: boolean;
+}
+
+export async function listMyWorkspaces(): Promise<{ data: WorkspaceSummary[]; currentWorkspaceId: string | null }> {
+  return apiClient("/api/workspaces");
+}
+
+export async function createClientWorkspace(input: { name: string; industry?: string | null }): Promise<{ data: WorkspaceSummary }> {
+  return apiClient("/api/workspaces", { method: "POST", body: JSON.stringify(input) });
+}
+
+// --- Keyword monitoring runs -------------------------------------------------
+
+export interface KeywordRunResult {
+  workspaceId?: string;
+  keyword: string;
+  status: "ok" | "failed" | "deferred";
+  fetched?: number;
+  inserted?: number;
+  deduplicated?: number;
+  analyzed?: number;
+  analysisFailed?: number;
+  error?: string;
+  errorCategory?: string;
+}
+
+export interface MonitoringRunResponse {
+  runId: string;
+  status: "completed" | "completed_with_errors" | "partial" | "failed" | "skipped_overlap";
+  keywords: number;
+  totals: { fetched: number; inserted: number; deduplicated: number; analyzed: number; analysisFailed: number; failedKeywords: number; deferredKeywords: number };
+  durationMs: number;
+  results: KeywordRunResult[];
+}
+
+/** Owner/admin: run monitoring now for the selected workspace's active keywords. Throws with the server message (no keywords, cooldown, permission). */
+export async function runKeywordMonitoring(): Promise<MonitoringRunResponse> {
+  return apiClient<MonitoringRunResponse>("/api/ingestion/run-keywords", { method: "POST", body: JSON.stringify({}), timeout: 130000 });
+}
+
+// --- AI providers (admin visibility) -------------------------------------------
+
+export interface AiWorkflowRoute { workflow: string; provider: string | null; model: string | null; routed: boolean; note?: string }
+export interface AiProvidersResponse {
+  profile: string;
+  workflows: AiWorkflowRoute[];
+  providers: { openai: { configured: boolean }; anthropic: { configured: boolean } };
+}
+export interface AiProviderCheck { configured: boolean; ok?: boolean; model?: string; latencyMs?: number; error?: string; status?: number | null }
+export interface ApifyAccountCheck { configured: boolean; ok?: boolean; latencyMs?: number; error?: string; status?: number | null; plan?: string | null; monthlyUsageUsd?: number | null; monthlyLimitUsd?: number | null; remainingUsd?: number | null; cycleEnd?: string | null }
+
+export async function getAiProviders(): Promise<AiProvidersResponse> {
+  return apiClient<AiProvidersResponse>("/api/ai/providers");
+}
+
+export async function checkAiProviders(): Promise<{ checkedAt: string; profile: string; results: { openai: AiProviderCheck; anthropic: AiProviderCheck; apify?: ApifyAccountCheck } }> {
+  return apiClient("/api/ai/providers/check", { method: "POST", body: JSON.stringify({}), timeout: 60000 });
+}
+
 // Keyword calls throw (with the backend error message) so the UI can show
 // duplicate / limit / permission errors instead of failing silently.
 export async function getMonitoringKeywords(): Promise<MonitoringKeywordsResponse> {

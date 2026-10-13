@@ -16,6 +16,8 @@ import { logoutSession, getNotifications, getAlerts, getNarratives, markNotifica
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSSEContext } from "@/components/providers/SSEProvider";
 import { isDemoMode } from "@/lib/demo-mock-data";
+import { WorkspaceSwitcher } from "@/components/layout/workspace-switcher";
+import { useWorkspaceStore } from "@/store/useWorkspaceStore";
 
 
 const notificationToneClass = {
@@ -311,6 +313,7 @@ export function Topbar() {
       await logoutSession(refreshToken).catch(() => {});
     }
     logout();
+    useWorkspaceStore.getState().setSelectedWorkspaceId(null);
     router.replace("/login");
   };
 
@@ -511,7 +514,7 @@ export function Topbar() {
           </div>
           <div className="hidden sm:block">
             <p className="text-[15px] font-bold text-[var(--text)]">{user?.name || "User"}</p>
-            <p className="mt-1 text-[13px] font-semibold text-[var(--text-muted)]">{user?.workspace || "Workspace"}</p>
+            <WorkspaceSwitcher />
           </div>
         </div>
         <button type="button" onClick={handleLogout} className="rounded-xl p-2 text-[var(--text-muted)] hover:bg-slate-100 hover:text-[#C81E1E] transition-colors" aria-label={t("logout")} title={t("logout")}>

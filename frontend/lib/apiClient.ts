@@ -1,5 +1,6 @@
 import ky from "ky";
-import { useAuthStore } from "@/store/useAuthStore";
+import { isDemoSession, useAuthStore } from "@/store/useAuthStore";
+import { useWorkspaceStore } from "@/store/useWorkspaceStore";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:3000";
@@ -50,6 +51,11 @@ export async function apiClient<T>(
     }
     if (!headers.has("Content-Type") && !(requestOptions.body instanceof FormData)) {
       headers.set("Content-Type", "application/json");
+    }
+    // Scope every call to the selected workspace (demo sessions are pinned server-side).
+    const selectedWorkspaceId = typeof window !== "undefined" ? useWorkspaceStore.getState().selectedWorkspaceId : null;
+    if (auth && selectedWorkspaceId && !isDemoSession(authState?.user) && !headers.has("X-Workspace-Id")) {
+      headers.set("X-Workspace-Id", selectedWorkspaceId);
     }
     return headers;
   };

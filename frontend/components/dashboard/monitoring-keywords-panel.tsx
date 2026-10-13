@@ -3,14 +3,16 @@
 import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Pause, Pencil, Play, Plus, Search, Trash2, X } from "lucide-react";
+import { Check, Loader2, Pause, Pencil, Play, Plus, RefreshCw, Search, Trash2, X } from "lucide-react";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useToast } from "@/components/ui/toast";
 import {
   createMonitoringKeyword,
   deleteMonitoringKeyword,
   getMonitoringKeywords,
+  runKeywordMonitoring,
   updateMonitoringKeyword,
+  type MonitoringRunResponse,
   type MonitoringKeyword,
   type MonitoringKeywordsResponse,
 } from "@/lib/api-service";
@@ -206,6 +208,7 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
               ))}
             </ul>
           )}
+          {canEdit && keywords.some((k) => k.isActive) ? <RunMonitoringNow onDone={() => queryClient.invalidateQueries()} /> : null}
         </>
       )}
 
@@ -257,5 +260,59 @@ function LastRunLine({ keyword, t }: { keyword: MonitoringKeyword; t: T }) {
     <span className="block text-[9.5px] font-semibold text-[#5A6478]">
       {t("lastRun", { time: timeAgo(run.at), fetched: run.fetched ?? 0, inserted: run.inserted ?? 0, duplicates: run.deduplicated ?? 0 })}
     </span>
+  );
+}
+
+const RUN_STATUS_TEXT: Record<MonitoringRunResponse["status"], string> = {
+  completed: "Completed",
+  completed_with_errors: "Completed with some errors",
+  partial: "Partially completed: some keywords were not reached in time",
+  failed: "Failed",
+  skipped_overlap: "Skipped: another run was in progress",
+};
+
+/**
+ * "Run monitoring now" for owners/admins: collects Google News articles for
+ * this workspace's active keywords through the same pipeline as the scheduled
+ * runs (dedup, storage, AI analysis, clustering) and reports what happened.
+ */
+function RunMonitoringNow({ onDone }: { onDone: () => void }) {
+  const mutation = useMutation({ mutationFn: runKeywordMonitoring, onSuccess: onDone });
+  const result = mutation.data;
+  return (
+    <div className="mt-4 rounded-lg border border-[#DDE3EF] bg-[#FBFCFF] p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[11.5px] font-black text-[#101334]">Run monitoring now</p>
+          <p className="text-[10px] font-semibold text-[#5A6478]">Collects the latest public news for up to 3 active keywords (8 articles each) and analyses it. Takes up to 2 minutes; one run per 10 minutes.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => mutation.mutate()}
+          disabled={mutation.isPending}
+          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-[#465FFF] px-3 text-[11px] font-black text-white hover:bg-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {mutation.isPending ? <Loader2 size={13} className="animate-spin" aria-hidden="true" /> : <RefreshCw size={13} aria-hidden="true" />}
+          {mutation.isPending ? "Running…" : "Run now"}
+        </button>
+      </div>
+      {mutation.isError ? (
+        <p role="alert" className="mt-2 text-[10.5px] font-semibold text-[#C81E1E]">{mutation.error instanceof Error ? mutation.error.message : "The monitoring run failed."}</p>
+      ) : null}
+      {result ? (
+        <div className="mt-2 text-[10.5px] font-semibold text-[#31406B]" role="status">
+          <p>
+            {RUN_STATUS_TEXT[result.status] ?? result.status}: {result.totals.fetched} articles found, {result.totals.inserted} new signals stored, {result.totals.deduplicated} duplicates skipped, {result.totals.analyzed} analysed.
+          </p>
+          <ul className="mt-1 space-y-0.5">
+            {result.results.filter((r) => r.keyword).map((r) => (
+              <li key={r.keyword} className={r.status === "failed" ? "text-[#C81E1E]" : "text-[#5A6478]"}>
+                &ldquo;{r.keyword}&rdquo;: {r.status === "ok" ? `${r.fetched ?? 0} found, ${r.inserted ?? 0} new` : r.status === "deferred" ? "not reached in this run" : `failed (${r.errorCategory || "error"})`}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
   );
 }

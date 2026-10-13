@@ -454,9 +454,25 @@ export default function DashboardPage() {
         </div>
       )}
       {isEmptyDashboard && !liveErrorKind && (
-        <div className="rounded-[10px] border border-slate-200 bg-slate-50 px-4 py-3 text-[12px] font-semibold text-[#5A6478]">
-          No signals in this period yet. Data appears here after your sources and monitoring keywords are ingested.
-        </div>
+        // A new workspace has no data yet: say what is needed rather than show empty intelligence.
+        <section aria-labelledby="setup-title" className="rounded-[14px] border border-[#DDE3EF] bg-white p-5">
+          <h2 id="setup-title" className="text-[16px] font-bold text-[#101334]">Set up monitoring for this workspace</h2>
+          <p className="mt-1 text-[13px] text-[#5A6478]">No signals have been collected in this period yet, so the scores and narratives below have nothing to work from.</p>
+          <ol className="mt-4 grid gap-3 sm:grid-cols-3">
+            {[
+              { n: 1, title: "Add monitoring keywords", body: "Company, brand, product or executive names to follow.", href: "/workspace/settings#keywords", cta: "Open keywords" },
+              { n: 2, title: "Collect the first data", body: "Owners and admins can run monitoring now; scheduled runs follow every 6 hours.", href: "/workspace/settings#keywords", cta: "Run monitoring" },
+              { n: 3, title: "Review signals and narratives", body: "Sentiment, narratives and alerts appear once articles are analysed.", href: "/signals", cta: "Open Signals" },
+            ].map((step) => (
+              <li key={step.n} className="rounded-[10px] border border-slate-100 bg-[#FBFCFF] p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#5A6478]">Step {step.n}</p>
+                <p className="mt-1 text-[13px] font-semibold text-[#101334]">{step.title}</p>
+                <p className="mt-0.5 text-[12px] text-[#5A6478]">{step.body}</p>
+                <Link href={step.href} className="mt-2 inline-flex text-[12px] font-semibold text-[#3B52F5] hover:underline">{step.cta}</Link>
+              </li>
+            ))}
+          </ol>
+        </section>
       )}
 
       {/* ── 1b. Real intelligence strip from backend ───────────────────────── */}
@@ -690,8 +706,15 @@ export default function DashboardPage() {
               <SectionHeader title="Data Status" />
               <div className="space-y-2.5 text-[12px]">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-[#5A6478]">Last updated</span>
-                  <span className="font-bold text-slate-700">{dashboardQuery.dataUpdatedAt ? new Date(dashboardQuery.dataUpdatedAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "—"}</span>
+                  <span className="font-semibold text-[#5A6478]">Data</span>
+                  <span className="font-bold text-slate-700">
+                    {isDemoSession ? "Demo workspace" : summary?.kpis ? (summary.kpis.total_signals > 0 ? "Live monitoring" : "No data yet") : "—"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  {/* When this page last fetched the summary; data freshness is "Last ingestion". */}
+                  <span className="font-semibold text-[#5A6478]">Dashboard refreshed</span>
+                  <span className="font-bold text-slate-700">{dashboardQuery.dataUpdatedAt ? new Date(dashboardQuery.dataUpdatedAt).toLocaleTimeString(intlLocale(), { hour: "2-digit", minute: "2-digit" }) : "—"}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-[#5A6478]">Data coverage</span>

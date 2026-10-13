@@ -43,6 +43,7 @@ import { MonitoringKeywordsPanel } from "@/components/dashboard/monitoring-keywo
 import { SubscriptionCard } from "@/components/dashboard/SubscriptionCard";
 import { UpgradeModal } from "@/components/dashboard/UpgradeModal";
 import { intlLocale } from "@/store/useUiStore";
+import { AiProvidersPanel } from "@/components/dashboard/ai-providers-panel";
 
 type TeamMember = {
   name: string;
@@ -890,6 +891,8 @@ export default function SettingsPage() {
       </div>
 
       <MonitoringKeywordsPanel />
+
+      <AiProvidersPanel />
 
       {/* Row 2: 4-Column Settings Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
