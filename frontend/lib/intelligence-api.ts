@@ -234,6 +234,26 @@ export async function getGeoIntelligence(windowHours = 168) {
   return (await I(`/geo-intelligence?windowHours=${windowHours}`)) as GeoIntelligencePayload;
 }
 
+export interface OverviewEvidence { id: string; kind: "signal" | "alert" | "narrative"; title: string | null; url: string | null; platform?: string | null; publisher?: string | null; publishedAt?: string | null; collectedAt?: string | null; sentiment?: string | null; severity?: string | null }
+export interface OverviewFinding { code: string; type: "fact" | "interpretation"; values: Record<string, string | number | null>; evidenceIds: string[] }
+export interface OverviewAction { action: string; priority: string; urgency: string; whyItMatters?: string; observedIssue?: string; monitorNext: string | null; requiresApproval: boolean; limitations: string[]; evidence: OverviewEvidence[]; evidenceCount: number; relatedNarrative: { id: string; title: string | null } | null }
+export interface ExecutiveOverview {
+  status: "ok" | "insufficient_data";
+  period: { from: string; to: string; windowHours: number };
+  coverage: { signals: number; platforms: Record<string, number>; newsOnly: boolean };
+  minimumSignals?: number;
+  happening: { main: { id: string; title: string; signals: number; negative: number; publishers: number; platforms: string[]; isNew: boolean; evidence: OverviewEvidence[] } | null; counts: Record<string, number>; topEvidence: OverviewEvidence[] } | null;
+  matters: OverviewFinding[];
+  changed: { baseline: boolean; comparison: { current: { from: string; to: string }; previous: { from: string; to: string } }; current: { signals: number; negativeShare: number | null }; previous: { signals: number; negativeShare: number | null } | null; newNarratives: Array<{ id: string; title: string; signals: number }>; newWarnings: number } | null;
+  actions: OverviewAction[];
+  uncertainty: { level: string; reasons: string[] } | null;
+  limitations?: string[];
+}
+
+export async function getExecutiveOverview(windowHours = 168) {
+  return (await I(`/overview?windowHours=${windowHours}`)) as ExecutiveOverview;
+}
+
 export async function getExecutiveBrief(windowHours = 24) {
   return (await I(`/executive-brief?windowHours=${windowHours}`)) as ExecutiveBriefPayload;
 }

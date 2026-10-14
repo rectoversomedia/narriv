@@ -1,25 +1,20 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
-  BarChart2,
   BarChart3,
   Bell,
   Bot,
-  Briefcase,
   CheckCircle2,
   Clock3,
   Database,
   FileText,
   Headphones,
-  Home,
   LineChart,
   MessageCircle,
   Newspaper,
-  Search,
   Settings,
   Sparkles,
   Users,
-  Webhook,
 } from "lucide-react";
 
 export type Localized = Record<"en" | "id", string>;
@@ -29,47 +24,7 @@ export function text(value: Localized, language: string) {
   return value[language as "en" | "id"];
 }
 
-export const navGroups = [
-  {
-    key: "main",
-    label: "Command",
-    items: [
-      { key: "command", href: "/", icon: Home },
-      { key: "signals", href: "/signals", icon: Activity },
-      { key: "alerts", href: "/alerts", icon: Bell },
-      { key: "visibility", href: "/visibility", icon: Search },
-    ],
-  },
-  {
-    key: "analysis",
-    label: "Insight",
-    items: [
-      { key: "intelligence", href: "/intelligence", icon: BarChart3 },
-      { key: "askNarriv", href: "/ask", icon: MessageCircle },
-      { key: "reports", href: "/reports", icon: FileText },
-      { key: "brief", href: "/brief", icon: BarChart2 },
-    ],
-  },
-  {
-    key: "action",
-    label: "Response",
-    items: [
-      { key: "actions", href: "/action-center", icon: Sparkles },
-      { key: "actionCenter", href: "/action-plans", icon: CheckCircle2 },
-      { key: "cases", href: "/workspace/cases", icon: Briefcase },
-    ],
-  },
-  {
-    key: "system",
-    label: "Operations",
-    items: [
-      { key: "dataSources", href: "/workspace/sources", icon: Database },
-      { key: "activity", href: "/workspace/activity", icon: Clock3 },
-      { key: "integrations", href: "/workspace/integrations", icon: Webhook },
-      { key: "settings", href: "/workspace/settings", icon: Settings },
-    ],
-  },
-];
+export { navGroups } from "./navigation";
 
 export const dashboardMetrics: Array<{ label: Localized; value: string; helper: Localized; icon: LucideIcon; tone: Tone }> = [
   { label: { en: "Total Signals (24h)", id: "Total Sinyal (24 Jam)" }, value: "2.842", helper: { en: "+18.3% vs yesterday", id: "+18,3% vs kemarin" }, icon: Activity, tone: "purple" },

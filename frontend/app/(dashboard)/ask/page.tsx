@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
+import { useUiStore } from "@/store/useUiStore";
 import { Send, BotMessageSquare, TrendingUp, Zap, AlertTriangle, Users, Compass, Eye, BarChart2, Activity, ChevronDown, ChevronRight } from "lucide-react";
 import { CardContent } from "@/components/ui/card";
 import { getMockNarratives } from "@/lib/demo-mock-data";
@@ -30,31 +31,38 @@ interface Message {
 const PLATFORM_NAME: Record<string, string> = { news: "news", x: "X", tiktok: "TikTok", instagram: "Instagram", threads: "Threads", youtube: "YouTube", facebook: "Facebook", web: "web search" };
 
 // What the answer was based on, so it never reads as broader coverage than the data.
-function describeCoverage(data?: { signals: number; windowHours: number; platforms?: Record<string, number> }): string | undefined {
+function describeCoverage(data: { signals: number; windowHours: number; platforms?: Record<string, number> } | undefined, lang: "en" | "id"): string | undefined {
   if (!data || !data.signals) return undefined;
   const days = Math.round(data.windowHours / 24);
-  const period = days >= 1 ? `the last ${days} day${days === 1 ? "" : "s"}` : `the last ${data.windowHours} hours`;
   const platforms = Object.entries(data.platforms ?? {}).map(([p, n]) => `${PLATFORM_NAME[p] ?? p} ${n}`).join(", ");
+  const newsOnly = Object.keys(data.platforms ?? {}).length > 0 && Object.keys(data.platforms ?? {}).every((p) => p === "news");
+  if (lang === "id") {
+    const period = days >= 1 ? `${days} hari terakhir` : `${data.windowHours} jam terakhir`;
+    const count = data.signals >= 50 ? `${data.signals} data tersimpan terbaru` : `${data.signals} data tersimpan`;
+    return `Berdasarkan ${count} dari ${period}${platforms ? ` (${platforms})` : ""}.${newsOnly ? " Hanya sumber berita; media sosial belum tercakup." : ""}`;
+  }
+  const period = days >= 1 ? `the last ${days} day${days === 1 ? "" : "s"}` : `the last ${data.windowHours} hours`;
   const count = data.signals >= 50 ? `the ${data.signals} most recent stored signals` : `${data.signals} stored signal${data.signals === 1 ? "" : "s"}`;
-  return `Based on ${count} from ${period}${platforms ? ` (${platforms})` : ""}.`;
+  return `Based on ${count} from ${period}${platforms ? ` (${platforms})` : ""}.${newsOnly ? " News sources only; social media is not covered." : ""}`;
 }
 
 interface SuggestedCategory {
   id: string;
   icon: typeof TrendingUp;
-  question: string;
+  question: { en: string; id: string };
 }
 
-// Neutral starter questions (no presupposed findings); answers always come
-// from the grounded backend.
+// Business questions an executive or communications team would ask, with no
+// presupposed findings; answers always come from the grounded backend.
 const SUGGESTED_CATEGORIES: SuggestedCategory[] = [
-  { id: "sentiment", icon: TrendingUp, question: "How has sentiment changed this week, and what is driving it?" },
-  { id: "spike", icon: Zap, question: "Has there been an unusual spike in mentions recently? What caused it?" },
-  { id: "complaints", icon: AlertTriangle, question: "What are the most common complaints in recent signals?" },
-  { id: "competitors", icon: Users, question: "Which competitors are mentioned most, and in what context?" },
-  { id: "actions", icon: Compass, question: "Which issues need a response first, based on the evidence?" },
-  { id: "risks", icon: BarChart2, question: "Summarize the main risks in the last 7 days with sources." },
-  { id: "changes", icon: Activity, question: "What changed compared with the previous period?" },
+  { id: "today", icon: Compass, question: { id: "Apa isu paling penting yang perlu saya ketahui hari ini?", en: "What is the most important issue I need to know about today?" } },
+  { id: "changes", icon: Activity, question: { id: "Apa yang berubah dibandingkan minggu lalu?", en: "What changed compared with last week?" } },
+  { id: "risks", icon: AlertTriangle, question: { id: "Apakah ada potensi risiko reputasi?", en: "Is there a potential reputation risk?" } },
+  { id: "complaints", icon: Zap, question: { id: "Apa keluhan pelanggan yang paling sering muncul?", en: "What are the most common customer complaints?" } },
+  { id: "why", icon: BarChart2, question: { id: "Mengapa isu utama saat ini perlu diperhatikan?", en: "Why does the main current issue deserve attention?" } },
+  { id: "actions", icon: TrendingUp, question: { id: "Apa tindakan yang sebaiknya dilakukan tim komunikasi?", en: "What should the communications team do?" } },
+  { id: "development", icon: Activity, question: { id: "Bagaimana perkembangan isu utama selama 7 hari terakhir?", en: "How has the main issue developed over the last 7 days?" } },
+  { id: "competitors", icon: Users, question: { id: "Bagaimana posisi brand dibandingkan kompetitor?", en: "How does the brand compare with competitors?" } },
 ];
 
 // ---------------------------------------------------------------------------
@@ -124,6 +132,7 @@ export default function AskPage() {
   const [isTyping, setIsTyping] = useState(false);
   // Only show a model name after the backend reports which model actually answered.
   const [lastModel, setLastModel] = useState<string | null>(null);
+  const language = useUiStore((state) => state.language);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   // Suggestions start collapsed on small screens so the conversation has room.
   useEffect(() => {
@@ -186,7 +195,7 @@ export default function AskPage() {
           confidence: result.grounded && (result.sources || []).length > 0 ? "medium" : "low",
           links: [],
           isDemo: isDemoSession,
-          coverage: describeCoverage(result.data),
+          coverage: describeCoverage(result.data, language),
         };
         setMessages((prev) => [...prev, assistantMsg]);
       } catch (err) {
@@ -294,7 +303,7 @@ export default function AskPage() {
                     key={cat.id}
                     type="button"
                     onClick={() => {
-                      sendMessage(cat.question);
+                      sendMessage(cat.question[language]);
                       if (window.matchMedia("(max-width: 1023px)").matches) setSidebarOpen(false);
                     }}
                     className="flex items-start gap-2.5 rounded-xl border border-transparent px-3 py-2.5 text-left transition-all hover:border-[#465FFF]/15 hover:bg-[#465FFF]/5 active:scale-[0.98]"
@@ -303,7 +312,7 @@ export default function AskPage() {
                       <Icon size={12} className="text-[#3B52F5]" />
                     </span>
                     <span className="text-[12px] font-semibold leading-snug text-slate-700">
-                      {cat.question}
+                      {cat.question[language]}
                     </span>
                   </button>
                 );

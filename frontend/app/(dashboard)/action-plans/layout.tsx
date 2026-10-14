@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { SectionTabs } from "@/components/layout/section-tabs";
 import { createPageMetadata } from "@/lib/metadata";
 
 export const metadata = createPageMetadata(
@@ -7,5 +8,10 @@ export const metadata = createPageMetadata(
 );
 
 export default function ActionPlansLayout({ children }: { children: ReactNode }) {
-  return children;
+  return (
+    <>
+      <SectionTabs group="actions" />
+      {children}
+    </>
+  );
 }

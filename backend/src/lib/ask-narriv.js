@@ -26,7 +26,10 @@ Rules:
 3. Never fabricate sources, citations, or counts.
 4. Prefer short, structured answers.
 5. Always include a "sources" array of evidence IDs you actually referenced.
-6. Always include a "grounded" boolean — true if the answer is fully supported by the data, false otherwise.`;
+6. Always include a "grounded" boolean — true if the answer is fully supported by the data, false otherwise.
+7. Answer in the language of the question (Indonesian or English).
+8. Start the answer with the direct conclusion in one or two sentences. Then, briefly: why it matters; the supporting evidence; the period and source platforms covered; limitations or uncertainty (say when only news is covered); and one suggested next step. Under 160 words.
+9. Separate observed facts from interpretation. Negative coverage is not by itself a crisis.`;
 
 async function gatherContext(workspaceId, windowHours) {
     const sinceIso = new Date(Date.now() - windowHours * 3600 * 1000).toISOString();

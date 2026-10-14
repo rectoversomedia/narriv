@@ -872,6 +872,15 @@ export default function VisibilityPage() {
                 ? "Pantau proyeksi visibilitas brand, topik, dan kompetitor berbasis pemodelan AI (Simulasi OpenAI GPT-4o-mini)."
                 : "Monitor AI-modeled projections of brand, topics, and competitor visibility (Simulated via OpenAI GPT-4o-mini)."}
             </p>
+            {/* What is and is not measured, so a simulation is never read as live AI-platform monitoring. */}
+            <details className="mt-2 max-w-3xl text-[12px] text-[#5A6478]">
+              <summary className="cursor-pointer font-semibold text-[#3B52F5]">{language === "id" ? "Apa yang diukur di halaman ini?" : "What does this page measure?"}</summary>
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                <li>{language === "id" ? "Diukur: jawaban satu model AI (OpenAI GPT-4o-mini) atas prompt uji tentang brand Anda, disimpan setiap kali uji dijalankan." : "Measured: answers from one AI model (OpenAI GPT-4o-mini) to test prompts about your brand, stored each time a test runs."}</li>
+                <li>{language === "id" ? "Tidak diukur: jawaban langsung dari ChatGPT, Gemini, Perplexity, atau platform AI lain. Belum ada pengumpulan data otomatis dari platform tersebut." : "Not measured: live answers from ChatGPT, Gemini, Perplexity or other AI platforms. There is no automated collection from those platforms yet."}</li>
+                <li>{language === "id" ? "Skor dan rekomendasi di sini adalah analisis AI atas hasil uji tersebut, bukan pangsa suara (share of voice) yang terukur." : "Scores and recommendations here are AI analysis of those test results, not a measured share of voice."}</li>
+              </ul>
+            </details>
           </div>
         </div>
         <div className="flex w-full flex-wrap gap-2.5 md:w-auto">

@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { MoreHorizontal, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { navGroups } from "@/lib/mock-data";
+import { navGroups } from "@/lib/navigation";
 import { useUiStore } from "@/store/useUiStore";
 
 import { useQuery } from "@tanstack/react-query";
@@ -22,9 +22,9 @@ function resolveBackendAssetUrl(url: string) {
   return url;
 }
 
-function activeRoute(pathname: string, href: string) {
+function activeRoute(pathname: string, href: string, match: string[] = []) {
   if (href === "/") return pathname === "/";
-  return pathname === href || pathname.startsWith(`${href}/`);
+  return [href, ...match].some((h) => pathname === h || pathname.startsWith(`${h}/`));
 }
 
 export function Sidebar() {
@@ -114,11 +114,11 @@ export function Sidebar() {
         <nav className={`space-y-5 ${sidebarCollapsed ? "mt-8" : "mt-6"}`}>
           {navGroups.map((group) => (
             <div key={group.key}>
-              {sidebarCollapsed ? null : <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-white/40">{group.label ?? t(`navGroups.${group.key}`)}</p>}
+              {sidebarCollapsed ? null : <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-white/40">{t(`navGroups.${group.key}`)}</p>}
               <div className="mt-2 grid gap-1.5">
                 {group.items.map((item) => {
                   const Icon = item.icon;
-                  const active = activeRoute(pathname, item.href);
+                  const active = activeRoute(pathname, item.href, item.match);
                   return (
                     <Link
                       key={item.href}
@@ -162,7 +162,7 @@ export function Sidebar() {
       <nav className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 rounded-2xl border border-border bg-[#090D16]/90 p-1.5 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] lg:hidden">
         {mobileItems.map((item) => {
           const Icon = item.icon;
-          const active = activeRoute(pathname, item.href);
+          const active = activeRoute(pathname, item.href, item.match);
           return (
             <Link
               key={item.href}
@@ -187,7 +187,7 @@ export function Sidebar() {
             <div className="grid gap-2">
               {navGroups.flatMap((group) => group.items).map((item) => {
                 const Icon = item.icon;
-                const active = activeRoute(pathname, item.href);
+                const active = activeRoute(pathname, item.href, item.match);
                 return (
                   <Link
                     key={item.href}

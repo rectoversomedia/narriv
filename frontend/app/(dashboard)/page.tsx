@@ -18,6 +18,7 @@ import { TodaysIntelligenceStrip } from "@/components/intelligence/intelligence-
 import { getPipelineStatus, timeAgo } from "@/lib/intelligence-api";
 import { DemoBanner } from "@/components/ui/demo-banner";
 import { SignalSentimentPanel } from "@/components/dashboard/signal-sentiment-panel";
+import { ExecutiveOverview } from "@/components/dashboard/executive-overview";
 
 type QuickActionKey = "newAlert" | "report" | "analyze" | "sources" | "settings" | "help";
 
@@ -182,6 +183,7 @@ function QuickActionDrawer({ actionKey, onClose, quickActionContent, tDrawer }: 
 }
 export default function DashboardPage() {
   const t = useTranslations("DemoApp");
+  const tOverview = useTranslations("Overview");
   const tDrawer = useTranslations("DemoApp");
   const language = useUiStore((state) => state.language);
   const [timeRange, setTimeRange] = useState<DateRangeKey>("24h");
@@ -423,7 +425,7 @@ export default function DashboardPage() {
               <Sparkles size={18} />
             </span>
             <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">
-              Today&apos;s Intelligence
+              {tOverview("pageTitle")}
             </h1>
           </div>
           <span className="text-[13px] font-semibold text-[#5A6478]">{dateStr}</span>
@@ -474,6 +476,14 @@ export default function DashboardPage() {
           </ol>
         </section>
       )}
+
+      {/* ── 1a. Executive briefing: happening, why it matters, changes, next steps */}
+      {!isEmptyDashboard ? <ExecutiveOverview /> : null}
+
+      <div className="border-t border-[#E8ECF5] pt-6">
+        <h2 className="text-[16px] font-bold text-[#101334]">{tOverview("detailHeading")}</h2>
+        <p className="mt-0.5 text-[12px] text-[#5A6478]">{tOverview("detailDesc")}</p>
+      </div>
 
       {/* ── 1b. Real intelligence strip from backend ───────────────────────── */}
       <TodaysIntelligenceStrip />

@@ -252,6 +252,7 @@ function Toggle({ active }: { active: boolean }) {
 }
 
 function ConnectorCard({ source, selected, onSelect, onToggle, onDelete, onSync }: { source: Connector; selected: boolean; onSelect: (source: Connector) => void; onToggle?: (source: Connector) => void; onDelete?: (source: Connector) => void; onSync?: (source: Connector) => void }) {
+  const t = useTranslations("Sources");
   const style = toneStyles[source.tone];
   const Icon = source.icon;
   // The card is clickable for mouse users; keyboard users select via the name
@@ -296,7 +297,7 @@ function ConnectorCard({ source, selected, onSelect, onToggle, onDelete, onSync 
           </>
         )}
       </p>
-      <div className="mt-4 grid grid-cols-2 gap-3 text-[11px] font-bold text-[#5F6B94]"><span>Last success<br /><b className="text-[14px] text-[#101334]">{source.health}</b></span><span>Documents<br /><b className="text-[14px] text-[#101334]">{source.signals}</b></span></div>
+      <div className="mt-4 grid grid-cols-2 gap-3 text-[11px] font-bold text-[#5F6B94]"><span>{t("lastSuccess")}<br /><b className="text-[14px] text-[#101334]">{source.health}</b></span><span>{t("documents")}<br /><b className="text-[14px] text-[#101334]">{source.signals}</b></span></div>
       {/* No per-source time series is stored, so no trend line is drawn. */}
       <div className="mt-3 flex items-center justify-between gap-3 text-[10px] font-bold text-[#5F6B94]"><span>Last Sync</span><span>{source.lastSync}</span><button type="button" role="switch" aria-checked={source.active} aria-label={`Collect from ${source.name}`} onClick={(e) => { e.stopPropagation(); onToggle?.(source); }} className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/40"><Toggle active={source.active} /></button></div>
     </div>
@@ -304,6 +305,7 @@ function ConnectorCard({ source, selected, onSelect, onToggle, onDelete, onSync 
 }
 
 function ConnectorListRow({ source, selected, onSelect, onToggle, onDelete, onSync }: { source: Connector; selected: boolean; onSelect: (source: Connector) => void; onToggle?: (source: Connector) => void; onDelete?: (source: Connector) => void; onSync?: (source: Connector) => void }) {
+  const t = useTranslations("Sources");
   const style = toneStyles[source.tone];
   const Icon = source.icon;
   return (
@@ -335,11 +337,11 @@ function ConnectorListRow({ source, selected, onSelect, onToggle, onDelete, onSy
         </div>
       </div>
       <div className="text-[12px] font-bold text-[#53608C]">
-        <span className="block text-[10px] uppercase tracking-wide text-[#647099]">Last success</span>
+        <span className="block text-[10px] uppercase tracking-wide text-[#647099]">{t("lastSuccess")}</span>
         <span className="text-[14px] font-black text-[#101334]">{source.health}</span>
       </div>
       <div className="text-[12px] font-bold text-[#53608C]">
-        <span className="block text-[10px] uppercase tracking-wide text-[#647099]">Documents</span>
+        <span className="block text-[10px] uppercase tracking-wide text-[#647099]">{t("documents")}</span>
         <span className="text-[14px] font-black text-[#101334]">{source.signals}</span>
       </div>
       <div className="text-[12px] font-bold text-[#53608C]">
@@ -938,8 +940,8 @@ export default function SourcesPage() {
                     <div className="grid gap-2.5">
                       <div className="hidden grid-cols-[minmax(0,1fr)_120px_120px_140px_120px_auto] items-center gap-4 px-4 text-[10px] font-black uppercase tracking-wide text-[#647099]">
                         <span>Source</span>
-                        <span>Last success</span>
-                        <span>Documents</span>
+                        <span>{t("lastSuccess")}</span>
+                        <span>{t("documents")}</span>
                         <span>Last Sync</span>
                         <span>Status</span>
                         <span>Actions</span>

@@ -15,7 +15,7 @@ import { ANTHROPIC_MODEL, createClaudeCompletion, isAnthropicConfigured, modelCa
 import { computeEntityIntelligence } from "../../lib/entity-intelligence.js";
 import { computeReputationIntelligence } from "../../lib/reputation-intelligence.js";
 import { computePredictiveSignals } from "../../lib/predictive-signals.js";
-import { deriveRecommendations } from "../../lib/recommendation-engine.js";
+import { computeExecutiveOverview, computeWorkspaceRecommendations } from "../../lib/executive-overview.js";
 import { computeTrend, sentimentVelocity } from "../../lib/trend-engine.js";
 import { getAiObservabilitySummary, recordAiEvent } from "../../lib/ai-observability.js";
 import { askNarriv } from "../../lib/ask-narriv.js";
@@ -322,27 +322,22 @@ router.get("/recommendations", async (req, res) => {
     try {
         const ws = await resolveWs(req, res);
         if (!ws) return;
-        const win = windowParam(req);
-        const [narrative, rep, predictions] = await Promise.all([
-            computeNarrativeIntelligence({ workspaceId: ws, windowHours: win }),
-            computeReputationIntelligence({ workspaceId: ws, windowHours: win }),
-            computePredictiveSignals({ workspaceId: ws, windowHours: win }),
-        ]);
-        const signalCount = narrative.facts.find((f) => f.kind === "signal_count_window")?.value || 0;
-        const negCount = narrative.facts.find((f) => f.kind === "sentiment_breakdown")?.value?.NEGATIVE || 0;
-        const out = deriveRecommendations({
-            riskScore: narrative.riskScore || 0,
-            riskBand: narrative.riskBand || "low",
-            reputationBand: rep.reputationBand || "neutral",
-            // Unresolved alerts only (alert_count_window also counts resolved ones).
-            activeAlerts: narrative.facts.find((f) => f.kind === "active_alerts")?.value || 0,
-            emergingNarratives: narrative.inferences.find((i) => i.kind === "emerging_narratives")?.items?.length || 0,
-            negativeShare: signalCount > 0 ? negCount / signalCount : 0,
-            volumeRatio: narrative.inferences.find((i) => i.kind === "volume_ratio")?.ratio || 1,
-            risk: narrative.riskModel || null,
-        });
+        const { out, narrative, rep, predictions } = await computeWorkspaceRecommendations({ workspaceId: ws, windowHours: windowParam(req) });
         res.json({ status: "ok", ...out, source: { narrativeRisk: narrative.riskScore, reputationBand: rep.reputationBand, predictiveSignalCount: predictions.signals.length } });
     } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /ai/overview — the executive Overview (what happened, why it matters,
+// what changed, what to do), built only from this workspace's records.
+router.get("/overview", async (req, res) => {
+    try {
+        const ws = await resolveWs(req, res);
+        if (!ws) return;
+        res.json(await computeExecutiveOverview({ workspaceId: ws, windowHours: windowParam(req) }));
+    } catch (e) {
+        logStructured("error", "executive_overview_failed", { error: e?.message });
+        res.status(500).json({ error: "The overview could not be built." });
+    }
 });
 
 router.get("/trend", async (req, res) => {
