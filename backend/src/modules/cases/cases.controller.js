@@ -104,6 +104,7 @@ export async function createCase(req, res) {
                 .from("signals")
                 .select("id")
                 .eq("id", rawSignalId)
+                .eq("workspace_id", scopedWorkspaceId) // never link another workspace's record
                 .maybeSingle();
             if (signalExists) {
                 validSignalId = rawSignalId;

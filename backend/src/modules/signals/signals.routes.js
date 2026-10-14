@@ -10,6 +10,7 @@ import { globalEvents } from "../app-notifications/app-notifications.events.js";
 import { recordAuditLog } from "../../lib/audit.js";
 import { wrapAsync } from "../../lib/sentry.js";
 import XLSX from "xlsx";
+import { classifyRecord, loadRelevanceContext } from "../../lib/brand-relevance.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -46,17 +47,26 @@ export function toSignalListItem(row, workspaceIds = []) {
     };
 }
 
+// Filters: keyword, platform, sentiment, startDate/endDate (collection time),
+// narrativeId (persisted membership in this workspace), relevance ("direct":
+// names the brand, "other": does not) and analysis ("analyzed" | "pending").
+// Every row also carries its brand relevance, classified from its own text.
 router.get("/", async (req, res) => {
     try {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
         const page = parseInt(req.query.page, 10) || 1;
         const limit = parseInt(req.query.limit, 10) || 10;
 
-        const { keyword, platform, startDate, endDate, sentiment } = req.query;
+        const { keyword, platform, startDate, endDate, sentiment, narrativeId, relevance, analysis } = req.query;
 
         const safePage = Math.max(1, page);
         const safeLimit = Math.min(100, Math.max(1, limit));
         const skip = (safePage - 1) * safeLimit;
+        const emptyPage = () => res.json({ data: [], pagination: { page: safePage, limit: safeLimit, total: 0, totalPages: 0 }, relevance: null });
+
+        if (workspaceIds.length === 0) return emptyPage();
+        if (relevance && !["direct", "other"].includes(relevance)) return res.status(400).json({ error: "relevance must be direct or other." });
+        if (analysis && !["analyzed", "pending"].includes(analysis)) return res.status(400).json({ error: "analysis must be analyzed or pending." });
 
         // Build dynamic query using Supabase
         let query = supabase
@@ -78,6 +88,34 @@ router.get("/", async (req, res) => {
             query = query.ilike('sentiment', sentiment);
         }
 
+        // Analysis status: a stored sentiment exists only after AI analysis.
+        if (analysis === "analyzed") query = query.not('sentiment', 'is', null);
+        if (analysis === "pending") query = query.is('sentiment', null);
+
+        if (narrativeId) {
+            // Only a narrative of the caller's workspace, and only its linked records.
+            const { data: cluster } = await supabase.from('narrative_clusters').select('id').eq('id', String(narrativeId)).in('workspace_id', workspaceIds).maybeSingle();
+            if (!cluster) return res.status(404).json({ error: "Narrative not found." });
+            const { data: links, error: linkErr } = await supabase.from('narrative_cluster_signals').select('signal_id').eq('cluster_id', cluster.id).limit(1000);
+            if (linkErr) throw linkErr;
+            const linkedIds = [...new Set((links || []).map((l) => l.signal_id).filter(Boolean))];
+            if (linkedIds.length === 0) return emptyPage();
+            query = query.in('id', linkedIds);
+        }
+
+        const ctx = await loadRelevanceContext(supabase, workspaceIds[0]);
+        if (relevance) {
+            if (!ctx.configured) return res.status(409).json({ error: "No brand name or monitoring keyword is configured, so relevance cannot be determined.", code: "RELEVANCE_NOT_CONFIGURED" });
+            const terms = ctx.brandTerms.map((t) => sanitizeSearch(t)).filter(Boolean);
+            if (relevance === "direct") {
+                query = query.or(terms.flatMap((t) => [`title.ilike.%${t}%`, `content.ilike.%${t}%`]).join(","));
+            } else {
+                for (const t of terms) {
+                    query = query.or(`title.is.null,title.not.ilike.%${t}%`).not('content', 'ilike', `%${t}%`);
+                }
+            }
+        }
+
         if (startDate || endDate) {
             if (startDate) {
                 const dateStart = new Date(startDate);
@@ -95,39 +133,25 @@ router.get("/", async (req, res) => {
             }
         }
 
-        let { data: signalsData, error: signalsError, count } = await query
+        // No fallback to other periods: an empty period is reported as empty.
+        const { data: signalsData, error: signalsError, count } = await query
             .order('captured_at', { ascending: false })
             .range(skip, skip + safeLimit - 1);
 
         if (signalsError) throw signalsError;
 
-        // If date filter produced no signals for demo user, fallback to all workspace signals
-        if ((!signalsData || signalsData.length === 0) && (startDate || endDate) && (req.user?.isDemo || String(req.user?.id).startsWith("demo"))) {
-            let fallbackQuery = supabase
-                .from('signals')
-                .select(SIGNAL_LIST_SELECT, { count: 'exact' })
-                .in('workspace_id', workspaceIds);
-            if (term) fallbackQuery = fallbackQuery.or(`title.ilike.%${term}%,content.ilike.%${term}%`);
-            if (platform) fallbackQuery = fallbackQuery.eq('platform', platform);
-            if (sentiment) fallbackQuery = fallbackQuery.ilike('sentiment', sentiment);
-
-            const fallbackRes = await fallbackQuery
-                .order('captured_at', { ascending: false })
-                .range(skip, skip + safeLimit - 1);
-            if (!fallbackRes.error && fallbackRes.data && fallbackRes.data.length > 0) {
-                signalsData = fallbackRes.data;
-                count = fallbackRes.count;
-            }
-        }
-
         res.json({
-            data: (signalsData || []).map((row) => toSignalListItem(row, workspaceIds)),
+            data: (signalsData || []).map((row) => ({
+                ...toSignalListItem(row, workspaceIds),
+                relevance: ctx.configured ? classifyRecord(row, ctx).relevance : null,
+            })),
             pagination: {
                 page: safePage,
                 limit: safeLimit,
                 total: count || 0,
                 totalPages: Math.ceil((count || 0) / safeLimit)
-            }
+            },
+            relevance: { configured: ctx.configured, brand: ctx.brandTerms[0] || null, brandSource: ctx.brandSource },
         });
     } catch (error) {
         logStructured("error", "Error fetching signals:", { error: error?.message || error, stack: error?.stack });

@@ -104,7 +104,12 @@ export function createMemoryDb(seed = {}) {
     b.match = (obj) => addFilter((row) => Object.entries(obj || {}).every(([c, v]) => compare('eq', row[c], v)));
     b.setHeader = () => b;
     b.filter = (col, op, val) => addFilter((row) => compare(op, row[col], val));
-    b.or = (expr) => addFilter((row) => parseOr(expr).some(([c, o, v]) => (o === 'not' ? false : compare(o, row[c], v))));
+    b.or = (expr) => addFilter((row) => parseOr(expr).some(([c, o, v]) => {
+      if (o !== 'not') return compare(o, row[c], v);
+      // "col.not.ilike.%x%": like PostgREST, a NULL column never matches a negation.
+      const [op2, ...rest] = v.split('.');
+      return row[c] != null && !compare(op2, row[c], rest.join('.'));
+    }));
     b.order = (col, { ascending = true } = {}) => { state.order.push([col, ascending]); return b; };
     b.limit = (n) => { state.limit = n; return b; };
     b.range = (from, to) => { state.range = [from, to]; return b; };

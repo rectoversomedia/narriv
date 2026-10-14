@@ -132,6 +132,16 @@ describe('Workspace isolation across CRUD endpoints', () => {
       expect([400, 403, 404]).toContain(del.status);
       expect(db.table('cases').find((c) => c.id === ids.caseB)).toMatchObject({ status: 'open' });
     });
+
+    it('links a new case only to a record from the same workspace', async () => {
+      const own = await request(app).post('/workspace/cases').set(auth()).send({ title: 'Own', sourceType: 'signal', sourceId: ids.signalA });
+      expect(own.status).toBe(201);
+      const foreign = await request(app).post('/workspace/cases').set(auth()).send({ title: 'Foreign', sourceType: 'signal', sourceId: ids.signalB });
+      expect(foreign.status).toBe(201);
+      const created = db.table('cases');
+      expect(created.find((c) => c.title === 'Own').signal_id).toBe(ids.signalA);
+      expect(created.find((c) => c.title === 'Foreign').signal_id).toBeNull();
+    });
   });
 
   describe('integrations', () => {
