@@ -37,7 +37,8 @@ import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { AddSourceModal } from "@/components/dashboard/add-source-modal";
-import { bootstrapDefaultSources, getSources, updateSource, deleteSource, runBatchSourceIngestion, runSourceIngestion, getSourceHealth, getSourceCoverage, fetchLatestSignals, type SourceRecord, type SourceHealthSummary } from "@/lib/api-service";
+import { bootstrapDefaultSources, getSources, updateSource, deleteSource, runBatchSourceIngestion, startPlatformCollection, getSourceHealth, getSourceCoverage, fetchLatestSignals, type SourceRecord, type SourceHealthResponse, type SourceHealthSummary, type ConnectorStatus } from "@/lib/api-service";
+import { usePlatformCollections } from "@/components/dashboard/platform-collection-panel";
 import { getMockSources } from "@/lib/demo-mock-data";
 import { PipelineHealthPanel } from "@/components/dashboard/pipeline-health-panel";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
@@ -55,7 +56,8 @@ type Connector = {
   signals: string;
   lastSync: string;
   active: boolean;
-  status: "Live" | "Paused";
+  status: string;
+  statusTone: StatusTone;
   tone: Tone;
   icon: SourceIcon;
   spark: number[];
@@ -63,6 +65,37 @@ type Connector = {
 };
 
 type SourceIcon = ComponentType<{ className?: string }>;
+
+type StatusTone = "ok" | "neutral" | "info" | "warn" | "error";
+// A card says what its runs show, not just that it is switched on.
+const STATUS_VIEW: Record<ConnectorStatus, { key: string; tone: StatusTone }> = {
+  operational: { key: "statusOperational", tone: "ok" },
+  no_results: { key: "statusNoResults", tone: "neutral" },
+  collecting: { key: "statusCollecting", tone: "info" },
+  not_tested: { key: "statusNotTested", tone: "neutral" },
+  failed: { key: "statusFailed", tone: "error" },
+  access_restricted: { key: "statusAccessRestricted", tone: "warn" },
+  paused: { key: "statusPaused", tone: "warn" },
+};
+const STATUS_BADGE: Record<StatusTone, string> = {
+  ok: "bg-[#10B981]/12 text-[#047857]",
+  neutral: "bg-slate-100 text-[#5A6478]",
+  info: "bg-[#465FFF]/10 text-[#3B52F5]",
+  warn: "bg-[#F59E0B]/12 text-[#A04606]",
+  error: "bg-[#FF1D1D]/10 text-[#C81E1E]",
+};
+const ERROR_REASON: Record<string, string> = {
+  authentication_failed: "Apify rejected the token",
+  billing_or_quota: "Apify usage or billing limit",
+  actor_not_rented: "actor must be rented on Apify",
+  permission_denied: "no permission for this actor",
+  actor_not_found: "actor not found",
+  rate_limited: "rate limited",
+  provider_unavailable: "Apify unavailable",
+  timeout: "run hit its time limit",
+  actor_run_failed: "actor run failed",
+  persist_failed: "results could not be stored",
+};
 
 type ToneStyle = {
   color: string;
@@ -147,7 +180,10 @@ function sourceToneForSource(source: SourceRecord): Tone {
   return "slate";
 }
 
-function buildApiConnectors(sources: SourceRecord[]): Connector[] {
+type Translate = (key: string, values?: Record<string, string | number>) => string;
+
+function buildApiConnectors(sources: SourceRecord[], health: SourceHealthResponse | null | undefined, t: Translate): Connector[] {
+  const healthById = new Map((health?.sources ?? []).map((h) => [h.id, h.connector]));
   return sources.map((source) => {
     const type = source.type || "source";
     const active = source.isActive ?? true;
@@ -169,15 +205,20 @@ function buildApiConnectors(sources: SourceRecord[]): Connector[] {
       }
     }
 
+    const connector = healthById.get(source.id);
+    // Without health data the run state is unknown: say so rather than "Live".
+    const view = STATUS_VIEW[connector?.status ?? (active ? "not_tested" : "paused")];
+    const reason = connector?.lastError ? ERROR_REASON[connector.lastError] ?? connector.lastError : null;
     return {
       id: source.id,
       name: source.name,
       category: type.charAt(0).toUpperCase() + type.slice(1),
-      health: active ? "Live" : "Paused",
-      signals: "-",
-      lastSync: formatSourceTime(source.updatedAt || source.createdAt),
+      health: connector?.lastSuccessAt ? formatSourceTime(connector.lastSuccessAt) : t("never"),
+      signals: connector ? connector.documents.toLocaleString(intlLocale()) : "-",
+      lastSync: connector?.lastRunAt ? formatSourceTime(connector.lastRunAt) : t("never"),
       active,
-      status: active ? "Live" : "Paused",
+      status: reason ? `${t(view.key)}: ${reason}` : t(view.key),
+      statusTone: view.tone,
       tone: sourceToneForSource(source),
       icon: sourceIconForSource(source),
       spark: stableSpark(source.id),
@@ -240,7 +281,7 @@ function ConnectorCard({ source, selected, onSelect, onToggle, onDelete, onSync 
               <Trash2 size={13} />
             </button>
           )}
-          <span className={cn("rounded-full px-2.5 py-1 text-[9px] font-black", source.status === "Live" ? "bg-[#10B981]/12 text-[#047857]" : "bg-[#F59E0B]/12 text-[#A04606]")}>{source.status}</span>
+          <span className={cn("max-w-[170px] truncate rounded-full px-2.5 py-1 text-[9px] font-black", STATUS_BADGE[source.statusTone])} title={source.status}>{source.status}</span>
         </div>
       </div>
       <h3 className="mt-3 text-[13px] font-black text-[#101334]">
@@ -255,7 +296,7 @@ function ConnectorCard({ source, selected, onSelect, onToggle, onDelete, onSync 
           </>
         )}
       </p>
-      <div className="mt-4 grid grid-cols-2 gap-3 text-[11px] font-bold text-[#5F6B94]"><span>Health<br /><b className="text-[14px] text-[#101334]">{source.health}</b></span><span>Signals (24h)<br /><b className="text-[14px] text-[#101334]">{source.signals}</b></span></div>
+      <div className="mt-4 grid grid-cols-2 gap-3 text-[11px] font-bold text-[#5F6B94]"><span>Last success<br /><b className="text-[14px] text-[#101334]">{source.health}</b></span><span>Documents<br /><b className="text-[14px] text-[#101334]">{source.signals}</b></span></div>
       {/* No per-source time series is stored, so no trend line is drawn. */}
       <div className="mt-3 flex items-center justify-between gap-3 text-[10px] font-bold text-[#5F6B94]"><span>Last Sync</span><span>{source.lastSync}</span><button type="button" role="switch" aria-checked={source.active} aria-label={`Collect from ${source.name}`} onClick={(e) => { e.stopPropagation(); onToggle?.(source); }} className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/40"><Toggle active={source.active} /></button></div>
     </div>
@@ -294,18 +335,18 @@ function ConnectorListRow({ source, selected, onSelect, onToggle, onDelete, onSy
         </div>
       </div>
       <div className="text-[12px] font-bold text-[#53608C]">
-        <span className="block text-[10px] uppercase tracking-wide text-[#647099]">Health</span>
+        <span className="block text-[10px] uppercase tracking-wide text-[#647099]">Last success</span>
         <span className="text-[14px] font-black text-[#101334]">{source.health}</span>
       </div>
       <div className="text-[12px] font-bold text-[#53608C]">
-        <span className="block text-[10px] uppercase tracking-wide text-[#647099]">Signals (24h)</span>
+        <span className="block text-[10px] uppercase tracking-wide text-[#647099]">Documents</span>
         <span className="text-[14px] font-black text-[#101334]">{source.signals}</span>
       </div>
       <div className="text-[12px] font-bold text-[#53608C]">
         <span className="block text-[10px] uppercase tracking-wide text-[#647099]">Last Sync</span>
         <span className="text-[12px] font-black text-[#101334]">{source.lastSync}</span>
       </div>
-      <span className={cn("rounded-full px-2.5 py-1 text-center text-[9px] font-black", source.status === "Live" ? "bg-[#10B981]/12 text-[#047857]" : "bg-[#F59E0B]/12 text-[#A04606]")}>{source.status}</span>
+      <span className={cn("truncate rounded-full px-2.5 py-1 text-center text-[9px] font-black", STATUS_BADGE[source.statusTone])} title={source.status}>{source.status}</span>
       <div className="flex items-center gap-2">
         {onSync && (
           <button
@@ -461,7 +502,7 @@ function VolumeBars({ bars, isEmpty }: { bars: Array<{ label: string; value: str
         </div>
         <div className="text-center">
           <p className="text-[13px] font-bold text-[#53608C]">No volume data yet</p>
-          <p className="mt-1 text-[11px] font-semibold text-[#647099]">Data will appear once sources are synced</p>
+          <p className="mt-1 text-[11px] font-semibold text-[#647099]">No signals stored in the last 7 days.</p>
         </div>
       </div>
     );
@@ -527,14 +568,16 @@ function DistributionPanel({ total, legend }: { total: number; legend: Array<{ l
   );
 }
 
+// Signals stored per platform in the last 7 days (the chart's stated window).
 function buildCoverageBars(coverage: Awaited<ReturnType<typeof getSourceCoverage>> | undefined) {
-  const entries = Object.entries(coverage?.typeCoverage ?? {}).slice(0, 7);
-  const maxDocuments = Math.max(...entries.map(([, item]) => item.documents), 1);
+  const labels = coverage?.platformLabels ?? {};
+  const entries = Object.entries(coverage?.platformVolume ?? {}).sort((a, b) => b[1] - a[1]).slice(0, 7);
+  const max = Math.max(...entries.map(([, n]) => n), 1);
   return entries.length > 0
-    ? entries.map(([type, item], index) => ({
-        label: type.charAt(0).toUpperCase() + type.slice(1),
-        value: formatCompact(item.documents),
-        height: Math.max(8, Math.round((item.documents / maxDocuments) * 100)),
+    ? entries.map(([platform, n], index) => ({
+        label: labels[platform] ?? platform.charAt(0).toUpperCase() + platform.slice(1),
+        value: formatCompact(n),
+        height: Math.max(8, Math.round((n / max) * 100)),
         color: toneStyles[["black", "pink", "blue", "red", "green", "purple", "orange"][index % 7] as Tone].color,
       }))
     : [];
@@ -654,19 +697,28 @@ export default function SourcesPage() {
     onError: () => showToast(toast("deleteFailed"), "error"),
   });
 
+  // Sync = one capped Apify run for this card (owner/admin; the server says why when it refuses).
   const syncSingleMutation = useMutation({
-    mutationFn: (sourceId: string) => runSourceIngestion(sourceId),
+    mutationFn: (sourceId: string) => startPlatformCollection({ sourceId }),
     onSuccess: async (result) => {
-      if (result) {
-        showToast(`Sync started: ${result.jobId.slice(0, 8)}...`);
-        await queryClient.invalidateQueries({ queryKey: ["source-health"] });
-        await queryClient.invalidateQueries({ queryKey: ["source-history"] });
-      } else {
-        showToast(toast("syncAllError"), "error");
-      }
+      showToast(t("collectStarted", { keyword: result.data.keyword }), "info");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["source-health"] }),
+        queryClient.invalidateQueries({ queryKey: ["platform-collections"] }),
+      ]);
     },
-    onError: () => showToast(toast("syncAllError"), "error"),
+    onError: (error) => showToast(error instanceof Error && error.message ? error.message : toast("syncAllError"), "error"),
   });
+
+  // While a collection is active, keep checking it (this also stores its
+  // results); refresh the cards and counts whenever a run changes state.
+  const collectionsQuery = usePlatformCollections(!isDemoSession);
+  const collectionsSignature = (collectionsQuery.data?.data ?? []).map((r) => `${r.id}:${r.status}`).join("|");
+  useEffect(() => {
+    if (!collectionsSignature) return;
+    void queryClient.invalidateQueries({ queryKey: ["source-health"] });
+    void queryClient.invalidateQueries({ queryKey: ["source-coverage"] });
+  }, [collectionsSignature, queryClient]);
 
   const [isFetchingSignals, setIsFetchingSignals] = useState(false);
 
@@ -708,7 +760,7 @@ export default function SourcesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 12;
 
-  const liveConnectors = sourcesQuery.data?.data ? buildApiConnectors(sourcesQuery.data.data) : [];
+  const liveConnectors = sourcesQuery.data?.data ? buildApiConnectors(sourcesQuery.data.data, sourceHealthQuery.data, t as unknown as Translate) : [];
   const isLiveUnavailable = sourcesQuery.data === null;
   const availableCategories = Array.from(new Set(liveConnectors.map((item) => item.category))).sort();
   const categoryOptions = [ALL_CATEGORIES, ...availableCategories];
@@ -732,14 +784,19 @@ export default function SourcesPage() {
   const activeSources = coverage?.activeSources ?? healthSummary?.active ?? filteredItems.filter((item) => item.active).length;
   const totalSources = coverage?.totalSources ?? healthSummary?.total ?? totalFilteredItems;
   const totalDocuments = coverage?.totalDocuments ?? 0;
-  const warningCount = (healthSummary?.warning ?? 0) + (healthSummary?.unknown ?? 0);
+  const byStatus = healthSummary?.byStatus ?? {};
+  // Needs attention = runs that failed or were refused; untested sources are counted separately.
+  const warningCount = (byStatus.failed ?? 0) + (byStatus.access_restricted ?? 0);
 
-  const recentHealthEntries = (sourceHealthQuery.data?.sources ?? [])
-    .filter((source) => source.health.lastSyncAt)
-    .slice(0, 5)
-    .map((source) => {
-      const tone = source.health.health === "healthy" ? "green" : source.health.health === "warning" ? "amber" : "red";
-      return [source.id, source.name, source.health.health, formatSourceTime(source.health.lastSyncAt ?? undefined), tone, Database] as const;
+  const recentHealthEntries = (sourceHealthQuery.data?.activity ?? [])
+    .slice(0, 6)
+    .map((a, i) => {
+      const tone = a.outcome === "failed" ? "red" : a.outcome === "running" ? "blue" : a.outcome === "empty" ? "slate" : "green";
+      const status = a.outcome === "success" ? t("activityStored", { count: a.inserted ?? 0 })
+        : a.outcome === "empty" ? t("activityEmpty")
+        : a.outcome === "running" ? t("activityRunning")
+        : t("activityFailed", { reason: ERROR_REASON[a.error ?? ""] ?? a.error ?? "unknown" });
+      return [`${a.sourceId ?? a.kind}-${a.at}-${i}`, a.name, status, formatSourceTime(a.at), tone, Database] as const;
     });
 
   // Each row states its real status; only rows with a working destination are links.
@@ -779,10 +836,10 @@ export default function SourcesPage() {
 
       <section className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-5">
         <MetricCard label={t("metricConnectedSources")} value={String(totalSources)} helper={t("metricActive", { count: activeSources })} icon={Database} tone="purple" />
-        <MetricCard label={t("metricLiveMonitoring")} value={activeSources > 0 ? "Every 6h" : "-"} helper={healthText(healthSummary, t)} icon={Play} tone="green" />
+        <MetricCard label={t("metricLiveMonitoring")} value={activeSources > 0 ? "Every 6h" : "-"} helper={healthSummary ? t("healthWorkingCount", { working: (byStatus.operational ?? 0) + (byStatus.no_results ?? 0), total: healthSummary.total }) : healthText(healthSummary, t)} icon={Play} tone="green" />
         <MetricCard label={t("metricTotalDocuments")} value={formatCompact(totalDocuments)} helper={t("metricCoverage", { count: coverage?.coverageRate ?? 0 })} icon={Zap} tone="blue" />
-        <MetricCard label={t("metricHealthWarning")} value={String(warningCount)} helper={t("metricCritical", { count: healthSummary?.critical ?? 0 })} icon={RefreshCw} tone="amber" />
-        <MetricCard label={t("metricLastSync")} value={sourceHealthQuery.data?.sources.find((source) => source.health.lastSyncAt)?.health.lastSyncAt ? formatSourceTime(sourceHealthQuery.data.sources.find((source) => source.health.lastSyncAt)?.health.lastSyncAt ?? undefined) : "-"} helper={t("metricFromHealthApi")} icon={Clock3} tone="purple" />
+        <MetricCard label={t("metricNeedAttention")} value={String(warningCount)} helper={t("metricNotTested", { count: byStatus.not_tested ?? 0 })} icon={RefreshCw} tone="amber" />
+        <MetricCard label={t("metricLastSync")} value={sourceHealthQuery.data?.lastSyncAt ? formatSourceTime(sourceHealthQuery.data.lastSyncAt) : "-"} helper={t("metricFromHealthApi")} icon={Clock3} tone="purple" />
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
@@ -881,8 +938,8 @@ export default function SourcesPage() {
                     <div className="grid gap-2.5">
                       <div className="hidden grid-cols-[minmax(0,1fr)_120px_120px_140px_120px_auto] items-center gap-4 px-4 text-[10px] font-black uppercase tracking-wide text-[#647099]">
                         <span>Source</span>
-                        <span>Health</span>
-                        <span>Signals (24h)</span>
+                        <span>Last success</span>
+                        <span>Documents</span>
                         <span>Last Sync</span>
                         <span>Status</span>
                         <span>Actions</span>

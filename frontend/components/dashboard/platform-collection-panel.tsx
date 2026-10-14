@@ -39,6 +39,25 @@ const ERROR_TEXT: Record<string, string> = {
 
 const ACTIVE = new Set(["starting", "running", "persisting"]);
 
+/**
+ * Collection history; while a run is active it is checked every 15 seconds,
+ * which also stores its results once Apify reports it has finished.
+ */
+export function usePlatformCollections(enabled = true) {
+  return useQuery({
+    queryKey: ["platform-collections"],
+    queryFn: async () => {
+      const list = await getPlatformCollections();
+      const active = list.data.filter((r) => ACTIVE.has(r.status)).slice(0, 2);
+      if (active.length === 0) return list;
+      await Promise.all(active.map((r) => syncPlatformCollection(r.id).catch(() => null)));
+      return getPlatformCollections();
+    },
+    enabled,
+    refetchInterval: (query) => (query.state.data?.data.some((r) => ACTIVE.has(r.status)) ? 15000 : false),
+  });
+}
+
 function describe(run: PlatformCollection): { text: string; tone: "muted" | "ok" | "warn" | "error" } {
   if (ACTIVE.has(run.status)) {
     return { text: run.status === "persisting" ? "Storing and analysing results…" : `Collecting on Apify${run.apifyStatus ? ` (${run.apifyStatus.toLowerCase()})` : ""}…`, tone: "muted" };
@@ -71,17 +90,7 @@ export function PlatformCollectionPanel() {
   const canManage = Boolean(keywordsQuery.data?.canEdit);
   const activeKeywords = (keywordsQuery.data?.data ?? []).filter((k) => k.isActive !== false).map((k) => k.keyword);
 
-  const collectionsQuery = useQuery({
-    queryKey: ["platform-collections"],
-    queryFn: async () => {
-      const list = await getPlatformCollections();
-      const active = list.data.filter((r) => ACTIVE.has(r.status)).slice(0, 2);
-      if (active.length === 0) return list;
-      await Promise.all(active.map((r) => syncPlatformCollection(r.id).catch(() => null)));
-      return getPlatformCollections();
-    },
-    refetchInterval: (query) => (query.state.data?.data.some((r) => ACTIVE.has(r.status)) ? 15000 : false),
-  });
+  const collectionsQuery = usePlatformCollections();
 
   const [preset, setPreset] = useState("");
   const [keyword, setKeyword] = useState("");
@@ -90,7 +99,7 @@ export function PlatformCollectionPanel() {
   const selectedPreset = preset || presets[0]?.key || "";
   const selectedKeyword = keyword && activeKeywords.includes(keyword) ? keyword : activeKeywords[0] || "";
   const start = useMutation({
-    mutationFn: () => startPlatformCollection(selectedPreset, selectedKeyword || undefined),
+    mutationFn: () => startPlatformCollection({ preset: selectedPreset, keyword: selectedKeyword || undefined }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["platform-collections"] });
     },

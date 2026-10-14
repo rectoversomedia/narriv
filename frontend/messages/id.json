@@ -3472,7 +3472,26 @@
     "healthCritical": "Bermasalah",
     "healthNeedsAttention": "Perlu perhatian",
     "healthHealthyCount": "{healthy}/{total} sehat",
-    "noSourcesLegend": "Belum ada sumber"
+    "noSourcesLegend": "Belum ada sumber",
+    "statusOperational": "Berfungsi",
+    "statusNoResults": "Tanpa hasil",
+    "statusCollecting": "Mengumpulkan",
+    "statusNotTested": "Belum diuji",
+    "statusFailed": "Gagal",
+    "statusAccessRestricted": "Akses dibatasi",
+    "statusPaused": "Dijeda",
+    "lastSuccess": "Terakhir berhasil",
+    "documents": "Dokumen",
+    "never": "Belum pernah",
+    "healthWorkingCount": "{working} dari {total} sumber berfungsi",
+    "metricNotTested": "{count} belum diuji",
+    "metricNeedAttention": "Perlu Perhatian",
+    "activityStored": "{count} baru disimpan",
+    "activityEmpty": "Tidak ada hasil baru",
+    "activityFailed": "Gagal: {reason}",
+    "activityRunning": "Mengumpulkan…",
+    "collectStarted": "Pengumpulan dimulai di Apify untuk \"{keyword}\". Kartu ini diperbarui setelah selesai.",
+    "volumeEmpty": "Tidak ada sinyal tersimpan dalam 7 hari terakhir."
   },
   "DashboardStates": {
     "empty": {

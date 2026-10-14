@@ -38,6 +38,22 @@ export const COLLECTION_PLATFORMS = {
 };
 
 export const COLLECTION_MAX_ITEMS = 20;
+
+/** The collection preset that runs this actor, or null when it is not offered. */
+export function presetForActor(actorId) {
+    const preset = APIFY_ACTOR_PRESETS.find((p) => p.actorId === actorId && COLLECTION_PLATFORMS[p.key]);
+    return preset ? preset.key : null;
+}
+
+/** The search term an owner configured on a source card (first one found). */
+export function sourceKeyword(inputConfig) {
+    const cfg = inputConfig && typeof inputConfig === "object" ? inputConfig : {};
+    const first = (v) => (Array.isArray(v) ? v.find((x) => typeof x === "string" && x.trim()) : typeof v === "string" ? v : null);
+    const term = first(cfg.searchTerms) || first(cfg.searchQueries) || first(cfg.hashtags) || first(cfg.keywords) || first(cfg.keyword) || first(cfg.queries) || first(cfg.search);
+    return term ? String(term).replace(/ forum lokal kaskus$/, "").trim() : null;
+}
+
+const squash = (v) => String(v || "").toLowerCase().replace(/[\s#'’]+/g, "");
 const ACTIVE_STATUSES = ["starting", "running", "persisting"];
 const ACTIVE_WINDOW_MS = 30 * 60 * 1000;
 const PERSIST_STALE_MS = 10 * 60 * 1000;
@@ -145,7 +161,7 @@ async function workspaceRuns(workspaceId, sinceMs) {
     return (data || []).filter((r) => r.metadata?.workspaceId === workspaceId);
 }
 
-async function pickKeyword(workspaceId, requested) {
+async function pickKeyword(workspaceId, requested, preferred = null) {
     const { data, error } = await baseSupabaseAdmin
         .from("monitoring_keywords")
         .select("keyword")
@@ -156,7 +172,10 @@ async function pickKeyword(workspaceId, requested) {
     if (error) throw new CollectionError("LOG_UNAVAILABLE", "Monitoring keywords could not be read.", 500);
     const keywords = (data || []).map((k) => k.keyword).filter(Boolean);
     if (keywords.length === 0) throw new CollectionError("NO_KEYWORD", "Add at least one active monitoring keyword before collecting.", 400);
-    if (!requested) return keywords[0];
+    if (!requested) {
+        // A source card's own term, when it is one of the workspace's keywords.
+        return keywords.find((k) => preferred && squash(k) === squash(preferred)) || keywords[0];
+    }
     // Only this workspace's own keywords can be collected (no free-text scraping).
     const match = keywords.find((k) => k.toLowerCase() === String(requested).trim().toLowerCase());
     if (!match) throw new CollectionError("UNKNOWN_KEYWORD", "Choose one of this workspace's active monitoring keywords.", 400);
@@ -175,6 +194,7 @@ export function publicCollection(row) {
         id: row.id,
         status: row.status,
         preset: m.preset,
+        sourceId: m.sourceId || null,
         platform: m.platform,
         keyword: m.keyword,
         apifyStatus: m.apifyStatus || null,
@@ -186,11 +206,40 @@ export function publicCollection(row) {
     };
 }
 
-export async function startCollection({ workspaceId, presetKey, keyword: requestedKeyword, userId }) {
+export async function startCollection({ workspaceId, presetKey, sourceId = null, keyword: requestedKeyword, userId }) {
     if (!isCollectionConfigured()) throw new CollectionError("APIFY_NOT_CONFIGURED", "Apify is not configured on the server.", 503);
+    let source = null;
+    if (sourceId) {
+        const { data, error } = await baseSupabaseAdmin
+            .from("sources")
+            .select("id, name, type, actor_id, input_config, is_active")
+            .eq("id", sourceId)
+            .eq("workspace_id", workspaceId)
+            .neq("type", "deleted")
+            .maybeSingle();
+        if (error || !data) throw new CollectionError("SOURCE_NOT_FOUND", "Source not found.", 404);
+        if (data.is_active === false) throw new CollectionError("SOURCE_PAUSED", "This source is paused. Turn it on before collecting.", 409);
+        presetKey = presetForActor(data.actor_id);
+        if (!presetKey) throw new CollectionError("SOURCE_NOT_COLLECTABLE", "This source cannot be collected on demand yet.", 400);
+        source = data;
+    }
     const platform = COLLECTION_PLATFORMS[presetKey];
     if (!platform) throw new CollectionError("UNKNOWN_PRESET", "Unknown collection source.", 400);
-    const keyword = await pickKeyword(workspaceId, requestedKeyword);
+    if (!source) {
+        // Started from Settings: credit the run to this workspace's source card
+        // for the same actor when there is exactly one, so its counts agree.
+        const actorId = APIFY_ACTOR_PRESETS.find((p) => p.key === presetKey)?.actorId;
+        const { data: cards } = await baseSupabaseAdmin
+            .from("sources")
+            .select("id, name, type, actor_id, input_config, is_active")
+            .eq("workspace_id", workspaceId)
+            .eq("actor_id", actorId)
+            .eq("is_active", true)
+            .neq("type", "deleted")
+            .limit(2);
+        if (cards && cards.length === 1) source = cards[0];
+    }
+    const keyword = await pickKeyword(workspaceId, requestedKeyword, source ? sourceKeyword(source.input_config) : null);
 
     const history = await workspaceRuns(workspaceId, 24 * 3600 * 1000);
     const activeSince = Date.now() - ACTIVE_WINDOW_MS;
@@ -204,6 +253,7 @@ export async function startCollection({ workspaceId, presetKey, keyword: request
     const built = buildCollectionInput(presetKey, keyword);
     const metadata = {
         workspaceId,
+        sourceId: source?.id || undefined,
         preset: presetKey,
         platform,
         actorId: built.actorId,
@@ -240,9 +290,22 @@ export async function startCollection({ workspaceId, presetKey, keyword: request
     } catch (err) {
         const category = categorizeApifyError(err);
         await updateLog(row.id, "failed", { ...metadata, error: category, finishedAt: new Date().toISOString() });
+        await markSource(metadata, "failed");
         logStructured("warn", "apify_collection_start_failed", { workspaceId, preset: presetKey, actorId: built.actorId, category, status: err?.statusCode });
         throw new CollectionError("APIFY_START_FAILED", "Apify did not start the collection.", 502, { category });
     }
+}
+
+// The source card's own sync columns (last_sync_at = last finished run).
+async function markSource(m, lastStatus) {
+    if (!m.sourceId) return;
+    const now = new Date().toISOString();
+    const { error } = await baseSupabaseAdmin
+        .from("sources")
+        .update({ last_sync_at: now, last_status: lastStatus, updated_at: now })
+        .eq("id", m.sourceId)
+        .eq("workspace_id", m.workspaceId);
+    if (error) logStructured("warn", "apify_collection_source_update_failed", { sourceId: m.sourceId, error: error.message });
 }
 
 async function loadRow(id) {
@@ -290,6 +353,7 @@ export async function syncCollection({ workspaceId, id, runFollowUps = true }) {
     if (APIFY_FAILED.includes(run.status)) {
         const meta = { ...m, apifyStatus: run.status, costUsd, error: run.status === "TIMED-OUT" ? "timeout" : "actor_run_failed", finishedAt: new Date().toISOString() };
         await updateLog(row.id, "failed", meta);
+        await markSource(m, "failed");
         return publicCollection({ ...row, status: "failed", metadata: meta });
     }
     if (run.status !== "SUCCEEDED") {
@@ -326,6 +390,7 @@ export async function syncCollection({ workspaceId, id, runFollowUps = true }) {
     try {
         result = await persistCollectedRecords(records, {
             workspaceId: m.workspaceId,
+            sourceId: m.sourceId || null,
             platform: m.platform,
             keyword: m.keyword,
             ingestionType: "apify_collection",
@@ -355,6 +420,7 @@ export async function syncCollection({ workspaceId, id, runFollowUps = true }) {
     else if (totals.analysisFailed > 0 || totals.insertFailed > 0) status = "completed_with_errors";
     const meta = { ...claimMeta, totals, finishedAt: new Date().toISOString() };
     await updateLog(row.id, status, meta);
+    await markSource(m, status === "completed_empty" ? "no_results" : "success");
     logStructured("info", "apify_collection_persisted", { id: row.id, workspaceId: m.workspaceId, preset: m.preset, ...totals, costUsd });
     return publicCollection({ ...row, status, metadata: meta });
 }

@@ -46,6 +46,7 @@ const tweet = (id, extra = {}) => ({ id, text: `Layanan app error lagi ${id}`, u
 
 beforeEach(() => {
   for (const name of Object.keys(db.tables)) db.tables[name].length = 0;
+  db.clearFailures();
   analyzeFails = false;
   jest.clearAllMocks();
   process.env.APIFY_TOKEN = 'test-token';
@@ -217,5 +218,60 @@ describe('syncing a collection', () => {
     state.items = [tweet('7')];
     expect(await svc.syncPendingCollections()).toMatchObject({ checked: 1, completed: 1 });
     expect(db.table('signals')).toHaveLength(1);
+  });
+});
+
+describe('source cards and failure modes', () => {
+  const CARD = '00000000-0000-4000-8000-0000000000d1';
+  beforeEach(() => {
+    db.table('sources').push({ id: CARD, workspace_id: WS_A, name: 'X / Twitter Latest', type: 'social', actor_id: 'apidojo/twitter-scraper-lite', input_config: { searchTerms: ['bank a mobile'] }, is_active: true });
+  });
+
+  it('starts from a source card with its own keyword and stores documents against it', async () => {
+    const { calls, state } = fakeApify();
+    const res = await svc.startCollection({ workspaceId: WS_A, sourceId: CARD, userId: USER });
+    expect(res).toMatchObject({ sourceId: CARD, preset: 'twitter-x-latest', keyword: 'Bank A Mobile' });
+    expect(calls.start[0].input.searchTerms).toEqual(['Bank A Mobile']);
+    state.run.status = 'SUCCEEDED';
+    state.items = [tweet('11')];
+    await svc.syncCollection({ workspaceId: WS_A, id: res.id });
+    expect(db.table('raw_documents')[0].source_id).toBe(CARD);
+    expect(db.table('signals')[0].source_id).toBe(CARD);
+    const card = db.table('sources').find((x) => x.id === CARD);
+    expect(card.last_status).toBe('success');
+    expect(card.last_sync_at).toBeTruthy();
+  });
+
+  it('credits a Settings-started run to the matching card', async () => {
+    fakeApify();
+    expect((await start()).sourceId).toBe(CARD);
+  });
+
+  it('refuses cards of another workspace, paused cards and actors without a collection preset', async () => {
+    fakeApify();
+    await expect(svc.startCollection({ workspaceId: WS_B, sourceId: CARD, userId: USER })).rejects.toMatchObject({ code: 'SOURCE_NOT_FOUND', httpStatus: 404 });
+    db.table('sources')[0].is_active = false;
+    await expect(svc.startCollection({ workspaceId: WS_A, sourceId: CARD, userId: USER })).rejects.toMatchObject({ code: 'SOURCE_PAUSED' });
+    db.table('sources').push({ id: '00000000-0000-4000-8000-0000000000d2', workspace_id: WS_A, name: 'Shopee', type: 'web', actor_id: 'xtracto/shopee-scraper', input_config: {}, is_active: true });
+    await expect(svc.startCollection({ workspaceId: WS_A, sourceId: '00000000-0000-4000-8000-0000000000d2', userId: USER })).rejects.toMatchObject({ code: 'SOURCE_NOT_COLLECTABLE' });
+  });
+
+  it('records a rate-limited start and marks the card failed', async () => {
+    fakeApify({ startError: Object.assign(new Error('Too many'), { statusCode: 429 }) });
+    await expect(svc.startCollection({ workspaceId: WS_A, sourceId: CARD, userId: USER })).rejects.toMatchObject({ category: 'rate_limited' });
+    expect(db.table('cron_ingestion_logs')[0]).toMatchObject({ status: 'failed', metadata: { error: 'rate_limited' } });
+    expect(db.table('sources')[0].last_status).toBe('failed');
+  });
+
+  it('reports partial success when the database rejects some records', async () => {
+    const { state } = fakeApify();
+    const { id } = await start();
+    state.run.status = 'SUCCEEDED';
+    state.items = [tweet('21'), tweet('22')];
+    db.failNext('raw_documents', 'insert', { message: 'db down' });
+    const res = await svc.syncCollection({ workspaceId: WS_A, id });
+    expect(res.status).toBe('completed_with_errors');
+    expect(res.totals.insertFailed).toBeGreaterThan(0);
+    expect(res.totals.inserted + res.totals.insertFailed).toBe(2);
   });
 });

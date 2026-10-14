@@ -939,6 +939,7 @@ export interface PlatformCollection {
   id: string;
   status: "starting" | "running" | "persisting" | "completed" | "completed_empty" | "completed_with_errors" | "failed" | "skipped_overlap" | string;
   preset: string;
+  sourceId?: string | null;
   platform: string;
   keyword: string;
   apifyStatus: string | null;
@@ -955,8 +956,9 @@ export async function getPlatformCollections(): Promise<PlatformCollectionsRespo
   return apiClient<PlatformCollectionsResponse>("/api/ingestion/collect");
 }
 
-export async function startPlatformCollection(preset: string, keyword?: string): Promise<{ data: PlatformCollection }> {
-  return apiClient("/api/ingestion/collect", { method: "POST", body: JSON.stringify({ preset, keyword }), timeout: 60000 });
+/** Starts one capped Apify run, by preset (Settings) or by source card. */
+export async function startPlatformCollection(args: { preset?: string; sourceId?: string; keyword?: string }): Promise<{ data: PlatformCollection }> {
+  return apiClient("/api/ingestion/collect", { method: "POST", body: JSON.stringify(args), timeout: 60000 });
 }
 
 /** Checks the run on Apify and stores its results once it has finished. */
@@ -1513,7 +1515,27 @@ export interface SourceHealthSummary {
   unknown: number;
 }
 
-export async function getSourceHealth(): Promise<{ sources: Array<{ id: string; name: string; isActive: boolean; health: { health: string; score: number; lastSyncAt: string | null; recentJobs: number; successRate: number } }>; summary: SourceHealthSummary } | null> {
+export type ConnectorStatus = "operational" | "no_results" | "collecting" | "not_tested" | "failed" | "access_restricted" | "paused";
+export interface SourceConnectorState {
+  status: ConnectorStatus;
+  configured: boolean;
+  documents: number;
+  lastDocumentAt: string | null;
+  lastRunAt: string | null;
+  lastSuccessAt: string | null;
+  lastError: string | null;
+  runs: number;
+}
+export interface SourceActivity { sourceId: string | null; name: string; kind: "source" | "keyword_monitoring"; at: string; outcome: "success" | "empty" | "failed" | "running"; error: string | null; inserted: number | null; trigger?: string }
+export interface SourceHealthResponse {
+  sources: Array<{ id: string; name: string; is_active?: boolean; health: { health: string; score: number; lastSyncAt: string | null; recentJobs: number; successRate: number }; connector?: SourceConnectorState }>;
+  summary: SourceHealthSummary & { byStatus?: Partial<Record<ConnectorStatus, number>> };
+  activity?: SourceActivity[];
+  keywordMonitoring?: { lastRunAt: string; lastOutcome: string; lastSuccessAt: string | null } | null;
+  lastSyncAt?: string | null;
+}
+
+export async function getSourceHealth(): Promise<SourceHealthResponse | null> {
   try {
     return await apiClient("/sources/health");
   } catch {
@@ -1521,7 +1543,7 @@ export async function getSourceHealth(): Promise<{ sources: Array<{ id: string; 
   }
 }
 
-export async function getSourceCoverage(): Promise<{ totalSources: number; activeSources: number; totalDocuments: number; coverageRate: number; typeCoverage: Record<string, { sources: number; active: number; documents: number }> } | null> {
+export async function getSourceCoverage(): Promise<{ totalSources: number; activeSources: number; totalDocuments: number; unattributedDocuments?: number; coverageRate: number; typeCoverage: Record<string, { sources: number; active: number; documents: number }>; windowDays?: number; platformVolume?: Record<string, number>; platformLabels?: Record<string, string> } | null> {
   try {
     return await apiClient("/sources/coverage");
   } catch {

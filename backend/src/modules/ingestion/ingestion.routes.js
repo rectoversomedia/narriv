@@ -159,8 +159,14 @@ router.get("/collect", memberWorkspace, async (req, res) => {
 
 router.post("/collect", requireWorkspaceRole(MANAGER_ROLES), async (req, res) => {
     try {
-        const { preset, keyword } = req.body || {};
-        const data = await startCollection({ workspaceId: req.scopedWorkspaceId, presetKey: String(preset || ""), keyword: keyword || null, userId: req.user.id });
+        const { preset, sourceId, keyword } = req.body || {};
+        const data = await startCollection({
+            workspaceId: req.scopedWorkspaceId,
+            presetKey: String(preset || ""),
+            sourceId: typeof sourceId === "string" && sourceId ? sourceId : null,
+            keyword: keyword || null,
+            userId: req.user.id,
+        });
         return res.status(202).json({ data });
     } catch (err) {
         return collectionErrorResponse(res, err, "apify_collection_start_route_failed");

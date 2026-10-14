@@ -3500,7 +3500,26 @@
     "healthCritical": "Critical",
     "healthNeedsAttention": "Needs attention",
     "healthHealthyCount": "{healthy}/{total} healthy",
-    "noSourcesLegend": "No sources"
+    "noSourcesLegend": "No sources",
+    "statusOperational": "Working",
+    "statusNoResults": "No results",
+    "statusCollecting": "Collecting",
+    "statusNotTested": "Not yet tested",
+    "statusFailed": "Failed",
+    "statusAccessRestricted": "Access restricted",
+    "statusPaused": "Paused",
+    "lastSuccess": "Last success",
+    "documents": "Documents",
+    "never": "Never",
+    "healthWorkingCount": "{working} of {total} sources working",
+    "metricNotTested": "{count} not yet tested",
+    "metricNeedAttention": "Needs Attention",
+    "activityStored": "Stored {count} new",
+    "activityEmpty": "No new results",
+    "activityFailed": "Failed: {reason}",
+    "activityRunning": "Collecting…",
+    "collectStarted": "Collection started on Apify for \"{keyword}\". This card updates when it finishes.",
+    "volumeEmpty": "No signals stored in the last 7 days."
   },
   "DashboardStates": {
     "empty": {
