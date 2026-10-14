@@ -311,7 +311,14 @@ export async function computeExecutiveOverview({ workspaceId, windowHours = 168 
         const others = found.filter((e) => e.kind);
         if (found.length === 0) continue;
         seen.add(r.action);
-        const narrativeRef = others.find((e) => e.kind === "narrative") || (main ? { id: main.id, kind: "narrative", title: main.title } : null);
+        // The issue these records belong to: one named in the evidence, else the
+        // qualifying issue containing most of them. Never an unrelated issue.
+        const sigIds = new Set(sigs.map((x) => x.id));
+        const owner = candidates.filter((c) => !ctx.configured || eligibleIds.has(c.id))
+            .map((c) => ({ c, overlap: c.inWindow.filter((x) => sigIds.has(x.id)).length }))
+            .filter((o) => o.overlap > 0)
+            .sort((a, b) => b.overlap - a.overlap)[0]?.c;
+        const narrativeRef = others.find((e) => e.kind === "narrative") || (owner ? { id: owner.id, kind: "narrative", title: owner.title } : null);
         const followUp = followUpFor({
             narrativeIds: narrativeRef ? [narrativeRef.id] : [],
             signalIds: sigs.map((s) => s.id),

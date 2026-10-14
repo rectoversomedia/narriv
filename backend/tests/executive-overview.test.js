@@ -177,3 +177,16 @@ describe('follow-up on recommendations', () => {
     expect(out.actions[0].followUp).toEqual({ stage: 'none', openSince: null, plans: [], cases: [] });
   });
 });
+
+it('links an action only to the issue its records belong to', async () => {
+  const inIssue = [sig(), sig()];
+  const outside = sig({ sentiment: 'NEGATIVE' });
+  db.table('signals').push(...inIssue, outside);
+  db.table('narrative_clusters').push({ id: 'c1', workspace_id: WS, title: 'Main issue', created_at: hoursAgo(20), updated_at: hoursAgo(1) });
+  db.table('narrative_cluster_signals').push(...inIssue.map((x) => ({ narrative_cluster_id: 'c1', signal_id: x.id })));
+  recs = [{ action: 'escalate_internal', sourceIds: [outside.id] }, { action: 'investigate', sourceIds: [inIssue[0].id] }];
+  const out = await run();
+  expect(out.happening.main.id).toBe('c1');
+  expect(out.actions.find((a) => a.action === 'escalate_internal').relatedNarrative).toBeNull();
+  expect(out.actions.find((a) => a.action === 'investigate').relatedNarrative).toMatchObject({ id: 'c1' });
+});
