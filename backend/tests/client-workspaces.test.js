@@ -264,7 +264,7 @@ describe('platform collection routes', () => {
     const res = await request(app).post('/ingestion/collect').set(as(ADMIN)).set('X-Workspace-Id', WS_A).send({ preset: 'tiktok-hashtag' });
     expect(res.status).toBe(202);
     expect(res.body.data).toMatchObject({ status: 'running', platform: 'tiktok', keyword: 'Bank A' });
-    expect(starts[0].input.hashtags).toEqual(['Bank A']);
+    expect(starts[0].input.hashtags).toEqual(['BankA']); // hashtags cannot contain spaces
     const again = await request(app).post('/ingestion/collect').set(as(ADMIN)).set('X-Workspace-Id', WS_A).send({ preset: 'youtube-search' });
     expect(again.status).toBe(409);
     expect((await request(app).post('/ingestion/collect').set(as(ADMIN)).set('X-Workspace-Id', WS_A).send({ preset: 'nope' })).status).toBe(400);

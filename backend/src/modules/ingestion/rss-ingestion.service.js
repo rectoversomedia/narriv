@@ -225,6 +225,7 @@ export async function ingestRssSignals({
       .eq("workspace_id", workspaceId)
       .eq("is_active", true)
       .in("type", ["news", "rss", "web"])
+      .is("actor_id", null)
       .order("created_at", { ascending: false });
 
     if (newsSources && newsSources.length > 0) {
@@ -265,6 +266,9 @@ export async function ingestRssSignals({
       .eq("workspace_id", workspaceId)
       .eq("is_active", true)
       .eq("type", "news")
+      // Never credit Google News articles to an Apify actor source.
+      .is("actor_id", null)
+      .limit(1)
       .maybeSingle();
     if (fallbackSource) {
       activeSource = fallbackSource;

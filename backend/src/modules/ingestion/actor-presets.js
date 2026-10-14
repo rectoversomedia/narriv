@@ -77,7 +77,7 @@ export const APIFY_ACTOR_PRESETS = [
         buildInput: (keyword = DEFAULT_KEYWORD) => ({
             commentsPerPost: 0,
             excludePinnedPosts: false,
-            hashtags: [keyword.replace(/^#/, "")],
+            hashtags: [keyword.replace(/^#/, "").replace(/[\s'’]+/g, "")], // hashtags cannot contain spaces
             maxFollowersPerProfile: 0,
             maxFollowingPerProfile: 0,
             maxRepliesPerComment: 0,
@@ -105,7 +105,7 @@ export const APIFY_ACTOR_PRESETS = [
             resultsType: "posts",
             searchLimit: 10,
             searchType: "hashtag",
-            search: keyword.replace(/^#/, ""),
+            search: keyword.replace(/^#/, "").replace(/[\s'’]+/g, ""),
         }),
     },
     {
