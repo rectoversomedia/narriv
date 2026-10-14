@@ -54,7 +54,8 @@ export function AuthShell({ visual, children, topAction, email }: AuthShellProps
       <BrandPanel visual={visual} email={email} />
       <section className="relative flex min-h-dvh items-center justify-center px-6 py-10 sm:px-10 lg:px-14">
         {topAction ? <div className="absolute right-6 top-6 sm:right-10 lg:right-14 lg:top-10">{topAction}</div> : null}
-        <div className="w-full max-w-[520px] pt-12 lg:pt-0">{children}</div>
+        {/* Room for the language picker above the form at every width. */}
+        <div className="w-full max-w-[520px] pt-16">{children}</div>
       </section>
     </main>
   );

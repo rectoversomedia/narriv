@@ -23,6 +23,7 @@ import {
 import { NarrativeMap } from "@/components/intelligence/narrative-map";
 import { cn } from "@/lib/utils";
 import { isDemoMode } from "@/lib/demo-mock-data";
+import { useUiStore } from "@/store/useUiStore";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -415,6 +416,7 @@ export default function DailyIntelligenceBriefPage() {
   const [dateRange, setDateRange] = useState<DateRange>("today");
   // Read after mount (localStorage-backed) to avoid a hydration mismatch.
   const [isDemo, setIsDemo] = useState(false);
+  const language = useUiStore((state) => state.language);
   useEffect(() => setIsDemo(isDemoMode()), []);
 
   // Uses the browser's print dialog (Save as PDF). Nothing is sent anywhere.
@@ -459,6 +461,12 @@ export default function DailyIntelligenceBriefPage() {
       {/* Sample document: demo sandbox only. Live workspaces see the grounded brief above. */}
       {isDemo && (
       <div>
+        {/* Its figures (competitors, scores) are invented for illustration and must never read as findings. */}
+        <p role="note" className="mb-4 rounded-[10px] border border-[#8B5CFF]/30 bg-[#8B5CFF]/10 px-4 py-3 text-[13px] font-semibold text-[#5B33C9]">
+          {language === "id"
+            ? "Contoh ilustrasi format laporan. Angka, kompetitor, dan temuan di bawah ini tidak diukur dari workspace mana pun. Ringkasan berdasarkan data nyata ada di atas."
+            : "Illustrative example of the report format. The figures, competitors and findings below are not measured from any workspace. The brief based on real data is above."}
+        </p>
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
 
           {/* Left column — narrative map + main document */}

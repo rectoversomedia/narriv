@@ -1006,15 +1006,11 @@
     "authorityScore": "Authority Score",
     "brandCitations": "Brand Citations",
     "compCitations": "Competitor Citations",
-    "citationInsight1": "Your strongest AI citation source is your official website.",
-    "citationInsight2": "Competitor appears more often in high-authority domains.",
-    "citationInsight3": "Your brand lacks independent third-party reviews in this category.",
     "aiReputation": "AI Reputation",
     "aiReputationDesc": "How AI platforms describe your brand vs competitors",
     "attribute": "Attribute",
     "brand": "Brand",
     "competitor": "Competitor",
-    "reputationInsight1": "AI platforms increasingly associate your brand with affordability but not innovation.",
     "shareOfAIAnswer": "Share of AI Answer",
     "shareOfAIAnswerDesc": "How often your brand appears across monitored AI answers",
     "promptCategory": "Prompt Category",
@@ -3914,6 +3910,9 @@
     "limitations": "Limitations",
     "detailHeading": "Supporting data",
     "detailDesc": "Metrics, sentiment and analysis behind the briefing.",
-    "pageTitle": "Overview"
+    "pageTitle": "Overview",
+    "headerLine": "Last 24 hours: {total} records · {analyzed} analysed · {negative} negative.",
+    "headerLoading": "Loading live data…",
+    "headerUnavailable": "Live summary unavailable."
   }
 }

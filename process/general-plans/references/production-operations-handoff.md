@@ -109,6 +109,13 @@ The shared demo login has no role: it can read the demo workspace but cannot cre
 - Actor notes (Apify store pages, 2026-10-14): `apidojo/twitter-scraper-lite` on a free Apify plan runs only in Demo Mode (5 runs/month, max 10 items); paid plans ~$0.016 per query + $0.0004/tweet. TikTok ~$1.70, Instagram $2.70 (free plan), YouTube ~$2.40 per 1,000 results. TikTok/Instagram hashtag input has spaces removed.
 - The Apify token in the local `backend/.env` is rejected by Apify (401). The production token's validity, plan and usage are shown by **Test connections** (read-only account call).
 
+## Product structure (2026-10-14)
+
+- Navigation: Overview, Monitoring (/signals), Issues & Narratives (/intelligence), Early Warnings (/alerts), AI Visibility, Ask Narriv, Reports & Insights (/reports + /brief tabs), Recommended Actions (/action-center + /action-plans + /workspace/cases tabs); Administration: Data Sources, Integrations, Activity Log, Settings. Config in `frontend/lib/navigation.ts`; old routes unchanged.
+- Overview starts with `GET /api/ai/overview?windowHours=` (`backend/src/lib/executive-overview.js`, deterministic): happening / why it matters (fact vs interpretation) / what changed (only with a previous-period baseline) / up to 3 actions with workspace evidence. Fewer than 3 records -> `insufficient_data`.
+- Indonesian is the default UI language for new visitors (stored choice wins).
+- AI Visibility measures one model's (gpt-4o-mini) answers to test prompts only; the former hard-coded "AI Reputation" and "Share of AI Answer" panels were removed. The demo Daily Brief sample document is labelled illustrative.
+
 ## Open blockers (owner action required)
 
 | Blocked | Why | Exact action | Needs |

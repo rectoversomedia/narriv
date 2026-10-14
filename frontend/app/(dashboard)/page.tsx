@@ -432,8 +432,8 @@ export default function DashboardPage() {
         </div>
         <p className="text-[13px] font-medium leading-relaxed text-[#5A6478]">
           {summary?.kpis
-              ? `${formatNumber(summary.kpis.total_signals)} signals in this period · ${formatNumber(summary.kpis.analyzed_signals)} analyzed · ${formatPercent(summary.kpis.negative_percentage)} negative.`
-              : dashboardQuery.isLoading ? "Loading live intelligence…" : "Live summary unavailable."}
+              ? tOverview("headerLine", { total: formatNumber(summary.kpis.total_signals), analyzed: formatNumber(summary.kpis.analyzed_signals), negative: formatPercent(summary.kpis.negative_percentage) })
+              : dashboardQuery.isLoading ? tOverview("headerLoading") : tOverview("headerUnavailable")}
         </p>
       </div>
 

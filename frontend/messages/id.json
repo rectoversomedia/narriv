@@ -997,7 +997,31 @@
       "Jum",
       "Sab",
       "Min"
-    ]
+    ],
+    "citationIntelligence": "Sumber Rujukan AI",
+    "whereDoesAI": "Dari mana AI mendapatkan informasi tentang brand Anda?",
+    "sourceDomain": "Domain Sumber",
+    "sourceType": "Jenis",
+    "citationFreq": "Frekuensi Rujukan",
+    "authorityScore": "Skor Otoritas",
+    "brandCitations": "Rujukan Brand",
+    "compCitations": "Rujukan Kompetitor",
+    "aiReputation": "Reputasi di AI",
+    "aiReputationDesc": "Bagaimana platform AI menggambarkan brand Anda dibanding kompetitor",
+    "attribute": "Atribut",
+    "brand": "Brand",
+    "competitor": "Kompetitor",
+    "shareOfAIAnswer": "Pangsa Jawaban AI",
+    "shareOfAIAnswerDesc": "Seberapa sering brand Anda muncul dalam jawaban AI",
+    "promptCategory": "Kategori Prompt",
+    "yourBrand": "Brand Anda",
+    "owned": "Milik Sendiri",
+    "news": "Berita",
+    "blog": "Blog",
+    "forum": "Forum",
+    "review": "Ulasan",
+    "wiki": "Wiki",
+    "social": "Sosial"
   },
   "ActionPlansLegacy": {
     "title": "Rencana Aksi",
@@ -3886,6 +3910,9 @@
     "limitations": "Keterbatasan",
     "detailHeading": "Data pendukung",
     "detailDesc": "Metrik, sentimen, dan analisis di balik ringkasan.",
-    "pageTitle": "Ringkasan"
+    "pageTitle": "Ringkasan",
+    "headerLine": "24 jam terakhir: {total} data · {analyzed} dianalisis · {negative} negatif.",
+    "headerLoading": "Memuat data…",
+    "headerUnavailable": "Ringkasan data belum tersedia."
   }
 }

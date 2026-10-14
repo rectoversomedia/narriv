@@ -1354,131 +1354,22 @@ export default function VisibilityPage() {
               </tbody>
             </table>
           </div>
-          <div className="mt-4 rounded-[10px] border border-[#D9E1FC] bg-[#F6F8FF] px-4 py-3">
-            <p className="text-[11px] font-semibold leading-relaxed text-[#53608C]">
-              {t("citationInsight1")} {t("citationInsight2")} {t("citationInsight3")}
-            </p>
-          </div>
         </CardContent>
       </Panel>
 
-      {/* AI Reputation Section */}
+      {/* AI Reputation and Share of AI Answer: not measured. These panels used
+          to show fixed example percentages to every workspace; nothing is shown
+          until there is a real measurement. */}
       <Panel>
         <CardContent className="p-5">
-          <div className="mb-5">
-            <h3 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{t("aiReputation")}</h3>
-            <p className="text-[11px] font-bold text-[#647099] mt-1">{t("aiReputationDesc")}</p>
-          </div>
-          <div className="flex flex-col gap-3">
-            {[
-              { label: "trusted", brand: 78, comp: 62 },
-              { label: "innovative", brand: 64, comp: 82 },
-              { label: "affordable", brand: 88, comp: 42 },
-              { label: "premium", brand: 52, comp: 68 },
-              { label: "reliable", brand: 74, comp: 76 },
-              { label: "customer-friendly", brand: 91, comp: 54 },
-              { label: "technology-driven", brand: 65, comp: 73 },
-              { label: "sustainable", brand: 45, comp: 61 },
-              { label: "controversial", brand: 18, comp: 64, brandNeg: true },
-            ].map((attr) => (
-              <div key={attr.label} className="grid grid-cols-[140px_1fr_1fr] items-center gap-3">
-                <p className="text-[11px] font-black capitalize text-[#101334]">{attr.label}</p>
-                {/* Brand bar */}
-                <div className="flex items-center gap-2">
-                  <div className="h-2 flex-1 rounded-full bg-[#EEF1F7] overflow-hidden">
-                    <div
-                      className={cn("h-full rounded-full", attr.brandNeg ? "bg-[#EF4444]" : "bg-[#8B5CFF]")}
-                      style={{ width: `${attr.brand}%` }}
-                    />
-                  </div>
-                  <span className="text-[10px] font-black text-[#101334] tabular-nums w-7 text-right">{attr.brand}%</span>
-                </div>
-                {/* Competitor bar */}
-                <div className="flex items-center gap-2">
-                  <div className="h-2 flex-1 rounded-full bg-[#EEF1F7] overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-[#EF4444]"
-                      style={{ width: `${attr.comp}%` }}
-                    />
-                  </div>
-                  <span className="text-[10px] font-black text-[#101334] tabular-nums w-7 text-right">{attr.comp}%</span>
-                </div>
-              </div>
-            ))}
-            <div className="mt-2 flex flex-wrap items-center gap-4 text-[10px] font-bold text-[#53608C]">
-              <span className="flex items-center gap-1.5">
-                <span className="size-2.5 rounded-full bg-[#8B5CFF]" />{t("brand")}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="size-2.5 rounded-full bg-[#EF4444]" />{t("competitor")}
-              </span>
-            </div>
-          </div>
-          <div className="mt-4 rounded-[10px] border border-[#D9E1FC] bg-[#F6F8FF] px-4 py-3">
-            <p className="text-[11px] font-semibold leading-relaxed text-[#53608C]">{t("reputationInsight1")}</p>
-          </div>
+          <h3 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{t("aiReputation")} · {t("shareOfAIAnswer")}</h3>
+          <p className="mt-2 text-[12px] font-semibold leading-relaxed text-[#53608C]">
+            {language === "id"
+              ? "Belum diukur. Narriv belum mengumpulkan jawaban dari platform AI publik secara otomatis, sehingga persepsi brand di AI dan pangsa jawaban dibanding kompetitor belum dapat dihitung. Gunakan AI Search Sandbox di atas untuk menguji prompt tertentu."
+              : "Not measured yet. Narriv does not collect answers from public AI platforms automatically, so how AI describes the brand and its share of answers against competitors cannot be calculated. Use the AI Search Sandbox above to test specific prompts."}
+          </p>
         </CardContent>
       </Panel>
-
-      {/* Share of AI Answer Section */}
-      <Panel>
-        <CardContent className="p-5">
-          <div className="mb-5">
-            <h3 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{t("shareOfAIAnswer")}</h3>
-            <p className="text-[11px] font-bold text-[#647099] mt-1">{t("shareOfAIAnswerDesc")}</p>
-          </div>
-          <div className="flex flex-col gap-6">
-            {[
-              {
-                category: "Best Digital Bank Indonesia",
-                rows: [
-                  { label: "Your Brand", pct: 38, color: "#8B5CFF" },
-                  { label: "Bank Jago", pct: 31, color: "#EF4444" },
-                  { label: "OVO", pct: 18, color: "#465FFF" },
-                  { label: "Others", pct: 13, color: "#CBD0E0" },
-                ],
-              },
-              {
-                category: "Mobile Banking Features",
-                rows: [
-                  { label: "Your Brand", pct: 42, color: "#8B5CFF" },
-                  { label: "Bank Jago", pct: 28, color: "#EF4444" },
-                  { label: "OVO", pct: 20, color: "#465FFF" },
-                  { label: "Others", pct: 10, color: "#CBD0E0" },
-                ],
-              },
-              {
-                category: "Best for Savings",
-                rows: [
-                  { label: "Your Brand", pct: 29, color: "#8B5CFF" },
-                  { label: "Bank Jago", pct: 38, color: "#EF4444" },
-                  { label: "OVO", pct: 21, color: "#465FFF" },
-                  { label: "Others", pct: 12, color: "#CBD0E0" },
-                ],
-              },
-            ].map((prompt) => (
-              <div key={prompt.category}>
-                <p className="text-[11px] font-black text-[#101334] mb-2">{prompt.category}</p>
-                <div className="flex flex-col gap-2">
-                  {prompt.rows.map((row) => (
-                    <div key={row.label} className="flex items-center gap-3">
-                      <div className="w-28 shrink-0 text-[11px] font-bold text-[#53608C] truncate">{row.label}</div>
-                      <div className="h-2.5 flex-1 rounded-full bg-[#EEF1F7] overflow-hidden">
-                        <div
-                          className="h-full rounded-full"
-                          style={{ width: `${row.pct}%`, backgroundColor: row.color }}
-                        />
-                      </div>
-                      <span className="text-[11px] font-black text-[#101334] tabular-nums w-10 text-right shrink-0">{row.pct}%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Panel>
-
       {/* Actions Modal */}
       {isActionsModalOpen && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsActionsModalOpen(false)}>
