@@ -9,7 +9,6 @@ import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { DashboardEmptyState, DashboardErrorState, TableSkeleton } from "@/components/dashboard/dashboard-states";
 import { useToast } from "@/components/ui/toast";
 import { createIntegration, deleteIntegration, getIntegrations, updateIntegration, testIntegration, type IntegrationRecord } from "@/lib/api-service";
-import { getMockIntegrations } from "@/lib/demo-mock-data";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
 import { intlLocale } from "@/store/useUiStore";
@@ -92,17 +91,10 @@ export default function IntegrationsPage() {
   const integrationsQuery = useQuery({
     queryKey: ["integrations", { platform: platformFilter, status: statusFilter }],
     queryFn: async () => {
-      try {
-        return await getIntegrations({
-          platform: platformFilter || undefined,
-          status: statusFilter || undefined,
-        });
-      } catch (err) {
-        if (isDemoSession) {
-          return getMockIntegrations();
-        }
-        throw err;
-      }
+      return await getIntegrations({
+        platform: platformFilter || undefined,
+        status: statusFilter || undefined,
+      });
     },
     staleTime: 30 * 1000,
   });

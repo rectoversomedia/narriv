@@ -207,6 +207,8 @@ export interface Signal {
   narratives?: Array<{ id: string; title: string }>;
   analysisStatus?: "analyzed" | "unanalyzed";
   analysisConfidence?: number | null;
+  /** Brand relevance from the record's own text; null when no brand is configured. */
+  relevance?: "direct" | "indirect" | "competitor" | "unconfirmed" | null;
 }
 
 export interface SignalAnalysis {
@@ -330,6 +332,12 @@ export interface GetSignalsOptions {
   startDate?: string;
   endDate?: string;
   sentiment?: string;
+  /** Records linked to this narrative (same workspace only). */
+  narrativeId?: string;
+  /** "direct": names the brand; "other": does not. */
+  relevance?: "direct" | "other";
+  /** "analyzed" or "pending" AI analysis. */
+  analysis?: "analyzed" | "pending";
 }
 
 export interface SignalsMeta {
@@ -361,19 +369,25 @@ export async function getSignalsMeta(): Promise<SignalsMeta | null> {
   }
 }
 
+/** A page of signals plus how brand relevance was determined for this workspace. */
+export type SignalListPage = PaginatedResponse<Signal> & { relevance?: { configured: boolean; brand: string | null; brandSource: string } | null };
+
 export async function getSignals(
   options: GetSignalsOptions = {}
-): Promise<PaginatedResponse<Signal> | null> {
-  const { page = 1, limit = 20, keyword, platform, startDate, endDate, sentiment } = options;
+): Promise<SignalListPage | null> {
+  const { page = 1, limit = 20, keyword, platform, startDate, endDate, sentiment, narrativeId, relevance, analysis } = options;
   const params = new URLSearchParams({ page: String(page), limit: String(limit) });
   if (keyword) params.set("keyword", keyword);
   if (platform) params.set("platform", platform);
   if (startDate) params.set("startDate", startDate);
   if (endDate) params.set("endDate", endDate);
   if (sentiment) params.set("sentiment", sentiment);
+  if (narrativeId) params.set("narrativeId", narrativeId);
+  if (relevance) params.set("relevance", relevance);
+  if (analysis) params.set("analysis", analysis);
 
   try {
-    return await apiClient<PaginatedResponse<Signal>>(`/signals?${params.toString()}`);
+    return await apiClient<SignalListPage>(`/signals?${params.toString()}`);
   } catch {
     return null;
   }
@@ -451,7 +465,7 @@ export async function getAlerts(
 
 export async function getAlertById(id: string): Promise<Alert | null> {
   // If id is a mock ID or starts with demo-alert-, look up in mock alerts
-  if (id.startsWith("demo-alert-") || id.startsWith("mock-alert-")) {
+  if (isDemoMode() && (id.startsWith("demo-alert-") || id.startsWith("mock-alert-"))) {
     const mockAlerts = getMockAlerts();
     const found = mockAlerts.find((a) => a.id === id);
     if (found) return found;
@@ -459,13 +473,7 @@ export async function getAlertById(id: string): Promise<Alert | null> {
 
   try {
     const raw = await apiClient<any>(`/api/alerts/${id}`);
-    if (!raw) {
-      if (isDemoMode()) {
-        const mockAlerts = getMockAlerts();
-        return mockAlerts.find((a) => a.id === id) ?? mockAlerts[0] ?? null;
-      }
-      return null;
-    }
+    if (!raw) return null;
 
     return {
       id: raw.id,
@@ -488,10 +496,7 @@ export async function getAlertById(id: string): Promise<Alert | null> {
       createdAt: raw.createdAt ?? raw.created_at ?? new Date().toISOString(),
     };
   } catch {
-    if (isDemoMode()) {
-      const mockAlerts = getMockAlerts();
-      return mockAlerts.find((a) => a.id === id) ?? mockAlerts[0] ?? null;
-    }
+    // Never another alert in place of the one requested.
     return null;
   }
 }
@@ -2248,21 +2253,14 @@ export async function getFeedbackAccuracy(options: Record<string, string | numbe
 }
 
 export async function getNarrativeById(id: string): Promise<NarrativeDetailRecord | null> {
-  if (id.startsWith("demo-narrative-") || id.startsWith("mock-narrative-")) {
+  if (isDemoMode() && (id.startsWith("demo-narrative-") || id.startsWith("mock-narrative-"))) {
     return getMockNarrativeDetail(id);
   }
 
+  // A real narrative id never falls back to sample content.
   try {
-    const res = await apiClient<NarrativeDetailRecord>(`/api/narratives/${id}`);
-    if (res) return res;
-    if (isDemoMode()) {
-      return getMockNarrativeDetail(id);
-    }
-    return null;
+    return (await apiClient<NarrativeDetailRecord>(`/api/narratives/${id}`)) ?? null;
   } catch {
-    if (isDemoMode()) {
-      return getMockNarrativeDetail(id);
-    }
     return null;
   }
 }

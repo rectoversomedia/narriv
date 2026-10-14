@@ -290,7 +290,13 @@ function DeltaChip({ delta }: { delta: string }) {
 // Main Page
 // ---------------------------------------------------------------------------
 
+function useL() {
+  const language = useUiStore((state) => state.language);
+  return (en: string, id: string) => (language === "id" ? id : en);
+}
+
 function LiveExecutiveBrief({ windowHours }: { windowHours: number }) {
+  const L = useL();
   const { data, isLoading, isError } = useQuery({
     queryKey: ["brief", "live", windowHours],
     queryFn: async () => (await import("@/lib/intelligence-api")).getExecutiveBrief(windowHours),
@@ -303,29 +309,29 @@ function LiveExecutiveBrief({ windowHours }: { windowHours: number }) {
       <div>
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-card">
           <div className="flex items-center justify-between">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">Live executive brief</div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">{L("Live executive brief", "Ringkasan eksekutif live")}</div>
             {isLoading ? (
-              <span className="text-[12px] text-[#5A6478]">Loading…</span>
+              <span className="text-[12px] text-[#5A6478]">{L("Loading…", "Memuat…")}</span>
             ) : isError ? (
-              <span className="text-[12px] text-rose-600">Backend unavailable</span>
+              <span className="text-[12px] text-rose-600">{L("Backend unavailable", "Layanan belum tersedia")}</span>
             ) : data?.grounded ? (
-              <span className="text-[12px] text-emerald-700">Grounded in current data</span>
+              <span className="text-[12px] text-emerald-700">{L("Grounded in current data", "Berdasarkan data terkini")}</span>
             ) : (
-              <span className="text-[12px] text-[#5A6478]">Insufficient data</span>
+              <span className="text-[12px] text-[#5A6478]">{L("Insufficient data", "Data belum cukup")}</span>
             )}
           </div>
           {data && data.grounded ? (
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="rounded-lg border border-slate-200 bg-white p-3">
-                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#5A6478]">What changed</div>
+                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#5A6478]">{L("What changed", "Apa yang berubah")}</div>
                 <p className="mt-1 text-[12.5px] text-slate-800">{data.sections?.whatChanged?.summary || "—"}</p>
               </div>
               <div className="rounded-lg border border-slate-200 bg-white p-3">
-                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#5A6478]">Biggest risk</div>
+                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#5A6478]">{L("Biggest risk", "Risiko terbesar")}</div>
                 <p className="mt-1 text-[12.5px] text-slate-800">{data.sections?.biggestRisk?.summary || "—"}</p>
               </div>
               <div className="rounded-lg border border-slate-200 bg-white p-3">
-                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#5A6478]">Reputation</div>
+                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#5A6478]">{L("Reputation", "Reputasi")}</div>
                 <p className="mt-1 text-[12.5px] text-slate-800">{data.sections?.reputation?.summary || "—"}</p>
               </div>
             </div>
@@ -347,6 +353,7 @@ type BriefDriver = { key: string; contribution: number; reason: string; evidence
 
 /** Grounded detail for the live brief: risk drivers, uncertainty, actions and what to watch. */
 function LiveBriefDetails({ data }: { data: import("@/lib/intelligence-api").ExecutiveBriefPayload }) {
+  const L = useL();
   const risk = data.sections?.biggestRisk as unknown as { drivers?: BriefDriver[]; uncertainty?: { level: string; reasons: string[] } | null };
   const drivers = risk?.drivers || [];
   const actions = data.sections?.recommendedActions || [];
@@ -354,9 +361,9 @@ function LiveBriefDetails({ data }: { data: import("@/lib/intelligence-api").Exe
   return (
     <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
       <div className="rounded-lg border border-slate-200 bg-white p-3">
-        <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#5A6478]">What drives the risk index</div>
+        <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#5A6478]">{L("What drives the risk index", "Pendorong indeks risiko")}</div>
         {drivers.length === 0 ? (
-          <p className="mt-1 text-[12.5px] text-[#5A6478]">No risk component is elevated.</p>
+          <p className="mt-1 text-[12.5px] text-[#5A6478]">{L("No risk component is elevated.", "Tidak ada komponen risiko yang meningkat.")}</p>
         ) : (
           <ul className="mt-1.5 space-y-1.5">
             {drivers.map((d) => (
@@ -370,15 +377,15 @@ function LiveBriefDetails({ data }: { data: import("@/lib/intelligence-api").Exe
         {risk?.uncertainty?.reasons?.length ? (
           <p className="mt-2 text-[11.5px] text-amber-700">{risk.uncertainty.level} uncertainty: {risk.uncertainty.reasons.join(" ")}</p>
         ) : null}
-        <p className="mt-2 text-[11px] text-[#5A6478]">Heuristic index for prioritization, not a probability.</p>
+        <p className="mt-2 text-[11px] text-[#5A6478]">{L("Heuristic index for prioritization, not a probability.", "Indeks heuristik untuk prioritas, bukan probabilitas.")}</p>
         {data.sections?.emergingIssue?.summary ? (
-          <p className="mt-2 text-[12.5px] text-slate-700"><span className="font-semibold">Emerging: </span>{data.sections.emergingIssue.summary}</p>
+          <p className="mt-2 text-[12.5px] text-slate-700"><span className="font-semibold">{L("Emerging", "Berkembang")}: </span>{data.sections.emergingIssue.summary}</p>
         ) : null}
       </div>
       <div className="rounded-lg border border-slate-200 bg-white p-3">
-        <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#5A6478]">Recommended actions (suggested, require approval)</div>
+        <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#5A6478]">{L("Recommended actions (suggested, require approval)", "Rekomendasi tindakan (saran, perlu persetujuan)")}</div>
         {actions.length === 0 ? (
-          <p className="mt-1 text-[12.5px] text-[#5A6478]">No actions suggested.</p>
+          <p className="mt-1 text-[12.5px] text-[#5A6478]">{L("No actions suggested.", "Tidak ada tindakan yang disarankan.")}</p>
         ) : (
           <ul className="mt-1.5 space-y-2">
             {actions.map((a, i) => (
@@ -400,7 +407,7 @@ function LiveBriefDetails({ data }: { data: import("@/lib/intelligence-api").Exe
         )}
         {watch.length ? (
           <div className="mt-2 border-t border-slate-100 pt-2">
-            <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#5A6478]">What to watch next</div>
+            <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#5A6478]">{L("What to watch next", "Yang perlu dipantau berikutnya")}</div>
             <ul className="mt-1 list-disc pl-4 text-[12px] text-slate-600">
               {watch.map((w, i) => <li key={i}>{w.label}</li>)}
             </ul>

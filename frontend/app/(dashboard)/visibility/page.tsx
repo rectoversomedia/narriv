@@ -28,7 +28,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardErrorState, MetricRowSkeleton } from "@/components/dashboard/dashboard-states";
 import { getVisibility, getVisibilitySummary, getVisibilityTrends, getWorkspaceSettings, triggerVisibilityAnalysis, type VisibilityResponse } from "@/lib/api-service";
-import { getMockVisibility, getMockVisibilitySummary, getMockVisibilityTrends } from "@/lib/demo-mock-data";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { useUiStore } from "@/store/useUiStore";
 import {
@@ -523,50 +522,17 @@ export default function VisibilityPage() {
 
   const visibilityQuery = useQuery({
     queryKey: ["visibility"],
-    queryFn: async () => {
-      try {
-        const real = await getVisibility();
-        if (real && ((real.prompts?.length ?? 0) > 0 || Number(real.score ?? 0) > 0 || (real.citations?.length ?? 0) > 0)) {
-          return real;
-        }
-        return isDemoSession ? getMockVisibility() : real;
-      } catch (err) {
-        if (isDemoSession) return getMockVisibility();
-        throw err;
-      }
-    },
+    queryFn: () => getVisibility(),
     staleTime: 30 * 1000,
   });
   const visibilitySummaryQuery = useQuery({
     queryKey: ["visibility-summary"],
-    queryFn: async () => {
-      try {
-        const real = await getVisibilitySummary();
-        if (real && (real.engine_breakdown.length > 0 || real.kpis.total_analyses > 0)) {
-          return real;
-        }
-        return isDemoSession ? getMockVisibilitySummary() : real;
-      } catch (err) {
-        if (isDemoSession) return getMockVisibilitySummary();
-        throw err;
-      }
-    },
+    queryFn: () => getVisibilitySummary(),
     staleTime: 60 * 1000,
   });
   const visibilityTrendsQuery = useQuery({
     queryKey: ["visibility-trends", selectedDays],
-    queryFn: async () => {
-      try {
-        const real = await getVisibilityTrends(undefined, undefined, selectedDays);
-        if (real && real.trends && real.trends.length > 0) {
-          return real;
-        }
-        return isDemoSession ? getMockVisibilityTrends(selectedDays) : real;
-      } catch (err) {
-        if (isDemoSession) return getMockVisibilityTrends(selectedDays);
-        throw err;
-      }
-    },
+    queryFn: () => getVisibilityTrends(undefined, undefined, selectedDays),
     staleTime: 60 * 1000,
   });
   const workspaceSettingsQuery = useQuery({

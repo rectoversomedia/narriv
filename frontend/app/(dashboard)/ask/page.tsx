@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import { useUiStore } from "@/store/useUiStore";
 import { Send, BotMessageSquare, TrendingUp, Zap, AlertTriangle, Users, Compass, Eye, BarChart2, Activity, ChevronDown, ChevronRight } from "lucide-react";
 import { CardContent } from "@/components/ui/card";
-import { getMockNarratives } from "@/lib/demo-mock-data";
 import { getNarratives, getDashboardSummary } from "@/lib/api-service";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import type { NarrativeRecord, DashboardSummary } from "@/lib/api-service";
@@ -153,10 +152,7 @@ export default function AskPage() {
       if (narrativesResult) setNarratives(narrativesResult);
       if (summaryResult) setDashboardSummary(summaryResult);
     }).catch(() => {
-      // Fallback to mock only if demo session and API fails
-      if (isDemoSession) {
-        setNarratives(getMockNarratives());
-      }
+      // No sample narratives: Ask only describes stored records.
     });
   }, [isDemoSession]);
 
@@ -189,7 +185,7 @@ export default function AskPage() {
         const assistantMsg: Message = {
           id: crypto.randomUUID(),
           role: "assistant",
-          content: result.answer || (result.error ? `I could not answer that: ${result.error}` : "Insufficient data to answer."),
+          content: result.answer || (result.error ? (language === "id" ? `Pertanyaan ini belum dapat dijawab: ${result.error}` : `I could not answer that: ${result.error}`) : (language === "id" ? "Data belum cukup untuk menjawab." : "Insufficient data to answer.")),
           evidence: (result.sources || []).map((s) => ({ id: s.id, kind: s.kind, title: (s.title as string | null | undefined) ?? null, url: (s.url as string | null | undefined) ?? null })),
           // Grounded + cited sources is the strongest signal we have; otherwise low.
           confidence: result.grounded && (result.sources || []).length > 0 ? "medium" : "low",
@@ -340,7 +336,7 @@ export default function AskPage() {
               <h1 className="text-[15px] font-black text-slate-900">{tAsk("title")}</h1>
             </div>
             {lastModel && (
-              <span title="Model that produced the latest answer" className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold text-[#5A6478]">
+              <span title={language === "id" ? "Model yang menghasilkan jawaban terakhir" : "Model that produced the latest answer"} className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-bold text-[#5A6478]">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#12B76A]" />
                 {lastModel}
               </span>
@@ -428,7 +424,7 @@ export default function AskPage() {
                     {/* Evidence bullets */}
                     {msg.evidence && msg.evidence.length > 0 && (
                       <ul className="mt-3 space-y-1.5">
-                        <li className="text-[10px] font-black uppercase tracking-wide text-[#5A6478]">Sources cited</li>
+                        <li className="text-[10px] font-black uppercase tracking-wide text-[#5A6478]">{language === "id" ? "Sumber yang dikutip" : "Sources cited"}</li>
                         {msg.evidence.map((e) => {
                           const label = e.title || e.id;
                           const kind = e.kind === "alert" ? "Alert" : e.kind === "narrative" ? "Narrative" : e.kind === "signal" ? "Signal" : "Record";

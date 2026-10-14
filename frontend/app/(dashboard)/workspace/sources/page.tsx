@@ -39,7 +39,6 @@ import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { AddSourceModal } from "@/components/dashboard/add-source-modal";
 import { bootstrapDefaultSources, getSources, updateSource, deleteSource, runBatchSourceIngestion, startPlatformCollection, getSourceHealth, getSourceCoverage, fetchLatestSignals, type SourceRecord, type SourceHealthResponse, type SourceHealthSummary, type ConnectorStatus } from "@/lib/api-service";
 import { usePlatformCollections } from "@/components/dashboard/platform-collection-panel";
-import { getMockSources } from "@/lib/demo-mock-data";
 import { PipelineHealthPanel } from "@/components/dashboard/pipeline-health-panel";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
@@ -84,18 +83,10 @@ const STATUS_BADGE: Record<StatusTone, string> = {
   warn: "bg-[#F59E0B]/12 text-[#A04606]",
   error: "bg-[#FF1D1D]/10 text-[#C81E1E]",
 };
-const ERROR_REASON: Record<string, string> = {
-  authentication_failed: "Apify rejected the token",
-  billing_or_quota: "Apify usage or billing limit",
-  actor_not_rented: "actor must be rented on Apify",
-  permission_denied: "no permission for this actor",
-  actor_not_found: "actor not found",
-  rate_limited: "rate limited",
-  provider_unavailable: "Apify unavailable",
-  timeout: "run hit its time limit",
-  actor_run_failed: "actor run failed",
-  persist_failed: "results could not be stored",
-};
+// Collection failure codes reported by the backend; text lives in Sources.errors.
+const ERROR_CODES = ["authentication_failed", "billing_or_quota", "actor_not_rented", "permission_denied", "actor_not_found", "rate_limited", "provider_unavailable", "timeout", "actor_run_failed", "run_not_found", "persist_failed", "request_failed"];
+const errorReason = (t: (key: string) => string, code: string | null | undefined) =>
+  !code ? t("errors.unknown") : ERROR_CODES.includes(code) ? t(`errors.${code}`) : code;
 
 type ToneStyle = {
   color: string;
@@ -208,7 +199,7 @@ function buildApiConnectors(sources: SourceRecord[], health: SourceHealthRespons
     const connector = healthById.get(source.id);
     // Without health data the run state is unknown: say so rather than "Live".
     const view = STATUS_VIEW[connector?.status ?? (active ? "not_tested" : "paused")];
-    const reason = connector?.lastError ? ERROR_REASON[connector.lastError] ?? connector.lastError : null;
+    const reason = connector?.lastError ? errorReason(t, connector.lastError) : null;
     return {
       id: source.id,
       name: source.name,
@@ -612,14 +603,7 @@ export default function SourcesPage() {
   const sourcesQuery = useQuery({
     queryKey: ["sources", { limit: 50 }],
     queryFn: async () => {
-      try {
-        return await getSources({ limit: 50 });
-      } catch (err) {
-        if (isDemoSession) {
-          return getMockSources();
-        }
-        throw err;
-      }
+      return await getSources({ limit: 50 });
     },
     staleTime: 30 * 1000,
   });
@@ -797,7 +781,7 @@ export default function SourcesPage() {
       const status = a.outcome === "success" ? t("activityStored", { count: a.inserted ?? 0 })
         : a.outcome === "empty" ? t("activityEmpty")
         : a.outcome === "running" ? t("activityRunning")
-        : t("activityFailed", { reason: ERROR_REASON[a.error ?? ""] ?? a.error ?? "unknown" });
+        : t("activityFailed", { reason: errorReason(t, a.error) });
       return [`${a.sourceId ?? a.kind}-${a.at}-${i}`, a.name, status, formatSourceTime(a.at), tone, Database] as const;
     });
 

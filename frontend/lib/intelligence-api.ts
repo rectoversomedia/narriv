@@ -234,17 +234,39 @@ export async function getGeoIntelligence(windowHours = 168) {
   return (await I(`/geo-intelligence?windowHours=${windowHours}`)) as GeoIntelligencePayload;
 }
 
-export interface OverviewEvidence { id: string; kind: "signal" | "alert" | "narrative"; title: string | null; url: string | null; platform?: string | null; publisher?: string | null; publishedAt?: string | null; collectedAt?: string | null; sentiment?: string | null; severity?: string | null }
-export interface OverviewFinding { code: string; type: "fact" | "interpretation"; values: Record<string, string | number | null>; evidenceIds: string[] }
-export interface OverviewAction { action: string; priority: string; urgency: string; whyItMatters?: string; observedIssue?: string; monitorNext: string | null; requiresApproval: boolean; limitations: string[]; evidence: OverviewEvidence[]; evidenceCount: number; relatedNarrative: { id: string; title: string | null } | null }
+export type Relevance = "direct" | "indirect" | "competitor" | "unconfirmed";
+export interface OverviewEvidence { id: string; kind: "signal" | "alert" | "narrative"; title: string | null; url: string | null; platform?: string | null; publisher?: string | null; publishedAt?: string | null; collectedAt?: string | null; sentiment?: string | null; severity?: string | null; relevance?: Relevance | null }
+export interface OverviewFinding { code: string; type: "fact" | "interpretation"; values: Record<string, string | number | boolean | null>; evidenceIds: string[] }
+/** Follow-ups already recorded (action plans, cases); the stage is their stored status only. */
+export interface OverviewFollowUp {
+  stage: "none" | "in_progress" | "completed";
+  openSince: string | null;
+  plans: Array<{ id: string; title: string | null; status: string; createdAt: string | null }>;
+  cases: Array<{ id: string; title: string | null; status: string; hasResolution: boolean; createdAt: string | null }>;
+}
+export interface OverviewAction { action: string; priority: string; urgency: string; whyItMatters?: string; observedIssue?: string; monitorNext: string | null; requiresApproval: boolean; limitations: string[]; evidence: OverviewEvidence[]; evidenceCount: number; signalIds?: string[]; relatedNarrative: { id: string; title: string | null } | null; followUp?: OverviewFollowUp; unchangedSinceFollowUp?: boolean }
+export interface OverviewMainIssue { id: string; title: string; signals: number; brandSignals: number | null; negative: number; severe?: number; publishers: number; platforms: string[]; isNew: boolean; previousSignals?: number; rankedBy?: string[]; evidence: OverviewEvidence[]; evidenceIds?: string[]; followUp?: OverviewFollowUp }
 export interface ExecutiveOverview {
   status: "ok" | "insufficient_data";
   period: { from: string; to: string; windowHours: number };
-  coverage: { signals: number; platforms: Record<string, number>; newsOnly: boolean };
+  coverage: {
+    signals: number;
+    platforms: Record<string, number>;
+    newsOnly: boolean;
+    relevance?: { configured: boolean; brandSource: "brand_name" | "keywords" | "none"; brand: string | null; keywords: string[]; competitorsConfigured: number; counts: Record<Relevance, number> | null };
+  };
   minimumSignals?: number;
-  happening: { main: { id: string; title: string; signals: number; negative: number; publishers: number; platforms: string[]; isNew: boolean; evidence: OverviewEvidence[] } | null; counts: Record<string, number>; topEvidence: OverviewEvidence[] } | null;
+  happening: { main: OverviewMainIssue | null; counts: Record<string, number>; excluded?: Array<{ id: string; title: string; signals: number; brandSignals: number }>; topEvidence: OverviewEvidence[] } | null;
   matters: OverviewFinding[];
-  changed: { baseline: boolean; comparison: { current: { from: string; to: string }; previous: { from: string; to: string } }; current: { signals: number; negativeShare: number | null }; previous: { signals: number; negativeShare: number | null } | null; newNarratives: Array<{ id: string; title: string; signals: number }>; newWarnings: number } | null;
+  changed: {
+    baseline: boolean;
+    comparison: { current: { from: string; to: string }; previous: { from: string; to: string } };
+    current: { signals: number; brandSignals?: number | null; negativeShare: number | null };
+    previous: { signals: number; brandSignals?: number | null; negativeShare: number | null } | null;
+    mainIssue?: { title: string; isNew: boolean; previousSignals: number } | null;
+    newNarratives: Array<{ id: string; title: string; signals: number }>;
+    newWarnings: number;
+  } | null;
   actions: OverviewAction[];
   uncertainty: { level: string; reasons: string[] } | null;
   limitations?: string[];

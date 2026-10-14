@@ -34,13 +34,18 @@ export function isDemoMode(): boolean {
   if (typeof window === "undefined") return false;
 
   try {
-    // 1. Check URL search params first (most reliable for demo mode)
+    // 1. A signed-in session decides: a real client workspace is never put
+    // into demo mode by a URL parameter (that would allow sample fallbacks).
+    const signedIn = useAuthStore.getState();
+    if (signedIn.isAuthenticated && signedIn.user) return signedIn.user.provider === "demo";
+
+    // 2. Signed out only: the URL may ask for the demo experience.
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("demo") === "true" || urlParams.get("mode") === "demo") {
       return true;
     }
 
-    // 2. Check Zustand persist store (narriv-auth)
+    // 3. Check Zustand persist store (narriv-auth)
     // IMPORTANT: read from Zustand store directly to avoid localStorage hydration race.
     // Zustand persist rehydrates synchronously from localStorage on create(), so
     // getState() always returns the persisted state (not default values).

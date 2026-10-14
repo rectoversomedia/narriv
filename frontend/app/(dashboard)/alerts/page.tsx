@@ -69,7 +69,6 @@ import {
   type NotificationRuleTrigger,
   type WorkspaceMemberRecord,
 } from "@/lib/api-service";
-import { getMockAlerts, getMockAlertsSummary } from "@/lib/demo-mock-data";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { intlLocale } from "@/store/useUiStore";
 import { DemoBanner } from "@/components/ui/demo-banner";
@@ -1116,8 +1115,7 @@ export default function AlertsPage() {
     queryKey: ["alerts-summary"],
     queryFn: async () => {
       const res = await getAlertsSummary();
-      if (res) return res;
-      return isDemoSession ? getMockAlertsSummary() : null;
+      return res ?? null;
     },
     staleTime: 60 * 1000,
   });
@@ -1133,10 +1131,7 @@ export default function AlertsPage() {
         status: statusFilter || undefined,
         search: searchQuery.trim() || undefined,
       });
-      if (res) return res;
-      return isDemoSession
-        ? { data: getMockAlerts(), pagination: { page: 1, limit: 10, total: 5, totalPages: 1 } }
-        : { data: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0 } };
+      return res ?? { data: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0 } };
     },
     staleTime: 30 * 1000,
   });
@@ -1144,10 +1139,7 @@ export default function AlertsPage() {
     queryKey: ["alerts", "critical-delivery"],
     queryFn: async () => {
       const res = await getAlerts({ page: 1, limit: 100, severity: "critical" });
-      if (res) return res;
-      return isDemoSession
-        ? { data: getMockAlerts().filter((a) => a.severity === "critical"), pagination: { page: 1, limit: 100, total: 1, totalPages: 1 } }
-        : { data: [], pagination: { page: 1, limit: 100, total: 0, totalPages: 0 } };
+      return res ?? { data: [], pagination: { page: 1, limit: 100, total: 0, totalPages: 0 } };
     },
     staleTime: 30 * 1000,
   });

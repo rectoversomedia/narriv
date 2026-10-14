@@ -9,7 +9,6 @@ import { AppCard, SectionHeader, toneMap } from "@/components/dashboard/dashboar
 import { CardContent } from "@/components/ui/card";
 import { text, type Tone } from "@/lib/mock-data";
 import { useUiStore, intlLocale } from "@/store/useUiStore";
-import { getMockNarratives } from "@/lib/demo-mock-data";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { useQuery } from "@tanstack/react-query";
 import { fetchDashboardSummaryStrict, getDashboardSummary, getDateRangeOptions, getWorkspaceSettings, type DateRangeKey } from "@/lib/api-service";
@@ -186,6 +185,7 @@ export default function DashboardPage() {
   const tOverview = useTranslations("Overview");
   const tDrawer = useTranslations("DemoApp");
   const language = useUiStore((state) => state.language);
+  const L = (en: string, id: string) => text({ en, id }, language);
   const [timeRange, setTimeRange] = useState<DateRangeKey>("24h");
   const [selectedAction, setSelectedAction] = useState<QuickActionKey | null>(null);
   const user = useAuthStore((state) => state.user);
@@ -301,23 +301,23 @@ export default function DashboardPage() {
             <Rocket size={36} className="text-white" />
           </div>
           <h1 className="mb-3 text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">
-            Welcome to Narriv!
+            {L("Welcome to Narriv!", "Selamat datang di Narriv!")}
           </h1>
           <p className="mt-1.5 max-w-2xl text-[14px] font-medium leading-6 text-body">
-            Set up your monitoring workspace in just 3 steps. We&apos;ll help you configure sources and keywords to start tracking signals.
+            {L("Set up your monitoring workspace in 3 steps: keywords, sources, then monitoring.", "Siapkan workspace pemantauan dalam 3 langkah: kata kunci, sumber, lalu pemantauan.")}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
             <div className="flex items-center gap-3 px-4 py-3 rounded-[8px] border border-slate-100 bg-slate-50">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#465FFF] text-white text-[13px] font-bold">1</span>
-              <span className="text-[14px] font-bold text-slate-700">Configure Keywords</span>
+              <span className="text-[14px] font-bold text-slate-700">{L("Configure Keywords", "Atur Kata Kunci")}</span>
             </div>
             <div className="flex items-center gap-3 px-4 py-3 rounded-[8px] border border-slate-100 bg-slate-50">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#465FFF] text-white text-[13px] font-bold">2</span>
-              <span className="text-[14px] font-bold text-slate-700">Select Sources</span>
+              <span className="text-[14px] font-bold text-slate-700">{L("Select Sources", "Pilih Sumber")}</span>
             </div>
             <div className="flex items-center gap-3 px-4 py-3 rounded-[8px] border border-slate-100 bg-slate-50">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#465FFF] text-white text-[13px] font-bold">3</span>
-              <span className="text-[14px] font-bold text-slate-700">Start Monitoring</span>
+              <span className="text-[14px] font-bold text-slate-700">{L("Start Monitoring", "Mulai Pemantauan")}</span>
             </div>
           </div>
           <Link
@@ -389,16 +389,7 @@ export default function DashboardPage() {
           // No historical snapshots yet: show nothing rather than an invented +0%.
           growth: t.delta ?? null,
         }))
-      : isDemoSession
-        ? getMockNarratives().data.map((n) => ({
-            id: n.id,
-            title: n.title,
-            status: "active" as const,
-            sentiment: (n.sentiment === "positive" ? "green" : n.sentiment === "negative" ? "red" : n.sentiment === "mixed" ? "amber" : "blue") as Tone,
-            volume: String(n.signalCount),
-            growth: n.velocity,
-          }))
-        : [];
+      : [];
 
   const priorityBadgeClass: Record<string, string> = {
     Immediate: "bg-red-50 text-red-700 border-red-200",
@@ -410,7 +401,7 @@ export default function DashboardPage() {
   // Demo sessions read the real demo workspace summary; the sections built from
   // sample values below are labelled "Illustrative" so they are never read as
   // measurements of this workspace.
-  const illustrativeNote = "Illustrative example, not measured from this workspace";
+  const illustrativeNote = L("Illustrative example, not measured from this workspace", "Contoh ilustratif, bukan hasil pengukuran workspace ini");
 
   return (
     <div className="space-y-8 pb-6">
@@ -458,16 +449,16 @@ export default function DashboardPage() {
       {isEmptyDashboard && !liveErrorKind && (
         // A new workspace has no data yet: say what is needed rather than show empty intelligence.
         <section aria-labelledby="setup-title" className="rounded-[14px] border border-[#DDE3EF] bg-white p-5">
-          <h2 id="setup-title" className="text-[16px] font-bold text-[#101334]">Set up monitoring for this workspace</h2>
-          <p className="mt-1 text-[13px] text-[#5A6478]">No signals have been collected in this period yet, so the scores and narratives below have nothing to work from.</p>
+          <h2 id="setup-title" className="text-[16px] font-bold text-[#101334]">{L("Set up monitoring for this workspace", "Siapkan pemantauan untuk workspace ini")}</h2>
+          <p className="mt-1 text-[13px] text-[#5A6478]">{L("No records have been collected in this period yet, so there is nothing to summarise.", "Belum ada data yang terkumpul pada periode ini, jadi belum ada yang dapat diringkas.")}</p>
           <ol className="mt-4 grid gap-3 sm:grid-cols-3">
             {[
-              { n: 1, title: "Add monitoring keywords", body: "Company, brand, product or executive names to follow.", href: "/workspace/settings#keywords", cta: "Open keywords" },
-              { n: 2, title: "Collect the first data", body: "Owners and admins can run monitoring now; scheduled runs follow every 6 hours.", href: "/workspace/settings#keywords", cta: "Run monitoring" },
-              { n: 3, title: "Review signals and narratives", body: "Sentiment, narratives and alerts appear once articles are analysed.", href: "/signals", cta: "Open Signals" },
+              { n: 1, title: L("Add monitoring keywords", "Tambah kata kunci pemantauan"), body: L("Company, brand, product or executive names to follow.", "Nama perusahaan, brand, produk, atau eksekutif yang ingin dipantau."), href: "/workspace/settings#keywords", cta: L("Open keywords", "Buka kata kunci") },
+              { n: 2, title: L("Collect the first data", "Kumpulkan data pertama"), body: L("Owners and admins can run monitoring now; scheduled runs follow every 6 hours.", "Pemilik dan admin dapat menjalankan pemantauan sekarang; pemantauan terjadwal berjalan setiap 6 jam."), href: "/workspace/settings#keywords", cta: L("Run monitoring", "Jalankan pemantauan") },
+              { n: 3, title: L("Review records and issues", "Tinjau data dan isu"), body: L("Sentiment, issues and warnings appear once articles are analysed.", "Sentimen, isu, dan peringatan muncul setelah artikel dianalisis."), href: "/signals", cta: L("Open Monitoring", "Buka Pemantauan") },
             ].map((step) => (
               <li key={step.n} className="rounded-[10px] border border-slate-100 bg-[#FBFCFF] p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#5A6478]">Step {step.n}</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#5A6478]">{L("Step", "Langkah")} {step.n}</p>
                 <p className="mt-1 text-[13px] font-semibold text-[#101334]">{step.title}</p>
                 <p className="mt-0.5 text-[12px] text-[#5A6478]">{step.body}</p>
                 <Link href={step.href} className="mt-2 inline-flex text-[12px] font-semibold text-[#3B52F5] hover:underline">{step.cta}</Link>
@@ -505,9 +496,9 @@ export default function DashboardPage() {
 
       {/* ── 2. Top Developments ───────────────────────────────────────────── */}
       <div>
-        <h2 className="mb-3 text-[13px] font-black uppercase tracking-[0.1em] text-[#5A6478]">Top Developments{isDemoSession ? <span className="ml-2 rounded-[6px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-1.5 py-0.5 align-middle text-[10px] font-black uppercase tracking-wider text-[#6E44E8]">Illustrative</span> : null}</h2>
+        <h2 className="mb-3 text-[13px] font-black uppercase tracking-[0.1em] text-[#5A6478]">{L("Top Developments", "Perkembangan Utama")}{isDemoSession ? <span className="ml-2 rounded-[6px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-1.5 py-0.5 align-middle text-[10px] font-black uppercase tracking-wider text-[#6E44E8]">{L("Illustrative", "Ilustratif")}</span> : null}</h2>
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-          {developments.length === 0 && <div className="w-full"><EmptyPanel compact label="Top developments appear once live risk and opportunity tracking has enough data." /></div>}
+          {developments.length === 0 && <div className="w-full"><EmptyPanel compact label={L("Top developments appear once live risk and opportunity tracking has enough data.", "Perkembangan utama muncul setelah pelacakan risiko dan peluang punya cukup data.")} /></div>}
           {developments.map((d) => {
             const Icon = d.icon;
             const toneStyle = toneMap[d.tone] ?? toneMap.purple;
@@ -529,10 +520,10 @@ export default function DashboardPage() {
 
       {/* ── 3. Intelligence Scorecard ─────────────────────────────────────── */}
       {isDemoSession && scorecard.length > 0 ? (
-        <p className="-mb-5 text-[12px] font-semibold text-[#5A6478]">Scorecard{<span className="ml-2 rounded-[6px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-1.5 py-0.5 align-middle text-[10px] font-black uppercase tracking-wider text-[#6E44E8]">Illustrative</span>}</p>
+        <p className="-mb-5 text-[12px] font-semibold text-[#5A6478]">{L("Scorecard", "Kartu Skor")}{<span className="ml-2 rounded-[6px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-1.5 py-0.5 align-middle text-[10px] font-black uppercase tracking-wider text-[#6E44E8]">{L("Illustrative", "Ilustratif")}</span>}</p>
       ) : null}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-        {scorecard.length === 0 && <div className="col-span-full"><EmptyPanel compact label="Intelligence scores are not yet computed for live workspaces." /></div>}
+        {scorecard.length === 0 && <div className="col-span-full"><EmptyPanel compact label={L("Intelligence scores are not yet computed for live workspaces.", "Skor intelijen belum dihitung untuk workspace live.")} /></div>}
         {scorecard.map((s) => {
           const isPositive = s.lowerIsBetter ? s.delta.startsWith("-") || s.delta === "0" : !s.delta.startsWith("-");
           const trendColor = isPositive ? "text-[#047857]" : "text-[#C81E1E]";
@@ -560,11 +551,11 @@ export default function DashboardPage() {
           <AppCard>
             <CardContent className="p-5">
               <SectionHeader
-                title="Today&apos;s Top Narratives"
-                description="Most active narrative clusters in the last 24 hours"
+                title={L("Today's Top Narratives", "Narasi Teratas Hari Ini")}
+                description={L("Most active narrative clusters in the last 24 hours", "Kluster narasi paling aktif dalam 24 jam terakhir")}
                 action={
                   <Link href="/intelligence" className="flex items-center gap-1 text-[11px] font-bold text-[#3B52F5] transition-all hover:text-[#6E44E8] hover:underline">
-                    View all <ArrowRight size={12} />
+                    {L("View all", "Lihat semua")} <ArrowRight size={12} />
                   </Link>
                 }
               />
@@ -591,33 +582,33 @@ export default function DashboardPage() {
           <AppCard>
             <CardContent className="p-5">
               <SectionHeader
-                title="Competitor Snapshot"
-                description={isDemoSession ? illustrativeNote : "Share of voice and sentiment vs. key competitors"}
+                title={L("Competitor Snapshot", "Gambaran Pesaing")}
+                description={isDemoSession ? illustrativeNote : L("Share of voice and sentiment vs. key competitors", "Porsi percakapan dan sentimen dibanding pesaing utama")}
                 action={
                   <Link href="/visibility" className="flex items-center gap-1 text-[11px] font-bold text-[#3B52F5] transition-all hover:text-[#6E44E8] hover:underline">
-                    View all <ArrowRight size={12} />
+                    {L("View all", "Lihat semua")} <ArrowRight size={12} />
                   </Link>
                 }
               />
               {competitors.length === 0 ? (
-                <div className="mt-3"><EmptyPanel label="Competitor tracking is not configured for this workspace yet." /></div>
+                <div className="mt-3"><EmptyPanel label={L("Competitor tracking is not configured for this workspace yet.", "Pelacakan pesaing belum diatur untuk workspace ini.")} /></div>
               ) : (
-              <div className="mt-3 overflow-x-auto rounded-[8px] border border-slate-100" tabIndex={0} role="region" aria-label="Competitor snapshot">
+              <div className="mt-3 overflow-x-auto rounded-[8px] border border-slate-100" tabIndex={0} role="region" aria-label={L("Competitor snapshot", "Gambaran pesaing")}>
                 <table className="w-full min-w-[460px] text-[12px]">
                   <thead>
                     <tr className="border-b border-slate-100 bg-slate-50">
-                      <th className="px-3 py-2 text-left font-bold text-[#5A6478]">Competitor</th>
-                      <th className="px-3 py-2 text-right font-bold text-[#5A6478]">Voice Share</th>
-                      <th className="px-3 py-2 text-center font-bold text-[#5A6478]">Sentiment</th>
-                      <th className="px-3 py-2 text-right font-bold text-[#5A6478]">Momentum</th>
-                      <th className="px-3 py-2 text-right font-bold text-[#5A6478]">AI Visibility</th>
+                      <th className="px-3 py-2 text-left font-bold text-[#5A6478]">{L("Competitor", "Pesaing")}</th>
+                      <th className="px-3 py-2 text-right font-bold text-[#5A6478]">{L("Voice Share", "Porsi Percakapan")}</th>
+                      <th className="px-3 py-2 text-center font-bold text-[#5A6478]">{L("Sentiment", "Sentimen")}</th>
+                      <th className="px-3 py-2 text-right font-bold text-[#5A6478]">{L("Momentum", "Momentum")}</th>
+                      <th className="px-3 py-2 text-right font-bold text-[#5A6478]">{L("AI Visibility", "Visibilitas AI")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {competitors.map((c) => {
                       const sentStyle = toneMap[c.sentiment] ?? toneMap.slate;
                       const momentumPositive = c.momentum.startsWith("+");
-                      const sentimentLabel = c.sentiment === "green" ? "Positive" : c.sentiment === "red" ? "Negative" : c.sentiment === "amber" ? "Mixed" : "Neutral";
+                      const sentimentLabel = c.sentiment === "green" ? L("Positive", "Positif") : c.sentiment === "red" ? L("Negative", "Negatif") : c.sentiment === "amber" ? L("Mixed", "Campuran") : L("Neutral", "Netral");
                       return (
                         <tr key={c.name} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
                           <td className="px-3 py-2.5 font-bold text-slate-800">{c.name}</td>
@@ -647,16 +638,16 @@ export default function DashboardPage() {
           <AppCard>
             <CardContent className="p-5">
               <SectionHeader
-                title="Recommended Actions"
-                description={isDemoSession ? illustrativeNote : "Prioritized response items for today"}
+                title={L("Recommended Actions", "Rekomendasi Tindakan")}
+                description={isDemoSession ? illustrativeNote : L("Prioritized response items for today", "Prioritas respons untuk hari ini")}
                 action={
                   <Link href="/action-plans" className="flex items-center gap-1 text-[11px] font-bold text-[#3B52F5] transition-all hover:text-[#6E44E8] hover:underline">
-                    View all <ArrowRight size={12} />
+                    {L("View all", "Lihat semua")} <ArrowRight size={12} />
                   </Link>
                 }
               />
               <div className="mt-3 space-y-2.5">
-                {recommendedActions.length === 0 && <EmptyPanel compact label="Open Action Plans to review AI-generated responses for live alerts." />}
+                {recommendedActions.length === 0 && <EmptyPanel compact label={L("Open Action Plans to review AI-generated responses for live alerts.", "Buka Rencana Tindakan untuk meninjau draf respons AI untuk peringatan aktif.")} />}
                 {recommendedActions.map((a) => (
                   <div key={a.id} className="flex flex-col gap-2 rounded-[8px] border border-slate-100 bg-white px-4 py-3 transition hover:border-[#465FFF]/20">
                     <div className="flex items-center justify-between gap-2">
@@ -678,8 +669,8 @@ export default function DashboardPage() {
           <AppCard>
             <CardContent className="p-5">
               <SectionHeader
-                title="AI Visibility Changes"
-                description={isDemoSession ? illustrativeNote : "Platform visibility scores vs. last week"}
+                title={L("AI Visibility Changes", "Perubahan Visibilitas AI")}
+                description={isDemoSession ? illustrativeNote : L("Platform visibility scores vs. last week", "Skor visibilitas platform dibanding minggu lalu")}
                 action={
                   <Link href="/visibility" className="flex items-center gap-1 text-[11px] font-bold text-[#3B52F5] transition-all hover:text-[#6E44E8] hover:underline">
                     Details <ArrowRight size={12} />
@@ -687,7 +678,7 @@ export default function DashboardPage() {
                 }
               />
               <div className="mt-3 space-y-3">
-                {aiPlatforms.length === 0 && <EmptyPanel compact label="Run AI Visibility prompt tests to measure platform scores." />}
+                {aiPlatforms.length === 0 && <EmptyPanel compact label={L("Run AI Visibility prompt tests to measure platform scores.", "Jalankan uji prompt Visibilitas AI untuk mengukur skor platform.")} />}
                 {aiPlatforms.map((p) => {
                   const platformStyle = toneMap[p.tone] ?? toneMap.purple;
                   const changePositive = !p.change.startsWith("-");
@@ -713,57 +704,57 @@ export default function DashboardPage() {
           {/* Data Status */}
           <AppCard>
             <CardContent className="flex flex-col gap-3 p-5">
-              <SectionHeader title="Data Status" />
+              <SectionHeader title={L("Data Status", "Status Data")} />
               <div className="space-y-2.5 text-[12px]">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-[#5A6478]">Data</span>
+                  <span className="font-semibold text-[#5A6478]">{L("Data", "Data")}</span>
                   <span className="font-bold text-slate-700">
-                    {isDemoSession ? "Demo workspace" : summary?.kpis ? (summary.kpis.total_signals > 0 ? "Live monitoring" : "No data yet") : "—"}
+                    {isDemoSession ? L("Demo workspace", "Workspace demo") : summary?.kpis ? (summary.kpis.total_signals > 0 ? L("Live monitoring", "Pemantauan aktif") : L("No data yet", "Belum ada data")) : "—"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   {/* When this page last fetched the summary; data freshness is "Last ingestion". */}
-                  <span className="font-semibold text-[#5A6478]">Dashboard refreshed</span>
+                  <span className="font-semibold text-[#5A6478]">{L("Dashboard refreshed", "Ringkasan dimuat")}</span>
                   <span className="font-bold text-slate-700">{dashboardQuery.dataUpdatedAt ? new Date(dashboardQuery.dataUpdatedAt).toLocaleTimeString(intlLocale(), { hour: "2-digit", minute: "2-digit" }) : "—"}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-[#5A6478]">Data coverage</span>
+                  <span className="font-semibold text-[#5A6478]">{L("Data coverage", "Cakupan sumber")}</span>
                   <span className="font-bold text-slate-700">
                     {sourcesData.length > 0
-                      ? `${sourcesData.filter((src) => src.status?.en === "Active").length} / ${sourcesData.length} sources active`
+                      ? `${sourcesData.filter((src) => src.status?.en === "Active").length} / ${sourcesData.length} ${L("sources active", "sumber aktif")}`
                       : "—"}
                   </span>
                 </div>
                 {!isDemoSession && pipelineQuery.data ? (
                   <>
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-[#5A6478]">Last ingestion</span>
+                      <span className="font-semibold text-[#5A6478]">{L("Last ingestion", "Pengambilan terakhir")}</span>
                       <span className="font-bold text-slate-700">{timeAgo(pipelineQuery.data.ingestion.lastRawDocumentAt)}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-[#5A6478]">Awaiting AI analysis</span>
-                      <span className="font-bold text-slate-700">{pipelineQuery.data.analysis.unanalyzedRealSignals ?? "—"} signals</span>
+                      <span className="font-semibold text-[#5A6478]">{L("Awaiting AI analysis", "Menunggu analisis AI")}</span>
+                      <span className="font-bold text-slate-700">{pipelineQuery.data.analysis.unanalyzedRealSignals ?? "—"} {L("records", "data")}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-[#5A6478]">Alert notifications</span>
+                      <span className="font-semibold text-[#5A6478]">{L("Alert notifications", "Notifikasi peringatan")}</span>
                       <span className={`font-bold ${pipelineQuery.data.alerts.activeNotificationIntegrations ? "text-slate-700" : "text-amber-700"}`}>
-                        {pipelineQuery.data.alerts.activeNotificationIntegrations ? `${pipelineQuery.data.alerts.activeNotificationIntegrations} channel(s)` : "Not configured"}
+                        {pipelineQuery.data.alerts.activeNotificationIntegrations ? `${pipelineQuery.data.alerts.activeNotificationIntegrations} ${L("channel(s)", "kanal")}` : L("Not configured", "Belum diatur")}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-[#5A6478]">AI cost (30 days)</span>
+                      <span className="font-semibold text-[#5A6478]">{L("AI cost (30 days)", "Biaya AI (30 hari)")}</span>
                       <span className="font-bold tabular-nums text-slate-700">${pipelineQuery.data.aiUsageLast30d.estimatedCostUsd.toFixed(2)}</span>
                     </div>
                   </>
                 ) : null}
                 {!isDemoSession && pipelineQuery.isError ? (
-                  <p className="text-[11px] font-semibold text-amber-700">Pipeline status unavailable.</p>
+                  <p className="text-[11px] font-semibold text-amber-700">{L("Pipeline status unavailable.", "Status pipeline belum tersedia.")}</p>
                 ) : null}
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-[#5A6478]">Workspace</span>
                   <span className={`inline-flex items-center gap-1.5 rounded-[6px] px-2 py-0.5 text-[11px] font-bold ${isDemoSession ? "bg-[#8B5CFF]/10 text-[#6E44E8]" : "bg-[#10B981]/10 text-[#047857]"}`}>
                     <span className={`h-1.5 w-1.5 rounded-full ${isDemoSession ? "bg-[#8B5CFF]" : "bg-[#10B981]"}`} />
-                    {isDemoSession ? "Demo Sandbox" : "Live Production"}
+                    {isDemoSession ? L("Demo Sandbox", "Demo") : L("Live Production", "Produksi")}
                   </span>
                 </div>
               </div>
@@ -774,7 +765,7 @@ export default function DashboardPage() {
                 className="mt-1 flex h-9 w-full items-center justify-center gap-2 rounded-[8px] border border-slate-200 bg-white text-[12px] font-bold text-slate-600 transition hover:border-[#465FFF]/30 hover:bg-[#465FFF]/5 hover:text-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <RefreshCcw size={13} className={dashboardQuery.isFetching ? "animate-spin" : ""} />
-                Refresh now
+                {L("Refresh now", "Muat ulang")}
               </button>
             </CardContent>
           </AppCard>
@@ -783,11 +774,11 @@ export default function DashboardPage() {
 
       {/* ── 5. Footer strip ───────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-slate-100 bg-slate-50 px-5 py-3 text-[12px] font-semibold text-[#5A6478]">
-        <span>Last refresh: {today.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</span>
+        <span>{L("Last refresh", "Terakhir dimuat")}: {today.toLocaleTimeString(intlLocale(), { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</span>
         <div className="flex items-center gap-3">
           {isDemoSession && (
             <span className="rounded-[6px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#6E44E8]">
-              Demo Sandbox
+              {L("Demo Sandbox", "Demo")}
             </span>
           )}
           <span>Narriv Intelligence Platform</span>

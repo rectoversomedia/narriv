@@ -36,10 +36,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
 import { getNarrativeById, getNarratives, getSources, triggerClustering, type NarrativeRecord, type NarrativeDetailRecord } from "@/lib/api-service";
-import { getMockNarratives } from "@/lib/demo-mock-data";
 import { getPipelineStatus, timeAgo } from "@/lib/intelligence-api";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
+import { monitoringHref, parseIssueLink } from "@/lib/evidence-links";
 import { useTranslations } from "next-intl";
 import { useUiStore } from "@/store/useUiStore";
 import { useToast } from "@/components/ui/toast";
@@ -457,6 +457,20 @@ export default function IntelligencePage() {
   const sentimentMenuRef = useRef<HTMLDivElement | null>(null);
   const actionsMenuRef = useRef<HTMLDivElement | null>(null);
 
+  // Deep link from Overview or Monitoring: ?narrative=<id>&days=<1|7|30|90>
+  // opens that issue's evidence for the same period.
+  useEffect(() => {
+    const link = parseIssueLink(window.location.search);
+    if (link.days) {
+      const option = periodOptions.find((o) => o.days === link.days);
+      if (option) setSelectedPeriod(option);
+    }
+    if (link.narrative) {
+      setSelectedClusterId(link.narrative);
+      setIsAnalysisOpen(true);
+    }
+  }, []);
+
   useEffect(() => {
     const mountedId = window.setTimeout(() => setMounted(true), 0);
     
@@ -495,7 +509,7 @@ export default function IntelligencePage() {
         sentiment: sentimentFilter === "all" ? undefined : sentimentFilter,
       });
       if (res) return res;
-      return isDemoSession ? getMockNarratives() : { data: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0 } };
+      return { data: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0 } };
     },
     staleTime: 30 * 1000,
   });
@@ -505,7 +519,8 @@ export default function IntelligencePage() {
   const clusters = liveClusters;
   const emptyCluster = buildEmptyCluster(ti);
   const selectedCluster = clusters.find((cluster) => cluster.id === selectedClusterId) ?? clusters[0] ?? emptyCluster;
-  const selectedNarrativeId = selectedCluster.id === "empty" ? null : selectedCluster.id;
+  // A linked narrative may sit outside the loaded list; its detail is still fetched by id.
+  const selectedNarrativeId = selectedClusterId ?? (selectedCluster.id === "empty" ? null : selectedCluster.id);
   const selectedLifecycleKey = selectedNarrativeId ? classifyLifecycle(selectedCluster) : null;
   const narrativeDetailQuery = useQuery({
     queryKey: ["narrative-detail", selectedNarrativeId],
@@ -1034,7 +1049,7 @@ export default function IntelligencePage() {
           <Panel className="flex w-full max-w-3xl flex-col max-h-[90vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div>
-                <h2 className="text-lg font-black text-[#101334]">{text(selectedCluster.topic, language)}</h2>
+                <h2 className="text-lg font-black text-[#101334]">{narrativeDetailQuery.data?.title || (selectedCluster.id === selectedNarrativeId ? text(selectedCluster.topic, language) : "")}</h2>
                 <p className="mt-1 text-xs font-bold text-[#647099]">{ti("analysisModal.subtitle")}</p>
               </div>
               <button type="button" onClick={() => setIsAnalysisOpen(false)} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
@@ -1066,9 +1081,12 @@ export default function IntelligencePage() {
             </div>
             {selectedNarrativeId ? (
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#EEF1F7] p-4">
-                <p className="text-[11px] font-semibold text-[#647099]">Plans are generated as drafts from this narrative&apos;s evidence and need review before any external use.</p>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold text-[#647099]">{ti("analysisModal.draftNote")}</p>
+                  <a href={monitoringHref({ narrative: selectedNarrativeId, hours: selectedPeriod.days <= 1 ? 24 : selectedPeriod.days <= 7 ? 168 : selectedPeriod.days <= 30 ? 720 : undefined })} className="mt-1 inline-block text-[11px] font-black text-[#3B52F5] hover:underline">{ti("analysisModal.viewRecords")}</a>
+                </div>
                 <button type="button" onClick={() => setIsPlanResponseOpen(true)} className="h-9 rounded-[9px] bg-[#465FFF] px-4 text-[12px] font-black text-white transition hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/40">
-                  Plan a response
+                  {ti("analysisModal.planResponse")}
                 </button>
               </div>
             ) : null}

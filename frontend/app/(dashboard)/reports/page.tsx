@@ -34,7 +34,6 @@ import { SentimentTrendChart } from "@/components/dashboard/sentiment-trend-char
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton, formatPaginationSummary } from "@/components/dashboard/dashboard-states";
 import { getReports, getReportTemplates, createReportTemplate, updateReportTemplate, deleteReportTemplate, getReportsAnalytics, createReportExport, getReportExportStatus, downloadReportFile, getNarratives, getDashboardSummary, getReportSchedules, createReportSchedule, updateReportSchedule, deleteReportSchedule, toggleReportSchedule, generateReportFromTemplate, sendReportEmail, sendTestScheduleEmail, type PaginationInfo, type ReportRecord, type ReportsAnalyticsResponse, type NarrativeRecord, type DashboardSummary, type ReportTemplate, type ReportScheduleRecord } from "@/lib/api-service";
-import { getMockReports } from "@/lib/demo-mock-data";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { DemoBanner } from "@/components/ui/demo-banner";
 
@@ -935,14 +934,7 @@ export default function ReportsPage() {
   const reportsQuery = useQuery({
     queryKey: ["reports", { page, limit: reportsApiLimit }],
     queryFn: async () => {
-      try {
-        return await getReports({ page, limit: reportsApiLimit });
-      } catch (err) {
-        if (isDemoSession) {
-          return getMockReports();
-        }
-        throw err;
-      }
+      return await getReports({ page, limit: reportsApiLimit });
     },
     staleTime: 30 * 1000,
   });

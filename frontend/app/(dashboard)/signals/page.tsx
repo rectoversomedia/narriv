@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useDeferredValue, useEffect, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
-import { useUiStore } from "@/store/useUiStore";
+import { intlLocale, useUiStore } from "@/store/useUiStore";
+import { MONITORING_PERIODS, monitoringHref, parseMonitoringFilters, periodStart, type MonitoringFilters } from "@/lib/evidence-links";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ArrowRight, Briefcase, Check, FileText, Flag, Filter, Info, Loader2, RotateCw, Search, ShieldCheck, Sparkles, Star, Trash2, Zap, CheckCircle2, Download, X, Globe, ExternalLink } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
@@ -16,8 +17,6 @@ import {
   TikTokDark,
 } from "@ridemountainpig/svgl-react";
 import { cn } from "@/lib/utils";
-import { NarrativeCard } from "@/components/intelligence/narrative-card";
-import { getMockNarrativeCards } from "@/lib/demo-mock-data";
 import { CreateInvestigationModal } from "./components/create-investigation-modal";
 import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components/create-action-plan-modal";
 import { AdvancedSearchModal, ActiveFiltersChips } from "./components/advanced-search-modal";
@@ -48,6 +47,9 @@ type SignalRow = {
   analysisConfidence: number | null;
   url: string | null;
   narrativeCount: number;
+  narratives: Array<{ id: string; title: string }>;
+  relevance: Signal["relevance"];
+  platform: string | null;
 };
 
 const signalApiLimit = 20;
@@ -81,11 +83,12 @@ const sourceIcons = {
 
 
 
+// Date and time: the table spans days, so a bare clock time would be ambiguous.
 function compactTime(value: string | null | undefined) {
-  if (!value) return "-";
+  if (!value) return "—";
   const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "-";
-  return `${String(parsed.getHours()).padStart(2, "0")}:${String(parsed.getMinutes()).padStart(2, "0")}`;
+  if (Number.isNaN(parsed.getTime())) return "—";
+  return parsed.toLocaleString(intlLocale(), { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
 function sourceFromPlatform(platform: string | null): SourceKey {
@@ -130,7 +133,8 @@ function buildApiSignalRows(apiSignals: Signal[], t: (key: string) => string): S
       sourceType: signal.platform || t("fallbackLiveSource"),
       sources: [source],
       sentiment,
-      time: compactTime(publishedAt || capturedAt),
+      // Publication time only when the source gave one; never the collection time.
+      time: compactTime(publishedAt),
       captured: compactTime(capturedAt),
       // Only persisted narrative membership is shown (never generated).
       relatedNarrative: narratives[0]?.title ?? "—",
@@ -138,8 +142,85 @@ function buildApiSignalRows(apiSignals: Signal[], t: (key: string) => string): S
       analysisStatus: signal.analysisStatus === "analyzed" ? "analyzed" : "unanalyzed",
       analysisConfidence: typeof signal.analysisConfidence === "number" ? signal.analysisConfidence : null,
       url: signal.url ?? null,
+      narratives,
+      relevance: signal.relevance ?? null,
+      platform: signal.platform ?? null,
     };
   });
+}
+
+const RELEVANCE_TONE: Record<string, string> = {
+  direct: "bg-emerald-50 text-emerald-700",
+  indirect: "bg-sky-50 text-sky-700",
+  competitor: "bg-violet-50 text-violet-700",
+  unconfirmed: "bg-amber-50 text-[#9A5B00]",
+};
+
+function RelevanceBadge({ relevance }: { relevance: SignalRow["relevance"] }) {
+  const t = useTranslations("Signals.filters");
+  if (!relevance) return null;
+  return <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold", RELEVANCE_TONE[relevance])}>{t(`rel_${relevance}`)}</span>;
+}
+
+const PLATFORM_OPTIONS = ["news", "x", "tiktok", "instagram", "youtube", "facebook", "threads", "web"] as const;
+
+/**
+ * Filters that the API applies to stored records. The URL carries them, so a
+ * link from Overview opens on the same evidence and the view can be shared.
+ */
+function MonitoringFilterBar({ filters, onChange, narrativeTitle, relevanceAvailable, brand }: { filters: MonitoringFilters; onChange: (next: MonitoringFilters) => void; narrativeTitle: string | null; relevanceAvailable: boolean; brand: string | null }) {
+  const t = useTranslations("Signals.filters");
+  const select = "mt-1 block h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-2 text-[12px] font-semibold text-[#31406B] disabled:opacity-60";
+  const label = "min-w-0 text-[10px] font-black uppercase tracking-[0.08em] text-[#5A6478]";
+  const active = Boolean(filters.hours || filters.narrative || filters.relevance || filters.analysis || filters.platform);
+  return (
+    <div className="rounded-[12px] border border-[#EDF1F7] bg-white p-3">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <label className={label}>
+          {t("period")}
+          <select className={select} value={filters.hours ?? ""} onChange={(e) => onChange({ ...filters, hours: e.target.value ? (Number(e.target.value) as MonitoringFilters["hours"]) : undefined })}>
+            <option value="">{t("periodAll")}</option>
+            {MONITORING_PERIODS.map((h) => <option key={h} value={h}>{t(`period_${h}`)}</option>)}
+          </select>
+        </label>
+        <label className={label}>
+          {t("relevance")}
+          <select className={select} disabled={!relevanceAvailable} value={filters.relevance ?? ""} onChange={(e) => onChange({ ...filters, relevance: (e.target.value || undefined) as MonitoringFilters["relevance"] })}>
+            <option value="">{t("relevanceAll")}</option>
+            <option value="direct">{t("relevanceDirect", { brand: brand || "brand" })}</option>
+            <option value="other">{t("relevanceOther", { brand: brand || "brand" })}</option>
+          </select>
+        </label>
+        <label className={label}>
+          {t("platform")}
+          <select className={select} value={filters.platform ?? ""} onChange={(e) => onChange({ ...filters, platform: e.target.value || undefined })}>
+            <option value="">{t("platformAll")}</option>
+            {PLATFORM_OPTIONS.map((p) => <option key={p} value={p}>{t(`platform_${p}`)}</option>)}
+          </select>
+        </label>
+        <label className={label}>
+          {t("analysis")}
+          <select className={select} value={filters.analysis ?? ""} onChange={(e) => onChange({ ...filters, analysis: (e.target.value || undefined) as MonitoringFilters["analysis"] })}>
+            <option value="">{t("analysisAll")}</option>
+            <option value="analyzed">{t("analysisDone")}</option>
+            <option value="pending">{t("analysisPending")}</option>
+          </select>
+        </label>
+      </div>
+      {!relevanceAvailable ? <p className="mt-2 text-[11px] text-[#5A6478]">{t("relevanceUnavailable")}</p> : null}
+      {filters.narrative || active ? (
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-semibold">
+          {filters.narrative ? (
+            <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-[#465FFF]/10 px-2.5 py-1 text-[#3B52F5]">
+              <span className="truncate">{t("issueChip", { title: narrativeTitle || t("issueSelected") })}</span>
+              <button type="button" onClick={() => onChange({ ...filters, narrative: undefined })} aria-label={t("removeIssue")} className="rounded-full hover:bg-[#465FFF]/15"><X size={12} /></button>
+            </span>
+          ) : null}
+          {active ? <button type="button" onClick={() => onChange({})} className="text-[#5A6478] hover:text-[#101334] hover:underline">{t("reset")}</button> : null}
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 function Panel({ children, className }: { children: ReactNode; className?: string }) {
@@ -299,7 +380,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
       {/* Bulk Actions Toolbar */}
       {selectedIds.size > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-[10px] border border-[#465FFF]/20 bg-[#EEF2FF] px-4 py-2.5">
-          <span className="text-[12px] font-black text-[#3B52F5]">{selectedIds.size} selected</span>
+          <span className="text-[12px] font-black text-[#3B52F5]">{t("bulk.selected", { count: selectedIds.size })}</span>
           <div className="h-4 w-px bg-[#465FFF]/20" />
           <button
             onClick={onBulkAnalyze}
@@ -307,7 +388,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
             className="flex items-center gap-1.5 rounded-[6px] bg-[#465FFF] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#3147E8] disabled:opacity-50"
           >
             {isBulkProcessing ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-            Analyze
+            {t("bulk.analyze")}
           </button>
           <button
             onClick={onBulkCreateAlert}
@@ -315,7 +396,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
             className="flex items-center gap-1.5 rounded-[6px] bg-[#B45309] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#92400E] disabled:opacity-50"
           >
             {isBulkProcessing ? <Loader2 size={12} className="animate-spin" /> : <AlertTriangle size={12} />}
-            Create Alert
+            {t("bulk.createAlert")}
           </button>
           <button
             onClick={onBulkDelete}
@@ -323,14 +404,14 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
             className="flex items-center gap-1.5 rounded-[6px] bg-[#C81E1E] px-3 py-1.5 text-[11px] font-black text-white transition hover:bg-[#A51818] disabled:opacity-50"
           >
             {isBulkProcessing ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-            Delete
+            {t("bulk.delete")}
           </button>
           <button
             onClick={() => onSelectionChange(new Set())}
             className="ml-auto flex items-center gap-1 rounded-[6px] px-2 py-1.5 text-[11px] font-bold text-[#5F6B94] transition hover:bg-[#465FFF]/10 hover:text-[#3B52F5]"
           >
             <X size={12} />
-            Clear
+            {t("bulk.clear")}
           </button>
         </div>
       )}
@@ -342,7 +423,6 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
           ))}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {/* The table is not time-limited (newest first), so no time-window badge is shown. */}
           <label className="relative block w-full sm:w-[220px]">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#647099]" />
             <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder={tSignals("search")} className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] pl-9 pr-3 text-[11px] font-bold text-[#101334] outline-none transition placeholder:text-[#647099] focus:border-[#465FFF] focus:bg-white" />
@@ -354,7 +434,38 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
       </div>
 
       <Panel className="overflow-hidden p-0 xl:min-h-[610px] flex flex-col">
-        <div className="overflow-x-auto flex-1 flex flex-col">
+        {/* Phones: one card per record with the same evidence fields. */}
+        <ul className="divide-y divide-[#EDF1F7] md:hidden">
+          {rows.map((row) => (
+            <li key={row.id} className="px-4 py-3">
+              <div className="flex items-start gap-2">
+                <SentimentIcon sentiment={row.sentiment} tone={row.sentimentTone} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-semibold leading-snug text-navy">{row.title}</p>
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                    <SentimentBadge sentiment={row.sentiment} />
+                    <RelevanceBadge relevance={row.relevance} />
+                  </div>
+                  <p className="mt-1 text-[11px] text-[#5A6478]">
+                    {row.tags.join(" · ")}
+                  </p>
+                  <p className="text-[11px] text-[#5A6478]">
+                    {t("headerPublished")}: {row.time} · {t("headerCaptured")}: {row.captured}
+                  </p>
+                  {row.narratives[0] ? (
+                    <Link href={monitoringHref({ narrative: row.narratives[0].id })} className="mt-0.5 block truncate text-[11px] font-semibold text-[#3B52F5] hover:underline">{row.relatedNarrative}</Link>
+                  ) : null}
+                  <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] font-bold">
+                    {row.url ? <a href={row.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[#3B52F5]">{t("original")} <ExternalLink size={11} /></a> : null}
+                    <button type="button" onClick={() => onGenerateActionPlan?.(row)} className="text-[#3B52F5]">{t("plan")}</button>
+                    <button type="button" onClick={() => onInvestigate(row)} className="text-[#3B52F5]">{tSignals("investigate")}</button>
+                  </div>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <div className="hidden flex-1 flex-col overflow-x-auto md:flex">
           <table className="w-full min-w-[980px] border-collapse text-left">
             <thead>
               <tr className="border-b border-[#E6EAF2] bg-[#FBFCFF] text-[10px] font-black uppercase tracking-[0.17em] text-[#5F6B94]">
@@ -362,7 +473,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                   <button
                     type="button"
                     onClick={handleSelectAll}
-                    aria-label="Select all signals"
+                    aria-label={t("bulk.selectAll")}
                     aria-pressed={allSelected}
                     className={cn(
                       "flex h-5 w-5 items-center justify-center rounded border transition",
@@ -384,7 +495,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                     <button
                       type="button"
                       onClick={() => handleSelectRow(row.id)}
-                      aria-label={`Select signal: ${row.title}`}
+                      aria-label={t("bulk.selectOne", { title: row.title })}
                       aria-pressed={selectedIds.has(row.id)}
                       className={cn(
                         "flex h-5 w-5 items-center justify-center rounded border transition",
@@ -402,10 +513,11 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-[13px] font-semibold leading-snug text-navy">{row.title}</span>
                           {row.url ? (
-                            <a href={row.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-0.5 text-[10px] font-bold text-[#3B52F5] hover:underline" aria-label="Open original source">
-                              Source <ExternalLink size={10} />
+                            <a href={row.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-0.5 text-[10px] font-bold text-[#3B52F5] hover:underline" aria-label={t("openOriginal")}>
+                              {t("original")} <ExternalLink size={10} />
                             </a>
                           ) : null}
+                          <RelevanceBadge relevance={row.relevance} />
                         </div>
                         <p className="mt-1 line-clamp-2 text-[12px] font-medium leading-snug text-body">{row.desc}</p>
                         <div className="mt-2 flex flex-wrap gap-1.5">{row.tags.map((tag) => <TagBadge key={tag} tag={tag} />)}</div>
@@ -415,9 +527,13 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                   <td className="px-3.5 py-4 align-middle"><SourceIconList row={row} /></td>
                   <td className="px-3.5 py-4 align-middle"><SentimentBadge sentiment={row.sentiment} /></td>
                   <td className="px-3.5 py-4 align-middle">
-                    <span className={cn("block max-w-[120px] truncate text-[10.5px] font-bold", row.narrativeCount ? "text-[#3B52F5]" : "text-[#5A6478]")} title={row.relatedNarrative}>
-                      {row.relatedNarrative}{row.narrativeCount > 1 ? ` +${row.narrativeCount - 1}` : ""}
-                    </span>
+                    {row.narratives[0] ? (
+                      <Link href={monitoringHref({ narrative: row.narratives[0].id })} className="block max-w-[120px] truncate text-[10.5px] font-bold text-[#3B52F5] hover:underline" title={row.relatedNarrative}>
+                        {row.relatedNarrative}{row.narrativeCount > 1 ? ` +${row.narrativeCount - 1}` : ""}
+                      </Link>
+                    ) : (
+                      <span className="block text-[10.5px] font-bold text-[#5A6478]">—</span>
+                    )}
                   </td>
                   <td className="px-3.5 py-4 align-middle"><AnalysisBadge status={row.analysisStatus} confidence={row.analysisConfidence} /></td>
                   <td className="px-3.5 py-4 align-middle"><span className="block text-[11px] font-black text-[#31406B]">{row.time}</span></td>
@@ -427,11 +543,11 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                       <button
                         type="button"
                         onClick={() => onGenerateActionPlan?.(row)}
-                        title="Generate Action Plan for this signal"
+                        title={t("planTitle")}
                         className="inline-flex h-8 items-center justify-center gap-1 rounded-[8px] border border-[#DDE3EF] bg-white px-2.5 text-[10.5px] font-black text-[#3B52F5] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]"
                       >
                         <Sparkles size={11} />
-                        Plan
+                        {t("plan")}
                       </button>
                       <button
                         type="button"
@@ -800,48 +916,10 @@ function LiveRelatedNarratives() {
   );
 }
 
-function RelatedNarrativesSection({ isDemo = false }: { isDemo?: boolean }) {
-  const t = useTranslations("Signals");
-  if (!isDemo) return <LiveRelatedNarratives />;
-  const narratives = getMockNarrativeCards().slice(0, 3);
-
-  return (
-    <div className="mt-6 rounded-[14px] border border-[#DDE3EF] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.03)]">
-      <div className="mb-4 flex items-center gap-2">
-        <h3 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{t("relatedNarratives")}</h3>
-        <span title="Related narratives are clustered from signals with similar themes and sources" className="cursor-help text-[#647099]"><Info size={13} /></span>
-      </div>
-      <div className="grid gap-4 md:grid-cols-3">
-        {narratives.map((narrative) => (
-          <NarrativeCard
-            key={narrative.id}
-            id={narrative.id}
-            title={narrative.title}
-            summary={narrative.summary}
-            status={narrative.status}
-            type={narrative.type}
-            sentiment={narrative.sentiment}
-            emotion={narrative.emotion}
-            volume={narrative.volume}
-            growth={narrative.growth}
-            velocity={narrative.velocity}
-            momentum={narrative.momentum}
-            confidence={narrative.confidence}
-            firstDetected={narrative.firstDetected}
-            latestActivity={narrative.latestActivity}
-            primaryChannel={narrative.primaryChannel}
-            relatedKeywords={narrative.relatedKeywords}
-            relatedEntities={narrative.relatedEntities}
-            relatedCompetitors={narrative.relatedCompetitors}
-            whyItMatters={narrative.whyItMatters}
-            possibleImpact={narrative.possibleImpact}
-            recommendedAction={narrative.recommendedAction}
-            actionPriority={narrative.actionPriority}
-          />
-        ))}
-      </div>
-    </div>
-  );
+// Live narratives only, demo sessions included: the demo workspace has real
+// clusters, so invented cards are never shown beside real records.
+function RelatedNarrativesSection(_props: { isDemo?: boolean }) {
+  return <LiveRelatedNarratives />;
 }
 
 export default function SignalsPage() {
@@ -855,6 +933,7 @@ export default function SignalsPage() {
   const [activeFilter, setActiveFilter] = useState<SignalFilter>("all");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
+  const [filters, setFilters] = useState<MonitoringFilters>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isFetchingSignals, setIsFetchingSignals] = useState(false);
   const [isExporting, setIsExporting] = useState<"csv" | "xlsx" | null>(null);
@@ -869,9 +948,9 @@ export default function SignalsPage() {
         keyword: deferredQuery.trim() || undefined,
         sentiment: apiSentimentFilter,
       });
-      toastHook.success(`Signals exported to ${format.toUpperCase()} successfully!`);
+      toastHook.success(t("exportDone", { format: format.toUpperCase() }));
     } catch {
-      toastHook.error(`Failed to export signals to ${format.toUpperCase()}`);
+      toastHook.error(t("exportFailed", { format: format.toUpperCase() }));
     } finally {
       setIsExporting(null);
     }
@@ -882,9 +961,7 @@ export default function SignalsPage() {
     try {
       const result = await fetchLatestSignals({ limit: 15 });
       if (result && result.success) {
-        toastHook.success(
-          `Fetched ${result.totalFetched} live news items. ${result.newSignalsCreated} new signals ingested!`
-        );
+        toastHook.success(t("fetchDone", { fetched: result.totalFetched, created: result.newSignalsCreated }));
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ["signals"] }),
           queryClient.invalidateQueries({ queryKey: ["signalsMeta"] }),
@@ -893,10 +970,10 @@ export default function SignalsPage() {
           queryClient.invalidateQueries({ queryKey: ["alerts"] }),
         ]);
       } else {
-        toastHook.info("Ingestion completed: No new signals found.");
+        toastHook.info(t("fetchNone"));
       }
     } catch {
-      toastHook.error("Failed to fetch live signals");
+      toastHook.error(t("fetchFailed"));
     } finally {
       setIsFetchingSignals(false);
     }
@@ -949,7 +1026,7 @@ export default function SignalsPage() {
   };
 
   const handleBulkDelete = () => {
-    if (selectedIds.size > 0 && confirm(`Delete ${selectedIds.size} selected signals?`)) {
+    if (selectedIds.size > 0 && confirm(t("bulk.confirmDelete", { count: selectedIds.size }))) {
       bulkDeleteMutation.mutate(Array.from(selectedIds));
     }
   };
@@ -985,14 +1062,37 @@ export default function SignalsPage() {
     activeFilter === "neutral" ? "neutral" :
     activeFilter === "mixed" ? "mixed" : undefined;
 
+  // Filters from the URL (a link from Overview or a shared view), read once on load.
+  useEffect(() => {
+    const fromUrl = parseMonitoringFilters(window.location.search);
+    setFilters(fromUrl);
+    if (fromUrl.sentiment) setActiveFilter(fromUrl.sentiment);
+  }, []);
+
+  const updateUrl = (next: MonitoringFilters, sentiment: SignalFilter) => {
+    window.history.replaceState(null, "", monitoringHref({ ...next, sentiment: sentiment === "all" ? undefined : sentiment }));
+  };
+  const handleFiltersChange = (next: MonitoringFilters) => {
+    setFilters(next);
+    setPage(1);
+    setSelectedIds(new Set());
+    updateUrl(next, activeFilter);
+  };
+
   const signalsQuery = useQuery({
-    queryKey: ["signals", { keyword: deferredQuery, page, sentiment: apiSentimentFilter }],
+    queryKey: ["signals", { keyword: deferredQuery, page, sentiment: apiSentimentFilter, hours: filters.hours, narrative: filters.narrative, relevance: filters.relevance, analysis: filters.analysis, platform: filters.platform }],
     queryFn: async () => {
       const res = await getSignals({
         page,
         limit: signalApiLimit,
         keyword: deferredQuery.trim() || undefined,
         sentiment: apiSentimentFilter,
+        // The period start is computed when the request is made, not in the key.
+        startDate: filters.hours ? periodStart(filters.hours) : undefined,
+        narrativeId: filters.narrative,
+        relevance: filters.relevance,
+        analysis: filters.analysis,
+        platform: filters.platform,
       });
       if (res) return res;
       return { data: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0 } };
@@ -1008,6 +1108,7 @@ export default function SignalsPage() {
   const handleFilterChange = (value: SignalFilter) => {
     setActiveFilter(value);
     setPage(1);
+    updateUrl(filters, value);
   };
 
   const handleInvestigate = (row: SignalRow) => {
@@ -1077,6 +1178,15 @@ export default function SignalsPage() {
   const tSignals = useTranslations("Signals");
 
   const liveRows = signalsQuery.data?.data ? buildApiSignalRows(signalsQuery.data.data, t) : [];
+  // Relevance metadata comes with any successful page; a 409 (not configured) yields null.
+  const [relevanceInfo, setRelevanceInfo] = useState<{ configured: boolean; brand: string | null } | null>(null);
+  const pageRelevance = signalsQuery.data?.relevance;
+  useEffect(() => {
+    if (pageRelevance) setRelevanceInfo({ configured: pageRelevance.configured, brand: pageRelevance.brand });
+  }, [pageRelevance]);
+  const brandLabel = relevanceInfo?.brand ? relevanceInfo.brand.replace(/\b\w/g, (c) => c.toUpperCase()) : null;
+  const narrativeTitle = filters.narrative ? liveRows.flatMap((r) => r.narratives).find((n) => n.id === filters.narrative)?.title ?? null : null;
+  const newsOnlyRows = liveRows.length > 0 && liveRows.every((r) => (r.platform || "news") === "news");
   const isLiveUnavailable = signalsQuery.data === null;
   const sourceRows = liveRows;
 
@@ -1107,11 +1217,11 @@ export default function SignalsPage() {
             type="button"
             onClick={handleFetchLatestSignals}
             disabled={isFetchingSignals}
-            title="Fetch latest news and signals from live RSS feeds"
+            title={t("fetchTitle")}
             className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#31406B] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <RotateCw size={14} className={cn("text-[#3B52F5]", isFetchingSignals && "animate-spin")} />
-            {isFetchingSignals ? "Fetching Signals..." : "Fetch Latest Signals"}
+            {isFetchingSignals ? t("fetching") : t("fetchLatest")}
           </button>
           <button onClick={() => setIsAdvancedSearchOpen(true)} className={cn("flex h-10 items-center justify-center gap-2 rounded-[8px] border px-4 text-[12px] font-black transition", isAdvancedSearchActive ? "border-[#465FFF] bg-[#465FFF]/10 text-[#3B52F5]" : "border-[#DDE3EF] bg-white text-[#31406B] hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]")}>
             <Filter size={15} />
@@ -1121,7 +1231,7 @@ export default function SignalsPage() {
             type="button"
             onClick={() => handleExport("csv")}
             disabled={!!isExporting}
-            title="Export signals as CSV file"
+            title={t("exportCsv")}
             className="flex h-10 items-center justify-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-black text-[#31406B] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:opacity-50"
           >
             <Download size={14} className={isExporting === "csv" ? "animate-pulse text-[#3B52F5]" : ""} />
@@ -1131,7 +1241,7 @@ export default function SignalsPage() {
             type="button"
             onClick={() => handleExport("xlsx")}
             disabled={!!isExporting}
-            title="Export signals as Excel spreadsheet (.xlsx)"
+            title={t("exportXlsx")}
             className="flex h-10 items-center justify-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-black text-[#31406B] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:opacity-50"
           >
             <Download size={14} className={isExporting === "xlsx" ? "animate-pulse text-[#3B52F5]" : ""} />
@@ -1170,6 +1280,12 @@ export default function SignalsPage() {
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_336px]">
         <div className="flex min-w-0 flex-col gap-4">
           <SummaryPanel meta={meta} />
+          {!isAdvancedSearchActive ? (
+            <MonitoringFilterBar filters={filters} onChange={handleFiltersChange} narrativeTitle={narrativeTitle} relevanceAvailable={relevanceInfo?.configured !== false} brand={brandLabel} />
+          ) : null}
+          {!isAdvancedSearchActive && newsOnlyRows ? (
+            <p className="rounded-[10px] bg-[#F4F6FF] px-3 py-2 text-[12px] font-medium text-[#31406B]">{t("filters.newsOnly")}</p>
+          ) : null}
           {isAdvancedSearchActive ? (
             isAdvancedSearchSearching ? (
               <TableSkeleton rows={6} columns={6} className="xl:min-h-[610px]" />

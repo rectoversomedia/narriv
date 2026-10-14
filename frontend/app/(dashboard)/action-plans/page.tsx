@@ -28,7 +28,6 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
-import { getMockActionPlans } from "@/lib/demo-mock-data";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { getActionPlanById, getActionQueue, getFeedbackAccuracy, submitActionPlanFeedback, getActionPlansMetrics, getActionPlanLearning, type ActionPlanResponse, type ActionQueueRecord, type MetaPaginatedResponse } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
@@ -350,8 +349,8 @@ export default function ActionPlansPage() {
     queryKey: ["action-queue", { page: currentPage, limit: 8, search: searchQuery.trim(), priority: filterPriority, status: filterStatus }],
     queryFn: async () => {
       const res = await getActionQueue({ page: currentPage, limit: 8, search: searchQuery.trim(), priority: filterPriority, status: filterStatus });
-      if (res && res.data && res.data.length > 0) return res;
-      return isDemoSession ? getMockActionPlans() : (res || { data: [], meta: { page: 1, limit: 8, total: 0, totalPages: 0 } });
+      // Recorded plans only: an empty queue is shown as empty, demo included.
+      return res || { data: [], meta: { page: 1, limit: 8, total: 0, totalPages: 0 } };
     },
     staleTime: 30 * 1000,
   });
