@@ -44,6 +44,7 @@ import { SubscriptionCard } from "@/components/dashboard/SubscriptionCard";
 import { UpgradeModal } from "@/components/dashboard/UpgradeModal";
 import { intlLocale } from "@/store/useUiStore";
 import { AiProvidersPanel } from "@/components/dashboard/ai-providers-panel";
+import { PlatformCollectionPanel } from "@/components/dashboard/platform-collection-panel";
 
 type TeamMember = {
   name: string;
@@ -891,6 +892,8 @@ export default function SettingsPage() {
       </div>
 
       <MonitoringKeywordsPanel />
+
+      <PlatformCollectionPanel />
 
       <AiProvidersPanel />
 

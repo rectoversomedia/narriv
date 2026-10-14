@@ -24,6 +24,19 @@ interface Message {
   confidence?: Confidence;
   links?: Array<{ label: string; href: string }>;
   isDemo?: boolean;
+  coverage?: string;
+}
+
+const PLATFORM_NAME: Record<string, string> = { news: "news", x: "X", tiktok: "TikTok", instagram: "Instagram", threads: "Threads", youtube: "YouTube", facebook: "Facebook", web: "web search" };
+
+// What the answer was based on, so it never reads as broader coverage than the data.
+function describeCoverage(data?: { signals: number; windowHours: number; platforms?: Record<string, number> }): string | undefined {
+  if (!data || !data.signals) return undefined;
+  const days = Math.round(data.windowHours / 24);
+  const period = days >= 1 ? `the last ${days} day${days === 1 ? "" : "s"}` : `the last ${data.windowHours} hours`;
+  const platforms = Object.entries(data.platforms ?? {}).map(([p, n]) => `${PLATFORM_NAME[p] ?? p} ${n}`).join(", ");
+  const count = data.signals >= 50 ? `the ${data.signals} most recent stored signals` : `${data.signals} stored signal${data.signals === 1 ? "" : "s"}`;
+  return `Based on ${count} from ${period}${platforms ? ` (${platforms})` : ""}.`;
 }
 
 interface SuggestedCategory {
@@ -173,6 +186,7 @@ export default function AskPage() {
           confidence: result.grounded && (result.sources || []).length > 0 ? "medium" : "low",
           links: [],
           isDemo: isDemoSession,
+          coverage: describeCoverage(result.data),
         };
         setMessages((prev) => [...prev, assistantMsg]);
       } catch (err) {
@@ -385,6 +399,10 @@ export default function AskPage() {
                         );
                       })}
                     </div>
+
+                    {msg.coverage ? (
+                      <p className="mt-2 text-[11px] font-semibold text-[#5A6478]">{msg.coverage}</p>
+                    ) : null}
 
                     {/* Metrics */}
                     {msg.metrics && msg.metrics.length > 0 && (

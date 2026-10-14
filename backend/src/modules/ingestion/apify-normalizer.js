@@ -264,8 +264,9 @@ export function normalizeDatasetItem(item) {
         item.takenAt,
         item.creationDate,
         item.publishedAt,
-        item.releaseDate?.isoString,
-        item.scrapedAt
+        item.releaseDate?.isoString
+        // scrapedAt is when the actor collected the item, not when it was
+        // published; a missing publication date stays missing.
     ));
     const id = firstValue(item.id, item.postId, item.tweetId, item.videoId, item.shortCode, item.product_id, item.item_id, item.uri, nestedData.playlistId, url);
     const actorMetadata = normalizeActorMetadata({ ...item, ...nestedData });

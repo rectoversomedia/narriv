@@ -197,7 +197,7 @@ export interface AskNarrivPayload {
   grounded: boolean;
   answer?: string;
   sources?: Array<{ id: string; kind: string; title?: string | null; url?: string | null; [k: string]: unknown }>;
-  data?: { signals: number; alerts: number; clusters: number; windowHours: number };
+  data?: { signals: number; alerts: number; clusters: number; windowHours: number; platforms?: Record<string, number> };
   error?: string;
   code?: string;
   meta?: { model: string | null; latencyMs: number | null; costUsd: number | null };

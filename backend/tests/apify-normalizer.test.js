@@ -135,8 +135,9 @@ describe("Apify dataset normalizer", () => {
       title: "Tech Podcast Indonesia",
       author: "Narriv Audio",
       url: "https://music.youtube.com/playlist?list=abc",
-      publishedDate: "2025-02-09T13:52:48.526Z",
     });
+    // scrapedAt is the collection time, never a publication date.
+    expect(podcastItem.publishedDate).toBeNull();
     expect(podcastItem.actorMetadata.mediaUrls).toEqual(["https://example.com/thumb.jpg"]);
   });
 

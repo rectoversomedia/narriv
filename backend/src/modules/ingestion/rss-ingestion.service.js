@@ -11,27 +11,9 @@ import crypto from "crypto";
 import supabaseAdmin from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
 import { assertPublicHttpUrl } from "../../lib/url-safety.js";
-import { checkBudgetAllowance } from "../../lib/cost-management.js";
-import { analyzeSignal } from "../ai/ai.service.js";
-import { runClustering } from "../clustering/clustering.service.js";
-import { detectAlerts } from "../alerts/alerts.service.js";
+import { persistCollectedRecords, existsInWorkspace, runWithConcurrency } from "./signal-persistence.js";
 
-export { assertPublicHttpUrl };
-
-// Max articles analyzed in parallel per ingestion call.
-const INGEST_CONCURRENCY = Math.max(1, Number(process.env.INGEST_CONCURRENCY || 4));
-
-/** Run `fn` over `items` with at most `limit` in flight. */
-export async function runWithConcurrency(items, limit, fn) {
-  let next = 0;
-  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (next < items.length) {
-      const item = items[next++];
-      await fn(item);
-    }
-  });
-  await Promise.all(workers);
-}
+export { assertPublicHttpUrl, existsInWorkspace, runWithConcurrency };
 
 const DEFAULT_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 NarrivNewsBot/1.0";
 const REQUEST_TIMEOUT_MS = 15000;
@@ -185,28 +167,6 @@ export async function fetchGoogleNewsRss(keyword, options = {}) {
 }
 
 /**
- * True when this article already exists in the workspace (raw_documents by
- * external id or URL, or a legacy signal with the same URL).
- */
-export async function existsInWorkspace(workspaceId, externalId, url) {
-  const checks = [
-    supabaseAdmin.from("raw_documents").select("id").eq("workspace_id", workspaceId).eq("external_id", externalId).limit(1),
-  ];
-  if (url) {
-    checks.push(supabaseAdmin.from("raw_documents").select("id").eq("workspace_id", workspaceId).eq("url", url).limit(1));
-    checks.push(supabaseAdmin.from("signals").select("id").eq("workspace_id", workspaceId).eq("url", url).limit(1));
-  }
-  const results = await Promise.all(checks);
-  const failed = results.find((r) => r.error);
-  if (failed) {
-    // Fail closed: skipping an item is safer than inserting a possible duplicate.
-    logStructured("warn", "rss_dedup_check_failed", { error: failed.error.message, workspaceId });
-    return true;
-  }
-  return results.some((r) => (r.data || []).length > 0);
-}
-
-/**
  * Main Ingestion Pipeline:
  * Fetch RSS, deduplicate against raw_documents & signals, run AI extraction, and persist.
  */
@@ -278,7 +238,9 @@ export async function ingestRssSignals({
     }
   }
 
-  // Fallback to workspace brand if no keyword specified
+  // Fall back to the workspace's own brand name; never to another
+  // organisation's name (this used to default to "Bank Mandiri", which filled
+  // new client workspaces with articles they never asked to monitor).
   if (!targetKeyword && !rssUrl) {
     const { data: settings } = await supabaseAdmin
       .from("workspace_settings")
@@ -289,7 +251,9 @@ export async function ingestRssSignals({
     if (settings?.brand_name && settings.brand_name.toLowerCase() !== "narriv") {
       targetKeyword = settings.brand_name;
     } else {
-      targetKeyword = "Bank Mandiri";
+      const err = new Error("No monitoring keyword is configured for this workspace. Add a keyword first.");
+      err.code = "NO_KEYWORD";
+      throw err;
     }
   }
 
@@ -333,155 +297,27 @@ export async function ingestRssSignals({
     .select()
     .single();
 
-  const createdSignals = [];
-  const createdRawDocs = [];
-  let skippedDuplicates = 0;
-  let analyzed = 0;
-  let analysisFailed = 0;
-  let insertFailed = 0;
-
-  // Process and persist items
-  // Budget gate: when the workspace's AI budget is exhausted, articles are
-  // still stored (unanalyzed) so the backfill can analyze them later.
-  const budget = await checkBudgetAllowance(workspaceId).catch(() => ({ allowed: true }));
-  const aiAllowed = budget?.allowed !== false;
-  if (!aiAllowed) logStructured("warn", "ingestion_ai_skipped_budget", { workspaceId, reason: budget.reason });
-
-  // Items are processed with bounded concurrency (AI analysis dominates the
-  // per-item time); counters are updated on the single JS event loop.
-  const processItem = async (item) => {
-    try {
-      const externalId = generateExternalId(item.url, item.guid, item.title);
-
-      // Deduplicate within the workspace by external id, then by URL. Separate
-      // .eq() filters avoid PostgREST or() parsing issues with URLs, and limit(1)
-      // keeps the check working even if legacy duplicates already exist.
-      if (await existsInWorkspace(workspaceId, externalId, item.url)) {
-        skippedDuplicates++;
-        return;
-      }
-
-      // 1. Insert to raw_documents
-      const { data: rawDoc, error: rawDocErr } = await supabaseAdmin
-        .from("raw_documents")
-        .insert({
-          workspace_id: workspaceId,
-          source_id: activeSource?.id || null,
-          external_id: externalId,
-          title: item.title,
-          content: item.content,
-          url: item.url,
-          author: item.publisher,
-          published_at: item.publishedAt,
-          metadata: {
-            ingestion_type: "rss",
-            keyword: targetKeyword,
-            publisher: item.publisher,
-            ingested_at: new Date().toISOString(),
-          },
-        })
-        .select()
-        .single();
-
-      if (rawDocErr || !rawDoc) {
-        logStructured("warn", "raw_doc_insert_failed", { error: rawDocErr?.message });
-        insertFailed++;
-        return;
-      }
-      createdRawDocs.push(rawDoc);
-
-      // 2. Perform AI Signal Analysis (GPT-4o-mini). On failure the signal is
-      // stored without an analysis so the backfill can retry it later; no
-      // heuristic result is ever persisted as an AI analysis.
-      let aiResult = null;
-      let aiError = null;
-      try {
-        if (!aiAllowed) throw new Error("budget_exceeded: AI analysis paused for this workspace");
-        aiResult = await analyzeSignal(item.title, item.content, { workspaceId, operation: "ingestion_analysis" });
-      } catch (aiErr) {
-        aiError = aiErr;
-        logStructured("warn", "ai_signal_analysis_failed", { error: aiErr.message, workspaceId });
-      }
-
-      // Map AI result to database values
-      const dbSentiment = aiResult ? String(aiResult.sentiment || "NEUTRAL").toUpperCase() : null;
-      const rawImpact = String(aiResult?.impact || "").toLowerCase();
-      const dbSeverity = aiResult ? (["critical", "high", "medium", "low"].includes(rawImpact) ? rawImpact : "low") : null;
-      const sentimentScore = aiResult && typeof aiResult.confidence_score === "number"
-        ? (dbSentiment === "NEGATIVE" ? -Math.abs(aiResult.confidence_score) : Math.abs(aiResult.confidence_score))
-        : null;
-
-      // 3. Insert to signals
-      const { data: signal, error: signalErr } = await supabaseAdmin
-        .from("signals")
-        .insert({
-          workspace_id: workspaceId,
-          source_id: activeSource?.id || null,
-          raw_document_id: rawDoc.id,
-          title: item.title,
-          content: aiResult?.summary ? `${item.content} (AI Summary: ${aiResult.summary})` : item.content,
-          platform: "news",
-          url: item.url,
-          author: item.publisher,
-          published_at: item.publishedAt,
-          captured_at: new Date().toISOString(),
-          sentiment: dbSentiment,
-          sentiment_score: sentimentScore,
-          severity: dbSeverity,
-          region: "ID",
-          language: "id",
-          topics: [targetKeyword, aiResult?.narrative_type || "Industry News"].filter(Boolean),
-          metadata: {
-            ai_summary: aiResult?.summary || null,
-            narrative_type: aiResult?.narrative_type || null,
-            stakeholder: aiResult?.stakeholder || null,
-            recommended_action: aiResult?.recommended_action || null,
-            ingestion_type: "rss",
-            keyword: targetKeyword,
-          },
-        })
-        .select()
-        .single();
-
-      if (signalErr || !signal) {
-        logStructured("warn", "signal_insert_failed", { error: signalErr?.message });
-        insertFailed++;
-        return;
-      }
-      createdSignals.push(signal);
-
-      // 4. Save analysis details to signal_analyses
-      if (aiResult) {
-        const { error: analysisErr } = await supabaseAdmin
-          .from("signal_analyses")
-          .insert({
-            signal_id: signal.id,
-            analysis: aiResult,
-            confidence: aiResult.confidence_score || 0.85,
-            model: "gpt-4o-mini",
-          });
-        if (analysisErr) {
-          analysisFailed++;
-          logStructured("warn", "signal_analysis_insert_failed", { error: analysisErr.message, signalId: signal.id });
-        } else {
-          analyzed++;
-        }
-      } else {
-        analysisFailed++;
-        await supabaseAdmin.from("ai_analysis_failure_logs").insert({
-          workspace_id: workspaceId,
-          signal_id: signal.id,
-          error_type: "ingestion_analysis",
-          error_message: String(aiError?.message || "AI analysis failed").slice(0, 500),
-          retry_count: 0,
-        });
-      }
-    } catch (itemErr) {
-      insertFailed++;
-      logStructured("warn", "rss_item_processing_failed", { error: itemErr.message, title: item.title });
-    }
-  };
-  await runWithConcurrency(fetchedItems, INGEST_CONCURRENCY, processItem);
+  const result = await persistCollectedRecords(
+    fetchedItems.map((item) => ({
+      externalId: generateExternalId(item.url, item.guid, item.title),
+      title: item.title,
+      content: item.content,
+      url: item.url,
+      author: item.publisher,
+      publishedAt: item.publishedAt,
+      metadata: { publisher: item.publisher },
+    })),
+    {
+      workspaceId,
+      sourceId: activeSource?.id || null,
+      platform: "news",
+      keyword: targetKeyword,
+      ingestionType: "rss",
+      // Google News is queried for Indonesia in Indonesian (hl=id&gl=ID).
+      signalDefaults: { region: "ID", language: "id" },
+    },
+  );
+  const { createdSignals, createdRawDocs, skippedDuplicates, analyzed, analysisFailed, insertFailed } = result;
 
   // Update source sync status if sourceId is provided
   if (activeSource?.id) {
@@ -507,39 +343,8 @@ export async function ingestRssSignals({
       .eq("id", job.id);
   }
 
-  // Trigger Dynamic Narrative Clustering if new signals were ingested
-  let clusteringResult = null;
-  if (createdSignals.length > 0) {
-    try {
-      logStructured("info", "triggering_dynamic_clustering_post_ingestion", {
-        workspaceId,
-        newSignalsCount: createdSignals.length,
-      });
-      clusteringResult = await runClustering(workspaceId);
-    } catch (clusterErr) {
-      logStructured("warn", "dynamic_clustering_post_ingestion_failed", {
-        error: clusterErr.message,
-        workspaceId,
-      });
-    }
-  }
-
-  // Trigger Automated Alert Rules Engine if new signals were ingested
-  let detectedAlerts = [];
-  if (createdSignals.length > 0) {
-    try {
-      logStructured("info", "evaluating_alert_rules_post_ingestion", {
-        workspaceId,
-        newSignalsCount: createdSignals.length,
-      });
-      detectedAlerts = await detectAlerts(workspaceId);
-    } catch (alertErr) {
-      logStructured("warn", "evaluating_alert_rules_post_ingestion_failed", {
-        error: alertErr.message,
-        workspaceId,
-      });
-    }
-  }
+  const clusteringResult = result.clustering;
+  const detectedAlerts = result.alerts;
 
   const durationMs = Date.now() - startTime;
   logStructured("info", "rss_ingestion_completed", {

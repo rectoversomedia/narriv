@@ -190,6 +190,12 @@ const runDaily = async (req, res) => {
             }
         } catch (e) { results.cluster = { error: e.message }; }
 
+        // 6. Store finished Apify collections nobody checked from the browser.
+        try {
+            const { syncPendingCollections } = await import("../ingestion/apify-collection.service.js");
+            results.apifyCollections = await syncPendingCollections({ deadline: start + 240000 });
+        } catch (e) { results.apifyCollections = { error: e.message }; }
+
         logStructured("info", "cron_daily_done", { results, durationMs: Date.now() - start });
         res.json({ ok: true, results, durationMs: Date.now() - start });
     } catch (error) {

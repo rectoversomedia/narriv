@@ -12,9 +12,11 @@ jest.unstable_mockModule('../src/lib/supabase.js', () => supabaseModuleFor(db));
 const ingestCalls = [];
 const failingKeywords = new Set();
 let ingestDelayMs = 0;
+let noKeyword = false;
 jest.unstable_mockModule('../src/modules/ingestion/rss-ingestion.service.js', () => ({
   ingestRssSignals: jest.fn(async (args) => {
     ingestCalls.push(args);
+    if (noKeyword) throw Object.assign(new Error('No monitoring keyword is configured for this workspace. Add a keyword first.'), { code: 'NO_KEYWORD' });
     if (ingestDelayMs) await new Promise((r) => setTimeout(r, ingestDelayMs));
     // Same error shape as an unreachable Google News feed.
     if (failingKeywords.has(args.keyword)) throw new Error('Google News RSS fetch failed: HTTP 503');
@@ -25,6 +27,7 @@ await import('./setup.js');
 const app = (await import('../src/index.js')).default;
 const { MAX_OWNED_WORKSPACES } = await import('../src/modules/workspaces/workspaces.routes.js');
 const { categorizeProviderError } = await import('../src/modules/ai/ai.routes.js');
+const collection = await import('../src/modules/ingestion/apify-collection.service.js');
 
 const ADMIN = '00000000-0000-4000-8000-0000000000c1';
 const ANALYST = '00000000-0000-4000-8000-0000000000c2';
@@ -235,5 +238,61 @@ describe('AI endpoints', () => {
     expect(categorizeProviderError({ status: 404, message: 'model not found' })).toBe('model_not_found');
     expect(categorizeProviderError({ status: 429, message: 'rate' })).toBe('rate_limited');
     expect(categorizeProviderError({ status: 529, message: 'overloaded' })).toBe('provider_unavailable');
+  });
+});
+
+describe('platform collection routes', () => {
+  const starts = [];
+  beforeEach(() => {
+    starts.length = 0;
+    process.env.APIFY_TOKEN = 'test-token';
+    collection.setApifyClientFactory(() => ({
+      actor: (actorId) => ({ start: async (input) => { starts.push({ actorId, input }); return { id: 'run-x', defaultDatasetId: 'ds-x', status: 'READY' }; } }),
+      run: () => ({ get: async () => ({ id: 'run-x', status: 'RUNNING' }) }),
+    }));
+    db.table('monitoring_keywords').push(
+      { id: 'kw-a', workspace_id: WS_A, keyword: 'Bank A', is_active: true, created_at: '2026-10-01T00:00:00Z' },
+      { id: 'kw-b', workspace_id: WS_B, keyword: 'Bank B', is_active: true, created_at: '2026-10-01T00:00:00Z' },
+    );
+  });
+  afterAll(() => { delete process.env.APIFY_TOKEN; collection.setApifyClientFactory(null); });
+
+  it('starting a collection is owner/admin only', async () => {
+    expect((await request(app).post('/ingestion/collect').set(as(ANALYST)).set('X-Workspace-Id', WS_A).send({ preset: 'tiktok-hashtag' })).status).toBe(403);
+    expect((await request(app).post('/ingestion/collect').set(demo()).send({ preset: 'tiktok-hashtag' })).status).toBe(403);
+    expect(starts).toHaveLength(0);
+    const res = await request(app).post('/ingestion/collect').set(as(ADMIN)).set('X-Workspace-Id', WS_A).send({ preset: 'tiktok-hashtag' });
+    expect(res.status).toBe(202);
+    expect(res.body.data).toMatchObject({ status: 'running', platform: 'tiktok', keyword: 'Bank A' });
+    expect(starts[0].input.hashtags).toEqual(['Bank A']);
+    const again = await request(app).post('/ingestion/collect').set(as(ADMIN)).set('X-Workspace-Id', WS_A).send({ preset: 'youtube-search' });
+    expect(again.status).toBe(409);
+    expect((await request(app).post('/ingestion/collect').set(as(ADMIN)).set('X-Workspace-Id', WS_A).send({ preset: 'nope' })).status).toBe(400);
+  });
+
+  it('history and status stay inside the selected workspace', async () => {
+    const started = await request(app).post('/ingestion/collect').set(as(ADMIN)).set('X-Workspace-Id', WS_A).send({ preset: 'instagram-posts' });
+    const id = started.body.data.id;
+    const listA = await request(app).get('/ingestion/collect').set(as(ANALYST)).set('X-Workspace-Id', WS_A);
+    expect(listA.status).toBe(200);
+    expect(listA.body.configured).toBe(true);
+    expect(listA.body.data.map((r) => r.id)).toEqual([id]);
+    const listB = await request(app).get('/ingestion/collect').set(as(ADMIN)).set('X-Workspace-Id', WS_B);
+    expect(listB.body.data).toEqual([]);
+    expect((await request(app).get(`/ingestion/collect/${id}`).set(as(ADMIN)).set('X-Workspace-Id', WS_B)).status).toBe(404);
+    expect((await request(app).get(`/ingestion/collect/${id}`).set(demo())).status).toBe(404);
+    const status = await request(app).get(`/ingestion/collect/${id}`).set(as(ANALYST)).set('X-Workspace-Id', WS_A);
+    expect(status.body.data).toMatchObject({ status: 'running', apifyStatus: 'RUNNING' });
+  });
+
+  it('manual fetch without any keyword answers 400, not 500', async () => {
+    noKeyword = true;
+    try {
+      const res = await request(app).post('/ingestion/fetch').set(as(ADMIN)).set('X-Workspace-Id', WS_A).send({});
+      expect(res.status).toBe(400);
+      expect(res.body.status).toBe('no_keywords');
+    } finally {
+      noKeyword = false;
+    }
   });
 });

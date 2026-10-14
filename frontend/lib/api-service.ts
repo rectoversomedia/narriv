@@ -933,6 +933,37 @@ export async function runKeywordMonitoring(): Promise<MonitoringRunResponse> {
   return apiClient<MonitoringRunResponse>("/api/ingestion/run-keywords", { method: "POST", body: JSON.stringify({}), timeout: 130000 });
 }
 
+// --- Platform collection (Apify) -----------------------------------------------
+
+export interface PlatformCollection {
+  id: string;
+  status: "starting" | "running" | "persisting" | "completed" | "completed_empty" | "completed_with_errors" | "failed" | "skipped_overlap" | string;
+  preset: string;
+  platform: string;
+  keyword: string;
+  apifyStatus: string | null;
+  startedAt: string;
+  finishedAt: string | null;
+  costUsd: number | null;
+  error: string | null;
+  checkError?: string;
+  totals: { datasetItems: number; inserted: number; deduplicated: number; invalid: number; analyzed: number; analysisFailed: number; insertFailed: number } | null;
+}
+export interface PlatformCollectionsResponse { configured: boolean; presets: { key: string; platform: string }[]; data: PlatformCollection[] }
+
+export async function getPlatformCollections(): Promise<PlatformCollectionsResponse> {
+  return apiClient<PlatformCollectionsResponse>("/api/ingestion/collect");
+}
+
+export async function startPlatformCollection(preset: string, keyword?: string): Promise<{ data: PlatformCollection }> {
+  return apiClient("/api/ingestion/collect", { method: "POST", body: JSON.stringify({ preset, keyword }), timeout: 60000 });
+}
+
+/** Checks the run on Apify and stores its results once it has finished. */
+export async function syncPlatformCollection(id: string): Promise<{ data: PlatformCollection }> {
+  return apiClient(`/api/ingestion/collect/${encodeURIComponent(id)}`, { timeout: 130000 });
+}
+
 // --- AI providers (admin visibility) -------------------------------------------
 
 export interface AiWorkflowRoute { workflow: string; provider: string | null; model: string | null; routed: boolean; note?: string }

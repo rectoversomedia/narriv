@@ -91,6 +91,17 @@ export function keepKnownSources(sources, ctx) {
         .map((src) => ({ id: src.id, ...known.get(src.id) }));
 }
 
+// Which platforms the signals in the context came from, so an answer never
+// implies coverage (e.g. social media) the workspace does not have.
+export function platformCoverage(signals) {
+    const counts = {};
+    for (const s of signals || []) {
+        const key = s.platform || "unknown";
+        counts[key] = (counts[key] || 0) + 1;
+    }
+    return counts;
+}
+
 export async function askNarriv({ workspaceId, question, windowHours = 24 }, deps = {}) {
     if (!workspaceId) return { grounded: false, error: "workspaceId is required" };
     if (!question || typeof question !== "string") return { grounded: false, error: "question is required" };
@@ -98,8 +109,13 @@ export async function askNarriv({ workspaceId, question, windowHours = 24 }, dep
     const ctx = await (deps.gatherContext || gatherContext)(workspaceId, windowHours);
     const dataIsEmpty = ctx.signals.length === 0 && ctx.alerts.length === 0 && ctx.clusters.length === 0;
 
+    const platforms = platformCoverage(ctx.signals);
+    const coverageLine = Object.keys(platforms).length
+        ? Object.entries(platforms).map(([p, n]) => `${p} (${n})`).join(", ")
+        : "none";
     const dataSection = `Window: last ${windowHours}h (since ${ctx.sinceIso})\n` +
         `Signals: ${ctx.signals.length}\n` +
+        `Platforms covered by these signals: ${coverageLine}. Say nothing about platforms not listed except that they are not covered.\n` +
         `Alerts: ${ctx.alerts.length}\n` +
         `Narrative clusters: ${ctx.clusters.length}\n\n` +
         `Recent signals (id | sent | platform | title):\n` +
@@ -114,7 +130,7 @@ export async function askNarriv({ workspaceId, question, windowHours = 24 }, dep
             grounded: true,
             answer: "There is no data in the current window, so I cannot answer the question. Try a wider window or wait for signals to arrive.",
             sources: [],
-            data: { signals: 0, alerts: 0, clusters: 0, windowHours },
+            data: { signals: 0, alerts: 0, clusters: 0, windowHours, platforms: {} },
         };
     }
 
@@ -139,6 +155,6 @@ export async function askNarriv({ workspaceId, question, windowHours = 24 }, dep
         sources,
         grounded: out.data.grounded === true && sources.length > 0,
         meta,
-        data: { signals: ctx.signals.length, alerts: ctx.alerts.length, clusters: ctx.clusters.length, windowHours },
+        data: { signals: ctx.signals.length, alerts: ctx.alerts.length, clusters: ctx.clusters.length, windowHours, platforms },
     };
 }

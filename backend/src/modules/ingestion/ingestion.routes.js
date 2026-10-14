@@ -2,7 +2,7 @@ import express from "express";
 import { triggerIngestion, triggerBatchIngestion, getIngestionStatus, cancelIngestion } from "./ingestion.controller.js";
 import { handleWebhook } from "./custom-sources.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
-import { MANAGER_ROLES, requireWorkspaceRole } from "../../lib/workspace-access.js";
+import { MANAGER_ROLES, requireWorkspaceRole, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { runScheduledIngestion } from "./scheduled-ingestion.js";
 import { baseSupabaseAdmin } from "../../lib/supabase.js";
 import supabaseAdmin from "../../lib/supabase.js";
@@ -17,6 +17,7 @@ import {
     triggerIngestionParamsSchema
 } from "./ingestion.schema.js";
 import { ingestRssSignals } from "./rss-ingestion.service.js";
+import { CollectionError, COLLECTION_PLATFORMS, isCollectionConfigured, listCollections, startCollection, syncCollection } from "./apify-collection.service.js";
 
 const router = express.Router();
 router.use(verifyToken);
@@ -40,6 +41,7 @@ router.post("/fetch", requireWorkspaceRole(MANAGER_ROLES), async (req, res) => {
 
         return res.json(result);
     } catch (err) {
+        if (err?.code === "NO_KEYWORD") return res.status(400).json({ status: "no_keywords", error: err.message });
         logStructured("error", "rss_fetch_endpoint_failed", { error: err.message });
         return res.status(500).json({ error: err.message || "Failed to fetch live signals" });
     }
@@ -67,6 +69,7 @@ router.post("/rss/:sourceId", requireWorkspaceRole(MANAGER_ROLES), async (req, r
             ...result,
         });
     } catch (err) {
+        if (err?.code === "NO_KEYWORD") return res.status(400).json({ status: "no_keywords", error: err.message });
         logStructured("error", "rss_source_endpoint_failed", { error: err.message });
         return res.status(500).json({ error: err.message || "Failed to ingest RSS source" });
     }
@@ -120,6 +123,56 @@ router.post("/run-keywords", requireWorkspaceRole(MANAGER_ROLES), async (req, re
     } catch (err) {
         logStructured("error", "manual_keyword_run_failed", { error: err?.message || err });
         return res.status(500).json({ status: "failed", error: "Monitoring run failed to start." });
+    }
+});
+
+// Platform collection through Apify (X, TikTok, Instagram, Threads, YouTube,
+// Facebook, web, Indonesian news). The actor run happens on Apify's side; the
+// status endpoint stores its dataset once it has finished. Owner/admin start
+// runs (each one costs Apify credit); every member can read the history.
+const collectionErrorResponse = (res, err, event) => {
+    if (err instanceof CollectionError) {
+        return res.status(err.httpStatus).json({ status: "error", code: err.code, error: err.message, category: err.category });
+    }
+    logStructured("error", event, { error: err?.message || err });
+    return res.status(500).json({ status: "error", error: "Collection request failed." });
+};
+
+const memberWorkspace = async (req, res, next) => {
+    try {
+        req.scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, null);
+        if (!req.scopedWorkspaceId) return res.status(403).json({ error: "Workspace access denied", code: "WORKSPACE_ACCESS_DENIED" });
+        return next();
+    } catch (err) {
+        return next(err);
+    }
+};
+
+router.get("/collect", memberWorkspace, async (req, res) => {
+    try {
+        const data = await listCollections(req.scopedWorkspaceId);
+        return res.json({ configured: isCollectionConfigured(), presets: Object.entries(COLLECTION_PLATFORMS).map(([key, platform]) => ({ key, platform })), data });
+    } catch (err) {
+        return collectionErrorResponse(res, err, "apify_collection_list_failed");
+    }
+});
+
+router.post("/collect", requireWorkspaceRole(MANAGER_ROLES), async (req, res) => {
+    try {
+        const { preset, keyword } = req.body || {};
+        const data = await startCollection({ workspaceId: req.scopedWorkspaceId, presetKey: String(preset || ""), keyword: keyword || null, userId: req.user.id });
+        return res.status(202).json({ data });
+    } catch (err) {
+        return collectionErrorResponse(res, err, "apify_collection_start_route_failed");
+    }
+});
+
+router.get("/collect/:id", memberWorkspace, async (req, res) => {
+    try {
+        const data = await syncCollection({ workspaceId: req.scopedWorkspaceId, id: req.params.id });
+        return res.json({ data });
+    } catch (err) {
+        return collectionErrorResponse(res, err, "apify_collection_sync_route_failed");
     }
 });
 

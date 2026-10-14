@@ -1,6 +1,6 @@
 # Narriv Production Operations Handoff
 
-Last verified: 2026-10-13
+Last verified: 2026-10-14
 
 How Narriv actually runs in production, how to deploy and verify it, and what
 is still blocked. This supersedes the VPS/Prisma sections of
@@ -103,7 +103,8 @@ The shared demo login has no role: it can read the demo workspace but cannot cre
 | Narrative clustering, reports | none | deterministic |
 
 - `ANTHROPIC_API_KEY` is set but no workflow routes to Claude. Setting `AI_ROUTING_PROFILE=claude` would move **only Ask Narriv** (complex tier -> `claude-sonnet-5-5`; simple -> `claude-haiku-5-5`; premium -> `claude-opus-5-5` only if `AI_MODEL_PREMIUM` is set). Run Settings -> AI providers -> **Test connections** first.
-- Keyword monitoring uses Google News RSS, not Apify. Apify source runs (`/ingestion/run`) need the BullMQ worker, which does not run on Vercel; they now answer 503 `WORKERS_DISABLED`. Actor runs are capped by `maxItems`, `APIFY_MAX_CHARGE_USD` (default 0.50) and a timeout.
+- Scheduled keyword monitoring uses Google News RSS, not Apify. Legacy Apify source runs (`/ingestion/run`) need the BullMQ worker, which does not run on Vercel; they answer 503 `WORKERS_DISABLED`.
+- Social and web collection (2026-10-14): Settings -> **Social and web collection** (`POST /api/ingestion/collect {preset, keyword}`, owner/admin) starts one Apify actor run on Apify's side for one of the workspace's active keywords: X, TikTok, Instagram, Threads, YouTube, Facebook, Google Search, Indonesian news. Caps: 20 items, `APIFY_COLLECTION_MAX_CHARGE_USD` (default 0.25, never above `APIFY_MAX_CHARGE_USD`), `APIFY_COLLECTION_TIMEOUT_SECS` (default 180), one active run per workspace, `APIFY_DAILY_RUNS_PER_WORKSPACE` (default 10) per 24h. `GET /api/ingestion/collect/:id` checks the run and, once Apify reports SUCCEEDED, stores the dataset once (dedup, AI analysis, clustering, alerts). The panel polls every 15 s; the daily cron finishes runs nobody checked. Runs are logged in `cron_ingestion_logs` (`job_name = apify-collection`) with status, Apify run id, cost and totals. **No actor has been run in production yet**: none of these platforms is verified until an owner starts a collection and it reports stored results.
 - The Apify token in the local `backend/.env` is rejected by Apify (401). The production token's validity, plan and usage are shown by **Test connections** (read-only account call).
 
 ## Open blockers (owner action required)
