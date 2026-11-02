@@ -808,7 +808,7 @@ function PopularReports({ reports, onViewAll }: { reports: PopularReportItem[]; 
         
         <div className="mt-5 space-y-3">
           {reports.length > 0 ? reports.slice(0, 5).map((report, idx) => (
-            <div key={report.title} className="flex items-center gap-3">
+            <div key={`${report.title}:${idx}`} className="flex items-center gap-3">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[11px] font-black text-[#3B52F5]">
                 {idx + 1}
               </span>
@@ -1517,7 +1517,7 @@ export default function ReportsPage() {
               {livePopularReports.length > 0 ? (
                 <div className="space-y-3">
                   {livePopularReports.map((report, idx) => (
-                    <div key={report.title} className="flex items-center gap-3 rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-3 hover:border-[#DCE2F0] hover:bg-white transition">
+                    <div key={`${report.title}:${idx}`} className="flex items-center gap-3 rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-3 hover:border-[#DCE2F0] hover:bg-white transition">
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[12px] font-black text-[#3B52F5]">
                         {idx + 1}
                       </span>

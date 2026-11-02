@@ -590,11 +590,11 @@ function FollowUpPanel({ data }: { data?: SignalsMeta["followUps"] }) {
         </div>
       ) : (
         <div className="mt-4 space-y-2.5">
-          {(data || []).map((item) => {
+          {(data || []).map((item, keyIdx) => {
             const style = toneStyles[item.tone as Tone];
             const Icon = item.tone === "green" ? Star : Zap;
             return (
-              <div key={item.title} className={cn("grid grid-cols-[36px_minmax(0,1fr)] gap-3 rounded-[12px] border p-3 sm:grid-cols-[36px_minmax(0,1fr)_auto]", item.tone === "red" ? "border-[#F8CACA] bg-[#FFF5F5]" : item.tone === "amber" ? "border-[#FFE8C2] bg-[#FFF9F0]" : "border-[#CDEEDD] bg-[#F1FCF6]")}>
+              <div key={`${item.title}:${keyIdx}`} className={cn("grid grid-cols-[36px_minmax(0,1fr)] gap-3 rounded-[12px] border p-3 sm:grid-cols-[36px_minmax(0,1fr)_auto]", item.tone === "red" ? "border-[#F8CACA] bg-[#FFF5F5]" : item.tone === "amber" ? "border-[#FFE8C2] bg-[#FFF9F0]" : "border-[#CDEEDD] bg-[#F1FCF6]")}>
                 <span className={cn("flex h-8 w-8 items-center justify-center rounded-full", style.soft, style.text)}><Icon size={15} fill={item.tone === "green" ? style.color : "none"} /></span>
                 <span className="min-w-0"><span className="block truncate text-[12px] font-black text-[#101334]">{item.title}</span><span className="mt-1 block text-[10px] font-bold text-[#58648C]">{item.meta}</span></span>
                 <span className="col-start-2 text-left sm:col-start-auto sm:text-right"><span className={cn("rounded-full px-2 py-0.5 text-[9px] font-black", style.soft, style.text)}>{item.badge}</span><span className="mt-2 block text-[10px] font-bold text-[#31406B]">{item.time}</span></span>
@@ -628,11 +628,11 @@ function RecommendationPanel({ data }: { data?: SignalsMeta["recommendations"] }
         </div>
       ) : (
         <div className="mt-4 space-y-2.5">
-          {(data || []).map((item) => {
+          {(data || []).map((item, keyIdx) => {
             const style = toneStyles[item.tone as Tone];
             const Icon = item.icon || (item.tone === "purple" ? AlertTriangle : item.tone === "blue" ? ShieldCheck : Zap);
             return (
-              <div key={item.title} className="grid grid-cols-[32px_minmax(0,1fr)] gap-3 rounded-[11px] border border-[#EDF1F7] bg-[#FBFCFF] p-3 sm:grid-cols-[32px_minmax(0,1fr)_auto]">
+              <div key={`${item.title}:${keyIdx}`} className="grid grid-cols-[32px_minmax(0,1fr)] gap-3 rounded-[11px] border border-[#EDF1F7] bg-[#FBFCFF] p-3 sm:grid-cols-[32px_minmax(0,1fr)_auto]">
                 <span className={cn("flex h-8 w-8 items-center justify-center rounded-[9px]", style.soft, style.text)}><Icon size={15} /></span>
                 <span className="min-w-0"><span className="block truncate text-[11.5px] font-black text-[#101334]">{item.title}</span><span className="mt-1 block text-[10px] font-bold text-[#5F6B94]">{item.desc}</span></span>
                 <span className={cn("col-start-2 h-fit w-fit rounded-full px-2 py-1 text-[8.5px] font-black sm:col-start-auto", item.tone === "red" || item.tone === "purple" ? "bg-[#EF4444]/10 text-[#C81E1E]" : item.tone === "blue" ? "bg-[#F59E0B]/12 text-[#A04606]" : "bg-[#10B981]/10 text-[#047857]")}>{item.badge}</span>
@@ -863,10 +863,10 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
         </div>
       ) : (
         <div className="mt-4 space-y-3">
-          {data.map((item) => {
+          {data.map((item, keyIdx) => {
             const style = toneStyles[item.tone as Tone];
             return (
-              <div key={item.title} className="grid grid-cols-[34px_minmax(0,1fr)] gap-3 rounded-[11px] border border-[#EDF1F7] bg-[#FBFCFF] p-3 sm:grid-cols-[34px_minmax(0,1fr)_auto]">
+              <div key={`${item.title}:${keyIdx}`} className="grid grid-cols-[34px_minmax(0,1fr)] gap-3 rounded-[11px] border border-[#EDF1F7] bg-[#FBFCFF] p-3 sm:grid-cols-[34px_minmax(0,1fr)_auto]">
                 <span className={cn("flex h-8 w-8 items-center justify-center rounded-[9px]", style.soft, style.text)}><Zap size={15} /></span>
                 <span className="min-w-0">
                   <span className="block truncate text-[12px] font-black text-[#101334]">{item.title}</span>
