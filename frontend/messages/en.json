@@ -2780,7 +2780,9 @@
         "industryGovernment": "Government & Non-Profit",
         "languageId": "Bahasa Indonesia",
         "languageEnUs": "English (US)",
-        "languageEnUk": "English (UK)"
+        "languageEnUk": "English (UK)",
+        "languageEn": "English",
+        "languageHint": "Language of alerts and summaries Narriv writes for this workspace."
       },
       "membersCard": {
         "title": "User & Access Management",

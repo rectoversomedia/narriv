@@ -2,6 +2,7 @@ import supabase from "../../lib/supabase.js";
 import { enhanceAlert } from "../ai/ai.service.js";
 import { globalEvents } from "../app-notifications/app-notifications.events.js";
 import { logStructured } from "../../lib/logger.js";
+import { workspaceLanguage } from "../../lib/workspace-language.js";
 import { dispatchAlertToWebhooks } from "../integrations/webhook-dispatcher.service.js";
 
 const SOURCE_STRENGTH = {
@@ -237,11 +238,21 @@ export async function detectAlerts(workspaceId) {
         }
 
         const sources = Array.from(new Set(signals.map((s) => s.platform).filter(Boolean)));
-        const title = `Negative Sentiment Spike: ${topicKey}`;
-        const description = `${negativeCount} of ${totalCount} recent signals (${roundedRatio}%) are negative for ${topicKey}.`;
-        const whatHappened = `Automated rules engine detected an acute negative sentiment surge (${roundedRatio}%, ${negativeCount}/${totalCount} signals) concerning '${topicKey}' within the recent monitoring window.`;
-        const defaultWhy = `A concentrated negative sentiment surge threatens brand trust and indicates an escalating crisis requiring immediate PR monitoring.`;
-        const defaultAction = `Review incoming signals, draft a clarifying statement or holding response, and assign an incident lead.`;
+        // Stored once and read by every member, so written in the workspace's content language.
+        const id = (await workspaceLanguage(workspaceId)) === "id";
+        const title = id ? `Lonjakan Sentimen Negatif: ${topicKey}` : `Negative Sentiment Spike: ${topicKey}`;
+        const description = id
+            ? `${negativeCount} dari ${totalCount} sinyal terbaru (${roundedRatio}%) bernada negatif untuk ${topicKey}.`
+            : `${negativeCount} of ${totalCount} recent signals (${roundedRatio}%) are negative for ${topicKey}.`;
+        const whatHappened = id
+            ? `Aturan otomatis mendeteksi lonjakan sentimen negatif yang tajam (${roundedRatio}%, ${negativeCount}/${totalCount} sinyal) terkait '${topicKey}' dalam periode pemantauan terakhir.`
+            : `Automated rules engine detected an acute negative sentiment surge (${roundedRatio}%, ${negativeCount}/${totalCount} signals) concerning '${topicKey}' within the recent monitoring window.`;
+        const defaultWhy = id
+            ? `Lonjakan sentimen negatif yang terkonsentrasi mengancam kepercayaan terhadap brand dan menandakan krisis yang bisa membesar, sehingga perlu dipantau tim PR segera.`
+            : `A concentrated negative sentiment surge threatens brand trust and indicates an escalating crisis requiring immediate PR monitoring.`;
+        const defaultAction = id
+            ? `Tinjau sinyal yang masuk, siapkan pernyataan klarifikasi atau tanggapan sementara, dan tunjuk penanggung jawab insiden.`
+            : `Review incoming signals, draft a clarifying statement or holding response, and assign an incident lead.`;
 
         // Attempt AI enhancement if available
         let whyItMatters = defaultWhy;

@@ -799,6 +799,8 @@ export interface WorkspaceSettingsResponse {
   timezone: string | null;
   notificationEmail: string | null;
   whatsappPIC: string | null;
+  /** Language of the content Narriv writes and stores for the workspace (alerts); "id" by default. */
+  language: "id" | "en";
   logoUrl: string | null;
   createdAt: string | null;
   updatedAt: string | null;
@@ -811,6 +813,7 @@ export interface UpdateWorkspaceSettingsInput {
   timezone?: string | null;
   notificationEmail?: string | null;
   whatsappPIC?: string | null;
+  language?: "id" | "en";
 }
 
 export interface WorkspaceMemberRecord {
@@ -851,6 +854,7 @@ export async function getWorkspaceSettings(): Promise<WorkspaceSettingsResponse 
       timezone: (raw.timezone as string) || null,
       notificationEmail: (raw.notificationEmail as string) || (raw.notification_email as string) || null,
       whatsappPIC: (raw.whatsappPIC as string) || (raw.whatsapp_pic as string) || null,
+      language: raw.language === "en" ? "en" : "id",
       logoUrl: (raw.logoUrl as string) || (raw.logo_url as string) || null,
       createdAt: (raw.createdAt as string) || (raw.created_at as string) || null,
       updatedAt: (raw.updatedAt as string) || (raw.updated_at as string) || null,

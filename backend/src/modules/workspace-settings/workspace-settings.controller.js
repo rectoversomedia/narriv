@@ -4,6 +4,7 @@ import { recordAuditLog } from "../../lib/audit.js";
 import { workspaceHasOwner, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { logStructured } from "../../lib/logger.js";
 import { DEFAULT_TIMEZONE, normalizeTimezone } from "../../lib/timezone.js";
+import { forgetWorkspaceLanguage } from "../../lib/workspace-language.js";
 
 function toSafeDefaults(workspaceId) {
     return {
@@ -11,6 +12,7 @@ function toSafeDefaults(workspaceId) {
         brand_name: null,
         industry: null,
         timezone: DEFAULT_TIMEZONE,
+        language: "id",
         notification_email: null,
         whatsapp_pic: null,
         logo_url: null,
@@ -57,7 +59,7 @@ export async function getWorkspaceSettings(req, res) {
 
 export async function updateWorkspaceSettings(req, res) {
     try {
-        const { workspaceId, brandName, industry, notificationEmail, whatsappPIC } = req.body;
+        const { workspaceId, brandName, industry, notificationEmail, whatsappPIC, language } = req.body;
         let { timezone } = req.body;
         if (timezone !== undefined && timezone !== null) {
             timezone = normalizeTimezone(timezone);
@@ -77,6 +79,7 @@ export async function updateWorkspaceSettings(req, res) {
             .maybeSingle();
 
         let updated;
+        forgetWorkspaceLanguage(scopedWorkspaceId);
         if (existing) {
             const updates = {};
             if (brandName !== undefined) updates.brand_name = brandName;
@@ -84,6 +87,7 @@ export async function updateWorkspaceSettings(req, res) {
             if (timezone !== undefined) updates.timezone = timezone;
             if (notificationEmail !== undefined) updates.notification_email = notificationEmail;
             if (whatsappPIC !== undefined) updates.whatsapp_pic = whatsappPIC;
+            if (language !== undefined) updates.language = language;
 
             const { data, error } = await supabase
                 .from("workspace_settings")
@@ -107,6 +111,7 @@ export async function updateWorkspaceSettings(req, res) {
                     timezone: timezone ?? DEFAULT_TIMEZONE,
                     notification_email: notificationEmail ?? null,
                     whatsapp_pic: whatsappPIC ?? null,
+                    language: language ?? "id",
                 })
                 .select()
                 .single();

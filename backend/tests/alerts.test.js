@@ -15,6 +15,7 @@ jest.unstable_mockModule('../src/modules/app-notifications/app-notifications.eve
 
 const { detectAlerts, signalSentiment, notifyAndRecord, retryFailedNotifications } = await import('../src/modules/alerts/alerts.service.js');
 const { assertPublicHttpUrl } = await import('../src/lib/url-safety.js');
+const { forgetWorkspaceLanguage } = await import('../src/lib/workspace-language.js');
 
 const WS = '11111111-1111-1111-1111-111111111111';
 const now = Date.now();
@@ -25,9 +26,10 @@ const sig = (id, sentiment, extra = {}) => ({
   ...extra,
 });
 
-function db({ signals = [], existingAlerts = [], dedupError = null } = {}) {
+function db({ signals = [], existingAlerts = [], dedupError = null, language = null } = {}) {
   return (q) => {
     if (q.table === 'signals') return { data: signals, error: null };
+    if (q.table === 'workspace_settings') return { data: language ? { language } : null, error: null };
     if (q.table === 'alerts' && q.op === 'select') return dedupError ? { data: null, error: dedupError } : { data: existingAlerts, error: null };
     if (q.table === 'alerts' && q.op === 'insert') return { data: [{ id: 'alert-1', ...q.payload }], error: null };
     return { data: null, error: null };
@@ -37,6 +39,7 @@ const inserts = () => fake.calls.filter((c) => c.table === 'alerts' && c.op === 
 
 beforeEach(() => {
   fake.calls.length = 0;
+  forgetWorkspaceLanguage(WS);
   respond = () => ({ data: [], error: null });
   dispatchAlertToWebhooks.mockClear();
   enhanceAlert.mockClear();
@@ -53,10 +56,20 @@ describe('alert rule evaluation', () => {
     const created = await detectAlerts(WS);
     expect(created).toHaveLength(1);
     const [{ payload }] = inserts();
-    expect(payload).toMatchObject({ workspace_id: WS, type: 'risk', severity: 'critical', status: 'open', title: 'Negative Sentiment Spike: Bank A' });
+    // Stored text follows the workspace content language (default Indonesian).
+    expect(payload).toMatchObject({ workspace_id: WS, type: 'risk', severity: 'critical', status: 'open', title: 'Lonjakan Sentimen Negatif: Bank A' });
+    expect(payload.description).toBe('3 dari 4 sinyal terbaru (75%) bernada negatif untuk Bank A.');
     expect(payload.metadata.signal_ids).toEqual(['s1', 's2', 's3']);
     const signalQuery = fake.calls.find((c) => c.table === 'signals');
     expect(signalQuery.filters).toContainEqual({ name: 'eq', args: ['workspace_id', WS] });
+  });
+
+  it('writes the alert in English for a workspace whose content language is English', async () => {
+    respond = db({ language: 'en', signals: [sig('s1', 'negative'), sig('s2', 'negative'), sig('s3', 'negative'), sig('s4', 'positive')] });
+    await detectAlerts(WS);
+    const [{ payload }] = inserts();
+    expect(payload.title).toBe('Negative Sentiment Spike: Bank A');
+    expect(payload.description).toBe('3 of 4 recent signals (75%) are negative for Bank A.');
   });
 
   it('does not alert on non-qualifying (all positive/neutral) signals', async () => {

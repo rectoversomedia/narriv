@@ -2780,7 +2780,9 @@
         "industryGovernment": "Pemerintahan & Nirlaba",
         "languageId": "Bahasa Indonesia",
         "languageEnUs": "Inggris (AS)",
-        "languageEnUk": "Inggris (Britania)"
+        "languageEnUk": "Inggris (Britania)",
+        "languageEn": "Bahasa Inggris",
+        "languageHint": "Bahasa peringatan dan ringkasan yang ditulis Narriv untuk workspace ini."
       },
       "membersCard": {
         "title": "Pengguna & Manajemen Akses",

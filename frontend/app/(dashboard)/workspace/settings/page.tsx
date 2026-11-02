@@ -37,7 +37,7 @@ import {
 import { DashboardEmptyState, DashboardErrorState, TableSkeleton } from "@/components/dashboard/dashboard-states";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useToast } from "@/components/ui/toast";
-import { getWorkspaceMembers, getWorkspaceSettings, updateWorkspaceSettings, createWorkspaceMember, deleteWorkspaceMember, changePassword, uploadWorkspaceLogo, type CreateWorkspaceMemberInput, type UpdateWorkspaceSettingsInput, type WorkspaceMemberRecord } from "@/lib/api-service";
+import { getNotificationSettings, updateNotificationSettings, getWorkspaceMembers, getWorkspaceSettings, updateWorkspaceSettings, createWorkspaceMember, deleteWorkspaceMember, changePassword, uploadWorkspaceLogo, type CreateWorkspaceMemberInput, type UpdateWorkspaceSettingsInput, type WorkspaceMemberRecord } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
 import { MonitoringKeywordsPanel } from "@/components/dashboard/monitoring-keywords-panel";
 import { SubscriptionCard } from "@/components/dashboard/SubscriptionCard";
@@ -261,7 +261,7 @@ export default function SettingsPage() {
   const [workspaceName, setWorkspaceName] = useState<string | null>(null);
   const [industry, setIndustry] = useState<string | null>(null);
   const [timezone, setTimezone] = useState<string | null>(null);
-  const [language, setLanguage] = useState(ts("workspaceInfo.languageId"));
+  const [language, setLanguage] = useState<"id" | "en" | null>(null);
   const [workspaceLogo, setWorkspaceLogo] = useState<string | null>(null);
   const activeLogo = workspaceLogo || (workspaceSettingsQuery.data?.logoUrl ? resolveBackendAssetUrl(workspaceSettingsQuery.data.logoUrl) : "/logo-h-narriv-2026.png");
   const [logoError, setLogoError] = useState("");
@@ -368,8 +368,27 @@ export default function SettingsPage() {
   const industryValue = industry ?? workspaceSettingsQuery.data?.industry ?? ts("workspaceInfo.industryTechnology");
   // Stored values are IANA ids; older rows hold labels like "Asia/Jakarta (GMT+7)".
   const timezoneValue = (timezone ?? workspaceSettingsQuery.data?.timezone ?? "Asia/Jakarta").replace(/\s*\(.*\)\s*$/, "");
-  const notifEmailValue = notifEmail ?? Boolean(workspaceSettingsQuery.data?.notificationEmail ?? true);
-  const notifWhatsappValue = notifWhatsapp ?? Boolean(workspaceSettingsQuery.data?.whatsappPIC);
+  const languageValue = language ?? workspaceSettingsQuery.data?.language ?? "id";
+  // Email/WhatsApp alert switches live in workspace_notification_settings (booleans) and save on toggle; they used
+  // to be sent with the workspace form as notificationEmail: "enabled", which the API rejects as an invalid email,
+  // so saving the workspace name, industry or time zone always failed.
+  const notificationQuery = useQuery({ queryKey: ["notification-settings"], queryFn: getNotificationSettings, staleTime: 30 * 1000 });
+  const notifEmailValue = notifEmail ?? notificationQuery.data?.emailEnabled ?? true;
+  const notifWhatsappValue = notifWhatsapp ?? notificationQuery.data?.whatsappEnabled ?? false;
+  const notificationMutation = useMutation({
+    mutationFn: (input: { emailEnabled?: boolean; whatsappEnabled?: boolean }) => updateNotificationSettings(input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["notification-settings"] });
+      showToast(ts("toast.saveSuccess"));
+    },
+    onError: () => {
+      setNotifEmail(null);
+      setNotifWhatsapp(null);
+      showToast(ts("toast.saveFailed"), "error");
+    },
+  });
+  const toggleEmail = (next: boolean) => { setNotifEmail(next); notificationMutation.mutate({ emailEnabled: next }); };
+  const toggleWhatsapp = (next: boolean) => { setNotifWhatsapp(next); notificationMutation.mutate({ whatsappEnabled: next }); };
 
 
   const handleSaveWorkspaceInfo = (e: FormEvent) => {
@@ -389,8 +408,7 @@ export default function SettingsPage() {
       brandName: workspaceNameValue.trim(),
       industry: industryValue,
       timezone: timezoneValue,
-      notificationEmail: notifEmailValue ? "enabled" : null,
-      whatsappPIC: notifWhatsappValue ? "enabled" : null,
+      language: languageValue,
     });
   };
 
@@ -733,16 +751,16 @@ export default function SettingsPage() {
                 </label>
                 <div className="relative">
                   <select aria-label={ts("workspaceInfo.labelLanguage")}
-                    value={language}
-                    onChange={(e) => setLanguage(e.target.value)}
+                    value={languageValue}
+                    onChange={(e) => setLanguage(e.target.value === "en" ? "en" : "id")}
                     className="h-10 w-full appearance-none rounded-lg border border-[#DDE3EF] bg-white px-3 pr-8 text-[12px] font-bold text-[#101334] focus:border-[#465FFF] focus:outline-none"
                   >
-                    <option value="Bahasa Indonesia">{ts("workspaceInfo.languageId")}</option>
-                    <option value="English (US)">{ts("workspaceInfo.languageEnUs")}</option>
-                    <option value="English (UK)">{ts("workspaceInfo.languageEnUk")}</option>
+                    <option value="id">{ts("workspaceInfo.languageId")}</option>
+                    <option value="en">{ts("workspaceInfo.languageEn")}</option>
                   </select>
                   <ChevronDown size={14} className="pointer-events-none absolute right-3 top-3.5 text-[#5F6B94]" />
                 </div>
+                <p className="mt-1 text-[9.5px] font-semibold text-[#5A6478]">{ts("workspaceInfo.languageHint")}</p>
               </div>
             </div>
 
@@ -920,7 +938,7 @@ export default function SettingsPage() {
                 <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.emailAlerts")}</span>
                 <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("notifications.emailAlertsDesc")}</span>
               </div>
-              <Switch label={ts("notifications.emailAlerts")} checked={notifEmailValue} onChange={setNotifEmail} />
+              <Switch label={ts("notifications.emailAlerts")} checked={notifEmailValue} onChange={toggleEmail} disabled={notificationMutation.isPending} />
             </div>
 
             <div className="flex items-center justify-between">
@@ -939,7 +957,7 @@ export default function SettingsPage() {
                 <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.whatsappAlerts")}</span>
                 <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("notifications.whatsappAlertsDesc")}</span>
               </div>
-              <Switch label={ts("notifications.whatsappAlerts")} checked={notifWhatsappValue} onChange={setNotifWhatsapp} />
+              <Switch label={ts("notifications.whatsappAlerts")} checked={notifWhatsappValue} onChange={toggleWhatsapp} disabled={notificationMutation.isPending} />
             </div>
 
             <div className="flex items-center justify-between">

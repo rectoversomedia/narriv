@@ -13,8 +13,10 @@ export const updateWorkspaceSettingsBodySchema = z.object({
     timezone: z.string().trim().min(1, "timezone cannot be empty.").max(80, "timezone is too long.").optional().nullable(),
     notificationEmail: z.string().trim().email("notificationEmail format is invalid.").optional().nullable(),
     whatsappPIC: z.string().trim().min(6, "whatsappPIC is too short.").max(32, "whatsappPIC is too long.").optional().nullable(),
+    // Language of the content Narriv writes and stores for this workspace (alert titles and descriptions).
+    language: z.enum(["id", "en"], { errorMap: () => ({ message: "language must be id or en." }) }).optional(),
 }).refine((data) => {
-    const updatableFields = ["brandName", "industry", "timezone", "notificationEmail", "whatsappPIC"];
+    const updatableFields = ["brandName", "industry", "timezone", "notificationEmail", "whatsappPIC", "language"];
     return updatableFields.some((key) => Object.prototype.hasOwnProperty.call(data, key));
 }, {
     message: "At least one settings field must be provided.",
