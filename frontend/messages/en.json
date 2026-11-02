@@ -515,7 +515,7 @@
     "noDecisionItemsDesc": "Open warnings from your workspace will appear here when the system finds something that needs attention.",
     "visibilityLabel": "AI visibility",
     "recommendationLabel": "Recommendation",
-    "title": "Dashboard",
+    "title": "Overview",
     "subtitle": "See what is happening, which issues need attention, how your brand appears in AI answers, and what your team should do next.",
     "last7Days": "Last 7 days",
     "emptyTitle": "No dashboard data yet",
@@ -1145,7 +1145,7 @@
     "footer": "Note: each suggestion should include evidence, action type, reason, owner, approval status, and a measurable outcome."
   },
   "Alerts": {
-    "title": "Predictive Alerts",
+    "title": "Early Warnings",
     "subtitle": "Find issues before they grow, then record team decisions so future suggestions get better.",
     "learningQueue": "Review Queue",
     "queue": "Alert Queue",
@@ -1644,7 +1644,7 @@
     }
   },
   "Intelligence": {
-    "pageTitle": "Intelligence",
+    "pageTitle": "Issues & Narratives",
     "pageSubtitle": "Understand topic clusters, narrative growth, and strategic context.",
     "title": "Topic Map",
     "subtitle": "Understand which topics are growing, who is involved, their impact, and the risks behind them.",
@@ -2772,7 +2772,7 @@
         "labelLanguage": "Language",
         "labelUrl": "Workspace URL",
         "copyUrl": "Copy workspace URL",
-        "urlPrefix": "narriv.ai/workspace/",
+        "urlPrefix": "narriv.digital/workspace/",
         "industryTechnology": "Technology",
         "industryFinance": "Finance",
         "industryHealthcare": "Healthcare",
