@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspace=frontend",
+    "dev:local": "node scripts/dev-local.mjs",
     "build": "npm run build --workspace=frontend",
     "dev:backend": "npm run dev --workspace=backend",
     "start:backend": "npm run start --workspace=backend",
@@ -16,7 +17,8 @@
     "test:frontend-unit": "npm run test:unit --workspace=frontend",
     "eval:intelligence": "node backend/eval/intelligence-eval.mjs --compare",
     "check:frontend": "npm run lint --workspace=frontend && tsc -p frontend --noEmit && npm run build --workspace=frontend",
-    "check": "npm run test:backend && npm run test:frontend-unit && npm run eval:intelligence && npm run check:frontend && npm run e2e:sandbox"
+    "check": "npm run test:backend && npm run test:frontend-unit && npm run eval:intelligence && npm run check:frontend && npm run e2e:sandbox",
+    "release": "bash scripts/release.sh"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

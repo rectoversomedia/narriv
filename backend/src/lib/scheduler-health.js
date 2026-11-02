@@ -8,7 +8,7 @@
  * hour, so a slot only counts as missed once its grace window has passed.
  */
 
-export const INGEST_SLOTS_UTC = [0, 6, 12, 18];
+export const INGEST_SLOTS_UTC = [0];   // pre-launch: one ingestion a day (07:00 WIB); was [0, 6, 12, 18]
 export const SLOT_GRACE_MINUTES = 75;
 
 const isScheduled = (trigger) => typeof trigger === "string" && trigger.startsWith("vercel-cron");
