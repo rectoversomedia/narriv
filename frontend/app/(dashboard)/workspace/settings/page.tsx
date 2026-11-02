@@ -45,6 +45,7 @@ import { UpgradeModal } from "@/components/dashboard/UpgradeModal";
 import { intlLocale } from "@/store/useUiStore";
 import { AiProvidersPanel } from "@/components/dashboard/ai-providers-panel";
 import { PlatformCollectionPanel } from "@/components/dashboard/platform-collection-panel";
+import { pickL, useL } from "@/lib/use-l";
 
 type TeamMember = {
   name: string;
@@ -81,7 +82,7 @@ function readFileAsBase64(file: File) {
       const result = String(reader.result || "");
       resolve(result.includes(",") ? result.split(",")[1] : result);
     };
-    reader.onerror = () => reject(reader.error || new Error("Logo file could not be read."));
+    reader.onerror = () => reject(reader.error || new Error(pickL("Logo file could not be read.", "File logo tidak bisa dibaca.")));
     reader.readAsDataURL(file);
   });
 }
@@ -185,6 +186,7 @@ function PlanSparkline({ values, className = "h-10 w-full" }: { values: number[]
 // Main Page Component
 export default function SettingsPage() {
   const ts = useTranslations("Workspace.settings");
+  const L = useL();
   const queryClient = useQueryClient();
   const toast = useToast();
   const workspaceSettingsQuery = useQuery({
@@ -783,12 +785,12 @@ export default function SettingsPage() {
               {/* Roles are enforced server-side; this explains them (there is no separate role editor). */}
               <details className="relative">
                 <summary className="flex h-9 cursor-pointer list-none items-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-slate-700 shadow-sm transition hover:bg-slate-50">
-                  What each role can do
+                  {L("What each role can do", "Wewenang tiap peran")}
                 </summary>
                 <div className="absolute right-0 z-20 mt-2 w-[300px] rounded-[10px] border border-[#DDE3EF] bg-white p-3 text-[11px] font-semibold leading-relaxed text-slate-600 shadow-lg">
-                  <p><b className="text-[#101334]">Owner</b>: everything an admin can do, plus granting or removing the owner role. The last owner cannot be removed.</p>
-                  <p className="mt-2"><b className="text-[#101334]">Admin</b>: add and remove members (not owners), change workspace settings, monitoring keywords and integrations.</p>
-                  <p className="mt-2"><b className="text-[#101334]">Analyst</b>: view all workspace data, ask questions, and work on cases and action plans. Cannot change members, settings or keywords.</p>
+                  <p><b className="text-[#101334]">{L("Owner", "Pemilik")}</b>: {L("everything an admin can do, plus granting or removing the owner role. The last owner cannot be removed.", "semua yang bisa dilakukan admin, ditambah memberi atau mencabut peran pemilik. Pemilik terakhir tidak bisa dihapus.")}</p>
+                  <p className="mt-2"><b className="text-[#101334]">Admin</b>: {L("add and remove members (not owners), change workspace settings, monitoring keywords and integrations.", "menambah dan menghapus anggota (kecuali pemilik), mengubah pengaturan workspace, kata kunci pemantauan, dan integrasi.")}</p>
+                  <p className="mt-2"><b className="text-[#101334]">{L("Analyst", "Analis")}</b>: {L("view all workspace data, ask questions, and work on cases and action plans. Cannot change members, settings or keywords.", "melihat semua data workspace, bertanya ke Narriv, serta mengerjakan kasus dan rencana aksi. Tidak bisa mengubah anggota, pengaturan, atau kata kunci.")}</p>
                 </div>
               </details>
               <button
@@ -805,7 +807,7 @@ export default function SettingsPage() {
             {membersQuery.isPending ? (
               <TableSkeleton rows={4} columns={6} className="border-0 shadow-none" />
             ) : membersQuery.isError || membersQuery.data === null ? (
-              <DashboardErrorState title="Members could not be loaded" description="The member list is unavailable right now. No changes were made." onRetry={() => void membersQuery.refetch()} minHeight="min-h-[220px]" />
+              <DashboardErrorState title={L("Members could not be loaded", "Daftar anggota belum bisa dimuat")} description={L("The member list is unavailable right now. No changes were made.", "Daftar anggota sedang tidak tersedia. Tidak ada perubahan yang dibuat.")} onRetry={() => void membersQuery.refetch()} minHeight="min-h-[220px]" />
             ) : members.length === 0 ? (
               <DashboardEmptyState title={ts("membersEmptyTitle")} description={ts("membersEmptyDesc")} icon="inbox" minHeight="min-h-[280px]" />
             ) : (

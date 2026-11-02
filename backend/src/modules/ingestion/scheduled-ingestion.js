@@ -26,11 +26,13 @@ function categorizeError(err) {
 }
 
 /**
- * Build the ordered (workspace, keyword) work list. The starting offset
- * rotates per run so a time-limited run does not always favor the same
- * workspaces.
+ * Build the ordered (workspace, keyword) work list. A time-limited run only reaches the first few workspaces, so the
+ * order must be fair: with `lastProcessed` (workspaceId -> ISO time of its last processed keyword) the workspaces
+ * that waited longest go first (never-processed first). Without it, a fixed rotation offset is used.
+ * The previous order — an offset that advanced once per 6-hour block — skipped some workspaces forever once the
+ * schedule became daily (the offset jumped by 4 each run).
  */
-export function buildWorkList(keywordRows, { maxKeywordsPerWorkspace = 3, maxWorkspaces = 25, rotation = 0 } = {}) {
+export function buildWorkList(keywordRows, { maxKeywordsPerWorkspace = 3, maxWorkspaces = 25, rotation = 0, lastProcessed = null } = {}) {
     const byWorkspace = new Map();
     for (const row of keywordRows || []) {
         const keyword = String(row.keyword || "").trim();
@@ -42,12 +44,37 @@ export function buildWorkList(keywordRows, { maxKeywordsPerWorkspace = 3, maxWor
         byWorkspace.set(row.workspace_id, list);
     }
     const workspaces = [...byWorkspace.keys()].sort();
-    const offset = workspaces.length ? rotation % workspaces.length : 0;
-    const ordered = [...workspaces.slice(offset), ...workspaces.slice(0, offset)].slice(0, maxWorkspaces);
+    let ordered;
+    if (lastProcessed) {
+        const at = (ws) => (lastProcessed.get(ws) ? Date.parse(lastProcessed.get(ws)) : -Infinity);
+        ordered = [...workspaces].sort((a, b) => at(a) - at(b) || a.localeCompare(b)).slice(0, maxWorkspaces);
+    } else {
+        const offset = workspaces.length ? rotation % workspaces.length : 0;
+        ordered = [...workspaces.slice(offset), ...workspaces.slice(0, offset)].slice(0, maxWorkspaces);
+    }
     return ordered.flatMap((workspaceId) => byWorkspace.get(workspaceId).map((keyword) => ({ workspaceId, keyword })));
 }
 
 const LOCK_WINDOW_MS = 10 * 60 * 1000;
+
+/** workspaceId -> ISO time of the latest run that processed (not deferred) one of its keywords. */
+async function lastProcessedByWorkspace() {
+    const { data, error } = await baseSupabaseAdmin
+        .from("cron_ingestion_logs")
+        .select("created_at, metadata")
+        .eq("job_name", JOB_NAME)
+        .order("created_at", { ascending: false })
+        .limit(60);
+    if (error) return null;
+    const map = new Map();
+    for (const row of data || []) {
+        for (const r of row.metadata?.results || []) {
+            if (!r.workspaceId || r.status === "deferred" || map.has(r.workspaceId)) continue;
+            map.set(r.workspaceId, row.created_at);
+        }
+    }
+    return map;
+}
 
 /**
  * Claim the run: insert a "running" row, then let the earliest running row
@@ -102,6 +129,7 @@ export async function runScheduledIngestion({
     trigger = "cron",
     ingest = ingestRssSignals,
     pauseMs = 300,
+    concurrency = 3,
     workspaceId = null, // set for an admin's manual run of one workspace
 } = {}) {
     const runId = crypto.randomUUID();
@@ -136,40 +164,54 @@ export async function runScheduledIngestion({
             maxKeywordsPerWorkspace,
             maxWorkspaces,
             rotation: Math.floor(start / (6 * 3600 * 1000)),
+            lastProcessed: workspaceId ? null : await lastProcessedByWorkspace(),
         });
     }
 
-    for (const { workspaceId, keyword } of work) {
-        if (Date.now() - start > budgetMs) {
-            totals.deferredKeywords += 1;
-            results.push({ workspaceId, keyword, status: "deferred" });
-            continue;
+    // Keywords run `concurrency` at a time (each one is a news fetch plus per-article AI analysis, mostly waiting on
+    // the network), so a run within the same time budget covers several times more keywords. A keyword is only
+    // started while budget remains; the rest are reported as deferred. Results keep the work-list order.
+    const slots = new Array(work.length);
+    let next = 0;
+    const worker = async () => {
+        while (next < work.length) {
+            const i = next++;
+            const { workspaceId: ws, keyword } = work[i];
+            if (Date.now() - start > budgetMs) {
+                slots[i] = { workspaceId: ws, keyword, status: "deferred" };
+                continue;
+            }
+            // Space out requests to the news source.
+            if (pauseMs > 0 && i > 0) await new Promise((r) => setTimeout(r, pauseMs));
+            const itemStart = Date.now();
+            try {
+                const r = await ingest({ workspaceId: ws, keyword, limit: perKeywordLimit });
+                slots[i] = {
+                    workspaceId: ws,
+                    keyword,
+                    status: "ok",
+                    fetched: r.totalFetched || 0,
+                    inserted: r.newSignalsCreated || 0,
+                    deduplicated: r.skippedDuplicates || 0,
+                    analyzed: r.analyzed || 0,
+                    analysisFailed: r.analysisFailed || 0,
+                    insertFailed: r.insertFailed || 0,
+                    clustersCreated: r.clustering?.clustersCreated || 0,
+                    alerts: Array.isArray(r.alerts) ? r.alerts.length : 0,
+                    durationMs: Date.now() - itemStart,
+                };
+            } catch (err) {
+                slots[i] = { workspaceId: ws, keyword, status: "failed", error: String(err?.message || err).slice(0, 300), errorCategory: categorizeError(err), durationMs: Date.now() - itemStart };
+            }
         }
-        // Space out requests to the news source.
-        if (pauseMs > 0 && results.length > 0) await new Promise((r) => setTimeout(r, pauseMs));
-        const itemStart = Date.now();
-        try {
-            const r = await ingest({ workspaceId, keyword, limit: perKeywordLimit });
-            const row = {
-                workspaceId,
-                keyword,
-                status: "ok",
-                fetched: r.totalFetched || 0,
-                inserted: r.newSignalsCreated || 0,
-                deduplicated: r.skippedDuplicates || 0,
-                analyzed: r.analyzed || 0,
-                analysisFailed: r.analysisFailed || 0,
-                insertFailed: r.insertFailed || 0,
-                clustersCreated: r.clustering?.clustersCreated || 0,
-                alerts: Array.isArray(r.alerts) ? r.alerts.length : 0,
-                durationMs: Date.now() - itemStart,
-            };
-            for (const k of ["fetched", "inserted", "deduplicated", "analyzed", "analysisFailed", "insertFailed", "clustersCreated", "alerts"]) totals[k] += row[k];
-            results.push(row);
-        } catch (err) {
-            totals.failedKeywords += 1;
-            results.push({ workspaceId, keyword, status: "failed", error: String(err?.message || err).slice(0, 300), errorCategory: categorizeError(err), durationMs: Date.now() - itemStart });
-        }
+    };
+    await Promise.all(Array.from({ length: Math.max(1, Math.min(concurrency, work.length)) }, worker));
+    for (const row of slots) {
+        if (!row) continue;
+        results.push(row);
+        if (row.status === "deferred") totals.deferredKeywords += 1;
+        else if (row.status === "failed") totals.failedKeywords += 1;
+        else for (const k of ["fetched", "inserted", "deduplicated", "analyzed", "analysisFailed", "insertFailed", "clustersCreated", "alerts"]) totals[k] += row[k];
     }
 
     const durationMs = Date.now() - start;

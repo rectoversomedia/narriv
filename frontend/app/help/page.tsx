@@ -309,7 +309,7 @@ export default function HelpCenterPage() {
   const faqs = [
     {
       q: "How do I get started with Narriv?",
-      a: "Create an account and complete onboarding, then add monitoring keywords in Settings → Monitoring Keywords. Scheduled ingestion runs every 6 hours, collects news for your active keywords, and the AI analysis step classifies each new signal. Narratives, risk and recommendations are built from those stored signals.",
+      a: "Create an account and complete onboarding, then add monitoring keywords in Settings → Monitoring Keywords. Scheduled monitoring runs once a day (07:00 WIB), collects news for up to 3 active keywords per workspace, and the AI analysis step classifies each new signal. Narratives, risk and recommendations are built from those stored signals.",
     },
     {
       q: "What data sources does Narriv support?",

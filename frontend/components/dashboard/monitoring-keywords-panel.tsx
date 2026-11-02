@@ -18,6 +18,8 @@ import {
 } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
 import { timeAgo } from "@/lib/intelligence-api";
+import { pickL } from "@/lib/use-l";
+import { intlLocale } from "@/store/useUiStore";
 
 const QUERY_KEY = ["monitoring-keywords"];
 
@@ -263,12 +265,12 @@ function LastRunLine({ keyword, t }: { keyword: MonitoringKeyword; t: T }) {
   );
 }
 
-const RUN_STATUS_TEXT: Record<MonitoringRunResponse["status"], string> = {
-  completed: "Completed",
-  completed_with_errors: "Completed with some errors",
-  partial: "Partially completed: some keywords were not reached in time",
-  failed: "Failed",
-  skipped_overlap: "Skipped: another run was in progress",
+const RUN_STATUS_TEXT: Record<MonitoringRunResponse["status"], [string, string]> = {
+  completed: ["Completed", "Selesai"],
+  completed_with_errors: ["Completed with some errors", "Selesai dengan beberapa galat"],
+  partial: ["Partially completed: some keywords were not reached in time", "Selesai sebagian: beberapa kata kunci belum sempat diproses"],
+  failed: ["Failed", "Gagal"],
+  skipped_overlap: ["Skipped: another run was in progress", "Dilewati: ada run lain yang sedang berjalan"],
 };
 
 /**
@@ -281,15 +283,16 @@ type RunError = Error & { status?: number; code?: string; info?: { retryAt?: str
 /** What to tell the user for each way a run request can end without a result. */
 function describeRunError(err: RunError): { tone: "error" | "info"; text: string } {
   if (err.code === "CLIENT_TIMEOUT") {
-    return { tone: "info", text: "The run is taking longer than expected. It continues on the server; the keyword list below refreshes in a minute with the real result." };
+    return { tone: "info", text: pickL("The run is taking longer than expected. It continues on the server; the keyword list below refreshes in a minute with the real result.", "Run ini butuh waktu lebih lama dari perkiraan. Prosesnya tetap berjalan di server; daftar kata kunci di bawah akan diperbarui dalam semenit dengan hasil aslinya.") };
   }
   if (err.status === 429) {
     const at = err.info?.retryAt ? new Date(err.info.retryAt) : null;
-    return { tone: "info", text: at ? `A run for this workspace started less than 10 minutes ago. You can run again at ${at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.` : err.message };
+    const when = at ? at.toLocaleTimeString(intlLocale(), { hour: "2-digit", minute: "2-digit" }) : "";
+    return { tone: "info", text: at ? pickL(`A run for this workspace started less than 10 minutes ago. You can run again at ${when}.`, `Run untuk workspace ini dimulai kurang dari 10 menit lalu. Anda bisa menjalankan lagi pukul ${when}.`) : err.message };
   }
-  if (err.status === 400) return { tone: "info", text: "Add or resume at least one keyword before running monitoring." };
-  if (err.status === 403) return { tone: "error", text: "Only workspace owners and admins can run monitoring." };
-  return { tone: "error", text: err.message || "The monitoring run failed." };
+  if (err.status === 400) return { tone: "info", text: pickL("Add or resume at least one keyword before running monitoring.", "Tambahkan atau aktifkan lagi minimal satu kata kunci sebelum menjalankan pemantauan.") };
+  if (err.status === 403) return { tone: "error", text: pickL("Only workspace owners and admins can run monitoring.", "Hanya pemilik dan admin workspace yang bisa menjalankan pemantauan.") };
+  return { tone: "error", text: err.message || pickL("The monitoring run failed.", "Run pemantauan gagal.") };
 }
 
 function RunMonitoringNow({ onDone }: { onDone: () => void }) {
@@ -308,8 +311,8 @@ function RunMonitoringNow({ onDone }: { onDone: () => void }) {
     <div className="mt-4 rounded-lg border border-[#DDE3EF] bg-[#FBFCFF] p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[11.5px] font-black text-[#101334]">Run monitoring now</p>
-          <p className="text-[10px] font-semibold text-[#5A6478]">Collects the latest public news for up to 3 active keywords (8 articles each) and analyses it. Takes up to 2 minutes; one run per 10 minutes.</p>
+          <p className="text-[11.5px] font-black text-[#101334]">{pickL("Run monitoring now", "Jalankan pemantauan sekarang")}</p>
+          <p className="text-[10px] font-semibold text-[#5A6478]">{pickL("Collects the latest public news for up to 3 active keywords (8 articles each) and analyses it. Takes up to 2 minutes; one run per 10 minutes.", "Mengambil berita publik terbaru untuk hingga 3 kata kunci aktif (8 artikel per kata kunci) lalu menganalisisnya. Butuh hingga 2 menit; satu run per 10 menit.")}</p>
         </div>
         <button
           type="button"
@@ -327,7 +330,11 @@ function RunMonitoringNow({ onDone }: { onDone: () => void }) {
       {result ? (
         <div className="mt-2 text-[10.5px] font-semibold text-[#31406B]" role="status">
           <p>
-            {RUN_STATUS_TEXT[result.status] ?? result.status} in {Math.max(1, Math.round(result.durationMs / 1000))} s: {result.totals.fetched} articles found, {result.totals.inserted} new saved, {result.totals.deduplicated} already saved (skipped), {result.totals.analyzed} analysed{result.totals.analysisFailed ? `, ${result.totals.analysisFailed} analysis failures` : ""}{result.totals.failedKeywords ? `, ${result.totals.failedKeywords} keyword(s) failed` : ""}.
+            {RUN_STATUS_TEXT[result.status] ? pickL(...RUN_STATUS_TEXT[result.status]) : result.status}{" "}
+            {pickL(
+              `in ${Math.max(1, Math.round(result.durationMs / 1000))} s: ${result.totals.fetched} articles found, ${result.totals.inserted} new saved, ${result.totals.deduplicated} already saved (skipped), ${result.totals.analyzed} analysed${result.totals.analysisFailed ? `, ${result.totals.analysisFailed} analysis failures` : ""}${result.totals.failedKeywords ? `, ${result.totals.failedKeywords} keyword(s) failed` : ""}.`,
+              `dalam ${Math.max(1, Math.round(result.durationMs / 1000))} dtk: ${result.totals.fetched} artikel ditemukan, ${result.totals.inserted} baru disimpan, ${result.totals.deduplicated} sudah tersimpan (dilewati), ${result.totals.analyzed} dianalisis${result.totals.analysisFailed ? `, ${result.totals.analysisFailed} analisis gagal` : ""}${result.totals.failedKeywords ? `, ${result.totals.failedKeywords} kata kunci gagal` : ""}.`,
+            )}
           </p>
           <ul className="mt-1 space-y-0.5">
             {result.results.filter((r) => r.keyword).map((r) => (

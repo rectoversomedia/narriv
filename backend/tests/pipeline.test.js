@@ -100,6 +100,13 @@ describe('scheduled ingestion work list', () => {
     const rows = [{ workspace_id: WS_A, keyword: 'a' }, { workspace_id: WS_B, keyword: 'b' }];
     expect(buildWorkList(rows, { rotation: 1 })[0].workspaceId).toBe(WS_B);
   });
+
+  it('puts the workspace that waited longest first (never-processed before any), whatever the schedule', () => {
+    const WS_C = '00000000-0000-4000-8000-0000000000cc';
+    const rows = [{ workspace_id: WS_A, keyword: 'a' }, { workspace_id: WS_B, keyword: 'b' }, { workspace_id: WS_C, keyword: 'c' }];
+    const lastProcessed = new Map([[WS_A, '2026-11-02T00:00:00Z'], [WS_B, '2026-10-30T00:00:00Z']]);
+    expect(buildWorkList(rows, { lastProcessed }).map((w) => w.workspaceId)).toEqual([WS_C, WS_B, WS_A]);
+  });
 });
 
 describe('runScheduledIngestion', () => {
@@ -158,6 +165,23 @@ describe('runScheduledIngestion', () => {
     expect(summary.status).toBe('skipped_overlap');
     expect(ingest).not.toHaveBeenCalled();
     expect(writesTo('cron_ingestion_logs', 'update')[0].payload.status).toBe('skipped_overlap');
+  });
+
+  it('runs keywords concurrently and keeps the work-list order in the results', async () => {
+    const many = Array.from({ length: 6 }, (_, i) => ({ workspace_id: i % 2 ? WS_B : WS_A, keyword: `kw-${i}` }));
+    respond = (q) => (q.table === 'monitoring_keywords' ? { data: many, error: null } : { data: null, error: null });
+    let inFlight = 0, peak = 0;
+    const ingest = jest.fn(async () => {
+      inFlight += 1; peak = Math.max(peak, inFlight);
+      await new Promise((r) => setTimeout(r, 20));
+      inFlight -= 1;
+      return { totalFetched: 1, newSignalsCreated: 1, skippedDuplicates: 0, analyzed: 1 };
+    });
+    const summary = await runScheduledIngestion({ ingest, pauseMs: 0, concurrency: 3, maxKeywordsPerWorkspace: 3 });
+    expect(ingest).toHaveBeenCalledTimes(6);
+    expect(peak).toBe(3);
+    expect(summary.totals.inserted).toBe(6);
+    expect(summary.results.map((r) => r.keyword)).toEqual(buildWorkList(many, { maxKeywordsPerWorkspace: 3, lastProcessed: new Map() }).map((w) => w.keyword));
   });
 
   it('defers remaining keywords once the time budget is spent', async () => {

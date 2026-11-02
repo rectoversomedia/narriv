@@ -10,6 +10,7 @@
  * ingestion processes the first SCHEDULED_KEYWORDS_PER_WORKSPACE active
  * keywords (oldest first) each run; the response states this explicitly.
  */
+import { tr } from "../../lib/request-context.js";
 import express from "express";
 import { z } from "zod";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
@@ -95,7 +96,7 @@ function present(rows, runs = new Map()) {
             };
         }),
         limits: { maxActive: MAX_ACTIVE_KEYWORDS, scheduledPerRun: SCHEDULED_KEYWORDS_PER_WORKSPACE },
-        note: `Scheduled ingestion runs every 6 hours and processes the first ${SCHEDULED_KEYWORDS_PER_WORKSPACE} active keywords (oldest first).`,
+        note: tr(`Scheduled monitoring runs once a day (07:00 WIB) and collects up to 8 new articles for each of the first ${SCHEDULED_KEYWORDS_PER_WORKSPACE} active keywords (oldest first).`, `Pemantauan terjadwal berjalan sekali sehari (07.00 WIB) dan mengambil hingga 8 artikel baru untuk ${SCHEDULED_KEYWORDS_PER_WORKSPACE} kata kunci aktif pertama (yang paling lama ditambahkan).`),
     };
 }
 

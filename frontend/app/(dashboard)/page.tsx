@@ -454,7 +454,7 @@ export default function DashboardPage() {
           <ol className="mt-4 grid gap-3 sm:grid-cols-3">
             {[
               { n: 1, title: L("Add monitoring keywords", "Tambah kata kunci pemantauan"), body: L("Company, brand, product or executive names to follow.", "Nama perusahaan, brand, produk, atau eksekutif yang ingin dipantau."), href: "/workspace/settings#keywords", cta: L("Open keywords", "Buka kata kunci") },
-              { n: 2, title: L("Collect the first data", "Kumpulkan data pertama"), body: L("Owners and admins can run monitoring now; scheduled runs follow every 6 hours.", "Pemilik dan admin dapat menjalankan pemantauan sekarang; pemantauan terjadwal berjalan setiap 6 jam."), href: "/workspace/settings#keywords", cta: L("Run monitoring", "Jalankan pemantauan") },
+              { n: 2, title: L("Collect the first data", "Kumpulkan data pertama"), body: L("Owners and admins can run monitoring now; after that it runs automatically once a day (07:00 WIB).", "Pemilik dan admin bisa menjalankan pemantauan sekarang; setelah itu berjalan otomatis sekali sehari (07.00 WIB)."), href: "/workspace/settings#keywords", cta: L("Run monitoring", "Jalankan pemantauan") },
               { n: 3, title: L("Review records and issues", "Tinjau data dan isu"), body: L("Sentiment, issues and warnings appear once articles are analysed.", "Sentimen, isu, dan peringatan muncul setelah artikel dianalisis."), href: "/signals", cta: L("Open Monitoring", "Buka Pemantauan") },
             ].map((step) => (
               <li key={step.n} className="rounded-[10px] border border-slate-100 bg-[#FBFCFF] p-3">

@@ -19,6 +19,7 @@ import {
   Sparkles
 } from "lucide-react";
 import Link from "next/link";
+import { pickL, useL } from "@/lib/use-l";
 
 const planIcons = {
   pilot: Rocket,
@@ -75,7 +76,7 @@ function UsageBar({ label, used, limit, icon: Icon, color }: UsageBarProps) {
           isExceeded ? "text-red-700" : isWarning ? "text-amber-700" : "text-[#5A6478]"
         )}>
           {isUnlimited ? (
-            <span className="text-emerald-700">Unlimited</span>
+            <span className="text-emerald-700">{pickL("Unlimited", "Tanpa batas")}</span>
           ) : (
             <>{formatNumber(used)} / {formatNumber(limit)}</>
           )}
@@ -100,8 +101,16 @@ interface SubscriptionCardProps {
   onUpgradeClick?: () => void;
 }
 
+const PLAN_TAGLINE: Record<string, [string, string]> = {
+  pilot: ["Validate the value.", "Buktikan nilainya."],
+  intelligence: ["Understand what matters.", "Pahami yang penting."],
+  decision: ["Turn intelligence into action.", "Ubah intelijen jadi tindakan."],
+  command: ["Operationalize intelligence.", "Jadikan intelijen bagian dari operasional."],
+};
+
 export function SubscriptionCard({ onUpgradeClick }: SubscriptionCardProps) {
   const t = useTranslations("Workspace.settings");
+  const L = useL();
 
   const { data: subscription, isLoading, error } = useQuery({
     queryKey: ["my-subscription"],
@@ -137,31 +146,31 @@ export function SubscriptionCard({ onUpgradeClick }: SubscriptionCardProps) {
 
   const usageItems = [
     {
-      label: "Members",
+      label: L("Members", "Anggota"),
       used: subscription.usage?.membersUsed || 0,
       limit: subscription.usage?.membersLimit || 1,
       icon: Users,
     },
     {
-      label: "Topics",
+      label: L("Topics", "Topik"),
       used: subscription.usage?.topicsUsed || 0,
       limit: subscription.usage?.topicsLimit || 5,
       icon: Hash,
     },
     {
-      label: "Signals",
+      label: L("Signals", "Sinyal"),
       used: subscription.usage?.signalsUsed || 0,
       limit: subscription.usage?.signalsLimit || 10000,
       icon: Activity,
     },
     {
-      label: "Alerts",
+      label: L("Alerts", "Peringatan"),
       used: subscription.usage?.alertsUsed || 0,
       limit: subscription.usage?.alertsLimit || 100,
       icon: Bell,
     },
     {
-      label: "Reports",
+      label: L("Reports", "Laporan"),
       used: subscription.usage?.reportsUsed || 0,
       limit: subscription.usage?.reportsLimit || 10,
       icon: FileText,
@@ -186,12 +195,12 @@ export function SubscriptionCard({ onUpgradeClick }: SubscriptionCardProps) {
               </h3>
               {subscription.plan?.status === "active" && (
                 <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">
-                  Active
+                  {L("Active", "Aktif")}
                 </span>
               )}
             </div>
             <p className="text-[10px] text-[#5A6478]">
-              {subscription.plan?.tagline || "Your current plan"}
+              {PLAN_TAGLINE[planKey] ? L(...PLAN_TAGLINE[planKey]) : subscription.plan?.tagline || L("Your current plan", "Paket Anda saat ini")}
             </p>
           </div>
         </div>
