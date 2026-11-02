@@ -14,6 +14,8 @@
  *   adjust_campaign, monitor_competitor, escalate_internal
  */
 
+import { tr } from "./request-context.js";
+
 function priorityFromScore(score) {
     if (score >= 75) return "critical";
     if (score >= 50) return "high";
@@ -35,10 +37,10 @@ export function deriveRecommendations({ riskScore = 0, riskBand = "low", reputat
     if (riskBand === "critical" || activeAlerts >= 3) {
         out.push({
             action: "escalate_internal",
-            reason: "Critical risk score or multiple active alerts warrant immediate internal escalation.",
+            reason: tr("Critical risk score or multiple active alerts warrant immediate internal escalation.", "Skor risiko kritis atau beberapa peringatan aktif perlu segera dieskalasi secara internal."),
             priority: priorityFromScore(Math.max(riskScore, 75)),
             urgency: "immediate",
-            expectedOutcome: "Decision-maker is briefed within 1h and the situation is assigned an owner.",
+            expectedOutcome: tr("Decision-maker is briefed within 1h and the situation is assigned an owner.", "Pengambil keputusan mendapat briefing dalam 1 jam dan situasi ini punya penanggung jawab."),
             evidence: ["risk_score", "active_alerts"],
             confidence: 0.8,
             requiresApproval: true,
@@ -48,10 +50,10 @@ export function deriveRecommendations({ riskScore = 0, riskBand = "low", reputat
     if (riskBand === "high" || riskBand === "critical") {
         out.push({
             action: "investigate",
-            reason: "Elevated risk score; an investigator should examine the contributing signals.",
+            reason: tr("Elevated risk score; an investigator should examine the contributing signals.", "Skor risiko meningkat; perlu ada yang memeriksa sinyal-sinyal pemicunya."),
             priority: priorityFromScore(riskScore),
             urgency: urgencyFromBand(riskBand),
-            expectedOutcome: "Root cause is identified within 24h or the risk is downgraded.",
+            expectedOutcome: tr("Root cause is identified within 24h or the risk is downgraded.", "Akar masalah teridentifikasi dalam 24 jam atau tingkat risikonya diturunkan."),
             evidence: ["risk_score"],
             confidence: 0.7,
             requiresApproval: true,
@@ -61,10 +63,10 @@ export function deriveRecommendations({ riskScore = 0, riskBand = "low", reputat
     if (negativeShare >= 0.5) {
         out.push({
             action: "prepare_clarification",
-            reason: "More than half of recent signals are negative. A clarification may pre-empt further escalation.",
+            reason: tr("More than half of recent signals are negative. A clarification may pre-empt further escalation.", "Lebih dari separuh sinyal terbaru bernada negatif. Klarifikasi bisa mencegah eskalasi lebih lanjut."),
             priority: "high",
             urgency: "today",
-            expectedOutcome: "Clarification draft is ready for review before any external amplification.",
+            expectedOutcome: tr("Clarification draft is ready for review before any external amplification.", "Draf klarifikasi siap ditinjau sebelum isu makin menyebar."),
             evidence: ["sentiment_breakdown"],
             confidence: 0.65,
             requiresApproval: true,
@@ -74,10 +76,10 @@ export function deriveRecommendations({ riskScore = 0, riskBand = "low", reputat
     if (emergingNarratives > 0) {
         out.push({
             action: "monitor",
-            reason: `${emergingNarratives} emerging narrative cluster(s) detected. Continue monitoring for further momentum.`,
+            reason: tr(`${emergingNarratives} emerging narrative cluster(s) detected. Continue monitoring for further momentum.`, `${emergingNarratives} klaster narasi baru terdeteksi. Lanjutkan pemantauan untuk melihat perkembangannya.`),
             priority: "medium",
             urgency: "this_week",
-            expectedOutcome: "Continued observation produces an updated brief within 24h.",
+            expectedOutcome: tr("Continued observation produces an updated brief within 24h.", "Pemantauan lanjutan menghasilkan briefing terbaru dalam 24 jam."),
             evidence: ["narrative_clusters_table_query"],
             confidence: 0.6,
             requiresApproval: true,
@@ -87,20 +89,20 @@ export function deriveRecommendations({ riskScore = 0, riskBand = "low", reputat
     if (reputationBand === "at_risk" || reputationBand === "critical") {
         out.push({
             action: "prepare_statement",
-            reason: "Reputation has declined; prepare a statement draft in case the situation escalates.",
+            reason: tr("Reputation has declined; prepare a statement draft in case the situation escalates.", "Reputasi menurun; siapkan draf pernyataan kalau situasinya membesar."),
             priority: "high",
             urgency: "today",
-            expectedOutcome: "Statement draft is ready for executive review.",
+            expectedOutcome: tr("Statement draft is ready for executive review.", "Draf pernyataan siap ditinjau pimpinan."),
             evidence: ["reputation_intelligence"],
             confidence: 0.7,
             requiresApproval: true,
         });
         out.push({
             action: "brief_spokesperson",
-            reason: "Reputation decline requires spokesperson alignment.",
+            reason: tr("Reputation decline requires spokesperson alignment.", "Penurunan reputasi perlu penyelarasan juru bicara."),
             priority: "medium",
             urgency: "this_week",
-            expectedOutcome: "Spokesperson is briefed and aligned with current narrative position.",
+            expectedOutcome: tr("Spokesperson is briefed and aligned with current narrative position.", "Juru bicara mendapat briefing dan selaras dengan posisi narasi saat ini."),
             evidence: ["reputation_intelligence"],
             confidence: 0.6,
             requiresApproval: true,
@@ -110,10 +112,10 @@ export function deriveRecommendations({ riskScore = 0, riskBand = "low", reputat
     if (volumeRatio >= 2) {
         out.push({
             action: "investigate",
-            reason: "Volume has doubled; the source mix may have shifted. Investigate before responding.",
+            reason: tr("Volume has doubled; the source mix may have shifted. Investigate before responding.", "Volume naik dua kali lipat; komposisi sumber mungkin berubah. Selidiki dulu sebelum merespons."),
             priority: "medium",
             urgency: "this_week",
-            expectedOutcome: "Source mix is mapped; whether the increase is organic or coordinated is determined.",
+            expectedOutcome: tr("Source mix is mapped; whether the increase is organic or coordinated is determined.", "Komposisi sumber terpetakan; jelas apakah kenaikannya organik atau terkoordinasi."),
             evidence: ["volume_ratio"],
             confidence: 0.55,
             requiresApproval: true,
@@ -123,10 +125,10 @@ export function deriveRecommendations({ riskScore = 0, riskBand = "low", reputat
     if (out.length === 0) {
         out.push({
             action: "monitor",
-            reason: "No risk signals elevated. Continue routine monitoring.",
+            reason: tr("No risk signals elevated. Continue routine monitoring.", "Tidak ada sinyal risiko yang meningkat. Lanjutkan pemantauan rutin."),
             priority: "low",
             urgency: "monitor",
-            expectedOutcome: "Next scheduled intelligence run.",
+            expectedOutcome: tr("Next scheduled intelligence run.", "Run intelijen terjadwal berikutnya."),
             evidence: ["risk_score"],
             confidence: 0.5,
             requiresApproval: true,
@@ -153,12 +155,12 @@ const TAG_COMPONENTS = {
 };
 
 const MONITOR_NEXT = {
-    escalate_internal: "Unresolved alert count and negative share in the next run.",
-    investigate: "Whether the cited signals are followed by more coverage from additional sources.",
-    prepare_clarification: "Negative share and the narratives behind the cited signals.",
-    monitor: "Velocity and signal count of the cited narrative clusters.",
-    prepare_statement: "Reputation band and negative share in the next run.",
-    brief_spokesperson: "Media pickup of the cited signals.",
+    escalate_internal: ["Unresolved alert count and negative share in the next run.", "Jumlah peringatan yang belum selesai dan porsi negatif di run berikutnya."],
+    investigate: ["Whether the cited signals are followed by more coverage from additional sources.", "Apakah sinyal yang dirujuk diikuti pemberitaan dari sumber lain."],
+    prepare_clarification: ["Negative share and the narratives behind the cited signals.", "Porsi negatif dan narasi di balik sinyal yang dirujuk."],
+    monitor: ["Velocity and signal count of the cited narrative clusters.", "Kecepatan dan jumlah sinyal di klaster narasi yang dirujuk."],
+    prepare_statement: ["Reputation band and negative share in the next run.", "Tingkat reputasi dan porsi negatif di run berikutnya."],
+    brief_spokesperson: ["Media pickup of the cited signals.", "Seberapa banyak media mengangkat sinyal yang dirujuk."],
 };
 
 /**
@@ -171,7 +173,7 @@ export function groundRecommendation(rec, risk) {
     const components = (risk.components || []).filter((c) => keys.includes(c.key));
     const sourceIds = [...new Set(components.flatMap((c) => c.evidenceIds || []))].slice(0, 10);
     const observedIssue = components.filter((c) => c.contribution > 0).map((c) => c.reason).join(" ")
-        || "No elevated risk component; routine monitoring.";
+        || tr("No elevated risk component; routine monitoring.", "Tidak ada komponen risiko yang meningkat; pemantauan rutin.");
 
     const limitations = [...(risk.uncertainty?.reasons || [])];
     let confidence = rec.confidence;
@@ -179,7 +181,7 @@ export function groundRecommendation(rec, risk) {
     else if (risk.uncertainty?.level === "medium") confidence *= 0.85;
     if (sourceIds.length === 0 && rec.action !== "monitor") {
         confidence = Math.min(confidence, 0.4);
-        limitations.push("No individual records directly support this recommendation; it is based on aggregate metrics.");
+        limitations.push(tr("No individual records directly support this recommendation; it is based on aggregate metrics.", "Tidak ada catatan spesifik yang mendukung rekomendasi ini; dasarnya metrik agregat."));
     }
 
     return {
@@ -192,6 +194,6 @@ export function groundRecommendation(rec, risk) {
         confidence: Number(confidence.toFixed(2)),
         confidenceBasis: `risk model ${risk.version}, uncertainty ${risk.uncertainty?.level || "unknown"}, ${sourceIds.length} supporting record(s)`,
         limitations,
-        monitorNext: MONITOR_NEXT[rec.action] || "Re-run the intelligence brief after the next ingestion.",
+        monitorNext: MONITOR_NEXT[rec.action] ? tr(...MONITOR_NEXT[rec.action]) : tr("Re-run the intelligence brief after the next ingestion.", "Jalankan ulang briefing intelijen setelah pengambilan data berikutnya."),
     };
 }

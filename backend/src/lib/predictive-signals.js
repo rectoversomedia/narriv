@@ -13,6 +13,7 @@
  * returns an empty list with status "insufficient_data".
  */
 
+import { tr } from "./request-context.js";
 import { narrativeMomentum, isEmerging } from "./narrative-momentum.js";
 import { baseSupabaseAdmin } from "./supabase.js";
 
@@ -65,9 +66,9 @@ export async function computePredictiveSignals({ workspaceId, windowHours = 24 }
     if (volRatio >= 1.5 && recent.length >= 5) {
         signals.push({
             signal: "volume_continuation",
-            label: "If current volume persists, the next window is likely to remain elevated.",
+            label: tr("If current volume persists, the next window is likely to remain elevated.", "Jika volume saat ini berlanjut, periode berikutnya kemungkinan tetap tinggi."),
             confidence: clamp01(0.5 + 0.05 * (volRatio - 1.5)),
-            timeframe: "next 24h",
+            timeframe: tr("next 24h", "24 jam ke depan"),
             supporting: ["signal_volume_ratio", "signals_table_query"],
             assumptions: ["No external shock event occurs", "Ingestion pipeline remains healthy"],
         });
@@ -77,9 +78,9 @@ export async function computePredictiveSignals({ workspaceId, windowHours = 24 }
     if (negShare >= 0.4 && volRatio >= 1.25) {
         signals.push({
             signal: "sentiment_escalation",
-            label: "Concentrated negative sentiment combined with rising volume may indicate an emerging issue.",
+            label: tr("Concentrated negative sentiment combined with rising volume may indicate an emerging issue.", "Sentimen negatif yang terkonsentrasi ditambah volume yang naik bisa menandakan isu yang mulai muncul."),
             confidence: clamp01(0.4 + 0.3 * (negShare - 0.4)),
-            timeframe: "next 24-72h",
+            timeframe: tr("next 24-72h", "24–72 jam ke depan"),
             supporting: ["sentiment_breakdown", "signal_volume_ratio"],
             assumptions: ["Sample size is representative", "Source mix is not shifting dramatically"],
         });
@@ -89,9 +90,9 @@ export async function computePredictiveSignals({ workspaceId, windowHours = 24 }
     if (activeAlerts >= 3) {
         signals.push({
             signal: "alert_clustering",
-            label: "Multiple active alerts suggest a possible coordinated or systemic issue.",
+            label: tr("Multiple active alerts suggest a possible coordinated or systemic issue.", "Beberapa peringatan aktif menandakan kemungkinan isu yang terkoordinasi atau sistemik."),
             confidence: clamp01(0.4 + 0.1 * activeAlerts),
-            timeframe: "next 12-48h",
+            timeframe: tr("next 12-48h", "12–48 jam ke depan"),
             supporting: ["alerts_table_query"],
             assumptions: ["Alert thresholds have not changed in the window"],
         });
@@ -110,9 +111,9 @@ export async function computePredictiveSignals({ workspaceId, windowHours = 24 }
     if (risingClusters.length >= 2) {
         signals.push({
             signal: "narrative_expansion",
-            label: "Multiple narratives are gaining momentum; expect broader coverage if the trend continues.",
+            label: tr("Multiple narratives are gaining momentum; expect broader coverage if the trend continues.", "Beberapa narasi sedang naik; pemberitaan bisa meluas kalau tren ini berlanjut."),
             confidence: clamp01(0.4 + 0.1 * risingClusters.length),
-            timeframe: "next 48-96h",
+            timeframe: tr("next 48-96h", "48–96 jam ke depan"),
             supporting: ["narrative_cluster_signals (captured_at, last 24h vs previous 24h)"],
             assumptions: ["Growth in distinct member signals continues at a similar rate"],
         });
@@ -126,6 +127,6 @@ export async function computePredictiveSignals({ workspaceId, windowHours = 24 }
         windowHours,
         signals,
         evidence,
-        disclaimer: "These are heuristic signals, not scientific predictions. They are intended to focus human review, not replace it.",
+        disclaimer: tr("These are heuristic signals, not scientific predictions. They are intended to focus human review, not replace it.", "Ini sinyal heuristik, bukan prediksi ilmiah. Tujuannya membantu fokus tinjauan manusia, bukan menggantikannya."),
     };
 }

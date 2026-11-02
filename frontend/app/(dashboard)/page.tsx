@@ -325,11 +325,11 @@ export default function DashboardPage() {
             className="inline-flex h-[52px] items-center gap-3 rounded-[10px] bg-[#465FFF] hover:bg-[#3B51E0] px-8 text-[15px] font-bold text-white shadow-sm transition active:scale-[0.98]"
           >
             <Rocket size={20} />
-            Start Setup Wizard
+            {L("Start Setup Wizard", "Mulai Panduan Penyiapan")}
             <ArrowRight size={18} />
           </Link>
           <p className="mt-6 text-[13px] font-semibold text-[#5A6478]">
-            Takes about 7 minutes to complete
+            {L("Takes about 7 minutes to complete", "Butuh sekitar 7 menit")}
           </p>
         </div>
       </div>
@@ -339,22 +339,22 @@ export default function DashboardPage() {
   // ── New "Today's Intelligence" data ───────────────────────────────────────
 
   const today = new Date();
-  const dateStr = today.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const dateStr = today.toLocaleDateString(intlLocale(), { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
   const developments: Array<{ id: string; icon: typeof AlertTriangle; title: string; change: string; category: string; tone: Tone }> = isDemoSession ? [
-    { id: "d1", icon: Activity, title: "Service quality mentions spiking on Reddit", change: "+38%", category: "Risk", tone: "red" },
-    { id: "d2", icon: Zap, title: "New competitor mentioned in AI responses", change: "NEW", category: "Competitor", tone: "amber" },
-    { id: "d3", icon: TrendingUp, title: "Feature launch driving positive momentum", change: "+67%", category: "Opportunity", tone: "green" },
-    { id: "d4", icon: Bot, title: "AI visibility score improving across platforms", change: "+8pp", category: "AI Visibility", tone: "blue" },
+    { id: "d1", icon: Activity, title: L("Service quality mentions spiking on Reddit", "Penyebutan kualitas layanan melonjak di Reddit"), change: "+38%", category: L("Risk", "Risiko"), tone: "red" },
+    { id: "d2", icon: Zap, title: L("New competitor mentioned in AI responses", "Kompetitor baru disebut dalam jawaban AI"), change: L("NEW", "BARU"), category: L("Competitor", "Kompetitor"), tone: "amber" },
+    { id: "d3", icon: TrendingUp, title: L("Feature launch driving positive momentum", "Peluncuran fitur mendorong momentum positif"), change: "+67%", category: L("Opportunity", "Peluang"), tone: "green" },
+    { id: "d4", icon: Bot, title: L("AI visibility score improving across platforms", "Skor visibilitas AI membaik di semua platform"), change: "+8pp", category: L("AI Visibility", "Visibilitas AI"), tone: "blue" },
   ] : [];
 
   const scorecard = isDemoSession ? [
-    { label: "Narrative Health", value: 74, delta: "+3", lowerIsBetter: false, tone: "green" as Tone },
-    { label: "Reputation Score", value: 81, delta: "-1", lowerIsBetter: false, tone: "blue" as Tone },
-    { label: "Risk Level", value: 27, delta: "+5", lowerIsBetter: true, tone: "red" as Tone },
-    { label: "Narrative Momentum", value: 69, delta: "+8", lowerIsBetter: false, tone: "green" as Tone },
-    { label: "Share of Narrative", value: "34%", delta: "+2pp", lowerIsBetter: false, tone: "blue" as Tone },
-    { label: "AI Visibility", value: 72, delta: "+6", lowerIsBetter: false, tone: "purple" as Tone },
+    { label: L("Narrative Health", "Kesehatan Narasi"), value: 74, delta: "+3", lowerIsBetter: false, tone: "green" as Tone },
+    { label: L("Reputation Score", "Skor Reputasi"), value: 81, delta: "-1", lowerIsBetter: false, tone: "blue" as Tone },
+    { label: L("Risk Level", "Tingkat Risiko"), value: 27, delta: "+5", lowerIsBetter: true, tone: "red" as Tone },
+    { label: L("Narrative Momentum", "Momentum Narasi"), value: 69, delta: "+8", lowerIsBetter: false, tone: "green" as Tone },
+    { label: L("Share of Narrative", "Pangsa Narasi"), value: "34%", delta: "+2pp", lowerIsBetter: false, tone: "blue" as Tone },
+    { label: L("AI Visibility", "Visibilitas AI"), value: 72, delta: "+6", lowerIsBetter: false, tone: "purple" as Tone },
   ] : [];
 
   const competitors = isDemoSession ? [
@@ -365,11 +365,11 @@ export default function DashboardPage() {
   ] : [];
 
   const recommendedActions = isDemoSession ? [
-    { id: "a1", priority: "Immediate" as const, text: "Monitor spike in negative service quality mentions on Reddit — consider response strategy", href: "/signals" },
-    { id: "a2", priority: "High" as const, text: "Investigate sudden drop in positive sentiment (-8%) over the past 24 hours", href: "/signals" },
-    { id: "a3", priority: "High" as const, text: "Review AI-generated content citing competitor comparison — assess opportunity", href: "/visibility" },
-    { id: "a4", priority: "Medium" as const, text: "Prepare response to emerging \"app performance\" topic before it gains traction", href: "/intelligence" },
-    { id: "a5", priority: "Low" as const, text: "Capitalize on positive loyalty program momentum with follow-up content", href: "/reports" },
+    { id: "a1", priority: "Immediate" as const, text: L("Monitor spike in negative service quality mentions on Reddit — consider response strategy", "Pantau lonjakan penyebutan negatif soal kualitas layanan di Reddit — siapkan strategi respons"), href: "/signals" },
+    { id: "a2", priority: "High" as const, text: L("Investigate sudden drop in positive sentiment (-8%) over the past 24 hours", "Selidiki penurunan mendadak sentimen positif (-8%) dalam 24 jam terakhir"), href: "/signals" },
+    { id: "a3", priority: "High" as const, text: L("Review AI-generated content citing competitor comparison — assess opportunity", "Tinjau konten AI yang membandingkan dengan kompetitor — nilai peluangnya"), href: "/visibility" },
+    { id: "a4", priority: "Medium" as const, text: L("Prepare response to emerging \"app performance\" topic before it gains traction", "Siapkan respons untuk topik \"performa aplikasi\" yang mulai muncul sebelum meluas"), href: "/intelligence" },
+    { id: "a5", priority: "Low" as const, text: L("Capitalize on positive loyalty program momentum with follow-up content", "Manfaatkan momentum positif program loyalitas dengan konten lanjutan"), href: "/reports" },
   ] : [];
 
   const aiPlatforms = isDemoSession ? [
@@ -652,10 +652,10 @@ export default function DashboardPage() {
                   <div key={a.id} className="flex flex-col gap-2 rounded-[8px] border border-slate-100 bg-white px-4 py-3 transition hover:border-[#465FFF]/20">
                     <div className="flex items-center justify-between gap-2">
                       <span className={`rounded-[6px] border px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ${priorityBadgeClass[a.priority]}`}>
-                        {a.priority}
+                        {({ Immediate: L("Immediate", "Segera"), High: L("High", "Tinggi"), Medium: L("Medium", "Sedang"), Low: L("Low", "Rendah") } as Record<string, string>)[a.priority]}
                       </span>
                       <Link href={a.href} className="flex items-center gap-0.5 text-[10px] font-bold text-[#3B52F5] transition hover:text-[#6E44E8]">
-                        View <ChevronRight size={10} />
+                        {L("View", "Lihat")} <ChevronRight size={10} />
                       </Link>
                     </div>
                     <p className="text-[12px] font-medium leading-snug text-slate-700">{a.text}</p>

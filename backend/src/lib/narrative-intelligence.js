@@ -19,6 +19,7 @@
  * model. Treat all numbers as guidance for human review.
  */
 
+import { tr } from "./request-context.js";
 import { computeRisk } from "./risk-model.js";
 import { narrativeMomentum } from "./narrative-momentum.js";
 import { deriveRecommendations } from "./recommendation-engine.js";
@@ -128,7 +129,7 @@ export async function computeNarrativeIntelligence({ workspaceId, windowHours = 
             evidence,
             generatedAt: new Date().toISOString(),
             windowHours,
-            note: "No signals in the window — no intelligence can be derived.",
+            note: tr("No signals in the window — no intelligence can be derived.", "Tidak ada sinyal di periode ini — belum ada intelijen yang bisa disusun."),
         };
     }
 
@@ -149,14 +150,14 @@ export async function computeNarrativeIntelligence({ workspaceId, windowHours = 
     inferences.push({
         kind: "volume_ratio",
         label: ratio === null
-            ? "No signals in the previous window; volume change cannot be assessed yet."
+            ? tr("No signals in the previous window; volume change cannot be assessed yet.", "Tidak ada sinyal di periode sebelumnya; perubahan volume belum bisa dinilai.")
             : ratio >= 2
-                ? "Mention volume has doubled or more vs the prior window."
+                ? tr("Mention volume has doubled or more vs the prior window.", "Volume penyebutan naik dua kali lipat atau lebih dibanding periode sebelumnya.")
                 : ratio >= 1.25
-                    ? "Mention volume is moderately elevated."
+                    ? tr("Mention volume is moderately elevated.", "Volume penyebutan agak meningkat.")
                     : ratio <= 0.5
-                        ? "Mention volume has dropped vs the prior window."
-                        : "Mention volume is stable.",
+                        ? tr("Mention volume has dropped vs the prior window.", "Volume penyebutan turun dibanding periode sebelumnya.")
+                        : tr("Mention volume is stable.", "Volume penyebutan stabil."),
         ratio,
         current: signalsRecent.length,
         prior: signalsPrev.length,
@@ -167,10 +168,10 @@ export async function computeNarrativeIntelligence({ workspaceId, windowHours = 
     inferences.push({
         kind: "negative_sentiment_share",
         label: negShare >= 0.5
-            ? "More than half of recent signals are negative."
+            ? tr("More than half of recent signals are negative.", "Lebih dari separuh sinyal terbaru bernada negatif.")
             : negShare >= 0.25
-                ? "A meaningful share of recent signals are negative."
-                : "Negative sentiment is not dominant in the window.",
+                ? tr("A meaningful share of recent signals are negative.", "Sebagian cukup besar sinyal terbaru bernada negatif.")
+                : tr("Negative sentiment is not dominant in the window.", "Sentimen negatif tidak dominan di periode ini."),
         value: Number(negShare.toFixed(2)),
         signalIds: risk.components.find((c) => c.key === "negative_share").evidenceIds,
     });
@@ -183,7 +184,7 @@ export async function computeNarrativeIntelligence({ workspaceId, windowHours = 
     if (emerging.length > 0) {
         inferences.push({
             kind: "emerging_narratives",
-            label: `${emerging.length} narrative cluster(s) currently showing elevated momentum.`,
+            label: tr(`${emerging.length} narrative cluster(s) currently showing elevated momentum.`, `${emerging.length} klaster narasi sedang menunjukkan momentum tinggi.`),
             items: emerging,
         });
         for (const e of emerging) evidence.push({ type: "narrative_cluster", id: e.clusterId });
@@ -199,7 +200,7 @@ export async function computeNarrativeIntelligence({ workspaceId, windowHours = 
     const riskBand = risk.band;
     inferences.push({
         kind: "risk_score",
-        label: "Heuristic composite risk index (0-100). Not a probability and not empirically calibrated.",
+        label: tr("Heuristic composite risk index (0-100). Not a probability and not empirically calibrated.", "Indeks risiko gabungan heuristik (0-100). Bukan probabilitas dan belum dikalibrasi secara empiris."),
         score: riskScore,
         band: riskBand,
         modelVersion: risk.version,
@@ -211,9 +212,9 @@ export async function computeNarrativeIntelligence({ workspaceId, windowHours = 
     if (ratio !== null && ratio >= 2) {
         predictions.push({
             kind: "volume_continuation",
-            label: "If the current pace persists, volume in the next window is likely to be elevated.",
+            label: tr("If the current pace persists, volume in the next window is likely to be elevated.", "Jika laju saat ini berlanjut, volume di periode berikutnya kemungkinan tetap tinggi."),
             confidence: clamp01(0.5 + 0.1 * (ratio - 2)),
-            timeframe: "next 24h",
+            timeframe: tr("next 24h", "24 jam ke depan"),
             evidence: ["volume_ratio", "signals_table_query"],
         });
     }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useUiStore } from "@/store/useUiStore";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -346,7 +347,7 @@ export function NarrativeMap({ brandName, narratives, onNarrativeClick }: Narrat
         viewBox={`0 0 ${BASE_WIDTH} ${BASE_HEIGHT}`}
         className="w-full h-full"
         style={{ background: "#0f172a", display: "block" }}
-        aria-label={`Narrative map for ${brandName}`}
+        aria-label={useUiStore.getState().language === "id" ? `Peta narasi untuk ${brandName}` : `Narrative map for ${brandName}`}
         role="img"
       >
         <GridPattern />

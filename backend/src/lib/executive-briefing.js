@@ -6,6 +6,7 @@
  * data. If a section has no data, the function says so explicitly.
  */
 
+import { tr } from "./request-context.js";
 import { computeNarrativeIntelligence } from "./narrative-intelligence.js";
 import { computeReputationIntelligence } from "./reputation-intelligence.js";
 import { computeEntityIntelligence } from "./entity-intelligence.js";
@@ -50,11 +51,11 @@ export async function generateExecutiveBrief({ workspaceId, windowHours = 24 }) 
         windowHours,
         sections: {
             whatChanged: {
-                summary: `${factSignalCount} new signal(s) and ${factAlertCount} new alert(s) in the last ${windowHours}h.`,
+                summary: tr(`${factSignalCount} new signal(s) and ${factAlertCount} new alert(s) in the last ${windowHours}h.`, `${factSignalCount} sinyal baru dan ${factAlertCount} peringatan baru dalam ${windowHours} jam terakhir.`),
                 evidence: narrative.evidence.slice(0, 5),
             },
             biggestRisk: {
-                summary: `Risk index ${biggestRisk}/100 (${biggestRiskBand}) — heuristic, not a probability.`,
+                summary: tr(`Risk index ${biggestRisk}/100 (${biggestRiskBand}) — heuristic, not a probability.`, `Indeks risiko ${biggestRisk}/100 (${biggestRiskBand}) — heuristik, bukan probabilitas.`),
                 drivers: (narrative.riskModel?.components || []).filter((c) => c.contribution > 0)
                     .sort((a, b) => b.contribution - a.contribution)
                     .map((c) => ({ key: c.key, contribution: c.contribution, reason: c.reason, evidenceIds: c.evidenceIds })),
@@ -63,24 +64,24 @@ export async function generateExecutiveBrief({ workspaceId, windowHours = 24 }) 
             },
             emergingIssue: topEmergent
                 ? { summary: topEmergent.label, items: topEmergent.items, evidence: narrative.evidence }
-                : { summary: "No emerging narratives detected." },
+                : { summary: tr("No emerging narratives detected.", "Belum ada narasi baru yang terdeteksi.") },
             competitiveMovement: {
                 summary: topEntity
-                    ? `Most-mentioned entity: ${topEntity} (${entities.entities[0].mentions} mentions, sentiment ${entities.entities[0].avgSentiment}).`
-                    : "No entity intelligence available.",
+                    ? tr(`Most-mentioned entity: ${topEntity} (${entities.entities[0].mentions} mentions, sentiment ${entities.entities[0].avgSentiment}).`, `Entitas paling banyak disebut: ${topEntity} (${entities.entities[0].mentions} penyebutan, sentimen ${entities.entities[0].avgSentiment}).`)
+                    : tr("No entity intelligence available.", "Belum ada data intelijen entitas."),
                 evidence: entities.evidence.slice(0, 3),
             },
             opportunity: {
-                summary: predictions.signals.find((s) => s.signal === "narrative_expansion")?.label || "No expansion signal detected.",
+                summary: predictions.signals.find((s) => s.signal === "narrative_expansion")?.label || tr("No expansion signal detected.", "Belum ada sinyal perluasan yang terdeteksi."),
             },
             reputation: {
                 score: repScore,
                 band: repBand,
-                summary: repScore === null ? "Reputation: not enough data in this window." : `Reputation: ${repBand} (${repScore}/100).`,
+                summary: repScore === null ? tr("Reputation: not enough data in this window.", "Reputasi: data di periode ini belum cukup.") : tr(`Reputation: ${repBand} (${repScore}/100).`, `Reputasi: ${repBand} (${repScore}/100).`),
             },
             recommendedActions: recs.recommendations.slice(0, 5),
             whatToWatchNext: predictions.signals.slice(0, 3),
         },
-        disclaimer: "Generated deterministically from current Narriv data. Risk drivers and recommendations list the IDs of the records behind them; aggregate statements reference the query they come from. Scores are heuristic indices, not probabilities. Recommendations are suggestions and have not been acted on.",
+        disclaimer: tr("Generated deterministically from current Narriv data. Risk drivers and recommendations list the IDs of the records behind them; aggregate statements reference the query they come from. Scores are heuristic indices, not probabilities. Recommendations are suggestions and have not been acted on.", "Disusun secara deterministik dari data Narriv saat ini. Pemicu risiko dan rekomendasi mencantumkan ID catatan yang mendasarinya; pernyataan agregat merujuk ke kueri asalnya. Skor adalah indeks heuristik, bukan probabilitas. Rekomendasi bersifat saran dan belum ditindaklanjuti."),
     };
 }

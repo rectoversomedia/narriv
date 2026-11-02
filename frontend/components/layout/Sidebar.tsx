@@ -138,25 +138,25 @@ export function Sidebar() {
         </nav>
 
         {sidebarCollapsed || !pipeline ? null : <div className="mt-8 rounded-[8px] border border-white/10 bg-white/[0.02] p-4 backdrop-blur-md">
-          <div className="text-[11px] font-semibold text-white/90">Pipeline status</div>
+          <div className="text-[11px] font-semibold text-white/90">{t("sidebar.pipelineStatus")}</div>
           <dl className="mt-3 space-y-1.5 text-[11px]">
-            <div className="flex justify-between gap-2"><dt className="text-white/50">Last ingestion</dt><dd className="font-bold text-white/90">{timeAgo(pipeline.scheduler.lastSuccessfulIngestionForWorkspace ?? pipeline.ingestion.lastRawDocumentAt)}</dd></div>
-            <div className="flex justify-between gap-2"><dt className="text-white/50">Last analysis</dt><dd className="font-bold text-white/90">{timeAgo(pipeline.analysis.lastAnalysisAt)}</dd></div>
+            <div className="flex justify-between gap-2"><dt className="text-white/50">{t("sidebar.lastIngestion")}</dt><dd className="font-bold text-white/90">{timeAgo(pipeline.scheduler.lastSuccessfulIngestionForWorkspace ?? pipeline.ingestion.lastRawDocumentAt)}</dd></div>
+            <div className="flex justify-between gap-2"><dt className="text-white/50">{t("sidebar.lastAnalysis")}</dt><dd className="font-bold text-white/90">{timeAgo(pipeline.analysis.lastAnalysisAt)}</dd></div>
             {pipeline.scheduler.health ? (
-              <div className="flex justify-between gap-2" title={pipeline.scheduler.health.basis}>
-                <dt className="text-white/50">Scheduled runs (24h)</dt>
+              <div className="flex justify-between gap-2" title={t("sidebar.scheduledRunsHint")}>
+                <dt className="text-white/50">{t("sidebar.scheduledRuns")}</dt>
                 <dd className={pipeline.scheduler.health.missedSlotsLast24h.length ? "font-bold text-amber-300" : "font-bold text-white/90"}>
                   {pipeline.scheduler.health.expectedSlotsLast24h - pipeline.scheduler.health.missedSlotsLast24h.length}/{pipeline.scheduler.health.expectedSlotsLast24h}
                 </dd>
               </div>
             ) : null}
-            <div className="flex justify-between gap-2"><dt className="text-white/50">Unresolved alerts</dt><dd className="font-bold text-white/90">{pipeline.alerts.unresolved ?? "—"}</dd></div>
+            <div className="flex justify-between gap-2"><dt className="text-white/50">{t("sidebar.unresolvedAlerts")}</dt><dd className="font-bold text-white/90">{pipeline.alerts.unresolved ?? "—"}</dd></div>
           </dl>
-          {pipeline.partial ? <p className="mt-2 text-[10px] text-amber-300/80">Some status checks failed; figures may be incomplete.</p> : null}
+          {pipeline.partial ? <p className="mt-2 text-[10px] text-amber-300/80">{t("sidebar.partialStatus")}</p> : null}
         </div>}
 
         {sidebarCollapsed ? null : <p className="mt-6 px-2 text-[11px] text-white/40">© {new Date().getFullYear()} Narriv</p>}
-        {sidebarCollapsed ? null : <p className="mt-2 px-2 text-[11px] text-white/40">All rights reserved.</p>}
+        {sidebarCollapsed ? null : <p className="mt-2 px-2 text-[11px] text-white/40">{t("sidebar.rightsReserved")}</p>}
       </aside>
 
       <nav className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 rounded-2xl border border-border bg-[#090D16]/90 p-1.5 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] lg:hidden">

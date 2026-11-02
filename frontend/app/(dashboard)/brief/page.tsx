@@ -23,7 +23,8 @@ import {
 import { NarrativeMap } from "@/components/intelligence/narrative-map";
 import { cn } from "@/lib/utils";
 import { isDemoMode } from "@/lib/demo-mock-data";
-import { useUiStore } from "@/store/useUiStore";
+import { useCodeLabels } from "@/components/intelligence/intelligence-panels";
+import { useUiStore, intlLocale } from "@/store/useUiStore";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -38,151 +39,70 @@ const WINDOW_HOURS: Record<DateRange, number> = { today: 24, last7days: 168, las
 // Demo data
 // ---------------------------------------------------------------------------
 
-const DEMO_DATE_FORMATTED = "Thursday, 27 August 2026";
-
-const EXECUTIVE_SUMMARY = {
-  criticalAlerts: 2,
-  netSentimentShift: +8,
-  aiVisibility: 72,
-  competitorNote:
-    "Competitor Bank Jago gained 3 points in the 'best digital bank' prompt category.",
-};
-
-const KEY_DEVELOPMENTS = [
-  {
-    severity: "CRITICAL",
-    color: "text-red-700",
-    bg: "bg-red-50",
-    border: "border-red-200",
-    dot: "bg-red-500",
-    title: "App login failures viral on Twitter/X",
-    signals: 127,
-    growth: "+38%",
-    time: "2h ago",
-  },
-  {
-    severity: "HIGH",
-    color: "text-amber-700",
-    bg: "bg-amber-50",
-    border: "border-amber-200",
-    dot: "bg-amber-500",
-    title: "AI visibility declined 6 points — Bank Jago overtaking in Gemini",
-    signals: 89,
-    growth: "-6 pts",
-    time: "4h ago",
-  },
-  {
-    severity: "MEDIUM",
-    color: "text-blue-600",
-    bg: "bg-blue-50",
-    border: "border-blue-200",
-    dot: "bg-blue-500",
-    title: "EV affordability narrative growing 180% in 48h — brand positioning gap",
-    signals: 312,
-    growth: "+180%",
-    time: "48h ago",
-  },
-  {
-    severity: "LOW",
-    color: "text-slate-600",
-    bg: "bg-slate-50",
-    border: "border-slate-200",
-    dot: "bg-slate-400",
-    title: "Positive sustainability mention cluster",
-    signals: 42,
-    growth: "+22%",
-    time: "12h ago",
-  },
-];
-
-const NARRATIVE_CHANGES = [
-  { direction: "growing" as const, label: "Digital Banking UX complaints", delta: "+38%" },
-  { direction: "growing" as const, label: "EV Affordability", delta: "+180%" },
-  { direction: "declining" as const, label: "Account security mentions", delta: "-12%" },
-  { direction: "stable" as const, label: "GoPay Integration ecosystem", delta: "+4%" },
-];
-
-const RISKS = [
-  "Service disruption narrative escalating — 3 critical signals, 2h ago",
-  "AI platforms citing outdated battery safety information",
-  "Regulatory fintech discussion increasing (+23% this week)",
-];
-
-const OPPORTUNITIES = [
-  "No brand owns 'EV family car' positioning — create content campaign",
-  "Sustainability narrative growing but no brand leads it — whitespace opportunity",
-  "AI visibility gap in 'best fintech for SMEs' prompt — priority improvement area",
-];
-
-const COMPETITORS = [
-  {
-    name: "Bank Jago",
-    sentiment: "+18 narrative momentum",
-    ai: "+3 AI visibility points",
-    note: "community banking campaign",
-    tone: "negative" as const,
-  },
-  {
-    name: "GoPay",
-    sentiment: "Stable share of voice",
-    ai: "+12% AI visibility",
-    note: "QR payment feature launch",
-    tone: "positive" as const,
-  },
-  {
-    name: "OVO",
-    sentiment: "Declining narrative momentum",
-    ai: "Less AI coverage this week",
-    note: "",
-    tone: "neutral" as const,
-  },
-];
-
-const AI_VISIBILITY = [
-  { engine: "ChatGPT", from: 68, to: 64, delta: -4 },
-  { engine: "Gemini", from: 78, to: 72, delta: -6 },
-  { engine: "Perplexity", from: 71, to: 73, delta: +2 },
-  { engine: "Claude", from: 65, to: 65, delta: 0 },
-];
-
-const RECOMMENDED_ACTIONS = [
-  {
-    priority: "IMMEDIATE",
-    priorityColor: "bg-red-600",
-    text: "Investigate and respond to app login failure complaints",
-  },
-  {
-    priority: "HIGH",
-    priorityColor: "bg-amber-700",
-    text: "Publish content addressing battery safety misconceptions",
-  },
-  {
-    priority: "HIGH",
-    priorityColor: "bg-amber-700",
-    text: "Increase authoritative coverage around digital security",
-  },
-  {
-    priority: "MEDIUM",
-    priorityColor: "bg-blue-600",
-    text: "Create educational content on EV charging accessibility",
-  },
-  {
-    priority: "MEDIUM",
-    priorityColor: "bg-blue-600",
-    text: "Benchmark and improve AI visibility for key category prompts",
-  },
-];
-
-const NARRATIVES_MAP_DATA = [
-  { id: "n1", title: "Digital Banking UX", volume: 847, sentiment: "negative" as const, momentum: "growing" as const, growth: 38 },
-  { id: "n2", title: "EV Affordability", volume: 562, sentiment: "mixed" as const, momentum: "escalating" as const, growth: 180 },
-  { id: "n3", title: "App Stability", volume: 412, sentiment: "negative" as const, momentum: "growing" as const, growth: 38 },
-  { id: "n4", title: "Sustainability", volume: 142, sentiment: "positive" as const, momentum: "stable" as const, growth: 22 },
-  { id: "n5", title: "Customer Service", volume: 380, sentiment: "negative" as const, momentum: "declining" as const, growth: -8 },
-  { id: "n6", title: "Brand Innovation", volume: 198, sentiment: "positive" as const, momentum: "stable" as const, growth: 5 },
-  { id: "n7", title: "Pricing", volume: 290, sentiment: "mixed" as const, momentum: "stable" as const, growth: 12 },
-  { id: "n8", title: "Competitor Movement", volume: 165, sentiment: "neutral" as const, momentum: "declining" as const, growth: -3 },
-];
+// One coherent illustrative scenario (a retail bank after an app-login outage). The figures agree with each other
+// across sections (summary, developments, AI visibility table, snapshot); none is measured from a workspace.
+function sampleBrief(L: (en: string, id: string) => string, locale: string) {
+  return {
+    DEMO_DATE_FORMATTED: new Date("2026-08-27T08:00:00+07:00").toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", year: "numeric" }),
+    EXECUTIVE_SUMMARY: {
+      criticalAlerts: 2,
+      netSentimentShift: -4,
+      aiVisibility: 68,
+      competitorNote: L("Competitor Bank Jago gained 3 points in the 'best digital bank' prompt category.", "Kompetitor Bank Jago naik 3 poin di kategori prompt 'bank digital terbaik'."),
+    },
+    KEY_DEVELOPMENTS: [
+      { severity: "CRITICAL", bg: "bg-red-50", border: "border-red-200", dot: "bg-red-500", title: L("App login failures viral on X", "Gangguan login aplikasi viral di X"), signals: 127, growth: "+38%", time: L("2h ago", "2 jam lalu") },
+      { severity: "HIGH", bg: "bg-amber-50", border: "border-amber-200", dot: "bg-amber-500", title: L("AI visibility on Gemini down 4 points — Bank Jago overtaking", "Visibilitas AI di Gemini turun 4 poin — Bank Jago menyalip"), signals: 89, growth: L("-4 pts", "-4 poin"), time: L("4h ago", "4 jam lalu") },
+      { severity: "MEDIUM", bg: "bg-blue-50", border: "border-blue-200", dot: "bg-blue-500", title: L("Complaints about interbank transfer fees rising", "Keluhan biaya transfer antarbank meningkat"), signals: 212, growth: "+46%", time: L("24h ago", "24 jam lalu") },
+      { severity: "LOW", bg: "bg-slate-50", border: "border-slate-200", dot: "bg-slate-400", title: L("SME financial-literacy programme earning positive coverage", "Program literasi keuangan UMKM mendapat liputan positif"), signals: 42, growth: "+22%", time: L("12h ago", "12 jam lalu") },
+    ],
+    NARRATIVE_CHANGES: [
+      { direction: "growing" as const, label: L("Mobile app experience complaints", "Keluhan pengalaman aplikasi"), delta: "+38%" },
+      { direction: "growing" as const, label: L("Transfer and admin fees", "Biaya transfer & admin"), delta: "+46%" },
+      { direction: "declining" as const, label: L("Account security mentions", "Penyebutan keamanan akun"), delta: "-12%" },
+      { direction: "stable" as const, label: L("SME programmes", "Program UMKM"), delta: "+4%" },
+    ],
+    RISKS: [
+      L("Service disruption narrative escalating — 3 critical signals, 2h ago", "Narasi gangguan layanan meningkat — 3 sinyal kritis, 2 jam lalu"),
+      L("AI platforms quoting outdated fee information", "Platform AI mengutip informasi biaya yang sudah kedaluwarsa"),
+      L("Regulatory discussion of transfer fees increasing (+23% this week)", "Diskusi regulasi soal biaya transfer meningkat (+23% minggu ini)"),
+    ],
+    OPPORTUNITIES: [
+      L("No bank owns the 'safest bank for SMEs' position — create a content campaign", "Belum ada bank yang menguasai posisi 'bank paling aman untuk UMKM' — buat kampanye konten"),
+      L("Financial-literacy narrative growing with no clear leader — whitespace opportunity", "Narasi literasi keuangan tumbuh tanpa pemimpin yang jelas — peluang mengisi ruang kosong"),
+      L("AI visibility gap in the 'best digital bank for SMEs' prompt — priority improvement area", "Celah visibilitas AI di prompt 'bank digital terbaik untuk UMKM' — area perbaikan prioritas"),
+    ],
+    COMPETITORS: [
+      { name: "Bank Jago", sentiment: L("+18 narrative momentum", "+18 momentum narasi"), ai: L("+3 AI visibility points", "+3 poin visibilitas AI"), note: L("community banking campaign", "kampanye community banking"), tone: "negative" as const },
+      { name: "GoPay", sentiment: L("Stable share of voice", "Pangsa suara stabil"), ai: L("+12% AI visibility", "+12% visibilitas AI"), note: L("QR payment feature launch", "peluncuran fitur pembayaran QR"), tone: "positive" as const },
+      { name: "OVO", sentiment: L("Declining narrative momentum", "Momentum narasi menurun"), ai: L("Less AI coverage this week", "Liputan AI berkurang minggu ini"), note: "", tone: "neutral" as const },
+    ],
+    // average 68.75 → 67.75: the "68" in the summary
+    AI_VISIBILITY: [
+      { engine: "ChatGPT", from: 70, to: 68, delta: -2 },
+      { engine: "Gemini", from: 74, to: 70, delta: -4 },
+      { engine: "Perplexity", from: 66, to: 68, delta: +2 },
+      { engine: "Claude", from: 65, to: 65, delta: 0 },
+    ],
+    RECOMMENDED_ACTIONS: [
+      { priority: "IMMEDIATE", priorityColor: "bg-red-600", text: L("Investigate and respond to the app login failure complaints", "Selidiki dan tanggapi keluhan gangguan login aplikasi") },
+      { priority: "HIGH", priorityColor: "bg-amber-700", text: L("Update fee information on official channels so AI platforms quote current figures", "Perbarui informasi biaya di kanal resmi agar platform AI mengutip angka terbaru") },
+      { priority: "HIGH", priorityColor: "bg-amber-700", text: L("Increase authoritative coverage around digital security", "Perbanyak liputan otoritatif soal keamanan digital") },
+      { priority: "MEDIUM", priorityColor: "bg-blue-600", text: L("Create educational content for the SME financial-literacy programme", "Buat konten edukasi untuk program literasi keuangan UMKM") },
+      { priority: "MEDIUM", priorityColor: "bg-blue-600", text: L("Benchmark and improve AI visibility for key category prompts", "Ukur dan tingkatkan visibilitas AI untuk prompt kategori utama") },
+    ],
+    NARRATIVES_MAP_DATA: [
+      { id: "n1", title: L("App Experience", "Pengalaman Aplikasi"), volume: 847, sentiment: "negative" as const, momentum: "growing" as const, growth: 38 },
+      { id: "n2", title: L("Transfer Fees", "Biaya Transfer"), volume: 562, sentiment: "mixed" as const, momentum: "escalating" as const, growth: 46 },
+      { id: "n3", title: L("App Stability", "Stabilitas Aplikasi"), volume: 412, sentiment: "negative" as const, momentum: "growing" as const, growth: 38 },
+      { id: "n4", title: L("Sustainable Finance", "Keuangan Berkelanjutan"), volume: 142, sentiment: "positive" as const, momentum: "stable" as const, growth: 22 },
+      { id: "n5", title: L("Customer Service", "Layanan Nasabah"), volume: 380, sentiment: "negative" as const, momentum: "declining" as const, growth: -8 },
+      { id: "n6", title: L("Product Innovation", "Inovasi Produk"), volume: 198, sentiment: "positive" as const, momentum: "stable" as const, growth: 5 },
+      { id: "n7", title: L("Interest Rates", "Suku Bunga"), volume: 290, sentiment: "mixed" as const, momentum: "stable" as const, growth: 12 },
+      { id: "n8", title: L("Competitor Movement", "Pergerakan Kompetitor"), volume: 165, sentiment: "neutral" as const, momentum: "declining" as const, growth: -3 },
+    ],
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -197,16 +117,17 @@ function DateRangeSelector({
   onChange: (v: DateRange) => void;
   t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
+  const L = useL();
   const options: { value: DateRange; label: string }[] = [
-    { value: "today", label: "Last 24 Hours" },
-    { value: "last7days", label: "Last 7 Days" },
-    { value: "last30days", label: "Last 30 Days" },
+    { value: "today", label: L("Last 24 Hours", "24 Jam Terakhir") },
+    { value: "last7days", label: L("Last 7 Days", "7 Hari Terakhir") },
+    { value: "last30days", label: L("Last 30 Days", "30 Hari Terakhir") },
   ];
 
   return (
     <div className="relative inline-block">
       <select
-        aria-label="Date range"
+        aria-label={L("Date range", "Rentang waktu")}
         value={value}
         onChange={(e) => onChange(e.target.value as DateRange)}
         className={cn(
@@ -241,6 +162,8 @@ function SectionDivider({ label }: { label: string }) {
 }
 
 function SeverityBadge({ severity }: { severity: string }) {
+  const L = useL();
+  const label: Record<string, string> = { CRITICAL: L("Critical", "Kritis"), HIGH: L("High", "Tinggi"), MEDIUM: L("Medium", "Sedang"), LOW: L("Low", "Rendah") };
   const config: Record<string, { bg: string; text: string }> = {
     CRITICAL: { bg: "bg-red-50", text: "text-red-700" },
     HIGH: { bg: "bg-amber-50", text: "text-amber-700" },
@@ -256,7 +179,7 @@ function SeverityBadge({ severity }: { severity: string }) {
         cfg.text
       )}
     >
-      {severity}
+      {label[severity] ?? severity}
     </span>
   );
 }
@@ -339,7 +262,7 @@ function LiveExecutiveBrief({ windowHours }: { windowHours: number }) {
           {data && data.grounded ? <LiveBriefDetails data={data} /> : null}
           {data && !data.grounded && !isLoading ? (
             <p className="mt-3 text-[12.5px] text-[#5A6478]">
-              There is not enough recent data in this workspace to produce a brief. It will appear after sources and monitoring keywords have been ingested.
+              {L("There is not enough recent data in this workspace to produce a brief. It will appear after sources and monitoring keywords have been ingested.", "Data terbaru di workspace ini belum cukup untuk menyusun ringkasan. Ringkasan akan muncul setelah sumber dan kata kunci pemantauan diambil datanya.")}
             </p>
           ) : null}
         </div>
@@ -354,6 +277,7 @@ type BriefDriver = { key: string; contribution: number; reason: string; evidence
 /** Grounded detail for the live brief: risk drivers, uncertainty, actions and what to watch. */
 function LiveBriefDetails({ data }: { data: import("@/lib/intelligence-api").ExecutiveBriefPayload }) {
   const L = useL();
+  const code = useCodeLabels();
   const risk = data.sections?.biggestRisk as unknown as { drivers?: BriefDriver[]; uncertainty?: { level: string; reasons: string[] } | null };
   const drivers = risk?.drivers || [];
   const actions = data.sections?.recommendedActions || [];
@@ -369,13 +293,13 @@ function LiveBriefDetails({ data }: { data: import("@/lib/intelligence-api").Exe
             {drivers.map((d) => (
               <li key={d.key} className="text-[12.5px] text-slate-700">
                 <span className="font-semibold tabular-nums text-slate-900">+{d.contribution}</span> {d.reason}
-                {d.evidenceIds?.length ? <span className="text-[#5A6478]"> · {d.evidenceIds.length} record(s)</span> : null}
+                {d.evidenceIds?.length ? <span className="text-[#5A6478]"> · {L(`${d.evidenceIds.length} record(s)`, `${d.evidenceIds.length} catatan`)}</span> : null}
               </li>
             ))}
           </ul>
         )}
         {risk?.uncertainty?.reasons?.length ? (
-          <p className="mt-2 text-[11.5px] text-amber-700">{risk.uncertainty.level} uncertainty: {risk.uncertainty.reasons.join(" ")}</p>
+          <p className="mt-2 text-[11.5px] text-amber-700">{L(`${risk.uncertainty.level} uncertainty:`, `Ketidakpastian ${({ low: "rendah", medium: "sedang", high: "tinggi" } as Record<string, string>)[risk.uncertainty.level] ?? risk.uncertainty.level}:`)} {risk.uncertainty.reasons.join(" ")}</p>
         ) : null}
         <p className="mt-2 text-[11px] text-[#5A6478]">{L("Heuristic index for prioritization, not a probability.", "Indeks heuristik untuk prioritas, bukan probabilitas.")}</p>
         {data.sections?.emergingIssue?.summary ? (
@@ -391,14 +315,14 @@ function LiveBriefDetails({ data }: { data: import("@/lib/intelligence-api").Exe
             {actions.map((a, i) => (
               <li key={`${a.action}-${i}`} className="text-[12.5px]">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="font-semibold capitalize text-slate-900">{a.action.replace(/_/g, " ")}</span>
-                  <span className="rounded border border-slate-200 bg-slate-50 px-1.5 text-[10.5px] font-semibold text-slate-600">{a.priority}</span>
-                  <span className="rounded border border-slate-200 bg-slate-50 px-1.5 text-[10.5px] font-semibold text-slate-600">{a.urgency}</span>
+                  <span className="font-semibold text-slate-900 first-letter:uppercase">{code.action(a.action)}</span>
+                  <span className="rounded border border-slate-200 bg-slate-50 px-1.5 text-[10.5px] font-semibold text-slate-600">{code.level(a.priority)}</span>
+                  <span className="rounded border border-slate-200 bg-slate-50 px-1.5 text-[10.5px] font-semibold text-slate-600">{code.urgency(a.urgency)}</span>
                 </div>
                 <p className="mt-0.5 text-slate-600">{a.reason}</p>
                 <p className="mt-0.5 text-[11px] text-[#5A6478]">
-                  Confidence {Math.round((a.confidence ?? 0) * 100)}%
-                  {a.sourceIds ? ` · ${a.sourceIds.length ? `${a.sourceIds.length} source record(s)` : "aggregate metrics only"}` : ""}
+                  {L("Confidence", "Keyakinan")} {Math.round((a.confidence ?? 0) * 100)}%
+                  {a.sourceIds ? ` · ${a.sourceIds.length ? L(`${a.sourceIds.length} source record(s)`, `${a.sourceIds.length} catatan sumber`) : L("aggregate metrics only", "hanya metrik agregat")}` : ""}
                 </p>
                 {a.limitations?.length ? <p className="mt-0.5 text-[11px] text-amber-700">{a.limitations[0]}</p> : null}
               </li>
@@ -425,6 +349,8 @@ export default function DailyIntelligenceBriefPage() {
   const [isDemo, setIsDemo] = useState(false);
   const language = useUiStore((state) => state.language);
   useEffect(() => setIsDemo(isDemoMode()), []);
+  const L = useL();
+  const { DEMO_DATE_FORMATTED, EXECUTIVE_SUMMARY, KEY_DEVELOPMENTS, NARRATIVE_CHANGES, RISKS, OPPORTUNITIES, COMPETITORS, AI_VISIBILITY, RECOMMENDED_ACTIONS, NARRATIVES_MAP_DATA } = sampleBrief(L, intlLocale());
 
   // Uses the browser's print dialog (Save as PDF). Nothing is sent anywhere.
   const handlePrint = () => window.print();
@@ -437,7 +363,7 @@ export default function DailyIntelligenceBriefPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-[#3B52F5]">
-                Intelligence
+                {L("Reports & Insights", "Laporan & Wawasan")}
               </p>
               <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1>
             </div>
@@ -454,7 +380,7 @@ export default function DailyIntelligenceBriefPage() {
                   )}
                 >
                   <Download className="h-4 w-4 text-[#5A6478]" strokeWidth={2} />
-                  Print / Save as PDF
+                  {L("Print / Save as PDF", "Cetak / Simpan PDF")}
                 </button>
               </div>
             </div>
@@ -498,7 +424,7 @@ export default function DailyIntelligenceBriefPage() {
                   </div>
                   <div className="text-right">
                     <span className="inline-block rounded-[6px] bg-[#465FFF]/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#8EA0FF]">
-                      Confidential
+                      {L("Confidential", "Rahasia")}
                     </span>
                   </div>
                 </div>
@@ -514,33 +440,33 @@ export default function DailyIntelligenceBriefPage() {
                     {/* KPI row */}
                     <div className="grid grid-cols-3 gap-3">
                       <div className="rounded-[10px] border border-slate-200 bg-slate-50 p-4 text-center">
-                        <p className="text-[11px] font-semibold text-[#5A6478]">Critical Alerts</p>
+                        <p className="text-[11px] font-semibold text-[#5A6478]">{L("Critical Alerts", "Peringatan Kritis")}</p>
                         <p className="mt-1 text-[24px] font-bold text-red-700">
                           {EXECUTIVE_SUMMARY.criticalAlerts}
                         </p>
-                        <p className="text-[11px] text-[#5A6478]">active</p>
+                        <p className="text-[11px] text-[#5A6478]">{L("active", "aktif")}</p>
                       </div>
                       <div className="rounded-[10px] border border-slate-200 bg-slate-50 p-4 text-center">
-                        <p className="text-[11px] font-semibold text-[#5A6478]">Net Sentiment</p>
-                        <p className="mt-1 text-[24px] font-bold text-green-700">
-                          +{EXECUTIVE_SUMMARY.netSentimentShift}%
+                        <p className="text-[11px] font-semibold text-[#5A6478]">{L("Net Sentiment", "Sentimen Bersih")}</p>
+                        <p className="mt-1 text-[24px] font-bold text-red-700">
+                          {EXECUTIVE_SUMMARY.netSentimentShift}%
                         </p>
-                        <p className="text-[11px] text-[#5A6478]">shift positive</p>
+                        <p className="text-[11px] text-[#5A6478]">{L("shift vs last period", "perubahan vs periode lalu")}</p>
                       </div>
                       <div className="rounded-[10px] border border-slate-200 bg-slate-50 p-4 text-center">
-                        <p className="text-[11px] font-semibold text-[#5A6478]">AI Visibility</p>
+                        <p className="text-[11px] font-semibold text-[#5A6478]">{L("AI Visibility", "Visibilitas AI")}</p>
                         <p className="mt-1 text-[24px] font-bold text-[#3B52F5]">
                           {EXECUTIVE_SUMMARY.aiVisibility}
                         </p>
-                        <p className="text-[11px] text-[#5A6478]">score</p>
+                        <p className="text-[11px] text-[#5A6478]">{L("score", "skor")}</p>
                       </div>
                     </div>
                     <p className="text-[14px] leading-relaxed text-[#5F6B94]">
-                      {EXECUTIVE_SUMMARY.criticalAlerts} critical alerts active. Net sentiment shifted{" "}
-                      <span className="font-semibold text-green-700">
-                        +{EXECUTIVE_SUMMARY.netSentimentShift}% positive
+                      {L(`${EXECUTIVE_SUMMARY.criticalAlerts} critical alerts active. Net sentiment moved`, `${EXECUTIVE_SUMMARY.criticalAlerts} peringatan kritis aktif. Sentimen bersih bergeser`)}{" "}
+                      <span className="font-semibold text-red-700">
+                        {EXECUTIVE_SUMMARY.netSentimentShift}%
                       </span>{" "}
-                      driven by brand campaign lift. AI visibility stable at{" "}
+                      {L("after the app login outage. AI visibility edged down to", "setelah gangguan login aplikasi. Visibilitas AI turun tipis ke")}{" "}
                       <span className="font-semibold text-[#101334]">
                         {EXECUTIVE_SUMMARY.aiVisibility}
                       </span>
@@ -577,7 +503,7 @@ export default function DailyIntelligenceBriefPage() {
                             </span>
                           </div>
                           <div className="flex flex-wrap gap-3 text-[12px] text-[#5A6478]">
-                            <span>{dev.signals} signals</span>
+                            <span>{L(`${dev.signals} signals`, `${dev.signals} sinyal`)}</span>
                             <span className="font-medium text-slate-700">{dev.growth}</span>
                             <span>{dev.time}</span>
                           </div>
@@ -651,7 +577,7 @@ export default function DailyIntelligenceBriefPage() {
                         </div>
                         <div className="space-y-1 text-[13px] text-[#5F6B94]">
                           <p>
-                            <span className="font-medium text-[#101334]">AI:</span> {comp.ai}
+                            <span className="font-medium text-[#101334]">{L("AI", "AI")}:</span> {comp.ai}
                           </p>
                           {comp.note && <p className="text-[#5A6478]">{comp.note}</p>}
                         </div>
@@ -668,16 +594,16 @@ export default function DailyIntelligenceBriefPage() {
                       <thead>
                         <tr className="bg-slate-50">
                           <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-[#5A6478]">
-                            Platform
+                            {L("Platform", "Platform")}
                           </th>
                           <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-[#5A6478]">
-                            Previous
+                            {L("Previous", "Sebelumnya")}
                           </th>
                           <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-[#5A6478]">
-                            Current
+                            {L("Current", "Sekarang")}
                           </th>
                           <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-[#5A6478]">
-                            Change
+                            {L("Change", "Perubahan")}
                           </th>
                         </tr>
                       </thead>
@@ -741,7 +667,7 @@ export default function DailyIntelligenceBriefPage() {
                                 action.priorityColor
                               )}
                             >
-                              {action.priority}
+                              {({ IMMEDIATE: L("Immediate", "Segera"), HIGH: L("High", "Tinggi"), MEDIUM: L("Medium", "Sedang"), LOW: L("Low", "Rendah") } as Record<string, string>)[action.priority] ?? action.priority}
                             </span>
                           </div>
                           <p className="text-[14px] leading-relaxed text-[#5F6B94]">
@@ -762,18 +688,18 @@ export default function DailyIntelligenceBriefPage() {
             {/* Narrative map card */}
             <div className="overflow-hidden rounded-[16px] border border-slate-200 bg-white shadow-sm">
               <div className="border-b border-slate-100 px-5 py-4">
-                <h3 className="text-[14px] font-bold text-[#101334]">Narrative Landscape</h3>
+                <h3 className="text-[14px] font-bold text-[#101334]">{L("Narrative Landscape", "Lanskap Narasi")}</h3>
                 <p className="mt-0.5 text-[12px] text-[#5A6478]">
-                  Brand narratives sized by signal volume, colored by sentiment
+                  {L("Brand narratives sized by signal volume, colored by sentiment", "Narasi brand: ukuran menurut volume sinyal, warna menurut sentimen")}
                 </p>
               </div>
               <div className="p-4">
                 <div className="flex flex-wrap items-center gap-3 mb-4">
                   {[
-                    { color: "#22c55e", label: "Positive" },
-                    { color: "#ef4444", label: "Negative" },
-                    { color: "#f59e0b", label: "Mixed" },
-                    { color: "#94a3b8", label: "Neutral" },
+                    { color: "#22c55e", label: L("Positive", "Positif") },
+                    { color: "#ef4444", label: L("Negative", "Negatif") },
+                    { color: "#f59e0b", label: L("Mixed", "Campuran") },
+                    { color: "#94a3b8", label: L("Neutral", "Netral") },
                   ].map((item) => (
                     <div key={item.label} className="flex items-center gap-1.5">
                       <span
@@ -785,9 +711,9 @@ export default function DailyIntelligenceBriefPage() {
                   ))}
                 </div>
                 <div className="flex items-center gap-2 mb-4 text-[11px] text-[#5A6478]">
-                  <span className="font-semibold text-[#5A6478]">Legend:</span>
+                  <span className="font-semibold text-[#5A6478]">{L("Legend:", "Keterangan:")}</span>
                   <ArrowUp className="h-3 w-3 text-green-700" strokeWidth={2.5} />
-                  <span>Growing</span>
+                  <span>{L("Growing", "Tumbuh")}</span>
                   <span className="text-slate-300">·</span>
                   <svg width="12" height="12" viewBox="0 0 12 12" className="text-green-700">
                     <path
@@ -795,7 +721,7 @@ export default function DailyIntelligenceBriefPage() {
                       fill="currentColor"
                     />
                   </svg>
-                  <span>Escalating</span>
+                  <span>{L("Escalating", "Meningkat tajam")}</span>
                 </div>
                 <NarrativeMap
                   brandName="Narriv"
@@ -807,14 +733,14 @@ export default function DailyIntelligenceBriefPage() {
             {/* Quick stats card */}
             <div className="overflow-hidden rounded-[16px] border border-slate-200 bg-white shadow-sm">
               <div className="border-b border-slate-100 px-5 py-4">
-                <h3 className="text-[14px] font-bold text-[#101334]">Signal Snapshot</h3>
+                <h3 className="text-[14px] font-bold text-[#101334]">{L("Signal Snapshot", "Cuplikan Sinyal")}</h3>
               </div>
               <div className="p-5 space-y-4">
                 {[
-                  { label: "Total Signals", value: "12,847", delta: "+8%", positive: true },
-                  { label: "Analyzed", value: "11,234", delta: "+12%", positive: true },
-                  { label: "Negative", value: "18%", delta: "-4%", positive: true },
-                  { label: "AI Visibility", value: "72", delta: "-6", positive: false },
+                  { label: L("Total Signals", "Total Sinyal"), value: (12847).toLocaleString(intlLocale()), delta: "+8%", positive: true },
+                  { label: L("Analyzed", "Dianalisis"), value: (11234).toLocaleString(intlLocale()), delta: "+12%", positive: true },
+                  { label: L("Negative", "Negatif"), value: "22%", delta: "+4%", positive: false },
+                  { label: L("AI Visibility", "Visibilitas AI"), value: "68", delta: "-1", positive: false },
                 ].map((stat) => (
                   <div key={stat.label} className="flex items-center justify-between">
                     <span className="text-[13px] text-[#5A6478]">{stat.label}</span>

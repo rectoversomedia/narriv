@@ -2,6 +2,7 @@ import ky from "ky";
 import { isDemoSession, useAuthStore } from "@/store/useAuthStore";
 import { useWorkspaceStore } from "@/store/useWorkspaceStore";
 import { timingOptions, toClientError } from "@/lib/http-timeout";
+import { useUiStore } from "@/store/useUiStore";
 export type { ClientError } from "@/lib/http-timeout";
 
 const BASE_URL =
@@ -45,6 +46,8 @@ export async function apiClient<T>(
     if (auth && accessToken && !headers.has("Authorization")) {
       headers.set("Authorization", `Bearer ${accessToken}`);
     }
+    // Generated text (recommendations, briefs, risk explanations) follows the UI language.
+    if (!headers.has("Accept-Language")) headers.set("Accept-Language", useUiStore.getState().language === "id" ? "id" : "en");
     if (!headers.has("Content-Type") && !(requestOptions.body instanceof FormData)) {
       headers.set("Content-Type", "application/json");
     }

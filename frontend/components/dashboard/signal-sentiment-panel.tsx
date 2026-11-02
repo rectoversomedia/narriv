@@ -1,4 +1,8 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import type { DashboardKPIs } from "@/lib/api-service";
+import { intlLocale } from "@/store/useUiStore";
 
 // Signal volume and sentiment share for the selected period, from the
 // dashboard summary KPIs (no extra requests). A measured zero shows "0.0%";
@@ -24,10 +28,11 @@ const SENTIMENTS = [
 const isNumber = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
 
 function formatCount(value: number | null | undefined) {
-  return isNumber(value) ? value.toLocaleString("en-US") : "—";
+  return isNumber(value) ? value.toLocaleString(intlLocale()) : "—";
 }
 
 export function SignalSentimentPanel({ kpis, labels }: { kpis: Partial<DashboardKPIs> | null | undefined; labels: Labels }) {
+  const t = useTranslations("HealthPanels");
   const total = kpis?.total_signals;
   const analyzed = kpis?.analyzed_signals;
   const coverage = isNumber(total) && isNumber(analyzed) && total > 0 ? Math.round((analyzed / total) * 100) : null;
@@ -39,10 +44,10 @@ export function SignalSentimentPanel({ kpis, labels }: { kpis: Partial<Dashboard
     return { ...s, name: labels[s.label], value };
   });
   const barTotal = shares.reduce((sum, s) => sum + (s.value ?? 0), 0);
-  const sentimentNote = noAnalysis ? "No analyzed signals yet" : "No data";
+  const sentimentNote = noAnalysis ? t("noAnalyzed") : t("noData");
 
   return (
-    <section aria-label="Signals and sentiment" className="grid gap-3 rounded-[14px] border border-slate-200 bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.03)] lg:grid-cols-[minmax(0,0.9fr)_minmax(0,2fr)] lg:gap-0">
+    <section aria-label={t("ariaPanel")} className="grid gap-3 rounded-[14px] border border-slate-200 bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.03)] lg:grid-cols-[minmax(0,0.9fr)_minmax(0,2fr)] lg:gap-0">
       {/* Volume */}
       <div className="grid grid-cols-2 gap-3 lg:pr-5">
         {[
@@ -52,19 +57,19 @@ export function SignalSentimentPanel({ kpis, labels }: { kpis: Partial<Dashboard
           <div key={m.label} className="rounded-[10px] bg-[#F8FAFC] p-3">
             <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#5A6478]">{m.label}</p>
             <p className="mt-1.5 text-[26px] font-bold leading-none tabular-nums text-[#101334]">{formatCount(m.value)}</p>
-            {!isNumber(m.value) ? <p className="mt-1 text-[11px] font-medium text-[#5A6478]">No data</p> : null}
+            {!isNumber(m.value) ? <p className="mt-1 text-[11px] font-medium text-[#5A6478]">{t("noData")}</p> : null}
           </div>
         ))}
         <p className="col-span-2 text-[12px] font-medium text-[#5A6478]">
-          {coverage === null ? "Analysis coverage appears once signals are collected." : `${coverage}% of signals analyzed`}
+          {coverage === null ? t("coverageLater") : t("coverage", { value: coverage })}
         </p>
       </div>
 
       {/* Sentiment share */}
       <div className="border-t border-slate-100 pt-3 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#5A6478]">Sentiment share</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#5A6478]">{t("sentimentShare")}</p>
         {barTotal > 0 ? (
-          <div className="mt-2 flex h-2.5 w-full overflow-hidden rounded-full bg-slate-100" role="img" aria-label={shares.map((s) => `${s.name} ${s.value === null ? "no data" : `${s.value.toFixed(1)}%`}`).join(", ")}>
+          <div className="mt-2 flex h-2.5 w-full overflow-hidden rounded-full bg-slate-100" role="img" aria-label={shares.map((s) => `${s.name} ${s.value === null ? t("noData") : `${s.value.toFixed(1)}%`}`).join(", ")}>
             {shares.map((s) => (s.value ? <span key={s.key} className={s.bar} style={{ width: `${(s.value / barTotal) * 100}%` }} /> : null))}
           </div>
         ) : (

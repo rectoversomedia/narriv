@@ -11,6 +11,7 @@
  */
 
 import { apiClient } from "./apiClient";
+import { useUiStore } from "@/store/useUiStore";
 
 export interface IntelligenceFact {
   kind: string;
@@ -350,13 +351,14 @@ export async function getPipelineStatus() {
 
 /** "3h ago" style relative time; null-safe. */
 export function timeAgo(iso: string | null | undefined): string {
-  if (!iso) return "never";
+  const id = useUiStore.getState().language === "id";
+  if (!iso) return id ? "belum pernah" : "never";
   const diff = Date.now() - new Date(iso).getTime();
-  if (!Number.isFinite(diff)) return "unknown";
+  if (!Number.isFinite(diff)) return id ? "tidak diketahui" : "unknown";
   const m = Math.round(diff / 60000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m ago`;
+  if (m < 1) return id ? "baru saja" : "just now";
+  if (m < 60) return id ? `${m} mnt lalu` : `${m}m ago`;
   const h = Math.round(m / 60);
-  if (h < 48) return `${h}h ago`;
-  return `${Math.round(h / 24)}d ago`;
+  if (h < 48) return id ? `${h} jam lalu` : `${h}h ago`;
+  return id ? `${Math.round(h / 24)} hari lalu` : `${Math.round(h / 24)}d ago`;
 }

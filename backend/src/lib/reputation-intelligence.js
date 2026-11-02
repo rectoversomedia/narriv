@@ -5,6 +5,7 @@
  * issues into a single reputation view. Every output is traceable.
  */
 
+import { tr } from "./request-context.js";
 import { baseSupabaseAdmin } from "./supabase.js";
 
 function clamp01(n) {
@@ -68,7 +69,7 @@ export async function computeReputationIntelligence({ workspaceId, windowHours =
             facts,
             inferences,
             evidence,
-            note: "No signals in the window, so reputation cannot be assessed.",
+            note: tr("No signals in the window, so reputation cannot be assessed.", "Tidak ada sinyal di periode ini, jadi reputasi belum bisa dinilai."),
         };
     }
 
@@ -86,22 +87,22 @@ export async function computeReputationIntelligence({ workspaceId, windowHours =
 
     inferences.push({
         kind: "negative_share",
-        label: negShare > 0.5 ? "Majority of recent signals are negative." : "Negative share is moderate.",
+        label: negShare > 0.5 ? tr("Majority of recent signals are negative.", "Sebagian besar sinyal terbaru bernada negatif.") : tr("Negative share is moderate.", "Porsi negatif sedang."),
         value: Number(negShare.toFixed(3)),
     });
     inferences.push({
         kind: "positive_share",
-        label: posShare > 0.5 ? "Majority of recent signals are positive." : "Positive share is moderate.",
+        label: posShare > 0.5 ? tr("Majority of recent signals are positive.", "Sebagian besar sinyal terbaru bernada positif.") : tr("Positive share is moderate.", "Porsi positif sedang."),
         value: Number(posShare.toFixed(3)),
     });
     inferences.push({
         kind: "volume_ratio",
-        label: volumeRatio >= 2 ? "Volume has doubled vs prior window." : "Volume is stable.",
+        label: volumeRatio >= 2 ? tr("Volume has doubled vs prior window.", "Volume naik dua kali lipat dibanding periode sebelumnya.") : tr("Volume is stable.", "Volume stabil."),
         value: Number(volumeRatio.toFixed(2)),
     });
     inferences.push({
         kind: "active_alerts",
-        label: `${activeAlerts} active alert(s) in the window.`,
+        label: tr(`${activeAlerts} active alert(s) in the window.`, `${activeAlerts} peringatan aktif di periode ini.`),
         value: activeAlerts,
     });
 
