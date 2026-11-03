@@ -201,12 +201,20 @@ export const getSummary = async (req, res) => {
                 const hits = (signals || []).filter((sig) => String(sig.metadata?.keyword || "").toLowerCase() === k
                     || `${sig.title || ""} ${sig.content || ""}`.toLowerCase().includes(k));
                 const sentimentOf = (sig) => String(sig.sentiment || "").toLowerCase();
+                // Records per day for the last 7 days (oldest first), for the keyword's sparkline.
+                const daily = Array.from({ length: 7 }, (_, i) => {
+                    const end = Date.now() - (6 - i) * 24 * 60 * 60 * 1000;
+                    return hits.filter((sig) => { const t = new Date(sig.captured_at).getTime(); return t > end - 24 * 60 * 60 * 1000 && t <= end; }).length;
+                });
                 return {
                     keyword,
                     count: hits.length,
                     negative: hits.filter((sig) => sentimentOf(sig).includes("negative")).length,
                     positive: hits.filter((sig) => sentimentOf(sig).includes("positive")).length,
+                    neutral: hits.filter((sig) => sentimentOf(sig).includes("neutral")).length,
+                    mixed: hits.filter((sig) => sentimentOf(sig).includes("mixed")).length,
                     last24h: hits.filter((sig) => new Date(sig.captured_at).getTime() >= dayAgo).length,
+                    daily,
                 };
             });
 

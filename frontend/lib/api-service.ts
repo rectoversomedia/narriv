@@ -79,7 +79,7 @@ export interface DashboardSummary {
   /** Publishers (news sites, accounts) with the most records in the period. */
   top_publishers?: Array<{ publisher: string; platform: string; count: number; negative: number; positive: number }>;
   /** Active monitoring keywords with their records in the period. */
-  keyword_breakdown?: Array<{ keyword: string; count: number; negative: number; positive: number; last24h: number }>;
+  keyword_breakdown?: Array<{ keyword: string; count: number; negative: number; positive: number; neutral?: number; mixed?: number; last24h: number; daily?: number[] }>;
   latest_signals: LatestSignal[];
   global_activity?: GlobalActivitySummary;
   top_topics?: Array<{ name: { en: string; id: string }; mentions: string; delta: string; tone: string }>;

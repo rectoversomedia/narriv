@@ -79,12 +79,15 @@ function Stat({ label, value, tone = "plain", href }: { label: string; value: st
   return href ? <Link href={href} className={cls}>{body}</Link> : <div className={cls}>{body}</div>;
 }
 
-function Bar({ label, value, share, color, href, muted }: { label: string; value: string; share: number; color: string; href?: string; muted?: boolean }) {
-  // The number sits where the bar ends (inside it when there is room), so it reads with its bar.
-  const inside = share >= 22;
+function Bar({ label, value, share, color, href, muted, right }: { label: string; value: string; share: number; color: string; href?: string; muted?: boolean; right?: string }) {
+  // The count sits where the bar ends (inside it when there is room); the share, if any, in the right corner.
+  const inside = share >= 18;
   const body = (
     <>
-      <span className={cn("block text-[12px] font-bold", muted ? "text-[#8A93AD]" : "text-[#101334]")}>{label}</span>
+      <span className="flex items-baseline justify-between gap-3 text-[12px]">
+        <span className={cn("font-bold", muted ? "text-[#8A93AD]" : "text-[#101334]")}>{label}</span>
+        {right ? <span className={cn("tabular-nums font-black", muted ? "text-[#8A93AD]" : "text-[#101334]")}>{right}</span> : null}
+      </span>
       <div className="relative mt-1 h-6 overflow-hidden rounded-[7px] bg-[#F1F4FA]">
         <div className="absolute inset-y-0 left-0 rounded-[7px] transition-[width] duration-500" style={{ width: `${Math.max(share, share > 0 ? 1.5 : 0)}%`, backgroundColor: color }} />
         <span
@@ -98,6 +101,31 @@ function Bar({ label, value, share, color, href, muted }: { label: string; value
   );
   return href ? <Link href={href} className="-mx-1.5 block rounded-[8px] px-1.5 py-1 transition hover:bg-[#F8FAFF]">{body}</Link> : <div className="py-1">{body}</div>;
 }
+
+/** A small 7-point line for a keyword's daily records. */
+function Sparkline({ values }: { values: number[] }) {
+  const max = Math.max(1, ...values);
+  const w = 120, h = 32;
+  const pts = values.map((v, i) => `${(i / Math.max(1, values.length - 1)) * w},${h - 3 - (v / max) * (h - 6)}`).join(" ");
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="h-8 w-full" preserveAspectRatio="none" aria-hidden="true">
+      <polygon points={`0,${h} ${pts} ${w},${h}`} fill="#465FFF" fillOpacity="0.12" />
+      <polyline points={pts} fill="none" stroke="#465FFF" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+    </svg>
+  );
+}
+
+const PLATFORM_TAG: Record<string, { label: string; cls: string }> = {
+  news: { label: "Berita", cls: "bg-[#EEF1F7] text-[#465170]" },
+  twitter: { label: "X", cls: "bg-[#101334] text-white" },
+  x: { label: "X", cls: "bg-[#101334] text-white" },
+  instagram: { label: "Instagram", cls: "bg-[#FDE7F3] text-[#B0156B]" },
+  tiktok: { label: "TikTok", cls: "bg-[#E6FBFA] text-[#0B7C77]" },
+  youtube: { label: "YouTube", cls: "bg-[#FDECEC] text-[#B42318]" },
+  facebook: { label: "Facebook", cls: "bg-[#E8EEFD] text-[#1D4ED8]" },
+  threads: { label: "Threads", cls: "bg-[#F1F1F1] text-[#111111]" },
+  reddit: { label: "Reddit", cls: "bg-[#FFF0E6] text-[#C2410C]" },
+};
 
 function Tag({ tone, children }: { tone: string; children: React.ReactNode }) {
   return <span className={cn("rounded-[5px] px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wide", tone)}>{children}</span>;
@@ -223,36 +251,63 @@ export default function DashboardPage() {
 
       {/* What this workspace watches: the brand and every active keyword, each opening its records. */}
       {!neverCollected && (summary?.keyword_breakdown?.length || workspaceQuery.data?.brandName) ? (
-        <section aria-label={L("Monitoring focus", "Fokus pemantauan")} className="rounded-[14px] bg-[#101334] px-5 py-4 text-white shadow-[0_8px_24px_rgba(16,19,52,0.18)]">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <section aria-label={L("Monitoring focus", "Fokus pemantauan")} className="overflow-hidden rounded-[16px] bg-gradient-to-br from-[#101334] via-[#18206B] to-[#2B2F9E] p-5 text-white shadow-[0_12px_32px_rgba(16,19,52,0.22)]">
+          <div className="flex flex-wrap items-end justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[11px] font-black uppercase tracking-[0.14em] text-white/60">{L("Monitoring focus", "Fokus pemantauan")}</p>
-              <p className="mt-0.5 truncate text-[20px] font-black leading-tight">{workspaceQuery.data?.brandName || L("Your brand", "Brand Anda")}</p>
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/60">{L("Monitoring focus", "Fokus pemantauan")}</p>
+              <p className="mt-1 truncate text-[24px] font-black leading-tight">{workspaceQuery.data?.brandName || L("Your brand", "Brand Anda")}</p>
+              <p className="mt-0.5 text-[12px] font-semibold text-white/70">
+                {L(`${summary?.keyword_breakdown?.length ?? 0} keywords monitored, ${periodWord[period]}`, `${summary?.keyword_breakdown?.length ?? 0} kata kunci dipantau, ${periodWord[period]}`)}
+              </p>
             </div>
-            <Link href="/workspace/settings#keywords" className="shrink-0 text-[12px] font-black text-[#A9B6FF] hover:text-white">{L("Manage keywords", "Atur kata kunci")} →</Link>
+            <Link href="/workspace/settings#keywords" className="shrink-0 rounded-[9px] border border-white/25 px-3 py-1.5 text-[12px] font-black text-white transition hover:bg-white/10">{L("Manage keywords", "Atur kata kunci")}</Link>
           </div>
           {summary?.keyword_breakdown?.length ? (
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {summary.keyword_breakdown.map((k) => {
+                const neutral = k.neutral ?? Math.max(0, k.count - k.negative - k.positive - (k.mixed ?? 0));
+                const parts = [
+                  { n: k.positive, color: "#10B981", label: L("positive", "positif") },
+                  { n: neutral, color: "#94A3B8", label: L("neutral", "netral") },
+                  { n: k.mixed ?? 0, color: "#F59E0B", label: L("mixed", "campuran") },
+                  { n: k.negative, color: "#EF4444", label: L("negative", "negatif") },
+                ];
                 const negShare = k.count > 0 ? Math.round((k.negative / k.count) * 100) : 0;
                 return (
-                  <Link
-                    key={k.keyword}
-                    href={monitoringHref({ hours, q: k.keyword })}
-                    className="group flex items-center gap-3 rounded-[10px] border border-white/15 bg-white/[0.06] px-3.5 py-2 transition hover:border-white/40 hover:bg-white/[0.12]"
-                  >
-                    <span className="text-[14px] font-black">{k.keyword}</span>
-                    <span className="text-[12px] font-bold text-white/70">{fmt(k.count)} {L("data", "data")}</span>
-                    {k.count > 0 ? (
-                      <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-black", negShare >= 30 ? "bg-[#EF4444] text-white" : "bg-white/15 text-white")}>{negShare}% {L("negative", "negatif")}</span>
+                  <Link key={k.keyword} href={monitoringHref({ hours, q: k.keyword })} className="group block rounded-[14px] bg-white p-4 text-[#101334] shadow-sm transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(16,19,52,0.25)]">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-[15px] font-black">{k.keyword}</p>
+                        <p className="mt-1 flex items-baseline gap-1.5">
+                          <span className="text-[26px] font-black tabular-nums leading-none">{fmt(k.count)}</span>
+                          <span className="text-[12px] font-bold text-[#5A6478]">{L("data", "data")}</span>
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <span className={cn("inline-block rounded-full px-2.5 py-1 text-[12px] font-black", negShare >= 30 ? "bg-[#FDECEC] text-[#B42318]" : "bg-[#E8F7EF] text-[#047857]")}>{negShare}% {L("negative", "negatif")}</span>
+                        <p className={cn("mt-1.5 text-[11px] font-black", k.last24h > 0 ? "text-[#3B52F5]" : "text-[#8A93AD]")}>{k.last24h > 0 ? `+${fmt(k.last24h)} ${L("in 24h", "24 jam")}` : L("none in 24h", "0 dalam 24 jam")}</p>
+                      </div>
+                    </div>
+                    {k.daily?.some((v) => v > 0) ? (
+                      <div className="mt-3">
+                        <Sparkline values={k.daily} />
+                        <p className="mt-0.5 text-[10px] font-bold text-[#8A93AD]">{L("Data per day, last 7 days", "Data per hari, 7 hari terakhir")}</p>
+                      </div>
                     ) : null}
-                    {k.last24h > 0 ? <span className="text-[11px] font-black text-[#7CF0C0]">+{fmt(k.last24h)} {L("in 24h", "24 jam")}</span> : null}
+                    <div className="mt-3 flex h-2 overflow-hidden rounded-full bg-[#EEF1F7]" role="img" aria-label={parts.map((p) => `${p.n} ${p.label}`).join(", ")}>
+                      {k.count > 0 ? parts.filter((p) => p.n > 0).map((p) => <span key={p.label} style={{ width: `${(p.n / k.count) * 100}%`, backgroundColor: p.color }} />) : null}
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] font-bold text-[#5A6478]">
+                      {parts.filter((p) => p.n > 0).map((p) => (
+                        <span key={p.label} className="flex items-center gap-1"><span className="size-2 rounded-full" style={{ backgroundColor: p.color }} />{fmt(p.n)} {p.label}</span>
+                      ))}
+                    </div>
                   </Link>
                 );
               })}
             </div>
           ) : (
-            <p className="mt-2 text-[12px] font-semibold text-white/70">{L("No active keywords yet.", "Belum ada kata kunci aktif.")}</p>
+            <p className="mt-3 text-[12px] font-semibold text-white/70">{L("No active keywords yet.", "Belum ada kata kunci aktif.")}</p>
           )}
         </section>
       ) : null}
@@ -306,7 +361,7 @@ export default function DashboardPage() {
                       ["mixed", L("Mixed", "Campuran"), "#F59E0B"],
                       ["negative", L("Negative", "Negatif"), "#EF4444"],
                     ] as const).map(([key, label, color]) => (
-                      <Bar key={key} label={label} value={`${fmt(dist[key])} · ${pct(dist[key], analysed).toFixed(0)}%`} share={pct(dist[key], analysed)} color={color} href={monitoringHref({ hours, sentiment: key })} />
+                      <Bar key={key} label={label} value={fmt(dist[key])} right={`${pct(dist[key], analysed).toFixed(0)}%`} share={pct(dist[key], analysed)} color={color} href={monitoringHref({ hours, sentiment: key })} />
                     ))}
                   </div>
                   {unanalysed > 0 ? (
@@ -451,7 +506,7 @@ export default function DashboardPage() {
                 <p className="mb-1 text-[11px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{L("By platform", "Per platform")}</p>
                 <div className="space-y-1">
                   {platforms.map((p, index) => (
-                    <Bar key={p.platform} label={platformName(p.platform)} value={`${fmt(p.count)} · ${pct(p.count, platformTotal).toFixed(0)}%`} share={pct(p.count, platformTotal)} color={BAR_COLORS[index % BAR_COLORS.length]} href={monitoringHref({ hours, platform: p.platform })} />
+                    <Bar key={p.platform} label={platformName(p.platform)} value={fmt(p.count)} right={`${pct(p.count, platformTotal).toFixed(0)}%`} share={pct(p.count, platformTotal)} color={BAR_COLORS[index % BAR_COLORS.length]} href={monitoringHref({ hours, platform: p.platform })} />
                   ))}
                   {missingSocial.map((key) => (
                     <Bar key={key} label={PLATFORM_NAMES[key]} value={L("not connected", "belum terhubung")} share={0} color="#EEF1F7" href="/workspace/sources" muted />
@@ -464,7 +519,10 @@ export default function DashboardPage() {
                     <ul className="divide-y divide-[#F3F5FA]">
                       {publishers.slice(0, 8).map((pub) => (
                         <li key={pub.publisher} className="flex items-center justify-between gap-3 py-2 text-[12px]">
-                          <span className="min-w-0 truncate font-bold text-[#101334]">{pub.publisher}</span>
+                          <span className="flex min-w-0 items-center gap-2">
+                            <span className={cn("shrink-0 rounded-[5px] px-1.5 py-0.5 text-[10px] font-black", (PLATFORM_TAG[pub.platform] ?? PLATFORM_TAG.news).cls)}>{pub.platform === "news" ? L("News", "Berita") : (PLATFORM_TAG[pub.platform]?.label ?? pub.platform)}</span>
+                            <span className="min-w-0 truncate font-bold text-[#101334]">{pub.publisher}</span>
+                          </span>
                           <span className="flex shrink-0 items-center gap-1.5 tabular-nums">
                             {pub.negative > 0 ? <span className="rounded-full bg-[#FDECEC] px-2 py-0.5 text-[10px] font-black text-[#B42318]">{pub.negative} neg</span> : null}
                             <span className="w-6 text-right font-black text-[#101334]">{pub.count}</span>
