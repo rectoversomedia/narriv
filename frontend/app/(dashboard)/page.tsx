@@ -26,6 +26,7 @@ import { getPipelineStatus, getRecommendations, timeAgo, type IntelligenceRecomm
 import { useCodeLabels } from "@/components/intelligence/intelligence-panels";
 import { DemoBanner } from "@/components/ui/demo-banner";
 import { SentimentTrendChart } from "@/components/dashboard/sentiment-trend-chart";
+import { PlatformIcon } from "@/components/ui/platform-icon";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/toast";
 import { issueHref, monitoringHref, type MonitoringPeriod } from "@/lib/evidence-links";
@@ -68,18 +69,8 @@ function Empty({ children }: { children: React.ReactNode }) {
   return <div className="rounded-[10px] border border-dashed border-[#DDE3EF] bg-[#FBFCFF] px-4 py-6 text-center text-[12px] font-semibold text-[#5A6478]">{children}</div>;
 }
 
-function Stat({ label, value, tone = "plain", href }: { label: string; value: string; tone?: "plain" | "bad"; href?: string }) {
-  const body = (
-    <>
-      <p className="text-[11px] font-bold text-[#5A6478]">{label}</p>
-      <p className={cn("mt-1 text-[24px] font-black tabular-nums leading-none", tone === "bad" ? "text-[#B42318]" : "text-[#101334]")}>{value}</p>
-    </>
-  );
-  const cls = cn("rounded-[10px] p-3", tone === "bad" ? "bg-[#FDECEC]" : "bg-[#F8FAFF]", href && "transition hover:bg-[#EEF2FF]");
-  return href ? <Link href={href} className={cls}>{body}</Link> : <div className={cls}>{body}</div>;
-}
 
-function Bar({ label, value, share, color, href, muted, right }: { label: string; value: string; share: number; color: string; href?: string; muted?: boolean; right?: string }) {
+function Bar({ label, value, share, color, href, muted, right }: { label: React.ReactNode; value: string; share: number; color: string; href?: string; muted?: boolean; right?: string }) {
   // The count sits where the bar ends (inside it when there is room); the share, if any, in the right corner.
   const inside = share >= 18;
   const body = (
@@ -115,17 +106,6 @@ function Sparkline({ values }: { values: number[] }) {
   );
 }
 
-const PLATFORM_TAG: Record<string, { label: string; cls: string }> = {
-  news: { label: "Berita", cls: "bg-[#EEF1F7] text-[#465170]" },
-  twitter: { label: "X", cls: "bg-[#101334] text-white" },
-  x: { label: "X", cls: "bg-[#101334] text-white" },
-  instagram: { label: "Instagram", cls: "bg-[#FDE7F3] text-[#B0156B]" },
-  tiktok: { label: "TikTok", cls: "bg-[#E6FBFA] text-[#0B7C77]" },
-  youtube: { label: "YouTube", cls: "bg-[#FDECEC] text-[#B42318]" },
-  facebook: { label: "Facebook", cls: "bg-[#E8EEFD] text-[#1D4ED8]" },
-  threads: { label: "Threads", cls: "bg-[#F1F1F1] text-[#111111]" },
-  reddit: { label: "Reddit", cls: "bg-[#FFF0E6] text-[#C2410C]" },
-};
 
 function Tag({ tone, children }: { tone: string; children: React.ReactNode }) {
   return <span className={cn("rounded-[5px] px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wide", tone)}>{children}</span>;
@@ -196,7 +176,6 @@ export default function DashboardPage() {
   const analysed = dist.positive + dist.neutral + dist.mixed + dist.negative;
   const unanalysed = Math.max(0, total - analysed);
   const pct = (n: number, of: number) => (of > 0 ? (n / of) * 100 : 0);
-  const negativeShare = pct(dist.negative, analysed);
   const fmt = (n: number) => n.toLocaleString(intlLocale());
 
   // Hottest issues: most records first, then fastest growth
@@ -339,7 +318,7 @@ export default function DashboardPage() {
       ) : (
         <>
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-            <Card className="flex flex-col" title={L("Sentiment", "Sentimen")} link={{ href: monitoringHref({ hours }), label: L("All data", "Semua data") }}>
+            <Card className="flex flex-col" title={L("Overall sentiment", "Sentimen keseluruhan")} link={{ href: monitoringHref({ hours }), label: L("All data", "Semua data") }}>
               {summaryQuery.isLoading ? (
                 <div className="space-y-3">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
               ) : total === 0 ? (
@@ -349,11 +328,33 @@ export default function DashboardPage() {
                 </Empty>
               ) : (
                 <>
-                  <div className="mb-4 grid grid-cols-3 gap-3">
-                    <Stat label={L("Data", "Data")} value={fmt(total)} href={monitoringHref({ hours })} />
-                    <Stat label={L("Negative", "Negatif")} value={fmt(dist.negative)} tone={negativeShare >= 30 ? "bad" : "plain"} href={monitoringHref({ hours, sentiment: "negative" })} />
-                    <Stat label={L("Negative share", "Porsi negatif")} value={analysed > 0 ? `${negativeShare.toFixed(0)}%` : "—"} tone={negativeShare >= 30 ? "bad" : "plain"} />
-                  </div>
+                  {/* The verdict first: all keywords together, positive minus negative over analysed records. */}
+                  {(() => {
+                    const net = analysed > 0 ? Math.round(((dist.positive - dist.negative) / analysed) * 100) : 0;
+                    const verdict = net <= -15
+                      ? { text: L("Leaning negative", "Cenderung negatif"), cls: "border-[#F4C7C3] bg-[#FFF5F4] text-[#B42318]" }
+                      : net >= 15
+                        ? { text: L("Leaning positive", "Cenderung positif"), cls: "border-[#BFE8D3] bg-[#F1FBF6] text-[#047857]" }
+                        : { text: L("Balanced", "Seimbang"), cls: "border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B]" };
+                    return (
+                      <div className={cn("mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[12px] border px-4 py-3", verdict.cls)}>
+                        <div>
+                          <p className="text-[11px] font-black uppercase tracking-[0.08em] opacity-80">{L("All keywords combined", "Semua kata kunci digabung")}</p>
+                          <p className="mt-0.5 text-[22px] font-black leading-tight">{verdict.text}</p>
+                        </div>
+                        <div className="flex items-center gap-5 text-right">
+                          <div>
+                            <p className="text-[11px] font-bold opacity-80">{L("Net score", "Skor bersih")}</p>
+                            <p className="text-[20px] font-black tabular-nums leading-tight">{net > 0 ? `+${net}` : net}</p>
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-bold opacity-80">{L("Data", "Data")}</p>
+                            <p className="text-[20px] font-black tabular-nums leading-tight">{fmt(total)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                   <div className="space-y-2">
                     {([
                       ["positive", L("Positive", "Positif"), "#10B981"],
@@ -506,10 +507,10 @@ export default function DashboardPage() {
                 <p className="mb-1 text-[11px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{L("By platform", "Per platform")}</p>
                 <div className="space-y-1">
                   {platforms.map((p, index) => (
-                    <Bar key={p.platform} label={platformName(p.platform)} value={fmt(p.count)} right={`${pct(p.count, platformTotal).toFixed(0)}%`} share={pct(p.count, platformTotal)} color={BAR_COLORS[index % BAR_COLORS.length]} href={monitoringHref({ hours, platform: p.platform })} />
+                    <Bar key={p.platform} label={<span className="inline-flex items-center gap-2"><PlatformIcon platform={p.platform} className="size-4" />{platformName(p.platform)}</span>} value={fmt(p.count)} right={`${pct(p.count, platformTotal).toFixed(0)}%`} share={pct(p.count, platformTotal)} color={BAR_COLORS[index % BAR_COLORS.length]} href={monitoringHref({ hours, platform: p.platform })} />
                   ))}
                   {missingSocial.map((key) => (
-                    <Bar key={key} label={PLATFORM_NAMES[key]} value={L("not connected", "belum terhubung")} share={0} color="#EEF1F7" href="/workspace/sources" muted />
+                    <Bar key={key} label={<span className="inline-flex items-center gap-2 opacity-60"><PlatformIcon platform={key} className="size-4" />{PLATFORM_NAMES[key]}</span>} value={L("not connected", "belum terhubung")} share={0} color="#EEF1F7" href="/workspace/sources" muted />
                   ))}
                 </div>
                 </div>
@@ -520,7 +521,7 @@ export default function DashboardPage() {
                       {publishers.slice(0, 8).map((pub) => (
                         <li key={pub.publisher} className="flex items-center justify-between gap-3 py-2 text-[12px]">
                           <span className="flex min-w-0 items-center gap-2">
-                            <span className={cn("shrink-0 rounded-[5px] px-1.5 py-0.5 text-[10px] font-black", (PLATFORM_TAG[pub.platform] ?? PLATFORM_TAG.news).cls)}>{pub.platform === "news" ? L("News", "Berita") : (PLATFORM_TAG[pub.platform]?.label ?? pub.platform)}</span>
+                            <PlatformIcon platform={pub.platform} className="size-[18px]" />
                             <span className="min-w-0 truncate font-bold text-[#101334]">{pub.publisher}</span>
                           </span>
                           <span className="flex shrink-0 items-center gap-1.5 tabular-nums">
