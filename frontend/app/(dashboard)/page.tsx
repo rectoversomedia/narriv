@@ -120,7 +120,8 @@ export default function DashboardPage() {
   const router = useRouter();
 
   // A workspace that has not finished onboarding goes there first.
-  const workspaceQuery = useQuery({ queryKey: ["workspace-settings"], queryFn: () => getWorkspaceSettings(), staleTime: 60 * 1000, enabled: !isDemoSession });
+  // Also gives the brand name shown in the focus strip (demo sessions read the demo workspace's settings).
+  const workspaceQuery = useQuery({ queryKey: ["workspace-settings"], queryFn: () => getWorkspaceSettings(), staleTime: 60 * 1000 });
   useEffect(() => {
     if (isDemoSession || workspaceQuery.isLoading) return;
     if (workspaceQuery.data && workspaceQuery.data.onboarding_completed !== true) router.push("/onboarding");
@@ -213,6 +214,42 @@ export default function DashboardPage() {
           ))}
         </div>
       </header>
+
+      {/* What this workspace watches: the brand and every active keyword, each opening its records. */}
+      {!neverCollected && (summary?.keyword_breakdown?.length || workspaceQuery.data?.brandName) ? (
+        <section aria-label={L("Monitoring focus", "Fokus pemantauan")} className="rounded-[14px] bg-[#101334] px-5 py-4 text-white shadow-[0_8px_24px_rgba(16,19,52,0.18)]">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-black uppercase tracking-[0.14em] text-white/60">{L("Monitoring focus", "Fokus pemantauan")}</p>
+              <p className="mt-0.5 truncate text-[20px] font-black leading-tight">{workspaceQuery.data?.brandName || L("Your brand", "Brand Anda")}</p>
+            </div>
+            <Link href="/workspace/settings#keywords" className="shrink-0 text-[12px] font-black text-[#A9B6FF] hover:text-white">{L("Manage keywords", "Atur kata kunci")} →</Link>
+          </div>
+          {summary?.keyword_breakdown?.length ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {summary.keyword_breakdown.map((k) => {
+                const negShare = k.count > 0 ? Math.round((k.negative / k.count) * 100) : 0;
+                return (
+                  <Link
+                    key={k.keyword}
+                    href={monitoringHref({ hours, q: k.keyword })}
+                    className="group flex items-center gap-3 rounded-[10px] border border-white/15 bg-white/[0.06] px-3.5 py-2 transition hover:border-white/40 hover:bg-white/[0.12]"
+                  >
+                    <span className="text-[14px] font-black">{k.keyword}</span>
+                    <span className="text-[12px] font-bold text-white/70">{fmt(k.count)} {L("data", "data")}</span>
+                    {k.count > 0 ? (
+                      <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-black", negShare >= 30 ? "bg-[#EF4444] text-white" : "bg-white/15 text-white")}>{negShare}% {L("negative", "negatif")}</span>
+                    ) : null}
+                    {k.last24h > 0 ? <span className="text-[11px] font-black text-[#7CF0C0]">+{fmt(k.last24h)} {L("in 24h", "24 jam")}</span> : null}
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="mt-2 text-[12px] font-semibold text-white/70">{L("No active keywords yet.", "Belum ada kata kunci aktif.")}</p>
+          )}
+        </section>
+      ) : null}
 
       {liveError ? (
         <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-red-200 bg-red-50 px-4 py-3 text-[12px] font-semibold text-red-700">

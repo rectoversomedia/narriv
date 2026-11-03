@@ -133,6 +133,7 @@ export const getSummary = async (req, res) => {
                     content,
                     platform,
                     author,
+                    metadata,
                     sentiment,
                     region,
                     captured_at,
@@ -190,6 +191,24 @@ export const getSummary = async (req, res) => {
                 }
             });
             const top_publishers = Object.values(publishersMap).sort((a, b) => b.count - a.count).slice(0, 8);
+
+            // The workspace's focus: every active monitoring keyword with its records in the period.
+            const { data: keywordRows } = await supabase
+                .from("monitoring_keywords").select("keyword").in("workspace_id", workspaceIds).eq("is_active", true).order("created_at", { ascending: true });
+            const dayAgo = Date.now() - 24 * 60 * 60 * 1000;
+            const keyword_breakdown = (keywordRows || []).map(({ keyword }) => {
+                const k = String(keyword).toLowerCase();
+                const hits = (signals || []).filter((sig) => String(sig.metadata?.keyword || "").toLowerCase() === k
+                    || `${sig.title || ""} ${sig.content || ""}`.toLowerCase().includes(k));
+                const sentimentOf = (sig) => String(sig.sentiment || "").toLowerCase();
+                return {
+                    keyword,
+                    count: hits.length,
+                    negative: hits.filter((sig) => sentimentOf(sig).includes("negative")).length,
+                    positive: hits.filter((sig) => sentimentOf(sig).includes("positive")).length,
+                    last24h: hits.filter((sig) => new Date(sig.captured_at).getTime() >= dayAgo).length,
+                };
+            });
 
             const platform_distribution = Object.keys(platformsMap)
                 .map(platform => ({ platform, count: platformsMap[platform] }))
@@ -346,6 +365,7 @@ export const getSummary = async (req, res) => {
                 sentiment_distribution: { positive, negative, neutral, mixed },
                 platform_distribution,
                 top_publishers,
+                keyword_breakdown,
                 latest_signals,
                 top_topics,
                 mini_topics,

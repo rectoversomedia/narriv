@@ -1067,9 +1067,10 @@ export default function SignalsPage() {
 
   // Filters from the URL (a link from Overview or a shared view), read once on load.
   useEffect(() => {
-    const fromUrl = parseMonitoringFilters(window.location.search);
+    const { q, ...fromUrl } = parseMonitoringFilters(window.location.search);
     setFilters(fromUrl);
     if (fromUrl.sentiment) setActiveFilter(fromUrl.sentiment);
+    if (q) setQuery(q);
   }, []);
 
   const updateUrl = (next: MonitoringFilters, sentiment: SignalFilter) => {

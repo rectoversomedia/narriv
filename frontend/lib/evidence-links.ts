@@ -17,6 +17,8 @@ export interface MonitoringFilters {
   sentiment?: SentimentFilter;
   analysis?: AnalysisFilter;
   platform?: string;
+  /** Search text, e.g. a monitoring keyword; it fills Monitoring's search box. */
+  q?: string;
 }
 
 const SENTIMENTS: SentimentFilter[] = ["negative", "positive", "neutral", "mixed"];
@@ -31,7 +33,7 @@ function query(params: Record<string, string | number | undefined>) {
 }
 
 export function monitoringHref(f: MonitoringFilters = {}) {
-  return `/signals${query({ hours: f.hours, narrative: f.narrative, relevance: f.relevance, sentiment: f.sentiment, analysis: f.analysis, platform: f.platform })}`;
+  return `/signals${query({ hours: f.hours, narrative: f.narrative, relevance: f.relevance, sentiment: f.sentiment, analysis: f.analysis, platform: f.platform, q: f.q })}`;
 }
 
 /** Issues & Narratives works in days; 24 h is its 1-day view. */
@@ -59,6 +61,8 @@ export function parseMonitoringFilters(search: string): MonitoringFilters {
   if (analysis === "analyzed" || analysis === "pending") out.analysis = analysis;
   const platform = p.get("platform");
   if (platform && PLATFORM.test(platform)) out.platform = platform;
+  const q = p.get("q")?.trim();
+  if (q) out.q = q.slice(0, 80);
   return out;
 }
 
