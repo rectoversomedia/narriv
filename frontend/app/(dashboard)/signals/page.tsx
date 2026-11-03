@@ -476,11 +476,22 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
             </li>
           ))}
         </ul>
-        <div className="hidden flex-1 flex-col overflow-x-auto md:flex">
-          <table className="w-full min-w-[980px] border-collapse text-left">
+        {/* Fixed columns that share the frame's width: nothing scrolls sideways; long text wraps to two lines. */}
+        <div className="hidden flex-1 flex-col md:flex">
+          <table className="w-full table-fixed border-collapse text-left">
+            <colgroup>
+              <col className="w-10" />
+              <col className="w-[32%]" />
+              <col className="w-[13%]" />
+              <col className="w-[10%]" />
+              <col className="w-[17%]" />
+              <col className="w-[8%]" />
+              <col className="w-[9%]" />
+              <col className="w-[11%]" />
+            </colgroup>
             <thead>
-              <tr className="border-b border-[#E6EAF2] bg-[#FBFCFF] text-[10px] font-black uppercase tracking-[0.17em] text-[#5F6B94]">
-                <th className="w-10 px-3.5 py-3">
+              <tr className="border-b border-[#E6EAF2] bg-[#FBFCFF] text-[10px] font-black uppercase tracking-[0.06em] text-[#5F6B94]">
+                <th className="px-2.5 py-3">
                   <button
                     type="button"
                     onClick={handleSelectAll}
@@ -496,13 +507,13 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                     {allSelected || someSelected ? <Check size={12} /> : null}
                   </button>
                 </th>
-                {[tSignals("headerSignal"), pickL("Media", "Media"), tSignals("headerSentiment"), tSignals("headerRelatedNarrative"), pickL("AI confidence", "Keyakinan AI"), tSignals("headerPublished"), tSignals("headerAction")].map((header) => <th key={header} scope="col" className="whitespace-nowrap px-3.5 py-3">{header}</th>)}
+                {[tSignals("headerSignal"), pickL("Media", "Media"), tSignals("headerSentiment"), tSignals("headerRelatedNarrative"), pickL("AI confidence", "Keyakinan AI"), tSignals("headerPublished"), tSignals("headerAction")].map((header) => <th key={header} scope="col" className="px-2.5 py-3 leading-tight">{header}</th>)}
               </tr>
             </thead>
             <tbody className="divide-y divide-[#EDF1F7]">
               {rows.map((row) => (
                 <tr key={row.id} className={cn("transition hover:bg-[#F8FAFF]", selectedIds.has(row.id) && "bg-[#EEF2FF]")}>
-                  <td className="px-3.5 py-3 align-middle">
+                  <td className="px-2.5 py-3 align-middle">
                     <button
                       type="button"
                       onClick={() => handleSelectRow(row.id)}
@@ -517,41 +528,41 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                       {selectedIds.has(row.id) ? <Check size={12} /> : null}
                     </button>
                   </td>
-                  <td className="max-w-[420px] px-3.5 py-3">
+                  <td className="px-2.5 py-3">
                     {/* One line per record: the headline opens the original article. */}
                     {row.url ? (
-                      <a href={row.url} target="_blank" rel="noopener noreferrer" title={row.title} className="block truncate text-[13px] font-bold text-navy hover:text-[#3B52F5] hover:underline">{row.title}</a>
+                      <a href={row.url} target="_blank" rel="noopener noreferrer" title={row.title} className="line-clamp-2 break-words text-[13px] font-bold leading-snug text-navy hover:text-[#3B52F5] hover:underline">{row.title}</a>
                     ) : (
-                      <span title={row.title} className="block truncate text-[13px] font-bold text-navy">{row.title}</span>
+                      <span title={row.title} className="line-clamp-2 break-words text-[13px] font-bold leading-snug text-navy">{row.title}</span>
                     )}
                   </td>
-                  <td className="whitespace-nowrap px-3.5 py-3 align-middle text-[12px] font-bold text-[#31406B]">{row.publisher}</td>
-                  <td className="px-3.5 py-3 align-middle"><SentimentBadge sentiment={row.sentiment} /></td>
-                  <td className="px-3.5 py-3 align-middle">
+                  <td className="px-2.5 py-3 align-middle"><span className="line-clamp-2 break-words text-[12px] font-bold leading-snug text-[#31406B]" title={row.publisher}>{row.publisher}</span></td>
+                  <td className="px-2.5 py-3 align-middle"><SentimentBadge sentiment={row.sentiment} /></td>
+                  <td className="px-2.5 py-3 align-middle">
                     {row.narratives[0] ? (
-                      <Link href={monitoringHref({ narrative: row.narratives[0].id })} className="block max-w-[180px] truncate text-[12px] font-bold text-[#3B52F5] hover:underline" title={row.relatedNarrative}>
+                      <Link href={monitoringHref({ narrative: row.narratives[0].id })} className="line-clamp-2 break-words text-[12px] font-bold leading-snug text-[#3B52F5] hover:underline" title={row.relatedNarrative}>
                         {row.relatedNarrative}{row.narrativeCount > 1 ? ` +${row.narrativeCount - 1}` : ""}
                       </Link>
                     ) : (
                       <span className="block text-[12px] font-bold text-[#8A93AD]">—</span>
                     )}
                   </td>
-                  <td className="whitespace-nowrap px-3.5 py-3 align-middle"><AnalysisBadge status={row.analysisStatus} confidence={row.analysisConfidence} /></td>
-                  <td className="whitespace-nowrap px-3.5 py-3 align-middle text-[12px] font-bold text-[#31406B]">{row.time}</td>
-                  <td className="px-3.5 py-3 text-right align-middle">
-                    <div className="flex items-center justify-end gap-1.5">
+                  <td className="px-2.5 py-3 align-middle"><AnalysisBadge status={row.analysisStatus} confidence={row.analysisConfidence} /></td>
+                  <td className="px-2.5 py-3 align-middle text-[12px] font-bold leading-snug text-[#31406B]">{row.time}</td>
+                  <td className="px-2.5 py-3 align-middle">
+                    <div className="flex flex-col gap-1">
                       <button
                         type="button"
                         onClick={() => onGenerateActionPlan?.(row)}
                         title={t("planTitle")}
-                        className="inline-flex h-8 items-center justify-center gap-1 rounded-[8px] border border-[#DDE3EF] bg-white px-2.5 text-[10.5px] font-black text-[#3B52F5] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]"
+                        className="inline-flex h-7 w-full items-center justify-center rounded-[7px] border border-[#DDE3EF] bg-white px-2 text-[11px] font-black text-[#3B52F5] transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]"
                       >
                         {t("plan")}
                       </button>
                       <button
                         type="button"
                         onClick={() => onInvestigate(row)}
-                        className="inline-flex h-8 items-center justify-center gap-1.5 rounded-[8px] bg-[#465FFF] px-2.5 text-[10.5px] font-black text-white shadow-sm transition hover:bg-[#3147E8]"
+                        className="inline-flex h-7 w-full items-center justify-center rounded-[7px] bg-[#465FFF] px-2 text-[11px] font-black text-white transition hover:bg-[#3147E8]"
                       >
                         {tSignals("investigate")}
                       </button>
@@ -1272,7 +1283,8 @@ export default function SignalsPage() {
         </div>
       )}
 
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_336px]">
+      {/* The side panels sit beside the table only on wide screens; otherwise below it, so the table keeps a full row. */}
+      <div className="grid items-start gap-4 2xl:grid-cols-[minmax(0,1fr)_336px]">
         <div className="flex min-w-0 flex-col gap-4">
           <SummaryPanel meta={meta} />
           {!isAdvancedSearchActive ? (
@@ -1355,7 +1367,7 @@ export default function SignalsPage() {
             </>
           )}
         </div>
-        <div className="flex flex-col gap-4">
+        <div className="grid items-start gap-4 md:grid-cols-2 2xl:grid-cols-1">
             {isMetaUnavailable ? <DashboardErrorState title={tSignals("metaErrorTitle")} description={tSignals("metaErrorDesc")} onRetry={() => void metaQuery.refetch()} minHeight="min-h-[150px]" /> : null}
             <FollowUpPanel data={meta?.followUps} />
             <RecommendationPanel data={meta?.recommendations} />
