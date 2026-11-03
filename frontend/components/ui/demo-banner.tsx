@@ -1,6 +1,5 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 // One banner for every page in a demo session. Signals and narratives in the
@@ -10,7 +9,6 @@ export function DemoBanner() {
   const t = useTranslations("DemoApp.sidebar");
   return (
     <div role="note" className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3 text-center">
-      <Sparkles size={16} className="shrink-0 text-[#6E44E8]" aria-hidden="true" />
       <p className="text-[13px] font-bold text-[#6E44E8]">
         {t("demoBanner")}
       </p>

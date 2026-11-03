@@ -1,461 +1,210 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BarChart3, Bell, ChevronRight, Database, FileText, Headphones, RefreshCcw, Send, Settings, Sparkles, TrendingUp, X, Zap, Rocket, AlertTriangle, Activity, Bot } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useRef, useState } from "react";
-import { AppCard, SectionHeader, toneMap } from "@/components/dashboard/dashboard-kit";
-import { CardContent } from "@/components/ui/card";
-import { text, type Tone } from "@/lib/mock-data";
-import { useUiStore, intlLocale } from "@/store/useUiStore";
-import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { useQuery } from "@tanstack/react-query";
-import { fetchDashboardSummaryStrict, getDashboardSummary, getDateRangeOptions, getWorkspaceSettings, type DateRangeKey } from "@/lib/api-service";
-import { Skeleton } from "@/components/ui/Skeleton";
-import { TodaysIntelligenceStrip } from "@/components/intelligence/intelligence-panels";
-import { getPipelineStatus, timeAgo } from "@/lib/intelligence-api";
+import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
+import { useL } from "@/lib/use-l";
+import { intlLocale } from "@/store/useUiStore";
+import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
+import {
+  fetchDashboardSummaryStrict,
+  getAlerts,
+  getDashboardSummary,
+  getDateRangeOptions,
+  getNarratives,
+  getWorkspaceSettings,
+  type Alert,
+  type DateRangeKey,
+  type NarrativeRecord,
+} from "@/lib/api-service";
+import { getPipelineStatus, getRecommendations, timeAgo, type IntelligenceRecommendation } from "@/lib/intelligence-api";
+import { useCodeLabels } from "@/components/intelligence/intelligence-panels";
+import { SentimentTrendChart } from "@/components/dashboard/sentiment-trend-chart";
 import { DemoBanner } from "@/components/ui/demo-banner";
-import { SignalSentimentPanel } from "@/components/dashboard/signal-sentiment-panel";
-import { ExecutiveOverview } from "@/components/dashboard/executive-overview";
+import { Skeleton } from "@/components/ui/Skeleton";
 
-type QuickActionKey = "newAlert" | "report" | "analyze" | "sources" | "settings" | "help";
+// The overview answers three questions on one screen, for one period: how is the coverage leaning
+// (sentiment counts), which issues are hottest, and what should be done now. Everything else has its own page.
 
-function getQuickActionContent(t: (key: string) => string): Record<QuickActionKey, { title: string; description: string; icon: typeof Bell; href?: string; items?: Array<{ label: string; desc: string }> }> {
-  return {
-    newAlert: {
-      title: t("pages.quickActionContent.newAlertTitle"),
-      description: t("pages.quickActionContent.newAlertDesc"),
-      icon: Bell,
-      items: [
-        { label: t("pages.quickActionContent.newAlertItem1Label"), desc: t("pages.quickActionContent.newAlertItem1Desc") },
-        { label: t("pages.quickActionContent.newAlertItem2Label"), desc: t("pages.quickActionContent.newAlertItem2Desc") },
-        { label: t("pages.quickActionContent.newAlertItem3Label"), desc: t("pages.quickActionContent.newAlertItem3Desc") },
-      ],
-    },
-    report: {
-      title: t("pages.quickActionContent.reportTitle"),
-      description: t("pages.quickActionContent.reportDesc"),
-      icon: FileText,
-      items: [
-        { label: t("pages.quickActionContent.reportItem1Label"), desc: t("pages.quickActionContent.reportItem1Desc") },
-        { label: t("pages.quickActionContent.reportItem2Label"), desc: t("pages.quickActionContent.reportItem2Desc") },
-        { label: t("pages.quickActionContent.reportItem3Label"), desc: t("pages.quickActionContent.reportItem3Desc") },
-      ],
-    },
-    analyze: {
-      title: t("pages.quickActionContent.analyzeTitle"),
-      description: t("pages.quickActionContent.analyzeDesc"),
-      icon: BarChart3,
-      items: [
-        { label: t("pages.quickActionContent.analyzeItem1Label"), desc: t("pages.quickActionContent.analyzeItem1Desc") },
-        { label: t("pages.quickActionContent.analyzeItem2Label"), desc: t("pages.quickActionContent.analyzeItem2Desc") },
-        { label: t("pages.quickActionContent.analyzeItem3Label"), desc: t("pages.quickActionContent.analyzeItem3Desc") },
-      ],
-    },
-    sources: {
-      title: t("pages.quickActionContent.sourcesTitle"),
-      description: t("pages.quickActionContent.sourcesDesc"),
-      icon: Database,
-      href: "/workspace/sources",
-    },
-    settings: {
-      title: t("pages.quickActionContent.settingsTitle"),
-      description: t("pages.quickActionContent.settingsDesc"),
-      icon: Settings,
-      href: "/workspace/settings",
-    },
-    help: {
-      title: t("pages.quickActionContent.helpTitle"),
-      description: t("pages.quickActionContent.helpDesc"),
-      icon: Headphones,
-      items: [
-        { label: t("pages.quickActionContent.helpItem1Label"), desc: t("pages.quickActionContent.helpItem1Desc") },
-        { label: t("pages.quickActionContent.helpItem2Label"), desc: t("pages.quickActionContent.helpItem2Desc") },
-        { label: t("pages.quickActionContent.helpItem3Label"), desc: t("pages.quickActionContent.helpItem3Desc") },
-      ],
-    },
-  };
+const PERIOD_HOURS: Record<DateRangeKey, number> = { "24h": 24, "7d": 168, "30d": 720 };
+const PERIOD_DAYS: Record<DateRangeKey, number> = { "24h": 1, "7d": 7, "30d": 30 };
+const SEVERITY_RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
+const PRIORITY_RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+
+function Card({ title, subtitle, action, children, className }: { title: string; subtitle?: string; action?: React.ReactNode; children: React.ReactNode; className?: string }) {
+  return (
+    <section className={cn("rounded-[14px] border border-[#E6EAF2] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)}>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-[15px] font-black text-[#101334]">{title}</h2>
+          {subtitle ? <p className="mt-0.5 text-[12px] font-medium text-[#5A6478]">{subtitle}</p> : null}
+        </div>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
 }
 
-function EmptyPanel({ label, compact = false }: { label: string; compact?: boolean }) {
+function EmptyNote({ children }: { children: React.ReactNode }) {
+  return <p className="rounded-[10px] border border-dashed border-[#DDE3EF] bg-[#FBFCFF] px-4 py-6 text-center text-[12px] font-semibold text-[#5A6478]">{children}</p>;
+}
+
+function SentimentBar({ label, count, share, color }: { label: string; count: number; share: number; color: string }) {
   return (
-    <div className={`flex items-center justify-center rounded-[10px] border border-dashed border-slate-200 bg-slate-50/70 px-4 text-center text-[12px] font-bold text-[#5A6478] ${compact ? "min-h-16 py-4" : "min-h-24 py-6"}`}>
-      {label}
+    <div>
+      <div className="flex items-baseline justify-between gap-3 text-[12px]">
+        <span className="font-bold text-[#101334]">{label}</span>
+        <span className="tabular-nums font-black text-[#101334]">
+          {count.toLocaleString(intlLocale())}
+          <span className="ml-1.5 font-semibold text-[#5A6478]">{share.toFixed(0)}%</span>
+        </span>
+      </div>
+      <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-[#EEF1F7]">
+        <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${Math.max(share, count > 0 ? 2 : 0)}%`, backgroundColor: color }} />
+      </div>
     </div>
   );
 }
 
-function QuickActionDrawer({ actionKey, onClose, quickActionContent, tDrawer }: { actionKey: QuickActionKey; onClose: () => void; quickActionContent: ReturnType<typeof getQuickActionContent>; tDrawer: (key: string) => string }) {
-  const content = quickActionContent[actionKey];
-  const Icon = content.icon;
-  const titleId = useId();
-  const descriptionId = useId();
-  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
-  const drawerRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    closeButtonRef.current?.focus();
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-        return;
-      }
-      if (event.key !== "Tab" || !drawerRef.current) return;
-
-      const focusable = drawerRef.current.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])');
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (!first || !last) return;
-
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      previouslyFocused?.focus();
-    };
-  }, [onClose]);
-
-  return (
-    <>
-      <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm transition-opacity" role="presentation" onMouseDown={onClose} />
-      <div ref={drawerRef} role="dialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={descriptionId} className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl animate-in slide-in-from-right duration-200">
-        <div className="flex h-full flex-col">
-          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-            <div className="flex items-center gap-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#465FFF]/10 text-[#3B52F5]">
-                <Icon size={18} />
-              </span>
-              <h2 id={titleId} className="text-[16px] font-black text-slate-900">{content.title}</h2>
-            </div>
-            <button ref={closeButtonRef} type="button" aria-label={tDrawer("pages.command.close")} onClick={onClose} className="rounded-lg border border-slate-100 p-1.5 text-[#5A6478] transition hover:bg-slate-50 hover:text-slate-700">
-              <X size={15} />
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto px-6 py-5">
-            <p id={descriptionId} className="text-[13px] font-semibold leading-relaxed text-[#5A6478]">{content.description}</p>
-
-            {content.href && (
-              <Link href={content.href} onClick={onClose} className="mt-6 flex items-center justify-between rounded-xl border border-[#465FFF]/15 bg-[#465FFF]/5 px-4 py-3 text-[13px] font-bold text-[#3B52F5] transition hover:bg-[#465FFF]/10">
-                <span>{tDrawer("pages.command.openRelated")}</span>
-                <ArrowRight size={15} />
-              </Link>
-            )}
-
-            {content.items && (
-              <div className="mt-6 space-y-3">
-                {content.items.map((item) => (
-                  <button key={item.label} type="button" onClick={onClose} className="flex w-full items-start gap-3 rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-3.5 text-left transition hover:border-[#465FFF]/20 hover:bg-[#465FFF]/5">
-                    <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#465FFF]/10 text-[#3B52F5]">
-                      <Send size={13} />
-                    </span>
-                    <div>
-                      <p className="text-[13px] font-black text-slate-900">{item.label}</p>
-                      <p className="mt-0.5 text-[11px] font-semibold text-[#5A6478]">{item.desc}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="border-t border-slate-100 px-6 py-4">
-            <button type="button" onClick={onClose} className="flex h-10 w-full items-center justify-center rounded-xl border border-slate-200 bg-white text-[13px] font-bold text-slate-700 transition hover:bg-slate-50">
-              {tDrawer("pages.command.close")}
-            </button>
-          </div>
-        </div>
-      </div>
-    </>
-  );
+// The alert list returns stored rows (snake_case); the detail endpoint returns camelCase.
+type AlertRow = Alert & { created_at?: string; what_to_do?: string | null };
+function alertTime(alert: AlertRow) {
+  return alert.createdAt || alert.created_at || null;
 }
+function alertAdvice(alert: AlertRow) {
+  return alert.whatToDo || alert.what_to_do || null;
+}
+
+function sentimentTone(value: string | null | undefined) {
+  const v = String(value || "").toLowerCase();
+  if (v.includes("neg")) return { cls: "bg-[#FDECEC] text-[#B42318]", en: "Negative", id: "Negatif" };
+  if (v.includes("pos")) return { cls: "bg-[#E8F7EF] text-[#047857]", en: "Positive", id: "Positif" };
+  if (v.includes("mix")) return { cls: "bg-[#FFF4E5] text-[#A04606]", en: "Mixed", id: "Campuran" };
+  return { cls: "bg-[#EEF1F7] text-[#465170]", en: "Neutral", id: "Netral" };
+}
+
+function levelTone(level: string) {
+  if (level === "critical") return "bg-[#B42318] text-white";
+  if (level === "high") return "bg-[#FDECEC] text-[#B42318]";
+  if (level === "medium") return "bg-[#FFF4E5] text-[#A04606]";
+  return "bg-[#EEF1F7] text-[#465170]";
+}
+
 export default function DashboardPage() {
-  const t = useTranslations("DemoApp");
-  const tOverview = useTranslations("Overview");
-  const tDrawer = useTranslations("DemoApp");
-  const language = useUiStore((state) => state.language);
-  const L = (en: string, id: string) => text({ en, id }, language);
-  const [timeRange, setTimeRange] = useState<DateRangeKey>("24h");
-  const [selectedAction, setSelectedAction] = useState<QuickActionKey | null>(null);
+  const L = useL();
+  const codes = useCodeLabels();
+  const tLevel = useTranslations("IntelPanels");
   const user = useAuthStore((state) => state.user);
   const isDemoSession = isDemoUser(user);
-  const dateRange = getDateRangeOptions(timeRange);
-  const quickActionContent = getQuickActionContent((key) => tDrawer(key));
-
-  // Check onboarding status
-  const workspaceQuery = useQuery({
-    queryKey: ["workspace-settings"],
-    queryFn: () => getWorkspaceSettings(),
-    staleTime: 60 * 1000,
-    enabled: !isDemoSession,
-  });
-
-  // Redirect to onboarding if onboarding not yet completed
+  const [period, setPeriod] = useState<DateRangeKey>("30d");
   const router = useRouter();
+
+  // A workspace that has not finished onboarding goes there first.
+  const workspaceQuery = useQuery({ queryKey: ["workspace-settings"], queryFn: () => getWorkspaceSettings(), staleTime: 60 * 1000, enabled: !isDemoSession });
   useEffect(() => {
     if (isDemoSession || workspaceQuery.isLoading) return;
-    const onboardingCompleted = workspaceQuery.data?.onboarding_completed === true;
-    if (!onboardingCompleted && workspaceQuery.data) {
-      // Onboarding not yet completed, redirect to onboarding
-      router.push("/onboarding");
-    }
+    if (workspaceQuery.data && workspaceQuery.data.onboarding_completed !== true) router.push("/onboarding");
   }, [isDemoSession, workspaceQuery.data, workspaceQuery.isLoading, router]);
 
-  const dashboardQuery = useQuery({
-    queryKey: ["dashboard-summary", timeRange],
-    // Live sessions use the strict fetch so failures surface as errors instead of empty data.
-    queryFn: () => (isDemoSession ? getDashboardSummary(dateRange) : fetchDashboardSummaryStrict(dateRange)),
+  const summaryQuery = useQuery({
+    queryKey: ["dashboard-summary", period],
+    // Live sessions use the strict fetch so a failure shows as an error instead of an empty board.
+    queryFn: () => (isDemoSession ? getDashboardSummary(getDateRangeOptions(period)) : fetchDashboardSummaryStrict(getDateRangeOptions(period))),
     retry: (count, err) => ![401, 403].includes((err as { status?: number })?.status ?? 0) && count < 2,
-    staleTime: 15 * 1000,
-    refetchInterval: isDemoSession ? 60000 : 15 * 1000, // Longer interval in demo session
-    refetchIntervalInBackground: false,
+    staleTime: 30 * 1000,
+    refetchInterval: 60 * 1000,
   });
+  const pipelineQuery = useQuery({ queryKey: ["pipeline-status"], queryFn: getPipelineStatus, staleTime: 60 * 1000, retry: 1 });
+  const issuesQuery = useQuery({ queryKey: ["overview-issues", period], queryFn: () => getNarratives({ limit: 20, days: PERIOD_DAYS[period] }), staleTime: 60 * 1000 });
+  const alertsQuery = useQuery({ queryKey: ["overview-open-alerts"], queryFn: () => getAlerts({ status: "open", limit: 50 }), staleTime: 30 * 1000 });
+  const recsQuery = useQuery({ queryKey: ["overview-recommendations", period], queryFn: () => getRecommendations(PERIOD_HOURS[period]), staleTime: 60 * 1000, retry: 1 });
 
-  // Pipeline freshness/provenance (real data only; demo sessions skip it).
-  const pipelineQuery = useQuery({
-    queryKey: ["pipeline-status"],
-    queryFn: getPipelineStatus,
-    enabled: !isDemoSession,
-    staleTime: 60 * 1000,
-    retry: 1,
-  });
+  const summary = summaryQuery.data;
+  const pipeline = pipelineQuery.data;
+  const lastDataAt = pipeline?.scheduler?.lastSuccessfulIngestionForWorkspace ?? pipeline?.ingestion?.lastRawDocumentAt ?? null;
+  const periodLabel = { "24h": L("the last 24 hours", "24 jam terakhir"), "7d": L("the last 7 days", "7 hari terakhir"), "30d": L("the last 30 days", "30 hari terakhir") }[period];
 
-  const timeRangeOptions: Array<{ label: string; value: DateRangeKey }> = [
-    { label: t("pages.command.timeRange24h"), value: "24h" },
-    { label: t("pages.command.timeRange7d"), value: "7d" },
-    { label: t("pages.command.timeRange30d"), value: "30d" },
-  ];
+  // ── Sentiment ────────────────────────────────────────────────────────────
+  const dist = summary?.sentiment_distribution ?? { positive: 0, neutral: 0, mixed: 0, negative: 0 };
+  const total = summary?.kpis?.total_signals ?? 0;
+  const analysed = dist.positive + dist.neutral + dist.mixed + dist.negative;
+  const unanalysed = Math.max(0, total - analysed);
+  const share = (n: number) => (analysed > 0 ? (n / analysed) * 100 : 0);
+  const negativeShare = share(dist.negative);
 
-  const liveError = !isDemoSession && dashboardQuery.isError ? (dashboardQuery.error as { status?: number } | null) : null;
-  const liveErrorKind: "auth" | "forbidden" | "server" | null = !liveError
-    ? null
-    : liveError.status === 401 ? "auth" : liveError.status === 403 ? "forbidden" : "server";
-  // React Query keeps the last good response when a refetch fails.
-  const isStaleData = Boolean(liveError && dashboardQuery.data);
-  const summary = dashboardQuery.data;
+  // ── Hottest issues: most signals first, then fastest growth ─────────────
+  const issues = [...(issuesQuery.data?.data ?? [])]
+    .filter((n) => n.signalCount > 0)
+    .sort((a, b) => b.signalCount - a.signalCount || (parseFloat(b.velocity) || 0) - (parseFloat(a.velocity) || 0))
+    .slice(0, 5);
 
-  const activityData = summary?.trends?.length
-    ? summary.trends.map(t => ({ label: new Date(t.date).toLocaleDateString(), value: t.count }))
-    : [];
+  // ── What to do: open alerts by severity, then the recommendations ───────
+  const openAlerts = [...(alertsQuery.data?.data ?? [])]
+    .sort((a, b) => (SEVERITY_RANK[a.severity ?? "info"] ?? 9) - (SEVERITY_RANK[b.severity ?? "info"] ?? 9) || +new Date(alertTime(b) ?? 0) - +new Date(alertTime(a) ?? 0))
+    .slice(0, 3);
+  const recommendations = [...(recsQuery.data?.recommendations ?? [])]
+    .sort((a, b) => (PRIORITY_RANK[a.priority] ?? 9) - (PRIORITY_RANK[b.priority] ?? 9))
+    .slice(0, 3);
+  const openAlertTotal = alertsQuery.data?.pagination?.total ?? openAlerts.length;
 
-  const sentimentData = summary?.sentiment_distribution
-    ? [
-        { name: t("pages.command.positive"), value: summary.sentiment_distribution.positive, tone: "green" as const },
-        { name: t("pages.command.neutral"), value: summary.sentiment_distribution.neutral, tone: "blue" as const },
-        { name: t("pages.command.negative"), value: summary.sentiment_distribution.negative, tone: "red" as const },
-      ]
-    : [];
-
-  // Format number with thousand separators
-  const formatNumber = (num: number | undefined | null): string => {
-    if (num === undefined || num === null) return "0";
-    return num.toLocaleString("en-US");
-  };
-
-  // Format percentage with 1 decimal place
-  const formatPercent = (num: number | undefined | null): string => {
-    if (num === undefined || num === null) return "—";
-    return `${num.toFixed(1)}%`;
-  };
-
-
-  const alertsRow = summary?.latest_signals?.length
-    ? summary.latest_signals.slice(0, 4).map((sig) => ({
-        id: sig.id,
-        title: sig.title || "Unknown signal",
-        source: sig.platform,
-        time: new Date(sig.published_at).toLocaleTimeString(intlLocale(), { hour: "2-digit", minute: "2-digit" }),
-        tone: sig.sentiment.toLowerCase().includes("negative") ? "red" : sig.sentiment.toLowerCase().includes("positive") ? "green" : "blue",
-      }))
-    : [];
-
-  const sysStatusData = summary?.system_status ?? [];
-  const hotTopics = summary?.top_topics ?? [];
-  const miniTrends = summary?.mini_topics ?? [];
-  const sourcesData = summary?.sources_health ?? [];
-  const globalActivity = summary?.global_activity ?? null;
-  const mappedSignalCount = globalActivity?.total_signals ?? 0;
-  const mappedRegionCount = globalActivity?.countries?.length ?? 0;
-
-  // Check if workspace needs onboarding
-  const needsOnboarding = !isDemoSession && workspaceQuery.data === null && !workspaceQuery.isLoading;
-  const isEmptyDashboard = summary?.kpis?.total_signals === 0 && !isDemoSession;
-
-  // Onboarding Empty State Component
-  if (needsOnboarding) {
-    return (
-      <div className="min-h-[calc(100vh-200px)] flex items-center justify-center">
-        <div className="max-w-xl text-center">
-          <div className="mx-auto w-20 h-20 rounded-full bg-[#465FFF] flex items-center justify-center mb-6">
-            <Rocket size={36} className="text-white" />
-          </div>
-          <h1 className="mb-3 text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">
-            {L("Welcome to Narriv!", "Selamat datang di Narriv!")}
-          </h1>
-          <p className="mt-1.5 max-w-2xl text-[14px] font-medium leading-6 text-body">
-            {L("Set up your monitoring workspace in 3 steps: keywords, sources, then monitoring.", "Siapkan workspace pemantauan dalam 3 langkah: kata kunci, sumber, lalu pemantauan.")}
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-            <div className="flex items-center gap-3 px-4 py-3 rounded-[8px] border border-slate-100 bg-slate-50">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#465FFF] text-white text-[13px] font-bold">1</span>
-              <span className="text-[14px] font-bold text-slate-700">{L("Configure Keywords", "Atur Kata Kunci")}</span>
-            </div>
-            <div className="flex items-center gap-3 px-4 py-3 rounded-[8px] border border-slate-100 bg-slate-50">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#465FFF] text-white text-[13px] font-bold">2</span>
-              <span className="text-[14px] font-bold text-slate-700">{L("Select Sources", "Pilih Sumber")}</span>
-            </div>
-            <div className="flex items-center gap-3 px-4 py-3 rounded-[8px] border border-slate-100 bg-slate-50">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#465FFF] text-white text-[13px] font-bold">3</span>
-              <span className="text-[14px] font-bold text-slate-700">{L("Start Monitoring", "Mulai Pemantauan")}</span>
-            </div>
-          </div>
-          <Link
-            href="/onboarding"
-            className="inline-flex h-[52px] items-center gap-3 rounded-[10px] bg-[#465FFF] hover:bg-[#3B51E0] px-8 text-[15px] font-bold text-white shadow-sm transition active:scale-[0.98]"
-          >
-            <Rocket size={20} />
-            {L("Start Setup Wizard", "Mulai Panduan Penyiapan")}
-            <ArrowRight size={18} />
-          </Link>
-          <p className="mt-6 text-[13px] font-semibold text-[#5A6478]">
-            {L("Takes about 7 minutes to complete", "Butuh sekitar 7 menit")}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // ── New "Today's Intelligence" data ───────────────────────────────────────
-
-  const today = new Date();
-  const dateStr = today.toLocaleDateString(intlLocale(), { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-
-  const developments: Array<{ id: string; icon: typeof AlertTriangle; title: string; change: string; category: string; tone: Tone }> = isDemoSession ? [
-    { id: "d1", icon: Activity, title: L("Service quality mentions spiking on Reddit", "Penyebutan kualitas layanan melonjak di Reddit"), change: "+38%", category: L("Risk", "Risiko"), tone: "red" },
-    { id: "d2", icon: Zap, title: L("New competitor mentioned in AI responses", "Kompetitor baru disebut dalam jawaban AI"), change: L("NEW", "BARU"), category: L("Competitor", "Kompetitor"), tone: "amber" },
-    { id: "d3", icon: TrendingUp, title: L("Feature launch driving positive momentum", "Peluncuran fitur mendorong momentum positif"), change: "+67%", category: L("Opportunity", "Peluang"), tone: "green" },
-    { id: "d4", icon: Bot, title: L("AI visibility score improving across platforms", "Skor visibilitas AI membaik di semua platform"), change: "+8pp", category: L("AI Visibility", "Visibilitas AI"), tone: "blue" },
-  ] : [];
-
-  const scorecard = isDemoSession ? [
-    { label: L("Narrative Health", "Kesehatan Narasi"), value: 74, delta: "+3", lowerIsBetter: false, tone: "green" as Tone },
-    { label: L("Reputation Score", "Skor Reputasi"), value: 81, delta: "-1", lowerIsBetter: false, tone: "blue" as Tone },
-    { label: L("Risk Level", "Tingkat Risiko"), value: 27, delta: "+5", lowerIsBetter: true, tone: "red" as Tone },
-    { label: L("Narrative Momentum", "Momentum Narasi"), value: 69, delta: "+8", lowerIsBetter: false, tone: "green" as Tone },
-    { label: L("Share of Narrative", "Pangsa Narasi"), value: "34%", delta: "+2pp", lowerIsBetter: false, tone: "blue" as Tone },
-    { label: L("AI Visibility", "Visibilitas AI"), value: 72, delta: "+6", lowerIsBetter: false, tone: "purple" as Tone },
-  ] : [];
-
-  const competitors = isDemoSession ? [
-    { name: "Bank Central Asia (BCA)", shareOfVoice: 38, sentiment: "green" as Tone, momentum: "+8%", aiVisibility: 74 },
-    { name: "Bank Mandiri", shareOfVoice: 31, sentiment: "green" as Tone, momentum: "+5%", aiVisibility: 69 },
-    { name: "Bank Rakyat Indonesia (BRI)", shareOfVoice: 21, sentiment: "slate" as Tone, momentum: "-2%", aiVisibility: 62 },
-    { name: "Bank Negara Indonesia (BNI)", shareOfVoice: 10, sentiment: "slate" as Tone, momentum: "+1%", aiVisibility: 55 },
-  ] : [];
-
-  const recommendedActions = isDemoSession ? [
-    { id: "a1", priority: "Immediate" as const, text: L("Monitor spike in negative service quality mentions on Reddit — consider response strategy", "Pantau lonjakan penyebutan negatif soal kualitas layanan di Reddit — siapkan strategi respons"), href: "/signals" },
-    { id: "a2", priority: "High" as const, text: L("Investigate sudden drop in positive sentiment (-8%) over the past 24 hours", "Selidiki penurunan mendadak sentimen positif (-8%) dalam 24 jam terakhir"), href: "/signals" },
-    { id: "a3", priority: "High" as const, text: L("Review AI-generated content citing competitor comparison — assess opportunity", "Tinjau konten AI yang membandingkan dengan kompetitor — nilai peluangnya"), href: "/visibility" },
-    { id: "a4", priority: "Medium" as const, text: L("Prepare response to emerging \"app performance\" topic before it gains traction", "Siapkan respons untuk topik \"performa aplikasi\" yang mulai muncul sebelum meluas"), href: "/intelligence" },
-    { id: "a5", priority: "Low" as const, text: L("Capitalize on positive loyalty program momentum with follow-up content", "Manfaatkan momentum positif program loyalitas dengan konten lanjutan"), href: "/reports" },
-  ] : [];
-
-  const aiPlatforms = isDemoSession ? [
-    { name: "ChatGPT", score: 72, change: "+6", tone: "green" as Tone },
-    { name: "Gemini", score: 61, change: "+3", tone: "blue" as Tone },
-    { name: "Perplexity", score: 58, change: "-2", tone: "red" as Tone },
-  ] : [];
-
-  const narratives: Array<{ id: string; title: string; status: "active"; sentiment: Tone; volume: string; growth: string | null }> =
-    (summary?.top_topics && summary.top_topics.length > 0)
-      ? summary.top_topics.map((t, i) => ({
-          id: `topic-${i}`,
-          title: text(t.name, language),
-          status: "active" as const,
-          sentiment: (t.tone === "positive" ? "green" : t.tone === "negative" ? "red" : t.tone === "mixed" ? "amber" : "blue") as Tone,
-          volume: t.mentions,
-          // No historical snapshots yet: show nothing rather than an invented +0%.
-          growth: t.delta ?? null,
-        }))
-      : [];
-
-  const priorityBadgeClass: Record<string, string> = {
-    Immediate: "bg-red-50 text-red-700 border-red-200",
-    High: "bg-amber-50 text-amber-700 border-amber-200",
-    Medium: "bg-blue-50 text-blue-600 border-blue-200",
-    Low: "bg-slate-50 text-[#5A6478] border-slate-200",
-  };
-
-  // Demo sessions read the real demo workspace summary; the sections built from
-  // sample values below are labelled "Illustrative" so they are never read as
-  // measurements of this workspace.
-  const illustrativeNote = L("Illustrative example, not measured from this workspace", "Contoh ilustratif, bukan hasil pengukuran workspace ini");
+  const liveError = !isDemoSession && summaryQuery.isError ? (summaryQuery.error as { status?: number } | null) : null;
+  const neverCollected = !isDemoSession && pipelineQuery.isSuccess && !lastDataAt && total === 0;
+  const dateStr = new Date().toLocaleDateString(intlLocale(), { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
   return (
-    <div className="space-y-8 pb-6">
-      {isDemoSession && (
-        <DemoBanner />
-      )}
-      {/* ── 1. Executive Summary Bar ──────────────────────────────────────── */}
-      <div className="flex flex-col gap-3 rounded-[14px] border border-slate-100 bg-white p-4 shadow-[0_14px_38px_rgba(16,24,40,0.04)]">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#465FFF]/10 text-[#3B52F5]">
-              <Sparkles size={18} />
-            </span>
-            <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">
-              {tOverview("pageTitle")}
-            </h1>
-          </div>
-          <span className="text-[13px] font-semibold text-[#5A6478]">{dateStr}</span>
-        </div>
-        <p className="text-[13px] font-medium leading-relaxed text-[#5A6478]">
-          {summary?.kpis
-              ? tOverview("headerLine", { total: formatNumber(summary.kpis.total_signals), analyzed: formatNumber(summary.kpis.analyzed_signals), negative: formatPercent(summary.kpis.negative_percentage) })
-              : dashboardQuery.isLoading ? tOverview("headerLoading") : tOverview("headerUnavailable")}
-        </p>
-      </div>
+    <div className="space-y-5 pb-6">
+      {isDemoSession ? <DemoBanner /> : null}
 
-      {liveErrorKind && (
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-[28px] font-black leading-tight tracking-[-0.02em] text-[#101334]">{L("Overview", "Ringkasan")}</h1>
+          <p className="mt-1 text-[13px] font-medium text-[#5A6478]">
+            {dateStr}
+            {lastDataAt ? <> · {L("data last collected", "data terakhir masuk")} <b className="font-black text-[#101334]">{timeAgo(lastDataAt)}</b></> : null}
+          </p>
+        </div>
+        <div role="group" aria-label={L("Period", "Periode")} className="flex rounded-[10px] border border-[#DDE3EF] bg-white p-1">
+          {(["24h", "7d", "30d"] as DateRangeKey[]).map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setPeriod(key)}
+              aria-pressed={period === key}
+              className={cn("rounded-[7px] px-3.5 py-1.5 text-[12px] font-black transition", period === key ? "bg-[#465FFF] text-white" : "text-[#5A6478] hover:text-[#101334]")}
+            >
+              {{ "24h": L("24 hours", "24 jam"), "7d": L("7 days", "7 hari"), "30d": L("30 days", "30 hari") }[key]}
+            </button>
+          ))}
+        </div>
+      </header>
+
+      {liveError ? (
         <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-red-200 bg-red-50 px-4 py-3 text-[12px] font-semibold text-red-700">
           <span>
-            {liveErrorKind === "auth"
-              ? "Your session has expired. Sign in again to load live data."
-              : liveErrorKind === "forbidden"
-                ? "You don't have access to this workspace's data."
-                : isStaleData
-                  ? `Latest refresh failed. Showing data from ${new Date(dashboardQuery.dataUpdatedAt).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}.`
-                  : "Live data could not be loaded. No estimates are shown in its place."}
+            {liveError.status === 401
+              ? L("Your session has expired. Sign in again to load the data.", "Sesi Anda berakhir. Masuk lagi untuk memuat data.")
+              : liveError.status === 403
+                ? L("You don't have access to this workspace's data.", "Anda tidak punya akses ke data workspace ini.")
+                : L("The data could not be loaded. No estimates are shown in its place.", "Data gagal dimuat. Tidak ada angka perkiraan yang ditampilkan sebagai gantinya.")}
           </span>
-          {liveErrorKind === "server" && (
-            <button type="button" onClick={() => void dashboardQuery.refetch()} className="rounded-[6px] border border-red-200 bg-white px-2.5 py-1 text-[11px] font-bold text-red-700 hover:bg-red-100">
-              Retry
-            </button>
-          )}
+          <button type="button" onClick={() => void summaryQuery.refetch()} className="rounded-[6px] border border-red-200 bg-white px-2.5 py-1 text-[11px] font-bold text-red-700 hover:bg-red-100">
+            {L("Retry", "Coba lagi")}
+          </button>
         </div>
-      )}
-      {isEmptyDashboard && !liveErrorKind && (
-        // A new workspace has no data yet: say what is needed rather than show empty intelligence.
-        <section aria-labelledby="setup-title" className="rounded-[14px] border border-[#DDE3EF] bg-white p-5">
-          <h2 id="setup-title" className="text-[16px] font-bold text-[#101334]">{L("Set up monitoring for this workspace", "Siapkan pemantauan untuk workspace ini")}</h2>
-          <p className="mt-1 text-[13px] text-[#5A6478]">{L("No records have been collected in this period yet, so there is nothing to summarise.", "Belum ada data yang terkumpul pada periode ini, jadi belum ada yang dapat diringkas.")}</p>
-          <ol className="mt-4 grid gap-3 sm:grid-cols-3">
+      ) : null}
+
+      {neverCollected ? (
+        // A new workspace has no data yet: say what is needed instead of showing empty panels.
+        <Card title={L("Set up monitoring for this workspace", "Siapkan pemantauan untuk workspace ini")} subtitle={L("Nothing has been collected yet, so there is nothing to summarise.", "Belum ada data yang terkumpul, jadi belum ada yang bisa diringkas.")}>
+          <ol className="grid gap-3 sm:grid-cols-3">
             {[
               { n: 1, title: L("Add monitoring keywords", "Tambah kata kunci pemantauan"), body: L("Company, brand, product or executive names to follow.", "Nama perusahaan, brand, produk, atau eksekutif yang ingin dipantau."), href: "/workspace/settings#keywords", cta: L("Open keywords", "Buka kata kunci") },
-              { n: 2, title: L("Collect the first data", "Kumpulkan data pertama"), body: L("Owners and admins can run monitoring now; after that it runs automatically once a day (07:00 WIB).", "Pemilik dan admin bisa menjalankan pemantauan sekarang; setelah itu berjalan otomatis sekali sehari (07.00 WIB)."), href: "/workspace/settings#keywords", cta: L("Run monitoring", "Jalankan pemantauan") },
-              { n: 3, title: L("Review records and issues", "Tinjau data dan isu"), body: L("Sentiment, issues and warnings appear once articles are analysed.", "Sentimen, isu, dan peringatan muncul setelah artikel dianalisis."), href: "/signals", cta: L("Open Monitoring", "Buka Pemantauan") },
+              { n: 2, title: L("Collect the first data", "Kumpulkan data pertama"), body: L("Run monitoring now; after that it runs every day at 07:00 WIB.", "Jalankan pemantauan sekarang; setelah itu berjalan otomatis setiap hari pukul 07.00 WIB."), href: "/workspace/settings#keywords", cta: L("Run monitoring", "Jalankan pemantauan") },
+              { n: 3, title: L("Review sentiment and issues", "Tinjau sentimen dan isu"), body: L("They appear here once articles are analysed.", "Akan muncul di sini setelah artikel dianalisis."), href: "/signals", cta: L("Open Monitoring", "Buka Pemantauan") },
             ].map((step) => (
               <li key={step.n} className="rounded-[10px] border border-slate-100 bg-[#FBFCFF] p-3">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[#5A6478]">{L("Step", "Langkah")} {step.n}</p>
@@ -465,326 +214,151 @@ export default function DashboardPage() {
               </li>
             ))}
           </ol>
-        </section>
-      )}
-
-      {/* ── 1a. Executive briefing: happening, why it matters, changes, next steps */}
-      {!isEmptyDashboard ? <ExecutiveOverview /> : null}
-
-      <div className="border-t border-[#E8ECF5] pt-6">
-        <h2 className="text-[16px] font-bold text-[#101334]">{tOverview("detailHeading")}</h2>
-        <p className="mt-0.5 text-[12px] text-[#5A6478]">{tOverview("detailDesc")}</p>
-      </div>
-
-      {/* ── 1b. Real intelligence strip from backend ───────────────────────── */}
-      <TodaysIntelligenceStrip />
-
-      {/* ── 1c. Signal volume and sentiment share (dashboard summary for the selected period) */}
-      {summary?.kpis ? (
-        <SignalSentimentPanel
-          kpis={summary.kpis}
-          labels={{
-            totalSignals: t("metrics.totalSignals"),
-            analyzedSignals: t("metrics.analyzedSignals"),
-            positive: t("metrics.positiveSent"),
-            negative: t("metrics.negativeSent"),
-            neutral: t("metrics.neutralSent"),
-            mixed: t("metrics.mixedSent"),
-          }}
-        />
-      ) : null}
-
-      {/* ── 2. Top Developments ───────────────────────────────────────────── */}
-      <div>
-        <h2 className="mb-3 text-[13px] font-black uppercase tracking-[0.1em] text-[#5A6478]">{L("Top Developments", "Perkembangan Utama")}{isDemoSession ? <span className="ml-2 rounded-[6px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-1.5 py-0.5 align-middle text-[10px] font-black uppercase tracking-wider text-[#6E44E8]">{L("Illustrative", "Ilustratif")}</span> : null}</h2>
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-          {developments.length === 0 && <div className="w-full"><EmptyPanel compact label={L("Top developments appear once live risk and opportunity tracking has enough data.", "Perkembangan utama muncul setelah pelacakan risiko dan peluang punya cukup data.")} /></div>}
-          {developments.map((d) => {
-            const Icon = d.icon;
-            const toneStyle = toneMap[d.tone] ?? toneMap.purple;
-            return (
-              <div key={d.id} className="flex min-w-[220px] flex-1 basis-0 flex-col gap-2.5 rounded-[10px] border border-slate-100 bg-white p-4 shadow-sm transition hover:border-slate-200 hover:shadow-md">
-                <div className="flex items-start justify-between gap-2">
-                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] ${toneStyle.bg} ${toneStyle.text}`}>
-                    <Icon size={15} />
-                  </span>
-                  <span className="rounded-[6px] border border-slate-100 bg-slate-50 px-2 py-0.5 text-[10px] font-bold text-[#5A6478]">{d.category}</span>
-                </div>
-                <p className="text-[12px] font-bold leading-snug text-slate-800">{d.title}</p>
-                <span className={`text-[13px] font-black tabular-nums ${toneStyle.text}`}>{d.change}</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── 3. Intelligence Scorecard ─────────────────────────────────────── */}
-      {isDemoSession && scorecard.length > 0 ? (
-        <p className="-mb-5 text-[12px] font-semibold text-[#5A6478]">{L("Scorecard", "Kartu Skor")}{<span className="ml-2 rounded-[6px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-1.5 py-0.5 align-middle text-[10px] font-black uppercase tracking-wider text-[#6E44E8]">{L("Illustrative", "Ilustratif")}</span>}</p>
-      ) : null}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-        {scorecard.length === 0 && <div className="col-span-full"><EmptyPanel compact label={L("Intelligence scores are not yet computed for live workspaces.", "Skor intelijen belum dihitung untuk workspace live.")} /></div>}
-        {scorecard.map((s) => {
-          const isPositive = s.lowerIsBetter ? s.delta.startsWith("-") || s.delta === "0" : !s.delta.startsWith("-");
-          const trendColor = isPositive ? "text-[#047857]" : "text-[#C81E1E]";
-          const scoreStyle = toneMap[s.tone] ?? toneMap.purple;
-          return (
-            <AppCard key={s.label}>
-              <CardContent className="flex flex-col gap-1 p-4">
-                <p className="text-[11px] font-bold text-[#5A6478]">{s.label}</p>
-                <p className={`text-[26px] font-black tracking-[-0.03em] tabular-nums ${scoreStyle.text}`}>{s.value}</p>
-                <p className={`text-[12px] font-bold tabular-nums ${trendColor}`}>
-                  {s.delta}
-                </p>
-              </CardContent>
-            </AppCard>
-          );
-        })}
-      </div>
-
-      {/* ── 4. Two-column layout ──────────────────────────────────────────── */}
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-
-        {/* Left column: Top Narratives + Competitor Snapshot */}
-        <div className="flex flex-col gap-6">
-          {/* Today's Top Narratives */}
-          <AppCard>
-            <CardContent className="p-5">
-              <SectionHeader
-                title={L("Today's Top Narratives", "Narasi Teratas Hari Ini")}
-                description={L("Most active narrative clusters in the last 24 hours", "Kluster narasi paling aktif dalam 24 jam terakhir")}
-                action={
-                  <Link href="/intelligence" className="flex items-center gap-1 text-[11px] font-bold text-[#3B52F5] transition-all hover:text-[#6E44E8] hover:underline">
-                    {L("View all", "Lihat semua")} <ArrowRight size={12} />
-                  </Link>
-                }
-              />
-              <div className="mt-3 space-y-2.5">
-                {narratives.slice(0, 5).map((n) => {
-                  const sentimentColor = toneMap[n.sentiment] ?? toneMap.slate;
-                  return (
-                    <div key={n.id} className="flex items-center gap-3 rounded-[8px] border border-slate-100 bg-white px-4 py-3 transition hover:border-[#465FFF]/20 hover:bg-[#465FFF]/2">
-                      <span className={`h-2 w-2 shrink-0 rounded-full ${sentimentColor.soft}`} />
-                      <p className="flex-1 text-[13px] font-bold text-slate-800 truncate">{n.title}</p>
-                      <span className="hidden text-[11px] font-semibold text-[#5A6478] sm:block">{n.volume}</span>
-                      {n.growth ? <span className="rounded-[6px] bg-slate-50 px-2 py-0.5 text-[11px] font-bold text-slate-600">{n.growth}</span> : null}
-                    </div>
-                  );
-                })}
-                {narratives.length === 0 && (
-                  <EmptyPanel label={t("pages.command.emptyTopics")} />
-                )}
-              </div>
-            </CardContent>
-          </AppCard>
-
-          {/* Competitor Snapshot */}
-          <AppCard>
-            <CardContent className="p-5">
-              <SectionHeader
-                title={L("Competitor Snapshot", "Gambaran Pesaing")}
-                description={isDemoSession ? illustrativeNote : L("Share of voice and sentiment vs. key competitors", "Porsi percakapan dan sentimen dibanding pesaing utama")}
-                action={
-                  <Link href="/visibility" className="flex items-center gap-1 text-[11px] font-bold text-[#3B52F5] transition-all hover:text-[#6E44E8] hover:underline">
-                    {L("View all", "Lihat semua")} <ArrowRight size={12} />
-                  </Link>
-                }
-              />
-              {competitors.length === 0 ? (
-                <div className="mt-3"><EmptyPanel label={L("Competitor tracking is not configured for this workspace yet.", "Pelacakan pesaing belum diatur untuk workspace ini.")} /></div>
+        </Card>
+      ) : (
+        <>
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+            {/* 1. Sentiment */}
+            <Card
+              title={L("Sentiment", "Sentimen")}
+              subtitle={L(`Analysed records from ${periodLabel}`, `Data yang sudah dianalisis, ${periodLabel}`)}
+              action={<Link href="/signals" className="shrink-0 text-[12px] font-black text-[#3B52F5] hover:underline">{L("All signals", "Semua sinyal")}</Link>}
+            >
+              {summaryQuery.isLoading ? (
+                <div className="space-y-3">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
+              ) : total === 0 ? (
+                <EmptyNote>
+                  {L(`No new records in ${periodLabel}.`, `Belum ada data baru dalam ${periodLabel}.`)}
+                  {lastDataAt ? ` ${L("Data last collected", "Data terakhir masuk")} ${timeAgo(lastDataAt)}.` : ""}
+                  {period !== "30d" ? <> <button type="button" onClick={() => setPeriod("30d")} className="font-black text-[#3B52F5] hover:underline">{L("Show 30 days", "Lihat 30 hari")}</button></> : null}
+                </EmptyNote>
               ) : (
-              <div className="mt-3 overflow-x-auto rounded-[8px] border border-slate-100" tabIndex={0} role="region" aria-label={L("Competitor snapshot", "Gambaran pesaing")}>
-                <table className="w-full min-w-[460px] text-[12px]">
+                <>
+                  <div className="mb-4 grid grid-cols-3 gap-3">
+                    <div className="rounded-[10px] bg-[#F8FAFF] p-3">
+                      <p className="text-[11px] font-bold text-[#5A6478]">{L("Total records", "Total data")}</p>
+                      <p className="mt-1 text-[24px] font-black tabular-nums leading-none text-[#101334]">{total.toLocaleString(intlLocale())}</p>
+                    </div>
+                    <div className="rounded-[10px] bg-[#F8FAFF] p-3">
+                      <p className="text-[11px] font-bold text-[#5A6478]">{L("Analysed", "Dianalisis")}</p>
+                      <p className="mt-1 text-[24px] font-black tabular-nums leading-none text-[#101334]">{analysed.toLocaleString(intlLocale())}</p>
+                    </div>
+                    <div className={cn("rounded-[10px] p-3", negativeShare >= 30 ? "bg-[#FDECEC]" : "bg-[#F8FAFF]")}>
+                      <p className="text-[11px] font-bold text-[#5A6478]">{L("Negative share", "Porsi negatif")}</p>
+                      <p className={cn("mt-1 text-[24px] font-black tabular-nums leading-none", negativeShare >= 30 ? "text-[#B42318]" : "text-[#101334]")}>{analysed > 0 ? `${negativeShare.toFixed(0)}%` : "—"}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <SentimentBar label={L("Positive", "Positif")} count={dist.positive} share={share(dist.positive)} color="#10B981" />
+                    <SentimentBar label={L("Neutral", "Netral")} count={dist.neutral} share={share(dist.neutral)} color="#94A3B8" />
+                    <SentimentBar label={L("Mixed", "Campuran")} count={dist.mixed} share={share(dist.mixed)} color="#F59E0B" />
+                    <SentimentBar label={L("Negative", "Negatif")} count={dist.negative} share={share(dist.negative)} color="#EF4444" />
+                  </div>
+                  {unanalysed > 0 ? (
+                    <p className="mt-3 text-[11px] font-semibold text-[#5A6478]">
+                      {L(`${unanalysed.toLocaleString("en-US")} record(s) not analysed yet are not counted in the bars.`, `${unanalysed.toLocaleString("id-ID")} data belum dianalisis dan tidak dihitung di batang di atas.`)}
+                    </p>
+                  ) : null}
+                  {summary?.sentiment_trend?.some((d) => d.total > 0) ? (
+                    <div className="mt-5 border-t border-[#EEF1F7] pt-4">
+                      <p className="mb-2 text-[12px] font-black text-[#101334]">{L("Last 7 days, per day", "7 hari terakhir, per hari")}</p>
+                      <SentimentTrendChart
+                        days={summary.sentiment_trend}
+                        locale={intlLocale()}
+                        labels={{ positive: L("Positive", "Positif"), neutral: L("Neutral", "Netral"), negative: L("Negative", "Negatif"), mixed: L("Mixed", "Campuran"), unanalyzed: L("Not analysed", "Belum dianalisis"), noSignals: L("No records", "Tidak ada data") }}
+                      />
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </Card>
+
+            {/* 2. What to do now */}
+            <Card
+              title={L("What to do now", "Yang harus dilakukan")}
+              subtitle={L("Open alerts first, then Narriv's suggestions. Nothing is sent automatically.", "Peringatan terbuka dulu, lalu saran Narriv. Tidak ada yang dijalankan otomatis.")}
+              action={<Link href="/alerts" className="shrink-0 text-[12px] font-black text-[#3B52F5] hover:underline">{L(`${openAlertTotal} open alerts`, `${openAlertTotal} peringatan terbuka`)}</Link>}
+            >
+              {alertsQuery.isLoading || recsQuery.isLoading ? (
+                <div className="space-y-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
+              ) : openAlerts.length === 0 && recommendations.length === 0 ? (
+                <EmptyNote>{L("Nothing needs attention right now. Narriv keeps monitoring.", "Tidak ada yang perlu ditindaklanjuti saat ini. Narriv tetap memantau.")}</EmptyNote>
+              ) : (
+                <ol className="space-y-2.5">
+                  {openAlerts.map((alert: Alert) => (
+                    <li key={alert.id}>
+                      <Link href={`/alerts/${alert.id}`} className="block rounded-[10px] border border-[#EEF1F7] p-3 transition hover:border-[#465FFF]/40 hover:bg-[#FBFCFF]">
+                        <div className="flex items-center gap-2">
+                          <span className={cn("rounded-[5px] px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wide", levelTone(alert.severity ?? "low"))}>{tLevel(`level.${["critical", "high", "medium", "low"].includes(alert.severity ?? "") ? alert.severity : "low"}`)}</span>
+                          <span className="text-[10px] font-bold text-[#5A6478]">{L("Alert", "Peringatan")} · {timeAgo(alertTime(alert))}</span>
+                        </div>
+                        <p className="mt-1.5 text-[13px] font-black leading-snug text-[#101334]">{alert.title}</p>
+                        {alertAdvice(alert) ? <p className="mt-1 line-clamp-2 text-[12px] font-medium text-[#53608C]">{alertAdvice(alert)}</p> : null}
+                      </Link>
+                    </li>
+                  ))}
+                  {recommendations.map((rec: IntelligenceRecommendation, index) => (
+                    <li key={`${rec.action}-${index}`}>
+                      <Link href="/action-center" className="block rounded-[10px] border border-[#EEF1F7] p-3 transition hover:border-[#465FFF]/40 hover:bg-[#FBFCFF]">
+                        <div className="flex items-center gap-2">
+                          <span className={cn("rounded-[5px] px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wide", levelTone(rec.priority))}>{tLevel(`level.${rec.priority}`)}</span>
+                          <span className="text-[10px] font-bold text-[#5A6478]">{L("Suggestion", "Saran")} · {codes.urgency(rec.urgency)}</span>
+                        </div>
+                        <p className="mt-1.5 text-[13px] font-black leading-snug text-[#101334]">{codes.action(rec.action)}</p>
+                        <p className="mt-1 line-clamp-2 text-[12px] font-medium text-[#53608C]">{rec.observedIssue ? `${rec.observedIssue} ` : ""}{rec.reason}</p>
+                      </Link>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </Card>
+          </div>
+
+          {/* 3. Hottest issues */}
+          <Card
+            title={L("Hottest issues", "Isu paling panas")}
+            subtitle={L(`Narratives with the most records in ${periodLabel}`, `Narasi dengan data terbanyak, ${periodLabel}`)}
+            action={<Link href="/intelligence" className="shrink-0 text-[12px] font-black text-[#3B52F5] hover:underline">{L("All issues", "Semua isu")}</Link>}
+          >
+            {issuesQuery.isLoading ? (
+              <div className="space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+            ) : issues.length === 0 ? (
+              <EmptyNote>{L(`No issues have formed in ${periodLabel} yet.`, `Belum ada isu yang terbentuk dalam ${periodLabel}.`)}</EmptyNote>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[560px] text-left">
                   <thead>
-                    <tr className="border-b border-slate-100 bg-slate-50">
-                      <th className="px-3 py-2 text-left font-bold text-[#5A6478]">{L("Competitor", "Pesaing")}</th>
-                      <th className="px-3 py-2 text-right font-bold text-[#5A6478]">{L("Voice Share", "Porsi Percakapan")}</th>
-                      <th className="px-3 py-2 text-center font-bold text-[#5A6478]">{L("Sentiment", "Sentimen")}</th>
-                      <th className="px-3 py-2 text-right font-bold text-[#5A6478]">{L("Momentum", "Momentum")}</th>
-                      <th className="px-3 py-2 text-right font-bold text-[#5A6478]">{L("AI Visibility", "Visibilitas AI")}</th>
+                    <tr className="border-b border-[#EEF1F7] text-[10px] font-black uppercase tracking-[0.08em] text-[#5A6478]">
+                      <th className="w-8 py-2 pr-2">#</th>
+                      <th className="py-2 pr-3">{L("Issue", "Isu")}</th>
+                      <th className="py-2 pr-3 text-right">{L("Records", "Data")}</th>
+                      <th className="py-2 pr-3">{L("Sentiment", "Sentimen")}</th>
+                      <th className="py-2 text-right">{L("Last 24h", "24 jam terakhir")}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {competitors.map((c) => {
-                      const sentStyle = toneMap[c.sentiment] ?? toneMap.slate;
-                      const momentumPositive = c.momentum.startsWith("+");
-                      const sentimentLabel = c.sentiment === "green" ? L("Positive", "Positif") : c.sentiment === "red" ? L("Negative", "Negatif") : c.sentiment === "amber" ? L("Mixed", "Campuran") : L("Neutral", "Netral");
+                    {issues.map((issue: NarrativeRecord, index) => {
+                      const tone = sentimentTone(issue.sentiment);
+                      const velocity = issue.velocity === "new" ? L("new", "baru") : issue.velocity;
                       return (
-                        <tr key={c.name} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
-                          <td className="px-3 py-2.5 font-bold text-slate-800">{c.name}</td>
-                          <td className="px-3 py-2.5 text-right font-bold tabular-nums text-slate-700">{c.shareOfVoice}%</td>
-                          <td className="px-3 py-2.5 text-center">
-                            <span className={`inline-flex h-5 items-center gap-1 rounded-[6px] px-1.5 text-[10px] font-bold ${sentStyle.bg} ${sentStyle.text}`}>
-                              <span className={`h-1.5 w-1.5 rounded-full ${sentStyle.soft}`} />
-                              {sentimentLabel}
-                            </span>
+                        <tr key={issue.id} className="border-b border-[#F3F5FA] last:border-0">
+                          <td className="py-3 pr-2 text-[13px] font-black text-[#5A6478]">{index + 1}</td>
+                          <td className="py-3 pr-3">
+                            <Link href={`/intelligence?narrative=${issue.id}`} className="text-[13px] font-black text-[#101334] hover:text-[#3B52F5]">{issue.title}</Link>
                           </td>
-                          <td className={`px-3 py-2.5 text-right font-bold tabular-nums ${momentumPositive ? "text-[#047857]" : "text-[#C81E1E]"}`}>{c.momentum}</td>
-                          <td className="px-3 py-2.5 text-right font-bold tabular-nums text-slate-700">{c.aiVisibility}</td>
+                          <td className="py-3 pr-3 text-right text-[13px] font-black tabular-nums text-[#101334]">{issue.signalCount.toLocaleString(intlLocale())}</td>
+                          <td className="py-3 pr-3"><span className={cn("rounded-full px-2 py-0.5 text-[10px] font-black", tone.cls)}>{L(tone.en, tone.id)}</span></td>
+                          <td className={cn("py-3 text-right text-[12px] font-black tabular-nums", velocity.startsWith("+") ? "text-[#B42318]" : "text-[#5A6478]")}>{velocity}</td>
                         </tr>
                       );
                     })}
                   </tbody>
                 </table>
               </div>
-              )}
-            </CardContent>
-          </AppCard>
-        </div>
-
-        {/* Right column: Actions + AI Visibility + Data Status */}
-        <div className="flex flex-col gap-6">
-          {/* Recommended Actions */}
-          <AppCard>
-            <CardContent className="p-5">
-              <SectionHeader
-                title={L("Recommended Actions", "Rekomendasi Tindakan")}
-                description={isDemoSession ? illustrativeNote : L("Prioritized response items for today", "Prioritas respons untuk hari ini")}
-                action={
-                  <Link href="/action-plans" className="flex items-center gap-1 text-[11px] font-bold text-[#3B52F5] transition-all hover:text-[#6E44E8] hover:underline">
-                    {L("View all", "Lihat semua")} <ArrowRight size={12} />
-                  </Link>
-                }
-              />
-              <div className="mt-3 space-y-2.5">
-                {recommendedActions.length === 0 && <EmptyPanel compact label={L("Open Action Plans to review AI-generated responses for live alerts.", "Buka Rencana Tindakan untuk meninjau draf respons AI untuk peringatan aktif.")} />}
-                {recommendedActions.map((a) => (
-                  <div key={a.id} className="flex flex-col gap-2 rounded-[8px] border border-slate-100 bg-white px-4 py-3 transition hover:border-[#465FFF]/20">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className={`rounded-[6px] border px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ${priorityBadgeClass[a.priority]}`}>
-                        {({ Immediate: L("Immediate", "Segera"), High: L("High", "Tinggi"), Medium: L("Medium", "Sedang"), Low: L("Low", "Rendah") } as Record<string, string>)[a.priority]}
-                      </span>
-                      <Link href={a.href} className="flex items-center gap-0.5 text-[10px] font-bold text-[#3B52F5] transition hover:text-[#6E44E8]">
-                        {L("View", "Lihat")} <ChevronRight size={10} />
-                      </Link>
-                    </div>
-                    <p className="text-[12px] font-medium leading-snug text-slate-700">{a.text}</p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </AppCard>
-
-          {/* AI Visibility Changes */}
-          <AppCard>
-            <CardContent className="p-5">
-              <SectionHeader
-                title={L("AI Visibility Changes", "Perubahan Visibilitas AI")}
-                description={isDemoSession ? illustrativeNote : L("Platform visibility scores vs. last week", "Skor visibilitas platform dibanding minggu lalu")}
-                action={
-                  <Link href="/visibility" className="flex items-center gap-1 text-[11px] font-bold text-[#3B52F5] transition-all hover:text-[#6E44E8] hover:underline">
-                    Details <ArrowRight size={12} />
-                  </Link>
-                }
-              />
-              <div className="mt-3 space-y-3">
-                {aiPlatforms.length === 0 && <EmptyPanel compact label={L("Run AI Visibility prompt tests to measure platform scores.", "Jalankan uji prompt Visibilitas AI untuk mengukur skor platform.")} />}
-                {aiPlatforms.map((p) => {
-                  const platformStyle = toneMap[p.tone] ?? toneMap.purple;
-                  const changePositive = !p.change.startsWith("-");
-                  return (
-                    <div key={p.name} className="flex items-center justify-between rounded-[8px] border border-slate-100 bg-white px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] ${platformStyle.bg} ${platformStyle.text}`}>
-                          <Bot size={14} />
-                        </span>
-                        <span className="text-[13px] font-bold text-slate-700">{p.name}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-[15px] font-black tabular-nums text-slate-900">{p.score}</span>
-                        <span className={`text-[11px] font-bold tabular-nums ${changePositive ? "text-[#047857]" : "text-[#C81E1E]"}`}>{p.change}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </AppCard>
-
-          {/* Data Status */}
-          <AppCard>
-            <CardContent className="flex flex-col gap-3 p-5">
-              <SectionHeader title={L("Data Status", "Status Data")} />
-              <div className="space-y-2.5 text-[12px]">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-[#5A6478]">{L("Data", "Data")}</span>
-                  <span className="font-bold text-slate-700">
-                    {isDemoSession ? L("Demo workspace", "Workspace demo") : summary?.kpis ? (summary.kpis.total_signals > 0 ? L("Live monitoring", "Pemantauan aktif") : L("No data yet", "Belum ada data")) : "—"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  {/* When this page last fetched the summary; data freshness is "Last ingestion". */}
-                  <span className="font-semibold text-[#5A6478]">{L("Dashboard refreshed", "Ringkasan dimuat")}</span>
-                  <span className="font-bold text-slate-700">{dashboardQuery.dataUpdatedAt ? new Date(dashboardQuery.dataUpdatedAt).toLocaleTimeString(intlLocale(), { hour: "2-digit", minute: "2-digit" }) : "—"}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-[#5A6478]">{L("Data coverage", "Cakupan sumber")}</span>
-                  <span className="font-bold text-slate-700">
-                    {sourcesData.length > 0
-                      ? `${sourcesData.filter((src) => src.status?.en === "Active").length} / ${sourcesData.length} ${L("sources active", "sumber aktif")}`
-                      : "—"}
-                  </span>
-                </div>
-                {!isDemoSession && pipelineQuery.data ? (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-[#5A6478]">{L("Last ingestion", "Pengambilan terakhir")}</span>
-                      <span className="font-bold text-slate-700">{timeAgo(pipelineQuery.data.ingestion.lastRawDocumentAt)}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-[#5A6478]">{L("Awaiting AI analysis", "Menunggu analisis AI")}</span>
-                      <span className="font-bold text-slate-700">{pipelineQuery.data.analysis.unanalyzedRealSignals ?? "—"} {L("records", "data")}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-[#5A6478]">{L("Alert notifications", "Notifikasi peringatan")}</span>
-                      <span className={`font-bold ${pipelineQuery.data.alerts.activeNotificationIntegrations ? "text-slate-700" : "text-amber-700"}`}>
-                        {pipelineQuery.data.alerts.activeNotificationIntegrations ? `${pipelineQuery.data.alerts.activeNotificationIntegrations} ${L("channel(s)", "kanal")}` : L("Not configured", "Belum diatur")}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-[#5A6478]">{L("AI cost (30 days)", "Biaya AI (30 hari)")}</span>
-                      <span className="font-bold tabular-nums text-slate-700">${pipelineQuery.data.aiUsageLast30d.estimatedCostUsd.toFixed(2)}</span>
-                    </div>
-                  </>
-                ) : null}
-                {!isDemoSession && pipelineQuery.isError ? (
-                  <p className="text-[11px] font-semibold text-amber-700">{L("Pipeline status unavailable.", "Status pipeline belum tersedia.")}</p>
-                ) : null}
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-[#5A6478]">Workspace</span>
-                  <span className={`inline-flex items-center gap-1.5 rounded-[6px] px-2 py-0.5 text-[11px] font-bold ${isDemoSession ? "bg-[#8B5CFF]/10 text-[#6E44E8]" : "bg-[#10B981]/10 text-[#047857]"}`}>
-                    <span className={`h-1.5 w-1.5 rounded-full ${isDemoSession ? "bg-[#8B5CFF]" : "bg-[#10B981]"}`} />
-                    {isDemoSession ? L("Demo Sandbox", "Demo") : L("Live Production", "Produksi")}
-                  </span>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => void dashboardQuery.refetch()}
-                disabled={dashboardQuery.isFetching}
-                className="mt-1 flex h-9 w-full items-center justify-center gap-2 rounded-[8px] border border-slate-200 bg-white text-[12px] font-bold text-slate-600 transition hover:border-[#465FFF]/30 hover:bg-[#465FFF]/5 hover:text-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <RefreshCcw size={13} className={dashboardQuery.isFetching ? "animate-spin" : ""} />
-                {L("Refresh now", "Muat ulang")}
-              </button>
-            </CardContent>
-          </AppCard>
-        </div>
-      </div>
-
-      {/* ── 5. Footer strip ───────────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-slate-100 bg-slate-50 px-5 py-3 text-[12px] font-semibold text-[#5A6478]">
-        <span>{L("Last refresh", "Terakhir dimuat")}: {today.toLocaleTimeString(intlLocale(), { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</span>
-        <div className="flex items-center gap-3">
-          {isDemoSession && (
-            <span className="rounded-[6px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#6E44E8]">
-              {L("Demo Sandbox", "Demo")}
-            </span>
-          )}
-          <span>Narriv Intelligence Platform</span>
-        </div>
-      </div>
+            )}
+          </Card>
+        </>
+      )}
     </div>
   );
 }
-
