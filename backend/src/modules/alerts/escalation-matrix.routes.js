@@ -10,6 +10,37 @@ import { wrapAsync } from "../../lib/sentry.js";
 const router = express.Router();
 router.use(verifyToken);
 
+// Production escalation_matrices: id, workspace_id, level, sla_minutes, is_active, sort_order, created_at, updated_at.
+// role_name arrives with migration 029; until it is applied, writes retry without it and reads fall back to the
+// default role for the level, so the matrix keeps working (role names just are not saved yet).
+const DEFAULT_ROLES = { L1: "Team Lead", L2: "Department Head", L3: "Executive Team", L4: "Executive Team", L5: "Executive Team" };
+
+function missingRoleColumn(error) {
+    return /role_name/.test(String(error?.message || ""));
+}
+
+export function toEscalationRecord(row) {
+    return {
+        id: row.id,
+        workspaceId: row.workspace_id,
+        level: row.level,
+        roleName: row.role_name || DEFAULT_ROLES[row.level] || row.level,
+        slaMinutes: row.sla_minutes,
+        isActive: row.is_active !== false,
+        order: row.sort_order ?? 0,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+    };
+}
+
+/** Run a write whose payload may carry role_name; retry without it when the column does not exist yet. */
+async function writeWithRole(payload, run) {
+    const first = await run(payload);
+    if (!first.error || !missingRoleColumn(first.error) || !("role_name" in payload)) return first;
+    const { role_name: _omit, ...rest } = payload;
+    return run(rest);
+}
+
 const escalationLevelSchema = z.object({
     level: z.string().trim().min(1, "level is required").max(10),
     roleName: z.string().trim().min(1, "roleName is required").max(100),
@@ -45,7 +76,7 @@ router.get("/escalation-matrix", async (req, res) => {
             return res.status(500).json({ error: "Internal server error" });
         }
 
-        return res.json({ data: levels });
+        return res.json({ data: (levels || []).map(toEscalationRecord) });
     } catch (error) {
         logStructured("error", "Error fetching escalation matrix:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
@@ -69,7 +100,7 @@ router.post("/escalation-matrix", validateRequest({ body: z.object({ levels: z.a
             .from('escalation_matrices')
             .delete()
             .eq('workspace_id', scopedWorkspaceId)
-            .not('level', 'in', `(${incomingLevels.map(l => `'${l}'`).join(',')})`);
+            .not('level', 'in', `(${incomingLevels.map(l => `"${l.replace(/"/g, "")}"`).join(',')})`);
 
         if (deleteError) {
             logStructured("error", "Error deleting old escalation levels:", { error: deleteError?.message || deleteError });
@@ -88,44 +119,43 @@ router.post("/escalation-matrix", validateRequest({ body: z.object({ levels: z.a
 
             if (existing) {
                 // Update existing
-                const { data: updated, error: updateError } = await supabase
+                const { data: updated, error: updateError } = await writeWithRole({
+                    role_name: level.roleName,
+                    sla_minutes: level.slaMinutes,
+                    is_active: level.isActive,
+                    sort_order: level.order,
+                    updated_at: new Date().toISOString(),
+                }, (values) => supabase
                     .from('escalation_matrices')
-                    .update({
-                        role_name: level.roleName,
-                        sla_minutes: level.slaMinutes,
-                        is_active: level.isActive,
-                        order: level.order,
-                    })
+                    .update(values)
                     .eq('workspace_id', scopedWorkspaceId)
                     .eq('level', level.level)
                     .select()
-                    .single();
+                    .single());
 
-                if (!updateError && updated) {
-                    results.push(updated);
-                }
+                if (updateError) throw updateError;
+                results.push(updated);
             } else {
                 // Insert new
-                const { data: created, error: insertError } = await supabase
+                const { data: created, error: insertError } = await writeWithRole({
+                    workspace_id: scopedWorkspaceId,
+                    level: level.level,
+                    role_name: level.roleName,
+                    sla_minutes: level.slaMinutes,
+                    is_active: level.isActive,
+                    sort_order: level.order,
+                }, (values) => supabase
                     .from('escalation_matrices')
-                    .insert({
-                        workspace_id: scopedWorkspaceId,
-                        level: level.level,
-                        role_name: level.roleName,
-                        sla_minutes: level.slaMinutes,
-                        is_active: level.isActive,
-                        order: level.order,
-                    })
+                    .insert(values)
                     .select()
-                    .single();
+                    .single());
 
-                if (!insertError && created) {
-                    results.push(created);
-                }
+                if (insertError) throw insertError;
+                results.push(created);
             }
         }
 
-        return res.json({ data: results });
+        return res.json({ data: results.map(toEscalationRecord) });
     } catch (error) {
         logStructured("error", "Error updating escalation matrix:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
@@ -161,22 +191,23 @@ router.patch("/escalation-matrix/:level", validateRequest({
         if (roleName !== undefined) updateData.role_name = roleName;
         if (slaMinutes !== undefined) updateData.sla_minutes = slaMinutes;
         if (isActive !== undefined) updateData.is_active = isActive;
-        if (order !== undefined) updateData.order = order;
+        if (order !== undefined) updateData.sort_order = order;
+        updateData.updated_at = new Date().toISOString();
 
-        const { data: updated, error: updateError } = await supabase
+        const { data: updated, error: updateError } = await writeWithRole(updateData, (values) => supabase
             .from('escalation_matrices')
-            .update(updateData)
+            .update(values)
             .eq('workspace_id', scopedWorkspaceId)
             .eq('level', level)
             .select()
-            .single();
+            .single());
 
         if (updateError) {
             logStructured("error", "Error updating escalation level:", { error: updateError?.message || updateError, stack: updateError?.stack });
             return res.status(500).json({ error: "Internal server error" });
         }
 
-        return res.json(updated);
+        return res.json(toEscalationRecord(updated));
     } catch (error) {
         logStructured("error", "Error updating escalation level:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });

@@ -5,6 +5,7 @@ import {
     createWorkspaceMember,
     deleteWorkspace,
     deleteWorkspaceMember,
+    setMonitoringPaused,
     getWorkspaceSettings,
     listWorkspaceMembers,
     updateWorkspaceSettings
@@ -13,6 +14,7 @@ import {
     createWorkspaceMemberBodySchema,
     deleteWorkspaceBodySchema,
     deleteWorkspaceMemberParamsSchema,
+    monitoringPauseBodySchema,
     updateWorkspaceSettingsBodySchema,
     workspaceMembersQuerySchema,
     workspaceSettingsQuerySchema
@@ -36,6 +38,7 @@ router.use(verifyToken);
 
 router.get("/settings", validateRequest({ query: workspaceSettingsQuerySchema }), getWorkspaceSettings);
 router.patch("/settings", validateRequest({ body: updateWorkspaceSettingsBodySchema }), requireWorkspaceRole(MANAGER_ROLES), updateWorkspaceSettings);
+router.post("/monitoring-pause", validateRequest({ body: monitoringPauseBodySchema }), requireWorkspaceRole(MANAGER_ROLES), setMonitoringPaused);
 router.get("/members", validateRequest({ query: workspaceMembersQuerySchema }), listWorkspaceMembers);
 router.post("/members", validateRequest({ body: createWorkspaceMemberBodySchema }), requireWorkspaceRole(MANAGER_ROLES), createWorkspaceMember);
 router.delete(

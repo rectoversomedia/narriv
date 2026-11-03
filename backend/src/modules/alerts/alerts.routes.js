@@ -223,10 +223,10 @@ router.get("/summary", async (req, res) => {
         // Fetch escalation matrices for SLA targets
         const { data: escalationLevels, error: matrixError } = await supabase
             .from('escalation_matrices')
-            .select('sla_minutes, "order"')
+            .select('sla_minutes, sort_order')
             .in('workspace_id', scopedWorkspaceIds)
             .eq('is_active', true)
-            .order('order', { ascending: true });
+            .order('sort_order', { ascending: true });
 
         if (matrixError) {
             logStructured("error", "Error fetching escalation matrices:", { error: matrixError?.message || matrixError, stack: matrixError?.stack });
@@ -476,6 +476,19 @@ router.patch("/:id/assign", validateRequest({ params: assignAlertParamsSchema, b
 
         if (!scopedWorkspaceIds.includes(existing.workspace_id)) {
             return res.status(404).json({ error: "Alert not found" });
+        }
+
+        // assigned_to is a user id; only a member of the alert's workspace can be assigned.
+        if (assignedTo) {
+            const { data: member } = await supabase
+                .from('workspace_members')
+                .select('user_id')
+                .eq('workspace_id', existing.workspace_id)
+                .eq('user_id', assignedTo)
+                .maybeSingle();
+            if (!member) {
+                return res.status(400).json({ error: "assignedTo must be a member of this workspace", code: "INVALID_ASSIGNEE" });
+            }
         }
 
         const { data: updated, error: updateError } = await supabase

@@ -48,6 +48,7 @@ import {
 } from "@ridemountainpig/svgl-react";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
+import { memberName } from "@/lib/member-name";
 import {
   createAlert,
   getAlerts,
@@ -437,7 +438,7 @@ function mapAlertRecordToRow(alert: Alert, ta: ReturnType<typeof useTranslations
     title: alert.title,
     description: alert.whatHappened || alert.whyItMatters || alert.whatToDo || "-",
     tags: [alert.severity || "info"],
-    sourceLabel: alert.assignedTeam || alert.assignedTo || alert.type || ta("table.unassigned"),
+    sourceLabel: alert.assignedTeam || alert.type || ta("table.unassigned"),
     sources: shownSources.length > 0 ? shownSources : ["x"],
     extraSources: Math.max(0, alertSources.length - shownSources.length),
     escalationLevel: alert.escalationLevel || "-",
@@ -1417,10 +1418,10 @@ export default function AlertsPage() {
 
   const members: WorkspaceMemberRecord[] = membersQuery.data ?? [];
   const selectedMember = members.find(
-    (m: WorkspaceMemberRecord) => (m.user?.name || m.user?.email || m.userId) === createAssignedTo
+    (m: WorkspaceMemberRecord) => m.userId === createAssignedTo
   );
   const assignedToHoverTitle = selectedMember
-    ? `${selectedMember.user?.name || selectedMember.user?.email || selectedMember.userId}${
+    ? `${memberName(selectedMember)}${
         selectedMember.role ? ` (${selectedMember.role})` : ""
       }`
     : taCreate("assignedToPlaceholder");
@@ -2002,7 +2003,7 @@ export default function AlertsPage() {
                 {/* ── Assignment & Sources ── */}
                 <div className="rounded-[10px] border border-[#E6EAF2] bg-[#FBFCFF]">
                   <button type="button" onClick={() => setIsCreateAdvancedOpen((open) => !open)} className="flex w-full items-center justify-between px-3.5 py-2.5 text-[11px] font-black text-[#31406B]">
-                    <span className="flex items-center gap-2"><Settings size={13} className="text-[#3B52F5]" />{ta("v2.header.escalationMatrix").replace("Escalation Matrix", "Assignment & Sources").replace("Matriks Eskalasi", "Penugasan & Sumber")}</span>
+                    <span className="flex items-center gap-2"><Settings size={13} className="text-[#3B52F5]" />{taCreate("advancedSection")}</span>
                     <ChevronRight size={14} className={cn("text-[#647099] transition-transform", isCreateAdvancedOpen && "rotate-90")} />
                   </button>
                   {isCreateAdvancedOpen && (
@@ -2019,10 +2020,9 @@ export default function AlertsPage() {
                           >
                             <option value="" title={taCreate("assignedToPlaceholder")}>{taCreate("assignedToPlaceholder")}</option>
                             {(membersQuery.data ?? []).map((m: WorkspaceMemberRecord) => {
-                              const val = m.user?.name || m.user?.email || m.userId;
-                              const label = `${val}${m.role ? ` (${m.role})` : ""}`;
+                              const label = `${memberName(m)}${m.role ? ` (${m.role})` : ""}`;
                               return (
-                                <option key={m.id} value={val} title={label}>
+                                <option key={m.id} value={m.userId} title={label}>
                                   {label}
                                 </option>
                               );

@@ -3,6 +3,7 @@ import supabase from "../../lib/supabase.js";
 import { generateReport } from "./reports.service.js";
 import {
     cleanupExpiredReportExports,
+    expiryFromUrl,
     resolveSignedReportDownload,
     storeReportExportPayload
 } from "./report-export-storage.service.js";
@@ -18,6 +19,40 @@ import { recordAuditLog } from "../../lib/audit.js";
 import { logStructured } from "../../lib/logger.js";
 import { wrapAsync } from "../../lib/sentry.js";
 import XLSX from "xlsx";
+import { dayIndex, nextRunAt, templateRowId, withTemplates } from "./report-schedules.js";
+
+
+/** The export file for a stored report: the full report (live sections when the row has none) as JSON, or PDF data. */
+async function buildExportPayload(report, normalizedFormat) {
+    const periodStart = report.content?.period_start || report.period_start;
+    const periodEnd = report.content?.period_end || report.period_end;
+    const summary = report.content?.summary || report.summary;
+
+    const fullReport = await generateReport({
+        workspaceId: report.workspace_id,
+        title: report.title,
+        periodStart,
+        periodEnd,
+    });
+
+    const mergedReport = {
+        ...fullReport,
+        id: report.id,
+        title: report.title,
+        summary: summary || fullReport.summary,
+        periodStart: periodStart || fullReport.periodStart,
+        periodEnd: periodEnd || fullReport.periodEnd,
+        sections: Array.isArray(report.content?.sections) ? report.content.sections : fullReport.sections,
+        createdAt: report.created_at,
+        exportedAt: new Date().toISOString(),
+    };
+
+    const payload = normalizedFormat === "pdf"
+        ? buildPdfData(mergedReport, report.id)
+        : mergedReport;
+
+    return payload;
+}
 
 const router = express.Router();
 
@@ -35,9 +70,10 @@ router.get("/exports/:jobId/download", rateLimiters.export(), async (req, res) =
             return res.status(resolved.status).json({ error: resolved.error });
         }
 
-        const { job, payload } = resolved;
+        const { job, report } = resolved;
+        const payload = await buildExportPayload(report, job.format);
         res.setHeader("Content-Type", "application/json");
-        res.setHeader("Content-Disposition", `attachment; filename="${job.fileName || `report-export-${job.id}.${job.format}`}"`);
+        res.setHeader("Content-Disposition", `attachment; filename="${job.file_path || `report-export-${job.id}.${job.format}`}"`);
         return res.json(payload);
     } catch (error) {
         logStructured("error", "Error downloading export file:", { error: error?.message || error, stack: error?.stack });
@@ -259,6 +295,12 @@ router.get("/", async (req, res) => {
     }
 });
 
+/** A custom report_templates row → the template record the web app reads (settings live in content). */
+function customTemplateRecord(t) {
+    const c = t.content || {};
+    return { key: t.id, name: t.name, description: c.description || "", format: c.format || "PDF", cadence: c.cadence || "On-demand", sectionCount: c.sectionCount || 3, isSystem: false };
+}
+
 // GET /api/reports/templates — List available report templates
 router.get("/templates", async (req, res) => {
     try {
@@ -269,20 +311,14 @@ router.get("/templates", async (req, res) => {
 
         let customTemplates = [];
         if (scopedWorkspaceIds.length > 0) {
+            // Custom templates keep their settings in content (jsonb); is_system rows only anchor schedules.
             const { data: dbTemplates } = await supabase
                 .from("report_templates")
                 .select("*")
                 .in("workspace_id", scopedWorkspaceIds)
+                .neq("is_system", true)
                 .order("created_at", { ascending: false });
-            customTemplates = (dbTemplates || []).map(t => ({
-                key: t.id,
-                name: t.name,
-                description: t.description || "",
-                format: t.format,
-                cadence: t.cadence,
-                sectionCount: t.section_count,
-                isSystem: false
-            }));
+            customTemplates = (dbTemplates || []).map(customTemplateRecord);
         }
 
         return res.json({ data: [...systemTemplates, ...customTemplates] });
@@ -308,10 +344,9 @@ router.post("/templates", validateRequest({ body: createReportTemplateSchema }),
             .insert({
                 workspace_id: scopedWorkspaceId,
                 name,
-                description,
-                format: format || "PDF",
-                cadence: cadence || "On-demand",
-                section_count: sectionCount || 3
+                type: "custom",
+                is_system: false,
+                content: { description: description ?? "", format: format || "PDF", cadence: cadence || "On-demand", sectionCount: sectionCount || 3 },
             })
             .select()
             .single();
@@ -320,7 +355,7 @@ router.post("/templates", validateRequest({ body: createReportTemplateSchema }),
             throw error;
         }
 
-        return res.status(201).json(template);
+        return res.status(201).json(customTemplateRecord(template));
     } catch (error) {
         logStructured("error", "Error creating template:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
@@ -349,12 +384,13 @@ router.patch("/templates/:id", validateRequest({ body: updateReportTemplateSchem
 
         const { name, description, format, cadence, sectionCount } = req.body;
 
-        const updateData = {};
+        const content = { ...(template.content || {}) };
+        if (description !== undefined) content.description = description;
+        if (format !== undefined) content.format = format;
+        if (cadence !== undefined) content.cadence = cadence;
+        if (sectionCount !== undefined) content.sectionCount = sectionCount;
+        const updateData = { content };
         if (name !== undefined) updateData.name = name;
-        if (description !== undefined) updateData.description = description;
-        if (format !== undefined) updateData.format = format;
-        if (cadence !== undefined) updateData.cadence = cadence;
-        if (sectionCount !== undefined) updateData.section_count = sectionCount;
 
         const { data: updated, error: updateError } = await supabase
             .from("report_templates")
@@ -367,7 +403,7 @@ router.patch("/templates/:id", validateRequest({ body: updateReportTemplateSchem
             throw updateError;
         }
 
-        return res.json(updated);
+        return res.json(customTemplateRecord(updated));
     } catch (error) {
         logStructured("error", "Error updating template:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
@@ -453,7 +489,7 @@ router.get("/schedules", async (req, res) => {
             throw error;
         }
 
-        return res.json({ data: schedules || [] });
+        return res.json({ data: await withTemplates(schedules || []) });
     } catch (error) {
         logStructured("error", "Error fetching schedules:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
@@ -471,16 +507,20 @@ router.post("/schedules", validateRequest({ body: createReportScheduleSchema }),
             return res.status(403).json({ error: "Workspace access denied" });
         }
 
+        const templateId = await templateRowId(scopedWorkspaceId, templateKey);
+        if (!templateId) return res.status(400).json({ error: "Unknown report template", code: "UNKNOWN_TEMPLATE" });
+        const plan = { cadence: cadence || "weekly", dayOfWeek: dayIndex(dayOfWeek), timeOfDay: timeOfDay || "09:00" };
         const { data: schedule, error } = await supabase
             .from("report_schedules")
             .insert({
                 workspace_id: scopedWorkspaceId,
-                template_key: templateKey,
+                template_id: templateId,
                 name,
-                cadence: cadence || "weekly",
-                day_of_week: dayOfWeek || null,
-                time_of_day: timeOfDay || "09:00",
-                enabled: enabled !== false
+                cadence: plan.cadence,
+                day_of_week: plan.cadence === "weekly" ? (plan.dayOfWeek ?? 1) : null,
+                time_of_day: plan.timeOfDay,
+                is_active: enabled !== false,
+                next_run_at: nextRunAt(plan).toISOString(),
             })
             .select()
             .single();
@@ -489,7 +529,7 @@ router.post("/schedules", validateRequest({ body: createReportScheduleSchema }),
             throw error;
         }
 
-        return res.status(201).json(schedule);
+        return res.status(201).json((await withTemplates([schedule]))[0]);
     } catch (error) {
         logStructured("error", "Error creating schedule:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
@@ -519,12 +559,23 @@ router.patch("/schedules/:id", validateRequest({ body: updateReportScheduleSchem
         const { templateKey, name, cadence, dayOfWeek, timeOfDay, enabled } = req.body;
 
         const updateData = {};
-        if (templateKey !== undefined) updateData.template_key = templateKey;
+        if (templateKey !== undefined) {
+            const templateId = await templateRowId(schedule.workspace_id, templateKey);
+            if (!templateId) return res.status(400).json({ error: "Unknown report template", code: "UNKNOWN_TEMPLATE" });
+            updateData.template_id = templateId;
+        }
         if (name !== undefined) updateData.name = name;
         if (cadence !== undefined) updateData.cadence = cadence;
-        if (dayOfWeek !== undefined) updateData.day_of_week = dayOfWeek;
+        if (dayOfWeek !== undefined) updateData.day_of_week = dayIndex(dayOfWeek);
         if (timeOfDay !== undefined) updateData.time_of_day = timeOfDay;
-        if (enabled !== undefined) updateData.enabled = enabled;
+        if (enabled !== undefined) updateData.is_active = enabled;
+        if (cadence !== undefined || dayOfWeek !== undefined || timeOfDay !== undefined) {
+            updateData.next_run_at = nextRunAt({
+                cadence: updateData.cadence ?? schedule.cadence,
+                dayOfWeek: updateData.day_of_week !== undefined ? updateData.day_of_week : schedule.day_of_week,
+                timeOfDay: updateData.time_of_day ?? schedule.time_of_day,
+            }).toISOString();
+        }
 
         const { data: updated, error: updateError } = await supabase
             .from("report_schedules")
@@ -537,7 +588,7 @@ router.patch("/schedules/:id", validateRequest({ body: updateReportScheduleSchem
             throw updateError;
         }
 
-        return res.json(updated);
+        return res.json((await withTemplates([updated]))[0]);
     } catch (error) {
         logStructured("error", "Error updating schedule:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
@@ -602,7 +653,7 @@ router.patch("/schedules/:id/toggle", async (req, res) => {
 
         const { data: updated, error: updateError } = await supabase
             .from("report_schedules")
-            .update({ enabled: !schedule.enabled })
+            .update({ is_active: schedule.is_active === false })
             .eq("id", id)
             .select()
             .single();
@@ -611,7 +662,7 @@ router.patch("/schedules/:id/toggle", async (req, res) => {
             throw updateError;
         }
 
-        return res.json(updated);
+        return res.json((await withTemplates([updated]))[0]);
     } catch (error) {
         logStructured("error", "Error toggling schedule:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
@@ -773,37 +824,12 @@ router.post("/:id/export", rateLimiters.export(), validateRequest({ params: repo
                 .update({ status: "running" })
                 .eq("id", exportJob.id);
 
-            const periodStart = report.content?.period_start || report.period_start;
-            const periodEnd = report.content?.period_end || report.period_end;
-            const summary = report.content?.summary || report.summary;
-
-            const fullReport = await generateReport({
-                workspaceId: report.workspace_id,
-                title: report.title,
-                periodStart,
-                periodEnd,
-            });
-
-            const mergedReport = {
-                ...fullReport,
-                id: report.id,
-                title: report.title,
-                summary: summary || fullReport.summary,
-                periodStart: periodStart || fullReport.periodStart,
-                periodEnd: periodEnd || fullReport.periodEnd,
-                sections: Array.isArray(report.content?.sections) ? report.content.sections : fullReport.sections,
-                createdAt: report.created_at,
-                exportedAt: new Date().toISOString(),
-            };
-
-            const payload = normalizedFormat === "pdf"
-                ? buildPdfData(mergedReport, report.id)
-                : mergedReport;
+            // Built once here so a broken report fails the job now; the file itself is rebuilt at download time.
+            await buildExportPayload(report, normalizedFormat);
 
             const baseUrl = `${req.protocol}://${req.get("host")}`;
             await storeReportExportPayload({
                 exportId: exportJob.id,
-                payload,
                 fileName: `narriv-report-${report.id.substring(0, 8)}.${normalizedFormat}`,
                 baseUrl,
             });
@@ -854,8 +880,8 @@ router.get("/exports/:jobId", async (req, res) => {
             format: job.format,
             status: job.status,
             errorMessage: job.error_message,
-            signedUrl: job.status === "completed" ? job.signed_url : null,
-            expiresAt: job.expires_at,
+            signedUrl: job.status === "completed" ? job.file_url : null,
+            expiresAt: expiryFromUrl(job.file_url),
         });
     } catch (error) {
         logStructured("error", "Error fetching export job:", { error: error?.message || error, stack: error?.stack });

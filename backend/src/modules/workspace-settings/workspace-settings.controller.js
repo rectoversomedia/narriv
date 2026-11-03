@@ -42,17 +42,55 @@ export async function getWorkspaceSettings(req, res) {
         // Also fetch onboarding_completed from workspaces table for redirect logic
         const { data: workspaceData } = await supabase
             .from("workspaces")
-            .select("onboarding_completed")
+            .select("onboarding_completed, settings")
             .eq("id", scopedWorkspaceId)
             .maybeSingle();
+        const workspaceFlags = {
+            onboarding_completed: workspaceData?.onboarding_completed ?? false,
+            monitoring_paused: workspaceData?.settings?.monitoringPaused === true,
+        };
 
         if (!settings) {
-            return res.json({ ...toSafeDefaults(scopedWorkspaceId), onboarding_completed: workspaceData?.onboarding_completed ?? false });
+            return res.json({ ...toSafeDefaults(scopedWorkspaceId), ...workspaceFlags });
         }
 
-        return res.json({ ...settings, onboarding_completed: workspaceData?.onboarding_completed ?? false });
+        return res.json({ ...settings, ...workspaceFlags });
     } catch (error) {
         logStructured("error", "Error fetching workspace settings:", { error: error?.message || error, stack: error?.stack });
+        return internalError(res);
+    }
+}
+
+/**
+ * Pause or resume scheduled monitoring: the scheduled ingestion skips a paused workspace (manual runs still work).
+ * Stored in workspaces.settings.monitoringPaused, so keywords keep their own on/off state.
+ */
+export async function setMonitoringPaused(req, res) {
+    try {
+        const { workspaceId, paused } = req.body;
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
+        if (!scopedWorkspaceId) {
+            return forbidden(res, "Workspace access denied", "WORKSPACE_ACCESS_DENIED");
+        }
+        const { data: workspace, error: readError } = await supabase
+            .from("workspaces").select("settings").eq("id", scopedWorkspaceId).maybeSingle();
+        if (readError || !workspace) return notFound(res, "Workspace not found", "WORKSPACE_NOT_FOUND");
+
+        const settings = { ...(workspace.settings || {}), monitoringPaused: paused };
+        const { error } = await supabase.from("workspaces").update({ settings }).eq("id", scopedWorkspaceId);
+        if (error) {
+            logStructured("error", "Error updating monitoring pause:", { error: error?.message || error });
+            return internalError(res);
+        }
+        await recordAuditLog({
+            userId: req.user.id,
+            workspaceId: scopedWorkspaceId,
+            event: paused ? "workspace_monitoring_paused" : "workspace_monitoring_resumed",
+            metadata: { workspace_id: scopedWorkspaceId },
+        });
+        return res.json({ monitoring_paused: paused });
+    } catch (error) {
+        logStructured("error", "Error updating monitoring pause:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
     }
 }

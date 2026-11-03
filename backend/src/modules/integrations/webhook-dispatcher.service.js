@@ -13,7 +13,7 @@ import { sendTeamsMessage, formatAlertForTeams } from "../../lib/notifications/t
 /**
  * Extract webhook URL from integration config
  */
-function getWebhookUrl(integration) {
+export function getWebhookUrl(integration) {
     const config = integration?.config || {};
     return config.webhookUrl || config.url || config.webhook_url || config.incomingWebhook?.url || null;
 }
@@ -66,10 +66,10 @@ export async function dispatchAlertToWebhooks(alert) {
             try {
                 if (integration.platform === "slack") {
                     const message = formatAlertForSlack(alert);
-                    await sendSlackMessage(url, message);
+                    await sendSlackMessage(await assertPublicHttpUrl(url), message);
                 } else if (integration.platform === "teams") {
                     const message = formatAlertForTeams(alert);
-                    await sendTeamsMessage(url, message);
+                    await sendTeamsMessage(await assertPublicHttpUrl(url), message);
                 } else if (integration.platform === "webhook") {
                     const safeUrl = await assertPublicHttpUrl(url);
                     const response = await fetch(safeUrl, {

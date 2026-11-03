@@ -3,6 +3,19 @@ import { badRequest, forbidden, internalError, notFound } from "../../lib/api-er
 import { resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { logStructured } from "../../lib/logger.js";
 import { testIntegrationConnection } from "./webhook-dispatcher.service.js";
+import { assertPublicHttpUrl } from "../../lib/url-safety.js";
+import { tr } from "../../lib/request-context.js";
+
+// Every URL an integration can call is checked when it is saved (Slack, Teams and generic webhooks), so a private or
+// non-http address is refused with a clear message instead of failing silently at dispatch time (SSRF guard).
+async function invalidWebhookUrl(config) {
+    const c = config || {};
+    for (const url of [c.webhookUrl, c.url, c.webhook_url, c.incomingWebhook?.url].filter(Boolean)) {
+        try { await assertPublicHttpUrl(String(url)); }
+        catch { return tr("The webhook URL must be a public http(s) address.", "URL webhook harus berupa alamat http(s) publik."); }
+    }
+    return null;
+}
 
 export async function listIntegrations(req, res) {
     try {
@@ -69,6 +82,8 @@ export async function getIntegration(req, res) {
 export async function createIntegration(req, res) {
     try {
         const { workspaceId, name, platform, config } = req.body;
+        const urlProblem = await invalidWebhookUrl(config);
+        if (urlProblem) return badRequest(res, urlProblem, "INVALID_WEBHOOK_URL");
 
         const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
         if (!scopedWorkspaceId) {
@@ -129,6 +144,10 @@ export async function updateIntegration(req, res) {
         }
 
         const { workspaceId, ...updateData } = req.body;
+        if (updateData.config) {
+            const urlProblem = await invalidWebhookUrl(updateData.config);
+            if (urlProblem) return badRequest(res, urlProblem, "INVALID_WEBHOOK_URL");
+        }
 
         const { data: updated, error: updateError } = await supabase
             .from("integrations")

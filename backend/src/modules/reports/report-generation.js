@@ -1,5 +1,7 @@
 import supabase from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
+import { workspaceLanguage } from "../../lib/workspace-language.js";
+import { signalSentiment } from "../alerts/alerts.service.js";
 
 /**
  * Send a report via email.
@@ -118,67 +120,118 @@ export async function generateReport({ workspaceId, templateKey, options = {} })
         }
 
         const sections = getTemplateSections(templateKey);
-        const generatedSections = [];
+        const periodStart = options.dateRange?.start || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        const periodEnd = options.dateRange?.end || new Date().toISOString();
+        const id = (await workspaceLanguage(workspaceId)) === "id";
 
+        // Every section reads real records of this workspace inside the chosen period (earlier versions ignored the
+        // period and filled several sections with placeholders such as "Dashboard summary data").
+        const inPeriod = (q, col = "created_at") => q.gte(col, periodStart).lte(col, periodEnd);
+        const cache = {};
+        const signalsInPeriod = async () => cache.signals ??= ((await inPeriod(supabase
+            .from("signals")
+            .select("id, title, platform, severity, sentiment, captured_at, analyses:signal_analyses (confidence, analysis)")
+            .eq("workspace_id", workspaceId), "captured_at").limit(2000)).data || []);
+        const alertsInPeriod = async () => cache.alerts ??= ((await inPeriod(supabase
+            .from("alerts").select("*").eq("workspace_id", workspaceId)).order("created_at", { ascending: false }).limit(500)).data || []);
+        const sentimentCounts = (signals) => {
+            const out = { POSITIVE: 0, NEGATIVE: 0, NEUTRAL: 0, MIXED: 0, UNANALYZED: 0 };
+            for (const sg of signals) {
+                const v = signalSentiment(sg);
+                out[out[v] !== undefined ? v : "UNANALYZED"] += 1;
+            }
+            return out;
+        };
+        const visibilityRows = async () => cache.vis ??= ((await inPeriod(supabase
+            .from("ai_visibility_results").select("engine, query, score, result, created_at").eq("workspace_id", workspaceId))
+            .order("created_at", { ascending: false }).limit(500)).data || []);
+
+        const generatedSections = [];
         for (const section of sections) {
             let data = null;
-
-            // Fetch data based on dataSource
             switch (section.dataSource) {
                 case "dashboard_summary":
-                    // Would call getDashboardSummary
-                    data = { summary: "Dashboard summary data" };
+                case "kpi_cards":
+                case "signals_stats": {
+                    const signals = await signalsInPeriod();
+                    const alerts = await alertsInPeriod();
+                    const sentiment = sentimentCounts(signals);
+                    const analyzed = signals.length - sentiment.UNANALYZED;
+                    data = {
+                        totalSignals: signals.length,
+                        analyzedSignals: analyzed,
+                        negativeShare: analyzed ? Math.round((sentiment.NEGATIVE / analyzed) * 100) : null,
+                        alerts: alerts.length,
+                        openAlerts: alerts.filter((a) => a.status !== "resolved").length,
+                        criticalAlerts: alerts.filter((a) => a.severity === "critical").length,
+                        platforms: Object.entries(signals.reduce((m, sg) => ({ ...m, [sg.platform || "unknown"]: (m[sg.platform || "unknown"] || 0) + 1 }), {}))
+                            .sort((a, b) => b[1] - a[1]).map(([platform, count]) => ({ platform, count })),
+                    };
                     break;
+                }
+                case "sentiment_distribution": {
+                    data = { sentiment: sentimentCounts(await signalsInPeriod()) };
+                    break;
+                }
                 case "alerts_list":
                 case "alerts_filtered":
                 case "alerts_stats":
-                    let alertQuery = supabase
-                        .from("alerts")
-                        .select("*")
-                        .eq("workspace_id", workspaceId)
-                        .order("created_at", { ascending: false })
-                        .limit(section.limit || 50);
-
-                    if (section.filter?.severity) {
-                        alertQuery = alertQuery.in("severity", section.filter.severity);
-                    }
-                    const { data: alerts } = await alertQuery;
-                    data = { alerts: alerts || [], count: (alerts || []).length };
+                case "alert_escalations": {
+                    let alerts = await alertsInPeriod();
+                    if (section.filter?.severity) alerts = alerts.filter((a) => section.filter.severity.includes(a.severity));
+                    if (section.dataSource === "alert_escalations") alerts = alerts.filter((a) => a.escalation_level && a.escalation_level !== "low");
+                    const bySeverity = alerts.reduce((m, a) => ({ ...m, [a.severity]: (m[a.severity] || 0) + 1 }), {});
+                    const byStatus = alerts.reduce((m, a) => ({ ...m, [a.status]: (m[a.status] || 0) + 1 }), {});
+                    data = { alerts: alerts.slice(0, section.limit || 50), count: alerts.length, bySeverity, byStatus };
                     break;
-                case "narrative_clusters":
+                }
+                case "narrative_clusters": {
                     const { data: clusters } = await supabase
                         .from("narrative_clusters")
-                        .select("*")
+                        .select("id, title, summary, sentiment, signal_count, velocity, lifecycle, updated_at")
                         .eq("workspace_id", workspaceId)
+                        .gte("updated_at", periodStart)
                         .order("signal_count", { ascending: false })
                         .limit(section.limit || 20);
                     data = { clusters: clusters || [], count: (clusters || []).length };
                     break;
+                }
                 case "action_plans":
-                    const { data: plans } = await supabase
-                        .from("action_plans")
-                        .select("*")
-                        .eq("workspace_id", workspaceId)
+                case "action_deadlines": {
+                    const { data: plans } = await inPeriod(supabase
+                        .from("action_plans").select("id, title, status, priority, assigned_to, created_at, updated_at").eq("workspace_id", workspaceId))
                         .order("created_at", { ascending: false })
                         .limit(section.limit || 10);
-                    data = { plans: plans || [], count: (plans || []).length };
+                    const list = plans || [];
+                    data = { plans: section.dataSource === "action_deadlines" ? list.filter((pl) => pl.status !== "completed") : list, count: list.length };
                     break;
+                }
+                case "visibility_summary":
+                case "visibility_data":
+                case "visibility_trends":
+                case "visibility_by_engine":
+                case "competitor_mentions":
+                case "prompt_test_runs": {
+                    const rows = await visibilityRows();
+                    const byEngine = Object.values(rows.reduce((m, r) => {
+                        const e = m[r.engine] || { engine: r.engine, runs: 0, scoreSum: 0, scored: 0 };
+                        e.runs += 1;
+                        if (typeof r.score === "number") { e.scoreSum += r.score; e.scored += 1; }
+                        return { ...m, [r.engine]: e };
+                    }, {})).map((e) => ({ engine: e.engine, runs: e.runs, averageScore: e.scored ? Math.round(e.scoreSum / e.scored) : null }));
+                    data = { runs: rows.length, byEngine, latest: rows.slice(0, section.limit || 10).map((r) => ({ engine: r.engine, query: r.query, score: r.score, at: r.created_at })) };
+                    break;
+                }
                 default:
-                    data = { message: `Data source '${section.dataSource}' not implemented` };
+                    data = { unavailable: true };
             }
-
-            generatedSections.push({
-                id: section.id,
-                title: section.title,
-                data,
-            });
+            generatedSections.push({ id: section.id, title: section.title, data });
         }
 
         // Create report record
-        const periodStart = options.dateRange?.start || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-        const periodEnd = options.dateRange?.end || new Date().toISOString();
-        const summary = `Generated from ${template.name} template`;
-        const reportTitle = `${template.name} - ${new Date().toLocaleDateString("id-ID")}`;
+        const day = new Date().toLocaleDateString(id ? "id-ID" : "en-GB", { day: "numeric", month: "long", year: "numeric" });
+        const summary = id ? `Disusun dari templat ${template.name} untuk periode yang dipilih.` : `Generated from the ${template.name} template for the selected period.`;
+        const reportTitle = `${template.name} - ${day}`;
 
         const { data: report, error: reportError } = await supabase
             .from("reports")

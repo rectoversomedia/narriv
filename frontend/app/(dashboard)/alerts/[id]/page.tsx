@@ -6,6 +6,7 @@ import { ArrowLeft, AlertTriangle, CalendarClock, CheckCircle2, Flag, Route, Sav
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { assigneeName } from "@/lib/member-name";
 import { useToast } from "@/components/ui/toast";
 import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components/create-action-plan-modal";
 import { CreateInvestigationModal } from "@/app/(dashboard)/signals/components/create-investigation-modal";
@@ -159,7 +160,7 @@ function AssignmentCard({
               <option value="" title={td("assignedToPlaceholder")}>{td("assignedToPlaceholder")}</option>
               {members.map((member) => {
                 const label = memberLabel(member);
-                return <option key={member.id} value={label} title={label}>{label}</option>;
+                return <option key={member.id} value={member.userId} title={label}>{label}</option>;
               })}
             </select>
           </label>
@@ -325,7 +326,7 @@ export default function AlertDetailPage() {
                 <p className="mt-3 text-[13px] font-bold leading-6 text-[#53608C]">{td("issue.description", { issue })}</p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                <DetailStat icon={UserRound} label={td("assignedTo")} value={liveData.assignedTo || (liveData as any)?.assigned_to || "-"} tone="blue" />
+                <DetailStat icon={UserRound} label={td("assignedTo")} value={assigneeName(liveData.assignedTo || (liveData as any)?.assigned_to, members) || "-"} tone="blue" />
                 <DetailStat icon={CalendarClock} label={td("deadline")} value={formatDateTime(liveData.deadline)} tone={tone} />
               </div>
             </div>

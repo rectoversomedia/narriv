@@ -154,6 +154,14 @@ const runDaily = async (req, res) => {
             results.cleanup = await cleanupExpiredReportExports(200);
         } catch (e) { results.cleanup = { error: e.message }; }
 
+        // 3b. Scheduled reports whose next run has passed (the schedule page promised these; nothing ran them).
+        try {
+            const { runDueReportSchedules } = await import("../reports/report-schedules.js");
+            const { generateReport } = await import("../reports/report-generation.js");
+            const run = await runDueReportSchedules({ generate: generateReport });
+            results.reportSchedules = { ran: run.ran, failed: (run.results || []).filter((r) => r.status === "failed").length, error: run.error };
+        } catch (e) { results.reportSchedules = { error: e.message }; }
+
         // 4. AI backfill: analyze real signals that lack a signal_analyses row.
         // Idempotent and time-bounded; anything left over is picked up next run.
         try {

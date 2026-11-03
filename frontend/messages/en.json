@@ -1533,7 +1533,8 @@
         "assignedTeamPlaceholder": "Select team",
         "deadlineLabel": "Deadline",
         "submit": "Create Alert",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "advancedSection": "Assignment & Sources"
       },
       "incident": {
         "alertDesc": "Spike in payment delay complaints across social media and news.",
@@ -2822,23 +2823,23 @@
       },
       "danger": {
         "title": "Danger Zone",
-        "desc": "Risky actions that may affect your workspace.",
-        "pauseTitle": "Pause Workspace",
-        "pauseDesc": "Temporarily stop all monitoring and data ingestion.",
-        "pauseButton": "Pause Workspace",
-        "resetTitle": "Reset Signals Cache",
-        "resetDesc": "Clear local cache and reprocess all signals.",
-        "resetButton": "Reset Cache",
+        "desc": "Actions that affect the whole workspace. Read the description before you press a button.",
+        "pauseTitle": "Pause Monitoring",
+        "pauseDesc": "Temporarily stop scheduled data collection for every keyword. Existing data stays safe, and you can still run a manual collection.",
+        "pauseButton": "Pause Monitoring",
         "deleteTitle": "Delete Workspace",
-        "deleteDesc": "Permanently delete this workspace and all its data.",
-        "deleteButton": "Delete Workspace"
+        "deleteDesc": "Permanently delete this workspace. Only possible while it holds no data. A workspace that already has signals, alerts or reports is deleted by the Narriv team so no data is lost by accident.",
+        "deleteButton": "Delete Workspace",
+        "resumeTitle": "Monitoring Is Paused",
+        "resumeDesc": "Scheduled data collection is stopped. Resume it so new signals come in every day again.",
+        "resumeButton": "Resume Monitoring"
       },
       "confirm": {
         "title": "Confirm Action",
         "confirm": "Yes, continue",
-        "pauseDesc": "Are you sure you want to pause this workspace temporarily? New signal collection, automated sentiment analysis, and notifications will be stopped.",
-        "resetDesc": "Are you sure you want to clear the local cache? All signals will be re-fetched from the original monitoring platforms. This may take several minutes.",
-        "deleteDesc": "Are you sure you want to delete this workspace permanently? All analysis history, integrations, user data, and visualizations will be erased forever. This action cannot be undone."
+        "pauseDesc": "Pause monitoring? Scheduled data collection stops until you resume it. Existing data is not deleted.",
+        "deleteDesc": "Permanently delete this workspace? Its members, settings and integrations are removed too, and this cannot be undone.",
+        "resumeDesc": "Resume monitoring? Scheduled data collection runs again from the next slot (daily at 07:00 WIB)."
       },
       "deleteMemberDialog": {
         "title": "Remove Member",
@@ -2868,12 +2869,13 @@
         "2faInvalid": "Invalid code. Please try again.",
         "auditExport": "Security audit log is being exported.",
         "statusChanged": "Member status updated.",
-        "confirmPause": "Workspace paused temporarily.",
-        "confirmReset": "Signal cache cleared and reprocessed.",
-        "confirmDelete": "Workspace deletion procedure initiated.",
         "rolePermissionsInfo": "Role & Permissions manager will open.",
         "quietHoursInfo": "Quiet Hours editor will open.",
-        "managementInfo": "Management panel for {label} will open."
+        "managementInfo": "Management panel for {label} will open.",
+        "monitoringPaused": "Monitoring paused. Scheduled data collection has stopped.",
+        "monitoringResumed": "Monitoring resumed.",
+        "deleteRestricted": "This workspace still holds data (signals, alerts or reports), so it cannot be deleted here. Contact the Narriv team for permanent deletion.",
+        "actionFailed": "The action failed. Please try again shortly."
       },
       "invite": {
         "title": "Invite Member",

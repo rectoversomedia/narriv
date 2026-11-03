@@ -121,6 +121,12 @@ async function claimRun(runId, trigger, workspaceId = null) {
     return { logId: row.id, acquired: !leader || leader === row.id };
 }
 
+async function pausedWorkspaceIds(ids) {
+    if (!ids.length) return new Set();
+    const { data } = await baseSupabaseAdmin.from("workspaces").select("id, settings").in("id", ids);
+    return new Set((data || []).filter((w) => w.settings?.monitoringPaused === true).map((w) => w.id));
+}
+
 export async function runScheduledIngestion({
     budgetMs = 240000,
     perKeywordLimit = 8,
@@ -149,7 +155,7 @@ export async function runScheduledIngestion({
         .select("workspace_id, keyword")
         .eq("is_active", true);
     if (workspaceId) keywordQuery = keywordQuery.eq("workspace_id", workspaceId);
-    const { data: keywordRows, error: kwErr } = await keywordQuery
+    let { data: keywordRows, error: kwErr } = await keywordQuery
         .order("created_at", { ascending: true })
         .limit(1000);
 
@@ -160,6 +166,9 @@ export async function runScheduledIngestion({
     if (kwErr) {
         results.push({ error: kwErr.message, errorCategory: "keyword_query_failed" });
     } else {
+        // A scheduled run skips workspaces whose owner paused monitoring (Settings → Danger zone); a manual run does not.
+        const pausedIds = workspaceId ? new Set() : await pausedWorkspaceIds([...new Set((keywordRows || []).map((r) => r.workspace_id))]);
+        if (pausedIds.size) keywordRows = keywordRows.filter((r) => !pausedIds.has(r.workspace_id));
         work = buildWorkList(keywordRows, {
             maxKeywordsPerWorkspace,
             maxWorkspaces,

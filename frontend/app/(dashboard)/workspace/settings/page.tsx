@@ -16,6 +16,7 @@ import {
   CreditCard,
   TrendingUp,
   Pause,
+  Play,
   RefreshCw,
   Trash2,
   UserCheck,
@@ -37,8 +38,9 @@ import {
 import { DashboardEmptyState, DashboardErrorState, TableSkeleton } from "@/components/dashboard/dashboard-states";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useToast } from "@/components/ui/toast";
-import { getNotificationSettings, updateNotificationSettings, getWorkspaceMembers, getWorkspaceSettings, updateWorkspaceSettings, createWorkspaceMember, deleteWorkspaceMember, changePassword, uploadWorkspaceLogo, type CreateWorkspaceMemberInput, type UpdateWorkspaceSettingsInput, type WorkspaceMemberRecord } from "@/lib/api-service";
+import { deleteCurrentWorkspace, setMonitoringPaused, getNotificationSettings, updateNotificationSettings, getWorkspaceMembers, getWorkspaceSettings, updateWorkspaceSettings, createWorkspaceMember, deleteWorkspaceMember, changePassword, uploadWorkspaceLogo, type CreateWorkspaceMemberInput, type UpdateWorkspaceSettingsInput, type WorkspaceMemberRecord } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
+import { useWorkspaceStore } from "@/store/useWorkspaceStore";
 import { MonitoringKeywordsPanel } from "@/components/dashboard/monitoring-keywords-panel";
 import { SubscriptionCard } from "@/components/dashboard/SubscriptionCard";
 import { UpgradeModal } from "@/components/dashboard/UpgradeModal";
@@ -340,7 +342,7 @@ export default function SettingsPage() {
 
   // Confirmation Modal State (Danger Zone)
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<"pause" | "reset" | "delete" | null>(null);
+  const [confirmAction, setConfirmAction] = useState<"pause" | "delete" | null>(null);
   const [memberToDelete, setMemberToDelete] = useState<TeamMember | null>(null);
   const memberLabels = {
     defaultName: ts("defaultMemberName"),
@@ -479,19 +481,38 @@ export default function SettingsPage() {
     toast.success(message);
   };
 
-  const triggerConfirmAction = (action: "pause" | "reset" | "delete") => {
+  const triggerConfirmAction = (action: "pause" | "delete") => {
     setConfirmAction(action);
     setShowConfirmModal(true);
   };
 
+  const monitoringPaused = workspaceSettingsQuery.data?.monitoringPaused === true;
+  const pauseMutation = useMutation({
+    mutationFn: (paused: boolean) => setMonitoringPaused(paused),
+    onSuccess: (paused) => {
+      queryClient.invalidateQueries({ queryKey: ["workspace-settings"] });
+      showToast(ts(paused ? "toast.monitoringPaused" : "toast.monitoringResumed"));
+    },
+    onError: () => showToast(ts("toast.actionFailed"), "error"),
+  });
+  const deleteWorkspaceMutation = useMutation({
+    mutationFn: () => deleteCurrentWorkspace("Deleted from workspace settings"),
+    onSuccess: () => {
+      useWorkspaceStore.getState().setSelectedWorkspaceId(null);
+      queryClient.clear();
+      window.location.href = "/";
+    },
+    onError: (error: Error & { info?: { code?: string } }) => {
+      showToast(ts(error.info?.code === "WORKSPACE_DELETE_RESTRICTED" ? "toast.deleteRestricted" : "toast.actionFailed"), "error");
+    },
+  });
+
   const executeConfirmAction = () => {
     setShowConfirmModal(false);
     if (confirmAction === "pause") {
-      showToast(ts("toast.confirmPause"));
-    } else if (confirmAction === "reset") {
-      showToast(ts("toast.confirmReset"));
+      pauseMutation.mutate(!monitoringPaused);
     } else if (confirmAction === "delete") {
-      showToast(ts("toast.confirmDelete"));
+      deleteWorkspaceMutation.mutate();
     }
     setConfirmAction(null);
   };
@@ -514,17 +535,9 @@ export default function SettingsPage() {
     }
   };
 
-  const confirmDescription = (() => {
-    if (confirmAction === "pause") {
-      return ts("confirm.pauseDesc");
-    }
-
-    if (confirmAction === "reset") {
-      return ts("confirm.resetDesc");
-    }
-
-    return ts("confirm.deleteDesc");
-  })();
+  const confirmDescription = confirmAction === "pause"
+    ? ts(monitoringPaused ? "confirm.resumeDesc" : "confirm.pauseDesc")
+    : ts("confirm.deleteDesc");
 
   // Helper styles for roles
   const roleStyles: Record<string, string> = {
@@ -1415,33 +1428,21 @@ export default function SettingsPage() {
           <div className="space-y-5">
             <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0 flex-1">
-                <span className="block text-[11.5px] font-black text-slate-800">{ts("danger.pauseTitle")}</span>
+                <span className="block text-[11.5px] font-black text-slate-800">{ts(monitoringPaused ? "danger.resumeTitle" : "danger.pauseTitle")}</span>
                 <span className="mt-1 block text-[10px] text-[#5A6478] font-semibold leading-normal">
-                  {ts("danger.pauseDesc")}
+                  {ts(monitoringPaused ? "danger.resumeDesc" : "danger.pauseDesc")}
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => triggerConfirmAction("pause")}
-                className="flex h-9 min-w-[140px] items-center justify-center gap-1.5 rounded-lg bg-rose-600 px-3.5 text-[11px] font-black text-white transition hover:bg-rose-700 shadow-sm"
+                disabled={pauseMutation.isPending || workspaceSettingsQuery.isLoading}
+                className={cn(
+                  "flex h-9 min-w-[140px] items-center justify-center gap-1.5 rounded-lg px-3.5 text-[11px] font-black text-white transition shadow-sm disabled:opacity-60",
+                  monitoringPaused ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700",
+                )}
               >
-                <Pause size={13} /> {ts("danger.pauseButton")}
-              </button>
-            </div>
-
-            <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between border-t border-slate-100/80 pt-4">
-              <div className="min-w-0 flex-1">
-                <span className="block text-[11.5px] font-black text-slate-800">{ts("danger.resetTitle")}</span>
-                <span className="mt-1 block text-[10px] text-[#5A6478] font-semibold leading-normal">
-                  {ts("danger.resetDesc")}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => triggerConfirmAction("reset")}
-                className="flex h-9 min-w-[140px] items-center justify-center gap-1.5 rounded-lg bg-rose-600 px-3.5 text-[11px] font-black text-white transition hover:bg-rose-700 shadow-sm"
-              >
-                <RefreshCw size={13} /> {ts("danger.resetButton")}
+                {monitoringPaused ? <Play size={13} /> : <Pause size={13} />} {ts(monitoringPaused ? "danger.resumeButton" : "danger.pauseButton")}
               </button>
             </div>
 
@@ -1455,7 +1456,8 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => triggerConfirmAction("delete")}
-                className="flex h-9 min-w-[140px] items-center justify-center gap-1.5 rounded-lg bg-rose-600 px-3.5 text-[11px] font-black text-white transition hover:bg-rose-700 shadow-sm"
+                disabled={deleteWorkspaceMutation.isPending}
+                className="disabled:opacity-60 flex h-9 min-w-[140px] items-center justify-center gap-1.5 rounded-lg bg-rose-600 px-3.5 text-[11px] font-black text-white transition hover:bg-rose-700 shadow-sm"
               >
                 <Trash2 size={13} /> {ts("danger.deleteButton")}
               </button>

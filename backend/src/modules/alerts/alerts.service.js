@@ -326,12 +326,13 @@ export async function escalateAlertsForWorkspace(workspaceId) {
     let criticalRiskEscalated = 0;
 
     // Fetch escalation matrix for this workspace
+    // role_name may not exist yet (migration 029); select("*") keeps this working either way.
     const { data: escalationLevels } = await supabase
         .from('escalation_matrices')
-        .select('level, role_name, sla_minutes')
+        .select('*')
         .eq('workspace_id', workspaceId)
         .eq('is_active', true)
-        .order('order', { ascending: true });
+        .order('sort_order', { ascending: true });
 
     // Build role lookup: level -> { roleName, slaMinutes }
     const levelRoleMap = {};

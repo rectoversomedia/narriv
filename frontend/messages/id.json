@@ -1443,7 +1443,8 @@
         "assignedTeamPlaceholder": "Pilih tim",
         "deadlineLabel": "Batas Waktu",
         "submit": "Buat Peringatan",
-        "cancel": "Batal"
+        "cancel": "Batal",
+        "advancedSection": "Penugasan & Sumber"
       },
       "metrics": {
         "totalAlerts": "Total Peringatan",
@@ -2822,23 +2823,23 @@
       },
       "danger": {
         "title": "Zona Berbahaya",
-        "desc": "Tindakan berisiko yang dapat mempengaruhi workspace Anda.",
-        "pauseTitle": "Jeda Workspace",
-        "pauseDesc": "Hentikan sementara semua pemantauan dan pengambilan data.",
-        "pauseButton": "Jeda Workspace",
-        "resetTitle": "Reset Cache Sinyal",
-        "resetDesc": "Hapus cache lokal dan proses ulang semua sinyal.",
-        "resetButton": "Reset Cache",
+        "desc": "Tindakan yang memengaruhi seluruh workspace. Baca keterangannya dulu sebelum menekan tombol.",
+        "pauseTitle": "Jeda Pemantauan",
+        "pauseDesc": "Hentikan sementara pengambilan data terjadwal untuk semua kata kunci. Data yang sudah ada tetap aman, dan Anda masih bisa menjalankan pengambilan manual.",
+        "pauseButton": "Jeda Pemantauan",
         "deleteTitle": "Hapus Workspace",
-        "deleteDesc": "Hapus permanen workspace beserta semua data di dalamnya.",
-        "deleteButton": "Hapus Workspace"
+        "deleteDesc": "Hapus permanen workspace ini. Hanya bisa untuk workspace yang belum berisi data. Workspace yang sudah punya sinyal, peringatan, atau laporan dihapus lewat tim Narriv agar tidak ada data yang hilang tanpa sengaja.",
+        "deleteButton": "Hapus Workspace",
+        "resumeTitle": "Pemantauan Sedang Dijeda",
+        "resumeDesc": "Pengambilan data terjadwal sedang berhenti. Lanjutkan agar sinyal baru kembali masuk setiap hari.",
+        "resumeButton": "Lanjutkan Pemantauan"
       },
       "confirm": {
         "title": "Konfirmasi Aksi",
         "confirm": "Ya, lanjutkan",
-        "pauseDesc": "Apakah Anda yakin ingin menonaktifkan workspace ini sementara? Pengumpulan sinyal baru, analisis sentimen otomatis, dan notifikasi akan dihentikan.",
-        "resetDesc": "Apakah Anda yakin ingin membersihkan cache lokal? Semua sinyal akan diunduh ulang dari platform monitoring asal. Proses ini memakan waktu beberapa menit.",
-        "deleteDesc": "Apakah Anda yakin ingin menghapus workspace secara permanen? Seluruh riwayat analisis, integrasi, data pengguna, dan visualisasi akan dihapus selamanya. Tindakan ini tidak dapat dibatalkan."
+        "pauseDesc": "Jeda pemantauan? Pengambilan data terjadwal berhenti sampai Anda melanjutkannya. Data yang sudah ada tidak dihapus.",
+        "deleteDesc": "Hapus workspace ini secara permanen? Anggota, pengaturan, dan integrasinya ikut terhapus, dan tindakan ini tidak dapat dibatalkan.",
+        "resumeDesc": "Lanjutkan pemantauan? Pengambilan data terjadwal berjalan lagi mulai jadwal berikutnya (setiap hari pukul 07.00 WIB)."
       },
       "deleteMemberDialog": {
         "title": "Hapus Member",
@@ -2868,12 +2869,13 @@
         "2faInvalid": "Kode tidak valid. Silakan coba lagi.",
         "auditExport": "Log audit keamanan sedang diekspor.",
         "statusChanged": "Status anggota berhasil diperbarui.",
-        "confirmPause": "Workspace berhasil dinonaktifkan sementara.",
-        "confirmReset": "Cache sinyal berhasil dibersihkan dan diproses ulang.",
-        "confirmDelete": "Prosedur penghapusan workspace diinisialisasi.",
         "rolePermissionsInfo": "Manajer Role & Permission akan terbuka.",
         "quietHoursInfo": "Editor Quiet Hours akan terbuka.",
-        "managementInfo": "Panel manajemen {label} akan terbuka."
+        "managementInfo": "Panel manajemen {label} akan terbuka.",
+        "monitoringPaused": "Pemantauan dijeda. Pengambilan data terjadwal berhenti.",
+        "monitoringResumed": "Pemantauan dilanjutkan.",
+        "deleteRestricted": "Workspace ini masih berisi data (sinyal, peringatan, atau laporan), jadi belum bisa dihapus dari sini. Hubungi tim Narriv untuk penghapusan permanen.",
+        "actionFailed": "Aksi gagal. Coba lagi sebentar lagi."
       },
       "invite": {
         "title": "Undang Anggota",

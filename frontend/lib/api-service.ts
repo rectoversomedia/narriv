@@ -805,6 +805,8 @@ export interface WorkspaceSettingsResponse {
   createdAt: string | null;
   updatedAt: string | null;
   onboarding_completed?: boolean;
+  /** Scheduled monitoring is paused for this workspace (Settings → Danger zone). */
+  monitoringPaused: boolean;
 }
 
 export interface UpdateWorkspaceSettingsInput {
@@ -859,10 +861,27 @@ export async function getWorkspaceSettings(): Promise<WorkspaceSettingsResponse 
       createdAt: (raw.createdAt as string) || (raw.created_at as string) || null,
       updatedAt: (raw.updatedAt as string) || (raw.updated_at as string) || null,
       onboarding_completed: raw.onboarding_completed as boolean | undefined,
+      monitoringPaused: raw.monitoring_paused === true,
     };
   } catch {
     return null;
   }
+}
+
+export async function setMonitoringPaused(paused: boolean): Promise<boolean> {
+  const res = await apiClient<{ monitoring_paused: boolean }>("/api/workspace/monitoring-pause", {
+    method: "POST",
+    body: JSON.stringify({ paused }),
+  });
+  return res.monitoring_paused;
+}
+
+/** Deletes the current workspace. Rejects with code WORKSPACE_DELETE_RESTRICTED (409) while it still holds data. */
+export async function deleteCurrentWorkspace(reason: string): Promise<void> {
+  await apiClient<{ success: boolean }>("/api/workspace", {
+    method: "DELETE",
+    body: JSON.stringify({ reason, confirmText: "DELETE_WORKSPACE" }),
+  });
 }
 
 export async function updateWorkspaceSettings(input: UpdateWorkspaceSettingsInput): Promise<WorkspaceSettingsResponse | null> {
@@ -1085,19 +1104,34 @@ export interface NotificationSettings {
   customRules?: NotificationRuleRecord[];
 }
 
+// The API returns the database row (snake_case); every caller reads camelCase. Without this, the switches never
+// showed the stored state and the notification-rules modal always saw an empty rule list.
+function toNotificationSettings(raw: Record<string, unknown> | null): NotificationSettings | null {
+  if (!raw) return null;
+  const pick = (camel: string, snake: string) => (raw[camel] !== undefined ? raw[camel] : raw[snake]);
+  return {
+    workspaceId: String(pick("workspaceId", "workspace_id") ?? ""),
+    emailEnabled: pick("emailEnabled", "email_enabled") !== false,
+    whatsappEnabled: pick("whatsappEnabled", "whatsapp_enabled") === true,
+    escalationNotifications: pick("escalationNotifications", "escalation_notifications") !== false,
+    reminderNotifications: pick("reminderNotifications", "reminder_notifications") !== false,
+    customRules: (pick("customRules", "custom_rules") as NotificationRuleRecord[] | undefined) ?? [],
+  };
+}
+
 export async function getNotificationSettings(): Promise<NotificationSettings | null> {
   try {
-    return await apiClient<NotificationSettings>("/api/workspace/notification-settings");
+    return toNotificationSettings(await apiClient<Record<string, unknown>>("/api/workspace/notification-settings"));
   } catch {
     return null;
   }
 }
 
 export async function updateNotificationSettings(input: Partial<Pick<NotificationSettings, "emailEnabled" | "whatsappEnabled" | "escalationNotifications" | "reminderNotifications" | "customRules">>): Promise<NotificationSettings | null> {
-  return apiClient<NotificationSettings>("/api/workspace/notification-settings", {
+  return toNotificationSettings(await apiClient<Record<string, unknown>>("/api/workspace/notification-settings", {
     method: "PATCH",
     body: JSON.stringify(input),
-  });
+  }));
 }
 
 // ---------------------------------------------------------------------------

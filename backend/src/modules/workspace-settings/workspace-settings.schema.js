@@ -22,6 +22,11 @@ export const updateWorkspaceSettingsBodySchema = z.object({
     message: "At least one settings field must be provided.",
 });
 
+export const monitoringPauseBodySchema = z.object({
+    workspaceId: z.string().uuid("workspaceId must be a valid UUID.").optional(),
+    paused: z.boolean({ required_error: "paused is required." }),
+}).strict();
+
 export const workspaceMembersQuerySchema = z.object({
     workspaceId: z.string().uuid("workspaceId must be a valid UUID.").optional(),
 });

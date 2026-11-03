@@ -37,6 +37,8 @@ import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { cn } from "@/lib/utils";
 import { createPortal } from "react-dom";
 import { useUiStore } from "@/store/useUiStore";
+import { assigneeName, memberName } from "@/lib/member-name";
+import type { WorkspaceMemberRecord } from "@/lib/api-service";
 
 /* ─── Types ─── */
 type CaseStatus = "open" | "in_progress" | "resolved" | "closed";
@@ -188,9 +190,11 @@ function MetricCard({
 /* ─── Case Detail Sidebar ─── */
 function CaseDetailSidebar({
   caseId,
+  members,
   onClose,
 }: {
   caseId: string;
+  members: WorkspaceMemberRecord[];
   onClose: () => void;
 }) {
   const t = useTranslations("Workspace.cases");
@@ -344,7 +348,7 @@ function CaseDetailSidebar({
                     {t("table.assignee")}
                   </p>
                   <p className="mt-2 text-[13px] font-black text-[#101334]">
-                    {record.assignedTo ||
+                    {assigneeName(record.assignedTo, members) ||
                       record.assignedTeam ||
                       t("table.unassigned")}
                   </p>
@@ -971,12 +975,12 @@ export default function CasesPage() {
                       <td className="px-4 py-4 align-top">
                         <div className="flex items-center gap-2">
                           <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#8B5CFF]/10 text-[10px] font-black text-[#6E44E8]">
-                            {(item.assignedTo ||
+                            {(assigneeName(item.assignedTo, members) ||
                               item.assignedTeam ||
                               "?")[0].toUpperCase()}
                           </span>
                           <p className="text-[11px] font-bold text-[#31406B]">
-                            {item.assignedTo ||
+                            {assigneeName(item.assignedTo, members) ||
                               item.assignedTeam ||
                               t("table.unassigned")}
                           </p>
@@ -1077,6 +1081,7 @@ export default function CasesPage() {
       {detailCaseId && (
         <CaseDetailSidebar
           caseId={detailCaseId}
+          members={members}
           onClose={() => setDetailCaseId(null)}
         />
       )}
@@ -1194,15 +1199,9 @@ export default function CasesPage() {
                       {members.map((member) => (
                         <option
                           key={member.userId}
-                          value={
-                            member.user?.name ||
-                            member.user?.email ||
-                            member.userId
-                          }
+                          value={member.userId}
                         >
-                          {member.user?.name ||
-                            member.user?.email ||
-                            member.userId}
+                          {memberName(member)}
                         </option>
                       ))}
                     </select>
