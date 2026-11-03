@@ -130,7 +130,6 @@ export default function ActionCenterPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1>
-          <p className="mt-1 max-w-2xl text-[14px] font-medium leading-6 text-body">{t("subtitle")}</p>
         </div>
         <div role="group" aria-label={to("period")} className="inline-flex rounded-[10px] border border-[#DDE3EF] bg-white p-0.5">
           {MONITORING_PERIODS.map((h) => (

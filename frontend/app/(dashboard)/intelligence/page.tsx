@@ -603,7 +603,6 @@ export default function IntelligencePage() {
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{ti("pageTitle")}</h1>
-          <p className="mt-2 max-w-2xl text-[14px] font-medium leading-6 text-body">{ti("pageSubtitle")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
           <button
@@ -668,7 +667,6 @@ export default function IntelligencePage() {
                     {ti("topicMap.title")}
                     <Info size={14} className="text-[#647099]" />
                   </h2>
-                  <p className="mt-1 text-[12px] font-semibold text-[#647099]">{ti("topicMap.desc")}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {/* Impact filter (All Topics) */}

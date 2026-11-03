@@ -474,9 +474,6 @@ export default function SettingsPage() {
       {/* Header */}
       <div>
         <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{ts("pageHeaderTitle")}</h1>
-        <p className="mt-2 max-w-2xl text-[14px] font-medium leading-6 text-body">
-          {ts("pageHeaderSubtitle")}
-        </p>
       </div>
 
       {/* Subscription Card */}
@@ -528,7 +525,6 @@ export default function SettingsPage() {
           <div className="flex items-start gap-4">
             <div>
               <h2 className="text-base font-black text-[#101334]">{ts("workspaceInfo.title")}</h2>
-              <p className="text-[11px] font-bold text-[#5F6B94]">{ts("workspaceInfo.description")}</p>
             </div>
           </div>
 
@@ -665,7 +661,6 @@ export default function SettingsPage() {
             <div className="flex items-start gap-4">
               <div>
                 <h2 className="text-base font-black text-[#101334]">{ts("membersCard.title")}</h2>
-                <p className="text-[11px] font-bold text-[#5F6B94]">{ts("membersCard.desc")}</p>
               </div>
             </div>
 
@@ -793,7 +788,6 @@ export default function SettingsPage() {
           <div className="flex items-start gap-3">
             <div>
               <h3 className="text-[13.5px] font-black text-[#101334]">{ts("notifications.title")}</h3>
-              <p className="text-[10px] font-semibold text-[#5F6B94]">{ts("notifications.desc")}</p>
             </div>
           </div>
           <div className="space-y-3.5">
@@ -830,7 +824,6 @@ export default function SettingsPage() {
           <div className="flex items-start gap-3">
             <div>
               <h3 className="text-[13.5px] font-black text-[#101334]">{ts("related.title")}</h3>
-              <p className="text-[10px] font-semibold text-[#5F6B94]">{ts("related.desc")}</p>
             </div>
           </div>
           <div className="space-y-1.5 flex-1">
@@ -881,7 +874,6 @@ export default function SettingsPage() {
           <div className="flex items-start gap-3">
             <div>
               <h3 className="text-[13.5px] font-black text-[#101334]">{ts("accountCard.title")}</h3>
-              <p className="text-[10px] font-semibold text-[#5F6B94]">{ts("accountCard.desc")}</p>
             </div>
           </div>
           <div>
@@ -945,9 +937,6 @@ export default function SettingsPage() {
           <div className="flex items-start gap-4">
             <div>
               <h2 className="text-base font-black text-rose-600">{ts("danger.title")}</h2>
-              <p className="text-[11px] font-bold text-[#5A6478]">
-                {ts("danger.desc")}
-              </p>
             </div>
           </div>
 

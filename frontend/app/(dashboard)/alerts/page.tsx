@@ -569,7 +569,6 @@ function EscalationMatrix({ ta, levels, isLoading }: { ta: ReturnType<typeof use
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-[16px] font-black text-[#101334]">{ta("v2.escalationMatrix.panelTitle")}</h3>
-          <p className="mt-1 text-[10px] font-bold text-[#5F6B94]">{ta("v2.escalationMatrix.desc")}</p>
         </div>
         {isLoading ? <span className="size-3.5 rounded-full border-2 border-[#465FFF] border-r-transparent" /> : null}
       </div>
@@ -691,7 +690,6 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h2 className="text-[18px] font-black tracking-[-0.03em] text-[#101334]">{ta("table.title")}</h2>
-          <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{ta("table.desc")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <label className="relative block">
@@ -1218,7 +1216,6 @@ export default function AlertsPage() {
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{ta("v2.header.title")}</h1>
-          <p className="mt-2 max-w-2xl text-[14px] font-medium leading-6 text-body">{ta("v2.header.desc")}</p>
         </div>
         <div className="flex flex-wrap gap-3">
           <button type="button" onClick={openNotificationRulesModal} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF] sm:w-auto">{ta("v2.header.notificationRules")}</button>

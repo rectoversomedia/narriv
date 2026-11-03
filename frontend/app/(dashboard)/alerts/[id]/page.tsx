@@ -154,7 +154,6 @@ function AssignmentCard({
         <div className="mb-5 flex flex-wrap items-center gap-3">
           <div>
             <h2 className="text-[18px] font-black tracking-[-0.03em] text-[#101334]">{td("assignment.title")}</h2>
-            <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{td("assignment.desc")}</p>
           </div>
           <button
             type="button"

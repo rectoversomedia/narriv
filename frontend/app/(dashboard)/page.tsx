@@ -332,9 +332,9 @@ export default function DashboardPage() {
                   {(() => {
                     const net = analysed > 0 ? Math.round(((dist.positive - dist.negative) / analysed) * 100) : 0;
                     const verdict = net <= -15
-                      ? { text: L("Leaning negative", "Cenderung negatif"), cls: "border-[#F4C7C3] bg-[#FFF5F4] text-[#B42318]" }
+                      ? { text: L("Negative", "Negatif"), cls: "border-[#F4C7C3] bg-[#FFF5F4] text-[#B42318]" }
                       : net >= 15
-                        ? { text: L("Leaning positive", "Cenderung positif"), cls: "border-[#BFE8D3] bg-[#F1FBF6] text-[#047857]" }
+                        ? { text: L("Positive", "Positif"), cls: "border-[#BFE8D3] bg-[#F1FBF6] text-[#047857]" }
                         : { text: L("Balanced", "Seimbang"), cls: "border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B]" };
                     return (
                       <div className={cn("mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[12px] border px-4 py-3", verdict.cls)}>

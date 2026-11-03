@@ -672,9 +672,6 @@ export default function DailyIntelligenceBriefPage() {
             <div className="overflow-hidden rounded-[16px] border border-slate-200 bg-white shadow-sm">
               <div className="border-b border-slate-100 px-5 py-4">
                 <h3 className="text-[14px] font-bold text-[#101334]">{L("Narrative Landscape", "Lanskap Narasi")}</h3>
-                <p className="mt-0.5 text-[12px] text-[#5A6478]">
-                  {L("Brand narratives sized by signal volume, colored by sentiment", "Narasi brand: ukuran menurut volume sinyal, warna menurut sentimen")}
-                </p>
               </div>
               <div className="p-4">
                 <div className="flex flex-wrap items-center gap-3 mb-4">

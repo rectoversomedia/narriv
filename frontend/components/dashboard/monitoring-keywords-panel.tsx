@@ -89,7 +89,6 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
       <div className="flex items-start gap-3">
         <div className="min-w-0">
           <h3 className="text-[13.5px] font-black text-[#101334]">{t("title")}</h3>
-          <p className="text-[10px] font-semibold text-[#5F6B94]">{t("desc")}</p>
           {keywordsQuery.data?.note ? <p className="mt-1 text-[10px] font-semibold text-[#5A6478]">{keywordsQuery.data.note}</p> : null}
         </div>
       </div>

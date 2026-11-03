@@ -409,7 +409,6 @@ export default function ActionPlansPage() {
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1>
-          <p className="mt-2 max-w-2xl text-[14px] font-medium leading-6 text-body">{t("desc")}</p>
         </div>
         <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[8px] bg-[#465FFF] px-4 text-[13px] font-black text-white shadow-sm transition hover:brightness-105 sm:w-fit">
           {t("newAction")}
@@ -519,7 +518,6 @@ export default function ActionPlansPage() {
               <Sparkles size={20} className="mt-0.5 text-[#3B52F5]" />
               <div>
                 <h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{t("detail")}</h2>
-                <p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("detailDesc")}</p>
               </div>
             </div>
             {!selectedActionId ? (
@@ -583,7 +581,6 @@ export default function ActionPlansPage() {
                 <BarChart3 size={20} className="mt-0.5 text-[#3B52F5]" />
                 <div>
                   <h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{t("performance")}</h2>
-                  <p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("performanceDesc")}</p>
                 </div>
               </div>
             {!selectedActionId ? (
@@ -640,7 +637,6 @@ export default function ActionPlansPage() {
               <Lightbulb size={20} className="mt-0.5 text-[#3B52F5]" />
               <div>
                 <h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{t("learning")}</h2>
-                <p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("learningDesc")}</p>
               </div>
             </div>
             {!selectedActionId ? (

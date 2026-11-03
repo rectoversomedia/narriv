@@ -982,7 +982,6 @@ export default function VisibilityPage() {
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
                     <h3 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{t("mentionsTrend.title")}</h3>
-                    <p className="text-[11px] font-bold text-[#647099]">{t("mentionsTrend.desc")}</p>
                   </div>
                   <div className="flex rounded-lg bg-[#F5F7FC] p-0.5">
                     <button type="button" onClick={() => setSelectedDays(7)} className={cn("rounded-md px-2.5 py-1 text-[10px] font-black transition", selectedDays === 7 ? "bg-white text-[#101334] shadow-sm" : "text-[#647099] hover:text-[#101334]")}>
@@ -1238,7 +1237,6 @@ export default function VisibilityPage() {
         <CardContent className="p-5">
           <div className="mb-5">
             <h3 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{t("citationIntelligence")}</h3>
-            <p className="text-[11px] font-bold text-[#647099] mt-1">{t("whereDoesAI")}</p>
           </div>
           <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={t("citationIntelligence")}>
             <table className="w-full text-left text-[11px] font-bold text-[#53608C]">

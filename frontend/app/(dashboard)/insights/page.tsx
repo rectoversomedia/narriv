@@ -113,7 +113,6 @@ export default function InsightsPage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">Insights</h1>
-              <p className="mt-1 max-w-2xl text-[14px] font-medium leading-6 text-body">What is happening around your brand right now. Every panel is grounded in current Narriv data.</p>
             </div>
             <div className="flex items-center gap-2">
               <div className="relative">

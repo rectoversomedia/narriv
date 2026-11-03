@@ -264,7 +264,6 @@ function ReportPreviewSidebar({
   return (
     <Panel className="p-4">
       <h3 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{tr("preview.title")}</h3>
-      <p className="mt-1 text-[11.5px] font-bold text-[#5F6B94]">{tr("preview.desc")}</p>
       
       {isPending ? (
         <div className="mt-4 flex h-[200px] items-center justify-center">
@@ -454,7 +453,6 @@ function ReportsTable({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{tr("table.title")}</h2>
-          <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{tr("table.desc")}</p>
         </div>
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           <label className="relative block w-full sm:w-[180px]">
@@ -628,7 +626,6 @@ function FormatDonut({ distribution }: { distribution: Array<{ name: string; val
   return (
     <Panel className="p-4">
       <h3 className="text-[16px] font-black text-[#101334]">{tr("formatDonut.title")}</h3>
-      <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{tr("formatDonut.desc")}</p>
       <div className="mt-5 grid gap-5 sm:grid-cols-[136px_minmax(0,1fr)] md:grid-cols-1 xl:grid-cols-[136px_minmax(0,1fr)]">
         {hasData ? (
           <>
@@ -711,7 +708,6 @@ function TimelineChart({ data }: { data: ReportsAnalyticsResponse["trend_timelin
   return (
     <Panel className="p-4">
       <h3 className="text-[16px] font-black text-[#101334]">{tr("timeline.title")} <span className="text-[11px] font-bold text-[#5F6B94]">{tr("timeline.period")}</span></h3>
-      <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{tr("timeline.desc")}</p>
 
       {hasData ? (
         <div className="relative mt-5 h-[190px] rounded-[12px] bg-gradient-to-b from-white to-[#F8FAFF]">
@@ -769,7 +765,6 @@ function PopularReports({ reports, onViewAll }: { reports: PopularReportItem[]; 
     <Panel className="p-4 flex flex-col justify-between">
       <div>
         <h3 className="text-[16px] font-black text-[#101334]">{tr("popular.title")}</h3>
-        <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{tr("popular.desc")}</p>
         
         <div className="mt-5 space-y-3">
           {reports.length > 0 ? reports.slice(0, 5).map((report, idx) => (
@@ -1164,7 +1159,6 @@ export default function ReportsPage() {
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("pages.reports.title")}</h1>
-          <p className="mt-2 max-w-2xl text-[14px] font-medium leading-6 text-body">{t("pages.reports.desc")}</p>
         </div>
         <div className="flex flex-wrap gap-3">
           <button type="button" onClick={() => setIsTemplatesModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:bg-[#F8FAFF] sm:w-auto">

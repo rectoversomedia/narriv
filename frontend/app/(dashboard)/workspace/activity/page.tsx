@@ -207,9 +207,6 @@ export default function ActivityPage() {
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="mt-3 text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1>
-          <p className="mt-1 max-w-2xl text-[14px] font-medium leading-6 text-body">
-            {t("desc")}
-          </p>
         </div>
         <button
           type="button"

@@ -589,7 +589,6 @@ function FollowUpPanel({ data }: { data?: SignalsMeta["followUps"] }) {
   return (
     <Panel className="p-4">
       <h2 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{t("title")}</h2>
-      <p className="mt-1 text-[11.5px] font-bold text-[#5F6B94]">{t("desc")}</p>
       
       {!hasData && data !== undefined ? (
         <div className="mt-4 flex flex-col items-center justify-center gap-2 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-6 text-center">
@@ -626,7 +625,6 @@ function RecommendationPanel({ data }: { data?: SignalsMeta["recommendations"] }
   return (
     <Panel className="p-4">
       <h2 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{t("title")}</h2>
-      <p className="mt-1 text-[11.5px] font-bold text-[#5F6B94]">{t("desc")}</p>
       
       {!hasData && data !== undefined ? (
         <div className="mt-4 flex flex-col items-center justify-center gap-2 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-6 text-center">
@@ -681,7 +679,6 @@ function SourceDonut({ data, totalSignals }: { data?: SignalsMeta["sourceDistrib
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-[16px] font-black text-[#101334]">{t("title")}</h3>
-          <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{t("desc")}</p>
         </div>
         <span className="inline-flex h-8 shrink-0 whitespace-nowrap items-center rounded-full border border-[#E6EAF2] bg-[#F8FAFF] px-3 text-[9px] font-black text-[#53608C]">
           {t("timeframe")}
@@ -756,7 +753,6 @@ function TimelineChart({ data, labels }: { data?: SignalsMeta["timeline"]; label
   return (
     <Panel className="p-4">
       <h3 className="text-[16px] font-black text-[#101334]">{t("title")} <span className="text-[11px] font-bold text-[#5F6B94]">{t("period")}</span></h3>
-      <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{t("desc")}</p>
 
       {isLoading ? (
         <div className="relative mt-5 h-[170px] overflow-hidden rounded-[12px] bg-[#FBFCFF]">
@@ -854,7 +850,6 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-[16px] font-black text-[#101334]">{t("title")}</h3>
-          <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{t("desc")}</p>
         </div>
         <Link href="/workspace/cases" className="text-[11px] font-black text-[#3B52F5]">{t("viewAll")}</Link>
       </div>
@@ -1215,7 +1210,7 @@ export default function SignalsPage() {
         <DemoBanner />
       )}
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div><h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1><p className="mt-2 max-w-2xl text-[14px] font-medium leading-6 text-body">{t("subtitle")}</p></div>
+        <div><h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1></div>
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"

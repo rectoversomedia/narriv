@@ -182,9 +182,6 @@ export default function IntegrationsPage() {
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="mt-3 text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1>
-          <p className="mt-1 max-w-2xl text-[14px] font-medium leading-6 text-body">
-            {t("description")}
-          </p>
         </div>
         <button
           type="button"
@@ -218,7 +215,6 @@ export default function IntegrationsPage() {
           <div className="mb-5 flex items-start gap-3">
             <div>
               <h2 className="text-base font-black text-slate-950">{t("form.title")}</h2>
-              <p className="mt-1 text-xs font-semibold leading-5 text-[#5A6478]">{t("form.desc")}</p>
             </div>
           </div>
 

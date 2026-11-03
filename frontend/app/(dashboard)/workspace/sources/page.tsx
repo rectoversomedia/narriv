@@ -487,7 +487,6 @@ function DistributionPanel({ total, legend }: { total: number; legend: Array<{ l
       <Panel>
         <CardContent className="p-5">
           <h2 className="text-[16px] font-black text-[#101334]">{t("distribution")}</h2>
-          <p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("distributionDesc")}</p>
           <div className="mt-6 flex flex-col items-center gap-3 py-6">
             <div className="text-center">
               <p className="text-[13px] font-bold text-[#53608C]">{t("emptyDistribution")}</p>
@@ -503,7 +502,6 @@ function DistributionPanel({ total, legend }: { total: number; legend: Array<{ l
     <Panel>
       <CardContent className="p-5">
         <h2 className="text-[16px] font-black text-[#101334]">{t("distribution")}</h2>
-        <p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("distributionDesc")}</p>
         {/* Side by side only where the card is wide enough; it sits in a narrow column at lg/xl. */}
         <div className="mt-5 grid items-center justify-items-center gap-6 sm:grid-cols-1 sm:justify-items-stretch lg:grid-cols-1 lg:justify-items-center 2xl:grid-cols-1 2xl:justify-items-stretch">
           <DistributionDonut total={total} />
@@ -765,7 +763,7 @@ export default function SourcesPage() {
       )}
 
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div><h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1><p className="mt-2 max-w-2xl text-[14px] font-medium leading-6 text-body">{t("desc")}</p></div>
+        <div><h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1></div>
         <div className="flex flex-wrap items-center gap-2.5">
           <button
             type="button"

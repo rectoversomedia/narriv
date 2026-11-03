@@ -20,7 +20,6 @@ export function PipelineHealthPanel({ className }: { className?: string }) {
         <div className="flex items-start gap-3">
           <div>
             <h2 id="pipeline-health-title" className="text-[14px] font-black text-[#101334]">{t("title")}</h2>
-            <p className="text-[11px] font-semibold text-[#5F6B94]">{t("desc")}</p>
           </div>
         </div>
         <button type="button" onClick={() => query.refetch()} disabled={query.isFetching} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#DDE3EF] px-3 text-[11px] font-black text-slate-600 hover:bg-slate-50 disabled:opacity-50">
