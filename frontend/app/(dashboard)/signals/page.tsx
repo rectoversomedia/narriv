@@ -35,6 +35,7 @@ type SignalRow = {
   id: string;
   title: string;
   sentimentTone: Exclude<Tone, "blue">;
+  publisher: string;
   desc: string;
   tags: string[];
   sourceType: string;
@@ -139,6 +140,7 @@ function buildApiSignalRows(apiSignals: Signal[], t: (key: string) => string): S
       desc: signal.content && !sameText(signal.content, title) ? signal.content : "",
       // Publisher (stored as author by ingestion) first, then the collection platform.
       tags: [...(signal.author ? [signal.author] : []), signal.platform || t("fallbackUnknownSource")],
+      publisher: signal.author || (signal.platform === "news" ? pickL("News", "Berita") : signal.platform) || t("fallbackUnknownSource"),
       sourceType: signal.platform || t("fallbackLiveSource"),
       sources: [source],
       sentiment,
@@ -313,7 +315,14 @@ function SentimentBadge({ sentiment }: { sentiment: Sentiment }) {
     MIXED: "bg-[#8B5CFF]/10 text-[#6E44E8]",
     UNANALYZED: "border border-dashed border-slate-300 bg-white text-[#5A6478]",
   };
-  return <span className={cn("rounded-full px-2 py-1 text-[9.5px] font-black tracking-[0.12em]", styles[sentiment])}>{sentiment === "UNANALYZED" ? "UNANALYZED" : sentiment}</span>;
+  const labels: Record<Sentiment, [string, string]> = {
+    NEGATIVE: ["Negative", "Negatif"],
+    POSITIVE: ["Positive", "Positif"],
+    NEUTRAL: ["Neutral", "Netral"],
+    MIXED: ["Mixed", "Campuran"],
+    UNANALYZED: ["Not analysed", "Belum dianalisis"],
+  };
+  return <span className={cn("whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-black", styles[sentiment])}>{pickL(...labels[sentiment])}</span>;
 }
 
 function TagBadge({ tag }: { tag: string }) {
@@ -328,14 +337,8 @@ function TagBadge({ tag }: { tag: string }) {
 }
 
 function AnalysisBadge({ status, confidence }: { status: "analyzed" | "unanalyzed"; confidence: number | null }) {
-  if (status !== "analyzed") {
-    return <span className="rounded-full border border-dashed border-slate-300 px-2 py-1 text-[9px] font-black text-[#5A6478]">Pending</span>;
-  }
-  return (
-    <span className="rounded-full bg-[#465FFF]/10 px-2 py-1 text-[9px] font-black text-[#3B52F5]" title="AI analysis confidence (persisted)">
-      {confidence === null ? "Analyzed" : `${Math.round(confidence * 100)}% conf.`}
-    </span>
-  );
+  if (status !== "analyzed") return <span className="text-[12px] font-bold text-[#8A93AD]">{pickL("Not yet", "Belum")}</span>;
+  return <span className="text-[12px] font-black text-[#3B52F5]">{confidence === null ? pickL("Done", "Selesai") : `${Math.round(confidence * 100)}%`}</span>;
 }
 
 function SourceIconList({ row }: { row: SignalRow }) {
@@ -493,13 +496,13 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                     {allSelected || someSelected ? <Check size={12} /> : null}
                   </button>
                 </th>
-                {[tSignals("headerSignal"), tSignals("headerSource"), tSignals("headerSentiment"), tSignals("headerRelatedNarrative"), tSignals("headerAmplification"), tSignals("headerPublished"), tSignals("headerCaptured"), tSignals("headerAction")].map((header) => <th key={header} scope="col" className="whitespace-nowrap px-3.5 py-3">{header}</th>)}
+                {[tSignals("headerSignal"), pickL("Media", "Media"), tSignals("headerSentiment"), tSignals("headerRelatedNarrative"), pickL("AI confidence", "Keyakinan AI"), tSignals("headerPublished"), tSignals("headerAction")].map((header) => <th key={header} scope="col" className="whitespace-nowrap px-3.5 py-3">{header}</th>)}
               </tr>
             </thead>
             <tbody className="divide-y divide-[#EDF1F7]">
               {rows.map((row) => (
                 <tr key={row.id} className={cn("transition hover:bg-[#F8FAFF]", selectedIds.has(row.id) && "bg-[#EEF2FF]")}>
-                  <td className="px-3.5 py-4 align-middle">
+                  <td className="px-3.5 py-3 align-middle">
                     <button
                       type="button"
                       onClick={() => handleSelectRow(row.id)}
@@ -514,39 +517,28 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                       {selectedIds.has(row.id) ? <Check size={12} /> : null}
                     </button>
                   </td>
-                  <td className="min-w-[280px] max-w-[400px] px-3.5 py-4">
-                    <div className="flex items-start gap-3">
-                      <SentimentIcon sentiment={row.sentiment} tone={row.sentimentTone} />
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-[13px] font-semibold leading-snug text-navy">{row.title}</span>
-                          {row.url ? (
-                            <a href={row.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-0.5 text-[10px] font-bold text-[#3B52F5] hover:underline" aria-label={t("openOriginal")}>
-                              {t("original")} <ExternalLink size={10} />
-                            </a>
-                          ) : null}
-                          <RelevanceBadge relevance={row.relevance} />
-                        </div>
-                        {row.desc ? <p className="mt-1 line-clamp-2 text-[12px] font-medium leading-snug text-body">{row.desc}</p> : null}
-                        <div className="mt-2 flex flex-wrap gap-1.5">{row.tags.map((tag) => <TagBadge key={tag} tag={tag} />)}</div>
-                      </div>
-                    </div>
+                  <td className="max-w-[420px] px-3.5 py-3">
+                    {/* One line per record: the headline opens the original article. */}
+                    {row.url ? (
+                      <a href={row.url} target="_blank" rel="noopener noreferrer" title={row.title} className="block truncate text-[13px] font-bold text-navy hover:text-[#3B52F5] hover:underline">{row.title}</a>
+                    ) : (
+                      <span title={row.title} className="block truncate text-[13px] font-bold text-navy">{row.title}</span>
+                    )}
                   </td>
-                  <td className="px-3.5 py-4 align-middle"><SourceIconList row={row} /></td>
-                  <td className="px-3.5 py-4 align-middle"><SentimentBadge sentiment={row.sentiment} /></td>
-                  <td className="px-3.5 py-4 align-middle">
+                  <td className="whitespace-nowrap px-3.5 py-3 align-middle text-[12px] font-bold text-[#31406B]">{row.publisher}</td>
+                  <td className="px-3.5 py-3 align-middle"><SentimentBadge sentiment={row.sentiment} /></td>
+                  <td className="px-3.5 py-3 align-middle">
                     {row.narratives[0] ? (
-                      <Link href={monitoringHref({ narrative: row.narratives[0].id })} className="block max-w-[120px] truncate text-[10.5px] font-bold text-[#3B52F5] hover:underline" title={row.relatedNarrative}>
+                      <Link href={monitoringHref({ narrative: row.narratives[0].id })} className="block max-w-[180px] truncate text-[12px] font-bold text-[#3B52F5] hover:underline" title={row.relatedNarrative}>
                         {row.relatedNarrative}{row.narrativeCount > 1 ? ` +${row.narrativeCount - 1}` : ""}
                       </Link>
                     ) : (
-                      <span className="block text-[10.5px] font-bold text-[#5A6478]">—</span>
+                      <span className="block text-[12px] font-bold text-[#8A93AD]">—</span>
                     )}
                   </td>
-                  <td className="px-3.5 py-4 align-middle"><AnalysisBadge status={row.analysisStatus} confidence={row.analysisConfidence} /></td>
-                  <td className="px-3.5 py-4 align-middle"><span className="block text-[11px] font-black text-[#31406B]">{row.time}</span></td>
-                  <td className="px-3.5 py-4 align-middle"><span className="block text-[11px] font-black text-[#31406B]">{row.captured}</span></td>
-                  <td className="px-3.5 py-4 text-right align-middle">
+                  <td className="whitespace-nowrap px-3.5 py-3 align-middle"><AnalysisBadge status={row.analysisStatus} confidence={row.analysisConfidence} /></td>
+                  <td className="whitespace-nowrap px-3.5 py-3 align-middle text-[12px] font-bold text-[#31406B]">{row.time}</td>
+                  <td className="px-3.5 py-3 text-right align-middle">
                     <div className="flex items-center justify-end gap-1.5">
                       <button
                         type="button"
@@ -579,6 +571,17 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
   );
 }
 
+/** Severity, priority and status codes from the API, in the UI language. */
+function codeLabel(code: string | null | undefined) {
+  const map: Record<string, [string, string]> = {
+    critical: ["Critical", "Kritis"], high: ["High", "Tinggi"], medium: ["Medium", "Sedang"], low: ["Low", "Rendah"], info: ["Info", "Info"],
+    open: ["Open", "Terbuka"], acknowledged: ["In progress", "Ditangani"], investigating: ["In progress", "Ditangani"], in_progress: ["In progress", "Ditangani"],
+    resolved: ["Resolved", "Selesai"], closed: ["Closed", "Ditutup"], pending: ["Pending", "Menunggu"],
+  };
+  const pair = map[String(code || "").toLowerCase()];
+  return pair ? pickL(pair[0], pair[1]) : code ?? "";
+}
+
 function FollowUpPanel({ data }: { data?: SignalsMeta["followUps"] }) {
   const t = useTranslations("Signals.followUp");
   const hasData = data && data.length > 0;
@@ -600,9 +603,9 @@ function FollowUpPanel({ data }: { data?: SignalsMeta["followUps"] }) {
             const style = toneStyles[item.tone as Tone];
             const Icon = item.tone === "green" ? Star : Zap;
             return (
-              <div key={`${item.title}:${keyIdx}`} className={cn("grid grid-cols-[36px_minmax(0,1fr)] gap-3 rounded-[12px] border p-3 sm:grid-cols-[36px_minmax(0,1fr)_auto]", item.tone === "red" ? "border-[#F8CACA] bg-[#FFF5F5]" : item.tone === "amber" ? "border-[#FFE8C2] bg-[#FFF9F0]" : "border-[#CDEEDD] bg-[#F1FCF6]")}>
+              <div key={`${item.title}:${keyIdx}`} className={cn("grid grid-cols-1 gap-3 rounded-[12px] border p-3 sm:grid-cols-[minmax(0,1fr)_auto]", item.tone === "red" ? "border-[#F8CACA] bg-[#FFF5F5]" : item.tone === "amber" ? "border-[#FFE8C2] bg-[#FFF9F0]" : "border-[#CDEEDD] bg-[#F1FCF6]")}>
                 <span className="min-w-0"><span className="block truncate text-[12px] font-black text-[#101334]">{item.title}</span><span className="mt-1 block text-[10px] font-bold text-[#58648C]">{item.meta}</span></span>
-                <span className="col-start-2 text-left sm:col-start-auto sm:text-right"><span className={cn("rounded-full px-2 py-0.5 text-[9px] font-black", style.soft, style.text)}>{item.badge}</span><span className="mt-2 block text-[10px] font-bold text-[#31406B]">{item.time}</span></span>
+                <span className="text-left sm:text-right"><span className={cn("rounded-full px-2 py-0.5 text-[9px] font-black", style.soft, style.text)}>{codeLabel(item.badge)}</span><span className="mt-2 block text-[10px] font-bold text-[#31406B]">{item.time}</span></span>
               </div>
             );
           })}
@@ -637,9 +640,9 @@ function RecommendationPanel({ data }: { data?: SignalsMeta["recommendations"] }
             const style = toneStyles[item.tone as Tone];
             const Icon = item.icon || (item.tone === "purple" ? AlertTriangle : item.tone === "blue" ? ShieldCheck : Zap);
             return (
-              <div key={`${item.title}:${keyIdx}`} className="grid grid-cols-[32px_minmax(0,1fr)] gap-3 rounded-[11px] border border-[#EDF1F7] bg-[#FBFCFF] p-3 sm:grid-cols-[32px_minmax(0,1fr)_auto]">
+              <div key={`${item.title}:${keyIdx}`} className="grid grid-cols-1 gap-3 rounded-[11px] border border-[#EDF1F7] bg-[#FBFCFF] p-3 sm:grid-cols-[minmax(0,1fr)_auto]">
                 <span className="min-w-0"><span className="block truncate text-[11.5px] font-black text-[#101334]">{item.title}</span><span className="mt-1 block text-[10px] font-bold text-[#5F6B94]">{item.desc}</span></span>
-                <span className={cn("col-start-2 h-fit w-fit rounded-full px-2 py-1 text-[8.5px] font-black sm:col-start-auto", item.tone === "red" || item.tone === "purple" ? "bg-[#EF4444]/10 text-[#C81E1E]" : item.tone === "blue" ? "bg-[#F59E0B]/12 text-[#A04606]" : "bg-[#10B981]/10 text-[#047857]")}>{item.badge}</span>
+                <span className={cn("h-fit w-fit rounded-full px-2 py-1 text-[8.5px] font-black", item.tone === "red" || item.tone === "purple" ? "bg-[#EF4444]/10 text-[#C81E1E]" : item.tone === "blue" ? "bg-[#F59E0B]/12 text-[#A04606]" : "bg-[#10B981]/10 text-[#047857]")}>{codeLabel(item.badge)}</span>
               </div>
             );
           })}
@@ -692,7 +695,7 @@ function SourceDonut({ data, totalSignals }: { data?: SignalsMeta["sourceDistrib
           <p className="text-[10px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
         </div>
       ) : (
-        <div className="mt-5 grid gap-5 sm:grid-cols-[136px_minmax(0,1fr)] md:grid-cols-1 xl:grid-cols-[136px_minmax(0,1fr)]">
+        <div className="mt-5 grid gap-5 sm:grid-cols-1 md:grid-cols-1 xl:grid-cols-1">
           <div className="chart-donut-enter relative mx-auto flex h-[136px] w-[136px] items-center justify-center rounded-full" style={{ background: `conic-gradient(${conicGradient})` }}>
             <span className="absolute h-[88px] w-[88px] rounded-full bg-white" />
             <span className="relative text-center">
@@ -867,12 +870,12 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
           {data.map((item, keyIdx) => {
             const style = toneStyles[item.tone as Tone];
             return (
-              <div key={`${item.title}:${keyIdx}`} className="grid grid-cols-[34px_minmax(0,1fr)] gap-3 rounded-[11px] border border-[#EDF1F7] bg-[#FBFCFF] p-3 sm:grid-cols-[34px_minmax(0,1fr)_auto]">
+              <div key={`${item.title}:${keyIdx}`} className="grid grid-cols-1 gap-3 rounded-[11px] border border-[#EDF1F7] bg-[#FBFCFF] p-3 sm:grid-cols-[minmax(0,1fr)_auto]">
                 <span className="min-w-0">
                   <span className="block truncate text-[12px] font-black text-[#101334]">{item.title}</span>
                   <span className="mt-1 block text-[10px] font-bold text-[#5F6B94]">{item.meta}</span>
                 </span>
-                <span className={cn("col-start-2 h-fit w-fit rounded-full px-2 py-1 text-[9px] font-black sm:col-start-auto", item.badge === "Investigating" || item.badge === "open" ? "bg-[#465FFF]/10 text-[#3B52F5]" : "bg-[#F59E0B]/12 text-[#A04606]")}>{item.badge}</span>
+                <span className={cn("h-fit w-fit rounded-full px-2 py-1 text-[9px] font-black", item.badge === "Investigating" || item.badge === "open" ? "bg-[#465FFF]/10 text-[#3B52F5]" : "bg-[#F59E0B]/12 text-[#A04606]")}>{codeLabel(item.badge)}</span>
               </div>
             );
           })}

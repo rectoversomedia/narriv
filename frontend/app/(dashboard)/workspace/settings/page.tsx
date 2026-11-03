@@ -533,7 +533,7 @@ export default function SettingsPage() {
 
           <form onSubmit={handleSaveWorkspaceInfo} className="grid gap-4">
             {/* Logo and inputs side-by-side or stacked */}
-            <div className="grid gap-5 sm:grid-cols-[100px_minmax(0,1fr)]">
+            <div className="grid gap-5 sm:grid-cols-1">
               <div className="flex flex-col items-center">
                 <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl bg-slate-950 border border-slate-800 shadow-inner">
                   <Image src={activeLogo} alt={ts("workspaceInfo.logoAlt")} width={60} height={60} unoptimized={activeLogo.startsWith("http")} className={cn("object-contain transition-opacity", uploadLogoMutation.isPending && "opacity-45")} />
@@ -993,8 +993,8 @@ export default function SettingsPage() {
 
       {/* MODAL: Invite Member (portal to escape z-10 stacking context) */}
       {showInviteModal && createPortal(
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-2xl border border-slate-100 bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-[18px] border border-[#E6EAF2] bg-white p-6 shadow-[0_24px_70px_rgba(16,19,52,0.25)] animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div>

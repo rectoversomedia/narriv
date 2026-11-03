@@ -1,11 +1,11 @@
 "use client";
 
-import { useId, useRef, useState, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { X, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { createCase } from "@/lib/api-service";
 import { useToast } from "@/components/ui/toast";
+import { Field, ModalShell, inputClass, primaryButtonClass, secondaryButtonClass } from "@/components/ui/modal-shell";
+import { useL } from "@/lib/use-l";
 
 interface CreateInvestigationModalProps {
   open: boolean;
@@ -31,13 +31,11 @@ export function CreateInvestigationModal({
   initialDescription,
 }: CreateInvestigationModalProps) {
   const t = useTranslations("Signals.modal");
-  const titleId = useId();
-  const descriptionId = useId();
-  const dialogRef = useRef<HTMLDivElement>(null);
+  const L = useL();
   const toast = useToast();
 
   const getComputedTitle = () => {
-    if (alertTitle) return `Investigation: ${alertTitle}`;
+    if (alertTitle) return L(`Investigation: ${alertTitle}`, `Investigasi: ${alertTitle}`);
     if (signalTitle) return t("defaultTitle", { title: signalTitle });
     return "";
   };
@@ -55,27 +53,7 @@ export function CreateInvestigationModal({
     }
   }, [open, signalTitle, alertTitle, initialDescription, initialPriority, t]);
 
-  useEffect(() => {
-    if (!open) return;
-    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onOpenChange(false);
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      previouslyFocused?.focus();
-    };
-  }, [onOpenChange, open]);
-
-  if (!open || typeof document === "undefined") return null;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     if (!title.trim()) return;
 
     setIsSubmitting(true);
@@ -101,91 +79,56 @@ export function CreateInvestigationModal({
     }
   };
 
-  return createPortal(
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md" role="presentation" onMouseDown={() => onOpenChange(false)}>
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={descriptionId}
-        className="w-full max-w-lg rounded-2xl border bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div>
-              <h3 id={titleId} className="text-lg font-black text-slate-900">{t("title")}</h3>
-              <p id={descriptionId} className="text-xs font-semibold text-[#5A6478]">{t("desc")}</p>
-            </div>
-          </div>
-          <button type="button" onClick={() => onOpenChange(false)} className="rounded-full p-1 text-[#5A6478] transition hover:bg-slate-100 hover:text-slate-700">
-            <X size={16} />
+  const close = () => onOpenChange(false);
+  const basis = alertTitle || signalTitle;
+
+  return (
+    <ModalShell
+      open={open}
+      onClose={close}
+      title={t("title")}
+      description={L("A case collects the evidence, an owner and a deadline for a deeper look.", "Kasus mengumpulkan bukti, penanggung jawab, dan tenggat untuk ditelusuri lebih dalam.")}
+      closeLabel={L("Close", "Tutup")}
+      size="sm"
+      footer={
+        <>
+          <button type="button" onClick={close} disabled={isSubmitting} className={secondaryButtonClass}>{t("cancel")}</button>
+          <button type="button" onClick={() => void handleSubmit()} disabled={isSubmitting || !title.trim()} className={primaryButtonClass}>
+            {isSubmitting ? L("Saving…", "Menyimpan…") : t("submit")}
           </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
-          <div className="space-y-1.5">
-            <label htmlFor="title" className="text-[12px] font-black text-slate-700">{t("titleLabel")}</label>
-            <input
-              id="title"
-              type="text"
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={t("titlePlaceholder")}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-            />
+        </>
+      }
+    >
+      <div className="space-y-4">
+        {basis ? (
+          <div className="rounded-[12px] border border-[#465FFF]/20 bg-[#F5F7FF] px-4 py-3">
+            <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#3B52F5]">{alertTitle ? L("Based on this alert", "Berdasarkan peringatan") : L("Based on this article", "Berdasarkan berita")}</p>
+            <p className="mt-1 truncate text-[14px] font-black text-[#101334]" title={basis}>{basis}</p>
           </div>
-
-          <div className="space-y-1.5">
-            <label htmlFor="priority" className="text-[12px] font-black text-slate-700">{t("priorityLabel")}</label>
-            <select
-              id="priority"
-              value={priority}
-              onChange={(e) => setPriority(e.target.value as "low" | "medium" | "high" | "critical")}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white"
-            >
-              <option value="low">{t("priority.low")}</option>
-              <option value="medium">{t("priority.medium")}</option>
-              <option value="high">{t("priority.high")}</option>
-              <option value="critical">{t("priority.critical")}</option>
-            </select>
+        ) : null}
+        <Field label={t("titleLabel")} htmlFor="case-title">
+          <input id="case-title" type="text" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("titlePlaceholder")} className={inputClass} />
+        </Field>
+        <Field label={t("priorityLabel")}>
+          <div role="radiogroup" aria-label={t("priorityLabel")} className="grid grid-cols-4 gap-2">
+            {(["low", "medium", "high", "critical"] as const).map((level) => (
+              <button
+                key={level}
+                type="button"
+                role="radio"
+                aria-checked={priority === level}
+                onClick={() => setPriority(level)}
+                className={`h-10 rounded-[10px] border text-[12px] font-black transition ${priority === level ? (level === "critical" ? "border-[#B42318] bg-[#B42318] text-white" : "border-[#465FFF] bg-[#465FFF] text-white") : "border-[#DDE3EF] bg-white text-[#31406B] hover:border-[#C9D4F6]"}`}
+              >
+                {t(`priority.${level}`)}
+              </button>
+            ))}
           </div>
-
-          <div className="space-y-1.5">
-            <label htmlFor="description" className="text-[12px] font-black text-slate-700">{t("descriptionLabel")}</label>
-            <textarea
-              id="description"
-              rows={4}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={t("descriptionPlaceholder")}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-            />
-          </div>
-
-          <div className="mt-4 flex gap-3">
-            <button
-              type="button"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-              className="flex h-10 flex-1 items-center justify-center rounded-lg border border-slate-200 bg-white text-[12px] font-black text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
-            >
-              {t("cancel")}
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting || !title.trim()}
-              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-[#465FFF] hover:bg-[#3B52F5] text-[12px] font-black text-white transition hover:opacity-90 disabled:opacity-50"
-            >
-              {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : null}
-              {t("submit")}
-            </button>
-          </div>
-        </form>
+        </Field>
+        <Field label={t("descriptionLabel")} htmlFor="case-description">
+          <textarea id="case-description" rows={4} value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("descriptionPlaceholder")} className={`${inputClass} h-auto py-2.5`} />
+        </Field>
       </div>
-    </div>,
-    document.body
+    </ModalShell>
   );
 }

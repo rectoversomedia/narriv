@@ -187,7 +187,7 @@ export function AdvancedSearchModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm"
       role="presentation"
       onMouseDown={() => onOpenChange(false)}
     >

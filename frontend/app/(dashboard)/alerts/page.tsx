@@ -575,7 +575,7 @@ function EscalationMatrix({ ta, levels, isLoading }: { ta: ReturnType<typeof use
       <div className="mt-4 space-y-2">
         {levels.map((item, index) => (
           <div key={`${item.id}-${item.level}`}>
-            <div className={cn("grid grid-cols-[42px_minmax(0,1fr)_auto] items-center gap-3 rounded-[9px] px-3 py-2", item.isActive ? "bg-[#F8FAFF]" : "bg-white ring-1 ring-inset ring-[#EEF1F7]")}>
+            <div className={cn("grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[9px] px-3 py-2", item.isActive ? "bg-[#F8FAFF]" : "bg-white ring-1 ring-inset ring-[#EEF1F7]")}>
               <span className={cn("rounded-[6px] px-2 py-1 text-center text-[10px] font-black", item.isActive ? "bg-[#EEEAFE] text-[#6B4DE6]" : "bg-slate-100 text-[#5A6478]")}>{item.level}</span>
               <div className="min-w-0">
                 <p className="truncate text-[11px] font-black text-[#101334]">{item.roleName}</p>
@@ -1269,7 +1269,7 @@ export default function AlertsPage() {
 
 
       {isNotificationRulesModalOpen && createPortal(
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#101334]/50 p-4 backdrop-blur-sm" onClick={closeNotificationRulesModal}>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={closeNotificationRulesModal}>
           <div className="relative z-10 flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-[18px] border border-[#DDE5F4] bg-white text-[#101334] shadow-[0_24px_70px_rgba(16,24,40,0.22)]" onClick={(event) => event.stopPropagation()}>
             <div className="relative overflow-hidden border-b border-[#E7ECF6] bg-[#F8FAFF] p-5">
               <div className="absolute right-8 top-3 size-28 rounded-full bg-[#465FFF]/10 blur-2xl" />
@@ -1293,7 +1293,7 @@ export default function AlertsPage() {
                   {Array.from({ length: 5 }, (_, index) => <div key={index} className="h-16 animate-pulse rounded-[12px] bg-[#F1F4FB]" />)}
                 </div>
               ) : (
-                <div className="grid gap-5 lg:grid-cols-[270px_minmax(0,1fr)]">
+                <div className="grid gap-5 lg:grid-cols-1">
                   <aside className="space-y-3">
                     <div className="rounded-[14px] border border-[#E6EAF2] bg-[#FBFCFF] p-4">
                       <p className="text-[12px] font-black text-[#101334]">{ta("v2.notificationRulesModal.deliveryTitle")}</p>
@@ -1458,7 +1458,7 @@ export default function AlertsPage() {
       )}
 
       {isEscalationModalOpen && createPortal(
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={closeEscalationModal}>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={closeEscalationModal}>
           <div className="relative z-10 flex max-h-[88vh] w-full max-w-3xl flex-col rounded-[14px] border border-[#E8ECF5] bg-white text-[#101334] shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-4 border-b border-[#EEF1F7] p-5">
               <div>
@@ -1567,7 +1567,7 @@ export default function AlertsPage() {
 
       {/* Create Alert Modal */}
       {isCreateModalOpen && createPortal(
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={closeCreateModal}>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={closeCreateModal}>
           <div className="relative z-10 flex w-full max-w-lg flex-col max-h-[85vh] rounded-[14px] border border-[#E8ECF5] bg-white text-[#101334] shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div>
@@ -1790,7 +1790,7 @@ export default function AlertsPage() {
 
       {/* Filter Modal */}
       {isFilterModalOpen && createPortal(
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#101334]/50 p-4 backdrop-blur-sm" onClick={() => setIsFilterModalOpen(false)}>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={() => setIsFilterModalOpen(false)}>
           <div className="relative z-10 flex w-full max-w-xl flex-col overflow-hidden rounded-[18px] border border-[#DDE5F4] bg-white text-[#101334] shadow-[0_24px_70px_rgba(16,24,40,0.22)]" onClick={(e) => e.stopPropagation()}>
             <div className="relative overflow-hidden border-b border-[#E7ECF6] bg-[#F8FAFF] p-5">
               <div className="absolute right-6 top-4 size-24 rounded-full bg-[#465FFF]/10 blur-2xl" />

@@ -1056,7 +1056,7 @@ export default function CasesPage() {
       {isCreateModalOpen &&
         createPortal(
           <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm"
             role="presentation"
             onMouseDown={(event) => {
               if (event.target === event.currentTarget)

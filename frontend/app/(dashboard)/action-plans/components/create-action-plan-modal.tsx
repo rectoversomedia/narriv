@@ -1,12 +1,12 @@
 "use client";
 
-import { useId, useRef, useState, useEffect } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { X, Sparkles, Loader2, Megaphone, FileText, Users, ShieldAlert, MessageCircle, Handshake, BarChart3 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { createActionPlan, getAlerts, getNarratives, type ActionStrategyType } from "@/lib/api-service";
 import { useToast } from "@/components/ui/toast";
+import { Field, ModalShell, inputClass, primaryButtonClass, secondaryButtonClass } from "@/components/ui/modal-shell";
+import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
 
 interface CreateActionPlanModalProps {
@@ -20,14 +20,14 @@ interface CreateActionPlanModalProps {
   initialStrategyType?: ActionStrategyType;
 }
 
-const strategyTypes: Array<{ value: ActionStrategyType; icon: React.ElementType; descriptionKey: string }> = [
-  { value: "crisis_response", icon: ShieldAlert, descriptionKey: "crDesc" },
-  { value: "stakeholder_update", icon: Handshake, descriptionKey: "suDesc" },
-  { value: "social_response", icon: MessageCircle, descriptionKey: "srDesc" },
-  { value: "pr_response", icon: Megaphone, descriptionKey: "prDesc" },
-  { value: "content_strategy", icon: FileText, descriptionKey: "csDesc" },
-  { value: "influencer_strategy", icon: Users, descriptionKey: "isDesc" },
-  { value: "data_driven", icon: BarChart3, descriptionKey: "ddDesc" },
+const strategyTypes: Array<{ value: ActionStrategyType; descriptionKey: string }> = [
+  { value: "crisis_response", descriptionKey: "crDesc" },
+  { value: "pr_response", descriptionKey: "prDesc" },
+  { value: "stakeholder_update", descriptionKey: "suDesc" },
+  { value: "social_response", descriptionKey: "srDesc" },
+  { value: "content_strategy", descriptionKey: "csDesc" },
+  { value: "influencer_strategy", descriptionKey: "isDesc" },
+  { value: "data_driven", descriptionKey: "ddDesc" },
 ];
 
 export function CreateActionPlanModal({
@@ -41,9 +41,7 @@ export function CreateActionPlanModal({
   initialStrategyType,
 }: CreateActionPlanModalProps) {
   const t = useTranslations("ActionPlans.modal");
-  const titleId = useId();
-  const descriptionId = useId();
-  const dialogRef = useRef<HTMLDivElement>(null);
+  const L = useL();
   const queryClient = useQueryClient();
   const toast = useToast();
 
@@ -51,19 +49,11 @@ export function CreateActionPlanModal({
   const [selectedAlertId, setSelectedAlertId] = useState<string>(initialAlertId || "");
   const [selectedClusterId, setSelectedClusterId] = useState<string>(initialClusterId || "");
   const [selectedSignalId, setSelectedSignalId] = useState<string>(initialSignalId || "");
+  const [showLinks, setShowLinks] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: alertsData } = useQuery({
-    queryKey: ["alerts-modal-select"],
-    queryFn: () => getAlerts({ limit: 50 }),
-    enabled: open,
-  });
-
-  const { data: narrativesData } = useQuery({
-    queryKey: ["narratives-modal-select"],
-    queryFn: () => getNarratives({ limit: 50 }),
-    enabled: open,
-  });
+  const { data: alertsData } = useQuery({ queryKey: ["alerts-modal-select"], queryFn: () => getAlerts({ limit: 50, status: "unresolved" }), enabled: open });
+  const { data: narrativesData } = useQuery({ queryKey: ["narratives-modal-select"], queryFn: () => getNarratives({ limit: 50 }), enabled: open });
 
   useEffect(() => {
     if (open) {
@@ -71,30 +61,13 @@ export function CreateActionPlanModal({
       setSelectedAlertId(initialAlertId || "");
       setSelectedClusterId(initialClusterId || "");
       setSelectedSignalId(initialSignalId || "");
+      setShowLinks(false);
     }
   }, [open, initialAlertId, initialClusterId, initialSignalId, initialStrategyType]);
 
-  useEffect(() => {
-    if (!open) return;
-    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  const close = () => onOpenChange(false);
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onOpenChange(false);
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      previouslyFocused?.focus();
-    };
-  }, [onOpenChange, open]);
-
-  if (!open || typeof document === "undefined") return null;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
       const result = await createActionPlan({
@@ -110,7 +83,7 @@ export function CreateActionPlanModal({
           queryClient.invalidateQueries({ queryKey: ["action-plans-latest"] }),
         ]);
         toast.success(t("toast.successDesc"), t("toast.successTitle"));
-        onOpenChange(false);
+        close();
       } else {
         toast.error(t("toast.errorDesc"), t("toast.errorTitle"));
       }
@@ -121,136 +94,91 @@ export function CreateActionPlanModal({
     }
   };
 
-  return createPortal(
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md" role="presentation" onMouseDown={() => onOpenChange(false)}>
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={descriptionId}
-        className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div>
-              <h3 id={titleId} className="text-lg font-black text-slate-900">{t("title")}</h3>
-              <p id={descriptionId} className="text-xs font-semibold text-[#5A6478]">{t("desc")}</p>
-            </div>
-          </div>
-          <button type="button" onClick={() => onOpenChange(false)} className="rounded-full p-1 text-[#5A6478] transition hover:bg-slate-100 hover:text-slate-700">
-            <X size={16} />
+  // What the plan starts from, in one line: the article or the alert.
+  const alertTitle = alertsData?.data?.find((a) => a.id === selectedAlertId)?.title || initialAlertTitle;
+  const basis = initialSignalTitle
+    ? { label: L("article", "berita"), title: initialSignalTitle }
+    : alertTitle && selectedAlertId
+      ? { label: L("alert", "peringatan"), title: alertTitle }
+      : null;
+  const linkedCount = (selectedAlertId && !(basis && !initialSignalTitle) ? 1 : 0) + (selectedClusterId ? 1 : 0);
+  const suggested = initialStrategyType || "crisis_response";
+
+  return (
+    <ModalShell
+      open={open}
+      onClose={close}
+      title={t("title")}
+      description={L("Pick the kind of response. Narriv drafts the plan; you review it before anything is used.", "Pilih jenis respons. Narriv menyusun drafnya; Anda yang meninjau sebelum dipakai.")}
+      closeLabel={L("Close", "Tutup")}
+      footer={
+        <>
+          <button type="button" onClick={close} disabled={isSubmitting} className={secondaryButtonClass}>{t("cancel")}</button>
+          <button type="button" onClick={() => void handleSubmit()} disabled={isSubmitting} className={primaryButtonClass}>
+            {isSubmitting ? L("Drafting…", "Menyusun…") : L("Create plan", "Buat rencana")}
           </button>
+        </>
+      }
+    >
+      {basis ? (
+        <div className="mb-5 rounded-[12px] border border-[#465FFF]/20 bg-[#F5F7FF] px-4 py-3">
+          <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#3B52F5]">{L("Based on this", "Berdasarkan")} {basis.label}</p>
+          <p className="mt-1 truncate text-[14px] font-black text-[#101334]" title={basis.title}>{basis.title}</p>
         </div>
+      ) : null}
 
-        <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
-          {selectedSignalId && (
-            <div className="flex items-center gap-2.5 rounded-xl border border-[#465FFF]/20 bg-[#465FFF]/5 p-3 text-[12px] text-[#3B52F5]">
-              <Sparkles size={16} className="shrink-0 text-[#3B52F5]" />
-              <div className="min-w-0">
-                <span className="block text-[10px] font-black uppercase tracking-wider text-[#3B52F5]/70">Prefilled Context: Signal</span>
-                <span className="block truncate font-bold text-slate-800">{initialSignalTitle || `#${selectedSignalId.slice(0, 8)}`}</span>
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-1.5">
-            <label className="text-[12px] font-black text-slate-700">{t("strategyLabel")}</label>
-            <div className="grid grid-cols-1 gap-2">
-              {strategyTypes.map((st) => {
-                const Icon = st.icon;
-                const isActive = strategyType === st.value;
-                return (
-                  <button
-                    key={st.value}
-                    type="button"
-                    onClick={() => setStrategyType(st.value)}
-                    className={cn(
-                      "group flex items-start gap-3 rounded-xl border p-3 text-left transition-all duration-200 hover:-translate-y-0.5",
-                      isActive
-                        ? "border-[#465FFF] bg-[#465FFF]/5 shadow-sm"
-                        : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
-                    )}
-                  >
-                    <div>
-                      <p className={cn("text-[13px] font-black transition-colors", isActive ? "text-[#3B52F5]" : "text-slate-700")}>{t(`strategy.${st.value}`)}</p>
-                      <p className="mt-0.5 text-[11px] font-semibold text-[#5A6478]">{t(st.descriptionKey)}</p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Alert Selector (Optional) */}
-          <div className="space-y-1.5">
-            <label htmlFor="modal-alert-select" className="text-[12px] font-black text-slate-700">
-              {t("alertLabel")}
-            </label>
-            <select
-              id="modal-alert-select"
-              value={selectedAlertId}
-              onChange={(e) => setSelectedAlertId(e.target.value)}
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-semibold text-slate-700 outline-none transition focus:border-[#465FFF] focus:ring-2 focus:ring-[#465FFF]/15"
-            >
-              <option value="">{t("alertPlaceholder")}</option>
-              {selectedAlertId && !alertsData?.data?.some((a) => a.id === selectedAlertId) && (
-                <option value={selectedAlertId}>
-                  {initialAlertTitle || `Alert #${selectedAlertId.slice(0, 8)}`} (Pre-selected)
-                </option>
-              )}
-              {alertsData?.data?.map((alert) => (
-                <option key={alert.id} value={alert.id}>
-                  {alert.title} {alert.severity ? `(${alert.severity.toUpperCase()})` : ""}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Narrative Cluster Selector (Optional) */}
-          <div className="space-y-1.5">
-            <label htmlFor="modal-cluster-select" className="text-[12px] font-black text-slate-700">
-              {t("clusterLabel")}
-            </label>
-            <select
-              id="modal-cluster-select"
-              value={selectedClusterId}
-              onChange={(e) => setSelectedClusterId(e.target.value)}
-              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-semibold text-slate-700 outline-none transition focus:border-[#465FFF] focus:ring-2 focus:ring-[#465FFF]/15"
-            >
-              <option value="">{t("clusterPlaceholder")}</option>
-              {narrativesData?.data?.map((cluster) => (
-                <option key={cluster.id} value={cluster.id}>
-                  {cluster.title}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <p className="text-[11px] font-semibold text-[#5A6478]">{t("hint")}</p>
-
-          <div className="mt-2 flex gap-3">
+      <p className="mb-2 text-[12px] font-black text-[#101334]">{t("strategyLabel")}</p>
+      <div role="radiogroup" aria-label={t("strategyLabel")} className="grid gap-2.5 sm:grid-cols-2">
+        {strategyTypes.map((st) => {
+          const isActive = strategyType === st.value;
+          return (
             <button
+              key={st.value}
               type="button"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-              className="flex h-10 flex-1 items-center justify-center rounded-lg border border-slate-200 bg-white text-[12px] font-black text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+              role="radio"
+              aria-checked={isActive}
+              onClick={() => setStrategyType(st.value)}
+              className={cn(
+                "rounded-[12px] border p-3.5 text-left transition",
+                isActive ? "border-[#465FFF] bg-[#F5F7FF] ring-2 ring-[#465FFF]/15" : "border-[#E6EAF2] bg-white hover:border-[#C9D4F6]",
+              )}
             >
-              {t("cancel")}
+              <span className="flex items-center justify-between gap-2">
+                <span className={cn("text-[13px] font-black", isActive ? "text-[#3B52F5]" : "text-[#101334]")}>{t(`strategy.${st.value}`)}</span>
+                {st.value === suggested ? <span className="rounded-full bg-[#E8F7EF] px-2 py-0.5 text-[10px] font-black text-[#047857]">{L("Suggested", "Disarankan")}</span> : null}
+              </span>
+              <span className="mt-1 block text-[12px] font-medium leading-snug text-[#5A6478]">{t(st.descriptionKey)}</span>
             </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-[#465FFF] hover:bg-[#3B52F5] text-[12px] font-black text-white transition hover:opacity-90 disabled:opacity-50"
-            >
-              {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : null}
-              {t("submit")}
-            </button>
-          </div>
-        </form>
+          );
+        })}
       </div>
-    </div>,
-    document.body
+
+      <div className="mt-5 rounded-[12px] border border-[#EEF1F7]">
+        <button type="button" onClick={() => setShowLinks((v) => !v)} aria-expanded={showLinks} className="flex w-full items-center justify-between px-4 py-3 text-left">
+          <span className="text-[13px] font-black text-[#101334]">
+            {L("Link to an alert or issue", "Kaitkan dengan peringatan atau isu")}
+            <span className="ml-2 text-[12px] font-semibold text-[#5A6478]">{linkedCount > 0 ? L(`${linkedCount} linked`, `${linkedCount} terkait`) : L("optional", "opsional")}</span>
+          </span>
+          <span className="text-[12px] font-black text-[#3B52F5]">{showLinks ? L("Hide", "Tutup") : L("Show", "Buka")}</span>
+        </button>
+        {showLinks ? (
+          <div className="grid gap-4 border-t border-[#EEF1F7] p-4 sm:grid-cols-2">
+            <Field label={L("Alert", "Peringatan")} htmlFor="modal-alert-select">
+              <select id="modal-alert-select" value={selectedAlertId} onChange={(e) => setSelectedAlertId(e.target.value)} className={inputClass}>
+                <option value="">{L("None", "Tidak ada")}</option>
+                {selectedAlertId && !alertsData?.data?.some((a) => a.id === selectedAlertId) ? <option value={selectedAlertId}>{initialAlertTitle || L("Selected alert", "Peringatan terpilih")}</option> : null}
+                {alertsData?.data?.map((alert) => <option key={alert.id} value={alert.id}>{alert.title}</option>)}
+              </select>
+            </Field>
+            <Field label={L("Issue", "Isu")} htmlFor="modal-cluster-select">
+              <select id="modal-cluster-select" value={selectedClusterId} onChange={(e) => setSelectedClusterId(e.target.value)} className={inputClass}>
+                <option value="">{L("None", "Tidak ada")}</option>
+                {narrativesData?.data?.map((cluster) => <option key={cluster.id} value={cluster.id}>{cluster.title}</option>)}
+              </select>
+            </Field>
+          </div>
+        ) : null}
+      </div>
+    </ModalShell>
   );
 }

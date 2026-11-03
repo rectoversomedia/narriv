@@ -67,7 +67,7 @@ export function RejectActionPlanModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md animate-in fade-in duration-150"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm animate-in fade-in duration-150"
       role="presentation"
       onMouseDown={() => {
         if (!isSubmitting) onOpenChange(false);

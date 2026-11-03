@@ -439,7 +439,7 @@ function ReportsTable({
   ];
   const filteredRows = rows
     .filter((report) => activeTab === "all" || report.status === activeTab)
-    .filter((report) => typeFilter === "all" || report.type.toLowerCase().includes(typeFilter.toLowerCase()))
+    .filter((report) => typeFilter === "all" || report.type === typeFilter)
     .filter((report) => {
       const term = searchTerm.trim().toLowerCase();
       if (!term) return true;
@@ -473,10 +473,8 @@ function ReportsTable({
               aria-label={pickL("Filter report type", "Saring jenis laporan")}
               className="h-8 w-full rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-2.5 text-[10px] font-black text-[#58648C] outline-none transition hover:bg-white focus:border-[#465FFF] sm:w-auto"
             >
-              <option value="all">All Types</option>
-              <option value="Executive Brief">Executive Brief</option>
-              <option value="Incident">Incident</option>
-              <option value="Weekly">Weekly Digest</option>
+              <option value="all">{pickL("All types", "Semua jenis")}</option>
+              {Object.entries(REPORT_TYPE_LABELS).map(([key, [en, id]]) => <option key={key} value={pickL(en, id)}>{pickL(en, id)}</option>)}
             </select>
           </div>
           {hasLocalFilters ? (
@@ -1244,7 +1242,7 @@ export default function ReportsPage() {
 
       {/* Schedule Settings Modal */}
       {mounted && isScheduleModalOpen ? createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => { setIsScheduleModalOpen(false); setIsScheduleFormOpen(false); }}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={() => { setIsScheduleModalOpen(false); setIsScheduleFormOpen(false); }}>
           <Panel role="dialog" aria-modal="true" aria-labelledby="reports-schedule-dialog-title" tabIndex={-1} className="flex w-full max-w-2xl flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div className="flex items-center gap-3">
@@ -1463,7 +1461,7 @@ export default function ReportsPage() {
 
       {/* Popular Reports Modal */}
       {mounted && isPopularModalOpen ? createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsPopularModalOpen(false)}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={() => setIsPopularModalOpen(false)}>
           <Panel role="dialog" aria-modal="true" aria-labelledby="reports-popular-dialog-title" tabIndex={-1} className="flex w-full max-w-lg flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div>
@@ -1503,7 +1501,7 @@ export default function ReportsPage() {
 
       {/* Share Report Modal */}
       {mounted && isShareModalOpen ? createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsShareModalOpen(false)}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={() => setIsShareModalOpen(false)}>
           <Panel role="dialog" aria-modal="true" aria-labelledby="reports-share-dialog-title" tabIndex={-1} className="flex w-full max-w-md flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div>
@@ -1554,7 +1552,7 @@ export default function ReportsPage() {
 
       {/* Modals */}
       {mounted && isTemplatesModalOpen ? createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsTemplatesModalOpen(false)}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={() => setIsTemplatesModalOpen(false)}>
           <Panel role="dialog" aria-modal="true" aria-labelledby="reports-templates-dialog-title" tabIndex={-1} className="flex w-full max-w-2xl flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div className="flex items-center gap-3">
@@ -1664,7 +1662,7 @@ export default function ReportsPage() {
       ) : null}
 
       {mounted && isCreateModalOpen ? createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsCreateModalOpen(false)}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={() => setIsCreateModalOpen(false)}>
           <Panel role="dialog" aria-modal="true" aria-labelledby="reports-create-dialog-title" tabIndex={-1} className="flex w-full max-w-lg flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div>

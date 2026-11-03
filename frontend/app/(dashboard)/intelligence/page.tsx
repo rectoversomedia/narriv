@@ -20,6 +20,8 @@ import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components
 import { TopicMapCanvas } from "@/components/intelligence/topic-map-canvas";
 import { readableTone } from "@/lib/readable-tone";
 import { DemoBanner } from "@/components/ui/demo-banner";
+import { pickL } from "@/lib/use-l";
+import { intlLocale } from "@/store/useUiStore";
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type LocalizedText = { en: string; id: string };
 
@@ -929,7 +931,7 @@ export default function IntelligencePage() {
                 {ti("competitorShare.title")}
                 <Info size={13} className="text-[#647099]" />
               </h3>
-              <div className="grid items-center justify-items-center gap-4 sm:grid-cols-[156px_minmax(0,1fr)] sm:justify-items-stretch xl:grid-cols-[156px_minmax(0,1fr)]">
+              <div className="grid items-center justify-items-center gap-4 sm:grid-cols-1 sm:justify-items-stretch xl:grid-cols-1">
                 <CompetitorDonut label={ti("competitorShare.totalShare")} gradient={narrativeShareGradient} totalLabel={ti("labels.total")} />
                 <div className="flex w-full min-w-0 flex-col gap-2 text-[12px] font-bold text-[#53608C]">
                   {narrativeShareData.map((item) => {
@@ -986,7 +988,7 @@ export default function IntelligencePage() {
       </footer>
 
       {mounted && isAnalysisOpen ? createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsAnalysisOpen(false)}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={() => setIsAnalysisOpen(false)}>
           <Panel className="flex w-full max-w-3xl flex-col max-h-[90vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div>
@@ -1046,7 +1048,7 @@ export default function IntelligencePage() {
       ) : null}
 
       {mounted && isLandscapeOpen ? createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsLandscapeOpen(false)}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={() => setIsLandscapeOpen(false)}>
           <Panel className="flex w-full max-w-2xl flex-col shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <h2 className="text-lg font-black text-[#101334]">{ti("competitorShare.title")}</h2>
@@ -1076,7 +1078,7 @@ export default function IntelligencePage() {
       ) : null}
 
       {mounted && isAllClustersModalOpen ? createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsAllClustersModalOpen(false)}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={() => setIsAllClustersModalOpen(false)}>
           <Panel className="flex w-full max-w-2xl flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div>
@@ -1136,10 +1138,16 @@ const SENTIMENT_CHIP: Record<string, string> = {
   unanalyzed: "border-dashed border-slate-300 bg-white text-[#5A6478]",
 };
 
+function sentimentWord(key: string) {
+  const map: Record<string, [string, string]> = { positive: ["Positive", "Positif"], negative: ["Negative", "Negatif"], neutral: ["Neutral", "Netral"], mixed: ["Mixed", "Campuran"], unanalyzed: ["Not analysed", "Belum dianalisis"] };
+  const pair = map[String(key).toLowerCase()];
+  return pair ? pickL(pair[0], pair[1]) : key;
+}
+
 function formatDate(iso?: string | null) {
   if (!iso) return "—";
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString(intlLocale(), { dateStyle: "medium", timeStyle: "short" });
 }
 
 /** Narrative evidence: observed facts (counts, dates, linked sources) separate from model assessments. */
@@ -1150,37 +1158,37 @@ function NarrativeEvidence({ detail }: { detail: NarrativeDetailRecord }) {
   const momentum = detail.momentum;
   return (
     <div className="grid gap-6">
-      <section aria-label="Observed facts">
-        <h3 className="text-sm font-black text-[#53608C]">Observed</h3>
+      <section aria-label={pickL("Facts", "Fakta")}>
+        <h3 className="text-sm font-black text-[#53608C]">{pickL("Facts", "Fakta")}</h3>
         <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold uppercase text-[#647099]">Linked signals</dt><dd className="mt-1 text-lg font-black text-[#101334]">{signals.length}</dd></div>
-          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3" title={momentum?.basis}><dt className="text-[10px] font-bold uppercase text-[#647099]">Last 24h vs prior</dt><dd className="mt-1 text-lg font-black text-[#101334]">{momentum ? `${momentum.last24h} vs ${momentum.prior24h}` : "—"}</dd></div>
-          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold uppercase text-[#647099]">First seen</dt><dd className="mt-1 text-[12px] font-black text-[#101334]">{formatDate(detail.firstSeen)}</dd></div>
-          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold uppercase text-[#647099]">Last seen</dt><dd className="mt-1 text-[12px] font-black text-[#101334]">{formatDate(detail.lastSeen)}</dd></div>
+          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold uppercase text-[#647099]">{pickL("Articles", "Berita")}</dt><dd className="mt-1 text-lg font-black text-[#101334]">{signals.length}</dd></div>
+          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3" title={momentum?.basis}><dt className="text-[10px] font-bold uppercase text-[#647099]">{pickL("Last 24h vs day before", "24 jam terakhir vs sebelumnya")}</dt><dd className="mt-1 text-lg font-black text-[#101334]">{momentum ? `${momentum.last24h} vs ${momentum.prior24h}` : "—"}</dd></div>
+          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold uppercase text-[#647099]">{pickL("First seen", "Pertama muncul")}</dt><dd className="mt-1 text-[12px] font-black text-[#101334]">{formatDate(detail.firstSeen)}</dd></div>
+          <div className="rounded-lg border border-[#EEF1F7] bg-[#FBFCFF] p-3"><dt className="text-[10px] font-bold uppercase text-[#647099]">{pickL("Last seen", "Terakhir muncul")}</dt><dd className="mt-1 text-[12px] font-black text-[#101334]">{formatDate(detail.lastSeen)}</dd></div>
         </dl>
       </section>
 
-      <section aria-label="Model assessment">
-        <h3 className="text-sm font-black text-[#53608C]">AI assessment</h3>
+      <section aria-label={pickL("AI assessment", "Penilaian AI")}>
+        <h3 className="text-sm font-black text-[#53608C]">{pickL("AI assessment", "Penilaian AI")}</h3>
         <p className="mt-2 text-[12px] font-semibold text-[#58648C]">
-          Confidence: <span className="font-black text-[#101334]">{detail.confidence === null || detail.confidence === undefined ? "not available" : `${detail.confidence}%`}</span>
+          {pickL("Confidence", "Keyakinan")}: <span className="font-black text-[#101334]">{detail.confidence === null || detail.confidence === undefined ? pickL("not available", "belum tersedia") : `${detail.confidence}%`}</span>
           {detail.confidenceBasis ? <span className="text-[#647099]"> · {detail.confidenceBasis}</span> : null}
         </p>
         {total > 0 ? (
           <div className="mt-3 flex flex-wrap gap-2">
             {Object.entries(breakdown).filter(([, v]) => v > 0).map(([key, value]) => (
               <span key={key} className={cn("rounded-md border px-2 py-1 text-[11px] font-black capitalize", SENTIMENT_CHIP[key] || SENTIMENT_CHIP.neutral)}>
-                {key} {Math.round((value / total) * 100)}% ({value})
+                {sentimentWord(key)} {Math.round((value / total) * 100)}% ({value})
               </span>
             ))}
           </div>
         ) : null}
       </section>
 
-      <section aria-label="Evidence">
-        <h3 className="text-sm font-black text-[#53608C]">Evidence ({signals.length})</h3>
+      <section aria-label={pickL("Evidence", "Bukti")}>
+        <h3 className="text-sm font-black text-[#53608C]">{pickL("Evidence", "Bukti")} ({signals.length})</h3>
         {signals.length === 0 ? (
-          <p className="mt-2 text-[12px] font-semibold text-[#647099]">{detail.evidenceNote || "No linked signals."}</p>
+          <p className="mt-2 text-[12px] font-semibold text-[#647099]">{detail.evidenceNote || pickL("No linked articles.", "Belum ada berita tertaut.")}</p>
         ) : (
           <ul className="mt-3 flex flex-col gap-2">
             {signals.slice(0, 20).map((sig) => (
@@ -1192,16 +1200,16 @@ function NarrativeEvidence({ detail }: { detail: NarrativeDetailRecord }) {
                     <p className="text-sm font-bold text-[#101334]">{sig.title}</p>
                   )}
                   <span className={cn("shrink-0 rounded-md border px-1.5 py-0.5 text-[10px] font-black capitalize", SENTIMENT_CHIP[sig.sentiment] || SENTIMENT_CHIP.unanalyzed)}>
-                    {sig.sentiment === "unanalyzed" ? "Not analyzed" : sig.sentiment}
+                    {sentimentWord(sig.sentiment)}
                     {typeof sig.analysisConfidence === "number" ? ` · ${Math.round(sig.analysisConfidence * 100)}%` : ""}
                   </span>
                 </div>
-                <p className="mt-1 text-[11px] font-semibold text-[#647099]">{sig.platform || "Unknown source"} · {formatDate(sig.publishedAt || sig.capturedAt)}</p>
+                <p className="mt-1 text-[11px] font-semibold text-[#647099]">{sig.platform === "news" ? pickL("News", "Berita") : sig.platform || pickL("Unknown source", "Sumber tidak diketahui")} · {formatDate(sig.publishedAt || sig.capturedAt)}</p>
               </li>
             ))}
           </ul>
         )}
-        {signals.length > 20 ? <p className="mt-2 text-[11px] font-semibold text-[#647099]">Showing the 20 most recent of {signals.length} linked signals.</p> : null}
+        {signals.length > 20 ? <p className="mt-2 text-[11px] font-semibold text-[#647099]">{pickL(`Showing the 20 most recent of ${signals.length} articles.`, `Menampilkan 20 terbaru dari ${signals.length} berita.`)}</p> : null}
       </section>
     </div>
   );

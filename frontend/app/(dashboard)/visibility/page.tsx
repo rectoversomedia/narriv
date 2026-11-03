@@ -1319,7 +1319,7 @@ export default function VisibilityPage() {
       </Panel>
       {/* Actions Modal */}
       {isActionsModalOpen && createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsActionsModalOpen(false)}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={() => setIsActionsModalOpen(false)}>
           <div className="flex w-full max-w-lg flex-col max-h-[85vh] rounded-[14px] border border-[#E8ECF5] bg-white text-[#101334] shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div>
@@ -1355,7 +1355,7 @@ export default function VisibilityPage() {
 
       {/* All Mentions Modal */}
       {isMentionsModalOpen && createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4 backdrop-blur-md" onClick={() => setIsMentionsModalOpen(false)}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={() => setIsMentionsModalOpen(false)}>
           <div className="flex w-full max-w-2xl flex-col max-h-[85vh] rounded-[14px] border border-[#E8ECF5] bg-white text-[#101334] shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
               <div>
