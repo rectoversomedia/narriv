@@ -3085,7 +3085,9 @@
       "unresolvedAlerts": "Unresolved alerts",
       "partialStatus": "Some status checks failed; figures may be incomplete.",
       "rightsReserved": "All rights reserved.",
-      "demoBanner": "Demo workspace — live monitoring data; panels marked Illustrative or Demo show example content"
+      "demoBanner": "Demo workspace — live monitoring data; panels marked Illustrative or Demo show example content",
+      "collapse": "Collapse menu",
+      "expand": "Expand menu"
     },
     "topbar": {
       "search": "Search signals, topics, issues, or cases...",

@@ -3085,7 +3085,9 @@
       "unresolvedAlerts": "Peringatan belum selesai",
       "partialStatus": "Sebagian pemeriksaan status gagal; angka bisa belum lengkap.",
       "rightsReserved": "Hak cipta dilindungi.",
-      "demoBanner": "Workspace demo — data pemantauan terkini; panel berlabel Ilustratif atau Demo berisi contoh"
+      "demoBanner": "Workspace demo — data pemantauan terkini; panel berlabel Ilustratif atau Demo berisi contoh",
+      "collapse": "Ciutkan menu",
+      "expand": "Buka menu"
     },
     "topbar": {
       "search": "Cari sinyal, topik, isu, atau kasus...",

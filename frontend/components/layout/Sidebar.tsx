@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MoreHorizontal, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
+import { ChevronsLeft, MoreHorizontal, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { navGroups } from "@/lib/navigation";
@@ -47,65 +47,30 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className={`sidebar-gradient fixed inset-y-0 left-0 z-30 hidden overflow-y-auto px-4 py-6 text-white transition-[width,padding] duration-300 lg:block ${sidebarCollapsed ? "w-[72px] px-2" : "w-[240px]"}`}>
-        <div className={`flex items-center gap-2 px-1 ${sidebarCollapsed ? "justify-center" : ""}`}>
-          {sidebarCollapsed ? (
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full">
-              <Image
-                src={customLogoUrl || "/logo-bulat-narriv-2026.png"}
-                alt={brandName}
-                width={40}
-                height={40}
-                priority
-                unoptimized={Boolean(customLogoUrl)}
-                className="h-10 w-10 object-contain"
-              />
-            </span>
-          ) : customLogoUrl ? (
-            <>
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full">
-                <Image
-                  src={customLogoUrl}
-                  alt={brandName}
-                  width={40}
-                  height={40}
-                  priority
-                  unoptimized
-                  className="h-10 w-10 scale-[1.28] object-contain"
-                />
-              </span>
-              <span className="text-[24px] font-bold tracking-[-0.05em] bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-white/70">
-                {brandName}
-              </span>
-            </>
-          ) : (
-            <div className="flex h-10 items-center px-1">
-              <Image
-                src="/logo-p-narriv-2026.png"
-                alt={brandName}
-                width={140}
-                height={40}
-                priority
-                className="h-10 w-auto max-w-[140px] object-contain"
-              />
-            </div>
-          )}
+      <aside
+        className={`sidebar-gradient fixed inset-y-0 left-0 z-30 hidden flex-col overflow-hidden px-3 py-6 text-white transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] lg:flex ${sidebarCollapsed ? "w-[72px]" : "w-[240px]"}`}
+      >
+        {/* Logo: the round mark when collapsed, the wordmark when open; they cross-fade instead of jumping. */}
+        <div className="relative h-10 shrink-0 px-1">
+          <span className={`absolute left-1 top-0 flex h-10 w-10 items-center justify-center overflow-hidden rounded-full transition-opacity duration-200 ${sidebarCollapsed ? "opacity-100" : "opacity-0"}`}>
+            <Image src={customLogoUrl || "/logo-bulat-narriv-2026.png"} alt={brandName} width={40} height={40} priority unoptimized={Boolean(customLogoUrl)} className="h-10 w-10 object-contain" />
+          </span>
+          <span className={`absolute left-1 top-0 flex h-10 items-center gap-2 whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? "pointer-events-none opacity-0" : "opacity-100"}`}>
+            {customLogoUrl ? (
+              <>
+                <Image src={customLogoUrl} alt={brandName} width={40} height={40} priority unoptimized className="h-10 w-10 scale-[1.28] rounded-full object-contain" />
+                <span className="text-[24px] font-bold tracking-[-0.05em] text-white">{brandName}</span>
+              </>
+            ) : (
+              <Image src={activeLogo} alt={brandName} width={140} height={40} priority className="h-10 w-auto max-w-[140px] object-contain" />
+            )}
+          </span>
         </div>
 
-        <button
-          type="button"
-          onClick={toggleSidebar}
-          className="absolute right-3 top-6 flex h-7 w-7 items-center justify-center rounded-[6px] border border-white/10 bg-white/4 text-white/80 transition hover:bg-white/10 hover:text-white"
-          aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {sidebarCollapsed ? <PanelLeftOpen size={14} /> : <PanelLeftClose size={14} />}
-        </button>
-
-        <nav className={`space-y-5 ${sidebarCollapsed ? "mt-8" : "mt-6"}`}>
+        <nav className="mt-6 min-h-0 flex-1 space-y-5 overflow-y-auto overflow-x-hidden">
           {navGroups.map((group) => (
             <div key={group.key}>
-              {sidebarCollapsed ? null : <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-white/40">{t(`navGroups.${group.key}`)}</p>}
+              <p className={`h-4 whitespace-nowrap px-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-white/40 transition-opacity duration-200 ${sidebarCollapsed ? "opacity-0" : "opacity-100"}`}>{t(`navGroups.${group.key}`)}</p>
               <div className="mt-2 grid gap-1.5">
                 {group.items.map((item) => {
                   const Icon = item.icon;
@@ -114,12 +79,12 @@ export function Sidebar() {
                     <Link
                       key={item.href}
                       href={item.href}
-                      title={t(`nav.${item.key}`)}
+                      title={sidebarCollapsed ? t(`nav.${item.key}`) : undefined}
                       aria-label={t(`nav.${item.key}`)}
-                      className={`flex h-[40px] items-center gap-3 rounded-[6px] text-[13px] font-semibold transition ${sidebarCollapsed ? "justify-center px-0" : "px-3"} ${active ? "bg-[#465FFF] text-white" : "text-white/70 hover:bg-white/5"}`}
+                      className={`flex h-[40px] items-center gap-3 rounded-[8px] px-[15px] text-[13px] font-semibold transition-colors ${active ? "bg-[#465FFF] text-white" : "text-white/70 hover:bg-white/[0.06] hover:text-white"}`}
                     >
                       <Icon size={18} strokeWidth={2} className="shrink-0" />
-                      {sidebarCollapsed ? null : t(`nav.${item.key}`)}
+                      <span className={`whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? "opacity-0" : "opacity-100"}`}>{t(`nav.${item.key}`)}</span>
                     </Link>
                   );
                 })}
@@ -128,9 +93,20 @@ export function Sidebar() {
           ))}
         </nav>
 
-
-        {sidebarCollapsed ? null : <p className="mt-6 px-2 text-[11px] text-white/40">© {new Date().getFullYear()} Narriv</p>}
-        {sidebarCollapsed ? null : <p className="mt-2 px-2 text-[11px] text-white/40">{t("sidebar.rightsReserved")}</p>}
+        {/* Collapse control at the bottom, where it does not compete with the logo. */}
+        <div className="mt-4 shrink-0 border-t border-white/10 pt-4">
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            aria-label={sidebarCollapsed ? t("sidebar.expand") : t("sidebar.collapse")}
+            title={sidebarCollapsed ? t("sidebar.expand") : undefined}
+            className="flex h-[40px] w-full items-center gap-3 rounded-[8px] px-[15px] text-[13px] font-semibold text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white"
+          >
+            <ChevronsLeft size={18} strokeWidth={2} className={`shrink-0 transition-transform duration-300 ${sidebarCollapsed ? "rotate-180" : ""}`} />
+            <span className={`whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? "opacity-0" : "opacity-100"}`}>{t("sidebar.collapse")}</span>
+          </button>
+          <p className={`mt-3 whitespace-nowrap px-3 text-[11px] text-white/40 transition-opacity duration-200 ${sidebarCollapsed ? "opacity-0" : "opacity-100"}`}>© {new Date().getFullYear()} Narriv</p>
+        </div>
       </aside>
 
       <nav className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 rounded-2xl border border-border bg-[#090D16]/90 p-1.5 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] lg:hidden">

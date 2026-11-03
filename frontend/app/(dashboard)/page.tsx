@@ -79,14 +79,19 @@ function Stat({ label, value, tone = "plain", href }: { label: string; value: st
 }
 
 function Bar({ label, value, share, color, href, muted }: { label: string; value: string; share: number; color: string; href?: string; muted?: boolean }) {
+  // The number sits where the bar ends (inside it when there is room), so it reads with its bar.
+  const inside = share >= 22;
   const body = (
     <>
-      <div className="flex items-baseline justify-between gap-3 text-[12px]">
-        <span className={cn("font-bold", muted ? "text-[#8A93AD]" : "text-[#101334]")}>{label}</span>
-        <span className={cn("tabular-nums font-black", muted ? "text-[#8A93AD]" : "text-[#101334]")}>{value}</span>
-      </div>
-      <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-[#EEF1F7]">
-        <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${share}%`, backgroundColor: color }} />
+      <span className={cn("block text-[12px] font-bold", muted ? "text-[#8A93AD]" : "text-[#101334]")}>{label}</span>
+      <div className="relative mt-1 h-6 overflow-hidden rounded-[7px] bg-[#F1F4FA]">
+        <div className="absolute inset-y-0 left-0 rounded-[7px] transition-[width] duration-500" style={{ width: `${Math.max(share, share > 0 ? 1.5 : 0)}%`, backgroundColor: color }} />
+        <span
+          className={cn("absolute inset-y-0 flex items-center whitespace-nowrap text-[11px] font-black tabular-nums", inside ? "text-white" : muted ? "text-[#8A93AD]" : "text-[#101334]")}
+          style={inside ? { right: `calc(${100 - share}% + 8px)` } : { left: `calc(${share}% + 8px)` }}
+        >
+          {value}
+        </span>
       </div>
     </>
   );
@@ -353,68 +358,39 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          <Card title={L("Hottest issues", "Isu paling panas")} link={{ href: `/intelligence?days=${PERIOD_DAYS[period]}`, label: L("All issues", "Semua isu") }}>
-            {issuesQuery.isLoading ? (
-              <div className="space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
-            ) : issues.length === 0 ? (
-              <Empty>{L(`No issues in ${periodWord[period]}.`, `Belum ada isu dalam ${periodWord[period]}.`)}</Empty>
-            ) : (
-              <ol className="divide-y divide-[#F3F5FA]">
-                {issues.map((issue: NarrativeRecord, index) => {
-                  const tag = sentimentTag(issue.sentiment);
-                  const velocity = issue.velocity === "new" ? L("new", "baru") : issue.velocity === "—" ? "" : issue.velocity;
-                  return (
-                    <li key={issue.id}>
-                      <Link href={issueHref(issue.id, hours)} className="-mx-2 flex items-center gap-3 rounded-[8px] px-2 py-3 transition hover:bg-[#F8FAFF]">
-                        <span className="w-5 text-[13px] font-black text-[#8A93AD]">{index + 1}</span>
-                        <span className="min-w-0 flex-1 truncate text-[13px] font-black text-[#101334]">{issue.title}</span>
-                        <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-black", tag.cls)}>{L(tag.en, tag.id)}</span>
-                        {velocity ? <span className={cn("w-12 text-right text-[12px] font-black tabular-nums", velocity.startsWith("+") ? "text-[#B42318]" : "text-[#5A6478]")}>{velocity}</span> : null}
-                        <span className="w-16 text-right text-[12px] font-black tabular-nums text-[#101334]">{fmt(issue.signalCount)} {L("data", "data")}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ol>
-            )}
-          </Card>
-
           <div className="grid gap-5 xl:grid-cols-2">
-            <Card title={L("Sources", "Sumber data")} link={{ href: "/workspace/sources", label: L("Manage", "Kelola") }}>
-              {summaryQuery.isLoading ? (
-                <div className="space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
-              ) : platformTotal === 0 ? (
-                <Empty>{L(`No data in ${periodWord[period]}.`, `Belum ada data dalam ${periodWord[period]}.`)}</Empty>
+          <Card title={L("Top issues", "Isu teratas")} link={{ href: `/intelligence?days=${PERIOD_DAYS[period]}`, label: L("All issues", "Semua isu") }}>
+              {issuesQuery.isLoading ? (
+                <div className="space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+              ) : issues.length === 0 ? (
+                <Empty>{L(`No issues in ${periodWord[period]}.`, `Belum ada isu dalam ${periodWord[period]}.`)}</Empty>
               ) : (
-                <>
-                  <div className="space-y-2">
-                    {platforms.map((p, index) => (
-                      <Bar key={p.platform} label={platformName(p.platform)} value={`${fmt(p.count)} · ${pct(p.count, platformTotal).toFixed(0)}%`} share={pct(p.count, platformTotal)} color={BAR_COLORS[index % BAR_COLORS.length]} href={monitoringHref({ hours, platform: p.platform })} />
-                    ))}
-                    {missingSocial.map((key) => (
-                      <Bar key={key} label={PLATFORM_NAMES[key]} value={L("not connected", "belum terhubung")} share={0} color="#EEF1F7" href="/workspace/sources" muted />
-                    ))}
-                  </div>
-                  {publishers.length > 0 ? (
-                    <>
-                      <p className="mb-1 mt-5 text-[11px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{L("Top publishers", "Media teratas")}</p>
-                      <ul className="divide-y divide-[#F3F5FA]">
-                        {publishers.slice(0, 6).map((pub) => (
-                          <li key={pub.publisher} className="flex items-center justify-between gap-3 py-2 text-[12px]">
-                            <span className="min-w-0 truncate font-bold text-[#101334]">{pub.publisher}</span>
-                            <span className="flex shrink-0 items-center gap-1.5 tabular-nums">
-                              {pub.negative > 0 ? <span className="rounded-full bg-[#FDECEC] px-2 py-0.5 text-[10px] font-black text-[#B42318]">{pub.negative} neg</span> : null}
-                              <span className="w-6 text-right font-black text-[#101334]">{pub.count}</span>
+                <ol className="divide-y divide-[#F3F5FA]">
+                  {issues.map((issue: NarrativeRecord, index) => {
+                    const tag = sentimentTag(issue.sentiment);
+                    const velocity = issue.velocity === "new" ? L("new", "baru") : issue.velocity === "—" ? "" : issue.velocity;
+                    return (
+                      <li key={issue.id}>
+                        <Link href={issueHref(issue.id, hours)} className="-mx-2 flex items-center gap-3 rounded-[8px] px-2 py-2.5 transition hover:bg-[#F8FAFF]">
+                          <span className="w-5 text-[14px] font-black text-[#8A93AD]">{index + 1}</span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-[13px] font-black text-[#101334]">{issue.title}</span>
+                            <span className="mt-0.5 flex items-center gap-2 text-[11px] font-bold">
+                              <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-black", tag.cls)}>{L(tag.en, tag.id)}</span>
+                              {velocity ? <span className={velocity.startsWith("+") ? "text-[#B42318]" : "text-[#5A6478]"}>{velocity} {L("in 24h", "24 jam")}</span> : null}
                             </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </>
-                  ) : null}
-                </>
+                          </span>
+                          <span className="shrink-0 text-right">
+                            <span className="block text-[16px] font-black tabular-nums leading-none text-[#101334]">{fmt(issue.signalCount)}</span>
+                            <span className="text-[10px] font-bold text-[#5A6478]">{L("data", "data")}</span>
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ol>
               )}
             </Card>
-
             <Card title={L("Visibility in AI (GEO)", "Visibilitas di AI (GEO)")} link={{ href: "/visibility", label: L("Details", "Detail") }}>
               {geoQuery.isLoading ? (
                 <div className="space-y-2">{[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
@@ -451,6 +427,44 @@ export default function DashboardPage() {
               )}
             </Card>
           </div>
+
+            <Card title={L("Sources", "Sumber data")} link={{ href: "/workspace/sources", label: L("Manage", "Kelola") }}>
+            {summaryQuery.isLoading ? (
+              <div className="space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
+            ) : platformTotal === 0 ? (
+              <Empty>{L(`No data in ${periodWord[period]}.`, `Belum ada data dalam ${periodWord[period]}.`)}</Empty>
+            ) : (
+              <div className="grid gap-6 lg:grid-cols-2">
+                <div>
+                <p className="mb-1 text-[11px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{L("By platform", "Per platform")}</p>
+                <div className="space-y-1">
+                  {platforms.map((p, index) => (
+                    <Bar key={p.platform} label={platformName(p.platform)} value={`${fmt(p.count)} · ${pct(p.count, platformTotal).toFixed(0)}%`} share={pct(p.count, platformTotal)} color={BAR_COLORS[index % BAR_COLORS.length]} href={monitoringHref({ hours, platform: p.platform })} />
+                  ))}
+                  {missingSocial.map((key) => (
+                    <Bar key={key} label={PLATFORM_NAMES[key]} value={L("not connected", "belum terhubung")} share={0} color="#EEF1F7" href="/workspace/sources" muted />
+                  ))}
+                </div>
+                </div>
+                {publishers.length > 0 ? (
+                  <div>
+                    <p className="mb-1 text-[11px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{L("Top media", "Media teratas")}</p>
+                    <ul className="divide-y divide-[#F3F5FA]">
+                      {publishers.slice(0, 8).map((pub) => (
+                        <li key={pub.publisher} className="flex items-center justify-between gap-3 py-2 text-[12px]">
+                          <span className="min-w-0 truncate font-bold text-[#101334]">{pub.publisher}</span>
+                          <span className="flex shrink-0 items-center gap-1.5 tabular-nums">
+                            {pub.negative > 0 ? <span className="rounded-full bg-[#FDECEC] px-2 py-0.5 text-[10px] font-black text-[#B42318]">{pub.negative} neg</span> : null}
+                            <span className="w-6 text-right font-black text-[#101334]">{pub.count}</span>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
+            )}
+          </Card>
         </>
       )}
     </div>

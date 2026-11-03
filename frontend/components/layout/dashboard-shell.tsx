@@ -54,7 +54,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-background text-foreground selection:bg-[#465FFF]/30">
       <Sidebar />
-      <div className={`flex min-h-screen flex-col transition-[padding] duration-300 ${sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-[240px]"}`}>
+      <div className={`flex min-h-screen flex-col transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-[240px]"}`}>
         <Topbar />
         <main className="flex-1 px-4 pb-32 pt-6 sm:px-6 lg:px-6 lg:pb-10 2xl:px-8">
           <div className="relative z-10 w-full max-w-[1600px] mx-auto">{children}</div>
