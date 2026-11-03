@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { isDemoMode } from "@/lib/demo-mock-data";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-states";
-import { TrendingUp, Target, Zap, AlertTriangle, Clock, Eye, Lightbulb, BarChart3 } from "lucide-react";
+import { TrendingUp, Target, Zap, AlertTriangle, Eye, Lightbulb, BarChart3 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -255,14 +255,12 @@ function OpportunityCard({ opp, t }: { opp: Opportunity; t: (key: string) => str
       <div className="mt-auto grid grid-cols-2 gap-x-4 gap-y-2 border-t border-slate-100 pt-4">
         {/* Potential Impact */}
         <div className="flex items-center gap-1.5">
-          <Eye size={12} className="shrink-0 text-[#5A6478]" />
           <span className="text-[11px] text-[#5A6478]">{t("potentialImpact")}:</span>
           <span className="text-[11px] font-bold text-[#101334]">{opp.potentialImpact}</span>
         </div>
 
         {/* Confidence */}
         <div className="flex items-center gap-1.5">
-          <Target size={12} className="shrink-0 text-[#5A6478]" />
           <span className="text-[11px] text-[#5A6478]">{t("confidence")}:</span>
           <Badge variant={confidenceCfg.variant} className="text-[10px] px-1.5 py-0">
             {opp.confidence}
@@ -271,14 +269,12 @@ function OpportunityCard({ opp, t }: { opp: Opportunity; t: (key: string) => str
 
         {/* Trend */}
         <div className="flex items-center gap-1.5">
-          <TrendIcon size={12} className={cn("shrink-0", trendCfg.color)} />
           <span className="text-[11px] text-[#5A6478]">{t("trend")}:</span>
           <span className={cn("text-[11px] font-bold", trendCfg.color)}>{trendCfg.label}</span>
         </div>
 
         {/* Created */}
         <div className="flex items-center gap-1.5">
-          <Clock size={12} className="shrink-0 text-[#5A6478]" />
           <span className="text-[11px] text-[#5A6478]">{t("created")}:</span>
           <span className="text-[11px] font-bold text-[#101334]">
             {new Date(opp.createdAt).toLocaleDateString("en-GB", {

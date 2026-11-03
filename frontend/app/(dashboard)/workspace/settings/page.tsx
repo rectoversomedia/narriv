@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Webhook, Pause, Play, RefreshCw, UserCheck, Upload, ChevronDown, ArrowRight, Lock, Trash, X, Database, Cloud } from "lucide-react";
+import { Webhook, Pause, Play, RefreshCw, UserCheck, Upload, ChevronDown, ArrowRight, Lock, Trash, Database, Cloud } from "lucide-react";
 import { DashboardEmptyState, DashboardErrorState, TableSkeleton } from "@/components/dashboard/dashboard-states";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useToast } from "@/components/ui/toast";

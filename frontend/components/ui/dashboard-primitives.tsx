@@ -43,10 +43,7 @@ export function MetricCard({ label, value, delta, icon: Icon }: { label: string;
             </span>
           </div>
         </div>
-        <div className="theme-accent flex h-11 w-11 items-center justify-center rounded-2xl border border-[#465FFF]/20 bg-[#465FFF]/10 transition-colors duration-200 group-hover:bg-[#465FFF]/15">
-          <Icon size={22} strokeWidth={1.5} />
         </div>
-      </div>
     </SurfaceCard>
   );
 }

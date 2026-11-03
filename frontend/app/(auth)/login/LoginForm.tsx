@@ -7,12 +7,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { AuthInput, AuthShell, Divider, LanguageSelector, PasswordInput, PrimaryButton, SecurityFooter, SocialButtons } from "@/components/auth/auth-shell";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { loginWithPassword } from "@/lib/api-service";
 import { useAuthStore, type AuthUser } from "@/store/useAuthStore";
+import { pickL } from "@/lib/use-l";
 
 // Schema is defined outside the component to avoid recreating it on every render
 const loginSchema = z.object({
@@ -36,7 +36,7 @@ export function LoginForm() {
   useEffect(() => {
     if (isRegistered && !hasFiredRegisteredToast.current) {
       hasFiredRegisteredToast.current = true;
-      toast.success("Account created successfully! Please sign in with your credentials.");
+      toast.success(pickL("Account created. Please sign in.", "Akun berhasil dibuat. Silakan masuk."));
     }
   }, [isRegistered]);
 
@@ -115,8 +115,7 @@ export function LoginForm() {
 
       {isRegistered && (
         <div className="mb-8 flex items-center gap-3 rounded-2xl border border-emerald-200/90 bg-emerald-50/90 px-4 py-3.5 text-[14px] font-medium text-emerald-900 shadow-sm">
-          <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-700" />
-          <span>Account created successfully! Please sign in with your credentials.</span>
+          <span>{pickL("Account created. Please sign in.", "Akun berhasil dibuat. Silakan masuk.")}</span>
         </div>
       )}
 

@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useUiStore } from "@/store/useUiStore";
-import { BriefcaseBusiness, Building2, Check, ChevronDown, Eye, EyeOff, Globe2, HelpCircle, LockKeyhole, Mail, ShieldCheck, User } from "lucide-react";
+import { BriefcaseBusiness, Building2, Check, ChevronDown, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, User } from "lucide-react";
 
 type AuthVisual = "dashboard" | "features" | "security" | "verification";
 
@@ -144,7 +144,6 @@ export function LanguageSelector() {
 
   return (
     <button type="button" onClick={handleToggleLanguage} className="flex items-center gap-3 rounded-full px-3 py-2 text-[15px] font-semibold text-[#1C2452] hover:bg-[#F6F8FF]">
-      <Globe2 size={21} className={cn("transition-transform duration-500", language === "id" ? "rotate-0" : "rotate-180")} />
       <span key={language} className="inline-block animate-in fade-in slide-in-from-bottom-1 duration-200">
         {language === "id" ? t("language.id") : t("language.en")}
       </span>
@@ -158,7 +157,6 @@ export function HelpAction() {
 
   return (
     <div className="flex items-center gap-2 text-[15px] font-medium text-[#344054]">
-      <HelpCircle size={20} className="text-[#344054]" />
       <span>{t("help.needHelp")}</span>
       <Link href={SUPPORT_EMAIL ? `mailto:${SUPPORT_EMAIL}` : "/help#contact"} className="font-semibold text-[#3B52F5] hover:underline">
         {t("help.contact")}

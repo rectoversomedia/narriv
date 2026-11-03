@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Clock, Users, ChevronDown, Play } from "lucide-react";
+import { ChevronDown, Play } from "lucide-react";
 import type { VideoWalkthrough } from "./video-walkthroughs";
 import { VideoPlayer } from "./VideoPlayer";
 
@@ -55,11 +55,9 @@ export function VideoCard({ video, variant = "compact", onSelect }: VideoCardPro
         {/* Meta info */}
         <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-[#5A6478]">
           <div className="flex items-center gap-1.5">
-            <Clock className="w-4 h-4" />
             <span>{video.duration}</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <Users className="w-4 h-4" />
             <span>For {video.targetAudience[0]}</span>
           </div>
         </div>

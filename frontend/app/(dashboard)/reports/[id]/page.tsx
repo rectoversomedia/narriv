@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { CalendarClock, Download, RefreshCcw } from "lucide-react";
+import { Download, RefreshCcw } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
 import { useToast } from "@/components/ui/toast";
@@ -191,7 +191,6 @@ export default function ReportDetailPage() {
         </div>
       ) : (
         <section className="flex min-h-[260px] flex-col items-center justify-center rounded-[16px] border border-dashed border-[#DDE3EF] bg-white p-8 text-center">
-          <CalendarClock size={28} className="text-[#647099]" />
           <h2 className="mt-4 text-[16px] font-black text-[#101334]">{tr("detail.emptySectionsTitle")}</h2>
           <p className="mt-2 max-w-[460px] text-[13px] font-semibold leading-6 text-[#5F6B94]">{tr("detail.emptySectionsDesc")}</p>
         </section>

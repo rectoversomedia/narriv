@@ -12,7 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, BarChart3, Bell, Check, CheckCircle2, ChevronDown, Database, Globe2, Hash, Headphones, Lightbulb, Mail, MessageCircle, Mic, Newspaper, Share2, Shield, ShoppingCart, Sparkles, Users, X, type LucideIcon } from "lucide-react";
+import { ArrowRight, BarChart3, Bell, Check, CheckCircle2, ChevronDown, Globe2, Headphones, Lightbulb, Mail, MessageCircle, Mic, Newspaper, Share2, Shield, ShoppingCart, Sparkles, Users, X, type LucideIcon } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import {
   createOnboardingWorkspace,
@@ -735,7 +735,6 @@ function KeywordsStep({
 
         {keywords.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#E8EAF6] py-12 text-center">
-            <Hash size={32} className="text-[#D6DDEC]" />
             <p className="mt-3 text-sm font-semibold text-[#647099]">No keywords added yet</p>
             <p className="mt-1 text-xs font-medium text-[#C4C9E2]">Type a keyword above and press Enter to add</p>
           </div>
@@ -893,7 +892,6 @@ function SourcesStep({
 
       <div className="flex items-center justify-between rounded-xl border border-[#E8EAF6] bg-[#FAFBFF] px-6 py-4">
         <div className="flex items-center gap-3">
-          <Database size={20} className="text-[#3B52F5]" />
           <span className="text-sm font-bold text-[#111536]">
             {sources.length} source{sources.length !== 1 ? "s" : ""} selected
           </span>
@@ -1025,7 +1023,6 @@ function NotificationsStep({
                 data[key] ? "border-[#465FFF] bg-[#F8F6FF]" : "border-[#E8EAF6] bg-white hover:border-[#B8BDD8]"
               }`}
             >
-              <Icon size={18} className={data[key] ? "text-[#3B52F5]" : "text-[#5F6B94]"} />
               <span className={`text-sm font-semibold ${data[key] ? "text-[#111536]" : "text-[#5F6B94]"}`}>
                 {label}
               </span>
@@ -1182,7 +1179,6 @@ function PreviewStep({ data }: { data: OnboardingData }) {
                     key={label}
                     className="flex items-center gap-3 rounded-xl border border-[#E8EAF6] bg-[#FAFBFF] px-4 py-3"
                   >
-                    <Bell size={16} className="text-[#3B52F5]" />
                     <span className="text-sm font-semibold text-[#111536]">{label}</span>
                   </div>
                 )

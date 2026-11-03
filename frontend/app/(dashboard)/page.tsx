@@ -394,7 +394,7 @@ export default function DashboardPage() {
                 <ol className="space-y-2.5">
                   {openAlerts.map((alert) => (
                     <li key={alert.id}>
-                      <Link href={`/alerts/${alert.id}`} className="flex items-center justify-between gap-3 rounded-[10px] border border-[#EEF1F7] p-3 transition hover:border-[#465FFF]/40 hover:bg-[#FBFCFF]">
+                      <Link href={`/alerts/${alert.id}`} className={cn("flex items-center justify-between gap-3 rounded-[10px] border border-[#EEF1F7] p-3 transition hover:border-[#465FFF]/40 hover:bg-[#FBFCFF]", alert.severity === "critical" && "border-[#F4C7C3] bg-[#FFF6F6] shadow-[inset_4px_0_0_#DC2626]", alert.severity === "high" && "border-[#FDE2B5] bg-[#FFFBF2] shadow-[inset_4px_0_0_#F59E0B]")}>
                         <span className="min-w-0">
                           <span className="flex items-center gap-2">
                             <Tag tone={levelTone(alert.severity ?? "low")}>{tLevel(`level.${["critical", "high", "medium", "low"].includes(alert.severity ?? "") ? alert.severity : "low"}`)}</Tag>

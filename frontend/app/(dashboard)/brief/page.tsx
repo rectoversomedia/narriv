@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
-import { FileText, ChevronDown, AlertTriangle, TrendingUp, TrendingDown, Minus, Lightbulb, ArrowUp, ArrowDown, ArrowRight } from "lucide-react";
+import { ChevronDown, TrendingUp, TrendingDown, Minus, ArrowUp, ArrowDown, ArrowRight } from "lucide-react";
 import { NarrativeMap } from "@/components/intelligence/narrative-map";
 import { cn } from "@/lib/utils";
 import { isDemoMode } from "@/lib/demo-mock-data";
@@ -395,7 +395,6 @@ export default function DailyIntelligenceBriefPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="mb-1 flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-[#8EA0FF]" strokeWidth={2} />
                       <span className="text-[11px] font-semibold uppercase tracking-widest text-[#8EA0FF]">
                         Narriv
                       </span>
@@ -516,7 +515,6 @@ export default function DailyIntelligenceBriefPage() {
                   <ul className="space-y-2.5">
                     {RISKS.map((risk, i) => (
                       <li key={i} className="flex items-start gap-3">
-                        <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-400" strokeWidth={2} />
                         <span className="text-[14px] leading-relaxed text-[#5F6B94]">{risk}</span>
                       </li>
                     ))}
@@ -529,7 +527,6 @@ export default function DailyIntelligenceBriefPage() {
                   <ul className="space-y-2.5">
                     {OPPORTUNITIES.map((opp, i) => (
                       <li key={i} className="flex items-start gap-3">
-                        <Lightbulb className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-400" strokeWidth={2} />
                         <span className="text-[14px] leading-relaxed text-[#5F6B94]">{opp}</span>
                       </li>
                     ))}
@@ -692,7 +689,6 @@ export default function DailyIntelligenceBriefPage() {
                 </div>
                 <div className="flex items-center gap-2 mb-4 text-[11px] text-[#5A6478]">
                   <span className="font-semibold text-[#5A6478]">{L("Legend:", "Keterangan:")}</span>
-                  <ArrowUp className="h-3 w-3 text-green-700" strokeWidth={2.5} />
                   <span>{L("Growing", "Tumbuh")}</span>
                   <span className="text-slate-300">·</span>
                   <svg width="12" height="12" viewBox="0 0 12 12" className="text-green-700">

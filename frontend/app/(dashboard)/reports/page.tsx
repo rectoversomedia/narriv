@@ -6,7 +6,7 @@ import { type ComponentPropsWithoutRef, type ReactNode, useState, useEffect } fr
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Calendar, CalendarClock, CheckCircle2, ChevronDown, Clock, Download, FileText, Mail, Plus, RefreshCcw, Search, Share2, Trash2, Edit2, X, type LucideIcon } from "lucide-react";
+import { ArrowRight, Calendar, CalendarClock, ChevronDown, Clock, Download, FileText, Mail, Plus, RefreshCcw, Search, Share2, Trash2, Edit2, X, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { SentimentTrendChart } from "@/components/dashboard/sentiment-trend-chart";
@@ -137,7 +137,8 @@ function MetricCard({ label, value, helper, icon: Icon, tone }: { label: string;
   const isTrend = helper.startsWith("▲") || helper.startsWith("▼");
 
   return (
-    <Panel className="flex min-h-[88px] items-center gap-3.5 p-4">
+    <Panel className="flex min-h-[88px] items-center gap-3.5 p-4 overflow-hidden">
+      <div aria-hidden="true" className="-mx-px -mt-px mb-0 h-1 rounded-t-[14px]" style={{ background: `linear-gradient(90deg, ${(toneStyles[tone]).color}, rgba(${(toneStyles[tone]).rgb}, 0.25))` }} />
       <div className="min-w-0">
         <span className="block text-[10px] font-extrabold text-[#5F6B94]">{label}</span>
         <span className="mt-0.5 block text-[24px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</span>
@@ -304,7 +305,7 @@ function ReportPreviewSidebar({
                 <div className="min-w-0 space-y-2.5 self-center">
                   {reportSections.slice(0, 4).map((section) => (
                     <div key={section} className="flex items-center justify-between gap-2 text-[9.5px] font-black text-[#31406B]">
-                      <span className="flex min-w-0 items-center gap-2"><CheckCircle2 size={13} className="shrink-0 text-[#047857]" /> <span className="truncate">{section}</span></span>
+                      <span className="flex min-w-0 items-center gap-2"><span className="truncate">{section}</span></span>
                       <span className="text-[#047857]">{tr("preview.ready")}</span>
                     </div>
                   ))}
@@ -779,7 +780,6 @@ function PopularReports({ reports, onViewAll }: { reports: PopularReportItem[]; 
             </div>
           )) : (
             <div className="flex flex-col items-center justify-center py-6 text-center">
-              <FileText size={24} className="text-[#DDE3EF] mb-2" />
               <p className="text-[11px] font-bold text-[#647099]">{tr("popular.noData")}</p>
             </div>
           )}
@@ -1306,7 +1306,6 @@ export default function ReportsPage() {
                   {/* Email Recipients Section */}
                   <div className="rounded-[10px] border border-[#EEF1F7] bg-[#FAFBFF] p-4 space-y-3">
                     <div className="flex items-center gap-2 mb-2">
-                      <Mail size={14} className="text-[#3B52F5]" />
                       <span className="text-[11px] font-black text-[#31406B]">{tr("scheduleModal.recipientsLabel")}</span>
                     </div>
                     <div>
@@ -1387,7 +1386,6 @@ export default function ReportsPage() {
                           {/* Recipients display */}
                           {schedule.recipients && schedule.recipients.length > 0 && (
                             <div className="flex items-center gap-1.5 mt-2">
-                              <Mail size={11} className="text-[#647099] shrink-0" />
                               <span className="text-[9.5px] font-bold text-[#647099] truncate">
                                 {schedule.recipients.slice(0, 2).join(", ")}
                                 {schedule.recipients.length > 2 && ` +${schedule.recipients.length - 2}`}
@@ -1430,7 +1428,6 @@ export default function ReportsPage() {
                     ))
                   ) : (
                     <div className="flex h-40 flex-col items-center justify-center text-center">
-                      <CalendarClock size={24} className="text-[#647099] mb-3" />
                       <p className="text-[13px] font-bold text-[#53608C]">{tr("scheduleModal.empty")}</p>
                       <p className="text-[11px] font-bold text-[#647099] mt-1">{tr("scheduleModal.emptyDesc")}</p>
                     </div>
@@ -1457,7 +1454,6 @@ export default function ReportsPage() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-10 text-center">
-                  <FileText size={28} className="text-[#DDE3EF] mb-3" />
                   <p className="text-[13px] font-bold text-[#53608C]">{tr("popular.noData")}</p>
                 </div>
               )}
@@ -1490,7 +1486,6 @@ export default function ReportsPage() {
                 </form>
               ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <Share2 size={28} className="text-[#DDE3EF] mb-3" />
                   <p className="text-[13px] font-bold text-[#53608C]">{tr("shareModal.noReport")}</p>
                 </div>
               )}
@@ -1586,7 +1581,6 @@ export default function ReportsPage() {
                     ))
                   ) : (
                     <div className="flex h-40 flex-col items-center justify-center text-center">
-                      <FileText size={24} className="text-[#647099] mb-3" />
                       <p className="text-sm font-bold text-[#53608C]">{tr("empty.title")}</p>
                     </div>
                   )}

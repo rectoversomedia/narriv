@@ -512,7 +512,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
             </thead>
             <tbody className="divide-y divide-[#EDF1F7]">
               {rows.map((row) => (
-                <tr key={row.id} className={cn("transition hover:bg-[#F8FAFF]", selectedIds.has(row.id) && "bg-[#EEF2FF]")}>
+                <tr key={row.id} className={cn("transition hover:bg-[#F8FAFF]", row.sentiment === "NEGATIVE" && "bg-[#FFF8F8] shadow-[inset_4px_0_0_#EF4444]", selectedIds.has(row.id) && "bg-[#EEF2FF]")}>
                   <td className="px-2.5 py-3 align-middle">
                     <button
                       type="button"
@@ -603,7 +603,6 @@ function FollowUpPanel({ data }: { data?: SignalsMeta["followUps"] }) {
       
       {!hasData && data !== undefined ? (
         <div className="mt-4 flex flex-col items-center justify-center gap-2 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-6 text-center">
-          <ShieldCheck size={24} className="text-[#A0ABC0]" />
           <p className="text-[12px] font-bold text-[#58648C]">{t("emptyTitle")}</p>
           <p className="text-[10px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
         </div>
@@ -639,7 +638,6 @@ function RecommendationPanel({ data }: { data?: SignalsMeta["recommendations"] }
       
       {!hasData && data !== undefined ? (
         <div className="mt-4 flex flex-col items-center justify-center gap-2 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-6 text-center">
-          <Sparkles size={24} className="text-[#A0ABC0]" />
           <p className="text-[12px] font-bold text-[#58648C]">{t("emptyTitle")}</p>
           <p className="text-[10px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
         </div>
@@ -698,7 +696,6 @@ function SourceDonut({ data, totalSignals }: { data?: SignalsMeta["sourceDistrib
 
       {!hasData ? (
         <div className="mt-5 flex flex-col items-center justify-center gap-2 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-6 text-center">
-          <AlertTriangle size={24} className="text-[#A0ABC0]" />
           <p className="text-[12px] font-bold text-[#58648C]">{t("emptyTitle")}</p>
           <p className="text-[10px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
         </div>
@@ -867,7 +864,6 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
 
       {!hasData ? (
         <div className="mt-4 flex flex-col items-center justify-center gap-2 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-6 text-center">
-          <ShieldCheck size={24} className="text-[#A0ABC0]" />
           <p className="text-[12px] font-bold text-[#58648C]">{t("emptyTitle")}</p>
           <p className="text-[10px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
         </div>

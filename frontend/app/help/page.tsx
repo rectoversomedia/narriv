@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { SUPPORT_EMAIL } from "@/lib/support";
 import { useL } from "@/lib/use-l";
-import { Search, MessageCircle, ChevronDown, Zap, BarChart3, Bell, FileText, Users, Settings } from "lucide-react";
+import { Search, ChevronDown, Zap, BarChart3, Bell, FileText, Users, Settings } from "lucide-react";
 
 // Answers describe current product behaviour only; update them when the behaviour changes.
 type Faq = { q: [string, string]; a: [string, string] };
@@ -264,7 +264,6 @@ export default function HelpCenterPage() {
 
         <section id="contact" className="mx-auto mt-16 max-w-4xl scroll-mt-24">
           <div className="rounded-2xl bg-[#101334] p-8 text-center text-white">
-            <MessageCircle size={40} className="mx-auto mb-4 opacity-80" />
             <h2 className="text-2xl font-bold">{L("Still need help?", "Masih butuh bantuan?")}</h2>
             {SUPPORT_EMAIL ? (
               <div className="mt-6 flex flex-wrap justify-center gap-4">

@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, type ComponentType, type ReactNode } from 
 import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { Search, TrendingUp, Target, Shield, MessageCircle, Info, ChevronDown, ChevronRight, CheckCircle, X, type LucideIcon } from "lucide-react";
+import { Search, TrendingUp, Target, Shield, MessageCircle, Info, ChevronDown, ChevronRight, CheckCircle, type LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardErrorState, MetricRowSkeleton } from "@/components/dashboard/dashboard-states";
@@ -88,7 +88,8 @@ function MetricCard({ label, value, subValue, helper, icon, tone, sparklineValue
   const styles = toneStyles[tone];
   const isNegative = helper.startsWith("-") || helper.startsWith("▼");
   return (
-    <Panel>
+    <Panel className="overflow-hidden">
+      <div aria-hidden="true" className="-mx-px -mt-px mb-0 h-1 rounded-t-[14px]" style={{ background: `linear-gradient(90deg, ${(toneStyles[tone]).color}, rgba(${(toneStyles[tone]).rgb}, 0.25))` }} />
       <CardContent className="flex flex-col gap-3 p-5 min-h-[110px]">
         {/* Header row: icon + label */}
         <div className="flex items-center justify-between gap-3">
@@ -962,7 +963,6 @@ export default function VisibilityPage() {
                     <p className="text-[11px] font-bold text-[#647099]">{tEmpty("noActionData")}</p>
                   ) : geoActions.map((action, idx) => (
                     <div key={idx} className="flex items-start gap-2 text-[11px] font-semibold text-[#53608C]">
-                      <CheckCircle size={13} className="mt-0.5 shrink-0 text-[#6E44E8]" />
                       <span>{action}</span>
                     </div>
                   ))}
@@ -1330,7 +1330,6 @@ export default function VisibilityPage() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-10 text-center">
-                  <Info size={28} className="text-[#DDE3EF] mb-3" />
                   <p className="text-[13px] font-bold text-[#53608C]">{tEmpty("noActionData")}</p>
                 </div>
               )}
@@ -1355,7 +1354,6 @@ export default function VisibilityPage() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-10 text-center">
-                  <Info size={28} className="text-[#DDE3EF] mb-3" />
                   <p className="text-[13px] font-bold text-[#53608C]">{tEmpty("noMentionData")}</p>
                 </div>
               )}

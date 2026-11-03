@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Cable, CheckCircle2, Cloud, Send, Trash2, TriangleAlert } from "lucide-react";
+import { Cable, CheckCircle2, Cloud, Trash2, TriangleAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { DashboardEmptyState, DashboardErrorState, TableSkeleton } from "@/components/dashboard/dashboard-states";
@@ -378,7 +378,6 @@ export default function IntegrationsPage() {
                                 className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50"
                                 title="Test Webhook Connection"
                               >
-                                <Send size={12} className={testMutation.isPending ? "animate-pulse text-[#3B52F5]" : ""} />
                                 <span>Test</span>
                               </button>
                             )}

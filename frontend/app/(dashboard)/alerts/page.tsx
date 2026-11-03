@@ -209,7 +209,8 @@ function MetricCard({ metric }: { metric: Metric }) {
   const helperStyle = toneStyles[metric.helperTone];
 
   return (
-    <Panel className="relative min-h-[96px] overflow-hidden p-3.5">
+    <Panel className="relative min-h-[96px] overflow-hidden p-3.5 overflow-hidden">
+      <div aria-hidden="true" className="-mx-px -mt-px mb-0 h-1 rounded-t-[14px]" style={{ background: `linear-gradient(90deg, ${(toneStyles[metric.tone]).color}, rgba(${(toneStyles[metric.tone]).rgb}, 0.25))` }} />
       <div className="flex items-center gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold leading-tight text-body">{metric.label}</p>
@@ -755,7 +756,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                 </td>
               </tr>
             ) : rows.map((alert) => (
-              <tr key={alert.id} className={cn("transition hover:bg-[#F8FAFF]", selectedAlerts.has(alert.id) && "bg-[#EEF2FF]")}>
+              <tr key={alert.id} className={cn("transition hover:bg-[#F8FAFF]", alert.tone === "red" && "bg-[#FFF6F6] shadow-[inset_4px_0_0_#DC2626]", alert.tone === "amber" && "bg-[#FFFBF2] shadow-[inset_4px_0_0_#F59E0B]", selectedAlerts.has(alert.id) && "bg-[#EEF2FF]")}>
                 <td className="px-3 py-3 align-middle">
                   <button
                     type="button"

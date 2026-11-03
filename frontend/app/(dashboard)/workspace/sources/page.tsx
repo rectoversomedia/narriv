@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 
 import Image from "next/image";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { ArrowRight, Bell, ChevronDown, CirclePlus, Clock3, Database, Grid3X3, Heart, KeyRound, List, Newspaper, PieChart, Play, RefreshCw, RotateCw, ShieldCheck, Trash2, Webhook, Zap, Check, type LucideIcon } from "lucide-react";
+import { ArrowRight, Bell, ChevronDown, Clock3, Database, Grid3X3, KeyRound, List, Newspaper, Play, RefreshCw, RotateCw, Trash2, Webhook, Zap, Check, type LucideIcon } from "lucide-react";
 import { SiDiscourse, SiShopee } from "react-icons/si";
 import { Facebook, Google, Instagram, Spotify, ThreadsDark, TikTokDark, XDark, YouTube } from "@ridemountainpig/svgl-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -202,7 +202,8 @@ function Panel({ children, className }: { children: ReactNode; className?: strin
 function MetricCard({ label, value, helper, icon: Icon, tone }: { label: string; value: string; helper: string; icon: LucideIcon; tone: Tone }) {
   const style = toneStyles[tone];
   return (
-    <Panel>
+    <Panel className="overflow-hidden">
+      <div aria-hidden="true" className="-mx-px -mt-px mb-0 h-1 rounded-t-[14px]" style={{ background: `linear-gradient(90deg, ${(toneStyles[tone]).color}, rgba(${(toneStyles[tone]).rgb}, 0.25))` }} />
       <CardContent className="flex min-h-[98px] items-center gap-4 p-4">
         <span className="min-w-0">
           <span className="block text-[12px] font-extrabold text-[#5F6B94]">{label}</span>
@@ -422,7 +423,6 @@ function HealthDonut({ total }: { total: number }) {
     return (
       <div className="flex size-[128px] shrink-0 items-center justify-center rounded-full border-2 border-dashed border-[#E5E9F3] bg-[#F8FAFF]">
         <div className="text-center">
-          <Heart size={22} className="mx-auto text-[#647099]" />
           <p className="mt-2 text-[10px] font-bold text-[#647099]">No data</p>
         </div>
       </div>
@@ -441,7 +441,6 @@ function DistributionDonut({ total }: { total: number }) {
     return (
       <div className="flex size-[154px] shrink-0 items-center justify-center rounded-full border-2 border-dashed border-[#E5E9F3] bg-[#F8FAFF]">
         <div className="text-center">
-          <PieChart size={24} className="mx-auto text-[#647099]" />
           <p className="mt-2 text-[10px] font-bold text-[#647099]">No data</p>
         </div>
       </div>
@@ -938,7 +937,7 @@ export default function SourcesPage() {
                   )}
                 </>
               )}
-              <button type="button" onClick={() => setIsModalOpen(true)} disabled={bootstrapMutation.isPending} className="mt-3 flex min-h-11 w-full items-center justify-between gap-3 rounded-[10px] border border-[#DDE3EF] bg-[#FBFCFF] px-4 py-2 text-left transition disabled:cursor-not-allowed disabled:opacity-70"><span className="flex min-w-0 items-center gap-3"><CirclePlus size={20} className="shrink-0 text-[#3B52F5]" /><span className="min-w-0"><b className="block text-[13px] font-black text-[#3B52F5]">{bootstrapMutation.isPending ? toast("bootstrapInProgress") : t("connect")}</b><span className="block text-[11px] font-semibold leading-snug text-[#5F6B94]">{t("connectDesc")}</span></span></span><ArrowRight size={16} className="shrink-0 text-[#53608C]" /></button>
+              <button type="button" onClick={() => setIsModalOpen(true)} disabled={bootstrapMutation.isPending} className="mt-3 flex min-h-11 w-full items-center justify-between gap-3 rounded-[10px] border border-[#DDE3EF] bg-[#FBFCFF] px-4 py-2 text-left transition disabled:cursor-not-allowed disabled:opacity-70"><span className="flex min-w-0 items-center gap-3"><span className="min-w-0"><b className="block text-[13px] font-black text-[#3B52F5]">{bootstrapMutation.isPending ? toast("bootstrapInProgress") : t("connect")}</b><span className="block text-[11px] font-semibold leading-snug text-[#5F6B94]">{t("connectDesc")}</span></span></span><ArrowRight size={16} className="shrink-0 text-[#53608C]" /></button>
             </CardContent>
           </Panel>
 
@@ -952,7 +951,7 @@ export default function SourcesPage() {
         </div>
 
         <aside className="flex flex-col gap-4">
-          <Panel><CardContent className="p-5"><h2 className="text-[16px] font-black text-[#101334]">{t("healthTitle")}</h2><p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("healthDesc")}</p><div className="mt-5 grid items-center gap-5 sm:grid-cols-1 xl:grid-cols-1 2xl:grid-cols-1"><HealthDonut total={healthSummary?.total ?? totalSources} /><div className="grid gap-3 text-[12px] font-bold text-[#53608C]"><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#10B981]" />{t("healthHealthy")}</span><b className="text-[#101334]">{healthSummary?.healthy ?? 0}</b></div><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#F59E0B]" />{t("healthWarning")}</span><b className="text-[#101334]">{healthSummary?.warning ?? 0}</b></div><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#EF4444]" />{t("healthCritical")}</span><b className="text-[#101334]">{healthSummary?.critical ?? 0}</b></div></div></div><div className="mt-5 rounded-[12px] border border-[#BFEBD9] bg-[#ECFDF6] p-4"><div className="flex items-start gap-3"><ShieldCheck size={20} className="text-[#047857]" /><span><b className="block text-[13px] font-black text-[#047857]">{healthSummary && healthSummary.total > 0 && healthSummary.healthy === healthSummary.total ? t("optimal") : t("healthNeedsAttention")}</b><span className="text-[12px] font-semibold text-[#53608C]">{healthText(healthSummary, t)}</span></span></div></div></CardContent></Panel>
+          <Panel><CardContent className="p-5"><h2 className="text-[16px] font-black text-[#101334]">{t("healthTitle")}</h2><p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("healthDesc")}</p><div className="mt-5 grid items-center gap-5 sm:grid-cols-1 xl:grid-cols-1 2xl:grid-cols-1"><HealthDonut total={healthSummary?.total ?? totalSources} /><div className="grid gap-3 text-[12px] font-bold text-[#53608C]"><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#10B981]" />{t("healthHealthy")}</span><b className="text-[#101334]">{healthSummary?.healthy ?? 0}</b></div><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#F59E0B]" />{t("healthWarning")}</span><b className="text-[#101334]">{healthSummary?.warning ?? 0}</b></div><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#EF4444]" />{t("healthCritical")}</span><b className="text-[#101334]">{healthSummary?.critical ?? 0}</b></div></div></div><div className="mt-5 rounded-[12px] border border-[#BFEBD9] bg-[#ECFDF6] p-4"><div className="flex items-start gap-3"><span><b className="block text-[13px] font-black text-[#047857]">{healthSummary && healthSummary.total > 0 && healthSummary.healthy === healthSummary.total ? t("optimal") : t("healthNeedsAttention")}</b><span className="text-[12px] font-semibold text-[#53608C]">{healthText(healthSummary, t)}</span></span></div></div></CardContent></Panel>
 
           <Panel><CardContent className="p-5"><div className="mb-4 flex items-start justify-between"><div><h2 className="text-[16px] font-black text-[#101334]">{t("activity")}</h2><p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("activityDesc")}</p></div></div>{recentHealthEntries.length > 0 ? <div className="grid gap-3">{recentHealthEntries.map(([id, name, status, time, tone, Icon]) => { const TypedIcon = Icon as SourceIcon; const style = toneStyles[tone as Tone]; return <div key={id} className="flex items-center justify-between gap-3"><span className="flex min-w-0 items-center gap-3"><span className="min-w-0"><b className="block truncate text-[12px] text-[#101334]">{name}</b><span className="text-[11px] font-semibold capitalize" style={{ color: readableTone(style.color) }}>{status}</span></span></span><span className="shrink-0 text-[10px] font-bold text-[#5F6B94]">{time}</span><Check size={13} style={{ color: style.color }} /></div>; })}</div> : <DashboardEmptyState title={toast("activity.emptyTitle")} description={toast("activity.emptyDesc")} icon="search" minHeight="min-h-[120px]" />}</CardContent></Panel>
 

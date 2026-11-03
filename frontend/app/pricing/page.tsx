@@ -4,7 +4,7 @@ import { Fragment, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useL } from "@/lib/use-l";
-import { Zap, Building2, Users, ArrowRight, Brain, Target, Crown, Rocket, MessageCircle, FileText, Workflow, Sliders } from "lucide-react";
+import { Users, ArrowRight, Brain, Target, Crown, Rocket, MessageCircle, FileText, Workflow, Sliders } from "lucide-react";
 
 // Subscription plans matching pricing image
 const plans = [
@@ -319,7 +319,6 @@ export default function PricingPage() {
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-600 px-4 py-1.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/30">
-                      <Zap size={14} />
                       <span>{t("mostPopular")}</span>
                     </span>
                   </div>
@@ -557,7 +556,6 @@ export default function PricingPage() {
       <footer className="border-t border-slate-200 px-6 py-12">
         <div className="mx-auto max-w-6xl flex flex-wrap items-center justify-between gap-6">
           <div className="flex items-center gap-3">
-            <Building2 className="h-8 w-8 text-indigo-600" />
             <span className="text-xl font-bold text-slate-900">Narriv</span>
           </div>
           <div className="flex items-center gap-8 text-sm text-[#5A6478]">

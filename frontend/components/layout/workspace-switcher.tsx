@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, Check, ChevronDown, Loader2, X } from "lucide-react";
+import { Check, ChevronDown, Loader2, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { createClientWorkspace, listMyWorkspaces, type WorkspaceSummary } from "@/lib/api-service";
 import { isDemoSession, useAuthStore } from "@/store/useAuthStore";
@@ -83,7 +83,6 @@ export function WorkspaceSwitcher() {
                     onClick={() => switchTo(w.id)}
                     className="flex w-full items-center gap-2.5 rounded-[10px] px-2.5 py-2 text-left transition hover:bg-slate-50"
                   >
-                    <Building2 size={15} className="shrink-0 text-[#5A6478]" aria-hidden="true" />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[13px] font-semibold text-[#101334]">{w.name}</span>
                       <span className="block text-[11px] text-[#5A6478]">{w.role ? ROLE_LABEL[w.role] ?? w.role : "Member"}</span>

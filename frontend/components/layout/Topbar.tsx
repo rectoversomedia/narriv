@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useRef, useState } from "react";
-import { Bell, CheckCheck, Inbox, Languages, LogOut, RotateCw, Search, WifiOff, X } from "lucide-react";
+import { Bell, Inbox, LogOut, Search, WifiOff, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
@@ -94,9 +94,6 @@ function getNotificationMeta(type: string) {
 function NotificationState({ icon: Icon, title, description, action }: { icon: LucideIcon; title: string; description: string; action?: React.ReactNode }) {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-10 text-center">
-      <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-[#5A6478]">
-        <Icon size={20} />
-      </span>
       <p className="mt-3 text-sm font-black text-slate-800">{title}</p>
       <p className="mt-1 max-w-[260px] text-xs font-semibold leading-relaxed text-[#5A6478]">{description}</p>
       {action}
@@ -373,7 +370,6 @@ export function Topbar() {
 
         {searchOpen && searchQuery.trim().length >= 2 && searchResults.length === 0 && (
           <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-[14px] border border-slate-200 bg-white p-6 text-center shadow-[0_24px_70px_rgba(15,23,42,0.16)]">
-            <Search size={24} className="mx-auto text-slate-300" />
             <p className="mt-2 text-[13px] font-bold text-[#5A6478]">Tidak ada hasil untuk &quot;{searchQuery}&quot;</p>
             <p className="mt-1 text-[11px] font-semibold text-[#5A6478]">Coba kata kunci lain</p>
           </div>
@@ -385,7 +381,6 @@ export function Topbar() {
         {/* Only claim live updates while the event stream is actually connected. */}
         {sseStatus === "connected" ? <LiveIndicator status={sseStatus} /> : null}
         <button type="button" onClick={() => startTransition(toggleLanguage)} className="hidden items-center gap-2 rounded-[8px] border border-border px-3 py-2 text-xs font-bold text-[var(--text-soft)] transition-all duration-200 hover:border-[#465FFF] hover:text-[var(--text)] hover: active:scale-[0.98] sm:flex" aria-label="Switch language">
-          <Languages size={15} />
           <span key={language} className="inline-block min-w-5 animate-in fade-in slide-in-from-bottom-1 duration-200">
             {language.toUpperCase()}
           </span>
@@ -396,7 +391,6 @@ export function Topbar() {
             className="relative inline-flex h-10 w-10 items-center justify-center rounded-[10px] text-[var(--text)] transition hover:bg-slate-100 hover:text-[#3B52F5]"
             aria-label={t("notifications")}
           >
-            <Bell size={24} />
             {unreadCount > 0 ? (
               <span className="absolute right-0.5 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#C81E1E] px-1 text-[10px] font-black text-white ring-2 ring-white">
                 {unreadBadge}
@@ -411,7 +405,6 @@ export function Topbar() {
                     <PopoverTitle className="text-[15px] font-black text-slate-950">{t("notificationsTitle")}</PopoverTitle>
                     {notificationStreamStatus === "degraded" ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-black text-amber-700">
-                        <WifiOff size={11} />
                         {t("notificationsPolling")}
                       </span>
                     ) : null}
@@ -426,7 +419,6 @@ export function Topbar() {
                   disabled={unreadCount === 0 || markAllRead.isPending}
                   className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold text-[#3B52F5] transition hover:bg-[#465FFF]/5 disabled:cursor-not-allowed disabled:text-slate-300"
                 >
-                  <CheckCheck size={13} />
                   {markAllRead.isPending ? t("notificationsMarking") : t("notificationsMarkAll")}
                 </button>
               </div>
@@ -459,7 +451,6 @@ export function Topbar() {
                       onClick={() => notificationsQuery.refetch()}
                       className="mt-4 inline-flex h-9 items-center justify-center gap-2 rounded-[10px] border border-slate-200 bg-white px-3 text-[12px] font-black text-[#3B52F5] transition hover:bg-[#465FFF]/5"
                     >
-                      <RotateCw size={13} />
                       {t("notificationsRetry")}
                     </button>
                   }

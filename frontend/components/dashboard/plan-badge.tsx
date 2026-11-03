@@ -57,7 +57,6 @@ export function PlanBadge() {
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${config.color} ${config.bgColor}`}
       title={`${subscription.plan.name} Plan`}
     >
-      <PlanIcon size={12} />
       <span>{config.name}</span>
     </div>
   );

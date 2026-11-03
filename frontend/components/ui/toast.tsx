@@ -93,9 +93,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
           return (
             <div key={toast.id} className={cn("flex items-start gap-3 rounded-[14px] border px-4 py-3 shadow-[0_18px_48px_rgba(15,23,42,0.14)] backdrop-blur animate-in fade-in slide-in-from-bottom-3", styles.shell)} role={toast.tone === "error" ? "alert" : "status"}>
-              <span className={cn("mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full", styles.icon)}>
-                <Icon size={17} />
-              </span>
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] font-black">{toast.title}</p>
                 <p className="mt-0.5 text-[12px] font-bold leading-5 opacity-85">{toast.description}</p>

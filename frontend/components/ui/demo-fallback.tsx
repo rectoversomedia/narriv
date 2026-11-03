@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Sparkles, RefreshCcw } from "lucide-react";
 import { isDemoMode } from "@/lib/demo-mock-data";
 
 interface DemoFallbackProps {
@@ -45,9 +44,6 @@ export function DemoFallback({
         (className ?? "")
       }
     >
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#8B5CFF]/10 text-[#6E44E8]">
-        <Sparkles size={22} strokeWidth={2.2} />
-      </div>
       <div className="space-y-1">
         <p className="text-[15px] font-bold text-slate-900">{title}</p>
         <p className="mx-auto max-w-md text-[12px] font-medium text-[#5A6478]">{description}</p>
@@ -59,7 +55,6 @@ export function DemoFallback({
             onClick={handleActivateDemo}
             className="h-9 rounded-lg bg-[#6E44E8] px-4 text-[12px] font-bold text-white shadow-sm hover:bg-[#5B35D6]"
           >
-            <Sparkles size={13} />
             Try Demo Mode
           </Button>
         )}
@@ -70,7 +65,6 @@ export function DemoFallback({
             variant="outline"
             className="h-9 rounded-lg border-slate-200 px-4 text-[12px] font-bold text-slate-700 hover:bg-slate-50"
           >
-            <RefreshCcw size={13} />
             Retry
           </Button>
         )}

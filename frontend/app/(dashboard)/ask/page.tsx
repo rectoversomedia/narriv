@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { useUiStore } from "@/store/useUiStore";
-import { Send, BotMessageSquare, TrendingUp, Zap, AlertTriangle, Users, Compass, BarChart2, Activity, ChevronDown, ChevronRight } from "lucide-react";
+import { Send, TrendingUp, Zap, AlertTriangle, Users, Compass, BarChart2, Activity, ChevronDown, ChevronRight } from "lucide-react";
 import { CardContent } from "@/components/ui/card";
 import { getNarratives, getDashboardSummary } from "@/lib/api-service";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
@@ -291,7 +291,7 @@ export default function AskPage() {
           {sidebarOpen && (
             <div className="flex flex-col gap-1">
               <p className="mb-1 px-1 text-[10px] font-black uppercase tracking-wider text-[#5A6478]">
-                Suggested
+                {pickL("Suggested questions", "Pertanyaan yang disarankan")}
               </p>
               {SUGGESTED_CATEGORIES.map((cat) => {
                 const Icon = cat.icon;
@@ -330,7 +330,6 @@ export default function AskPage() {
               {sidebarOpen ? <ChevronDown size={14} className="rotate-90" /> : <ChevronRight size={14} />}
             </button>
             <div className="flex items-center gap-2">
-              <BotMessageSquare size={18} className="text-[#3B52F5]" />
               <h1 className="text-[15px] font-black text-slate-900">{tAsk("title")}</h1>
             </div>
             {lastModel && (

@@ -121,7 +121,8 @@ function MetricCard({ label, value, helper, trend, icon: Icon, tone, negative = 
   const isTrendNegative = trend != null && trend < 0;
   const isNegativeDisplay = negative || isTrendNegative;
   return (
-    <Panel>
+    <Panel className="overflow-hidden">
+      <div aria-hidden="true" className="-mx-px -mt-px mb-0 h-1 rounded-t-[14px]" style={{ background: `linear-gradient(90deg, ${(toneStyles[tone]).color}, rgba(${(toneStyles[tone]).rgb}, 0.25))` }} />
       <CardContent className="flex min-h-[94px] items-center gap-4 p-4">
         <span className="min-w-0">
           <span className="block text-[12px] font-extrabold text-[#5F6B94]">{label}</span>
@@ -184,7 +185,7 @@ function ActionCard({ action, selected, onSelect, t }: { action: ActionItem; sel
     <button
       type="button"
       onClick={() => onSelect(action)}
-      className={cn("w-full rounded-[12px] border bg-white p-4 text-left transition hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(16,24,40,0.08)]", selected ? "border-[#465FFF] shadow-sm" : "border-[#EEF1F7]")}
+      className={cn("w-full rounded-[12px] border border-t-4 bg-white p-4 text-left transition hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(16,24,40,0.08)]", action.status !== "done" && action.priority === "high" ? "border-t-[#DC2626]" : action.status !== "done" && action.priority === "medium" ? "border-t-[#F59E0B]" : "border-t-[#10B981]", selected ? "border-[#465FFF] shadow-sm" : "border-[#EEF1F7]")}
     >
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-[13px] font-black leading-5 text-[#101334]">{action.title}</h3>
@@ -620,7 +621,6 @@ export default function ActionPlansPage() {
                   </div>
                 ) : (
                   <div className="mt-5 flex flex-col items-center justify-center gap-2 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-6 text-center">
-                    <BarChart3 size={20} className="text-[#A0ABC0]" />
                     <p className="text-[12px] font-bold text-[#58648C]">{t("noFeedback")}</p>
                     <p className="text-[10px] font-semibold text-[#647099]">{t("noFeedbackDesc")}</p>
                   </div>

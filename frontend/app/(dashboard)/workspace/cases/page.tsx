@@ -11,7 +11,7 @@ import {
   getCaseById,
   getWorkspaceMembers,
 } from "@/lib/api-service";
-import { Trash2, FileText, Search, RefreshCcw, X, Eye, FolderOpen, CheckCircle2, Clock, Calendar } from "lucide-react";
+import { Trash2, FileText, Search, RefreshCcw, X, Eye, FolderOpen, CheckCircle2, Clock } from "lucide-react";
 import {
   DashboardErrorState,
   DashboardEmptyState,
@@ -134,6 +134,8 @@ function formatDeadline(value: string | null, locale: string) {
 }
 
 /* ─── Metric Card ─── */
+const TONE_HEX: Record<string, string> = { blue: "#465FFF", purple: "#8B5CFF", green: "#10B981", red: "#EF4444", amber: "#F59E0B", slate: "#64748B", orange: "#F97316" };
+
 function MetricCard({
   label,
   value,
@@ -151,7 +153,8 @@ function MetricCard({
   const style = toneMap[tone];
 
   return (
-    <div className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+    <div className="overflow-hidden rounded-[14px] border border-slate-200 bg-white p-4 pt-0 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+      <div aria-hidden="true" className="-mx-4 mb-4 h-1" style={{ background: `linear-gradient(90deg, ${TONE_HEX[tone] ?? "#465FFF"}, ${TONE_HEX[tone] ?? "#465FFF"}40)` }} />
       <div className="flex items-center gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">
@@ -957,14 +960,6 @@ export default function CasesPage() {
                       <td className="px-4 py-4 align-top">
                         {deadlineInfo ? (
                           <div className="flex items-center gap-1.5">
-                            <Calendar
-                              size={12}
-                              className={
-                                deadlineInfo.isPast
-                                  ? "text-[#C81E1E]"
-                                  : "text-[#647099]"
-                              }
-                            />
                             <span
                               className={cn(
                                 "text-[11px] font-bold",

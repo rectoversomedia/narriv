@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Bot, Brain, Check, ChevronDown, ChevronRight, Database, Info, Layers3, Maximize2, Minimize2, MoreHorizontal, Network, RefreshCcw, RotateCcw, Sparkles, Target, TrendingUp, X, ZoomIn, ZoomOut, type LucideIcon } from "lucide-react";
+import { Bot, Brain, Check, ChevronDown, ChevronRight, Database, Info, Layers3, Maximize2, Minimize2, MoreHorizontal, Network, RefreshCcw, RotateCcw, Sparkles, Target, TrendingUp, ZoomIn, ZoomOut, type LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
@@ -289,7 +289,8 @@ function IconHalo({ icon: Icon, tone }: { icon: LucideIcon; tone: Tone }) {
 
 function MetricCard({ label, value, helper, icon, tone }: { label: string; value: string; helper: string; icon: LucideIcon; tone: Tone }) {
   return (
-    <Panel>
+    <Panel className="overflow-hidden">
+      <div aria-hidden="true" className="-mx-px -mt-px mb-0 h-1 rounded-t-[14px]" style={{ background: `linear-gradient(90deg, ${(toneStyles[tone]).color}, rgba(${(toneStyles[tone]).rgb}, 0.25))` }} />
       <CardContent className="flex min-h-[88px] items-center gap-4 p-4">
         <IconHalo icon={icon} tone={tone} />
         <div className="min-w-0">
@@ -612,7 +613,6 @@ export default function IntelligencePage() {
             className="flex h-10 items-center justify-center gap-2 rounded-[10px] border border-[#E5E9F3] bg-white px-3.5 text-xs font-extrabold text-[#475070] shadow-sm transition hover:bg-[#F8FAFF] disabled:opacity-60"
             title="Trigger dynamic narrative clustering"
           >
-            <RefreshCcw size={14} className={cn("text-[#3B52F5]", isSyncingClusters && "animate-spin")} />
             <span>{isSyncingClusters ? (language === "id" ? "Memproses..." : "Clustering...") : (language === "id" ? "Sinkronkan Kluster" : "Sync Clusters")}</span>
           </button>
 
@@ -999,7 +999,6 @@ export default function IntelligencePage() {
                 </div>
               ) : narrativeDetailQuery.data === null || narrativeDetailQuery.isError ? (
                 <div className="flex h-48 flex-col items-center justify-center text-center">
-                  <Info size={24} className="text-[#647099]" />
                   <p className="mt-2 text-sm font-black text-[#53608C]">{ti("analysisModal.errorTitle")}</p>
                   <p className="mt-1 max-w-sm text-xs font-semibold leading-relaxed text-[#647099]">{ti("analysisModal.errorDesc")}</p>
                   <button type="button" onClick={() => void narrativeDetailQuery.refetch()} className="mt-4 rounded-[8px] border border-[#D9DEEA] bg-white px-4 py-2 text-[11px] font-black text-[#53608C] transition hover:bg-[#F8FAFF]">
@@ -1010,7 +1009,6 @@ export default function IntelligencePage() {
                 <NarrativeEvidence detail={narrativeDetailQuery.data} />
               ) : (
                 <div className="flex h-40 flex-col items-center justify-center text-center">
-                  <Info size={24} className="text-[#647099]" />
                   <p className="mt-2 text-sm font-bold text-[#53608C]">{ti("analysisModal.noData")}</p>
                 </div>
               )}
