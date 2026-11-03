@@ -2344,7 +2344,7 @@
     },
     "assignment": {
       "title": "Penugasan",
-      "desc": "Pilih dari anggota workspace dan peran eskalasi yang terdaftar agar penugasan tidak salah ketik.",
+      "desc": "Pilih anggota workspace dan tim, lalu simpan.",
       "save": "Simpan",
       "saving": "Menyimpan...",
       "back": "Kembali"

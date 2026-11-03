@@ -7,6 +7,8 @@ import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { assigneeName } from "@/lib/member-name";
+import { teamOptions } from "@/lib/teams";
+import { useL } from "@/lib/use-l";
 import { useToast } from "@/components/ui/toast";
 import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components/create-action-plan-modal";
 import { CreateInvestigationModal } from "@/app/(dashboard)/signals/components/create-investigation-modal";
@@ -93,6 +95,30 @@ function DetailStat({ icon: Icon, label, value, tone = "slate" }: { icon: typeof
   );
 }
 
+function severityLabel(severity: string | null | undefined, L: (en: string, id: string) => string) {
+  const v = String(severity || "").toLowerCase();
+  if (v === "critical") return L("Critical", "Kritis");
+  if (v === "high") return L("High", "Tinggi");
+  if (v === "medium") return L("Medium", "Sedang");
+  return L("Low", "Rendah");
+}
+function severityTag(severity: string | null | undefined) {
+  const v = String(severity || "").toLowerCase();
+  return v === "critical" ? "bg-[#B42318] text-white" : v === "high" ? "bg-[#FDECEC] text-[#B42318]" : v === "medium" ? "bg-[#FFF4E5] text-[#A04606]" : "bg-[#EEF1F7] text-[#465170]";
+}
+function sentimentLabel(sentiment: string | null | undefined, L: (en: string, id: string) => string) {
+  const v = String(sentiment || "").toLowerCase();
+  if (v.includes("neg")) return L("Negative", "Negatif");
+  if (v.includes("pos")) return L("Positive", "Positif");
+  if (v.includes("mix")) return L("Mixed", "Campuran");
+  if (v.includes("neu")) return L("Neutral", "Netral");
+  return L("Not analysed", "Belum dianalisis");
+}
+function sentimentTag(sentiment: string | null | undefined) {
+  const v = String(sentiment || "").toLowerCase();
+  return v.includes("neg") ? "bg-[#FDECEC] text-[#B42318]" : v.includes("pos") ? "bg-[#E8F7EF] text-[#047857]" : v.includes("mix") ? "bg-[#FFF4E5] text-[#A04606]" : "bg-[#EEF1F7] text-[#465170]";
+}
+
 function AssignmentCard({
   alert,
   members,
@@ -126,7 +152,7 @@ function AssignmentCard({
   };
 
   return (
-    <section className={`rounded-[18px] border ${toneClass[tone].border} bg-white shadow-[0_2px_14px_rgba(16,24,40,0.04)]`}>
+    <section id="assignment" className={`scroll-mt-24 rounded-[18px] border ${toneClass[tone].border} bg-white shadow-[0_2px_14px_rgba(16,24,40,0.04)]`}>
       <div className="p-5">
         <div className="mb-5 flex flex-wrap items-center gap-3">
           <span className={`flex size-10 items-center justify-center rounded-full ${toneClass[tone].bubble}`}>
@@ -174,10 +200,7 @@ function AssignmentCard({
               className="h-11 w-full rounded-[10px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white disabled:opacity-60"
             >
               <option value="" title={td("assignedTeamPlaceholder")}>{td("assignedTeamPlaceholder")}</option>
-              {activeEscalationRecords.map((record) => {
-                const label = `${record.roleName} (${record.level})`;
-                return <option key={record.id} value={record.roleName} title={label}>{label}</option>;
-              })}
+              {teamOptions(assignedTeam).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
           </label>
           <label className="block">
@@ -255,6 +278,7 @@ export default function AlertDetailPage() {
 
   const liveData = alertQuery.data;
 
+  const L = useL();
   const title = liveData?.title ?? td("empty.title");
   const source = liveData?.type ?? "-";
   const issue = liveData?.type ?? "-";
@@ -276,37 +300,20 @@ export default function AlertDetailPage() {
       {alertQuery.isPending ? (
         <PanelSkeleton />
       ) : liveData ? (
-        <section className={`min-h-0 h-auto overflow-hidden rounded-[20px] border ${toneClass[tone].border} bg-gradient-to-br ${toneClass[tone].panel} via-white to-white shadow-[0_2px_16px_rgba(16,24,40,0.04)]`}>
+        <section className={`overflow-hidden rounded-[20px] border ${toneClass[tone].border} bg-white shadow-[0_2px_16px_rgba(16,24,40,0.04)]`}>
           <div className="p-5 sm:p-6">
-            <div className="flex flex-wrap items-center gap-3">
-              <StatusBadge tone={tone}>{liveData.severity ?? "alert"}</StatusBadge>
-              <StatusBadge tone="slate">{source}</StatusBadge>
-              <span className="rounded-[8px] border border-[#E6EAF2] bg-white px-3 py-1.5 text-[10px] font-black text-[#5F6B94]">#{params.id}</span>
-              <div className="ml-auto flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsActionPlanModalOpen(true)}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-[9px] bg-[#465FFF] hover:bg-[#3B52F5] px-3.5 text-[11px] font-black text-white shadow-sm transition hover:opacity-90"
-                >
-                  <Sparkles size={13} />
-                  Generate Action Plan
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsCaseModalOpen(true)}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-[9px] border border-[#DDE3EF] bg-white px-3.5 text-[11px] font-black text-[#31406B] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]"
-                >
-                  <Flag size={13} className="text-[#3B52F5]" />
-                  Create Case
-                </button>
-                <div className="mx-1 hidden h-4 w-px bg-slate-200 sm:block" />
+            {/* Severity and status: the two facts that decide how fast to move. */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className={`rounded-[6px] px-2.5 py-1 text-[11px] font-black uppercase tracking-wide ${severityTag(liveData.severity)}`}>{severityLabel(liveData.severity, L)}</span>
+              <div role="group" aria-label={L("Status", "Status")} className="flex rounded-[10px] border border-[#DDE3EF] bg-white p-1">
                 {(["open", "acknowledged", "resolved"] as const).map((status) => (
                   <button
                     key={status}
                     type="button"
                     onClick={() => statusMutation.mutate(status)}
                     disabled={statusMutation.isPending || currentStatus === status}
-                    className={`h-9 rounded-[9px] px-3 text-[11px] font-black transition ${currentStatus === status ? "bg-[#465FFF] text-white shadow-sm" : "border border-[#DDE3EF] bg-white text-[#53608C] hover:bg-[#F8FAFF]"}`}
+                    aria-pressed={currentStatus === status}
+                    className={`rounded-[7px] px-3 py-1.5 text-[11px] font-black transition ${currentStatus === status ? "bg-[#465FFF] text-white" : "text-[#53608C] hover:text-[#101334]"}`}
                   >
                     {status === "open" ? td("status.new") : status === "acknowledged" ? td("status.investigating") : td("status.resolved")}
                   </button>
@@ -314,40 +321,67 @@ export default function AlertDetailPage() {
               </div>
             </div>
 
-            <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
-              <div>
-                <div className="mb-3 flex items-center gap-3">
-                  <span className={`flex size-11 items-center justify-center rounded-full ring-4 ring-white ${toneClass[tone].bubble}`}>
-                    <ShieldAlert size={22} strokeWidth={2.4} />
-                  </span>
-                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#647099]">{td("liveDetail")}</p>
-                </div>
-                <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{title}</h1>
-                <p className="mt-3 text-[13px] font-bold leading-6 text-[#53608C]">{td("issue.description", { issue })}</p>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                <DetailStat icon={UserRound} label={td("assignedTo")} value={assigneeName(liveData.assignedTo || (liveData as any)?.assigned_to, members) || "-"} tone="blue" />
-                <DetailStat icon={CalendarClock} label={td("deadline")} value={formatDateTime(liveData.deadline)} tone={tone} />
-              </div>
-            </div>
+            <h1 className="mt-4 text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{title}</h1>
 
-            <div className="mt-7 grid gap-4 md:grid-cols-3">
+            {/* Who owns it and by when; missing answers are marked, because that is what to fix first. */}
+            <dl className="mt-4 grid gap-3 sm:grid-cols-3">
               {[
-                [td("section.whatHappened"), whatHappened],
-                [td("section.whyItMatters"), whyItMatters],
-                [td("section.whatToDo"), whatToDo],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-[14px] border border-[#E6EAF2] bg-white/80 p-4 text-[13px] font-semibold leading-6 text-[#53608C]">
-                  <span className={`mb-2 block text-[10px] font-black uppercase tracking-[0.16em] ${toneClass[tone].text}`}>{label}</span>
+                { label: L("Owner", "Penanggung jawab"), value: assigneeName(liveData.assignedTo || (liveData as any)?.assigned_to, members) || liveData.assignedTeam || null, missing: L("Not assigned", "Belum ditunjuk") },
+                { label: L("Deadline", "Tenggat"), value: liveData.deadline ? formatDateTime(liveData.deadline) : null, missing: L("No deadline", "Belum ada tenggat") },
+                { label: L("Raised", "Muncul"), value: formatDateTime(liveData.createdAt), missing: "-" },
+              ].map((item) => (
+                <div key={item.label} className={`rounded-[12px] border p-3 ${item.value ? "border-[#E6EAF2] bg-[#FBFCFF]" : "border-[#F4C7C3] bg-[#FFF5F4]"}`}>
+                  <dt className="text-[11px] font-bold text-[#5F6B94]">{item.label}</dt>
+                  <dd className={`mt-1 text-[14px] font-black ${item.value ? "text-[#101334]" : "text-[#B42318]"}`}>{item.value || item.missing}</dd>
+                </div>
+              ))}
+            </dl>
+
+            <div className="mt-5 grid gap-4 md:grid-cols-3">
+              {[
+                [L("What happened", "Apa yang terjadi"), whatHappened],
+                [L("Why it matters", "Kenapa penting"), whyItMatters],
+                [L("What to do", "Yang perlu dilakukan"), whatToDo],
+              ].map(([label, value], index) => (
+                <div key={label} className={`rounded-[14px] border p-4 text-[13px] font-semibold leading-6 ${index === 2 ? "border-[#465FFF]/30 bg-[#F5F7FF] text-[#101334]" : "border-[#E6EAF2] bg-white text-[#53608C]"}`}>
+                  <span className="mb-1.5 block text-[12px] font-black text-[#101334]">{label}</span>
                   {value}
                 </div>
               ))}
             </div>
 
-            <section aria-label="Evidence" className="mt-6 rounded-[14px] border border-[#E6EAF2] bg-white/80 p-5">
-              <p className={`text-[10px] font-black uppercase tracking-[0.16em] ${toneClass[tone].text}`}>Evidence ({liveData.evidence?.length ?? 0})</p>
+            {/* One place for the next steps, in the order they are usually done. */}
+            <div className="mt-5 rounded-[14px] border border-[#E6EAF2] bg-[#FBFCFF] p-4">
+              <p className="text-[13px] font-black text-[#101334]">{L("Next steps", "Langkah berikutnya")}</p>
+              <ol className="mt-3 grid gap-2.5 md:grid-cols-3">
+                <li>
+                  <a href="#assignment" className="flex h-full items-start gap-3 rounded-[10px] border border-[#E6EAF2] bg-white p-3 transition hover:border-[#465FFF]/40">
+                    <span className="text-[16px] font-black text-[#465FFF]">1</span>
+                    <span><b className="block text-[13px] font-black text-[#101334]">{L("Assign an owner and deadline", "Tunjuk penanggung jawab & tenggat")}</b><span className="text-[11px] font-semibold text-[#5F6B94]">{L("So someone is accountable", "Supaya jelas siapa yang bertanggung jawab")}</span></span>
+                  </a>
+                </li>
+                <li>
+                  <button type="button" onClick={() => setIsActionPlanModalOpen(true)} className="flex h-full w-full items-start gap-3 rounded-[10px] border border-[#E6EAF2] bg-white p-3 text-left transition hover:border-[#465FFF]/40">
+                    <span className="text-[16px] font-black text-[#465FFF]">2</span>
+                    <span><b className="block text-[13px] font-black text-[#101334]">{L("Create a response plan", "Buat rencana respons")}</b><span className="text-[11px] font-semibold text-[#5F6B94]">{L("AI drafts it; you approve", "Disusun AI, Anda yang menyetujui")}</span></span>
+                  </button>
+                </li>
+                <li>
+                  <button type="button" onClick={() => statusMutation.mutate("resolved")} disabled={statusMutation.isPending || currentStatus === "resolved"} className="flex h-full w-full items-start gap-3 rounded-[10px] border border-[#E6EAF2] bg-white p-3 text-left transition hover:border-[#465FFF]/40 disabled:opacity-50">
+                    <span className="text-[16px] font-black text-[#465FFF]">3</span>
+                    <span><b className="block text-[13px] font-black text-[#101334]">{L("Mark as resolved", "Tandai selesai")}</b><span className="text-[11px] font-semibold text-[#5F6B94]">{L("When the issue is handled", "Setelah isunya tertangani")}</span></span>
+                  </button>
+                </li>
+              </ol>
+              <button type="button" onClick={() => setIsCaseModalOpen(true)} className="mt-3 text-[12px] font-bold text-[#3B52F5] hover:underline">
+                {L("Needs a longer investigation? Open it as a case →", "Perlu investigasi lebih panjang? Jadikan kasus →")}
+              </button>
+            </div>
+
+            <section aria-label={L("Evidence", "Bukti")} className="mt-5">
+              <p className="text-[13px] font-black text-[#101334]">{L("Evidence", "Bukti")} <span className="font-bold text-[#5F6B94]">({liveData.evidence?.length ?? 0} {L("articles", "berita")})</span></p>
               {liveData.evidence && liveData.evidence.length > 0 ? (
-                <ul className="mt-3 flex flex-col gap-2">
+                <ul className="mt-2 flex flex-col gap-2">
                   {liveData.evidence.map((sig) => (
                     <li key={sig.id} className="flex flex-wrap items-start justify-between gap-2 rounded-[10px] border border-[#EEF1F7] p-3">
                       <span className="min-w-0">
@@ -356,44 +390,18 @@ export default function AlertDetailPage() {
                         ) : (
                           <span className="text-[13px] font-bold text-[#101334]">{sig.title}</span>
                         )}
-                        <span className="mt-0.5 block text-[11px] font-semibold text-[#647099]">{[sig.publisher, sig.platform].filter(Boolean).join(" · ") || "Unknown source"} · {formatDateTime(sig.publishedAt || sig.capturedAt)}</span>
+                        <span className="mt-0.5 block text-[11px] font-semibold text-[#647099]">{sig.publisher || sig.platform || L("Unknown source", "Sumber tidak diketahui")} · {formatDateTime(sig.publishedAt || sig.capturedAt)}</span>
                       </span>
-                      <span className="shrink-0 rounded-md border border-[#E6EAF2] px-1.5 py-0.5 text-[10px] font-black capitalize text-[#53608C]">{sig.sentiment === "unanalyzed" ? "Not analyzed" : sig.sentiment}</span>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black ${sentimentTag(sig.sentiment)}`}>{sentimentLabel(sig.sentiment, L)}</span>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="mt-2 text-[12px] font-semibold text-[#647099]">No linked signals are stored for this alert.</p>
+                <p className="mt-2 text-[12px] font-semibold text-[#647099]">{L("No linked articles are stored for this alert.", "Belum ada berita yang tertaut ke peringatan ini.")}</p>
               )}
-              {liveData.evidenceMissing ? <p className="mt-2 text-[11px] font-semibold text-[#647099]">{liveData.evidenceMissing} referenced signal(s) are no longer available.</p> : null}
-              {liveData.triggeredBy ? <p className="mt-2 text-[11px] font-semibold text-[#647099]">Raised by: {liveData.triggeredBy === "pg_cron_automated_rules" ? "database alert rules (legacy scheduler)" : liveData.triggeredBy}</p> : null}
+              {liveData.evidenceMissing ? <p className="mt-2 text-[11px] font-semibold text-[#647099]">{L(`${liveData.evidenceMissing} linked article(s) are no longer available.`, `${liveData.evidenceMissing} berita tertaut sudah tidak tersedia.`)}</p> : null}
+              {liveData.triggeredBy ? <p className="mt-2 text-[11px] font-semibold text-[#647099]">{L("Raised automatically by Narriv's monitoring rules.", "Dibuat otomatis oleh aturan pemantauan Narriv.")}</p> : null}
             </section>
-
-            <div className="mt-6 rounded-[14px] border border-[#CFEFE3] bg-[#F4FFFA] p-5">
-              <p className="flex items-center gap-2 text-[13px] font-black text-[#047857]">
-                <CheckCircle2 size={17} />
-                {td("recommendation.title")}
-              </p>
-              <p className="mt-2 text-[12px] font-bold leading-5 text-[#31406B]">{td("recommendation.desc")}</p>
-              <div className="mt-4 flex flex-wrap gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setIsActionPlanModalOpen(true)}
-                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[9px] bg-[#047857] px-4 text-[12px] font-black text-white shadow-sm transition hover:bg-[#065F46]"
-                >
-                  <Sparkles size={14} />
-                  {td("createAction")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsCaseModalOpen(true)}
-                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[9px] border border-[#CFEFE3] bg-white px-4 text-[12px] font-black text-[#047857] transition hover:bg-[#F4FFFA]"
-                >
-                  <Flag size={14} />
-                  Escalate to Case
-                </button>
-              </div>
-            </div>
           </div>
         </section>
       ) : (

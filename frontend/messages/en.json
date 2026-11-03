@@ -2344,7 +2344,7 @@
     },
     "assignment": {
       "title": "Assignment",
-      "desc": "Use registered workspace members and escalation roles to prevent typo-prone assignments.",
+      "desc": "Choose a workspace member and a team, then save.",
       "save": "Save",
       "saving": "Saving...",
       "back": "Back"

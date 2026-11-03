@@ -46,6 +46,7 @@ import {
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import { assigneeName, memberName } from "@/lib/member-name";
+import { teamOptions } from "@/lib/teams";
 import {
   createAlert,
   getAlerts,
@@ -1236,9 +1237,9 @@ export default function AlertsPage() {
       }`
     : taCreate("assignedToPlaceholder");
 
-  const selectedTeam = escalationLevels.find((e) => e.roleName === createAssignedTeam);
+  const selectedTeam = teamOptions().find((o) => o.value === createAssignedTeam);
   const assignedTeamHoverTitle = selectedTeam
-    ? `${selectedTeam.roleName} (${selectedTeam.level})`
+    ? selectedTeam.label
     : taCreate("assignedTeamPlaceholder");
 
   return (
@@ -1754,14 +1755,7 @@ export default function AlertsPage() {
                             className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF]"
                           >
                             <option value="" title={taCreate("assignedTeamPlaceholder")}>{taCreate("assignedTeamPlaceholder")}</option>
-                            {escalationLevels.filter((e) => e.isActive).map((e) => {
-                              const label = `${e.roleName} (${e.level})`;
-                              return (
-                                <option key={e.id} value={e.roleName} title={label}>
-                                  {label}
-                                </option>
-                              );
-                            })}
+                            {teamOptions().map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                           </select>
                         </div>
                       </div>

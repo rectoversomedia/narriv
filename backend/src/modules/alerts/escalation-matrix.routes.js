@@ -13,7 +13,9 @@ router.use(verifyToken);
 // Production escalation_matrices: id, workspace_id, level, sla_minutes, is_active, sort_order, created_at, updated_at.
 // role_name arrives with migration 029; until it is applied, writes retry without it and reads fall back to the
 // default role for the level, so the matrix keeps working (role names just are not saved yet).
-const DEFAULT_ROLES = { L1: "Team Lead", L2: "Department Head", L3: "Executive Team", L4: "Executive Team", L5: "Executive Team" };
+const DEFAULT_ROLES = { L1: "Team Lead", L2: "Department Head", L3: "Executive Team", L4: "Board of Directors", L5: "Board of Directors" };
+// Levels are stored as "L1" or as a bare number ("1").
+const defaultRole = (level) => DEFAULT_ROLES[/^\d+$/.test(String(level)) ? `L${level}` : level];
 
 function missingRoleColumn(error) {
     return /role_name/.test(String(error?.message || ""));
@@ -24,7 +26,7 @@ export function toEscalationRecord(row) {
         id: row.id,
         workspaceId: row.workspace_id,
         level: row.level,
-        roleName: row.role_name || DEFAULT_ROLES[row.level] || row.level,
+        roleName: row.role_name || defaultRole(row.level) || row.level,
         slaMinutes: row.sla_minutes,
         isActive: row.is_active !== false,
         order: row.sort_order ?? 0,
