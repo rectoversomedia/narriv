@@ -73,6 +73,7 @@ import {
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { intlLocale } from "@/store/useUiStore";
 import { DemoBanner } from "@/components/ui/demo-banner";
+import { pickL } from "@/lib/use-l";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type AlertStatus = "New" | "Investigating" | "Escalated" | "Resolved";
@@ -906,7 +907,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                 <button
                   type="button"
                   onClick={handleSelectAll}
-                  aria-label="Select all alerts"
+                  aria-label={pickL("Select all alerts", "Pilih semua peringatan")}
                   aria-pressed={allSelected}
                   className={cn(
                     "flex h-5 w-5 items-center justify-center rounded border transition",
@@ -962,7 +963,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                   <button
                     type="button"
                     onClick={() => handleSelectRow(alert.id)}
-                    aria-label={`Select alert: ${alert.title}`}
+                    aria-label={pickL(`Select alert: ${alert.title}`, `Pilih peringatan: ${alert.title}`)}
                     aria-pressed={selectedAlerts.has(alert.id)}
                     className={cn(
                       "flex h-5 w-5 items-center justify-center rounded border transition",
@@ -991,7 +992,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                 <td className="px-3 py-3 align-middle"><StatusBadge status={alert.status} /></td>
                 <td className="px-3 py-3 align-middle text-[10px] font-black text-[#31406B]">{alert.time}</td>
                 <td className="relative px-3 py-3 text-right align-middle">
-                  <button type="button" aria-label={`Open actions for ${alert.title}`} onClick={() => setOpenMenuId(openMenuId === alert.id ? null : alert.id)} className="rounded-md p-1 text-[#5F6B94] transition hover:bg-[#EEF2FF] hover:text-[#3B52F5]"><MoreVertical size={16} /></button>
+                  <button type="button" aria-label={pickL(`Open actions for ${alert.title}`, `Buka aksi untuk ${alert.title}`)} onClick={() => setOpenMenuId(openMenuId === alert.id ? null : alert.id)} className="rounded-md p-1 text-[#5F6B94] transition hover:bg-[#EEF2FF] hover:text-[#3B52F5]"><MoreVertical size={16} /></button>
                   {openMenuId === alert.id ? (
                     <div ref={menuRef} className="absolute right-3 top-full z-50 mt-1 w-48 rounded-[10px] border border-[#E6EAF2] bg-white py-1 shadow-[0_12px_36px_rgba(16,24,40,0.12)]">
                       <p className="px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-[#647099]">{ta("table.changeStatus")}</p>

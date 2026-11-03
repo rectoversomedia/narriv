@@ -1,4 +1,5 @@
 import express from "express";
+import { tr } from "../../lib/request-context.js";
 import supabase from "../../lib/supabase.js";
 import { generateReport } from "./reports.service.js";
 import {
@@ -83,39 +84,18 @@ router.get("/exports/:jobId/download", rateLimiters.export(), async (req, res) =
 
 router.use(verifyToken);
 
-const REPORT_TEMPLATES = {
-    "Weekly Narrative Intelligence Brief": {
-        readiness: 92,
-        sections: "Signals, clusters, GEO, actions",
-        status: "Ready for exec review",
-    },
-    "AI Visibility Movement Report": {
-        readiness: 76,
-        sections: "Prompt set, citations, competitors",
-        status: "Needs GEO annotations",
-    },
-    "Predictive Risk Review": {
-        readiness: 64,
-        sections: "Drivers, owner actions, learning loop",
-        status: "Awaiting comms feedback",
-    },
-};
-
 function toFrontendReport(report) {
-    const template = REPORT_TEMPLATES[report.title] || {};
-    const sectionCount = Array.isArray(report.content?.sections)
-        ? `${report.content.sections.length} sections`
-        : template.sections || "Signals, clusters, insights";
+    const sections = Array.isArray(report.content?.sections) ? report.content.sections.length : null;
     return {
         id: report.id,
         title: report.title,
-        readiness: Number(template.readiness || 70),
-        sections: sectionCount,
-        status: report.status || template.status || "In progress",
+        sections: sections === null ? null : tr(`${sections} sections`, `${sections} bagian`),
+        status: report.status || "draft",
         summary: report.content?.summary || report.summary || "",
         periodStart: report.content?.period_start || report.period_start || null,
         periodEnd: report.content?.period_end || report.period_end || null,
         type: report.type || "intelligence",
+        createdAt: report.created_at,
     };
 }
 

@@ -36,6 +36,7 @@ import { PlanWorkflowControls } from "./components/plan-workflow-controls";
 import { RejectActionPlanModal } from "./components/reject-action-plan-modal";
 import { readableTone } from "@/lib/readable-tone";
 import { DemoBanner } from "@/components/ui/demo-banner";
+import { pickL } from "@/lib/use-l";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Priority = "high" | "medium" | "low" | "done";
@@ -496,7 +497,7 @@ export default function ActionPlansPage() {
                       start: (validPage - 1) * pageSize + 1,
                       end: Math.min(validPage * pageSize, totalFilteredItems),
                       total: totalFilteredItems,
-                      label: "actions",
+                      label: pickL("actions", "aksi"),
                     })}
                   </span>
                   <div className="flex items-center gap-2">

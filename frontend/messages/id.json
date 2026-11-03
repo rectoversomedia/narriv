@@ -1803,7 +1803,7 @@
         },
         "dormant": {
           "title": "Pasif",
-          "desc": "Minim aktivitas, perlu monitoring"
+          "desc": "Aktivitas rendah, tetap dipantau"
         }
       }
     },
@@ -3707,7 +3707,29 @@
     "event_notification_settings_updated": "Pengaturan Notifikasi Diperbarui",
     "event_onboarding_workspace_created": "Workspace Onboarding Dibuat",
     "event_onboarding_sources_created": "Sumber Onboarding Dibuat",
-    "event_onboarding_team_invited": "Tim Onboarding Diundang"
+    "event_onboarding_team_invited": "Tim Onboarding Diundang",
+    "event_action_plan_learning_viewed": "Pembelajaran rencana aksi dilihat",
+    "event_action_plan_status_change": "Status rencana aksi diubah",
+    "event_deadline_reminder": "Pengingat tenggat",
+    "event_integration_tested": "Integrasi diuji",
+    "event_monitoring_keyword_created": "Kata kunci ditambahkan",
+    "event_monitoring_keyword_deleted": "Kata kunci dihapus",
+    "event_monitoring_keyword_updated": "Kata kunci diperbarui",
+    "event_narrative_created": "Narasi dibuat",
+    "event_narrative_deleted": "Narasi dihapus",
+    "event_narrative_updated": "Narasi diperbarui",
+    "event_new_high_risk_alert": "Peringatan risiko tinggi baru",
+    "event_onboarding_completed": "Onboarding selesai",
+    "event_onboarding_keywords_created": "Kata kunci onboarding ditambahkan",
+    "event_onboarding_workspace_configured": "Workspace dikonfigurasi",
+    "event_signal_deleted": "Sinyal dihapus",
+    "event_signal_updated": "Sinyal diperbarui",
+    "event_signals_bulk_deleted": "Sinyal dihapus massal",
+    "event_template_deleted": "Templat laporan dihapus",
+    "event_workspace_created": "Workspace dibuat",
+    "event_workspace_owner_recovered": "Pemilik workspace dipulihkan",
+    "event_workspace_monitoring_paused": "Pemantauan dijeda",
+    "event_workspace_monitoring_resumed": "Pemantauan dilanjutkan"
   },
   "Pricing": {
     "title": "Harga yang sederhana dan transparan",

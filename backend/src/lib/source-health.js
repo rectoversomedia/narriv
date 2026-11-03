@@ -1,4 +1,5 @@
 import supabase from "./supabase.js";
+import { tr } from "./request-context.js";
 import { logStructured } from "../lib/logger.js";
 
 /**
@@ -171,7 +172,7 @@ export async function getWorkspaceSourceHealth(workspaceId) {
         });
 
         const keywordEvents = keywordRunEvents(history.keywordRuns, workspaceId);
-        for (const e of keywordEvents.slice(0, 5)) activity.push({ sourceId: null, name: "Google News (keyword monitoring)", kind: "keyword_monitoring", at: e.at, outcome: e.outcome, error: null, inserted: e.inserted, trigger: e.trigger });
+        for (const e of keywordEvents.slice(0, 5)) activity.push({ sourceId: null, name: tr("Google News (keyword monitoring)", "Google News (pemantauan kata kunci)"), kind: "keyword_monitoring", at: e.at, outcome: e.outcome, error: null, inserted: e.inserted, trigger: e.trigger });
         activity.sort((a, b) => new Date(b.at) - new Date(a.at));
 
         const count = (st) => results.filter((r) => r.connector.status === st).length;

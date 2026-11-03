@@ -21,6 +21,7 @@ import type {
   IntegrationRecord,
 } from "./api-service";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useUiStore } from "@/store/useUiStore";
 
 // ---------------------------------------------------------------------------
 // Demo Mode Detection
@@ -491,39 +492,54 @@ export function getMockActionPlans(): MetaPaginatedResponse<ActionQueueRecord> {
 export function getMockReports(): PaginatedResponse<{
   id: string;
   title: string;
-  sections: unknown;
-  readiness: number;
+  sections: string;
   status: string;
+  summary: string;
+  type: string;
+  periodStart: string;
+  periodEnd: string;
+  createdAt: string;
 }> {
-  const now = new Date();
+  const now = Date.now();
+  const ago = (days: number) => new Date(now - days * 864e5).toISOString();
+  const id = useUiStore.getState().language === "id";
+  const L = (en: string, idText: string) => (id ? idText : en);
   return {
     data: [
       {
         id: "demo-report-1",
-        title: "Weekly Sentiment Overview",
-        sections: ["Executive Summary", "Key Metrics", "Sentiment Analysis", "Recommendations"],
-        readiness: 95,
+        title: L("Weekly Sentiment Overview", "Ringkasan Sentimen Mingguan"),
+        sections: L("4 sections", "4 bagian"),
+        summary: L("Negative mentions fell 12% after the service update; complaints now centre on transfer delays.", "Sebutan negatif turun 12% setelah pembaruan layanan; keluhan kini berpusat pada transfer yang tertunda."),
+        type: "weekly",
+        periodStart: ago(7), periodEnd: ago(0), createdAt: ago(0),
         status: "ready",
       },
       {
         id: "demo-report-2",
-        title: "Service Disruption Analysis",
-        sections: ["Incident Timeline", "Root Cause", "Impact Assessment", "Action Items"],
-        readiness: 100,
+        title: L("Service Disruption Analysis", "Analisis Gangguan Layanan"),
+        sections: L("4 sections", "4 bagian"),
+        summary: L("Timeline, impact and follow-up actions for the mobile app outage.", "Linimasa, dampak, dan tindak lanjut gangguan aplikasi mobile."),
+        type: "incident",
+        periodStart: ago(3), periodEnd: ago(2), createdAt: ago(2),
         status: "ready",
       },
       {
         id: "demo-report-3",
-        title: "Monthly Executive Summary",
-        sections: ["Overview", "Trends", "Alerts", "Action Plans"],
-        readiness: 30,
+        title: L("Monthly Executive Summary", "Ringkasan Eksekutif Bulanan"),
+        sections: L("4 sections", "4 bagian"),
+        summary: L("Draft: trends, alerts and action plans for the month.", "Draf: tren, peringatan, dan rencana aksi bulan ini."),
+        type: "monthly",
+        periodStart: ago(30), periodEnd: ago(0), createdAt: ago(1),
         status: "draft",
       },
       {
         id: "demo-report-4",
-        title: "Competitive Analysis Q2",
-        sections: ["Market Share", "Sentiment Comparison", "Opportunities"],
-        readiness: 75,
+        title: L("Competitive Analysis Q2", "Analisis Kompetitor Q2"),
+        sections: L("3 sections", "3 bagian"),
+        summary: L("Share of voice and sentiment against three competitors.", "Pangsa suara dan sentimen dibanding tiga kompetitor."),
+        type: "intelligence",
+        periodStart: ago(90), periodEnd: ago(1), createdAt: ago(4),
         status: "review",
       },
     ],

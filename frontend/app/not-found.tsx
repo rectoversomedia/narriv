@@ -1,8 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { FileQuestion, Home, ArrowLeft } from "lucide-react";
+import { useL } from "@/lib/use-l";
 
 export default function NotFound() {
+  const L = useL();
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--app-bg)]">
       <div className="max-w-md w-full px-6 text-center">
@@ -20,10 +24,10 @@ export default function NotFound() {
 
         {/* Error Message */}
         <h2 className="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">
-          Page Not Found
+          {L("Page not found", "Halaman tidak ditemukan")}
         </h2>
         <p className="text-[#5A6478] dark:text-[#5A6478] mb-8">
-          Sorry, the page you&apos;re looking for doesn&apos;t exist or has been moved.
+          {L("Sorry, the page you're looking for doesn't exist or has been moved.", "Maaf, halaman yang Anda cari tidak ada atau sudah dipindahkan.")}
         </p>
 
         {/* Actions */}
@@ -31,14 +35,14 @@ export default function NotFound() {
           <Link href="/">
             <Button variant="default" size="lg" className="w-full sm:w-auto">
               <Home className="w-4 h-4 mr-2" />
-              Back to Dashboard
+              {L("Back to dashboard", "Kembali ke dashboard")}
             </Button>
           </Link>
 
           <Link href="/signals">
             <Button variant="outline" size="lg" className="w-full sm:w-auto">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              View Signals
+              {L("View signals", "Lihat sinyal")}
             </Button>
           </Link>
         </div>

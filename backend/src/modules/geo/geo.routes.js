@@ -1,4 +1,5 @@
 import express from "express";
+import { tr } from "../../lib/request-context.js";
 import supabase from "../../lib/supabase.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
@@ -14,30 +15,30 @@ function buildGeoActions({ score, competitor, hasWeakPrompts }) {
 
     if (score < 60) {
         actions.push({
-            title: "Create a plan to improve AI visibility",
-            tag: "High impact",
+            title: tr("Create a plan to improve AI visibility", "Susun rencana untuk meningkatkan visibilitas di AI"),
+            tag: tr("High impact", "Dampak tinggi"),
             highlighted: true,
         });
     }
 
     if (competitor >= 45) {
         actions.push({
-            title: "Publish comparative proof points for key prompts",
-            tag: "Defensive",
+            title: tr("Publish comparative proof points for key prompts", "Terbitkan bukti pembanding untuk prompt utama"),
+            tag: tr("Defensive", "Defensif"),
         });
     }
 
     if (hasWeakPrompts) {
         actions.push({
-            title: "Improve answer quality on unanswered prompts",
-            tag: "Quick win",
+            title: tr("Improve answer quality on unanswered prompts", "Perbaiki kualitas jawaban untuk prompt yang belum terjawab"),
+            tag: tr("Quick win", "Cepat terlihat hasilnya"),
         });
     }
 
     if (actions.length === 0) {
         actions.push({
-            title: "Maintain prompt monitoring cadence",
-            tag: "Stable",
+            title: tr("Maintain prompt monitoring cadence", "Pertahankan ritme pemantauan prompt"),
+            tag: tr("Stable", "Stabil"),
         });
     }
 

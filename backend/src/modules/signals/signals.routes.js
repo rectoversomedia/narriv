@@ -1,4 +1,5 @@
 import express from "express";
+import { tr } from "../../lib/request-context.js";
 import supabase from "../../lib/supabase.js";
 import { analyzeSignal, generateSignalsSummary } from "../ai/ai.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
@@ -27,6 +28,12 @@ const SIGNAL_LIST_SELECT =
 // Strip PostgREST filter syntax characters from free-text search input.
 const sanitizeSearch = (v) => String(v).replace(/[,()*%\\]/g, " ").trim().slice(0, 100);
 
+// Older ingestion appended the AI summary to the content ("… (AI Summary: …)"); the summary lives in
+// metadata.ai_summary, so the suffix is stripped wherever content is shown or exported.
+export function cleanSignalContent(content) {
+    return typeof content === "string" ? content.replace(/\s*\(AI Summary: [\s\S]*\)\s*$/, "") : content;
+}
+
 export function toSignalListItem(row, workspaceIds = []) {
     const { narrative_cluster_signals: links, analyses, ...signal } = row;
     const narratives = (links || [])
@@ -37,6 +44,8 @@ export function toSignalListItem(row, workspaceIds = []) {
     const rawConf = Number(analysis?.analysis?.confidence_score ?? analysis?.confidence);
     return {
         ...signal,
+        content: cleanSignalContent(signal.content),
+        aiSummary: signal.metadata?.ai_summary ?? null,
         // camelCase aliases expected by the frontend Signal type (snake_case kept).
         capturedAt: signal.captured_at,
         publishedAt: signal.published_at,
@@ -246,7 +255,7 @@ router.get("/export", async (req, res) => {
             "Source URL": s.source_url || "",
             Author: s.author || "",
             "Captured At": s.captured_at || s.created_at || "",
-            Content: (s.content || "").replace(/[\r\n]+/g, " ").slice(0, 1000),
+            Content: (cleanSignalContent(s.content) || "").replace(/[\r\n]+/g, " ").slice(0, 1000),
         }));
 
         const normalizedFormat = String(format).toLowerCase() === "xlsx" ? "xlsx" : "csv";
@@ -372,7 +381,7 @@ router.get("/meta", async (req, res) => {
         // Fetch cases
         const { data: rawCases, error: casesError } = await supabase
             .from('cases')
-            .select('title, status')
+            .select('title, status, assignee_id')
             .in('workspace_id', workspaceIds)
             .order('created_at', { ascending: false })
             .limit(3);
@@ -386,7 +395,7 @@ router.get("/meta", async (req, res) => {
         if (rawCases && rawCases.length > 0) {
             investigationQueue = rawCases.map(c => ({
                 title: c.title,
-                meta: 'Assigned to ' + (c.assigned_team || 'Ops Team'),
+                meta: c.assignee_id ? tr("Case has an owner", "Kasus sudah punya penanggung jawab") : tr("Not assigned yet", "Belum ditugaskan"),
                 badge: c.status,
                 tone: c.status === 'open' ? 'amber' : 'blue'
             }));
@@ -394,7 +403,7 @@ router.get("/meta", async (req, res) => {
             // Fallback to alerts if no cases
             const { data: fallbackAlerts, error: fallbackError } = await supabase
                 .from('alerts')
-                .select('title, status')
+                .select('title, status, assigned_team')
                 .in('workspace_id', workspaceIds)
                 .order('created_at', { ascending: false })
                 .limit(3);
@@ -403,7 +412,7 @@ router.get("/meta", async (req, res) => {
 
             investigationQueue = (fallbackAlerts || []).map(a => ({
                 title: a.title,
-                meta: 'Assigned to Ops Team',
+                meta: a.assigned_team ? tr(`Assigned to ${a.assigned_team}`, `Ditugaskan ke ${a.assigned_team}`) : tr("Not assigned yet", "Belum ditugaskan"),
                 badge: a.status,
                 tone: a.status === 'open' ? 'amber' : 'blue'
             }));
@@ -512,7 +521,7 @@ router.get("/:id", async (req, res) => {
         }
 
         return res.json({
-            signal,
+            signal: { ...signal, content: cleanSignalContent(signal.content) },
             analysis: latestAnalysis ?? { status: "processing" },
         });
 
@@ -566,7 +575,7 @@ router.post("/:id/analyze", validateRequest({ params: signalIdParamsSchema }), a
 
         // 3. Run AI analysis
         logStructured("info", "signal_analyze_started", { signalId: id });
-        const result = await analyzeSignal(signal.title, signal.content);
+        const result = await analyzeSignal(signal.title, cleanSignalContent(signal.content));
 
         // 4. Save result to SignalAnalysis
         const { data: analysis, error: analysisError } = await supabase
@@ -660,7 +669,7 @@ router.post("/batch-analyze", async (req, res) => {
         const results = [];
         for (const signal of unanalyzed) {
             try {
-                const result = await analyzeSignal(signal.title, signal.content);
+                const result = await analyzeSignal(signal.title, cleanSignalContent(signal.content));
 
                 const { data: analysis, error: createError } = await supabase
                     .from('signal_analyses')

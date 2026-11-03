@@ -45,6 +45,7 @@ import { cn } from "@/lib/utils";
 import { intlLocale } from "@/store/useUiStore";
 import { readableTone } from "@/lib/readable-tone";
 import { DemoBanner } from "@/components/ui/demo-banner";
+import { pickL } from "@/lib/use-l";
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate" | "pink" | "black" | "orange";
 
 type Connector = {
@@ -256,7 +257,7 @@ function ConnectorCard({ source, selected, onSelect, onToggle, onDelete, onSync 
           {onSync && (
             <button
               type="button"
-              aria-label="Sync source"
+              aria-label={pickL("Sync source", "Sinkronkan sumber")}
               onClick={(e) => { e.stopPropagation(); onSync(source); }}
               className="flex size-7 items-center justify-center rounded-full text-slate-300 opacity-0 transition hover:bg-blue-50 hover:text-blue-600 focus:opacity-100 group-hover:opacity-100"
             >
@@ -266,7 +267,7 @@ function ConnectorCard({ source, selected, onSelect, onToggle, onDelete, onSync 
           {onDelete && (
             <button
               type="button"
-              aria-label="Delete source"
+              aria-label={pickL("Delete source", "Hapus sumber")}
               onClick={(e) => { e.stopPropagation(); onDelete(source); }}
               className="flex size-7 items-center justify-center rounded-full text-slate-300 opacity-0 transition hover:bg-rose-50 hover:text-rose-600 focus:opacity-100 group-hover:opacity-100"
             >
@@ -290,7 +291,7 @@ function ConnectorCard({ source, selected, onSelect, onToggle, onDelete, onSync 
       </p>
       <div className="mt-4 grid grid-cols-2 gap-3 text-[11px] font-bold text-[#5F6B94]"><span>{t("lastSuccess")}<br /><b className="text-[14px] text-[#101334]">{source.health}</b></span><span>{t("documents")}<br /><b className="text-[14px] text-[#101334]">{source.signals}</b></span></div>
       {/* No per-source time series is stored, so no trend line is drawn. */}
-      <div className="mt-3 flex items-center justify-between gap-3 text-[10px] font-bold text-[#5F6B94]"><span>Last Sync</span><span>{source.lastSync}</span><button type="button" role="switch" aria-checked={source.active} aria-label={`Collect from ${source.name}`} onClick={(e) => { e.stopPropagation(); onToggle?.(source); }} className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/40"><Toggle active={source.active} /></button></div>
+      <div className="mt-3 flex items-center justify-between gap-3 text-[10px] font-bold text-[#5F6B94]"><span>{pickL("Last sync", "Sinkron terakhir")}</span><span>{source.lastSync}</span><button type="button" role="switch" aria-checked={source.active} aria-label={pickL(`Collect from ${source.name}`, `Ambil data dari ${source.name}`)} onClick={(e) => { e.stopPropagation(); onToggle?.(source); }} className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/40"><Toggle active={source.active} /></button></div>
     </div>
   );
 }
@@ -336,7 +337,7 @@ function ConnectorListRow({ source, selected, onSelect, onToggle, onDelete, onSy
         <span className="text-[14px] font-black text-[#101334]">{source.signals}</span>
       </div>
       <div className="text-[12px] font-bold text-[#53608C]">
-        <span className="block text-[10px] uppercase tracking-wide text-[#647099]">Last Sync</span>
+        <span className="block text-[10px] uppercase tracking-wide text-[#647099]">{pickL("Last sync", "Sinkron terakhir")}</span>
         <span className="text-[12px] font-black text-[#101334]">{source.lastSync}</span>
       </div>
       <span className={cn("truncate rounded-full px-2.5 py-1 text-center text-[9px] font-black", STATUS_BADGE[source.statusTone])} title={source.status}>{source.status}</span>
@@ -344,7 +345,7 @@ function ConnectorListRow({ source, selected, onSelect, onToggle, onDelete, onSy
         {onSync && (
           <button
             type="button"
-            aria-label="Sync source"
+            aria-label={pickL("Sync source", "Sinkronkan sumber")}
             onClick={(e) => { e.stopPropagation(); onSync(source); }}
             className="flex size-7 items-center justify-center rounded-full text-slate-300 opacity-0 transition hover:bg-blue-50 hover:text-blue-600 focus:opacity-100 group-hover:opacity-100"
           >
@@ -354,7 +355,7 @@ function ConnectorListRow({ source, selected, onSelect, onToggle, onDelete, onSy
         {onDelete && (
           <button
             type="button"
-            aria-label="Delete source"
+            aria-label={pickL("Delete source", "Hapus sumber")}
             onClick={(e) => { e.stopPropagation(); onDelete(source); }}
             className="flex size-7 items-center justify-center rounded-full text-slate-300 opacity-0 transition hover:bg-rose-50 hover:text-rose-600 focus:opacity-100 group-hover:opacity-100"
           >
@@ -365,7 +366,7 @@ function ConnectorListRow({ source, selected, onSelect, onToggle, onDelete, onSy
           type="button"
           role="switch"
           aria-checked={source.active}
-          aria-label={`Collect from ${source.name}`}
+          aria-label={pickL(`Collect from ${source.name}`, `Ambil data dari ${source.name}`)}
           onClick={(e) => { e.stopPropagation(); onToggle?.(source); }}
           className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/40"
         >
@@ -494,8 +495,8 @@ function VolumeBars({ bars, isEmpty }: { bars: Array<{ label: string; value: str
           <BarChart3 size={24} className="text-[#647099]" />
         </div>
         <div className="text-center">
-          <p className="text-[13px] font-bold text-[#53608C]">No volume data yet</p>
-          <p className="mt-1 text-[11px] font-semibold text-[#647099]">No signals stored in the last 7 days.</p>
+          <p className="text-[13px] font-bold text-[#53608C]">{pickL("No volume data yet", "Belum ada data volume")}</p>
+          <p className="mt-1 text-[11px] font-semibold text-[#647099]">{pickL("No signals stored in the last 7 days.", "Belum ada sinyal tersimpan dalam 7 hari terakhir.")}</p>
         </div>
       </div>
     );
@@ -789,8 +790,8 @@ export default function SourcesPage() {
   const settings: Array<{ title: string; desc: string; Icon: LucideIcon; tone: Tone; href?: string; status: string }> = [
     { title: t("settingsKeyword"), desc: t("settingsKeywordDesc"), Icon: KeyRound, tone: "blue", href: "/workspace/settings#keywords", status: "Manage" },
     { title: t("settingsDedup"), desc: t("settingsDedupDesc"), Icon: Database, tone: "purple", status: "Automatic" },
-    { title: t("settingsRateLimit"), desc: t("settingsRateLimitDesc"), Icon: Clock3, tone: "purple", status: "Managed by Narriv" },
-    { title: t("settingsRetention"), desc: t("settingsRetentionDesc"), Icon: Bell, tone: "orange", status: "Not configurable yet" },
+    { title: t("settingsRateLimit"), desc: t("settingsRateLimitDesc"), Icon: Clock3, tone: "purple", status: pickL("Managed by Narriv", "Dikelola Narriv") },
+    { title: t("settingsRetention"), desc: t("settingsRetentionDesc"), Icon: Bell, tone: "orange", status: pickL("Not configurable yet", "Belum bisa diatur") },
     { title: t("settingsWebhooks"), desc: t("settingsWebhooksDesc"), Icon: Webhook, tone: "purple", href: "/workspace/integrations", status: "Manage" },
   ];
 
@@ -808,11 +809,11 @@ export default function SourcesPage() {
             type="button"
             onClick={handleFetchLatestSignals}
             disabled={isFetchingSignals}
-            title="Fetch latest live news signals from RSS & Google News"
+            title={pickL("Fetch the latest news signals from RSS & Google News", "Ambil sinyal berita terbaru dari RSS & Google News")}
             className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[13px] font-black text-[#31406B] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-70 sm:w-fit"
           >
             <RotateCw size={15} className={cn("text-[#3B52F5]", isFetchingSignals && "animate-spin")} />
-            {isFetchingSignals ? "Fetching Signals..." : "Fetch Latest Signals"}
+            {isFetchingSignals ? pickL("Fetching signals…", "Mengambil sinyal…") : pickL("Fetch latest signals", "Ambil sinyal terbaru")}
           </button>
           <button type="button" onClick={() => setIsModalOpen(true)} disabled={bootstrapMutation.isPending} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B51E0] px-4 text-[13px] font-black text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-70 sm:w-fit"><Plus size={15} />{bootstrapMutation.isPending ? toast("bootstrapInProgress") : t("add")}</button>
         </div>
@@ -862,7 +863,7 @@ export default function SourcesPage() {
                   </button>
                   <button
                     type="button"
-                    aria-label="Display sources in grid view"
+                    aria-label={pickL("Display sources in grid view", "Tampilkan sumber sebagai kisi")}
                     aria-pressed={viewMode === "grid"}
                     onClick={() => setViewMode("grid")}
                     className={cn(
@@ -876,7 +877,7 @@ export default function SourcesPage() {
                   </button>
                   <button
                     type="button"
-                    aria-label="Display sources in list view"
+                    aria-label={pickL("Display sources in list view", "Tampilkan sumber sebagai daftar")}
                     aria-pressed={viewMode === "list"}
                     onClick={() => setViewMode("list")}
                     className={cn(
@@ -926,7 +927,7 @@ export default function SourcesPage() {
                         <span>Source</span>
                         <span>{t("lastSuccess")}</span>
                         <span>{t("documents")}</span>
-                        <span>Last Sync</span>
+                        <span>{pickL("Last sync", "Sinkron terakhir")}</span>
                         <span>Status</span>
                         <span>Actions</span>
                       </div>

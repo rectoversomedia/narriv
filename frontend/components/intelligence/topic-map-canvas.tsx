@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { deriveEdges, edgeEndpoints, fitLayout, labelBox, type PlacedNode } from "@/lib/topic-map-geometry";
 import { cn } from "@/lib/utils";
+import { pickL } from "@/lib/use-l";
 
 export type TopicMapNode = {
   id: string;
@@ -93,8 +94,8 @@ export function TopicMapCanvas({
       </div>
 
       <div className="pointer-events-none absolute bottom-2 left-14 right-3 flex flex-wrap justify-between gap-x-4 gap-y-1 text-[11px] font-medium text-subtle">
-        <span>{nodes.length > visible.length ? `Showing the ${visible.length} largest of ${nodes.length} narratives.` : null}</span>
-        <span>{visible.length > 1 && edges.length === 0 ? "No narratives share evidence in this period, so no connections are drawn." : null}</span>
+        <span>{nodes.length > visible.length ? pickL(`Showing the ${visible.length} largest of ${nodes.length} narratives.`, `Menampilkan ${visible.length} narasi terbesar dari ${nodes.length}.`) : null}</span>
+        <span>{visible.length > 1 && edges.length === 0 ? pickL("No narratives share evidence in this period, so no connections are drawn.", "Belum ada narasi yang berbagi bukti pada periode ini, jadi tidak ada garis hubungan.") : null}</span>
       </div>
     </div>
   );

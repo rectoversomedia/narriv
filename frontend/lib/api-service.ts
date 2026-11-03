@@ -1778,9 +1778,14 @@ export async function sendReportEmail(input: { reportId: string; recipientEmail:
 export interface ReportRecord {
   id: string;
   title: string;
-  sections: string;
-  readiness: number;
+  /** "5 bagian" when the report has stored sections, otherwise null. */
+  sections: string | null;
   status: string;
+  summary?: string;
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  type?: string;
+  createdAt?: string;
 }
 
 export interface ReportDetailSection {

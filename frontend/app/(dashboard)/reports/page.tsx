@@ -36,6 +36,8 @@ import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSke
 import { getReports, getReportTemplates, createReportTemplate, updateReportTemplate, deleteReportTemplate, getReportsAnalytics, createReportExport, getReportExportStatus, downloadReportFile, getNarratives, getDashboardSummary, getReportSchedules, createReportSchedule, updateReportSchedule, deleteReportSchedule, toggleReportSchedule, generateReportFromTemplate, sendReportEmail, sendTestScheduleEmail, type PaginationInfo, type ReportRecord, type ReportsAnalyticsResponse, type NarrativeRecord, type DashboardSummary, type ReportTemplate, type ReportScheduleRecord } from "@/lib/api-service";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { DemoBanner } from "@/components/ui/demo-banner";
+import { intlLocale } from "@/store/useUiStore";
+import { pickL } from "@/lib/use-l";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type ReportStatus = "READY" | "REVIEW" | "DRAFT" | "SCHEDULED" | "ARCHIVED";
@@ -65,7 +67,6 @@ type ReportRow = {
   type: string;
   period: string;
   status: ReportStatus;
-  progress: number | null;
   created: string;
   createdTime: string;
   tone: Tone;
@@ -105,23 +106,39 @@ function toneFromStatus(status: ReportStatus): Tone {
   return "purple";
 }
 
+const REPORT_TYPE_LABELS: Record<string, [string, string]> = {
+  executive_brief: ["Executive brief", "Ringkasan eksekutif"],
+  weekly: ["Weekly", "Mingguan"],
+  weekly_digest: ["Weekly digest", "Rangkuman mingguan"],
+  monthly: ["Monthly", "Bulanan"],
+  incident: ["Incident", "Insiden"],
+  risk_review: ["Risk review", "Tinjauan risiko"],
+  intelligence: ["Intelligence", "Intelijen"],
+  custom: ["Custom", "Kustom"],
+};
+
 function buildApiReportRows(
-  reports: Array<{ id: string; title: string; status: string; sections?: unknown; readiness?: number }>,
-  fallbacks: { description: string; type: string; period: string; created: string },
+  reports: ReportRecord[],
+  fallbacks: { description: string },
+  locale: string,
 ): ReportRow[] {
+  const day = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" }) : null);
+  const time = (iso?: string | null) => (iso ? new Date(iso).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" }) : "");
+  const id = locale.startsWith("id");
   return reports.map((report) => {
     const status = statusFromApi(report.status);
-    const sectionsStr = typeof report.sections === "string" ? report.sections : fallbacks.description;
+    const typeLabel = REPORT_TYPE_LABELS[report.type ?? ""];
+    const start = day(report.periodStart);
+    const end = day(report.periodEnd);
     return {
       id: report.id,
       title: report.title,
-      description: sectionsStr,
-      type: fallbacks.type,
-      period: fallbacks.period,
+      description: report.summary?.trim() ? report.summary : report.sections || fallbacks.description,
+      type: typeLabel ? typeLabel[id ? 1 : 0] : report.type || "-",
+      period: start && end ? `${start} – ${end}` : start || end || "-",
       status,
-      progress: report.readiness ?? 0,
-      created: fallbacks.created,
-      createdTime: "API",
+      created: day(report.createdAt) || "-",
+      createdTime: time(report.createdAt),
       tone: toneFromStatus(status),
     };
   });
@@ -163,12 +180,12 @@ function SentimentChart({ dashboard }: { dashboard?: DashboardSummary | null }) 
   return (
     <div className="flex h-full min-h-[160px] flex-col border-t border-line-soft pt-4 md:border-l md:border-t-0 md:pl-5 md:pt-0">
       <h4 className="text-[12px] font-bold text-navy">{tr("sentimentChart.title")}</h4>
-      <p className="mt-0.5 text-[10px] font-medium text-subtle">Signals per day (UTC days)</p>
+      <p className="mt-0.5 text-[10px] font-medium text-subtle">{pickL("Signals per day (UTC days)", "Sinyal per hari (hari UTC)")}</p>
       <div className="mt-2">
         {!days ? (
           <p className="mt-6 text-[11px] font-medium text-subtle">Sentiment trend is not available right now.</p>
         ) : !hasSignals ? (
-          <p className="mt-6 text-[11px] font-medium text-subtle">No signals were captured in the last 7 days.</p>
+          <p className="mt-6 text-[11px] font-medium text-subtle">{pickL("No signals were captured in the last 7 days.", "Belum ada sinyal yang tertangkap dalam 7 hari terakhir.")}</p>
         ) : (
           <SentimentTrendChart
             days={days}
@@ -484,7 +501,7 @@ function ReportsTable({
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              aria-label="Filter report type"
+              aria-label={pickL("Filter report type", "Saring jenis laporan")}
               className="h-8 w-full rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-2.5 text-[10px] font-black text-[#58648C] outline-none transition hover:bg-white focus:border-[#465FFF] sm:w-auto"
             >
               <option value="all">All Types</option>
@@ -536,7 +553,6 @@ function ReportsTable({
               <th className="px-3 py-3">{tr("table.type")}</th>
               <th className="px-3 py-3">{tr("table.period")}</th>
               <th className="px-3 py-3">{tr("table.status")}</th>
-              <th className="px-3 py-3">{tr("table.progress")}</th>
               <th className="px-3 py-3">{tr("table.created")}</th>
               <th className="px-3 py-3 text-right">{tr("table.action")}</th>
             </tr>
@@ -560,16 +576,6 @@ function ReportsTable({
                 <td className="px-3 py-3.5 align-middle text-[11px] font-black text-[#31406B]">{report.type}</td>
                 <td className="px-3 py-3.5 align-middle text-[11px] font-bold text-[#5F6B94]">{report.period}</td>
                 <td className="px-3 py-3.5 align-middle"><StatusBadge status={report.status} /></td>
-                <td className="px-3 py-3.5 align-middle">
-                  {report.progress !== null ? (
-                    <div className="flex items-center gap-2">
-                      <ProgressBar value={report.progress} tone={report.tone} />
-                      <span className="text-[10px] font-black text-[#31406B]">{report.progress}%</span>
-                    </div>
-                  ) : (
-                    <span className="text-[#647099] text-[11px]">-</span>
-                  )}
-                </td>
                 <td className="px-3 py-3.5 align-middle">
                   <span className="block text-[11px] font-black text-[#31406B]">{report.created}</span>
                   <span className="mt-0.5 block text-[9.5px] font-bold text-[#647099]">{report.createdTime}</span>
@@ -609,7 +615,7 @@ function ReportsTable({
               </tr>
             )) : (
               <tr>
-                <td colSpan={7} className="px-3 py-10 text-center">
+                <td colSpan={6} className="px-3 py-10 text-center">
                   <p className="text-[13px] font-black text-[#101334]">{tr("noMatch")}</p>
                   <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{tr("noMatchDesc")}</p>
                 </td>
@@ -1153,12 +1159,7 @@ export default function ReportsPage() {
   
   const isLiveUnavailable = reportsQuery.data === null;
   const rows = reportsQuery.data?.data
-    ? buildApiReportRows(reportsQuery.data.data, {
-        description: tr("preview.liveFallback"),
-        type: tr("preview.liveType"),
-        period: tr("preview.activePeriod"),
-        created: tr("preview.liveCreated"),
-      })
+    ? buildApiReportRows(reportsQuery.data.data, { description: tr("preview.liveFallback") }, intlLocale())
     : [];
 
   const templatesValue = templatesQuery.isPending ? "..." : String(templatesQuery.data?.data.length ?? 0);

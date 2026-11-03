@@ -13,6 +13,7 @@ import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore"
 import { cn } from "@/lib/utils";
 import { intlLocale } from "@/store/useUiStore";
 import { DemoBanner } from "@/components/ui/demo-banner";
+import { pickL } from "@/lib/use-l";
 const emptyIntegrations: IntegrationRecord[] = [];
 
 function platformLabel(platform: string, options: { value: string; label: string }[]) {
@@ -395,7 +396,7 @@ export default function IntegrationsPage() {
                         </td>
                         <td className="px-6 py-4 align-top">
                           <p className="font-bold text-slate-700">{formatDateTime(item.lastSyncAt, t("table.neverSynced"))}</p>
-                          <p className="mt-1 text-xs font-semibold text-[#5A6478]">Created {formatDateTime(item.createdAt, t("table.neverSynced"))}</p>
+                          <p className="mt-1 text-xs font-semibold text-[#5A6478]">{pickL("Created", "Dibuat")} {formatDateTime(item.createdAt, t("table.neverSynced"))}</p>
                         </td>
                         <td className="px-6 py-4 text-right align-top">
                           <div className="flex items-center justify-end gap-2">
@@ -415,7 +416,7 @@ export default function IntegrationsPage() {
                               type="button"
                               onClick={() => setDeleteTarget(item)}
                               className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#5A6478] transition hover:bg-red-50 hover:text-red-700"
-                              aria-label={`Disconnect ${item.name} integration`}
+                              aria-label={pickL(`Disconnect ${item.name} integration`, `Putuskan integrasi ${item.name}`)}
                             >
                               <Trash2 size={16} />
                             </button>

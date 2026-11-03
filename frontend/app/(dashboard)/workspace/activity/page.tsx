@@ -75,7 +75,8 @@ const knownEvents = [
   "action_generated", "action_status_updated", "action_plan_generated",
   "multi_step_action_plan_generated", "ai_feedback_submitted",
   "report_created", "report_generated_from_template", "report_export_created", "report_email_sent",
-  "notification_settings_updated", "onboarding_workspace_created", "onboarding_sources_created", "onboarding_team_invited"
+  "notification_settings_updated", "onboarding_workspace_created", "onboarding_sources_created", "onboarding_team_invited",
+  "action_plan_learning_viewed", "action_plan_status_change", "deadline_reminder", "integration_tested", "monitoring_keyword_created", "monitoring_keyword_deleted", "monitoring_keyword_updated", "narrative_created", "narrative_deleted", "narrative_updated", "new_high_risk_alert", "onboarding_completed", "onboarding_keywords_created", "onboarding_workspace_configured", "signal_deleted", "signal_updated", "signals_bulk_deleted", "template_deleted", "workspace_created", "workspace_owner_recovered", "workspace_monitoring_paused", "workspace_monitoring_resumed"
 ];
 
 function formatEventName(event: string, t?: ActivityTranslator) {

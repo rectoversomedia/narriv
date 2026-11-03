@@ -39,6 +39,7 @@ import {
 } from "@ridemountainpig/svgl-react";
 import { cn } from "@/lib/utils";
 import { DemoBanner } from "@/components/ui/demo-banner";
+import { pickL } from "@/lib/use-l";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 
@@ -416,9 +417,25 @@ function formatChartDate(date: string, language: string) {
   }).format(new Date(date));
 }
 
+const MENTION_CODES: Record<string, [string, string]> = {
+  mentioned: ["mentioned", "disebut"],
+  unmentioned: ["not mentioned", "tidak disebut"],
+  "not mentioned": ["not mentioned", "tidak disebut"],
+  positive: ["positive", "positif"],
+  negative: ["negative", "negatif"],
+  neutral: ["neutral", "netral"],
+  mixed: ["mixed", "campuran"],
+};
+/** brand/competitor/tone values arrive as codes ("unmentioned", "neutral"); show them in the UI language. */
+function mentionLabel(value: string | null | undefined) {
+  if (!value) return value ?? "";
+  const pair = MENTION_CODES[value.toLowerCase()];
+  return pair ? pickL(pair[0], pair[1]) : value;
+}
+
 function buildLatestMentionQuote(prompt: NonNullable<VisibilityResponse["prompts"]>[number], t: ReturnType<typeof useTranslations<"Visibility">>) {
-  const brand = prompt.brand ? t("mentionQuote.brand", { value: prompt.brand }) : t("mentionQuote.brandFallback");
-  const competitor = prompt.competitor ? t("mentionQuote.competitor", { value: prompt.competitor }) : t("mentionQuote.competitorFallback");
+  const brand = prompt.brand ? t("mentionQuote.brand", { value: mentionLabel(prompt.brand) }) : t("mentionQuote.brandFallback");
+  const competitor = prompt.competitor ? t("mentionQuote.competitor", { value: mentionLabel(prompt.competitor) }) : t("mentionQuote.competitorFallback");
   return `"${prompt.prompt}" - ${brand}; ${competitor}.`;
 }
 
@@ -695,8 +712,8 @@ export default function VisibilityPage() {
   const topTopicsData = visibilityData?.prompts?.length
     ? visibilityData.prompts.slice(0, 5).map((prompt) => ({
       topic: prompt.prompt,
-      mentions: prompt.brand || "-",
-      direction: prompt.brandTone || "Live",
+      mentions: mentionLabel(prompt.brand) || "-",
+      direction: mentionLabel(prompt.brandTone) || "-",
       type: formatEngineName(prompt.engine),
     }))
     : [];

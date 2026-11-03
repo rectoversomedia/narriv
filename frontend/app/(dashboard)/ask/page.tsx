@@ -8,6 +8,7 @@ import { CardContent } from "@/components/ui/card";
 import { getNarratives, getDashboardSummary } from "@/lib/api-service";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import type { NarrativeRecord, DashboardSummary } from "@/lib/api-service";
+import { pickL } from "@/lib/use-l";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -234,10 +235,16 @@ export default function AskPage() {
 
   // Dynamic welcome message — uses loaded real or mock data
   const welcomeContent = useMemo(() => {
-    const intro = "Hello! I'm Narriv, your AI intelligence copilot. I answer questions using only your workspace's signals, alerts and narratives, and cite the records I used. If the data can't support an answer, I'll say so.";
+    const intro = pickL(
+      "Hello! I'm Narriv, your AI intelligence copilot. I answer questions using only your workspace's signals, alerts and narratives, and cite the records I used. If the data can't support an answer, I'll say so.",
+      "Halo! Saya Narriv, asisten intelijen AI Anda. Saya menjawab hanya dari sinyal, peringatan, dan narasi di workspace Anda, lengkap dengan data yang saya pakai. Kalau datanya belum cukup untuk menjawab, saya akan bilang terus terang.",
+    );
     const total = dashboardSummary?.kpis?.total_signals;
     if (typeof total !== "number") return intro;
-    return `${intro}\n\nYour workspace currently holds ${total.toLocaleString()} signals. Try one of the suggested questions, or ask in your own words.`;
+    return `${intro}\n\n${pickL(
+      `Your workspace currently holds ${total.toLocaleString("en-US")} signals. Try one of the suggested questions, or ask in your own words.`,
+      `Workspace Anda saat ini berisi ${total.toLocaleString("id-ID")} sinyal. Coba salah satu pertanyaan yang disarankan, atau tanyakan dengan kalimat Anda sendiri.`,
+    )}`;
   }, [dashboardSummary]);
 
   const WELCOME_MESSAGE = useMemo<Message>(() => ({
@@ -245,8 +252,8 @@ export default function AskPage() {
     role: "assistant",
     content: welcomeContent,
     links: [
-      { label: "View Signals", href: "/signals" },
-      { label: "View Dashboard", href: "/" },
+      { label: pickL("View signals", "Lihat sinyal"), href: "/signals" },
+      { label: pickL("View dashboard", "Lihat dashboard"), href: "/" },
     ],
     isDemo: isDemoSession,
   }), [welcomeContent, isDemoSession]);
@@ -517,7 +524,7 @@ export default function AskPage() {
             </button>
           </div>
           <p className="mx-auto mt-2 max-w-3xl text-center text-[11px] font-semibold text-[#5A6478]">
-            Press Enter to send · Shift+Enter for new line
+            {pickL("Press Enter to send · Shift+Enter for a new line", "Tekan Enter untuk kirim · Shift+Enter untuk baris baru")}
           </p>
         </div>
       </main>

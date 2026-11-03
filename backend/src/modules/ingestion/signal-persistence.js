@@ -176,7 +176,7 @@ export async function persistCollectedRecords(records, {
           source_id: sourceId,
           raw_document_id: rawDoc.id,
           title: record.title || content.slice(0, 140),
-          content: aiResult?.summary ? `${content} (AI Summary: ${aiResult.summary})` : content,
+          content, // the AI summary is kept in metadata.ai_summary
           platform,
           url,
           author: record.author || null,

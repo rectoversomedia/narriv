@@ -1,4 +1,5 @@
 import express from "express";
+import { tr } from "../../lib/request-context.js";
 import { analyzeSignal } from "./ai.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { rateLimiters } from "../../middlewares/rate-limit.js";
@@ -106,8 +107,8 @@ router.get("/providers", async (req, res) => {
             { workflow: "signal_analysis_and_sentiment", provider: "openai", model: "gpt-4o-mini", routed: false },
             { workflow: "action_plans_and_recommendations", provider: "openai", model: "gpt-4o-mini", routed: false },
             { workflow: "ai_visibility", provider: "openai", model: "gpt-4o-mini", routed: false },
-            { workflow: "narrative_clustering", provider: null, model: null, routed: false, note: "deterministic, no language model" },
-            { workflow: "reports", provider: null, model: null, routed: false, note: "built from stored records, no language model" },
+            { workflow: "narrative_clustering", provider: null, model: null, routed: false, note: tr("deterministic, no language model", "berbasis aturan, tanpa model bahasa") },
+            { workflow: "reports", provider: null, model: null, routed: false, note: tr("built from stored records, no language model", "disusun dari data tersimpan, tanpa model bahasa") },
         ];
         res.json({
             profile: activeProfile(),

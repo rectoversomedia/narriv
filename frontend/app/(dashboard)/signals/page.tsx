@@ -24,6 +24,7 @@ import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSke
 import { getNarratives, getDateRangeOptions, getSignals, getSources, type PaginationInfo, type Signal, getSignalsMeta, type SignalsMeta, bulkDeleteSignals, bulkAnalyzeSignals, bulkCreateAlertsFromSignals, searchSignals, fetchLatestSignals, downloadSignalsExport, type AdvancedSearchFilters, type SearchSignalsResponse } from "@/lib/api-service";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { DemoBanner } from "@/components/ui/demo-banner";
+import { pickL } from "@/lib/use-l";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Sentiment = "NEGATIVE" | "POSITIVE" | "NEUTRAL" | "MIXED" | "UNANALYZED";
@@ -891,7 +892,7 @@ function LiveRelatedNarratives() {
     <div className="mt-6 rounded-[14px] border border-[#DDE3EF] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.03)]">
       <div className="mb-4 flex items-center gap-2">
         <h3 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{t("relatedNarratives")}</h3>
-        <span title="Narrative clusters built from your workspace's signals" className="cursor-help text-[#647099]"><Info size={13} /></span>
+        <span title={pickL("Narrative clusters built from your workspace's signals", "Klaster narasi yang disusun dari sinyal workspace Anda")} className="cursor-help text-[#647099]"><Info size={13} /></span>
       </div>
       {q.isLoading ? (
         <p className="text-[12px] font-bold text-[#5A6478]">Loading narratives…</p>
@@ -905,7 +906,7 @@ function LiveRelatedNarratives() {
             <Link key={n.id} href="/intelligence" className="rounded-[12px] border border-[#EDF1F7] bg-[#FBFCFF] p-4 transition hover:border-[#465FFF]/30">
               <p className="line-clamp-2 text-[13px] font-black text-[#101334]">{n.title}</p>
               <p className="mt-2 text-[11px] font-bold text-[#5F6B94]">
-                {n.signalCount} signal(s) · confidence {n.confidence === null ? "—" : `${n.confidence}%`} · 24h trend {n.velocity}
+                {pickL(`${n.signalCount} signal(s) · confidence ${n.confidence === null ? "—" : `${n.confidence}%`} · 24h trend ${n.velocity}`, `${n.signalCount} sinyal · keyakinan ${n.confidence === null ? "—" : `${n.confidence}%`} · tren 24 jam ${n.velocity}`)}
               </p>
               <p className="mt-1 text-[10.5px] font-bold capitalize text-[#5A6478]">{n.sentiment}</p>
             </Link>

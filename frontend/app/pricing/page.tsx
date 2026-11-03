@@ -3,6 +3,7 @@
 import { Fragment, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { useL } from "@/lib/use-l";
 import {
   Check,
   X,
@@ -200,6 +201,53 @@ const comparisonFeatures = [
   },
 ];
 
+
+// Indonesian for the plan and comparison copy above (plan names stay as product names).
+const ID_COPY: Record<string, string> = {
+  "Validate the value.": "Buktikan nilainya.",
+  "Pilot projects and proofs of concept": "Proyek percontohan dan uji konsep",
+  "Understand what matters.": "Pahami yang penting.",
+  "Corporate communications, brand, and reputation teams": "Tim komunikasi korporat, brand, dan reputasi",
+  "Turn intelligence into action.": "Ubah intelijen jadi tindakan.",
+  "Large organizations managing multiple brands, products, and issues": "Organisasi besar yang mengelola banyak brand, produk, dan isu",
+  "Operationalize intelligence.": "Jadikan intelijen bagian dari operasional.",
+  "Banks, telcos, ministries, and enterprise organizations": "Bank, telko, kementerian, dan organisasi enterprise",
+  "30 days": "30 hari",
+  "12 months": "12 bulan",
+  Unlimited: "Tanpa batas",
+  Custom: "Kustom",
+  "Signals Monitoring": "Pemantauan Sinyal",
+  Alerts: "Peringatan",
+  "Email Notifications": "Notifikasi Email",
+  Intelligence: "Intelijen",
+  "AI Visibility": "Visibilitas AI",
+  "WhatsApp Notifications": "Notifikasi WhatsApp",
+  "Action Center": "Action Center",
+  "Slack/Teams Integration": "Integrasi Slack/Teams",
+  "API Access": "Akses API",
+  "Monthly Executive Report": "Laporan Eksekutif Bulanan",
+  "Weekly Report": "Laporan Mingguan",
+  "Custom AI Models": "Model AI Kustom",
+  "Everything in Intelligence": "Semua fitur Intelligence",
+  "Escalation Workflow": "Alur Eskalasi",
+  "Slack Integration": "Integrasi Slack",
+  "Microsoft Teams Integration": "Integrasi Microsoft Teams",
+  "Microsoft Teams": "Microsoft Teams",
+  "WhatsApp Alerts": "Peringatan WhatsApp",
+  "Weekly Executive Brief": "Ringkasan Eksekutif Mingguan",
+  "Dedicated Infrastructure": "Infrastruktur Khusus",
+  "Enterprise SLA": "SLA Enterprise",
+  "Everything in Decision": "Semua fitur Decision",
+  "Dedicated Success Manager": "Success Manager Khusus",
+  "Quarterly Strategic Review": "Tinjauan Strategis Kuartalan",
+  "Core Intelligence": "Intelijen Inti",
+  Notifications: "Notifikasi",
+  "Action & Workflow": "Aksi & Alur Kerja",
+  Integrations: "Integrasi",
+  Reports: "Laporan",
+  Enterprise: "Enterprise",
+};
+
 function formatPrice(price: number): string {
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -227,6 +275,8 @@ function XIcon({ className }: { className?: string }) {
 
 export default function PricingPage() {
   const t = useTranslations("Pricing");
+  const L = useL();
+  const tx = (text: string | number) => (typeof text === "string" ? L(text, ID_COPY[text] ?? text) : text);
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
 
   const discount = billingPeriod === "annual" ? 0.8 : 1; // 20% discount for annual
@@ -236,7 +286,7 @@ export default function PricingPage() {
       {/* Header */}
       <header className="relative overflow-hidden bg-[#101334] px-6 py-20 text-white">
         <div className="relative z-10 mx-auto max-w-5xl text-center">
-          <p className="mb-4 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#A5B4FC]">Pricing</p>
+          <p className="mb-4 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#A5B4FC]">{L("Pricing", "Harga")}</p>
           <h1 className="text-[34px] font-bold leading-tight tracking-[-0.02em] sm:text-[42px]">{t("title")}</h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-300 sm:text-xl">{t("subtitle")}</p>
 
@@ -303,23 +353,23 @@ export default function PricingPage() {
                     <PlanIcon size={28} />
                   </div>
                   <h3 className="text-xl font-bold text-slate-900">{plan.name}</h3>
-                  <p className="mt-1 text-sm text-[#5A6478]">{plan.tagline}</p>
-                  <p className="mt-2 text-xs text-[#5A6478]">{plan.description}</p>
+                  <p className="mt-1 text-sm text-[#5A6478]">{tx(plan.tagline)}</p>
+                  <p className="mt-2 text-xs text-[#5A6478]">{tx(plan.description)}</p>
                 </div>
 
                 {/* Price */}
                 <div className="mt-6 text-center">
                   {isCustom ? (
-                    <div className="text-[26px] font-bold leading-tight text-slate-900 xl:text-[28px]"><span>Custom</span></div>
+                    <div className="text-[26px] font-bold leading-tight text-slate-900 xl:text-[28px]"><span>{tx("Custom")}</span></div>
                   ) : (
                     <>
                       {/* Price and period wrap as a unit so long rupiah amounts never overflow the card. */}
                       <div className="flex flex-wrap items-baseline justify-center gap-x-1 text-[26px] font-bold leading-tight tabular-nums text-slate-900 xl:text-[28px]">
                         <span className="whitespace-nowrap">{formatPrice(price)}</span>
-                        <span className="text-[14px] font-normal text-[#5A6478]">/{plan.period}</span>
+                        <span className="text-[14px] font-normal text-[#5A6478]">/{plan.period === "month+" ? L("month+", "bulan+") : L("month", "bulan")}</span>
                       </div>
                       {billingPeriod === "annual" && (
-                        <span>Save {formatPrice(plan.price - price)}/month</span>
+                        <span>{L(`Save ${formatPrice(plan.price - price)}/month`, `Hemat ${formatPrice(plan.price - price)}/bulan`)}</span>
                       )}
                     </>
                   )}
@@ -340,16 +390,16 @@ export default function PricingPage() {
                 {/* Limits */}
                 <div className="mt-6 space-y-3 border-t border-slate-100 pt-6">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-[#5A6478]">Intelligence Topics</span>
-                    <span className="font-semibold text-slate-900">{plan.limits.topics}</span>
+                    <span className="text-[#5A6478]">{L("Intelligence topics", "Topik intelijen")}</span>
+                    <span className="font-semibold text-slate-900">{tx(plan.limits.topics)}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-[#5A6478]">Users</span>
-                    <span className="font-semibold text-slate-900">{plan.limits.users}</span>
+                    <span className="text-[#5A6478]">{L("Users", "Pengguna")}</span>
+                    <span className="font-semibold text-slate-900">{tx(plan.limits.users)}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-[#5A6478]">Data Retention</span>
-                    <span className="font-semibold text-slate-900">{plan.limits.retention}</span>
+                    <span className="text-[#5A6478]">{L("Data retention", "Retensi data")}</span>
+                    <span className="font-semibold text-slate-900">{tx(plan.limits.retention)}</span>
                   </div>
                 </div>
 
@@ -360,7 +410,7 @@ export default function PricingPage() {
                       <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-700">
                         <CheckIcon className="h-3 w-3" />
                       </div>
-                      <span className="text-sm text-slate-600">{feature}</span>
+                      <span className="text-sm text-slate-600">{tx(feature)}</span>
                     </div>
                   ))}
                 </div>
@@ -383,7 +433,7 @@ export default function PricingPage() {
               <thead>
                 <tr className="border-b-2 border-slate-200">
                   <th className="py-4 pr-4 text-left text-sm font-bold text-slate-900">
-                    Feature
+                    {L("Feature", "Fitur")}
                   </th>
                   <th className="px-4 py-4 text-center text-sm font-bold text-slate-600">
                     PILOT
@@ -406,13 +456,13 @@ export default function PricingPage() {
                       <td colSpan={5} className="py-3 px-4">
                         <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
                           <category.icon size={16} className="text-indigo-500" />
-                          {category.category}
+                          {tx(category.category)}
                         </div>
                       </td>
                     </tr>
                     {category.items.map((item) => (
                       <tr key={item.name} className="border-b border-slate-100">
-                        <td className="py-4 pr-4 text-sm text-slate-600">{item.name}</td>
+                        <td className="py-4 pr-4 text-sm text-slate-600">{tx(item.name)}</td>
                         <td className="px-4 py-4 text-center">
                           {typeof item.pilot === "boolean" ? (
                             item.pilot ? (
@@ -539,7 +589,7 @@ export default function PricingPage() {
           <div className="flex items-center gap-8 text-sm text-[#5A6478]">
             <Link href="/help#contact" className="hover:text-slate-900">{t("contact")}</Link>
           </div>
-          <p className="text-sm text-[#5A6478]">© {new Date().getFullYear()} Narriv. All rights reserved.</p>
+          <p className="text-sm text-[#5A6478]">© {new Date().getFullYear()} Narriv. {L("All rights reserved.", "Hak cipta dilindungi.")}</p>
         </div>
       </footer>
     </div>
