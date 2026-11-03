@@ -29,7 +29,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
-import { getActionPlanById, getActionQueue, getFeedbackAccuracy, submitActionPlanFeedback, getActionPlansMetrics, getActionPlanLearning, type ActionPlanResponse, type ActionQueueRecord, type MetaPaginatedResponse } from "@/lib/api-service";
+import { getActionPlanById, getActionQueue, getFeedbackAccuracy, getWorkspaceMembers, submitActionPlanFeedback, getActionPlansMetrics, getActionPlanLearning, type ActionPlanResponse, type ActionQueueRecord, type MetaPaginatedResponse, type WorkspaceMemberRecord } from "@/lib/api-service";
+import { assigneeName } from "@/lib/member-name";
 import { cn } from "@/lib/utils";
 import { CreateActionPlanModal } from "./components/create-action-plan-modal";
 import { PlanWorkflowControls } from "./components/plan-workflow-controls";
@@ -98,20 +99,21 @@ function formatWorkflowStatus(status: ActionStatus, t: (key: string) => string) 
   return t("statusActive");
 }
 
-function buildActionItems(records: ActionQueueRecord[], t: (key: string) => string): ActionItem[] {
+function buildActionItems(records: ActionQueueRecord[], t: (key: string) => string, members: WorkspaceMemberRecord[]): ActionItem[] {
   return records.map((record) => {
     const priority = normalizePriority(record);
     const status = normalizeStatus(record.workflowStatus);
     const tone: Tone = status === "done" ? "green" : priority === "high" ? "red" : priority === "medium" ? "amber" : "green";
-    const progress = status === "done" ? 100 : status === "in-progress" ? 55 : 20;
+    // Plans have no step tracking, so progress is the workflow stage (1 active, 2 in progress, 3 done), not a percentage.
+    const progress = status === "done" ? 3 : status === "in-progress" ? 2 : 1;
 
     return {
       id: record.id,
       title: record.title,
       issue: record.alert?.title || record.cluster?.title || t("livePlanLabel"),
       impact: record.escalationLevel || record.alert?.severity || record.cluster?.sentiment || t("liveReviewLabel"),
-      response: t("livePlanLabel"),
-      owner: record.assignedTo || t("unassignedOwner"),
+      response: "",
+      owner: assigneeName(record.assignedTo, members) || t("unassignedOwner"),
       role: record.assignedTeam || t("liveRoleLabel"),
       due: formatActionDate(record.deadline || record.createdAt),
       progress,
@@ -184,14 +186,17 @@ function Avatar({ name }: { name: string }) {
   );
 }
 
+/** Workflow stage of a plan: three segments (active → in progress → done). */
 function ProgressLine({ value, tone }: { value: number; tone: Tone }) {
   const style = toneStyles[tone];
   return (
     <div className="flex items-center gap-2">
-      <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#EEF1F7]">
-        <span className="block h-full rounded-full" style={{ width: `${value}%`, backgroundColor: style.color }} />
+      <span className="flex flex-1 gap-1">
+        {[1, 2, 3].map((step) => (
+          <span key={step} className="h-1.5 flex-1 rounded-full" style={{ backgroundColor: step <= value ? style.color : "#EEF1F7" }} />
+        ))}
       </span>
-      <span className="w-9 text-right text-[10px] font-black text-[#101334]">{value}%</span>
+      <span className="whitespace-nowrap text-right text-[10px] font-black text-[#101334]">{pickL(`Stage ${value}/3`, `Tahap ${value}/3`)}</span>
     </div>
   );
 }
@@ -211,7 +216,7 @@ function ActionCard({ action, selected, onSelect, t }: { action: ActionItem; sel
       <div className="mt-3 flex flex-col gap-1 text-[11px] font-semibold text-[#5F6B94]">
         <span>{action.issue}</span>
         <span>{t("impactLabel")} <b className="font-black" style={{ color: readableTone(style.color) }}>{action.impact}</b></span>
-        <span>{action.response}</span>
+        {action.response ? <span>{action.response}</span> : null}
       </div>
       <div className="mt-4 flex items-center justify-between gap-3">
         <span className="flex items-center gap-2">
@@ -312,7 +317,7 @@ export default function ActionPlansPage() {
   const queryClient = useQueryClient();
   const toastHook = useToast();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedActionId, setSelectedActionId] = useState<string>("");
+  const [pickedActionId, setSelectedActionId] = useState<string>("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -346,6 +351,7 @@ export default function ActionPlansPage() {
     },
     onError: () => showToast(t("toast.feedbackRetry"), "error"),
   });
+  const membersQuery = useQuery({ queryKey: ["workspace-members"], queryFn: getWorkspaceMembers, staleTime: 60 * 1000 });
   const actionQueueQuery = useQuery<MetaPaginatedResponse<ActionQueueRecord>>({
     queryKey: ["action-queue", { page: currentPage, limit: 8, search: searchQuery.trim(), priority: filterPriority, status: filterStatus }],
     queryFn: async () => {
@@ -355,6 +361,8 @@ export default function ActionPlansPage() {
     },
     staleTime: 30 * 1000,
   });
+  // The preview, performance and learning panels follow the picked plan, or the first plan on the page.
+  const selectedActionId = pickedActionId || actionQueueQuery.data?.data?.[0]?.id || "";
   const actionPlanQuery = useQuery({
     queryKey: ["action-plan", selectedActionId],
     queryFn: () => getActionPlanById(selectedActionId),
@@ -377,7 +385,7 @@ export default function ActionPlansPage() {
   const accuracyScorePercent = accuracy?.accuracy_score != null ? Math.round(accuracy.accuracy_score * 100) : null;
   const acceptanceRatePercent = accuracy ? Math.round(accuracy.acceptance_rate * 100) : null;
   const rejectionRatePercent = accuracy ? Math.round(accuracy.rejection_rate * 100) : null;
-  const liveActions = actionQueueQuery.data?.data ? buildActionItems(actionQueueQuery.data.data, t) : [];
+  const liveActions = actionQueueQuery.data?.data ? buildActionItems(actionQueueQuery.data.data, t, membersQuery.data ?? []) : [];
   const isQueueUnavailable = actionQueueQuery.isError;
   const isPlanUnavailable = !!selectedActionId && actionPlanQuery.isError;
   const actionItems = liveActions;
@@ -579,8 +587,8 @@ export default function ActionPlansPage() {
             <div className="mt-5">
               <p className="text-[12px] font-black text-[#101334]">{t("aiStepsTitle")}</p>
               <div className="mt-2 grid gap-2">
-                {(detailSteps ?? []).slice(0, 3).map(([item, owner]) => (
-                  <div key={item} className="flex items-center justify-between rounded-[8px] border border-[#E8ECF5] px-3 py-2 text-[12px] font-semibold text-[#53608C]">
+                {(detailSteps ?? []).slice(0, 3).map(([item, owner], stepIndex) => (
+                  <div key={`${stepIndex}:${item}`} className="flex items-center justify-between rounded-[8px] border border-[#E8ECF5] px-3 py-2 text-[12px] font-semibold text-[#53608C]">
                     <span className="flex items-center gap-2"><CircleCheck size={16} className="text-[#047857]" />{item}</span>
                     <span className="text-[10px] font-black text-[#5F6B94]">{owner}</span>
                   </div>
@@ -690,11 +698,17 @@ export default function ActionPlansPage() {
                     <p className="text-[13px] font-black text-[#101334]">{t("keyInsights")}</p>
                     <div className="mt-3 grid gap-2.5">
                       {actionPlanLearningQuery.data.insights.map((insight) => {
-                        const Icon = insight.icon === "trending-down" ? TrendingDown : insight.icon === "trending-up" ? TrendingUp : Timer;
+                        const stats = actionPlanLearningQuery.data?.stats;
+                        const row =
+                          insight.type === "acceptance_rate"
+                            ? { Icon: TrendingUp, label: pickL("AI suggestions accepted", "Saran AI yang diterima"), value: `${insight.value}%`, hint: stats ? pickL(`${stats.accepted} of ${stats.totalFeedback} reviews`, `${stats.accepted} dari ${stats.totalFeedback} tinjauan`) : "" }
+                            : insight.type === "avg_rating"
+                              ? { Icon: Timer, label: pickL("Average content rating", "Rata-rata nilai konten"), value: `${insight.value}/5`, hint: "" }
+                              : { Icon: TrendingDown, label: pickL("More suggestions rejected than accepted", "Lebih banyak saran ditolak daripada diterima"), value: String(insight.value), hint: pickL("Review the plan's prompt and context", "Tinjau konteks dan arahan rencana ini") };
                         return (
-                          <div key={insight.titleKey} className="flex items-center justify-between gap-4 rounded-[9px] bg-[#FBFCFF] p-3 text-[11px] font-semibold text-[#53608C]">
-                            <span className="flex items-center gap-2"><Icon size={15} className="text-[#3B52F5]" />{t(insight.titleKey)}</span>
-                            <b className="shrink-0 text-[#53608C]">{t(insight.valueKey)}</b>
+                          <div key={insight.type} className="flex items-center justify-between gap-4 rounded-[9px] bg-[#FBFCFF] p-3 text-[11px] font-semibold text-[#53608C]">
+                            <span className="flex min-w-0 items-center gap-2"><row.Icon size={15} className="shrink-0 text-[#3B52F5]" /><span className="min-w-0"><span className="block">{row.label}</span>{row.hint ? <span className="block text-[10px] text-[#647099]">{row.hint}</span> : null}</span></span>
+                            <b className="shrink-0 text-[#53608C]">{row.value}</b>
                           </div>
                         );
                       })}
@@ -706,15 +720,14 @@ export default function ActionPlansPage() {
                     <p className="text-[13px] font-black text-[#101334]">{t("popularTemplates")}</p>
                     <div className="mt-3 grid gap-2.5">
                       {actionPlanLearningQuery.data.templates.map((template) => (
-                        <div key={template.nameKey} className="flex items-center justify-between rounded-[9px] border border-[#EEF1F7] px-3 py-2.5 text-[12px] font-semibold text-[#53608C]">
-                          <span className="flex items-center gap-2"><ListChecks size={15} className="text-[#C81E1E]" />{t(template.nameKey)}</span>
-                          <span className="text-[10px] font-black">{t("templateUsed", { count: template.usageCount + "x" })}</span>
+                        <div key={template.id} className="rounded-[9px] border border-[#EEF1F7] px-3 py-2.5 text-[12px] font-semibold text-[#53608C]">
+                          <span className="flex items-center gap-2 font-black text-[#101334]"><ListChecks size={15} className="text-[#C81E1E]" />{template.type}</span>
+                          <span className="mt-1 block line-clamp-2 text-[11px]">{template.content}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
-                <Link href="/workspace/settings" className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#F8FAFF] text-[12px] font-black text-[#3B52F5] transition hover:bg-[#465FFF]/5">{t("manageAllTemplates")} <ChevronRight size={14} /></Link>
               </>
             )}
           </CardContent>

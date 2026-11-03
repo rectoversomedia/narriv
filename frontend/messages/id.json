@@ -1467,7 +1467,8 @@
         "criticalIncidents": "Insiden Kritis",
         "target": "Target: {val}",
         "vsPrevious7Days": "{val} vs 7 hari sebelumnya",
-        "noBaseline": "Belum ada minggu sebelumnya untuk dibandingkan"
+        "noBaseline": "Belum ada minggu sebelumnya untuk dibandingkan",
+        "openAlerts": "Belum Ditangani"
       },
       "incident": {
         "title": "Insiden Kritis",
@@ -1766,9 +1767,9 @@
       "moreActions": "Aksi narasi terpilih lainnya"
     },
     "competitorShare": {
-      "title": "Popularitas Obrolan Kompetitor",
-      "totalShare": "Total Obrolan",
-      "viewLandscape": "Lihat Peta Persaingan"
+      "title": "Porsi Narasi",
+      "totalShare": "Total Sinyal",
+      "viewLandscape": "Lihat rincian porsi narasi"
     },
     "aiSummary": {
       "title": "Wawasan Narasi (Ringkasan AI)",
@@ -1811,18 +1812,16 @@
       "apiIssues": "Masalah koneksi",
       "dataCoverage": "Cakupan Data",
       "degraded": "Terdegradasi",
-      "sourcesActive": "62 / 72 Sumber Aktif",
-      "coveragePercent": "86% Cakupan",
       "updateFreq": "Frekuensi Pembaruan",
-      "realtime": "Waktu Nyata",
-      "autoUpdated": "Diperbarui otomatis 30 detik lalu",
-      "aiStatus": "Status Model AI",
-      "operational": "Operasional",
-      "systemsNormal": "Semua sistem normal",
-      "analysisDepth": "Kedalaman Analisis",
-      "deep": "Analisis Mendalam",
-      "multilingual": "Lintas platform & multibahasa",
-      "btnSettings": "Konfigurasi Pengaturan Intelijen"
+      "btnSettings": "Atur Kata Kunci & Sumber",
+      "dailySchedule": "Sekali sehari (07.00 WIB)",
+      "freshnessUnavailable": "Waktu pembaruan belum tersedia",
+      "lastIngestion": "Pengambilan terakhir {time}",
+      "dataConnection": "Koneksi Data",
+      "connected": "Terhubung",
+      "connectedDetail": "Data narasi dan sumber berhasil dimuat",
+      "lastAnalysis": "Analisis Terakhir",
+      "lastAnalysisDetail": "Waktu sinyal terakhir dianalisis AI"
     },
     "toast": {
       "copyFailed": "Gagal menyalin ID narasi.",
@@ -3045,7 +3044,7 @@
       "opportunities": "Peluang",
       "brief": "Briefing Harian",
       "timeline": "Linimasa",
-      "actions": "Rekomendasi Tindakan",
+      "actions": "Aksi & Tindak Lanjut",
       "alertCenter": "Pusat Peringatan",
       "actionCenter": "Rencana Aksi",
       "cases": "Kasus",
@@ -3270,7 +3269,7 @@
     },
     "navSections": {
       "reports": "Laporan & Wawasan",
-      "actions": "Rekomendasi Tindakan"
+      "actions": "Aksi & Tindak Lanjut"
     }
   },
   "ActionPlans": {

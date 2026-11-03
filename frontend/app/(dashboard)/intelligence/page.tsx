@@ -606,8 +606,8 @@ export default function IntelligencePage() {
     {
       icon: Database,
       title: ti("footer.dataCoverage"),
-      value: sourcesQuery.isPending ? "..." : `${activeSourcesCount} / ${totalSourcesCount} ${ti("labels.sourcesActive") || "Sources Active"}`,
-      detail: sourcesQuery.isPending ? "..." : `${coveragePercent}% ${ti("labels.coverage") || "Coverage"}`,
+      value: sourcesQuery.isPending ? "..." : `${activeSourcesCount} / ${totalSourcesCount} ${ti("labels.sourcesActive")}`,
+      detail: sourcesQuery.isPending ? "..." : `${coveragePercent}% ${ti("labels.coverage")}`,
       tone: "purple" as Tone,
       progress: true,
       progressValue: coveragePercent,
@@ -615,26 +615,26 @@ export default function IntelligencePage() {
     {
       icon: RefreshCcw,
       title: ti("footer.updateFreq"),
-      value: "Scheduled every 6h",
+      value: ti("footer.dailySchedule"),
       detail: pipelineQuery.isPending
         ? "..."
         : pipelineQuery.isError
-          ? "Freshness unavailable"
-          : `Last ingestion ${timeAgo(pipelineQuery.data?.ingestion.lastRawDocumentAt)}`,
+          ? ti("footer.freshnessUnavailable")
+          : ti("footer.lastIngestion", { time: timeAgo(pipelineQuery.data?.ingestion.lastRawDocumentAt) }),
       tone: "blue" as Tone,
     },
     {
       icon: Bot,
-      title: ti("footer.aiStatus"),
-      value: isApiHealthy ? ti("footer.operational") : ti("footer.degraded"),
-      detail: isApiHealthy ? ti("footer.systemsNormal") : ti("footer.apiIssues"),
+      title: ti("footer.dataConnection"),
+      value: isApiHealthy ? ti("footer.connected") : ti("footer.degraded"),
+      detail: isApiHealthy ? ti("footer.connectedDetail") : ti("footer.apiIssues"),
       tone: (isApiHealthy ? "green" : "red") as Tone,
     },
     {
       icon: Layers3,
-      title: ti("footer.analysisDepth"),
-      value: ti("footer.deep"),
-      detail: ti("footer.multilingual"),
+      title: ti("footer.lastAnalysis"),
+      value: pipelineQuery.isPending ? "..." : timeAgo(pipelineQuery.data?.analysis.lastAnalysisAt),
+      detail: ti("footer.lastAnalysisDetail"),
       tone: "purple" as Tone,
     },
   ];
@@ -1038,7 +1038,7 @@ export default function IntelligencePage() {
             );
           })}
         </div>
-        <button type="button" onClick={() => router.push("/settings")} className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#C9C6F8] bg-white px-5 text-[12px] font-black text-[#6B4DE6] shadow-sm transition hover:bg-[#F8F6FF]">
+        <button type="button" onClick={() => router.push("/workspace/settings")} className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#C9C6F8] bg-white px-5 text-[12px] font-black text-[#6B4DE6] shadow-sm transition hover:bg-[#F8F6FF]">
           <Settings size={14} />
           {ti("footer.btnSettings")}
         </button>

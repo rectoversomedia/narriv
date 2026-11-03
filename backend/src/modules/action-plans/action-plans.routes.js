@@ -361,13 +361,7 @@ router.get("/:id/learning", async (req, res) => {
                 createdAt: a.created_at
             }));
 
-        await recordAuditLog({
-            userId: req.user.id,
-            event: "action_plan_learning_viewed",
-            workspaceId: plan.workspace_id,
-            metadata: { actionPlanId: id }
-        });
-
+        // A read: not written to the activity log (the page opens it for the selected plan on every visit).
         return res.json({
             insights,
             templates,

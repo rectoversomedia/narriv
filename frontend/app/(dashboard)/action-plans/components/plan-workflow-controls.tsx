@@ -4,14 +4,15 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getWorkspaceMembers, updateActionPlanAssignment, type AssignmentInput } from "@/lib/api-service";
 import { useToast } from "@/components/ui/toast";
+import { useL } from "@/lib/use-l";
 
 type WorkflowStatus = NonNullable<AssignmentInput["workflowStatus"]>;
 
-const STATUS_OPTIONS: Array<{ value: WorkflowStatus; label: string }> = [
-  { value: "pending", label: "Not started" },
-  { value: "in_progress", label: "In progress" },
-  { value: "blocked", label: "Blocked" },
-  { value: "done", label: "Done" },
+const STATUS_OPTIONS: Array<{ value: WorkflowStatus; label: [string, string] }> = [
+  { value: "pending", label: ["Not started", "Belum dimulai"] },
+  { value: "in_progress", label: ["In progress", "Sedang dikerjakan"] },
+  { value: "blocked", label: ["Blocked", "Terhambat"] },
+  { value: "done", label: ["Done", "Selesai"] },
 ];
 
 function toWorkflowStatus(status?: string | null): WorkflowStatus {
@@ -27,6 +28,7 @@ function toWorkflowStatus(status?: string | null): WorkflowStatus {
  */
 export function PlanWorkflowControls({ planId, status, assignedTo }: { planId: string; status?: string | null; assignedTo?: string | null }) {
   const toast = useToast();
+  const L = useL();
   const queryClient = useQueryClient();
   const [nextStatus, setNextStatus] = useState<WorkflowStatus>(toWorkflowStatus(status));
   const [owner, setOwner] = useState<string>(assignedTo ?? "");
@@ -40,7 +42,7 @@ export function PlanWorkflowControls({ planId, status, assignedTo }: { planId: s
     const result = await updateActionPlanAssignment(planId, { workflowStatus: nextStatus, assignedTo: owner || null });
     setSaving(false);
     if (!result) {
-      toast.error("The change was not saved. Check that the owner is a workspace member and try again.", "Update failed");
+      toast.error(L("The change was not saved. Check that the owner is a workspace member and try again.", "Perubahan belum tersimpan. Pastikan penanggung jawab adalah anggota workspace, lalu coba lagi."), L("Update failed", "Gagal menyimpan"));
       return;
     }
     await Promise.all([
@@ -48,31 +50,31 @@ export function PlanWorkflowControls({ planId, status, assignedTo }: { planId: s
       queryClient.invalidateQueries({ queryKey: ["action-plans-metrics"] }),
       queryClient.invalidateQueries({ queryKey: ["action-plan"] }),
     ]);
-    toast.success("Status and owner saved.");
+    toast.success(L("Status and owner saved.", "Status dan penanggung jawab tersimpan."));
   };
 
   return (
     <div className="mt-5 rounded-[10px] border border-[#E8ECF5] p-3">
-      <p className="text-[12px] font-black text-[#101334]">Track this action</p>
-      <p className="mt-0.5 text-[10px] font-semibold text-[#647099]">AI-generated content is a draft. Narriv does not publish or send anything on your behalf.</p>
+      <p className="text-[12px] font-black text-[#101334]">{L("Track this action", "Pantau tindakan ini")}</p>
+      <p className="mt-0.5 text-[10px] font-semibold text-[#647099]">{L("AI-generated content is a draft. Narriv does not publish or send anything on your behalf.", "Konten buatan AI adalah draf. Narriv tidak memublikasikan atau mengirim apa pun atas nama Anda.")}</p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <label className="text-[10px] font-black text-[#647099]">
-          Status
+          {L("Status", "Status")}
           <select value={nextStatus} onChange={(e) => setNextStatus(e.target.value as WorkflowStatus)} className="mt-1 h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-2 text-[12px] font-bold text-[#101334] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/30">
-            {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{L(o.label[0], o.label[1])}</option>)}
           </select>
         </label>
         <label className="text-[10px] font-black text-[#647099]">
-          Owner
+          {L("Owner", "Penanggung jawab")}
           <select value={owner} onChange={(e) => setOwner(e.target.value)} disabled={members.isLoading} className="mt-1 h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-2 text-[12px] font-bold text-[#101334] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/30">
-            <option value="">Unassigned</option>
+            <option value="">{L("Unassigned", "Belum ditugaskan")}</option>
             {(members.data ?? []).map((m) => <option key={m.userId} value={m.userId}>{m.user?.name || m.user?.email || m.userId}</option>)}
           </select>
         </label>
       </div>
-      {members.isError ? <p className="mt-2 text-[10px] font-semibold text-rose-600">Workspace members could not be loaded.</p> : null}
+      {members.isError ? <p className="mt-2 text-[10px] font-semibold text-rose-600">{L("Workspace members could not be loaded.", "Daftar anggota workspace gagal dimuat.")}</p> : null}
       <button type="button" onClick={save} disabled={!dirty || saving} className="mt-3 h-9 w-full rounded-[8px] bg-[#465FFF] text-[12px] font-black text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50">
-        {saving ? "Saving…" : "Save"}
+        {saving ? L("Saving…", "Menyimpan…") : L("Save", "Simpan")}
       </button>
     </div>
   );

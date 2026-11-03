@@ -208,16 +208,17 @@ export async function detectAlerts(workspaceId) {
 
         if (!isTriggered) continue;
 
-        // Deduplication check: skip while an unresolved alert for this topic exists
-        // (looking back 7 days), so repeated scheduled runs do not re-raise it.
-        const dedupWindowStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        // Deduplication: while an unresolved alert for this topic exists (of any age), the issue is still the
+        // same one, so it is refreshed instead of raised again. A 7-day look-back used to re-raise an issue
+        // that stayed open for more than a week, stacking identical alerts. Titles in either language
+        // ("Negative Sentiment Spike: X" / "Lonjakan Sentimen Negatif: X") contain the topic.
         const { data: existingAlerts, error: dedupErr } = await supabase
             .from('alerts')
-            .select('id, status, created_at')
+            .select('id, status, created_at, metadata')
             .eq('workspace_id', workspaceId)
             .ilike('title', `%${topicKey}%`)
-            .gte('created_at', dedupWindowStart.toISOString())
             .neq('status', 'resolved')
+            .order('created_at', { ascending: false })
             .limit(1);
 
         if (dedupErr) {
@@ -225,7 +226,17 @@ export async function detectAlerts(workspaceId) {
             continue;
         }
         if (existingAlerts && existingAlerts.length > 0) {
-            logStructured("info", "alert_rules_duplicate_skipped", { topicKey, existingAlertId: existingAlerts[0].id });
+            const existing = existingAlerts[0];
+            await supabase.from('alerts').update({
+                metadata: {
+                    ...(existing.metadata || {}),
+                    negative_count: negativeCount,
+                    total_count: totalCount,
+                    negative_ratio: roundedRatio,
+                    last_detected_at: now.toISOString(),
+                },
+            }).eq('id', existing.id);
+            logStructured("info", "alert_rules_duplicate_refreshed", { topicKey, existingAlertId: existing.id });
             continue;
         }
 

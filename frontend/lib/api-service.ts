@@ -678,14 +678,16 @@ export interface ActionPlanResponse {
 
 export interface ActionPlanLearningResponse {
   insights: Array<{
-    titleKey: string;
-    valueKey: string;
-    icon: string;
+    type: "acceptance_rate" | "avg_rating" | "improvement" | string;
+    value: number;
   }>;
+  /** Generated assets from this plan that were rated 4 or higher. */
   templates: Array<{
-    nameKey: string;
-    usageCount: number;
+    id: string;
+    type: string;
+    content: string;
   }>;
+  stats?: { totalFeedback: number; accepted: number; rejected: number; edited: number; assetsGenerated: number };
 }
 
 export async function getActionPlanLearning(id: string): Promise<ActionPlanLearningResponse | null> {

@@ -152,27 +152,8 @@ export const getSummary = async (req, res) => {
             let { data: signals, error: signalsError } = await signalsQuery;
             if (signalsError) throw signalsError;
 
-            // If date filter produced no signals for demo user, fallback to all workspace signals
-            if ((!signals || signals.length === 0) && (dateFilter.gte || dateFilter.lte) && (req.user?.isDemo || String(req.user?.id).startsWith("demo"))) {
-                const { data: allSignals } = await supabase
-                    .from("signals")
-                    .select(`
-                        id,
-                        title,
-                        content,
-                        platform,
-                        sentiment,
-                        region,
-                        captured_at,
-                        published_at,
-                        signal_analyses(id)
-                    `)
-                    .in("workspace_id", workspaceIds)
-                    .order("captured_at", { ascending: false });
-                if (allSignals && allSignals.length > 0) {
-                    signals = allSignals;
-                }
-            }
+            // No fallback to other periods: an empty period is reported as empty, so the header ("last 24 hours: N")
+            // and every panel below it describe the same data.
 
             const totalSignals = signals?.length || 0;
 

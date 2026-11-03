@@ -1629,7 +1629,8 @@
         "vsPrevious7Days": "{val} vs previous 7 days",
         "vs30Days": "▲ {val} vs last 30 days",
         "warningAlerts": "Warning Alerts",
-        "noBaseline": "No earlier week to compare"
+        "noBaseline": "No earlier week to compare",
+        "openAlerts": "Awaiting Action"
       },
       "stakeholder": {
         "acknowledged": "Acknowledged",
@@ -1744,9 +1745,9 @@
       "moreActions": "More selected narrative actions"
     },
     "competitorShare": {
-      "title": "Competitor Narrative Share",
-      "totalShare": "Total Narrative Share",
-      "viewLandscape": "View Competitive Landscape"
+      "title": "Narrative Share",
+      "totalShare": "Total Signals",
+      "viewLandscape": "View narrative share breakdown"
     },
     "aiSummary": {
       "title": "Narrative Insights (AI Summary)",
@@ -1781,18 +1782,16 @@
       "apiIssues": "Connection issues",
       "dataCoverage": "Data Coverage",
       "degraded": "Degraded",
-      "sourcesActive": "62 / 72 Sources Active",
-      "coveragePercent": "86% Coverage",
       "updateFreq": "Update Frequency",
-      "realtime": "Real-time",
-      "autoUpdated": "Auto-updated 30 seconds ago",
-      "aiStatus": "AI Model Status",
-      "operational": "Operational",
-      "systemsNormal": "All systems normal",
-      "analysisDepth": "Analysis Depth",
-      "deep": "Deep Analysis",
-      "multilingual": "Cross-platform & multilingual",
-      "btnSettings": "Configure Intelligence Settings"
+      "btnSettings": "Manage Keywords & Sources",
+      "dailySchedule": "Once a day (07:00 WIB)",
+      "freshnessUnavailable": "Freshness unavailable",
+      "lastIngestion": "Last collection {time}",
+      "dataConnection": "Data Connection",
+      "connected": "Connected",
+      "connectedDetail": "Narrative and source data loaded",
+      "lastAnalysis": "Last Analysis",
+      "lastAnalysisDetail": "When a signal was last analysed by AI"
     },
     "toast": {
       "copyFailed": "Failed to copy narrative ID.",
@@ -3045,7 +3044,7 @@
       "opportunities": "Opportunities",
       "brief": "Daily Brief",
       "timeline": "Timeline",
-      "actions": "Recommended Actions",
+      "actions": "Actions & Follow-up",
       "alertCenter": "Alerts Center",
       "actionCenter": "Action Plans",
       "cases": "Cases",
@@ -3270,7 +3269,7 @@
     },
     "navSections": {
       "reports": "Reports & Insights",
-      "actions": "Recommended Actions"
+      "actions": "Actions & Follow-up"
     }
   },
   "ActionPlans": {

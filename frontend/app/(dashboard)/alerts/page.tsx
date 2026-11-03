@@ -13,13 +13,11 @@ import {
   ChevronDown,
   ChevronRight,
   CircleCheck,
-  Eye,
   Headphones,
   HelpCircle,
   Loader2,
   Mail,
   MoreVertical,
-  Play,
   Plus,
   Search,
   Settings,
@@ -28,7 +26,6 @@ import {
   SlidersHorizontal,
   Sparkles,
   Star,
-  Trash2,
   Users,
   X,
   CheckCircle2,
@@ -48,7 +45,7 @@ import {
 } from "@ridemountainpig/svgl-react";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
-import { memberName } from "@/lib/member-name";
+import { assigneeName, memberName } from "@/lib/member-name";
 import {
   createAlert,
   getAlerts,
@@ -201,22 +198,15 @@ function Sparkline({ values, tone, id, className = "h-8" }: { values: number[]; 
 function buildMetricCards(ta: ReturnType<typeof useTranslations<"Alerts">>, summary: Awaited<ReturnType<typeof getAlertsSummary>>): Metric[] {
   const total = summary?.total ?? 0;
   const critical = summary?.by_severity?.critical ?? 0;
-  const high = summary?.by_severity?.high ?? 0;
-  const medium = summary?.by_severity?.medium ?? 0;
-  const low = summary?.by_severity?.low ?? 0;
-  const info = summary?.by_severity?.info ?? 0;
   const inProgress = summary?.by_status?.in_progress ?? 0;
   const resolved = summary?.by_status?.resolved ?? 0;
   const acknowledgedCount = summary?.acknowledged_count ?? inProgress + resolved;
-  const escalatedCount = summary?.escalated_count ?? critical;
   const overdueCount = summary?.overdue_count ?? 0;
   const last7 = summary?.last_7_days ?? 0;
   const prev7 = summary?.previous_7_days ?? 0;
   const trendDelta = summary?.trend_delta ?? 0;
   const spark = summary?.timeline?.slice(-12) ?? [];
   const avgResponseMinutes = summary?.avg_response_time_minutes ?? null;
-  const deliverySuccessRate = summary?.delivery_success_rate ?? 0;
-  const acknowledgmentRate = summary?.acknowledgment_rate ?? (total > 0 ? Math.round((acknowledgedCount / total) * 100) : 0);
   const slaTargetMinutes = summary?.sla_target_minutes ?? null;
 
   const delta = prev7 > 0 ? `${((last7 - prev7) / prev7 * 100).toFixed(1)}%` : "0%";
@@ -225,14 +215,14 @@ function buildMetricCards(ta: ReturnType<typeof useTranslations<"Alerts">>, summ
   const hasBaseline = prev7 > 0;
   const deltaLabel = !hasBaseline ? ta("v2.metrics.noBaseline") : trendDelta >= 0 ? ta("v2.metrics.vsPrevious7Days", { val: `${deltaSign}${delta}` }) : ta("v2.metrics.vsPrevious7Days", { val: delta });
 
+  const openCount = summary?.by_status?.open ?? Math.max(0, total - acknowledgedCount);
+
+  // Five numbers that answer "how many, how bad, what is waiting, what is done, how fast"; the severity split
+  // and delivery details live in the table filters and the side panels.
   return [
     { label: ta("v2.metrics.totalAlerts"), value: String(total), helper: deltaLabel, helperTone: !hasBaseline ? "blue" : trendDelta >= 0 ? "green" : "red", icon: Bell, tone: "purple", spark },
     { label: ta("v2.metrics.criticalAlerts"), value: String(critical), helper: ta("v2.metrics.severityBreakdown", { val: `${critical}/${total}` }), helperTone: critical > 0 ? "red" : "green", icon: AlertTriangle, tone: "red", spark: [] },
-    { label: ta("v2.metrics.warningAlerts"), value: String(high + medium), helper: ta("v2.metrics.severityBreakdown", { val: `${high + medium}/${total}` }), helperTone: high + medium > 0 ? "amber" : "green", icon: AlertTriangle, tone: "amber", spark: [] },
-    { label: ta("v2.metrics.infoAlerts"), value: String(info + low), helper: ta("v2.metrics.severityBreakdown", { val: `${info + low}/${total}` }), helperTone: "blue", icon: HelpCircle, tone: "blue", spark: [] },
-    { label: ta("v2.metrics.deliveredAlerts"), value: `${deliverySuccessRate}%`, helper: ta("v2.metrics.lifecycleCoverage"), helperTone: deliverySuccessRate >= 80 ? "green" : deliverySuccessRate >= 50 ? "amber" : "red", icon: Shield, tone: "green", spark: [] },
-    { label: ta("v2.metrics.acknowledgedAlerts"), value: String(acknowledgedCount), helper: ta("v2.metrics.ackRate", { val: String(acknowledgmentRate) }), helperTone: acknowledgmentRate >= 80 ? "green" : "blue", icon: Users, tone: "purple", spark: [] },
-    { label: ta("v2.metrics.escalated"), value: String(escalatedCount), helper: ta("v2.metrics.overdue", { val: String(overdueCount) }), helperTone: overdueCount > 0 ? "red" : "green", icon: AlertTriangle, tone: "red", spark: [] },
+    { label: ta("v2.metrics.openAlerts"), value: String(openCount), helper: ta("v2.metrics.overdue", { val: String(overdueCount) }), helperTone: overdueCount > 0 ? "red" : "green", icon: Users, tone: "amber", spark: [] },
     { label: ta("v2.metrics.resolved"), value: String(resolved), helper: ta("v2.metrics.of", { val1: String(resolved), val2: String(total) }), helperTone: "green", icon: CircleCheck, tone: "green", spark: [] },
     { label: ta("v2.metrics.avgResponseTime"), value: avgResponseMinutes !== null ? formatMinutes(avgResponseMinutes) : "-", helper: ta("v2.metrics.target", { val: slaTargetMinutes !== null ? formatMinutes(slaTargetMinutes) : "-" }), helperTone: avgResponseMinutes !== null && slaTargetMinutes !== null && avgResponseMinutes > slaTargetMinutes ? "red" : "blue", icon: HelpCircle, tone: "blue", spark: [] },
   ];
@@ -420,7 +410,7 @@ function channelLabel(channel: string, ta: ReturnType<typeof useTranslations<"Al
   return channel;
 }
 
-function mapAlertRecordToRow(alert: Alert, ta: ReturnType<typeof useTranslations<"Alerts">>, optimisticStatuses: Record<string | number, AlertStatus>): AlertRow {
+function mapAlertRecordToRow(alert: Alert, ta: ReturnType<typeof useTranslations<"Alerts">>, optimisticStatuses: Record<string | number, AlertStatus>, members: WorkspaceMemberRecord[]): AlertRow {
   const normalizedStatus = String(alert.status || "").toLowerCase();
   const mappedStatus = normalizedStatus === "open"
     ? "New"
@@ -439,7 +429,8 @@ function mapAlertRecordToRow(alert: Alert, ta: ReturnType<typeof useTranslations
     title: alert.title,
     description: alert.whatHappened || alert.whyItMatters || alert.whatToDo || "-",
     tags: [alert.severity || "info"],
-    sourceLabel: alert.assignedTeam || alert.type || ta("table.unassigned"),
+    // The owner: the assigned member, else the assigned team (the alert type is not an owner).
+    sourceLabel: assigneeName(alert.assignedTo, members) || alert.assignedTeam || ta("table.unassigned"),
     sources: shownSources.length > 0 ? shownSources : ["x"],
     extraSources: Math.max(0, alertSources.length - shownSources.length),
     escalationLevel: alert.escalationLevel || "-",
@@ -596,87 +587,6 @@ function DeliveryStatus({ ta, integrations, isLoading }: { ta: ReturnType<typeof
   );
 }
 
-function StakeholderEngagement({ ta, summary, memberCount, isLoading }: { ta: ReturnType<typeof useTranslations<"Alerts">>; summary: Awaited<ReturnType<typeof getAlertsSummary>> | null; memberCount: number | null; isLoading: boolean }) {
-  const total = summary?.total ?? 0;
-  const pct = (value: number) => (total > 0 ? `${Math.round((value / total) * 100)}%` : "-");
-  const acknowledged = summary?.acknowledged_count ?? 0;
-  const resolved = summary?.resolved_count ?? 0;
-  const escalated = summary?.escalated_count ?? 0;
-  const items = [
-    { label: ta("v2.stakeholder.recipients"), value: memberCount === null ? "-" : String(memberCount), pct: ta("v2.stakeholder.registered"), icon: Users, tone: "purple" as Tone, progress: memberCount === null ? 0 : 100 },
-    { label: ta("v2.stakeholder.acknowledged"), value: String(acknowledged), pct: pct(acknowledged), icon: Eye, tone: "blue" as Tone, progress: total > 0 ? acknowledged / total * 100 : 0 },
-    { label: ta("v2.stakeholder.resolved"), value: String(resolved), pct: pct(resolved), icon: CircleCheck, tone: "green" as Tone, progress: total > 0 ? resolved / total * 100 : 0 },
-    { label: ta("v2.stakeholder.escalated"), value: String(escalated), pct: pct(escalated), icon: Play, tone: "amber" as Tone, progress: total > 0 ? escalated / total * 100 : 0 },
-  ];
-
-  return (
-    <Panel className="p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-[16px] font-black text-[#101334]">{ta("v2.stakeholder.title")}</h3>
-          <p className="mt-1 text-[10px] font-bold text-[#5F6B94]">{ta("v2.stakeholder.desc")}</p>
-        </div>
-        {isLoading ? <span className="size-3.5 rounded-full border-2 border-[#465FFF] border-r-transparent" /> : null}
-      </div>
-      <div className="mt-4 divide-y divide-[#EDF1F7]">
-        {items.map((item) => {
-          const Icon = item.icon;
-          return (
-            <div key={item.label} className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 py-3 first:pt-0 last:pb-0">
-              <ChannelIcon tone={item.tone}><Icon size={15} /></ChannelIcon>
-              <div className="min-w-0">
-                <p className="text-[12px] font-black text-[#101334]">{item.label}</p>
-                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[#EEF2F7]">
-                  <div className="h-full rounded-full bg-[#465FFF]" style={{ width: `${Math.min(100, Math.max(0, item.progress))}%` }} />
-                </div>
-              </div>
-              <p className="text-right text-[12px] font-black text-[#101334]">{item.value} <span className="ml-3 text-[10px] font-bold text-[#53608C]">{item.pct}</span></p>
-            </div>
-          );
-        })}
-      </div>
-    </Panel>
-  );
-}
-
-function CriticalDeliveryStatus({ alerts, total, ta, onViewAll, isLoading }: { alerts: AlertRow[]; total: number; ta: ReturnType<typeof useTranslations<"Alerts">>; onViewAll: () => void; isLoading: boolean }) {
-  const alert = alerts[0] ?? null;
-  const acknowledged = alerts.filter((item) => item.ack === ta("table.acknowledged")).length;
-  const active = alerts.filter((item) => item.status !== "Resolved").length;
-  const resolved = alerts.filter((item) => item.status === "Resolved").length;
-  const rows = [
-    [ta("v2.criticalStatus.criticalAlerts"), String(total), AlertTriangle, "red"],
-    [ta("v2.criticalStatus.inProgress"), String(active), Play, "amber"],
-    [ta("v2.criticalStatus.acknowledged"), String(acknowledged), Eye, "blue"],
-    [ta("v2.criticalStatus.resolved"), String(resolved), CircleCheck, "green"],
-  ] as const;
-
-  return (
-    <Panel className="p-4">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h3 className="text-[16px] font-black text-[#101334]">{ta("v2.criticalStatus.title")}</h3>
-        <button type="button" onClick={onViewAll} className="inline-flex items-center gap-1 text-[8.5px] font-black leading-none text-[#3B52F5] whitespace-nowrap hover:underline">{ta("v2.criticalStatus.viewAll")} <ArrowRight size={11} /></button>
-      </div>
-      <div className="overflow-hidden rounded-[10px] border border-[#F4D8D8]">
-        <div className="flex items-center justify-between gap-3 bg-[#FFF2F2] px-3 py-2">
-          <p className="truncate text-[12px] font-black text-[#101334]">{isLoading ? ta("v2.criticalStatus.loading") : alert?.title ?? ta("v2.criticalStatus.noCritical")}</p>
-          <span className="rounded-[6px] bg-[#EF4444]/10 px-2 py-0.5 text-[9px] font-black text-[#C81E1E]">{ta("v2.incident.critical")}</span>
-        </div>
-        <div className="divide-y divide-[#F1E5E5]">
-          {rows.map(([label, value, Icon, tone]) => (
-            <div key={label} className="grid grid-cols-[26px_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2">
-              <ChannelIcon tone={tone as Tone}><Icon size={13} /></ChannelIcon>
-              <span className="text-[10px] font-bold text-[#53608C]">{label}</span>
-              <span className="text-[10px] font-black text-[#101334]">{value}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="mt-3 flex items-center justify-between gap-3 text-[10px] font-black text-[#31406B]"><span>{ta("v2.criticalStatus.firstSent", { time: alert?.time ?? "-" })}</span><span>{ta("v2.criticalStatus.lastUpdate", { time: alert?.deadline ?? "-" })}</span></div>
-    </Panel>
-  );
-}
-
 function EscalationMatrix({ ta, levels, isLoading }: { ta: ReturnType<typeof useTranslations<"Alerts">>; levels: EscalationMatrixRecord[]; isLoading: boolean }) {
   return (
     <Panel className="p-4">
@@ -702,85 +612,6 @@ function EscalationMatrix({ ta, levels, isLoading }: { ta: ReturnType<typeof use
               </p>
             </div>
             {index < levels.length - 1 ? <ArrowDown size={14} className="mx-14 my-1 text-[#3B52F5]" /> : null}
-          </div>
-        ))}
-      </div>
-    </Panel>
-  );
-}
-
-function buildAlertJourneySteps(alert: AlertRow, ta: ReturnType<typeof useTranslations<"Alerts">>) {
-  const steps = [
-    [alert.time, ta("v2.journey.createdTitle"), ta("v2.journey.createdDesc", { severity: alert.tags[0] }), AlertTriangle, alert.tone],
-    [alert.time, ta("v2.journey.ownerTitle"), ta("v2.journey.ownerDesc", { owner: alert.sourceLabel }), Users, "purple"],
-    [alert.time, ta("v2.journey.escalationTitle"), ta("v2.journey.escalationDesc", { level: alert.escalationLevel }), Shield, "blue"],
-  ] as Array<[string, string, string, LucideIcon, Tone]>;
-
-  if (alert.status !== "New") {
-    steps.push([alert.time, ta("v2.journey.ackTitle"), ta("v2.journey.ackDesc"), CircleCheck, "green"]);
-  }
-  if (alert.status === "Resolved") {
-    steps.push([alert.time, ta("v2.journey.resolvedTitle"), ta("v2.journey.resolvedDesc"), ShieldCheck, "green"]);
-  }
-  if (alert.deadline !== "-") {
-    steps.push([alert.deadline, ta("v2.journey.deadlineTitle"), ta("v2.journey.deadlineDesc"), Play, "amber"]);
-  }
-  return steps;
-}
-
-function AlertJourney({ alert, ta, onViewTimeline }: { alert: AlertRow; ta: ReturnType<typeof useTranslations<"Alerts">>; onViewTimeline: () => void }) {
-  const steps = buildAlertJourneySteps(alert, ta).slice(0, 4);
-
-  return (
-    <Panel className="p-4">
-      <div className="mb-4 flex items-start justify-between gap-5">
-        <div className="min-w-0">
-          <h3 className="text-[16px] font-black text-[#101334]">{ta("v2.journey.title")}</h3>
-          <p className="mt-1 truncate text-[10px] font-bold text-[#53608C]">{alert.title}</p>
-        </div>
-        <button type="button" onClick={onViewTimeline} className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#DDE3EF] bg-[#F8FAFF] px-3 py-1.5 text-[9px] font-black leading-none text-[#3B52F5] transition hover:border-[#C9D4F6] hover:bg-white">{ta("v2.journey.viewFull")} <ArrowRight size={11} /></button>
-      </div>
-      <div className="relative space-y-4 pl-1 before:absolute before:left-[70px] before:top-2 before:h-[calc(100%-16px)] before:border-l before:border-[#DDE5F4]">
-        {steps.map(([time, title, desc, Icon, tone]) => (
-          <div key={`${time}-${title}`} className="relative grid grid-cols-[56px_32px_minmax(0,1fr)] items-start gap-3">
-            <p className="pt-2 text-[9px] font-black text-[#31406B]">{time}</p>
-            <ChannelIcon tone={tone as Tone}><Icon className="size-4" /></ChannelIcon>
-            <div>
-              <p className="text-[11px] font-black text-[#101334]">{title}</p>
-              <p className="mt-0.5 text-[10px] font-bold leading-snug text-[#53608C]">{desc}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </Panel>
-  );
-}
-
-function EscalationFlow({ ta, levels }: { ta: ReturnType<typeof useTranslations<"Alerts">>; levels: EscalationMatrixRecord[] }) {
-  const activeLevels = levels.filter((item) => item.isActive);
-  const assignmentLabel = activeLevels.length > 0
-    ? activeLevels.map((item) => `${item.level}: ${item.roleName}`).join(" -> ")
-    : ta("v2.escalationMatrix.noActiveLevels");
-  const steps = [
-    [Bell, ta("v2.flow.step1Title"), ta("v2.flow.step1Desc"), "purple"],
-    [AlertTriangle, ta("v2.flow.step2Title"), ta("v2.flow.step2Desc"), "blue"],
-    [Mail, ta("v2.flow.step3Title"), ta("v2.flow.step3Desc"), "green"],
-    [Shield, ta("v2.flow.step4Title"), assignmentLabel, "purple"],
-    [Play, ta("v2.flow.step5Title"), ta("v2.flow.step5Desc"), "blue"],
-    [CircleCheck, ta("v2.flow.step6Title"), ta("v2.flow.step6Desc"), "purple"],
-  ] as const;
-
-  return (
-    <Panel className="p-4">
-      <h3 className="text-[16px] font-black text-[#101334]">{ta("v2.flow.title")} <span className="text-[11px] font-bold text-[#53608C]">{ta("v2.flow.desc")}</span></h3>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-[minmax(0,1fr)_20px_minmax(0,1fr)_20px_minmax(0,1.25fr)_20px_minmax(0,1fr)_20px_minmax(0,1fr)_20px_minmax(0,1fr)]">
-        {steps.map(([Icon, title, desc, tone], index) => (
-          <div key={title} className="contents">
-            <div className={cn("flex min-h-[70px] items-center gap-3 rounded-[10px] border border-[#E6EAF2] bg-[#FBFCFF] p-3", index === 2 && "bg-[#F2EEFF]")}> 
-              <ChannelIcon tone={tone as Tone}><Icon size={17} /></ChannelIcon>
-              <div className="min-w-0"><p className="text-[11px] font-black text-[#3B52F5]">{title}</p><p className="mt-1 text-[9px] font-bold text-[#53608C]">{desc}</p></div>
-            </div>
-            {index < steps.length - 1 ? <div className="hidden items-center justify-center text-[#3B52F5] 2xl:flex"><ChevronRight size={18} /></div> : null}
           </div>
         ))}
       </div>
@@ -1030,8 +861,6 @@ export default function AlertsPage() {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isNotificationRulesModalOpen, setIsNotificationRulesModalOpen] = useState(false);
   const [isEscalationModalOpen, setIsEscalationModalOpen] = useState(false);
-  const [isCriticalStatusModalOpen, setIsCriticalStatusModalOpen] = useState(false);
-  const [isJourneyModalOpen, setIsJourneyModalOpen] = useState(false);
   const [isCreateAdvancedOpen, setIsCreateAdvancedOpen] = useState(false);
   const [isCreatingAlert, setIsCreatingAlert] = useState(false);
   const [isLoadingNotificationRules, setIsLoadingNotificationRules] = useState(false);
@@ -1072,8 +901,6 @@ export default function AlertsPage() {
         if (isFilterModalOpen) setIsFilterModalOpen(false);
         if (isNotificationRulesModalOpen) setIsNotificationRulesModalOpen(false);
         if (isEscalationModalOpen) setIsEscalationModalOpen(false);
-        if (isCriticalStatusModalOpen) setIsCriticalStatusModalOpen(false);
-        if (isJourneyModalOpen) setIsJourneyModalOpen(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -1083,8 +910,6 @@ export default function AlertsPage() {
     isFilterModalOpen,
     isNotificationRulesModalOpen,
     isEscalationModalOpen,
-    isCriticalStatusModalOpen,
-    isJourneyModalOpen,
   ]);
 
   // Members and escalation data feed live alert panels plus create/edit dropdowns.
@@ -1328,9 +1153,9 @@ export default function AlertsPage() {
   }
 
   const rows: AlertRow[] = alertsData?.data
-    ? alertsData.data.map((alert) => mapAlertRecordToRow(alert, ta, optimisticStatuses))
+    ? alertsData.data.map((alert) => mapAlertRecordToRow(alert, ta, optimisticStatuses, membersQuery.data ?? []))
     : [];
-  const criticalRows = (criticalAlertsQuery.data?.data ?? []).map((alert) => mapAlertRecordToRow(alert, ta, optimisticStatuses));
+  const criticalRows = (criticalAlertsQuery.data?.data ?? []).map((alert) => mapAlertRecordToRow(alert, ta, optimisticStatuses, membersQuery.data ?? []));
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -1394,22 +1219,6 @@ export default function AlertsPage() {
     }
   }
 
-  const primaryAlert = rows[0] ?? {
-    id: "empty",
-    title: ta("empty.noIncident"),
-    description: ta("empty.noIncidentDesc"),
-    tags: [ta("table.statusNew")],
-    sourceLabel: ta("table.unassigned"),
-    sources: ["x"],
-    extraSources: 0,
-    escalationLevel: "-",
-    deadline: "-",
-    ack: ta("table.notAcknowledged"),
-    impact: "Medium" as const,
-    status: "New" as const,
-    time: "-",
-    tone: "green" as const,
-  };
   const highlightedCriticalAlert = criticalRows[0] ?? null;
   const totalCriticalAlerts = criticalAlertsQuery.data?.pagination?.total ?? summary?.by_severity?.critical ?? 0;
   const metrics = buildMetricCards(ta, summary);
@@ -1451,7 +1260,7 @@ export default function AlertsPage() {
 
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5">
         {summaryQuery.isLoading ? (
-          Array.from({ length: 9 }, (_, index) => <MetricCardSkeleton key={index} />)
+          Array.from({ length: 5 }, (_, index) => <MetricCardSkeleton key={index} />)
         ) : (
           metrics.map((metric) => <MetricCard key={metric.label} metric={metric} />)
         )}
@@ -1463,131 +1272,36 @@ export default function AlertsPage() {
               <Sparkles size={18} />
             </div>
             <div>
-              <p className="text-[13px] font-bold text-slate-900">Alert metrics unavailable</p>
-              <p className="text-[11px] font-medium text-[#5A6478]">Backend data couldn't be loaded. Activate Demo Mode to explore with sample alerts.</p>
+              <p className="text-[13px] font-bold text-slate-900">{pickL("Alert metrics unavailable", "Metrik peringatan belum bisa dimuat")}</p>
+              <p className="text-[11px] font-medium text-[#5A6478]">{pickL("The data could not be loaded. Try again in a moment.", "Data gagal dimuat. Coba lagi sebentar lagi.")}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
-              onClick={() => {
-                if (typeof window !== "undefined") {
-                  const url = new URL(window.location.href);
-                  url.searchParams.set("demo", "true");
-                  window.location.href = url.toString();
-                }
-              }}
-              className="h-8 rounded-lg bg-[#6E44E8] px-3 text-[11px] font-bold text-white shadow-sm hover:bg-[#5B35D6]"
-            >
-              Try Demo
-            </button>
-            <button
-              type="button"
               onClick={() => void summaryQuery.refetch()}
               className="h-8 rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-700 hover:bg-slate-50"
             >
-              Retry
+              {pickL("Retry", "Coba lagi")}
             </button>
           </div>
         </div>
       ) : null}
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_336px]">
-        {/* The incident card spans the full row until there is room for three readable columns. */}
-        <div className="grid min-w-0 items-start gap-4 md:grid-cols-2 2xl:grid-cols-[minmax(0,1.55fr)_minmax(250px,0.7fr)_minmax(250px,0.7fr)]">
-          <div className="min-w-0 md:col-span-2 2xl:col-span-1"><CriticalIncident alert={highlightedCriticalAlert} totalCritical={totalCriticalAlerts} isLoading={criticalAlertsQuery.isLoading} ta={ta} /></div>
-          <DeliveryStatus ta={ta} integrations={integrationsQuery.data?.data ?? []} isLoading={integrationsQuery.isLoading} />
-          <StakeholderEngagement ta={ta} summary={summary} memberCount={membersQuery.data ? membersQuery.data.length : null} isLoading={summaryQuery.isLoading || membersQuery.isLoading} />
-        </div>
-        <div className="min-w-0"><CriticalDeliveryStatus alerts={criticalRows} total={totalCriticalAlerts} ta={ta} onViewAll={() => setIsCriticalStatusModalOpen(true)} isLoading={criticalAlertsQuery.isLoading} /></div>
-      </section>
+      {/* What needs attention now, then the full list with the routing context beside it. */}
+      <CriticalIncident alert={highlightedCriticalAlert} totalCritical={totalCriticalAlerts} isLoading={criticalAlertsQuery.isLoading} ta={ta} />
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_336px]">
-        <div className="min-w-0 space-y-4">
-          <EscalationFlow ta={ta} levels={escalationLevels} />
+        <div className="min-w-0">
           <AlertsTable ta={ta} rows={rows} page={page} totalPages={totalPages} footerText={footerText} isLoading={alertsQuery.isLoading} isError={alertsQuery.isError || (!alertsQuery.isLoading && !alertsData)} onPageChange={setPage} onStatusChange={handleStatusChange} openMenuId={openMenuId} setOpenMenuId={setOpenMenuId} menuRef={menuRef} searchQuery={searchQuery} onSearchChange={(value) => { setSearchQuery(value); setPage(1); }} severityFilter={severityFilter} statusFilter={statusFilter} onOpenFilterModal={() => setIsFilterModalOpen(true)} selectedAlerts={selectedAlerts} onSelectionChange={setSelectedAlerts} onBulkStatusChange={handleBulkStatusChange} isBulkUpdating={isBulkUpdating} />
         </div>
         <aside className="space-y-4">
           <EscalationMatrix ta={ta} levels={escalationLevels} isLoading={escalationQuery.isLoading} />
-          <AlertJourney alert={primaryAlert} ta={ta} onViewTimeline={() => setIsJourneyModalOpen(true)} />
+          <DeliveryStatus ta={ta} integrations={integrationsQuery.data?.data ?? []} isLoading={integrationsQuery.isLoading} />
         </aside>
       </section>
 
-      {isCriticalStatusModalOpen && createPortal(
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#101334]/50 p-4 backdrop-blur-sm" onClick={() => setIsCriticalStatusModalOpen(false)}>
-          <div className="relative z-10 flex max-h-[86vh] w-full max-w-2xl flex-col overflow-hidden rounded-[18px] border border-[#F4D8D8] bg-white text-[#101334] shadow-[0_24px_70px_rgba(16,24,40,0.22)]" onClick={(event) => event.stopPropagation()}>
-            <div className="flex items-start justify-between gap-4 border-b border-[#F4D8D8] bg-[#FFF6F6] p-5">
-              <div>
-                <h2 className="text-lg font-black text-[#101334]">{ta("v2.criticalStatus.modalTitle")}</h2>
-                <p className="mt-1 text-[11px] font-bold text-[#8A4B4B]">{ta("v2.criticalStatus.modalDesc")}</p>
-              </div>
-              <button type="button" onClick={() => setIsCriticalStatusModalOpen(false)} className="rounded-full bg-white p-2 text-[#647099] shadow-sm transition hover:text-[#53608C]">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-5">
-              {criticalAlertsQuery.isLoading ? (
-                <div className="space-y-2">
-                  {Array.from({ length: 4 }, (_, index) => <div key={index} className="h-14 animate-pulse rounded-[10px] bg-[#F8EDED]" />)}
-                </div>
-              ) : criticalRows.length === 0 ? (
-                <div className="rounded-[12px] border border-dashed border-[#F4D8D8] bg-[#FFFDFD] p-8 text-center">
-                  <p className="text-[13px] font-black text-[#101334]">{ta("v2.criticalStatus.noCritical")}</p>
-                  <p className="mt-1 text-[11px] font-bold text-[#647099]">{ta("v2.criticalStatus.noCriticalDesc")}</p>
-                </div>
-              ) : (
-                <div className="space-y-2.5">
-                  {criticalRows.map((item) => (
-                    <div key={item.id} className="grid gap-3 rounded-[12px] border border-[#F4D8D8] bg-[#FFFDFD] p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-                      <div className="min-w-0">
-                        <Link href={`/alerts/${item.id}`} className="text-[12px] font-black text-[#101334] hover:text-[#3B52F5]">{item.title}</Link>
-                        <p className="mt-1 line-clamp-2 text-[10px] font-bold text-[#5F6B94]">{item.description}</p>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                        <StatusBadge status={item.status} />
-                        <span className="rounded-[8px] bg-[#EEF2FF] px-2 py-1 text-[9px] font-black text-[#3B52F5]">{item.sourceLabel}</span>
-                        <span className="text-[10px] font-black text-[#31406B]">{item.time}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
 
-      {isJourneyModalOpen && createPortal(
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#101334]/50 p-4 backdrop-blur-sm" onClick={() => setIsJourneyModalOpen(false)}>
-          <div className="relative z-10 flex max-h-[86vh] w-full max-w-2xl flex-col overflow-hidden rounded-[18px] border border-[#DDE5F4] bg-white text-[#101334] shadow-[0_24px_70px_rgba(16,24,40,0.22)]" onClick={(event) => event.stopPropagation()}>
-            <div className="flex items-start justify-between gap-4 border-b border-[#EEF1F7] bg-[#F8FAFF] p-5">
-              <div className="min-w-0">
-                <h2 className="text-lg font-black text-[#101334]">{ta("v2.journey.modalTitle")}</h2>
-                <p className="mt-1 truncate text-[11px] font-bold text-[#5F6B94]">{primaryAlert.title}</p>
-              </div>
-              <button type="button" onClick={() => setIsJourneyModalOpen(false)} className="rounded-full bg-white p-2 text-[#647099] shadow-sm transition hover:text-[#53608C]">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-5">
-              <div className="relative space-y-5 pl-1 before:absolute before:left-[78px] before:top-2 before:h-[calc(100%-16px)] before:border-l before:border-[#DDE5F4]">
-                {buildAlertJourneySteps(primaryAlert, ta).map(([time, title, desc, Icon, tone]) => (
-                  <div key={`${time}-${title}`} className="relative grid grid-cols-[64px_32px_minmax(0,1fr)] items-start gap-3">
-                    <p className="pt-2 text-[9px] font-black text-[#31406B]">{time}</p>
-                    <ChannelIcon tone={tone}><Icon className="size-4" /></ChannelIcon>
-                    <div className="rounded-[10px] border border-[#E6EAF2] bg-[#FBFCFF] p-3">
-                      <p className="text-[12px] font-black text-[#101334]">{title}</p>
-                      <p className="mt-1 text-[10px] font-bold leading-snug text-[#53608C]">{desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
 
       {isNotificationRulesModalOpen && createPortal(
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#101334]/50 p-4 backdrop-blur-sm" onClick={closeNotificationRulesModal}>
