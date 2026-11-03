@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
@@ -10,11 +11,8 @@ import {
   Users,
   Bell,
   Sparkles,
-  Key,
   Webhook,
   Shield,
-  CreditCard,
-  TrendingUp,
   Pause,
   Play,
   RefreshCw,
@@ -23,14 +21,12 @@ import {
   Upload,
   ChevronDown,
   ArrowRight,
-  Sliders,
   Lock,
   Plus,
   Check,
   Trash,
   PlusCircle,
   X,
-  Clock,
   Layers,
   Database,
   Cloud,
@@ -44,7 +40,6 @@ import { useWorkspaceStore } from "@/store/useWorkspaceStore";
 import { MonitoringKeywordsPanel } from "@/components/dashboard/monitoring-keywords-panel";
 import { SubscriptionCard } from "@/components/dashboard/SubscriptionCard";
 import { UpgradeModal } from "@/components/dashboard/UpgradeModal";
-import { intlLocale } from "@/store/useUiStore";
 import { AiProvidersPanel } from "@/components/dashboard/ai-providers-panel";
 import { PlatformCollectionPanel } from "@/components/dashboard/platform-collection-panel";
 import { pickL, useL } from "@/lib/use-l";
@@ -153,39 +148,6 @@ function Switch({ checked, onChange, label, disabled = false }: { checked: boole
   );
 }
 
-// Sparkline Component for Billing stats
-function PlanSparkline({ values, className = "h-10 w-full" }: { values: number[]; className?: string }) {
-  const width = 240;
-  const height = 60;
-  const max = Math.max(...values);
-  const min = Math.min(...values);
-  const range = max - min || 1;
-  const padding = 5;
-
-  const points = values.map((val, idx) => {
-    const x = padding + (idx / (values.length - 1)) * (width - padding * 2);
-    const y = padding + (1 - (val - min) / range) * (height - padding * 2);
-    return `${x},${y}`;
-  }).join(" ");
-
-  const pathD = `M ${points.split(" ")[0]} L ${points.split(" ").slice(1).join(" L ")}`;
-  const areaD = `${pathD} L ${width - padding} ${height} L ${padding} ${height} Z`;
-
-  return (
-    <svg viewBox={`0 0 ${width} ${height}`} className={cn("chart-line-draw overflow-visible", className)} preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#465FFF" stopOpacity="0.25" />
-          <stop offset="100%" stopColor="#465FFF" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={areaD} fill="url(#chartGradient)" />
-      <path d={pathD} fill="none" stroke="#465FFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-// Main Page Component
 export default function SettingsPage() {
   const ts = useTranslations("Workspace.settings");
   const L = useL();
@@ -311,34 +273,17 @@ export default function SettingsPage() {
 
   // State: Notifications
   const [notifEmail, setNotifEmail] = useState<boolean | null>(null);
-  const [notifSlack, setNotifSlack] = useState(false);
   const [notifWhatsapp, setNotifWhatsapp] = useState<boolean | null>(null);
-  const [notifDaily, setNotifDaily] = useState(false);
-  const [notifCritical, setNotifCritical] = useState(false);
 
   // State: AI Preferences
-  const [aiSensitivity, setAiSensitivity] = useState("Medium");
-  const [autoCat, setAutoCat] = useState(true);
-  const [autoSentiment, setAutoSentiment] = useState(true);
-  const [summaryStyle, setSummaryStyle] = useState("Executive");
-  const [enableRecs, setEnableRecs] = useState(true);
-  const [enablePredictive, setEnablePredictive] = useState(true);
 
   // State: Security
-  const [security2fa, setSecurity2fa] = useState(true);
-  const [sessionTimeout, setSessionTimeout] = useState("30 menit");
-  const [ipRestrict, setIpRestrict] = useState(false);
-  const [dataRetention, setDataRetention] = useState("90 hari");
 
   // State: Upgrade Modal
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>();
   const [upgradeLimit, setUpgradeLimit] = useState<string | undefined>();
 
-  // State: Chart interactive hover
-  const chartData = [18452, 22000, 19800, 26000, 24500, 31000, 29000, 34000, 32041];
-  const chartDates = ts.raw("billingCard.chartDates") as unknown as string[];
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   // Confirmation Modal State (Danger Zone)
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -686,58 +631,6 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="border-t border-slate-100 pt-4">
-              <p className="mb-3 text-[11px] font-black text-[#101334]">{ts("workspaceInfo.sectionPassword")}</p>
-              <div className="space-y-2.5">
-                <div>
-                  <input
-                    type="password"
-                    placeholder={ts("workspaceInfo.passwordCurrentPlaceholder")}
-                    value={currentPassword}
-                    onChange={(e) => { setCurrentPassword(e.target.value); setPasswordErrors((prev) => ({ ...prev, current: undefined })); }}
-                    className={cn("h-9 w-full rounded-md border bg-slate-50 px-3 text-[10px] font-semibold text-slate-700 outline-none focus:border-[#465FFF]", passwordErrors.current ? "border-[#EF4444]" : "border-[#DDE3EF]")}
-                  />
-                  {passwordErrors.current && <p className="mt-1 text-[9px] font-bold text-[#C81E1E]">{passwordErrors.current}</p>}
-                </div>
-                <div>
-                  <input
-                    type="password"
-                    placeholder={ts("workspaceInfo.passwordNewPlaceholder")}
-                    value={newPassword}
-                    onChange={(e) => { setNewPassword(e.target.value); setPasswordErrors((prev) => ({ ...prev, newPass: undefined })); }}
-                    className={cn("h-9 w-full rounded-md border bg-slate-50 px-3 text-[10px] font-semibold text-slate-700 outline-none focus:border-[#465FFF]", passwordErrors.newPass ? "border-[#EF4444]" : "border-[#DDE3EF]")}
-                  />
-                  {passwordErrors.newPass && <p className="mt-1 text-[9px] font-bold text-[#C81E1E]">{passwordErrors.newPass}</p>}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const errors: { current?: string; newPass?: string } = {};
-                    if (!currentPassword) errors.current = ts("validation.currentPasswordRequired");
-                    if (!newPassword) {
-                      errors.newPass = ts("validation.newPasswordRequired");
-                    } else if (newPassword.length < 10) {
-                      errors.newPass = ts("validation.passwordMinLength");
-                    } else if (!/[A-Z]/.test(newPassword)) {
-                      errors.newPass = ts("validation.passwordUppercase");
-                    } else if (!/[0-9]/.test(newPassword)) {
-                      errors.newPass = ts("validation.passwordNumber");
-                    } else if (!/[^A-Za-z0-9]/.test(newPassword)) {
-                      errors.newPass = ts("validation.passwordSymbol");
-                    }
-                    setPasswordErrors(errors);
-                    if (Object.keys(errors).length > 0) return;
-                    changePasswordMutation.mutate({ currentPassword, newPassword });
-                  }}
-                  disabled={changePasswordMutation.isPending}
-                  className="flex h-9 w-full items-center justify-center gap-2 rounded-md bg-[#465FFF] text-[11px] font-black text-white transition hover:bg-[#3B4FE0] disabled:opacity-50"
-                >
-                  <Lock size={13} />
-                  {changePasswordMutation.isPending ? ts("common.saving") : ts("changePassword")}
-                </button>
-              </div>
-            </div>
-
             <div className="grid gap-3.5 sm:grid-cols-2">
               <div>
                 <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#5F6B94]">
@@ -930,10 +823,8 @@ export default function SettingsPage() {
 
       <AiProvidersPanel />
 
-      {/* Row 2: 4-Column Settings Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        
-        {/* Card 1: Notifikasi */}
+      {/* Row 2: notifications, where integrations and data live, account security. Every control here saves. */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Panel className="flex flex-col gap-4.5">
           <div className="flex items-start gap-3">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-[#6E44E8]">
@@ -944,7 +835,6 @@ export default function SettingsPage() {
               <p className="text-[10px] font-semibold text-[#5F6B94]">{ts("notifications.desc")}</p>
             </div>
           </div>
-
           <div className="space-y-3.5">
             <div className="flex items-center justify-between">
               <div>
@@ -953,18 +843,6 @@ export default function SettingsPage() {
               </div>
               <Switch label={ts("notifications.emailAlerts")} checked={notifEmailValue} onChange={toggleEmail} disabled={notificationMutation.isPending} />
             </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.slackAlerts")}</span>
-                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("notifications.slackAlertsDesc")}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[9px] font-black text-[#5A6478]">{ts("notAvailable")}</span>
-                <Switch label={ts("notifications.slackAlerts")} checked={notifSlack} onChange={setNotifSlack} disabled />
-              </div>
-            </div>
-
             <div className="flex items-center justify-between">
               <div>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.whatsappAlerts")}</span>
@@ -972,445 +850,142 @@ export default function SettingsPage() {
               </div>
               <Switch label={ts("notifications.whatsappAlerts")} checked={notifWhatsappValue} onChange={toggleWhatsapp} disabled={notificationMutation.isPending} />
             </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.dailySummary")}</span>
-                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("notifications.dailySummaryDesc")}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[9px] font-black text-[#5A6478]">{ts("notAvailable")}</span>
-                <Switch label={ts("notifications.dailySummary")} checked={notifDaily} onChange={setNotifDaily} disabled />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.criticalOnly")}</span>
-                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("notifications.criticalOnlyDesc")}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[9px] font-black text-[#5A6478]">{ts("notAvailable")}</span>
-                <Switch label={ts("notifications.criticalOnly")} checked={notifCritical} onChange={setNotifCritical} disabled />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between border-t border-slate-100 pt-3.5">
-              <div className="flex items-center gap-2">
-                <Clock size={14} className="text-[#5A6478]" />
-                <div>
-                  <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.quietHours")}</span>
-                  <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("notifications.quietHoursDesc")}</span>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => showToast(ts("toast.quietHoursInfo"), "info")}
-                className="text-[10px] font-black text-[#3B52F5] hover:underline"
-              >
-                {ts("quietHoursTime")}
-              </button>
-            </div>
+          </div>
+          <div className="border-t border-slate-100 pt-2">
+              <Link href="/workspace/integrations" className="flex w-full items-center justify-between rounded-lg p-2.5 text-left transition hover:bg-slate-50">
+                <span className="flex items-center gap-3">
+                  <span className="text-[#5F6B94]"><Webhook size={16} /></span>
+                  <span>
+                    <span className="block text-[11px] font-black text-[#101334]">{ts("related.channels")}</span>
+                    <span className="block text-[9px] text-[#5A6478] font-semibold">{ts("related.channelsDesc")}</span>
+                  </span>
+                </span>
+                <ArrowRight size={13} className="text-[#5A6478]" />
+              </Link>
           </div>
         </Panel>
 
-        {/* Card 2: AI Preferences */}
-        <Panel className="flex flex-col gap-4.5">
-          <div className="flex items-start gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-[#6E44E8]">
-              <Sparkles size={18} strokeWidth={2.3} />
-            </span>
-            <div>
-              <h3 className="text-[13.5px] font-black text-[#101334]">{ts("aiPrefs.title")}</h3>
-              <p className="text-[10px] font-semibold text-[#5F6B94]">{ts("aiPrefs.desc")}</p>
-            </div>
-          </div>
-
-          <p className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[9.5px] font-semibold text-amber-800">
-            <span className="font-black">{ts("notConfigurable")}.</span> {ts("notConfigurableDesc")}
-          </p>
-
-          <div className="space-y-3.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-black text-[#101334]">{ts("aiPrefs.sensitivity")}</span>
-              <div className="relative">
-                <select aria-label={ts("aiPrefs.sensitivity")}
-                  value={aiSensitivity}
-                  disabled
-                  onChange={(e) => setAiSensitivity(e.target.value)}
-                  className="h-8 appearance-none rounded-md border border-[#DDE3EF] bg-slate-50 px-2.5 pr-7 text-[10px] font-black text-slate-700 focus:outline-none"
-                >
-                  <option value="Low">{ts("sensitivityLow")}</option>
-                  <option value="Medium">{ts("sensitivityMedium")}</option>
-                  <option value="High">{ts("sensitivityHigh")}</option>
-                </select>
-                <ChevronDown size={11} className="pointer-events-none absolute right-2 top-2.5 text-[#5A6478]" />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="block text-[11px] font-black text-[#101334]">{ts("aiPrefs.autoCategorization")}</span>
-                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("aiPrefs.autoCategorizationDesc")}</span>
-              </div>
-              <Switch label={ts("aiPrefs.autoCategorization")} checked={autoCat} onChange={setAutoCat} disabled />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="block text-[11px] font-black text-[#101334]">{ts("aiPrefs.autoSentiment")}</span>
-                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("aiPrefs.autoSentimentDesc")}</span>
-              </div>
-              <Switch label={ts("aiPrefs.autoSentiment")} checked={autoSentiment} onChange={setAutoSentiment} disabled />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-black text-[#101334]">{ts("aiPrefs.summaryStyle")}</span>
-              <div className="relative">
-                <select aria-label={ts("aiPrefs.summaryStyle")}
-                  value={summaryStyle}
-                  disabled
-                  onChange={(e) => setSummaryStyle(e.target.value)}
-                  className="h-8 appearance-none rounded-md border border-[#DDE3EF] bg-slate-50 px-2.5 pr-7 text-[10px] font-black text-slate-700 focus:outline-none"
-                >
-                  <option value="Executive">{ts("summaryExecutive")}</option>
-                  <option value="Detailed">{ts("summaryDetailed")}</option>
-                  <option value="Short">{ts("summaryShort")}</option>
-                </select>
-                <ChevronDown size={11} className="pointer-events-none absolute right-2 top-2.5 text-[#5A6478]" />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="block text-[11px] font-black text-[#101334]">{ts("aiPrefs.enableRecs")}</span>
-                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("aiPrefs.enableRecsDesc")}</span>
-              </div>
-              <Switch label={ts("aiPrefs.enableRecs")} checked={enableRecs} onChange={setEnableRecs} disabled />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="block text-[11px] font-black text-[#101334]">{ts("aiPrefs.enablePredictive")}</span>
-                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("aiPrefs.enablePredictiveDesc")}</span>
-              </div>
-              <Switch label={ts("aiPrefs.enablePredictive")} checked={enablePredictive} onChange={setEnablePredictive} disabled />
-            </div>
-          </div>
-        </Panel>
-
-        {/* Card 3: Integrations & API */}
         <Panel className="flex flex-col gap-4.5">
           <div className="flex items-start gap-3">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#3B52F5]">
               <Layers size={18} strokeWidth={2.3} />
             </span>
             <div>
-              <h3 className="text-[13.5px] font-black text-[#101334]">{ts("integrationsApi.title")}</h3>
-              <p className="text-[10px] font-semibold text-[#5F6B94]">{ts("integrationsApi.desc")}</p>
+              <h3 className="text-[13.5px] font-black text-[#101334]">{ts("related.title")}</h3>
+              <p className="text-[10px] font-semibold text-[#5F6B94]">{ts("related.desc")}</p>
             </div>
           </div>
-
           <div className="space-y-1.5 flex-1">
-            {[
-              { label: ts("integrationsApi.connectedPlatforms"), sub: ts("integrationsApi.connectedPlatformsDesc"), icon: Cloud, badge: ts("connectedPlatformsBadge") },
-              { label: ts("integrationsApi.apiKeys"), sub: ts("integrationsApi.apiKeysDesc"), icon: Key },
-              { label: ts("integrationsApi.webhooks"), sub: ts("integrationsApi.webhooksDesc"), icon: Webhook },
-              { label: ts("integrationsApi.dbExport"), sub: ts("integrationsApi.dbExportDesc"), icon: Database },
-              { label: ts("integrationsApi.slackSettings"), sub: ts("integrationsApi.slackSettingsDesc"), icon: Sliders },
-            ].map((item, index) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => showToast(ts("toast.managementInfo", { label: item.label }), "info")}
-                  className="flex w-full items-center justify-between rounded-lg p-2.5 text-left transition hover:bg-slate-50"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-[#5F6B94]"><Icon size={16} /></span>
-                    <div>
-                      <span className="block text-[11px] font-black text-[#101334]">{item.label}</span>
-                      <span className="block text-[9px] text-[#5A6478] font-semibold">{item.sub}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {item.badge && (
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-black text-slate-700">
-                        {item.badge}
-                      </span>
-                    )}
-                    <ArrowRight size={13} className="text-[#5A6478]" />
-                  </div>
-                </button>
-              );
-            })}
+              <Link href="/workspace/integrations" className="flex w-full items-center justify-between rounded-lg p-2.5 text-left transition hover:bg-slate-50">
+                <span className="flex items-center gap-3">
+                  <span className="text-[#5F6B94]"><Webhook size={16} /></span>
+                  <span>
+                    <span className="block text-[11px] font-black text-[#101334]">{ts("related.integrations")}</span>
+                    <span className="block text-[9px] text-[#5A6478] font-semibold">{ts("related.integrationsDesc")}</span>
+                  </span>
+                </span>
+                <ArrowRight size={13} className="text-[#5A6478]" />
+              </Link>
+              <Link href="/workspace/sources" className="flex w-full items-center justify-between rounded-lg p-2.5 text-left transition hover:bg-slate-50">
+                <span className="flex items-center gap-3">
+                  <span className="text-[#5F6B94]"><Database size={16} /></span>
+                  <span>
+                    <span className="block text-[11px] font-black text-[#101334]">{ts("related.sources")}</span>
+                    <span className="block text-[9px] text-[#5A6478] font-semibold">{ts("related.sourcesDesc")}</span>
+                  </span>
+                </span>
+                <ArrowRight size={13} className="text-[#5A6478]" />
+              </Link>
+              <Link href="/reports" className="flex w-full items-center justify-between rounded-lg p-2.5 text-left transition hover:bg-slate-50">
+                <span className="flex items-center gap-3">
+                  <span className="text-[#5F6B94]"><Cloud size={16} /></span>
+                  <span>
+                    <span className="block text-[11px] font-black text-[#101334]">{ts("related.exports")}</span>
+                    <span className="block text-[9px] text-[#5A6478] font-semibold">{ts("related.exportsDesc")}</span>
+                  </span>
+                </span>
+                <ArrowRight size={13} className="text-[#5A6478]" />
+              </Link>
+              <Link href="/workspace/activity" className="flex w-full items-center justify-between rounded-lg p-2.5 text-left transition hover:bg-slate-50">
+                <span className="flex items-center gap-3">
+                  <span className="text-[#5F6B94]"><Lock size={16} /></span>
+                  <span>
+                    <span className="block text-[11px] font-black text-[#101334]">{ts("related.activity")}</span>
+                    <span className="block text-[9px] text-[#5A6478] font-semibold">{ts("related.activityDesc")}</span>
+                  </span>
+                </span>
+                <ArrowRight size={13} className="text-[#5A6478]" />
+              </Link>
           </div>
         </Panel>
 
-        {/* Card 4: Security */}
         <Panel className="flex flex-col gap-4.5">
           <div className="flex items-start gap-3">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#3B52F5]">
               <Shield size={18} strokeWidth={2.3} />
             </span>
             <div>
-              <h3 className="text-[13.5px] font-black text-[#101334]">{ts("security.title")}</h3>
-              <p className="text-[10px] font-semibold text-[#5F6B94]">{ts("security.desc")}</p>
+              <h3 className="text-[13.5px] font-black text-[#101334]">{ts("accountCard.title")}</h3>
+              <p className="text-[10px] font-semibold text-[#5F6B94]">{ts("accountCard.desc")}</p>
             </div>
           </div>
-
-          <p className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[9.5px] font-semibold text-amber-800">
-            <span className="font-black">{ts("notConfigurable")}.</span> {ts("notConfigurableDesc")}
-          </p>
-
-          <div className="space-y-3.5">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="block text-[11px] font-black text-[#101334]">{ts("security.twoFa")}</span>
-                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("security.twoFaDesc")}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-[9px] font-black text-[#5A6478]">
-                  {ts("notAvailable")}
-                </span>
-                <Switch label={ts("security.twoFa")} checked={false} onChange={setSecurity2fa} disabled />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="block text-[11px] font-black text-[#101334]">{ts("security.sessionTimeout")}</span>
-                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("security.sessionTimeoutDesc")}</span>
-              </div>
-              <div className="relative">
-                <select aria-label={ts("security.sessionTimeout")}
-                  value={sessionTimeout}
-                  disabled
-                  onChange={(e) => setSessionTimeout(e.target.value)}
-                  className="h-8 appearance-none rounded-md border border-[#DDE3EF] bg-slate-50 px-2.5 pr-7 text-[10px] font-black text-slate-700 focus:outline-none"
-                >
-                  <option value="15 menit">{ts("sessionTimeout15")}</option>
-                  <option value="30 menit">{ts("sessionTimeout30")}</option>
-                  <option value="1 jam">{ts("sessionTimeout1h")}</option>
-                  <option value="12 jam">{ts("sessionTimeout12h")}</option>
-                </select>
-                <ChevronDown size={11} className="pointer-events-none absolute right-2 top-2.5 text-[#5A6478]" />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="block text-[11px] font-black text-[#101334]">{ts("security.ipRestriction")}</span>
-                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("security.ipRestrictionDesc")}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className={cn(
-                  "rounded-md border px-2 py-0.5 text-[9px] font-black",
-                  ipRestrict 
-                    ? "border-[#CDEEDD] bg-[#F1FCF6] text-[#047857]" 
-                    : "border-slate-200 bg-slate-100 text-[#5A6478]"
-                )}>
-                  {ipRestrict ? ts("security.active") : ts("security.inactive")}
-                </span>
-                <Switch label={ts("security.ipRestriction")} checked={ipRestrict} onChange={setIpRestrict} disabled />
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => showToast(ts("toast.auditExport"), "info")}
-              className="flex w-full items-center justify-between border-t border-slate-100 pt-3.5 text-left"
-            >
-              <div className="flex items-center gap-2">
-                <Lock size={14} className="text-[#5A6478]" />
+          <div>
+            <p className="mb-3 text-[11px] font-black text-[#101334]">{ts("workspaceInfo.sectionPassword")}</p>
+              <div className="space-y-2.5">
                 <div>
-                  <span className="block text-[11px] font-black text-[#101334]">{ts("security.auditLog")}</span>
-                  <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("security.auditLogDesc")}</span>
+                  <input
+                    type="password"
+                    placeholder={ts("workspaceInfo.passwordCurrentPlaceholder")}
+                    value={currentPassword}
+                    onChange={(e) => { setCurrentPassword(e.target.value); setPasswordErrors((prev) => ({ ...prev, current: undefined })); }}
+                    className={cn("h-9 w-full rounded-md border bg-slate-50 px-3 text-[10px] font-semibold text-slate-700 outline-none focus:border-[#465FFF]", passwordErrors.current ? "border-[#EF4444]" : "border-[#DDE3EF]")}
+                  />
+                  {passwordErrors.current && <p className="mt-1 text-[9px] font-bold text-[#C81E1E]">{passwordErrors.current}</p>}
                 </div>
-              </div>
-              <ArrowRight size={13} className="text-[#5A6478]" />
-            </button>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="block text-[11px] font-black text-[#101334]">{ts("retentionTitle")}</span>
-                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("retentionDesc")}</span>
-              </div>
-              <div className="relative">
-                <select aria-label={ts("retentionTitle")}
-                  value={dataRetention}
-                  disabled
-                  onChange={(e) => setDataRetention(e.target.value)}
-                  className="h-8 appearance-none rounded-md border border-[#DDE3EF] bg-slate-50 px-2.5 pr-7 text-[10px] font-black text-slate-700 focus:outline-none"
+                <div>
+                  <input
+                    type="password"
+                    placeholder={ts("workspaceInfo.passwordNewPlaceholder")}
+                    value={newPassword}
+                    onChange={(e) => { setNewPassword(e.target.value); setPasswordErrors((prev) => ({ ...prev, newPass: undefined })); }}
+                    className={cn("h-9 w-full rounded-md border bg-slate-50 px-3 text-[10px] font-semibold text-slate-700 outline-none focus:border-[#465FFF]", passwordErrors.newPass ? "border-[#EF4444]" : "border-[#DDE3EF]")}
+                  />
+                  {passwordErrors.newPass && <p className="mt-1 text-[9px] font-bold text-[#C81E1E]">{passwordErrors.newPass}</p>}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const errors: { current?: string; newPass?: string } = {};
+                    if (!currentPassword) errors.current = ts("validation.currentPasswordRequired");
+                    if (!newPassword) {
+                      errors.newPass = ts("validation.newPasswordRequired");
+                    } else if (newPassword.length < 10) {
+                      errors.newPass = ts("validation.passwordMinLength");
+                    } else if (!/[A-Z]/.test(newPassword)) {
+                      errors.newPass = ts("validation.passwordUppercase");
+                    } else if (!/[0-9]/.test(newPassword)) {
+                      errors.newPass = ts("validation.passwordNumber");
+                    } else if (!/[^A-Za-z0-9]/.test(newPassword)) {
+                      errors.newPass = ts("validation.passwordSymbol");
+                    }
+                    setPasswordErrors(errors);
+                    if (Object.keys(errors).length > 0) return;
+                    changePasswordMutation.mutate({ currentPassword, newPassword });
+                  }}
+                  disabled={changePasswordMutation.isPending}
+                  className="flex h-9 w-full items-center justify-center gap-2 rounded-md bg-[#465FFF] text-[11px] font-black text-white transition hover:bg-[#3B4FE0] disabled:opacity-50"
                 >
-                  <option value="30 hari">{ts("retention30")}</option>
-                  <option value="90 hari">{ts("retention90")}</option>
-                  <option value="365 hari">{ts("retention365")}</option>
-                  <option value="Selamanya">{ts("retentionForever")}</option>
-                </select>
-                <ChevronDown size={11} className="pointer-events-none absolute right-2 top-2.5 text-[#5A6478]" />
+                  <Lock size={13} />
+                  {changePasswordMutation.isPending ? ts("common.saving") : ts("changePassword")}
+                </button>
               </div>
-            </div>
           </div>
         </Panel>
       </div>
 
-      {/* Row 3: Billing & Usage & Danger Zone */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1.1fr)]">
+      {/* Row 3: Danger Zone (plan and usage are in the subscription card at the top) */}
+      <div className="grid grid-cols-1 gap-6">
         
-        {/* Card A: Billing & Usage */}
-        <Panel className="flex flex-col gap-6">
-          <div className="flex items-start gap-4">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#3B52F5]">
-              <CreditCard size={20} strokeWidth={2.3} />
-            </span>
-            <div>
-              <h2 className="text-base font-black text-[#101334]">{ts("billingCard.title")}</h2>
-              <p className="text-[11px] font-bold text-[#5F6B94]">{ts("billingCard.desc")}</p>
-            </div>
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-3">
-            {/* Left Section (Plan Info - 1/3 width) */}
-            <div className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-[#FBFCFF] p-4.5">
-              <div className="flex flex-col items-center text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 shadow-[inset_0_0_12px_rgba(70,95,255,0.15)]">
-                  <Sparkles size={24} />
-                </div>
-                <h4 className="mt-3 text-[18px] font-black text-[#101334]">{ts("billingCard.planEnterprise")}</h4>
-                <p className="mt-1 text-[11px] font-semibold text-[#5F6B94]">{ts("billingCard.planDesc")}</p>
-                <button
-                  type="button"
-                  onClick={() => showToast(ts("billing.subscribe"), "info")}
-                  className="mt-4 w-full rounded-lg border border-indigo-200 bg-white py-2 text-center text-[11px] font-black text-[#3B52F5] shadow-sm transition hover:bg-indigo-50/30"
-                >
-                  {ts("billingCard.managePlan")}
-                </button>
-              </div>
-
-              <div className="border-t border-slate-100 pt-3 text-[11px] font-bold space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-[#5F6B94]">{ts("billingCard.statusLabel")}</span>
-                  <span className="rounded-full bg-emerald-50 border border-emerald-100/50 px-2.5 py-0.5 text-[9.5px] font-black text-emerald-700">
-                    {ts("security.active")}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#5F6B94]">{ts("billingCard.nextBilling")}</span>
-                  <span className="text-[#101334]">{ts("billingCard.billingDateFormat")} <span className="text-[10px] text-[#5A6478] font-semibold">{ts("billingCard.billingDaysLeft")}</span></span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Section (Usage Chart - 2/3 width) */}
-            <div className="lg:col-span-2 flex flex-col justify-between rounded-2xl border border-slate-100 bg-white p-4.5">
-              <div className="flex items-start justify-between">
-                <div>
-                  <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-[#5F6B94]">
-                    {ts("billingCard.usageTitle")}
-                  </span>
-                  <div className="mt-1.5 flex items-baseline gap-2">
-                    <span className="text-[25px] font-black text-[#101334]">128.452</span>
-                    <span className="text-[11px] font-bold text-[#5A6478]">{ts("billingCard.usageTotalSignals")}</span>
-                  </div>
-                  <span className="mt-1 block text-[10.5px] font-black text-emerald-700 flex items-center gap-0.5">
-                    <TrendingUp size={12} /> {ts("billingCard.usageChange")}
-                  </span>
-                </div>
-                <div className="relative">
-                  <select aria-label={ts("billingCard.usageChange")}
-                    defaultValue="30"
-                    className="h-7 rounded-md border border-[#DDE3EF] bg-white px-2.5 pr-7 text-[10px] font-black text-slate-700 focus:outline-none"
-                  >
-                    <option value="30">{ts("billingCard.period30")}</option>
-                    <option value="60">{ts("billingCard.period60")}</option>
-                  </select>
-                  <ChevronDown size={11} className="pointer-events-none absolute right-2 top-2 text-[#5A6478]" />
-                </div>
-              </div>
-
-              {/* Spline Area Chart */}
-              <div className="relative mt-4 h-[120px] w-full">
-                {/* Visual grid lines */}
-                <div className="absolute inset-y-0 left-0 right-0 flex flex-col justify-between pointer-events-none">
-                  <div className="border-t border-slate-100/80 w-full" />
-                  <div className="border-t border-slate-100/80 w-full" />
-                  <div className="border-t border-slate-100/80 w-full" />
-                  <div className="border-t border-slate-100/80 w-full" />
-                </div>
-
-                <div className="absolute inset-0 z-10">
-                  <PlanSparkline values={chartData} className="h-full w-full" />
-                </div>
-
-                {/* Hover dots & tooltips */}
-                <div className="absolute inset-0 z-20 flex items-end justify-between px-1.5 pointer-events-none">
-                  {chartData.map((val, idx) => {
-                    const maxVal = Math.max(...chartData);
-                    const minVal = Math.min(...chartData);
-                    const percent = ((val - minVal) / (maxVal - minVal)) * 80 + 10; // 10% - 90% range
-                    
-                    return (
-                      <div
-                        key={idx}
-                        className="relative flex flex-col items-center justify-end h-full flex-1 group pointer-events-auto cursor-pointer"
-                        onMouseEnter={() => setHoveredIdx(idx)}
-                        onMouseLeave={() => setHoveredIdx(null)}
-                      >
-                        {/* Dot */}
-                        <div
-                          style={{ bottom: `${percent}%` }}
-                          className={cn(
-                            "absolute h-3 w-3 rounded-full border-2 border-white transition-all shadow-sm",
-                            hoveredIdx === idx ? "bg-[#8B5CFF] scale-125 ring-4 ring-[#8B5CFF]/15" : "bg-[#465FFF]"
-                          )}
-                        />
-
-                        {/* Custom Interactive Tooltip */}
-                        {hoveredIdx === idx && (
-                          <div
-                            style={{ bottom: `${percent + 18}%` }}
-                            className="absolute z-30 flex flex-col items-center bg-slate-950 px-2.5 py-1.5 rounded-lg shadow-xl text-[9px] font-black text-white whitespace-nowrap animate-in fade-in zoom-in-95 duration-100"
-                          >
-                            <span className="text-[#5A6478] font-bold">{chartDates[idx]}</span>
-                            <span className="mt-0.5 text-[10px] text-[#00F0FF]">{val.toLocaleString(intlLocale())} {ts("billingCard.signalsUnit")}</span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* X axis dates */}
-              <div className="mt-2 flex justify-between px-1 text-[9px] font-black text-[#5A6478]">
-                {chartDates.slice(0, 7).map((d) => <span key={d}>{d}</span>)}
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Progress Metrics Sub-row */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 border-t border-slate-100 pt-5">
-            {[
-              { label: ts("billingCard.metricSignalVolume"), usage: "128.452 / 200.000", pct: 64, fill: "bg-[#465FFF]" },
-              { label: ts("billingCard.metricConnectedSources"), usage: "8 / 10", pct: 80, fill: "bg-[#465FFF]" },
-              { label: ts("billingCard.metricUsersLimit"), usage: "12 / 25", pct: 48, fill: "bg-[#465FFF]" },
-              { label: ts("billingCard.metricAiCredits"), usage: "8.200 / 10.000", pct: 82, fill: "bg-emerald-500" },
-            ].map((metric) => (
-              <div key={metric.label} className="rounded-xl border border-slate-100 bg-[#FBFCFF] p-4">
-                <div className="flex items-center justify-between text-[11px] font-black">
-                  <span className="text-[#5A6478]">{metric.label}</span>
-                  <span className="text-[#101334]">{metric.usage}</span>
-                </div>
-                <div className="mt-2.5 h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
-                  <div style={{ width: `${metric.pct}%` }} className={cn("h-full rounded-full", metric.fill)} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </Panel>
-
         {/* Card B: Danger Zone */}
         <Panel className="flex flex-col gap-6 border-rose-100 bg-rose-50/10">
           <div className="flex items-start gap-4">

@@ -823,7 +823,7 @@ export default function SourcesPage() {
 
       <section className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-5">
         <MetricCard label={t("metricConnectedSources")} value={String(totalSources)} helper={t("metricActive", { count: activeSources })} icon={Database} tone="purple" />
-        <MetricCard label={t("metricLiveMonitoring")} value={activeSources > 0 ? "Every 6h" : "-"} helper={healthSummary ? t("healthWorkingCount", { working: (byStatus.operational ?? 0) + (byStatus.no_results ?? 0), total: healthSummary.total }) : healthText(healthSummary, t)} icon={Play} tone="green" />
+        <MetricCard label={t("metricLiveMonitoring")} value={activeSources > 0 ? pickL("Daily, 07:00 WIB", "Harian, 07.00 WIB") : "-"} helper={healthSummary ? t("healthWorkingCount", { working: (byStatus.operational ?? 0) + (byStatus.no_results ?? 0), total: healthSummary.total }) : healthText(healthSummary, t)} icon={Play} tone="green" />
         <MetricCard label={t("metricTotalDocuments")} value={formatCompact(totalDocuments)} helper={t("metricCoverage", { count: coverage?.coverageRate ?? 0 })} icon={Zap} tone="blue" />
         <MetricCard label={t("metricNeedAttention")} value={String(warningCount)} helper={t("metricNotTested", { count: byStatus.not_tested ?? 0 })} icon={RefreshCw} tone="amber" />
         <MetricCard label={t("metricLastSync")} value={sourceHealthQuery.data?.lastSyncAt ? formatSourceTime(sourceHealthQuery.data.lastSyncAt) : "-"} helper={t("metricFromHealthApi")} icon={Clock3} tone="purple" />

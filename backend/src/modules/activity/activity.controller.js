@@ -77,10 +77,13 @@ export async function listActivityLogs(req, res) {
             data: logs.map((log) => ({
                 id: log.id,
                 user_id: log.user_id,
+                userId: log.user_id,
                 user: actorById.get(log.user_id) || null,
                 event: log.event,
                 metadata: log.metadata,
                 created_at: log.created_at,
+                // The web app reads camelCase; without it every entry showed "just now" and no date.
+                createdAt: log.created_at,
             })),
             meta: {
                 page,

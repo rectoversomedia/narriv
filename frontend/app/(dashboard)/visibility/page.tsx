@@ -822,8 +822,8 @@ export default function VisibilityPage() {
     if (topPrompt) {
       const engine = formatEngineName(topPrompt.engine);
       return language === "id"
-        ? `Topik teratas "${topPrompt.prompt}" muncul di ${engine} dengan brand "${topPrompt.brand || "-"}". Kompetitor: "${topPrompt.competitor || "-"}".`
-        : `Top topic "${topPrompt.prompt}" appears on ${engine} with brand "${topPrompt.brand || "-"}". Competitor: "${topPrompt.competitor || "-"}".`;
+        ? `Untuk prompt teratas "${topPrompt.prompt}" di ${engine}, brand ${mentionLabel(topPrompt.brand) || "-"}; kompetitor ${mentionLabel(topPrompt.competitor) || "-"}.`
+        : `For the top prompt "${topPrompt.prompt}" on ${engine}, the brand is ${mentionLabel(topPrompt.brand) || "-"}; competitors ${mentionLabel(topPrompt.competitor) || "-"}.`;
     }
     return language === "id"
       ? `Brand Anda memiliki ${brandPresence} kehadiran di ${visibilitySummary?.kpis.engines_tracked ?? 0} platform AI.`

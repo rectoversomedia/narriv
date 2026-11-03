@@ -35,18 +35,6 @@ function formatDateTime(value: string | null, neverSyncedLabel: string) {
   }).format(new Date(value));
 }
 
-function parseConfigJson(value: string) {
-  const trimmed = value.trim();
-  if (!trimmed) return {};
-
-  const parsed = JSON.parse(trimmed) as unknown;
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new Error("Config harus berupa JSON object.");
-  }
-
-  return parsed as Record<string, unknown>;
-}
-
 function configSummary(config: IntegrationRecord["config"], noConfigLabel: string) {
   if (!config || Object.keys(config).length === 0) return noConfigLabel;
 
@@ -63,7 +51,7 @@ export default function IntegrationsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [name, setName] = useState("");
   const [platform, setPlatform] = useState("slack");
-  const [configJson, setConfigJson] = useState("{}");
+  const [webhookUrl, setWebhookUrl] = useState("");
   const [formError, setFormError] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<IntegrationRecord | null>(null);
 
@@ -76,10 +64,7 @@ export default function IntegrationsPage() {
     { value: "slack", label: "Slack" },
     { value: "teams", label: "Microsoft Teams" },
     { value: "webhook", label: t("platforms.webhook") },
-    { value: "email", label: t("platforms.email") },
-    { value: "whatsapp", label: "WhatsApp" },
-    { value: "bigquery", label: "BigQuery" },
-    { value: "postgres", label: "Postgres" },
+    // Only these three deliver alerts; email and WhatsApp are set in Settings → Notifications.
   ], [t]);
 
   const statusOptions = useMemo(() => [
@@ -110,7 +95,7 @@ export default function IntegrationsPage() {
 
       setName("");
       setPlatform("slack");
-      setConfigJson("{}");
+      setWebhookUrl("");
       setFormError("");
       await queryClient.invalidateQueries({ queryKey: ["integrations"] });
       toast.success(t("toast.createSuccess"));
@@ -176,16 +161,15 @@ export default function IntegrationsPage() {
     event.preventDefault();
 
     if (!name.trim()) {
-      setFormError("Nama integrasi wajib diisi.");
+      setFormError(pickL("Integration name is required.", "Nama integrasi wajib diisi."));
       return;
     }
 
-    try {
-      const config = parseConfigJson(configJson);
-      createMutation.mutate({ name: name.trim(), platform, config });
-    } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Config JSON tidak valid.");
+    if (!/^https:\/\/\S+$/.test(webhookUrl.trim())) {
+      setFormError(pickL("Enter the webhook URL (it starts with https://).", "Isi URL webhook (diawali https://)."));
+      return;
     }
+    createMutation.mutate({ name: name.trim(), platform, config: { webhookUrl: webhookUrl.trim() } });
   };
 
   return (
@@ -274,13 +258,21 @@ export default function IntegrationsPage() {
             </label>
 
             <label className="grid gap-1.5">
-              <span className="text-[11px] font-black text-[#5A6478]">Config JSON</span>
-              <textarea
-                value={configJson}
-                onChange={(event) => { setConfigJson(event.target.value); setFormError(""); }}
-                rows={6}
-                className="rounded-[8px] border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-xs font-semibold leading-5 text-slate-800 outline-none transition focus:border-[#465FFF] focus:ring-2 focus:ring-[#465FFF]/15"
+              <span className="text-[11px] font-black text-[#5A6478]">{pickL("Webhook URL", "URL webhook")}</span>
+              <input
+                type="url"
+                value={webhookUrl}
+                onChange={(event) => { setWebhookUrl(event.target.value); setFormError(""); }}
+                placeholder={platform === "slack" ? "https://hooks.slack.com/services/…" : platform === "teams" ? "https://….webhook.office.com/…" : "https://"}
+                className="h-10 rounded-[8px] border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-800 outline-none transition placeholder:text-slate-300 focus:border-[#465FFF] focus:ring-2 focus:ring-[#465FFF]/15"
               />
+              <span className="text-[10px] font-semibold leading-4 text-[#647099]">
+                {platform === "slack"
+                  ? pickL("In Slack: Apps → Incoming Webhooks → Add to a channel, then copy the URL.", "Di Slack: Apps → Incoming Webhooks → tambahkan ke channel, lalu salin URL-nya.")
+                  : platform === "teams"
+                    ? pickL("In Teams: channel ⋯ → Workflows / Connectors → Incoming Webhook, then copy the URL.", "Di Teams: ⋯ pada channel → Workflows / Connectors → Incoming Webhook, lalu salin URL-nya.")
+                    : pickL("Narriv sends a JSON POST for every alert to this address.", "Narriv mengirim JSON POST untuk setiap peringatan ke alamat ini.")}
+              </span>
             </label>
 
             {formError ? <p className="rounded-[8px] border border-[#FAD1D1] bg-[#FFF5F5] px-3 py-2 text-xs font-bold text-[#B42318]">{formError}</p> : null}

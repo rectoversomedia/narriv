@@ -85,6 +85,12 @@ const sourceIcons = {
 
 
 // Date and time: the table spans days, so a bare clock time would be ambiguous.
+function sameText(content: string, title: string) {
+  const norm = (value: string) => value.toLowerCase().replace(/\s+/g, " ").trim();
+  const head = norm(title).slice(0, 48);
+  return head.length > 0 && norm(content).startsWith(head);
+}
+
 function compactTime(value: string | null | undefined) {
   if (!value) return "—";
   const parsed = new Date(value);
@@ -128,7 +134,9 @@ function buildApiSignalRows(apiSignals: Signal[], t: (key: string) => string): S
       id: signal.id,
       title,
       sentimentTone,
-      desc: signal.content || t("fallbackNoContent"),
+      // News items often carry the headline as their content ("Headline  Publisher"); repeating it adds
+      // nothing, so the snippet is shown only when it says more than the title.
+      desc: signal.content && !sameText(signal.content, title) ? signal.content : "",
       // Publisher (stored as author by ingestion) first, then the collection platform.
       tags: [...(signal.author ? [signal.author] : []), signal.platform || t("fallbackUnknownSource")],
       sourceType: signal.platform || t("fallbackLiveSource"),
@@ -520,7 +528,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                           ) : null}
                           <RelevanceBadge relevance={row.relevance} />
                         </div>
-                        <p className="mt-1 line-clamp-2 text-[12px] font-medium leading-snug text-body">{row.desc}</p>
+                        {row.desc ? <p className="mt-1 line-clamp-2 text-[12px] font-medium leading-snug text-body">{row.desc}</p> : null}
                         <div className="mt-2 flex flex-wrap gap-1.5">{row.tags.map((tag) => <TagBadge key={tag} tag={tag} />)}</div>
                       </div>
                     </div>

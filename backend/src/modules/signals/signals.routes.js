@@ -1,5 +1,5 @@
 import express from "express";
-import { tr } from "../../lib/request-context.js";
+import { requestLang, tr } from "../../lib/request-context.js";
 import supabase from "../../lib/supabase.js";
 import { analyzeSignal, generateSignalsSummary } from "../ai/ai.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
@@ -291,7 +291,7 @@ router.get("/meta", async (req, res) => {
         // Fetch alerts
         const { data: rawAlerts, error: alertsError } = await supabase
             .from('alerts')
-            .select('title, severity, created_at')
+            .select('title, severity, status, created_at, metadata')
             .in('workspace_id', workspaceIds)
             .neq('status', 'resolved')
             .order('created_at', { ascending: false })
@@ -302,8 +302,12 @@ router.get("/meta", async (req, res) => {
         const followUps = (rawAlerts || []).map(a => ({
             title: a.title,
             badge: (a.severity || 'info').toUpperCase(),
-            meta: 'Latest updates pending',
-            time: new Date(a.created_at).toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' }) + ' WIB',
+            // What is known about it: the signal counts behind a rules alert, otherwise its workflow status.
+            meta: Number.isFinite(a.metadata?.negative_count) && Number.isFinite(a.metadata?.total_count)
+                ? tr(`${a.metadata.negative_count} of ${a.metadata.total_count} signals negative`, `${a.metadata.negative_count} dari ${a.metadata.total_count} sinyal negatif`)
+                : a.status === 'acknowledged' ? tr("Acknowledged, not resolved", "Sudah dikonfirmasi, belum selesai") : tr("Not acknowledged yet", "Belum dikonfirmasi"),
+            // A date as well as the time: an unresolved alert can be days old.
+            time: new Date(a.created_at).toLocaleString(requestLang() === 'id' ? 'id-ID' : 'en-GB', { timeZone: 'Asia/Jakarta', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' WIB',
             tone: a.severity === 'critical' ? 'red' : 'amber'
         }));
 

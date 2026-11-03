@@ -9,6 +9,7 @@ import { useTranslations } from "next-intl";
 import { useUiStore } from "@/store/useUiStore";
 import { getActivityLogs, type ActivityLogEntry } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
+import { pickL } from "@/lib/use-l";
 
 const emptyActivityRows: ActivityLogEntry[] = [];
 type ActivityTranslator = ReturnType<typeof useTranslations<"ActivityLog">>;
@@ -136,8 +137,11 @@ function formatRelativeTime(value: string, locale: string, t: ActivityTranslator
 function metadataSummary(metadata: ActivityLogEntry["metadata"], t: ActivityTranslator) {
   if (!metadata) return t("noMetadata");
 
+  // Ids (workspace, actor, plan, …) mean nothing to a reader; show the descriptive fields.
+  const isId = (key: string, value: unknown) =>
+    /(^id$|Id$|_id$)/.test(key) || (typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(value)) || (typeof value === "string" && value.startsWith("demo_"));
   const visibleEntries = Object.entries(metadata)
-    .filter(([key]) => !["workspaceId", "userId"].includes(key))
+    .filter(([key, value]) => !isId(key, value) && value !== null && value !== "")
     .slice(0, 3);
 
   if (visibleEntries.length === 0) return t("recordedMetadata");
@@ -148,7 +152,9 @@ function metadataSummary(metadata: ActivityLogEntry["metadata"], t: ActivityTran
 }
 
 function actorName(log: ActivityLogEntry) {
-  return log.user?.name || log.user?.email || "System / Unknown";
+  if (log.user?.name || log.user?.email) return log.user.name || log.user.email;
+  if (log.userId?.startsWith("demo")) return pickL("Demo visitor", "Pengunjung demo");
+  return log.userId ? pickL("Former member", "Mantan anggota") : pickL("System", "Sistem");
 }
 
 export default function ActivityPage() {
@@ -325,13 +331,12 @@ export default function ActivityPage() {
                           <Badge variant={eventVariant(log.event)} className="rounded-full normal-case tracking-normal">
                             {formatEventName(log.event, t)}
                           </Badge>
-                          <p className="mt-2 text-[11px] font-bold text-[#5A6478]">ID: {log.id.slice(0, 8)}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 align-top">
                       <p className="font-black text-slate-900">{actorName(log)}</p>
-                      <p className="mt-1 text-xs font-semibold text-[#5A6478]">{log.user?.email || log.userId || t("systemGenerated")}</p>
+                      {log.user?.email && log.user.name ? <p className="mt-1 text-xs font-semibold text-[#5A6478]">{log.user.email}</p> : null}
                     </td>
                     <td className="max-w-[360px] px-6 py-4 align-top">
                       <p className="line-clamp-2 text-sm font-semibold leading-6 text-slate-600">{metadataSummary(log.metadata, t)}</p>

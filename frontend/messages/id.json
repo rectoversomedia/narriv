@@ -2224,7 +2224,7 @@
       "generated30Helper": "▲ 6 vs periode sebelumnya",
       "reportsCreated": "Laporan Dibuat",
       "reportsCreatedHelper": "▲ 6 vs periode sebelumnya",
-      "inProgress": "Sedang Diproses",
+      "inProgress": "Draf & Ditinjau",
       "inProgressHelper": "Kadens mingguan"
     },
     "liveMetrics": {
@@ -2233,7 +2233,7 @@
       "reportsCreated": "Laporan Dibuat",
       "totalLive": "total terkini",
       "reportsCreatedHelper": "total terkini",
-      "inProgress": "Sedang Diproses",
+      "inProgress": "Draf & Ditinjau",
       "inProgressHelper": "dalam proses",
       "ready": "Siap",
       "readyHelper": "siap"
@@ -2557,7 +2557,7 @@
       },
       "form": {
         "title": "Hubungkan Integrasi",
-        "desc": "Tambahkan koneksi baru. Config opsional harus berupa JSON object.",
+        "desc": "Kirim peringatan ke Slack, Microsoft Teams, atau webhook milik tim Anda.",
         "name": "Nama Integrasi",
         "namePlaceholder": "Contoh: Slack Crisis Room",
         "platform": "Platform",
@@ -3023,6 +3023,24 @@
         "delete": "Hapus",
         "inviteMember": "Undang Anggota",
         "manageRoles": "Kelola Role & Permission"
+      },
+      "related": {
+        "title": "Integrasi & Data",
+        "desc": "Tempat mengatur koneksi, sumber, ekspor, dan riwayat aktivitas.",
+        "channels": "Slack, Microsoft Teams & webhook",
+        "channelsDesc": "Kirim peringatan ke kanal tim lewat halaman Integrasi",
+        "integrations": "Integrasi",
+        "integrationsDesc": "Slack, Microsoft Teams, dan webhook",
+        "sources": "Sumber Data",
+        "sourcesDesc": "Konektor dan kesehatan pengambilan data",
+        "exports": "Ekspor Laporan",
+        "exportsDesc": "CSV, Excel, dan PDF dari halaman Laporan",
+        "activity": "Log Aktivitas",
+        "activityDesc": "Siapa melakukan apa di workspace ini"
+      },
+      "accountCard": {
+        "title": "Keamanan Akun",
+        "desc": "Berlaku untuk akun Anda, bukan untuk seluruh workspace."
       }
     }
   },
@@ -3487,7 +3505,7 @@
     "metricHealthWarning": "Peringatan Kesehatan",
     "metricCritical": "{count} kritis",
     "metricLastSync": "Terakhir Diperbarui",
-    "metricFromHealthApi": "dari health API",
+    "metricFromHealthApi": "dari pemeriksaan kesehatan sumber",
     "settingsKeyword": "Kata Kunci Target Global",
     "settingsKeywordDesc": "Kelola kata kunci utama untuk semua sumber.",
     "settingsDedup": "Aturan Deduplikasi",

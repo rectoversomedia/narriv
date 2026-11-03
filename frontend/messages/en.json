@@ -2224,7 +2224,7 @@
       "generated30Helper": "▲ 6 vs previous period",
       "reportsCreated": "Reports Created",
       "reportsCreatedHelper": "▲ 6 vs previous period",
-      "inProgress": "In Progress",
+      "inProgress": "Draft & In Review",
       "inProgressHelper": "Weekly cadence"
     },
     "liveMetrics": {
@@ -2233,7 +2233,7 @@
       "reportsCreated": "Reports Created",
       "totalLive": "total live",
       "reportsCreatedHelper": "total live",
-      "inProgress": "In Progress",
+      "inProgress": "Draft & In Review",
       "inProgressHelper": "in progress",
       "ready": "Ready",
       "readyHelper": "ready"
@@ -2557,7 +2557,7 @@
       },
       "form": {
         "title": "Connect Integration",
-        "desc": "Add a new connection. Config is optional and must be a JSON object.",
+        "desc": "Send alerts to Slack, Microsoft Teams or your team's webhook.",
         "name": "Integration Name",
         "namePlaceholder": "Example: Slack Crisis Room",
         "platform": "Platform",
@@ -3023,6 +3023,24 @@
         "delete": "Delete",
         "inviteMember": "Invite Member",
         "manageRoles": "Manage Roles & Permissions"
+      },
+      "related": {
+        "title": "Integrations & Data",
+        "desc": "Where connections, sources, exports and activity history are managed.",
+        "channels": "Slack, Microsoft Teams & webhooks",
+        "channelsDesc": "Send alerts to team channels from the Integrations page",
+        "integrations": "Integrations",
+        "integrationsDesc": "Slack, Microsoft Teams and webhooks",
+        "sources": "Data Sources",
+        "sourcesDesc": "Connectors and collection health",
+        "exports": "Report Exports",
+        "exportsDesc": "CSV, Excel and PDF from the Reports page",
+        "activity": "Activity Log",
+        "activityDesc": "Who did what in this workspace"
+      },
+      "accountCard": {
+        "title": "Account Security",
+        "desc": "Applies to your account, not the whole workspace."
       }
     }
   },
@@ -3487,7 +3505,7 @@
     "metricHealthWarning": "Health Warning",
     "metricCritical": "{count} critical",
     "metricLastSync": "Last Sync",
-    "metricFromHealthApi": "from health API",
+    "metricFromHealthApi": "from the source health check",
     "settingsKeyword": "Global Keyword Target",
     "settingsKeywordDesc": "Manage main keywords for all sources.",
     "settingsDedup": "Deduplication Rules",

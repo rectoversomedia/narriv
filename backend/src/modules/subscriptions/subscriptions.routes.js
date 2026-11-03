@@ -11,6 +11,7 @@ import { supabaseAdmin } from "../../lib/supabase.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { WorkspacePlan, PLAN_LIMITS } from "../../types/workspace.js";
 import { wrapAsync } from "../../lib/sentry.js";
+import { DEMO_WORKSPACE_ID } from "../../lib/workspace-access.js";
 
 const router = express.Router();
 
@@ -125,7 +126,9 @@ router.get("/my-plan", async (req, res) => {
     const userId = req.user.id || req.user.userId;
 
     if (req.user?.isDemo) {
-      const planLimits = getPlanLimits(WorkspacePlan.PILOT);
+      // The demo shows its real usage on the plan prospects usually start from.
+      const planLimits = getPlanLimits(WorkspacePlan.INTELLIGENCE);
+      const usage = await getWorkspaceUsage(DEMO_WORKSPACE_ID);
       return res.json({
         plan: {
           key: planLimits.plan,
@@ -135,15 +138,15 @@ router.get("/my-plan", async (req, res) => {
           status: "active",
         },
         usage: {
-          membersUsed: 2,
+          membersUsed: usage.membersUsed,
           membersLimit: planLimits.maxMembers,
-          topicsUsed: 1,
+          topicsUsed: usage.topicsUsed,
           topicsLimit: planLimits.maxTopics,
-          signalsUsed: 4,
+          signalsUsed: usage.signalsUsed,
           signalsLimit: planLimits.maxSignalsPerMonth,
-          alertsUsed: 3,
+          alertsUsed: usage.alertsUsed,
           alertsLimit: planLimits.maxAlertsPerMonth,
-          reportsUsed: 1,
+          reportsUsed: usage.reportsUsed,
           reportsLimit: planLimits.maxReportsPerMonth,
         },
         expiresAt: null,
@@ -447,16 +450,18 @@ router.get("/usage", async (req, res) => {
     const userId = req.user.id || req.user.userId;
 
     if (req.user?.isDemo) {
-      const planLimits = getPlanLimits(WorkspacePlan.PILOT);
+      const planLimits = getPlanLimits(WorkspacePlan.INTELLIGENCE);
+      const usage = await getWorkspaceUsage(DEMO_WORKSPACE_ID);
+      const pct = (used, limit) => (limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0);
       return res.json({
-        workspaceId: "demo-workspace",
+        workspaceId: DEMO_WORKSPACE_ID,
         plan: planLimits.plan,
         usage: {
-          members: { used: 2, limit: planLimits.maxMembers, percentage: 40 },
-          topics: { used: 1, limit: planLimits.maxTopics, percentage: 33 },
-          signals: { used: 4, limit: planLimits.maxSignalsPerMonth, percentage: 8 },
-          alerts: { used: 3, limit: planLimits.maxAlertsPerMonth, percentage: 15 },
-          reports: { used: 1, limit: planLimits.maxReportsPerMonth, percentage: 20 },
+          members: { used: usage.membersUsed, limit: planLimits.maxMembers, percentage: pct(usage.membersUsed, planLimits.maxMembers) },
+          topics: { used: usage.topicsUsed, limit: planLimits.maxTopics, percentage: pct(usage.topicsUsed, planLimits.maxTopics) },
+          signals: { used: usage.signalsUsed, limit: planLimits.maxSignalsPerMonth, percentage: pct(usage.signalsUsed, planLimits.maxSignalsPerMonth) },
+          alerts: { used: usage.alertsUsed, limit: planLimits.maxAlertsPerMonth, percentage: pct(usage.alertsUsed, planLimits.maxAlertsPerMonth) },
+          reports: { used: usage.reportsUsed, limit: planLimits.maxReportsPerMonth, percentage: pct(usage.reportsUsed, planLimits.maxReportsPerMonth) },
         },
         expiresAt: null,
         trialEndsAt: null,
