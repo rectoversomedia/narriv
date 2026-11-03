@@ -25,6 +25,7 @@ import {
 import { getPipelineStatus, getRecommendations, timeAgo, type IntelligenceRecommendation } from "@/lib/intelligence-api";
 import { useCodeLabels } from "@/components/intelligence/intelligence-panels";
 import { DemoBanner } from "@/components/ui/demo-banner";
+import { SentimentTrendChart } from "@/components/dashboard/sentiment-trend-chart";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/toast";
 import { issueHref, monitoringHref, type MonitoringPeriod } from "@/lib/evidence-links";
@@ -283,7 +284,7 @@ export default function DashboardPage() {
       ) : (
         <>
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-            <Card title={L("Sentiment", "Sentimen")} link={{ href: monitoringHref({ hours }), label: L("All data", "Semua data") }}>
+            <Card className="flex flex-col" title={L("Sentiment", "Sentimen")} link={{ href: monitoringHref({ hours }), label: L("All data", "Semua data") }}>
               {summaryQuery.isLoading ? (
                 <div className="space-y-3">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
               ) : total === 0 ? (
@@ -312,6 +313,17 @@ export default function DashboardPage() {
                     <Link href={monitoringHref({ hours, analysis: "pending" })} className="mt-3 inline-block text-[12px] font-bold text-[#3B52F5] hover:underline">
                       {L(`${fmt(unanalysed)} not analysed yet →`, `${fmt(unanalysed)} belum dianalisis →`)}
                     </Link>
+                  ) : null}
+                  {/* Day-by-day split for the last week; fills the card to the height of the to-do list beside it. */}
+                  {summary?.sentiment_trend?.some((d) => d.total > 0) ? (
+                    <div className="mt-auto border-t border-[#EEF1F7] pt-4">
+                      <p className="mb-2 text-[12px] font-black text-[#101334]">{L("Last 7 days, per day", "7 hari terakhir, per hari")}</p>
+                      <SentimentTrendChart
+                        days={summary.sentiment_trend}
+                        locale={intlLocale()}
+                        labels={{ positive: L("Positive", "Positif"), neutral: L("Neutral", "Netral"), negative: L("Negative", "Negatif"), mixed: L("Mixed", "Campuran"), unanalyzed: L("Not analysed", "Belum dianalisis"), noSignals: L("No records", "Tidak ada data") }}
+                      />
+                    </div>
                   ) : null}
                 </>
               )}
