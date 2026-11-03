@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { deriveEdges, edgeEndpoints, fitLayout, labelBox, type PlacedNode } from "@/lib/topic-map-geometry";
+import { deriveEdges, edgeEndpoints, fitLayout, type PlacedNode } from "@/lib/topic-map-geometry";
 import { cn } from "@/lib/utils";
 import { pickL } from "@/lib/use-l";
 
@@ -74,16 +74,11 @@ export function TopicMapCanvas({
 
   return (
     <div ref={ref} className={cn("absolute inset-0 overflow-hidden rounded-[14px]", className)}>
-      {/* Backdrop: deep navy with a centre glow, a fine dot grid and faint orbit rings (decoration only). */}
-      <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,#2A2F86_0%,#161A52_45%,#0B0E2E_100%)]" />
-      <div aria-hidden="true" className="absolute inset-0 opacity-40 [background-image:radial-gradient(rgba(255,255,255,0.35)_1px,transparent_1px)] [background-size:22px_22px]" />
-      {size.width > 0 ? (
-        <svg aria-hidden="true" className="absolute inset-0" width={size.width} height={size.height}>
-          {[0.18, 0.3, 0.42].map((f) => (
-            <circle key={f} cx={size.width / 2} cy={(size.height - 24) / 2} r={Math.min(size.width, size.height) * f} fill="none" stroke="rgba(165,180,252,0.18)" strokeDasharray="3 7" />
-          ))}
-        </svg>
-      ) : null}
+      {/* Backdrop: a soft light gradient with three large blurred colour fields (no pattern). */}
+      <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(135deg,#F7F8FF_0%,#EEF1FF_45%,#FBF1F8_100%)]" />
+      <div aria-hidden="true" className="absolute -left-[10%] -top-[25%] h-[70%] w-[55%] rounded-full bg-[#A5B4FC] opacity-40 blur-[90px]" />
+      <div aria-hidden="true" className="absolute -bottom-[30%] right-[-5%] h-[75%] w-[50%] rounded-full bg-[#F9A8D4] opacity-35 blur-[90px]" />
+      <div aria-hidden="true" className="absolute left-[35%] top-[30%] h-[45%] w-[35%] rounded-full bg-[#99F6E4] opacity-30 blur-[100px]" />
       <div className="absolute inset-0 origin-center transition-transform duration-slow ease-standard" style={{ transform: `scale(${zoom})` }}>
         {size.width > 0 ? (
           <svg className="absolute inset-0" width={size.width} height={size.height} viewBox={`0 0 ${size.width} ${size.height}`} aria-hidden="true">
@@ -98,7 +93,7 @@ export function TopicMapCanvas({
                 <line
                   key={`${edge.from}-${edge.to}`}
                   {...e}
-                  stroke={highlighted ? "#FFFFFF" : "rgba(199,210,254,0.55)"}
+                  stroke={highlighted ? "#465FFF" : "rgba(70,95,255,0.28)"}
                   strokeWidth={edge.strength === "strong" ? 2 : 1.25}
                   strokeDasharray={edge.strength === "weak" ? "4 4" : undefined}
                   strokeLinecap="round"
@@ -115,7 +110,7 @@ export function TopicMapCanvas({
         })}
       </div>
 
-      <div className="pointer-events-none absolute bottom-2 left-14 right-3 flex flex-wrap justify-between gap-x-4 gap-y-1 text-[11px] font-medium text-white/60">
+      <div className="pointer-events-none absolute bottom-2 left-14 right-3 flex flex-wrap justify-between gap-x-4 gap-y-1 text-[11px] font-medium text-[#5A6478]">
         <span>{nodes.length > visible.length ? pickL(`Showing the ${visible.length} largest of ${nodes.length} narratives.`, `Menampilkan ${visible.length} narasi terbesar dari ${nodes.length}.`) : null}</span>
         <span>{visible.length > 1 && edges.length === 0 ? pickL("No narratives share evidence in this period, so no connections are drawn.", "Belum ada narasi yang berbagi bukti pada periode ini, jadi tidak ada garis hubungan.") : null}</span>
       </div>
@@ -124,39 +119,42 @@ export function TopicMapCanvas({
 }
 
 function MapNodeButton({ node, placed, colors, selected, onSelect, signalLabel }: { node: TopicMapNode; placed: PlacedNode; colors: string[]; selected: boolean; onSelect: (id: string) => void; signalLabel: (count: number) => string }) {
-  const d = placed.r * 2;
-  const box = labelBox(placed.r);
+  const r = placed.r;
+  const d = r * 2;
   const [from, to] = colors;
+  // The count is the hero; the name sits under it in at most two short lines (full name in the tooltip).
+  const numberSize = Math.round(Math.min(40, Math.max(16, r * 0.44)));
+  const titleSize = Math.round(Math.min(13, Math.max(9.5, r * 0.15)));
+  const showTitle = r >= 34;
   return (
     <button
       type="button"
       aria-pressed={selected}
       aria-label={`${node.title}, ${signalLabel(node.signals)}`}
-      title={node.title}
+      title={`${node.title} · ${signalLabel(node.signals)}`}
       onClick={() => onSelect(node.id)}
-      className="group absolute rounded-full transition-transform duration-200 hover:scale-[1.04] focus:outline-none"
-      style={{ left: placed.x - placed.r, top: placed.y - placed.r, width: d, height: d, zIndex: selected ? 2 : 1 }}
+      className="group absolute rounded-full transition-transform duration-200 hover:scale-[1.05] focus:outline-none"
+      style={{ left: placed.x - r, top: placed.y - r, width: d, height: d, zIndex: selected ? 2 : 1 }}
     >
       <span
-        className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-full group-focus-visible:ring-2 group-focus-visible:ring-white group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-[#161A52]"
+        className="absolute inset-0 flex items-center justify-center rounded-full group-focus-visible:ring-2 group-focus-visible:ring-[#465FFF] group-focus-visible:ring-offset-2"
         style={{
-          background: `radial-gradient(circle at 30% 25%, rgba(255,255,255,0.35), transparent 45%), linear-gradient(135deg, ${from}, ${to})`,
-          // Outer ring in the sentiment colour; the glow in the narrative's own colour.
-          boxShadow: `0 0 0 ${selected ? 4 : 3}px ${node.color}, 0 0 ${selected ? 40 : 26}px ${from}99`,
+          background: `radial-gradient(circle at 30% 22%, rgba(255,255,255,0.4), transparent 50%), linear-gradient(140deg, ${from}, ${to})`,
+          // White separation ring, the sentiment ring outside it, and a soft shadow in the narrative's colour.
+          boxShadow: `0 0 0 3px #FFFFFF, 0 0 0 ${selected ? 7 : 5}px ${node.color}, 0 ${selected ? 18 : 12}px ${selected ? 36 : 26}px -8px ${from}AA`,
         }}
       >
-        {/* Label box is sized so its corners stay inside the circle. */}
-        <span className="flex flex-col items-center justify-center overflow-hidden text-center" style={{ width: box.width, maxHeight: box.height }}>
-          <span
-            className="font-black leading-[1.2] text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.25)]"
-            style={{ fontSize: box.fontSize, display: "-webkit-box", WebkitLineClamp: box.lines, WebkitBoxOrient: "vertical", overflow: "hidden", overflowWrap: "anywhere" }}
-          >
-            {node.title}
-          </span>
-          <span className="mt-1 inline-flex shrink-0 items-center gap-1 rounded-full bg-black/20 px-1.5 py-px font-bold text-white" style={{ fontSize: box.fontSize - 1 }}>
-            <span className="size-1.5 rounded-full" style={{ backgroundColor: node.color }} />
-            {signalLabel(node.signals)}
-          </span>
+        <span className="flex flex-col items-center text-center text-white" style={{ width: r * 1.45 }}>
+          <span className="font-black tabular-nums leading-none [text-shadow:0_2px_6px_rgba(0,0,0,0.18)]" style={{ fontSize: numberSize }}>{node.signals}</span>
+          <span className="mt-0.5 font-bold uppercase tracking-[0.08em] text-white/85" style={{ fontSize: Math.max(8, titleSize - 2.5) }}>{signalLabel(node.signals).replace(/^\d+\s*/, "")}</span>
+          {showTitle ? (
+            <span
+              className="mt-1.5 font-bold leading-[1.2] text-white"
+              style={{ fontSize: titleSize, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+            >
+              {node.title}
+            </span>
+          ) : null}
         </span>
       </span>
     </button>
