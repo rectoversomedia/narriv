@@ -162,6 +162,12 @@ const runDaily = async (req, res) => {
             results.reportSchedules = { ran: run.ran, failed: (run.results || []).filter((r) => r.status === "failed").length, error: run.error };
         } catch (e) { results.reportSchedules = { error: e.message }; }
 
+        // 3c. The demo workspace is reseeded with fresh dates once its newest record is a day old.
+        try {
+            const { refreshDemoWorkspaceIfStale } = await import("../demo/demo-seed.js");
+            results.demo = await refreshDemoWorkspaceIfStale();
+        } catch (e) { results.demo = { error: e.message }; }
+
         // 4. AI backfill: analyze real signals that lack a signal_analyses row.
         // Idempotent and time-bounded; anything left over is picked up next run.
         try {

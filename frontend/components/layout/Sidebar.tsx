@@ -140,7 +140,7 @@ export function Sidebar() {
         {sidebarCollapsed || !pipeline ? null : <div className="mt-8 rounded-[8px] border border-white/10 bg-white/[0.02] p-4 backdrop-blur-md">
           <div className="text-[11px] font-semibold text-white/90">{t("sidebar.pipelineStatus")}</div>
           <dl className="mt-3 space-y-1.5 text-[11px]">
-            <div className="flex justify-between gap-2"><dt className="text-white/50">{t("sidebar.lastIngestion")}</dt><dd className="font-bold text-white/90">{timeAgo(pipeline.scheduler.lastSuccessfulIngestionForWorkspace ?? pipeline.ingestion.lastRawDocumentAt)}</dd></div>
+            <div className="flex justify-between gap-2"><dt className="text-white/50">{t("sidebar.lastIngestion")}</dt><dd className="font-bold text-white/90">{timeAgo([pipeline.scheduler.lastSuccessfulIngestionForWorkspace, pipeline.ingestion.lastRawDocumentAt].filter(Boolean).sort().at(-1))}</dd></div>
             <div className="flex justify-between gap-2"><dt className="text-white/50">{t("sidebar.lastAnalysis")}</dt><dd className="font-bold text-white/90">{timeAgo(pipeline.analysis.lastAnalysisAt)}</dd></div>
             {pipeline.scheduler.health ? (
               <div className="flex justify-between gap-2" title={t("sidebar.scheduledRunsHint")}>

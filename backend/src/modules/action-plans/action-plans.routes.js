@@ -1,4 +1,5 @@
 import express from "express";
+import { tr } from "../../lib/request-context.js";
 import supabase from "../../lib/supabase.js";
 import { submitFeedback } from "../feedback/feedback.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
@@ -76,9 +77,9 @@ function buildActionPlanResponse(plan) {
     const channel = primaryOption.media_channels?.join(", ")
         || primaryOption.distribution_channels?.join(", ")
         || primaryOption.platforms?.join(", ")
-        || "Owned + PR";
+        || tr("Owned channels + PR", "Kanal resmi + PR");
 
-    const timelineSlots = ["Today", "Next 6h", "24h", "48h"];
+    const timelineSlots = [tr("Today", "Hari ini"), tr("Next 6h", "6 jam ke depan"), tr("24h", "24 jam"), tr("48h", "48 jam")];
 
     return {
         id: plan.id,
@@ -94,14 +95,12 @@ function buildActionPlanResponse(plan) {
             || plan.description
             || (plan.alert ? `Alert Context: ${plan.alert.title}` : (plan.cluster ? `Cluster Context: ${plan.cluster.title}` : ""))
             || "",
-        evidenceSummary: `Status: ${plan.status || "open"} · Priority: ${plan.priority || "medium"}`,
+        evidenceSummary: tr(`Status: ${plan.status || "open"} · Priority: ${plan.priority || "medium"}`, `Status: ${plan.status || "open"} · Prioritas: ${plan.priority || "medium"}`),
         outputs: [
-            ["Primary action", plan.title || "Action plan"],
-            ["Channel", channel],
-            ["Impact / effort", `${plan.priority === "high" || plan.priority === "critical" ? "High" : "Medium"} impact · Medium effort`],
-            ["Confidence", "82%"],
+            [tr("Primary action", "Aksi utama"), plan.title || tr("Action plan", "Rencana aksi")],
+            [tr("Channel", "Kanal"), channel],
         ],
-        plan: steps.slice(0, 4).map((step, index) => [step, timelineSlots[index] || "Later"]),
+        plan: steps.slice(0, 4).map((step, index) => [step, timelineSlots[index] || tr("Later", "Nanti")]),
     };
 }
 

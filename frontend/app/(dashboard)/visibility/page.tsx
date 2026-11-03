@@ -348,14 +348,14 @@ function clampPercent(value: number) {
 
 function formatEngineName(engineName: string) {
   const normalized = engineName.toLowerCase();
-  if (normalized.includes("simulated") || normalized === "gpt-4o-mini-simulated") {
-    return "AI-Modeled (GPT-4o-mini)";
-  }
-  if (normalized.includes("gemini")) return "Google Gemini (Projected)";
-  if (normalized.includes("copilot") || normalized.includes("microsoft")) return "Microsoft Copilot (Projected)";
-  if (normalized.includes("perplexity")) return "Perplexity (Projected)";
-  if (normalized.includes("claude")) return "Claude (Projected)";
-  if (normalized.includes("gpt") || normalized.includes("openai") || normalized.includes("chatgpt")) return "OpenAI GPT-4o-mini (Modeled)";
+  // Runs from before direct testing were a GPT-4o-mini simulation; say so.
+  if (normalized.includes("simulated")) return pickL("ChatGPT (simulated)", "ChatGPT (simulasi)");
+  if (normalized.includes("gemini")) return "Gemini";
+  if (normalized.includes("copilot") || normalized.includes("microsoft")) return "Copilot";
+  if (normalized.includes("perplexity")) return "Perplexity";
+  if (normalized.includes("claude")) return "Claude";
+  if (normalized.includes("deepseek")) return "DeepSeek";
+  if (normalized.includes("gpt") || normalized.includes("openai") || normalized.includes("chatgpt")) return "ChatGPT";
   return engineName;
 }
 
@@ -574,11 +574,11 @@ export default function VisibilityPage() {
         const analysis = raw.analysis || {};
         setSandboxMeta([
           { label: t("sandbox.analyzedBrand"), value: sandboxBrandName },
-          { label: t("sandbox.engine"), value: "AI-Modeled (GPT-4o-mini)" },
+          { label: t("sandbox.engine"), value: pickL("ChatGPT (simulated)", "ChatGPT (simulasi)") },
           { label: t("sandbox.query"), value: raw.query || trimmedQuery },
-          { label: "Methodology", value: "Simulated via OpenAI GPT-4o-mini" },
-          { label: "Brand Mention", value: analysis.brandMentioned ? "Mentioned" : "Unmentioned" },
-          { label: "Detected Sentiment", value: (analysis.sentiment || "neutral").toUpperCase() },
+          { label: pickL("Method", "Metode"), value: pickL("Simulated answer from GPT-4o-mini", "Jawaban simulasi dari GPT-4o-mini") },
+          { label: pickL("Brand mentioned", "Brand disebut"), value: analysis.brandMentioned ? pickL("Yes", "Ya") : pickL("No", "Tidak") },
+          { label: pickL("Sentiment", "Sentimen"), value: mentionLabel(analysis.sentiment || "neutral") },
         ]);
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ["visibility"] }),
@@ -817,7 +817,7 @@ export default function VisibilityPage() {
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1>
               <Badge variant="default" className="px-2 py-0.5 text-[9px] font-bold normal-case tracking-normal">
-                AI-Modeled Projection (Simulated via GPT-4o-mini)
+                {pickL("ChatGPT · Gemini · Claude · Perplexity · DeepSeek", "ChatGPT · Gemini · Claude · Perplexity · DeepSeek")}
               </Badge>
               {isDemoSession && (
                 <Badge variant="purple" className="px-2 py-0.5 text-[9px] font-bold normal-case tracking-normal">DEMO</Badge>
@@ -825,8 +825,8 @@ export default function VisibilityPage() {
             </div>
             <p className="mt-2 text-[13px] font-bold text-[#53608C]">
               {language === "id"
-                ? "Pantau proyeksi visibilitas brand, topik, dan kompetitor berbasis pemodelan AI (Simulasi OpenAI GPT-4o-mini)."
-                : "Monitor AI-modeled projections of brand, topics, and competitor visibility (Simulated via OpenAI GPT-4o-mini)."}
+                ? "Seberapa sering asisten AI menyebut brand Anda dan kompetitor saat ditanya soal industri Anda."
+                : "How often AI assistants mention your brand and competitors when asked about your industry."}
             </p>
             {/* What is and is not measured, so a simulation is never read as live AI-platform monitoring. */}
             <details className="mt-2 max-w-3xl text-[12px] text-[#5A6478]">

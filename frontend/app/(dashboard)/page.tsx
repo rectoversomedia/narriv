@@ -152,7 +152,8 @@ export default function DashboardPage() {
   const hours = PERIOD_HOURS[period] as MonitoringPeriod;
   const summary = summaryQuery.data;
   const pipeline = pipelineQuery.data;
-  const lastDataAt = pipeline?.scheduler?.lastSuccessfulIngestionForWorkspace ?? pipeline?.ingestion?.lastRawDocumentAt ?? null;
+  // The later of the last scheduled run and the newest stored record (manual collection counts too).
+  const lastDataAt = [pipeline?.scheduler?.lastSuccessfulIngestionForWorkspace, pipeline?.ingestion?.lastRawDocumentAt].filter(Boolean).sort().at(-1) ?? null;
 
   // Sentiment
   const dist = summary?.sentiment_distribution ?? { positive: 0, neutral: 0, mixed: 0, negative: 0 };
