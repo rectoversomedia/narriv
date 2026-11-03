@@ -5,31 +5,7 @@ import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 
 import Image from "next/image";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import {
-  ArrowRight,
-  BarChart3,
-  Bell,
-  ChevronDown,
-  CirclePlus,
-  Clock3,
-  Database,
-  Grid3X3,
-  Heart,
-  KeyRound,
-  List,
-  Newspaper,
-  PieChart,
-  Play,
-  Plus,
-  RefreshCw,
-  RotateCw,
-  ShieldCheck,
-  Trash2,
-  Webhook,
-  Zap,
-  Check,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowRight, Bell, ChevronDown, CirclePlus, Clock3, Database, Grid3X3, Heart, KeyRound, List, Newspaper, PieChart, Play, RefreshCw, RotateCw, ShieldCheck, Trash2, Webhook, Zap, Check, type LucideIcon } from "lucide-react";
 import { SiDiscourse, SiShopee } from "react-icons/si";
 import { Facebook, Google, Instagram, Spotify, ThreadsDark, TikTokDark, XDark, YouTube } from "@ridemountainpig/svgl-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -228,7 +204,6 @@ function MetricCard({ label, value, helper, icon: Icon, tone }: { label: string;
   return (
     <Panel>
       <CardContent className="flex min-h-[98px] items-center gap-4 p-4">
-        <span className="flex size-13 shrink-0 items-center justify-center rounded-full border" style={{ color: style.color, backgroundColor: `rgba(${style.rgb}, .10)`, borderColor: `rgba(${style.rgb}, .12)` }}><Icon size={23} strokeWidth={2.2} /></span>
         <span className="min-w-0">
           <span className="block text-[12px] font-extrabold text-[#5F6B94]">{label}</span>
           <span className="mt-1 block text-[26px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</span>
@@ -252,7 +227,6 @@ function ConnectorCard({ source, selected, onSelect, onToggle, onDelete, onSync 
   return (
     <div onClick={() => onSelect(source)} className={cn("group cursor-pointer rounded-[13px] border bg-white p-4 text-left transition hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(16,24,40,0.08)] focus-within:ring-2 focus-within:ring-[#465FFF]/30", selected ? "border-[#465FFF] shadow-sm" : "border-[#E8ECF5]")}> 
       <div className="flex items-start justify-between gap-3">
-        <span className={cn("flex size-10 items-center justify-center rounded-[10px]", style.bg)} style={source.tone === "black" ? undefined : { backgroundColor: `rgba(${style.rgb}, .10)`, color: style.color }}><Icon className="size-[21px]" /></span>
         <div className="flex items-center gap-2">
           {onSync && (
             <button
@@ -309,12 +283,6 @@ function ConnectorListRow({ source, selected, onSelect, onToggle, onDelete, onSy
       )}
     >
       <div className="flex min-w-0 items-center gap-3">
-        <span
-          className={cn("flex size-9 shrink-0 items-center justify-center rounded-[9px]", style.bg)}
-          style={source.tone === "black" ? undefined : { backgroundColor: `rgba(${style.rgb}, .10)`, color: style.color }}
-        >
-          <Icon className="size-[18px]" />
-        </span>
         <div className="min-w-0">
           <button type="button" aria-pressed={selected} onClick={(e) => { e.stopPropagation(); onSelect(source); }} className="block max-w-full truncate text-left text-[13px] font-black text-[#101334] focus:outline-none">{source.name}</button>
           <p className="mt-0.5 flex items-center gap-1.5 truncate text-[10px] font-bold text-[#5F6B94]">
@@ -491,9 +459,6 @@ function VolumeBars({ bars, isEmpty }: { bars: Array<{ label: string; value: str
   if (isEmpty || bars.length === 0 || (bars.length === 1 && bars[0].value === "0")) {
     return (
       <div className="flex h-[220px] flex-col items-center justify-center gap-3 px-4 pt-4">
-        <div className="flex size-14 items-center justify-center rounded-full bg-[#F4F6FF]">
-          <BarChart3 size={24} className="text-[#647099]" />
-        </div>
         <div className="text-center">
           <p className="text-[13px] font-bold text-[#53608C]">{pickL("No volume data yet", "Belum ada data volume")}</p>
           <p className="mt-1 text-[11px] font-semibold text-[#647099]">{pickL("No signals stored in the last 7 days.", "Belum ada sinyal tersimpan dalam 7 hari terakhir.")}</p>
@@ -524,9 +489,6 @@ function DistributionPanel({ total, legend }: { total: number; legend: Array<{ l
           <h2 className="text-[16px] font-black text-[#101334]">{t("distribution")}</h2>
           <p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("distributionDesc")}</p>
           <div className="mt-6 flex flex-col items-center gap-3 py-6">
-            <div className="flex size-14 items-center justify-center rounded-full bg-[#F4F6FF]">
-              <PieChart size={24} className="text-[#647099]" />
-            </div>
             <div className="text-center">
               <p className="text-[13px] font-bold text-[#53608C]">{t("emptyDistribution")}</p>
               <p className="mt-1 text-[11px] font-semibold text-[#647099]">{t("emptyDistributionDesc")}</p>
@@ -812,10 +774,9 @@ export default function SourcesPage() {
             title={pickL("Fetch the latest news signals from RSS & Google News", "Ambil sinyal berita terbaru dari RSS & Google News")}
             className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[13px] font-black text-[#31406B] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-70 sm:w-fit"
           >
-            <RotateCw size={15} className={cn("text-[#3B52F5]", isFetchingSignals && "animate-spin")} />
             {isFetchingSignals ? pickL("Fetching signals…", "Mengambil sinyal…") : pickL("Fetch latest signals", "Ambil sinyal terbaru")}
           </button>
-          <button type="button" onClick={() => setIsModalOpen(true)} disabled={bootstrapMutation.isPending} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B51E0] px-4 text-[13px] font-black text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-70 sm:w-fit"><Plus size={15} />{bootstrapMutation.isPending ? toast("bootstrapInProgress") : t("add")}</button>
+          <button type="button" onClick={() => setIsModalOpen(true)} disabled={bootstrapMutation.isPending} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B51E0] px-4 text-[13px] font-black text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-70 sm:w-fit">{bootstrapMutation.isPending ? toast("bootstrapInProgress") : t("add")}</button>
         </div>
       </header>
 
@@ -858,7 +819,6 @@ export default function SourcesPage() {
                     disabled={syncAllMutation.isPending || sourcesQuery.isPending}
                     className="flex h-9 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] px-4 text-[12px] font-black text-[#53608C] transition disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
                   >
-                    <RotateCw size={14} className={syncAllMutation.isPending ? "animate-spin" : ""} />
                     {syncAllMutation.isPending ? toast("syncAllInProgress") : t("syncAll")}
                   </button>
                   <button
@@ -985,7 +945,7 @@ export default function SourcesPage() {
           </Panel>
 
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
-            <Panel><CardContent className="p-5"><div className="mb-4 flex items-start justify-between"><div><h2 className="text-[16px] font-black text-[#101334]">{t("volume")}</h2><p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("volumeDesc")}</p></div><button type="button" onClick={() => void sourceCoverageQuery.refetch()} disabled={sourceCoverageQuery.isFetching} className="flex h-9 items-center gap-2 rounded-[8px] border border-[#DDE3EF] px-3 text-[11px] font-black text-[#53608C] transition hover:border-[#CBD5E1] disabled:opacity-60"><RotateCw size={12} className={sourceCoverageQuery.isFetching ? "animate-spin" : undefined} />Refresh</button></div><VolumeBars bars={coverageBars} /></CardContent></Panel>
+            <Panel><CardContent className="p-5"><div className="mb-4 flex items-start justify-between"><div><h2 className="text-[16px] font-black text-[#101334]">{t("volume")}</h2><p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("volumeDesc")}</p></div><button type="button" onClick={() => void sourceCoverageQuery.refetch()} disabled={sourceCoverageQuery.isFetching} className="flex h-9 items-center gap-2 rounded-[8px] border border-[#DDE3EF] px-3 text-[11px] font-black text-[#53608C] transition hover:border-[#CBD5E1] disabled:opacity-60">Refresh</button></div><VolumeBars bars={coverageBars} /></CardContent></Panel>
             <DistributionPanel
               total={totalSources}
               legend={coverageLegend.length > 0 ? coverageLegend : [{ label: t("noSourcesLegend"), value: "0 (0%)", tone: "slate" as Tone }]}
@@ -996,13 +956,13 @@ export default function SourcesPage() {
         <aside className="flex flex-col gap-4">
           <Panel><CardContent className="p-5"><h2 className="text-[16px] font-black text-[#101334]">{t("healthTitle")}</h2><p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("healthDesc")}</p><div className="mt-5 grid items-center gap-5 sm:grid-cols-[128px_minmax(0,1fr)] xl:grid-cols-1 2xl:grid-cols-[128px_minmax(0,1fr)]"><HealthDonut total={healthSummary?.total ?? totalSources} /><div className="grid gap-3 text-[12px] font-bold text-[#53608C]"><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#10B981]" />{t("healthHealthy")}</span><b className="text-[#101334]">{healthSummary?.healthy ?? 0}</b></div><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#F59E0B]" />{t("healthWarning")}</span><b className="text-[#101334]">{healthSummary?.warning ?? 0}</b></div><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#EF4444]" />{t("healthCritical")}</span><b className="text-[#101334]">{healthSummary?.critical ?? 0}</b></div></div></div><div className="mt-5 rounded-[12px] border border-[#BFEBD9] bg-[#ECFDF6] p-4"><div className="flex items-start gap-3"><ShieldCheck size={20} className="text-[#047857]" /><span><b className="block text-[13px] font-black text-[#047857]">{healthSummary && healthSummary.total > 0 && healthSummary.healthy === healthSummary.total ? t("optimal") : t("healthNeedsAttention")}</b><span className="text-[12px] font-semibold text-[#53608C]">{healthText(healthSummary, t)}</span></span></div></div></CardContent></Panel>
 
-          <Panel><CardContent className="p-5"><div className="mb-4 flex items-start justify-between"><div><h2 className="text-[16px] font-black text-[#101334]">{t("activity")}</h2><p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("activityDesc")}</p></div></div>{recentHealthEntries.length > 0 ? <div className="grid gap-3">{recentHealthEntries.map(([id, name, status, time, tone, Icon]) => { const TypedIcon = Icon as SourceIcon; const style = toneStyles[tone as Tone]; return <div key={id} className="flex items-center justify-between gap-3"><span className="flex min-w-0 items-center gap-3"><span className="flex size-7 items-center justify-center rounded-[7px]" style={{ color: style.color, backgroundColor: `rgba(${style.rgb}, .10)` }}><TypedIcon className="size-[15px]" /></span><span className="min-w-0"><b className="block truncate text-[12px] text-[#101334]">{name}</b><span className="text-[11px] font-semibold capitalize" style={{ color: readableTone(style.color) }}>{status}</span></span></span><span className="shrink-0 text-[10px] font-bold text-[#5F6B94]">{time}</span><Check size={13} style={{ color: style.color }} /></div>; })}</div> : <DashboardEmptyState title={toast("activity.emptyTitle")} description={toast("activity.emptyDesc")} icon="search" minHeight="min-h-[120px]" />}</CardContent></Panel>
+          <Panel><CardContent className="p-5"><div className="mb-4 flex items-start justify-between"><div><h2 className="text-[16px] font-black text-[#101334]">{t("activity")}</h2><p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("activityDesc")}</p></div></div>{recentHealthEntries.length > 0 ? <div className="grid gap-3">{recentHealthEntries.map(([id, name, status, time, tone, Icon]) => { const TypedIcon = Icon as SourceIcon; const style = toneStyles[tone as Tone]; return <div key={id} className="flex items-center justify-between gap-3"><span className="flex min-w-0 items-center gap-3"><span className="min-w-0"><b className="block truncate text-[12px] text-[#101334]">{name}</b><span className="text-[11px] font-semibold capitalize" style={{ color: readableTone(style.color) }}>{status}</span></span></span><span className="shrink-0 text-[10px] font-bold text-[#5F6B94]">{time}</span><Check size={13} style={{ color: style.color }} /></div>; })}</div> : <DashboardEmptyState title={toast("activity.emptyTitle")} description={toast("activity.emptyDesc")} icon="search" minHeight="min-h-[120px]" />}</CardContent></Panel>
 
           <Panel><CardContent className="p-5"><h2 className="text-[16px] font-black text-[#101334]">{t("settings")}</h2><p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("settingsDesc")}</p><div className="mt-4 grid gap-2.5">{settings.map(({ title, desc, Icon, tone, href, status }) => {
             const style = toneStyles[tone];
             const body = (
               <>
-                <span className="flex min-w-0 items-center gap-3"><span className="flex size-8 shrink-0 items-center justify-center rounded-[8px]" style={{ color: style.color, backgroundColor: `rgba(${style.rgb}, .10)` }}><Icon size={16} /></span><span><b className="block text-[12px] text-[#101334]">{title}</b><span className="text-[10px] font-semibold text-[#5F6B94]">{desc}</span></span></span>
+                <span className="flex min-w-0 items-center gap-3"><span><b className="block text-[12px] text-[#101334]">{title}</b><span className="text-[10px] font-semibold text-[#5F6B94]">{desc}</span></span></span>
                 <span className={cn("shrink-0 text-[10px] font-black", href ? "text-[#3B52F5]" : "text-[#5A6478]")}>{status}{href ? " →" : ""}</span>
               </>
             );

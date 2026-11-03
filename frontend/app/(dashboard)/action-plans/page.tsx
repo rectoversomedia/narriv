@@ -4,27 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import {
-  BarChart3,
-  Check,
-  ChevronRight,
-  CircleCheck,
-  Clock3,
-  Flag,
-  Funnel,
-  Lightbulb,
-  ListChecks,
-  MoreVertical,
-  Plus,
-  Search,
-  Sparkles,
-  Target,
-  Timer,
-  TrendingDown,
-  TrendingUp,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+import { BarChart3, Check, ChevronRight, Clock3, Flag, Lightbulb, MoreVertical, Search, Sparkles, Target, Timer, TrendingDown, TrendingUp, type LucideIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
@@ -143,9 +123,6 @@ function MetricCard({ label, value, helper, trend, icon: Icon, tone, negative = 
   return (
     <Panel>
       <CardContent className="flex min-h-[94px] items-center gap-4 p-4">
-        <span className="flex size-13 shrink-0 items-center justify-center rounded-full border" style={{ color: style.color, backgroundColor: `rgba(${style.rgb}, .10)`, borderColor: `rgba(${style.rgb}, .12)` }}>
-          <Icon size={22} strokeWidth={2.2} />
-        </span>
         <span className="min-w-0">
           <span className="block text-[12px] font-extrabold text-[#5F6B94]">{label}</span>
           <span className="mt-1 block text-[27px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</span>
@@ -435,7 +412,6 @@ export default function ActionPlansPage() {
           <p className="mt-2 max-w-2xl text-[14px] font-medium leading-6 text-body">{t("desc")}</p>
         </div>
         <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[8px] bg-[#465FFF] px-4 text-[13px] font-black text-white shadow-sm transition hover:brightness-105 sm:w-fit">
-          <Plus size={15} />
           {t("newAction")}
         </button>
       </header>
@@ -481,7 +457,7 @@ export default function ActionPlansPage() {
                 <input aria-label={t("search")} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="min-w-0 flex-1 bg-transparent text-[12px] font-semibold outline-none placeholder:text-[#647099]" placeholder={t("search")} />
               </label>
               <div className="relative">
-                <button type="button" aria-expanded={isFilterOpen} aria-controls="action-filter-menu" onClick={() => setIsFilterOpen(!isFilterOpen)} className={cn("flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border px-4 text-[12px] font-black sm:flex-none", isFilterOpen || filterPriority !== "all" || filterStatus !== "all" ? "border-[#465FFF] bg-[#465FFF]/5 text-[#3B52F5]" : "border-[#DDE3EF] bg-white text-[#101334]")}><Funnel size={14} />{t("filter")}{(filterPriority !== "all" || filterStatus !== "all") ? <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#465FFF] text-[8px] text-white">{(filterPriority !== "all" ? 1 : 0) + (filterStatus !== "all" ? 1 : 0)}</span> : null}</button>
+                <button type="button" aria-expanded={isFilterOpen} aria-controls="action-filter-menu" onClick={() => setIsFilterOpen(!isFilterOpen)} className={cn("flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border px-4 text-[12px] font-black sm:flex-none", isFilterOpen || filterPriority !== "all" || filterStatus !== "all" ? "border-[#465FFF] bg-[#465FFF]/5 text-[#3B52F5]" : "border-[#DDE3EF] bg-white text-[#101334]")}>{t("filter")}{(filterPriority !== "all" || filterStatus !== "all") ? <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#465FFF] text-[8px] text-white">{(filterPriority !== "all" ? 1 : 0) + (filterStatus !== "all" ? 1 : 0)}</span> : null}</button>
                 <FilterDropdown isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} filterPriority={filterPriority} setFilterPriority={setFilterPriority} filterStatus={filterStatus} setFilterStatus={setFilterStatus} t={t} />
               </div>
             </div>
@@ -548,9 +524,6 @@ export default function ActionPlansPage() {
             </div>
             {!selectedActionId ? (
               <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDF1F7]">
-                  <Sparkles size={18} className="text-[#647099]" />
-                </div>
                 <div>
                   <p className="text-[12px] font-bold text-[#58648C]">{t("detailEmptyTitle")}</p>
                   <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("detailEmptyDesc")}</p>
@@ -560,9 +533,6 @@ export default function ActionPlansPage() {
               <PanelSkeleton className="mt-6" />
             ) : !hasActionPlanData(latestPlan) ? (
               <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDF1F7]">
-                  <Sparkles size={18} className="text-[#647099]" />
-                </div>
                 <div>
                   <p className="text-[12px] font-bold text-[#58648C]">{t("detailNoPlanTitle")}</p>
                   <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("detailNoPlanDesc")}</p>
@@ -589,7 +559,7 @@ export default function ActionPlansPage() {
               <div className="mt-2 grid gap-2">
                 {(detailSteps ?? []).slice(0, 3).map(([item, owner], stepIndex) => (
                   <div key={`${stepIndex}:${item}`} className="flex items-center justify-between rounded-[8px] border border-[#E8ECF5] px-3 py-2 text-[12px] font-semibold text-[#53608C]">
-                    <span className="flex items-center gap-2"><CircleCheck size={16} className="text-[#047857]" />{item}</span>
+                    <span className="flex items-center gap-2">{item}</span>
                     <span className="text-[10px] font-black text-[#5F6B94]">{owner}</span>
                   </div>
                 ))}
@@ -600,8 +570,8 @@ export default function ActionPlansPage() {
             ) : null}
             <button type="button" onClick={() => setSelectedActionId("")} className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#F8FAFF] text-[12px] font-black text-[#3B52F5] transition hover:bg-[#465FFF]/5">{t("backToQueue")} <ChevronRight size={14} /></button>
             <div className="mt-3 flex gap-2">
-              <button type="button" onClick={() => { if (latestPlan?.id) feedbackMutation.mutate({ actionPlanId: latestPlan.id, action: "accepted" }); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[#10B981]/10 text-[11px] font-black text-[#047857] transition hover:bg-[#10B981]/20 disabled:opacity-50"><Check size={14} /> {t("approve")}</button>
-              <button type="button" onClick={() => { if (latestPlan?.id) setIsRejectModalOpen(true); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[#EF4444]/10 text-[11px] font-black text-[#C81E1E] transition hover:bg-[#EF4444]/20 disabled:opacity-50"><X size={14} /> {t("reject")}</button>
+              <button type="button" onClick={() => { if (latestPlan?.id) feedbackMutation.mutate({ actionPlanId: latestPlan.id, action: "accepted" }); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[#10B981]/10 text-[11px] font-black text-[#047857] transition hover:bg-[#10B981]/20 disabled:opacity-50">{t("approve")}</button>
+              <button type="button" onClick={() => { if (latestPlan?.id) setIsRejectModalOpen(true); }} disabled={!latestPlan?.id || feedbackMutation.isPending} className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] bg-[#EF4444]/10 text-[11px] font-black text-[#C81E1E] transition hover:bg-[#EF4444]/20 disabled:opacity-50">{t("reject")}</button>
             </div>
             </>)}
           </CardContent>
@@ -618,9 +588,6 @@ export default function ActionPlansPage() {
               </div>
             {!selectedActionId ? (
               <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDF1F7]">
-                  <BarChart3 size={18} className="text-[#647099]" />
-                </div>
                 <div>
                   <p className="text-[12px] font-bold text-[#58648C]">{t("performanceEmptyTitle")}</p>
                   <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("performanceEmptyDesc")}</p>
@@ -630,9 +597,6 @@ export default function ActionPlansPage() {
               <PanelSkeleton className="mt-5" />
             ) : !hasLearningData ? (
               <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDF1F7]">
-                  <Lightbulb size={18} className="text-[#647099]" />
-                </div>
                 <div>
                   <p className="text-[12px] font-bold text-[#58648C]">{t("learningNoDataTitle")}</p>
                   <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("learningNoDataDesc")}</p>
@@ -681,9 +645,6 @@ export default function ActionPlansPage() {
             </div>
             {!selectedActionId ? (
               <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDF1F7]">
-                  <Lightbulb size={18} className="text-[#647099]" />
-                </div>
                 <div>
                   <p className="text-[12px] font-bold text-[#58648C]">{t("learningEmptyTitle")}</p>
                   <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("learningEmptyDesc")}</p>
@@ -721,7 +682,7 @@ export default function ActionPlansPage() {
                     <div className="mt-3 grid gap-2.5">
                       {actionPlanLearningQuery.data.templates.map((template) => (
                         <div key={template.id} className="rounded-[9px] border border-[#EEF1F7] px-3 py-2.5 text-[12px] font-semibold text-[#53608C]">
-                          <span className="flex items-center gap-2 font-black text-[#101334]"><ListChecks size={15} className="text-[#C81E1E]" />{template.type}</span>
+                          <span className="flex items-center gap-2 font-black text-[#101334]">{template.type}</span>
                           <span className="mt-1 block line-clamp-2 text-[11px]">{template.content}</span>
                         </div>
                       ))}

@@ -2,7 +2,7 @@
 
 import { useId, useRef, useEffect, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
-import { X, Database, Check } from "lucide-react";
+import { X, Check } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
@@ -89,9 +89,6 @@ export function AddSourceModal({ open, onOpenChange, onSubmit, isPending }: AddS
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[#465FFF]/10 text-[#3B52F5]">
-              <Database size={20} strokeWidth={2.5} />
-            </span>
             <div>
               <h3 id={titleId} className="text-[16px] font-black text-[#101334]">
                 {t("title")}

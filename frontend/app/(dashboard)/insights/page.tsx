@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BarChart3, Globe2, AlertCircle, Activity, Database, Building2, Filter, RefreshCcw, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { DashboardEmptyState, DashboardErrorState } from "@/components/dashboard/dashboard-states";
 import { Skeleton } from "@/components/ui/Skeleton";
 import {
@@ -40,7 +40,7 @@ function TrendMini({ windowHours }: { windowHours: number }) {
     return (
       <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-5 text-sm text-slate-600">
         <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">
-          <Activity size={14} /> Trend
+          Trend
         </div>
         <p className="mt-2 text-[15px] font-medium text-slate-700">Insufficient data</p>
         <p className="mt-1 text-[13px] text-[#5A6478]">Need at least two consecutive time windows to compute a trend.</p>
@@ -50,7 +50,7 @@ function TrendMini({ windowHours }: { windowHours: number }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5">
       <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">
-        <Activity size={14} /> Trend
+        Trend
       </div>
       <p className="mt-2 text-[15px] font-semibold text-slate-900 capitalize">{String(t.status || "—").toLowerCase()}</p>
       <div className="mt-2 text-[12px] text-[#5A6478]">
@@ -74,7 +74,7 @@ function GeoPanel({ windowHours }: { windowHours: number }) {
     return (
       <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-5 text-sm text-slate-600">
         <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">
-          <Globe2 size={14} /> GEO intelligence
+          GEO intelligence
         </div>
         <p className="mt-2 text-[15px] font-medium text-slate-700">No GEO data yet</p>
         <p className="mt-1 text-[13px] text-[#5A6478]">Run a GEO check or ingest AI search results to enable this panel.</p>
@@ -84,7 +84,7 @@ function GeoPanel({ windowHours }: { windowHours: number }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5">
       <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">
-        <Globe2 size={14} /> GEO intelligence
+        GEO intelligence
       </div>
       <p className="mt-2 text-[15px] font-semibold text-slate-900">Live data</p>
       <ul className="mt-3 space-y-1 text-[12px] text-slate-600">
@@ -134,7 +134,7 @@ export default function InsightsPage() {
                 onClick={refreshAll}
                 className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-slate-600 hover:bg-slate-50"
               >
-                <RefreshCcw size={12} /> Refresh
+                Refresh
               </button>
             </div>
           </div>

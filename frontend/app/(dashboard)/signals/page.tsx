@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import { intlLocale, useUiStore } from "@/store/useUiStore";
 import { MONITORING_PERIODS, monitoringHref, parseMonitoringFilters, periodStart, type MonitoringFilters } from "@/lib/evidence-links";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ArrowRight, Briefcase, Check, FileText, Flag, Filter, Info, Loader2, RotateCw, Search, ShieldCheck, Sparkles, Star, Trash2, Zap, CheckCircle2, Download, X, Globe, ExternalLink } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, FileText, Info, Loader2, Search, ShieldCheck, Sparkles, Star, Trash2, Zap, X, Globe, ExternalLink } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import {
   AppStore,
@@ -266,7 +266,7 @@ function SummaryPanel({ meta }: { meta?: SignalsMeta }) {
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{t("title")}</h2>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black text-[#6E44E8]"><Sparkles size={12} /> {t("aiGenerated")}</span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black text-[#6E44E8]">{t("aiGenerated")}</span>
           </div>
           {hasData && aiSummary ? (
             <>
@@ -302,7 +302,7 @@ function MetricBlock({ label, value, helper, tone }: { label: string; value: str
 function SentimentIcon({ sentiment, tone }: { sentiment: Sentiment; tone: SignalRow["sentimentTone"] }) {
   const style = toneStyles[tone];
   const Icon = sentiment === "NEGATIVE" ? AlertTriangle : sentiment === "POSITIVE" ? ShieldCheck : Sparkles;
-  return <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full border", style.soft, style.text, style.border)}><Icon size={17} /></span>;
+  return null;
 }
 
 function SentimentBadge({ sentiment }: { sentiment: Sentiment }) {
@@ -419,7 +419,6 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
             onClick={() => onSelectionChange(new Set())}
             className="ml-auto flex items-center gap-1 rounded-[6px] px-2 py-1.5 text-[11px] font-bold text-[#5F6B94] transition hover:bg-[#465FFF]/10 hover:text-[#3B52F5]"
           >
-            <X size={12} />
             {t("bulk.clear")}
           </button>
         </div>
@@ -555,7 +554,6 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                         title={t("planTitle")}
                         className="inline-flex h-8 items-center justify-center gap-1 rounded-[8px] border border-[#DDE3EF] bg-white px-2.5 text-[10.5px] font-black text-[#3B52F5] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]"
                       >
-                        <Sparkles size={11} />
                         {t("plan")}
                       </button>
                       <button
@@ -563,7 +561,6 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                         onClick={() => onInvestigate(row)}
                         className="inline-flex h-8 items-center justify-center gap-1.5 rounded-[8px] bg-[#465FFF] px-2.5 text-[10.5px] font-black text-white shadow-sm transition hover:bg-[#3147E8]"
                       >
-                        <Flag size={11} />
                         {tSignals("investigate")}
                       </button>
                     </div>
@@ -604,7 +601,6 @@ function FollowUpPanel({ data }: { data?: SignalsMeta["followUps"] }) {
             const Icon = item.tone === "green" ? Star : Zap;
             return (
               <div key={`${item.title}:${keyIdx}`} className={cn("grid grid-cols-[36px_minmax(0,1fr)] gap-3 rounded-[12px] border p-3 sm:grid-cols-[36px_minmax(0,1fr)_auto]", item.tone === "red" ? "border-[#F8CACA] bg-[#FFF5F5]" : item.tone === "amber" ? "border-[#FFE8C2] bg-[#FFF9F0]" : "border-[#CDEEDD] bg-[#F1FCF6]")}>
-                <span className={cn("flex h-8 w-8 items-center justify-center rounded-full", style.soft, style.text)}><Icon size={15} fill={item.tone === "green" ? style.color : "none"} /></span>
                 <span className="min-w-0"><span className="block truncate text-[12px] font-black text-[#101334]">{item.title}</span><span className="mt-1 block text-[10px] font-bold text-[#58648C]">{item.meta}</span></span>
                 <span className="col-start-2 text-left sm:col-start-auto sm:text-right"><span className={cn("rounded-full px-2 py-0.5 text-[9px] font-black", style.soft, style.text)}>{item.badge}</span><span className="mt-2 block text-[10px] font-bold text-[#31406B]">{item.time}</span></span>
               </div>
@@ -642,7 +638,6 @@ function RecommendationPanel({ data }: { data?: SignalsMeta["recommendations"] }
             const Icon = item.icon || (item.tone === "purple" ? AlertTriangle : item.tone === "blue" ? ShieldCheck : Zap);
             return (
               <div key={`${item.title}:${keyIdx}`} className="grid grid-cols-[32px_minmax(0,1fr)] gap-3 rounded-[11px] border border-[#EDF1F7] bg-[#FBFCFF] p-3 sm:grid-cols-[32px_minmax(0,1fr)_auto]">
-                <span className={cn("flex h-8 w-8 items-center justify-center rounded-[9px]", style.soft, style.text)}><Icon size={15} /></span>
                 <span className="min-w-0"><span className="block truncate text-[11.5px] font-black text-[#101334]">{item.title}</span><span className="mt-1 block text-[10px] font-bold text-[#5F6B94]">{item.desc}</span></span>
                 <span className={cn("col-start-2 h-fit w-fit rounded-full px-2 py-1 text-[8.5px] font-black sm:col-start-auto", item.tone === "red" || item.tone === "purple" ? "bg-[#EF4444]/10 text-[#C81E1E]" : item.tone === "blue" ? "bg-[#F59E0B]/12 text-[#A04606]" : "bg-[#10B981]/10 text-[#047857]")}>{item.badge}</span>
               </div>
@@ -652,7 +647,7 @@ function RecommendationPanel({ data }: { data?: SignalsMeta["recommendations"] }
       )}
       
       {hasData && (
-        <Link href="/action-plans" className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] text-[12px] font-black text-white shadow-sm"><Briefcase size={14} />{t("action")}</Link>
+        <Link href="/action-plans" className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] text-[12px] font-black text-white shadow-sm">{t("action")}</Link>
       )}
     </Panel>
   );
@@ -774,9 +769,6 @@ function TimelineChart({ data, labels }: { data?: SignalsMeta["timeline"]; label
         </div>
       ) : !hasData || !hasNonZero ? (
         <div className="mt-5 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EDF1F7]">
-            <AlertTriangle size={18} className="text-[#647099]" />
-          </div>
           <div>
             <p className="text-[12px] font-bold text-[#58648C]">{t("emptyTitle")}</p>
             <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
@@ -876,7 +868,6 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
             const style = toneStyles[item.tone as Tone];
             return (
               <div key={`${item.title}:${keyIdx}`} className="grid grid-cols-[34px_minmax(0,1fr)] gap-3 rounded-[11px] border border-[#EDF1F7] bg-[#FBFCFF] p-3 sm:grid-cols-[34px_minmax(0,1fr)_auto]">
-                <span className={cn("flex h-8 w-8 items-center justify-center rounded-[9px]", style.soft, style.text)}><Zap size={15} /></span>
                 <span className="min-w-0">
                   <span className="block truncate text-[12px] font-black text-[#101334]">{item.title}</span>
                   <span className="mt-1 block text-[10px] font-bold text-[#5F6B94]">{item.meta}</span>
@@ -1229,11 +1220,9 @@ export default function SignalsPage() {
             title={t("fetchTitle")}
             className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#31406B] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <RotateCw size={14} className={cn("text-[#3B52F5]", isFetchingSignals && "animate-spin")} />
             {isFetchingSignals ? t("fetching") : t("fetchLatest")}
           </button>
           <button onClick={() => setIsAdvancedSearchOpen(true)} className={cn("flex h-10 items-center justify-center gap-2 rounded-[8px] border px-4 text-[12px] font-black transition", isAdvancedSearchActive ? "border-[#465FFF] bg-[#465FFF]/10 text-[#3B52F5]" : "border-[#DDE3EF] bg-white text-[#31406B] hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]")}>
-            <Filter size={15} />
             {t("advancedSearch") || "Filters"}
           </button>
           <button
@@ -1243,7 +1232,6 @@ export default function SignalsPage() {
             title={t("exportCsv")}
             className="flex h-10 items-center justify-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-black text-[#31406B] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:opacity-50"
           >
-            <Download size={14} className={isExporting === "csv" ? "animate-pulse text-[#3B52F5]" : ""} />
             CSV
           </button>
           <button
@@ -1253,10 +1241,9 @@ export default function SignalsPage() {
             title={t("exportXlsx")}
             className="flex h-10 items-center justify-center gap-1.5 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-black text-[#31406B] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:opacity-50"
           >
-            <Download size={14} className={isExporting === "xlsx" ? "animate-pulse text-[#3B52F5]" : ""} />
             Excel
           </button>
-          <button onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 text-[12px] font-black text-white shadow-sm sm:w-fit"><Flag size={15} />{t("createInvestigation")}</button>
+          <button onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 text-[12px] font-black text-white shadow-sm sm:w-fit">{t("createInvestigation")}</button>
         </div>
       </header>
 

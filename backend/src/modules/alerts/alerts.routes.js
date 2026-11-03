@@ -149,7 +149,10 @@ router.get("/", async (req, res) => {
             query = query.eq('severity', severity);
         }
 
-        if (status) {
+        // "unresolved" = everything still needing work (open or acknowledged).
+        if (status === 'unresolved') {
+            query = query.neq('status', 'resolved');
+        } else if (status) {
             query = query.eq('status', status);
         }
 

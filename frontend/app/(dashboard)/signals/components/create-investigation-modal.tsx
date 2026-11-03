@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, Flag, Loader2 } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { createCase } from "@/lib/api-service";
 import { useToast } from "@/components/ui/toast";
@@ -114,9 +114,6 @@ export function CreateInvestigationModal({
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-              <Flag size={20} />
-            </span>
             <div>
               <h3 id={titleId} className="text-lg font-black text-slate-900">{t("title")}</h3>
               <p id={descriptionId} className="text-xs font-semibold text-[#5A6478]">{t("desc")}</p>

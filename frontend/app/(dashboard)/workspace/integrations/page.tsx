@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Cable, CheckCircle2, Cloud, Filter, Link2, Plus, RefreshCcw, Send, Trash2, TriangleAlert, Zap } from "lucide-react";
+import { Cable, CheckCircle2, Cloud, Send, Trash2, TriangleAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { DashboardEmptyState, DashboardErrorState, TableSkeleton } from "@/components/dashboard/dashboard-states";
@@ -192,7 +192,6 @@ export default function IntegrationsPage() {
           disabled={integrationsQuery.isFetching}
           className="inline-flex items-center justify-center gap-2 rounded-[8px] border border-slate-200 bg-white px-4 py-2.5 text-sm font-black text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <RefreshCcw size={16} className={integrationsQuery.isFetching ? "animate-spin" : ""} />
           Refresh
         </button>
       </header>
@@ -203,15 +202,6 @@ export default function IntegrationsPage() {
           return (
             <div key={metric.label} className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
               <div className="flex items-center gap-3">
-                <span className={cn(
-                  "flex h-10 w-10 items-center justify-center rounded-xl",
-                  metric.tone === "blue" && "bg-[#465FFF]/10 text-[#3B52F5]",
-                  metric.tone === "green" && "bg-[#10B981]/10 text-[#047857]",
-                  metric.tone === "purple" && "bg-[#8B5CFF]/10 text-[#6E44E8]",
-                  metric.tone === "red" && "bg-[#EF4444]/10 text-[#C81E1E]"
-                )}>
-                  <Icon size={18} />
-                </span>
                 <div className="min-w-0">
                   <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">{metric.label}</p>
                   <p className="mt-1 text-2xl font-black tracking-[-0.04em] text-slate-950">{metric.value.toLocaleString(intlLocale())}</p>
@@ -226,9 +216,6 @@ export default function IntegrationsPage() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.4fr)]">
         <section className="rounded-[16px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="mb-5 flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#465FFF]/10 text-[#3B52F5]">
-              <Plus size={19} />
-            </span>
             <div>
               <h2 className="text-base font-black text-slate-950">{t("form.title")}</h2>
               <p className="mt-1 text-xs font-semibold leading-5 text-[#5A6478]">{t("form.desc")}</p>
@@ -282,7 +269,6 @@ export default function IntegrationsPage() {
               disabled={createMutation.isPending}
               className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] px-4 text-sm font-black text-white transition hover:bg-[#3b52d9] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <Link2 size={15} />
               {createMutation.isPending ? t("form.connecting") : t("form.connect")}
             </button>
           </form>
@@ -291,7 +277,6 @@ export default function IntegrationsPage() {
         <section className="space-y-4">
           <div className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-3 flex items-center gap-2 text-[12px] font-black uppercase tracking-[0.12em] text-[#5A6478]">
-              <Filter size={14} />
               {t("filter.filterTitle")}
             </div>
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
@@ -359,9 +344,6 @@ export default function IntegrationsPage() {
                       <tr key={item.id} className="transition hover:bg-slate-50/70">
                         <td className="px-6 py-4 align-top">
                           <div className="flex items-start gap-3">
-                            <span className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-950 text-white shadow-sm">
-                              <Zap size={16} />
-                            </span>
                             <div>
                               <p className="font-black text-slate-950">{item.name}</p>
                               <p className="mt-1 text-xs font-semibold text-[#5A6478]">{platformLabel(item.platform, platformOptions)} · {item.id.slice(0, 8)}</p>

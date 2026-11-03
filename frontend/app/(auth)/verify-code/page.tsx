@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { AuthShell, CenterIcon, HelpAction, InfoCallout, PrimaryButton, SecondaryLinkButton, VerificationCodeInput } from "@/components/auth/auth-shell";
 import { requestPasswordReset, verifyPasswordResetCode } from "@/lib/api-service";
-import { RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function VerifyCodePage() {
@@ -130,7 +129,6 @@ export default function VerifyCodePage() {
       <div className="mt-11 grid gap-9">
         <InfoCallout title={t("infoTitle")} text={t("infoText")} />
         <button type="button" onClick={handleResend} disabled={!isMounted || isResending || resendCooldown > 0 || !email} className="mx-auto flex items-center gap-3 text-[16px] font-medium text-[#3E4975] transition hover:text-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-60">
-          <RefreshCw key={isResending ? "spin" : "static"} size={16} className={cn("text-[#3E4975]", isResending && "animate-spin")} />
           {isResending ? t("resending") : t("resendCode")} 
           {isMounted && resendCooldown > 0 && !isResending && <span className="font-bold">({formatTime(resendCooldown)})</span>}
         </button>

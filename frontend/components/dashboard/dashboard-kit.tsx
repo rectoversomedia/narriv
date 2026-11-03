@@ -74,9 +74,6 @@ export function MetricTile({ label, value, helper, icon: Icon, tone }: { label: 
   return (
     <AppCard>
       <CardContent className="flex min-h-[96px] items-center gap-4 p-4">
-        <div className={cn("flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full border border-slate-100", styles.bg, styles.text)}>
-          <Icon size={20} strokeWidth={2.1} />
-        </div>
         <div className="min-w-0 flex-1 overflow-hidden">
           <p className="text-[13px] font-bold text-[#5A6478] truncate">{label}</p>
           <p className="mt-1.5 text-[28px] font-black leading-none tracking-[-0.03em] text-slate-900 drop- tabular-nums">{value}</p>
@@ -167,5 +164,5 @@ export function MiniSpark({ tone = "purple" }: { tone?: Tone }) {
 
 export function IconBubble({ icon: Icon, tone = "purple", className = "" }: { icon: LucideIcon; tone?: Tone; className?: string }) {
   const styles = toneMap[tone] ?? toneMap.purple;
-  return <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] border border-slate-100", styles.bg, styles.text, className)}><Icon size={22} /></div>;
+  return null;
 }

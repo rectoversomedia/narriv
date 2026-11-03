@@ -6,31 +6,7 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Building,
-  Users,
-  Bell,
-  Sparkles,
-  Webhook,
-  Shield,
-  Pause,
-  Play,
-  RefreshCw,
-  Trash2,
-  UserCheck,
-  Upload,
-  ChevronDown,
-  ArrowRight,
-  Lock,
-  Plus,
-  Check,
-  Trash,
-  PlusCircle,
-  X,
-  Layers,
-  Database,
-  Cloud,
-} from "lucide-react";
+import { Webhook, Pause, Play, RefreshCw, UserCheck, Upload, ChevronDown, ArrowRight, Lock, Trash, X, Database, Cloud } from "lucide-react";
 import { DashboardEmptyState, DashboardErrorState, TableSkeleton } from "@/components/dashboard/dashboard-states";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useToast } from "@/components/ui/toast";
@@ -508,9 +484,6 @@ export default function SettingsPage() {
       {workspaceSettingsQuery.data === null ? (
         <div className="rounded-[12px] border border-dashed border-[#8B5CFF]/30 bg-[#FBFAFF] px-5 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#8B5CFF]/10 text-[#6E44E8] shrink-0">
-              <Sparkles size={18} />
-            </div>
             <div>
               <p className="text-[13px] font-bold text-slate-900">{ts("loadFailedTitle")}</p>
               <p className="text-[11px] font-medium text-[#5A6478]">{ts("loadFailedDesc")}</p>
@@ -531,9 +504,6 @@ export default function SettingsPage() {
       {membersQuery.data === null ? (
         <div className="rounded-[12px] border border-dashed border-amber-300 bg-amber-50 px-5 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-amber-700 shrink-0">
-              <Users size={18} />
-            </div>
             <div>
               <p className="text-[13px] font-bold text-slate-900">{ts("membersLoadFailedTitle")}</p>
               <p className="text-[11px] font-medium text-[#5A6478]">{ts("membersLoadFailedDesc")}</p>
@@ -555,9 +525,6 @@ export default function SettingsPage() {
         {/* Card A: Informasi Workspace */}
         <Panel className="flex flex-col gap-5">
           <div className="flex items-start gap-4">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#3B52F5]">
-              <Building size={20} strokeWidth={2.3} />
-            </span>
             <div>
               <h2 className="text-base font-black text-[#101334]">{ts("workspaceInfo.title")}</h2>
               <p className="text-[11px] font-bold text-[#5F6B94]">{ts("workspaceInfo.description")}</p>
@@ -682,7 +649,6 @@ export default function SettingsPage() {
                 </>
               ) : saveSuccess ? (
                 <>
-                  <Check size={16} />
                   {ts("common.changesSaved")}
                 </>
               ) : (
@@ -696,9 +662,6 @@ export default function SettingsPage() {
         <Panel className="flex flex-col gap-4 h-full">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-start gap-4">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#3B52F5]">
-                <Users size={20} strokeWidth={2.3} />
-              </span>
               <div>
                 <h2 className="text-base font-black text-[#101334]">{ts("membersCard.title")}</h2>
                 <p className="text-[11px] font-bold text-[#5F6B94]">{ts("membersCard.desc")}</p>
@@ -722,7 +685,7 @@ export default function SettingsPage() {
                 onClick={() => setShowInviteModal(true)}
                 className="flex h-9 items-center gap-1.5 rounded-[8px] bg-[#465FFF] px-3.5 text-[11px] font-black text-white shadow-sm transition hover:bg-[#3B20EA]"
               >
-                <Plus size={14} /> {ts("common.inviteMember")}
+                {ts("common.inviteMember")}
               </button>
             </div>
           </div>
@@ -827,9 +790,6 @@ export default function SettingsPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Panel className="flex flex-col gap-4.5">
           <div className="flex items-start gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-[#6E44E8]">
-              <Bell size={18} strokeWidth={2.3} />
-            </span>
             <div>
               <h3 className="text-[13.5px] font-black text-[#101334]">{ts("notifications.title")}</h3>
               <p className="text-[10px] font-semibold text-[#5F6B94]">{ts("notifications.desc")}</p>
@@ -867,9 +827,6 @@ export default function SettingsPage() {
 
         <Panel className="flex flex-col gap-4.5">
           <div className="flex items-start gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#3B52F5]">
-              <Layers size={18} strokeWidth={2.3} />
-            </span>
             <div>
               <h3 className="text-[13.5px] font-black text-[#101334]">{ts("related.title")}</h3>
               <p className="text-[10px] font-semibold text-[#5F6B94]">{ts("related.desc")}</p>
@@ -921,9 +878,6 @@ export default function SettingsPage() {
 
         <Panel className="flex flex-col gap-4.5">
           <div className="flex items-start gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#3B52F5]">
-              <Shield size={18} strokeWidth={2.3} />
-            </span>
             <div>
               <h3 className="text-[13.5px] font-black text-[#101334]">{ts("accountCard.title")}</h3>
               <p className="text-[10px] font-semibold text-[#5F6B94]">{ts("accountCard.desc")}</p>
@@ -975,7 +929,6 @@ export default function SettingsPage() {
                   disabled={changePasswordMutation.isPending}
                   className="flex h-9 w-full items-center justify-center gap-2 rounded-md bg-[#465FFF] text-[11px] font-black text-white transition hover:bg-[#3B4FE0] disabled:opacity-50"
                 >
-                  <Lock size={13} />
                   {changePasswordMutation.isPending ? ts("common.saving") : ts("changePassword")}
                 </button>
               </div>
@@ -989,9 +942,6 @@ export default function SettingsPage() {
         {/* Card B: Danger Zone */}
         <Panel className="flex flex-col gap-6 border-rose-100 bg-rose-50/10">
           <div className="flex items-start gap-4">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
-              <Shield size={20} strokeWidth={2.3} />
-            </span>
             <div>
               <h2 className="text-base font-black text-rose-600">{ts("danger.title")}</h2>
               <p className="text-[11px] font-bold text-[#5A6478]">
@@ -1034,7 +984,7 @@ export default function SettingsPage() {
                 disabled={deleteWorkspaceMutation.isPending}
                 className="disabled:opacity-60 flex h-9 min-w-[140px] items-center justify-center gap-1.5 rounded-lg bg-rose-600 px-3.5 text-[11px] font-black text-white transition hover:bg-rose-700 shadow-sm"
               >
-                <Trash2 size={13} /> {ts("danger.deleteButton")}
+                {ts("danger.deleteButton")}
               </button>
             </div>
           </div>
@@ -1047,9 +997,6 @@ export default function SettingsPage() {
           <div className="w-full max-w-md rounded-2xl border border-slate-100 bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-[#3B52F5]">
-                  <PlusCircle size={18} />
-                </span>
                 <div>
                   <h3 className="text-base font-black text-[#101334]">{ts("invite.modalTitle")}</h3>
                   <p className="text-[10px] font-semibold text-[#5A6478]">{ts("invite.subtitle")}</p>

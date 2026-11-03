@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Clock, Users, BookOpen, ChevronDown, Play, Info } from "lucide-react";
+import { Clock, Users, ChevronDown, Play } from "lucide-react";
 import type { VideoWalkthrough } from "./video-walkthroughs";
 import { VideoPlayer } from "./VideoPlayer";
 
@@ -25,10 +25,6 @@ export function VideoCard({ video, variant = "compact", onSelect }: VideoCardPro
           <div className={`absolute inset-0 bg-gradient-to-br ${video.thumbnailGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
 
           {/* Play button */}
-          <div className="h-12 w-12 rounded-full bg-white shadow-lg flex items-center justify-center group-hover:scale-110 transition-transform relative z-10">
-            <Play className="w-5 h-5 text-slate-900 ml-0.5" />
-          </div>
-
           {/* Duration badge */}
           <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm px-2 py-0.5 rounded text-white text-xs font-medium">
             {video.duration}
@@ -74,7 +70,6 @@ export function VideoCard({ video, variant = "compact", onSelect }: VideoCardPro
             onClick={() => setIsExpanded(!isExpanded)}
             className="flex items-center gap-2 text-sm font-medium text-slate-900 hover:text-indigo-600 transition-colors"
           >
-            <BookOpen className="w-4 h-4" />
             Key Topics
             <ChevronDown
               className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
@@ -117,7 +112,6 @@ export function VideoScriptOutline({ video }: VideoScriptOutlineProps) {
   return (
     <div className="bg-slate-50 rounded-xl border border-slate-200 p-6">
       <h3 className="font-bold text-slate-900 flex items-center gap-2 mb-4">
-        <Info className="w-5 h-5 text-indigo-500" />
         Script Outline: {video.title}
       </h3>
 

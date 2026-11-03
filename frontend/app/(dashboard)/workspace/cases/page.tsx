@@ -11,20 +11,7 @@ import {
   getCaseById,
   getWorkspaceMembers,
 } from "@/lib/api-service";
-import {
-  Plus,
-  Trash2,
-  FileText,
-  Search,
-  RefreshCcw,
-  X,
-  Eye,
-  FolderOpen,
-  CheckCircle2,
-  Clock,
-  ArrowUpRight,
-  Calendar,
-} from "lucide-react";
+import { Trash2, FileText, Search, RefreshCcw, X, Eye, FolderOpen, CheckCircle2, Clock, Calendar } from "lucide-react";
 import {
   DashboardErrorState,
   DashboardEmptyState,
@@ -164,15 +151,6 @@ function MetricCard({
   return (
     <div className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
       <div className="flex items-center gap-3">
-        <span
-          className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-xl",
-            style.bg,
-            style.text,
-          )}
-        >
-          <Icon size={18} />
-        </span>
         <div className="min-w-0">
           <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">
             {label}
@@ -389,9 +367,6 @@ function CaseDetailSidebar({
                     {tDetail("source")}
                   </p>
                   <div className="mt-2 flex items-center gap-2">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#465FFF]/10 text-[#3B52F5]">
-                      <ArrowUpRight size={12} />
-                    </span>
                     <span className="text-[12px] font-black text-[#101334]">
                       {record.sourceType}
                       {record.sourceId && (
@@ -737,17 +712,12 @@ export default function CasesPage() {
             disabled={casesQuery.isFetching}
             className="inline-flex items-center justify-center gap-2 rounded-[8px] border border-slate-200 bg-white px-4 py-2.5 text-sm font-black text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <RefreshCcw
-              size={16}
-              className={casesQuery.isFetching ? "animate-spin" : ""}
-            />
             {t("header.refresh")}
           </button>
           <button
             onClick={() => setIsCreateModalOpen(true)}
             className="flex h-10 items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B51E0] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 sm:w-fit"
           >
-            <Plus size={15} />
             {t("header.newCase")}
           </button>
         </div>
@@ -833,7 +803,6 @@ export default function CasesPage() {
                 onClick={() => setIsCreateModalOpen(true)}
                 className="inline-flex items-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 py-2.5 text-[12px] font-black text-white shadow-sm transition hover:opacity-90"
               >
-                <Plus size={14} />
                 {t("header.newCase")}
               </button>
             }
@@ -878,9 +847,6 @@ export default function CasesPage() {
                       {/* Case */}
                       <td className="px-6 py-4 align-top">
                         <div className="flex items-center gap-3">
-                          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[#3B52F5]">
-                            <FileText size={15} />
-                          </span>
                           <div className="min-w-0">
                             <p className="text-[12px] font-black text-[#101334]">
                               {item.title}

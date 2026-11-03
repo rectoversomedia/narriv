@@ -134,9 +134,6 @@ export function CreateActionPlanModal({
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#465FFF]/10 text-[#3B52F5]">
-              <Sparkles size={20} />
-            </span>
             <div>
               <h3 id={titleId} className="text-lg font-black text-slate-900">{t("title")}</h3>
               <p id={descriptionId} className="text-xs font-semibold text-[#5A6478]">{t("desc")}</p>
@@ -176,9 +173,6 @@ export function CreateActionPlanModal({
                         : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
                     )}
                   >
-                    <span className={cn("mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors", isActive ? "bg-[#465FFF] text-white" : "bg-slate-100 text-[#5A6478] group-hover:bg-[#465FFF]/10 group-hover:text-[#3B52F5]")}>
-                      <Icon size={14} strokeWidth={2.5} />
-                    </span>
                     <div>
                       <p className={cn("text-[13px] font-black transition-colors", isActive ? "text-[#3B52F5]" : "text-slate-700")}>{t(`strategy.${st.value}`)}</p>
                       <p className="mt-0.5 text-[11px] font-semibold text-[#5A6478]">{t(st.descriptionKey)}</p>

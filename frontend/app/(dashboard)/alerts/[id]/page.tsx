@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowLeft, AlertTriangle, CalendarClock, CheckCircle2, Flag, Route, Save, ShieldAlert, Sparkles, UserRound } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -85,9 +85,6 @@ function DetailStat({ icon: Icon, label, value, tone = "slate" }: { icon: typeof
   return (
     <div className="rounded-[14px] border border-[#E6EAF2] bg-white p-4 shadow-[0_1px_4px_rgba(16,24,40,0.03)]">
       <div className="flex items-center gap-2">
-        <span className={`flex size-8 items-center justify-center rounded-full ${toneClass[tone].bubble}`}>
-          <Icon size={15} strokeWidth={2.4} />
-        </span>
         <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#647099]">{label}</p>
       </div>
       <p className="mt-3 truncate text-[15px] font-black text-[#101334]" title={value}>{value}</p>
@@ -155,9 +152,6 @@ function AssignmentCard({
     <section id="assignment" className={`scroll-mt-24 rounded-[18px] border ${toneClass[tone].border} bg-white shadow-[0_2px_14px_rgba(16,24,40,0.04)]`}>
       <div className="p-5">
         <div className="mb-5 flex flex-wrap items-center gap-3">
-          <span className={`flex size-10 items-center justify-center rounded-full ${toneClass[tone].bubble}`}>
-            <Route size={18} strokeWidth={2.4} />
-          </span>
           <div>
             <h2 className="text-[18px] font-black tracking-[-0.03em] text-[#101334]">{td("assignment.title")}</h2>
             <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{td("assignment.desc")}</p>
@@ -168,7 +162,6 @@ function AssignmentCard({
             disabled={isSaving}
             className="ml-auto flex h-10 items-center gap-2 rounded-[10px] bg-[#465FFF] px-4 text-[12px] font-black text-white shadow-sm transition hover:bg-[#3B4FE0] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <Save size={14} />
             {isSaving ? td("assignment.saving") : td("assignment.save")}
           </button>
         </div>
@@ -293,7 +286,6 @@ export default function AlertDetailPage() {
   return (
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
       <Link href="/alerts" className="inline-flex items-center gap-2 text-[13px] font-black text-[#5F6B94] transition hover:text-[#3B52F5]">
-        <ArrowLeft size={16} />
         {td("nav.back")}
       </Link>
       

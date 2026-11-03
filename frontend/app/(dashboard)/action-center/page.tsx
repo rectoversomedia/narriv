@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { ArrowRight, CheckCircle2, ClipboardList, FileSearch, Gavel, Lightbulb, ListChecks } from "lucide-react";
+import { ArrowRight, CheckCircle2, ClipboardList, FileSearch, Gavel, Lightbulb } from "lucide-react";
 import { DashboardEmptyState, DashboardErrorState } from "@/components/dashboard/dashboard-states";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getExecutiveOverview, type OverviewAction } from "@/lib/intelligence-api";
@@ -23,9 +23,6 @@ function JourneyStep({ step, last }: { step: Step; last: boolean }) {
   return (
     <li className="relative flex gap-3 pb-4">
       {!last ? <span className="absolute left-[13px] top-7 h-[calc(100%-1.75rem)] w-px bg-[#E3E7F1]" aria-hidden="true" /> : null}
-      <span className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-full", step.done ? "bg-[#465FFF] text-white" : "border border-[#DDE3EF] bg-white text-[#5A6478]")}>
-        <Icon size={13} aria-hidden="true" />
-      </span>
       <div className="min-w-0 pt-0.5">
         <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{step.title}</p>
         <div className="mt-0.5 text-[13px] text-[#31406B]">{step.body}</div>
@@ -169,7 +166,7 @@ export default function ActionCenterPage() {
             return (
               <li key={`${a.action}-${i}`} className="rounded-[14px] border border-[#E8ECF5] bg-white p-5">
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                  <h2 className="flex items-center gap-2 text-[15px] font-bold text-[#101334]"><ListChecks size={16} className="text-[#3B52F5]" aria-hidden="true" />{to.has(`a_${a.action}`) ? to(`a_${a.action}`) : a.action}</h2>
+                  <h2 className="flex items-center gap-2 text-[15px] font-bold text-[#101334]">{to.has(`a_${a.action}`) ? to(`a_${a.action}`) : a.action}</h2>
                   {a.unchangedSinceFollowUp ? <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">{to("alreadyHandled")}</span> : null}
                 </div>
                 <ol>{steps.map((s, j) => <JourneyStep key={s.title} step={s} last={j === steps.length - 1} />)}</ol>

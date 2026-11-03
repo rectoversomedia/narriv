@@ -12,22 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useUiStore } from "@/store/useUiStore";
-import {
-  ArrowLeft,
-  BriefcaseBusiness,
-  Building2,
-  Check,
-  ChevronDown,
-  Eye,
-  EyeOff,
-  Globe2,
-  HelpCircle,
-  Info,
-  LockKeyhole,
-  Mail,
-  ShieldCheck,
-  User,
-} from "lucide-react";
+import { BriefcaseBusiness, Building2, Check, ChevronDown, Eye, EyeOff, Globe2, HelpCircle, LockKeyhole, Mail, ShieldCheck, User } from "lucide-react";
 
 type AuthVisual = "dashboard" | "features" | "security" | "verification";
 
@@ -262,7 +247,6 @@ export function PrimaryButton({ children, loading }: { children: ReactNode; load
 export function SecondaryLinkButton({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link href={href} className="flex h-[58px] w-full items-center justify-center gap-3 rounded-[8px] border border-[#D6DDEC] bg-white text-[17px] font-semibold text-[#111536] transition hover:border-[#AAB4D5] hover:bg-[#FBFCFF]">
-      <ArrowLeft size={21} />
       {children}
     </Link>
   );
@@ -414,7 +398,6 @@ export function SecurityFooter() {
 
   return (
     <div className="flex items-center justify-center gap-3 text-[15px] font-medium text-[#3E4975]">
-      <ShieldCheck size={19} />
       {t("security.footer")}
     </div>
   );
@@ -423,9 +406,6 @@ export function SecurityFooter() {
 export function InfoCallout({ title, text }: { title: string; text: string }) {
   return (
     <div className="flex items-center gap-5 rounded-[8px] border border-[#E0E4F1] bg-[#FBFAFF] p-5">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-[#465FFF] text-[#3B52F5]">
-        <Info size={24} />
-      </span>
       <span>
         <span className="block text-[16px] font-bold text-[#111536]">{title}</span>
         <span className="mt-1 block text-[15px] text-[#5F6B94]">{text}</span>
@@ -450,9 +430,6 @@ export function PasswordRequirements() {
     <div className="mt-3 flex flex-wrap gap-x-7 gap-y-2 text-[13px] font-medium text-[#111536]">
       {items.map((item) => (
         <span key={item} className="flex items-center gap-2">
-          <span className="flex h-4 w-4 items-center justify-center rounded-full border border-[#1DB45A] text-[#1DB45A]">
-            <Check size={11} strokeWidth={3} />
-          </span>
           {item}
         </span>
       ))}

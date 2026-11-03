@@ -6,28 +6,7 @@ import { type ComponentPropsWithoutRef, type ReactNode, useState, useEffect } fr
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  ArrowRight,
-  Calendar,
-  CalendarClock,
-  CheckCircle2,
-  ChevronDown,
-  Clock,
-  Download,
-  Eye,
-  FileText,
-  Mail,
-  Plus,
-  RefreshCcw,
-  Search,
-  Share2,
-  Trash2,
-  Edit2,
-  SlidersHorizontal,
-  Sparkles,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowRight, Calendar, CalendarClock, CheckCircle2, ChevronDown, Clock, Download, FileText, Mail, Plus, RefreshCcw, Search, Share2, Trash2, Edit2, X, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { SentimentTrendChart } from "@/components/dashboard/sentiment-trend-chart";
@@ -158,9 +137,6 @@ function MetricCard({ label, value, helper, icon: Icon, tone }: { label: string;
 
   return (
     <Panel className="flex min-h-[88px] items-center gap-3.5 p-4">
-      <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-full border shadow-sm", style.soft, style.text, style.border)}>
-        <Icon size={19} strokeWidth={2.35} />
-      </span>
       <div className="min-w-0">
         <span className="block text-[10px] font-extrabold text-[#5F6B94]">{label}</span>
         <span className="mt-0.5 block text-[24px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</span>
@@ -232,7 +208,7 @@ function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeReco
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{tr("aiSummary.title")}</h2>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black text-[#6E44E8]">
-              <Sparkles size={12} /> {tr("aiSummary.generated")}
+              {tr("aiSummary.generated")}
             </span>
           </div>
           <p className="mt-3 max-w-[660px] text-[14px] font-semibold leading-6 text-navy">
@@ -297,7 +273,6 @@ function ReportPreviewSidebar({
         <>
           <div className="mt-4 rounded-[12px] border border-[#DDE3EF] bg-[#F8FAFF] p-4">
             <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[#465FFF]/10 text-[#3B52F5]"><FileText size={18} /></span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-black text-[#101334]">{reportTitle}</p>
                 <p className="mt-0.5 text-[10px] font-bold text-[#5F6B94]">{tr("preview.latestReport")}</p>
@@ -342,26 +317,23 @@ function ReportPreviewSidebar({
 
           <div className="mt-4 grid gap-2">
             <Link href={`/reports/${latestReport.id}`} className="flex h-10 w-full items-center justify-center gap-2 rounded-[9px] bg-[#465FFF] text-[12px] font-black text-white shadow-sm transition hover:bg-[#3B20EA]">
-              <Eye size={15} /> {tr("preview.viewPreview")}
+              {tr("preview.viewPreview")}
             </Link>
             <div className="grid grid-cols-3 gap-2">
               <button type="button" onClick={onExportPdf} className="flex h-9 items-center justify-center gap-1 rounded-[8px] border border-[#E6EAF2] bg-white text-[11px] font-black text-[#101334] transition hover:bg-[#F8FAFF]">
-                <Download size={13} /> PDF
+                PDF
               </button>
               <button type="button" onClick={() => onExportFile?.("csv")} className="flex h-9 items-center justify-center gap-1 rounded-[8px] border border-[#E6EAF2] bg-white text-[11px] font-black text-[#101334] transition hover:bg-[#F8FAFF]">
-                <Download size={13} /> CSV
+                CSV
               </button>
               <button type="button" onClick={() => onExportFile?.("xlsx")} className="flex h-9 items-center justify-center gap-1 rounded-[8px] border border-[#E6EAF2] bg-white text-[11px] font-black text-[#101334] transition hover:bg-[#F8FAFF]">
-                <Download size={13} /> Excel
+                Excel
               </button>
             </div>
           </div>
         </>
       ) : (
         <div className="mt-4 flex flex-col items-center justify-center py-8 text-center">
-          <div className="mb-3 flex h-[80px] w-full items-center justify-center rounded-[12px] bg-[#F5F7FC]">
-            <FileText size={28} className="text-[#DDE3EF]" />
-          </div>
           <p className="text-[12px] font-bold text-[#53608C]">{tr("preview.emptyTitle")}</p>
           <p className="mt-1 text-[10px] font-bold text-[#647099]">{tr("preview.emptyDesc")}</p>
         </div>
@@ -392,9 +364,6 @@ function QuickActions({ onShare, onSchedule, onCreate, onViewHistory }: { onShar
               className="flex w-full items-center justify-between gap-3 rounded-[12px] border border-[#EDF1F7] bg-[#FBFCFF] p-3 text-left transition hover:border-[#DDE3EF] hover:bg-[#F8FAFF]"
             >
               <div className="flex items-center gap-3 min-w-0">
-                <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px]", action.color)}>
-                  <Icon size={15} />
-                </span>
                 <div className="min-w-0">
                   <span className="block truncate text-[12px] font-black text-[#101334]">{tr(`quickActions.${action.key}`)}</span>
                   <span className="mt-0.5 block truncate text-[9.5px] font-bold text-[#58648C]">{tr(`quickActions.${action.descKey}`)}</span>
@@ -516,7 +485,7 @@ function ReportsTable({
               onClick={() => { setActiveTab("all"); setSearchTerm(""); setTypeFilter("all"); }}
               className="inline-flex h-8 items-center justify-center gap-1 rounded-[7px] border border-[#FAD1D1] bg-[#FFF5F5] px-2.5 text-[10px] font-black text-[#B42318] transition hover:bg-[#FFEBEB] sm:flex-none"
             >
-              <X size={12} /> {tr("clear") || "Reset"}
+              {tr("clear") || "Reset"}
             </button>
           ) : null}
           <button type="button" onClick={() => setSortDirection((value) => value === "desc" ? "asc" : "desc")} className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-[7px] border border-[#DDE3EF] bg-[#F8FAFF] px-2.5 text-[10px] font-black text-[#58648C] transition hover:bg-white sm:flex-none">
@@ -562,9 +531,6 @@ function ReportsTable({
               <tr key={report.id} className="transition hover:bg-[#F8FAFF]">
                 <td className="min-w-[220px] px-3 py-3.5">
                   <div className="flex items-start gap-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[#3B52F5]">
-                      <FileText size={17} strokeWidth={2.3} />
-                    </span>
                     <div className="min-w-0">
                       <Link href={`/reports/${report.id}`} className="text-[12.5px] font-black leading-snug text-[#101334] hover:text-[#3B52F5] transition-colors">
                         {report.title}
@@ -692,9 +658,6 @@ function FormatDonut({ distribution }: { distribution: Array<{ name: string; val
           </>
         ) : (
           <div className="flex flex-col items-center justify-center py-8 text-center sm:col-span-2 xl:col-span-2">
-            <div className="relative mx-auto mb-4 flex h-[136px] w-[136px] items-center justify-center rounded-full bg-[#F5F7FC]">
-              <FileText size={32} className="text-[#DDE3EF]" />
-            </div>
             <p className="text-[13px] font-bold text-[#53608C]">{tr("formatDonut.noData")}</p>
             <p className="mt-1 text-[11px] font-bold text-[#647099]">{tr("formatDonut.noDataDesc")}</p>
           </div>
@@ -793,9 +756,6 @@ function TimelineChart({ data }: { data: ReportsAnalyticsResponse["trend_timelin
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-10 text-center">
-          <div className="mb-4 flex h-[100px] w-full max-w-[300px] items-center justify-center rounded-[12px] bg-[#F5F7FC]">
-            <RefreshCcw size={28} className="text-[#DDE3EF]" />
-          </div>
           <p className="text-[13px] font-bold text-[#53608C]">{tr("timeline.noData")}</p>
           <p className="mt-1 text-[11px] font-bold text-[#647099]">{tr("timeline.noDataDesc")}</p>
         </div>
@@ -1209,13 +1169,13 @@ export default function ReportsPage() {
         </div>
         <div className="flex flex-wrap gap-3">
           <button type="button" onClick={() => setIsTemplatesModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:bg-[#F8FAFF] sm:w-auto">
-            <FileText size={14} /> {tr("buttons.manageTemplates")}
+            {tr("buttons.manageTemplates")}
           </button>
           <button type="button" onClick={() => setIsScheduleModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:bg-[#F8FAFF] sm:w-auto">
-            <CalendarClock size={14} /> {tr("buttons.scheduleSettings")}
+            {tr("buttons.scheduleSettings")}
           </button>
           <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 sm:w-auto">
-            <Plus size={15} /> {tr("buttons.createNew")}
+            {tr("buttons.createNew")}
           </button>
         </div>
       </header>
@@ -1291,7 +1251,7 @@ export default function ReportsPage() {
                 <h2 id="reports-schedule-dialog-title" className="text-lg font-black text-[#101334]">{tr("scheduleModal.title")}</h2>
                 {!isScheduleFormOpen && (
                   <button type="button" onClick={() => { setEditingSchedule(null); setIsScheduleFormOpen(true); }} className="flex h-7 items-center justify-center gap-1.5 rounded-[6px] bg-[#465FFF] hover:bg-[#3B52F5] px-2.5 text-[10px] font-black text-white shadow-sm transition hover:opacity-90">
-                    <Plus size={12} /> {tr("scheduleModal.addSchedule")}
+                    {tr("scheduleModal.addSchedule")}
                   </button>
                 )}
               </div>
@@ -1426,7 +1386,7 @@ export default function ReportsPage() {
                           </div>
                           <div className="flex flex-wrap gap-2 mt-2">
                             <span className="flex items-center gap-1.5 text-[9.5px] bg-[#465FFF]/10 text-[#3B52F5] px-2.5 py-1.5 rounded-[6px] font-black uppercase tracking-[0.05em]">
-                              <CalendarClock size={11} /> {tr(`scheduleModal.${schedule.cadence}`)}
+                              {tr(`scheduleModal.${schedule.cadence}`)}
                             </span>
                             {schedule.dayOfWeek && (
                               <span className="flex items-center gap-1.5 text-[9.5px] bg-[#8B5CFF]/10 text-[#6E44E8] px-2.5 py-1.5 rounded-[6px] font-black">
@@ -1438,7 +1398,7 @@ export default function ReportsPage() {
                             </span>
                             {schedule.timezone && (
                               <span className="flex items-center gap-1.5 text-[9.5px] bg-[#64748B]/10 text-[#64748B] px-2.5 py-1.5 rounded-[6px] font-black">
-                                <Clock size={11} /> {schedule.timezone.split("/").pop()?.replace("_", " ")}
+                                {schedule.timezone.split("/").pop()?.replace("_", " ")}
                               </span>
                             )}
                           </div>
@@ -1601,7 +1561,7 @@ export default function ReportsPage() {
                 <h2 id="reports-templates-dialog-title" className="text-lg font-black text-[#101334]">{tr("buttons.manageTemplates")}</h2>
                 {!isFormOpen && (
                   <button type="button" onClick={() => { setEditingTemplate(null); setIsFormOpen(true); }} className="flex h-7 items-center justify-center gap-1.5 rounded-[6px] bg-[#465FFF] hover:bg-[#3B52F5] px-2.5 text-[10px] font-black text-white shadow-sm transition hover:opacity-90">
-                    <Plus size={12} /> {tr("templateForm.addCustom")}
+                    {tr("templateForm.addCustom")}
                   </button>
                 )}
               </div>
@@ -1666,10 +1626,10 @@ export default function ReportsPage() {
                           <p className="text-[11px] font-bold text-[#5F6B94] mt-1 leading-relaxed">{template.description}</p>
                           <div className="flex flex-wrap gap-2 mt-3">
                             <span className="flex items-center gap-1.5 text-[9.5px] bg-[#465FFF]/10 text-[#3B52F5] px-2.5 py-1.5 rounded-[6px] font-black uppercase tracking-[0.05em]">
-                              <FileText size={11} /> {template.format}
+                              {template.format}
                             </span>
                             <span className="flex items-center gap-1.5 text-[9.5px] bg-[#8B5CFF]/10 text-[#6E44E8] px-2.5 py-1.5 rounded-[6px] font-black uppercase tracking-[0.05em]">
-                              <CalendarClock size={11} /> {template.cadence}
+                              {template.cadence}
                             </span>
                           </div>
                         </div>

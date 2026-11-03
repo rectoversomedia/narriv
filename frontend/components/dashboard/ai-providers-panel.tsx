@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Cpu, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { checkAiProviders, getAiProviders, getMonitoringKeywords, type AiProviderCheck, type ApifyAccountCheck } from "@/lib/api-service";
 import { pickL, useL } from "@/lib/use-l";
 
@@ -56,7 +56,6 @@ export function AiProvidersPanel() {
   return (
     <section className="rounded-[14px] border border-[#DDE3EF] bg-white p-6 shadow-[0_2px_12px_rgba(16,24,40,0.03)]">
       <div className="flex items-start gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-[#6E44E8]"><Cpu size={18} strokeWidth={2.3} aria-hidden="true" /></span>
         <div className="min-w-0">
           <h3 className="text-[13.5px] font-black text-[#101334]">{L("AI providers", "Penyedia AI")}</h3>
           <p className="text-[10px] font-semibold text-[#5F6B94]">{L("The model behind each workflow. Routing profile:", "Model di balik tiap alur kerja. Profil routing:")} {data?.profile ?? "…"}.</p>

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { isDemoMode } from "@/lib/demo-mock-data";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-states";
-import { Search, TrendingUp, Target, Zap, AlertTriangle, CheckCircle, Clock, Eye, Users, Lightbulb, BarChart3 } from "lucide-react";
+import { TrendingUp, Target, Zap, AlertTriangle, Clock, Eye, Lightbulb, BarChart3 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -323,9 +323,6 @@ function MetricCard({
     <Card className="border-slate-100 shadow-sm">
       <CardContent className="flex flex-col gap-1 p-4">
         <div className="flex items-center gap-2">
-          <span className={cn("flex h-7 w-7 items-center justify-center rounded-[7px]", style.bg, style.text)}>
-            <Icon size={14} />
-          </span>
           <span className="text-[11px] font-semibold text-[#5A6478]">{label}</span>
         </div>
         <p className="text-[22px] font-black tracking-[-0.02em] text-[#101334]">{value}</p>
@@ -416,9 +413,6 @@ export default function OpportunitiesPage() {
       <div className="flex flex-col gap-3 rounded-[14px] border border-slate-100 bg-white p-4 shadow-[0_14px_38px_rgba(16,24,40,0.04)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#465FFF]/10 text-[#3B52F5]">
-              <Search size={18} />
-            </span>
             <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">
               {t("title")}
             </h1>

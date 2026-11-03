@@ -4,17 +4,7 @@ import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
 import { getSubscriptionPlans, getMySubscription } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
-import {
-  X,
-  Check,
-  Sparkles,
-  Rocket,
-  Brain,
-  Zap,
-  Crown,
-  ArrowRight,
-  Lock,
-} from "lucide-react";
+import { X, Check, Rocket, Brain, Zap, Crown, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
@@ -173,9 +163,6 @@ export function UpgradeModal({ isOpen, onClose, feature, limit, currentPlan }: U
 
                 {/* Plan Header */}
                 <div className="flex items-center gap-3 mb-3">
-                  <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg", colors.icon)}>
-                    <Icon size={20} className="text-white" />
-                  </div>
                   <div>
                     <h3 className={cn("text-sm font-black", colors.text)}>
                       {plan.name}
@@ -235,12 +222,10 @@ export function UpgradeModal({ isOpen, onClose, feature, limit, currentPlan }: U
                 {/* Select Indicator */}
                 {isCurrentPlan ? (
                   <div className={cn("flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold", colors.bg, colors.text)}>
-                    <Lock size={12} />
                     Current
                   </div>
                 ) : isSelected ? (
                   <div className="flex items-center justify-center gap-1.5 rounded-lg bg-[#465FFF] py-2 text-xs font-bold text-white">
-                    <Check size={12} />
                     Selected
                   </div>
                 ) : (

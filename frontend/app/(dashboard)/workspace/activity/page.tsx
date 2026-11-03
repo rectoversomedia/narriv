@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, CalendarDays, Filter, RefreshCcw, ShieldCheck, UserRound } from "lucide-react";
+import { Activity, CalendarDays, ShieldCheck, UserRound } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton } from "@/components/dashboard/dashboard-states";
 import { useTranslations } from "next-intl";
@@ -217,7 +217,6 @@ export default function ActivityPage() {
           disabled={activityQuery.isFetching}
           className="inline-flex items-center justify-center gap-2 rounded-[8px] border border-slate-200 bg-white px-4 py-2.5 text-sm font-black text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <RefreshCcw size={16} className={activityQuery.isFetching ? "animate-spin" : ""} />
           {t("refresh")}
         </button>
       </header>
@@ -228,15 +227,6 @@ export default function ActivityPage() {
           return (
             <div key={metric.label} className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
               <div className="flex items-center gap-3">
-                <span className={cn(
-                  "flex h-10 w-10 items-center justify-center rounded-xl",
-                  metric.tone === "blue" && "bg-[#465FFF]/10 text-[#3B52F5]",
-                  metric.tone === "purple" && "bg-[#8B5CFF]/10 text-[#6E44E8]",
-                  metric.tone === "green" && "bg-[#10B981]/10 text-[#047857]",
-                  metric.tone === "amber" && "bg-[#F59E0B]/10 text-[#A04606]"
-                )}>
-                  <Icon size={18} />
-                </span>
                 <div className="min-w-0">
                   <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">{metric.label}</p>
                   <p className="mt-1 text-2xl font-black tracking-[-0.04em] text-slate-950">{metric.value.toLocaleString(uiLanguage === "id" ? "id-ID" : "en-US")}</p>
@@ -250,7 +240,6 @@ export default function ActivityPage() {
 
       <section className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-sm">
         <div className="mb-3 flex items-center gap-2 text-[12px] font-black uppercase tracking-[0.12em] text-[#5A6478]">
-          <Filter size={14} />
           {t("filterTitle")}
         </div>
         <div className="grid gap-3 sm:grid-cols-2 sm:items-end lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
@@ -324,9 +313,6 @@ export default function ActivityPage() {
                   <tr key={log.id} className="transition hover:bg-slate-50/70">
                     <td className="px-6 py-4 align-top">
                       <div className="flex items-start gap-3">
-                        <span className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-950 text-white shadow-sm">
-                          <Activity size={15} />
-                        </span>
                         <div>
                           <Badge variant={eventVariant(log.event)} className="rounded-full normal-case tracking-normal">
                             {formatEventName(log.event, t)}

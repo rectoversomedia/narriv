@@ -1,6 +1,5 @@
 "use client";
 
-import { AlertTriangle, RefreshCcw } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 export default function DashboardError({
@@ -16,9 +15,6 @@ export default function DashboardError({
   return (
     <div className="flex min-h-[520px] items-center justify-center px-4 py-10">
       <section className="max-w-xl rounded-[18px] border border-[#FDE2E2] bg-white p-6 text-center shadow-[0_18px_52px_rgba(15,23,42,0.08)] sm:p-8">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-xl border border-[#EF4444]/20 bg-[#EF4444]/10 text-[#C81E1E]">
-          <AlertTriangle size={22} />
-        </div>
         <h1 className="mt-5 text-2xl font-black tracking-[-0.03em] text-[#101334]">
           {t("title")}
         </h1>
@@ -33,7 +29,6 @@ export default function DashboardError({
           onClick={reset}
           className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-[#465FFF] px-5 text-sm font-black text-white shadow-sm transition hover:bg-[#3B20EA] sm:w-auto"
         >
-          <RefreshCcw size={16} />
           {t("retry")}
         </button>
       </section>

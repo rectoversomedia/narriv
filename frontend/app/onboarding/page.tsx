@@ -12,33 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  ArrowRight,
-  BarChart3,
-  Bell,
-  Check,
-  CheckCircle2,
-  ChevronDown,
-  Database,
-  Globe2,
-  Hash,
-  Headphones,
-  Lightbulb,
-  Mail,
-  MessageCircle,
-  Mic,
-  Newspaper,
-  Plus,
-  Share2,
-  Shield,
-  ShieldCheck,
-  ShoppingCart,
-  Sparkles,
-  Users,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowRight, BarChart3, Bell, Check, CheckCircle2, ChevronDown, Database, Globe2, Hash, Headphones, Lightbulb, Mail, MessageCircle, Mic, Newspaper, Share2, Shield, ShoppingCart, Sparkles, Users, X, type LucideIcon } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import {
   createOnboardingWorkspace,
@@ -447,7 +421,6 @@ export default function OnboardingPage() {
                     onClick={back}
                     className="flex h-11 items-center gap-2 rounded-xl border border-[#D6DDEC] bg-white px-6 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#465FFF] hover:text-[#3B52F5]"
                   >
-                    <ArrowLeft size={16} />
                     Back
                   </button>
                 )}
@@ -466,7 +439,6 @@ export default function OnboardingPage() {
         </div>
 
         <p className="mt-6 flex items-center justify-center gap-2 text-center text-sm font-medium text-[#647099]">
-          <ShieldCheck size={15} className="text-[#047857]" />
           Your data is safe with Narriv. We protect your privacy and information security.
         </p>
       </main>
@@ -734,7 +706,6 @@ function KeywordsStep({
               disabled={!input.trim()}
               className="flex h-12 items-center gap-2 rounded-xl border border-[#D6DDEC] bg-white px-5 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#465FFF] hover:text-[#3B52F5] disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <Plus size={16} />
               {t("add")}
             </button>
           </div>
@@ -881,7 +852,6 @@ function SourcesStep({
                     : "border-[#E8EAF6] bg-white text-[#3E4975] hover:border-[#B8BDD8]"
                 }`}
               >
-                <Icon size={15} />
                 {cat.charAt(0).toUpperCase() + cat.slice(1)}
                 <span className="opacity-60">({templates[cat]?.length ?? 0})</span>
               </button>
@@ -969,13 +939,6 @@ function SourceCard({
           : "border-[#E8EAF6] bg-white hover:border-[#B8BDD8]"
       }`}
     >
-      <div
-        className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
-          active ? "bg-[#465FFF] text-white" : "bg-[#F0F2FA] text-[#5F6B94]"
-        }`}
-      >
-        <Icon size={20} />
-      </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-bold text-[#111536]">{title}</p>
         <p className="mt-1 text-xs font-medium text-[#5F6B94] leading-relaxed">{desc}</p>
@@ -1037,12 +1000,6 @@ function NotificationsStep({
                   : "border-[#E8EAF6] bg-white hover:border-[#B8BDD8]"
               }`}
             >
-              <div
-                className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-                style={{ backgroundColor: `${color}18`, color }}
-              >
-                <Icon size={18} />
-              </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-[#111536]">{label}</p>
                 <p className="mt-1 text-xs font-medium text-[#5F6B94] leading-relaxed">{desc}</p>
@@ -1173,7 +1130,6 @@ function PreviewStep({ data }: { data: OnboardingData }) {
           <p className="mt-1.5 text-sm font-medium text-[#5F6B94]">{t("desc")}</p>
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-[#10B981]/12 px-4 py-2 text-xs font-bold text-[#047857]">
-          <CheckCircle2 size={14} />
           Ready
         </span>
       </div>
@@ -1189,7 +1145,6 @@ function PreviewStep({ data }: { data: OnboardingData }) {
                 key={kw}
                 className="inline-flex items-center gap-1.5 rounded-full bg-[#465FFF]/10 px-4 py-2 text-sm font-semibold text-[#3B52F5]"
               >
-                <Hash size={13} />
                 {kw}
               </span>
             ))}

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ArrowLeft, CalendarClock, Download, FileText, RefreshCcw, Sparkles } from "lucide-react";
+import { CalendarClock, Download, RefreshCcw } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
 import { useToast } from "@/components/ui/toast";
@@ -114,12 +114,12 @@ export default function ReportDetailPage() {
     <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
       <header className="rounded-[18px] border border-[#DDE3EF] bg-white p-5 shadow-[0_2px_14px_rgba(16,24,40,0.04)]">
         <Link href="/reports" className="inline-flex items-center gap-2 text-[12px] font-black text-[#58648C] transition hover:text-[#3B52F5]">
-          <ArrowLeft size={15} /> {tr("detail.back")}
+          {tr("detail.back")}
         </Link>
         <div className="mt-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#465FFF]/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#3B52F5]">
-              <Sparkles size={13} /> {tr("detail.liveReport")}
+              {tr("detail.liveReport")}
             </div>
             <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{report.title}</h1>
             <p className="mt-3 max-w-2xl text-[14px] font-medium leading-6 text-body">{textFromUnknown(report.summary) || tr("detail.defaultSummary")}</p>
@@ -137,7 +137,7 @@ export default function ReportDetailPage() {
               }}
               className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-[9px] border border-[#DDE3EF] bg-white px-3.5 text-[12px] font-black text-[#101334] transition hover:bg-[#F8FAFF]"
             >
-              <Download size={15} /> CSV
+              CSV
             </button>
             <button
               type="button"
@@ -151,7 +151,7 @@ export default function ReportDetailPage() {
               }}
               className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-[9px] border border-[#DDE3EF] bg-white px-3.5 text-[12px] font-black text-[#101334] transition hover:bg-[#F8FAFF]"
             >
-              <Download size={15} /> Excel
+              Excel
             </button>
             <button
               type="button"
@@ -181,7 +181,7 @@ export default function ReportDetailPage() {
         </div>
         <div className="rounded-[14px] border border-[#E6EAF2] bg-white p-4">
           <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#647099]">{tr("detail.sections")}</p>
-          <p className="mt-2 inline-flex items-center gap-2 text-[13px] font-black text-[#101334]"><FileText size={15} /> {sections.length}</p>
+          <p className="mt-2 inline-flex items-center gap-2 text-[13px] font-black text-[#101334]">{sections.length}</p>
         </div>
       </div>
 

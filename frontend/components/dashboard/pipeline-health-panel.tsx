@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Activity, RefreshCcw } from "lucide-react";
 import { getPipelineStatus, timeAgo, type PipelineStatusPayload } from "@/lib/intelligence-api";
 import { intlLocale } from "@/store/useUiStore";
 import { cn } from "@/lib/utils";
@@ -19,14 +18,13 @@ export function PipelineHealthPanel({ className }: { className?: string }) {
     <section className={cn("rounded-[14px] border border-[#DDE3EF] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)} aria-labelledby="pipeline-health-title">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#3B52F5]"><Activity size={18} /></span>
           <div>
             <h2 id="pipeline-health-title" className="text-[14px] font-black text-[#101334]">{t("title")}</h2>
             <p className="text-[11px] font-semibold text-[#5F6B94]">{t("desc")}</p>
           </div>
         </div>
         <button type="button" onClick={() => query.refetch()} disabled={query.isFetching} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#DDE3EF] px-3 text-[11px] font-black text-slate-600 hover:bg-slate-50 disabled:opacity-50">
-          <RefreshCcw size={12} className={query.isFetching ? "animate-spin" : undefined} /> {t("refresh")}
+          {t("refresh")}
         </button>
       </div>
 

@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, AlertCircle, Loader2 } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 interface RejectActionPlanModalProps {
@@ -84,9 +84,6 @@ export function RejectActionPlanModal({
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EF4444]/10 text-[#C81E1E]">
-              <AlertCircle size={20} />
-            </span>
             <div>
               <h3 id={titleId} className="text-base font-black text-slate-900">
                 {t("title")}
@@ -147,7 +144,6 @@ export function RejectActionPlanModal({
             />
             {showError && (
               <p className="text-[11px] font-semibold text-[#C81E1E] flex items-center gap-1 mt-1">
-                <AlertCircle size={12} />
                 {t("reasonRequired")}
               </p>
             )}

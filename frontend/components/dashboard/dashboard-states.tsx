@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, FileSearch, Inbox, Loader2, RefreshCcw, WifiOff, type LucideIcon } from "lucide-react";
+import { AlertCircle, FileSearch, Inbox, Loader2, WifiOff } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import type { PaginationInfo } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
 import { pickL } from "@/lib/use-l";
+import type { LucideIcon } from "lucide-react";
 
 type StateTone = "blue" | "purple" | "green" | "amber" | "red" | "slate";
 
@@ -71,9 +72,6 @@ function StateShell({ title, description, icon: Icon, tone = "purple", action, c
         className
       )}
     >
-      <div className={cn("mb-4 flex h-14 w-14 items-center justify-center rounded-full ring-8", styles.bg, styles.text, styles.ring)}>
-        <Icon size={27} strokeWidth={2.1} />
-      </div>
       <h3 className="text-[18px] font-black tracking-[-0.02em] text-slate-950">{title}</h3>
       {description ? <p className="mt-2 max-w-[440px] text-sm font-semibold leading-6 text-[#5A6478]">{description}</p> : null}
       {action ? <div className="mt-5">{action}</div> : null}
@@ -128,7 +126,6 @@ export function DashboardErrorState({
       action={
         onRetry ? (
           <Button type="button" onClick={onRetry} className="h-10 rounded-[8px] bg-[#C81E1E] px-4 text-sm font-black text-white hover:bg-[#A51818]">
-            <RefreshCcw size={15} />
             {tp("retry")}
           </Button>
         ) : null

@@ -4,34 +4,7 @@ import { useState, useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import {
-  Bot,
-  Brain,
-  Calendar,
-  Check,
-  ChevronDown,
-  ChevronRight,
-  ClipboardCopy,
-  Database,
-  FileText,
-  Filter,
-  Info,
-  Layers3,
-  Maximize2,
-  Minimize2,
-  MoreHorizontal,
-  Network,
-  RefreshCcw,
-  RotateCcw,
-  Settings,
-  Sparkles,
-  Target,
-  TrendingUp,
-  X,
-  ZoomIn,
-  ZoomOut,
-  type LucideIcon,
-} from "lucide-react";
+import { Bot, Brain, Check, ChevronDown, ChevronRight, Database, Info, Layers3, Maximize2, Minimize2, MoreHorizontal, Network, RefreshCcw, RotateCcw, Sparkles, Target, TrendingUp, X, ZoomIn, ZoomOut, type LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
@@ -308,18 +281,7 @@ function Panel({ children, className, onClick }: { children: ReactNode; classNam
 function IconHalo({ icon: Icon, tone }: { icon: LucideIcon; tone: Tone }) {
   const toneStyle = toneStyles[tone];
 
-  return (
-    <div
-      className="flex size-12 shrink-0 items-center justify-center rounded-full border shadow-[0_12px_22px_rgba(16,24,40,0.06)]"
-      style={{
-        color: toneStyle.color,
-        borderColor: `rgba(${toneStyle.rgb}, 0.12)`,
-        background: `radial-gradient(circle at 30% 25%, rgba(255,255,255,.9), rgba(${toneStyle.rgb}, .13))`,
-      }}
-    >
-      <Icon size={22} strokeWidth={2.3} />
-    </div>
-  );
+  return null;
 }
 
 function MetricCard({ label, value, helper, icon, tone }: { label: string; value: string; helper: string; icon: LucideIcon; tone: Tone }) {
@@ -366,18 +328,7 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
 function ClusterIcon({ tone }: { tone: Tone }) {
   const toneStyle = toneStyles[tone];
 
-  return (
-    <span
-      className="flex size-8 shrink-0 items-center justify-center rounded-[9px] border"
-      style={{
-        color: toneStyle.color,
-        borderColor: `rgba(${toneStyle.rgb}, 0.14)`,
-        backgroundColor: `rgba(${toneStyle.rgb}, 0.09)`,
-      }}
-    >
-      <Network size={15} strokeWidth={2.4} />
-    </span>
-  );
+  return null;
 }
 
 function TrendBadge({ value, tone, className }: { value: string; tone: Tone; className?: string }) {
@@ -665,7 +616,6 @@ export default function IntelligencePage() {
 
           <div className="relative w-full sm:w-fit" ref={periodMenuRef}>
             <button type="button" onClick={() => setIsPeriodMenuOpen((open) => !open)} aria-expanded={isPeriodMenuOpen} className="flex h-10 w-full items-center justify-center gap-2 rounded-[10px] border border-[#E5E9F3] bg-white px-4 text-xs font-extrabold text-[#475070] shadow-sm transition hover:bg-[#F8FAFF] sm:w-fit">
-              <Calendar size={15} className="text-[#647099]" />
               {ti(`periods.${selectedPeriod.key}`)}
               <ChevronDown size={14} className={cn("text-[#647099] transition", isPeriodMenuOpen && "rotate-180")} />
             </button>
@@ -738,7 +688,6 @@ export default function IntelligencePage() {
                   {/* Sentiment filter */}
                   <div className="relative" ref={sentimentMenuRef}>
                     <button type="button" onClick={() => { setIsSentimentMenuOpen((o) => !o); setIsImpactMenuOpen(false); }} aria-expanded={isSentimentMenuOpen} className={cn("flex h-9 items-center gap-2 rounded-[9px] border bg-white px-3 text-[11px] font-extrabold shadow-sm transition hover:bg-[#F8FAFF]", sentimentFilter !== "all" ? "border-[#465FFF]/30 text-[#3B52F5]" : "border-[#E5E9F3] text-[#4F5877]")}>
-                      <Filter size={13} className="text-[#647099]" />
                       {sentimentFilter === "all" ? ti("topicMap.filter") : ti(`topicMap.sentiment.${sentimentFilter}`)}
                       <ChevronDown size={13} className={cn("text-[#647099] transition", isSentimentMenuOpen && "rotate-180")} />
                     </button>
@@ -821,7 +770,6 @@ export default function IntelligencePage() {
               <CardContent className="flex h-full flex-col justify-between p-5">
                 <div>
                   <h3 className="flex items-center gap-2 text-[16px] font-black tracking-[-0.02em] text-[#101334]">
-                    <Sparkles size={16} className="text-[#6E44E8]" />
                     {ti("aiSummary.title")}
                   </h3>
                   <div className="mt-4 rounded-[11px] border border-[#8B5CFF]/10 bg-[#8B5CFF]/7 p-3 text-[11px] font-bold leading-relaxed text-[#7654E7]">
@@ -830,7 +778,6 @@ export default function IntelligencePage() {
                   <ul className="mt-4 flex flex-col gap-2.5">
                     {aiSummaryData.bullets.map((item, index) => (
                       <li key={index} className="flex items-start gap-2.5 text-[12px] font-semibold leading-snug text-[#53608C]">
-                        <Check size={14} className="mt-0.5 shrink-0 text-[#53608C]" strokeWidth={2.6} />
                         {item}
                       </li>
                     ))}
@@ -918,7 +865,6 @@ export default function IntelligencePage() {
                 {isSelectedActionsOpen && selectedNarrativeId ? (
                   <div className="absolute right-0 top-full z-50 mt-1 w-[160px] overflow-hidden rounded-[12px] border border-[#E5E9F3] bg-white p-1.5 shadow-[0_16px_40px_rgba(16,24,40,0.12)]">
                     <button type="button" onClick={() => { setIsSelectedActionsOpen(false); setIsAnalysisOpen(true); }} className="flex w-full items-center gap-2 rounded-[9px] px-3 py-2.5 text-left text-[11px] font-extrabold text-[#475070] transition hover:bg-[#F8FAFF]">
-                      <FileText size={13} />
                       {ti("actions.viewDetails")}
                     </button>
                     <button type="button" onClick={() => { 
@@ -927,7 +873,6 @@ export default function IntelligencePage() {
                         .then(() => toastHook.success(ti("toast.copySuccess")))
                         .catch(() => toastHook.error(ti("toast.copyFailed"))); 
                     }} className="flex w-full items-center gap-2 rounded-[9px] px-3 py-2.5 text-left text-[11px] font-extrabold text-[#475070] transition hover:bg-[#F8FAFF]">
-                      <ClipboardCopy size={13} />
                       {ti("actions.copyId")}
                     </button>
                   </div>
@@ -1017,9 +962,6 @@ export default function IntelligencePage() {
             const toneStyle = toneStyles[item.tone];
             return (
               <div key={item.title} className={cn("flex gap-3 xl:border-r xl:border-[#E9EDF5] xl:pr-5", index === footerItems.length - 1 && "xl:border-r-0")}> 
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-full" style={{ color: toneStyle.color, backgroundColor: `rgba(${toneStyle.rgb}, .1)` }}>
-                  <Icon size={17} />
-                </span>
                 <div className="min-w-0 flex-1">
                   <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#647099]">{item.title}</p>
                   <p className="mt-1 text-[12px] font-black text-[#101334]">{item.value}</p>
@@ -1039,7 +981,6 @@ export default function IntelligencePage() {
           })}
         </div>
         <button type="button" onClick={() => router.push("/workspace/settings")} className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#C9C6F8] bg-white px-5 text-[12px] font-black text-[#6B4DE6] shadow-sm transition hover:bg-[#F8F6FF]">
-          <Settings size={14} />
           {ti("footer.btnSettings")}
         </button>
       </footer>

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { FileQuestion, Home, ArrowLeft } from "lucide-react";
 import { useL } from "@/lib/use-l";
 
 export default function NotFound() {
@@ -12,10 +11,7 @@ export default function NotFound() {
       <div className="max-w-md w-full px-6 text-center">
         {/* 404 Illustration */}
         <div className="mb-8">
-          <div className="w-32 h-32 mx-auto rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-            <FileQuestion className="w-16 h-16 text-[#5A6478]" />
           </div>
-        </div>
 
         {/* Error Code */}
         <h1 className="text-6xl font-bold text-slate-900 dark:text-slate-100 mb-4">
@@ -34,14 +30,12 @@ export default function NotFound() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link href="/">
             <Button variant="default" size="lg" className="w-full sm:w-auto">
-              <Home className="w-4 h-4 mr-2" />
               {L("Back to dashboard", "Kembali ke dashboard")}
             </Button>
           </Link>
 
           <Link href="/signals">
             <Button variant="outline" size="lg" className="w-full sm:w-auto">
-              <ArrowLeft className="w-4 h-4 mr-2" />
               {L("View signals", "Lihat sinyal")}
             </Button>
           </Link>

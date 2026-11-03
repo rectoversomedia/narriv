@@ -4,33 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  AlertTriangle,
-  ArrowDown,
-  ArrowRight,
-  Bell,
-  Check,
-  ChevronDown,
-  ChevronRight,
-  CircleCheck,
-  Headphones,
-  HelpCircle,
-  Loader2,
-  Mail,
-  MoreVertical,
-  Plus,
-  Search,
-  Settings,
-  Shield,
-  ShieldCheck,
-  SlidersHorizontal,
-  Sparkles,
-  Star,
-  Users,
-  X,
-  CheckCircle2,
-  type LucideIcon,
-} from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowRight, Bell, Check, ChevronDown, ChevronRight, CircleCheck, Headphones, HelpCircle, Loader2, Mail, MoreVertical, Search, Shield, Star, Users, X, CheckCircle2, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
   AppStore,
@@ -236,9 +210,6 @@ function MetricCard({ metric }: { metric: Metric }) {
   return (
     <Panel className="relative min-h-[96px] overflow-hidden p-3.5">
       <div className="flex items-center gap-3">
-        <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-full border shadow-sm", style.soft, style.text, style.border)}>
-          <metric.icon size={19} strokeWidth={2.4} />
-        </span>
         <div className="min-w-0">
           <p className="text-[11px] font-semibold leading-tight text-body">{metric.label}</p>
           <p className="mt-1 text-[24px] font-black leading-none tracking-[-0.03em] text-navy">{metric.value}</p>
@@ -274,8 +245,9 @@ function MetricCardSkeleton() {
 function SourceIconList({ label, sources, extraSources }: { label: string; sources: SourceKey[]; extraSources: number }) {
   return (
     <div>
-      <p className="mb-2 text-[9px] font-black text-[#5F6B94]">{label}</p>
+      {label ? <p className="mb-2 text-[9px] font-black text-[#5F6B94]">{label}</p> : null}
       <div className="flex items-center gap-1.5">
+        {sources.length === 0 ? <span className="text-[10px] font-black text-[#31406B]">{pickL("News", "Berita")}</span> : null}
         {sources.map((source) => (
           <span key={source} className="flex size-[22px] items-center justify-center rounded-[6px] border border-[#E6EAF2] bg-white shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
             {sourceIcons[source]}
@@ -291,11 +263,7 @@ function AlertIcon({ tone }: { tone: AlertRow["tone"] }) {
   const style = toneStyles[tone];
   const Icon = tone === "green" ? Star : tone === "blue" ? HelpCircle : AlertTriangle;
 
-  return (
-    <span className={cn("flex size-8 shrink-0 items-center justify-center rounded-full", style.soft, style.text)}>
-      <Icon size={16} fill={tone === "green" ? style.color : "none"} strokeWidth={2.3} />
-    </span>
-  );
+  return null;
 }
 
 function StatusBadge({ status }: { status: AlertStatus }) {
@@ -309,7 +277,8 @@ function StatusBadge({ status }: { status: AlertStatus }) {
   return <span className={cn("rounded-[8px] px-2.5 py-1 text-[10px] font-black", styles[status])}>{status}</span>;
 }
 
-function sourceNameToIconKey(source: string): SourceKey {
+/** Logo for a social/app source; null for news and anything without a logo (it used to fall back to X). */
+function sourceNameToIconKey(source: string): SourceKey | null {
   const normalized = source.toLowerCase();
   if (normalized.includes("instagram")) return "instagram";
   if (normalized.includes("tiktok")) return "tiktok";
@@ -318,7 +287,8 @@ function sourceNameToIconKey(source: string): SourceKey {
   if (normalized.includes("google play") || normalized.includes("googleplay")) return "googleplay";
   if (normalized.includes("support")) return "support";
   if (normalized.includes("discourse") || normalized.includes("forum")) return "discourse";
-  return "x";
+  if (normalized === "x" || normalized.includes("twitter")) return "x";
+  return null;
 }
 
 function defaultEscalationRecords(ta: ReturnType<typeof useTranslations<"Alerts">>): EscalationMatrixRecord[] {
@@ -411,6 +381,11 @@ function channelLabel(channel: string, ta: ReturnType<typeof useTranslations<"Al
   return channel;
 }
 
+function severityText(severity: string | null | undefined) {
+  const v = String(severity || "").toLowerCase();
+  return v === "critical" ? pickL("Critical", "Kritis") : v === "high" ? pickL("High", "Tinggi") : v === "medium" ? pickL("Medium", "Sedang") : pickL("Low", "Rendah");
+}
+
 function mapAlertRecordToRow(alert: Alert, ta: ReturnType<typeof useTranslations<"Alerts">>, optimisticStatuses: Record<string | number, AlertStatus>, members: WorkspaceMemberRecord[]): AlertRow {
   const normalizedStatus = String(alert.status || "").toLowerCase();
   const mappedStatus = normalizedStatus === "open"
@@ -421,7 +396,7 @@ function mapAlertRecordToRow(alert: Alert, ta: ReturnType<typeof useTranslations
         ? "Resolved"
         : "Escalated";
   const alertSources = alert.sources?.filter(Boolean) ?? [];
-  const shownSources = alertSources.slice(0, 3).map(sourceNameToIconKey);
+  const shownSources = alertSources.slice(0, 3).map(sourceNameToIconKey).filter((key): key is SourceKey => key !== null);
   const createdAt = new Date(alert.createdAt);
   const deadline = alert.deadline ? new Date(alert.deadline) : null;
 
@@ -429,10 +404,10 @@ function mapAlertRecordToRow(alert: Alert, ta: ReturnType<typeof useTranslations
     id: alert.id,
     title: alert.title,
     description: alert.whatHappened || alert.whyItMatters || alert.whatToDo || "-",
-    tags: [alert.severity || "info"],
+    tags: [severityText(alert.severity)],
     // The owner: the assigned member, else the assigned team (the alert type is not an owner).
     sourceLabel: assigneeName(alert.assignedTo, members) || alert.assignedTeam || ta("table.unassigned"),
-    sources: shownSources.length > 0 ? shownSources : ["x"],
+    sources: shownSources,
     extraSources: Math.max(0, alertSources.length - shownSources.length),
     escalationLevel: alert.escalationLevel || "-",
     deadline: deadline && !Number.isNaN(deadline.getTime()) ? deadline.toLocaleString(intlLocale(), { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "-",
@@ -474,7 +449,6 @@ function CriticalIncident({
     <Panel className="min-h-0 h-auto border-[#FAD7D7] bg-[#FFF8F8] p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="flex size-8 items-center justify-center rounded-full bg-[#EF4444]/10 text-[#C81E1E] ring-4 ring-[#EF4444]/5"><AlertTriangle size={17} fill="#EF4444" /></span>
           <div>
             <h2 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{ta("v2.incident.title")}</h2>
             <p className="mt-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#C81E1E]">{ta("v2.incident.totalCritical", { count: totalCritical })}</p>
@@ -572,7 +546,7 @@ function DeliveryStatus({ ta, integrations, isLoading }: { ta: ReturnType<typeof
                 <p className="truncate text-[12px] font-black text-[#101334]">{channel.name}</p>
                 <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-[#647099]">{channel.platform}</p>
               </div>
-              <div className="text-right"><p className="inline-flex items-center gap-1 text-[10px] font-black text-[#047857]"><CheckCircle2 size={11} aria-hidden="true" />{ta("v2.delivery.active")}</p><p className="text-[9px] font-bold text-[#31406B]">{channel.lastSyncAt ? new Date(channel.lastSyncAt).toLocaleDateString(intlLocale(), { day: "2-digit", month: "short" }) : ta("v2.delivery.ready")}</p></div>
+              <div className="text-right"><p className="inline-flex items-center gap-1 text-[10px] font-black text-[#047857]">{ta("v2.delivery.active")}</p><p className="text-[9px] font-bold text-[#31406B]">{channel.lastSyncAt ? new Date(channel.lastSyncAt).toLocaleDateString(intlLocale(), { day: "2-digit", month: "short" }) : ta("v2.delivery.ready")}</p></div>
             </div>
           ))
         ) : (
@@ -708,7 +682,6 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
             onClick={() => onSelectionChange(new Set())}
             className="ml-auto flex items-center gap-1 rounded-[6px] px-2 py-1.5 text-[11px] font-bold text-[#5F6B94] transition hover:bg-[#465FFF]/10 hover:text-[#3B52F5]"
           >
-            <X size={12} />
             Clear
           </button>
         </div>
@@ -725,7 +698,6 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
             <input type="search" value={searchQuery ?? ""} onChange={(e) => onSearchChange(e.target.value)} placeholder={ta("filter.search")} className="h-10 w-full min-w-[220px] rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-10 text-[13px] font-bold text-[#101334] outline-none transition placeholder:text-[#647099] focus:border-[#465FFF] focus:bg-white" />
           </label>
           <button type="button" onClick={onOpenFilterModal} className={cn("inline-flex h-10 items-center gap-2 rounded-[8px] border px-4 text-[11px] font-black transition", activeFilterCount > 0 ? "border-[#465FFF]/30 bg-[#EEF2FF] text-[#3B52F5]" : "border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B] hover:border-[#C9D4F6]")}>
-            <SlidersHorizontal size={14} />
             {ta("filter.title")}
             {activeFilterCount > 0 ? <span className="rounded-full bg-[#465FFF] px-1.5 py-0.5 text-[9px] leading-none text-white">{activeFilterCount}</span> : null}
           </button>
@@ -769,9 +741,6 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
               <tr>
                 <td colSpan={10} className="px-6 py-12 text-center">
                   <div className="flex flex-col items-center justify-center">
-                    <div className="flex size-12 items-center justify-center rounded-full bg-[#FFF2F2]">
-                      <AlertTriangle size={24} className="text-[#C81E1E]" />
-                    </div>
                     <p className="mt-3 text-[13px] font-bold text-[#B42318]">{ta("table.errorTitle")}</p>
                     <p className="mt-1 text-[11px] font-semibold text-[#647099]">{ta("table.errorDesc")}</p>
                   </div>
@@ -781,9 +750,6 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
               <tr>
                 <td colSpan={10} className="px-6 py-12 text-center">
                   <div className="flex flex-col items-center justify-center">
-                    <div className="flex size-12 items-center justify-center rounded-full bg-[#F5F7FC]">
-                      <AlertTriangle size={24} className="text-[#DDE3EF]" />
-                    </div>
                     <p className="mt-3 text-[13px] font-bold text-[#5F6B94]">{ta("empty.noAlerts")}</p>
                     <p className="mt-1 text-[11px] font-semibold text-[#647099]">{ta("empty.noAlertsDesc")}</p>
                   </div>
@@ -828,9 +794,9 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                   {openMenuId === alert.id ? (
                     <div ref={menuRef} className="absolute right-3 top-full z-50 mt-1 w-48 rounded-[10px] border border-[#E6EAF2] bg-white py-1 shadow-[0_12px_36px_rgba(16,24,40,0.12)]">
                       <p className="px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.14em] text-[#647099]">{ta("table.changeStatus")}</p>
-                      <button type="button" onClick={() => { onStatusChange(alert.id, "open"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]"><Bell size={13} className="text-[#3B52F5]" /> {ta("table.statusNew")}</button>
-                      <button type="button" onClick={() => { onStatusChange(alert.id, "acknowledged"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]"><Check size={13} className="text-[#047857]" /> {ta("table.statusInvestigating")}</button>
-                      <button type="button" onClick={() => { onStatusChange(alert.id, "resolved"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]"><ShieldCheck size={13} className="text-[#047857]" /> {ta("table.statusResolved")}</button>
+                      <button type="button" onClick={() => { onStatusChange(alert.id, "open"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]">{ta("table.statusNew")}</button>
+                      <button type="button" onClick={() => { onStatusChange(alert.id, "acknowledged"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]">{ta("table.statusInvestigating")}</button>
+                      <button type="button" onClick={() => { onStatusChange(alert.id, "resolved"); setOpenMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-[11px] font-bold text-[#31406B] hover:bg-[#F8FAFF]">{ta("table.statusResolved")}</button>
                     </div>
                   ) : null}
                 </td>
@@ -856,7 +822,8 @@ export default function AlertsPage() {
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [severityFilter, setSeverityFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  // Open by default on what still needs work; resolved alerts are one click away.
+  const [statusFilter, setStatusFilter] = useState("unresolved");
   const [openMenuId, setOpenMenuId] = useState<string | number | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
@@ -1253,9 +1220,9 @@ export default function AlertsPage() {
           <p className="mt-2 max-w-2xl text-[14px] font-medium leading-6 text-body">{ta("v2.header.desc")}</p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <button type="button" onClick={openNotificationRulesModal} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF] sm:w-auto"><Settings size={14} />{ta("v2.header.notificationRules")}</button>
-          <button type="button" onClick={openEscalationModal} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF] sm:w-auto"><Users size={14} />{ta("v2.header.escalationMatrix")}</button>
-          <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 text-[12px] font-black text-white shadow-sm sm:w-auto"><Plus size={15} />{ta("v2.header.createAlert")}</button>
+          <button type="button" onClick={openNotificationRulesModal} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF] sm:w-auto">{ta("v2.header.notificationRules")}</button>
+          <button type="button" onClick={openEscalationModal} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF] sm:w-auto">{ta("v2.header.escalationMatrix")}</button>
+          <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 text-[12px] font-black text-white shadow-sm sm:w-auto">{ta("v2.header.createAlert")}</button>
         </div>
       </header>
 
@@ -1269,9 +1236,6 @@ export default function AlertsPage() {
       {summaryQuery.isError || (!summaryQuery.isLoading && !summaryQuery.data) ? (
         <div className="rounded-[12px] border border-dashed border-[#8B5CFF]/30 bg-[#FBFAFF] px-5 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#8B5CFF]/10 text-[#6E44E8] shrink-0">
-              <Sparkles size={18} />
-            </div>
             <div>
               <p className="text-[13px] font-bold text-slate-900">{pickL("Alert metrics unavailable", "Metrik peringatan belum bisa dimuat")}</p>
               <p className="text-[11px] font-medium text-[#5A6478]">{pickL("The data could not be loaded. Try again in a moment.", "Data gagal dimuat. Coba lagi sebentar lagi.")}</p>
@@ -1312,7 +1276,7 @@ export default function AlertsPage() {
               <div className="relative flex items-start justify-between gap-4">
                 <div>
                   <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#DDE3EF] bg-white/80 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-[#3B52F5]">
-                    <Bell size={12} /> {ta("v2.notificationRulesModal.badge")}
+                    {ta("v2.notificationRulesModal.badge")}
                   </div>
                   <h2 className="text-lg font-black tracking-[-0.03em] text-[#101334]">{ta("v2.notificationRulesModal.title")}</h2>
                   <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{ta("v2.notificationRulesModal.desc")}</p>
@@ -1381,7 +1345,7 @@ export default function AlertsPage() {
                         <p className="mt-0.5 text-[10px] font-bold text-[#647099]">{ta("v2.notificationRulesModal.rulesDesc")}</p>
                       </div>
                       <button type="button" onClick={addNotificationRule} disabled={notificationRuleDraft.length >= 20} className="inline-flex h-9 items-center justify-center gap-2 rounded-[9px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#3B52F5] transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-50">
-                        <Plus size={14} /> {ta("v2.notificationRulesModal.addRule")}
+                        {ta("v2.notificationRulesModal.addRule")}
                       </button>
                     </div>
 
@@ -1584,7 +1548,7 @@ export default function AlertsPage() {
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] p-3">
                 <p className="text-[11px] font-bold text-[#5F6B94]">{ta("v2.escalationMatrix.limitHint")}</p>
                 <button type="button" onClick={addEscalationLevel} disabled={escalationDraft.length >= 5} className="inline-flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#3B52F5] transition hover:border-[#C9D4F6] disabled:cursor-not-allowed disabled:opacity-50">
-                  <Plus size={14} /> {ta("v2.escalationMatrix.addLevel")}
+                  {ta("v2.escalationMatrix.addLevel")}
                 </button>
               </div>
             </div>
@@ -1719,7 +1683,7 @@ export default function AlertsPage() {
                 {/* ── Assignment & Sources ── */}
                 <div className="rounded-[10px] border border-[#E6EAF2] bg-[#FBFCFF]">
                   <button type="button" onClick={() => setIsCreateAdvancedOpen((open) => !open)} className="flex w-full items-center justify-between px-3.5 py-2.5 text-[11px] font-black text-[#31406B]">
-                    <span className="flex items-center gap-2"><Settings size={13} className="text-[#3B52F5]" />{taCreate("advancedSection")}</span>
+                    <span className="flex items-center gap-2">{taCreate("advancedSection")}</span>
                     <ChevronRight size={14} className={cn("text-[#647099] transition-transform", isCreateAdvancedOpen && "rotate-90")} />
                   </button>
                   {isCreateAdvancedOpen && (
@@ -1833,7 +1797,7 @@ export default function AlertsPage() {
               <div className="relative flex items-start justify-between gap-4">
                 <div>
                   <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#DDE3EF] bg-white/80 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-[#3B52F5]">
-                    <SlidersHorizontal size={12} /> {ta("filter.badge")}
+                    {ta("filter.badge")}
                   </div>
                   <h2 className="text-lg font-black tracking-[-0.03em] text-[#101334]">{ta("filter.title")}</h2>
                   <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{ta("filter.desc")}</p>
@@ -1877,10 +1841,11 @@ export default function AlertsPage() {
                     <p className="text-[12px] font-black text-[#101334]">{ta("table.status")}</p>
                     <p className="mt-0.5 text-[10px] font-bold text-[#647099]">{ta("filter.statusDesc")}</p>
                   </div>
-                  {statusFilter ? <span className="rounded-full bg-[#465FFF]/10 px-2 py-1 text-[9px] font-black text-[#3B52F5]">{statusFilter}</span> : null}
+                  {statusFilter && statusFilter !== "unresolved" ? <span className="rounded-full bg-[#465FFF]/10 px-2 py-1 text-[9px] font-black text-[#3B52F5]">{statusFilter}</span> : null}
                 </div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {[
+                    { value: "unresolved", label: pickL("Needs work", "Belum selesai") },
                     { value: "", label: ta("filter.allStatus") },
                     { value: "open", label: ta("table.statusNew") },
                     { value: "acknowledged", label: ta("table.statusInvestigating") },
@@ -1899,7 +1864,7 @@ export default function AlertsPage() {
               </div>
             </div>
             <div className="flex flex-col-reverse gap-2 border-t border-[#EEF1F7] bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
-              <button type="button" onClick={() => { setSearchQuery(""); setSeverityFilter(""); setStatusFilter(""); setPage(1); }} className="inline-flex h-10 items-center justify-center rounded-[10px] border border-[#E6EAF2] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:border-[#F3B4B4] hover:bg-[#FFF7F7] hover:text-[#C81E1E]">
+              <button type="button" onClick={() => { setSearchQuery(""); setSeverityFilter(""); setStatusFilter("unresolved"); setPage(1); }} className="inline-flex h-10 items-center justify-center rounded-[10px] border border-[#E6EAF2] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:border-[#F3B4B4] hover:bg-[#FFF7F7] hover:text-[#C81E1E]">
                 {ta("filter.clearFilter")}
               </button>
               <div className="flex gap-2">

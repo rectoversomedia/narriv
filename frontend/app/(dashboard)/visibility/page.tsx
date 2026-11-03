@@ -6,24 +6,7 @@ import { useState, useEffect, useRef, type ComponentType, type ReactNode } from 
 import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import {
-  CalendarDays,
-  Download,
-  Search,
-  TrendingUp,
-  Target,
-  Shield,
-  MessageCircle,
-  Info,
-  ChevronDown,
-  ChevronRight,
-  CheckCircle,
-  AlertCircle,
-  RefreshCcw,
-  Bot,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+import { Search, TrendingUp, Target, Shield, MessageCircle, Info, ChevronDown, ChevronRight, CheckCircle, X, type LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardErrorState, MetricRowSkeleton } from "@/components/dashboard/dashboard-states";
@@ -76,18 +59,7 @@ function Panel({ children, className }: { children: ReactNode; className?: strin
 
 function IconHalo({ icon: Icon, tone }: { icon: LucideIcon; tone: Tone }) {
   const toneStyle = toneStyles[tone];
-  return (
-    <div
-      className="flex size-11 shrink-0 items-center justify-center rounded-full border shadow-[0_6px_12px_rgba(16,24,40,0.03)]"
-      style={{
-        color: toneStyle.color,
-        borderColor: `rgba(${toneStyle.rgb}, 0.12)`,
-        background: `radial-gradient(circle at 30% 25%, rgba(255,255,255,.9), rgba(${toneStyle.rgb}, .11))`,
-      }}
-    >
-      <Icon size={20} strokeWidth={2.3} />
-    </div>
-  );
+  return null;
 }
 
 function Sparkline({ values, color }: { values: number[]; color: string }) {
@@ -869,7 +841,6 @@ export default function VisibilityPage() {
         <div className="flex w-full flex-wrap gap-2.5 md:w-auto">
           <div className="relative" ref={dateMenuRef}>
             <button type="button" aria-label={t("ariaLabels.dateFilter")} onClick={() => setIsDateMenuOpen((open) => !open)} className="flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#D9DEEA] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:bg-[#F8FAFF] sm:flex-none">
-              <CalendarDays size={14} className="text-[#647099]" />
               {visibilityTrends?.period
                 ? `${formatChartDate(visibilityTrends.period.from, language)} - ${formatChartDate(visibilityTrends.period.to, language)}`
                 : t("last7Days")
@@ -922,7 +893,6 @@ export default function VisibilityPage() {
             }}
             className="flex h-10 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#D9DEEA] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:bg-[#F8FAFF] sm:flex-none"
           >
-            <Download size={14} className="text-[#647099]" />
             {t("export")}
           </button>
         </div>
@@ -957,9 +927,6 @@ export default function VisibilityPage() {
           <Panel className="border-[#D6DEFF] bg-[#F6F8FF]">
             <CardContent className="grid gap-5 p-5 md:grid-cols-2 2xl:grid-cols-[minmax(0,1fr)_230px_260px] 2xl:items-center">
               <div className="flex items-start gap-4">
-                <div className="relative flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-purple-200 bg-[#F3ECFF] shadow-md sm:size-20">
-                  <Bot className="size-8 text-purple-600" aria-hidden="true" />
-                </div>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-[12px] font-black uppercase tracking-[0.06em] text-[#101334]">{t("execSummary.title")}</p>
@@ -975,14 +942,12 @@ export default function VisibilityPage() {
               <div className="flex flex-col gap-3 border-t border-[#D9DDF2] pt-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
                 <div>
                   <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#647099]">
-                    <TrendingUp size={11} className="text-[#047857]" />
                     {t("execSummary.opportunity")}
                   </div>
                   <p className="mt-1 text-[11px] font-black leading-tight text-[#101334]">{execOpportunityValue}</p>
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#647099]">
-                    <AlertCircle size={11} className="text-[#C81E1E]" />
                     {t("execSummary.risk")}
                   </div>
                   <p className="mt-1 text-[11px] font-black leading-tight text-[#101334]">{execRiskValue}</p>
@@ -1110,7 +1075,6 @@ export default function VisibilityPage() {
                   >
                     {isSimulating ? (
                       <span className="flex items-center gap-2">
-                        <RefreshCcw size={13} className="animate-spin" />
                         {language === "id" ? "Menganalisis..." : "Analyzing..."}
                       </span>
                     ) : t("sandbox.simulateBtn")}
@@ -1371,9 +1335,6 @@ export default function VisibilityPage() {
                 <div className="space-y-3">
                   {geoActions.map((action, idx) => (
                     <div key={idx} className="flex items-start gap-3 rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-4 hover:border-[#DCE2F0] hover:bg-white transition">
-                      <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#8B5CFF]/10 text-[#6E44E8]">
-                        <CheckCircle size={15} />
-                      </span>
                       <div className="min-w-0">
                         <p className="text-[12px] font-black text-[#101334]">{action}</p>
                       </div>

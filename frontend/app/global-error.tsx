@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, RefreshCcw } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 
 export default function GlobalError({
   error,
@@ -40,7 +40,6 @@ export default function GlobalError({
               onClick={reset}
               style={{ marginTop: 24, display: "inline-flex", height: 44, alignItems: "center", justifyContent: "center", gap: 8, border: 0, borderRadius: 10, background: "#465FFF", padding: "0 20px", color: "#FFFFFF", fontSize: 14, fontWeight: 700, cursor: "pointer" }}
             >
-              <RefreshCcw size={16} />
               Coba lagi
             </button>
           </section>

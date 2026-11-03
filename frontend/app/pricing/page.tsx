@@ -4,27 +4,7 @@ import { Fragment, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useL } from "@/lib/use-l";
-import {
-  Check,
-  X,
-  Zap,
-  Building2,
-  Users,
-  Globe,
-  BarChart3,
-  Shield,
-  Headphones,
-  ArrowRight,
-  Brain,
-  Target,
-  Crown,
-  Rocket,
-  MessageCircle,
-  FileText,
-  Bot,
-  Workflow,
-  Sliders,
-} from "lucide-react";
+import { Zap, Building2, Users, ArrowRight, Brain, Target, Crown, Rocket, MessageCircle, FileText, Workflow, Sliders } from "lucide-react";
 
 // Subscription plans matching pricing image
 const plans = [
@@ -347,11 +327,6 @@ export default function PricingPage() {
 
                 {/* Plan Header */}
                 <div className="text-center">
-                  <div className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl ${
-                    plan.popular ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600"
-                  }`}>
-                    <PlanIcon size={28} />
-                  </div>
                   <h3 className="text-xl font-bold text-slate-900">{plan.name}</h3>
                   <p className="mt-1 text-sm text-[#5A6478]">{tx(plan.tagline)}</p>
                   <p className="mt-2 text-xs text-[#5A6478]">{tx(plan.description)}</p>
@@ -572,7 +547,6 @@ export default function PricingPage() {
               href="/help#contact"
               className="inline-flex items-center gap-2 rounded-xl border-2 border-white/30 px-8 py-4 text-base font-bold text-white hover:bg-white/10 transition"
             >
-              <Headphones size={18} />
               {t("contactSales")}
             </Link>
           </div>

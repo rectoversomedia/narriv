@@ -3,23 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
-import {
-  FileText,
-  Download,
-  ChevronDown,
-  AlertTriangle,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  Shield,
-  Lightbulb,
-  Eye,
-  BarChart2,
-  CheckSquare,
-  ArrowUp,
-  ArrowDown,
-  ArrowRight,
-} from "lucide-react";
+import { FileText, ChevronDown, AlertTriangle, TrendingUp, TrendingDown, Minus, Lightbulb, ArrowUp, ArrowDown, ArrowRight } from "lucide-react";
 import { NarrativeMap } from "@/components/intelligence/narrative-map";
 import { cn } from "@/lib/utils";
 import { isDemoMode } from "@/lib/demo-mock-data";
@@ -379,7 +363,6 @@ export default function DailyIntelligenceBriefPage() {
                     "hover:bg-slate-50 active:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/30"
                   )}
                 >
-                  <Download className="h-4 w-4 text-[#5A6478]" strokeWidth={2} />
                   {L("Print / Save as PDF", "Cetak / Simpan PDF")}
                 </button>
               </div>

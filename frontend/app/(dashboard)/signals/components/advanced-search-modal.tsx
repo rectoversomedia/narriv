@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { X, Search, Calendar, Loader2, Filter, Tag, Globe, Database } from "lucide-react";
+import { X, Search, Loader2, Filter } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { searchSignals, type AdvancedSearchFilters, type SearchSignalsResponse } from "@/lib/api-service";
@@ -203,9 +203,6 @@ export function AdvancedSearchModal({
         {/* Header */}
         <div className="flex items-start justify-between gap-4 border-b border-[#EDF1F7] p-5">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#465FFF]/10 text-[#3B52F5]">
-              <Filter size={20} />
-            </span>
             <div>
               <h3 id={titleId} className="text-lg font-black text-[#101334]">{t("title")}</h3>
               <p id={descriptionId} className="text-xs font-semibold text-[#5F6B94]">{t("description")}</p>
@@ -225,7 +222,6 @@ export function AdvancedSearchModal({
             {/* Platform Filter */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-[12px] font-black text-[#31406B]">
-                <Database size={14} className="text-[#647099]" />
                 {t("platform")}
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -284,7 +280,6 @@ export function AdvancedSearchModal({
             {/* Date Range */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-[12px] font-black text-[#31406B]">
-                <Calendar size={14} className="text-[#647099]" />
                 {t("dateRange")}
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -364,7 +359,6 @@ export function AdvancedSearchModal({
             {/* Topics */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-[12px] font-black text-[#31406B]">
-                <Tag size={14} className="text-[#647099]" />
                 {t("topics")}
               </label>
               <input
@@ -380,7 +374,6 @@ export function AdvancedSearchModal({
             {/* Language */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-[12px] font-black text-[#31406B]">
-                <Globe size={14} className="text-[#647099]" />
                 {t("language")}
               </label>
               <div className="grid grid-cols-4 gap-2">

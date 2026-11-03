@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Loader2, Pause, Pencil, Play, Plus, RefreshCw, Search, Trash2, X } from "lucide-react";
+import { Check, Loader2, Pause, Pencil, Play, RefreshCw, Trash2, X } from "lucide-react";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useToast } from "@/components/ui/toast";
 import {
@@ -87,9 +87,6 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
   return (
     <section id="keywords" className={cn("scroll-mt-24 rounded-[14px] border border-[#DDE3EF] bg-white p-6 shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)}>
       <div className="flex items-start gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#3B52F5]">
-          <Search size={18} strokeWidth={2.3} />
-        </span>
         <div className="min-w-0">
           <h3 className="text-[13.5px] font-black text-[#101334]">{t("title")}</h3>
           <p className="text-[10px] font-semibold text-[#5F6B94]">{t("desc")}</p>
@@ -127,7 +124,6 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
                 disabled={busy || draft.trim().length < 2}
                 className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#465FFF] px-3 text-[11px] font-black text-white disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Plus size={13} />
                 {createMutation.isPending ? t("adding") : t("add")}
               </button>
             </form>

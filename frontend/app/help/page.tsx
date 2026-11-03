@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { SUPPORT_EMAIL } from "@/lib/support";
 import { useL } from "@/lib/use-l";
-import { Search, Book, MessageCircle, Mail, ChevronDown, Zap, BarChart3, Bell, FileText, Users, Settings } from "lucide-react";
+import { Search, MessageCircle, ChevronDown, Zap, BarChart3, Bell, FileText, Users, Settings } from "lucide-react";
 
 // Answers describe current product behaviour only; update them when the behaviour changes.
 type Faq = { q: [string, string]; a: [string, string] };
@@ -177,7 +177,6 @@ export default function HelpCenterPage() {
       <header className="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 px-6 py-16 text-white">
         <div className="mx-auto max-w-4xl text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur-sm">
-            <Book size={16} />
             {L("Help Center", "Pusat Bantuan")}
           </div>
           <h1 className="text-[32px] font-bold leading-tight tracking-[-0.02em] sm:text-[40px]">{L("How can we help you?", "Ada yang bisa kami bantu?")}</h1>
@@ -217,7 +216,6 @@ export default function HelpCenterPage() {
                   onClick={() => setActiveGroup(active ? null : g.id)}
                   className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${active ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"}`}
                 >
-                  <Icon size={15} />
                   {pick(g.title)}
                 </button>
               );
@@ -233,7 +231,6 @@ export default function HelpCenterPage() {
                 return (
                   <div key={g.id}>
                     <h2 className="mb-4 flex items-center gap-3 text-lg font-bold text-slate-900">
-                      <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${g.color} text-white`}><Icon size={16} /></span>
                       {pick(g.title)}
                     </h2>
                     <div className="space-y-3">
@@ -275,7 +272,6 @@ export default function HelpCenterPage() {
                   href={`mailto:${SUPPORT_EMAIL}`}
                   className="inline-flex items-center gap-2 rounded-lg border-2 border-white/30 px-6 py-3 font-bold text-white transition-colors hover:bg-white/10"
                 >
-                  <Mail size={18} />
                   {L("Email support", "Email dukungan")} ({SUPPORT_EMAIL})
                 </a>
               </div>

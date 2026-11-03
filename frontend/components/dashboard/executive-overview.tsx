@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { AlertTriangle, ArrowRight, ChevronDown, ExternalLink, Lightbulb, ListChecks, Newspaper, TrendingUp } from "lucide-react";
+import { AlertTriangle, ArrowRight, ChevronDown, ExternalLink, ListChecks, Newspaper, TrendingUp } from "lucide-react";
 import { getExecutiveOverview, type ExecutiveOverview as OverviewData, type OverviewEvidence, type OverviewFinding, type OverviewFollowUp } from "@/lib/intelligence-api";
 import { issueHref, monitoringHref, type MonitoringFilters, type MonitoringPeriod } from "@/lib/evidence-links";
 import { intlLocale, useUiStore } from "@/store/useUiStore";
@@ -192,7 +192,7 @@ export function ExecutiveOverview() {
 
       {data?.coverage.newsOnly ? (
         <p className="flex items-center gap-2 rounded-[10px] bg-[#F4F6FF] px-3 py-2 text-[12px] font-medium text-[#31406B]">
-          <Newspaper size={14} className="shrink-0 text-[#3B52F5]" aria-hidden="true" />{t("newsOnly")}
+          {t("newsOnly")}
         </p>
       ) : null}
 
@@ -318,7 +318,7 @@ export function ExecutiveOverview() {
                 {data.actions.map((a, i) => (
                   <li key={`${a.action}-${i}`} className="rounded-[10px] border border-[#EEF1F7] p-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="font-semibold text-[#101334]"><Lightbulb size={13} className="mr-1 inline text-[#6E44E8]" aria-hidden="true" />{t.has(`a_${a.action}`) ? t(`a_${a.action}`) : a.action}</p>
+                      <p className="font-semibold text-[#101334]">{t.has(`a_${a.action}`) ? t(`a_${a.action}`) : a.action}</p>
                       {a.unchangedSinceFollowUp ? (
                         <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">{t("alreadyHandled")}</span>
                       ) : a.urgency && t.has(`urgency_${a.urgency}`) ? <span className="rounded-full bg-[#465FFF]/10 px-2 py-0.5 text-[10px] font-bold text-[#3B52F5]">{t(`urgency_${a.urgency}`)}</span> : null}

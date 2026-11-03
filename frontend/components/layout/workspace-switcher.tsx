@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, Check, ChevronDown, Loader2, Plus, X } from "lucide-react";
+import { Building2, Check, ChevronDown, Loader2, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { createClientWorkspace, listMyWorkspaces, type WorkspaceSummary } from "@/lib/api-service";
 import { isDemoSession, useAuthStore } from "@/store/useAuthStore";
@@ -100,7 +100,7 @@ export function WorkspaceSwitcher() {
               onClick={() => { setOpen(false); setCreating(true); }}
               className="flex w-full items-center gap-2 rounded-[10px] px-2.5 py-2 text-left text-[13px] font-semibold text-[#3B52F5] transition hover:bg-[#465FFF]/5"
             >
-              <Plus size={15} aria-hidden="true" /> New client workspace
+              New client workspace
             </button>
           </div>
         </PopoverContent>

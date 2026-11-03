@@ -4,20 +4,7 @@ import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
 import { getMySubscription } from "@/lib/api-service";
 import { cn } from "@/lib/utils";
-import {
-  Crown,
-  Zap,
-  Brain,
-  Rocket,
-  TrendingUp,
-  Users,
-  Hash,
-  Activity,
-  Bell,
-  FileText,
-  ArrowRight,
-  Sparkles
-} from "lucide-react";
+import { Crown, Zap, Brain, Rocket, Users, Hash, Activity, Bell, FileText, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { pickL, useL } from "@/lib/use-l";
 
@@ -66,9 +53,6 @@ function UsageBar({ label, used, limit, icon: Icon, color }: UsageBarProps) {
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className={cn("flex h-7 w-7 items-center justify-center rounded-md", color)}>
-            <Icon size={14} className="text-white" />
-          </div>
           <span className="text-[11px] font-semibold text-slate-600">{label}</span>
         </div>
         <span className={cn(
@@ -182,12 +166,6 @@ export function SubscriptionCard({ onUpgradeClick }: SubscriptionCardProps) {
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br shadow-sm",
-            gradientClass
-          )}>
-            <PlanIcon size={20} className="text-white" />
-          </div>
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-[13px] font-black text-slate-900">
@@ -213,7 +191,6 @@ export function SubscriptionCard({ onUpgradeClick }: SubscriptionCardProps) {
             "bg-[#465FFF] text-white shadow-sm hover:bg-[#3B52F5]"
           )}
         >
-          <Sparkles size={12} />
           Upgrade
           <ArrowRight size={12} />
         </Link>

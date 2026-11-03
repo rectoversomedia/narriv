@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { useUiStore } from "@/store/useUiStore";
-import { Send, BotMessageSquare, TrendingUp, Zap, AlertTriangle, Users, Compass, Eye, BarChart2, Activity, ChevronDown, ChevronRight } from "lucide-react";
+import { Send, BotMessageSquare, TrendingUp, Zap, AlertTriangle, Users, Compass, BarChart2, Activity, ChevronDown, ChevronRight } from "lucide-react";
 import { CardContent } from "@/components/ui/card";
 import { getNarratives, getDashboardSummary } from "@/lib/api-service";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
@@ -103,9 +103,6 @@ function ConfidenceChip({ confidence, t }: { confidence: Confidence; t: (key: st
 function TypingIndicator({ text }: { text: string }) {
   return (
     <div className="flex items-start gap-3 px-4">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10">
-        <BotMessageSquare size={15} className="text-[#3B52F5]" />
-      </div>
       <div className="flex flex-col gap-1.5 rounded-2xl rounded-tl-sm border border-slate-100 bg-white px-4 py-3 shadow-sm">
         <p className="text-[12px] font-semibold text-[#5A6478]">{text}</p>
         <div className="flex items-center gap-1">
@@ -282,9 +279,6 @@ export default function AskPage() {
         <div className="flex flex-col gap-1 p-4">
           {/* Title */}
           <div className="mb-3 flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#465FFF]/10">
-              <BotMessageSquare size={16} className="text-[#3B52F5]" />
-            </div>
             {sidebarOpen && (
               <div>
                 <p className="text-[14px] font-black text-slate-900">{tAsk("title")}</p>
@@ -311,9 +305,6 @@ export default function AskPage() {
                     }}
                     className="flex items-start gap-2.5 rounded-xl border border-transparent px-3 py-2.5 text-left transition-all hover:border-[#465FFF]/15 hover:bg-[#465FFF]/5 active:scale-[0.98]"
                   >
-                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[#465FFF]/10">
-                      <Icon size={12} className="text-[#3B52F5]" />
-                    </span>
                     <span className="text-[12px] font-semibold leading-snug text-slate-700">
                       {cat.question[language]}
                     </span>
@@ -377,9 +368,6 @@ export default function AskPage() {
 
               return (
                 <div key={msg.id} className="flex items-start gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10">
-                    <BotMessageSquare size={14} className="text-[#3B52F5]" />
-                  </div>
                   <div className="flex-1 rounded-2xl rounded-tl-sm border border-slate-100 bg-white px-5 py-4 shadow-sm">
                     {/* Demo badge */}
                     <div className="mb-3 flex items-center justify-between">
@@ -475,9 +463,6 @@ export default function AskPage() {
 
             {isTyping && (
               <div className="flex items-start gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10">
-                  <BotMessageSquare size={14} className="text-[#3B52F5]" />
-                </div>
                 <div className="rounded-2xl rounded-tl-sm border border-slate-100 bg-white px-5 py-4 shadow-sm">
                   <p className="mb-2 text-[12px] font-semibold text-[#5A6478]">{tAsk("thinking")}</p>
                   <div className="flex items-center gap-1">
