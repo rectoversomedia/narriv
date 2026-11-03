@@ -2165,12 +2165,28 @@ export interface VisibilitySummaryResponse {
   };
   engine_breakdown: Array<{
     engineName: string;
+    /** chatgpt | gemini | claude | perplexity | deepseek, or null for an engine outside the five. */
+    engineKey?: string | null;
     visibilityScore: number;
     brandPresenceRate: number;
     competitorMentionRate: number;
     lastChecked: string;
     metadata: Record<string, unknown>;
   }>;
+  engines?: GeoEngineStatus[];
+}
+
+/** The five AI assistants checked for GEO and whether each has an API key on the server. */
+export interface GeoEngineStatus {
+  key: string;
+  name: string;
+  model: string;
+  configured: boolean;
+}
+
+/** Ask every connected AI assistant the workspace's test prompts (owners and admins). */
+export async function runGeoAllEngines(): Promise<{ results: Array<{ engine: string; ok: boolean; score?: number | null; error?: string }> }> {
+  return apiClient("/api/visibility/analyze-all", { method: "POST", body: JSON.stringify({}) });
 }
 
 export interface VisibilityTrendsResponse {

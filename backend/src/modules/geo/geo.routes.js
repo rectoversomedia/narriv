@@ -4,6 +4,9 @@ import supabase from "../../lib/supabase.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { runVisibilityAnalysis } from "./geo.service.js";
+import { engineKeyFor, engineStatus, GEO_ENGINES, isEngineConfigured } from "./geo-engines.js";
+import { generatePromptVariants } from "./geo-prompts.service.js";
+import { requireWorkspaceRole, MANAGER_ROLES } from "../../lib/workspace-access.js";
 import { logStructured } from "../../lib/logger.js";
 import { wrapAsync } from "../../lib/sentry.js";
 
@@ -146,10 +149,10 @@ router.get("/summary", async (req, res) => {
 
         if (error) throw error;
 
-        // Group by engine, keep only the latest per engine
+        // Group by engine, keep only the latest per engine (older runs map onto the engine they used)
         const latestByEngine = {};
         (allResults || []).forEach(result => {
-            const engineKey = result.engine || "gpt-4o-mini-simulated";
+            const engineKey = engineKeyFor(result.engine) || result.engine || "gpt-4o-mini-simulated";
             if (!latestByEngine[engineKey]) {
                 latestByEngine[engineKey] = result;
             }
@@ -172,6 +175,7 @@ router.get("/summary", async (req, res) => {
         // Per-engine breakdown
         const engineBreakdown = engines.map(e => ({
             engineName: e.engine || "gpt-4o-mini-simulated",
+            engineKey: engineKeyFor(e.engine),
             visibilityScore: Number(e.score || 0),
             brandPresenceRate: e.result?.brand_presence_rate || 0,
             competitorMentionRate: e.result?.competitor_mention_rate || 0,
@@ -187,7 +191,9 @@ router.get("/summary", async (req, res) => {
                 engines_tracked: totalEngines,
                 total_analyses: (allResults || []).length
             },
-            engine_breakdown: engineBreakdown
+            engine_breakdown: engineBreakdown,
+            // The five assistants checked for GEO and whether each has an API key.
+            engines: engineStatus(),
         });
     } catch (error) {
         logStructured("error", "Error fetching visibility summary:", { error: error?.message || error, stack: error?.stack });
@@ -303,6 +309,38 @@ router.post("/analyze", async (req, res) => {
         res.status(201).json(result);
     } catch (error) {
         logStructured("error", "Error running visibility analysis:", { error: error?.message || error, stack: error?.stack });
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// POST /api/visibility/analyze-all — ask every connected AI assistant the workspace's test prompts.
+router.post("/analyze-all", requireWorkspaceRole(MANAGER_ROLES), async (req, res) => {
+    try {
+        const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, req.body?.workspaceId);
+        if (!scopedWorkspaceId) return res.status(403).json({ error: "Workspace access denied" });
+
+        const { data: settings } = await supabase.from("workspace_settings").select("brand_name").eq("workspace_id", scopedWorkspaceId).maybeSingle();
+        const { data: keywords } = await supabase.from("monitoring_keywords").select("keyword").eq("workspace_id", scopedWorkspaceId).eq("is_active", true).limit(3);
+        const brandName = String(req.body?.brandName || settings?.brand_name || keywords?.[0]?.keyword || "").trim();
+        if (!brandName) return res.status(400).json({ error: tr("Set a brand name or an active keyword first.", "Isi nama brand atau kata kunci aktif dulu."), code: "NO_BRAND" });
+        const competitors = Array.isArray(req.body?.competitors) ? req.body.competitors.slice(0, 3) : [];
+        // Three prompts per engine keeps a full run around a minute and its cost small.
+        const queries = generatePromptVariants(brandName, competitors).slice(0, 3).map((p) => p.prompt);
+
+        const connected = GEO_ENGINES.filter(isEngineConfigured);
+        if (connected.length === 0) return res.status(400).json({ error: tr("No AI assistant is connected yet.", "Belum ada asisten AI yang terhubung."), code: "NO_ENGINES" });
+
+        const results = await Promise.all(connected.map(async (engine) => {
+            try {
+                const r = await runVisibilityAnalysis({ workspaceId: scopedWorkspaceId, brandName, competitors, queries, engineName: engine.key });
+                return { engine: engine.key, ok: true, score: r?.score ?? null };
+            } catch (error) {
+                return { engine: engine.key, ok: false, error: String(error?.message || error).slice(0, 160) };
+            }
+        }));
+        res.status(201).json({ brandName, prompts: queries.length, results, engines: engineStatus() });
+    } catch (error) {
+        logStructured("error", "Error running multi-engine visibility analysis:", { error: error?.message || error, stack: error?.stack });
         res.status(500).json({ error: "Internal server error" });
     }
 });

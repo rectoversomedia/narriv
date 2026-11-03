@@ -7,6 +7,7 @@ import {
     executeSimulatedPromptQuery,
 } from "./geo-prompts.service.js";
 import { aggregateCitations } from "./citation-extractor.js";
+import { askEngine, GEO_ENGINES, modelFor } from "./geo-engines.js";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
@@ -216,6 +217,10 @@ Rules:
  * @returns {Promise<object>} - The saved AIVisibilityResult record.
  */
 export async function runVisibilityAnalysis({ workspaceId, brandName, competitors = [], queries, engineName = "gpt-4o-mini-simulated" }) {
+    // A real engine key (chatgpt, gemini, claude, perplexity, deepseek) asks that assistant directly;
+    // anything else keeps the earlier GPT-4o-mini modelled run.
+    const engine = GEO_ENGINES.find((e) => e.key === engineName) || null;
+    const methodology = engine ? `Asked ${engine.name} (${modelFor(engine)}) via its API` : "AI-Modeled via GPT-4o-mini";
     const cleanBrand = brandName?.trim() || "Bank Mandiri";
     const effectiveQueries = (queries && Array.isArray(queries) && queries.length > 0)
         ? queries
@@ -232,7 +237,9 @@ export async function runVisibilityAnalysis({ workspaceId, brandName, competitor
     const queryResults = [];
     for (const q of effectiveQueries) {
         try {
-            const executed = await executeSimulatedPromptQuery(q);
+            const executed = engine
+                ? await askEngine(engine, q).then((text) => ({ en: text, id: text, raw: text }))
+                : await executeSimulatedPromptQuery(q);
             const evaluation = analyzePromptResponse(executed.id || executed.raw, cleanBrand, competitors);
             queryResults.push({
                 query: q,
@@ -242,6 +249,8 @@ export async function runVisibilityAnalysis({ workspaceId, brandName, competitor
             });
         } catch (err) {
             logStructured("warn", "geo_prompt_execution_failed", { query: q, error: err.message });
+            // A real engine that failed has no answer to score; it is dropped, not counted as "not mentioned".
+            if (engine) continue;
             queryResults.push({
                 query: q,
                 response: `Simulated analysis error for: ${q}`,
@@ -249,6 +258,10 @@ export async function runVisibilityAnalysis({ workspaceId, brandName, competitor
                 analysis: analyzePromptResponse("", cleanBrand, competitors),
             });
         }
+    }
+
+    if (engine && queryResults.length === 0) {
+        throw new Error(`${engine.name} did not answer any test prompt`);
     }
 
     const responses = queryResults.map(qr => qr.responseId || qr.response);
@@ -287,7 +300,7 @@ export async function runVisibilityAnalysis({ workspaceId, brandName, competitor
                     total_queries: effectiveQueries.length,
                     total_responses: responses.filter(r => r && r.length > 0).length,
                     engine: engineName,
-                    methodology: "AI-Modeled via GPT-4o-mini",
+                    methodology,
                 }
             }
         })
@@ -312,7 +325,7 @@ export async function runVisibilityAnalysis({ workspaceId, brandName, competitor
                 citations: analysis.citations || [],
                 metadata: {
                     engine: engineName,
-                    methodology: "AI-Modeled via GPT-4o-mini",
+                    methodology,
                     brand: analysis.brandMentioned ? "mentioned" : "unmentioned",
                     competitor: (analysis.competitorsMentioned || []).join(", ") || "not mentioned",
                     brand_tone: analysis.brandTone || "neutral",
