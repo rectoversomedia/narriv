@@ -25,6 +25,8 @@ import { cn } from "@/lib/utils";
 import { createPortal } from "react-dom";
 import { useUiStore } from "@/store/useUiStore";
 import { assigneeName, memberName } from "@/lib/member-name";
+import { ChoiceGroup, Field, ModalShell, inputClass, primaryButtonClass, secondaryButtonClass } from "@/components/ui/modal-shell";
+import { pickL } from "@/lib/use-l";
 import type { WorkspaceMemberRecord } from "@/lib/api-service";
 
 /* ─── Types ─── */
@@ -424,6 +426,7 @@ export default function CasesPage() {
   const [priorityFilter, setPriorityFilter] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createPriority, setCreatePriority] = useState<"low" | "medium" | "high" | "critical">("medium");
   const [detailCaseId, setDetailCaseId] = useState<string | null>(null);
 
   const t = useTranslations("Workspace.cases");
@@ -1053,150 +1056,44 @@ export default function CasesPage() {
       )}
 
       {/* ─── Create Case Modal ─── */}
-      {isCreateModalOpen &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm"
-            role="presentation"
-            onMouseDown={(event) => {
-              if (event.target === event.currentTarget)
-                setIsCreateModalOpen(false);
-            }}
-          >
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby={dialogTitleId}
-              aria-describedby={dialogDescId}
-              className="flex w-full max-w-lg flex-col max-h-[85vh] rounded-[14px] border border-[#E8ECF5] bg-white text-[#101334] shadow-2xl"
-            >
-              <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
-                <div>
-                  <h2
-                    id={dialogTitleId}
-                    className="text-lg font-black text-[#101334]"
-                  >
-                    {tCreate("title")}
-                  </h2>
-                  <p
-                    id={dialogDescId}
-                    className="mt-1 text-[11px] font-bold text-[#5F6B94]"
-                  >
-                    {tCreate("desc")}
-                  </p>
-                </div>
-                <button
-                  ref={closeButtonRef}
-                  type="button"
-                  aria-label={tCreate("close")}
-                  onClick={() => setIsCreateModalOpen(false)}
-                  className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-5">
-                <form
-                  ref={createFormRef}
-                  onSubmit={handleCreateCase}
-                  className="space-y-4"
-                >
-                  <div>
-                    <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">
-                      {tCreate("titleLabel")}
-                    </label>
-                    <input
-                      name="title"
-                      required
-                      placeholder={tCreate("titlePlaceholder")}
-                      className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">
-                      {tCreate("descLabel")}
-                    </label>
-                    <textarea
-                      name="description"
-                      rows={3}
-                      placeholder={tCreate("descPlaceholder")}
-                      className="w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] p-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white resize-none"
-                    />
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">
-                        {tCreate("priorityLabel")}
-                      </label>
-                      <select
-                        aria-label={tCreate("priorityLabel")}
-                        name="priority"
-                        className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white"
-                      >
-                        <option value="medium">{tStatus("medium")}</option>
-                        <option value="low">{tStatus("low")}</option>
-                        <option value="high">{tStatus("high")}</option>
-                        <option value="critical">{tStatus("critical")}</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">
-                        {tCreate("deadlineLabel")}
-                      </label>
-                      <input
-                        name="deadline"
-                        type="date"
-                        className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">
-                      {tCreate("assignedToLabel")}
-                    </label>
-                    <select
-                      aria-label={tCreate("assignedToLabel")}
-                      name="assignedTo"
-                      className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white"
-                    >
-                      <option value="">
-                        {tCreate("assignedToPlaceholder")}
-                      </option>
-                      {members.map((member) => (
-                        <option
-                          key={member.userId}
-                          value={member.userId}
-                        >
-                          {memberName(member)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#EEF1F7]">
-                    <button
-                      type="button"
-                      onClick={() => setIsCreateModalOpen(false)}
-                      className="flex h-9 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF]"
-                    >
-                      {tCreate("cancel")}
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={createMutation.isPending}
-                      className="flex h-9 items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:opacity-50"
-                    >
-                      {createMutation.isPending ? (
-                        <RefreshCcw size={13} className="animate-spin" />
-                      ) : null}
-                      {tCreate("submit")}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>,
-          document.body,
-        )}
+      <ModalShell
+        open={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        title={tCreate("title")}
+        description={tCreate("desc")}
+        closeLabel={tCreate("close")}
+        footer={
+          <>
+            <button type="button" onClick={() => setIsCreateModalOpen(false)} className={secondaryButtonClass}>{tCreate("cancel")}</button>
+            <button type="submit" form="create-case-form" disabled={createMutation.isPending} className={primaryButtonClass}>{createMutation.isPending ? pickL("Saving…", "Menyimpan…") : tCreate("submit")}</button>
+          </>
+        }
+      >
+        <form id="create-case-form" ref={createFormRef} onSubmit={handleCreateCase} className="space-y-4">
+          <Field label={tCreate("titleLabel")} htmlFor="case-create-title">
+            <input id="case-create-title" name="title" required placeholder={tCreate("titlePlaceholder")} className={inputClass} />
+          </Field>
+          <Field label={tCreate("descLabel")} htmlFor="case-create-desc">
+            <textarea id="case-create-desc" name="description" rows={3} placeholder={tCreate("descPlaceholder")} className={`${inputClass} h-auto resize-none py-2.5`} />
+          </Field>
+          <div>
+            <p className="mb-2 text-[12px] font-black text-[#101334]">{tCreate("priorityLabel")}</p>
+            <input type="hidden" name="priority" value={createPriority} />
+            <ChoiceGroup label={tCreate("priorityLabel")} value={createPriority} onChange={setCreatePriority} options={(["low", "medium", "high", "critical"] as const).map((v) => ({ value: v, label: tStatus(v) }))} />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label={tCreate("deadlineLabel")} htmlFor="case-create-deadline">
+              <input id="case-create-deadline" name="deadline" type="date" className={inputClass} />
+            </Field>
+            <Field label={tCreate("assignedToLabel")} htmlFor="case-create-owner">
+              <select id="case-create-owner" name="assignedTo" className={inputClass}>
+                <option value="">{tCreate("assignedToPlaceholder")}</option>
+                {members.map((member) => <option key={member.userId} value={member.userId}>{memberName(member)}</option>)}
+              </select>
+            </Field>
+          </div>
+        </form>
+      </ModalShell>
 
       {/* ─── Delete Confirmation ─── */}
       <ConfirmationDialog

@@ -15,6 +15,7 @@ import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSke
 import { getReports, getReportTemplates, createReportTemplate, updateReportTemplate, deleteReportTemplate, getReportsAnalytics, createReportExport, getReportExportStatus, downloadReportFile, getNarratives, getDashboardSummary, getReportSchedules, createReportSchedule, updateReportSchedule, deleteReportSchedule, toggleReportSchedule, generateReportFromTemplate, sendReportEmail, sendTestScheduleEmail, type PaginationInfo, type ReportRecord, type ReportsAnalyticsResponse, type NarrativeRecord, type DashboardSummary, type ReportTemplate, type ReportScheduleRecord } from "@/lib/api-service";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { DemoBanner } from "@/components/ui/demo-banner";
+import { ModalShell } from "@/components/ui/modal-shell";
 import { intlLocale } from "@/store/useUiStore";
 import { pickL } from "@/lib/use-l";
 
@@ -1241,24 +1242,13 @@ export default function ReportsPage() {
         </div>
 
       {/* Schedule Settings Modal */}
-      {mounted && isScheduleModalOpen ? createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={() => { setIsScheduleModalOpen(false); setIsScheduleFormOpen(false); }}>
-          <Panel role="dialog" aria-modal="true" aria-labelledby="reports-schedule-dialog-title" tabIndex={-1} className="flex w-full max-w-2xl flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
-              <div className="flex items-center gap-3">
-                <h2 id="reports-schedule-dialog-title" className="text-lg font-black text-[#101334]">{tr("scheduleModal.title")}</h2>
-                {!isScheduleFormOpen && (
+      <ModalShell open={mounted && isScheduleModalOpen} onClose={() => { setIsScheduleModalOpen(false); setIsScheduleFormOpen(false); }} size="md" title={tr("scheduleModal.title")}>
+<div className="mb-4 flex justify-end">{!isScheduleFormOpen && (
                   <button type="button" onClick={() => { setEditingSchedule(null); setIsScheduleFormOpen(true); }} className="flex h-7 items-center justify-center gap-1.5 rounded-[6px] bg-[#465FFF] hover:bg-[#3B52F5] px-2.5 text-[10px] font-black text-white shadow-sm transition hover:opacity-90">
                     {tr("scheduleModal.addSchedule")}
                   </button>
-                )}
-              </div>
-              <button type="button" onClick={() => { setIsScheduleModalOpen(false); setIsScheduleFormOpen(false); }} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-5">
-              {isScheduleFormOpen ? (
+                )}</div>
+{isScheduleFormOpen ? (
                 <form onSubmit={handleSaveSchedule} className="space-y-4">
                   <div>
                     <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("scheduleModal.nameLabel")}</label>
@@ -1453,27 +1443,11 @@ export default function ReportsPage() {
                   )}
                 </div>
               )}
-            </div>
-          </Panel>
-        </div>,
-        document.body
-      ) : null}
+</ModalShell>
 
       {/* Popular Reports Modal */}
-      {mounted && isPopularModalOpen ? createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={() => setIsPopularModalOpen(false)}>
-          <Panel role="dialog" aria-modal="true" aria-labelledby="reports-popular-dialog-title" tabIndex={-1} className="flex w-full max-w-lg flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
-              <div>
-                <h2 id="reports-popular-dialog-title" className="text-lg font-black text-[#101334]">{tr("popular.title")}</h2>
-                <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{tr("popular.desc")}</p>
-              </div>
-              <button type="button" onClick={() => setIsPopularModalOpen(false)} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-5">
-              {livePopularReports.length > 0 ? (
+      <ModalShell open={mounted && isPopularModalOpen} onClose={() => setIsPopularModalOpen(false)} size="md" title={tr("popular.title")} description={tr("popular.desc")}>
+{livePopularReports.length > 0 ? (
                 <div className="space-y-3">
                   {livePopularReports.map((report, idx) => (
                     <div key={`${report.title}:${idx}`} className="flex items-center gap-3 rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-3 hover:border-[#DCE2F0] hover:bg-white transition">
@@ -1493,27 +1467,11 @@ export default function ReportsPage() {
                   <p className="text-[13px] font-bold text-[#53608C]">{tr("popular.noData")}</p>
                 </div>
               )}
-            </div>
-          </Panel>
-        </div>,
-        document.body
-      ) : null}
+</ModalShell>
 
       {/* Share Report Modal */}
-      {mounted && isShareModalOpen ? createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={() => setIsShareModalOpen(false)}>
-          <Panel role="dialog" aria-modal="true" aria-labelledby="reports-share-dialog-title" tabIndex={-1} className="flex w-full max-w-md flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
-              <div>
-                <h2 id="reports-share-dialog-title" className="text-lg font-black text-[#101334]">{tr("shareModal.title")}</h2>
-                <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{tr("shareModal.desc")}</p>
-              </div>
-              <button type="button" onClick={() => setIsShareModalOpen(false)} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-5">
-              {rows.length > 0 ? (
+      <ModalShell open={mounted && isShareModalOpen} onClose={() => setIsShareModalOpen(false)} size="sm" title={tr("shareModal.title")} description={tr("shareModal.desc")}>
+{rows.length > 0 ? (
                 <form onSubmit={handleShareReport} className="space-y-4">
                   <div className="rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-3">
                     <p className="text-[10px] font-bold text-[#647099]">{tr("shareModal.title")}</p>
@@ -1542,33 +1500,18 @@ export default function ReportsPage() {
                   <p className="text-[13px] font-bold text-[#53608C]">{tr("shareModal.noReport")}</p>
                 </div>
               )}
-            </div>
-          </Panel>
-        </div>,
-        document.body
-      ) : null}
+</ModalShell>
 
       {/* Screen Reader AI image slot */}
 
       {/* Modals */}
-      {mounted && isTemplatesModalOpen ? createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={() => setIsTemplatesModalOpen(false)}>
-          <Panel role="dialog" aria-modal="true" aria-labelledby="reports-templates-dialog-title" tabIndex={-1} className="flex w-full max-w-2xl flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
-              <div className="flex items-center gap-3">
-                <h2 id="reports-templates-dialog-title" className="text-lg font-black text-[#101334]">{tr("buttons.manageTemplates")}</h2>
-                {!isFormOpen && (
+      <ModalShell open={mounted && isTemplatesModalOpen} onClose={() => setIsTemplatesModalOpen(false)} size="md" title={tr("buttons.manageTemplates")}>
+<div className="mb-4 flex justify-end">{!isFormOpen && (
                   <button type="button" onClick={() => { setEditingTemplate(null); setIsFormOpen(true); }} className="flex h-7 items-center justify-center gap-1.5 rounded-[6px] bg-[#465FFF] hover:bg-[#3B52F5] px-2.5 text-[10px] font-black text-white shadow-sm transition hover:opacity-90">
                     {tr("templateForm.addCustom")}
                   </button>
-                )}
-              </div>
-              <button type="button" onClick={() => { setIsTemplatesModalOpen(false); setIsFormOpen(false); }} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-5">
-              {isFormOpen ? (
+                )}</div>
+{isFormOpen ? (
                 <form onSubmit={handleSaveTemplate} className="space-y-4">
                   <div>
                     <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("templateForm.nameLabel")}</label>
@@ -1618,7 +1561,7 @@ export default function ReportsPage() {
                           <div className="flex items-center gap-2">
                             <h3 className="font-black text-[#101334] text-[13px] truncate">{template.name}</h3>
                             <span className="shrink-0 rounded-full bg-[#E6EAF2] px-2 py-0.5 text-[9px] font-black text-[#58648C]">
-                              {template.sectionCount} Sections
+                              {pickL(`${template.sectionCount} sections`, `${template.sectionCount} bagian`)}
                             </span>
                           </div>
                           <p className="text-[11px] font-bold text-[#5F6B94] mt-1 leading-relaxed">{template.description}</p>
@@ -1655,26 +1598,10 @@ export default function ReportsPage() {
                   )}
                 </div>
               )}
-            </div>
-          </Panel>
-        </div>,
-        document.body
-      ) : null}
+</ModalShell>
 
-      {mounted && isCreateModalOpen ? createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={() => setIsCreateModalOpen(false)}>
-          <Panel role="dialog" aria-modal="true" aria-labelledby="reports-create-dialog-title" tabIndex={-1} className="flex w-full max-w-lg flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
-              <div>
-                <h2 id="reports-create-dialog-title" className="text-lg font-black text-[#101334]">{tr("createModal.title")}</h2>
-                <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{tr("createModal.desc")}</p>
-              </div>
-              <button type="button" onClick={() => setIsCreateModalOpen(false)} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-5">
-              <form onSubmit={handleGenerateReport} className="space-y-4">
+      <ModalShell open={mounted && isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} size="md" title={tr("createModal.title")} description={tr("createModal.desc")}>
+<form onSubmit={handleGenerateReport} className="space-y-4">
                 <div>
                   <label className="mb-1.5 block text-[11px] font-bold text-[#31406B]">{tr("createModal.templateLabel")}</label>
                   <select name="templateKey" required defaultValue="" className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-3 text-[12px] font-bold text-[#101334] outline-none transition focus:border-[#465FFF] focus:bg-white">
@@ -1709,11 +1636,7 @@ export default function ReportsPage() {
                   </button>
                 </div>
               </form>
-            </div>
-          </Panel>
-        </div>,
-        document.body
-      ) : null}
+</ModalShell>
     </div>
   );
 }

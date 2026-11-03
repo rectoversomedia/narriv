@@ -23,6 +23,7 @@ import {
 import { cn } from "@/lib/utils";
 import { DemoBanner } from "@/components/ui/demo-banner";
 import { pickL } from "@/lib/use-l";
+import { ModalShell } from "@/components/ui/modal-shell";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 
@@ -1318,20 +1319,8 @@ export default function VisibilityPage() {
         </CardContent>
       </Panel>
       {/* Actions Modal */}
-      {isActionsModalOpen && createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={() => setIsActionsModalOpen(false)}>
-          <div className="flex w-full max-w-lg flex-col max-h-[85vh] rounded-[14px] border border-[#E8ECF5] bg-white text-[#101334] shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
-              <div>
-                <h2 className="text-lg font-black text-[#101334]">{t("execSummary.recActions")}</h2>
-                <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{geoActions.length} {language === "id" ? "rekomendasi" : "recommendations"}</p>
-              </div>
-              <button type="button" onClick={() => setIsActionsModalOpen(false)} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-5">
-              {geoActions.length > 0 ? (
+      <ModalShell open={isActionsModalOpen} onClose={() => setIsActionsModalOpen(false)} size="md" title={t("execSummary.recActions")} description={`${geoActions.length} ${language === "id" ? "rekomendasi" : "recommendations"}`}>
+{geoActions.length > 0 ? (
                 <div className="space-y-3">
                   {geoActions.map((action, idx) => (
                     <div key={idx} className="flex items-start gap-3 rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-4 hover:border-[#DCE2F0] hover:bg-white transition">
@@ -1347,27 +1336,11 @@ export default function VisibilityPage() {
                   <p className="text-[13px] font-bold text-[#53608C]">{tEmpty("noActionData")}</p>
                 </div>
               )}
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+</ModalShell>
 
       {/* All Mentions Modal */}
-      {isMentionsModalOpen && createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={() => setIsMentionsModalOpen(false)}>
-          <div className="flex w-full max-w-2xl flex-col max-h-[85vh] rounded-[14px] border border-[#E8ECF5] bg-white text-[#101334] shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
-              <div>
-                <h2 className="text-lg font-black text-[#101334]">{t("latestMentions.title")}</h2>
-                <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{allMentions.length} {language === "id" ? "prompt tercatat" : "prompts recorded"}</p>
-              </div>
-              <button type="button" onClick={() => setIsMentionsModalOpen(false)} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-5">
-              {allMentions.length > 0 ? (
+      <ModalShell open={isMentionsModalOpen} onClose={() => setIsMentionsModalOpen(false)} size="md" title={t("latestMentions.title")} description={`${allMentions.length} ${language === "id" ? "prompt tercatat" : "prompts recorded"}`}>
+{allMentions.length > 0 ? (
                 <div className="space-y-4">
                   {allMentions.map((item, idx) => (
                     <div key={idx} className="flex gap-3 rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-4 hover:border-[#DCE2F0] hover:bg-white transition">
@@ -1388,11 +1361,7 @@ export default function VisibilityPage() {
                   <p className="text-[13px] font-bold text-[#53608C]">{tEmpty("noMentionData")}</p>
                 </div>
               )}
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+</ModalShell>
     </div>
   );
 }

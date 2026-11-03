@@ -1,3 +1,4 @@
+import { tr } from "../../lib/request-context.js";
 /**
  * Report templates for different use cases.
  * Each template defines sections, data sources, and formatting.
@@ -177,10 +178,18 @@ export function getReportTemplate(templateKey) {
 /**
  * Get all available report templates.
  */
+const TEMPLATE_NAMES_ID = {
+    executive_brief: "Ringkasan Eksekutif",
+    risk_review: "Tinjauan Risiko",
+    visibility_report: "Laporan Visibilitas AI",
+    weekly_digest: "Rangkuman Mingguan",
+};
+
 export function getAllReportTemplates() {
     return Object.entries(REPORT_TEMPLATES).map(([key, template]) => ({
         key,
-        name: template.name,
+        // Template names in the UI language (the stored key stays the same).
+        name: tr(template.name, TEMPLATE_NAMES_ID[key] || template.name),
         description: template.description,
         format: template.format,
         cadence: template.cadence,

@@ -1,9 +1,10 @@
 "use client";
 
-import { useId, useRef, useEffect, useState, type FormEvent } from "react";
-import { createPortal } from "react-dom";
-import { X, Check } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Check } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Field, ModalShell, inputClass, primaryButtonClass, secondaryButtonClass } from "@/components/ui/modal-shell";
+import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
 
 interface AddSourceModalProps {
@@ -15,200 +16,72 @@ interface AddSourceModalProps {
 
 export function AddSourceModal({ open, onOpenChange, onSubmit, isPending }: AddSourceModalProps) {
   const t = useTranslations("Sources.modal");
-  const titleId = useId();
-  const descriptionId = useId();
-  const dialogRef = useRef<HTMLDivElement>(null);
-
-  const [keyword, setKeyword] = useState("Narriv");
+  const L = useL();
+  const [keyword, setKeyword] = useState("");
   const [tiers, setTiers] = useState<number[]>([1, 2]);
 
   useEffect(() => {
-    if (!open) return;
-    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if (open) { setKeyword(""); setTiers([1, 2]); }
+  }, [open]);
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onOpenChange(false);
-        return;
+  const toggleTier = (tier: number) => setTiers((prev) => (prev.includes(tier) ? prev.filter((x) => x !== tier) : [...prev, tier]));
+  const canSubmit = keyword.trim().length > 0 && tiers.length > 0 && !isPending;
+  const submit = () => { if (canSubmit) onSubmit({ keyword: keyword.trim(), tiers }); };
+  const close = () => onOpenChange(false);
+
+  const options = [
+    { tier: 1, title: t("socialTitle"), desc: t("socialDesc") },
+    { tier: 2, title: t("videoTitle"), desc: t("videoDesc") },
+    { tier: 3, title: t("ecommerceTitle"), desc: t("ecommerceDesc") },
+  ];
+
+  return (
+    <ModalShell
+      open={open}
+      onClose={close}
+      size="sm"
+      title={t("title")}
+      description={t("desc")}
+      closeLabel={L("Close", "Tutup")}
+      footer={
+        <>
+          <button type="button" onClick={close} className={secondaryButtonClass}>{t("cancel")}</button>
+          <button type="button" onClick={submit} disabled={!canSubmit} className={primaryButtonClass}>{isPending ? t("deploying") : t("deploy")}</button>
+        </>
       }
-      if (event.key !== "Tab" || !dialogRef.current) return;
-
-      const focusable = Array.from(
-        dialogRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        )
-      ).filter((element) => !element.hasAttribute("disabled"));
-      
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-
-      if (!first || !last) return;
-
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      previouslyFocused?.focus();
-    };
-  }, [open, onOpenChange]);
-
-  if (!open || typeof document === "undefined") return null;
-
-  const toggleTier = (tier: number) => {
-    setTiers((prev) => (prev.includes(tier) ? prev.filter((t) => t !== tier) : [...prev, tier]));
-  };
-
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (!keyword.trim() || tiers.length === 0) return;
-    onSubmit({ keyword: keyword.trim(), tiers });
-  };
-
-  return createPortal(
-    <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-[#060A23]/60 p-4 backdrop-blur-sm"
-      role="presentation"
-      onMouseDown={() => onOpenChange(false)}
     >
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={descriptionId}
-        className="w-full max-w-[480px] rounded-[16px] border border-[#E5E9F3] bg-white p-6 shadow-[0_24px_48px_rgba(6,10,35,0.12)] animate-in fade-in zoom-in-95 duration-200"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div>
-              <h3 id={titleId} className="text-[16px] font-black text-[#101334]">
-                {t("title")}
-              </h3>
-              <p id={descriptionId} className="mt-0.5 text-[11px] font-semibold text-[#5F6B94]">
-                {t("desc")}
-              </p>
-            </div>
+      <div className="space-y-5">
+        <Field label={t("keyword")} hint={t("keywordHint")} htmlFor="source-keyword">
+          <input id="source-keyword" type="text" value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={t("keywordPlaceholder")} className={inputClass} autoFocus />
+        </Field>
+        <div>
+          <p className="text-[12px] font-black text-[#101334]">{t("categoryTitle")}</p>
+          <p className="mt-0.5 text-[11px] font-medium text-[#5A6478]">{t("categoryDesc")}</p>
+          <div className="mt-3 grid gap-2.5">
+            {options.map((option) => {
+              const active = tiers.includes(option.tier);
+              return (
+                <button
+                  key={option.tier}
+                  type="button"
+                  role="checkbox"
+                  aria-checked={active}
+                  onClick={() => toggleTier(option.tier)}
+                  className={cn("flex items-start gap-3 rounded-[12px] border p-3.5 text-left transition", active ? "border-[#465FFF] bg-[#F5F7FF] ring-2 ring-[#465FFF]/15" : "border-[#E6EAF2] bg-white hover:border-[#C9D4F6]")}
+                >
+                  <span className={cn("mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px] border-[1.5px]", active ? "border-[#465FFF] bg-[#465FFF] text-white" : "border-[#CBD5E1] bg-white")}>
+                    {active ? <Check size={12} strokeWidth={4} /> : null}
+                  </span>
+                  <span className="min-w-0">
+                    <span className={cn("block text-[13px] font-black", active ? "text-[#3B52F5]" : "text-[#101334]")}>{option.title}</span>
+                    <span className="mt-0.5 block text-[12px] font-medium leading-snug text-[#5A6478]">{option.desc}</span>
+                  </span>
+                </button>
+              );
+            })}
           </div>
-          <button
-            type="button"
-            aria-label={t("cancel")}
-            onClick={() => onOpenChange(false)}
-            className="rounded-full p-1.5 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]"
-          >
-            <X size={16} strokeWidth={2.5} />
-          </button>
         </div>
-
-        <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-5">
-          <div>
-            <label htmlFor="keywordInput" className="mb-2 block text-[12px] font-black text-[#101334]">
-              {t("keyword")}
-            </label>
-            <input
-              id="keywordInput"
-              type="text"
-              required
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              placeholder={t("keywordPlaceholder")}
-              className="w-full rounded-[10px] border border-[#DDE3EF] bg-[#FBFCFF] px-4 py-2.5 text-[13px] font-bold text-[#101334] outline-none transition placeholder:font-semibold placeholder:text-[#A0ABC0] focus:border-[#465FFF] focus:bg-white focus:ring-4 focus:ring-[#465FFF]/10"
-            />
-            <p className="mt-1.5 text-[10px] font-bold text-[#647099]">
-              {t("keywordHint")}
-            </p>
-          </div>
-
-          <div className="rounded-[12px] border border-[#EEF1F7] bg-[#F8FAFF] p-4">
-            <h4 className="text-[12px] font-black text-[#101334]">{t("categoryTitle")}</h4>
-            <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("categoryDesc")}</p>
-            
-            <div className="mt-4 flex flex-col gap-3">
-              {/* Tier 1 */}
-              <label className={cn("flex cursor-pointer items-start gap-3 rounded-[10px] border bg-white p-3 transition hover:border-[#CBD5E1]", tiers.includes(1) ? "border-[#465FFF] shadow-sm hover:border-[#465FFF]" : "border-[#E5E9F3]")}>
-                <div className="relative flex items-center justify-center">
-                  <input
-                    type="checkbox"
-                    className="peer sr-only"
-                    checked={tiers.includes(1)}
-                    onChange={() => toggleTier(1)}
-                  />
-                  <div className="h-5 w-5 rounded-[6px] border-[1.5px] border-[#CBD5E1] bg-white transition peer-checked:border-[#465FFF] peer-checked:bg-[#465FFF]" />
-                  <Check size={12} strokeWidth={4} className="absolute text-white opacity-0 transition peer-checked:opacity-100" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[12px] font-black text-[#101334]">{t("socialTitle")}</p>
-                  <p className="mt-1 text-[10px] font-semibold leading-relaxed text-[#5F6B94]">{t("socialDesc")}</p>
-                </div>
-              </label>
-
-              {/* Tier 2 */}
-              <label className={cn("flex cursor-pointer items-start gap-3 rounded-[10px] border bg-white p-3 transition hover:border-[#CBD5E1]", tiers.includes(2) ? "border-[#465FFF] shadow-sm hover:border-[#465FFF]" : "border-[#E5E9F3]")}>
-                <div className="relative flex items-center justify-center">
-                  <input
-                    type="checkbox"
-                    className="peer sr-only"
-                    checked={tiers.includes(2)}
-                    onChange={() => toggleTier(2)}
-                  />
-                  <div className="h-5 w-5 rounded-[6px] border-[1.5px] border-[#CBD5E1] bg-white transition peer-checked:border-[#465FFF] peer-checked:bg-[#465FFF]" />
-                  <Check size={12} strokeWidth={4} className="absolute text-white opacity-0 transition peer-checked:opacity-100" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[12px] font-black text-[#101334]">{t("videoTitle")}</p>
-                  <p className="mt-1 text-[10px] font-semibold leading-relaxed text-[#5F6B94]">{t("videoDesc")}</p>
-                </div>
-              </label>
-
-              {/* Tier 3 */}
-              <label className={cn("flex cursor-pointer items-start gap-3 rounded-[10px] border bg-white p-3 transition hover:border-[#CBD5E1]", tiers.includes(3) ? "border-[#465FFF] shadow-sm hover:border-[#465FFF]" : "border-[#E5E9F3]")}>
-                <div className="relative flex items-center justify-center">
-                  <input
-                    type="checkbox"
-                    className="peer sr-only"
-                    checked={tiers.includes(3)}
-                    onChange={() => toggleTier(3)}
-                  />
-                  <div className="h-5 w-5 rounded-[6px] border-[1.5px] border-[#CBD5E1] bg-white transition peer-checked:border-[#465FFF] peer-checked:bg-[#465FFF]" />
-                  <Check size={12} strokeWidth={4} className="absolute text-white opacity-0 transition peer-checked:opacity-100" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[12px] font-black text-[#101334]">{t("ecommerceTitle")}</p>
-                  <p className="mt-1 text-[10px] font-semibold leading-relaxed text-[#5F6B94]">{t("ecommerceDesc")}</p>
-                </div>
-              </label>
-
-              {/* Web Scrapers */}
-            </div>
-          </div>
-
-          <div className="mt-2 flex gap-3">
-            <button
-              type="button"
-              onClick={() => onOpenChange(false)}
-              className="flex h-11 flex-1 items-center justify-center rounded-[10px] border border-[#DDE3EF] bg-white text-[12px] font-black text-[#53608C] transition hover:bg-[#F5F7FC]"
-            >
-              {t("cancel")}
-            </button>
-            <button
-              type="submit"
-              disabled={isPending || !keyword.trim() || tiers.length === 0}
-              className="flex h-11 flex-1 items-center justify-center rounded-[10px] bg-[#465FFF] hover:bg-[#3B51E0] text-[12px] font-black text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isPending ? t("deploying") : t("deploy")}
-            </button>
-          </div>
-        </form>
       </div>
-    </div>,
-    document.body
+    </ModalShell>
   );
 }

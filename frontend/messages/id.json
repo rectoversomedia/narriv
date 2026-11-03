@@ -1249,9 +1249,9 @@
       "errorTitle": "Daftar peringatan gagal dimuat",
       "errorDesc": "Peringatan tidak dapat dimuat. Tidak ada baris yang ditampilkan agar data tetap akurat.",
       "changeStatus": "Ubah status",
-      "statusNew": "Tandai Baru",
-      "statusInvestigating": "Tandai Investigating",
-      "statusResolved": "Tandai Resolved",
+      "statusNew": "Baru",
+      "statusInvestigating": "Sedang ditangani",
+      "statusResolved": "Selesai",
       "assign": "Tugaskan",
       "assignToMe": "Tugaskan ke saya"
     },
@@ -1991,7 +1991,7 @@
       "deleteSchedule": "Hapus jadwal laporan ini?"
     },
     "templateForm": {
-      "addCustom": "Buat Kustom",
+      "addCustom": "Buat templat baru",
       "editCustom": "Ubah Templat",
       "nameLabel": "Nama Templat",
       "namePlaceholder": "Cth: Audit Media Sosial Bulanan",

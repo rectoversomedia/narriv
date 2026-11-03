@@ -1,4 +1,5 @@
 import express from "express";
+import { tr } from "../../lib/request-context.js";
 import supabase from "../../lib/supabase.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
 import { resolveScopedWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
@@ -39,7 +40,7 @@ export function toNarrativeItem(cluster, now = Date.now()) {
         description: cluster.description || cluster.main_narrative || "",
         sourceCount: uniquePlatforms.size || 0,
         confidence: avgConfidence,
-        confidenceBasis: confidenceValues.length ? `${confidenceValues.length} analysed member signal(s)` : "no analysed member signals",
+        confidenceBasis: confidenceValues.length ? tr(`from ${confidenceValues.length} analysed article(s)`, `dari ${confidenceValues.length} berita yang dianalisis`) : tr("no analysed articles yet", "belum ada berita yang dianalisis"),
         impact: (cluster.impact || "MEDIUM").toString(),
         velocity: momentum.label,
         momentum,

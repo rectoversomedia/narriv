@@ -22,6 +22,7 @@ import { readableTone } from "@/lib/readable-tone";
 import { DemoBanner } from "@/components/ui/demo-banner";
 import { pickL } from "@/lib/use-l";
 import { intlLocale } from "@/store/useUiStore";
+import { ModalShell } from "@/components/ui/modal-shell";
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type LocalizedText = { en: string; id: string };
 
@@ -987,20 +988,14 @@ export default function IntelligencePage() {
         </button>
       </footer>
 
-      {mounted && isAnalysisOpen ? createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={() => setIsAnalysisOpen(false)}>
-          <Panel className="flex w-full max-w-3xl flex-col max-h-[90vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
-              <div>
-                <h2 className="text-lg font-black text-[#101334]">{narrativeDetailQuery.data?.title || (selectedCluster.id === selectedNarrativeId ? text(selectedCluster.topic, language) : "")}</h2>
-                <p className="mt-1 text-xs font-bold text-[#647099]">{ti("analysisModal.subtitle")}</p>
-              </div>
-              <button type="button" onClick={() => setIsAnalysisOpen(false)} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-5">
-              {narrativeDetailQuery.isPending ? (
+      <ModalShell open={mounted && isAnalysisOpen} onClose={() => setIsAnalysisOpen(false)} size="lg" title={narrativeDetailQuery.data?.title || (selectedCluster.id === selectedNarrativeId ? text(selectedCluster.topic, language) : "")} description={ti("analysisModal.subtitle")} footer={<><div className="min-w-0">
+                  <p className="text-[11px] font-semibold text-[#647099]">{ti("analysisModal.draftNote")}</p>
+                  <a href={monitoringHref({ narrative: selectedNarrativeId ?? undefined, hours: selectedPeriod.days <= 1 ? 24 : selectedPeriod.days <= 7 ? 168 : selectedPeriod.days <= 30 ? 720 : undefined })} className="mt-1 inline-block text-[11px] font-black text-[#3B52F5] hover:underline">{ti("analysisModal.viewRecords")}</a>
+                </div>
+                <button type="button" onClick={() => setIsPlanResponseOpen(true)} className="h-9 rounded-[9px] bg-[#465FFF] px-4 text-[12px] font-black text-white transition hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/40">
+                  {ti("analysisModal.planResponse")}
+                </button></>}>
+{narrativeDetailQuery.isPending ? (
                 <div className="flex h-40 items-center justify-center">
                   <RefreshCcw className="animate-spin text-[#647099]" size={24} />
                 </div>
@@ -1021,22 +1016,7 @@ export default function IntelligencePage() {
                   <p className="mt-2 text-sm font-bold text-[#53608C]">{ti("analysisModal.noData")}</p>
                 </div>
               )}
-            </div>
-            {selectedNarrativeId ? (
-              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#EEF1F7] p-4">
-                <div className="min-w-0">
-                  <p className="text-[11px] font-semibold text-[#647099]">{ti("analysisModal.draftNote")}</p>
-                  <a href={monitoringHref({ narrative: selectedNarrativeId, hours: selectedPeriod.days <= 1 ? 24 : selectedPeriod.days <= 7 ? 168 : selectedPeriod.days <= 30 ? 720 : undefined })} className="mt-1 inline-block text-[11px] font-black text-[#3B52F5] hover:underline">{ti("analysisModal.viewRecords")}</a>
-                </div>
-                <button type="button" onClick={() => setIsPlanResponseOpen(true)} className="h-9 rounded-[9px] bg-[#465FFF] px-4 text-[12px] font-black text-white transition hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/40">
-                  {ti("analysisModal.planResponse")}
-                </button>
-              </div>
-            ) : null}
-          </Panel>
-        </div>,
-        document.body
-      ) : null}
+</ModalShell>
 
       {selectedNarrativeId ? (
         <CreateActionPlanModal
@@ -1047,16 +1027,8 @@ export default function IntelligencePage() {
         />
       ) : null}
 
-      {mounted && isLandscapeOpen ? createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={() => setIsLandscapeOpen(false)}>
-          <Panel className="flex w-full max-w-2xl flex-col shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
-              <h2 className="text-lg font-black text-[#101334]">{ti("competitorShare.title")}</h2>
-              <button type="button" onClick={() => setIsLandscapeOpen(false)} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="p-5">
+      <ModalShell open={mounted && isLandscapeOpen} onClose={() => setIsLandscapeOpen(false)} size="md" title={ti("competitorShare.title")}>
+<div className="p-5">
               <div className="flex flex-col gap-3">
                 {narrativeShareData.map((item) => {
                   const toneStyle = toneStyles[item.tone];
@@ -1072,25 +1044,10 @@ export default function IntelligencePage() {
                 })}
               </div>
             </div>
-          </Panel>
-        </div>,
-        document.body
-      ) : null}
+</ModalShell>
 
-      {mounted && isAllClustersModalOpen ? createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={() => setIsAllClustersModalOpen(false)}>
-          <Panel className="flex w-full max-w-2xl flex-col max-h-[85vh] shadow-2xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
-              <div>
-                <h2 className="text-lg font-black text-[#101334]">{ti("growingClusters.modalTitle")}</h2>
-                <p className="mt-1 text-xs font-bold text-[#647099]">{ti("growingClusters.modalSubtitle")}</p>
-              </div>
-              <button type="button" onClick={() => setIsAllClustersModalOpen(false)} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-5">
-              <div className="grid gap-3 sm:grid-cols-2">
+      <ModalShell open={mounted && isAllClustersModalOpen} onClose={() => setIsAllClustersModalOpen(false)} size="md" title={ti("growingClusters.modalTitle")} description={ti("growingClusters.modalSubtitle")}>
+<div className="grid gap-3 sm:grid-cols-2">
                 {clusters.map((cluster) => {
                   const selected = selectedCluster.id === cluster.id;
                   const toneStyle = toneStyles[cluster.tone];
@@ -1120,11 +1077,7 @@ export default function IntelligencePage() {
                   );
                 })}
               </div>
-            </div>
-          </Panel>
-        </div>,
-        document.body
-      ) : null}
+</ModalShell>
 
     </div>
   );

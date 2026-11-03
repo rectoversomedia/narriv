@@ -21,6 +21,7 @@ import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import { assigneeName, memberName } from "@/lib/member-name";
 import { teamOptions } from "@/lib/teams";
+import { ModalShell } from "@/components/ui/modal-shell";
 import {
   createAlert,
   getAlerts,
@@ -1268,27 +1269,16 @@ export default function AlertsPage() {
 
 
 
-      {isNotificationRulesModalOpen && createPortal(
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={closeNotificationRulesModal}>
-          <div className="relative z-10 flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-[18px] border border-[#DDE5F4] bg-white text-[#101334] shadow-[0_24px_70px_rgba(16,24,40,0.22)]" onClick={(event) => event.stopPropagation()}>
-            <div className="relative overflow-hidden border-b border-[#E7ECF6] bg-[#F8FAFF] p-5">
-              <div className="absolute right-8 top-3 size-28 rounded-full bg-[#465FFF]/10 blur-2xl" />
-              <div className="relative flex items-start justify-between gap-4">
-                <div>
-                  <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#DDE3EF] bg-white/80 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-[#3B52F5]">
-                    {ta("v2.notificationRulesModal.badge")}
-                  </div>
-                  <h2 className="text-lg font-black tracking-[-0.03em] text-[#101334]">{ta("v2.notificationRulesModal.title")}</h2>
-                  <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{ta("v2.notificationRulesModal.desc")}</p>
-                </div>
-                <button type="button" onClick={closeNotificationRulesModal} disabled={isSavingNotificationRules} className="rounded-full bg-white/80 p-2 text-[#647099] shadow-sm transition hover:bg-white hover:text-[#53608C] disabled:cursor-not-allowed disabled:opacity-60">
-                  <X size={20} />
+      <ModalShell open={isNotificationRulesModalOpen} onClose={closeNotificationRulesModal} size="lg" title={ta("v2.notificationRulesModal.title")} description={ta("v2.notificationRulesModal.desc")} footer={<><p className="text-[10px] font-bold text-[#647099]">{ta("v2.notificationRulesModal.limitHint")}</p>
+              <div className="flex gap-2">
+                <button type="button" onClick={closeNotificationRulesModal} disabled={isSavingNotificationRules} className="h-10 rounded-[10px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-60">
+                  {ta("v2.notificationRulesModal.cancel")}
                 </button>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-5">
-              {isLoadingNotificationRules ? (
+                <button type="button" onClick={handleSaveNotificationRules} disabled={isSavingNotificationRules || isLoadingNotificationRules} className="h-10 rounded-[10px] bg-[#465FFF] hover:bg-[#3B52F5] px-5 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
+                  {isSavingNotificationRules ? ta("v2.notificationRulesModal.saving") : ta("v2.notificationRulesModal.save")}
+                </button>
+              </div></>}>
+{isLoadingNotificationRules ? (
                 <div className="space-y-3">
                   {Array.from({ length: 5 }, (_, index) => <div key={index} className="h-16 animate-pulse rounded-[12px] bg-[#F1F4FB]" />)}
                 </div>
@@ -1439,38 +1429,15 @@ export default function AlertsPage() {
                   </section>
                 </div>
               )}
-            </div>
+</ModalShell>
 
-            <div className="flex flex-col-reverse gap-2 border-t border-[#EEF1F7] bg-white p-5 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-[10px] font-bold text-[#647099]">{ta("v2.notificationRulesModal.limitHint")}</p>
-              <div className="flex gap-2">
-                <button type="button" onClick={closeNotificationRulesModal} disabled={isSavingNotificationRules} className="h-10 rounded-[10px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-60">
-                  {ta("v2.notificationRulesModal.cancel")}
-                </button>
-                <button type="button" onClick={handleSaveNotificationRules} disabled={isSavingNotificationRules || isLoadingNotificationRules} className="h-10 rounded-[10px] bg-[#465FFF] hover:bg-[#3B52F5] px-5 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
-                  {isSavingNotificationRules ? ta("v2.notificationRulesModal.saving") : ta("v2.notificationRulesModal.save")}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {isEscalationModalOpen && createPortal(
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={closeEscalationModal}>
-          <div className="relative z-10 flex max-h-[88vh] w-full max-w-3xl flex-col rounded-[14px] border border-[#E8ECF5] bg-white text-[#101334] shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between gap-4 border-b border-[#EEF1F7] p-5">
-              <div>
-                <h2 className="text-lg font-black text-[#101334]">{ta("v2.escalationMatrix.modalTitle")}</h2>
-                <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{ta("v2.escalationMatrix.modalDesc")}</p>
-              </div>
-              <button type="button" onClick={closeEscalationModal} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]" aria-label={ta("v2.escalationMatrix.cancel")}>
-                <X size={20} />
+      <ModalShell open={isEscalationModalOpen} onClose={closeEscalationModal} size="lg" title={ta("v2.escalationMatrix.modalTitle")} description={ta("v2.escalationMatrix.modalDesc")} footer={<><button type="button" onClick={closeEscalationModal} disabled={isSavingEscalation} className="flex h-9 items-center justify-center rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-60">
+                {ta("v2.escalationMatrix.cancel")}
               </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-5">
-              <div className="mb-3 grid grid-cols-[78px_minmax(0,1fr)_120px_86px_36px] gap-2 px-2 text-[9px] font-black uppercase tracking-[0.16em] text-[#5F6B94] max-md:hidden">
+              <button type="button" onClick={handleSaveEscalationMatrix} disabled={isSavingEscalation} className="flex h-9 items-center justify-center rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
+                {isSavingEscalation ? ta("v2.escalationMatrix.saving") : ta("v2.escalationMatrix.save")}
+              </button></>}>
+<div className="mb-3 grid grid-cols-[78px_minmax(0,1fr)_120px_86px_36px] gap-2 px-2 text-[9px] font-black uppercase tracking-[0.16em] text-[#5F6B94] max-md:hidden">
                 <span>{ta("v2.escalationMatrix.levelLabel")}</span>
                 <span>{ta("v2.escalationMatrix.ownerLabel")}</span>
                 <span>{ta("v2.escalationMatrix.timeLabel")}</span>
@@ -1551,35 +1518,11 @@ export default function AlertsPage() {
                   {ta("v2.escalationMatrix.addLevel")}
                 </button>
               </div>
-            </div>
-            <div className="flex items-center justify-end gap-3 border-t border-[#EEF1F7] p-5">
-              <button type="button" onClick={closeEscalationModal} disabled={isSavingEscalation} className="flex h-9 items-center justify-center rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#58648C] transition hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-60">
-                {ta("v2.escalationMatrix.cancel")}
-              </button>
-              <button type="button" onClick={handleSaveEscalationMatrix} disabled={isSavingEscalation} className="flex h-9 items-center justify-center rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 text-[12px] font-black text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">
-                {isSavingEscalation ? ta("v2.escalationMatrix.saving") : ta("v2.escalationMatrix.save")}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+</ModalShell>
 
       {/* Create Alert Modal */}
-      {isCreateModalOpen && createPortal(
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={closeCreateModal}>
-          <div className="relative z-10 flex w-full max-w-lg flex-col max-h-[85vh] rounded-[14px] border border-[#E8ECF5] bg-white text-[#101334] shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-[#EEF1F7] p-5">
-              <div>
-                <h2 className="text-lg font-black text-[#101334]">{ta("v2.header.createAlert")}</h2>
-                <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{taCreate("desc")}</p>
-              </div>
-              <button type="button" onClick={closeCreateModal} className="rounded-full p-2 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C]">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-5">
-              <form onSubmit={(e) => {
+      <ModalShell open={isCreateModalOpen} onClose={closeCreateModal} size="md" title={ta("v2.header.createAlert")} description={taCreate("desc")}>
+<form onSubmit={(e) => {
                 e.preventDefault();
                 if (isCreatingAlert) return;
                 const formData = new FormData(e.currentTarget);
@@ -1782,32 +1725,21 @@ export default function AlertsPage() {
                   </button>
                 </div>
               </form>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+</ModalShell>
 
       {/* Filter Modal */}
-      {isFilterModalOpen && createPortal(
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm" onClick={() => setIsFilterModalOpen(false)}>
-          <div className="relative z-10 flex w-full max-w-xl flex-col overflow-hidden rounded-[18px] border border-[#DDE5F4] bg-white text-[#101334] shadow-[0_24px_70px_rgba(16,24,40,0.22)]" onClick={(e) => e.stopPropagation()}>
-            <div className="relative overflow-hidden border-b border-[#E7ECF6] bg-[#F8FAFF] p-5">
-              <div className="absolute right-6 top-4 size-24 rounded-full bg-[#465FFF]/10 blur-2xl" />
-              <div className="relative flex items-start justify-between gap-4">
-                <div>
-                  <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#DDE3EF] bg-white/80 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-[#3B52F5]">
-                    {ta("filter.badge")}
-                  </div>
-                  <h2 className="text-lg font-black tracking-[-0.03em] text-[#101334]">{ta("filter.title")}</h2>
-                  <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{ta("filter.desc")}</p>
-                </div>
-                <button type="button" onClick={() => setIsFilterModalOpen(false)} className="rounded-full bg-white/80 p-2 text-[#647099] shadow-sm transition hover:bg-white hover:text-[#53608C]">
-                <X size={20} />
+      <ModalShell open={isFilterModalOpen} onClose={() => setIsFilterModalOpen(false)} size="md" title={ta("filter.title")} description={ta("filter.desc")} footer={<><button type="button" onClick={() => { setSearchQuery(""); setSeverityFilter(""); setStatusFilter("unresolved"); setPage(1); }} className="inline-flex h-10 items-center justify-center rounded-[10px] border border-[#E6EAF2] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:border-[#F3B4B4] hover:bg-[#FFF7F7] hover:text-[#C81E1E]">
+                {ta("filter.clearFilter")}
               </button>
-              </div>
-            </div>
-            <div className="space-y-4 p-5">
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setIsFilterModalOpen(false)} className="h-10 rounded-[10px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:bg-[#F8FAFF]">
+                  {ta("filter.cancel")}
+                </button>
+                <button type="button" onClick={() => setIsFilterModalOpen(false)} className="h-10 rounded-[10px] bg-[#465FFF] hover:bg-[#3B52F5] px-5 text-[12px] font-black text-white shadow-sm transition hover:opacity-90">
+                  {ta("filter.apply")}
+                </button>
+              </div></>}>
+<div className="space-y-4 p-5">
               <div className="rounded-[14px] border border-[#E6EAF2] bg-[#FBFCFF] p-4">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
@@ -1863,23 +1795,7 @@ export default function AlertsPage() {
                 </div>
               </div>
             </div>
-            <div className="flex flex-col-reverse gap-2 border-t border-[#EEF1F7] bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
-              <button type="button" onClick={() => { setSearchQuery(""); setSeverityFilter(""); setStatusFilter("unresolved"); setPage(1); }} className="inline-flex h-10 items-center justify-center rounded-[10px] border border-[#E6EAF2] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:border-[#F3B4B4] hover:bg-[#FFF7F7] hover:text-[#C81E1E]">
-                {ta("filter.clearFilter")}
-              </button>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setIsFilterModalOpen(false)} className="h-10 rounded-[10px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#53608C] transition hover:bg-[#F8FAFF]">
-                  {ta("filter.cancel")}
-                </button>
-                <button type="button" onClick={() => setIsFilterModalOpen(false)} className="h-10 rounded-[10px] bg-[#465FFF] hover:bg-[#3B52F5] px-5 text-[12px] font-black text-white shadow-sm transition hover:opacity-90">
-                  {ta("filter.apply")}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+</ModalShell>
     </div>
   );
 }

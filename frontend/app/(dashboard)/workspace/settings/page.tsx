@@ -16,6 +16,7 @@ import { useWorkspaceStore } from "@/store/useWorkspaceStore";
 import { MonitoringKeywordsPanel } from "@/components/dashboard/monitoring-keywords-panel";
 import { SubscriptionCard } from "@/components/dashboard/SubscriptionCard";
 import { UpgradeModal } from "@/components/dashboard/UpgradeModal";
+import { Field, ModalShell, inputClass, primaryButtonClass, secondaryButtonClass } from "@/components/ui/modal-shell";
 import { AiProvidersPanel } from "@/components/dashboard/ai-providers-panel";
 import { PlatformCollectionPanel } from "@/components/dashboard/platform-collection-panel";
 import { pickL, useL } from "@/lib/use-l";
@@ -384,7 +385,7 @@ export default function SettingsPage() {
     setInviteErrors(errors);
     if (Object.keys(errors).length > 0) return;
 
-    const roleMap: Record<string, "admin" | "analyst"> = { "Admin": "admin", "Analyst": "analyst", "Viewer": "analyst" };
+    const roleMap: Record<string, "admin" | "analyst"> = { "Admin": "admin", "Analyst": "analyst" };
     inviteMemberMutation.mutate({ email: inviteEmail.trim(), name: inviteName.trim(), role: roleMap[inviteRole] || "analyst" });
   };
 
@@ -991,97 +992,46 @@ export default function SettingsPage() {
         </Panel>
       </div>
 
-      {/* MODAL: Invite Member (portal to escape z-10 stacking context) */}
-      {showInviteModal && createPortal(
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-[#101334]/45 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-[18px] border border-[#E6EAF2] bg-white p-6 shadow-[0_24px_70px_rgba(16,19,52,0.25)] animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div>
-                  <h3 className="text-base font-black text-[#101334]">{ts("invite.modalTitle")}</h3>
-                  <p className="text-[10px] font-semibold text-[#5A6478]">{ts("invite.subtitle")}</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowInviteModal(false)}
-                className="rounded-lg border border-slate-100 p-1.5 text-[#5A6478] hover:bg-slate-50 hover:text-slate-700"
-              >
-                <X size={15} />
-              </button>
+      {/* MODAL: Invite Member */}
+      <ModalShell
+        open={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        size="sm"
+        title={ts("invite.modalTitle")}
+        description={L("They must already have a Narriv account with this email.", "Orang tersebut harus sudah punya akun Narriv dengan email ini.")}
+        closeLabel={L("Close", "Tutup")}
+        footer={
+          <>
+            <button type="button" onClick={() => setShowInviteModal(false)} className={secondaryButtonClass}>{ts("invite.cancel")}</button>
+            <button type="submit" form="invite-member-form" disabled={inviteMemberMutation.isPending} className={primaryButtonClass}>{inviteMemberMutation.isPending ? L("Adding…", "Menambahkan…") : ts("invite.submit")}</button>
+          </>
+        }
+      >
+        <form id="invite-member-form" onSubmit={handleInviteSubmit} className="space-y-4">
+          <Field label={ts("invite.nameLabel")} htmlFor="invite-name">
+            <input id="invite-name" type="text" required placeholder={ts("invite.namePlaceholder")} value={inviteName} onChange={(e) => { setInviteName(e.target.value); setInviteErrors((prev) => ({ ...prev, name: undefined })); }} className={cn(inputClass, inviteErrors.name && "border-[#EF4444]")} />
+            {inviteErrors.name ? <p className="text-[12px] font-bold text-[#C81E1E]">{inviteErrors.name}</p> : null}
+          </Field>
+          <Field label={ts("invite.emailLabel")} htmlFor="invite-email">
+            <input id="invite-email" type="email" required placeholder={ts("invite.emailPlaceholder")} value={inviteEmail} onChange={(e) => { setInviteEmail(e.target.value); setInviteErrors((prev) => ({ ...prev, email: undefined })); }} className={cn(inputClass, inviteErrors.email && "border-[#EF4444]")} />
+            {inviteErrors.email ? <p className="text-[12px] font-bold text-[#C81E1E]">{inviteErrors.email}</p> : null}
+          </Field>
+          <div>
+            <p className="mb-2 text-[12px] font-black text-[#101334]">{ts("invite.roleLabel")}</p>
+            <div role="radiogroup" aria-label={ts("invite.roleLabel")} className="grid gap-2.5 sm:grid-cols-2">
+              {([
+                ["Admin", ts("invite.roleOptionAdmin"), L("Manages members, keywords and settings", "Mengatur anggota, kata kunci, dan pengaturan")],
+                ["Analyst", ts("invite.roleOptionAnalyst"), L("Works on alerts, cases and reports", "Menangani peringatan, kasus, dan laporan")],
+              ] as const).map(([value, label, desc]) => (
+                <button key={value} type="button" role="radio" aria-checked={inviteRole === value} onClick={() => setInviteRole(value)} className={cn("rounded-[12px] border p-3.5 text-left transition", inviteRole === value ? "border-[#465FFF] bg-[#F5F7FF] ring-2 ring-[#465FFF]/15" : "border-[#E6EAF2] bg-white hover:border-[#C9D4F6]")}>
+                  <span className={cn("block text-[13px] font-black", inviteRole === value ? "text-[#3B52F5]" : "text-[#101334]")}>{label}</span>
+                  <span className="mt-0.5 block text-[12px] font-medium leading-snug text-[#5A6478]">{desc}</span>
+                </button>
+              ))}
             </div>
-
-            <form onSubmit={handleInviteSubmit} className="mt-5 space-y-4">
-              <div>
-                <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#5F6B94]">
-                  {ts("invite.nameLabel")}
-                </label>
-                <input
-                  aria-label={ts("invite.nameLabel")}
-                  type="text"
-                  required
-                  placeholder={ts("invite.namePlaceholder")}
-                  value={inviteName}
-                  onChange={(e) => { setInviteName(e.target.value); setInviteErrors((prev) => ({ ...prev, name: undefined })); }}
-                  className={cn("h-10 w-full rounded-lg border px-3 text-[12px] font-bold text-[#101334] focus:border-[#465FFF] focus:outline-none focus:ring-2 focus:ring-[#465FFF]/15", inviteErrors.name ? "border-[#EF4444]" : "border-[#DDE3EF]")}
-                />
-                {inviteErrors.name && <p className="mt-1 text-[9px] font-bold text-[#C81E1E]">{inviteErrors.name}</p>}
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#5F6B94]">
-                  {ts("invite.emailLabel")}
-                </label>
-                <input
-                  aria-label={ts("invite.emailLabel")}
-                  type="email"
-                  required
-                  placeholder={ts("invite.emailPlaceholder")}
-                  value={inviteEmail}
-                  onChange={(e) => { setInviteEmail(e.target.value); setInviteErrors((prev) => ({ ...prev, email: undefined })); }}
-                  className={cn("h-10 w-full rounded-lg border px-3 text-[12px] font-bold text-[#101334] focus:border-[#465FFF] focus:outline-none focus:ring-2 focus:ring-[#465FFF]/15", inviteErrors.email ? "border-[#EF4444]" : "border-[#DDE3EF]")}
-                />
-                {inviteErrors.email && <p className="mt-1 text-[9px] font-bold text-[#C81E1E]">{inviteErrors.email}</p>}
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#5F6B94]">
-                  {ts("invite.roleLabel")}
-                </label>
-                <div className="relative">
-                  <select aria-label={ts("invite.roleLabel")}
-                    value={inviteRole}
-                    onChange={(e) => setInviteRole(e.target.value)}
-                    className="h-10 w-full appearance-none rounded-lg border border-[#DDE3EF] bg-white px-3 pr-8 text-[12px] font-bold text-[#101334] focus:border-[#465FFF] focus:outline-none"
-                  >
-                    <option value="Admin">{ts("invite.roleOptionAdmin")}</option>
-                    <option value="Analyst">{ts("invite.roleOptionAnalyst")}</option>
-                    <option value="Viewer">{ts("invite.roleOptionViewer")}</option>
-                  </select>
-                  <ChevronDown size={14} className="pointer-events-none absolute right-3 top-3.5 text-[#5F6B94]" />
-                </div>
-              </div>
-
-              <div className="flex gap-2.5 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setShowInviteModal(false)}
-                  className="flex h-10 flex-1 items-center justify-center rounded-lg border border-slate-200 bg-white text-[12px] font-black text-slate-700 hover:bg-slate-50"
-                >
-                  {ts("invite.cancel")}
-                </button>
-                <button
-                  type="submit"
-                  className="flex h-10 flex-1 items-center justify-center rounded-lg bg-[#465FFF] text-[12px] font-black text-white hover:bg-[#3B20EA]"
-                >
-                  {ts("invite.submit")}
-                </button>
-              </div>
-            </form>
           </div>
-        </div>,
-        document.body
-      )}
+        </form>
+      </ModalShell>
 
       <ConfirmationDialog
         open={showConfirmModal}

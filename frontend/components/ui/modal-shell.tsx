@@ -96,3 +96,29 @@ export const primaryButtonClass =
 
 export const secondaryButtonClass =
   "inline-flex h-10 items-center justify-center rounded-[10px] border border-[#DDE3EF] bg-white px-5 text-[13px] font-black text-[#31406B] transition hover:bg-[#F8FAFF] disabled:opacity-50";
+
+export const dangerButtonClass =
+  "inline-flex h-10 items-center justify-center rounded-[10px] bg-[#C81E1E] px-5 text-[13px] font-black text-white transition hover:bg-[#A51818] disabled:cursor-not-allowed disabled:opacity-50";
+
+/** A row of choices that behave like radio buttons (status, priority, period, …). */
+export function ChoiceGroup<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: Array<{ value: T; label: string }>; onChange: (value: T) => void }) {
+  return (
+    <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-2">
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          role="radio"
+          aria-checked={value === option.value}
+          onClick={() => onChange(option.value)}
+          className={cn(
+            "h-10 rounded-[10px] border px-4 text-[12px] font-black transition",
+            value === option.value ? "border-[#465FFF] bg-[#465FFF] text-white" : "border-[#DDE3EF] bg-white text-[#31406B] hover:border-[#C9D4F6]",
+          )}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}

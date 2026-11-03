@@ -1,50 +1,12 @@
 "use client";
 
-import { useTranslations } from "next-intl";
-import { useQuery } from "@tanstack/react-query";
-import { getSubscriptionPlans, getMySubscription } from "@/lib/api-service";
-import { cn } from "@/lib/utils";
-import { X, Check, Rocket, Brain, Zap, Crown, ArrowRight } from "lucide-react";
-import { useEffect, useState } from "react";
 import Link from "next/link";
-
-const planIcons = {
-  pilot: Rocket,
-  intelligence: Brain,
-  decision: Zap,
-  command: Crown,
-};
-
-const planColors = {
-  pilot: {
-    bg: "bg-slate-100",
-    border: "border-slate-200",
-    text: "text-slate-600",
-    button: "bg-slate-600 hover:bg-slate-700",
-    icon: "bg-slate-500",
-  },
-  intelligence: {
-    bg: "bg-blue-50",
-    border: "border-blue-200",
-    text: "text-blue-700",
-    button: "bg-[#465FFF] hover:bg-[#3b50d8]",
-    icon: "bg-[#465FFF]",
-  },
-  decision: {
-    bg: "bg-purple-50",
-    border: "border-purple-200",
-    text: "text-purple-700",
-    button: "bg-[#8B5CFF] hover:bg-[#764ee6]",
-    icon: "bg-[#8B5CFF]",
-  },
-  command: {
-    bg: "bg-amber-50",
-    border: "border-amber-200",
-    text: "text-amber-700",
-    button: "bg-amber-600 hover:bg-amber-700",
-    icon: "bg-amber-500",
-  },
-};
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getMySubscription, getSubscriptionPlans } from "@/lib/api-service";
+import { ModalShell, primaryButtonClass, secondaryButtonClass } from "@/components/ui/modal-shell";
+import { useL } from "@/lib/use-l";
+import { cn } from "@/lib/utils";
 
 const planOrder = ["pilot", "intelligence", "decision", "command"];
 
@@ -56,215 +18,83 @@ interface UpgradeModalProps {
   currentPlan?: string;
 }
 
-export function UpgradeModal({ isOpen, onClose, feature, limit, currentPlan }: UpgradeModalProps) {
-  const t = useTranslations("Workspace.settings");
+export function UpgradeModal({ isOpen, onClose, feature, limit }: UpgradeModalProps) {
+  const L = useL();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-
-  const { data: plansData } = useQuery({
-    queryKey: ["subscription-plans"],
-    queryFn: getSubscriptionPlans,
-    enabled: isOpen,
-  });
-
-  const { data: currentSubscription } = useQuery({
-    queryKey: ["my-subscription"],
-    queryFn: getMySubscription,
-    enabled: isOpen,
-  });
-
-  useEffect(() => {
-    if (isOpen && plansData?.plans?.length) {
-      // Find the next plan after current
-      const currentKey = currentSubscription?.plan?.key?.toLowerCase() || "pilot";
-      const currentIndex = planOrder.indexOf(currentKey);
-      const nextPlan = planOrder[currentIndex + 1] || planOrder[planOrder.length - 1];
-      setSelectedPlan(nextPlan);
-    }
-  }, [isOpen, plansData, currentSubscription]);
-
-  if (!isOpen) return null;
+  const { data: plansData } = useQuery({ queryKey: ["subscription-plans"], queryFn: getSubscriptionPlans, enabled: isOpen });
+  const { data: currentSubscription } = useQuery({ queryKey: ["my-subscription"], queryFn: getMySubscription, enabled: isOpen });
 
   const plans = plansData?.plans || [];
   const currentKey = currentSubscription?.plan?.key?.toLowerCase() || "pilot";
   const currentIndex = planOrder.indexOf(currentKey);
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
+  useEffect(() => {
+    if (isOpen && plans.length) setSelectedPlan(planOrder[currentIndex + 1] || planOrder[planOrder.length - 1]);
+  }, [isOpen, plans.length, currentIndex]);
+
+  const price = (value: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(value);
+  const count = (value: number, unit = "") => (value === -1 ? L("Unlimited", "Tanpa batas") : `${value.toLocaleString("id-ID")}${unit}`);
+  const isUpgrade = currentIndex < planOrder.indexOf(selectedPlan || "command");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
-
-      {/* Modal */}
-      <div className="relative z-10 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl">
-        {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-6 py-4">
-          <div>
-            <h2 className="text-xl font-black text-slate-900">
-              {feature ? `Unlock ${feature}` : limit ? `Upgrade for More ${limit}` : "Upgrade Your Plan"}
-            </h2>
-            <p className="mt-1 text-sm text-[#5A6478]">
-              {feature
-                ? `This feature requires a higher plan. Choose a plan that includes ${feature}.`
-                : limit
-                ? `You've reached your ${limit} limit. Upgrade to unlock more.`
-                : "Get more features and higher limits with our premium plans."}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-[#5A6478] hover:bg-slate-100 hover:text-slate-600"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        {/* Plans Grid */}
-        <div className="grid gap-4 p-6 md:grid-cols-2 lg:grid-cols-4">
-          {plans.map((plan) => {
-            const planKey = plan.key?.toLowerCase() || "pilot";
-            const planIndex = planOrder.indexOf(planKey);
-            const colors = planColors[planKey as keyof typeof planColors] || planColors.pilot;
-            const Icon = planIcons[planKey as keyof typeof planIcons] || Rocket;
-            const isCurrentPlan = planKey === currentKey;
-            const isUpgraded = planIndex > currentIndex;
-            const isSelected = selectedPlan === planKey;
-
-            return (
-              <div
-                key={plan.key}
-                className={cn(
-                  "relative rounded-xl border-2 p-4 transition-all cursor-pointer",
-                  colors.border,
-                  isCurrentPlan && "ring-2 ring-offset-2 ring-[#465FFF]",
-                  isSelected && !isCurrentPlan && "ring-2 ring-offset-2 ring-[#465FFF]",
-                  !isCurrentPlan && "hover:shadow-lg hover:scale-[1.02]"
-                )}
-                onClick={() => !isCurrentPlan && setSelectedPlan(planKey)}
-              >
-                {/* Current Badge */}
-                {isCurrentPlan && (
-                  <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
-                    <span className="rounded-full bg-[#465FFF] px-2.5 py-0.5 text-[10px] font-bold text-white">
-                      Current Plan
-                    </span>
-                  </div>
-                )}
-
-                {/* Plan Header */}
-                <div className="flex items-center gap-3 mb-3">
-                  <div>
-                    <h3 className={cn("text-sm font-black", colors.text)}>
-                      {plan.name}
-                    </h3>
-                    <p className="text-[10px] text-[#5A6478]">{plan.tagline}</p>
-                  </div>
-                </div>
-
-                {/* Price */}
-                <div className="mb-4">
-                  <span className="text-2xl font-black text-slate-900">
-                    {formatPrice(plan.priceIdr)}
-                  </span>
-                  <span className="text-xs text-[#5A6478]">/month</span>
-                </div>
-
-                {/* Limits */}
-                <div className="space-y-1.5 mb-4">
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-[#5A6478]">Members</span>
-                    <span className="font-semibold text-slate-700">
-                      {plan.maxMembers === -1 ? "∞" : plan.maxMembers}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-[#5A6478]">Topics</span>
-                    <span className="font-semibold text-slate-700">
-                      {plan.maxTopics === -1 ? "∞" : plan.maxTopics}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-[#5A6478]">Signals/mo</span>
-                    <span className="font-semibold text-slate-700">
-                      {plan.maxSignalsPerMonth === -1 ? "∞" : `${(plan.maxSignalsPerMonth / 1000)}K`}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Features */}
-                <div className="space-y-1 mb-4">
-                  {plan.features?.slice(0, 3).map((feat: string) => (
-                    <div key={feat} className="flex items-center gap-1.5">
-                      <Check size={12} className="text-emerald-700" />
-                      <span className="text-[10px] text-slate-600 truncate">{feat.replace(/_/g, " ")}</span>
-                    </div>
-                  ))}
-                  {(plan.features?.length || 0) > 3 && (
-                    <div className="flex items-center gap-1.5">
-                      <Check size={12} className="text-slate-300" />
-                      <span className="text-[10px] text-[#5A6478]">
-                        +{(plan.features?.length || 0) - 3} more
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Select Indicator */}
-                {isCurrentPlan ? (
-                  <div className={cn("flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold", colors.bg, colors.text)}>
-                    Current
-                  </div>
-                ) : isSelected ? (
-                  <div className="flex items-center justify-center gap-1.5 rounded-lg bg-[#465FFF] py-2 text-xs font-bold text-white">
-                    Selected
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 py-2 text-xs font-bold text-[#5A6478] hover:border-slate-300">
-                    Select
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Footer */}
-        <div className="sticky bottom-0 flex items-center justify-between border-t border-slate-100 bg-white px-6 py-4">
-          <p className="text-xs text-[#5A6478]">
-            Need help choosing?{" "}
-            <Link href="/pricing" className="text-[#3B52F5] hover:underline">
-              Compare all plans
-            </Link>
-          </p>
-          <div className="flex gap-3">
+    <ModalShell
+      open={isOpen}
+      onClose={onClose}
+      size="lg"
+      title={feature ? L(`Unlock ${feature}`, `Buka ${feature}`) : limit ? L(`More ${limit}`, `Tambah batas ${limit}`) : L("Choose a plan", "Pilih paket")}
+      description={
+        feature
+          ? L("This feature is on a higher plan.", "Fitur ini tersedia di paket yang lebih tinggi.")
+          : limit
+            ? L(`You have reached the ${limit} limit of your plan.`, `Batas ${limit} di paket Anda sudah tercapai.`)
+            : L("More members, topics and data on a higher plan.", "Lebih banyak anggota, topik, dan data di paket yang lebih tinggi.")
+      }
+      closeLabel={L("Close", "Tutup")}
+      footer={
+        <>
+          <Link href="/pricing" className="mr-auto text-[12px] font-bold text-[#3B52F5] hover:underline">{L("Compare all plans", "Bandingkan semua paket")}</Link>
+          <button type="button" onClick={onClose} className={secondaryButtonClass}>{L("Later", "Nanti saja")}</button>
+          <Link href={`/pricing?plan=${selectedPlan}${feature ? `&feature=${feature}` : ""}${limit ? `&limit=${limit}` : ""}`} className={primaryButtonClass}>
+            {isUpgrade ? L("Upgrade", "Upgrade sekarang") : L("Choose plan", "Pilih paket")}
+          </Link>
+        </>
+      }
+    >
+      <div role="radiogroup" aria-label={L("Plans", "Paket")} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {plans.map((plan) => {
+          const key = plan.key?.toLowerCase() || "pilot";
+          const isCurrent = key === currentKey;
+          const isSelected = selectedPlan === key;
+          return (
             <button
+              key={plan.key}
               type="button"
-              onClick={onClose}
-              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50"
+              role="radio"
+              aria-checked={isSelected}
+              disabled={isCurrent}
+              onClick={() => setSelectedPlan(key)}
+              className={cn(
+                "flex flex-col rounded-[14px] border p-4 text-left transition",
+                isSelected ? "border-[#465FFF] bg-[#F5F7FF] ring-2 ring-[#465FFF]/15" : "border-[#E6EAF2] bg-white hover:border-[#C9D4F6]",
+                isCurrent && "cursor-default opacity-80",
+              )}
             >
-              Maybe Later
+              <span className="flex items-center justify-between gap-2">
+                <span className="text-[13px] font-black tracking-wide text-[#101334]">{plan.name}</span>
+                {isCurrent ? <span className="rounded-full bg-[#EEF1F7] px-2 py-0.5 text-[10px] font-black text-[#465170]">{L("Current", "Saat ini")}</span> : null}
+              </span>
+              <span className="mt-0.5 text-[11px] font-medium text-[#5A6478]">{plan.tagline}</span>
+              <span className="mt-3 text-[18px] font-black tabular-nums text-[#101334]">{price(plan.priceIdr)}<span className="text-[11px] font-bold text-[#5A6478]">/{L("mo", "bln")}</span></span>
+              <dl className="mt-3 space-y-1 text-[12px]">
+                <div className="flex justify-between gap-2"><dt className="text-[#5A6478]">{L("Members", "Anggota")}</dt><dd className="font-black text-[#101334]">{count(plan.maxMembers)}</dd></div>
+                <div className="flex justify-between gap-2"><dt className="text-[#5A6478]">{L("Topics", "Topik")}</dt><dd className="font-black text-[#101334]">{count(plan.maxTopics)}</dd></div>
+                <div className="flex justify-between gap-2"><dt className="text-[#5A6478]">{L("Data / mo", "Data / bln")}</dt><dd className="font-black text-[#101334]">{plan.maxSignalsPerMonth === -1 ? L("Unlimited", "Tanpa batas") : `${plan.maxSignalsPerMonth / 1000}rb`}</dd></div>
+              </dl>
             </button>
-            <Link
-              href={`/pricing?plan=${selectedPlan}${feature ? `&feature=${feature}` : ""}${limit ? `&limit=${limit}` : ""}`}
-              className="flex items-center gap-2 rounded-lg bg-[#465FFF] px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-[#3b50d8]"
-            >
-              {currentIndex < planOrder.indexOf(selectedPlan || "command") ? "Upgrade Now" : "Choose Plan"}
-              <ArrowRight size={16} />
-            </Link>
-          </div>
-        </div>
+          );
+        })}
       </div>
-    </div>
+    </ModalShell>
   );
 }
 
