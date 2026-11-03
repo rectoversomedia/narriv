@@ -76,6 +76,8 @@ export interface DashboardSummary {
   // Daily stored-sentiment counts for the last 7 UTC days (every day present).
   sentiment_trend?: Array<{ date: string; positive: number; neutral: number; negative: number; mixed: number; unanalyzed: number; total: number }> | null;
   platform_distribution: PlatformCount[];
+  /** Publishers (news sites, accounts) with the most records in the period. */
+  top_publishers?: Array<{ publisher: string; platform: string; count: number; negative: number; positive: number }>;
   latest_signals: LatestSignal[];
   global_activity?: GlobalActivitySummary;
   top_topics?: Array<{ name: { en: string; id: string }; mentions: string; delta: string; tone: string }>;

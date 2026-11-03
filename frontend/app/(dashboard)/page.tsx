@@ -15,6 +15,8 @@ import {
   getDashboardSummary,
   getDateRangeOptions,
   getNarratives,
+  getVisibility,
+  getVisibilitySummary,
   getWorkspaceSettings,
   type Alert,
   type DateRangeKey,
@@ -24,6 +26,7 @@ import { getPipelineStatus, getRecommendations, timeAgo, type IntelligenceRecomm
 import { useCodeLabels } from "@/components/intelligence/intelligence-panels";
 import { SentimentTrendChart } from "@/components/dashboard/sentiment-trend-chart";
 import { DemoBanner } from "@/components/ui/demo-banner";
+import { issueHref, monitoringHref, type MonitoringPeriod } from "@/lib/evidence-links";
 import { Skeleton } from "@/components/ui/Skeleton";
 
 // The overview answers three questions on one screen, for one period: how is the coverage leaning
@@ -53,22 +56,39 @@ function EmptyNote({ children }: { children: React.ReactNode }) {
   return <p className="rounded-[10px] border border-dashed border-[#DDE3EF] bg-[#FBFCFF] px-4 py-6 text-center text-[12px] font-semibold text-[#5A6478]">{children}</p>;
 }
 
-function SentimentBar({ label, count, share, color }: { label: string; count: number; share: number; color: string }) {
+function SentimentBar({ label, count, share, color, href, valueLabel }: { label: string; count: number; share: number; color: string; href: string; valueLabel?: string }) {
   return (
-    <div>
+    <Link href={href} className="block rounded-[8px] px-1.5 py-1 -mx-1.5 transition hover:bg-[#F8FAFF]">
       <div className="flex items-baseline justify-between gap-3 text-[12px]">
         <span className="font-bold text-[#101334]">{label}</span>
         <span className="tabular-nums font-black text-[#101334]">
-          {count.toLocaleString(intlLocale())}
-          <span className="ml-1.5 font-semibold text-[#5A6478]">{share.toFixed(0)}%</span>
+          {valueLabel ?? (
+            <>
+              {count.toLocaleString(intlLocale())}
+              <span className="ml-1.5 font-semibold text-[#5A6478]">{share.toFixed(0)}%</span>
+            </>
+          )}
         </span>
       </div>
       <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-[#EEF1F7]">
         <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${Math.max(share, count > 0 ? 2 : 0)}%`, backgroundColor: color }} />
       </div>
-    </div>
+    </Link>
   );
 }
+
+const PLATFORM_NAMES: Record<string, string> = {
+  news: "Berita online",
+  twitter: "X (Twitter)",
+  x: "X (Twitter)",
+  instagram: "Instagram",
+  facebook: "Facebook",
+  tiktok: "TikTok",
+  youtube: "YouTube",
+  reddit: "Reddit",
+};
+const SOCIAL_PLATFORMS = ["twitter", "instagram", "facebook", "tiktok", "youtube"];
+const PLATFORM_COLORS = ["#465FFF", "#8B5CFF", "#10B981", "#F59E0B", "#EF4444", "#0EA5E9"];
 
 // The alert list returns stored rows (snake_case); the detail endpoint returns camelCase.
 type AlertRow = Alert & { created_at?: string; what_to_do?: string | null };
@@ -121,6 +141,8 @@ export default function DashboardPage() {
   const pipelineQuery = useQuery({ queryKey: ["pipeline-status"], queryFn: getPipelineStatus, staleTime: 60 * 1000, retry: 1 });
   const issuesQuery = useQuery({ queryKey: ["overview-issues", period], queryFn: () => getNarratives({ limit: 20, days: PERIOD_DAYS[period] }), staleTime: 60 * 1000 });
   const alertsQuery = useQuery({ queryKey: ["overview-open-alerts"], queryFn: () => getAlerts({ status: "open", limit: 50 }), staleTime: 30 * 1000 });
+  const geoQuery = useQuery({ queryKey: ["overview-geo-summary"], queryFn: () => getVisibilitySummary(), staleTime: 5 * 60 * 1000 });
+  const geoPromptsQuery = useQuery({ queryKey: ["overview-geo-prompts"], queryFn: () => getVisibility(), staleTime: 5 * 60 * 1000 });
   const recsQuery = useQuery({ queryKey: ["overview-recommendations", period], queryFn: () => getRecommendations(PERIOD_HOURS[period]), staleTime: 60 * 1000, retry: 1 });
 
   const summary = summaryQuery.data;
@@ -150,6 +172,22 @@ export default function DashboardPage() {
     .sort((a, b) => (PRIORITY_RANK[a.priority] ?? 9) - (PRIORITY_RANK[b.priority] ?? 9))
     .slice(0, 3);
   const openAlertTotal = alertsQuery.data?.pagination?.total ?? openAlerts.length;
+
+  const hours = PERIOD_HOURS[period] as MonitoringPeriod;
+
+  // ── Where the records come from ─────────────────────────────────────────
+  const platforms = summary?.platform_distribution ?? [];
+  const platformTotal = platforms.reduce((sum, p) => sum + p.count, 0);
+  const missingSocial = SOCIAL_PLATFORMS.filter((key) => !platforms.some((p) => p.platform === key || (key === "twitter" && p.platform === "x")));
+  const publishers = summary?.top_publishers ?? [];
+  const platformName = (key: string) => (key === "news" ? L("Online news", "Berita online") : PLATFORM_NAMES[key] ?? key);
+
+  // ── GEO: how AI answers describe the brand ──────────────────────────────
+  const geo = geoQuery.data?.kpis;
+  const geoEngines = geoQuery.data?.engine_breakdown ?? [];
+  const geoLastChecked = geoEngines.map((e) => e.lastChecked).filter(Boolean).sort().at(-1) ?? null;
+  const geoPrompt = geoPromptsQuery.data?.prompts?.[0];
+  const hasGeo = Boolean(geo && geo.total_analyses > 0);
 
   const liveError = !isDemoSession && summaryQuery.isError ? (summaryQuery.error as { status?: number } | null) : null;
   const neverCollected = !isDemoSession && pipelineQuery.isSuccess && !lastDataAt && total === 0;
@@ -222,7 +260,7 @@ export default function DashboardPage() {
             <Card
               title={L("Sentiment", "Sentimen")}
               subtitle={L(`Analysed records from ${periodLabel}`, `Data yang sudah dianalisis, ${periodLabel}`)}
-              action={<Link href="/signals" className="shrink-0 text-[12px] font-black text-[#3B52F5] hover:underline">{L("All signals", "Semua sinyal")}</Link>}
+              action={<Link href={monitoringHref({ hours })} className="shrink-0 text-[12px] font-black text-[#3B52F5] hover:underline">{L("All signals", "Semua sinyal")}</Link>}
             >
               {summaryQuery.isLoading ? (
                 <div className="space-y-3">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
@@ -249,15 +287,15 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div className="space-y-3">
-                    <SentimentBar label={L("Positive", "Positif")} count={dist.positive} share={share(dist.positive)} color="#10B981" />
-                    <SentimentBar label={L("Neutral", "Netral")} count={dist.neutral} share={share(dist.neutral)} color="#94A3B8" />
-                    <SentimentBar label={L("Mixed", "Campuran")} count={dist.mixed} share={share(dist.mixed)} color="#F59E0B" />
-                    <SentimentBar label={L("Negative", "Negatif")} count={dist.negative} share={share(dist.negative)} color="#EF4444" />
+                    <SentimentBar label={L("Positive", "Positif")} count={dist.positive} share={share(dist.positive)} color="#10B981" href={monitoringHref({ hours, sentiment: "positive" })} />
+                    <SentimentBar label={L("Neutral", "Netral")} count={dist.neutral} share={share(dist.neutral)} color="#94A3B8" href={monitoringHref({ hours, sentiment: "neutral" })} />
+                    <SentimentBar label={L("Mixed", "Campuran")} count={dist.mixed} share={share(dist.mixed)} color="#F59E0B" href={monitoringHref({ hours, sentiment: "mixed" })} />
+                    <SentimentBar label={L("Negative", "Negatif")} count={dist.negative} share={share(dist.negative)} color="#EF4444" href={monitoringHref({ hours, sentiment: "negative" })} />
                   </div>
                   {unanalysed > 0 ? (
-                    <p className="mt-3 text-[11px] font-semibold text-[#5A6478]">
+                    <Link href={monitoringHref({ hours, analysis: "pending" })} className="mt-3 block text-[11px] font-semibold text-[#5A6478] hover:text-[#3B52F5]">
                       {L(`${unanalysed.toLocaleString("en-US")} record(s) not analysed yet are not counted in the bars.`, `${unanalysed.toLocaleString("id-ID")} data belum dianalisis dan tidak dihitung di batang di atas.`)}
-                    </p>
+                    </Link>
                   ) : null}
                   {summary?.sentiment_trend?.some((d) => d.total > 0) ? (
                     <div className="mt-5 border-t border-[#EEF1F7] pt-4">
@@ -318,7 +356,7 @@ export default function DashboardPage() {
           <Card
             title={L("Hottest issues", "Isu paling panas")}
             subtitle={L(`Narratives with the most records in ${periodLabel}`, `Narasi dengan data terbanyak, ${periodLabel}`)}
-            action={<Link href="/intelligence" className="shrink-0 text-[12px] font-black text-[#3B52F5] hover:underline">{L("All issues", "Semua isu")}</Link>}
+            action={<Link href={`/intelligence?days=${PERIOD_DAYS[period]}`} className="shrink-0 text-[12px] font-black text-[#3B52F5] hover:underline">{L("All issues", "Semua isu")}</Link>}
           >
             {issuesQuery.isLoading ? (
               <div className="space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
@@ -344,9 +382,9 @@ export default function DashboardPage() {
                         <tr key={issue.id} className="border-b border-[#F3F5FA] last:border-0">
                           <td className="py-3 pr-2 text-[13px] font-black text-[#5A6478]">{index + 1}</td>
                           <td className="py-3 pr-3">
-                            <Link href={`/intelligence?narrative=${issue.id}`} className="text-[13px] font-black text-[#101334] hover:text-[#3B52F5]">{issue.title}</Link>
+                            <Link href={issueHref(issue.id, hours)} className="text-[13px] font-black text-[#101334] hover:text-[#3B52F5]">{issue.title}</Link>
                           </td>
-                          <td className="py-3 pr-3 text-right text-[13px] font-black tabular-nums text-[#101334]">{issue.signalCount.toLocaleString(intlLocale())}</td>
+                          <td className="py-3 pr-3 text-right"><Link href={monitoringHref({ hours, narrative: issue.id })} className="text-[13px] font-black tabular-nums text-[#101334] hover:text-[#3B52F5]">{issue.signalCount.toLocaleString(intlLocale())}</Link></td>
                           <td className="py-3 pr-3"><span className={cn("rounded-full px-2 py-0.5 text-[10px] font-black", tone.cls)}>{L(tone.en, tone.id)}</span></td>
                           <td className={cn("py-3 text-right text-[12px] font-black tabular-nums", velocity.startsWith("+") ? "text-[#B42318]" : "text-[#5A6478]")}>{velocity}</td>
                         </tr>
@@ -357,6 +395,119 @@ export default function DashboardPage() {
               </div>
             )}
           </Card>
+
+          <div className="grid gap-5 xl:grid-cols-2">
+            {/* 4. Where the records come from */}
+            <Card
+              title={L("Sources", "Sumber data")}
+              subtitle={L(`Platforms and publishers behind the records, ${periodLabel}`, `Platform dan penerbit asal data, ${periodLabel}`)}
+              action={<Link href="/workspace/sources" className="shrink-0 text-[12px] font-black text-[#3B52F5] hover:underline">{L("Manage sources", "Kelola sumber")}</Link>}
+            >
+              {summaryQuery.isLoading ? (
+                <div className="space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
+              ) : platformTotal === 0 ? (
+                <EmptyNote>{L(`No records in ${periodLabel}.`, `Belum ada data dalam ${periodLabel}.`)}</EmptyNote>
+              ) : (
+                <>
+                  <p className="mb-2 text-[11px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{L("By platform", "Per platform")}</p>
+                  <div className="space-y-2">
+                    {platforms.map((p, index) => (
+                      <SentimentBar key={p.platform} label={platformName(p.platform)} count={p.count} share={(p.count / platformTotal) * 100} color={PLATFORM_COLORS[index % PLATFORM_COLORS.length]} href={monitoringHref({ hours, platform: p.platform })} />
+                    ))}
+                  </div>
+                  {missingSocial.length > 0 ? (
+                    <Link href="/workspace/sources" className="mt-3 block rounded-[10px] border border-[#FDE2B5] bg-[#FFF8EC] px-3 py-2.5 text-[12px] font-semibold text-[#8A4B00] transition hover:border-[#F59E0B]">
+                      {L("Not collected yet:", "Belum dikumpulkan:")} <b className="font-black">{missingSocial.map((key) => PLATFORM_NAMES[key]).join(", ")}</b>.{" "}
+                      {L("Connect them in Data Sources so social conversation is counted too.", "Hubungkan di Sumber Data supaya percakapan media sosial ikut terhitung.")}
+                    </Link>
+                  ) : null}
+                  {publishers.length > 0 ? (
+                    <>
+                      <p className="mb-2 mt-5 text-[11px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{L("Top publishers", "Penerbit teratas")}</p>
+                      <ul className="divide-y divide-[#F3F5FA]">
+                        {publishers.map((pub) => (
+                          <li key={pub.publisher} className="flex items-center justify-between gap-3 py-2 text-[12px]">
+                            <span className="min-w-0 truncate font-bold text-[#101334]">{pub.publisher}</span>
+                            <span className="flex shrink-0 items-center gap-2 tabular-nums">
+                              {pub.negative > 0 ? <span className="rounded-full bg-[#FDECEC] px-2 py-0.5 text-[10px] font-black text-[#B42318]">{pub.negative} {L("neg", "neg")}</span> : null}
+                              {pub.positive > 0 ? <span className="rounded-full bg-[#E8F7EF] px-2 py-0.5 text-[10px] font-black text-[#047857]">{pub.positive} {L("pos", "pos")}</span> : null}
+                              <span className="w-8 text-right font-black text-[#101334]">{pub.count}</span>
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : null}
+                </>
+              )}
+            </Card>
+
+            {/* 5. GEO: the brand in AI answers */}
+            <Card
+              title={L("AI visibility (GEO)", "Visibilitas di AI (GEO)")}
+              subtitle={L("How AI answers mention the brand for the monitored keywords", "Seberapa sering jawaban AI menyebut brand untuk kata kunci yang dipantau")}
+              action={<Link href="/visibility" className="shrink-0 text-[12px] font-black text-[#3B52F5] hover:underline">{L("Open AI Visibility", "Buka Visibilitas AI")}</Link>}
+            >
+              {geoQuery.isLoading ? (
+                <div className="space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
+              ) : !hasGeo || !geo ? (
+                <EmptyNote>
+                  {L("No AI answer test has been run for this workspace yet.", "Belum ada uji jawaban AI untuk workspace ini.")}{" "}
+                  <Link href="/visibility" className="font-black text-[#3B52F5] hover:underline">{L("Run the first test", "Jalankan uji pertama")}</Link>
+                </EmptyNote>
+              ) : (
+                <>
+                  <div className="grid grid-cols-3 gap-3">
+                    <Link href="/visibility" className="rounded-[10px] bg-[#F8FAFF] p-3 transition hover:bg-[#EEF2FF]">
+                      <p className="text-[11px] font-bold text-[#5A6478]">{L("GEO score", "Skor GEO")}</p>
+                      <p className="mt-1 text-[24px] font-black tabular-nums leading-none text-[#101334]">{Math.round(geo.avg_visibility_score)}<span className="text-[13px] font-bold text-[#5A6478]">/100</span></p>
+                    </Link>
+                    <Link href="/visibility" className="rounded-[10px] bg-[#F8FAFF] p-3 transition hover:bg-[#EEF2FF]">
+                      <p className="text-[11px] font-bold text-[#5A6478]">{L("Brand mentioned", "Brand disebut")}</p>
+                      <p className="mt-1 text-[24px] font-black tabular-nums leading-none text-[#101334]">{Math.round(geo.avg_brand_presence_rate)}%</p>
+                    </Link>
+                    <Link href="/visibility" className="rounded-[10px] bg-[#F8FAFF] p-3 transition hover:bg-[#EEF2FF]">
+                      <p className="text-[11px] font-bold text-[#5A6478]">{L("Competitors mentioned", "Kompetitor disebut")}</p>
+                      <p className="mt-1 text-[24px] font-black tabular-nums leading-none text-[#101334]">{Math.round(geo.avg_competitor_mention_rate)}%</p>
+                    </Link>
+                  </div>
+                  {geoEngines.length > 0 ? (
+                    <>
+                      <p className="mb-2 mt-5 text-[11px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{L("Per AI model", "Per model AI")}</p>
+                      <div className="space-y-2">
+                        {geoEngines.map((engine, index) => (
+                          <SentimentBar
+                            key={engine.engineName}
+                            label={engine.engineName.replace(/-simulated$/, "").replace(/^gpt/, "GPT").replace(/^chatgpt$/, "ChatGPT")}
+                            count={Math.round(engine.visibilityScore)}
+                            share={Math.min(100, Math.max(0, engine.visibilityScore))}
+                            color={PLATFORM_COLORS[index % PLATFORM_COLORS.length]}
+                            href="/visibility"
+                            valueLabel={`${Math.round(engine.visibilityScore)}/100`}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  ) : null}
+                  {geoPrompt ? (
+                    <Link href="/visibility" className="mt-4 block rounded-[10px] border border-[#EEF1F7] p-3 transition hover:border-[#465FFF]/40 hover:bg-[#FBFCFF]">
+                      <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{L("Latest prompt tested", "Prompt terakhir yang diuji")}</p>
+                      <p className="mt-1 text-[12px] font-bold leading-snug text-[#101334]">&ldquo;{geoPrompt.prompt}&rdquo;</p>
+                      <p className="mt-1 text-[11px] font-semibold text-[#53608C]">
+                        {geoPrompt.brand === "mentioned" ? L("The brand is mentioned.", "Brand disebut.") : L("The brand is not mentioned.", "Brand tidak disebut.")}{" "}
+                        {geoPrompt.competitor && geoPrompt.competitor !== "not mentioned" ? L(`Competitors: ${geoPrompt.competitor}.`, `Kompetitor: ${geoPrompt.competitor}.`) : L("No competitor mentioned.", "Tidak ada kompetitor yang disebut.")}
+                      </p>
+                    </Link>
+                  ) : null}
+                  <p className="mt-3 text-[11px] font-semibold text-[#5A6478]">
+                    {L(`${geo.total_analyses} test(s) across ${geo.engines_tracked} model(s)`, `${geo.total_analyses} uji di ${geo.engines_tracked} model`)}
+                    {geoLastChecked ? ` · ${L("last tested", "terakhir diuji")} ${timeAgo(geoLastChecked)}` : ""}.{" "}
+                    {L("Measured by asking AI models the test prompts, not by watching ChatGPT or Gemini directly.", "Diukur dengan menanyakan prompt uji ke model AI, bukan memantau ChatGPT atau Gemini secara langsung.")}
+                  </p>
+                </>
+              )}
+            </Card>
+          </div>
         </>
       )}
     </div>

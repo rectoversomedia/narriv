@@ -132,6 +132,7 @@ export const getSummary = async (req, res) => {
                     title,
                     content,
                     platform,
+                    author,
                     sentiment,
                     region,
                     captured_at,
@@ -161,6 +162,7 @@ export const getSummary = async (req, res) => {
             // percentages use signals that carry a sentiment value.
             let positive = 0, negative = 0, neutral = 0, mixed = 0, analyzedCount = 0, sentimentCount = 0;
             const platformsMap = {};
+            const publishersMap = {};
 
             signals?.forEach(signal => {
                 if (Array.isArray(signal.signal_analyses) && signal.signal_analyses.length > 0) analyzedCount++;
@@ -176,7 +178,18 @@ export const getSummary = async (req, res) => {
 
                 const platform = signal.platform || 'unknown';
                 platformsMap[platform] = (platformsMap[platform] || 0) + 1;
+
+                // Publisher (stored as author by news ingestion) with its sentiment split.
+                const publisher = String(signal.author || "").trim();
+                if (publisher) {
+                    const row = publishersMap[publisher] || (publishersMap[publisher] = { publisher, platform, count: 0, negative: 0, positive: 0 });
+                    row.count++;
+                    const s = String(sentiment || "").toLowerCase();
+                    if (s.includes("negative")) row.negative++;
+                    else if (s.includes("positive")) row.positive++;
+                }
             });
+            const top_publishers = Object.values(publishersMap).sort((a, b) => b.count - a.count).slice(0, 8);
 
             const platform_distribution = Object.keys(platformsMap)
                 .map(platform => ({ platform, count: platformsMap[platform] }))
@@ -332,6 +345,7 @@ export const getSummary = async (req, res) => {
                 sentiment_trend,
                 sentiment_distribution: { positive, negative, neutral, mixed },
                 platform_distribution,
+                top_publishers,
                 latest_signals,
                 top_topics,
                 mini_topics,
