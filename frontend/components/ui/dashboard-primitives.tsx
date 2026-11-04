@@ -38,7 +38,7 @@ export function MetricCard({ label, value, delta, icon: Icon }: { label: string;
           <p className="theme-muted text-[12px] font-semibold uppercase tracking-[0.14em]">{label}</p>
           <div className="flex items-baseline gap-3">
             <p className="theme-text text-[34px] font-semibold tracking-[-0.04em]">{value}</p>
-            <span className="inline-flex items-center rounded-full border border-[#12B76A]/20 bg-[#12B76A]/10 px-2 py-0.5 text-[11px] font-semibold text-[#027A48] dark:text-[#6CE9A6]">
+            <span className="inline-flex items-center rounded-full border border-transparent bg-[#12B76A]/10 px-2 py-0.5 text-[11px] font-semibold text-[#027A48] dark:text-[#6CE9A6]">
               {delta}
             </span>
           </div>
@@ -58,10 +58,10 @@ export function InnerPanel({ children, className = "" }: CardProps) {
 
 export function StatusBadge({ children, tone = "blue" }: { children: ReactNode; tone?: "blue" | "green" | "amber" | "red" | "slate" }) {
   const tones = {
-    blue: "border-[#465FFF]/30 bg-[#465FFF]/10 text-[#3B52F5]",
-    green: "border-[#12B76A]/30 bg-[#12B76A]/10 text-[#027A48]",
-    amber: "border-[#FDB022]/30 bg-[#FDB022]/10 text-[#B54708]",
-    red: "border-[#F97066]/30 bg-[#F97066]/10 text-[#B42318]",
+    blue: "border-transparent bg-[#465FFF]/10 text-[#3B52F5]",
+    green: "border-transparent bg-[#12B76A]/10 text-[#027A48]",
+    amber: "border-transparent bg-[#FDB022]/10 text-[#B54708]",
+    red: "border-transparent bg-[#F97066]/10 text-[#B42318]",
     slate: "theme-border theme-muted bg-[var(--badge-slate-bg)]",
   };
 

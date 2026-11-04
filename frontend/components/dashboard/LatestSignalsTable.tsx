@@ -21,10 +21,10 @@ export function LatestSignalsTable({ signals }: LatestSignalsTableProps) {
 
   const getSentimentColor = (sentiment: string) => {
     switch (sentiment.toLowerCase()) {
-      case "positive": return "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
-      case "negative": return "text-rose-400 bg-rose-500/10 border-rose-500/20";
-      case "mixed": return "text-amber-400 bg-amber-500/10 border-amber-500/20";
-      default: return "text-sky-400 bg-sky-500/10 border-sky-500/20";
+      case "positive": return "text-emerald-400 bg-emerald-500/10 border-transparent";
+      case "negative": return "text-rose-400 bg-rose-500/10 border-transparent";
+      case "mixed": return "text-amber-400 bg-amber-500/10 border-transparent";
+      default: return "text-sky-400 bg-sky-500/10 border-transparent";
     }
   };
 

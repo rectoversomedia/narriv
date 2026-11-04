@@ -59,8 +59,8 @@ export default function ResetPasswordPage() {
         <FieldGroup className="gap-8">
           <AuthInput label={t("email")} icon="email" type="email" autoComplete="email" placeholder={t("emailPlaceholder")} error={errors.email?.message} registration={register("email")} />
 
-          {submitted ? <p className="rounded-[8px] border border-[#12B76A]/20 bg-[#ECFDF3] px-4 py-3 text-sm font-semibold text-[#027A48]">{t("submitted")}</p> : null}
-          {apiError ? <p className="rounded-[8px] border border-[#F04438]/20 bg-[#FFF5F4] px-4 py-3 text-sm font-medium text-[#B42318]">{apiError}</p> : null}
+          {submitted ? <p className="rounded-[8px] border border-transparent bg-[#ECFDF3] px-4 py-3 text-sm font-semibold text-[#027A48]">{t("submitted")}</p> : null}
+          {apiError ? <p className="rounded-[8px] border border-transparent bg-[#FFF5F4] px-4 py-3 text-sm font-medium text-[#B42318]">{apiError}</p> : null}
 
           <PrimaryButton loading={isSubmitting}>{isSubmitting ? t("submitting") : t("submit")}</PrimaryButton>
         </FieldGroup>

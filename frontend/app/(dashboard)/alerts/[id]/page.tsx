@@ -28,10 +28,10 @@ import { DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashb
 type DetailTone = "red" | "amber" | "blue" | "green" | "slate";
 
 const toneClass: Record<DetailTone, { badge: string; bubble: string; border: string; panel: string; text: string }> = {
-  red: { badge: "bg-[#EF4444]/10 text-[#C81E1E]", bubble: "bg-[#EF4444]/10 text-[#C81E1E]", border: "border-[#F4D8D8]", panel: "from-[#FFF4F4]", text: "text-[#C81E1E]" },
-  amber: { badge: "bg-[#F59E0B]/12 text-[#B7791F]", bubble: "bg-[#F59E0B]/12 text-[#B7791F]", border: "border-[#F7DFC0]", panel: "from-[#FFF9ED]", text: "text-[#B7791F]" },
-  blue: { badge: "bg-[#465FFF]/10 text-[#3B52F5]", bubble: "bg-[#465FFF]/10 text-[#3B52F5]", border: "border-[#DDE5FF]", panel: "from-[#F5F7FF]", text: "text-[#3B52F5]" },
-  green: { badge: "bg-[#10B981]/10 text-[#047857]", bubble: "bg-[#10B981]/10 text-[#047857]", border: "border-[#CFEFE3]", panel: "from-[#F4FFFA]", text: "text-[#047857]" },
+  red: { badge: "bg-[#EF4444]/10 text-[#C81E1E]", bubble: "bg-[#EF4444]/10 text-[#C81E1E]", border: "border-[#E6EAF2]", panel: "from-[#FFF4F4]", text: "text-[#C81E1E]" },
+  amber: { badge: "bg-[#F59E0B]/12 text-[#B7791F]", bubble: "bg-[#F59E0B]/12 text-[#B7791F]", border: "border-[#E6EAF2]", panel: "from-[#FFF9ED]", text: "text-[#B7791F]" },
+  blue: { badge: "bg-[#465FFF]/10 text-[#3B52F5]", bubble: "bg-[#465FFF]/10 text-[#3B52F5]", border: "border-[#E6EAF2]", panel: "from-[#F5F7FF]", text: "text-[#3B52F5]" },
+  green: { badge: "bg-[#10B981]/10 text-[#047857]", bubble: "bg-[#10B981]/10 text-[#047857]", border: "border-[#E6EAF2]", panel: "from-[#F4FFFA]", text: "text-[#047857]" },
   slate: { badge: "bg-slate-100 text-slate-600", bubble: "bg-slate-100 text-slate-600", border: "border-[#E3E8F2]", panel: "from-[#F8FAFC]", text: "text-slate-600" },
 };
 
@@ -321,7 +321,7 @@ export default function AlertDetailPage() {
                 { label: L("Deadline", "Tenggat"), value: liveData.deadline ? formatDateTime(liveData.deadline) : null, missing: L("No deadline", "Belum ada tenggat") },
                 { label: L("Raised", "Muncul"), value: formatDateTime(liveData.createdAt), missing: "-" },
               ].map((item) => (
-                <div key={item.label} className={`rounded-[12px] border p-3 ${item.value ? "border-[#E6EAF2] bg-[#FBFCFF]" : "border-[#F4C7C3] bg-[#FFF5F4]"}`}>
+                <div key={item.label} className={`rounded-[12px] border p-3 ${item.value ? "border-[#E6EAF2] bg-[#FBFCFF]" : "border-transparent bg-[#FFF5F4]"}`}>
                   <dt className="text-[11px] font-bold text-[#5F6B94]">{item.label}</dt>
                   <dd className={`mt-1 text-[14px] font-black ${item.value ? "text-[#101334]" : "text-[#B42318]"}`}>{item.value || item.missing}</dd>
                 </div>
@@ -334,7 +334,7 @@ export default function AlertDetailPage() {
                 [L("Why it matters", "Kenapa penting"), whyItMatters],
                 [L("What to do", "Yang perlu dilakukan"), whatToDo],
               ].map(([label, value], index) => (
-                <div key={label} className={`rounded-[14px] border p-4 text-[13px] font-semibold leading-6 ${index === 2 ? "border-[#465FFF]/30 bg-[#F5F7FF] text-[#101334]" : "border-[#E6EAF2] bg-white text-[#53608C]"}`}>
+                <div key={label} className={`rounded-[14px] border p-4 text-[13px] font-semibold leading-6 ${index === 2 ? "border-transparent bg-[#F5F7FF] text-[#101334]" : "border-[#E6EAF2] bg-white text-[#53608C]"}`}>
                   <span className="mb-1.5 block text-[12px] font-black text-[#101334]">{label}</span>
                   {value}
                 </div>

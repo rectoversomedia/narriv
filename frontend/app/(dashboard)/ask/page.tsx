@@ -80,11 +80,11 @@ function ConfidenceChip({ confidence, t }: { confidence: Confidence; t: (key: st
   const map: Record<Confidence, { label: string; className: string }> = {
     high: {
       label: t("confidenceHigh"),
-      className: "bg-[#12B76A]/10 text-[#027A48] border border-[#12B76A]/20",
+      className: "bg-[#12B76A]/10 text-[#027A48] border border-transparent",
     },
     medium: {
       label: t("confidenceMedium"),
-      className: "bg-[#FDB022]/10 text-[#B54708] border border-[#FDB022]/20",
+      className: "bg-[#FDB022]/10 text-[#B54708] border border-transparent",
     },
     low: {
       label: t("confidenceLow"),
@@ -375,7 +375,7 @@ export default function AskPage() {
                         {msg.confidence && <ConfidenceChip confidence={msg.confidence} t={tAsk} />}
                       </div>
                       {msg.isDemo && (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-bold text-[#6E44E8]">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-transparent bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-bold text-[#6E44E8]">
                           DEMO
                         </span>
                       )}

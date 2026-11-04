@@ -100,7 +100,7 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
           ))}
         </div>
       ) : keywordsQuery.isError ? (
-        <div className="mt-4 flex items-center justify-between rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[11px] font-semibold text-rose-700">
+        <div className="mt-4 flex items-center justify-between rounded-lg border border-transparent bg-rose-50 px-3 py-2 text-[11px] font-semibold text-rose-700">
           <span>{t("loadFailed")}</span>
           <button type="button" onClick={() => keywordsQuery.refetch()} className="font-black underline">
             {t("retry")}
@@ -228,11 +228,11 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
 }
 
 const STATUS_STYLE: Record<string, string> = {
-  active: "border-[#CDEEDD] bg-[#F1FCF6] text-[#047857]",
-  failing: "border-rose-200 bg-rose-50 text-rose-700",
+  active: "border-transparent bg-[#F1FCF6] text-[#047857]",
+  failing: "border-transparent bg-rose-50 text-rose-700",
   paused: "border-slate-200 bg-slate-100 text-[#5A6478]",
-  awaiting_first_run: "border-sky-200 bg-sky-50 text-sky-700",
-  not_in_rotation: "border-amber-200 bg-amber-50 text-amber-700",
+  awaiting_first_run: "border-transparent bg-sky-50 text-sky-700",
+  not_in_rotation: "border-transparent bg-amber-50 text-amber-700",
 };
 
 type T = ReturnType<typeof useTranslations<"Workspace.settings.keywords">>;

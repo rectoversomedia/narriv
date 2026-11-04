@@ -89,7 +89,6 @@ function MetricCard({ label, value, subValue, helper, icon, tone, sparklineValue
   const isNegative = helper.startsWith("-") || helper.startsWith("▼");
   return (
     <Panel className="overflow-hidden">
-      <div aria-hidden="true" className="-mx-px -mt-px mb-0 h-1 rounded-t-[14px]" style={{ background: `linear-gradient(90deg, ${(toneStyles[tone]).color}, rgba(${(toneStyles[tone]).rgb}, 0.25))` }} />
       <CardContent className="flex flex-col gap-3 p-5 min-h-[110px]">
         {/* Header row: icon + label */}
         <div className="flex items-center justify-between gap-3">
@@ -926,7 +925,7 @@ export default function VisibilityPage() {
             />
           ) : null}
 
-          <Panel className="border-[#D6DEFF] bg-[#F6F8FF]">
+          <Panel className="border-transparent bg-[#F6F8FF]">
             <CardContent className="grid gap-5 p-5 md:grid-cols-2 2xl:grid-cols-[minmax(0,1fr)_230px_260px] 2xl:items-center">
               <div className="flex items-start gap-4">
                 <div>
@@ -1087,7 +1086,7 @@ export default function VisibilityPage() {
                 ) : null}
 
                 <div className="mt-4 grid gap-4 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-                  <div className="rounded-[10px] bg-[#F6F8FF] border border-[#D9E1FC] p-4">
+                  <div className="rounded-[10px] bg-[#F6F8FF] border border-transparent p-4">
                     <div className="flex items-center justify-between">
                       <p className="text-[10px] font-black uppercase text-[#647099] tracking-[0.04em]">{t("sandbox.responseTitle")}</p>
                       <span className="text-[9px] font-bold text-[#3B52F5]">Live Simulation (GPT-4o-mini)</span>

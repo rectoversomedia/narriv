@@ -114,7 +114,7 @@ export function LoginForm() {
       </div>
 
       {isRegistered && (
-        <div className="mb-8 flex items-center gap-3 rounded-2xl border border-emerald-200/90 bg-emerald-50/90 px-4 py-3.5 text-[14px] font-medium text-emerald-900 shadow-sm">
+        <div className="mb-8 flex items-center gap-3 rounded-2xl border border-transparent bg-emerald-50/90 px-4 py-3.5 text-[14px] font-medium text-emerald-900 shadow-sm">
           <span>{pickL("Account created. Please sign in.", "Akun berhasil dibuat. Silakan masuk.")}</span>
         </div>
       )}
@@ -146,7 +146,7 @@ export function LoginForm() {
             registration={register("password")}
           />
 
-          {displayError ? <p className="rounded-[8px] border border-[#F04438]/20 bg-[#FFF5F4] px-4 py-3 text-sm font-medium text-[#B42318]">{displayError}</p> : null}
+          {displayError ? <p className="rounded-[8px] border border-transparent bg-[#FFF5F4] px-4 py-3 text-sm font-medium text-[#B42318]">{displayError}</p> : null}
 
           <div className="flex items-center justify-between pt-1">
             <Field orientation="horizontal" className="w-auto items-center gap-3">

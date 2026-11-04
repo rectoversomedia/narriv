@@ -7,7 +7,7 @@ export function LegalDraft({ title, children }: { title: string; children: React
     <main className="min-h-screen bg-white px-6 py-12 text-slate-800">
       <div className="mx-auto max-w-3xl">
         <Link href="/help" className="text-sm font-semibold text-indigo-600 hover:underline">← Help center</Link>
-        <div role="note" className="mt-6 rounded-xl border-2 border-amber-300 bg-amber-50 p-4 text-sm font-semibold text-amber-900">
+        <div role="note" className="mt-6 rounded-xl border-2 border-transparent bg-amber-50 p-4 text-sm font-semibold text-amber-900">
           DRAFT — not in effect. This document has not been reviewed or approved by Narriv&apos;s owner or legal counsel.
           Bracketed items such as [COMPANY LEGAL NAME] must be completed before publication. Nothing on this page is a binding commitment.
         </div>

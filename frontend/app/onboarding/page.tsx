@@ -1203,7 +1203,7 @@ function PreviewStep({ data }: { data: OnboardingData }) {
         </div>
       </div>
 
-      <div className="flex items-start gap-4 rounded-xl border border-[#10B981]/20 bg-[#F0FFF8] p-6">
+      <div className="flex items-start gap-4 rounded-xl border border-transparent bg-[#F0FFF8] p-6">
         <CheckCircle2 size={24} className="mt-0.5 shrink-0 text-[#047857]" />
         <div>
           <p className="text-base font-bold text-[#111536]">{t("readyTitle")}</p>

@@ -252,10 +252,10 @@ export function AdvancedSearchModal({
               <div className="flex flex-wrap gap-2">
                 {SENTIMENTS.map((opt) => {
                   const colors: Record<string, string> = {
-                    positive: "bg-[#10B981]/10 text-[#047857] border-[#10B981]/20",
-                    negative: "bg-[#EF4444]/10 text-[#C81E1E] border-[#EF4444]/20",
+                    positive: "bg-[#10B981]/10 text-[#047857] border-transparent",
+                    negative: "bg-[#EF4444]/10 text-[#C81E1E] border-transparent",
                     neutral: "bg-slate-100 text-slate-600 border-slate-200",
-                    mixed: "bg-[#8B5CFF]/10 text-[#6E44E8] border-[#8B5CFF]/20",
+                    mixed: "bg-[#8B5CFF]/10 text-[#6E44E8] border-transparent",
                   };
                   const activeClass = colors[opt.value] || "";
                   return (
@@ -509,7 +509,7 @@ export function ActiveFiltersChips({ filters, onRemove, onClearAll }: ActiveFilt
       {chips.map((chip) => (
         <span
           key={chip.key}
-          className="inline-flex items-center gap-1.5 rounded-full border border-[#465FFF]/20 bg-[#EEF2FF] px-2.5 py-1 text-[11px] font-bold text-[#3B52F5]"
+          className="inline-flex items-center gap-1.5 rounded-full border border-transparent bg-[#EEF2FF] px-2.5 py-1 text-[11px] font-bold text-[#3B52F5]"
         >
           <span className="text-[#647099]">{chip.label}:</span>
           <span className="capitalize">{chip.value}</span>

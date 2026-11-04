@@ -88,7 +88,7 @@ export function VideoCard({ video, variant = "compact", onSelect }: VideoCardPro
 
         {/* Prerequisites */}
         {video.prerequisites.length > 0 && (
-          <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
+          <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-transparent">
             <p className="text-sm font-medium text-amber-800">Prerequisites</p>
             <ul className="mt-1 space-y-1">
               {video.prerequisites.map((prereq, idx) => (

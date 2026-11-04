@@ -59,9 +59,9 @@ const OPPORTUNITY_TYPE_CONFIG: Record<
 };
 
 const PRIORITY_CONFIG: Record<Priority, { label: string; bg: string; text: string; border: string }> = {
-  Immediate: { label: "Immediate", bg: "bg-red-50",   text: "text-red-700",   border: "border-red-200"   },
-  High:      { label: "High",      bg: "bg-amber-50",  text: "text-amber-700", border: "border-amber-200" },
-  Medium:    { label: "Medium",    bg: "bg-blue-50",   text: "text-blue-600",  border: "border-blue-200"  },
+  Immediate: { label: "Immediate", bg: "bg-red-50",   text: "text-red-700",   border: "border-[#E6EAF2]"   },
+  High:      { label: "High",      bg: "bg-amber-50",  text: "text-amber-700", border: "border-[#E6EAF2]" },
+  Medium:    { label: "Medium",    bg: "bg-blue-50",   text: "text-blue-600",  border: "border-[#E6EAF2]"  },
   Low:       { label: "Low",       bg: "bg-slate-50",  text: "text-[#5A6478]", border: "border-slate-200" },
 };
 
@@ -412,7 +412,7 @@ export default function OpportunitiesPage() {
             <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">
               {t("title")}
             </h1>
-            <span className="rounded-[6px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#6E44E8]">
+            <span className="rounded-[6px] border border-transparent bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#6E44E8]">
               Demo
             </span>
           </div>

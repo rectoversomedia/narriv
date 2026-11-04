@@ -35,9 +35,9 @@ function sampleBrief(L: (en: string, id: string) => string, locale: string) {
       competitorNote: L("Competitor Bank Jago gained 3 points in the 'best digital bank' prompt category.", "Kompetitor Bank Jago naik 3 poin di kategori prompt 'bank digital terbaik'."),
     },
     KEY_DEVELOPMENTS: [
-      { severity: "CRITICAL", bg: "bg-red-50", border: "border-red-200", dot: "bg-red-500", title: L("App login failures viral on X", "Gangguan login aplikasi viral di X"), signals: 127, growth: "+38%", time: L("2h ago", "2 jam lalu") },
-      { severity: "HIGH", bg: "bg-amber-50", border: "border-amber-200", dot: "bg-amber-500", title: L("AI visibility on Gemini down 4 points — Bank Jago overtaking", "Visibilitas AI di Gemini turun 4 poin — Bank Jago menyalip"), signals: 89, growth: L("-4 pts", "-4 poin"), time: L("4h ago", "4 jam lalu") },
-      { severity: "MEDIUM", bg: "bg-blue-50", border: "border-blue-200", dot: "bg-blue-500", title: L("Complaints about interbank transfer fees rising", "Keluhan biaya transfer antarbank meningkat"), signals: 212, growth: "+46%", time: L("24h ago", "24 jam lalu") },
+      { severity: "CRITICAL", bg: "bg-red-50", border: "border-[#E6EAF2]", dot: "bg-red-500", title: L("App login failures viral on X", "Gangguan login aplikasi viral di X"), signals: 127, growth: "+38%", time: L("2h ago", "2 jam lalu") },
+      { severity: "HIGH", bg: "bg-amber-50", border: "border-[#E6EAF2]", dot: "bg-amber-500", title: L("AI visibility on Gemini down 4 points — Bank Jago overtaking", "Visibilitas AI di Gemini turun 4 poin — Bank Jago menyalip"), signals: 89, growth: L("-4 pts", "-4 poin"), time: L("4h ago", "4 jam lalu") },
+      { severity: "MEDIUM", bg: "bg-blue-50", border: "border-[#E6EAF2]", dot: "bg-blue-500", title: L("Complaints about interbank transfer fees rising", "Keluhan biaya transfer antarbank meningkat"), signals: 212, growth: "+46%", time: L("24h ago", "24 jam lalu") },
       { severity: "LOW", bg: "bg-slate-50", border: "border-slate-200", dot: "bg-slate-400", title: L("SME financial-literacy programme earning positive coverage", "Program literasi keuangan UMKM mendapat liputan positif"), signals: 42, growth: "+22%", time: L("12h ago", "12 jam lalu") },
     ],
     NARRATIVE_CHANGES: [
@@ -378,7 +378,7 @@ export default function DailyIntelligenceBriefPage() {
       {isDemo && (
       <div>
         {/* Its figures (competitors, scores) are invented for illustration and must never read as findings. */}
-        <p role="note" className="mb-4 rounded-[10px] border border-[#8B5CFF]/30 bg-[#8B5CFF]/10 px-4 py-3 text-[13px] font-semibold text-[#5B33C9]">
+        <p role="note" className="mb-4 rounded-[10px] border border-transparent bg-[#8B5CFF]/10 px-4 py-3 text-[13px] font-semibold text-[#5B33C9]">
           {language === "id"
             ? "Contoh ilustrasi format laporan. Angka, kompetitor, dan temuan di bawah ini tidak diukur dari workspace mana pun. Ringkasan berdasarkan data nyata ada di atas."
             : "Illustrative example of the report format. The figures, competitors and findings below are not measured from any workspace. The brief based on real data is above."}

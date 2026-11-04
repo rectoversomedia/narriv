@@ -29,17 +29,17 @@ const ToastContext = createContext<ToastApi | null>(null);
 
 const toneStyles: Record<ToastTone, { shell: string; icon: string; Icon: typeof CheckCircle2 }> = {
   success: {
-    shell: "border-[#CDEEDD] bg-[#F1FCF6] text-[#047857]",
+    shell: "border-transparent bg-[#F1FCF6] text-[#047857]",
     icon: "bg-[#10B981]/10 text-[#047857]",
     Icon: CheckCircle2,
   },
   error: {
-    shell: "border-[#FAD1D1] bg-[#FFF5F5] text-[#B42318]",
+    shell: "border-transparent bg-[#FFF5F5] text-[#B42318]",
     icon: "bg-[#EF4444]/10 text-[#C81E1E]",
     Icon: XCircle,
   },
   info: {
-    shell: "border-[#D7E2FF] bg-[#F5F7FF] text-[#3446B5]",
+    shell: "border-transparent bg-[#F5F7FF] text-[#3446B5]",
     icon: "bg-[#465FFF]/10 text-[#3B52F5]",
     Icon: Info,
   },

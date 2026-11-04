@@ -21,13 +21,13 @@ interface ConfirmationDialogProps {
 
 const toneStyles: Record<ConfirmationTone, { border: string; icon: string; title: string; button: string }> = {
   danger: {
-    border: "border-[#F8CACA]",
+    border: "border-[#E6EAF2]",
     icon: "bg-rose-50 text-rose-600",
     title: "text-rose-600",
     button: "bg-rose-600 hover:bg-rose-700",
   },
   warning: {
-    border: "border-amber-200",
+    border: "border-[#E6EAF2]",
     icon: "bg-amber-50 text-amber-700",
     title: "text-amber-700",
     button: "bg-amber-600 hover:bg-amber-700",

@@ -203,7 +203,7 @@ export default function TimelinePage() {
             {t("timeline.title")}
           </h1>
           {isDemoSession && (
-            <span className="rounded-full border border-purple-200 bg-purple-50 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-purple-600">
+            <span className="rounded-full border border-transparent bg-purple-50 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-purple-600">
               DEMO
             </span>
           )}

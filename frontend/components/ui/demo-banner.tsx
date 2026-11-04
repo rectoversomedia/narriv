@@ -8,7 +8,7 @@ import { useTranslations } from "next-intl";
 export function DemoBanner() {
   const t = useTranslations("DemoApp.sidebar");
   return (
-    <div role="note" className="flex items-center justify-center gap-2 rounded-[10px] border border-[#8B5CFF]/20 bg-[#8B5CFF]/10 px-4 py-3 text-center">
+    <div role="note" className="flex items-center justify-center gap-2 rounded-[10px] border border-transparent bg-[#8B5CFF]/10 px-4 py-3 text-center">
       <p className="text-[13px] font-bold text-[#6E44E8]">
         {t("demoBanner")}
       </p>

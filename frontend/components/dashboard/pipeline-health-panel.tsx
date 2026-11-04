@@ -30,7 +30,7 @@ export function PipelineHealthPanel({ className }: { className?: string }) {
       {query.isLoading ? (
         <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4" aria-busy="true">{[0, 1, 2, 3].map((i) => <div key={i} className="h-16 animate-pulse rounded-lg bg-slate-100" />)}</div>
       ) : query.isError || !query.data ? (
-        <p className="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[12px] font-semibold text-rose-700">{t("loadError")}</p>
+        <p className="mt-4 rounded-lg border border-transparent bg-rose-50 px-3 py-2 text-[12px] font-semibold text-rose-700">{t("loadError")}</p>
       ) : (
         <PipelineHealthBody data={query.data} />
       )}

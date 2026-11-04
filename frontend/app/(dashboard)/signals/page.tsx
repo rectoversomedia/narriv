@@ -58,11 +58,11 @@ const signalApiLimit = 20;
 
 
 const toneStyles: Record<Tone, { color: string; rgb: string; soft: string; text: string; border: string }> = {
-  blue: { color: "#465FFF", rgb: "70,95,255", soft: "bg-[#465FFF]/10", text: "text-[#3B52F5]", border: "border-[#465FFF]/15" },
-  purple: { color: "#8B5CFF", rgb: "139,92,255", soft: "bg-[#8B5CFF]/10", text: "text-[#6E44E8]", border: "border-[#8B5CFF]/15" },
-  green: { color: "#10B981", rgb: "16,185,129", soft: "bg-[#10B981]/10", text: "text-[#047857]", border: "border-[#10B981]/15" },
-  red: { color: "#EF4444", rgb: "239,68,68", soft: "bg-[#EF4444]/10", text: "text-[#C81E1E]", border: "border-[#EF4444]/15" },
-  amber: { color: "#F59E0B", rgb: "245,158,11", soft: "bg-[#F59E0B]/10", text: "text-[#A04606]", border: "border-[#F59E0B]/15" },
+  blue: { color: "#465FFF", rgb: "70,95,255", soft: "bg-[#465FFF]/10", text: "text-[#3B52F5]", border: "border-[#E6EAF2]" },
+  purple: { color: "#8B5CFF", rgb: "139,92,255", soft: "bg-[#8B5CFF]/10", text: "text-[#6E44E8]", border: "border-[#E6EAF2]" },
+  green: { color: "#10B981", rgb: "16,185,129", soft: "bg-[#10B981]/10", text: "text-[#047857]", border: "border-[#E6EAF2]" },
+  red: { color: "#EF4444", rgb: "239,68,68", soft: "bg-[#EF4444]/10", text: "text-[#C81E1E]", border: "border-[#E6EAF2]" },
+  amber: { color: "#F59E0B", rgb: "245,158,11", soft: "bg-[#F59E0B]/10", text: "text-[#A04606]", border: "border-[#E6EAF2]" },
   slate: { color: "#64748B", rgb: "100,116,139", soft: "bg-slate-100", text: "text-[#5A6478]", border: "border-slate-200" },
 };
 
@@ -391,7 +391,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
     <div className={cn("flex flex-col gap-3", className)}>
       {/* Bulk Actions Toolbar */}
       {selectedIds.size > 0 && (
-        <div className="flex flex-wrap items-center gap-2 rounded-[10px] border border-[#465FFF]/20 bg-[#EEF2FF] px-4 py-2.5">
+        <div className="flex flex-wrap items-center gap-2 rounded-[10px] border border-transparent bg-[#EEF2FF] px-4 py-2.5">
           <span className="text-[12px] font-black text-[#3B52F5]">{t("bulk.selected", { count: selectedIds.size })}</span>
           <div className="h-4 w-px bg-[#465FFF]/20" />
           <button
@@ -512,7 +512,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
             </thead>
             <tbody className="divide-y divide-[#EDF1F7]">
               {rows.map((row) => (
-                <tr key={row.id} className={cn("transition hover:bg-[#F8FAFF]", row.sentiment === "NEGATIVE" && "bg-[#FFF8F8] shadow-[inset_4px_0_0_#EF4444]", selectedIds.has(row.id) && "bg-[#EEF2FF]")}>
+                <tr key={row.id} className={cn("transition hover:bg-[#F8FAFF]", row.sentiment === "NEGATIVE" && "bg-[#FDF0F0]", selectedIds.has(row.id) && "bg-[#EEF2FF]")}>
                   <td className="px-2.5 py-3 align-middle">
                     <button
                       type="button"
@@ -612,7 +612,7 @@ function FollowUpPanel({ data }: { data?: SignalsMeta["followUps"] }) {
             const style = toneStyles[item.tone as Tone];
             const Icon = item.tone === "green" ? Star : Zap;
             return (
-              <div key={`${item.title}:${keyIdx}`} className={cn("grid grid-cols-1 gap-3 rounded-[12px] border p-3 sm:grid-cols-[minmax(0,1fr)_auto]", item.tone === "red" ? "border-[#F8CACA] bg-[#FFF5F5]" : item.tone === "amber" ? "border-[#FFE8C2] bg-[#FFF9F0]" : "border-[#CDEEDD] bg-[#F1FCF6]")}>
+              <div key={`${item.title}:${keyIdx}`} className={cn("grid grid-cols-1 gap-3 rounded-[12px] border p-3 sm:grid-cols-[minmax(0,1fr)_auto]", item.tone === "red" ? "border-transparent bg-[#FFF5F5]" : item.tone === "amber" ? "border-transparent bg-[#FFF9F0]" : "border-transparent bg-[#F1FCF6]")}>
                 <span className="min-w-0"><span className="block truncate text-[12px] font-black text-[#101334]">{item.title}</span><span className="mt-1 block text-[10px] font-bold text-[#58648C]">{item.meta}</span></span>
                 <span className="text-left sm:text-right"><span className={cn("rounded-full px-2 py-0.5 text-[9px] font-black", style.soft, style.text)}>{codeLabel(item.badge)}</span><span className="mt-2 block text-[10px] font-bold text-[#31406B]">{item.time}</span></span>
               </div>

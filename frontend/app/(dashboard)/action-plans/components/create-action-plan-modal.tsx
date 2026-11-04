@@ -121,7 +121,7 @@ export function CreateActionPlanModal({
       }
     >
       {basis ? (
-        <div className="mb-5 rounded-[12px] border border-[#465FFF]/20 bg-[#F5F7FF] px-4 py-3">
+        <div className="mb-5 rounded-[12px] border border-transparent bg-[#F5F7FF] px-4 py-3">
           <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#3B52F5]">{L("Based on this", "Berdasarkan")} {basis.label}</p>
           <p className="mt-1 truncate text-[14px] font-black text-[#101334]" title={basis.title}>{basis.title}</p>
         </div>

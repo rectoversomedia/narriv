@@ -292,9 +292,9 @@ export default function DashboardPage() {
       ) : null}
 
       {liveError ? (
-        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-red-200 bg-red-50 px-4 py-3 text-[12px] font-semibold text-red-700">
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-transparent bg-red-50 px-4 py-3 text-[12px] font-semibold text-red-700">
           <span>{liveError.status === 401 ? L("Session expired. Sign in again.", "Sesi berakhir. Silakan masuk lagi.") : liveError.status === 403 ? L("No access to this workspace.", "Tidak punya akses ke workspace ini.") : L("Data could not be loaded.", "Data gagal dimuat.")}</span>
-          <button type="button" onClick={() => void summaryQuery.refetch()} className="rounded-[6px] border border-red-200 bg-white px-2.5 py-1 text-[11px] font-bold text-red-700 hover:bg-red-100">{L("Retry", "Coba lagi")}</button>
+          <button type="button" onClick={() => void summaryQuery.refetch()} className="rounded-[6px] border border-[#E6EAF2] bg-white px-2.5 py-1 text-[11px] font-bold text-red-700 hover:bg-red-100">{L("Retry", "Coba lagi")}</button>
         </div>
       ) : null}
 
@@ -332,9 +332,9 @@ export default function DashboardPage() {
                   {(() => {
                     const net = analysed > 0 ? Math.round(((dist.positive - dist.negative) / analysed) * 100) : 0;
                     const verdict = net <= -15
-                      ? { text: L("Negative", "Negatif"), cls: "border-[#F4C7C3] bg-[#FFF5F4] text-[#B42318]" }
+                      ? { text: L("Negative", "Negatif"), cls: "border-transparent bg-[#FFF5F4] text-[#B42318]" }
                       : net >= 15
-                        ? { text: L("Positive", "Positif"), cls: "border-[#BFE8D3] bg-[#F1FBF6] text-[#047857]" }
+                        ? { text: L("Positive", "Positif"), cls: "border-transparent bg-[#F1FBF6] text-[#047857]" }
                         : { text: L("Balanced", "Seimbang"), cls: "border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B]" };
                     return (
                       <div className={cn("mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[12px] border px-4 py-3", verdict.cls)}>
@@ -394,7 +394,7 @@ export default function DashboardPage() {
                 <ol className="space-y-2.5">
                   {openAlerts.map((alert) => (
                     <li key={alert.id}>
-                      <Link href={`/alerts/${alert.id}`} className={cn("flex items-center justify-between gap-3 rounded-[10px] border border-[#EEF1F7] p-3 transition hover:border-[#465FFF]/40 hover:bg-[#FBFCFF]", alert.severity === "critical" && "border-[#F4C7C3] bg-[#FFF6F6] shadow-[inset_4px_0_0_#DC2626]", alert.severity === "high" && "border-[#FDE2B5] bg-[#FFFBF2] shadow-[inset_4px_0_0_#F59E0B]")}>
+                      <Link href={`/alerts/${alert.id}`} className={cn("flex items-center justify-between gap-3 rounded-[10px] border border-[#EEF1F7] p-3 transition hover:border-[#465FFF]/40 hover:bg-[#FBFCFF]", alert.severity === "critical" && "border-transparent bg-[#FFF6F6]", alert.severity === "high" && "border-transparent bg-[#FFFBF2]")}>
                         <span className="min-w-0">
                           <span className="flex items-center gap-2">
                             <Tag tone={levelTone(alert.severity ?? "low")}>{tLevel(`level.${["critical", "high", "medium", "low"].includes(alert.severity ?? "") ? alert.severity : "low"}`)}</Tag>

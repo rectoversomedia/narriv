@@ -32,11 +32,11 @@ type ToneStyle = {
 
 
 const toneStyles: Record<Tone, ToneStyle> = {
-  blue: { color: "#465FFF", rgb: "70,95,255", soft: "bg-[#465FFF]/10", text: "text-[#3B52F5]", border: "border-[#465FFF]/15" },
-  purple: { color: "#8B5CFF", rgb: "139,92,255", soft: "bg-[#8B5CFF]/10", text: "text-[#6E44E8]", border: "border-[#8B5CFF]/15" },
-  green: { color: "#10B981", rgb: "16,185,129", soft: "bg-[#10B981]/10", text: "text-[#047857]", border: "border-[#10B981]/15" },
-  red: { color: "#EF4444", rgb: "239,68,68", soft: "bg-[#EF4444]/10", text: "text-[#C81E1E]", border: "border-[#EF4444]/15" },
-  amber: { color: "#F59E0B", rgb: "245,158,11", soft: "bg-[#F59E0B]/10", text: "text-[#A04606]", border: "border-[#F59E0B]/15" },
+  blue: { color: "#465FFF", rgb: "70,95,255", soft: "bg-[#465FFF]/10", text: "text-[#3B52F5]", border: "border-[#E6EAF2]" },
+  purple: { color: "#8B5CFF", rgb: "139,92,255", soft: "bg-[#8B5CFF]/10", text: "text-[#6E44E8]", border: "border-[#E6EAF2]" },
+  green: { color: "#10B981", rgb: "16,185,129", soft: "bg-[#10B981]/10", text: "text-[#047857]", border: "border-[#E6EAF2]" },
+  red: { color: "#EF4444", rgb: "239,68,68", soft: "bg-[#EF4444]/10", text: "text-[#C81E1E]", border: "border-[#E6EAF2]" },
+  amber: { color: "#F59E0B", rgb: "245,158,11", soft: "bg-[#F59E0B]/10", text: "text-[#A04606]", border: "border-[#E6EAF2]" },
   slate: { color: "#64748B", rgb: "100,116,139", soft: "bg-slate-100", text: "text-[#5A6478]", border: "border-slate-200" },
 };
 
@@ -138,7 +138,6 @@ function MetricCard({ label, value, helper, icon: Icon, tone }: { label: string;
 
   return (
     <Panel className="flex min-h-[88px] items-center gap-3.5 p-4 overflow-hidden">
-      <div aria-hidden="true" className="-mx-px -mt-px mb-0 h-1 rounded-t-[14px]" style={{ background: `linear-gradient(90deg, ${(toneStyles[tone]).color}, rgba(${(toneStyles[tone]).rgb}, 0.25))` }} />
       <div className="min-w-0">
         <span className="block text-[10px] font-extrabold text-[#5F6B94]">{label}</span>
         <span className="mt-0.5 block text-[24px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</span>
@@ -481,7 +480,7 @@ function ReportsTable({
             <button
               type="button"
               onClick={() => { setActiveTab("all"); setSearchTerm(""); setTypeFilter("all"); }}
-              className="inline-flex h-8 items-center justify-center gap-1 rounded-[7px] border border-[#FAD1D1] bg-[#FFF5F5] px-2.5 text-[10px] font-black text-[#B42318] transition hover:bg-[#FFEBEB] sm:flex-none"
+              className="inline-flex h-8 items-center justify-center gap-1 rounded-[7px] border border-transparent bg-[#FFF5F5] px-2.5 text-[10px] font-black text-[#B42318] transition hover:bg-[#FFEBEB] sm:flex-none"
             >
               {tr("clear") || "Reset"}
             </button>
@@ -1324,12 +1323,12 @@ export default function ReportsPage() {
                     </div>
                   </div>
                   {editingSchedule?.id && (
-                    <div className="rounded-[8px] border border-[#10B981]/20 bg-[#10B981]/5 p-3">
+                    <div className="rounded-[8px] border border-transparent bg-[#10B981]/5 p-3">
                       <button
                         type="button"
                         onClick={() => sendTestEmailMutation.mutate(editingSchedule.id!)}
                         disabled={sendTestEmailMutation.isPending}
-                        className="flex w-full items-center justify-center gap-2 rounded-[6px] bg-white px-4 py-2 text-[11px] font-black text-[#047857] border border-[#10B981]/30 transition hover:bg-[#10B981]/10 disabled:opacity-50"
+                        className="flex w-full items-center justify-center gap-2 rounded-[6px] bg-white px-4 py-2 text-[11px] font-black text-[#047857] border border-[#E6EAF2] transition hover:bg-[#10B981]/10 disabled:opacity-50"
                       >
                         {sendTestEmailMutation.isPending ? (
                           <RefreshCcw size={13} className="animate-spin" />
@@ -1409,18 +1408,18 @@ export default function ReportsPage() {
                             type="button"
                             onClick={() => sendTestEmailMutation.mutate(schedule.id)}
                             disabled={sendTestEmailMutation.isPending}
-                            className="flex h-8 items-center justify-center gap-1.5 rounded-[8px] border border-[#10B981]/30 bg-white px-2.5 text-[10px] font-black text-[#047857] transition hover:bg-[#ECFDF5] disabled:opacity-50"
+                            className="flex h-8 items-center justify-center gap-1.5 rounded-[8px] border border-[#E6EAF2] bg-white px-2.5 text-[10px] font-black text-[#047857] transition hover:bg-[#ECFDF5] disabled:opacity-50"
                             title={tr("scheduleModal.sendTestEmail")}
                           >
                             <Mail size={13} />
                           </button>
-                          <button type="button" onClick={() => toggleScheduleMutation.mutate(schedule.id)} className={cn("flex h-8 items-center justify-center gap-1.5 rounded-[8px] border px-2.5 text-[10px] font-black transition", schedule.enabled ? "border-[#FAD7D7] bg-white text-[#C81E1E] hover:bg-[#FFF4F4]" : "border-[#D1FAE5] bg-white text-[#047857] hover:bg-[#ECFDF5]")}>
+                          <button type="button" onClick={() => toggleScheduleMutation.mutate(schedule.id)} className={cn("flex h-8 items-center justify-center gap-1.5 rounded-[8px] border px-2.5 text-[10px] font-black transition", schedule.enabled ? "border-[#E6EAF2] bg-white text-[#C81E1E] hover:bg-[#FFF4F4]" : "border-[#E6EAF2] bg-white text-[#047857] hover:bg-[#ECFDF5]")}>
                             {schedule.enabled ? tr("scheduleModal.disable") : tr("scheduleModal.enable")}
                           </button>
                           <button type="button" onClick={() => { setEditingSchedule(schedule); setIsScheduleFormOpen(true); }} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#3B52F5] transition hover:bg-[#F5F7FC]" aria-label={tr("actions.editSchedule")}>
                             <Edit2 size={13} />
                           </button>
-                          <button type="button" onClick={() => { if (window.confirm(tr("confirm.deleteSchedule"))) deleteScheduleMutation.mutate(schedule.id); }} disabled={deleteScheduleMutation.isPending} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#FAD7D7] bg-white text-[#C81E1E] transition hover:bg-[#FFF4F4]" aria-label={tr("actions.deleteSchedule")}>
+                          <button type="button" onClick={() => { if (window.confirm(tr("confirm.deleteSchedule"))) deleteScheduleMutation.mutate(schedule.id); }} disabled={deleteScheduleMutation.isPending} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#C81E1E] transition hover:bg-[#FFF4F4]" aria-label={tr("actions.deleteSchedule")}>
                             <Trash2 size={13} />
                           </button>
                         </div>
@@ -1572,7 +1571,7 @@ export default function ReportsPage() {
                             <button type="button" onClick={() => { setEditingTemplate(template); setIsFormOpen(true); }} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#3B52F5] transition hover:bg-[#F5F7FC]" aria-label={tr("actions.editTemplate")}>
                               <Edit2 size={13} />
                             </button>
-                            <button type="button" onClick={() => { if (window.confirm(tr("confirm.deleteTemplate"))) deleteTemplateMutation.mutate(template.key); }} disabled={deleteTemplateMutation.isPending} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#FAD7D7] bg-white text-[#C81E1E] transition hover:bg-[#FFF4F4]" aria-label={tr("actions.deleteTemplate")}>
+                            <button type="button" onClick={() => { if (window.confirm(tr("confirm.deleteTemplate"))) deleteTemplateMutation.mutate(template.key); }} disabled={deleteTemplateMutation.isPending} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#C81E1E] transition hover:bg-[#FFF4F4]" aria-label={tr("actions.deleteTemplate")}>
                               <Trash2 size={13} />
                             </button>
                           </div>

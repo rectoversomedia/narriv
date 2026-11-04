@@ -463,9 +463,9 @@ export default function SettingsPage() {
 
   // Helper styles for roles
   const roleStyles: Record<string, string> = {
-    [memberLabels.owner]: "bg-purple-50 text-purple-700 border-purple-100",
-    [memberLabels.admin]: "bg-blue-50 text-blue-700 border-blue-100",
-    [memberLabels.analyst]: "bg-emerald-50 text-emerald-700 border-emerald-100",
+    [memberLabels.owner]: "bg-purple-50 text-purple-700 border-transparent",
+    [memberLabels.admin]: "bg-blue-50 text-blue-700 border-transparent",
+    [memberLabels.analyst]: "bg-emerald-50 text-emerald-700 border-transparent",
     [memberLabels.viewer]: "bg-slate-100 text-slate-700 border-slate-200/50"
   };
 
@@ -480,7 +480,7 @@ export default function SettingsPage() {
       <SubscriptionCard onUpgradeClick={() => setShowUpgradeModal(true)} />
 
       {workspaceSettingsQuery.data === null ? (
-        <div className="rounded-[12px] border border-dashed border-[#8B5CFF]/30 bg-[#FBFAFF] px-5 py-4 flex items-center justify-between gap-4">
+        <div className="rounded-[12px] border border-dashed border-transparent bg-[#FBFAFF] px-5 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div>
               <p className="text-[13px] font-bold text-slate-900">{ts("loadFailedTitle")}</p>
@@ -500,7 +500,7 @@ export default function SettingsPage() {
       ) : null}
 
       {membersQuery.data === null ? (
-        <div className="rounded-[12px] border border-dashed border-amber-300 bg-amber-50 px-5 py-4 flex items-center justify-between gap-4">
+        <div className="rounded-[12px] border border-dashed border-transparent bg-amber-50 px-5 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div>
               <p className="text-[13px] font-bold text-slate-900">{ts("membersLoadFailedTitle")}</p>
@@ -734,8 +734,8 @@ export default function SettingsPage() {
                       <span className={cn(
                         "inline-flex items-center rounded-full px-2.5 py-0.5 text-[9.5px] font-black border",
                         member.status === memberLabels.statusActive 
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-100/50" 
-                          : "bg-rose-50 text-rose-700 border-rose-100/50"
+                          ? "bg-emerald-50 text-emerald-700 border-transparent" 
+                          : "bg-rose-50 text-rose-700 border-transparent"
                       )}>
                         {member.status}
                       </span>
@@ -933,7 +933,7 @@ export default function SettingsPage() {
       <div className="grid grid-cols-1 gap-6">
         
         {/* Card B: Danger Zone */}
-        <Panel className="flex flex-col gap-6 border-rose-100 bg-rose-50/10">
+        <Panel className="flex flex-col gap-6 border-transparent bg-rose-50/10">
           <div className="flex items-start gap-4">
             <div>
               <h2 className="text-base font-black text-rose-600">{ts("danger.title")}</h2>

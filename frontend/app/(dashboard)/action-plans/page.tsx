@@ -122,7 +122,6 @@ function MetricCard({ label, value, helper, trend, icon: Icon, tone, negative = 
   const isNegativeDisplay = negative || isTrendNegative;
   return (
     <Panel className="overflow-hidden">
-      <div aria-hidden="true" className="-mx-px -mt-px mb-0 h-1 rounded-t-[14px]" style={{ background: `linear-gradient(90deg, ${(toneStyles[tone]).color}, rgba(${(toneStyles[tone]).rgb}, 0.25))` }} />
       <CardContent className="flex min-h-[94px] items-center gap-4 p-4">
         <span className="min-w-0">
           <span className="block text-[12px] font-extrabold text-[#5F6B94]">{label}</span>
@@ -185,7 +184,12 @@ function ActionCard({ action, selected, onSelect, t }: { action: ActionItem; sel
     <button
       type="button"
       onClick={() => onSelect(action)}
-      className={cn("w-full rounded-[12px] border border-t-4 bg-white p-4 text-left transition hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(16,24,40,0.08)]", selected ? "border-[#465FFF] shadow-sm" : "border-[#EEF1F7]", action.status !== "done" && action.priority === "high" ? "border-t-[#DC2626]" : action.status !== "done" && action.priority === "medium" ? "border-t-[#F59E0B]" : "border-t-[#10B981]")}
+      className={cn(
+        "w-full rounded-[12px] p-4 text-left shadow-[0_2px_10px_rgba(16,24,40,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(16,24,40,0.08)]",
+        // Priority reads from the fill, not from a coloured edge.
+        action.status !== "done" && action.priority === "high" ? "bg-[#FDECEC]" : action.status !== "done" && action.priority === "medium" ? "bg-[#FFF6E0]" : "bg-white",
+        selected && "ring-2 ring-[#465FFF]",
+      )}
     >
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-[13px] font-black leading-5 text-[#101334]">{action.title}</h3>

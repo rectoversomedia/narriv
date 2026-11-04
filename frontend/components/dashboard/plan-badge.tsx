@@ -164,7 +164,7 @@ export function PlanUpgradePrompt({
   }
 
   return (
-    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+    <div className="rounded-lg border border-transparent bg-amber-50 p-3">
       <p className="text-sm text-amber-800">
         {feature && `Feature "${feature}" requires a higher plan.`}
         {limit && `You've reached your ${limit} limit.`}

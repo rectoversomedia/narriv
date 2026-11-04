@@ -3,9 +3,9 @@ import { AlertCircle, CheckCircle2, Info } from "lucide-react";
 type FeedbackTone = "success" | "error" | "info";
 
 const toneStyles: Record<FeedbackTone, string> = {
-  success: "border-[#12B76A]/25 bg-[#12B76A]/10 text-[#027A48] dark:text-[#6CE9A6]",
-  error: "border-[#F04438]/25 bg-[#F04438]/10 text-[#B42318] dark:text-[#FDA29B]",
-  info: "border-[#465FFF]/25 bg-[#465FFF]/10 text-[#3B52F5]",
+  success: "border-transparent bg-[#12B76A]/10 text-[#027A48] dark:text-[#6CE9A6]",
+  error: "border-transparent bg-[#F04438]/10 text-[#B42318] dark:text-[#FDA29B]",
+  info: "border-transparent bg-[#465FFF]/10 text-[#3B52F5]",
 };
 
 const icons = {

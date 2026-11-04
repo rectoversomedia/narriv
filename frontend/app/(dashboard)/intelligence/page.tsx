@@ -229,37 +229,6 @@ function buildLifecycleFromClusters(clusters: Cluster[]) {
   return { counts, series };
 }
 
-function buildDynamicAiSummary(clusters: Cluster[], lifecycleCounts: Record<LifecycleKey, number>, ti: ReturnType<typeof useTranslations<"Intelligence">>, language: "en" | "id") {
-  if (clusters.length === 0 || clusters[0].id === "empty") {
-    return {
-      box: ti("aiSummaryDynamic.boxEmpty"),
-      bullets: [],
-    };
-  }
-
-  const topCluster = clusters[0];
-  const sortedByGrowth = [...clusters].sort((a, b) => parseGrowthPercent(b.growth) - parseGrowthPercent(a.growth));
-  const fastest = sortedByGrowth[0];
-  const negativeClusters = clusters.filter(c => c.sentiment === "negative");
-  const highestRisk = negativeClusters.length > 0 ? negativeClusters[0] : (clusters[1] || topCluster);
-
-  const bullets = [
-    ti("aiSummaryDynamic.bulletFastest", { topic: text(fastest.topic, language), growth: fastest.growth }),
-    ti("aiSummaryDynamic.bulletRisk", { topic: text(highestRisk.topic, language), sentiment: ti(`topicMap.${highestRisk.sentiment === "negative" ? "neg" : highestRisk.sentiment === "positive" ? "pos" : "neu"}`) }),
-    ti("aiSummaryDynamic.bulletRec", { rec: text(topCluster.aiRec, language) }),
-    ti("aiSummaryDynamic.bulletEmerging", { count: lifecycleCounts.emerging })
-  ];
-
-  return {
-    box: ti("aiSummaryDynamic.box", { 
-      topic: text(topCluster.topic, language), 
-      signals: formatSignals(topCluster.signals),
-      impact: text(topCluster.priority, language).toLowerCase()
-    }),
-    bullets
-  };
-}
-
 function buildDonutGradient(items: DonutDatum[]) {
   let cursor = 0;
   const stops = items.map((item) => {
@@ -290,7 +259,6 @@ function IconHalo({ icon: Icon, tone }: { icon: LucideIcon; tone: Tone }) {
 function MetricCard({ label, value, helper, icon, tone }: { label: string; value: string; helper: string; icon: LucideIcon; tone: Tone }) {
   return (
     <Panel className="overflow-hidden">
-      <div aria-hidden="true" className="-mx-px -mt-px mb-0 h-1 rounded-t-[14px]" style={{ background: `linear-gradient(90deg, ${(toneStyles[tone]).color}, rgba(${(toneStyles[tone]).rgb}, 0.25))` }} />
       <CardContent className="flex min-h-[88px] items-center gap-4 p-4">
         <IconHalo icon={icon} tone={tone} />
         <div className="min-w-0">
@@ -343,12 +311,124 @@ function TrendBadge({ value, tone, className }: { value: string; tone: Tone; cla
   );
 }
 
+const SENTIMENT_LABEL: Record<Cluster["sentiment"], [string, string]> = {
+  negative: ["Negative", "Negatif"],
+  positive: ["Positive", "Positif"],
+  neutral: ["Neutral", "Netral"],
+  mixed: ["Mixed", "Campuran"],
+};
+
+/**
+ * The period in one look: the issue that dominates (with its share and tone), the fastest riser, the biggest
+ * risk and how many issues are new, then one clear next step. Numbers first, one line of text at most each.
+ */
+function NarrativeInsight({ clusters, emergingCount, language, onOpen, onPlan, onReport }: {
+  clusters: Cluster[];
+  emergingCount: number;
+  language: "en" | "id";
+  onOpen: (id: string) => void;
+  onPlan: (id: string) => void;
+  onReport: () => void;
+}) {
+  const L = (en: string, id: string) => (language === "id" ? id : en);
+  const live = clusters.filter((c) => c.id !== "empty");
+  if (live.length === 0) {
+    return (
+      <Panel>
+        <CardContent className="p-5">
+          <h3 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{L("What is happening", "Yang sedang terjadi")}</h3>
+          <p className="mt-3 text-[13px] font-semibold text-[#5A6478]">{L("No significant issue in this period.", "Belum ada isu yang menonjol pada periode ini.")}</p>
+        </CardContent>
+      </Panel>
+    );
+  }
+  const total = live.reduce((sum, c) => sum + c.signals, 0) || 1;
+  const top = [...live].sort((a, b) => b.signals - a.signals)[0];
+  const fastest = [...live].sort((a, b) => (b.growth === "new" ? 1e9 : parseGrowthPercent(b.growth)) - (a.growth === "new" ? 1e9 : parseGrowthPercent(a.growth)))[0];
+  const risk = live.filter((c) => c.sentiment === "negative").sort((a, b) => b.signals - a.signals)[0];
+  const share = Math.round((top.signals / total) * 100);
+  const topTone = toneStyles[top.tone];
+  const topIsRisk = top.sentiment === "negative";
+  const name = (c: Cluster) => text(c.topic, language);
+  const growthLabel = (g: string) => (g === "new" ? L("New", "Baru") : g);
+
+  const tiles: Array<{ key: string; label: string; value: string; topic?: string; tone: Tone; onClick?: () => void }> = [
+    { key: "fast", label: L("Fastest rising", "Naik paling cepat"), value: growthLabel(fastest.growth), topic: name(fastest), tone: parseGrowthPercent(fastest.growth) > 0 || fastest.growth === "new" ? "amber" : "slate", onClick: () => onOpen(fastest.id) },
+    risk
+      ? { key: "risk", label: L("Biggest risk", "Risiko terbesar"), value: formatSignals(risk.signals), topic: name(risk), tone: "red", onClick: () => onOpen(risk.id) }
+      : { key: "risk", label: L("Biggest risk", "Risiko terbesar"), value: "0", topic: L("No negative issue", "Tidak ada isu negatif"), tone: "green" },
+    { key: "new", label: L("New issues", "Isu baru"), value: String(emergingCount), topic: emergingCount > 0 ? L("to watch", "perlu dipantau") : L("none this period", "tidak ada"), tone: emergingCount > 0 ? "purple" : "slate" },
+  ];
+
+  return (
+    <Panel>
+      <CardContent className="p-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h3 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{L("What is happening", "Yang sedang terjadi")}</h3>
+          <p className="text-[11px] font-bold text-[#5A6478]">{L(`From ${formatSignals(total)} signals in ${live.length} issues`, `Dari ${formatSignals(total)} sinyal dalam ${live.length} isu`)}</p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onOpen(top.id)}
+          className="mt-4 grid w-full gap-4 rounded-[14px] p-4 text-left transition hover:brightness-[0.98] sm:grid-cols-[auto_1fr]"
+          style={{ background: `linear-gradient(135deg, rgba(${topTone.rgb}, 0.14), rgba(${topTone.rgb}, 0.04))` }}
+        >
+          <div className="flex size-[86px] flex-col items-center justify-center rounded-full bg-white shadow-[0_4px_14px_rgba(16,19,52,0.08)]">
+            <span className="text-[26px] font-black leading-none tracking-[-0.04em]" style={{ color: readableTone(topTone.color) }}>{share}%</span>
+            <span className="mt-1 text-[10px] font-black uppercase tracking-[0.06em] text-[#5A6478]">{L("of talk", "porsi")}</span>
+          </div>
+          <div className="min-w-0 self-center">
+            <p className="text-[11px] font-black uppercase tracking-[0.08em]" style={{ color: readableTone(topTone.color) }}>{L("Main issue", "Isu utama")}</p>
+            <p className="mt-1 text-[18px] font-black leading-tight tracking-[-0.02em] text-[#101334]">{name(top)}</p>
+            <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] font-black">
+              <span className="rounded-full bg-white px-2.5 py-1 text-[#101334]">{formatSignals(top.signals)} {L("signals", "sinyal")}</span>
+              <span className={cn("rounded-full px-2.5 py-1", topIsRisk ? "bg-[#C81E1E] text-white" : top.sentiment === "positive" ? "bg-[#047857] text-white" : "bg-white text-[#31406B]")}>{L(...SENTIMENT_LABEL[top.sentiment])}</span>
+              {top.growth && top.growth !== "0%" ? <span className="rounded-full bg-white px-2.5 py-1 text-[#B45309]">{growthLabel(top.growth)}</span> : null}
+            </div>
+            <p className="mt-2 line-clamp-2 text-[12px] font-semibold leading-snug text-[#3A4566]">{text(top.description, language)}</p>
+          </div>
+        </button>
+
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          {tiles.map((tile) => {
+            const tone = toneStyles[tile.tone];
+            const body = (
+              <>
+                <p className="text-[10px] font-black uppercase tracking-[0.07em]" style={{ color: readableTone(tone.color) }}>{tile.label}</p>
+                <p className="mt-1.5 text-[24px] font-black leading-none tracking-[-0.03em] text-[#101334]">{tile.value}</p>
+                {tile.topic ? <p className="mt-1.5 line-clamp-2 text-[12px] font-bold leading-snug text-[#3A4566]">{tile.topic}</p> : null}
+              </>
+            );
+            const style = { background: `rgba(${tone.rgb}, 0.09)` };
+            return tile.onClick ? (
+              <button key={tile.key} type="button" onClick={tile.onClick} className="rounded-[12px] p-3.5 text-left transition hover:brightness-[0.97]" style={style}>{body}</button>
+            ) : (
+              <div key={tile.key} className="rounded-[12px] p-3.5" style={style}>{body}</div>
+            );
+          })}
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-3 rounded-[12px] bg-[#101334] px-4 py-3">
+          <p className="min-w-0 flex-1 text-[13px] font-bold text-white">
+            {topIsRisk || risk
+              ? L(`Next step: prepare a response for "${name(risk || top)}".`, `Langkah berikutnya: siapkan respons untuk "${name(risk || top)}".`)
+              : L(`Next step: amplify "${name(top)}" while it is positive.`, `Langkah berikutnya: perkuat "${name(top)}" selagi positif.`)}
+          </p>
+          <button type="button" onClick={() => onPlan((risk || top).id)} className="h-9 rounded-[10px] bg-white px-4 text-[12px] font-black text-[#101334] transition hover:bg-[#EEF1FF]">{L("Create plan", "Buat rencana")}</button>
+          <button type="button" onClick={onReport} className="h-9 rounded-[10px] bg-white/10 px-4 text-[12px] font-black text-white transition hover:bg-white/20">{L("Full report", "Laporan lengkap")}</button>
+        </div>
+      </CardContent>
+    </Panel>
+  );
+}
+
 function CompetitorDonut({ label, gradient, totalLabel }: { label: string; gradient: string; totalLabel: string }) {
   return (
     <div className="chart-donut-enter relative flex size-[150px] shrink-0 items-center justify-center rounded-full shadow-sm" style={{ background: gradient }}>
       <div className="absolute size-[102px] rounded-full bg-white" />
       <div className="relative max-w-[86px] text-center">
-        <p className="text-[12px] font-black leading-tight text-[#101334]">{totalLabel}</p>
+        <p className="text-[24px] font-black leading-none tracking-[-0.03em] text-[#101334]">{totalLabel}</p>
         <p className="mt-0.5 text-[10px] font-bold leading-tight text-[#647099]">{label}</p>
       </div>
     </div>
@@ -507,7 +587,6 @@ export default function IntelligencePage() {
   const selectedTone = toneStyles[selectedCluster.tone];
   const narrativeShareData = buildNarrativeShareData(clusters, { noData: ti("labels.noData"), others: ti("labels.others") });
   const lifecycle = buildLifecycleFromClusters(clusters);
-  const aiSummaryData = buildDynamicAiSummary(clusters, lifecycle.counts, ti, language);
   const narrativeShareGradient = buildDonutGradient(narrativeShareData);
   const totalNarratives = narrativesQuery.data?.pagination.total ?? liveNarrativeRecords.length;
   // Average only persisted confidence values; narratives without analysed members are excluded.
@@ -671,7 +750,7 @@ export default function IntelligencePage() {
                 <div className="flex flex-wrap items-center gap-2">
                   {/* Impact filter (All Topics) */}
                   <div className="relative" ref={impactMenuRef}>
-                    <button type="button" onClick={() => { setIsImpactMenuOpen((o) => !o); setIsSentimentMenuOpen(false); }} aria-expanded={isImpactMenuOpen} className={cn("flex h-9 items-center gap-2 rounded-[9px] border bg-white px-3 text-[11px] font-extrabold shadow-sm transition hover:bg-[#F8FAFF]", impactFilter !== "all" ? "border-[#465FFF]/30 text-[#3B52F5]" : "border-[#E5E9F3] text-[#4F5877]")}>
+                    <button type="button" onClick={() => { setIsImpactMenuOpen((o) => !o); setIsSentimentMenuOpen(false); }} aria-expanded={isImpactMenuOpen} className={cn("flex h-9 items-center gap-2 rounded-[9px] border bg-white px-3 text-[11px] font-extrabold shadow-sm transition hover:bg-[#F8FAFF]", impactFilter !== "all" ? "border-[#E6EAF2] text-[#3B52F5]" : "border-[#E5E9F3] text-[#4F5877]")}>
                       {impactFilter === "all" ? ti("topicMap.allTopics") : ti(`topicMap.impact.${impactFilter}`)}
                       <ChevronDown size={13} className={cn("text-[#647099] transition", isImpactMenuOpen && "rotate-180")} />
                     </button>
@@ -688,7 +767,7 @@ export default function IntelligencePage() {
                   </div>
                   {/* Sentiment filter */}
                   <div className="relative" ref={sentimentMenuRef}>
-                    <button type="button" onClick={() => { setIsSentimentMenuOpen((o) => !o); setIsImpactMenuOpen(false); }} aria-expanded={isSentimentMenuOpen} className={cn("flex h-9 items-center gap-2 rounded-[9px] border bg-white px-3 text-[11px] font-extrabold shadow-sm transition hover:bg-[#F8FAFF]", sentimentFilter !== "all" ? "border-[#465FFF]/30 text-[#3B52F5]" : "border-[#E5E9F3] text-[#4F5877]")}>
+                    <button type="button" onClick={() => { setIsSentimentMenuOpen((o) => !o); setIsImpactMenuOpen(false); }} aria-expanded={isSentimentMenuOpen} className={cn("flex h-9 items-center gap-2 rounded-[9px] border bg-white px-3 text-[11px] font-extrabold shadow-sm transition hover:bg-[#F8FAFF]", sentimentFilter !== "all" ? "border-[#E6EAF2] text-[#3B52F5]" : "border-[#E5E9F3] text-[#4F5877]")}>
                       {sentimentFilter === "all" ? ti("topicMap.filter") : ti(`topicMap.sentiment.${sentimentFilter}`)}
                       <ChevronDown size={13} className={cn("text-[#647099] transition", isSentimentMenuOpen && "rotate-180")} />
                     </button>
@@ -757,7 +836,7 @@ export default function IntelligencePage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-[#647099]">{ti("topicMap.connStrength")}</span>
-                  <span className="flex items-center gap-1.5"><span className="w-9 border-b border-dashed border-[#B9C2D6]" />{ti("topicMap.weak")}</span>
+                  <span className="flex items-center gap-1.5"><span className="w-9 border-b border-dashed border-[#E6EAF2]" />{ti("topicMap.weak")}</span>
                   <span className="flex items-center gap-1.5"><span className="w-9 border-b border-[#8A94B8]" />{ti("topicMap.strong")}</span>
                 </div>
               </div>
@@ -767,29 +846,14 @@ export default function IntelligencePage() {
 
           {/* Stacked: beside the summary the five lifecycle cards were crushed to ~28px. */}
           <div className="grid grid-cols-1 gap-4">
-            <Panel>
-              <CardContent className="flex h-full flex-col justify-between p-5">
-                <div>
-                  <h3 className="flex items-center gap-2 text-[16px] font-black tracking-[-0.02em] text-[#101334]">
-                    {ti("aiSummary.title")}
-                  </h3>
-                  <div className="mt-4 rounded-[11px] border border-[#8B5CFF]/10 bg-[#8B5CFF]/7 p-3 text-[11px] font-bold leading-relaxed text-[#7654E7]">
-                    {aiSummaryData.box}
-                  </div>
-                  <ul className="mt-4 flex flex-col gap-2.5">
-                    {aiSummaryData.bullets.map((item, index) => (
-                      <li key={index} className="flex items-start gap-2.5 text-[12px] font-semibold leading-snug text-[#53608C]">
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <button type="button" onClick={() => router.push("/reports")} className="mt-5 flex h-9 w-full items-center justify-center gap-2 rounded-[8px] border border-[#D9DEEA] bg-white text-[11px] font-extrabold text-[#53608C] transition hover:bg-[#F8FAFF]">
-                  {ti("aiSummary.btn")}
-                  <ChevronRight size={13} />
-                </button>
-              </CardContent>
-            </Panel>
+            <NarrativeInsight
+              clusters={clusters}
+              emergingCount={lifecycle.counts.emerging}
+              language={language}
+              onOpen={(id) => setSelectedClusterId(id)}
+              onPlan={(id) => { setSelectedClusterId(id); setIsPlanResponseOpen(true); }}
+              onReport={() => router.push("/reports")}
+            />
 
             <Panel>
               <CardContent className="p-5">
@@ -801,7 +865,7 @@ export default function IntelligencePage() {
                   {lifecycleCards.map((phase) => {
                     const toneStyle = toneStyles[phase.tone];
                     return (
-                      <div key={phase.key} className="flex min-h-[150px] min-w-0 flex-col justify-between rounded-[12px] border border-[#EEF1F7] bg-[#FBFCFF] p-3">
+                      <div key={phase.key} className="flex min-h-[132px] min-w-0 flex-col justify-between rounded-[12px] p-3" style={{ background: `rgba(${toneStyle.rgb}, ${phase.count > 0 ? 0.09 : 0.04})` }}>
                         <div>
                           <p className="text-[10px] font-black uppercase tracking-[0.06em]" style={{ color: readableTone(toneStyle.color) }}>{ti(`lifecycle.phases.${phase.key}.title`)}</p>
                           <p className="mt-2 text-[27px] font-black leading-none tracking-[-0.04em] text-[#101334]">{phase.count}</p>
@@ -856,7 +920,7 @@ export default function IntelligencePage() {
             </CardContent>
           </Panel>
 
-          <Panel className="border-[#D9D6FF]">
+          <Panel className="border-[#E6EAF2]">
             <CardContent className="p-4">
               <div className="mb-3 flex items-center justify-between gap-3 relative" ref={actionsMenuRef}>
                 <p className="text-[11px] font-black text-[#53608C]">{ti("selectedNarrative.title")}</p>
@@ -931,7 +995,7 @@ export default function IntelligencePage() {
                 <Info size={13} className="text-[#647099]" />
               </h3>
               <div className="grid items-center justify-items-center gap-4 sm:grid-cols-1 sm:justify-items-stretch xl:grid-cols-1">
-                <CompetitorDonut label={ti("competitorShare.totalShare")} gradient={narrativeShareGradient} totalLabel={ti("labels.total")} />
+                <CompetitorDonut label={ti("competitorShare.totalShare")} gradient={narrativeShareGradient} totalLabel={formatSignals(clusters.reduce((sum, c) => sum + (c.id === "empty" ? 0 : c.signals), 0))} />
                 <div className="flex w-full min-w-0 flex-col gap-2 text-[12px] font-bold text-[#53608C]">
                   {narrativeShareData.map((item) => {
                     const toneStyle = toneStyles[item.tone];
@@ -981,7 +1045,7 @@ export default function IntelligencePage() {
             );
           })}
         </div>
-        <button type="button" onClick={() => router.push("/workspace/settings")} className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#C9C6F8] bg-white px-5 text-[12px] font-black text-[#6B4DE6] shadow-sm transition hover:bg-[#F8F6FF]">
+        <button type="button" onClick={() => router.push("/workspace/settings")} className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#E6EAF2] bg-white px-5 text-[12px] font-black text-[#6B4DE6] shadow-sm transition hover:bg-[#F8F6FF]">
           {ti("footer.btnSettings")}
         </button>
       </footer>
@@ -1080,10 +1144,10 @@ export default function IntelligencePage() {
 }
 
 const SENTIMENT_CHIP: Record<string, string> = {
-  positive: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  negative: "border-rose-200 bg-rose-50 text-rose-700",
+  positive: "border-transparent bg-emerald-50 text-emerald-700",
+  negative: "border-transparent bg-rose-50 text-rose-700",
   neutral: "border-slate-200 bg-slate-50 text-slate-600",
-  mixed: "border-amber-200 bg-amber-50 text-amber-700",
+  mixed: "border-transparent bg-amber-50 text-amber-700",
   unanalyzed: "border-dashed border-slate-300 bg-white text-[#5A6478]",
 };
 

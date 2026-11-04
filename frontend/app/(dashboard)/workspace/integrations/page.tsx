@@ -258,7 +258,7 @@ export default function IntegrationsPage() {
               </span>
             </label>
 
-            {formError ? <p className="rounded-[8px] border border-[#FAD1D1] bg-[#FFF5F5] px-3 py-2 text-xs font-bold text-[#B42318]">{formError}</p> : null}
+            {formError ? <p className="rounded-[8px] border border-transparent bg-[#FFF5F5] px-3 py-2 text-xs font-bold text-[#B42318]">{formError}</p> : null}
 
             <button
               type="submit"

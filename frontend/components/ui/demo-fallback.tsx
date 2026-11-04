@@ -40,7 +40,7 @@ export function DemoFallback({
   return (
     <div
       className={
-        "flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[#8B5CFF]/30 bg-[#FBFAFF] px-6 py-8 text-center " +
+        "flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-transparent bg-[#FBFAFF] px-6 py-8 text-center " +
         (className ?? "")
       }
     >
@@ -84,7 +84,7 @@ interface CompactInlineProps {
 
 export function CompactInline({ message, onRetry, variant = "empty" }: CompactInlineProps) {
   const styles = {
-    error: "border-[#EF4444]/20 bg-[#FEF2F2] text-[#991B1B]",
+    error: "border-transparent bg-[#FEF2F2] text-[#991B1B]",
     empty: "border-slate-200 bg-slate-50 text-[#5A6478]",
   };
 

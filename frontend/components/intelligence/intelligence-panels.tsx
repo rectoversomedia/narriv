@@ -20,17 +20,17 @@ import { Skeleton } from "@/components/ui/Skeleton";
 
 // Pill tones per band; the labels come from the IntelPanels.risk / IntelPanels.rep messages.
 const RISK_TONE: Record<string, string> = {
-  low: "text-emerald-700 bg-emerald-50 border-emerald-200",
-  medium: "text-amber-700 bg-amber-50 border-amber-200",
-  high: "text-rose-700 bg-rose-50 border-rose-200",
-  critical: "text-red-700 bg-red-50 border-red-200",
+  low: "text-emerald-700 bg-emerald-50 border-transparent",
+  medium: "text-amber-700 bg-amber-50 border-transparent",
+  high: "text-rose-700 bg-rose-50 border-transparent",
+  critical: "text-red-700 bg-red-50 border-transparent",
 };
 
 const REP_TONE: Record<string, string> = {
-  strong: "text-emerald-700 bg-emerald-50 border-emerald-200",
-  stable: "text-sky-700 bg-sky-50 border-sky-200",
-  at_risk: "text-amber-700 bg-amber-50 border-amber-200",
-  critical: "text-red-700 bg-red-50 border-red-200",
+  strong: "text-emerald-700 bg-emerald-50 border-transparent",
+  stable: "text-sky-700 bg-sky-50 border-transparent",
+  at_risk: "text-amber-700 bg-amber-50 border-transparent",
+  critical: "text-red-700 bg-red-50 border-transparent",
   neutral: "text-slate-600 bg-slate-50 border-slate-200",
   insufficient_data: "text-[#5A6478] bg-white border-dashed border-slate-300",
 };
@@ -296,7 +296,7 @@ function RiskExplanation({ model, score }: { model: RiskModelExplanation; score:
         </ul>
       )}
       {model.uncertainty.reasons.length > 0 ? (
-        <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
+        <div className="mt-3 rounded-md border border-transparent bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
           <span className="font-semibold">{t("uncertaintyLevel", { level: code.uncertainty(model.uncertainty.level) })}</span> {model.uncertainty.reasons.join(" ")}
         </div>
       ) : null}

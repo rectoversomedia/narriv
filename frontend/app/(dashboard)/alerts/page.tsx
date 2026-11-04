@@ -104,11 +104,11 @@ type NotificationRuleDraft = {
 };
 
 const toneStyles: Record<Tone, ToneStyle> = {
-  blue: { color: "#465FFF", rgb: "70,95,255", soft: "bg-[#465FFF]/10", text: "text-[#3B52F5]", border: "border-[#465FFF]/15" },
-  purple: { color: "#8B5CFF", rgb: "139,92,255", soft: "bg-[#8B5CFF]/10", text: "text-[#6E44E8]", border: "border-[#8B5CFF]/15" },
-  green: { color: "#10B981", rgb: "16,185,129", soft: "bg-[#10B981]/10", text: "text-[#047857]", border: "border-[#10B981]/15" },
-  red: { color: "#EF4444", rgb: "239,68,68", soft: "bg-[#EF4444]/10", text: "text-[#C81E1E]", border: "border-[#EF4444]/15" },
-  amber: { color: "#F59E0B", rgb: "245,158,11", soft: "bg-[#F59E0B]/10", text: "text-[#A04606]", border: "border-[#F59E0B]/15" },
+  blue: { color: "#465FFF", rgb: "70,95,255", soft: "bg-[#465FFF]/10", text: "text-[#3B52F5]", border: "border-[#E6EAF2]" },
+  purple: { color: "#8B5CFF", rgb: "139,92,255", soft: "bg-[#8B5CFF]/10", text: "text-[#6E44E8]", border: "border-[#E6EAF2]" },
+  green: { color: "#10B981", rgb: "16,185,129", soft: "bg-[#10B981]/10", text: "text-[#047857]", border: "border-[#E6EAF2]" },
+  red: { color: "#EF4444", rgb: "239,68,68", soft: "bg-[#EF4444]/10", text: "text-[#C81E1E]", border: "border-[#E6EAF2]" },
+  amber: { color: "#F59E0B", rgb: "245,158,11", soft: "bg-[#F59E0B]/10", text: "text-[#A04606]", border: "border-[#E6EAF2]" },
   slate: { color: "#64748B", rgb: "100,116,139", soft: "bg-slate-100", text: "text-[#5A6478]", border: "border-slate-200" },
 };
 
@@ -210,7 +210,6 @@ function MetricCard({ metric }: { metric: Metric }) {
 
   return (
     <Panel className="relative min-h-[96px] overflow-hidden p-3.5 overflow-hidden">
-      <div aria-hidden="true" className="-mx-px -mt-px mb-0 h-1 rounded-t-[14px]" style={{ background: `linear-gradient(90deg, ${(toneStyles[metric.tone]).color}, rgba(${(toneStyles[metric.tone]).rgb}, 0.25))` }} />
       <div className="flex items-center gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold leading-tight text-body">{metric.label}</p>
@@ -448,7 +447,7 @@ function CriticalIncident({
     : [];
 
   return (
-    <Panel className="min-h-0 h-auto border-[#FAD7D7] bg-[#FFF8F8] p-5">
+    <Panel className="min-h-0 h-auto border-transparent bg-[#FFF8F8] p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <div>
@@ -457,11 +456,11 @@ function CriticalIncident({
           </div>
         </div>
         {alert ? (
-          <Link href={`/alerts/${alert.id}`} className="inline-flex items-center gap-1 rounded-full border border-[#F4D8D8] bg-white px-3 py-1.5 text-[11px] font-black text-[#3B52F5] shadow-sm transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF]">
+          <Link href={`/alerts/${alert.id}`} className="inline-flex items-center gap-1 rounded-full border border-[#E6EAF2] bg-white px-3 py-1.5 text-[11px] font-black text-[#3B52F5] shadow-sm transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF]">
             {ta("v2.incident.viewDetails")} <ArrowRight size={13} />
           </Link>
         ) : (
-          <span className="inline-flex items-center gap-1 rounded-full border border-[#F4D8D8] bg-white/70 px-3 py-1.5 text-[11px] font-black text-[#A8B0C7]">
+          <span className="inline-flex items-center gap-1 rounded-full border border-transparent bg-white/70 px-3 py-1.5 text-[11px] font-black text-[#A8B0C7]">
             {ta("v2.incident.viewDetails")} <ArrowRight size={13} />
           </span>
         )}
@@ -485,7 +484,7 @@ function CriticalIncident({
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
             {stats.map(([label, value, helper, tone]) => (
-              <div key={label} className="min-w-0 rounded-[12px] border border-[#F4D8D8] bg-white/75 p-2.5 shadow-[0_1px_3px_rgba(16,24,40,0.03)]">
+              <div key={label} className="min-w-0 rounded-[12px] border border-transparent bg-white/75 p-2.5 shadow-[0_1px_3px_rgba(16,24,40,0.03)]">
                 <p className="truncate text-[9px] font-black uppercase tracking-wider text-[#647099]" title={label}>{label}</p>
                 <p className={cn("mt-1.5 truncate text-[14px] font-black leading-tight tracking-[-0.02em]", toneStyles[tone].text)} title={value}>{value}</p>
                 <p className="mt-1.5 truncate text-[9px] font-bold text-[#5F6B94]" title={helper}>{helper}</p>
@@ -508,7 +507,7 @@ function CriticalIncident({
           </div>
         </>
       ) : (
-        <div className="mt-5 rounded-[14px] border border-dashed border-[#F4D8D8] bg-white/70 p-6">
+        <div className="mt-5 rounded-[14px] border border-dashed border-transparent bg-white/70 p-6">
           <p className="text-[15px] font-black text-[#101334]">{ta("v2.incident.noCriticalTitle")}</p>
           <p className="mt-2 max-w-xl text-[12px] font-semibold leading-5 text-[#5F6B94]">{ta("v2.incident.noCriticalDesc")}</p>
         </div>
@@ -584,7 +583,7 @@ function EscalationMatrix({ ta, levels, isLoading }: { ta: ReturnType<typeof use
               </div>
               <p className="flex items-center gap-2 text-[10px] font-bold text-[#31406B]">
                 {ta("v2.escalationMatrix.sla", { time: formatSlaMinutes(item.slaMinutes, ta) })}
-                {item.isActive ? <CircleCheck size={14} className="text-[#047857]" /> : <span className="size-3.5 rounded-full border-2 border-[#C7D0E5]" />}
+                {item.isActive ? <CircleCheck size={14} className="text-[#047857]" /> : <span className="size-3.5 rounded-full border-2 border-[#E6EAF2]" />}
               </p>
             </div>
             {index < levels.length - 1 ? <ArrowDown size={14} className="mx-14 my-1 text-[#3B52F5]" /> : null}
@@ -652,7 +651,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
     <Panel className="p-4">
       {/* Bulk Actions Toolbar */}
       {selectedAlerts.size > 0 && (
-        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-[10px] border border-[#465FFF]/20 bg-[#EEF2FF] px-4 py-2.5">
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-[10px] border border-transparent bg-[#EEF2FF] px-4 py-2.5">
           <span className="text-[12px] font-black text-[#3B52F5]">{selectedAlerts.size} selected</span>
           <div className="h-4 w-px bg-[#465FFF]/20" />
           <button
@@ -697,7 +696,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#5F6B94]" />
             <input type="search" value={searchQuery ?? ""} onChange={(e) => onSearchChange(e.target.value)} placeholder={ta("filter.search")} className="h-10 w-full min-w-[220px] rounded-[8px] border border-[#DDE3EF] bg-[#F8FAFF] px-10 text-[13px] font-bold text-[#101334] outline-none transition placeholder:text-[#647099] focus:border-[#465FFF] focus:bg-white" />
           </label>
-          <button type="button" onClick={onOpenFilterModal} className={cn("inline-flex h-10 items-center gap-2 rounded-[8px] border px-4 text-[11px] font-black transition", activeFilterCount > 0 ? "border-[#465FFF]/30 bg-[#EEF2FF] text-[#3B52F5]" : "border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B] hover:border-[#C9D4F6]")}>
+          <button type="button" onClick={onOpenFilterModal} className={cn("inline-flex h-10 items-center gap-2 rounded-[8px] border px-4 text-[11px] font-black transition", activeFilterCount > 0 ? "border-transparent bg-[#EEF2FF] text-[#3B52F5]" : "border-[#DDE3EF] bg-[#F8FAFF] text-[#31406B] hover:border-[#C9D4F6]")}>
             {ta("filter.title")}
             {activeFilterCount > 0 ? <span className="rounded-full bg-[#465FFF] px-1.5 py-0.5 text-[9px] leading-none text-white">{activeFilterCount}</span> : null}
           </button>
@@ -756,7 +755,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                 </td>
               </tr>
             ) : rows.map((alert) => (
-              <tr key={alert.id} className={cn("transition hover:bg-[#F8FAFF]", alert.tone === "red" && "bg-[#FFF6F6] shadow-[inset_4px_0_0_#DC2626]", alert.tone === "amber" && "bg-[#FFFBF2] shadow-[inset_4px_0_0_#F59E0B]", selectedAlerts.has(alert.id) && "bg-[#EEF2FF]")}>
+              <tr key={alert.id} className={cn("transition hover:bg-[#F8FAFF]", alert.tone === "red" && "bg-[#FDECEC]", alert.tone === "amber" && "bg-[#FFF6E0]", selectedAlerts.has(alert.id) && "bg-[#EEF2FF]")}>
                 <td className="px-3 py-3 align-middle">
                   <button
                     type="button"
@@ -1233,7 +1232,7 @@ export default function AlertsPage() {
         )}
       </section>
       {summaryQuery.isError || (!summaryQuery.isLoading && !summaryQuery.data) ? (
-        <div className="rounded-[12px] border border-dashed border-[#8B5CFF]/30 bg-[#FBFAFF] px-5 py-4 flex items-center justify-between gap-4">
+        <div className="rounded-[12px] border border-dashed border-transparent bg-[#FBFAFF] px-5 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div>
               <p className="text-[13px] font-bold text-slate-900">{pickL("Alert metrics unavailable", "Metrik peringatan belum bisa dimuat")}</p>
@@ -1338,7 +1337,7 @@ export default function AlertsPage() {
                     </div>
 
                     {notificationRulesLoadFailed ? (
-                      <div className="m-4 rounded-[10px] border border-[#FAD7D7] bg-[#FFF6F6] px-4 py-3 text-[11px] font-bold text-[#B42318]">
+                      <div className="m-4 rounded-[10px] border border-transparent bg-[#FFF6F6] px-4 py-3 text-[11px] font-bold text-[#B42318]">
                         {ta("v2.notificationRulesModal.loadWarning")}
                       </div>
                     ) : null}
@@ -1415,7 +1414,7 @@ export default function AlertsPage() {
                             <button
                               type="button"
                               onClick={() => removeNotificationRule(index)}
-                              className="flex h-10 items-center justify-center rounded-[8px] border border-[#F3D4D4] bg-white text-[#C81E1E] transition hover:bg-[#FFF5F5]"
+                              className="flex h-10 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#C81E1E] transition hover:bg-[#FFF5F5]"
                               aria-label={ta("v2.notificationRulesModal.removeRule")}
                             >
                               <X size={15} />
@@ -1502,7 +1501,7 @@ export default function AlertsPage() {
                       type="button"
                       onClick={() => removeEscalationLevel(index)}
                       disabled={escalationDraft.length <= 1}
-                      className="flex h-10 items-center justify-center rounded-[8px] border border-[#F3D4D4] bg-white text-[#C81E1E] transition hover:bg-[#FFF5F5] disabled:cursor-not-allowed disabled:opacity-40"
+                      className="flex h-10 items-center justify-center rounded-[8px] border border-[#E6EAF2] bg-white text-[#C81E1E] transition hover:bg-[#FFF5F5] disabled:cursor-not-allowed disabled:opacity-40"
                       aria-label={ta("v2.escalationMatrix.removeLevel")}
                     >
                       <X size={15} />

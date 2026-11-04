@@ -24,9 +24,9 @@ const planColors = {
 
 const planBgColors = {
   pilot: "bg-slate-50 border-slate-200",
-  intelligence: "bg-[#465FFF]/5 border-[#465FFF]/20",
-  decision: "bg-[#8B5CFF]/5 border-[#8B5CFF]/20",
-  command: "bg-amber-50 border-amber-200",
+  intelligence: "bg-[#465FFF]/5 border-transparent",
+  decision: "bg-[#8B5CFF]/5 border-transparent",
+  command: "bg-amber-50 border-transparent",
 };
 
 interface UsageBarProps {

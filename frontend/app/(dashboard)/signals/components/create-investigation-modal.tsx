@@ -101,7 +101,7 @@ export function CreateInvestigationModal({
     >
       <div className="space-y-4">
         {basis ? (
-          <div className="rounded-[12px] border border-[#465FFF]/20 bg-[#F5F7FF] px-4 py-3">
+          <div className="rounded-[12px] border border-transparent bg-[#F5F7FF] px-4 py-3">
             <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#3B52F5]">{alertTitle ? L("Based on this alert", "Berdasarkan peringatan") : L("Based on this article", "Berdasarkan berita")}</p>
             <p className="mt-1 truncate text-[14px] font-black text-[#101334]" title={basis}>{basis}</p>
           </div>

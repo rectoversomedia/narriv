@@ -80,7 +80,7 @@ export default function NewPasswordPage() {
             <p className="mt-4 text-[15px] font-medium text-[#3E4975]">{t("confirmHelp")}</p>
           </div>
 
-          {apiError ? <p className="rounded-[8px] border border-[#F04438]/20 bg-[#FFF5F4] px-4 py-3 text-sm font-medium text-[#B42318]">{apiError}</p> : null}
+          {apiError ? <p className="rounded-[8px] border border-transparent bg-[#FFF5F4] px-4 py-3 text-sm font-medium text-[#B42318]">{apiError}</p> : null}
 
           <PrimaryButton loading={isSubmitting}>{isSubmitting ? t("submitting") : t("submit")}</PrimaryButton>
         </FieldGroup>
