@@ -451,6 +451,33 @@ export interface GetAlertsOptions {
   search?: string;
 }
 
+/** One alert in the frontend shape; the API answers in snake_case (list) or camelCase (detail). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function normalizeAlert(raw: any): Alert {
+  return {
+    // Keep any extra fields the API sends (links, metadata); the mapped ones below win.
+    ...raw,
+    id: raw.id,
+    title: raw.title,
+    evidence: Array.isArray(raw.evidence) ? raw.evidence : [],
+    evidenceMissing: typeof raw.evidenceMissing === "number" ? raw.evidenceMissing : 0,
+    triggeredBy: raw.triggeredBy ?? null,
+    whatHappened: raw.whatHappened ?? raw.what_happened ?? raw.description ?? null,
+    whyItMatters: raw.whyItMatters ?? raw.why_it_matters ?? null,
+    whatToDo: raw.whatToDo ?? raw.what_to_do ?? null,
+    severity: raw.severity ?? null,
+    status: raw.status ?? "open",
+    type: raw.type ?? null,
+    assignedTo: raw.assignedTo ?? raw.assigned_to ?? null,
+    assignedTeam: raw.assignedTeam ?? raw.assigned_team ?? null,
+    deadline: raw.deadline ?? null,
+    escalationLevel: raw.escalationLevel ?? raw.escalation_level ?? null,
+    workflowStatus: raw.workflowStatus ?? raw.workflow_status ?? null,
+    sources: raw.sources ?? (raw.source ? [raw.source] : []),
+    createdAt: raw.createdAt ?? raw.created_at ?? new Date().toISOString(),
+  };
+}
+
 export async function getAlerts(
   options: GetAlertsOptions = {}
 ): Promise<PaginatedResponse<Alert> | null> {
@@ -461,7 +488,8 @@ export async function getAlerts(
   if (search) params.set("search", search);
 
   try {
-    return await apiClient<PaginatedResponse<Alert>>(`/api/alerts?${params.toString()}`);
+    const res = await apiClient<PaginatedResponse<Alert>>(`/api/alerts?${params.toString()}`);
+    return res ? { ...res, data: (res.data ?? []).map(normalizeAlert) } : res;
   } catch {
     return null;
   }
@@ -479,26 +507,7 @@ export async function getAlertById(id: string): Promise<Alert | null> {
     const raw = await apiClient<any>(`/api/alerts/${id}`);
     if (!raw) return null;
 
-    return {
-      id: raw.id,
-      title: raw.title,
-      evidence: Array.isArray(raw.evidence) ? raw.evidence : [],
-      evidenceMissing: typeof raw.evidenceMissing === "number" ? raw.evidenceMissing : 0,
-      triggeredBy: raw.triggeredBy ?? null,
-      whatHappened: raw.whatHappened ?? raw.what_happened ?? raw.description ?? null,
-      whyItMatters: raw.whyItMatters ?? raw.why_it_matters ?? null,
-      whatToDo: raw.whatToDo ?? raw.what_to_do ?? null,
-      severity: raw.severity ?? null,
-      status: raw.status ?? "open",
-      type: raw.type ?? null,
-      assignedTo: raw.assignedTo ?? raw.assigned_to ?? null,
-      assignedTeam: raw.assignedTeam ?? raw.assigned_team ?? null,
-      deadline: raw.deadline ?? null,
-      escalationLevel: raw.escalationLevel ?? raw.escalation_level ?? null,
-      workflowStatus: raw.workflowStatus ?? raw.workflow_status ?? null,
-      sources: raw.sources ?? (raw.source ? [raw.source] : []),
-      createdAt: raw.createdAt ?? raw.created_at ?? new Date().toISOString(),
-    };
+    return normalizeAlert(raw);
   } catch {
     // Never another alert in place of the one requested.
     return null;
@@ -2158,6 +2167,11 @@ export async function markAllNotificationsAsRead(): Promise<boolean> {
 // ---------------------------------------------------------------------------
 
 export interface VisibilitySummaryResponse {
+  /** Per test prompt, each engine's latest answer: brand named or not, and which competitors it named. */
+  prompt_matrix?: Array<{ prompt: string; engines: Record<string, { mentioned: boolean; tone: string; competitors: string[] }> }>;
+  competitor_mentions?: Array<{ name: string; count: number }>;
+  answer_totals?: { answers: number; brand_answers: number };
+  brand_name?: string | null;
   kpis: {
     avg_visibility_score: number;
     avg_brand_presence_rate: number;

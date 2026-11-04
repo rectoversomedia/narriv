@@ -183,7 +183,35 @@ router.get("/summary", async (req, res) => {
             metadata: e.result?.metadata || {}
         }));
 
+        // Per prompt, what each engine's latest run said: was the brand named, which competitors were.
+        const latestIds = engines.map((e) => e.id);
+        const { data: runs } = latestIds.length
+            ? await supabase.from("prompt_test_runs").select("visibility_result_id, prompt, sentiment, metadata").in("visibility_result_id", latestIds).limit(500)
+            : { data: [] };
+        const engineOfResult = Object.fromEntries(engines.map((e) => [e.id, engineKeyFor(e.engine) || e.engine]));
+        const byPrompt = new Map();
+        const competitorCounts = {};
+        let answers = 0;
+        let brandAnswers = 0;
+        for (const run of runs || []) {
+            const prompt = String(run.prompt || "").trim();
+            if (!prompt) continue;
+            const mentioned = String(run.metadata?.brand || (run.sentiment === "positive" ? "mentioned" : "unmentioned")).toLowerCase() === "mentioned";
+            const competitors = String(run.metadata?.competitor || "")
+                .split(",").map((c) => c.trim()).filter((c) => c && !/^not mentioned$/i.test(c) && !/^tidak/i.test(c));
+            const row = byPrompt.get(prompt) || { prompt, engines: {} };
+            row.engines[engineOfResult[run.visibility_result_id]] = { mentioned, tone: run.metadata?.brand_tone || run.sentiment || "neutral", competitors };
+            byPrompt.set(prompt, row);
+            answers += 1;
+            if (mentioned) brandAnswers += 1;
+            for (const c of competitors) competitorCounts[c] = (competitorCounts[c] || 0) + 1;
+        }
+
         res.json({
+            prompt_matrix: [...byPrompt.values()],
+            competitor_mentions: Object.entries(competitorCounts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count),
+            answer_totals: { answers, brand_answers: brandAnswers },
+            brand_name: engines.find((e) => e.result?.metadata?.brand_name)?.result?.metadata?.brand_name || null,
             kpis: {
                 avg_visibility_score: avgVisibility,
                 avg_brand_presence_rate: avgBrandPresence,

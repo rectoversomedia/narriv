@@ -70,6 +70,7 @@ type AlertRow = {
   extraSources: number;
   escalationLevel: string;
   deadline: string;
+  overdue: boolean;
   ack: string;
   impact: "High" | "Medium";
   status: AlertStatus;
@@ -209,21 +210,11 @@ function MetricCard({ metric }: { metric: Metric }) {
   const helperStyle = toneStyles[metric.helperTone];
 
   return (
-    <Panel className="relative min-h-[96px] overflow-hidden p-3.5 overflow-hidden">
-      <div className="flex items-center gap-3">
-        <div className="min-w-0">
-          <p className="text-[11px] font-semibold leading-tight text-body">{metric.label}</p>
-          <p className="mt-1 text-[24px] font-black leading-none tracking-[-0.03em] text-navy">{metric.value}</p>
-          <p className={cn("mt-1.5 text-[11px] font-semibold leading-tight", helperStyle.text)}>{metric.helper}</p>
-        </div>
-      </div>
-      {/* A flat series carries no information and reads as a stray underline. */}
-      {metric.spark.length > 1 && Math.max(...metric.spark) !== Math.min(...metric.spark) ? (
-        <div className="absolute inset-x-3 bottom-0" aria-hidden="true">
-          <Sparkline values={metric.spark} tone={metric.tone} id={`metric-${metric.label.replace(/\W/g, "")}`} className="h-7" />
-        </div>
-      ) : null}
-    </Panel>
+    <div className="min-h-[104px] rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${style.rgb}, 0.10), rgba(${style.rgb}, 0.02) 60%)` }}>
+      <p className="text-[11px] font-black uppercase tracking-[0.06em]" style={{ color: style.color }}>{metric.label}</p>
+      <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-navy">{metric.value}</p>
+      <p className={cn("mt-2 text-[11px] font-bold leading-tight", helperStyle.text)}>{metric.helper}</p>
+    </div>
   );
 }
 
@@ -275,7 +266,8 @@ function StatusBadge({ status }: { status: AlertStatus }) {
     Resolved: "bg-[#10B981]/10 text-[#047857]",
   };
 
-  return <span className={cn("rounded-[8px] px-2.5 py-1 text-[10px] font-black", styles[status])}>{status}</span>;
+  const labels: Record<AlertStatus, [string, string]> = { New: ["New", "Baru"], Investigating: ["In progress", "Ditangani"], Escalated: ["Escalated", "Dieskalasi"], Resolved: ["Resolved", "Selesai"] };
+  return <span className={cn("whitespace-nowrap rounded-[8px] px-2.5 py-1 text-[11px] font-black", styles[status])}>{pickL(...labels[status])}</span>;
 }
 
 /** Logo for a social/app source; null for news and anything without a logo (it used to fall back to X). */
@@ -404,18 +396,19 @@ function mapAlertRecordToRow(alert: Alert, ta: ReturnType<typeof useTranslations
   return {
     id: alert.id,
     title: alert.title,
-    description: alert.whatHappened || alert.whyItMatters || alert.whatToDo || "-",
+    description: alert.whatHappened || alert.whyItMatters || alert.whatToDo || "",
     tags: [severityText(alert.severity)],
     // The owner: the assigned member, else the assigned team (the alert type is not an owner).
     sourceLabel: assigneeName(alert.assignedTo, members) || alert.assignedTeam || ta("table.unassigned"),
     sources: shownSources,
     extraSources: Math.max(0, alertSources.length - shownSources.length),
-    escalationLevel: alert.escalationLevel || "-",
-    deadline: deadline && !Number.isNaN(deadline.getTime()) ? deadline.toLocaleString(intlLocale(), { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "-",
+    escalationLevel: alert.escalationLevel ? severityText(alert.escalationLevel) : pickL("Not escalated", "Belum dieskalasi"),
+    deadline: deadline && !Number.isNaN(deadline.getTime()) ? deadline.toLocaleString(intlLocale(), { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : pickL("No deadline", "Tanpa tenggat"),
+    overdue: Boolean(deadline && !Number.isNaN(deadline.getTime()) && deadline.getTime() < Date.now() && normalizedStatus !== "resolved"),
     ack: normalizedStatus === "open" ? ta("table.notAcknowledged") : ta("table.acknowledged"),
     impact: alert.severity === "critical" || alert.severity === "high" ? "High" : "Medium",
     status: optimisticStatuses[alert.id] ?? mappedStatus,
-    time: Number.isNaN(createdAt.getTime()) ? "-" : createdAt.toLocaleTimeString(intlLocale(), { hour: "2-digit", minute: "2-digit" }),
+    time: Number.isNaN(createdAt.getTime()) ? "" : createdAt.toLocaleString(intlLocale(), { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }),
     tone: alert.severity === "critical" ? "red" : alert.severity === "high" ? "amber" : "green",
   };
 }
@@ -572,24 +565,25 @@ function EscalationMatrix({ ta, levels, isLoading }: { ta: ReturnType<typeof use
         </div>
         {isLoading ? <span className="size-3.5 rounded-full border-2 border-[#465FFF] border-r-transparent" /> : null}
       </div>
-      <div className="mt-4 space-y-2">
-        {levels.map((item, index) => (
-          <div key={`${item.id}-${item.level}`}>
-            <div className={cn("grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[9px] px-3 py-2", item.isActive ? "bg-[#F8FAFF]" : "bg-white ring-1 ring-inset ring-[#EEF1F7]")}>
-              <span className={cn("rounded-[6px] px-2 py-1 text-center text-[10px] font-black", item.isActive ? "bg-[#EEEAFE] text-[#6B4DE6]" : "bg-slate-100 text-[#5A6478]")}>{item.level}</span>
-              <div className="min-w-0">
-                <p className="truncate text-[11px] font-black text-[#101334]">{item.roleName}</p>
-                <p className="mt-0.5 text-[9px] font-bold text-[#5F6B94]">{item.isActive ? ta("v2.escalationMatrix.activeLabel") : ta("v2.escalationMatrix.standbyLabel")}</p>
+      {/* A stepper: who is called at each level, and how fast they must respond; the colour warms as it climbs. */}
+      <ol className="mt-4">
+        {levels.map((item, index) => {
+          const heat = ["#465FFF", "#F59E0B", "#F97316", "#C81E1E", "#7F1D1D"][Math.min(index, 4)];
+          return (
+            <li key={`${item.id}-${item.level}`} className="relative flex gap-3 pb-4 last:pb-0">
+              {index < levels.length - 1 ? <span aria-hidden="true" className="absolute left-[15px] top-8 h-[calc(100%-28px)] w-0.5 bg-[#E6EAF2]" /> : null}
+              <span className="relative z-[1] flex size-8 shrink-0 items-center justify-center rounded-full text-[13px] font-black text-white" style={{ background: item.isActive ? heat : "#B8C0D4" }}>{index + 1}</span>
+              <div className="min-w-0 flex-1 rounded-[10px] bg-[#F7F8FC] px-3 py-2">
+                <p className="text-[13px] font-black leading-snug text-[#101334]">{item.roleName}</p>
+                <p className="mt-0.5 text-[11px] font-bold text-[#5A6478]">
+                  {ta("v2.escalationMatrix.sla", { time: formatSlaMinutes(item.slaMinutes, ta) })}
+                  {item.isActive ? null : <span className="ml-1.5 text-[#8A93AD]">· {ta("v2.escalationMatrix.standbyLabel")}</span>}
+                </p>
               </div>
-              <p className="flex items-center gap-2 text-[10px] font-bold text-[#31406B]">
-                {ta("v2.escalationMatrix.sla", { time: formatSlaMinutes(item.slaMinutes, ta) })}
-                {item.isActive ? <CircleCheck size={14} className="text-[#047857]" /> : <span className="size-3.5 rounded-full border-2 border-[#E6EAF2]" />}
-              </p>
-            </div>
-            {index < levels.length - 1 ? <ArrowDown size={14} className="mx-14 my-1 text-[#3B52F5]" /> : null}
-          </div>
-        ))}
-      </div>
+            </li>
+          );
+        })}
+      </ol>
     </Panel>
   );
 }
@@ -619,7 +613,8 @@ function AlertPagination({ page, totalPages, onPageChange, ta }: { page: number;
 }
 
 function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isError, onPageChange, onStatusChange, openMenuId, setOpenMenuId, menuRef, searchQuery, onSearchChange, severityFilter, statusFilter, onOpenFilterModal, selectedAlerts, onSelectionChange, onBulkStatusChange, isBulkUpdating }: { ta: ReturnType<typeof useTranslations<"Alerts">>; rows: AlertRow[]; page: number; totalPages: number; footerText: string; isLoading: boolean; isError: boolean; onPageChange: (page: number) => void; onStatusChange: (id: string | number, status: "open" | "acknowledged" | "resolved") => void; openMenuId: string | number | null; setOpenMenuId: (id: string | number | null) => void; menuRef: React.RefObject<HTMLDivElement | null>; searchQuery: string; onSearchChange: (value: string) => void; severityFilter: string; statusFilter: string; onOpenFilterModal: () => void; selectedAlerts: Set<string | number>; onSelectionChange: (ids: Set<string | number>) => void; onBulkStatusChange: (status: "open" | "acknowledged" | "resolved") => void; isBulkUpdating: boolean }) {
-  const headers = [ta("table.alert"), ta("table.severity"), ta("table.owner"), ta("table.source"), ta("table.escalation"), ta("table.deadline"), ta("table.ack"), ta("table.status"), ta("table.time"), ""];
+  // Five columns that fit the panel; source, escalation and time live on the alert's own page.
+  const headers = [ta("table.alert"), ta("table.severity"), ta("table.owner"), ta("table.deadline"), ta("table.status"), ""];
   const activeFilterCount = [searchQuery, severityFilter, statusFilter].filter(Boolean).length;
 
   const allSelected = rows.length > 0 && rows.every(row => selectedAlerts.has(row.id));
@@ -703,9 +698,10 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
         </div>
       </div>
       <div className="mt-4 overflow-x-auto">
-        <table className="w-full min-w-[980px] border-collapse text-left">
+        <table className="w-full min-w-[720px] table-fixed border-collapse text-left">
+          <colgroup><col className="w-10" /><col /><col className="w-[96px]" /><col className="w-[150px]" /><col className="w-[120px]" /><col className="w-[130px]" /><col className="w-10" /></colgroup>
           <thead>
-            <tr className="border-b border-[#E6EAF2] text-[9px] font-black uppercase tracking-[0.18em] text-[#5F6B94]">
+            <tr className="border-b border-[#E6EAF2] text-[10px] font-black uppercase tracking-[0.1em] text-[#5F6B94]">
               <th className="w-10 px-3 py-3">
                 <button
                   type="button"
@@ -731,14 +727,14 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
             {isLoading ? (
               Array.from({ length: 5 }, (_, index) => (
                 <tr key={index}>
-                  <td colSpan={10} className="px-3 py-3">
+                  <td colSpan={7} className="px-3 py-3">
                     <div className="h-10 animate-pulse rounded-[8px] bg-[#F1F4FB]" />
                   </td>
                 </tr>
               ))
             ) : isError ? (
               <tr>
-                <td colSpan={10} className="px-6 py-12 text-center">
+                <td colSpan={7} className="px-6 py-12 text-center">
                   <div className="flex flex-col items-center justify-center">
                     <p className="mt-3 text-[13px] font-bold text-[#B42318]">{ta("table.errorTitle")}</p>
                     <p className="mt-1 text-[11px] font-semibold text-[#647099]">{ta("table.errorDesc")}</p>
@@ -747,7 +743,7 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={10} className="px-6 py-12 text-center">
+                <td colSpan={7} className="px-6 py-12 text-center">
                   <div className="flex flex-col items-center justify-center">
                     <p className="mt-3 text-[13px] font-bold text-[#5F6B94]">{ta("empty.noAlerts")}</p>
                     <p className="mt-1 text-[11px] font-semibold text-[#647099]">{ta("empty.noAlertsDesc")}</p>
@@ -771,23 +767,17 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                     {selectedAlerts.has(alert.id) ? <Check size={12} /> : null}
                   </button>
                 </td>
-                <td className="min-w-[250px] max-w-[310px] px-3 py-3">
-                  <div className="flex items-start gap-3">
-                    <AlertIcon tone={alert.tone} />
-                    <div className="min-w-0">
-                      <Link href={`/alerts/${alert.id}`} className="text-[12px] font-black leading-snug text-[#101334] hover:text-[#3B52F5]">{alert.title}</Link>
-                      <p className="mt-1 line-clamp-2 text-[10px] font-bold leading-snug text-[#5F6B94]">{alert.description}</p>
-                    </div>
+                <td className="px-3 py-3">
+                  <div className="min-w-0">
+                    <Link href={`/alerts/${alert.id}`} className="text-[13px] font-black leading-snug text-[#101334] hover:text-[#3B52F5]">{alert.title}</Link>
+                    {alert.description ? <p className="mt-1 line-clamp-2 text-[11px] font-semibold leading-snug text-[#3A4566]">{alert.description}</p> : null}
+                    {alert.time ? <p className="mt-1 text-[10px] font-bold text-[#8A93AD]">{alert.time}</p> : null}
                   </div>
                 </td>
-                <td className="px-3 py-3 align-middle"><span className={cn("rounded-[6px] px-2 py-1 text-[9px] font-black", alert.tone === "red" ? "bg-[#EF4444]/10 text-[#C81E1E]" : alert.tone === "amber" ? "bg-[#F59E0B]/12 text-[#A04606]" : "bg-[#10B981]/10 text-[#047857]")}>{alert.tags[0]}</span></td>
-                <td className="px-3 py-3 align-middle"><div className="flex items-center gap-1.5"><span className="flex size-6 items-center justify-center rounded-full bg-[#465FFF]/10 text-[9px] font-black text-[#2C3FC9]">{alert.sourceLabel.slice(0, 2).toUpperCase()}</span><span className="text-[10px] font-black text-[#31406B]">{alert.sourceLabel}</span></div></td>
-                <td className="px-3 py-3 align-middle"><SourceIconList label="" sources={alert.sources} extraSources={alert.extraSources} /></td>
-                <td className="px-3 py-3 align-middle text-[11px] font-black text-[#31406B]">{alert.escalationLevel}</td>
-                <td className="px-3 py-3 align-middle text-[10px] font-black text-[#31406B]">{alert.deadline}</td>
-                <td className="px-3 py-3 align-middle text-[11px] font-black text-[#101334]">{alert.ack}</td>
-                <td className="px-3 py-3 align-middle"><StatusBadge status={alert.status} /></td>
-                <td className="px-3 py-3 align-middle text-[10px] font-black text-[#31406B]">{alert.time}</td>
+                <td className="px-3 py-3 align-middle"><span className={cn("rounded-[6px] px-2 py-1 text-[11px] font-black", alert.tone === "red" ? "bg-[#C81E1E] text-white" : alert.tone === "amber" ? "bg-[#F59E0B] text-white" : "bg-[#10B981]/12 text-[#047857]")}>{alert.tags[0]}</span></td>
+                <td className="px-3 py-3 align-middle">{alert.sourceLabel === ta("table.unassigned") ? <span className="text-[12px] font-black text-[#C81E1E]">{alert.sourceLabel}</span> : <span className="line-clamp-2 text-[12px] font-black text-[#31406B]">{alert.sourceLabel}</span>}</td>
+                <td className="px-3 py-3 align-middle">{alert.overdue ? <span className="inline-block rounded-[6px] bg-[#C81E1E] px-2 py-1 text-[11px] font-black leading-tight text-white"><span className="block text-[10px] uppercase tracking-[0.06em] text-white/80">{pickL("Overdue", "Lewat tenggat")}</span>{alert.deadline}</span> : <span className="text-[12px] font-black text-[#31406B]">{alert.deadline}</span>}</td>
+                <td className="px-3 py-3 align-middle"><StatusBadge status={alert.status} /><p className="mt-1 text-[10px] font-bold text-[#5A6478]">{alert.ack}</p></td>
                 <td className="relative px-3 py-3 text-right align-middle">
                   <button type="button" aria-label={pickL(`Open actions for ${alert.title}`, `Buka aksi untuk ${alert.title}`)} onClick={() => setOpenMenuId(openMenuId === alert.id ? null : alert.id)} className="rounded-md p-1 text-[#5F6B94] transition hover:bg-[#EEF2FF] hover:text-[#3B52F5]"><MoreVertical size={16} /></button>
                   {openMenuId === alert.id ? (
