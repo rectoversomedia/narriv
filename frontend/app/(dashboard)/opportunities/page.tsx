@@ -1,446 +1,161 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { isDemoMode } from "@/lib/demo-mock-data";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-states";
-import { TrendingUp, Target, Zap, AlertTriangle, Eye, Lightbulb, BarChart3 } from "lucide-react";
-import { useTranslations } from "next-intl";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { PlatformIcon } from "@/components/ui/platform-icon";
+import { getAlerts, getSignals, type Alert, type Signal } from "@/lib/api-service";
+import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
+import { intlLocale } from "@/store/useUiStore";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+// Peluang: the good news worth acting on, from the workspace's own records — alerts marked as an opportunity and
+// the latest positive conversations. Nothing here is sample content; an empty workspace gets an empty state.
+const DAYS = 30;
 
-export type OpportunityType =
-  | "narrative_whitespace"
-  | "competitor_weakness"
-  | "rising_demand"
-  | "positive_brand"
-  | "industry_trend"
-  | "content_gap"
-  | "geo_opportunity";
-
-export type Priority = "Immediate" | "High" | "Medium" | "Low";
-export type TrendDirection = "growing" | "stable" | "declining";
-export type Confidence = "High" | "Medium" | "Low";
-
-export interface Opportunity {
-  id: string;
-  type: OpportunityType;
-  title: string;
-  description: string;
-  whyItMatters: string;
-  recommendedAction: string;
-  priority: Priority;
-  potentialImpact: string;
-  confidence: Confidence;
-  trend: TrendDirection;
-  createdAt: string;
-}
-
-// ---------------------------------------------------------------------------
-// Config maps
-// ---------------------------------------------------------------------------
-
-const OPPORTUNITY_TYPE_CONFIG: Record<
-  OpportunityType,
-  { label: string; variant: "default" | "green" | "amber" | "purple" | "slate" | "red" }
-> = {
-  narrative_whitespace: { label: "Narrative Whitespace", variant: "purple" },
-  competitor_weakness:  { label: "Competitor Weakness",  variant: "amber" },
-  rising_demand:        { label: "Rising Demand",         variant: "green" },
-  positive_brand:       { label: "Positive Brand",        variant: "green" },
-  industry_trend:       { label: "Industry Trend",        variant: "default" },
-  content_gap:          { label: "Content Gap",           variant: "slate" },
-  geo_opportunity:      { label: "SEO / GEO",             variant: "default" },
+const PRIORITY: Record<string, { en: string; id: string; tone: string }> = {
+  critical: { en: "Act now", id: "Segera", tone: "bg-[#FDECEC] text-[#B42318]" },
+  high: { en: "High", id: "Tinggi", tone: "bg-[#FEF6E4] text-[#B45309]" },
+  medium: { en: "Medium", id: "Sedang", tone: "bg-[#EEF1FF] text-[#3B52F5]" },
+  low: { en: "Low", id: "Rendah", tone: "bg-[#F1F3F8] text-[#5F6B94]" },
 };
 
-const PRIORITY_CONFIG: Record<Priority, { label: string; bg: string; text: string; border: string }> = {
-  Immediate: { label: "Immediate", bg: "bg-red-50",   text: "text-red-700",   border: "border-[#E6EAF2]"   },
-  High:      { label: "High",      bg: "bg-amber-50",  text: "text-amber-700", border: "border-[#E6EAF2]" },
-  Medium:    { label: "Medium",    bg: "bg-blue-50",   text: "text-blue-600",  border: "border-[#E6EAF2]"  },
-  Low:       { label: "Low",       bg: "bg-slate-50",  text: "text-[#5A6478]", border: "border-slate-200" },
+const STATUS: Record<string, [string, string]> = {
+  open: ["Not picked up yet", "Belum diambil"],
+  acknowledged: ["Picked up", "Sudah diambil"],
+  in_progress: ["In progress", "Sedang dikerjakan"],
+  resolved: ["Done", "Selesai"],
 };
 
-const CONFIDENCE_CONFIG: Record<Confidence, { variant: "green" | "amber" | "slate" }> = {
-  High:   { variant: "green"  },
-  Medium: { variant: "amber"  },
-  Low:    { variant: "slate" },
+const shortDate = (value?: string | null) => {
+  if (!value) return "—";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString(intlLocale(), { day: "numeric", month: "short" });
 };
 
-const TREND_CONFIG: Record<TrendDirection, { label: string; icon: typeof TrendingUp; color: string }> = {
-  growing:   { label: "Growing",   icon: TrendingUp, color: "text-[#047857]" },
-  stable:    { label: "Stable",    icon: BarChart3,  color: "text-[#5A6478]" },
-  declining: { label: "Declining", icon: AlertTriangle, color: "text-red-700" },
-};
-
-// ---------------------------------------------------------------------------
-// Demo data
-// ---------------------------------------------------------------------------
-
-const DEMO_OPPORTUNITIES: Opportunity[] = [
-  {
-    id: "opp-1",
-    type: "competitor_weakness",
-    title: "No brand owns the EV charging convenience narrative",
-    description:
-      "While EV adoption accelerates in Indonesia, no major automaker or charging provider has staked out a dominant 'convenient charging experience' narrative. Consumers seeking reassurance about charging accessibility find no authoritative voice.",
-    whyItMatters:
-      "First-mover ownership of this narrative could capture the most trust-sensitive segment of EV intenders — urban professionals who cite charging anxiety as their primary barrier.",
-    recommendedAction:
-      "Commission a quantitative survey on charging pain points, then publish a thought leadership piece positioning your charging network as the most accessible in Java.",
-    priority: "High",
-    potentialImpact: "1.2M reach",
-    confidence: "High",
-    trend: "growing",
-    createdAt: "2026-08-20",
-  },
-  {
-    id: "opp-2",
-    type: "industry_trend",
-    title: "Sustainable finance awareness rising sharply among Gen Z investors",
-    description:
-      "ESG-themed investment content is seeing a 3x engagement increase on Indonesian financial TikTok and YouTube since Q2 2026. However, no digital bank has built a dedicated 'green investment' content hub.",
-    whyItMatters:
-      "Gen Z wealth is shifting from savings to ESG-labelled instruments. Institutions that educate first will capture disproportionate wallet share as this cohort enters the investment market.",
-    recommendedAction:
-      "Partner with a credible sustainability NGO to co-author a 'Green Finance 101' video series targeted at first-time investors aged 18-25.",
-    priority: "Medium",
-    potentialImpact: "580K reach",
-    confidence: "Medium",
-    trend: "growing",
-    createdAt: "2026-08-18",
-  },
-  {
-    id: "opp-3",
-    type: "narrative_whitespace",
-    title: "No digital bank owns 'family finance' positioning in Indonesia",
-    description:
-      "Despite 82M millennials and Gen Z in Indonesia, no digital bank or fintech has clearly positioned around the family financial journey — from first paycheck to parenthood planning. The keyword cluster has near-zero authoritative coverage.",
-    whyItMatters:
-      "Family finance is a high-loyalty, high-LTV segment. Ownership of this narrative creates deep emotional resonance that drives long-term retention across life stages.",
-    recommendedAction:
-      "Develop a 'Family Milestones' content series mapping financial products to life events: first job, marriage, first child, home purchase.",
-    priority: "High",
-    potentialImpact: "2.4M reach",
-    confidence: "High",
-    trend: "growing",
-    createdAt: "2026-08-15",
-  },
-  {
-    id: "opp-4",
-    type: "positive_brand",
-    title: "BNI brand mentioned 3x more than competitors on Gemini AI responses",
-    description:
-      "Narriv's AI visibility engine detects that when generative AI platforms are asked about Indonesian state banks, BNI is mentioned 3x more frequently than BRI or Mandiri — yet with a neutral-to-mixed tone, not always positive.",
-    whyItMatters:
-      "High mention volume without positive framing is a wasted opportunity. Reinforcing the narrative with authoritative content can convert these passive mentions into active endorsements.",
-    recommendedAction:
-      "Submit an authoritative company profile and sustainability report to AI training data pipelines; brief AI-optimized PR agency on Gemini and ChatGPT citation gaps.",
-    priority: "Medium",
-    potentialImpact: "890K reach",
-    confidence: "Medium",
-    trend: "stable",
-    createdAt: "2026-08-22",
-  },
-  {
-    id: "opp-5",
-    type: "rising_demand",
-    title: "Customer service speed expectations increasing post-superapp era",
-    description:
-      "After years of conditioning by Gojek and Grab, Indonesian consumers now expect sub-30-second response times across all digital services. Financial services are falling behind — and users are vocalising this gap.",
-    whyItMatters:
-      "Service speed complaints are the #3 driver of brand switching in financial services, behind only fees and security concerns. Addressing this narrative proactively prevents competitor poaching.",
-    recommendedAction:
-      "Publish an accountability report showing your average response time benchmarks vs. industry average, and announce a speed improvement commitment with a public deadline.",
-    priority: "Immediate",
-    potentialImpact: "1.8M reach",
-    confidence: "High",
-    trend: "growing",
-    createdAt: "2026-08-24",
-  },
-  {
-    id: "opp-6",
-    type: "geo_opportunity",
-    title: "Sharia banking content gap on AI platforms remains wide",
-    description:
-      "When AI engines are asked about sharia-compliant financial products, responses are generic, outdated, and sometimes inaccurate. Islamic finance represents 32% of Indonesian banking assets — yet has the worst AI visibility of any segment.",
-    whyItMatters:
-      "Correcting AI misinformation on sharia banking proactively builds trust with the most religiously motivated consumer segment, which is also among the most brand-loyal once trust is established.",
-    recommendedAction:
-      "Create a structured FAQ document optimised for AI consumption covering the top 20 sharia banking questions, and engage with AI platform content programs directly.",
-    priority: "High",
-    potentialImpact: "420K reach",
-    confidence: "High",
-    trend: "growing",
-    createdAt: "2026-08-19",
-  },
-];
-
-// ---------------------------------------------------------------------------
-// Filter chip
-// ---------------------------------------------------------------------------
-
-type FilterType = "All" | "Narrative" | "Competitor" | "Market" | "SEO/GEO" | "Content";
-
-const FILTER_TYPE_MAP: Record<FilterType, OpportunityType[]> = {
-  All:       [],
-  Narrative: ["narrative_whitespace", "industry_trend"],
-  Competitor:["competitor_weakness", "positive_brand"],
-  Market:    ["rising_demand"],
-  "SEO/GEO": ["geo_opportunity"],
-  Content:   ["content_gap"],
-};
-
-// ---------------------------------------------------------------------------
-// OpportunityCard
-// ---------------------------------------------------------------------------
-
-function OpportunityCard({ opp, t }: { opp: Opportunity; t: (key: string) => string }) {
-  const typeCfg = OPPORTUNITY_TYPE_CONFIG[opp.type];
-  const priorityCfg = PRIORITY_CONFIG[opp.priority];
-  const confidenceCfg = CONFIDENCE_CONFIG[opp.confidence];
-  const trendCfg = TREND_CONFIG[opp.trend];
-
+function Tile({ label, value, helper, tone }: { label: string; value: string; helper: string; tone: string }) {
   return (
-    <div className="flex flex-col gap-0 rounded-[14px] border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md">
-      {/* Header row: type chip + priority badge */}
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <Badge variant={typeCfg.variant}>{typeCfg.label}</Badge>
-        <span
-          className={cn(
-            "rounded-[6px] border px-2 py-0.5 text-[10px] font-black uppercase tracking-wide",
-            priorityCfg.bg,
-            priorityCfg.text,
-            priorityCfg.border
-          )}
-        >
-          {priorityCfg.label}
-        </span>
-      </div>
-
-      {/* Title */}
-      <h3 className="mb-2 text-[16px] font-bold leading-snug text-[#101334]">{opp.title}</h3>
-
-      {/* Description */}
-      <p className="mb-4 text-[13px] leading-relaxed text-[#5F6B94]">{opp.description}</p>
-
-      {/* Why It Matters */}
-      <div className="mb-3">
-        <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-[#5A6478]">
-          {t("whyItMatters")}
-        </p>
-        <p className="text-[13px] leading-relaxed text-[#5F6B94]">{opp.whyItMatters}</p>
-      </div>
-
-      {/* Recommended Action — highlighted */}
-      <div
-        className={cn(
-          "mb-4 rounded-[10px] border p-3",
-          priorityCfg.bg,
-          priorityCfg.border
-        )}
-      >
-        <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-[#5A6478]">
-          {t("recommendedAction")}
-        </p>
-        <p className="text-[13px] font-medium text-[#101334]">{opp.recommendedAction}</p>
-      </div>
-
-      {/* Meta metrics row */}
-      <div className="mt-auto grid grid-cols-2 gap-x-4 gap-y-2 border-t border-slate-100 pt-4">
-        {/* Potential Impact */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-[11px] text-[#5A6478]">{t("potentialImpact")}:</span>
-          <span className="text-[11px] font-bold text-[#101334]">{opp.potentialImpact}</span>
-        </div>
-
-        {/* Confidence */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-[11px] text-[#5A6478]">{t("confidence")}:</span>
-          <Badge variant={confidenceCfg.variant} className="text-[10px] px-1.5 py-0">
-            {opp.confidence}
-          </Badge>
-        </div>
-
-        {/* Trend */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-[11px] text-[#5A6478]">{t("trend")}:</span>
-          <span className={cn("text-[11px] font-bold", trendCfg.color)}>{trendCfg.label}</span>
-        </div>
-
-        {/* Created */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-[11px] text-[#5A6478]">{t("created")}:</span>
-          <span className="text-[11px] font-bold text-[#101334]">
-            {new Date(opp.createdAt).toLocaleDateString("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            })}
-          </span>
-        </div>
-      </div>
+    <div className={cn("rounded-2xl p-4", tone)}>
+      <p className="text-[11px] font-extrabold uppercase tracking-[0.08em] opacity-80">{label}</p>
+      <p className="mt-1 text-[28px] font-black leading-tight tracking-[-0.02em]">{value}</p>
+      <p className="mt-0.5 text-[12px] font-semibold opacity-80">{helper}</p>
     </div>
   );
 }
 
-// ---------------------------------------------------------------------------
-// MetricCard
-// ---------------------------------------------------------------------------
-
-function MetricCard({
-  icon: _Icon,
-  label,
-  value,
-  tone: _tone,
-  helper,
-}: {
-  icon: typeof Zap;
-  label: string;
-  value: string;
-  tone: "blue" | "green" | "amber" | "purple" | "slate";
-  helper?: string;
-}) {
-
+function OpportunityCard({ alert }: { alert: Alert }) {
+  const L = useL();
+  const priority = PRIORITY[String(alert.severity || "").toLowerCase()] ?? PRIORITY.low;
+  const status = STATUS[String(alert.status || "open").toLowerCase()] ?? STATUS.open;
   return (
-    <Card className="border-slate-100 shadow-sm">
-      <CardContent className="flex flex-col gap-1 p-4">
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold text-[#5A6478]">{label}</span>
+    <Link href={`/alerts/${alert.id}`} className="group flex flex-col rounded-2xl bg-white p-5 shadow-[0_1px_2px_rgba(16,19,52,0.06),0_8px_24px_rgba(16,19,52,0.05)] transition hover:shadow-[0_12px_32px_rgba(16,19,52,0.1)]">
+      <div className="flex items-center justify-between gap-2">
+        <span className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-bold", priority.tone)}>{L(priority.en, priority.id)}</span>
+        <span className="text-[12px] font-semibold text-[#5F6B94]">{shortDate(alert.createdAt)}</span>
+      </div>
+      <h3 className="mt-3 text-[16px] font-bold leading-snug text-[#101334]">{alert.title}</h3>
+      {alert.whatHappened ? <p className="mt-1.5 line-clamp-3 text-[13px] leading-relaxed text-[#5F6B94]">{alert.whatHappened}</p> : null}
+      {alert.whatToDo ? (
+        <div className="mt-3 rounded-xl bg-[#E8F7F0] p-3">
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-[#047857]">{L("What to do", "Yang bisa dilakukan")}</p>
+          <p className="mt-1 line-clamp-3 text-[13px] font-medium text-[#101334]">{alert.whatToDo}</p>
         </div>
-        <p className="text-[22px] font-black tracking-[-0.02em] text-[#101334]">{value}</p>
-        {helper && <p className="text-[11px] font-medium text-[#5A6478]">{helper}</p>}
-      </CardContent>
-    </Card>
+      ) : null}
+      <div className="mt-auto flex items-center justify-between gap-2 pt-4 text-[12px]">
+        <span className="font-semibold text-[#31406B]">{alert.assignedTo || alert.assignedTeam || L("No owner yet", "Belum ada penanggung jawab")} · <span className="text-[#5F6B94]">{L(...status)}</span></span>
+        <ArrowRight size={16} className="shrink-0 text-[#465FFF] transition group-hover:translate-x-0.5" aria-hidden="true" />
+      </div>
+    </Link>
   );
 }
 
-// ---------------------------------------------------------------------------
-// FilterChip
-// ---------------------------------------------------------------------------
-
-function FilterChip({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "shrink-0 rounded-full border px-3 py-1.5 text-[12px] font-bold transition-all",
-        active
-          ? "border-[#465FFF] bg-[#465FFF] text-white shadow-sm"
-          : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
-      )}
-    >
-      {label}
-    </button>
+function GoodNewsRow({ signal }: { signal: Signal }) {
+  const L = useL();
+  const text = signal.title || signal.content;
+  const body = (
+    <>
+      <PlatformIcon platform={signal.platform || "news"} className="mt-0.5 size-6" />
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-2 text-[14px] font-semibold leading-snug text-[#101334]">{text}</p>
+        <p className="mt-1 text-[12px] text-[#5F6B94]">
+          {[signal.author, shortDate(signal.publishedAt || signal.capturedAt)].filter(Boolean).join(" · ")}
+          {signal.narratives?.length ? <> · <span className="font-semibold text-[#31406B]">{signal.narratives[0].title}</span></> : null}
+        </p>
+      </div>
+      {signal.url ? <ExternalLink size={15} className="mt-1 shrink-0 text-[#5F6B94]" aria-label={L("Open the source", "Buka sumber")} /> : null}
+    </>
   );
+  const cls = "flex items-start gap-3 rounded-xl px-3 py-3 transition hover:bg-[#F5F7FF]";
+  return signal.url ? <a href={signal.url} target="_blank" rel="noopener noreferrer" className={cls}>{body}</a> : <div className={cls}>{body}</div>;
 }
-
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
 
 export default function OpportunitiesPage() {
-  const t = useTranslations("opportunities");
-  const [activeFilter, setActiveFilter] = useState<FilterType>("All");
-  // Opportunities below are sample content; only the demo sandbox shows them.
-  const [isDemo, setIsDemo] = useState<boolean | null>(null);
-  useEffect(() => setIsDemo(isDemoMode()), []);
+  const L = useL();
+  const since = new Date(Date.now() - DAYS * 24 * 3600 * 1000).toISOString();
+  const opportunities = useQuery({ queryKey: ["opportunities", "alerts"], queryFn: () => getAlerts({ type: "opportunity", limit: 50 }) });
+  const positive = useQuery({ queryKey: ["opportunities", "positive", DAYS], queryFn: () => getSignals({ sentiment: "positive", startDate: since, limit: 8 }) });
+  const all = useQuery({ queryKey: ["opportunities", "all", DAYS], queryFn: () => getSignals({ startDate: since, limit: 1 }) });
 
-  const filters: FilterType[] = ["All", "Narrative", "Competitor", "Market", "SEO/GEO", "Content"];
-
-  const filteredOpportunities =
-    activeFilter === "All"
-      ? DEMO_OPPORTUNITIES
-      : DEMO_OPPORTUNITIES.filter((opp) =>
-          (FILTER_TYPE_MAP[activeFilter] as OpportunityType[]).includes(opp.type)
-        );
-
-  const metrics = [
-    { icon: Lightbulb, label: t("active"),      value: "8",  tone: "purple" as const, helper: undefined },
-    { icon: Zap,       label: t("highPriority"), value: "3",  tone: "amber"  as const, helper: undefined },
-    { icon: Eye,       label: t("estImpact"),    value: "2.4M", tone: "blue" as const, helper: "reach estimate" },
-    { icon: Target,    label: t("winRate"),      value: "67%", tone: "green"  as const, helper: undefined },
-  ];
-
-  if (isDemo === null) return null;
-  if (!isDemo) {
-    return (
-      <div className="space-y-6 pb-6">
-        <DashboardEmptyState
-          icon="search"
-          title="Opportunity detection is not available yet"
-          description="Narriv does not yet generate opportunities from your workspace data, so nothing is shown here rather than sample content. Emerging narratives and recommended actions grounded in your signals are available in Narrative Intelligence and the Daily Brief."
-          action={
-            <div className="flex gap-2">
-              <Link href="/intelligence" className="rounded-[8px] border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-700 hover:bg-slate-50">Narrative Intelligence</Link>
-              <Link href="/brief" className="rounded-[8px] border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-700 hover:bg-slate-50">Daily Brief</Link>
-            </div>
-          }
-        />
-      </div>
-    );
-  }
+  const loading = opportunities.isLoading || positive.isLoading || all.isLoading;
+  const alerts = opportunities.data?.data ?? [];
+  const open = alerts.filter((a) => String(a.status).toLowerCase() !== "resolved");
+  const unowned = open.filter((a) => !a.assignedTo && !a.assignedTeam).length;
+  const goodNews = positive.data?.data ?? [];
+  const positiveTotal = positive.data?.pagination?.total ?? goodNews.length;
+  const total = all.data?.pagination?.total ?? 0;
+  const share = total > 0 ? Math.round((positiveTotal / total) * 100) : null;
 
   return (
-    <div className="space-y-6 pb-6">
-      {/* Header */}
-      <div className="flex flex-col gap-3 rounded-[14px] border border-slate-100 bg-white p-4 shadow-[0_14px_38px_rgba(16,24,40,0.04)]">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">
-              {t("title")}
-            </h1>
-            <span className="rounded-[6px] border border-transparent bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#6E44E8]">
-              Demo
-            </span>
-          </div>
-        </div>
-
-        {/* Filter bar */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[12px] font-semibold text-[#5A6478]">{t("filterType")}:</span>
-          {filters.map((f) => (
-            <FilterChip
-              key={f}
-              label={f}
-              active={activeFilter === f}
-              onClick={() => setActiveFilter(f)}
-            />
-          ))}
-        </div>
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{L("Opportunities", "Peluang")}</h1>
+        <p className="mt-1 text-[14px] text-[#5F6B94]">{L("Good news worth using: praise, positive coverage and moments to step in.", "Kabar baik yang bisa dimanfaatkan: pujian, liputan positif, dan momen untuk ambil peran.")}</p>
       </div>
 
-      {/* Metric cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {metrics.map((m) => (
-          <MetricCard key={m.label} {...m} />
-        ))}
-      </div>
+      {loading ? (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-[104px] rounded-2xl" />)}</div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <Tile label={L("Open opportunities", "Peluang terbuka")} value={String(open.length)} helper={L(`of ${alerts.length} recorded`, `dari ${alerts.length} tercatat`)} tone="bg-[#E8F7F0] text-[#065F46]" />
+          <Tile label={L("Without an owner", "Belum ada pemilik")} value={String(unowned)} helper={unowned ? L("assign someone", "tunjuk penanggung jawab") : L("all assigned", "semua sudah ada pemilik")} tone={unowned ? "bg-[#FEF6E4] text-[#92400E]" : "bg-[#F1F3F8] text-[#31406B]"} />
+          <Tile label={L("Positive mentions", "Percakapan positif")} value={String(positiveTotal)} helper={L(`last ${DAYS} days`, `${DAYS} hari terakhir`)} tone="bg-[#EEF1FF] text-[#2B3FD6]" />
+          <Tile label={L("Positive share", "Porsi positif")} value={share === null ? "—" : `${share}%`} helper={L(`of ${total} mentions`, `dari ${total} percakapan`)} tone="bg-[#F3EEFF] text-[#5B33C9]" />
+        </div>
+      )}
 
-      {/* Opportunity grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredOpportunities.map((opp) => (
-          <OpportunityCard key={opp.id} opp={opp} t={(key) => t(key)} />
-        ))}
-        {filteredOpportunities.length === 0 && (
-          <div className="col-span-full flex min-h-40 items-center justify-center rounded-[14px] border border-dashed border-slate-200 bg-slate-50/70 text-[13px] font-bold text-[#5A6478]">
-            No opportunities match this filter.
-          </div>
+      <section>
+        <div className="mb-3 flex items-end justify-between gap-3">
+          <h2 className="text-[18px] font-bold text-[#101334]">{L("Flagged opportunities", "Peluang yang ditandai")}</h2>
+          <Link href="/alerts" className="text-[13px] font-bold text-[#3B52F5] hover:underline">{L("All alerts", "Semua peringatan")}</Link>
+        </div>
+        {loading ? (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-56 rounded-2xl" />)}</div>
+        ) : open.length ? (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{open.map((a) => <OpportunityCard key={a.id} alert={a} />)}</div>
+        ) : (
+          <DashboardEmptyState
+            icon="search"
+            title={L("No open opportunities", "Belum ada peluang terbuka")}
+            description={L("When an alert is marked as an opportunity, it shows up here with its owner and next step.", "Kalau ada peringatan yang ditandai sebagai peluang, ia muncul di sini lengkap dengan pemilik dan langkah berikutnya.")}
+          />
         )}
-      </div>
+      </section>
+
+      <section className="rounded-2xl bg-white p-4 shadow-[0_1px_2px_rgba(16,19,52,0.06),0_8px_24px_rgba(16,19,52,0.05)] sm:p-5">
+        <div className="mb-2 flex items-end justify-between gap-3 px-1">
+          <h2 className="text-[18px] font-bold text-[#101334]">{L("Latest good news", "Kabar baik terbaru")}</h2>
+          <Link href="/signals" className="text-[13px] font-bold text-[#3B52F5] hover:underline">{L("All mentions", "Semua percakapan")}</Link>
+        </div>
+        {loading ? (
+          <div className="space-y-2">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>
+        ) : goodNews.length ? (
+          <div className="divide-y divide-[#EEF1F6]">{goodNews.map((s) => <GoodNewsRow key={s.id} signal={s} />)}</div>
+        ) : (
+          <p className="px-1 py-6 text-[14px] text-[#5F6B94]">{L(`No positive mentions in the last ${DAYS} days.`, `Belum ada percakapan positif dalam ${DAYS} hari terakhir.`)}</p>
+        )}
+      </section>
     </div>
   );
 }

@@ -43,8 +43,11 @@ type SearchResult = {
 const navLinks = [
   { href: "/", title: { en: "Today", id: "Hari Ini" }, subtitle: { en: "Summary and today's decisions", id: "Ringkasan dan keputusan hari ini" } },
   { href: "/brief", title: { en: "Daily brief", id: "Briefing harian" }, subtitle: { en: "Today", id: "Hari Ini" } },
+  { href: "/insights", title: { en: "Analysis", id: "Analisis" }, subtitle: { en: "Today", id: "Hari Ini" } },
   { href: "/signals", title: { en: "Conversations", id: "Percakapan" }, subtitle: { en: "Issues", id: "Isu" } },
   { href: "/intelligence", title: { en: "Issue map", id: "Peta isu" }, subtitle: { en: "Issues", id: "Isu" } },
+  { href: "/opportunities", title: { en: "Opportunities", id: "Peluang" }, subtitle: { en: "Issues", id: "Isu" } },
+  { href: "/timeline", title: { en: "Timeline", id: "Kronologi" }, subtitle: { en: "Issues", id: "Isu" } },
   { href: "/alerts", title: { en: "Alerts", id: "Peringatan" }, subtitle: { en: "Alerts & Tasks", id: "Peringatan & Tugas" } },
   { href: "/action-center", title: { en: "Recommendations", id: "Rekomendasi" }, subtitle: { en: "Alerts & Tasks", id: "Peringatan & Tugas" } },
   { href: "/action-plans", title: { en: "Action plans", id: "Rencana aksi" }, subtitle: { en: "Alerts & Tasks", id: "Peringatan & Tugas" } },

@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Bell, BellRing, Briefcase, Database, FileText, History, Home, LayoutDashboard, Lightbulb, ListChecks, MessagesSquare, Network, Newspaper, Send, Settings, SlidersHorizontal, Sparkles } from "lucide-react";
+import { BarChart3, Bell, BellRing, CalendarClock, Briefcase, Database, FileText, History, Home, LayoutDashboard, Lightbulb, ListChecks, MessagesSquare, Network, Newspaper, Send, Settings, SlidersHorizontal, Sparkle, Sparkles } from "lucide-react";
 
 // Five menus, each answering one question a director has:
 //   Hari Ini — what is happening and what do I decide today?
@@ -13,8 +13,8 @@ export const navGroups: Array<{ key: string; items: Array<{ key: string; href: s
   {
     key: "main",
     items: [
-      { key: "today", href: "/", icon: Home, match: ["/brief"] },
-      { key: "issues", href: "/signals", icon: MessagesSquare, match: ["/intelligence", "/opportunities", "/insights", "/timeline"] },
+      { key: "today", href: "/", icon: Home, match: ["/brief", "/insights"] },
+      { key: "issues", href: "/signals", icon: MessagesSquare, match: ["/intelligence", "/opportunities", "/timeline"] },
       { key: "tasks", href: "/alerts", icon: Bell, match: ["/alert-center", "/action-center", "/action-plans", "/actions", "/workspace/cases"] },
       { key: "reports", href: "/reports", icon: FileText, match: ["/visibility"] },
       { key: "settings", href: "/workspace/settings", icon: Settings, match: ["/workspace/sources", "/workspace/integrations", "/workspace/activity"] },
@@ -28,10 +28,13 @@ export const SECTION_TABS = {
   today: [
     { key: "todayTab", href: "/", icon: LayoutDashboard },
     { key: "brief", href: "/brief", icon: Newspaper },
+    { key: "analysis", href: "/insights", icon: BarChart3 },
   ],
   issues: [
     { key: "conversations", href: "/signals", icon: MessagesSquare },
     { key: "issueMap", href: "/intelligence", icon: Network },
+    { key: "opportunities", href: "/opportunities", icon: Sparkle },
+    { key: "timeline", href: "/timeline", icon: CalendarClock },
   ],
   tasks: [
     { key: "alertsTab", href: "/alerts", icon: BellRing },

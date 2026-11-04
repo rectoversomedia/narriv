@@ -1,242 +1,190 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
-import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowRight } from "lucide-react";
+import { DashboardEmptyState } from "@/components/dashboard/dashboard-states";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { getActivityLogs, getAlerts, type ActivityLogEntry, type Alert } from "@/lib/api-service";
+import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
 import { intlLocale } from "@/store/useUiStore";
-import { getAlerts, getActivityLogs } from "@/lib/api-service";
-import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+// Kronologi: how issues unfolded, day by day — alerts raised, cases opened, plans made, reports sent.
+// Admin housekeeping (sign-ins, settings, keywords, members) stays in Riwayat aktivitas under Pengaturan.
 
-type Severity = "Critical" | "High" | "Medium" | "Low";
+type Kind = "alert" | "opportunity" | "case" | "plan" | "report";
 
-type TimelineEvent = {
-  id: string;
-  date: string;
-  dateLabel: string;
-  title: string;
-  category: string;
-  // Only a severity that was actually recorded (alerts); activity has none.
-  severity: Severity | null;
-  description: string;
-  metrics: { label: string; value: string }[];
-  source: string;
+const KIND: Record<Kind, { en: string; id: string; dot: string; chip: string }> = {
+  alert: { en: "Alert", id: "Peringatan", dot: "#E5484D", chip: "bg-[#FDECEC] text-[#B42318]" },
+  opportunity: { en: "Opportunity", id: "Peluang", dot: "#12A66A", chip: "bg-[#E8F7F0] text-[#047857]" },
+  case: { en: "Case", id: "Kasus", dot: "#8B5CFF", chip: "bg-[#F3EEFF] text-[#5B33C9]" },
+  plan: { en: "Plan", id: "Rencana", dot: "#F59E0B", chip: "bg-[#FEF6E4] text-[#B45309]" },
+  report: { en: "Report", id: "Laporan", dot: "#465FFF", chip: "bg-[#EEF1FF] text-[#2B3FD6]" },
 };
 
-// ---------------------------------------------------------------------------
-// Severity config
-// ---------------------------------------------------------------------------
-
-const SEVERITY_STYLES: Record<Severity, { dot: string; chipVariant: "red" | "amber" | "default" | "slate" }> = {
-  Critical: { dot: "#EF4444", chipVariant: "red" },
-  High: { dot: "#F59E0B", chipVariant: "amber" },
-  Medium: { dot: "#465FFF", chipVariant: "default" },
-  Low: { dot: "#94A3B8", chipVariant: "slate" },
+// The activity events that belong to an issue's story, with what happened in words a person would use.
+// alert_created is left out: the alert itself is on the timeline with its full text.
+const ISSUE_EVENTS: Record<string, { kind: Kind; en: string; id: string }> = {
+  assignment_change: { kind: "alert", en: "Owner changed", id: "Penanggung jawab diganti" },
+  escalation_change: { kind: "alert", en: "Escalation changed", id: "Eskalasi diubah" },
+  alert_escalated_overdue: { kind: "alert", en: "Escalated: past its deadline", id: "Dieskalasi: lewat tenggat" },
+  alert_escalated_unresolved_critical_risk: { kind: "alert", en: "Escalated: critical and unresolved", id: "Dieskalasi: kritis dan belum selesai" },
+  case_created: { kind: "case", en: "Case opened", id: "Kasus dibuka" },
+  case_updated: { kind: "case", en: "Case updated", id: "Kasus diperbarui" },
+  action_plan_generated: { kind: "plan", en: "Response plan created", id: "Rencana respons dibuat" },
+  multi_step_action_plan_generated: { kind: "plan", en: "Response plan created", id: "Rencana respons dibuat" },
+  action_plan_status_change: { kind: "plan", en: "Plan moved forward", id: "Status rencana berubah" },
+  report_created: { kind: "report", en: "Report created", id: "Laporan dibuat" },
+  report_generated_from_template: { kind: "report", en: "Report created", id: "Laporan dibuat" },
+  report_export_created: { kind: "report", en: "Report exported", id: "Laporan diekspor" },
+  report_email_sent: { kind: "report", en: "Report emailed", id: "Laporan dikirim lewat email" },
 };
 
-// ---------------------------------------------------------------------------
-// Event adapters
-// ---------------------------------------------------------------------------
+const SEVERITY: Record<string, [string, string]> = { critical: ["Critical", "Kritis"], high: ["High", "Tinggi"], medium: ["Medium", "Sedang"], low: ["Low", "Rendah"] };
 
-// Adapter: build TimelineEvent from an activity log entry
-function buildEventFromActivity(entry: {
-  id: string;
-  event: string;
-  metadata: Record<string, unknown> | null;
-  createdAt: string;
-}): TimelineEvent {
-  const date = new Date(entry.createdAt);
+type Entry = { id: string; at: string; kind: Kind; label: string; title: string | null; detail: string | null; severity: string | null; href: string | null };
+
+const RANGES = [
+  { days: 1, label: ["Today", "Hari ini"] },
+  { days: 7, label: ["7 days", "7 hari"] },
+  { days: 30, label: ["30 days", "30 hari"] },
+  { days: 90, label: ["90 days", "90 hari"] },
+] as const;
+
+function fromAlert(a: Alert, L: (en: string, id: string) => string): Entry {
+  const opportunity = String(a.type).toLowerCase() === "opportunity";
   return {
-    id: entry.id,
-    date: entry.createdAt.split("T")[0],
-    dateLabel: date.toLocaleDateString(intlLocale(), { month: "short", day: "numeric" }),
-    title: (entry.metadata?.title as string) ?? entry.event,
-    category: (entry.metadata?.category as string) ?? "Activity",
-    severity: null,
-    description: (entry.metadata?.description as string) ?? `Event: ${entry.event}`,
-    metrics: entry.metadata && Object.keys(entry.metadata).length > 2
-      ? Object.entries(entry.metadata)
-          .filter(([k]) => !["title", "category", "description"].includes(k))
-          .slice(0, 3)
-          .map(([k, v]) => ({ label: k, value: String(v) }))
-      : [],
-    source: entry.metadata?.source as string ?? "Narriv",
+    id: `alert-${a.id}`,
+    at: a.createdAt,
+    kind: opportunity ? "opportunity" : "alert",
+    label: opportunity ? L("Opportunity flagged", "Peluang ditandai") : L("Alert raised", "Peringatan muncul"),
+    title: a.title,
+    detail: a.whatHappened ?? null,
+    severity: a.severity ? String(a.severity).toLowerCase() : null,
+    href: `/alerts/${a.id}`,
   };
 }
 
-// ---------------------------------------------------------------------------
-// Date range filter config
-// ---------------------------------------------------------------------------
-
-type DateRange = "today" | "7d" | "30d" | "90d";
-
-const DATE_RANGES: { key: DateRange; labelKey: string }[] = [
-  { key: "today", labelKey: "timeline.filterToday" },
-  { key: "7d", labelKey: "timeline.filter7d" },
-  { key: "30d", labelKey: "timeline.filter30d" },
-  { key: "90d", labelKey: "timeline.filter90d" },
-];
-
-// ---------------------------------------------------------------------------
-// TimelineEntry
-// ---------------------------------------------------------------------------
-
-function TimelineEntry({ event }: { event: TimelineEvent }) {
-  const t = useTranslations("timeline");
-  const sev = event.severity ? SEVERITY_STYLES[event.severity] : { dot: "#94A3B8", chipVariant: "slate" as const };
-
-  return (
-    <div className="relative flex gap-4">
-      {/* Vertical line + dot */}
-      <div className="flex flex-col items-center">
-        <div
-          className="mt-[6px] h-3 w-3 shrink-0 rounded-full border-2 border-white shadow-sm"
-          style={{ backgroundColor: sev.dot }}
-        />
-        <div className="mt-1 w-px flex-1 bg-slate-200 last:hidden" />
-      </div>
-
-      {/* Card */}
-      <div className="mb-4 flex-1 rounded-[14px] border border-slate-200 bg-white p-4 shadow-sm">
-        {/* Date + chips */}
-        <div className="mb-2 flex flex-wrap items-center gap-2">
-          <span className="text-[12px] font-semibold text-[#5F6B94]">{event.dateLabel}</span>
-          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
-            {event.category}
-          </span>
-          {event.severity ? (
-            <Badge variant={sev.chipVariant} className="normal-case tracking-normal font-bold uppercase">
-              {event.severity}
-            </Badge>
-          ) : null}
-        </div>
-
-        {/* Title */}
-        <h3 className="mb-1.5 text-[16px] font-bold leading-snug text-[#101334]">
-          {event.title}
-        </h3>
-
-        {/* Description */}
-        <p className="mb-3 text-[13px] leading-relaxed text-[#5F6B94]">{event.description}</p>
-
-        {/* Metrics row */}
-        <div className="mb-3 flex flex-wrap gap-2">
-          {event.metrics.map((m) => (
-            <div
-              key={m.label}
-              className="flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1"
-            >
-              <span className="text-[11px] text-[#5F6B94]">{m.label}</span>
-              <span className="text-[11px] font-bold text-[#101334]">{m.value}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Source */}
-        <div className="flex items-center gap-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-slate-300" />
-          <span className="text-[11px] text-[#5F6B94]">{t("source", { source: event.source })}</span>
-        </div>
-      </div>
-    </div>
-  );
+function fromActivity(log: ActivityLogEntry, L: (en: string, id: string) => string): Entry | null {
+  const known = ISSUE_EVENTS[log.event];
+  if (!known) return null;
+  const m = (log.metadata ?? {}) as Record<string, unknown>;
+  const str = (k: string) => (typeof m[k] === "string" && m[k] ? String(m[k]) : null);
+  const format = str("format");
+  const alertId = str("alertId") ?? str("alert_id");
+  return {
+    id: log.id,
+    at: log.createdAt,
+    kind: known.kind,
+    label: L(known.en, known.id),
+    title: str("title") ?? str("name") ?? (format ? format.toUpperCase() : null),
+    detail: log.user?.name ? L(`by ${log.user.name}`, `oleh ${log.user.name}`) : null,
+    severity: null,
+    href: known.kind === "case" ? "/workspace/cases" : known.kind === "plan" ? "/action-plans" : known.kind === "report" ? "/reports" : alertId ? `/alerts/${alertId}` : null,
+  };
 }
 
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
+function Row({ entry }: { entry: Entry }) {
+  const L = useL();
+  const kind = KIND[entry.kind];
+  const sev = entry.severity ? SEVERITY[entry.severity] : null;
+  const time = new Date(entry.at).toLocaleTimeString(intlLocale(), { hour: "2-digit", minute: "2-digit" });
+  const inner = (
+    <>
+      <span className="w-12 shrink-0 pt-0.5 text-[12px] font-semibold tabular-nums text-[#5F6B94]">{time}</span>
+      <span aria-hidden="true" className="mt-1.5 size-2.5 shrink-0 rounded-full" style={{ backgroundColor: kind.dot }} />
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-bold", kind.chip)}>{L(kind.en, kind.id)}</span>
+          <span className="text-[13px] font-semibold text-[#31406B]">{entry.label}</span>
+          {sev ? <span className={cn("text-[12px] font-bold", entry.kind === "alert" && (entry.severity === "critical" || entry.severity === "high") ? "text-[#B42318]" : "text-[#5F6B94]")}>· {L(sev[0], sev[1])}</span> : null}
+        </div>
+        {entry.title ? <p className="mt-1 text-[15px] font-bold leading-snug text-[#101334]">{entry.title}</p> : null}
+        {entry.detail ? <p className="mt-0.5 line-clamp-2 text-[13px] text-[#5F6B94]">{entry.detail}</p> : null}
+      </div>
+      {entry.href ? <ArrowRight size={16} aria-hidden="true" className="mt-1 shrink-0 text-[#465FFF] opacity-0 transition group-hover:opacity-100" /> : null}
+    </>
+  );
+  const cls = "group flex items-start gap-3 rounded-xl px-3 py-3 transition hover:bg-[#F5F7FF]";
+  return entry.href ? <Link href={entry.href} className={cls}>{inner}</Link> : <div className={cls}>{inner}</div>;
+}
 
 export default function TimelinePage() {
-  const t = useTranslations();
-  const [range, setRange] = useState<DateRange>("30d");
-  const user = useAuthStore((state) => state.user);
-  const isDemoSession = isDemoUser(user);
-  const [events, setEvents] = useState<TimelineEvent[]>([]);
-  const [loadFailed, setLoadFailed] = useState(false);
+  const L = useL();
+  const [days, setDays] = useState<number>(30);
+  const activity = useQuery({ queryKey: ["timeline", "activity"], queryFn: () => getActivityLogs({ limit: 100 }) });
+  const alerts = useQuery({ queryKey: ["timeline", "alerts"], queryFn: () => getAlerts({ limit: 100 }) });
 
-  // Load real API data: activity logs + alerts
-  useEffect(() => {
-    Promise.all([
-      getActivityLogs({ limit: 50 }),
-      getAlerts({ limit: 20 }),
-    ]).then(([activityResult, alertsResult]) => {
-      const activityEvents = (activityResult?.data ?? []).map(buildEventFromActivity);
-      const alertEvents: TimelineEvent[] = (alertsResult?.data ?? []).map(alert => ({
-        id: alert.id,
-        date: alert.createdAt.split("T")[0],
-        dateLabel: new Date(alert.createdAt).toLocaleDateString(intlLocale(), { month: "short", day: "numeric" }),
-        title: alert.title,
-        category: alert.type ?? "Alert",
-        severity: alert.severity ? ((alert.severity.charAt(0).toUpperCase() + alert.severity.slice(1).toLowerCase()) as Severity) : null,
-        description: alert.whatHappened ?? alert.whyItMatters ?? "",
-        metrics: [],
-        source: "Narriv",
-      }));
-      // Merge and sort by date descending
-      const merged = [...activityEvents, ...alertEvents].sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-      );
-      // Recorded events only; demo sessions see the demo workspace's own records.
-      setEvents(merged);
-      setLoadFailed(false);
-    }).catch(() => {
-      setEvents([]);
-      setLoadFailed(true);
-    });
+  const entries = useMemo(() => {
+    const list = [
+      ...(alerts.data?.data ?? []).map((a) => fromAlert(a, L)),
+      ...(activity.data?.data ?? []).map((log) => fromActivity(log, L)).filter((e): e is Entry => e !== null),
+    ];
+    return list.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+  }, [alerts.data, activity.data, L]);
+
+  const cutoff = Date.now() - days * 24 * 3600 * 1000;
+  const visible = entries.filter((e) => new Date(e.at).getTime() >= cutoff);
+  const count = (k: Kind) => visible.filter((e) => e.kind === k).length;
+  const byDay = visible.reduce<Array<{ day: string; items: Entry[] }>>((acc, e) => {
+    const day = new Date(e.at).toLocaleDateString(intlLocale(), { weekday: "long", day: "numeric", month: "long" });
+    const last = acc[acc.length - 1];
+    if (last && last.day === day) last.items.push(e);
+    else acc.push({ day, items: [e] });
+    return acc;
   }, []);
-
-  // The period buttons filter the recorded events by date.
-  const days = range === "today" ? 1 : range === "7d" ? 7 : range === "30d" ? 30 : 90;
-  const cutoff = new Date(Date.now() - days * 24 * 3600 * 1000).toISOString().split("T")[0];
-  const visible = events.filter((e) => e.date >= cutoff);
+  const loading = activity.isLoading || alerts.isLoading;
+  const failed = !loading && !activity.data && !alerts.data;
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">
-            {t("timeline.title")}
-          </h1>
-          {isDemoSession && (
-            <span className="rounded-full border border-transparent bg-purple-50 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-purple-600">
-              DEMO
-            </span>
-          )}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{L("Timeline", "Kronologi")}</h1>
+          <p className="mt-1 text-[14px] text-[#5F6B94]">{L("How each issue unfolded: when it appeared, who picked it up, and what was done.", "Jalan cerita tiap isu: kapan muncul, siapa yang pegang, dan apa yang sudah dilakukan.")}</p>
         </div>
-
-        {/* Date range selector */}
-        <div className="flex rounded-[10px] border border-slate-200 bg-white p-1 shadow-sm">
-          {DATE_RANGES.map(({ key, labelKey }) => (
+        <div className="flex self-start rounded-[10px] bg-white p-1 shadow-sm sm:self-auto" role="group" aria-label={L("Period", "Periode")}>
+          {RANGES.map((r) => (
             <button
-              key={key}
-              onClick={() => setRange(key)}
-              className={cn(
-                "rounded-[7px] px-3 py-1.5 text-[12px] font-semibold transition-all duration-150",
-                range === key
-                  ? "bg-[#465FFF] text-white shadow-sm"
-                  : "text-[#5F6B94] hover:bg-slate-50 hover:text-[#101334]",
-              )}
+              key={r.days}
+              type="button"
+              aria-pressed={days === r.days}
+              onClick={() => setDays(r.days)}
+              className={cn("rounded-[7px] px-3 py-1.5 text-[12px] font-bold transition-colors", days === r.days ? "bg-[#465FFF] text-white" : "text-[#5F6B94] hover:bg-slate-50 hover:text-[#101334]")}
             >
-              {t(labelKey)}
+              {L(r.label[0], r.label[1])}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Timeline */}
-      <div className="max-w-2xl">
-        {visible.map((event) => (
-          <TimelineEntry key={event.id} event={event} />
-        ))}
-        {visible.length === 0 && (
-          <div className="flex flex-col items-center justify-center rounded-[14px] border border-dashed border-slate-300 px-4 py-16 text-center">
-            <p className="text-[14px] text-[#5F6B94]">{loadFailed ? t("timeline.loadFailed") : t("timeline.empty")}</p>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        {(["alert", "opportunity", "case", "plan", "report"] as Kind[]).map((k) => (
+          <div key={k} className={cn("rounded-2xl p-4", KIND[k].chip)}>
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.08em] opacity-80">{L(KIND[k].en, KIND[k].id)}</p>
+            <p className="mt-1 text-[28px] font-black leading-tight">{loading ? "…" : count(k)}</p>
           </div>
+        ))}
+      </div>
+
+      <div className="rounded-2xl bg-white p-3 shadow-[0_1px_2px_rgba(16,19,52,0.06),0_8px_24px_rgba(16,19,52,0.05)] sm:p-4">
+        {loading ? (
+          <div className="space-y-2 p-2">{[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>
+        ) : byDay.length ? (
+          byDay.map((group) => (
+            <section key={group.day} className="mb-2 last:mb-0">
+              <h2 className="px-3 pb-1 pt-3 text-[12px] font-extrabold uppercase tracking-[0.08em] text-[#5F6B94]">{group.day}</h2>
+              <div className="divide-y divide-[#EEF1F6]">{group.items.map((e) => <Row key={e.id} entry={e} />)}</div>
+            </section>
+          ))
+        ) : (
+          <DashboardEmptyState
+            icon="search"
+            title={failed ? L("The timeline could not be loaded", "Kronologi gagal dimuat") : L("Nothing happened in this period", "Belum ada kejadian di periode ini")}
+            description={failed ? L("Try again in a moment.", "Coba lagi sebentar lagi.") : L("Pick a longer period, or check back once alerts come in.", "Pilih periode yang lebih panjang, atau cek lagi setelah ada peringatan.")}
+          />
         )}
       </div>
     </div>

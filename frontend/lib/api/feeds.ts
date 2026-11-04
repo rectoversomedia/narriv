@@ -168,6 +168,8 @@ export interface GetAlertsOptions {
   status?: string;
   severity?: string;
   search?: string;
+  /** risk, opportunity or positioning. */
+  type?: string;
 }
 
 /** One alert in the frontend shape; the API answers in snake_case (list) or camelCase (detail). */
@@ -200,8 +202,9 @@ function normalizeAlert(raw: any): Alert {
 export async function getAlerts(
   options: GetAlertsOptions = {}
 ): Promise<PaginatedResponse<Alert> | null> {
-  const { page = 1, limit = 20, status, severity, search } = options;
+  const { page = 1, limit = 20, status, severity, search, type } = options;
   const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (type) params.set("type", type);
   if (status) params.set("status", status);
   if (severity) params.set("severity", severity);
   if (search) params.set("search", search);

@@ -206,7 +206,7 @@ export function NarrativeLandscapePanel({ windowHours = 168 }: { windowHours?: n
     return <InsufficientData label={t("narrativeIntel")} />;
   }
   const emerging = narrative.data.inferences.find((i) => i.kind === "emerging_narratives");
-  const items = (emerging?.items || []) as Array<{ clusterId: string; title: string; momentum: number; signalCount: number }>;
+  const items = (emerging?.items || []) as Array<{ clusterId: string; title: string; signalCount: number; last24h?: number | null }>;
   const volumeRatio = narrative.data.inferences.find((i) => i.kind === "volume_ratio");
   const negShare = narrative.data.inferences.find((i) => i.kind === "negative_sentiment_share");
   const band = narrative.data.riskBand;
@@ -245,7 +245,7 @@ export function NarrativeLandscapePanel({ windowHours = 168 }: { windowHours?: n
             {items.slice(0, 4).map((it) => (
               <li key={it.clusterId} className="flex items-center justify-between rounded-md border border-slate-100 bg-slate-50/60 px-3 py-2 text-[13px]">
                 <span className="truncate text-slate-800">{it.title}</span>
-                <span className="ml-3 shrink-0 text-[11px] font-semibold text-[#5A6478]">{t("velocity", { value: Math.round(it.momentum) })}</span>
+                <span className="ml-3 shrink-0 text-[11px] font-semibold text-[#5A6478]">{t("velocity", { value: it.last24h ?? it.signalCount })}</span>
               </li>
             ))}
           </ul>
@@ -266,7 +266,6 @@ function RiskExplanation({ model, score }: { model: RiskModelExplanation; score:
     <div className="mt-4 border-t border-slate-100 pt-4">
       <div className="flex items-center justify-between">
         <div className="text-[12px] font-semibold uppercase tracking-wide text-[#5A6478]">{t("whyScore", { score })}</div>
-        <span className="text-[11px] text-[#5A6478]">{t("heuristic", { version: model.version })}</span>
       </div>
       {drivers.length === 0 ? (
         <p className="mt-1.5 text-[13px] text-[#5A6478]">{t("noComponent")}</p>
@@ -286,9 +285,9 @@ function RiskExplanation({ model, score }: { model: RiskModelExplanation; score:
                 <p className="mt-0.5 text-[11px] text-[#5A6478]">
                   {t("evidence")} {c.key === "active_alerts"
                     ? c.evidenceIds.map((id, i) => (
-                        <span key={id}>{i > 0 ? ", " : ""}<Link href={`/alerts/${id}`} className="font-semibold text-[#3B52F5] hover:underline">{t("alertRef", { id: id.slice(0, 8) })}</Link></span>
+                        <span key={id}>{i > 0 ? ", " : ""}<Link href={`/alerts/${id}`} className="font-semibold text-[#3B52F5] hover:underline">{t("alertRef", { n: i + 1 })}</Link></span>
                       ))
-                    : `${t(c.key === "narrative_momentum" ? "recordsCluster" : "recordsSignal", { count: c.evidenceIds.length })} · ${c.evidenceIds.slice(0, 3).map((id) => id.slice(0, 8)).join(", ")}${c.evidenceIds.length > 3 ? "…" : ""}`}
+                    : t(c.key === "narrative_momentum" ? "recordsCluster" : "recordsSignal", { count: c.evidenceIds.length })}
                 </p>
               ) : null}
             </li>

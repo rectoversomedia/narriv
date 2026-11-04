@@ -52,6 +52,17 @@ test("every navigation and tab label is translated in English and Indonesian", (
   assert.equal(messages("id").nav.tasks, "Peringatan & Tugas");
 });
 
+test("the analysis, opportunities and timeline pages are tabs again, and none of them ships sample content", () => {
+  const tabsOf = (section) => SECTION_TABS[section].map((t) => t.href);
+  assert.ok(tabsOf("today").includes("/insights"));
+  assert.ok(tabsOf("issues").includes("/opportunities"));
+  assert.ok(tabsOf("issues").includes("/timeline"));
+  for (const route of ["insights", "opportunities", "timeline"]) {
+    const src = readFileSync(`app/(dashboard)/${route}/page.tsx`, "utf8");
+    assert.doesNotMatch(src, /DEMO_OPPORTUNITIES|Last 24h|Insufficient data|Event: /, `${route} has leftover sample or English-only copy`);
+  }
+});
+
 test("Overview strings exist in both languages for every finding and action code", () => {
   const en = JSON.parse(readFileSync("messages/en.json", "utf8")).Overview;
   const id = JSON.parse(readFileSync("messages/id.json", "utf8")).Overview;

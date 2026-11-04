@@ -167,7 +167,7 @@ export interface GeoIntelligencePayload {
 export interface ExecutiveBriefSection {
   summary: string;
   evidence?: IntelligenceEvidence[];
-  items?: Array<{ clusterId: string; title: string; momentum: number; signalCount: number }>;
+  items?: Array<{ clusterId: string; title: string; signalCount: number; last24h: number | null; prior24h: number | null; growth: string | null }>;
   score?: number;
   band?: string;
   label?: string;
