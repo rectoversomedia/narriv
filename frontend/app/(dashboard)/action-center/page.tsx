@@ -205,13 +205,38 @@ export default function ActionCenterPage() {
                   </div>
                 </div>
                 <div className="mt-4"><JourneyProgress steps={steps} /></div>
-                <div className="mt-4 grid gap-3 md:grid-cols-3">
-                  <Block title={steps[0].title} tint="#F4F6FC">{steps[0].body}</Block>
-                  <Block title={steps[1].title} tint="#EEF1FF">{steps[1].body}</Block>
-                  <Block title={steps[2].done ? steps[3].title : steps[2].title} tint={steps[2].done ? "#FFF6E0" : "#FDECEC"}>
-                    {steps[2].done ? steps[3].body : steps[2].body}
-                    {steps[4].done ? <p className="mt-2 text-[12px] font-black text-[#047857]">{steps[4].body}</p> : null}
-                  </Block>
+                {/* Two short blocks: why it matters (one line) and what is being done (chips). */}
+                <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+                  <div className="rounded-[12px] bg-[#EEF1FF] p-3.5">
+                    <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#3B52F5]">{L("Why", "Kenapa")}</p>
+                    <p className="mt-1 line-clamp-2 text-[13px] font-bold leading-snug text-[#101334]">{to.has(`w_${a.action}`) ? to(`w_${a.action}`) : a.whyItMatters}</p>
+                    <Link href={monitoringHref({ hours, narrative: a.relatedNarrative?.id })} className="mt-2 inline-block text-[12px] font-black text-[#3B52F5] hover:underline">{L(`See ${a.evidenceCount} evidence`, `Lihat ${a.evidenceCount} bukti`)} →</Link>
+                  </div>
+                  <div className={cn("rounded-[12px] p-3.5", steps[2].done ? "bg-[#F7F8FC]" : "bg-[#FDECEC]")}>
+                    <p className={cn("text-[10px] font-black uppercase tracking-[0.08em]", steps[2].done ? "text-[#5A6478]" : "text-[#C81E1E]")}>{steps[2].done ? L("Being done", "Yang sedang dikerjakan") : L("Decide now", "Putuskan sekarang")}</p>
+                    {steps[2].done ? (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {(a.followUp?.plans ?? []).map((pl) => (
+                          <Link key={pl.id} href="/action-plans" className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[12px] font-bold text-[#101334] hover:bg-[#EEF1FF]">
+                            <span className={cn("size-2 shrink-0 rounded-full", pl.status === "done" || pl.status === "completed" ? "bg-[#12A66A]" : "bg-[#F59E0B]")} />
+                            <span className="truncate">{pl.title || to("untitled")}</span>
+                          </Link>
+                        ))}
+                        {(a.followUp?.cases ?? []).map((c) => (
+                          <Link key={c.id} href="/workspace/cases" className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[12px] font-bold text-[#101334] hover:bg-[#EEF1FF]">
+                            <span className={cn("size-2 shrink-0 rounded-full", c.status === "resolved" || c.status === "closed" ? "bg-[#12A66A]" : "bg-[#465FFF]")} />
+                            <span className="truncate">{L("Case", "Kasus")}: {c.title || to("untitled")}</span>
+                          </Link>
+                        ))}
+                        {a.followUp?.stage === "in_progress" && !a.unchangedSinceFollowUp ? <span className="rounded-full bg-[#F59E0B] px-2.5 py-1 text-[11px] font-black text-white">{L("New data since", "Ada data baru")}</span> : null}
+                      </div>
+                    ) : (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <button type="button" onClick={() => setPlanFor(a)} className="h-9 rounded-[10px] bg-[#465FFF] px-4 text-[12px] font-black text-white hover:bg-[#3B52F5]">{t("createPlan")}</button>
+                        <button type="button" onClick={() => setCaseFor(a)} disabled={!a.signalIds?.length} className="h-9 rounded-[10px] bg-white px-4 text-[12px] font-black text-[#31406B] hover:bg-[#F8FAFF] disabled:opacity-50">{t("createCase")}</button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </li>
             );

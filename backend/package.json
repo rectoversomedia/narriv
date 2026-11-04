@@ -49,6 +49,7 @@
     "jsonwebtoken": "^9.0.3",
     "lodash.isequal": "^4.5.0",
     "openai": "^6.34.0",
+    "pdfkit": "^0.15.2",
     "proxy-agent": "^6.5.0",
     "resend": "^6.12.4",
     "uuid": "^9.0.1",

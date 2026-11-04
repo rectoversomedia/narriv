@@ -56,7 +56,7 @@ export function PlanWorkflowControls({ planId, status, assignedTo }: { planId: s
   return (
     <div className="mt-5 rounded-[10px] border border-[#E8ECF5] p-3">
       <p className="text-[12px] font-black text-[#101334]">{L("Track this action", "Pantau tindakan ini")}</p>
-      <p className="mt-0.5 text-[10px] font-semibold text-[#647099]">{L("AI-generated content is a draft. Narriv does not publish or send anything on your behalf.", "Konten buatan AI adalah draf. Narriv tidak memublikasikan atau mengirim apa pun atas nama Anda.")}</p>
+      <p className="mt-0.5 text-[11px] font-semibold text-[#647099]">{L("Draft only; nothing is sent for you.", "Hanya draf; tidak ada yang dikirim otomatis.")}</p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <label className="text-[10px] font-black text-[#647099]">
           {L("Status", "Status")}

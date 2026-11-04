@@ -12,6 +12,7 @@
 import type { LucideIcon } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { useAuthStore, type AuthUser } from "@/store/useAuthStore";
+import { useUiStore } from "@/store/useUiStore";
 import { getMockAlerts, getMockDashboardSummary, getMockNarrativeDetail, isDemoMode } from "./demo-mock-data";
 
 // ---------------------------------------------------------------------------
@@ -2084,11 +2085,15 @@ export async function createReportExport(reportId: string, format: "json" | "pdf
   });
 }
 
-export async function downloadReportFile(reportId: string, format: "csv" | "xlsx"): Promise<void> {
+export async function downloadReportFile(reportId: string, format: "pdf" | "csv" | "xlsx"): Promise<void> {
   const token = typeof window !== "undefined" ? useAuthStore.getState().token : null;
   const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:3000";
   const res = await fetch(`${baseUrl}/reports/${reportId}/export/file?format=${format}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      // The file is written in the language the app is showing.
+      "Accept-Language": useUiStore.getState().language === "id" ? "id" : "en",
+    },
   });
 
   if (!res.ok) throw new Error("Failed to export report");
@@ -2096,7 +2101,9 @@ export async function downloadReportFile(reportId: string, format: "csv" | "xlsx
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `narriv-report-${reportId.substring(0, 8)}.${format}`;
+  // The server names the file after the report title and period.
+  const named = /filename="([^"]+)"/.exec(res.headers.get("Content-Disposition") || "")?.[1];
+  a.download = named || `narriv-report-${reportId.substring(0, 8)}.${format}`;
   document.body.appendChild(a);
   a.click();
   a.remove();

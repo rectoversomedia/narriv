@@ -1239,7 +1239,7 @@ export default function SignalsPage() {
         onOpenChange={handleActionPlanModalChange}
         initialSignalId={selectedSignalForAction?.id}
         initialSignalTitle={selectedSignalForAction?.title}
-        initialStrategyType={selectedSignalForAction?.sentiment?.toLowerCase() === "negative" ? "crisis_response" : "pr_response"}
+        initialStrategyType={selectedSignalForAction?.sentiment?.toLowerCase() === "negative" ? "crisis_response" : selectedSignalForAction?.sentiment?.toLowerCase() === "positive" ? "content_strategy" : "pr_response"}
       />
 
       <AdvancedSearchModal

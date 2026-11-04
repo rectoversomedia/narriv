@@ -837,13 +837,14 @@ export default function ReportsPage() {
     onError: () => showToast(tr("toast.exportInitFailed"), "error"),
   });
 
-  const handleExportFile = async (reportId: string, format: "csv" | "xlsx") => {
+  const handleExportFile = async (reportId: string, format: "pdf" | "csv" | "xlsx") => {
+    const name = format === "xlsx" ? "Excel" : format.toUpperCase();
     try {
-      showToast(format === "xlsx" ? "Mengunduh file Excel..." : "Mengunduh file CSV...");
+      showToast(pickL(`Preparing the ${name} file…`, `Menyiapkan file ${name}…`));
       await downloadReportFile(reportId, format);
-      showToast(`File ${format.toUpperCase()} berhasil diunduh`);
+      showToast(pickL(`${name} file downloaded`, `File ${name} berhasil diunduh`));
     } catch {
-      showToast(`Gagal mengunduh ${format.toUpperCase()}`, "error");
+      showToast(pickL(`The ${name} file could not be downloaded`, `File ${name} gagal diunduh`), "error");
     }
   };
   const reportsQuery = useQuery({
@@ -1161,7 +1162,7 @@ export default function ReportsPage() {
                 pagination={reportsQuery.data?.pagination}
                 onPageChange={setPage}
                 isFetching={reportsQuery.isFetching || exportMutation.isPending}
-                onExport={(reportId) => exportMutation.mutate({ reportId, format: "pdf" })}
+                onExport={(reportId) => void handleExportFile(reportId, "pdf")}
                 onExportFile={handleExportFile}
               />
             </>
@@ -1170,7 +1171,7 @@ export default function ReportsPage() {
         <div className="space-y-4">
           <ReportPreviewSidebar
             latestReport={reportsQuery.data?.data?.[0]}
-            onExportPdf={() => { const firstRow = rows[0]; if (firstRow) exportMutation.mutate({ reportId: String(firstRow.id), format: "pdf" }); }}
+            onExportPdf={() => { const firstRow = rows[0]; if (firstRow) void handleExportFile(String(firstRow.id), "pdf"); }}
             onExportFile={(fmt) => { const firstRow = rows[0]; if (firstRow) void handleExportFile(String(firstRow.id), fmt); }}
             isPending={reportsQuery.isPending}
           />

@@ -194,23 +194,18 @@ function ActionCard({ action, selected, onSelect, t }: { action: ActionItem; sel
       )}
     >
       <div className="flex items-start justify-between gap-3">
-        <h3 className="text-[13px] font-black leading-5 text-[#101334]">{action.title}</h3>
+        <h3 className="text-[14px] font-black leading-snug text-[#101334]">{action.title}</h3>
         <StatusPill status={action.status} t={t} />
       </div>
-      <div className="mt-3 flex flex-col gap-1 text-[11px] font-semibold text-[#5F6B94]">
-        <span>{action.issue}</span>
-        <span>{t("impactLabel")} <b className="font-black" style={{ color: readableTone(style.color) }}>{action.impact}</b></span>
-        {action.response ? <span>{action.response}</span> : null}
+      {/* The issue in one line, impact as a chip; owner by name only (the role lives on the plan). */}
+      <p className="mt-2 line-clamp-1 text-[12px] font-semibold text-[#3A4566]" title={action.issue}>{action.issue}</p>
+      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-black" style={{ color: readableTone(style.color) }}>{action.impact}</span>
+        <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-[#31406B]">{action.due}</span>
       </div>
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <span className="flex items-center gap-2">
-          <Avatar name={action.owner} />
-          <span>
-            <span className="block text-[11px] font-black text-[#101334]">{action.owner}</span>
-            <span className="block text-[9px] font-semibold text-[#5F6B94]">{action.role}</span>
-          </span>
-        </span>
-        <span className="text-[10px] font-black text-[#53608C]">{action.due}</span>
+      <div className="mt-3 flex items-center gap-2">
+        <Avatar name={action.owner} />
+        <span className="truncate text-[12px] font-black text-[#101334]">{action.owner.split(" · ")[0]}</span>
       </div>
       <div className="mt-4">
         <ProgressLine value={action.progress} tone={action.tone} />

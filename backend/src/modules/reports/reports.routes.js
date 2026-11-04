@@ -1,5 +1,5 @@
 import express from "express";
-import { tr } from "../../lib/request-context.js";
+import { requestLang, tr } from "../../lib/request-context.js";
 import supabase from "../../lib/supabase.js";
 import { generateReport } from "./reports.service.js";
 import {
@@ -19,7 +19,7 @@ import { getAllReportTemplates } from "./report-templates.js";
 import { recordAuditLog } from "../../lib/audit.js";
 import { logStructured } from "../../lib/logger.js";
 import { wrapAsync } from "../../lib/sentry.js";
-import XLSX from "xlsx";
+import { buildReportCsv, buildReportPdf, buildReportXlsx, collectReportData, reportFileName } from "./report-files.js";
 import { dayIndex, nextRunAt, templateRowId, withTemplates } from "./report-schedules.js";
 
 
@@ -1002,7 +1002,7 @@ router.get("/:id/export/pdf", rateLimiters.export(), async (req, res) => {
     }
 });
 
-// GET /api/reports/:id/export/file - Download report as CSV or XLSX
+// GET /api/reports/:id/export/file - Download report as PDF, CSV or XLSX
 router.get("/:id/export/file", rateLimiters.export(), async (req, res) => {
     try {
         const { id } = req.params;
@@ -1019,102 +1019,26 @@ router.get("/:id/export/file", rateLimiters.export(), async (req, res) => {
             return res.status(404).json({ error: "Report not found" });
         }
 
-        const fullReport = await generateReport({
-            workspaceId: report.workspace_id,
-            title: report.title,
-            periodStart: report.content?.period_start || report.period_start,
-            periodEnd: report.content?.period_end || report.period_end,
-            reportId: report.id,
-            save: false,
-        });
+        // One data shape for every format, in the reader's language (the Accept-Language the app sends).
+        const requested = String(format).toLowerCase();
+        const normalizedFormat = ["pdf", "xlsx", "csv"].includes(requested) ? requested : "csv";
+        const data = await collectReportData(report);
+        const lang = requestLang() === "en" ? "en" : "id";
 
-        const normalizedFormat = String(format).toLowerCase() === "xlsx" ? "xlsx" : "csv";
-
-        const metrics = fullReport?.sections?.dashboard_metrics || {};
-        const totalSignals = fullReport?.executiveSummary?.totalSignals ?? metrics.total_signals ?? (fullReport?.topSignals || []).length;
-        const posPercent = fullReport?.executiveSummary?.positivePercentage ?? metrics.sentiment_percentages?.positive ?? 0;
-        const negPercent = fullReport?.executiveSummary?.negativePercentage ?? metrics.sentiment_percentages?.negative ?? 0;
-        const neuPercent = fullReport?.executiveSummary?.neutralPercentage ?? metrics.sentiment_percentages?.neutral ?? 0;
-        const periodStartVal = report.content?.period_start || report.period_start || fullReport?.periodStart || "N/A";
-        const periodEndVal = report.content?.period_end || report.period_end || fullReport?.periodEnd || "N/A";
-        const summaryText = report.content?.summary || report.summary || fullReport?.summary || "N/A";
-
-        // Summary sheet data
-        const summaryRows = [
-            { Property: "Report Title", Value: report.title || "Executive Intelligence Report" },
-            { Property: "Report ID", Value: report.id },
-            { Property: "Summary", Value: summaryText },
-            { Property: "Generated At", Value: new Date().toISOString() },
-            { Property: "Period Start", Value: periodStartVal },
-            { Property: "Period End", Value: periodEndVal },
-            { Property: "Total Signals", Value: totalSignals },
-            { Property: "Positive Sentiment %", Value: `${posPercent}%` },
-            { Property: "Negative Sentiment %", Value: `${negPercent}%` },
-            { Property: "Neutral Sentiment %", Value: `${neuPercent}%` },
-        ];
-
-        // Topics sheet data
-        const topicRows = (fullReport?.topTopics || []).map(t => ({
-            Topic: t.name || t.topic || "",
-            Mentions: t.mentions || t.count || 0,
-            Sentiment: t.sentiment || "neutral",
-            Severity: t.severity || "medium",
-        }));
-
-        // Signals sheet data
-        const signalRows = (fullReport?.topSignals || fullReport?.signals || []).map(s => ({
-            Title: s.title || "",
-            Platform: s.platform || "",
-            Sentiment: s.sentiment || "",
-            CapturedAt: s.captured_at || s.created_at || "",
-            URL: s.source_url || "",
-        }));
-
-        // Sections sheet data (if generated from template)
-        const sectionRows = (Array.isArray(report.content?.sections) ? report.content.sections : []).map(s => ({
-            Section: s.title || s.id || "",
-            Content: typeof s.data === "object" ? JSON.stringify(s.data) : String(s.data || s.summary || ""),
-        }));
-
-        if (normalizedFormat === "xlsx") {
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), "Summary");
-            if (sectionRows.length > 0) {
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sectionRows), "Sections");
-            }
-            if (topicRows.length > 0) {
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(topicRows), "Top Topics");
-            }
-            if (signalRows.length > 0) {
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(signalRows), "Signals");
-            }
-            const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
-
-            res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            res.setHeader("Content-Disposition", `attachment; filename="narriv-report-${report.id.substring(0, 8)}.xlsx"`);
+        if (normalizedFormat === "pdf") {
+            const buffer = await buildReportPdf(data, lang);
+            res.setHeader("Content-Type", "application/pdf");
+            res.setHeader("Content-Disposition", `attachment; filename="${reportFileName(data, "pdf")}"`);
             return res.send(buffer);
-        } else {
-            // For CSV, combine summary, sections, topics, and signals
-            const lines = [];
-            lines.push("--- REPORT SUMMARY ---");
-            lines.push(XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(summaryRows)));
-            if (sectionRows.length > 0) {
-                lines.push("\n--- SECTIONS ---");
-                lines.push(XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(sectionRows)));
-            }
-            if (topicRows.length > 0) {
-                lines.push("\n--- TOP TOPICS ---");
-                lines.push(XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(topicRows)));
-            }
-            if (signalRows.length > 0) {
-                lines.push("\n--- SIGNALS ---");
-                lines.push(XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(signalRows)));
-            }
-
-            res.setHeader("Content-Type", "text/csv; charset=utf-8");
-            res.setHeader("Content-Disposition", `attachment; filename="narriv-report-${report.id.substring(0, 8)}.csv"`);
-            return res.send(lines.join("\n"));
         }
+        if (normalizedFormat === "xlsx") {
+            res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            res.setHeader("Content-Disposition", `attachment; filename="${reportFileName(data, "xlsx")}"`);
+            return res.send(buildReportXlsx(data, lang));
+        }
+        res.setHeader("Content-Type", "text/csv; charset=utf-8");
+        res.setHeader("Content-Disposition", `attachment; filename="${reportFileName(data, "csv")}"`);
+        return res.send(buildReportCsv(data, lang));
     } catch (error) {
         logStructured("error", "Error exporting report file:", { error: error?.message || error, stack: error?.stack });
         return res.status(500).json({ error: "Internal server error" });

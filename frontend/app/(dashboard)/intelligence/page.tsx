@@ -423,6 +423,39 @@ function NarrativeInsight({ clusters, emergingCount, language, onOpen, onPlan, o
   );
 }
 
+/** One issue in a ranked list: rank, full title, sentiment, a volume bar against the biggest issue, growth. */
+function ClusterRow({ cluster, rank, max, selected, language, onClick }: { cluster: Cluster; rank: number; max: number; selected: boolean; language: "en" | "id"; onClick: () => void }) {
+  const L = (en: string, id: string) => (language === "id" ? id : en);
+  const sent = cluster.sentiment;
+  const bar = sent === "negative" ? "#E5484D" : sent === "positive" ? "#12A66A" : sent === "mixed" ? "#8B5CFF" : "#94A3B8";
+  const growthNum = parseGrowthPercent(cluster.growth);
+  // One rule for every list: rising = amber up, falling = grey down, new = purple, flat = grey.
+  const growth = cluster.growth === "new"
+    ? { label: L("New", "Baru"), cls: "bg-[#8B5CFF] text-white" }
+    : growthNum > 0 ? { label: `▲ ${cluster.growth}`, cls: "bg-[#FFF3DC] text-[#A04606]" }
+      : growthNum < 0 ? { label: `▼ ${cluster.growth.replace("-", "")}`, cls: "bg-[#EEF1F7] text-[#5A6478]" }
+        : { label: L("Stable", "Stabil"), cls: "bg-[#EEF1F7] text-[#5A6478]" };
+  const sentWord = ({ negative: ["Negative", "Negatif"], positive: ["Positive", "Positif"], mixed: ["Mixed", "Campuran"], neutral: ["Neutral", "Netral"] } as Record<string, [string, string]>)[sent] ?? ["Neutral", "Netral"];
+  return (
+    <button type="button" onClick={onClick} aria-pressed={selected} className={cn("w-full rounded-[12px] p-3 text-left transition", selected ? "bg-[#EEF1FF] ring-2 ring-[#465FFF]" : "bg-[#F7F8FC] hover:bg-[#EEF1F7]")}>
+      <div className="flex items-start gap-3">
+        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#101334] text-[11px] font-black text-white">{rank}</span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <p className="line-clamp-2 text-[13px] font-black leading-snug text-[#101334]">{text(cluster.topic, language)}</p>
+            <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-black", growth.cls)}>{growth.label}</span>
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <div className="h-2 flex-1 rounded-full bg-white"><div className="h-full rounded-full" style={{ width: `${Math.max(4, (cluster.signals / max) * 100)}%`, background: bar }} /></div>
+            <span className="shrink-0 text-[12px] font-black text-[#101334]">{formatSignals(cluster.signals)}</span>
+          </div>
+          <p className="mt-1 text-[11px] font-bold" style={{ color: bar === "#94A3B8" ? "#5A6478" : bar }}>{L(...sentWord)}</p>
+        </div>
+      </div>
+    </button>
+  );
+}
+
 function CompetitorDonut({ label, gradient, totalLabel }: { label: string; gradient: string; totalLabel: string }) {
   return (
     <div className="chart-donut-enter relative flex size-[150px] shrink-0 items-center justify-center rounded-full shadow-sm" style={{ background: gradient }}>
@@ -585,6 +618,7 @@ export default function IntelligencePage() {
   const isApiHealthy = !isLiveUnavailable && !isSourcesUnavailable;
 
   const selectedTone = toneStyles[selectedCluster.tone];
+  const maxClusterSignals = Math.max(1, ...clusters.map((c) => c.signals));
   const narrativeShareData = buildNarrativeShareData(clusters, { noData: ti("labels.noData"), others: ti("labels.others") });
   const lifecycle = buildLifecycleFromClusters(clusters);
   const narrativeShareGradient = buildDonutGradient(narrativeShareData);
@@ -891,29 +925,10 @@ export default function IntelligencePage() {
                 </button>
               </div>
               <div className="flex flex-col gap-2">
-                {clusters.slice(0, 5).map((cluster) => {
+                {clusters.slice(0, 5).map((cluster, index) => {
                   const selected = selectedCluster.id === cluster.id;
-                  const toneStyle = toneStyles[cluster.tone];
                   return (
-                    <button
-                      key={cluster.id}
-                      type="button"
-                      onClick={() => setSelectedClusterId(cluster.id)}
-                      className="flex items-center justify-between gap-3 rounded-[10px] border px-3 py-2.5 text-left transition hover:border-[#DCE2F0]"
-                      style={{
-                        borderColor: selected ? `rgba(${toneStyle.rgb}, .18)` : "#EEF1F7",
-                        backgroundColor: selected ? `rgba(${toneStyle.rgb}, .075)` : "#FFFFFF",
-                      }}
-                    >
-                      <span className="flex min-w-0 items-center gap-3">
-                        <ClusterIcon tone={cluster.tone} />
-                        <span className="min-w-0">
-                          <span className="block truncate text-[12px] font-black text-[#101334]">{text(cluster.topic, language)}</span>
-                          <span className="mt-1 block text-[10px] font-bold text-[#5F6B94]">{ti("labels.signals", { count: formatSignals(cluster.signals) })}</span>
-                        </span>
-                      </span>
-                      <TrendBadge value={cluster.growth} tone={cluster.tone} className="shrink-0 px-2 py-0.5 text-[10px]" />
-                    </button>
+                    <ClusterRow key={cluster.id} cluster={cluster} rank={index + 1} max={maxClusterSignals} selected={selected} language={language} onClick={() => setSelectedClusterId(cluster.id)} />
                   );
                 })}
               </div>
@@ -1107,35 +1122,18 @@ export default function IntelligencePage() {
 </ModalShell>
 
       <ModalShell open={mounted && isAllClustersModalOpen} onClose={() => setIsAllClustersModalOpen(false)} size="md" title={ti("growingClusters.modalTitle")} description={ti("growingClusters.modalSubtitle")}>
-<div className="grid gap-3 sm:grid-cols-2">
-                {clusters.map((cluster) => {
-                  const selected = selectedCluster.id === cluster.id;
-                  const toneStyle = toneStyles[cluster.tone];
-                  return (
-                    <button
-                      key={`modal-${cluster.id}`}
-                      type="button"
-                      onClick={() => {
-                        setSelectedClusterId(cluster.id);
-                        setIsAllClustersModalOpen(false);
-                      }}
-                      className="flex items-center justify-between gap-3 rounded-[10px] border px-3 py-2.5 text-left transition hover:border-[#DCE2F0]"
-                      style={{
-                        borderColor: selected ? `rgba(${toneStyle.rgb}, .18)` : "#EEF1F7",
-                        backgroundColor: selected ? `rgba(${toneStyle.rgb}, .075)` : "#FFFFFF",
-                      }}
-                    >
-                      <span className="flex min-w-0 items-center gap-3">
-                        <ClusterIcon tone={cluster.tone} />
-                        <span className="min-w-0">
-                          <span className="block truncate text-[12px] font-black text-[#101334]">{text(cluster.topic, language)}</span>
-                          <span className="mt-1 block text-[10px] font-bold text-[#5F6B94]">{ti("labels.signals", { count: formatSignals(cluster.signals) })}</span>
-                        </span>
-                      </span>
-                      <TrendBadge value={cluster.growth} tone={cluster.tone} className="shrink-0 px-2 py-0.5 text-[10px]" />
-                    </button>
-                  );
-                })}
+<div className="flex flex-col gap-2">
+                {[...clusters].filter((c) => c.id !== "empty").sort((x, y) => y.signals - x.signals).map((cluster, index) => (
+                  <ClusterRow
+                    key={`modal-${cluster.id}`}
+                    cluster={cluster}
+                    rank={index + 1}
+                    max={maxClusterSignals}
+                    selected={selectedCluster.id === cluster.id}
+                    language={language}
+                    onClick={() => { setSelectedClusterId(cluster.id); setIsAllClustersModalOpen(false); }}
+                  />
+                ))}
               </div>
 </ModalShell>
 

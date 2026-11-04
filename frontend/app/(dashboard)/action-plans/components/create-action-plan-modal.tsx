@@ -20,14 +20,15 @@ interface CreateActionPlanModalProps {
   initialStrategyType?: ActionStrategyType;
 }
 
-const strategyTypes: Array<{ value: ActionStrategyType; descriptionKey: string }> = [
-  { value: "crisis_response", descriptionKey: "crDesc" },
-  { value: "pr_response", descriptionKey: "prDesc" },
-  { value: "stakeholder_update", descriptionKey: "suDesc" },
-  { value: "social_response", descriptionKey: "srDesc" },
-  { value: "content_strategy", descriptionKey: "csDesc" },
-  { value: "influencer_strategy", descriptionKey: "isDesc" },
-  { value: "data_driven", descriptionKey: "ddDesc" },
+// Each strategy keeps one colour so it reads the same here and in the plan list.
+const strategyTypes: Array<{ value: ActionStrategyType; descriptionKey: string; color: string }> = [
+  { value: "crisis_response", descriptionKey: "crDesc", color: "#C81E1E" },
+  { value: "pr_response", descriptionKey: "prDesc", color: "#465FFF" },
+  { value: "stakeholder_update", descriptionKey: "suDesc", color: "#101334" },
+  { value: "social_response", descriptionKey: "srDesc", color: "#0EA5E9" },
+  { value: "content_strategy", descriptionKey: "csDesc", color: "#12A66A" },
+  { value: "influencer_strategy", descriptionKey: "isDesc", color: "#8B5CFF" },
+  { value: "data_driven", descriptionKey: "ddDesc", color: "#F59E0B" },
 ];
 
 export function CreateActionPlanModal({
@@ -123,14 +124,15 @@ export function CreateActionPlanModal({
       {basis ? (
         <div className="mb-5 rounded-[12px] border border-transparent bg-[#F5F7FF] px-4 py-3">
           <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#3B52F5]">{L("Based on this", "Berdasarkan")} {basis.label}</p>
-          <p className="mt-1 truncate text-[14px] font-black text-[#101334]" title={basis.title}>{basis.title}</p>
+          <p className="mt-1 line-clamp-2 text-[14px] font-black leading-snug text-[#101334]" title={basis.title}>{basis.title}</p>
         </div>
       ) : null}
 
       <p className="mb-2 text-[12px] font-black text-[#101334]">{t("strategyLabel")}</p>
       <div role="radiogroup" aria-label={t("strategyLabel")} className="grid gap-2.5 sm:grid-cols-2">
-        {strategyTypes.map((st) => {
+        {strategyTypes.map((st, index) => {
           const isActive = strategyType === st.value;
+          const last = index === strategyTypes.length - 1 && strategyTypes.length % 2 === 1;
           return (
             <button
               key={st.value}
@@ -138,22 +140,22 @@ export function CreateActionPlanModal({
               role="radio"
               aria-checked={isActive}
               onClick={() => setStrategyType(st.value)}
-              className={cn(
-                "rounded-[12px] border p-3.5 text-left transition",
-                isActive ? "border-[#465FFF] bg-[#F5F7FF] ring-2 ring-[#465FFF]/15" : "border-[#E6EAF2] bg-white hover:border-[#C9D4F6]",
-              )}
+              className={cn("flex items-start gap-3 rounded-[12px] p-3.5 text-left transition", last && "sm:col-span-2", isActive ? "bg-[#EEF1FF] ring-2 ring-[#465FFF]" : "bg-[#F7F8FC] hover:bg-[#EEF1F7]")}
             >
-              <span className="flex items-center justify-between gap-2">
-                <span className={cn("text-[13px] font-black", isActive ? "text-[#3B52F5]" : "text-[#101334]")}>{t(`strategy.${st.value}`)}</span>
-                {st.value === suggested ? <span className="rounded-full bg-[#E8F7EF] px-2 py-0.5 text-[10px] font-black text-[#047857]">{L("Suggested", "Disarankan")}</span> : null}
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-full text-[13px] font-black text-white" style={{ background: st.color }}>{isActive ? "✓" : index + 1}</span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center justify-between gap-2">
+                  <span className="text-[14px] font-black text-[#101334]">{t(`strategy.${st.value}`)}</span>
+                  {st.value === suggested ? <span className="shrink-0 rounded-full bg-[#12A66A] px-2 py-0.5 text-[10px] font-black text-white">{L("Suggested", "Disarankan")}</span> : null}
+                </span>
+                <span className="mt-0.5 block text-[12px] font-semibold leading-snug text-[#5A6478]">{t(st.descriptionKey)}</span>
               </span>
-              <span className="mt-1 block text-[12px] font-medium leading-snug text-[#5A6478]">{t(st.descriptionKey)}</span>
             </button>
           );
         })}
       </div>
 
-      <div className="mt-5 rounded-[12px] border border-[#EEF1F7]">
+      <div className="mt-5 rounded-[12px] bg-[#F7F8FC]">
         <button type="button" onClick={() => setShowLinks((v) => !v)} aria-expanded={showLinks} className="flex w-full items-center justify-between px-4 py-3 text-left">
           <span className="text-[13px] font-black text-[#101334]">
             {L("Link to an alert or issue", "Kaitkan dengan peringatan atau isu")}
@@ -162,7 +164,7 @@ export function CreateActionPlanModal({
           <span className="text-[12px] font-black text-[#3B52F5]">{showLinks ? L("Hide", "Tutup") : L("Show", "Buka")}</span>
         </button>
         {showLinks ? (
-          <div className="grid gap-4 border-t border-[#EEF1F7] p-4 sm:grid-cols-2">
+          <div className="grid gap-4 px-4 pb-4 sm:grid-cols-2">
             <Field label={L("Alert", "Peringatan")} htmlFor="modal-alert-select">
               <select id="modal-alert-select" value={selectedAlertId} onChange={(e) => setSelectedAlertId(e.target.value)} className={inputClass}>
                 <option value="">{L("None", "Tidak ada")}</option>

@@ -118,6 +118,8 @@ app.use(cors({
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Request-ID", "X-Workspace-Id"],
     credentials: true,
+    // Lets the app read the file name of a downloaded report.
+    exposedHeaders: ["Content-Disposition"],
     maxAge: 86400,
 }));
 
