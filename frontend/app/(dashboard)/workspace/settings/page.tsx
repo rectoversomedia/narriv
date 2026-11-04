@@ -250,7 +250,7 @@ export default function SettingsPage() {
 
   // State: Notifications
   const [notifEmail, setNotifEmail] = useState<boolean | null>(null);
-  const [notifWhatsapp, setNotifWhatsapp] = useState<boolean | null>(null);
+
 
   // State: AI Preferences
 
@@ -298,7 +298,6 @@ export default function SettingsPage() {
   // so saving the workspace name, industry or time zone always failed.
   const notificationQuery = useQuery({ queryKey: ["notification-settings"], queryFn: getNotificationSettings, staleTime: 30 * 1000 });
   const notifEmailValue = notifEmail ?? notificationQuery.data?.emailEnabled ?? true;
-  const notifWhatsappValue = notifWhatsapp ?? notificationQuery.data?.whatsappEnabled ?? false;
   const notificationMutation = useMutation({
     mutationFn: (input: { emailEnabled?: boolean; whatsappEnabled?: boolean }) => updateNotificationSettings(input),
     onSuccess: async () => {
@@ -307,12 +306,10 @@ export default function SettingsPage() {
     },
     onError: () => {
       setNotifEmail(null);
-      setNotifWhatsapp(null);
       showToast(ts("toast.saveFailed"), "error");
     },
   });
   const toggleEmail = (next: boolean) => { setNotifEmail(next); notificationMutation.mutate({ emailEnabled: next }); };
-  const toggleWhatsapp = (next: boolean) => { setNotifWhatsapp(next); notificationMutation.mutate({ whatsappEnabled: next }); };
 
 
   const handleSaveWorkspaceInfo = (e: FormEvent) => {
@@ -750,13 +747,14 @@ export default function SettingsPage() {
               </div>
               <Switch label={ts("notifications.emailAlerts")} checked={notifEmailValue} onChange={toggleEmail} disabled={notificationMutation.isPending} />
             </div>
-            <div className="flex items-center justify-between">
-              <div>
+            {/* WhatsApp is delivered through the WhatsApp Business API on the Integrations page. */}
+            <Link href="/workspace/integrations" className="flex items-center justify-between rounded-[10px] bg-[#E9FBF0] px-3 py-2.5 transition hover:bg-[#DDF7E7]">
+              <span>
                 <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.whatsappAlerts")}</span>
-                <span className="block text-[9.5px] text-[#5A6478] font-semibold">{ts("notifications.whatsappAlertsDesc")}</span>
-              </div>
-              <Switch label={ts("notifications.whatsappAlerts")} checked={notifWhatsappValue} onChange={toggleWhatsapp} disabled={notificationMutation.isPending} />
-            </div>
+                <span className="block text-[9.5px] font-semibold text-[#047857]">{L("Set up in Integrations, with Slack, Teams and Google Chat", "Atur di Integrasi, bersama Slack, Teams, dan Google Chat")}</span>
+              </span>
+              <ArrowRight size={13} className="text-[#047857]" />
+            </Link>
           </div>
           <div className="border-t border-slate-100 pt-2">
               <Link href="/workspace/integrations" className="flex w-full items-center justify-between rounded-lg p-2.5 text-left transition hover:bg-slate-50">

@@ -1,7 +1,7 @@
 /**
  * Webhook Dispatcher Service
  * Dispatches crisis alerts and notification payloads to active workspace integrations
- * (Slack, Microsoft Teams, generic webhooks)
+ * (Slack, Microsoft Teams, Google Chat, WhatsApp, generic webhooks)
  */
 
 import supabase from "../../lib/supabase.js";
@@ -9,6 +9,9 @@ import { logStructured } from "../../lib/logger.js";
 import { assertPublicHttpUrl } from "../../lib/url-safety.js";
 import { sendSlackMessage, formatAlertForSlack } from "../../lib/notifications/slack.js";
 import { sendTeamsMessage, formatAlertForTeams } from "../../lib/notifications/teams.js";
+import { formatAlertText, sendGoogleChatMessage, sendWhatsAppMessage } from "../../lib/notifications/chat-channels.js";
+
+export const DELIVERY_PLATFORMS = ["slack", "teams", "google_chat", "whatsapp", "webhook"];
 
 /**
  * Extract webhook URL from integration config
@@ -34,7 +37,7 @@ export async function dispatchAlertToWebhooks(alert) {
             .select("*")
             .eq("workspace_id", alert.workspace_id)
             .eq("status", "active")
-            .in("platform", ["slack", "teams", "webhook"]);
+            .in("platform", DELIVERY_PLATFORMS);
 
         if (error) {
             logStructured("error", "Failed to fetch integrations for alert dispatch", {
@@ -53,7 +56,8 @@ export async function dispatchAlertToWebhooks(alert) {
 
         for (const integration of integrations) {
             const url = getWebhookUrl(integration);
-            if (!url) {
+            // WhatsApp has no URL: it is a phone number ID, a token and recipients.
+            if (!url && integration.platform !== "whatsapp") {
                 results.push({
                     integrationId: integration.id,
                     platform: integration.platform,
@@ -70,6 +74,10 @@ export async function dispatchAlertToWebhooks(alert) {
                 } else if (integration.platform === "teams") {
                     const message = formatAlertForTeams(alert);
                     await sendTeamsMessage(await assertPublicHttpUrl(url), message);
+                } else if (integration.platform === "google_chat") {
+                    await sendGoogleChatMessage(url, formatAlertText(alert));
+                } else if (integration.platform === "whatsapp") {
+                    await sendWhatsAppMessage(integration.config, formatAlertText(alert));
                 } else if (integration.platform === "webhook") {
                     const safeUrl = await assertPublicHttpUrl(url);
                     const response = await fetch(safeUrl, {
@@ -138,6 +146,11 @@ export async function dispatchAlertToWebhooks(alert) {
  * @returns {Promise<{success: boolean, message: string}>}
  */
 export async function testIntegrationConnection(integration) {
+    const testText = "*[Narriv] Tes koneksi berhasil*\nSaluran ini akan menerima peringatan krisis dari workspace Narriv Anda.";
+    if (integration.platform === "whatsapp") {
+        const result = await sendWhatsAppMessage(integration.config, testText.replace(/\*/g, ""));
+        return { success: true, message: `WhatsApp test sent to ${result.sent} number(s)${result.failed.length ? `; failed: ${result.failed.join("; ")}` : ""}` };
+    }
     const url = getWebhookUrl(integration);
     if (!url) {
         throw new Error("No webhook URL configured for this integration. Please provide a valid URL.");
@@ -203,6 +216,11 @@ export async function testIntegrationConnection(integration) {
         };
         await sendTeamsMessage(url, testPayload);
         return { success: true, message: "Microsoft Teams test notification sent successfully" };
+    }
+
+    if (integration.platform === "google_chat") {
+        await sendGoogleChatMessage(url, testText);
+        return { success: true, message: "Google Chat test message sent" };
     }
 
     if (integration.platform === "webhook") {

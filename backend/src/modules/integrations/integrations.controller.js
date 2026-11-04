@@ -17,6 +17,28 @@ async function invalidWebhookUrl(config) {
     return null;
 }
 
+// Secrets stay on the server: webhook URLs and tokens are returned masked, so any member can see that a channel
+// is set up without being able to read (or reuse) its credentials.
+const SECRET_KEYS = ["webhookUrl", "url", "webhook_url", "accessToken", "token"];
+const maskValue = (v) => (typeof v === "string" && v.length > 8 ? `${v.slice(0, 12)}…${v.slice(-4)}` : "••••");
+export function maskIntegration(integration) {
+    if (!integration || !integration.config || typeof integration.config !== "object") return integration;
+    const config = { ...integration.config };
+    for (const key of SECRET_KEYS) if (config[key]) config[key] = maskValue(config[key]);
+    if (config.incomingWebhook?.url) config.incomingWebhook = { ...config.incomingWebhook, url: maskValue(config.incomingWebhook.url) };
+    return { ...integration, config };
+}
+
+// WhatsApp is configured with a phone number ID, an access token and recipient numbers instead of a URL.
+function invalidWhatsAppConfig(platform, config) {
+    if (platform !== "whatsapp") return null;
+    const c = config || {};
+    if (!String(c.phoneNumberId || "").trim() || !String(c.accessToken || "").trim() || !String(c.to || "").trim()) {
+        return tr("WhatsApp needs the phone number ID, the access token and at least one recipient number.", "WhatsApp butuh Phone Number ID, access token, dan minimal satu nomor penerima.");
+    }
+    return null;
+}
+
 export async function listIntegrations(req, res) {
     try {
         const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, req.query.workspaceId);
@@ -42,7 +64,7 @@ export async function listIntegrations(req, res) {
             return internalError(res);
         }
 
-        return res.json({ data: integrations || [] });
+        return res.json({ data: (integrations || []).map(maskIntegration) });
     } catch (error) {
         logStructured("error", "Error listing integrations:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
@@ -72,7 +94,7 @@ export async function getIntegration(req, res) {
             return notFound(res, "Integration not found", "INTEGRATION_NOT_FOUND");
         }
 
-        return res.json(integration);
+        return res.json(maskIntegration(integration));
     } catch (error) {
         logStructured("error", "Error getting integration:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
@@ -84,6 +106,8 @@ export async function createIntegration(req, res) {
         const { workspaceId, name, platform, config } = req.body;
         const urlProblem = await invalidWebhookUrl(config);
         if (urlProblem) return badRequest(res, urlProblem, "INVALID_WEBHOOK_URL");
+        const whatsappProblem = invalidWhatsAppConfig(platform, config);
+        if (whatsappProblem) return badRequest(res, whatsappProblem, "INVALID_WHATSAPP_CONFIG");
 
         const scopedWorkspaceId = await resolveWorkspaceIdForUser(req.user.id, workspaceId);
         if (!scopedWorkspaceId) {
@@ -97,6 +121,8 @@ export async function createIntegration(req, res) {
                 name,
                 platform,
                 config: config || {},
+                // Connecting a channel means it should receive alerts; it can be paused afterwards.
+                status: "active",
             })
             .select()
             .single();
@@ -113,7 +139,7 @@ export async function createIntegration(req, res) {
             metadata: { workspace_id: scopedWorkspaceId, integration_id: integration.id, name, platform },
         });
 
-        return res.status(201).json(integration);
+        return res.status(201).json(maskIntegration(integration));
     } catch (error) {
         logStructured("error", "Error creating integration:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
@@ -168,7 +194,7 @@ export async function updateIntegration(req, res) {
             metadata: { workspace_id: scopedWorkspaceId, integration_id: updated.id, changes: updateData },
         });
 
-        return res.json(updated);
+        return res.json(maskIntegration(updated));
     } catch (error) {
         logStructured("error", "Error updating integration:", { error: error?.message || error, stack: error?.stack });
         return internalError(res);
