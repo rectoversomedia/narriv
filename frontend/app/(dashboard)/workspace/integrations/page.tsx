@@ -194,14 +194,15 @@ export default function IntegrationsPage() {
       </header>
 
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        {metrics.map((metric) => {
-          const Icon = metric.icon;
+        {metrics.map((metric, index) => {
+          // Each stat gets its own colour wash (blue, green, purple, amber), no outline.
+          const wash = ["70,95,255", "18,166,106", "139,92,255", "245,158,11"][index % 4];
           return (
-            <div key={metric.label} className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+            <div key={metric.label} className="rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${wash},0.11), rgba(${wash},0.02) 60%)` }}>
               <div className="flex items-center gap-3">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">{metric.label}</p>
-                  <p className="mt-1 text-2xl font-black tracking-[-0.04em] text-slate-950">{metric.value.toLocaleString(intlLocale())}</p>
+                  <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{metric.label}</p>
+                  <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-slate-950">{metric.value.toLocaleString(intlLocale())}</p>
                 </div>
               </div>
               <p className="mt-3 text-[11px] font-bold text-[#5A6478]">{metric.helper}</p>
@@ -319,8 +320,8 @@ export default function IntegrationsPage() {
               <div className="p-4"><TableSkeleton rows={6} columns={5} /></div>
             ) : integrations.length === 0 ? (
               <DashboardEmptyState
-                title="No integrations yet"
-                description="Connect Slack, Teams, webhooks, or database exports to automate response workflows."
+                title={pickL("No integrations yet", "Belum ada integrasi")}
+                description={pickL("Connect Slack, Teams or a webhook to send alerts to your team automatically.", "Hubungkan Slack, Teams, atau webhook agar peringatan otomatis terkirim ke tim Anda.")}
                 icon="inbox"
               />
             ) : (

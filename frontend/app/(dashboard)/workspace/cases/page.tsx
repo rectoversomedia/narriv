@@ -153,14 +153,13 @@ function MetricCard({
   const style = toneMap[tone];
 
   return (
-    <div className="overflow-hidden rounded-[14px] border border-slate-200 bg-white p-4 pt-0 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
-      <div aria-hidden="true" className="-mx-4 mb-4 h-1" style={{ background: `linear-gradient(90deg, ${TONE_HEX[tone] ?? "#465FFF"}, ${TONE_HEX[tone] ?? "#465FFF"}40)` }} />
+    <div className="overflow-hidden rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, ${TONE_HEX[tone] ?? "#465FFF"}1F, ${TONE_HEX[tone] ?? "#465FFF"}05 60%)` }}>
       <div className="flex items-center gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">
             {label}
           </p>
-          <p className="mt-1 text-2xl font-black tracking-[-0.04em] text-slate-950">
+          <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-slate-950">
             {value.toLocaleString(locale === "id" ? "id-ID" : "en-US")}
           </p>
         </div>
@@ -877,7 +876,7 @@ export default function CasesPage() {
                           aria-label={t("table.updateStatus", {
                             title: item.title,
                           })}
-                          className="rounded-[6px] border-0 bg-transparent text-[10px] font-black outline-none cursor-pointer hover:bg-[#F8FAFF] py-1 px-2 -ml-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          className={cn("cursor-pointer rounded-full border-0 px-2.5 py-1 text-[11px] font-black outline-none disabled:cursor-not-allowed disabled:opacity-50", statusStyles[item.status as CaseStatus] || statusStyles.open)}
                         >
                           <option value="open">{tStatus("open")}</option>
                           <option value="in_progress">
@@ -888,17 +887,6 @@ export default function CasesPage() {
                           </option>
                           <option value="closed">{tStatus("closed")}</option>
                         </select>
-                        <div className="mt-1">
-                          <span
-                            className={cn(
-                              "rounded-full px-2 py-0.5 text-[9px] font-black",
-                              statusStyles[item.status as CaseStatus] ||
-                                statusStyles.open,
-                            )}
-                          >
-                            {tStatus(item.status as CaseStatus)}
-                          </span>
-                        </div>
                       </td>
 
                       {/* Priority dropdown + badge */}
@@ -915,7 +903,7 @@ export default function CasesPage() {
                           aria-label={t("table.updatePriority", {
                             title: item.title,
                           })}
-                          className="rounded-[6px] border-0 bg-transparent text-[10px] font-black outline-none cursor-pointer hover:bg-[#F8FAFF] py-1 px-2 -ml-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          className={cn("cursor-pointer rounded-full border-0 px-2.5 py-1 text-[11px] font-black outline-none disabled:cursor-not-allowed disabled:opacity-50", priorityStyles[(item.priority as CasePriority) || "medium"])}
                         >
                           <option value="low">{tStatus("low")}</option>
                           <option value="medium">{tStatus("medium")}</option>
@@ -924,20 +912,6 @@ export default function CasesPage() {
                             {tStatus("critical")}
                           </option>
                         </select>
-                        <div className="mt-1">
-                          <span
-                            className={cn(
-                              "rounded-full px-2 py-0.5 text-[9px] font-black",
-                              priorityStyles[
-                                (item.priority as CasePriority) || "medium"
-                              ],
-                            )}
-                          >
-                            {tStatus(
-                              (item.priority as CasePriority) || "medium",
-                            )}
-                          </span>
-                        </div>
                       </td>
 
                       {/* Assignee */}

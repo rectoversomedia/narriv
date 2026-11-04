@@ -18,6 +18,7 @@ import { usePlatformCollections } from "@/components/dashboard/platform-collecti
 import { PipelineHealthPanel } from "@/components/dashboard/pipeline-health-panel";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
+import { PlatformIcon } from "@/components/ui/platform-icon";
 import { intlLocale } from "@/store/useUiStore";
 import { readableTone } from "@/lib/readable-tone";
 import { DemoBanner } from "@/components/ui/demo-banner";
@@ -199,18 +200,15 @@ function Panel({ children, className }: { children: ReactNode; className?: strin
   return <Card className={cn("rounded-[14px] border-[#E6EAF2] bg-white text-[#101334] shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)}>{children}</Card>;
 }
 
-function MetricCard({ label, value, helper, icon: Icon, tone }: { label: string; value: string; helper: string; icon: LucideIcon; tone: Tone }) {
+function MetricCard({ label, value, helper, tone }: { label: string; value: string; helper: string; icon?: LucideIcon; tone: Tone }) {
   const style = toneStyles[tone];
   return (
-    <Panel className="overflow-hidden">
-      <CardContent className="flex min-h-[98px] items-center gap-4 p-4">
-        <span className="min-w-0">
-          <span className="block text-[12px] font-extrabold text-[#5F6B94]">{label}</span>
-          <span className="mt-1 block text-[26px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</span>
-          <span className="mt-2 block text-[11px] font-black text-[#047857]">• {helper}</span>
-        </span>
-      </CardContent>
-    </Panel>
+    <div className="min-h-[104px] rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${style.rgb},0.11), rgba(${style.rgb},0.02) 60%)` }}>
+      <p className="text-[11px] font-black uppercase tracking-[0.06em]" style={{ color: style.color }}>{label}</p>
+      {/* Long values (a schedule) step down so they never overflow the card. */}
+      <p className={cn("mt-2 font-black leading-none tracking-[-0.03em] text-[#101334]", value.length > 10 ? "text-[18px] leading-tight" : "text-[30px]")}>{value}</p>
+      <p className="mt-2 text-[11px] font-bold text-[#5A6478]">{helper}</p>
+    </div>
   );
 }
 
@@ -227,6 +225,7 @@ function ConnectorCard({ source, selected, onSelect, onToggle, onDelete, onSync 
   return (
     <div onClick={() => onSelect(source)} className={cn("group cursor-pointer rounded-[13px] border bg-white p-4 text-left transition hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(16,24,40,0.08)] focus-within:ring-2 focus-within:ring-[#465FFF]/30", selected ? "border-[#465FFF] shadow-sm" : "border-[#E8ECF5]")}> 
       <div className="flex items-start justify-between gap-3">
+        <span className="flex size-10 items-center justify-center rounded-[11px] bg-[#F4F6FC]"><PlatformIcon platform={source.category.toLowerCase()} className="size-6" /></span>
         <div className="flex items-center gap-2">
           {onSync && (
             <button
@@ -251,7 +250,7 @@ function ConnectorCard({ source, selected, onSelect, onToggle, onDelete, onSync 
           <span className={cn("max-w-[170px] truncate rounded-full px-2.5 py-1 text-[9px] font-black", STATUS_BADGE[source.statusTone])} title={source.status}>{source.status}</span>
         </div>
       </div>
-      <h3 className="mt-3 text-[13px] font-black text-[#101334]">
+      <h3 className="mt-3 text-[15px] font-black text-[#101334]">
         <button type="button" aria-pressed={selected} onClick={(e) => { e.stopPropagation(); onSelect(source); }} className="text-left focus:outline-none">{source.name}</button>
       </h3>
       <p className="mt-1 flex items-center gap-1.5 text-[10px] font-bold text-[#5F6B94]">

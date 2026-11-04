@@ -132,21 +132,14 @@ function Panel({ children, className, ...props }: ComponentPropsWithoutRef<"sect
   );
 }
 
-function MetricCard({ label, value, helper, icon: Icon, tone }: { label: string; value: string; helper: string; icon: LucideIcon; tone: Tone }) {
+function MetricCard({ label, value, helper, tone }: { label: string; value: string; helper: string; icon?: LucideIcon; tone: Tone }) {
   const style = toneStyles[tone];
-  const isTrend = helper.startsWith("▲") || helper.startsWith("▼");
-
   return (
-    <Panel className="flex min-h-[88px] items-center gap-3.5 p-4 overflow-hidden">
-      <div className="min-w-0">
-        <span className="block text-[10px] font-extrabold text-[#5F6B94]">{label}</span>
-        <span className="mt-0.5 block text-[24px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</span>
-        <span className={cn("mt-1.5 flex items-center gap-1 text-[10px] font-black", isTrend ? "text-[#047857]" : "text-[#58648C]")}>
-          {isTrend && <span className="h-1 w-1 rounded-full bg-[#10B981]" />}
-          {helper}
-        </span>
-      </div>
-    </Panel>
+    <div className="min-h-[104px] rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${style.rgb},0.11), rgba(${style.rgb},0.02) 60%)` }}>
+      <p className="text-[11px] font-black uppercase tracking-[0.06em]" style={{ color: style.color }}>{label}</p>
+      <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</p>
+      <p className="mt-2 text-[11px] font-bold text-[#5A6478]">{helper}</p>
+    </div>
   );
 }
 

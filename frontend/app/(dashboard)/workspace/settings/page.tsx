@@ -588,6 +588,9 @@ export default function SettingsPage() {
                       <option value="Healthcare">{ts("workspaceInfo.industryHealthcare")}</option>
                       <option value="Retail">{ts("workspaceInfo.industryRetail")}</option>
                       <option value="Government">{ts("workspaceInfo.industryGovernment")}</option>
+                      <option value="Banking">{pickL("Banking", "Perbankan")}</option>
+                      {/* A stored industry outside the list (e.g. "Perbankan") stays visible instead of reading as the first option. */}
+                      {industryValue && !["Technology", "Finance", "Healthcare", "Retail", "Government", "Banking"].includes(industryValue) ? <option value={industryValue}>{industryValue}</option> : null}
                     </select>
                     <ChevronDown size={14} className="pointer-events-none absolute right-3 top-3.5 text-[#5F6B94]" />
                   </div>

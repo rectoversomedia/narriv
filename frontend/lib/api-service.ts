@@ -1371,7 +1371,10 @@ export async function getCases(filters: CaseFilters = {}): Promise<{ data: CaseR
 
   const query = params.toString();
   try {
-    return await apiClient<{ data: CaseRecord[]; meta: { page: number; limit: number; total: number; totalPages: number } }>(`/api/workspace/cases${query ? `?${query}` : ""}`);
+    const res = await apiClient<{ data: CaseRecord[]; meta: { page: number; limit: number; total: number; totalPages: number } }>(`/api/workspace/cases${query ? `?${query}` : ""}`);
+    // The list answers created_at / updated_at; the page reads camelCase.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return res ? { ...res, data: (res.data ?? []).map((r: any) => ({ ...r, createdAt: r.createdAt ?? r.created_at, updatedAt: r.updatedAt ?? r.updated_at })) } : res;
   } catch {
     return null;
   }

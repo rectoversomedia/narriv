@@ -141,7 +141,8 @@ function metadataSummary(metadata: ActivityLogEntry["metadata"], t: ActivityTran
   const isId = (key: string, value: unknown) =>
     /(^id$|Id$|_id$)/.test(key) || (typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(value)) || (typeof value === "string" && value.startsWith("demo_"));
   const visibleEntries = Object.entries(metadata)
-    .filter(([key, value]) => !isId(key, value) && value !== null && value !== "")
+    // "demo: true" is a seeding marker, not something that happened.
+    .filter(([key, value]) => !isId(key, value) && value !== null && value !== "" && key !== "demo")
     .slice(0, 3);
 
   if (visibleEntries.length === 0) return t("recordedMetadata");
@@ -219,14 +220,15 @@ export default function ActivityPage() {
       </header>
 
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        {metrics.map((metric) => {
-          const Icon = metric.icon;
+        {metrics.map((metric, index) => {
+          // Each stat gets its own colour wash (blue, green, purple, amber), no outline.
+          const wash = ["70,95,255", "18,166,106", "139,92,255", "245,158,11"][index % 4];
           return (
-            <div key={metric.label} className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+            <div key={metric.label} className="rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${wash},0.11), rgba(${wash},0.02) 60%)` }}>
               <div className="flex items-center gap-3">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">{metric.label}</p>
-                  <p className="mt-1 text-2xl font-black tracking-[-0.04em] text-slate-950">{metric.value.toLocaleString(uiLanguage === "id" ? "id-ID" : "en-US")}</p>
+                  <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{metric.label}</p>
+                  <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-slate-950">{metric.value.toLocaleString(uiLanguage === "id" ? "id-ID" : "en-US")}</p>
                 </div>
               </div>
               <p className="mt-3 text-[11px] font-bold text-[#5A6478]">{metric.helper}</p>

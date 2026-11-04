@@ -18,16 +18,26 @@ const fmtDate = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString
 
 type Step = { icon: typeof Lightbulb; title: string; body: React.ReactNode; done: boolean };
 
-function JourneyStep({ step, last }: { step: Step; last: boolean }) {
-  const Icon = step.icon;
+/** The five steps as a progress row: numbered dots that fill as the journey advances. */
+function JourneyProgress({ steps }: { steps: Step[] }) {
   return (
-    <li className="relative flex gap-3 pb-4">
-      {!last ? <span className="absolute left-[13px] top-7 h-[calc(100%-1.75rem)] w-px bg-[#E3E7F1]" aria-hidden="true" /> : null}
-      <div className="min-w-0 pt-0.5">
-        <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{step.title}</p>
-        <div className="mt-0.5 text-[13px] text-[#31406B]">{step.body}</div>
-      </div>
-    </li>
+    <ol className="grid grid-cols-5 gap-1.5">
+      {steps.map((step, i) => (
+        <li key={step.title} className="min-w-0">
+          <div className={cn("h-2 rounded-full", step.done ? "bg-[#12A66A]" : "bg-[#E3E7F1]")} />
+          <p className={cn("mt-1.5 truncate text-[10px] font-black uppercase tracking-[0.06em]", step.done ? "text-[#047857]" : "text-[#8A93AD]")} title={step.title}>{i + 1}. {step.title}</p>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function Block({ title, children, tint }: { title: string; children: React.ReactNode; tint: string }) {
+  return (
+    <div className="min-w-0 rounded-[12px] p-3.5" style={{ background: tint }}>
+      <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{title}</p>
+      <div className="mt-1 text-[13px] font-semibold leading-snug text-[#101334]">{children}</div>
+    </div>
   );
 }
 
@@ -51,6 +61,7 @@ export default function ActionCenterPage() {
     if ((MONITORING_PERIODS as readonly number[]).includes(h)) setHours(h as MonitoringPeriod);
   }, []);
 
+  const L = (en: string, id: string) => (intlLocale().startsWith("id") ? id : en);
   const query = useQuery({ queryKey: ["executive-overview", hours], queryFn: () => getExecutiveOverview(hours), staleTime: 60 * 1000 });
   const refresh = () => void queryClient.invalidateQueries({ queryKey: ["executive-overview"] });
   const data = query.data;
@@ -140,15 +151,29 @@ export default function ActionCenterPage() {
         </div>
       </div>
 
-      {/* How the three action features relate. */}
-      <div className="grid gap-3 md:grid-cols-3">
-        {(["recommendations", "plans", "cases"] as const).map((k) => (
-          <div key={k} className="rounded-[12px] border border-[#E8ECF5] bg-white p-4">
-            <p className="text-[12px] font-black text-[#101334]">{t(`explain.${k}Title`)}</p>
-            <p className="mt-1 text-[12px] leading-relaxed text-[#5A6478]">{t(`explain.${k}Body`)}</p>
+      {/* The period in four numbers: how many recommendations, and where they stand. */}
+      {data && data.actions.length > 0 ? (() => {
+        const all = data.actions.map((a) => stepsFor(a));
+        const pending = all.filter((st) => !st[2].done).length;
+        const done = all.filter((st) => st[4].done).length;
+        const tiles = [
+          { label: L("Recommendations", "Rekomendasi"), value: all.length, sub: L("from the evidence", "dari bukti"), rgb: "70,95,255", color: "#3B52F5" },
+          { label: L("Waiting for a decision", "Menunggu keputusan"), value: pending, sub: pending > 0 ? L("decide first", "putuskan dulu") : L("none", "tidak ada"), rgb: pending > 0 ? "229,72,77" : "100,116,139", color: pending > 0 ? "#C81E1E" : "#5A6478" },
+          { label: L("In follow-up", "Sedang ditindaklanjuti"), value: all.length - pending - done, sub: L("plans or cases open", "rencana atau kasus berjalan"), rgb: "245,158,11", color: "#A04606" },
+          { label: L("Done", "Selesai"), value: done, sub: L("outcome recorded", "hasil tercatat"), rgb: "18,166,106", color: "#047857" },
+        ];
+        return (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {tiles.map((tile) => (
+              <div key={tile.label} className="rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${tile.rgb},0.11), rgba(${tile.rgb},0.02) 60%)` }}>
+                <p className="text-[11px] font-black uppercase tracking-[0.06em]" style={{ color: tile.color }}>{tile.label}</p>
+                <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-[#101334]">{tile.value}</p>
+                <p className="mt-2 text-[11px] font-bold text-[#5A6478]">{tile.sub}</p>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        );
+      })() : null}
 
       {query.isLoading ? (
         <div className="space-y-3"><Skeleton className="h-40 w-full rounded-xl" /><Skeleton className="h-40 w-full rounded-xl" /></div>
@@ -163,12 +188,31 @@ export default function ActionCenterPage() {
           {data.actions.map((a, i) => {
             const steps = stepsFor(a);
             return (
-              <li key={`${a.action}-${i}`} className="rounded-[14px] border border-[#E8ECF5] bg-white p-5">
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                  <h2 className="flex items-center gap-2 text-[15px] font-bold text-[#101334]">{to.has(`a_${a.action}`) ? to(`a_${a.action}`) : a.action}</h2>
-                  {a.unchangedSinceFollowUp ? <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">{to("alreadyHandled")}</span> : null}
+              <li key={`${a.action}-${i}`} className={cn("rounded-[16px] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.05)]", !steps[2].done && "bg-[#FFFAFA]")}>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#101334] text-[14px] font-black text-white">{i + 1}</span>
+                    <div className="min-w-0">
+                      <h2 className="text-[17px] font-black leading-snug tracking-[-0.02em] text-[#101334]">{to.has(`a_${a.action}`) ? to(`a_${a.action}`) : a.action}</h2>
+                      {a.relatedNarrative?.title ? <p className="mt-0.5 text-[12px] font-bold text-[#5A6478]">{L("Issue", "Isu")}: {a.relatedNarrative.title}</p> : null}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-[10px] bg-[#EEF1FF] px-3 py-1 text-center"><b className="block text-[18px] font-black leading-none text-[#101334]">{a.evidenceCount}</b><span className="text-[10px] font-bold text-[#3B52F5]">{L("evidence", "bukti")}</span></span>
+                    {steps[4].done ? <span className="rounded-full bg-[#047857] px-3 py-1 text-[11px] font-black text-white">{L("Done", "Selesai")}</span>
+                      : steps[2].done ? <span className="rounded-full bg-[#F59E0B] px-3 py-1 text-[11px] font-black text-white">{L("In follow-up", "Ditindaklanjuti")}</span>
+                        : <span className="rounded-full bg-[#C81E1E] px-3 py-1 text-[11px] font-black text-white">{L("Needs a decision", "Perlu keputusan")}</span>}
+                  </div>
                 </div>
-                <ol>{steps.map((s, j) => <JourneyStep key={s.title} step={s} last={j === steps.length - 1} />)}</ol>
+                <div className="mt-4"><JourneyProgress steps={steps} /></div>
+                <div className="mt-4 grid gap-3 md:grid-cols-3">
+                  <Block title={steps[0].title} tint="#F4F6FC">{steps[0].body}</Block>
+                  <Block title={steps[1].title} tint="#EEF1FF">{steps[1].body}</Block>
+                  <Block title={steps[2].done ? steps[3].title : steps[2].title} tint={steps[2].done ? "#FFF6E0" : "#FDECEC"}>
+                    {steps[2].done ? steps[3].body : steps[2].body}
+                    {steps[4].done ? <p className="mt-2 text-[12px] font-black text-[#047857]">{steps[4].body}</p> : null}
+                  </Block>
+                </div>
               </li>
             );
           })}
