@@ -185,7 +185,7 @@ function ActionCard({ action, selected, onSelect, t }: { action: ActionItem; sel
     <button
       type="button"
       onClick={() => onSelect(action)}
-      className={cn("w-full rounded-[12px] border border-t-4 bg-white p-4 text-left transition hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(16,24,40,0.08)]", action.status !== "done" && action.priority === "high" ? "border-t-[#DC2626]" : action.status !== "done" && action.priority === "medium" ? "border-t-[#F59E0B]" : "border-t-[#10B981]", selected ? "border-[#465FFF] shadow-sm" : "border-[#EEF1F7]")}
+      className={cn("w-full rounded-[12px] border border-t-4 bg-white p-4 text-left transition hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(16,24,40,0.08)]", selected ? "border-[#465FFF] shadow-sm" : "border-[#EEF1F7]", action.status !== "done" && action.priority === "high" ? "border-t-[#DC2626]" : action.status !== "done" && action.priority === "medium" ? "border-t-[#F59E0B]" : "border-t-[#10B981]")}
     >
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-[13px] font-black leading-5 text-[#101334]">{action.title}</h3>

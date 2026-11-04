@@ -14,6 +14,40 @@ import { logStructured } from "../../lib/logger.js";
 export const DEMO_BRAND = "Bank Arunika";
 const COMPETITORS = ["Bank Seroja", "KoinKu"];
 
+// The demo team. Fictional people with no password (they cannot sign in); they own the demo's alerts,
+// plans and cases so a presentation shows names and roles instead of test accounts.
+export const DEMO_PERSONAS = [
+    { key: "rina", email: "rina.wulandari@demo.narriv.digital", name: "Rina Wulandari", title: "Head of Corporate Communications", role: "owner" },
+    { key: "bayu", email: "bayu.pratama@demo.narriv.digital", name: "Bayu Pratama", title: "PR Manager", role: "admin" },
+    { key: "sari", email: "sari.kusuma@demo.narriv.digital", name: "Sari Kusuma", title: "Social Media Analyst", role: "analyst" },
+    { key: "dimas", email: "dimas.hartono@demo.narriv.digital", name: "Dimas Hartono", title: "Customer Care Lead", role: "analyst" },
+];
+
+/** Make the personas the demo workspace's only members; returns persona key → user id. */
+export async function ensureDemoPersonas(db = defaultDb, ws = DEMO_WORKSPACE_ID) {
+    const ids = {};
+    for (const p of DEMO_PERSONAS) {
+        const { data: existing } = await db.from("users").select("id").eq("email", p.email).maybeSingle();
+        if (existing?.id) {
+            await db.from("users").update({ name: `${p.name} · ${p.title}`, full_name: p.name }).eq("id", existing.id);
+            ids[p.key] = existing.id;
+        } else {
+            const created = await must(db.from("users").insert({ email: p.email, name: `${p.name} · ${p.title}`, full_name: p.name, provider: "demo-persona", email_verified: true, password: null }).select("id").single(), "persona user");
+            ids[p.key] = created.id;
+        }
+    }
+    const personaIds = Object.values(ids);
+    const { data: members } = await db.from("workspace_members").select("id, user_id").eq("workspace_id", ws);
+    const stale = (members || []).filter((m) => !personaIds.includes(m.user_id)).map((m) => m.id);
+    if (stale.length) await must(db.from("workspace_members").delete().in("id", stale), "remove old members");
+    for (const p of DEMO_PERSONAS) {
+        if (!(members || []).some((m) => m.user_id === ids[p.key])) {
+            await must(db.from("workspace_members").insert({ workspace_id: ws, user_id: ids[p.key], role: p.role }), "persona member");
+        }
+    }
+    return ids;
+}
+
 const H = 3600 * 1000;
 const D = 24 * H;
 
@@ -212,9 +246,9 @@ export async function seedDemoWorkspace({ now = new Date(), db = defaultDb, ws =
     const at = (msAgo) => new Date(t0 - msAgo).toISOString();
     await clearDemoWorkspace(db, ws);
 
-    const members = await must(db.from("workspace_members").select("user_id, role").eq("workspace_id", ws), "members");
-    const owner = members.find((m) => m.role === "owner")?.user_id ?? members[0]?.user_id ?? null;
-    const analyst = members.find((m) => m.role === "admin")?.user_id ?? owner;
+    const people = await ensureDemoPersonas(db, ws);
+    const owner = people.rina;
+    const analyst = people.bayu;
 
     // Workspace identity and what it monitors
     await must(db.from("workspace_settings").upsert({ workspace_id: ws, brand_name: DEMO_BRAND, industry: "Perbankan", timezone: "Asia/Jakarta", language: "id" }, { onConflict: "workspace_id" }), "settings");
@@ -295,15 +329,15 @@ export async function seedDemoWorkspace({ now = new Date(), db = defaultDb, ws =
     const ALERTS = [
         { key: "dataleak", title: "Lonjakan isu kebocoran data: Bank Arunika", type: "risk", severity: "critical", status: "open", team: null, to: null, deadlineIn: 2 * H, ago: 5 * H, level: "critical",
           what: "Klaim kebocoran data nasabah menyebar di X dan forum dalam 36 jam terakhir; mayoritas bernada negatif.", why: "Isu keamanan data cepat merusak kepercayaan dan bisa menarik perhatian regulator.", todo: "Siapkan pernyataan sementara dalam 2 jam, minta tim IT memverifikasi klaim, dan tunjuk juru bicara." },
-        { key: "outage", title: "Lonjakan sentimen negatif: Arunika Mobile", type: "risk", severity: "high", status: "acknowledged", team: "Operasional & IT", to: owner, deadlineIn: -3 * H, ago: 30 * H, level: "high",
+        { key: "outage", title: "Lonjakan sentimen negatif: Arunika Mobile", type: "risk", severity: "high", status: "acknowledged", team: "Operasional & IT", to: people.bayu, deadlineIn: -3 * H, ago: 30 * H, level: "high",
           what: "Keluhan login dan transfer gagal di Arunika Mobile naik tajam saat jam sibuk.", why: "Gangguan berulang menurunkan kepercayaan pada layanan digital dan memicu perpindahan ke pesaing.", todo: "Publikasikan status pemulihan, perbarui setiap 2 jam, dan balas keluhan teratas di X." },
         { key: "fees", title: "Keluhan biaya transfer meningkat: Bank Arunika", type: "risk", severity: "medium", status: "open", team: "Layanan Pelanggan", to: null, deadlineIn: 2 * D, ago: 3 * D, level: "medium",
           what: "Keluhan biaya transfer antarbank konsisten tinggi selama sebulan.", why: "Isu harga mudah dibandingkan dengan pesaing dan memengaruhi loyalitas.", todo: "Siapkan FAQ biaya yang jelas dan pertimbangkan promo gratis transfer untuk segmen tertentu." },
-        { key: "competitor", title: "Narasi perbandingan dengan Bank Seroja naik", type: "positioning", severity: "medium", status: "open", team: "Pemasaran", to: analyst, deadlineIn: 4 * D, ago: 2 * D, level: "medium",
+        { key: "competitor", title: "Narasi perbandingan dengan Bank Seroja naik", type: "positioning", severity: "medium", status: "open", team: "Pemasaran", to: people.sari, deadlineIn: 4 * D, ago: 2 * D, level: "medium",
           what: "Konten perbandingan layanan dengan Bank Seroja dan KoinKu bertambah di YouTube dan TikTok.", why: "Perbandingan membentuk persepsi calon nasabah muda.", todo: "Siapkan konten pembanding yang menonjolkan keunggulan promo dan perbaikan stabilitas aplikasi." },
         { key: "umkm", title: "Peluang: respons positif program UMKM", type: "opportunity", severity: "low", status: "open", team: "Komunikasi & PR", to: null, deadlineIn: 7 * D, ago: 1 * D, level: "low",
           what: "Testimoni dan liputan positif program UMKM Naik Kelas terus bertambah.", why: "Momentum positif bisa mengimbangi isu negatif yang sedang berjalan.", todo: "Perkuat dengan cerita pelaku UMKM dan ajak media daerah meliput." },
-        { key: "promo", title: "Keluhan cashback ArunikaPay belum masuk", type: "risk", severity: "low", status: "acknowledged", team: "Layanan Pelanggan", to: analyst, deadlineIn: 1 * D, ago: 2 * D, level: "low",
+        { key: "promo", title: "Keluhan cashback ArunikaPay belum masuk", type: "risk", severity: "low", status: "acknowledged", team: "Layanan Pelanggan", to: people.dimas, deadlineIn: 1 * D, ago: 2 * D, level: "low",
           what: "Sebagian pengguna mengeluhkan cashback promo yang telat masuk.", why: "Promo yang mengecewakan bisa berbalik menjadi sentimen negatif.", todo: "Umumkan jadwal pencairan cashback dan balas keluhan yang belum terjawab." },
         { key: "branch", title: "Antrean cabang Surabaya", type: "risk", severity: "low", status: "resolved", team: "Operasional & IT", to: owner, deadlineIn: -10 * D, ago: 20 * D, level: "low",
           what: "Keluhan antrean panjang di cabang Surabaya.", why: "Pengalaman di cabang memengaruhi persepsi layanan secara umum.", todo: "Tambah loket dan informasikan jam layanan yang lebih sepi." },
@@ -325,16 +359,16 @@ export async function seedDemoWorkspace({ now = new Date(), db = defaultDb, ws =
         { key: "dataleak", type: "crisis_response", title: "Respons krisis: isu kebocoran data", priority: "critical", status: "in_progress", to: owner,
           summary: "Verifikasi klaim, keluarkan pernyataan sementara, dan siapkan Q&A untuk media dan nasabah.",
           steps: ["Keluarkan pernyataan sementara di kanal resmi", "Minta tim IT memverifikasi klaim kebocoran", "Siapkan Q&A untuk call center", "Briefing juru bicara untuk media"] },
-        { key: "outage", type: "social_response", title: "Balasan publik untuk gangguan Arunika Mobile", priority: "high", status: "done", to: analyst,
+        { key: "outage", type: "social_response", title: "Balasan publik untuk gangguan Arunika Mobile", priority: "high", status: "done", to: people.sari,
           summary: "Template balasan dan jadwal pembaruan status selama gangguan.",
           steps: ["Unggah status gangguan di X dan Instagram", "Balas 20 keluhan teratas", "Perbarui status setiap 2 jam", "Umumkan pemulihan dan permintaan maaf"] },
         { key: "outage", type: "stakeholder_update", title: "Kabar untuk direksi: dampak gangguan aplikasi", priority: "high", status: "pending", to: owner,
           summary: "Ringkasan dampak gangguan untuk direksi beserta rencana perbaikan.",
           steps: ["Rangkum volume keluhan dan sentimen", "Jelaskan penyebab dan perbaikan teknis", "Usulkan kompensasi untuk nasabah terdampak"] },
-        { key: "fees", type: "pr_response", title: "Klarifikasi biaya transfer", priority: "medium", status: "blocked", to: analyst,
+        { key: "fees", type: "pr_response", title: "Klarifikasi biaya transfer", priority: "medium", status: "blocked", to: people.bayu,
           summary: "Materi penjelasan biaya transfer yang transparan; menunggu persetujuan tim produk.",
           steps: ["Susun FAQ biaya", "Bandingkan dengan biaya pesaing secara jujur", "Siapkan infografis untuk media sosial"] },
-        { key: "umkm", type: "content_strategy", title: "Seri cerita sukses UMKM Naik Kelas", priority: "medium", status: "in_progress", to: analyst,
+        { key: "umkm", type: "content_strategy", title: "Seri cerita sukses UMKM Naik Kelas", priority: "medium", status: "in_progress", to: people.sari,
           summary: "Seri konten mingguan cerita pelaku UMKM untuk memperkuat narasi positif.",
           steps: ["Pilih 6 pelaku UMKM untuk diliput", "Produksi video pendek", "Jadwalkan unggahan mingguan", "Ajak media daerah meliput"] },
         { key: "literacy", type: "influencer_strategy", title: "Perluas kolaborasi kreator literasi keuangan", priority: "low", status: "pending", to: null,
@@ -361,8 +395,8 @@ export async function seedDemoWorkspace({ now = new Date(), db = defaultDb, ws =
     // Cases
     await chunkedInsert(db, "cases", [
         { title: "Investigasi klaim kebocoran data nasabah", status: "open", priority: "critical", assignee_id: owner, deadline: new Date(t0 + D).toISOString(), signal_id: byNarrative.dataleak?.[0]?.id ?? null, ago: 6 * H },
-        { title: "Akar masalah gangguan Arunika Mobile", status: "in_progress", priority: "high", assignee_id: analyst, deadline: new Date(t0 + 2 * D).toISOString(), signal_id: byNarrative.outage?.[0]?.id ?? null, ago: 2 * D },
-        { title: "Evaluasi struktur biaya transfer", status: "open", priority: "medium", assignee_id: null, deadline: new Date(t0 + 7 * D).toISOString(), signal_id: byNarrative.fees?.[0]?.id ?? null, ago: 4 * D },
+        { title: "Akar masalah gangguan Arunika Mobile", status: "in_progress", priority: "high", assignee_id: people.bayu, deadline: new Date(t0 + 2 * D).toISOString(), signal_id: byNarrative.outage?.[0]?.id ?? null, ago: 2 * D },
+        { title: "Evaluasi struktur biaya transfer", status: "open", priority: "medium", assignee_id: people.dimas, deadline: new Date(t0 + 7 * D).toISOString(), signal_id: byNarrative.fees?.[0]?.id ?? null, ago: 4 * D },
         { title: "Antrean cabang Surabaya", status: "resolved", priority: "low", assignee_id: owner, deadline: new Date(t0 - 10 * D).toISOString(), signal_id: byNarrative.branch?.[0]?.id ?? null, ago: 20 * D, resolution: "Loket ditambah dan jam layanan diperpanjang; keluhan turun." },
     ].map(({ ago, ...c }) => ({ workspace_id: ws, description: null, resolution: null, ...c, created_at: at(ago), updated_at: at(Math.max(0, ago - H)) })));
 
