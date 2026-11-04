@@ -133,7 +133,7 @@ function MapNodeButton({ node, placed, colors, selected, onSelect, signalLabel }
       aria-label={`${node.title}, ${signalLabel(node.signals)}`}
       title={`${node.title} · ${signalLabel(node.signals)}`}
       onClick={() => onSelect(node.id)}
-      className="group absolute rounded-full transition-transform duration-200 hover:scale-[1.05] focus:outline-none"
+      className="group absolute cursor-pointer rounded-full transition-transform duration-200 hover:z-10 hover:scale-[1.07] focus:outline-none"
       style={{ left: placed.x - r, top: placed.y - r, width: d, height: d, zIndex: selected ? 2 : 1 }}
     >
       <span
@@ -156,6 +156,10 @@ function MapNodeButton({ node, placed, colors, selected, onSelect, signalLabel }
             </span>
           ) : null}
         </span>
+      </span>
+      {/* Hover hint: a click opens the issue's full analysis. */}
+      <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#101334] px-2.5 py-1 text-[10px] font-black text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+        {pickL("Click for details", "Klik untuk detail")}
       </span>
     </button>
   );

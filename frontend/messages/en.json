@@ -1712,7 +1712,7 @@
       "neg": "Negative",
       "weak": "Some",
       "strong": "Most",
-      "tip": "Select a narrative to see its evidence and details.",
+      "tip": "Click a bubble to open the issue's full analysis.",
       "expandMap": "Expand map",
       "filterAll": "All Sentiments",
       "high": "More signals",

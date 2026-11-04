@@ -365,12 +365,15 @@ export default function OnboardingPage() {
             {step === "processing" ? 5 : step} of 5
           </span>
           <div className="h-6 w-px bg-[#D6DDEC]" />
-          <button
-            type="button"
+          {/* Opens the help page in a new tab so the onboarding progress stays here. */}
+          <a
+            href="/help#contact"
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex h-9 items-center gap-2 rounded-full border border-[#D6DDEC] bg-white px-4 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#465FFF] hover:text-[#3B52F5]"
           >
             Need help?
-          </button>
+          </a>
         </div>
       </header>
 

@@ -88,9 +88,9 @@ function buildMemberRows(records: WorkspaceMemberRecord[], labels: { defaultName
 }
 
 // Custom Panel Component
-function Panel({ children, className }: { children: ReactNode; className?: string }) {
+function Panel({ children, className, id }: { children: ReactNode; className?: string; id?: string }) {
   return (
-    <section className={cn("rounded-[16px] bg-white p-6 shadow-[0_2px_12px_rgba(16,24,40,0.05)]", className)}>
+    <section id={id} className={cn("scroll-mt-24 rounded-[16px] bg-white p-6 shadow-[0_2px_12px_rgba(16,24,40,0.05)]", className)}>
       {children}
     </section>
   );
@@ -731,7 +731,7 @@ export default function SettingsPage() {
 
       {/* Row 2: notifications, where integrations and data live, account security. Every control here saves. */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Panel className="flex flex-col gap-4.5">
+        <Panel id="notifications" className="flex flex-col gap-4.5">
           <div className="flex items-start gap-3">
             <div>
               <h3 className="text-[13.5px] font-black text-[#101334]">{ts("notifications.title")}</h3>

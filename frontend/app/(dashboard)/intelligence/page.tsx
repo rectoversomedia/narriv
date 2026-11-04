@@ -319,7 +319,7 @@ function NarrativeInsight({ clusters, emergingCount, language, onOpen, onPlan, o
   language: "en" | "id";
   onOpen: (id: string) => void;
   onPlan: (id: string) => void;
-  onReport: () => void;
+  onReport: (id: string) => void;
 }) {
   const L = (en: string, id: string) => (language === "id" ? id : en);
   const live = clusters.filter((c) => c.id !== "empty");
@@ -407,7 +407,7 @@ function NarrativeInsight({ clusters, emergingCount, language, onOpen, onPlan, o
               : L(`Next step: amplify "${name(top)}" while it is positive.`, `Langkah berikutnya: perkuat "${name(top)}" selagi positif.`)}
           </p>
           <button type="button" onClick={() => onPlan((risk || top).id)} className="h-9 rounded-[10px] bg-white px-4 text-[12px] font-black text-[#101334] transition hover:bg-[#EEF1FF]">{L("Create plan", "Buat rencana")}</button>
-          <button type="button" onClick={onReport} className="h-9 rounded-[10px] bg-white/10 px-4 text-[12px] font-black text-white transition hover:bg-white/20">{L("Full report", "Laporan lengkap")}</button>
+          <button type="button" onClick={() => onReport((risk || top).id)} className="h-9 rounded-[10px] bg-white/10 px-4 text-[12px] font-black text-white transition hover:bg-white/20">{L("See the analysis", "Lihat analisis")}</button>
         </div>
       </CardContent>
     </Panel>
@@ -838,7 +838,7 @@ export default function IntelligencePage() {
                     memberSignalIds: cluster.memberSignalIds,
                   }))}
                   selectedId={selectedCluster.id === "empty" ? null : selectedCluster.id}
-                  onSelect={(id) => setSelectedClusterId(id)}
+                  onSelect={(id) => { setSelectedClusterId(id); setIsAnalysisOpen(true); }}
                   zoom={mapZoom}
                   signalLabel={(count) => ti("labels.signals", { count: formatSignals(count) })}
                 />
@@ -889,7 +889,7 @@ export default function IntelligencePage() {
               language={language}
               onOpen={(id) => setSelectedClusterId(id)}
               onPlan={(id) => { setSelectedClusterId(id); setIsPlanResponseOpen(true); }}
-              onReport={() => router.push("/reports")}
+              onReport={(id) => { setSelectedClusterId(id); setIsAnalysisOpen(true); }}
             />
 
             <Panel>
