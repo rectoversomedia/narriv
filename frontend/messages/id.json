@@ -3030,7 +3030,7 @@
         "channels": "Slack, Microsoft Teams & webhook",
         "channelsDesc": "Kirim peringatan ke kanal tim lewat halaman Integrasi",
         "integrations": "Integrasi",
-        "integrationsDesc": "Slack, Microsoft Teams, dan webhook",
+        "integrationsDesc": "Slack, Teams, Google Chat, WhatsApp, webhook",
         "sources": "Sumber Data",
         "sourcesDesc": "Konektor dan kesehatan pengambilan data",
         "exports": "Ekspor Laporan",

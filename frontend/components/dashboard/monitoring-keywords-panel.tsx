@@ -85,11 +85,14 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
   const keywords = keywordsQuery.data?.data ?? [];
 
   return (
-    <section id="keywords" className={cn("scroll-mt-24 rounded-[14px] border border-[#DDE3EF] bg-white p-6 shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)}>
+    <section id="keywords" className={cn("scroll-mt-24 rounded-[16px] bg-white p-6 shadow-[0_2px_12px_rgba(16,24,40,0.05)]", className)}>
       <div className="flex items-start gap-3">
         <div className="min-w-0">
-          <h3 className="text-[13.5px] font-black text-[#101334]">{t("title")}</h3>
-          {keywordsQuery.data?.note ? <p className="mt-1 text-[10px] font-semibold text-[#5A6478]">{keywordsQuery.data.note}</p> : null}
+          <h3 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{t("title")}</h3>
+          {/* One plain sentence instead of the scheduler's internal limits. */}
+          <p className="mt-0.5 text-[12px] font-bold text-[#5A6478]">
+            {pickL(`${(keywordsQuery.data?.data ?? []).filter((k) => k.isActive).length} active keywords, collected every day at 07:00 WIB.`, `${(keywordsQuery.data?.data ?? []).filter((k) => k.isActive).length} kata kunci aktif, diambil setiap hari pukul 07.00 WIB.`)}
+          </p>
         </div>
       </div>
 
@@ -127,7 +130,7 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
               </button>
             </form>
           ) : (
-            <p className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[10.5px] font-semibold text-[#5A6478]">{t("readOnly")}</p>
+            <p className="mt-4 rounded-[10px] bg-[#F4F6FC] px-3 py-2 text-[11px] font-semibold text-[#5A6478]">{t("readOnly")}</p>
           )}
 
           {keywords.length === 0 ? (

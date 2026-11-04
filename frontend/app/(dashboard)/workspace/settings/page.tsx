@@ -16,8 +16,6 @@ import { useWorkspaceStore } from "@/store/useWorkspaceStore";
 import { MonitoringKeywordsPanel } from "@/components/dashboard/monitoring-keywords-panel";
 import { UpgradeModal } from "@/components/dashboard/UpgradeModal";
 import { Field, ModalShell, inputClass, primaryButtonClass, secondaryButtonClass } from "@/components/ui/modal-shell";
-import { AiProvidersPanel } from "@/components/dashboard/ai-providers-panel";
-import { PlatformCollectionPanel } from "@/components/dashboard/platform-collection-panel";
 import { pickL, useL } from "@/lib/use-l";
 
 type TeamMember = {
@@ -727,9 +725,7 @@ export default function SettingsPage() {
 
       <MonitoringKeywordsPanel />
 
-      <PlatformCollectionPanel />
 
-      <AiProvidersPanel />
 
       {/* Row 2: notifications, where integrations and data live, account security. Every control here saves. */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -747,26 +743,14 @@ export default function SettingsPage() {
               </div>
               <Switch label={ts("notifications.emailAlerts")} checked={notifEmailValue} onChange={toggleEmail} disabled={notificationMutation.isPending} />
             </div>
-            {/* WhatsApp is delivered through the WhatsApp Business API on the Integrations page. */}
+            {/* WhatsApp, Slack, Teams and Google Chat are all set up on the Integrations page. */}
             <Link href="/workspace/integrations" className="flex items-center justify-between rounded-[10px] bg-[#E9FBF0] px-3 py-2.5 transition hover:bg-[#DDF7E7]">
               <span>
-                <span className="block text-[11px] font-black text-[#101334]">{ts("notifications.whatsappAlerts")}</span>
-                <span className="block text-[9.5px] font-semibold text-[#047857]">{L("Set up in Integrations, with Slack, Teams and Google Chat", "Atur di Integrasi, bersama Slack, Teams, dan Google Chat")}</span>
+                <span className="block text-[11px] font-black text-[#101334]">{L("WhatsApp, Slack, Teams & Google Chat", "WhatsApp, Slack, Teams & Google Chat")}</span>
+                <span className="block text-[9.5px] font-semibold text-[#047857]">{L("Send alerts to your team's chat, set up in Integrations", "Kirim peringatan ke chat tim, atur di Integrasi")}</span>
               </span>
               <ArrowRight size={13} className="text-[#047857]" />
             </Link>
-          </div>
-          <div className="border-t border-slate-100 pt-2">
-              <Link href="/workspace/integrations" className="flex w-full items-center justify-between rounded-lg p-2.5 text-left transition hover:bg-slate-50">
-                <span className="flex items-center gap-3">
-                  <span className="text-[#5F6B94]"><Webhook size={16} /></span>
-                  <span>
-                    <span className="block text-[11px] font-black text-[#101334]">{ts("related.channels")}</span>
-                    <span className="block text-[9px] text-[#5A6478] font-semibold">{ts("related.channelsDesc")}</span>
-                  </span>
-                </span>
-                <ArrowRight size={13} className="text-[#5A6478]" />
-              </Link>
           </div>
         </Panel>
 

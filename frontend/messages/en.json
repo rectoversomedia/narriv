@@ -3030,7 +3030,7 @@
         "channels": "Slack, Microsoft Teams & webhooks",
         "channelsDesc": "Send alerts to team channels from the Integrations page",
         "integrations": "Integrations",
-        "integrationsDesc": "Slack, Microsoft Teams and webhooks",
+        "integrationsDesc": "Slack, Teams, Google Chat, WhatsApp, webhooks",
         "sources": "Data Sources",
         "sourcesDesc": "Connectors and collection health",
         "exports": "Report Exports",
