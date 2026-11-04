@@ -1,26 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import Image from "next/image";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { ArrowRight, Bell, ChevronDown, Clock3, Database, Grid3X3, KeyRound, List, Newspaper, Play, RefreshCw, RotateCw, Trash2, Webhook, Zap, Check, type LucideIcon } from "lucide-react";
+import { Database, Newspaper, RotateCw, Trash2 } from "lucide-react";
 import { SiDiscourse, SiShopee } from "react-icons/si";
 import { Facebook, Google, Instagram, Spotify, ThreadsDark, TikTokDark, XDark, YouTube } from "@ridemountainpig/svgl-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { AddSourceModal } from "@/components/dashboard/add-source-modal";
-import { bootstrapDefaultSources, getSources, updateSource, deleteSource, runBatchSourceIngestion, startPlatformCollection, getSourceHealth, getSourceCoverage, fetchLatestSignals, type SourceRecord, type SourceHealthResponse, type SourceHealthSummary, type ConnectorStatus } from "@/lib/api-service";
+import { bootstrapDefaultSources, getSources, updateSource, deleteSource, runBatchSourceIngestion, startPlatformCollection, getSourceHealth, getSourceCoverage, fetchLatestSignals, type SourceRecord, type SourceHealthResponse, type ConnectorStatus } from "@/lib/api-service";
 import { usePlatformCollections } from "@/components/dashboard/platform-collection-panel";
-import { PipelineHealthPanel } from "@/components/dashboard/pipeline-health-panel";
+import { getPipelineStatus, timeAgo } from "@/lib/intelligence-api";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { intlLocale } from "@/store/useUiStore";
-import { readableTone } from "@/lib/readable-tone";
 import { DemoBanner } from "@/components/ui/demo-banner";
 import { pickL } from "@/lib/use-l";
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate" | "pink" | "black" | "orange";
@@ -39,6 +37,7 @@ type Connector = {
   icon: SourceIcon;
   spark: number[];
   targetKeyword?: string;
+  platform: string;
 };
 
 type SourceIcon = ComponentType<{ className?: string }>;
@@ -55,34 +54,17 @@ const STATUS_VIEW: Record<ConnectorStatus, { key: string; tone: StatusTone }> = 
   paused: { key: "statusPaused", tone: "warn" },
 };
 const STATUS_BADGE: Record<StatusTone, string> = {
-  ok: "bg-[#10B981]/12 text-[#047857]",
-  neutral: "bg-slate-100 text-[#5A6478]",
-  info: "bg-[#465FFF]/10 text-[#3B52F5]",
-  warn: "bg-[#F59E0B]/12 text-[#A04606]",
-  error: "bg-[#FF1D1D]/10 text-[#C81E1E]",
+  ok: "bg-[#E5F6EE] text-[#047857]",
+  neutral: "bg-[#EEF1F6] text-[#5A6478]",
+  info: "bg-[#EEF1FF] text-[#3B52F5]",
+  warn: "bg-[#FFF3DC] text-[#A04606]",
+  error: "bg-[#C81E1E] text-white",
 };
 // Collection failure codes reported by the backend; text lives in Sources.errors.
 const ERROR_CODES = ["authentication_failed", "billing_or_quota", "actor_not_rented", "permission_denied", "actor_not_found", "rate_limited", "provider_unavailable", "timeout", "actor_run_failed", "run_not_found", "persist_failed", "request_failed"];
 const errorReason = (t: (key: string) => string, code: string | null | undefined) =>
   !code ? t("errors.unknown") : ERROR_CODES.includes(code) ? t(`errors.${code}`) : code;
 
-type ToneStyle = {
-  color: string;
-  rgb: string;
-  bg: string;
-};
-
-const toneStyles: Record<Tone, ToneStyle> = {
-  blue: { color: "#465FFF", rgb: "70,95,255", bg: "bg-[#465FFF]/10 text-[#3B52F5]" },
-  purple: { color: "#8B5CFF", rgb: "139,92,255", bg: "bg-[#8B5CFF]/10 text-[#6E44E8]" },
-  green: { color: "#10B981", rgb: "16,185,129", bg: "bg-[#10B981]/10 text-[#047857]" },
-  red: { color: "#FF1D1D", rgb: "255,29,29", bg: "bg-[#FF1D1D]/10 text-[#FF1D1D]" },
-  amber: { color: "#F59E0B", rgb: "245,158,11", bg: "bg-[#F59E0B]/10 text-[#A04606]" },
-  slate: { color: "#64748B", rgb: "100,116,139", bg: "bg-slate-100 text-[#5A6478]" },
-  pink: { color: "#E1306C", rgb: "225,48,108", bg: "bg-[#E1306C]/10 text-[#E1306C]" },
-  black: { color: "#111827", rgb: "17,24,39", bg: "bg-[#111827] text-white" },
-  orange: { color: "#F97316", rgb: "249,115,22", bg: "bg-[#F97316]/10 text-[#F97316]" },
-};
 
 function formatSourceTime(value?: string) {
   if (!value) return "-";
@@ -192,359 +174,94 @@ function buildApiConnectors(sources: SourceRecord[], health: SourceHealthRespons
       icon: sourceIconForSource(source),
       spark: stableSpark(source.id),
       targetKeyword,
+      platform: type.toLowerCase() === "x" ? "twitter" : type.toLowerCase(),
     };
   });
-}
-
-function Panel({ children, className }: { children: ReactNode; className?: string }) {
-  return <Card className={cn("rounded-[14px] border-[#E6EAF2] bg-white text-[#101334] shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)}>{children}</Card>;
-}
-
-function MetricCard({ label, value, helper, tone }: { label: string; value: string; helper: string; icon?: LucideIcon; tone: Tone }) {
-  const style = toneStyles[tone];
-  return (
-    <div className="min-h-[104px] rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${style.rgb},0.11), rgba(${style.rgb},0.02) 60%)` }}>
-      <p className="text-[11px] font-black uppercase tracking-[0.06em]" style={{ color: style.color }}>{label}</p>
-      {/* Long values (a schedule) step down so they never overflow the card. */}
-      <p className={cn("mt-2 font-black leading-none tracking-[-0.03em] text-[#101334]", value.length > 10 ? "text-[18px] leading-tight" : "text-[30px]")}>{value}</p>
-      <p className="mt-2 text-[11px] font-bold text-[#5A6478]">{helper}</p>
-    </div>
-  );
-}
-
-function Toggle({ active }: { active: boolean }) {
-  return <span className={cn("relative inline-block h-5 w-9 shrink-0 align-middle rounded-full transition", active ? "bg-[#465FFF]" : "bg-[#CBD5E1]")}><span className={cn("absolute top-0.5 size-4 rounded-full bg-white shadow transition", active ? "left-4" : "left-0.5")} /></span>;
-}
-
-function ConnectorCard({ source, selected, onSelect, onToggle, onDelete, onSync }: { source: Connector; selected: boolean; onSelect: (source: Connector) => void; onToggle?: (source: Connector) => void; onDelete?: (source: Connector) => void; onSync?: (source: Connector) => void }) {
-  const t = useTranslations("Sources");
-  const style = toneStyles[source.tone];
-  const Icon = source.icon;
-  // The card is clickable for mouse users; keyboard users select via the name
-  // button, so the card's own controls are not nested inside a button.
-  return (
-    <div onClick={() => onSelect(source)} className={cn("group cursor-pointer rounded-[13px] border bg-white p-4 text-left transition hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(16,24,40,0.08)] focus-within:ring-2 focus-within:ring-[#465FFF]/30", selected ? "border-[#465FFF] shadow-sm" : "border-[#E8ECF5]")}> 
-      <div className="flex items-start justify-between gap-3">
-        <span className="flex size-10 items-center justify-center rounded-[11px] bg-[#F4F6FC]"><PlatformIcon platform={source.category.toLowerCase()} className="size-6" /></span>
-        <div className="flex items-center gap-2">
-          {onSync && (
-            <button
-              type="button"
-              aria-label={pickL("Sync source", "Sinkronkan sumber")}
-              onClick={(e) => { e.stopPropagation(); onSync(source); }}
-              className="flex size-7 items-center justify-center rounded-full text-slate-300 opacity-0 transition hover:bg-blue-50 hover:text-blue-600 focus:opacity-100 group-hover:opacity-100"
-            >
-              <RotateCw size={13} />
-            </button>
-          )}
-          {onDelete && (
-            <button
-              type="button"
-              aria-label={pickL("Delete source", "Hapus sumber")}
-              onClick={(e) => { e.stopPropagation(); onDelete(source); }}
-              className="flex size-7 items-center justify-center rounded-full text-slate-300 opacity-0 transition hover:bg-rose-50 hover:text-rose-600 focus:opacity-100 group-hover:opacity-100"
-            >
-              <Trash2 size={13} />
-            </button>
-          )}
-          <span className={cn("max-w-[170px] truncate rounded-full px-2.5 py-1 text-[9px] font-black", STATUS_BADGE[source.statusTone])} title={source.status}>{source.status}</span>
-        </div>
-      </div>
-      <h3 className="mt-3 text-[15px] font-black text-[#101334]">
-        <button type="button" aria-pressed={selected} onClick={(e) => { e.stopPropagation(); onSelect(source); }} className="text-left focus:outline-none">{source.name}</button>
-      </h3>
-      <p className="mt-1 flex items-center gap-1.5 text-[10px] font-bold text-[#5F6B94]">
-        {source.category}
-        {source.targetKeyword && (
-          <>
-            <span>•</span>
-            <span className="truncate text-[#53608C]">&quot;{source.targetKeyword}&quot;</span>
-          </>
-        )}
-      </p>
-      <div className="mt-4 grid grid-cols-2 gap-3 text-[11px] font-bold text-[#5F6B94]"><span>{t("lastSuccess")}<br /><b className="text-[14px] text-[#101334]">{source.health}</b></span><span>{t("documents")}<br /><b className="text-[14px] text-[#101334]">{source.signals}</b></span></div>
-      {/* No per-source time series is stored, so no trend line is drawn. */}
-      <div className="mt-3 flex items-center justify-between gap-3 text-[10px] font-bold text-[#5F6B94]"><span>{pickL("Last sync", "Sinkron terakhir")}</span><span>{source.lastSync}</span><button type="button" role="switch" aria-checked={source.active} aria-label={pickL(`Collect from ${source.name}`, `Ambil data dari ${source.name}`)} onClick={(e) => { e.stopPropagation(); onToggle?.(source); }} className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/40"><Toggle active={source.active} /></button></div>
-    </div>
-  );
-}
-
-function ConnectorListRow({ source, selected, onSelect, onToggle, onDelete, onSync }: { source: Connector; selected: boolean; onSelect: (source: Connector) => void; onToggle?: (source: Connector) => void; onDelete?: (source: Connector) => void; onSync?: (source: Connector) => void }) {
-  const t = useTranslations("Sources");
-  const style = toneStyles[source.tone];
-  const Icon = source.icon;
-  return (
-    <div
-      onClick={() => onSelect(source)}
-      className={cn(
-        "group grid cursor-pointer grid-cols-[minmax(0,1fr)_120px_120px_140px_120px_auto] items-center gap-4 rounded-[12px] border bg-white px-4 py-3 text-left transition hover:border-[#CBD5E1] focus-within:ring-2 focus-within:ring-[#465FFF]/30",
-        selected ? "border-[#465FFF] shadow-sm" : "border-[#E8ECF5]"
-      )}
-    >
-      <div className="flex min-w-0 items-center gap-3">
-        <div className="min-w-0">
-          <button type="button" aria-pressed={selected} onClick={(e) => { e.stopPropagation(); onSelect(source); }} className="block max-w-full truncate text-left text-[13px] font-black text-[#101334] focus:outline-none">{source.name}</button>
-          <p className="mt-0.5 flex items-center gap-1.5 truncate text-[10px] font-bold text-[#5F6B94]">
-            <span>{source.category}</span>
-            {source.targetKeyword && (
-              <>
-                <span>•</span>
-                <span className="truncate text-[#53608C]">&quot;{source.targetKeyword}&quot;</span>
-              </>
-            )}
-          </p>
-        </div>
-      </div>
-      <div className="text-[12px] font-bold text-[#53608C]">
-        <span className="block text-[10px] uppercase tracking-wide text-[#647099]">{t("lastSuccess")}</span>
-        <span className="text-[14px] font-black text-[#101334]">{source.health}</span>
-      </div>
-      <div className="text-[12px] font-bold text-[#53608C]">
-        <span className="block text-[10px] uppercase tracking-wide text-[#647099]">{t("documents")}</span>
-        <span className="text-[14px] font-black text-[#101334]">{source.signals}</span>
-      </div>
-      <div className="text-[12px] font-bold text-[#53608C]">
-        <span className="block text-[10px] uppercase tracking-wide text-[#647099]">{pickL("Last sync", "Sinkron terakhir")}</span>
-        <span className="text-[12px] font-black text-[#101334]">{source.lastSync}</span>
-      </div>
-      <span className={cn("truncate rounded-full px-2.5 py-1 text-center text-[9px] font-black", STATUS_BADGE[source.statusTone])} title={source.status}>{source.status}</span>
-      <div className="flex items-center gap-2">
-        {onSync && (
-          <button
-            type="button"
-            aria-label={pickL("Sync source", "Sinkronkan sumber")}
-            onClick={(e) => { e.stopPropagation(); onSync(source); }}
-            className="flex size-7 items-center justify-center rounded-full text-slate-300 opacity-0 transition hover:bg-blue-50 hover:text-blue-600 focus:opacity-100 group-hover:opacity-100"
-          >
-            <RotateCw size={13} />
-          </button>
-        )}
-        {onDelete && (
-          <button
-            type="button"
-            aria-label={pickL("Delete source", "Hapus sumber")}
-            onClick={(e) => { e.stopPropagation(); onDelete(source); }}
-            className="flex size-7 items-center justify-center rounded-full text-slate-300 opacity-0 transition hover:bg-rose-50 hover:text-rose-600 focus:opacity-100 group-hover:opacity-100"
-          >
-            <Trash2 size={13} />
-          </button>
-        )}
-        <button
-          type="button"
-          role="switch"
-          aria-checked={source.active}
-          aria-label={pickL(`Collect from ${source.name}`, `Ambil data dari ${source.name}`)}
-          onClick={(e) => { e.stopPropagation(); onToggle?.(source); }}
-          className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/40"
-        >
-          <Toggle active={source.active} />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-const ALL_CATEGORIES = "All";
-
-function CategoryFilterDropdown({ value, options, onChange, label }: { value: string; options: string[]; onChange: (value: string) => void; label: string }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handleClick = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-    const handleKey = (event: globalThis.KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", handleClick);
-    document.addEventListener("keydown", handleKey);
-    return () => {
-      document.removeEventListener("mousedown", handleClick);
-      document.removeEventListener("keydown", handleKey);
-    };
-  }, [open]);
-
-  const currentLabel = value === ALL_CATEGORIES ? label : value;
-
-  return (
-    <div ref={ref} className="relative flex-1 sm:flex-none">
-      <button
-        type="button"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        onClick={() => setOpen((prev) => !prev)}
-        className={cn(
-          "flex h-9 w-full items-center justify-between gap-2 rounded-[8px] border px-4 text-[12px] font-black transition sm:w-auto sm:min-w-[160px]",
-          open ? "border-[#465FFF] bg-white text-[#101334]" : "border-[#DDE3EF] bg-white text-[#101334] hover:border-[#CBD5E1]"
-        )}
-      >
-        <span className="truncate">{currentLabel}</span>
-        <ChevronDown size={13} className={cn("text-[#647099] transition", open && "rotate-180")} />
-      </button>
-      {open && (
-        <ul
-          role="listbox"
-          className="absolute right-0 z-30 mt-2 w-[220px] overflow-hidden rounded-[10px] border border-[#E5E9F3] bg-white py-1 shadow-[0_18px_42px_rgba(16,24,40,0.12)]"
-        >
-          {options.map((option) => {
-            const isActive = option === value;
-            return (
-              <li key={option}>
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={isActive}
-                  onClick={() => { onChange(option); setOpen(false); }}
-                  className={cn(
-                    "flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[12px] font-bold transition",
-                    isActive ? "bg-[#F4F6FF] text-[#101334]" : "text-[#53608C] hover:bg-[#F5F7FC]"
-                  )}
-                >
-                  <span className="truncate">{option === ALL_CATEGORIES ? label : option}</span>
-                  {isActive && <Check size={12} className="shrink-0 text-[#3B52F5]" />}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-function HealthDonut({ total }: { total: number }) {
-  if (total === 0) {
-    return (
-      <div className="flex size-[128px] shrink-0 items-center justify-center rounded-full border-2 border-dashed border-[#E5E9F3] bg-[#F8FAFF]">
-        <div className="text-center">
-          <p className="mt-2 text-[10px] font-bold text-[#647099]">No data</p>
-        </div>
-      </div>
-    );
-  }
-  return (
-    <div className="chart-donut-enter relative flex size-[128px] shrink-0 items-center justify-center rounded-full bg-[conic-gradient(#10B981_0_83%,#F59E0B_83%_96%,#EF4444_96%_100%)]">
-      <span className="absolute size-[86px] rounded-full bg-white" />
-      <span className="relative text-center"><b className="block text-[26px] font-black text-[#101334]">{total}</b><span className="text-[10px] font-bold text-[#5F6B94]">Total</span></span>
-    </div>
-  );
-}
-
-function DistributionDonut({ total }: { total: number }) {
-  if (total === 0) {
-    return (
-      <div className="flex size-[154px] shrink-0 items-center justify-center rounded-full border-2 border-dashed border-[#E5E9F3] bg-[#F8FAFF]">
-        <div className="text-center">
-          <p className="mt-2 text-[10px] font-bold text-[#647099]">No data</p>
-        </div>
-      </div>
-    );
-  }
-  return (
-    <div className="chart-donut-enter relative flex size-[154px] shrink-0 items-center justify-center rounded-full bg-[conic-gradient(#465FFF_0_33%,#8B5CFF_33%_58%,#FF1D1D_58%_71%,#10B981_71%_86%,#F59E0B_86%_100%)]">
-      <span className="absolute size-[104px] rounded-full bg-white" />
-      <span className="relative text-center"><b className="block text-[24px] font-black text-[#101334]">{total}</b><span className="text-[10px] font-bold text-[#5F6B94]">Total</span></span>
-    </div>
-  );
-}
-
-function VolumeBars({ bars, isEmpty }: { bars: Array<{ label: string; value: string; height: number; color: string }>; isEmpty?: boolean }) {
-  if (isEmpty || bars.length === 0 || (bars.length === 1 && bars[0].value === "0")) {
-    return (
-      <div className="flex h-[220px] flex-col items-center justify-center gap-3 px-4 pt-4">
-        <div className="text-center">
-          <p className="text-[13px] font-bold text-[#53608C]">{pickL("No volume data yet", "Belum ada data volume")}</p>
-          <p className="mt-1 text-[11px] font-semibold text-[#647099]">{pickL("No signals stored in the last 7 days.", "Belum ada sinyal tersimpan dalam 7 hari terakhir.")}</p>
-        </div>
-      </div>
-    );
-  }
-  return <div className="grid h-[220px] grid-cols-7 items-end gap-4 px-4 pt-4">{bars.map(({ label, value, height, color }) => <div key={label} className="flex h-full flex-col items-center justify-end gap-2"><span className="text-[11px] font-black text-[#101334]">{value}</span><span className="w-8 rounded-t-[8px]" style={{ height: `${height}%`, backgroundColor: color }} /><span className="whitespace-pre-line text-center text-[10px] font-bold leading-tight text-[#5F6B94]">{label}</span></div>)}</div>;
-}
-
-function healthText(summary?: SourceHealthSummary, t?: ReturnType<typeof useTranslations>) {
-  if (!summary || summary.total === 0) return t ? t("noSourcesYet") : "No sources yet";
-  return t ? t("healthHealthyCount", { healthy: summary.healthy, total: summary.total }) : `${summary.healthy}/${summary.total} healthy`;
 }
 
 function formatCompact(value: number) {
-  if (value >= 1000) return `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}K`;
-  return value.toLocaleString(intlLocale());
+  return value >= 1000 ? `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}K` : String(value);
 }
 
-function DistributionPanel({ total, legend }: { total: number; legend: Array<{ label: string; value: string; tone: Tone }> }) {
-  const t = useTranslations("Sources");
-
-  if (total === 0) {
-    return (
-      <Panel>
-        <CardContent className="p-5">
-          <h2 className="text-[16px] font-black text-[#101334]">{t("distribution")}</h2>
-          <div className="mt-6 flex flex-col items-center gap-3 py-6">
-            <div className="text-center">
-              <p className="text-[13px] font-bold text-[#53608C]">{t("emptyDistribution")}</p>
-              <p className="mt-1 text-[11px] font-semibold text-[#647099]">{t("emptyDistributionDesc")}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Panel>
-    );
-  }
-
+function Tile({ label, value, sub, rgb, color }: { label: string; value: string; sub: string; rgb: string; color: string }) {
   return (
-    <Panel>
-      <CardContent className="p-5">
-        <h2 className="text-[16px] font-black text-[#101334]">{t("distribution")}</h2>
-        {/* Side by side only where the card is wide enough; it sits in a narrow column at lg/xl. */}
-        <div className="mt-5 grid items-center justify-items-center gap-6 sm:grid-cols-1 sm:justify-items-stretch lg:grid-cols-1 lg:justify-items-center 2xl:grid-cols-1 2xl:justify-items-stretch">
-          <DistributionDonut total={total} />
-          <div className="grid w-full gap-3 text-[12px] font-bold text-[#53608C]">
-            {legend.map(({ label, value, tone }) => (
-              <div key={label} className="flex min-w-0 items-center justify-between gap-3">
-                <span className="flex min-w-0 items-center gap-2">
-                  <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: toneStyles[tone].color }} />
-                  <span className="truncate">{label}</span>
-                </span>
-                <b className="shrink-0 text-[#101334]">{value}</b>
-              </div>
-            ))}
-          </div>
-        </div>
-      </CardContent>
-    </Panel>
+    <div className="rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${rgb},0.12), rgba(${rgb},0.02) 60%)` }}>
+      <p className="text-[11px] font-black uppercase tracking-[0.06em]" style={{ color }}>{label}</p>
+      <p className="mt-2 truncate text-[30px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</p>
+      <p className="mt-2 text-[12px] font-bold text-[#5A6478]">{sub}</p>
+    </div>
   );
 }
 
-// Signals stored per platform in the last 7 days (the chart's stated window).
-function buildCoverageBars(coverage: Awaited<ReturnType<typeof getSourceCoverage>> | undefined) {
-  const labels = coverage?.platformLabels ?? {};
-  const entries = Object.entries(coverage?.platformVolume ?? {}).sort((a, b) => b[1] - a[1]).slice(0, 7);
-  const max = Math.max(...entries.map(([, n]) => n), 1);
-  return entries.length > 0
-    ? entries.map(([platform, n], index) => ({
-        label: labels[platform] ?? platform.charAt(0).toUpperCase() + platform.slice(1),
-        value: formatCompact(n),
-        height: Math.max(8, Math.round((n / max) * 100)),
-        color: toneStyles[["black", "pink", "blue", "red", "green", "purple", "orange"][index % 7] as Tone].color,
-      }))
-    : [];
+/** One line on whether collection works: green when every source runs, red when one needs attention. */
+function CollectionBanner({ problems, active, total }: { problems: number; active: number; total: number }) {
+  const query = useQuery({ queryKey: ["pipeline-status"], queryFn: getPipelineStatus, staleTime: 60 * 1000, retry: 1 });
+  const ws = query.data?.scheduler.lastRunForWorkspace;
+  const totals = (ws?.results || []).reduce<{ fetched: number; inserted: number; duplicates: number }>((acc, r) => ({ fetched: acc.fetched + (r.fetched || 0), inserted: acc.inserted + (r.inserted || 0), duplicates: acc.duplicates + (r.deduplicated || 0) }), { fetched: 0, inserted: 0, duplicates: 0 });
+  const pending = query.data?.analysis.unanalyzedRealSignals ?? 0;
+  const ok = problems === 0 && total > 0;
+  const headline = total === 0
+    ? pickL("No source connected yet", "Belum ada sumber yang terhubung")
+    : ok
+      ? pickL(`All ${active} sources are running`, `Semua ${active} sumber berjalan normal`)
+      : pickL(`${problems} source(s) need attention`, `${problems} sumber perlu perhatian`);
+  return (
+    <section className="flex flex-wrap items-center justify-between gap-4 rounded-[16px] p-5 text-white shadow-[0_12px_32px_rgba(16,19,52,0.16)]" style={{ background: total === 0 ? "linear-gradient(135deg,#334155,#64748B)" : ok ? "linear-gradient(135deg,#065F46,#12A66A)" : "linear-gradient(135deg,#7F1D1D,#C81E1E)" }}>
+      <div className="min-w-0">
+        <p className="text-[11px] font-black uppercase tracking-[0.14em] text-white/70">{pickL("Data collection", "Pengambilan data")}</p>
+        <p className="mt-1 text-[24px] font-black leading-tight">{headline}</p>
+        <p className="mt-1 text-[13px] font-bold text-white/85">
+          {ws
+            ? pickL(`Last run ${timeAgo(ws.at)}: ${totals.fetched} found, ${totals.inserted} new, ${totals.duplicates} duplicates skipped.`, `Terakhir ${timeAgo(ws.at)}: ${totals.fetched} ditemukan, ${totals.inserted} baru, ${totals.duplicates} duplikat dilewati.`)
+            : pickL("No collection has run yet.", "Belum ada pengambilan data.")}
+          {pending ? pickL(` ${pending} waiting for analysis.`, ` ${pending} menunggu dianalisis.`) : ""}
+        </p>
+      </div>
+      <div className="rounded-[12px] bg-white/[0.12] px-4 py-3 text-right">
+        <p className="text-[10px] font-black uppercase tracking-[0.1em] text-white/70">{pickL("Schedule", "Jadwal")}</p>
+        <p className="text-[15px] font-black">{pickL("Daily, 07:00 WIB", "Setiap hari, 07.00 WIB")}</p>
+      </div>
+    </section>
+  );
 }
 
-function buildCoverageLegend(coverage: Awaited<ReturnType<typeof getSourceCoverage>> | undefined) {
-  return Object.entries(coverage?.typeCoverage ?? {}).map(([type, item], index) => {
-    const label = type.charAt(0).toUpperCase() + type.slice(1);
-    const pct = coverage?.totalSources ? Math.round((item.sources / coverage.totalSources) * 100) : 0;
-    return { label, value: `${item.sources} (${pct}%)`, tone: ["blue", "purple", "red", "green", "slate", "orange"][index % 6] as Tone };
-  });
+const KNOWN_PLATFORMS = new Set(["twitter", "x", "tiktok", "instagram", "facebook", "youtube", "news", "reddit"]);
+
+function SourceRow({ source, volume, maxVolume, onToggle, onDelete, onSync, syncing }: { source: Connector; volume: number; maxVolume: number; onToggle: () => void; onDelete: () => void; onSync: () => void; syncing: boolean }) {
+  const Icon = source.icon;
+  return (
+    <li className={cn("grid items-center gap-3 px-4 py-3.5 md:grid-cols-[minmax(0,1.3fr)_130px_minmax(0,1fr)_96px_auto]", !source.active && "opacity-60")}>
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-[#F4F6FC]">{KNOWN_PLATFORMS.has(source.platform) ? <PlatformIcon platform={source.platform} className="size-[21px]" /> : <Icon className="size-[21px]" />}</span>
+        <div className="min-w-0">
+          <p className="truncate text-[14px] font-black text-[#101334]">{source.name}</p>
+          {source.targetKeyword ? <p className="truncate text-[11px] font-bold text-[#5A6478]">{pickL(`keyword: ${source.targetKeyword}`, `kata kunci: ${source.targetKeyword}`)}</p> : null}
+        </div>
+      </div>
+      <span className={cn("w-fit rounded-full px-2.5 py-1 text-[11px] font-black", STATUS_BADGE[source.statusTone])} title={source.status}>{source.status.split(":")[0]}</span>
+      <div className="min-w-0">
+        <div className="flex items-baseline justify-between text-[12px] font-black text-[#101334]">
+          <span>{volume} <span className="font-bold text-[#5A6478]">{pickL("records · 7 days", "sinyal · 7 hari")}</span></span>
+        </div>
+        <div className="mt-1 h-2 rounded-full bg-[#EEF1F7]"><div className="h-full rounded-full bg-[#465FFF]" style={{ width: `${volume ? Math.max(4, (volume / maxVolume) * 100) : 0}%` }} /></div>
+      </div>
+      <div className="text-[11px] font-bold text-[#5A6478]">
+        <p className="text-[10px] font-black uppercase tracking-[0.06em] text-[#8A93AD]">{pickL("Last ok", "Terakhir ok")}</p>
+        <p className="text-[13px] font-black text-[#101334]">{source.health}</p>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <button type="button" onClick={onSync} disabled={syncing || !source.active} title={pickL("Collect now", "Ambil sekarang")} className="flex size-9 items-center justify-center rounded-[9px] bg-[#EEF1FF] text-[#3B52F5] transition hover:bg-[#E1E6FF] disabled:opacity-40"><RotateCw size={15} className={syncing ? "animate-spin" : ""} /></button>
+        <button type="button" role="switch" aria-checked={source.active} onClick={onToggle} title={source.active ? pickL("Pause", "Jeda") : pickL("Resume", "Aktifkan")} className={cn("relative h-6 w-11 rounded-full transition", source.active ? "bg-[#12A66A]" : "bg-[#CBD2E1]")}>
+          <span className={cn("absolute top-0.5 size-5 rounded-full bg-white shadow transition-all", source.active ? "left-[22px]" : "left-0.5")} />
+        </button>
+        <button type="button" onClick={onDelete} title={pickL("Remove", "Hapus")} className="flex size-9 items-center justify-center rounded-[9px] text-[#8A93AD] transition hover:bg-[#FDECEC] hover:text-[#C81E1E]"><Trash2 size={15} /></button>
+      </div>
+    </li>
+  );
 }
 
 export default function SourcesPage() {
   const t = useTranslations("Sources");
-  const tPagination = useTranslations("DashboardStates.pagination");
   const queryClient = useQueryClient();
   const toastHook = useToast();
 
@@ -672,7 +389,7 @@ export default function SourcesPage() {
       const result = await fetchLatestSignals({ limit: 15 });
       if (result && result.success) {
         showToast(
-          `Fetched ${result.totalFetched} articles. ${result.newSignalsCreated} new signals ingested!`,
+          pickL(`Fetched ${result.totalFetched} articles, ${result.newSignalsCreated} new.`, `${result.totalFetched} artikel diambil, ${result.newSignalsCreated} baru.`),
           "success"
         );
         await Promise.all([
@@ -686,287 +403,150 @@ export default function SourcesPage() {
           queryClient.invalidateQueries({ queryKey: ["alerts"] }),
         ]);
       } else {
-        showToast("Ingestion completed: No new signals found.", "info");
+        showToast(pickL("No new articles found.", "Tidak ada artikel baru."), "info");
       }
     } catch {
-      showToast("Failed to fetch latest signals", "error");
+      showToast(pickL("Could not fetch the latest articles.", "Gagal mengambil artikel terbaru."), "error");
     } finally {
       setIsFetchingSignals(false);
     }
   };
 
-  const [selectedSourceId, setSelectedSourceId] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sourceToDelete, setSourceToDelete] = useState<Connector | null>(null);
-  const [categoryFilter, setCategoryFilter] = useState<string>(ALL_CATEGORIES);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 12;
 
   const liveConnectors = sourcesQuery.data?.data ? buildApiConnectors(sourcesQuery.data.data, sourceHealthQuery.data, t as unknown as Translate) : [];
   const isLiveUnavailable = sourcesQuery.data === null;
-  const availableCategories = Array.from(new Set(liveConnectors.map((item) => item.category))).sort();
-  const categoryOptions = [ALL_CATEGORIES, ...availableCategories];
-  const baseItems = liveConnectors;
-  
-  const filteredItems = (categoryFilter === ALL_CATEGORIES
-    ? baseItems
-    : baseItems.filter((item) => item.category === categoryFilter)
-  ).filter((item) => !searchQuery || item.name.toLowerCase().includes(searchQuery.toLowerCase()) || item.category.toLowerCase().includes(searchQuery.toLowerCase()));
-
-  const totalFilteredItems = filteredItems.length;
-  const totalPages = Math.max(1, Math.ceil(totalFilteredItems / pageSize));
-  
-  const validPage = Math.min(Math.max(1, currentPage), totalPages > 0 ? totalPages : 1);
-  const items = filteredItems.slice((validPage - 1) * pageSize, validPage * pageSize);
-
   const healthSummary = sourceHealthQuery.data?.summary;
   const coverage = sourceCoverageQuery.data ?? undefined;
-  const coverageBars = buildCoverageBars(coverage);
-  const coverageLegend = buildCoverageLegend(coverage);
-  const activeSources = coverage?.activeSources ?? healthSummary?.active ?? filteredItems.filter((item) => item.active).length;
-  const totalSources = coverage?.totalSources ?? healthSummary?.total ?? totalFilteredItems;
-  const totalDocuments = coverage?.totalDocuments ?? 0;
+  const volumeByPlatform = coverage?.platformVolume ?? {};
+  const volumeOf = (c: Connector) => volumeByPlatform[c.platform] ?? volumeByPlatform[c.platform === "twitter" ? "x" : c.platform] ?? 0;
+  const totalSources = coverage?.totalSources ?? healthSummary?.total ?? liveConnectors.length;
+  const activeSources = coverage?.activeSources ?? healthSummary?.active ?? liveConnectors.filter((c) => c.active).length;
   const byStatus = healthSummary?.byStatus ?? {};
   // Needs attention = runs that failed or were refused; untested sources are counted separately.
   const warningCount = (byStatus.failed ?? 0) + (byStatus.access_restricted ?? 0);
+  const weekTotal = Object.values(volumeByPlatform).reduce((n, v) => n + v, 0);
+  const ranked = [...liveConnectors].sort((a, b) => Number(b.active) - Number(a.active) || volumeOf(b) - volumeOf(a));
+  const shown = ranked.filter((c) => !searchQuery || `${c.name} ${c.category} ${c.targetKeyword ?? ""}`.toLowerCase().includes(searchQuery.toLowerCase()));
+  const maxVolume = Math.max(1, ...liveConnectors.map(volumeOf));
+  const top = ranked.find((c) => volumeOf(c) > 0);
+  const lastSync = sourceHealthQuery.data?.lastSyncAt;
 
-  const recentHealthEntries = (sourceHealthQuery.data?.activity ?? [])
-    .slice(0, 6)
-    .map((a, i) => {
-      const tone = a.outcome === "failed" ? "red" : a.outcome === "running" ? "blue" : a.outcome === "empty" ? "slate" : "green";
-      const status = a.outcome === "success" ? t("activityStored", { count: a.inserted ?? 0 })
-        : a.outcome === "empty" ? t("activityEmpty")
-        : a.outcome === "running" ? t("activityRunning")
-        : t("activityFailed", { reason: errorReason(t, a.error) });
-      return [`${a.sourceId ?? a.kind}-${a.at}-${i}`, a.name, status, formatSourceTime(a.at), tone, Database] as const;
-    });
-
-  // Each row states its real status; only rows with a working destination are links.
-  const settings: Array<{ title: string; desc: string; Icon: LucideIcon; tone: Tone; href?: string; status: string }> = [
-    { title: t("settingsKeyword"), desc: t("settingsKeywordDesc"), Icon: KeyRound, tone: "blue", href: "/workspace/settings#keywords", status: "Manage" },
-    { title: t("settingsDedup"), desc: t("settingsDedupDesc"), Icon: Database, tone: "purple", status: "Automatic" },
-    { title: t("settingsRateLimit"), desc: t("settingsRateLimitDesc"), Icon: Clock3, tone: "purple", status: pickL("Managed by Narriv", "Dikelola Narriv") },
-    { title: t("settingsRetention"), desc: t("settingsRetentionDesc"), Icon: Bell, tone: "orange", status: pickL("Not configurable yet", "Belum bisa diatur") },
-    { title: t("settingsWebhooks"), desc: t("settingsWebhooksDesc"), Icon: Webhook, tone: "purple", href: "/workspace/integrations", status: "Manage" },
+  // Plain-language rules of collection; only rows with somewhere to go are links.
+  const rules: Array<{ title: string; value: string; href?: string }> = [
+    { title: pickL("Keywords watched", "Kata kunci yang dipantau"), value: pickL("Manage", "Atur"), href: "/workspace/settings#keywords" },
+    { title: pickL("Duplicates", "Duplikat"), value: pickL("Removed automatically", "Dibuang otomatis") },
+    { title: pickL("Collection limits", "Batas pengambilan"), value: pickL("Handled by Narriv", "Diatur Narriv") },
+    { title: pickL("Send alerts to Slack / Teams", "Kirim peringatan ke Slack / Teams"), value: pickL("Connect", "Hubungkan"), href: "/workspace/integrations" },
   ];
 
   return (
-    <div className="flex max-w-full flex-col gap-4 pb-6 text-[#101334]">
-      {/* Demo Workspace Banner */}
-      {isDemoSession && (
-        <DemoBanner />
-      )}
+    <div className="flex max-w-full flex-col gap-5 pb-6 text-[#101334]">
+      {isDemoSession ? <DemoBanner /> : null}
 
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div><h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1></div>
-        <div className="flex flex-wrap items-center gap-2.5">
-          <button
-            type="button"
-            onClick={handleFetchLatestSignals}
-            disabled={isFetchingSignals}
-            title={pickL("Fetch the latest news signals from RSS & Google News", "Ambil sinyal berita terbaru dari RSS & Google News")}
-            className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[13px] font-black text-[#31406B] shadow-sm transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF] disabled:cursor-not-allowed disabled:opacity-70 sm:w-fit"
-          >
-            {isFetchingSignals ? pickL("Fetching signals…", "Mengambil sinyal…") : pickL("Fetch latest signals", "Ambil sinyal terbaru")}
+        <h1 className="text-[28px] font-black leading-tight tracking-[-0.02em] text-[#101334]">{t("title")}</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" onClick={handleFetchLatestSignals} disabled={isFetchingSignals} className="h-10 rounded-[10px] bg-white px-4 text-[13px] font-black text-[#101334] shadow-sm transition hover:bg-[#F8FAFF] disabled:opacity-60">
+            {isFetchingSignals ? pickL("Fetching…", "Mengambil…") : pickL("Fetch latest news", "Ambil berita terbaru")}
           </button>
-          <button type="button" onClick={() => setIsModalOpen(true)} disabled={bootstrapMutation.isPending} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B51E0] px-4 text-[13px] font-black text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-70 sm:w-fit">{bootstrapMutation.isPending ? toast("bootstrapInProgress") : t("add")}</button>
+          <button type="button" onClick={() => setIsModalOpen(true)} disabled={bootstrapMutation.isPending} className="h-10 rounded-[10px] bg-[#465FFF] px-4 text-[13px] font-black text-white shadow-sm transition hover:bg-[#3B52F5] disabled:opacity-60">
+            {bootstrapMutation.isPending ? toast("bootstrapInProgress") : pickL("Add source", "Tambah sumber")}
+          </button>
         </div>
       </header>
 
-      <PipelineHealthPanel />
+      <CollectionBanner problems={warningCount} active={activeSources} total={totalSources} />
 
-      <section className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-5">
-        <MetricCard label={t("metricConnectedSources")} value={String(totalSources)} helper={t("metricActive", { count: activeSources })} icon={Database} tone="purple" />
-        <MetricCard label={t("metricLiveMonitoring")} value={activeSources > 0 ? pickL("Daily, 07:00 WIB", "Harian, 07.00 WIB") : "-"} helper={healthSummary ? t("healthWorkingCount", { working: (byStatus.operational ?? 0) + (byStatus.no_results ?? 0), total: healthSummary.total }) : healthText(healthSummary, t)} icon={Play} tone="green" />
-        <MetricCard label={t("metricTotalDocuments")} value={formatCompact(totalDocuments)} helper={t("metricCoverage", { count: coverage?.coverageRate ?? 0 })} icon={Zap} tone="blue" />
-        <MetricCard label={t("metricNeedAttention")} value={String(warningCount)} helper={t("metricNotTested", { count: byStatus.not_tested ?? 0 })} icon={RefreshCw} tone="amber" />
-        <MetricCard label={t("metricLastSync")} value={sourceHealthQuery.data?.lastSyncAt ? formatSourceTime(sourceHealthQuery.data.lastSyncAt) : "-"} helper={t("metricFromHealthApi")} icon={Clock3} tone="purple" />
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Tile label={pickL("Active sources", "Sumber aktif")} value={`${activeSources}/${totalSources}`} sub={totalSources - activeSources ? pickL(`${totalSources - activeSources} paused`, `${totalSources - activeSources} dijeda`) : pickL("all on", "semua menyala")} rgb="70,95,255" color="#3B52F5" />
+        <Tile label={pickL("Records, 7 days", "Sinyal 7 hari")} value={formatCompact(weekTotal)} sub={lastSync ? pickL(`last update ${formatSourceTime(lastSync)}`, `diperbarui ${formatSourceTime(lastSync)}`) : pickL("from every platform", "dari semua platform")} rgb="139,92,255" color="#6E44E8" />
+        <Tile label={pickL("Busiest source", "Sumber teramai")} value={top ? top.name : "—"} sub={top && weekTotal ? pickL(`${Math.round((volumeOf(top) / weekTotal) * 100)}% of records`, `${Math.round((volumeOf(top) / weekTotal) * 100)}% dari sinyal`) : pickL("no records yet", "belum ada sinyal")} rgb="18,166,106" color="#047857" />
+        <Tile label={pickL("Need attention", "Perlu perhatian")} value={String(warningCount)} sub={byStatus.not_tested ? pickL(`${byStatus.not_tested} not tested yet`, `${byStatus.not_tested} belum diuji`) : warningCount ? pickL("check the red rows", "cek baris merah") : pickL("nothing failing", "tidak ada yang gagal")} rgb={warningCount ? "229,72,77" : "100,116,139"} color={warningCount ? "#C81E1E" : "#5A6478"} />
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="flex min-w-0 flex-col gap-4">
-          <Panel>
-            <CardContent className="p-4">
-              <div className="mb-4 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                <div><h2 className="text-[18px] font-black tracking-[-0.02em] text-[#101334]">{t("gridTitle")}</h2><p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("gridDesc")}</p></div>
-                <div className="flex w-full flex-wrap items-center gap-3 xl:w-auto">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                    placeholder={t("searchPlaceholder")}
-                    className="h-9 w-full rounded-[8px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#101334] placeholder:text-[#647099] focus:border-[#465FFF] focus:outline-none sm:w-[180px]"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const liveIds = (sourcesQuery.data?.data ?? [])
-                        .filter((source) => source.isActive !== false)
-                        .map((source) => source.id);
-                      if (liveIds.length === 0) {
-                        showToast(toast("syncAllNoneActive"), "error");
-                        return;
-                      }
-                      syncAllMutation.mutate(liveIds);
-                    }}
-                    disabled={syncAllMutation.isPending || sourcesQuery.isPending}
-                    className="flex h-9 flex-1 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] px-4 text-[12px] font-black text-[#53608C] transition disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
-                  >
-                    {syncAllMutation.isPending ? toast("syncAllInProgress") : t("syncAll")}
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={pickL("Display sources in grid view", "Tampilkan sumber sebagai kisi")}
-                    aria-pressed={viewMode === "grid"}
-                    onClick={() => setViewMode("grid")}
-                    className={cn(
-                      "flex size-9 items-center justify-center rounded-[8px] border transition",
-                      viewMode === "grid"
-                        ? "border-transparent bg-[#EEF0FF] text-[#3B52F5]"
-                        : "border-[#DDE3EF] bg-white text-[#53608C] hover:border-[#CBD5E1]"
-                    )}
-                  >
-                    <Grid3X3 size={15} />
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={pickL("Display sources in list view", "Tampilkan sumber sebagai daftar")}
-                    aria-pressed={viewMode === "list"}
-                    onClick={() => setViewMode("list")}
-                    className={cn(
-                      "flex size-9 items-center justify-center rounded-[8px] border transition",
-                      viewMode === "list"
-                        ? "border-transparent bg-[#EEF0FF] text-[#3B52F5]"
-                        : "border-[#DDE3EF] bg-white text-[#53608C] hover:border-[#CBD5E1]"
-                    )}
-                  >
-                    <List size={15} />
-                  </button>
-                  <CategoryFilterDropdown
-                    value={categoryFilter}
-                    options={categoryOptions}
-                    onChange={(val) => { setCategoryFilter(val); setCurrentPage(1); }}
-                    label={t("allCategories")}
-                  />
-                </div>
-              </div>
-              {categoryFilter !== ALL_CATEGORIES && items.length === 0 ? (
-                <DashboardEmptyState title={t("noCategoryMatch")} description={t("noCategoryMatchDesc")} icon="search" minHeight="min-h-[180px]" />
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0 rounded-[16px] bg-white shadow-[0_2px_12px_rgba(16,24,40,0.05)]">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5">
+            <div>
+              <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{pickL("Sources watched", "Sumber yang dipantau")}</h2>
+              <p className="text-[12px] font-bold text-[#5A6478]">{pickL("Busiest first. The bar is records in the last 7 days.", "Urut dari yang paling ramai. Batang = sinyal 7 hari terakhir.")}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {liveConnectors.length > 6 ? (
+                <input type="search" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t("searchPlaceholder")} className="h-9 w-[180px] rounded-[9px] bg-[#F4F6FC] px-3 text-[12px] font-bold text-[#101334] outline-none placeholder:text-[#8A93AD] focus:ring-2 focus:ring-[#465FFF]/30" />
               ) : null}
-              {sourcesQuery.isPending ? (
-                <PanelSkeleton />
-              ) : sourcesQuery.data && liveConnectors.length === 0 ? (
-                <DashboardEmptyState title={t("noLiveSources")} description={t("noLiveSourcesDesc")} icon="inbox" minHeight="min-h-[320px]" />
-              ) : (
-                <>
-                  {isLiveUnavailable ? <DashboardErrorState title={t("liveUnavailable")} description={t("liveUnavailableDesc")} onRetry={() => void sourcesQuery.refetch()} minHeight="min-h-[150px]" /> : null}
-                  {viewMode === "grid" ? (
-                    <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-4">
-                      {items.map((source) => (
-                        <ConnectorCard
-                          key={source.id}
-                          source={source}
-                          selected={selectedSourceId === source.id}
-                          onSelect={(item) => setSelectedSourceId(item.id)}
-                          onToggle={(item) => toggleMutation.mutate({ id: item.id, isActive: !item.active })}
-                          onDelete={(item) => setSourceToDelete(item)}
-                          onSync={(item) => syncSingleMutation.mutate(item.id)}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="grid gap-2.5">
-                      <div className="hidden grid-cols-[minmax(0,1fr)_120px_120px_140px_120px_auto] items-center gap-4 px-4 text-[10px] font-black uppercase tracking-wide text-[#647099]">
-                        <span>Source</span>
-                        <span>{t("lastSuccess")}</span>
-                        <span>{t("documents")}</span>
-                        <span>{pickL("Last sync", "Sinkron terakhir")}</span>
-                        <span>Status</span>
-                        <span>Actions</span>
-                      </div>
-                      {items.map((source) => (
-                        <ConnectorListRow
-                          key={source.id}
-                          source={source}
-                          selected={selectedSourceId === source.id}
-                          onSelect={(item) => setSelectedSourceId(item.id)}
-                          onToggle={(item) => toggleMutation.mutate({ id: item.id, isActive: !item.active })}
-                          onDelete={(item) => setSourceToDelete(item)}
-                          onSync={(item) => syncSingleMutation.mutate(item.id)}
-                        />
-                      ))}
-                    </div>
-                  )}
-
-                  {totalFilteredItems > pageSize && (
-                    <div className="mt-6 flex items-center justify-between border-t border-[#E8ECF5] pt-4">
-                      <span className="text-[12px] font-bold text-[#5F6B94]">
-                        {tPagination("summary", {
-                          start: (currentPage - 1) * pageSize + 1,
-                          end: Math.min(currentPage * pageSize, totalFilteredItems),
-                          total: totalFilteredItems,
-                          label: "sources",
-                        })}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                          disabled={currentPage === 1}
-                          className="flex h-8 items-center justify-center rounded-[6px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#53608C] transition hover:bg-[#F4F6FF] hover:text-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {tPagination("prev")}
-                        </button>
-                        <span className="text-[12px] font-bold text-[#101334]">
-                          {currentPage} / {totalPages}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                          disabled={currentPage === totalPages}
-                          className="flex h-8 items-center justify-center rounded-[6px] border border-[#DDE3EF] bg-white px-3 text-[12px] font-bold text-[#53608C] transition hover:bg-[#F4F6FF] hover:text-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {tPagination("next")}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-              <button type="button" onClick={() => setIsModalOpen(true)} disabled={bootstrapMutation.isPending} className="mt-3 flex min-h-11 w-full items-center justify-between gap-3 rounded-[10px] border border-[#DDE3EF] bg-[#FBFCFF] px-4 py-2 text-left transition disabled:cursor-not-allowed disabled:opacity-70"><span className="flex min-w-0 items-center gap-3"><span className="min-w-0"><b className="block text-[13px] font-black text-[#3B52F5]">{bootstrapMutation.isPending ? toast("bootstrapInProgress") : t("connect")}</b><span className="block text-[11px] font-semibold leading-snug text-[#5F6B94]">{t("connectDesc")}</span></span></span><ArrowRight size={16} className="shrink-0 text-[#53608C]" /></button>
-            </CardContent>
-          </Panel>
-
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
-            <Panel><CardContent className="p-5"><div className="mb-4 flex items-start justify-between"><div><h2 className="text-[16px] font-black text-[#101334]">{t("volume")}</h2><p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("volumeDesc")}</p></div><button type="button" onClick={() => void sourceCoverageQuery.refetch()} disabled={sourceCoverageQuery.isFetching} className="flex h-9 items-center gap-2 rounded-[8px] border border-[#DDE3EF] px-3 text-[11px] font-black text-[#53608C] transition hover:border-[#CBD5E1] disabled:opacity-60">Refresh</button></div><VolumeBars bars={coverageBars} /></CardContent></Panel>
-            <DistributionPanel
-              total={totalSources}
-              legend={coverageLegend.length > 0 ? coverageLegend : [{ label: t("noSourcesLegend"), value: "0 (0%)", tone: "slate" as Tone }]}
-            />
+              <button
+                type="button"
+                onClick={() => {
+                  const liveIds = (sourcesQuery.data?.data ?? []).filter((s) => s.isActive !== false).map((s) => s.id);
+                  if (liveIds.length === 0) { showToast(toast("syncAllNoneActive"), "error"); return; }
+                  syncAllMutation.mutate(liveIds);
+                }}
+                disabled={syncAllMutation.isPending || sourcesQuery.isPending}
+                className="h-9 rounded-[9px] bg-[#101334] px-3.5 text-[12px] font-black text-white transition hover:bg-[#1F2452] disabled:opacity-50"
+              >
+                {syncAllMutation.isPending ? toast("syncAllInProgress") : pickL("Collect all now", "Ambil semua sekarang")}
+              </button>
+            </div>
           </div>
+          {isLiveUnavailable ? <div className="p-5"><DashboardErrorState title={t("liveUnavailable")} description={t("liveUnavailableDesc")} onRetry={() => void sourcesQuery.refetch()} minHeight="min-h-[150px]" /></div> : null}
+          {sourcesQuery.isPending ? (
+            <div className="p-5"><PanelSkeleton /></div>
+          ) : liveConnectors.length === 0 ? (
+            <div className="p-5"><DashboardEmptyState title={t("noLiveSources")} description={t("noLiveSourcesDesc")} icon="inbox" minHeight="min-h-[260px]" /></div>
+          ) : (
+            <ul className="mt-3 divide-y divide-[#F0F2F8]">
+              {shown.map((source) => (
+                <SourceRow
+                  key={source.id}
+                  source={source}
+                  volume={volumeOf(source)}
+                  maxVolume={maxVolume}
+                  syncing={syncSingleMutation.isPending && syncSingleMutation.variables === source.id}
+                  onToggle={() => toggleMutation.mutate({ id: source.id, isActive: !source.active })}
+                  onDelete={() => setSourceToDelete(source)}
+                  onSync={() => syncSingleMutation.mutate(source.id)}
+                />
+              ))}
+            </ul>
+          )}
         </div>
 
         <aside className="flex flex-col gap-4">
-          <Panel><CardContent className="p-5"><h2 className="text-[16px] font-black text-[#101334]">{t("healthTitle")}</h2><p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("healthDesc")}</p><div className="mt-5 grid items-center gap-5 sm:grid-cols-1 xl:grid-cols-1 2xl:grid-cols-1"><HealthDonut total={healthSummary?.total ?? totalSources} /><div className="grid gap-3 text-[12px] font-bold text-[#53608C]"><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#10B981]" />{t("healthHealthy")}</span><b className="text-[#101334]">{healthSummary?.healthy ?? 0}</b></div><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#F59E0B]" />{t("healthWarning")}</span><b className="text-[#101334]">{healthSummary?.warning ?? 0}</b></div><div className="flex items-center justify-between"><span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#EF4444]" />{t("healthCritical")}</span><b className="text-[#101334]">{healthSummary?.critical ?? 0}</b></div></div></div><div className="mt-5 rounded-[12px] border border-transparent bg-[#ECFDF6] p-4"><div className="flex items-start gap-3"><span><b className="block text-[13px] font-black text-[#047857]">{healthSummary && healthSummary.total > 0 && healthSummary.healthy === healthSummary.total ? t("optimal") : t("healthNeedsAttention")}</b><span className="text-[12px] font-semibold text-[#53608C]">{healthText(healthSummary, t)}</span></span></div></div></CardContent></Panel>
-
-          <Panel><CardContent className="p-5"><div className="mb-4 flex items-start justify-between"><div><h2 className="text-[16px] font-black text-[#101334]">{t("activity")}</h2><p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("activityDesc")}</p></div></div>{recentHealthEntries.length > 0 ? <div className="grid gap-3">{recentHealthEntries.map(([id, name, status, time, tone, Icon]) => { const TypedIcon = Icon as SourceIcon; const style = toneStyles[tone as Tone]; return <div key={id} className="flex items-center justify-between gap-3"><span className="flex min-w-0 items-center gap-3"><span className="min-w-0"><b className="block truncate text-[12px] text-[#101334]">{name}</b><span className="text-[11px] font-semibold capitalize" style={{ color: readableTone(style.color) }}>{status}</span></span></span><span className="shrink-0 text-[10px] font-bold text-[#5F6B94]">{time}</span><Check size={13} style={{ color: style.color }} /></div>; })}</div> : <DashboardEmptyState title={toast("activity.emptyTitle")} description={toast("activity.emptyDesc")} icon="search" minHeight="min-h-[120px]" />}</CardContent></Panel>
-
-          <Panel><CardContent className="p-5"><h2 className="text-[16px] font-black text-[#101334]">{t("settings")}</h2><p className="mt-1 text-[12px] font-semibold text-[#5F6B94]">{t("settingsDesc")}</p><div className="mt-4 grid gap-2.5">{settings.map(({ title, desc, Icon, tone, href, status }) => {
-            const style = toneStyles[tone];
-            const body = (
-              <>
-                <span className="flex min-w-0 items-center gap-3"><span><b className="block text-[12px] text-[#101334]">{title}</b><span className="text-[10px] font-semibold text-[#5F6B94]">{desc}</span></span></span>
-                <span className={cn("shrink-0 text-[10px] font-black", href ? "text-[#3B52F5]" : "text-[#5A6478]")}>{status}{href ? " →" : ""}</span>
-              </>
-            );
-            return href ? (
-              <Link key={title} href={href} className="flex items-center justify-between gap-3 rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-3 text-left transition hover:border-[#CBD5E1] hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/30">{body}</Link>
+          <div className="rounded-[16px] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.05)]">
+            <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{pickL("Records by platform", "Sinyal per platform")}</h2>
+            <p className="text-[12px] font-bold text-[#5A6478]">{pickL("last 7 days", "7 hari terakhir")}</p>
+            {weekTotal === 0 ? (
+              <p className="mt-4 text-[13px] font-semibold text-[#5A6478]">{pickL("No records yet.", "Belum ada sinyal.")}</p>
             ) : (
-              <div key={title} className="flex items-center justify-between gap-3 rounded-[10px] border border-[#EEF1F7] bg-[#FBFCFF] p-3">{body}</div>
-            );
-          })}</div></CardContent></Panel>
+              <ul className="mt-4 space-y-2.5">
+                {Object.entries(volumeByPlatform).sort((a, b) => b[1] - a[1]).map(([platform, n], i) => (
+                  <li key={platform}>
+                    <div className="flex items-center justify-between text-[13px] font-black text-[#101334]">
+                      <span className="flex items-center gap-2"><PlatformIcon platform={platform} className="size-4" />{platform === "news" ? pickL("Online news", "Berita online") : platform === "twitter" ? "X" : coverage?.platformLabels?.[platform] ?? platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
+                      <span>{n} <span className="text-[11px] font-bold text-[#5A6478]">· {Math.round((n / weekTotal) * 100)}%</span></span>
+                    </div>
+                    <div className="mt-1 h-2.5 rounded-full bg-[#EEF1F7]"><div className="h-full rounded-full" style={{ width: `${Math.max(3, (n / weekTotal) * 100)}%`, background: i === 0 ? "#465FFF" : "#A5B4FC" }} /></div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="rounded-[16px] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.05)]">
+            <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{pickL("How collection works", "Aturan pengambilan")}</h2>
+            <ul className="mt-3 divide-y divide-[#F0F2F8]">
+              {rules.map((r) => (
+                <li key={r.title} className="flex items-center justify-between gap-3 py-2.5">
+                  <span className="text-[13px] font-bold text-[#101334]">{r.title}</span>
+                  {r.href ? <Link href={r.href} className="shrink-0 text-[12px] font-black text-[#3B52F5] hover:underline">{r.value} →</Link> : <span className="shrink-0 rounded-full bg-[#E5F6EE] px-2.5 py-0.5 text-[11px] font-black text-[#047857]">{r.value}</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
         </aside>
       </section>
 
