@@ -8,6 +8,17 @@ import { cn } from "@/lib/utils";
 import { useCodeLabels } from "@/components/intelligence/intelligence-panels";
 import { useUiStore } from "@/store/useUiStore";
 import type { ExecutiveBriefPayload } from "@/lib/intelligence-api";
+import { getAlertsSummary, type ActionStrategyType } from "@/lib/api-service";
+import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components/create-action-plan-modal";
+import { CreateInvestigationModal } from "@/app/(dashboard)/signals/components/create-investigation-modal";
+
+// Which plan a suggested step starts; "investigate" opens a case and "monitor" needs no button.
+const STEP_STRATEGY: Record<string, ActionStrategyType> = {
+  escalate_internal: "crisis_response",
+  prepare_clarification: "pr_response",
+  prepare_statement: "pr_response",
+  brief_spokesperson: "stakeholder_update",
+};
 
 /**
  * Daily brief: the workspace's grounded executive brief in numbers first (new signals, new alerts, risk
@@ -50,8 +61,8 @@ type EvidenceCount = { type?: string; count?: number };
 
 const DRIVER_LABELS: Record<string, [string, string]> = {
   negative_share: ["Share of negative signals", "Porsi sinyal negatif"],
-  severity: ["High / critical severity", "Keparahan tinggi / kritis"],
-  active_alerts: ["Open alerts", "Peringatan belum selesai"],
+  severity: ["Signals rated high / critical", "Sinyal berbobot tinggi / kritis"],
+  active_alerts: ["Alerts raised in this window", "Peringatan baru di periode ini"],
   volume_change: ["Volume spike", "Lonjakan volume"],
   narrative_momentum: ["Issue momentum", "Momentum isu"],
 };
@@ -98,13 +109,18 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
   const emerging = ((sections.emergingIssue as unknown as { items?: Array<{ title?: string }> }).items ?? []).filter((i) => i.title);
   const actions = sections.recommendedActions ?? [];
   const watch = sections.whatToWatchNext ?? [];
+  const [plan, setPlan] = useState<ActionStrategyType | null>(null);
+  const [investigate, setInvestigate] = useState<string | null>(null);
+  // Same numbers as Early Warnings: active = not resolved, across all time.
+  const alertsSummary = useQuery({ queryKey: ["brief-alerts-summary"], queryFn: () => getAlertsSummary(), staleTime: 30 * 1000 }).data;
+  const activeAlerts = alertsSummary ? Math.max(0, (alertsSummary.total ?? 0) - (alertsSummary.by_status?.resolved ?? 0)) : null;
   const levelTone = (p: string) => (p === "critical" || p === "high" ? "bg-[#C81E1E] text-white" : p === "medium" ? "bg-[#F59E0B] text-white" : "bg-[#E5F6EE] text-[#047857]");
 
   return (
     <div className="space-y-5">
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Tile label={L("New signals", "Sinyal baru")} value={newSignals === null ? "—" : String(newSignals)} sub={L("in this window", "di periode ini")} rgb="70,95,255" color="#3B52F5" />
-        <Tile label={L("New alerts", "Peringatan baru")} value={String(newAlerts)} sub={newAlerts ? L("check Early Warnings", "cek Peringatan Dini") : L("none", "tidak ada")} rgb={newAlerts ? "245,158,11" : "100,116,139"} color={newAlerts ? "#A04606" : "#5A6478"} />
+        <Tile label={L("Active alerts", "Peringatan aktif")} value={activeAlerts === null ? String(newAlerts) : String(activeAlerts)} sub={L(`${newAlerts} new in this window`, `${newAlerts} baru di periode ini`)} rgb={(activeAlerts ?? newAlerts) ? "245,158,11" : "100,116,139"} color={(activeAlerts ?? newAlerts) ? "#A04606" : "#5A6478"} />
         <Tile label={L("Risk index", "Indeks risiko")} value={risk ? `${riskScore}/100` : "—"} sub={risk ? L(...risk.word) : L("not enough data", "data belum cukup")} rgb="229,72,77" color={risk?.color ?? "#5A6478"} bar={risk ? riskScore : undefined} barColor={risk?.bar} />
         <Tile label={L("Reputation", "Reputasi")} value={repLook ? `${repScore}/100` : "—"} sub={repLook ? L(...repLook.word) : L("not enough data", "data belum cukup")} rgb={repLook && repScore >= 70 ? "18,166,106" : "229,72,77"} color={repLook?.color ?? "#5A6478"} bar={repLook ? repScore : undefined} barColor={repLook?.bar} />
       </section>
@@ -139,7 +155,7 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
 
         <section className="rounded-[16px] border border-[#E6EAF2] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.03)]">
           <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{L("Suggested next steps", "Langkah yang disarankan")}</h2>
-          <p className="mt-1 text-[11px] font-bold text-[#5A6478]">{L("Suggestions only; a person approves before anything is done.", "Hanya saran; seseorang menyetujui sebelum dijalankan.")}</p>
+          <p className="mt-1 text-[11px] font-bold text-[#5A6478]">{L("One click starts the plan or case; nothing is sent without approval.", "Satu klik memulai rencana atau kasus; tidak ada yang dikirim tanpa persetujuan.")}</p>
           {actions.length === 0 ? (
             <p className="mt-4 text-[13px] font-semibold text-[#5A6478]">{L("No step suggested.", "Tidak ada langkah yang disarankan.")}</p>
           ) : (
@@ -154,8 +170,12 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
                       <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-black text-[#31406B]">{code.urgency(a.urgency)}</span>
                     </div>
                     <p className="mt-1 line-clamp-2 text-[12px] font-semibold leading-snug text-[#3A4566]">{a.reason}</p>
-                    <p className="mt-1 text-[11px] font-black text-[#3B52F5]">{L("Confidence", "Keyakinan")} {Math.round((a.confidence ?? 0) * 100)}%</p>
                   </div>
+                  {STEP_STRATEGY[a.action] ? (
+                    <button type="button" onClick={() => setPlan(STEP_STRATEGY[a.action])} className="h-8 shrink-0 self-center rounded-[8px] bg-[#465FFF] px-3 text-[12px] font-black text-white transition hover:bg-[#3B52F5]">{L("Plan", "Buat rencana")}</button>
+                  ) : a.action === "investigate" ? (
+                    <button type="button" onClick={() => setInvestigate(a.reason)} className="h-8 shrink-0 self-center rounded-[8px] bg-[#101334] px-3 text-[12px] font-black text-white transition hover:bg-[#1F2452]">{L("Open case", "Buka kasus")}</button>
+                  ) : null}
                 </li>
               ))}
             </ol>
@@ -170,12 +190,13 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
             {watch.map((w, i) => (
               <li key={i} className="rounded-[12px] bg-white/[0.07] p-3 text-[13px] font-bold leading-snug">
                 {w.label}
-                {typeof w.confidence === "number" ? <span className="ml-2 text-[11px] font-black text-white/60">{Math.round(w.confidence * 100)}%</span> : null}
               </li>
             ))}
           </ul>
         </section>
       ) : null}
+      <CreateActionPlanModal open={plan !== null} onOpenChange={(open) => { if (!open) setPlan(null); }} initialStrategyType={plan ?? undefined} />
+      <CreateInvestigationModal open={investigate !== null} onOpenChange={(open) => { if (!open) setInvestigate(null); }} initialDescription={investigate ?? undefined} initialPriority="high" />
     </div>
   );
 }

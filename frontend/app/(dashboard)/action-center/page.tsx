@@ -184,9 +184,26 @@ export default function ActionCenterPage() {
       ) : data.actions.length === 0 ? (
         <DashboardEmptyState title={t("emptyTitle")} description={to("noActions")} />
       ) : (
+        (() => {
+        // Open work first (needs a decision, then in follow-up); finished items fold into one compact list.
+        const rank = (st: Step[]) => (st[4].done ? 2 : st[2].done ? 1 : 0);
+        const ordered = data.actions.map((a) => ({ a, steps: stepsFor(a) })).sort((x, y) => rank(x.steps) - rank(y.steps));
+        const open = ordered.filter((x) => !x.steps[4].done);
+        const finished = ordered.filter((x) => x.steps[4].done);
+        return (
+        <>
+        {open.length === 0 ? (
+          <div className="flex items-center gap-3 rounded-[14px] bg-[#ECFDF5] px-5 py-4">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#12A66A] text-white"><CheckCircle2 size={16} /></span>
+            <div>
+              <p className="text-[15px] font-black text-[#065F46]">{L("Nothing waiting for you", "Tidak ada yang menunggu Anda")}</p>
+              <p className="text-[12px] font-semibold text-[#047857]">{L(`All ${finished.length} recommendations have a recorded outcome.`, `Semua ${finished.length} rekomendasi sudah ada hasilnya.`)}</p>
+            </div>
+          </div>
+        ) : null}
+        {open.length > 0 ? (
         <ol className="space-y-4">
-          {data.actions.map((a, i) => {
-            const steps = stepsFor(a);
+          {open.map(({ a, steps }, i) => {
             return (
               <li key={`${a.action}-${i}`} className={cn("rounded-[16px] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.05)]", !steps[2].done && "bg-[#FFFAFA]")}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -242,6 +259,41 @@ export default function ActionCenterPage() {
             );
           })}
         </ol>
+        ) : null}
+        {finished.length > 0 ? (
+          <section className="rounded-[16px] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.05)]">
+            <h2 className="text-[14px] font-black text-[#101334]">{L("Done", "Selesai")} <span className="ml-1 rounded-full bg-[#047857] px-2 py-0.5 text-[11px] text-white">{finished.length}</span></h2>
+            <ul className="mt-3 divide-y divide-[#F0F2F8]">
+              {finished.map(({ a }, i) => {
+                const items = (a.followUp?.plans?.length ?? 0) + (a.followUp?.cases?.length ?? 0);
+                const reopened = a.followUp?.stage === "in_progress" && !a.unchangedSinceFollowUp;
+                return (
+                  <li key={`${a.action}-done-${i}`} className="flex flex-wrap items-center justify-between gap-3 py-2.5">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#12A66A] text-white"><CheckCircle2 size={13} /></span>
+                      <div className="min-w-0">
+                        <p className="truncate text-[13px] font-black text-[#101334]">{to.has(`a_${a.action}`) ? to(`a_${a.action}`) : a.action}</p>
+                        {a.relatedNarrative?.title ? <p className="truncate text-[11px] font-bold text-[#5A6478]">{a.relatedNarrative.title}</p> : null}
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {reopened ? <span className="rounded-full bg-[#F59E0B] px-2.5 py-1 text-[11px] font-black text-white">{L("New data since", "Ada data baru")}</span> : null}
+                      <span className="text-[11px] font-bold text-[#5A6478]">{L(`${items} follow-ups`, `${items} tindak lanjut`)} · {L(`${a.evidenceCount} evidence`, `${a.evidenceCount} bukti`)}</span>
+                      {reopened ? (
+                        <Link href={monitoringHref({ hours, narrative: a.relatedNarrative?.id })} className="rounded-[8px] bg-[#101334] px-3 py-1.5 text-[12px] font-black text-white hover:bg-[#1F2452]">{L("Check new data", "Cek data baru")}</Link>
+                      ) : (
+                        <Link href="/action-plans" className="text-[12px] font-black text-[#3B52F5] hover:underline">{L("Open", "Buka")} →</Link>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ) : null}
+        </>
+        );
+        })()
       )}
 
       <p className="text-[12px] text-[#5A6478]">

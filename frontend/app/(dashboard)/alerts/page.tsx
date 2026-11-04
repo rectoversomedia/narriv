@@ -32,6 +32,7 @@ import {
   getSources,
   getWorkspaceMembers,
   updateAlertStatus,
+  updateAlertAssignment,
   updateEscalationMatrix,
   updateNotificationSettings,
   bulkUpdateAlerts,
@@ -47,6 +48,7 @@ import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore"
 import { intlLocale } from "@/store/useUiStore";
 import { DemoBanner } from "@/components/ui/demo-banner";
 import { pickL } from "@/lib/use-l";
+import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components/create-action-plan-modal";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type AlertStatus = "New" | "Investigating" | "Escalated" | "Resolved";
@@ -70,7 +72,9 @@ type AlertRow = {
   extraSources: number;
   escalationLevel: string;
   deadline: string;
+  deadlineMs: number | null;
   overdue: boolean;
+  assigneeId: string | null;
   ack: string;
   impact: "High" | "Medium";
   status: AlertStatus;
@@ -172,9 +176,9 @@ function Sparkline({ values, tone, id, className = "h-8" }: { values: number[]; 
   );
 }
 
-function buildMetricCards(ta: ReturnType<typeof useTranslations<"Alerts">>, summary: Awaited<ReturnType<typeof getAlertsSummary>>): Metric[] {
+function buildMetricCards(ta: ReturnType<typeof useTranslations<"Alerts">>, summary: Awaited<ReturnType<typeof getAlertsSummary>>, openCritical: number): Metric[] {
   const total = summary?.total ?? 0;
-  const critical = summary?.by_severity?.critical ?? 0;
+  const critical = openCritical;
   const inProgress = summary?.by_status?.in_progress ?? 0;
   const resolved = summary?.by_status?.resolved ?? 0;
   const acknowledgedCount = summary?.acknowledged_count ?? inProgress + resolved;
@@ -193,15 +197,18 @@ function buildMetricCards(ta: ReturnType<typeof useTranslations<"Alerts">>, summ
   const deltaLabel = !hasBaseline ? ta("v2.metrics.noBaseline") : trendDelta >= 0 ? ta("v2.metrics.vsPrevious7Days", { val: `${deltaSign}${delta}` }) : ta("v2.metrics.vsPrevious7Days", { val: delta });
 
   const openCount = summary?.by_status?.open ?? Math.max(0, total - acknowledgedCount);
+  const active = Math.max(0, total - resolved);
+  const slow = avgResponseMinutes !== null && slaTargetMinutes !== null && slaTargetMinutes > 0 && avgResponseMinutes > slaTargetMinutes;
+  const slowBy = slow ? Math.round(avgResponseMinutes! / slaTargetMinutes!) : 0;
+  void deltaLabel; void spark;
 
-  // Five numbers that answer "how many, how bad, what is waiting, what is done, how fast"; the severity split
-  // and delivery details live in the table filters and the side panels.
+  // The five tiles add up: active + done = total, and the list below shows exactly the active ones.
   return [
-    { label: ta("v2.metrics.totalAlerts"), value: String(total), helper: deltaLabel, helperTone: !hasBaseline ? "blue" : trendDelta >= 0 ? "green" : "red", icon: Bell, tone: "purple", spark },
-    { label: ta("v2.metrics.criticalAlerts"), value: String(critical), helper: ta("v2.metrics.severityBreakdown", { val: `${critical}/${total}` }), helperTone: critical > 0 ? "red" : "green", icon: AlertTriangle, tone: "red", spark: [] },
-    { label: ta("v2.metrics.openAlerts"), value: String(openCount), helper: ta("v2.metrics.overdue", { val: String(overdueCount) }), helperTone: overdueCount > 0 ? "red" : "green", icon: Users, tone: "amber", spark: [] },
+    { label: pickL("Active", "Aktif"), value: String(active), helper: pickL(`${openCount} not picked up · of ${total} total`, `${openCount} belum disentuh · dari ${total} total`), helperTone: openCount > 0 ? "amber" : "green", icon: Bell, tone: "purple", spark: [] },
+    { label: ta("v2.metrics.criticalAlerts"), value: String(critical), helper: critical > 0 ? pickL("respond now", "respons sekarang") : pickL("none open", "tidak ada"), helperTone: critical > 0 ? "red" : "green", icon: AlertTriangle, tone: "red", spark: [] },
+    { label: pickL("Overdue", "Lewat tenggat"), value: String(overdueCount), helper: overdueCount > 0 ? pickL("assign an owner today", "tunjuk penanggung jawab hari ini") : pickL("all on schedule", "semua sesuai jadwal"), helperTone: overdueCount > 0 ? "red" : "green", icon: Users, tone: overdueCount > 0 ? "red" : "amber", spark: [] },
     { label: ta("v2.metrics.resolved"), value: String(resolved), helper: ta("v2.metrics.of", { val1: String(resolved), val2: String(total) }), helperTone: "green", icon: CircleCheck, tone: "green", spark: [] },
-    { label: ta("v2.metrics.avgResponseTime"), value: avgResponseMinutes !== null ? formatMinutes(avgResponseMinutes) : "-", helper: ta("v2.metrics.target", { val: slaTargetMinutes !== null ? formatMinutes(slaTargetMinutes) : "-" }), helperTone: avgResponseMinutes !== null && slaTargetMinutes !== null && avgResponseMinutes > slaTargetMinutes ? "red" : "blue", icon: HelpCircle, tone: "blue", spark: [] },
+    { label: ta("v2.metrics.avgResponseTime"), value: avgResponseMinutes !== null ? formatMinutes(avgResponseMinutes) : "-", helper: slow ? pickL(`${slowBy}× slower than the ${formatMinutes(slaTargetMinutes!)} target`, `${slowBy}× lebih lambat dari target ${formatMinutes(slaTargetMinutes!)}`) : ta("v2.metrics.target", { val: slaTargetMinutes !== null ? formatMinutes(slaTargetMinutes) : "-" }), helperTone: slow ? "red" : "green", icon: HelpCircle, tone: slow ? "red" : "blue", spark: [] },
   ];
 }
 
@@ -404,7 +411,9 @@ function mapAlertRecordToRow(alert: Alert, ta: ReturnType<typeof useTranslations
     extraSources: Math.max(0, alertSources.length - shownSources.length),
     escalationLevel: alert.escalationLevel ? severityText(alert.escalationLevel) : pickL("Not escalated", "Belum dieskalasi"),
     deadline: deadline && !Number.isNaN(deadline.getTime()) ? deadline.toLocaleString(intlLocale(), { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : pickL("No deadline", "Tanpa tenggat"),
+    deadlineMs: deadline && !Number.isNaN(deadline.getTime()) ? deadline.getTime() : null,
     overdue: Boolean(deadline && !Number.isNaN(deadline.getTime()) && deadline.getTime() < Date.now() && normalizedStatus !== "resolved"),
+    assigneeId: alert.assignedTo ? String(alert.assignedTo) : null,
     ack: normalizedStatus === "open" ? ta("table.notAcknowledged") : ta("table.acknowledged"),
     impact: alert.severity === "critical" || alert.severity === "high" ? "High" : "Medium",
     status: optimisticStatuses[alert.id] ?? mappedStatus,
@@ -418,92 +427,99 @@ function ChannelIcon({ children, tone = "blue" }: { children: ReactNode; tone?: 
   return <span className={cn("flex size-8 items-center justify-center rounded-[8px]", style.soft, style.text)}>{children}</span>;
 }
 
+function timeLeft(ms: number | null) {
+  if (ms === null) return null;
+  const diff = ms - Date.now();
+  const hours = Math.round(Math.abs(diff) / 3600000);
+  const span = hours >= 24 ? pickL(`${Math.round(hours / 24)}d`, `${Math.round(hours / 24)} hari`) : hours >= 1 ? pickL(`${hours}h`, `${hours} jam`) : pickL("<1h", "<1 jam");
+  return diff < 0 ? pickL(`${span} overdue`, `lewat ${span}`) : pickL(`${span} left`, `sisa ${span}`);
+}
+
+// The one incident that needs a decision now: three facts (deadline, owner, status) and the buttons that act on them.
 function CriticalIncident({
   alert,
   totalCritical,
   isLoading,
   ta,
+  members,
+  onAssign,
+  onStatusChange,
+  onPlan,
 }: {
   alert: AlertRow | null;
   totalCritical: number;
   isLoading: boolean;
   ta: ReturnType<typeof useTranslations<"Alerts">>;
+  members: WorkspaceMemberRecord[];
+  onAssign: (id: string | number, userId: string) => void;
+  onStatusChange: (id: string | number, status: "open" | "acknowledged" | "resolved") => void;
+  onPlan: (alert: AlertRow) => void;
 }) {
-  const stats: Array<[string, string, string, Tone]> = alert
+  if (!isLoading && !alert) {
+    return (
+      <div className="flex items-center gap-3 rounded-[14px] bg-[#ECFDF5] px-5 py-4">
+        <span className="flex size-8 items-center justify-center rounded-full bg-[#12A66A] text-white"><Check size={16} /></span>
+        <p className="text-[14px] font-black text-[#065F46]">{ta("v2.incident.noCriticalTitle")}</p>
+      </div>
+    );
+  }
+  const left = alert ? timeLeft(alert.deadlineMs) : null;
+  const unassigned = alert ? !alert.assigneeId : false;
+  const facts: Array<{ label: string; value: string; sub: string; bad: boolean }> = alert
     ? [
-      [ta("v2.incident.severity"), alert.tags[0] ?? "-", ta("v2.incident.liveSignal"), "red" as Tone],
-      [ta("v2.incident.owner"), alert.sourceLabel || ta("table.unassigned"), ta("v2.incident.currentOwner"), "blue" as Tone],
-      [ta("v2.incident.escalation"), alert.escalationLevel, ta("v2.incident.currentLevel"), "amber" as Tone],
-      [ta("v2.incident.deadline"), alert.deadline, ta("v2.incident.responseWindow"), "red" as Tone],
-      [ta("v2.incident.ack"), alert.ack, ta("v2.incident.lifecycleState"), "green" as Tone],
+      { label: ta("v2.incident.deadline"), value: left ?? alert.deadline, sub: alert.deadline, bad: alert.overdue },
+      { label: ta("v2.incident.owner"), value: alert.sourceLabel, sub: unassigned ? pickL("nobody is on it yet", "belum ada yang pegang") : pickL("on it", "sedang menangani"), bad: unassigned },
+      { label: ta("v2.incident.status"), value: alert.status === "New" ? pickL("Not picked up", "Belum disentuh") : alert.status === "Investigating" ? pickL("Being handled", "Sedang ditangani") : alert.status === "Resolved" ? ta("v2.incident.resolved") : pickL("Escalated", "Dieskalasi"), sub: ta("v2.incident.since", { time: alert.time }), bad: alert.status === "New" },
     ]
     : [];
 
   return (
-    <Panel className="min-h-0 h-auto border-transparent bg-[#FFF8F8] p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div>
-            <h2 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{ta("v2.incident.title")}</h2>
-            <p className="mt-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#C81E1E]">{ta("v2.incident.totalCritical", { count: totalCritical })}</p>
-          </div>
+    <Panel className="min-h-0 h-auto border-transparent bg-[#FFF5F5] p-5">
+      {isLoading || !alert ? (
+        <div className="space-y-3">
+          <div className="h-6 w-2/3 animate-pulse rounded bg-[#F8DADA]" />
+          <div className="grid gap-2 sm:grid-cols-3">{Array.from({ length: 3 }, (_, i) => <div key={i} className="h-16 animate-pulse rounded-[12px] bg-white/80" />)}</div>
         </div>
-        {alert ? (
-          <Link href={`/alerts/${alert.id}`} className="inline-flex items-center gap-1 rounded-full border border-[#E6EAF2] bg-white px-3 py-1.5 text-[11px] font-black text-[#3B52F5] shadow-sm transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF]">
-            {ta("v2.incident.viewDetails")} <ArrowRight size={13} />
-          </Link>
-        ) : (
-          <span className="inline-flex items-center gap-1 rounded-full border border-transparent bg-white/70 px-3 py-1.5 text-[11px] font-black text-[#A8B0C7]">
-            {ta("v2.incident.viewDetails")} <ArrowRight size={13} />
-          </span>
-        )}
-      </div>
-      {isLoading ? (
-        <div className="mt-5 space-y-4">
-          <div className="h-7 w-2/3 animate-pulse rounded bg-[#F8DADA]" />
-          <div className="h-4 w-full animate-pulse rounded bg-[#FCEAEA]" />
-          <div className="grid gap-2 sm:grid-cols-5">
-            {Array.from({ length: 5 }, (_, index) => <div key={index} className="h-20 animate-pulse rounded-[12px] bg-white/80" />)}
-          </div>
-        </div>
-      ) : alert ? (
+      ) : (
         <>
-          <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <h3 className="text-[18px] sm:text-[20px] font-black leading-snug tracking-[-0.03em] text-[#070B28] line-clamp-2">{alert.title}</h3>
-              <p className="mt-1.5 line-clamp-2 text-[12px] font-semibold leading-5 text-[#31406B]">{alert.description}</p>
+              <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#C81E1E]">
+                {pickL("Critical incident", "Insiden kritis")}{totalCritical > 1 ? ` · ${pickL(`${totalCritical} open`, `${totalCritical} aktif`)}` : ""}
+              </p>
+              <h2 className="mt-1 line-clamp-2 text-[20px] font-black leading-snug tracking-[-0.03em] text-[#070B28]">{alert.title}</h2>
+              {alert.description ? <p className="mt-1 line-clamp-1 text-[12px] font-semibold text-[#31406B]" title={alert.description}>{alert.description}</p> : null}
             </div>
-            <span className="shrink-0 rounded-[7px] bg-[#EF4444]/10 px-3 py-1 text-[10px] font-black tracking-[0.12em] text-[#C81E1E]">{ta("v2.incident.critical")}</span>
+            <Link href={`/alerts/${alert.id}`} className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-[11px] font-black text-[#3B52F5] shadow-sm transition hover:bg-[#F8FAFF]">
+              {ta("v2.incident.viewDetails")} <ArrowRight size={13} />
+            </Link>
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
-            {stats.map(([label, value, helper, tone]) => (
-              <div key={label} className="min-w-0 rounded-[12px] border border-transparent bg-white/75 p-2.5 shadow-[0_1px_3px_rgba(16,24,40,0.03)]">
-                <p className="truncate text-[9px] font-black uppercase tracking-wider text-[#647099]" title={label}>{label}</p>
-                <p className={cn("mt-1.5 truncate text-[14px] font-black leading-tight tracking-[-0.02em]", toneStyles[tone].text)} title={value}>{value}</p>
-                <p className="mt-1.5 truncate text-[9px] font-bold text-[#5F6B94]" title={helper}>{helper}</p>
+          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            {facts.map((f) => (
+              <div key={f.label} className={cn("min-w-0 rounded-[12px] px-3.5 py-3", f.bad ? "bg-[#C81E1E] text-white" : "bg-white")}>
+                <p className={cn("text-[10px] font-black uppercase tracking-[0.08em]", f.bad ? "text-white/80" : "text-[#647099]")}>{f.label}</p>
+                <p className={cn("mt-1 truncate text-[17px] font-black leading-tight", f.bad ? "text-white" : "text-[#101334]")} title={f.value}>{f.value}</p>
+                <p className={cn("mt-0.5 truncate text-[11px] font-bold", f.bad ? "text-white/80" : "text-[#5F6B94]")}>{f.sub}</p>
               </div>
             ))}
           </div>
-          <div className="mt-5 grid gap-3 border-t border-[#F2DCDC] pt-3.5 sm:grid-cols-3">
-            <SourceIconList label={ta("v2.incident.source")} sources={alert.sources} extraSources={alert.extraSources} />
-            <div className="min-w-0">
-              <p className="mb-2 text-[9px] font-black text-[#5F6B94]">{ta("v2.incident.owner")}</p>
-              <div className="inline-flex min-h-[30px] max-w-full items-center gap-1.5 rounded-[7px] border border-[#E6EAF2] bg-white px-2 text-[9px] font-black leading-none text-[#101334]">
-                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#465FFF]/10 text-[#3B52F5]">O</span>
-                <span className="truncate">{alert.sourceLabel || ta("table.unassigned")}</span>
-              </div>
-            </div>
-            <div className="min-w-0">
-              <p className="mb-2 text-[9px] font-black text-[#5F6B94]">{ta("v2.incident.status")}</p>
-              <div className="flex flex-wrap items-center gap-2"><StatusBadge status={alert.status} /><span className="text-[9px] font-black text-[#31406B]">{ta("v2.incident.since", { time: alert.time })}</span></div>
-            </div>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <label className="sr-only" htmlFor="incident-owner">{ta("v2.incident.owner")}</label>
+            <select
+              id="incident-owner"
+              value={alert.assigneeId ?? ""}
+              onChange={(e) => e.target.value && onAssign(alert.id, e.target.value)}
+              className={cn("h-10 rounded-[10px] px-3 text-[13px] font-black outline-none", unassigned ? "bg-[#101334] text-white" : "bg-white text-[#101334]")}
+            >
+              <option value="">{pickL("Assign an owner…", "Tunjuk penanggung jawab…")}</option>
+              {members.map((m) => <option key={m.userId} value={m.userId}>{memberName(m)}</option>)}
+            </select>
+            {alert.status === "New" ? (
+              <button type="button" onClick={() => onStatusChange(alert.id, "acknowledged")} className="h-10 rounded-[10px] bg-white px-4 text-[13px] font-black text-[#101334] shadow-sm transition hover:bg-[#F8FAFF]">{pickL("Mark as being handled", "Tandai sedang ditangani")}</button>
+            ) : null}
+            <button type="button" onClick={() => onPlan(alert)} className="h-10 rounded-[10px] bg-[#465FFF] px-4 text-[13px] font-black text-white transition hover:bg-[#3B52F5]">{pickL("Create response plan", "Buat rencana respons")}</button>
           </div>
         </>
-      ) : (
-        <div className="mt-5 rounded-[14px] border border-dashed border-transparent bg-white/70 p-6">
-          <p className="text-[15px] font-black text-[#101334]">{ta("v2.incident.noCriticalTitle")}</p>
-          <p className="mt-2 max-w-xl text-[12px] font-semibold leading-5 text-[#5F6B94]">{ta("v2.incident.noCriticalDesc")}</p>
-        </div>
       )}
     </Panel>
   );
@@ -813,6 +829,7 @@ export default function AlertsPage() {
   const [severityFilter, setSeverityFilter] = useState("");
   // Open by default on what still needs work; resolved alerts are one click away.
   const [statusFilter, setStatusFilter] = useState("unresolved");
+  const [planAlert, setPlanAlert] = useState<{ id: string; title: string } | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | number | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
@@ -1112,7 +1129,8 @@ export default function AlertsPage() {
   const rows: AlertRow[] = alertsData?.data
     ? alertsData.data.map((alert) => mapAlertRecordToRow(alert, ta, optimisticStatuses, membersQuery.data ?? []))
     : [];
-  const criticalRows = (criticalAlertsQuery.data?.data ?? []).map((alert) => mapAlertRecordToRow(alert, ta, optimisticStatuses, membersQuery.data ?? []));
+  // Only critical alerts that are still open count as an incident.
+  const criticalRows = (criticalAlertsQuery.data?.data ?? []).filter((alert) => String(alert.status || "").toLowerCase() !== "resolved").map((alert) => mapAlertRecordToRow(alert, ta, optimisticStatuses, membersQuery.data ?? []));
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -1153,6 +1171,17 @@ export default function AlertsPage() {
       });
   }
 
+  function handleAssign(id: string | number, userId: string) {
+    updateAlertAssignment(id.toString(), { assignedTo: userId })
+      .then((updated) => {
+        if (!updated) { toastHook.error(pickL("Could not assign the owner.", "Gagal menunjuk penanggung jawab.")); return; }
+        toastHook.success(pickL("Owner assigned.", "Penanggung jawab ditunjuk."));
+        queryClient.invalidateQueries({ queryKey: ["alerts"] });
+        queryClient.invalidateQueries({ queryKey: ["alerts-summary"] });
+      })
+      .catch(() => toastHook.error(pickL("Could not assign the owner.", "Gagal menunjuk penanggung jawab.")));
+  }
+
   async function handleBulkStatusChange(status: "open" | "acknowledged" | "resolved") {
     if (selectedAlerts.size === 0) return;
 
@@ -1177,11 +1206,11 @@ export default function AlertsPage() {
   }
 
   const highlightedCriticalAlert = criticalRows[0] ?? null;
-  const totalCriticalAlerts = criticalAlertsQuery.data?.pagination?.total ?? summary?.by_severity?.critical ?? 0;
-  const metrics = buildMetricCards(ta, summary);
+  const totalCriticalAlerts = criticalAlertsQuery.data ? criticalRows.length : summary?.by_severity?.critical ?? 0;
+  const metrics = buildMetricCards(ta, summary, totalCriticalAlerts);
   const td = useTranslations("DashboardStates");
   const totalPages = alertsData?.pagination?.totalPages ?? 1;
-  const footerText = td("pagination.summary", { start: alertsData?.pagination && alertsData.pagination.total > 0 ? (alertsData.pagination.page - 1) * alertsData.pagination.limit + 1 : 0, end: alertsData?.pagination ? Math.min(alertsData.pagination.page * alertsData.pagination.limit, alertsData.pagination.total) : 0, total: alertsData?.pagination?.total ?? 0, label: ta("table.alertsLabel") });
+  const footerText = td("pagination.summary", { start: alertsData?.pagination && alertsData.pagination.total > 0 ? (alertsData.pagination.page - 1) * alertsData.pagination.limit + 1 : 0, end: alertsData?.pagination ? Math.min(alertsData.pagination.page * alertsData.pagination.limit, alertsData.pagination.total) : 0, total: alertsData?.pagination?.total ?? 0, label: statusFilter === "unresolved" ? pickL("active alerts (resolved ones hidden)", "peringatan aktif (yang selesai disembunyikan)") : ta("table.alertsLabel") });
 
   const members: WorkspaceMemberRecord[] = membersQuery.data ?? [];
   const selectedMember = members.find(
@@ -1242,7 +1271,8 @@ export default function AlertsPage() {
       ) : null}
 
       {/* What needs attention now, then the full list with the routing context beside it. */}
-      <CriticalIncident alert={highlightedCriticalAlert} totalCritical={totalCriticalAlerts} isLoading={criticalAlertsQuery.isLoading} ta={ta} />
+      <CriticalIncident alert={highlightedCriticalAlert} totalCritical={totalCriticalAlerts} isLoading={criticalAlertsQuery.isLoading} ta={ta} members={members} onAssign={handleAssign} onStatusChange={handleStatusChange} onPlan={(a) => setPlanAlert({ id: String(a.id), title: a.title })} />
+      <CreateActionPlanModal open={planAlert !== null} onOpenChange={(open) => { if (!open) setPlanAlert(null); }} initialAlertId={planAlert?.id} initialAlertTitle={planAlert?.title} initialStrategyType="crisis_response" />
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_336px]">
         <div className="min-w-0">

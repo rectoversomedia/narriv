@@ -579,23 +579,16 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                   <td className="px-2.5 py-3 align-middle"><AnalysisBadge status={row.analysisStatus} confidence={row.analysisConfidence} /></td>
                   <td className="px-2.5 py-3 align-middle text-[12px] font-bold leading-snug text-[#31406B]">{row.time}</td>
                   <td className="px-2.5 py-3 align-middle">
-                    <div className="flex flex-col gap-1">
-                      <button
-                        type="button"
-                        onClick={() => onGenerateActionPlan?.(row)}
-                        title={t("planTitle")}
-                        className="inline-flex h-7 w-full items-center justify-center rounded-[7px] border border-[#DDE3EF] bg-white px-2 text-[11px] font-black text-[#3B52F5] transition hover:border-[#465FFF]/30 hover:bg-[#F8FAFF]"
-                      >
-                        {t("plan")}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onInvestigate(row)}
-                        className="inline-flex h-7 w-full items-center justify-center rounded-[7px] bg-[#465FFF] px-2 text-[11px] font-black text-white transition hover:bg-[#3147E8]"
-                      >
+                    {/* One button per row: a negative or mixed record needs checking, a positive or neutral one a plan. */}
+                    {row.sentiment === "NEGATIVE" || row.sentiment === "MIXED" ? (
+                      <button type="button" onClick={() => onInvestigate(row)} className="inline-flex h-8 w-full items-center justify-center rounded-[8px] bg-[#465FFF] px-2 text-[11px] font-black text-white transition hover:bg-[#3147E8]">
                         {tSignals("investigate")}
                       </button>
-                    </div>
+                    ) : (
+                      <button type="button" onClick={() => onGenerateActionPlan?.(row)} title={t("planTitle")} className="inline-flex h-8 w-full items-center justify-center rounded-[8px] bg-[#EEF1FF] px-2 text-[11px] font-black text-[#3B52F5] transition hover:bg-[#E1E6FF]">
+                        {t("plan")}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -652,41 +645,6 @@ function FollowUpPanel({ data }: { data?: SignalsMeta["followUps"] }) {
 
       {hasData && (
         <Link href="/action-plans" className="mt-3 flex h-9 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-[#FBFCFF] text-[11px] font-black text-[#3B52F5]">{t("action")} <ArrowRight size={13} /></Link>
-      )}
-    </Panel>
-  );
-}
-
-function RecommendationPanel({ data }: { data?: SignalsMeta["recommendations"] }) {
-  const t = useTranslations("Signals.recommendations");
-  const hasData = data && data.length > 0;
-
-  return (
-    <Panel className="p-4">
-      <h2 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{t("title")}</h2>
-      
-      {!hasData && data !== undefined ? (
-        <div className="mt-4 flex flex-col items-center justify-center gap-2 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-6 text-center">
-          <p className="text-[12px] font-bold text-[#58648C]">{t("emptyTitle")}</p>
-          <p className="text-[10px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
-        </div>
-      ) : (
-        <div className="mt-4 space-y-2.5">
-          {(data || []).map((item, keyIdx) => {
-            const style = toneStyles[item.tone as Tone];
-            const Icon = item.icon || (item.tone === "purple" ? AlertTriangle : item.tone === "blue" ? ShieldCheck : Zap);
-            return (
-              <div key={`${item.title}:${keyIdx}`} className={cn("grid grid-cols-1 gap-3 rounded-[11px] p-3 sm:grid-cols-[minmax(0,1fr)_auto]", item.tone === "red" || item.tone === "purple" ? "bg-[#FDF0F0]" : item.tone === "blue" ? "bg-[#FFF7E8]" : "bg-[#EEF9F3]")}>
-                <span className="min-w-0"><span className="line-clamp-2 block text-[12px] font-black leading-snug text-[#101334]" title={item.title}>{item.title}</span><span className="mt-1 block text-[10px] font-bold text-[#5F6B94]">{item.desc}</span></span>
-                <span className={cn("h-fit w-fit rounded-full px-2 py-1 text-[8.5px] font-black", item.tone === "red" || item.tone === "purple" ? "bg-[#EF4444]/10 text-[#C81E1E]" : item.tone === "blue" ? "bg-[#F59E0B]/12 text-[#A04606]" : "bg-[#10B981]/10 text-[#047857]")}>{codeLabel(item.badge)}</span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-      
-      {hasData && (
-        <Link href="/action-plans" className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] text-[12px] font-black text-white shadow-sm">{t("action")}</Link>
       )}
     </Panel>
   );
@@ -1346,7 +1304,6 @@ export default function SignalsPage() {
         <div className="grid items-start gap-4 md:grid-cols-2 2xl:grid-cols-1">
             {isMetaUnavailable ? <DashboardErrorState title={tSignals("metaErrorTitle")} description={tSignals("metaErrorDesc")} onRetry={() => void metaQuery.refetch()} minHeight="min-h-[150px]" /> : null}
             <FollowUpPanel data={meta?.followUps} />
-            <RecommendationPanel data={meta?.recommendations} />
         </div>
       </div>
 

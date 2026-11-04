@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Bot, Brain, Check, ChevronDown, ChevronRight, Database, Info, Layers3, Maximize2, Minimize2, MoreHorizontal, Network, RefreshCcw, RotateCcw, Sparkles, Target, TrendingUp, ZoomIn, ZoomOut, type LucideIcon } from "lucide-react";
+import { Bot, Brain, Check, ChevronDown, ChevronRight, Database, Info, Layers3, Maximize2, Minimize2, MoreHorizontal, Network, RefreshCcw, RotateCcw, Target, TrendingUp, ZoomIn, ZoomOut, type LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
@@ -263,24 +263,6 @@ function IconHalo({ icon: Icon, tone }: { icon: LucideIcon; tone: Tone }) {
   const toneStyle = toneStyles[tone];
 
   return null;
-}
-
-function MetricCard({ label, value, helper, icon, tone }: { label: string; value: string; helper: string; icon: LucideIcon; tone: Tone }) {
-  return (
-    <Panel className="overflow-hidden">
-      <CardContent className="flex min-h-[88px] items-center gap-4 p-4">
-        <IconHalo icon={icon} tone={tone} />
-        <div className="min-w-0">
-          <p className="truncate text-[12px] font-extrabold leading-none text-[#5F6B94]">{label}</p>
-          <p className="mt-2 text-[27px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</p>
-          <p className="mt-2 flex items-center gap-1 text-[11px] font-black text-[#047857]">
-            <span className="size-1.5 rounded-full bg-[#10B981]" />
-            {helper.replace("▲ ", "")}
-          </p>
-        </div>
-      </CardContent>
-    </Panel>
-  );
 }
 
 function Sparkline({ values, color }: { values: number[]; color: string }) {
@@ -640,32 +622,37 @@ export default function IntelligencePage() {
   const acceleratingCount = lifecycle.counts.accelerating;
   const highPotentialCount = liveNarrativeRecords.filter((record) => record.impact.toLowerCase().includes("high")).length;
 
+  // Four counts a director reads at a glance: how many issues, how many hurt, how many are new, how many help.
+  const negativeIssues = liveClusters.filter((c) => c.sentiment === "negative");
+  const positiveIssues = liveClusters.filter((c) => c.sentiment === "positive");
+  void averageConfidence; void highPotentialCount;
+  const pending = narrativesQuery.isPending;
   const metrics = [
     {
-      label: ti("metrics.clusters.label"),
-      value: narrativesQuery.isPending ? "..." : String(totalNarratives),
-      helper: liveClusters.length > 0 ? ti("metrics.clusters.accelerating", { count: acceleratingCount }) : ti("labels.noData"),
+      label: pickL("Issues tracked", "Isu terpantau"),
+      value: pending ? "..." : String(totalNarratives),
+      helper: liveClusters.length > 0 ? pickL(`${acceleratingCount} rising`, `${acceleratingCount} sedang naik`) : ti("labels.noData"),
       icon: Network,
       tone: "purple" as Tone,
     },
     {
-      label: ti("metrics.confidence.label"),
-      value: narrativesQuery.isPending ? "..." : averageConfidence === null ? "-" : `${averageConfidence}%`,
-      helper: liveNarrativeRecords.length > 0 ? ti("metrics.confidence.helper") : ti("labels.noData"),
+      label: pickL("Negative issues", "Isu negatif"),
+      value: pending ? "..." : String(negativeIssues.length),
+      helper: negativeIssues.length > 0 ? pickL(`${negativeIssues.reduce((n, c) => n + c.signals, 0)} records`, `${negativeIssues.reduce((n, c) => n + c.signals, 0)} sinyal`) : pickL("none", "tidak ada"),
       icon: Brain,
-      tone: "blue" as Tone,
+      tone: "red" as Tone,
     },
     {
-      label: ti("metrics.emerging.label"),
-      value: narrativesQuery.isPending ? "..." : String(lifecycle.counts.emerging),
-      helper: liveClusters.length > 0 ? ti("metrics.emerging.liveNarratives", { count: liveClusters.length }) : ti("labels.noData"),
+      label: pickL("New issues", "Isu baru"),
+      value: pending ? "..." : String(lifecycle.counts.emerging),
+      helper: lifecycle.counts.emerging > 0 ? pickL("just appeared", "baru muncul") : pickL("none this period", "tidak ada periode ini"),
       icon: TrendingUp,
       tone: "amber" as Tone,
     },
     {
-      label: ti("metrics.opportunities.label"),
-      value: narrativesQuery.isPending ? "..." : String(highPotentialCount),
-      helper: liveNarrativeRecords.length > 0 ? ti("metrics.opportunities.highImpact", { count: highPotentialCount }) : ti("labels.noData"),
+      label: pickL("Positive issues", "Isu positif"),
+      value: pending ? "..." : String(positiveIssues.length),
+      helper: positiveIssues.length > 0 ? pickL("worth amplifying", "layak diperkuat") : pickL("none", "tidak ada"),
       icon: Target,
       tone: "green" as Tone,
     },
@@ -770,9 +757,16 @@ export default function IntelligencePage() {
       </header>
 
       <section className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
-        {metrics.map((metric) => (
-          <MetricCard key={metric.label} {...metric} />
-        ))}
+        {metrics.map((metric) => {
+          const tone = toneStyles[metric.tone];
+          return (
+            <div key={metric.label} className="rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${tone.rgb},0.11), rgba(${tone.rgb},0.02) 60%)` }}>
+              <p className="text-[11px] font-black uppercase tracking-[0.06em]" style={{ color: readableTone(tone.color) }}>{metric.label}</p>
+              <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-[#101334]">{metric.value}</p>
+              <p className="mt-2 text-[11px] font-bold text-[#5A6478]">{metric.helper}</p>
+            </div>
+          );
+        })}
       </section>
 
       {narrativesQuery.isPending ? <PanelSkeleton /> : null}
@@ -986,25 +980,23 @@ export default function IntelligencePage() {
                   </Badge>
                 ) : null}
               </div>
-              <div className="mt-3 border-t border-[#EEF1F7] pt-3">
-                <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#53608C]">{ti("selectedNarrative.related")}</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {selectedCluster.related.map((item) => (
-                    <span key={`${text(item.topic, language)}-${item.growth}`} className="rounded-full bg-[#F5F7FC] px-2.5 py-1 text-[10px] font-bold text-[#53608C]">
-                      {text(item.topic, language)} <span className="ml-1 text-[#C81E1E]">{item.growth}</span>
-                    </span>
-                  ))}
+              {/* Size and spread in one line; the recommendation shows only when it says something new. */}
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="rounded-[10px] bg-[#F5F7FC] px-3 py-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#647099]">{pickL("Records", "Sinyal")}</p>
+                  <p className="text-[18px] font-black text-[#101334]">{selectedCluster.signals}</p>
+                </div>
+                <div className="rounded-[10px] bg-[#F5F7FC] px-3 py-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#647099]">{pickL("Spread", "Sebaran")}</p>
+                  <p className="text-[18px] font-black text-[#101334]">{text(selectedCluster.related[0]?.topic ?? { en: "-", id: "-" }, language)}</p>
                 </div>
               </div>
-              <div className="mt-3 rounded-[12px] bg-[#F6F8FF] p-3">
-                <div className="flex items-start gap-2.5">
-                  <Sparkles size={15} className="mt-0.5 shrink-0 text-[#3B52F5]" />
-                  <div>
-                    <p className="text-[10px] font-black text-[#53608C]">{ti("selectedNarrative.aiRec")}</p>
-                    <p className="mt-1 text-[11px] font-semibold leading-relaxed text-[#53608C]">{text(selectedCluster.aiRec, language)}</p>
-                  </div>
+              {text(selectedCluster.aiRec, language) && text(selectedCluster.aiRec, language) !== text(selectedCluster.description, language) ? (
+                <div className="mt-3 rounded-[12px] bg-[#101334] p-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#A9B4FF]">{pickL("Next step", "Langkah berikutnya")}</p>
+                  <p className="mt-1 line-clamp-3 text-[12px] font-bold leading-snug text-white">{text(selectedCluster.aiRec, language)}</p>
                 </div>
-              </div>
+              ) : null}
               <button type="button" onClick={() => setIsAnalysisOpen(true)} disabled={!selectedNarrativeId} className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-[9px] bg-[#465FFF] hover:bg-[#3B51E0] text-[12px] font-black text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50">
                 {ti("selectedNarrative.btnAnalysis")}
                 <ChevronRight size={14} />

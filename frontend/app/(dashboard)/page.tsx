@@ -29,6 +29,7 @@ import { SentimentTrendChart } from "@/components/dashboard/sentiment-trend-char
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/toast";
+import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components/create-action-plan-modal";
 import { issueHref, monitoringHref, type MonitoringPeriod } from "@/lib/evidence-links";
 
 // One screen, one period, five answers: how coverage leans, what to do, which issues are hot, where the
@@ -52,6 +53,23 @@ const BAR_COLORS = ["#465FFF", "#8B5CFF", "#10B981", "#F59E0B", "#EF4444", "#0EA
 // The alert list returns stored rows (snake_case); the detail endpoint returns camelCase.
 type AlertRow = Alert & { created_at?: string; what_to_do?: string | null };
 const alertTime = (a: AlertRow) => a.createdAt || a.created_at || null;
+
+const firstSentence = (text: string) => text.split(/(?<=[.!?])\s/)[0];
+
+// Who holds the alert and how its deadline stands: the two facts that decide whether it needs a push today.
+function AlertFacts({ alert }: { alert: AlertRow }) {
+  const L = useL();
+  const deadline = alert.deadline ? new Date(alert.deadline).getTime() : NaN;
+  const overdueHours = Number.isFinite(deadline) && deadline < Date.now() ? Math.max(1, Math.round((Date.now() - deadline) / 3600000)) : 0;
+  const noOwner = !alert.assignedTo && !alert.assignedTeam;
+  if (!overdueHours && !noOwner) return null;
+  return (
+    <span className="mt-1.5 flex flex-wrap gap-1.5">
+      {noOwner ? <span className="rounded-full bg-[#C81E1E] px-2 py-0.5 text-[10px] font-black text-white">{L("No owner", "Belum ada pemilik")}</span> : null}
+      {overdueHours ? <span className="rounded-full bg-[#C81E1E] px-2 py-0.5 text-[10px] font-black text-white">{L(`${overdueHours}h overdue`, `lewat ${overdueHours} jam`)}</span> : null}
+    </span>
+  );
+}
 
 function Card({ title, link, children, className }: { title: string; link?: { href: string; label: string }; children: React.ReactNode; className?: string }) {
   return (
@@ -131,6 +149,7 @@ export default function DashboardPage() {
   const user = useAuthStore((state) => state.user);
   const isDemoSession = isDemoUser(user);
   const [period, setPeriod] = useState<DateRangeKey>("30d");
+  const [planOpen, setPlanOpen] = useState(false);
   const router = useRouter();
 
   // A workspace that has not finished onboarding goes there first.
@@ -151,7 +170,7 @@ export default function DashboardPage() {
   });
   const pipelineQuery = useQuery({ queryKey: ["pipeline-status"], queryFn: getPipelineStatus, staleTime: 60 * 1000, retry: 1 });
   const issuesQuery = useQuery({ queryKey: ["overview-issues", period], queryFn: () => getNarratives({ limit: 20, days: PERIOD_DAYS[period] }), staleTime: 60 * 1000 });
-  const alertsQuery = useQuery({ queryKey: ["overview-open-alerts"], queryFn: () => getAlerts({ status: "open", limit: 50 }), staleTime: 30 * 1000 });
+  const alertsQuery = useQuery({ queryKey: ["overview-active-alerts"], queryFn: () => getAlerts({ status: "unresolved", limit: 50 }), staleTime: 30 * 1000 });
   const recsQuery = useQuery({ queryKey: ["overview-recommendations", period], queryFn: () => getRecommendations(PERIOD_HOURS[period]), staleTime: 60 * 1000, retry: 1 });
   const geoQuery = useQuery({ queryKey: ["overview-geo-summary"], queryFn: () => getVisibilitySummary(), staleTime: 5 * 60 * 1000 });
   const geoRun = useMutation({
@@ -385,7 +404,7 @@ export default function DashboardPage() {
               )}
             </Card>
 
-            <Card title={L("To do now", "Yang harus dilakukan")} link={{ href: "/alerts", label: L(`${openAlertTotal} open`, `${openAlertTotal} terbuka`) }}>
+            <Card title={L("Decide today", "Putuskan hari ini")} link={{ href: "/alerts", label: L(`${openAlertTotal} active alerts`, `${openAlertTotal} peringatan aktif`) }}>
               {alertsQuery.isLoading || recsQuery.isLoading ? (
                 <div className="space-y-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
               ) : openAlerts.length === 0 && recommendations.length === 0 ? (
@@ -401,6 +420,7 @@ export default function DashboardPage() {
                             <span className="text-[10px] font-bold text-[#5A6478]">{timeAgo(alertTime(alert))}</span>
                           </span>
                           <span className="mt-1.5 block truncate text-[13px] font-black text-[#101334]">{alert.title}</span>
+                          <AlertFacts alert={alert} />
                         </span>
                         <span className="shrink-0 rounded-[8px] bg-[#465FFF] px-3 py-1.5 text-[11px] font-black text-white">{L("Handle", "Tangani")}</span>
                       </Link>
@@ -408,17 +428,17 @@ export default function DashboardPage() {
                   ))}
                   {recommendations.map((rec: IntelligenceRecommendation, index) => (
                     <li key={`${rec.action}-${index}`}>
-                      <Link href="/action-center" className="flex items-center justify-between gap-3 rounded-[10px] border border-[#EEF1F7] p-3 transition hover:border-[#465FFF]/40 hover:bg-[#FBFCFF]">
+                      <button type="button" onClick={() => setPlanOpen(true)} className="flex w-full items-center justify-between gap-3 rounded-[10px] border border-[#EEF1F7] p-3 text-left transition hover:border-[#465FFF]/40 hover:bg-[#FBFCFF]">
                         <span className="min-w-0">
                           <span className="flex items-center gap-2">
                             <Tag tone={levelTone(rec.priority)}>{tLevel(`level.${rec.priority}`)}</Tag>
                             <span className="text-[10px] font-bold text-[#5A6478]">{codes.urgency(rec.urgency)}</span>
                           </span>
                           <span className="mt-1.5 block text-[13px] font-black text-[#101334]">{codes.action(rec.action)}</span>
-                          {rec.observedIssue ? <span className="mt-0.5 block truncate text-[12px] font-medium text-[#53608C]">{rec.observedIssue}</span> : null}
+                          {rec.observedIssue && (index === 0 || firstSentence(rec.observedIssue) !== firstSentence(recommendations[index - 1]?.observedIssue ?? "")) ? <span className="mt-0.5 block truncate text-[12px] font-semibold text-[#53608C]">{firstSentence(rec.observedIssue)}</span> : null}
                         </span>
                         <span className="shrink-0 rounded-[8px] border border-[#DDE3EF] px-3 py-1.5 text-[11px] font-black text-[#3B52F5]">{L("Plan", "Buat rencana")}</span>
-                      </Link>
+                      </button>
                     </li>
                   ))}
                 </ol>
@@ -538,6 +558,7 @@ export default function DashboardPage() {
           </Card>
         </>
       )}
+      <CreateActionPlanModal open={planOpen} onOpenChange={setPlanOpen} />
     </div>
   );
 }
