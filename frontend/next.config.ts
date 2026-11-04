@@ -40,6 +40,11 @@ const nextConfig: NextConfig = {
   // Headers for security - comprehensive CSP added
   async headers() {
     return [
+      // Brand images and icons change rarely: cache a day, then refresh in the background.
+      {
+        source: "/:dir(brand|icons|icon)/:file*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }],
+      },
       {
         source: "/(.*)",
         headers: [

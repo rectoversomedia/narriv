@@ -280,7 +280,7 @@ export function Topbar() {
     <header className="sticky top-0 z-[100] flex h-[88px] items-center justify-between border-b border-border bg-background/60 px-5 backdrop-blur-xl sm:px-8 lg:px-10 xl:px-12">
       {/* Brand on small screens, where the sidebar is replaced by the bottom navigation. */}
       <Link href="/" className="flex shrink-0 items-center lg:hidden" aria-label="Narriv dashboard">
-        <Image src="/logo-h-narriv-2026.png" alt="Narriv" width={96} height={36} priority className="h-8 w-auto object-contain" />
+        <Image src="/brand/logo-h.webp" alt="Narriv" width={96} height={36} priority unoptimized className="h-8 w-auto object-contain" />
       </Link>
       <div ref={searchRef} className="relative hidden w-full max-w-[530px] lg:block">
         <label className="flex h-[48px] items-center gap-4 rounded-[8px] border border-border bg-slate-50 px-5 text-[var(--text-soft)] focus-within:border-[#465FFF]/50 focus-within: transition-all">

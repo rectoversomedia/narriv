@@ -42,7 +42,7 @@ export function Sidebar() {
   });
 
   const customLogoUrl = workspaceSettingsQuery.data?.logoUrl ? resolveBackendAssetUrl(workspaceSettingsQuery.data.logoUrl) : null;
-  const activeLogo = customLogoUrl || "/logo-p-narriv-2026.png";
+  const activeLogo = customLogoUrl || "/brand/logo-p.webp";
   const brandName = workspaceSettingsQuery.data?.brandName || "Narriv";
 
   return (
@@ -53,7 +53,7 @@ export function Sidebar() {
         {/* Logo: the round mark when collapsed, the wordmark when open; they cross-fade instead of jumping. */}
         <div className="relative h-10 shrink-0 px-1">
           <span className={`absolute left-1 top-0 flex h-10 w-10 items-center justify-center overflow-hidden rounded-full transition-opacity duration-200 ${sidebarCollapsed ? "opacity-100" : "opacity-0"}`}>
-            <Image src={customLogoUrl || "/logo-bulat-narriv-2026.png"} alt={brandName} width={40} height={40} priority unoptimized={Boolean(customLogoUrl)} className="h-10 w-10 object-contain" />
+            <Image src={customLogoUrl || "/brand/logo-mark-96.webp"} alt={brandName} width={40} height={40} priority unoptimized className="h-10 w-10 object-contain" />
           </span>
           <span className={`absolute left-1 top-0 flex h-10 items-center gap-2 whitespace-nowrap transition-opacity duration-200 ${sidebarCollapsed ? "pointer-events-none opacity-0" : "opacity-100"}`}>
             {customLogoUrl ? (
@@ -131,7 +131,7 @@ export function Sidebar() {
           <button type="button" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} aria-label="Close menu" />
           <div className="absolute inset-x-3 bottom-3 max-h-[82dvh] overflow-y-auto rounded-[24px] bg-[#090D16] border border-border p-4 shadow-2xl">
             <div className="mb-4 flex items-center justify-between">
-              <Image src="/logo-p-narriv-2026.png" alt="Narriv" width={110} height={28} priority className="h-7 w-auto object-contain" />
+              <Image src="/brand/logo-p.webp" alt="Narriv" width={110} height={28} priority unoptimized className="h-7 w-auto object-contain" />
               <button type="button" onClick={() => setOpen(false)} className="rounded-xl border border-border p-2 text-white/60 hover:text-white hover:bg-white/5"><X size={18} /></button>
             </div>
             <div className="grid gap-2">
