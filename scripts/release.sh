@@ -18,7 +18,8 @@ if [[ "${1:-}" != "--skip-gates" ]]; then
 fi
 
 echo "== deploy backend (narriv-api)"
-(cd backend && VERCEL_ORG_ID=$ORG VERCEL_PROJECT_ID=$API_PROJECT ../$V deploy --prod --yes)
+# Both projects set their Root Directory (backend / frontend) in Vercel, so both deploy from the repo root.
+VERCEL_ORG_ID=$ORG VERCEL_PROJECT_ID=$API_PROJECT $V deploy --prod --yes
 echo "== deploy frontend"
 VERCEL_ORG_ID=$ORG VERCEL_PROJECT_ID=$WEB_PROJECT $V deploy --prod --yes || echo "(an 'Not authorized' line after a successful deploy is the apex alias; check below)"
 
