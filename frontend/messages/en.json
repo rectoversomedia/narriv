@@ -684,7 +684,7 @@
     "sourceDonut": {
       "title": "Signal Sources",
       "desc": "Distribution by data source.",
-      "timeframe": "Last 24 Hours",
+      "timeframe": "Last 30 days",
       "totalLabel": "Total Signals",
       "emptyTitle": "No source data",
       "emptyDesc": "Connect data sources to view distribution."

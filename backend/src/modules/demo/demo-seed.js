@@ -199,13 +199,12 @@ function hoursAgo(shape, r) {
 const SENTIMENT_OF = { negative: "NEGATIVE", positive: "POSITIVE", mixed: "MIXED", neutral: "NEUTRAL" };
 
 function signalSentiment(narrative, r) {
-    // Mostly the narrative's tone, with some neutral and opposite voices so the split looks real.
+    // The narrative's tone with some neutral voices. Never the opposite tone: the headlines are written in the
+    // narrative's tone, and a complaint headline labelled "positive" reads as a broken analysis in a demo.
     const x = r();
     if (narrative.sentiment === "mixed") return x < 0.3 ? "POSITIVE" : x < 0.55 ? "NEGATIVE" : x < 0.85 ? "MIXED" : "NEUTRAL";
-    if (x < 0.68) return SENTIMENT_OF[narrative.sentiment];
-    if (x < 0.86) return "NEUTRAL";
-    if (x < 0.93) return "MIXED";
-    return narrative.sentiment === "negative" ? "POSITIVE" : "NEGATIVE";
+    if (x < 0.82) return SENTIMENT_OF[narrative.sentiment];
+    return x < 0.94 ? "NEUTRAL" : "MIXED";
 }
 
 async function must(promise, what) {
@@ -290,9 +289,9 @@ export async function seedDemoWorkspace({ now = new Date(), db = defaultDb, ws =
     const byNarrative = {};
     signals.forEach((s, i) => { (byNarrative[owners[i]] ||= []).push(s); });
 
-    // AI analyses for most records; the newest few stay "not analysed yet"
+    // AI analyses for most records; a few recent ones (not the very top of the list) stay "not analysed yet"
     const newestFirst = [...signals].sort((a, b) => b.captured_at.localeCompare(a.captured_at));
-    const pending = new Set(newestFirst.slice(0, 6).map((s) => s.id));
+    const pending = new Set([4, 9, 15].map((i) => newestFirst[i]?.id).filter(Boolean));
     await chunkedInsert(db, "signal_analyses", signals.filter((s) => !pending.has(s.id)).map((s, i) => ({
         signal_id: s.id, model: "demo", confidence: 0.7 + ((i * 37) % 25) / 100, created_at: s.captured_at,
         analysis: { sentiment: s.sentiment.toLowerCase(), confidence_score: 0.7 + ((i * 37) % 25) / 100, narrative_type: owners[signals.indexOf(s)], summary: "Contoh analisis untuk demo." },

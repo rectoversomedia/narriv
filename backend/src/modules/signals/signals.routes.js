@@ -328,11 +328,13 @@ router.get("/meta", async (req, res) => {
             tone: 'purple'
         }));
 
-        // Platform counts - fetch all signals grouped by platform
+        // Platform counts over the last 30 days (labelled so on the page); all-time grew without bound.
         const { data: allSignals, error: signalsError } = await supabase
             .from('signals')
             .select('platform')
-            .in('workspace_id', workspaceIds);
+            .in('workspace_id', workspaceIds)
+            .gte('captured_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+            .limit(5000);
 
         if (signalsError) throw signalsError;
 

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useDeferredValue, useEffect, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { intlLocale, useUiStore } from "@/store/useUiStore";
-import { MONITORING_PERIODS, monitoringHref, parseMonitoringFilters, periodStart, type MonitoringFilters } from "@/lib/evidence-links";
+import { MONITORING_PERIODS, issueHref, monitoringHref, parseMonitoringFilters, periodStart, type MonitoringFilters } from "@/lib/evidence-links";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ArrowRight, Check, FileText, Info, Loader2, Search, ShieldCheck, Sparkles, Star, Trash2, Zap, X, Globe, ExternalLink } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
@@ -25,6 +25,7 @@ import { getNarratives, getDateRangeOptions, getSignals, getSources, type Pagina
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { DemoBanner } from "@/components/ui/demo-banner";
 import { pickL } from "@/lib/use-l";
+import { PlatformIcon } from "@/components/ui/platform-icon";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Sentiment = "NEGATIVE" | "POSITIVE" | "NEUTRAL" | "MIXED" | "UNANALYZED";
@@ -240,64 +241,92 @@ function Panel({ children, className }: { children: ReactNode; className?: strin
 
 
 function SummaryPanel({ meta }: { meta?: SignalsMeta }) {
-  const t = useTranslations("Signals.summary");
-  const tSignals = useTranslations("Signals");
   const uiLanguage = useUiStore((state) => state.language);
+  const L = (en: string, id: string) => (uiLanguage === "id" ? id : en);
+  const num = (n: number) => n.toLocaleString(uiLanguage === "id" ? "id-ID" : "en-US");
 
   const total = meta?.metrics?.totalSignals24h ?? 0;
   const negative = meta?.metrics?.negativeSignals24h ?? 0;
+  const positive = meta?.metrics?.positiveSignals24h ?? 0;
   const critical = meta?.metrics?.criticalSignals24h ?? 0;
-  // Positive comes from persisted sentiment; neutral and unanalyzed signals are not counted as positive.
-  const positive = meta?.metrics?.positiveSignals24h;
-  const ratio = positive !== undefined && negative > 0 ? (positive / negative).toFixed(1) : "—";
-  const other = positive !== undefined ? Math.max(0, total - positive - negative) : null;
-
-  const hasData = total > 0;
+  // Neutral, mixed and not-yet-analysed records together.
+  const other = Math.max(0, total - positive - negative);
+  const pct = (n: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
+  // Same rule as the Overview verdict: net (positive − negative) share of the day's records.
+  const net = total > 0 ? ((positive - negative) / total) * 100 : 0;
+  const verdict = total === 0
+    ? { word: L("No data", "Belum ada data"), color: "#5A6478", bg: "#F1F4FA" }
+    : net <= -15 ? { word: L("Negative", "Negatif"), color: "#C81E1E", bg: "#FDECEC" }
+      : net >= 15 ? { word: L("Positive", "Positif"), color: "#047857", bg: "#E5F6EE" }
+        : { word: L("Balanced", "Seimbang"), color: "#31406B", bg: "#EEF1F8" };
   const aiSummary = meta?.aiSummary;
+  const headline = aiSummary ? aiSummary.content[uiLanguage as "en" | "id"] || aiSummary.content.en : null;
+  const advice = aiSummary ? aiSummary.insight[uiLanguage as "en" | "id"] || aiSummary.insight.en : null;
 
-  const metricCards = [
-    { label: t("total"), value: total.toLocaleString(uiLanguage), helper: t("trendLabel"), tone: "blue" as Tone },
-    { label: t("critical"), value: critical.toLocaleString(uiLanguage), helper: t("alertBackedLabel"), tone: "amber" as Tone },
-    { label: tSignals("positiveNegativeRatio"), value: ratio === "—" ? "—" : `${ratio}:1`, helper: `${positive ?? "—"} / ${negative}`, tone: (positive ?? 0) >= negative ? "green" as Tone : "red" as Tone },
-    { label: tSignals("otherSentiment"), value: other === null ? "—" : other.toLocaleString(uiLanguage), helper: t("trendLabel"), tone: "purple" as Tone },
+  const segments = [
+    { key: "neg", label: L("Negative", "Negatif"), value: negative, color: "#E5484D" },
+    { key: "pos", label: L("Positive", "Positif"), value: positive, color: "#12A66A" },
+    { key: "other", label: L("Neutral & other", "Netral & lainnya"), value: other, color: "#B8C0D4" },
+  ];
+  const tiles = [
+    { key: "total", label: L("Signals, 24 h", "Sinyal 24 jam"), value: num(total), sub: L("collected today", "masuk hari ini"), tone: "#465FFF", rgb: "70,95,255" },
+    { key: "neg", label: L("Negative", "Negatif"), value: num(negative), sub: `${pct(negative)}% ${L("of today", "dari hari ini")}`, tone: "#C81E1E", rgb: "229,72,77" },
+    { key: "crit", label: L("Critical alerts", "Peringatan kritis"), value: num(critical), sub: critical > 0 ? L("handle first", "tangani dulu") : L("none open", "tidak ada"), tone: critical > 0 ? "#A04606" : "#5A6478", rgb: critical > 0 ? "245,158,11" : "100,116,139" },
+    { key: "pos", label: L("Positive", "Positif"), value: num(positive), sub: `${pct(positive)}% ${L("of today", "dari hari ini")}`, tone: "#047857", rgb: "18,166,106" },
   ];
 
   return (
-    <Panel className="overflow-hidden p-5">
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{t("title")}</h2>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black text-[#6E44E8]">{t("aiGenerated")}</span>
+    <Panel className="overflow-hidden">
+      <div className="grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+        <div className="min-w-0 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{L("Today at a glance", "Ringkasan hari ini")}</h2>
+            <span className="rounded-full bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black text-[#6E44E8]">{L("Summarised by AI", "Diringkas AI")}</span>
           </div>
-          {hasData && aiSummary ? (
-            <>
-              <p className="mt-3 text-[14px] font-semibold leading-6 text-navy">{aiSummary.content[uiLanguage as 'en' | 'id'] || aiSummary.content.en}</p>
-              <p className="mt-2 max-w-[560px] text-[13px] font-medium leading-6 text-body">{aiSummary.insight[uiLanguage as 'en' | 'id'] || aiSummary.insight.en}</p>
-            </>
-          ) : (
-            <>
-              <p className="mt-3 text-[14px] font-semibold leading-6 text-navy">{t("noData")}</p>
-              <p className="mt-2 max-w-[560px] text-[13px] font-medium leading-6 text-body">{t("noDataDesc")}</p>
-            </>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <span className="rounded-[10px] px-3 py-1.5 text-[20px] font-black leading-none tracking-[-0.03em]" style={{ color: verdict.color, background: verdict.bg }}>{verdict.word}</span>
+            <span className="text-[13px] font-bold text-[#3A4566]">{L(`overall tone of ${num(total)} signals in 24 h`, `nada keseluruhan dari ${num(total)} sinyal 24 jam`)}</span>
+          </div>
+
+          {total > 0 ? (
+            <div className="mt-4">
+              <div className="flex h-3.5 w-full overflow-hidden rounded-full bg-[#EEF1F7]">
+                {segments.map((seg) => seg.value > 0 ? <span key={seg.key} style={{ width: `${pct(seg.value)}%`, background: seg.color }} title={`${seg.label}: ${seg.value}`} /> : null)}
+              </div>
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[12px] font-bold text-[#3A4566]">
+                {segments.map((seg) => (
+                  <span key={seg.key} className="inline-flex items-center gap-1.5">
+                    <span className="size-2.5 rounded-full" style={{ background: seg.color }} />
+                    {seg.label} <b className="font-black text-[#101334]">{seg.value}</b> <span className="text-[#5A6478]">({pct(seg.value)}%)</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {headline ? <p className="mt-4 line-clamp-3 text-[14px] font-bold leading-6 text-[#101334]" title={headline}>{headline}</p> : (
+            <p className="mt-4 text-[13px] font-semibold text-[#5A6478]">{L("No signals in the last 24 hours yet.", "Belum ada sinyal dalam 24 jam terakhir.")}</p>
           )}
+          {advice ? (
+            <div className="mt-3 rounded-[12px] bg-[#101334] px-4 py-3">
+              <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#A9B4FF]">{L("Suggested next step", "Saran langkah")}</p>
+              <p className="mt-1 line-clamp-2 text-[13px] font-bold leading-snug text-white" title={advice}>{advice}</p>
+            </div>
+          ) : null}
         </div>
-        <div className="grid gap-3 border-t border-[#EDF1F7] pt-4 md:grid-cols-2 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
-          {metricCards.map((metric) => <MetricBlock key={metric.label} {...metric} />)}
+
+        <div className="grid grid-cols-2 gap-3 bg-[#F7F8FC] p-5">
+          {tiles.map((tile) => (
+            <div key={tile.key} className="flex min-w-0 flex-col justify-between rounded-[12px] bg-white p-4 shadow-[0_2px_10px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${tile.rgb}, 0.10), rgba(${tile.rgb}, 0.02) 60%)` }}>
+              <p className="text-[11px] font-black uppercase tracking-[0.06em]" style={{ color: tile.tone }}>{tile.label}</p>
+              <p className="mt-2 text-[32px] font-black leading-none tracking-[-0.045em] text-[#101334]">{tile.value}</p>
+              <p className="mt-2 text-[11px] font-bold text-[#5A6478]">{tile.sub}</p>
+            </div>
+          ))}
         </div>
       </div>
     </Panel>
-  );
-}
-
-function MetricBlock({ label, value, helper, tone }: { label: string; value: string; helper: string; tone: Tone }) {
-  const style = toneStyles[tone];
-  return (
-    <div className={cn("min-w-0 rounded-[12px] border p-3", style.border, style.soft)}>
-      <p className="text-[11px] font-extrabold text-[#5F6B94]">{label}</p>
-      <p className="mt-2 text-[25px] font-black leading-none tracking-[-0.045em] text-[#101334]">{value}</p>
-      <p className={cn("mt-2 text-[10px] font-black", style.text)}>{helper}</p>
-    </div>
   );
 }
 
@@ -613,7 +642,7 @@ function FollowUpPanel({ data }: { data?: SignalsMeta["followUps"] }) {
             const Icon = item.tone === "green" ? Star : Zap;
             return (
               <div key={`${item.title}:${keyIdx}`} className={cn("grid grid-cols-1 gap-3 rounded-[12px] border p-3 sm:grid-cols-[minmax(0,1fr)_auto]", item.tone === "red" ? "border-transparent bg-[#FFF5F5]" : item.tone === "amber" ? "border-transparent bg-[#FFF9F0]" : "border-transparent bg-[#F1FCF6]")}>
-                <span className="min-w-0"><span className="block truncate text-[12px] font-black text-[#101334]">{item.title}</span><span className="mt-1 block text-[10px] font-bold text-[#58648C]">{item.meta}</span></span>
+                <span className="min-w-0"><span className="line-clamp-2 block text-[12px] font-black leading-snug text-[#101334]" title={item.title}>{item.title}</span><span className="mt-1 block text-[10px] font-bold text-[#58648C]">{item.meta}</span></span>
                 <span className="text-left sm:text-right"><span className={cn("rounded-full px-2 py-0.5 text-[9px] font-black", style.soft, style.text)}>{codeLabel(item.badge)}</span><span className="mt-2 block text-[10px] font-bold text-[#31406B]">{item.time}</span></span>
               </div>
             );
@@ -647,8 +676,8 @@ function RecommendationPanel({ data }: { data?: SignalsMeta["recommendations"] }
             const style = toneStyles[item.tone as Tone];
             const Icon = item.icon || (item.tone === "purple" ? AlertTriangle : item.tone === "blue" ? ShieldCheck : Zap);
             return (
-              <div key={`${item.title}:${keyIdx}`} className="grid grid-cols-1 gap-3 rounded-[11px] border border-[#EDF1F7] bg-[#FBFCFF] p-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-                <span className="min-w-0"><span className="block truncate text-[11.5px] font-black text-[#101334]">{item.title}</span><span className="mt-1 block text-[10px] font-bold text-[#5F6B94]">{item.desc}</span></span>
+              <div key={`${item.title}:${keyIdx}`} className={cn("grid grid-cols-1 gap-3 rounded-[11px] p-3 sm:grid-cols-[minmax(0,1fr)_auto]", item.tone === "red" || item.tone === "purple" ? "bg-[#FDF0F0]" : item.tone === "blue" ? "bg-[#FFF7E8]" : "bg-[#EEF9F3]")}>
+                <span className="min-w-0"><span className="line-clamp-2 block text-[12px] font-black leading-snug text-[#101334]" title={item.title}>{item.title}</span><span className="mt-1 block text-[10px] font-bold text-[#5F6B94]">{item.desc}</span></span>
                 <span className={cn("h-fit w-fit rounded-full px-2 py-1 text-[8.5px] font-black", item.tone === "red" || item.tone === "purple" ? "bg-[#EF4444]/10 text-[#C81E1E]" : item.tone === "blue" ? "bg-[#F59E0B]/12 text-[#A04606]" : "bg-[#10B981]/10 text-[#047857]")}>{codeLabel(item.badge)}</span>
               </div>
             );
@@ -662,6 +691,8 @@ function RecommendationPanel({ data }: { data?: SignalsMeta["recommendations"] }
     </Panel>
   );
 }
+
+const PLATFORM_NAMES: Record<string, string> = { instagram: "Instagram", facebook: "Facebook", tiktok: "TikTok", youtube: "YouTube", twitter: "X", x: "X", threads: "Threads", reddit: "Reddit", news: "Berita online", linkedin: "LinkedIn" };
 
 function SourceDonut({ data, totalSignals }: { data?: SignalsMeta["sourceDistribution"]; totalSignals?: number }) {
   const t = useTranslations("Signals.sourceDonut");
@@ -689,7 +720,7 @@ function SourceDonut({ data, totalSignals }: { data?: SignalsMeta["sourceDistrib
         <div>
           <h3 className="text-[16px] font-black text-[#101334]">{t("title")}</h3>
         </div>
-        <span className="inline-flex h-8 shrink-0 whitespace-nowrap items-center rounded-full border border-[#E6EAF2] bg-[#F8FAFF] px-3 text-[9px] font-black text-[#53608C]">
+        <span className="inline-flex h-7 shrink-0 whitespace-nowrap items-center rounded-full bg-[#F1F4FA] px-3 text-[10px] font-black text-[#53608C]">
           {t("timeframe")}
         </span>
       </div>
@@ -710,9 +741,13 @@ function SourceDonut({ data, totalSignals }: { data?: SignalsMeta["sourceDistrib
           </div>
           <div className="space-y-2.5 self-center">
             {items.map((item) => (
-              <div key={item.name} className="flex items-center justify-between gap-3 text-[11px] font-bold">
-                <span className="flex items-center gap-2 text-[#31406B]"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />{item.name}</span>
-                <span className="text-[#5F6B94]">{item.value}</span>
+              <div key={item.name} className="flex items-center justify-between gap-3 text-[12px] font-bold">
+                <span className="flex min-w-0 items-center gap-2 text-[#101334]">
+                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: item.color }} />
+                  <PlatformIcon platform={item.name} className="size-4" />
+                  <span className="truncate">{PLATFORM_NAMES[item.name.toLowerCase()] ?? item.name}</span>
+                </span>
+                <span className="shrink-0 font-black text-[#101334]">{item.value}</span>
               </div>
             ))}
           </div>
@@ -726,122 +761,46 @@ function TimelineChart({ data, labels }: { data?: SignalsMeta["timeline"]; label
   const t = useTranslations("Signals.timeline");
   const uiLanguage = useUiStore((state) => state.language);
   const isLoading = data === undefined;
-  const hasData = data && data.length > 0;
-  const hasNonZero = hasData && data.some((v) => v > 0);
-  const values = hasData ? data : [];
-  const allLabels = labels && labels.length > 0 ? labels : [];
-
-  const width = 520;
-  const height = 170;
-  const padding = 14;
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-
-  const max = values.length > 0 ? Math.max(...values) : 1;
-  const min = 0;
-  const range = max - min || 1;
-
-  const points = values.map((value, index) => {
-    const x = padding + (index / (values.length - 1 || 1)) * (width - padding * 2);
-    const y = padding + (1 - (value - min) / range) * (height - padding * 2);
-    return { x, y, value, label: allLabels[index] ?? "" };
-  });
-
-  const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
-  const areaD = pathD ? `${pathD} L ${width - padding} ${height} L ${padding} ${height} Z` : "";
-
-  const sampledIndices = (() => {
-    if (points.length <= 7) return points.map((_, i) => i);
-    const step = Math.floor(points.length / 6);
-    const indices = [];
-    for (let i = 0; i < points.length; i += step) indices.push(i);
-    if (indices[indices.length - 1] !== points.length - 1) indices.push(points.length - 1);
-    return indices;
-  })();
+  const values = data ?? [];
+  const hasNonZero = values.some((v) => v > 0);
+  const max = Math.max(1, ...values);
+  const peakIndex = values.indexOf(Math.max(...values, 0));
+  const total = values.reduce((sum, v) => sum + v, 0);
+  const every = Math.max(1, Math.ceil(values.length / 6));
 
   return (
     <Panel className="p-4">
-      <h3 className="text-[16px] font-black text-[#101334]">{t("title")} <span className="text-[11px] font-bold text-[#5F6B94]">{t("period")}</span></h3>
+      <div className="flex items-baseline justify-between gap-3">
+        <h3 className="text-[16px] font-black text-[#101334]">{t("title")} <span className="text-[11px] font-bold text-[#5F6B94]">{t("period")}</span></h3>
+        {hasNonZero ? <span className="text-[12px] font-black text-[#101334]">{total.toLocaleString(uiLanguage)} <span className="font-bold text-[#5F6B94]">{t("signalsLabel")}</span></span> : null}
+      </div>
 
       {isLoading ? (
-        <div className="relative mt-5 h-[170px] overflow-hidden rounded-[12px] bg-[#FBFCFF]">
-          <svg className="h-full w-full animate-pulse" viewBox={`0 0 ${width} ${height + 8}`} preserveAspectRatio="none" aria-hidden="true">
-            {[34, 70, 106, 142].map((y) => (
-              <line key={y} x1={padding} x2={width - padding} y1={y} y2={y} stroke="#EDF1F7" strokeWidth="1" />
-            ))}
-            <path d={`M ${padding} ${height - 20} Q ${width * 0.25} ${height - 60} ${width * 0.5} ${height - 40} T ${width - padding} ${height - 30}`} fill="none" stroke="#DDE3EF" strokeWidth="3" strokeLinecap="round" />
-            <rect x={padding} y={height - 16} width="40" height="8" rx="4" fill="#EDF1F7" />
-            <rect x={width * 0.3} y={height - 16} width="40" height="8" rx="4" fill="#EDF1F7" />
-            <rect x={width * 0.6} y={height - 16} width="40" height="8" rx="4" fill="#EDF1F7" />
-          </svg>
-        </div>
-      ) : !hasData || !hasNonZero ? (
-        <div className="mt-5 flex flex-col items-center justify-center gap-3 rounded-[12px] border border-dashed border-[#DDE3EF] bg-[#F8FAFF] py-8 text-center">
-          <div>
-            <p className="text-[12px] font-bold text-[#58648C]">{t("emptyTitle")}</p>
-            <p className="mt-1 text-[10px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
-          </div>
+        <div className="mt-5 h-[170px] animate-pulse rounded-[12px] bg-[#F4F6FC]" />
+      ) : !hasNonZero ? (
+        <div className="mt-5 flex flex-col items-center justify-center gap-1 rounded-[12px] bg-[#F4F6FC] py-8 text-center">
+          <p className="text-[12px] font-bold text-[#58648C]">{t("emptyTitle")}</p>
+          <p className="text-[10px] font-semibold text-[#647099]">{t("emptyDesc")}</p>
         </div>
       ) : (
-        <div className="relative mt-5 h-[170px] overflow-hidden rounded-[12px] bg-[#FBFCFF]">
-          <svg
-            className="chart-enter chart-line-draw h-full w-full"
-            viewBox={`0 0 ${width} ${height + 8}`}
-            preserveAspectRatio="none"
-            aria-hidden="true"
-            onMouseLeave={() => setHoveredIndex(null)}
-          >
-            <defs>
-              <linearGradient id="signals-timeline-fill" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stopColor="#465FFF" stopOpacity="0.22" />
-                <stop offset="100%" stopColor="#465FFF" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-
-            {[34, 70, 106, 142].map((y) => (
-              <line key={y} x1={padding} x2={width - padding} y1={y} y2={y} stroke="#EDF1F7" strokeWidth="1" />
+        <div className="mt-4">
+          {peakIndex >= 0 ? (
+            <p className="mb-2 text-[11px] font-bold text-[#5F6B94]">
+              {pickL("Busiest hour", "Jam tersibuk")} <b className="font-black text-[#101334]">{labels?.[peakIndex] ?? ""}</b> · {values[peakIndex].toLocaleString(uiLanguage)} {t("signalsLabel")}
+            </p>
+          ) : null}
+          <div className="flex h-[140px] items-end gap-[3px] rounded-[12px] bg-[#F7F8FC] px-2 pt-3">
+            {values.map((v, i) => (
+              <div key={i} className="group relative flex h-full flex-1 items-end" title={`${labels?.[i] ?? ""} · ${v} ${t("signalsLabel")}`}>
+                <div
+                  className="w-full rounded-t-[4px] transition group-hover:opacity-80"
+                  style={{ height: v > 0 ? `${Math.max(6, (v / max) * 100)}%` : "2px", background: i === peakIndex ? "#465FFF" : v > 0 ? "#9AA9FF" : "#E3E7F1" }}
+                />
+              </div>
             ))}
-
-            {areaD && <path d={areaD} fill="url(#signals-timeline-fill)" />}
-            {pathD && (
-              <path d={pathD} fill="none" stroke="#465FFF" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" vectorEffect="non-scaling-stroke" />
-            )}
-
-            {points.map((p, i) => (
-              <circle
-                key={i}
-                cx={p.x}
-                cy={p.y}
-                r={hoveredIndex === i ? 5 : 3}
-                fill={hoveredIndex === i ? "#465FFF" : "white"}
-                stroke="#465FFF"
-                strokeWidth="2"
-                className="transition-all duration-150"
-                style={{ cursor: "pointer" }}
-                onMouseEnter={() => setHoveredIndex(i)}
-              />
-            ))}
-
-            {hoveredIndex !== null && points[hoveredIndex] && (() => {
-              const p = points[hoveredIndex];
-              const tooltipW = 90;
-              const tooltipH = 44;
-              const clampedX = Math.max(tooltipW / 2 + 4, Math.min(p.x, width - tooltipW / 2 - 4));
-              const tooltipY = Math.max(4, p.y - tooltipH - 10);
-              const label = p.label;
-              const valueText = p.value.toLocaleString(uiLanguage);
-              return (
-                <g>
-                  <line x1={p.x} y1={p.y} x2={p.x} y2={height} stroke="#465FFF" strokeWidth="1" strokeDasharray="3,3" opacity="0.4" />
-                  <rect x={clampedX - tooltipW / 2} y={tooltipY} width={tooltipW} height={tooltipH} rx="8" fill="#101334" />
-                  <text x={clampedX} y={tooltipY + 16} textAnchor="middle" fill="white" fontSize="9" fontWeight="800">{label}</text>
-                  <text x={clampedX} y={tooltipY + 32} textAnchor="middle" fill="white" fontSize="10" fontWeight="800">{valueText} {t("signalsLabel")}</text>
-                </g>
-              );
-            })()}
-          </svg>
-
-          <div className="absolute inset-x-3 bottom-1 flex justify-between text-[10px] font-bold text-[#5F6B94]">
-            {sampledIndices.map((i) => <span key={i}>{points[i]?.label ?? ""}</span>)}
+          </div>
+          <div className="mt-1.5 flex gap-[3px] px-2 text-[10px] font-bold text-[#5F6B94]">
+            {values.map((_, i) => <span key={i} className="flex-1 text-center">{i % every === 0 ? labels?.[i] ?? "" : ""}</span>)}
           </div>
         </div>
       )}
@@ -872,9 +831,9 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
           {data.map((item, keyIdx) => {
             const style = toneStyles[item.tone as Tone];
             return (
-              <div key={`${item.title}:${keyIdx}`} className="grid grid-cols-1 gap-3 rounded-[11px] border border-[#EDF1F7] bg-[#FBFCFF] p-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+              <div key={`${item.title}:${keyIdx}`} className="grid grid-cols-1 gap-3 rounded-[11px] bg-[#F4F6FC] p-3 sm:grid-cols-[minmax(0,1fr)_auto]">
                 <span className="min-w-0">
-                  <span className="block truncate text-[12px] font-black text-[#101334]">{item.title}</span>
+                  <span className="line-clamp-2 block text-[12px] font-black leading-snug text-[#101334]" title={item.title}>{item.title}</span>
                   <span className="mt-1 block text-[10px] font-bold text-[#5F6B94]">{item.meta}</span>
                 </span>
                 <span className={cn("h-fit w-fit rounded-full px-2 py-1 text-[9px] font-black", item.badge === "Investigating" || item.badge === "open" ? "bg-[#465FFF]/10 text-[#3B52F5]" : "bg-[#F59E0B]/12 text-[#A04606]")}>{codeLabel(item.badge)}</span>
@@ -887,33 +846,54 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
   );
 }
 
+function RelatedNarrativeCard({ n }: { n: { id: string; title: string; signalCount: number; sentiment: string; velocity: string; confidence: number | null } }) {
+  const tone = n.sentiment.toLowerCase();
+  const look = tone.includes("neg")
+    ? { bg: "#FDECEC", chip: "bg-[#C81E1E] text-white", word: pickL("Negative", "Negatif") }
+    : tone.includes("pos")
+      ? { bg: "#E5F6EE", chip: "bg-[#047857] text-white", word: pickL("Positive", "Positif") }
+      : tone.includes("mix")
+        ? { bg: "#F1ECFF", chip: "bg-[#6E44E8] text-white", word: pickL("Mixed", "Campuran") }
+        : { bg: "#EEF1F8", chip: "bg-[#5A6478] text-white", word: pickL("Neutral", "Netral") };
+  const rising = /^\+/.test(n.velocity) && n.velocity !== "+0%";
+  return (
+    <Link href={issueHref(n.id)} className="flex flex-col justify-between rounded-[12px] p-4 transition hover:brightness-[0.98]" style={{ background: look.bg }}>
+      <p className="line-clamp-2 text-[13px] font-black leading-snug text-[#101334]">{n.title}</p>
+      <div className="mt-3 flex items-end justify-between gap-2">
+        <span>
+          <b className="block text-[26px] font-black leading-none tracking-[-0.04em] text-[#101334]">{n.signalCount}</b>
+          <span className="text-[11px] font-bold text-[#5A6478]">{pickL("signals", "sinyal")}</span>
+        </span>
+        <span className="flex flex-wrap justify-end gap-1.5 text-[11px] font-black">
+          <span className={cn("rounded-full px-2.5 py-1", look.chip)}>{look.word}</span>
+          {n.velocity ? <span className={cn("rounded-full bg-white px-2.5 py-1", rising ? "text-[#B45309]" : "text-[#31406B]")}>{n.velocity} {pickL("24 h", "24 jam")}</span> : null}
+        </span>
+      </div>
+    </Link>
+  );
+}
+
 /** Live workspaces: real narrative clusters only (no sample cards). */
 function LiveRelatedNarratives() {
   const t = useTranslations("Signals");
   const q = useQuery({ queryKey: ["signals-related-narratives"], queryFn: () => getNarratives({ limit: 3 }), staleTime: 60 * 1000 });
   const items = q.data?.data ?? [];
   return (
-    <div className="mt-6 rounded-[14px] border border-[#DDE3EF] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.03)]">
+    <div className="mt-6 rounded-[14px] border border-[#E6EAF2] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.03)]">
       <div className="mb-4 flex items-center gap-2">
         <h3 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{t("relatedNarratives")}</h3>
         <span title={pickL("Narrative clusters built from your workspace's signals", "Klaster narasi yang disusun dari sinyal workspace Anda")} className="cursor-help text-[#647099]"><Info size={13} /></span>
       </div>
       {q.isLoading ? (
-        <p className="text-[12px] font-bold text-[#5A6478]">Loading narratives…</p>
+        <p className="text-[12px] font-bold text-[#5A6478]">{pickL("Loading narratives…", "Memuat narasi…")}</p>
       ) : q.data === null ? (
-        <p className="text-[12px] font-bold text-amber-700">Narratives could not be loaded.</p>
+        <p className="text-[12px] font-bold text-amber-700">{pickL("Narratives could not be loaded.", "Narasi gagal dimuat.")}</p>
       ) : items.length === 0 ? (
-        <p className="text-[12px] font-bold text-[#5A6478]">No narrative clusters yet. They form once enough related signals are ingested.</p>
+        <p className="text-[12px] font-bold text-[#5A6478]">{pickL("No narrative clusters yet. They form once enough related signals are ingested.", "Belum ada narasi. Narasi terbentuk setelah cukup banyak sinyal terkait masuk.")}</p>
       ) : (
         <div className="grid gap-4 md:grid-cols-3">
           {items.map((n) => (
-            <Link key={n.id} href="/intelligence" className="rounded-[12px] border border-[#EDF1F7] bg-[#FBFCFF] p-4 transition hover:border-[#465FFF]/30">
-              <p className="line-clamp-2 text-[13px] font-black text-[#101334]">{n.title}</p>
-              <p className="mt-2 text-[11px] font-bold text-[#5F6B94]">
-                {pickL(`${n.signalCount} signal(s) · confidence ${n.confidence === null ? "—" : `${n.confidence}%`} · 24h trend ${n.velocity}`, `${n.signalCount} sinyal · keyakinan ${n.confidence === null ? "—" : `${n.confidence}%`} · tren 24 jam ${n.velocity}`)}
-              </p>
-              <p className="mt-1 text-[10.5px] font-bold capitalize text-[#5A6478]">{n.sentiment}</p>
-            </Link>
+            <RelatedNarrativeCard key={n.id} n={n} />
           ))}
         </div>
       )}

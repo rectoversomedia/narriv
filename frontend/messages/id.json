@@ -684,7 +684,7 @@
     "sourceDonut": {
       "title": "Sumber Sinyal",
       "desc": "Distribusi berdasarkan sumber data.",
-      "timeframe": "24 Jam Terakhir",
+      "timeframe": "30 hari terakhir",
       "totalLabel": "Total Sinyal",
       "emptyTitle": "Belum ada data sumber",
       "emptyDesc": "Hubungkan sumber data untuk melihat distribusi."

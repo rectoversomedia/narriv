@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import OpenAI from "openai";
 import { validateAIOutput } from "./ai.schema.js";
 import { logStructured } from "../../lib/logger.js";
@@ -404,21 +405,23 @@ export const analyzeCluster = async (signalsContext) => {
  * Fallback generator for signals summary when AI provider is offline or rate-limited
  */
 function buildFallbackSummary(signals = [], contextInfo = {}) {
+    // Short, count-led lines; the advice follows the day's tone instead of a fixed sentence.
     const total = contextInfo.totalSignals24h || signals.length;
-    const negative = contextInfo.negativeSignals24h || signals.filter((s) => String(s.sentiment).toUpperCase() === "NEGATIVE").length;
-    const firstTitle = signals[0]?.title ? `terkait ${signals[0].title}` : "dalam sektor perbankan dan fintech";
-    const firstTitleEn = signals[0]?.title ? `regarding ${signals[0].title}` : "across banking and digital finance";
-
+    const negative = contextInfo.negativeSignals24h ?? signals.filter((s) => String(s.sentiment).toUpperCase() === "NEGATIVE").length;
+    const positive = contextInfo.positiveSignals24h ?? signals.filter((s) => String(s.sentiment).toUpperCase() === "POSITIVE").length;
+    const topNegative = signals.find((s) => String(s.sentiment).toUpperCase() === "NEGATIVE")?.title;
+    const top = topNegative || signals[0]?.title || "";
+    const short = top.length > 70 ? `${top.slice(0, 67).trimEnd()}…` : top;
+    const mostlyNegative = negative > positive;
     return {
         title: "AI Signal Summary",
         content: {
-            en: `Monitored ${total} media signals ${firstTitleEn}. ${negative} negative discussions were detected requiring continuous observation.`,
-            id: `Terpantau ${total} sinyal percakapan media ${firstTitle}. Terdeteksi ${negative} pembahasan bernada negatif yang perlu diobservasi secara berkala.`
+            en: `${negative} of ${total} signals today are negative${short ? `, led by "${short}"` : ""}.`,
+            id: `${negative} dari ${total} sinyal hari ini negatif${short ? `, terbanyak soal "${short}"` : ""}.`,
         },
-        insight: {
-            en: "Engage proactive communications on operational reliability to preserve positive brand sentiment.",
-            id: "Lakukan komunikasi proaktif mengenai keandalan operasional untuk menjaga sentimen positif reputasi brand."
-        }
+        insight: mostlyNegative
+            ? { en: "Prepare a holding statement and answer the main complaint on the busiest channel.", id: "Siapkan pernyataan sementara dan jawab keluhan utama di kanal yang paling ramai." }
+            : { en: "Amplify the positive stories while they trend.", id: "Perkuat cerita positif selagi sedang ramai." },
     };
 }
 
@@ -429,10 +432,25 @@ function buildFallbackSummary(signals = [], contextInfo = {}) {
  * @param {object} contextInfo - Metrics context (totalSignals24h, negativeSignals24h, criticalSignals24h)
  * @returns {Promise<{ title: string, content: { en: string, id: string }, insight: { en: string, id: string } }>}
  */
+// The Monitoring page asks for this summary on every load; the same signals and counts give the same summary,
+// so it is kept for a few hours per input instead of calling the model again (per warm instance).
+const SUMMARY_CACHE = new Map();
+const SUMMARY_TTL_MS = 6 * 60 * 60 * 1000;
+
 export const generateSignalsSummary = async (signals = [], contextInfo = {}) => {
     if (!signals || signals.length === 0) {
         return null;
     }
+    const cacheKey = crypto.createHash("sha1").update(JSON.stringify([signals.slice(0, 8).map((s) => [s.title, s.sentiment]), contextInfo])).digest("hex");
+    const cached = SUMMARY_CACHE.get(cacheKey);
+    if (cached && cached.at > Date.now() - SUMMARY_TTL_MS) return cached.value;
+    const value = await generateSignalsSummaryUncached(signals, contextInfo);
+    if (SUMMARY_CACHE.size > 200) SUMMARY_CACHE.delete(SUMMARY_CACHE.keys().next().value);
+    SUMMARY_CACHE.set(cacheKey, { at: Date.now(), value });
+    return value;
+};
+
+async function generateSignalsSummaryUncached(signals, contextInfo) {
 
     if (!OPENAI_API_KEY) {
         return buildFallbackSummary(signals, contextInfo);
@@ -448,20 +466,20 @@ Your task is to analyze recent media signals and generate a high-level executive
 
 STRICT RULES:
 1. Return ONLY a valid JSON object. No markdown. No code fences.
-2. "content.en" and "content.id" must be a concise, professional 2-sentence executive summary reflecting the primary topics and media tone.
-3. "insight.en" and "insight.id" must be a 1-sentence actionable strategic recommendation for corporate communication teams.
+2. "content.en" and "content.id" must be ONE plain sentence of at most 22 words: what is happening and the overall tone, for a board member.
+3. "insight.en" and "insight.id" must be ONE imperative sentence of at most 16 words: the next step for the communication team.
 4. Base your summary directly on the provided signals.
 
 REQUIRED OUTPUT FORMAT (pure JSON):
 {
   "title": "AI Signal Summary",
   "content": {
-    "en": "<2 sentences executive summary in English>",
-    "id": "<2 kalimat ringkasan eksekutif dalam Bahasa Indonesia>"
+    "en": "<one sentence, max 22 words>",
+    "id": "<satu kalimat, maks 22 kata>"
   },
   "insight": {
-    "en": "<1 sentence strategic recommendation in English>",
-    "id": "<1 kalimat rekomendasi tindakan strategis dalam Bahasa Indonesia>"
+    "en": "<one imperative sentence, max 16 words>",
+    "id": "<satu kalimat perintah, maks 16 kata>"
   }
 }`;
 
@@ -495,7 +513,7 @@ Critical Alerts: ${contextInfo.criticalSignals24h || 0}`;
         logStructured("warn", "ai_generate_signals_summary_failed_fallback", { error: error.message });
         return buildFallbackSummary(signals, contextInfo);
     }
-};
+}
 
 export default client;
 
