@@ -726,7 +726,7 @@ export default function IntelligencePage() {
           </button>
 
           <div className="relative w-full sm:w-fit" ref={periodMenuRef}>
-            <button type="button" onClick={() => setIsPeriodMenuOpen((open) => !open)} aria-expanded={isPeriodMenuOpen} className="flex h-10 w-full items-center justify-center gap-2 rounded-[10px] border border-[#E5E9F3] bg-white px-4 text-xs font-extrabold text-[#475070] shadow-sm transition hover:bg-[#F8FAFF] sm:w-fit">
+            <button type="button" onClick={() => setIsPeriodMenuOpen((open) => !open)} aria-expanded={isPeriodMenuOpen} className="flex h-10 items-center justify-center gap-2 rounded-[10px] border border-[#E5E9F3] bg-white px-4 text-xs font-extrabold text-[#475070] shadow-sm transition hover:bg-[#F8FAFF]">
               {ti(`periods.${selectedPeriod.key}`)}
               <ChevronDown size={14} className={cn("text-[#647099] transition", isPeriodMenuOpen && "rotate-180")} />
             </button>
@@ -756,7 +756,7 @@ export default function IntelligencePage() {
       </div>
       </header>
 
-      <section className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3.5 xl:grid-cols-4">
         {metrics.map((metric) => {
           const tone = toneStyles[metric.tone];
           return (

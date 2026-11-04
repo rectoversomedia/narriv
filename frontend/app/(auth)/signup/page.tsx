@@ -9,7 +9,8 @@ import * as z from "zod";
 import { useState } from "react";
 import { AuthInput, AuthShell, Divider, PasswordInput, PasswordRequirements, PrimaryButton, SecurityFooter, SocialButtons } from "@/components/auth/auth-shell";
 import { Field, FieldContent, FieldError, FieldGroup } from "@/components/ui/field";
-import { registerWithPassword } from "@/lib/api-service";
+import { loginWithPassword, registerWithPassword } from "@/lib/api-service";
+import { useAuthStore } from "@/store/useAuthStore";
 
 type SignupFormValues = {
   name: string;
@@ -72,8 +73,15 @@ export default function SignupPage() {
       if (json.requireVerification) {
         router.push("/verify-email");
       } else {
-        // Auto-verified: redirect to login so user can get auth token for onboarding
-        router.push("/login?registered=true");
+        // Auto-verified: sign in with what was just typed and go straight to onboarding (no second login form).
+        try {
+          const session = await loginWithPassword({ email: data.email, password: data.password });
+          useAuthStore.getState().setSession(session.token, { name: session.user.name, email: session.user.email, provider: "password", workspace: data.company || "Narriv" }, session.refreshToken);
+          document.cookie = `narriv_auth=${encodeURIComponent(session.token)}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`;
+          router.push("/onboarding");
+        } catch {
+          router.push("/login?registered=true");
+        }
       }
     } catch (error) {
       const status = (error as { status?: number }).status;

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { pickL } from "@/lib/use-l";
 import {
   useState,
   useEffect,
@@ -85,6 +86,22 @@ const INDUSTRIES = [
   "Agriculture",
   "Other",
 ];
+
+const INDUSTRY_ID: Record<string, string> = {
+  "Banking & Financial Services": "Perbankan & Jasa Keuangan",
+  "Leasing & Financing": "Leasing & Pembiayaan",
+  "E-commerce & Retail": "E-commerce & Ritel",
+  "Technology & Software": "Teknologi & Perangkat Lunak",
+  "Healthcare & Pharmaceuticals": "Kesehatan & Farmasi",
+  "Food & Beverage": "Makanan & Minuman",
+  "Energy & Utilities": "Energi & Utilitas",
+  "Real Estate": "Properti",
+  "Government & Public Sector": "Pemerintahan & Sektor Publik",
+  "Media & Entertainment": "Media & Hiburan",
+  "Transportation & Logistics": "Transportasi & Logistik",
+  "Hospitality & Tourism": "Perhotelan & Pariwisata",
+  "Professional Services": "Jasa Profesional",
+};
 
 const ROLES = [
   "CEO / Founder",
@@ -220,18 +237,18 @@ export default function OnboardingPage() {
   const validateStep = useCallback(
     (s: Step): string | null => {
       if (s === 1) {
-        if (!data.profile.name.trim()) return "Please enter your full name.";
-        if (!data.profile.role) return "Please select your role.";
-        if (!data.profile.company.trim()) return "Please enter your company or brand name.";
-        if (!data.profile.industry) return "Please select your industry.";
+        if (!data.profile.name.trim()) return pickL("Please enter your full name.", "Isi nama lengkap Anda.");
+        if (!data.profile.role) return pickL("Please select your role.", "Pilih jabatan Anda.");
+        if (!data.profile.company.trim()) return pickL("Please enter your company or brand name.", "Isi nama perusahaan atau brand.");
+        if (!data.profile.industry) return pickL("Please select your industry.", "Pilih industri.");
         return null;
       }
       if (s === 2) {
-        if (data.keywords.length === 0) return "Please add at least one keyword to monitor.";
+        if (data.keywords.length === 0) return pickL("Please add at least one keyword to monitor.", "Tambahkan minimal satu kata kunci untuk dipantau.");
         return null;
       }
       if (s === 3) {
-        if (data.sources.length === 0) return "Please select at least one data source.";
+        if (data.sources.length === 0) return pickL("Please select at least one data source.", "Pilih minimal satu sumber data.");
         return null;
       }
       return null;
@@ -272,19 +289,19 @@ export default function OnboardingPage() {
         industry,
         timezone: "Asia/Jakarta",
       });
-      if (!workspace?.id) throw new Error("Failed to configure workspace.");
+      if (!workspace?.id) throw new Error(pickL("Failed to configure workspace.", "Workspace gagal disiapkan."));
 
       const result = await completeOnboarding({ workspaceId: workspace.id, triggerIngestion: false });
       if (result?.success) {
-        toast.success("Welcome to Narriv! You can configure more settings later.");
+        toast.success(pickL("Welcome to Narriv! You can configure more settings later.", "Selamat datang di Narriv! Pengaturan lain bisa diubah nanti."));
         setTimeout(() => {
           window.location.href = "/";
         }, 500);
       } else {
-        throw new Error("Failed to complete onboarding.");
+        throw new Error(pickL("Failed to complete onboarding.", "Onboarding gagal diselesaikan."));
       }
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Failed to skip onboarding.";
+      const msg = e instanceof Error ? e.message : pickL("Failed to skip onboarding.", "Gagal melewati onboarding.");
       toast.error(msg);
       setIsSubmitting(false);
     }
@@ -309,7 +326,7 @@ export default function OnboardingPage() {
         industry: data.profile.industry,
         timezone: "Asia/Jakarta",
       });
-      if (!workspace?.id) throw new Error("Failed to create workspace.");
+      if (!workspace?.id) throw new Error(pickL("Failed to create workspace.", "Workspace gagal dibuat."));
 
       await createOnboardingKeywords({ workspaceId: workspace.id, keywords: data.keywords });
       await createOnboardingSources({ workspaceId: workspace.id, sources: data.sources });
@@ -334,11 +351,11 @@ export default function OnboardingPage() {
           window.location.href = "/";
         }, 800);
       } else {
-        throw new Error("Setup incomplete.");
+        throw new Error(pickL("Setup incomplete.", "Pengaturan belum selesai."));
       }
     } catch (e) {
       clearInterval(progressInterval);
-      const msg = e instanceof Error ? e.message : "An unexpected error occurred.";
+      const msg = e instanceof Error ? e.message : pickL("An unexpected error occurred.", "Terjadi kesalahan. Coba lagi.");
       setSubmitError(msg);
       setIsSubmitting(false);
       setProcessingProgress(0);
@@ -362,7 +379,7 @@ export default function OnboardingPage() {
 
         <div className="flex items-center gap-4">
           <span className="text-sm font-semibold text-[#5F6B94]">
-            {step === "processing" ? 5 : step} of 5
+            {step === "processing" ? 5 : step} {pickL("of", "dari")} 5
           </span>
           <div className="h-6 w-px bg-[#D6DDEC]" />
           {/* Opens the help page in a new tab so the onboarding progress stays here. */}
@@ -372,7 +389,7 @@ export default function OnboardingPage() {
             rel="noopener noreferrer"
             className="flex h-9 items-center gap-2 rounded-full border border-[#D6DDEC] bg-white px-4 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#465FFF] hover:text-[#3B52F5]"
           >
-            Need help?
+            {pickL("Need help?", "Butuh bantuan?")}
           </a>
         </div>
       </header>
@@ -394,7 +411,7 @@ export default function OnboardingPage() {
                   <ProfileStep data={data.profile} onChange={updateProfile} />
                 )}
                 {step === 2 && (
-                  <KeywordsStep keywords={data.keywords} onChange={updateKeywords} />
+                  <KeywordsStep keywords={data.keywords} onChange={updateKeywords} brand={data.profile.company} />
                 )}
                 {step === 3 && (
                   <SourcesStep sources={data.sources} onChange={updateSources} />
@@ -416,7 +433,7 @@ export default function OnboardingPage() {
                     onClick={handleSkip}
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? "Skipping..." : "Skip for now"}
+                    {isSubmitting ? pickL("Skipping…", "Melewati…") : pickL("Skip for now", "Lewati dulu")}
                   </button>
                 ) : (
                   <button
@@ -424,7 +441,7 @@ export default function OnboardingPage() {
                     onClick={back}
                     className="flex h-11 items-center gap-2 rounded-xl border border-[#D6DDEC] bg-white px-6 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#465FFF] hover:text-[#3B52F5]"
                   >
-                    Back
+                    {pickL("Back", "Kembali")}
                   </button>
                 )}
 
@@ -433,7 +450,7 @@ export default function OnboardingPage() {
                   onClick={next}
                   className="flex h-11 items-center gap-3 rounded-xl bg-[#465FFF] hover:bg-[#3B52F5] px-8 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-sm active:scale-[0.98]"
                 >
-                  {step === 5 ? "Finish Setup" : "Continue"}
+                  {step === 5 ? pickL("Finish setup", "Selesaikan") : pickL("Continue", "Lanjut")}
                   <ArrowRight size={16} />
                 </button>
               </div>
@@ -442,7 +459,7 @@ export default function OnboardingPage() {
         </div>
 
         <p className="mt-6 flex items-center justify-center gap-2 text-center text-sm font-medium text-[#647099]">
-          Your data is safe with Narriv. We protect your privacy and information security.
+          {pickL("Your data is safe with Narriv. We protect your privacy and information security.", "Data Anda aman di Narriv. Kami menjaga privasi dan keamanan informasi Anda.")}
         </p>
       </main>
     </div>
@@ -529,14 +546,14 @@ function ProfileStep({
 
       {/* Personal Info */}
       <div className="space-y-5">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">Personal Information</h2>
+        <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{pickL("Personal Information", "Data diri")}</h2>
         <div className="grid gap-5 lg:grid-cols-2">
           <FormField label={t("name")} required htmlFor="onb-name">
             <input id="onb-name"
               type="text"
               value={data.name}
               onChange={(e) => onChange({ name: e.target.value })}
-              placeholder="e.g. Sarah Johnson"
+              placeholder={pickL("e.g. Sarah Johnson", "mis. Rani Pratiwi")}
               className="form-input"
               autoComplete="name"
             />
@@ -546,8 +563,10 @@ function ProfileStep({
             <Select id="onb-role"
               value={data.role}
               onChange={(v) => onChange({ role: v })}
-              placeholder="Select your role"
+              placeholder={pickL("Select your role", "Pilih jabatan")}
             >
+              {/* The title typed at sign-up stays selected even when it is not in the list. */}
+              {data.role && !ROLES.includes(data.role) ? <option value={data.role}>{data.role}</option> : null}
               {ROLES.map((r) => (
                 <option key={r} value={r}>{r}</option>
               ))}
@@ -560,14 +579,14 @@ function ProfileStep({
 
       {/* Company Info */}
       <div className="space-y-5">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">Company / Brand</h2>
+        <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{pickL("Company / Brand", "Perusahaan / Brand")}</h2>
         <div className="grid gap-5 lg:grid-cols-2">
           <FormField label={t("company")} required htmlFor="onb-company">
             <input id="onb-company"
               type="text"
               value={data.company}
               onChange={(e) => onChange({ company: e.target.value })}
-              placeholder="e.g. FIFGROUP"
+              placeholder={pickL("e.g. FIFGROUP", "mis. Bank Arunika")}
               className="form-input"
               autoComplete="organization"
             />
@@ -577,10 +596,10 @@ function ProfileStep({
             <Select id="onb-industry"
               value={data.industry}
               onChange={(v) => onChange({ industry: v })}
-              placeholder="Select your industry"
+              placeholder={pickL("Select your industry", "Pilih industri")}
             >
               {INDUSTRIES.map((ind) => (
-                <option key={ind} value={ind}>{ind}</option>
+                <option key={ind} value={ind}>{INDUSTRY_ID[ind] ? pickL(ind, INDUSTRY_ID[ind]) : ind}</option>
               ))}
             </Select>
           </FormField>
@@ -594,7 +613,7 @@ function ProfileStep({
                 onChange({ mainGoal: e.target.value });
               }
             }}
-            placeholder="Describe what you want to achieve with Narriv. This helps AI personalize your experience..."
+            placeholder={pickL("Describe what you want to achieve with Narriv. This helps AI personalize your experience...", "Ceritakan apa yang ingin dicapai dengan Narriv, misalnya memantau isu layanan dan reputasi brand.")}
             rows={4}
             className="form-textarea"
           />
@@ -651,7 +670,7 @@ function ProfileStep({
         </div>
 
         <p className="text-xs font-medium text-[#647099]">
-          Select 1–3 goals. You can change this anytime in Settings.
+          {pickL("Select 1–3 goals. You can change this anytime in Settings.", "Pilih 1–3 tujuan. Bisa diubah kapan saja di Pengaturan.")}
         </p>
       </div>
     </div>
@@ -663,14 +682,18 @@ function ProfileStep({
 function KeywordsStep({
   keywords,
   onChange,
+  brand = "",
 }: {
   keywords: string[];
   onChange: (kw: string[]) => void;
+  brand?: string;
 }) {
   const t = useTranslations("OnboardingDesign.keywords");
   const [input, setInput] = useState("");
 
-  const suggestions = ["Brand Indonesia", "Customer Service", "Viral", "Competitor", "Market News"];
+  // Suggestions built from the brand itself: generic terms ("Market News") pull in unrelated articles and cost.
+  const base = brand.trim();
+  const suggestions = base ? [base, `${base} keluhan`, `${base} layanan`, `${base} aplikasi`, `${base} promo`] : [];
 
   const add = (kw: string) => {
     const trimmed = kw.trim();
@@ -738,8 +761,8 @@ function KeywordsStep({
 
         {keywords.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#E8EAF6] py-12 text-center">
-            <p className="mt-3 text-sm font-semibold text-[#647099]">No keywords added yet</p>
-            <p className="mt-1 text-xs font-medium text-[#C4C9E2]">Type a keyword above and press Enter to add</p>
+            <p className="mt-3 text-sm font-semibold text-[#647099]">{pickL("No keywords added yet", "Belum ada kata kunci")}</p>
+            <p className="mt-1 text-xs font-medium text-[#C4C9E2]">{pickL("Type a keyword above and press Enter to add", "Ketik kata kunci di atas lalu tekan Enter")}</p>
           </div>
         ) : (
           <div className="flex flex-wrap gap-2">
@@ -838,7 +861,7 @@ function SourcesStep({
       </div>
 
       <div className="space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">Quick Select by Category</h2>
+        <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{pickL("Quick Select by Category", "Pilih cepat per kategori")}</h2>
         <div className="flex flex-wrap gap-3">
           {categories.map((cat) => {
             const Icon = categoryIcons[cat] || Globe2;
@@ -1041,8 +1064,8 @@ function NotificationsStep({
         <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{t("frequency")}</h2>
         <div className="grid gap-3 sm:grid-cols-3">
           {[
-            { key: "dailyEnabled" as const, title: t("daily"), sub: "Every day, 08:00" },
-            { key: "weeklyEnabled" as const, title: t("weekly"), sub: "Every Monday, 09:00" },
+            { key: "dailyEnabled" as const, title: t("daily"), sub: pickL("Every day, 08:00", "Setiap hari, 08.00") },
+            { key: "weeklyEnabled" as const, title: t("weekly"), sub: pickL("Every Monday, 09:00", "Setiap Senin, 09.00") },
             { key: "realtimeEnabled" as const, title: t("realtime"), sub: t("realtimeDesc") },
           ].map(({ key, title, sub }) => (
             <button
@@ -1092,34 +1115,34 @@ function PreviewStep({ data }: { data: OnboardingData }) {
   const t = useTranslations("OnboardingDesign.preview");
 
   const activeAlertTypes = [
-    data.notifications.alertSpike && t("spike"),
-    data.notifications.alertNegative && t("negative"),
-    data.notifications.alertViral && t("viral"),
-    data.notifications.alertComplaint && t("complaint"),
+    data.notifications.alertSpike && pickL("Mention spike", "Lonjakan penyebutan"),
+    data.notifications.alertNegative && pickL("Negative sentiment", "Sentimen negatif"),
+    data.notifications.alertViral && pickL("Viral issue", "Isu viral"),
+    data.notifications.alertComplaint && pickL("Customer complaints", "Keluhan pelanggan"),
   ].filter(Boolean);
 
   const activeChannels = [
-    data.notifications.emailEnabled && t("email"),
+    data.notifications.emailEnabled && "Email",
     data.notifications.inAppEnabled && "In-app",
     data.notifications.telegramEnabled && "Telegram",
     data.notifications.whatsappEnabled && "WhatsApp",
   ].filter(Boolean);
 
   const summaryRows = [
-    { label: "Name", value: data.profile.name || "—" },
-    { label: "Role", value: data.profile.role || "—" },
-    { label: "Company", value: data.profile.company || "—" },
-    { label: "Industry", value: data.profile.industry || "—" },
+    { label: pickL("Name", "Nama"), value: data.profile.name || "—" },
+    { label: pickL("Role", "Jabatan"), value: data.profile.role || "—" },
+    { label: pickL("Company", "Perusahaan"), value: data.profile.company || "—" },
+    { label: pickL("Industry", "Industri"), value: data.profile.industry ? (INDUSTRY_ID[data.profile.industry] ? pickL(data.profile.industry, INDUSTRY_ID[data.profile.industry]) : data.profile.industry) : "—" },
     {
-      label: "Keywords",
-      value: `${data.keywords.length} keyword${data.keywords.length !== 1 ? "s" : ""}`,
+      label: pickL("Keywords", "Kata kunci"),
+      value: pickL(`${data.keywords.length} keyword${data.keywords.length !== 1 ? "s" : ""}`, `${data.keywords.length} kata kunci`),
     },
     {
-      label: "Data Sources",
-      value: `${data.sources.length} source${data.sources.length !== 1 ? "s" : ""}`,
+      label: pickL("Data Sources", "Sumber data"),
+      value: pickL(`${data.sources.length} source${data.sources.length !== 1 ? "s" : ""}`, `${data.sources.length} sumber`),
     },
-    { label: "Alert Types", value: `${activeAlertTypes.length} active` },
-    { label: "Channels", value: `${activeChannels.length} active` },
+    { label: pickL("Alert Types", "Jenis peringatan"), value: pickL(`${activeAlertTypes.length} active`, `${activeAlertTypes.length} aktif`) },
+    { label: pickL("Channels", "Saluran"), value: pickL(`${activeChannels.length} active`, `${activeChannels.length} aktif`) },
   ];
 
   return (
@@ -1130,14 +1153,14 @@ function PreviewStep({ data }: { data: OnboardingData }) {
           <p className="mt-1.5 text-sm font-medium text-[#5F6B94]">{t("desc")}</p>
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-[#10B981]/12 px-4 py-2 text-xs font-bold text-[#047857]">
-          Ready
+          {pickL("Ready", "Siap")}
         </span>
       </div>
 
       {data.keywords.length > 0 && (
         <div className="space-y-3">
           <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">
-            Keywords you&apos;ll monitor
+            {pickL("Keywords you will monitor", "Kata kunci yang akan dipantau")}
           </h2>
           <div className="flex flex-wrap gap-2">
             {data.keywords.map((kw) => (
@@ -1154,7 +1177,7 @@ function PreviewStep({ data }: { data: OnboardingData }) {
 
       {data.sources.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">Data Sources</h2>
+          <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{pickL("Data Sources", "Sumber Data")}</h2>
           <div className="flex flex-wrap gap-2">
             {[...new Set(data.sources.map((s) => s.type))].map((type) => (
               <span
@@ -1172,7 +1195,7 @@ function PreviewStep({ data }: { data: OnboardingData }) {
       {activeAlertTypes.length > 0 && (
         <div className="space-y-3">
           <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">
-            Alerts &amp; Notifications
+            {pickL("Alerts & notifications", "Peringatan & notifikasi")}
           </h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {activeAlertTypes.map(
@@ -1231,11 +1254,11 @@ function ProcessingStep({
   const t = useTranslations("OnboardingDesign.processing");
 
   const steps = [
-    { label: "Creating workspace", done: progress >= 10 },
-    { label: "Adding keywords", done: progress >= 40 },
-    { label: "Setting up sources", done: progress >= 55 },
-    { label: "Configuring notifications", done: progress >= 70 },
-    { label: "Launching dashboard", done: progress >= 95 },
+    { label: pickL("Creating workspace", "Membuat workspace"), done: progress >= 10 },
+    { label: pickL("Adding keywords", "Menambah kata kunci"), done: progress >= 40 },
+    { label: pickL("Setting up sources", "Menyiapkan sumber"), done: progress >= 55 },
+    { label: pickL("Configuring notifications", "Mengatur notifikasi"), done: progress >= 70 },
+    { label: pickL("Launching dashboard", "Membuka dashboard"), done: progress >= 95 },
   ];
 
   return (
@@ -1286,7 +1309,7 @@ function ProcessingStep({
             onClick={onRetry}
             className="rounded-xl border border-[#EF4444] bg-white px-6 py-3 text-sm font-semibold text-[#C81E1E] transition-colors hover:bg-[#FFF5F5]"
           >
-            Try Again
+            {pickL("Try Again", "Coba lagi")}
           </button>
         </div>
       )}

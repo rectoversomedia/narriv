@@ -178,7 +178,7 @@ export default function VisibilityPage() {
           </section>
 
           {/* One card per assistant */}
-          <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <section className="grid grid-cols-2 gap-3 lg:grid-cols-5">
             {ENGINES.map(({ key, name, Logo }) => {
               const e = byEngine.get(key);
               const isOn = configured.get(key) !== false;

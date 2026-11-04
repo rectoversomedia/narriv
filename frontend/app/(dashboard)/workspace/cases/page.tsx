@@ -729,7 +729,7 @@ export default function CasesPage() {
       {metricsLoading ? (
         <MetricRowSkeleton count={4} />
       ) : (
-        <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
           {metrics.map((metric) => (
             <MetricCard key={metric.label} {...metric} />
           ))}

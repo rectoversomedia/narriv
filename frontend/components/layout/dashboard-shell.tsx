@@ -1,5 +1,6 @@
 "use client";
 
+import { MessageCircle } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -68,10 +69,12 @@ export function DashboardShell({ children }: { children: ReactNode }) {
         {/* Floating Ask AI button (not shown on the Ask page itself) */}
         {pathname?.startsWith("/ask") ? null : <Link
           href="/ask"
-          className="fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full bg-[#465FFF] px-4 py-3 text-white shadow-sm transition-all hover:bg-[#3b50d8] shadow-sm active:scale-95 sm:right-6 lg:bottom-6 lg:right-6"
+          className="fixed bottom-24 right-4 z-40 flex size-12 items-center justify-center gap-2 rounded-full bg-[#465FFF] text-white shadow-[0_8px_24px_rgba(70,95,255,0.4)] transition-all hover:bg-[#3b50d8] active:scale-95 sm:right-6 lg:bottom-6 lg:right-6 lg:size-auto lg:px-4 lg:py-3"
           aria-label={pickL("Ask Narriv", "Tanya Narriv")}
         >
-          <span className="text-[13px] font-bold">{pickL("Ask AI", "Tanya AI")}</span>
+          {/* A round icon on phones so it does not cover the content; the label returns on desktop. */}
+          <MessageCircle size={20} strokeWidth={2.4} className="lg:hidden" />
+          <span className="hidden text-[13px] font-bold lg:inline">{pickL("Ask AI", "Tanya AI")}</span>
         </Link>}
       </div>
     </div>

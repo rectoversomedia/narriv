@@ -91,6 +91,18 @@ describe('alert rule evaluation', () => {
     expect(dedup.filters).toContainEqual({ name: 'eq', args: ['workspace_id', WS] });
   });
 
+  it('runs the rules for one workspace one pass at a time (no twin alerts from parallel keywords)', async () => {
+    respond = db({ signals: [sig('s1', 'negative'), sig('s2', 'negative')] });
+    await Promise.all([detectAlerts(WS), detectAlerts(WS)]);
+    const alertCalls = fake.calls.map((c, i) => ({ ...c, i })).filter((c) => c.table === 'alerts');
+    const firstInsert = alertCalls.find((c) => c.op === 'insert');
+    const dedupChecks = alertCalls.filter((c) => c.op === 'select' && c.filters.some((f) => f.name === 'ilike'));
+    // The second pass checks for an existing alert only after the first pass has written its alert.
+    expect(firstInsert).toBeDefined();
+    expect(dedupChecks.length).toBeGreaterThanOrEqual(2);
+    expect(dedupChecks[1].i).toBeGreaterThan(firstInsert.i);
+  });
+
   it('raises a new alert when the previous one for the topic was resolved', async () => {
     // Resolved alerts are excluded by the dedup query, so the engine sees none.
     respond = db({ signals: [sig('s1', 'negative'), sig('s2', 'negative')], existingAlerts: [] });

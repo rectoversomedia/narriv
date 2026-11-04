@@ -111,7 +111,7 @@ function ReportBody({ data }: { data: ReportView }) {
         <p className="mt-3 max-w-3xl text-[15px] font-bold leading-snug text-white/90">{headline}</p>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <Tile label={L("Records", "Sinyal")} value={String(t.signals)} sub={L(`${t.analyzed} analysed`, `${t.analyzed} sudah dianalisis`)} rgb="70,95,255" color="#3B52F5" />
         <Tile label={L("Negative", "Negatif")} value={`${t.negative}%`} sub={L(`${count(t.negative)} records`, `${count(t.negative)} sinyal`)} rgb="229,72,77" color="#C81E1E" />
         <Tile label={L("Positive", "Positif")} value={`${t.positive}%`} sub={L(`${count(t.positive)} records`, `${count(t.positive)} sinyal`)} rgb="18,166,106" color="#047857" />

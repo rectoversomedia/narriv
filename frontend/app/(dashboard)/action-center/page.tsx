@@ -163,7 +163,7 @@ export default function ActionCenterPage() {
           { label: L("Done", "Selesai"), value: done, sub: L("outcome recorded", "hasil tercatat"), rgb: "18,166,106", color: "#047857" },
         ];
         return (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {tiles.map((tile) => (
               <div key={tile.label} className="rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${tile.rgb},0.11), rgba(${tile.rgb},0.02) 60%)` }}>
                 <p className="text-[11px] font-black uppercase tracking-[0.06em]" style={{ color: tile.color }}>{tile.label}</p>
@@ -276,7 +276,7 @@ export default function ActionCenterPage() {
                         {a.relatedNarrative?.title ? <p className="truncate text-[11px] font-bold text-[#5A6478]">{a.relatedNarrative.title}</p> : null}
                       </div>
                     </div>
-                    <div className="flex shrink-0 items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2 pl-9 sm:pl-0">
                       {reopened ? <span className="rounded-full bg-[#F59E0B] px-2.5 py-1 text-[11px] font-black text-white">{L("New data since", "Ada data baru")}</span> : null}
                       <span className="text-[11px] font-bold text-[#5A6478]">{L(`${items} follow-ups`, `${items} tindak lanjut`)} · {L(`${a.evidenceCount} evidence`, `${a.evidenceCount} bukti`)}</span>
                       {reopened ? (

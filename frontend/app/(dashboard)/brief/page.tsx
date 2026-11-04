@@ -118,7 +118,7 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
 
   return (
     <div className="space-y-5">
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <Tile label={L("New signals", "Sinyal baru")} value={newSignals === null ? "—" : String(newSignals)} sub={L("in this window", "di periode ini")} rgb="70,95,255" color="#3B52F5" />
         <Tile label={L("Active alerts", "Peringatan aktif")} value={activeAlerts === null ? String(newAlerts) : String(activeAlerts)} sub={L(`${newAlerts} new in this window`, `${newAlerts} baru di periode ini`)} rgb={(activeAlerts ?? newAlerts) ? "245,158,11" : "100,116,139"} color={(activeAlerts ?? newAlerts) ? "#A04606" : "#5A6478"} />
         <Tile label={L("Risk index", "Indeks risiko")} value={risk ? `${riskScore}/100` : "—"} sub={risk ? L(...risk.word) : L("not enough data", "data belum cukup")} rgb="229,72,77" color={risk?.color ?? "#5A6478"} bar={risk ? riskScore : undefined} barColor={risk?.bar} />
@@ -230,7 +230,7 @@ export default function DailyIntelligenceBriefPage() {
       </header>
 
       {isLoading ? (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{Array.from({ length: 4 }, (_, i) => <div key={i} className="h-[120px] animate-pulse rounded-[14px] bg-[#EEF1F7]" />)}</div>
+        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">{Array.from({ length: 4 }, (_, i) => <div key={i} className="h-[120px] animate-pulse rounded-[14px] bg-[#EEF1F7]" />)}</div>
       ) : isError || !data ? (
         <p className="rounded-[14px] bg-[#FDECEC] p-4 text-[13px] font-bold text-[#C81E1E]">{L("The brief could not be loaded. Try again in a moment.", "Ringkasan gagal dimuat. Coba lagi sebentar lagi.")}</p>
       ) : !data.grounded ? (

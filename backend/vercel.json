@@ -25,6 +25,10 @@
     {
       "path": "/api/cron/social",
       "schedule": "30 * * * *"
+    },
+    {
+      "path": "/api/cron/demo-refresh",
+      "schedule": "0 20 * * *"
     }
   ],
   "functions": {

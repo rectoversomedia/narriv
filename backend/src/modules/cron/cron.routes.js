@@ -251,3 +251,18 @@ const runSocial = async (req, res) => {
 };
 router.get("/social", runSocial);
 router.post("/social", runSocial);
+
+// Nightly demo refresh (03:00 WIB): reseeds the demo workspace so its dates stay recent and visitors' changes reset.
+// Database writes only; no AI or paid provider is called.
+const runDemoRefresh = async (req, res) => {
+    if (!verifyCronSecret(req)) return res.status(401).json({ error: "Unauthorized" });
+    try {
+        const { seedDemoWorkspace } = await import("../demo/demo-seed.js");
+        res.json({ seeded: await seedDemoWorkspace() });
+    } catch (error) {
+        logStructured("error", "cron_demo_refresh_failed", { error: error.message });
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+router.get("/demo-refresh", runDemoRefresh);
+router.post("/demo-refresh", runDemoRefresh);

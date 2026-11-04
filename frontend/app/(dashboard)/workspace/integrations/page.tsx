@@ -198,7 +198,7 @@ export default function IntegrationsPage() {
       </section>
 
       {/* One card per channel: how many are connected, and the button that starts connecting one. */}
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {MAIN_CHANNELS.map((c) => {
           const connected = integrations.filter((i) => i.platform === c.value);
           const live = connected.filter((i) => i.status === "active").length;

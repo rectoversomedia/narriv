@@ -1187,7 +1187,7 @@ export default function SignalsPage() {
           >
             Excel
           </button>
-          <button onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 text-[12px] font-black text-white shadow-sm sm:w-fit">{t("createInvestigation")}</button>
+          <button onClick={() => setIsCreateModalOpen(true)} className="flex h-10 items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 text-[12px] font-black text-white shadow-sm">{t("createInvestigation")}</button>
         </div>
       </header>
 

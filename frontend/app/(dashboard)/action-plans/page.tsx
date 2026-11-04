@@ -412,7 +412,7 @@ export default function ActionPlansPage() {
         <div>
           <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1>
         </div>
-        <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[8px] bg-[#465FFF] px-4 text-[13px] font-black text-white shadow-sm transition hover:brightness-105 sm:w-fit">
+        <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-[8px] bg-[#465FFF] px-4 text-[13px] font-black text-white shadow-sm transition hover:brightness-105">
           {t("newAction")}
         </button>
       </header>
@@ -438,7 +438,7 @@ export default function ActionPlansPage() {
         }}
       />
 
-      <section className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-5">
+      <section className="grid grid-cols-2 gap-3.5 xl:grid-cols-5">
         <MetricCard label={t("metricActiveActions")} value={metricsQuery.data ? String(metricsQuery.data.active.value) : String(activeCount)} trend={metricsQuery.data?.active.trend} helper={metricsQuery.data ? trendHelper(metricsQuery.data.active.trend) : t("metricActiveHelper", { count: activeCount })} icon={Target} tone="blue" />
         <MetricCard label={t("metricInProgress")} value={metricsQuery.data ? String(metricsQuery.data.inProgress.value) : String(inProgressCount)} trend={metricsQuery.data?.inProgress.trend} helper={metricsQuery.data ? trendHelper(metricsQuery.data.inProgress.trend) : t("metricInProgressHelper", { count: inProgressCount })} icon={Sparkles} tone="amber" />
         <MetricCard label={t("metricCompleted")} value={metricsQuery.data ? String(metricsQuery.data.done.value) : String(completedCount)} trend={metricsQuery.data?.done.trend} helper={metricsQuery.data ? trendHelper(metricsQuery.data.done.trend) : t("metricCompletedHelper", { count: completedCount })} icon={Check} tone="green" />

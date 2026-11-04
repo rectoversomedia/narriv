@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
@@ -14,10 +14,12 @@ import {
   getAlerts,
   getDashboardSummary,
   getDateRangeOptions,
+  getMonitoringKeywords,
   getNarratives,
   getVisibilitySummary,
   getWorkspaceSettings,
   runGeoAllEngines,
+  runKeywordMonitoring,
   type Alert,
   type DateRangeKey,
   type NarrativeRecord,
@@ -138,6 +140,72 @@ function sentimentTag(value: string | null | undefined) {
   if (v.includes("pos")) return { cls: "bg-[#E8F7EF] text-[#047857]", en: "Positive", id: "Positif" };
   if (v.includes("mix")) return { cls: "bg-[#FFF4E5] text-[#A04606]", en: "Mixed", id: "Campuran" };
   return { cls: "bg-[#EEF1F7] text-[#465170]", en: "Neutral", id: "Netral" };
+}
+
+/**
+ * A new workspace's first minutes: with keywords set, the first news collection starts by itself (once per browser
+ * session) and the board fills when it finishes; without keywords, one clear step to add them.
+ */
+function FirstRun() {
+  const L = useL();
+  const queryClient = useQueryClient();
+  const keywordsQuery = useQuery({ queryKey: ["monitoring-keywords"], queryFn: getMonitoringKeywords, staleTime: 30 * 1000 });
+  const run = useMutation({
+    mutationFn: runKeywordMonitoring,
+    onSuccess: () => void queryClient.invalidateQueries(),
+    onError: (err: Error & { status?: number; code?: string }) => {
+      // The server keeps going after the browser stops waiting; look again in a minute.
+      if (err.code === "CLIENT_TIMEOUT" || err.status === 429) setTimeout(() => void queryClient.invalidateQueries(), 60_000);
+    },
+  });
+  const active = (keywordsQuery.data?.data ?? []).filter((k) => k.isActive);
+  const canEdit = Boolean(keywordsQuery.data?.canEdit);
+  const startedRef = useRef(false);
+  useEffect(() => {
+    if (startedRef.current || !canEdit || active.length === 0) return;
+    let already = false;
+    try { already = sessionStorage.getItem("narriv_first_run") === "1"; sessionStorage.setItem("narriv_first_run", "1"); } catch { /* storage off: still run once */ }
+    startedRef.current = true;
+    if (!already) run.mutate();
+  }, [canEdit, active.length, run]);
+
+  const nextHour = new Date(Math.ceil(Date.now() / 3600000) * 3600000).toLocaleTimeString(intlLocale(), { hour: "2-digit", minute: "2-digit" });
+  const names = active.slice(0, 3).map((k) => `«${k.keyword}»`).join(", ");
+  const err = run.error as (Error & { status?: number; code?: string }) | null;
+
+  if (keywordsQuery.isLoading) return <Skeleton className="h-40 w-full rounded-[16px]" />;
+  if (active.length === 0) {
+    return (
+      <section className="rounded-[16px] bg-gradient-to-br from-[#101334] via-[#18206B] to-[#2B2F9E] p-6 text-white">
+        <p className="text-[11px] font-black uppercase tracking-[0.14em] text-white/60">{L("First step", "Langkah pertama")}</p>
+        <p className="mt-1 text-[24px] font-black leading-tight">{L("Tell Narriv what to watch", "Beri tahu Narriv apa yang dipantau")}</p>
+        <p className="mt-1 text-[13px] font-bold text-white/80">{L("Add your brand or product name. News starts coming in within a minute.", "Tambahkan nama brand atau produk Anda. Berita mulai masuk dalam satu menit.")}</p>
+        <Link href="/workspace/settings#keywords" className="mt-4 inline-flex h-11 items-center rounded-[10px] bg-white px-5 text-[14px] font-black text-[#101334] hover:bg-[#EEF1FF]">{L("Add a keyword", "Tambah kata kunci")} →</Link>
+      </section>
+    );
+  }
+  const status = run.isPending
+    ? { tone: "working", title: L("Collecting the first news…", "Mengambil berita pertama…"), sub: L(`For ${names}. This usually takes about a minute.`, `Untuk ${names}. Biasanya sekitar satu menit.`) }
+    : run.isSuccess
+      ? { tone: "done", title: L(`${run.data?.totals?.fetched ?? 0} articles found`, `${run.data?.totals?.fetched ?? 0} berita ditemukan`), sub: (run.data?.totals?.fetched ?? 0) > 0 ? L("Analysing them now; the board fills in a moment.", "Sedang dianalisis; dashboard terisi sebentar lagi.") : L("Nothing yet for these keywords. Try a more common name, or wait for the next hourly check.", "Belum ada berita untuk kata kunci ini. Coba nama yang lebih umum, atau tunggu pengecekan jam berikutnya.") }
+      : err && err.code !== "CLIENT_TIMEOUT" && err.status !== 429
+        ? { tone: "error", title: L("The first collection did not run", "Pengambilan pertama belum berjalan"), sub: L(`It will run automatically at ${nextHour}. You can also try again now.`, `Akan berjalan otomatis pukul ${nextHour}. Anda juga bisa mencoba lagi sekarang.`) }
+        : { tone: "waiting", title: canEdit ? L("The first collection is running", "Pengambilan pertama sedang berjalan") : L(`First data arrives by ${nextHour}`, `Data pertama masuk sebelum pukul ${nextHour}`), sub: L(`Narriv watches ${names} and checks every hour.`, `Narriv memantau ${names} dan mengecek setiap jam.`) };
+  return (
+    <section className={cn("rounded-[16px] p-6 text-white", status.tone === "error" ? "bg-gradient-to-br from-[#7C2D12] to-[#E8590C]" : status.tone === "done" ? "bg-gradient-to-br from-[#065F46] to-[#12A66A]" : "bg-gradient-to-br from-[#101334] via-[#18206B] to-[#2B2F9E]")}>
+      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-white/60">{L("Getting started", "Memulai")}</p>
+      <div className="mt-1 flex items-center gap-3">
+        {status.tone === "working" ? <span className="size-5 animate-spin rounded-full border-[3px] border-white/30 border-t-white" aria-hidden="true" /> : null}
+        <p className="text-[24px] font-black leading-tight">{status.title}</p>
+      </div>
+      <p className="mt-1 text-[13px] font-bold text-white/85">{status.sub}</p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {status.tone === "error" && canEdit ? <button type="button" onClick={() => run.mutate()} className="h-10 rounded-[10px] bg-white px-4 text-[13px] font-black text-[#101334]">{L("Try again", "Coba lagi")}</button> : null}
+        <Link href="/workspace/settings#keywords" className="inline-flex h-10 items-center rounded-[10px] bg-white/15 px-4 text-[13px] font-black text-white hover:bg-white/25">{L("Manage keywords", "Atur kata kunci")}</Link>
+        <Link href="/workspace/integrations" className="inline-flex h-10 items-center rounded-[10px] bg-white/15 px-4 text-[13px] font-black text-white hover:bg-white/25">{L("Send alerts to Slack / WhatsApp", "Kirim peringatan ke Slack / WhatsApp")}</Link>
+      </div>
+    </section>
+  );
 }
 
 export default function DashboardPage() {
@@ -318,23 +386,7 @@ export default function DashboardPage() {
       ) : null}
 
       {neverCollected ? (
-        <Card title={L("Start monitoring", "Mulai pemantauan")}>
-          <ol className="grid gap-3 sm:grid-cols-3">
-            {[
-              { n: 1, title: L("Add keywords", "Tambah kata kunci"), href: "/workspace/settings#keywords" },
-              { n: 2, title: L("Run the first collection", "Jalankan pengambilan pertama"), href: "/workspace/settings#keywords" },
-              { n: 3, title: L("See the results here", "Lihat hasilnya di sini"), href: "/signals" },
-            ].map((step) => (
-              <li key={step.n}>
-                <Link href={step.href} className="block rounded-[10px] border border-slate-100 bg-[#FBFCFF] p-3 transition hover:border-[#465FFF]/40">
-                  <p className="text-[11px] font-bold text-[#5A6478]">{L("Step", "Langkah")} {step.n}</p>
-                  <p className="mt-1 text-[13px] font-black text-[#101334]">{step.title} →</p>
-                </Link>
-              </li>
-            ))}
-          </ol>
-        </Card>
-      ) : (
+        <FirstRun />      ) : (
         <>
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
             <Card className="flex flex-col" title={L("Overall sentiment", "Sentimen keseluruhan")} link={{ href: monitoringHref({ hours }), label: L("All data", "Semua data") }}>
@@ -350,7 +402,9 @@ export default function DashboardPage() {
                   {/* The verdict first: all keywords together, positive minus negative over analysed records. */}
                   {(() => {
                     const net = analysed > 0 ? Math.round(((dist.positive - dist.negative) / analysed) * 100) : 0;
-                    const verdict = net <= -15
+                    const verdict = analysed === 0
+                      ? { text: L("Being analysed", "Sedang dianalisis"), cls: "border-transparent bg-[#EEF1FF] text-[#3B52F5]" }
+                      : net <= -15
                       ? { text: L("Negative", "Negatif"), cls: "border-transparent bg-[#FFF5F4] text-[#B42318]" }
                       : net >= 15
                         ? { text: L("Positive", "Positif"), cls: "border-transparent bg-[#F1FBF6] text-[#047857]" }

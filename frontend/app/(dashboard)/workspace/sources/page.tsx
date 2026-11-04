@@ -493,7 +493,7 @@ export default function SourcesPage() {
 
       <CollectionBanner problems={warningCount} active={activeSources} total={totalSources} />
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <Tile label={pickL("Active sources", "Sumber aktif")} value={`${activeSources}/${totalSources}`} sub={totalSources - activeSources ? pickL(`${totalSources - activeSources} paused`, `${totalSources - activeSources} dijeda`) : pickL("all on", "semua menyala")} rgb="70,95,255" color="#3B52F5" />
         <Tile label={pickL("Records, 7 days", "Sinyal 7 hari")} value={formatCompact(weekTotal)} sub={lastSync ? pickL(`last update ${formatSourceTime(lastSync)}`, `diperbarui ${formatSourceTime(lastSync)}`) : pickL("from every platform", "dari semua platform")} rgb="139,92,255" color="#6E44E8" />
         <Tile label={pickL("Busiest source", "Sumber teramai")} value={top ? top.name : "—"} sub={top && weekTotal ? pickL(`${Math.round((volumeOf(top) / weekTotal) * 100)}% of records`, `${Math.round((volumeOf(top) / weekTotal) * 100)}% dari sinyal`) : pickL("no records yet", "belum ada sinyal")} rgb="18,166,106" color="#047857" />

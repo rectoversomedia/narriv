@@ -129,7 +129,20 @@ export async function retryFailedNotifications(workspaceId, { maxAttempts = 3, l
     return { retried };
 }
 
-export async function detectAlerts(workspaceId) {
+// One alert-rules pass per workspace at a time. The scheduler ingests several keywords of a workspace side by side
+// and each one runs the rules; run concurrently, two passes both found no open alert for a topic and both raised one
+// (identical alerts one second apart). Passes for the same workspace now queue behind each other.
+const detectQueue = new Map();
+
+export function detectAlerts(workspaceId) {
+    const previous = detectQueue.get(workspaceId) || Promise.resolve();
+    const current = previous.catch(() => {}).then(() => detectAlertsNow(workspaceId));
+    detectQueue.set(workspaceId, current);
+    current.finally(() => { if (detectQueue.get(workspaceId) === current) detectQueue.delete(workspaceId); }).catch(() => {});
+    return current;
+}
+
+async function detectAlertsNow(workspaceId) {
     const alerts = [];
     const now = new Date();
     // 6-hour immediate window, 24-hour baseline window
@@ -312,6 +325,21 @@ export async function detectAlerts(workspaceId) {
             .single();
 
         if (!createError && newAlert) {
+            // Another process (a manual run during the hourly one) may have raised the same topic at the same moment:
+            // keep the oldest open alert and drop this one.
+            const { data: twins } = await supabase
+                .from('alerts')
+                .select('id, created_at')
+                .eq('workspace_id', workspaceId)
+                .eq('title', title)
+                .neq('status', 'resolved')
+                .order('created_at', { ascending: true })
+                .limit(2);
+            if (twins && twins.length > 1 && twins[0].id !== newAlert.id) {
+                await supabase.from('alerts').delete().eq('id', newAlert.id);
+                logStructured("info", "alert_rules_duplicate_dropped", { topicKey, keptAlertId: twins[0].id });
+                continue;
+            }
             alerts.push(newAlert);
             logStructured("info", "alert_created_by_rules_engine", {
                 alertId: newAlert.id,

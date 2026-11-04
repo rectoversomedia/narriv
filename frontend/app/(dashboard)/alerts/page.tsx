@@ -509,7 +509,7 @@ function CriticalIncident({
               id="incident-owner"
               value={alert.assigneeId ?? ""}
               onChange={(e) => e.target.value && onAssign(alert.id, e.target.value)}
-              className={cn("h-10 rounded-[10px] px-3 text-[13px] font-black outline-none", unassigned ? "bg-[#101334] text-white" : "bg-white text-[#101334]")}
+              className={cn("h-10 w-full max-w-full rounded-[10px] px-3 text-[13px] font-black outline-none sm:w-auto", unassigned ? "bg-[#101334] text-white" : "bg-white text-[#101334]")}
             >
               <option value="">{pickL("Assign an owner…", "Tunjuk penanggung jawab…")}</option>
               {members.map((m) => <option key={m.userId} value={m.userId}>{memberName(m)}</option>)}
@@ -713,7 +713,28 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
           </button>
         </div>
       </div>
-      <div className="mt-4 overflow-x-auto">
+      {/* Phones: one card per alert (title, severity, owner, deadline, status, one tap to open). */}
+      <ul className="mt-4 space-y-2.5 md:hidden">
+        {isLoading ? Array.from({ length: 3 }, (_, i) => <li key={i} className="h-24 animate-pulse rounded-[12px] bg-[#F1F4FB]" />)
+          : isError ? <li className="rounded-[12px] bg-[#FDECEC] p-4 text-[13px] font-bold text-[#B42318]">{ta("table.errorTitle")}</li>
+          : rows.length === 0 ? <li className="rounded-[12px] bg-[#F7F8FC] p-4 text-[13px] font-bold text-[#5F6B94]">{ta("empty.noAlerts")}</li>
+          : rows.map((alert) => (
+            <li key={`m-${alert.id}`}>
+              <Link href={`/alerts/${alert.id}`} className={cn("block rounded-[12px] p-3.5", alert.tone === "red" ? "bg-[#FDECEC]" : alert.tone === "amber" ? "bg-[#FFF6E0]" : "bg-[#F7F8FC]")}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className={cn("rounded-[6px] px-2 py-0.5 text-[11px] font-black", alert.tone === "red" ? "bg-[#C81E1E] text-white" : alert.tone === "amber" ? "bg-[#F59E0B] text-white" : "bg-[#E5F6EE] text-[#047857]")}>{alert.tags[0]}</span>
+                  <StatusBadge status={alert.status} />
+                </div>
+                <p className="mt-2 line-clamp-2 text-[14px] font-black leading-snug text-[#101334]">{alert.title}</p>
+                <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] font-bold">
+                  <span className={alert.sourceLabel === ta("table.unassigned") ? "rounded-full bg-[#C81E1E] px-2 py-0.5 text-white" : "rounded-full bg-white px-2 py-0.5 text-[#31406B]"}>{alert.sourceLabel}</span>
+                  <span className={alert.overdue ? "rounded-full bg-[#C81E1E] px-2 py-0.5 text-white" : "rounded-full bg-white px-2 py-0.5 text-[#31406B]"}>{alert.overdue ? pickL("Overdue · ", "Lewat tenggat · ") : ""}{alert.deadline}</span>
+                </div>
+              </Link>
+            </li>
+          ))}
+      </ul>
+      <div className="mt-4 hidden overflow-x-auto md:block">
         <table className="w-full min-w-[720px] table-fixed border-collapse text-left">
           <colgroup><col className="w-10" /><col /><col className="w-[96px]" /><col className="w-[150px]" /><col className="w-[120px]" /><col className="w-[130px]" /><col className="w-10" /></colgroup>
           <thead>
@@ -1237,9 +1258,9 @@ export default function AlertsPage() {
           <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{ta("v2.header.title")}</h1>
         </div>
         <div className="flex flex-wrap gap-3">
-          <button type="button" onClick={openNotificationRulesModal} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF] sm:w-auto">{ta("v2.header.notificationRules")}</button>
-          <button type="button" onClick={openEscalationModal} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF] sm:w-auto">{ta("v2.header.escalationMatrix")}</button>
-          <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 w-full items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 text-[12px] font-black text-white shadow-sm sm:w-auto">{ta("v2.header.createAlert")}</button>
+          <button type="button" onClick={openNotificationRulesModal} className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF]">{ta("v2.header.notificationRules")}</button>
+          <button type="button" onClick={openEscalationModal} className="flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#DDE3EF] bg-white px-4 text-[12px] font-black text-[#101334] shadow-[0_2px_8px_rgba(16,24,40,0.03)] transition hover:border-[#C9D4F6] hover:bg-[#F8FAFF]">{ta("v2.header.escalationMatrix")}</button>
+          <button type="button" onClick={() => setIsCreateModalOpen(true)} className="flex h-10 items-center justify-center gap-2 rounded-[8px] bg-[#465FFF] hover:bg-[#3B52F5] px-4 text-[12px] font-black text-white shadow-sm">{ta("v2.header.createAlert")}</button>
         </div>
       </header>
 
