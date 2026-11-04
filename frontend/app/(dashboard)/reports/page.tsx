@@ -1,5 +1,6 @@
 "use client";
 
+import { humanReportSummary } from "@/lib/report-summary";
 import Image from "next/image";
 import Link from "next/link";
 import { type ComponentPropsWithoutRef, type ReactNode, useState, useEffect } from "react";
@@ -113,7 +114,7 @@ function buildApiReportRows(
     return {
       id: report.id,
       title: report.title,
-      description: report.summary?.trim() ? report.summary : report.sections || fallbacks.description,
+      description: report.summary?.trim() ? humanReportSummary(report.summary, id) : report.sections || fallbacks.description,
       type: typeLabel ? typeLabel[id ? 1 : 0] : report.type || "-",
       period: start && end ? `${start} – ${end}` : start || end || "-",
       status,
@@ -287,7 +288,7 @@ function ReportPreviewSidebar({
   onExportFile,
   isPending,
 }: {
-  latestReport?: { id: string; title: string; status: string; sections?: string | unknown };
+  latestReport?: { id: string; title: string; status: string; sections?: string | unknown; summary?: string | null };
   onExportPdf?: () => void;
   onExportFile?: (format: "csv" | "xlsx") => void;
   isPending?: boolean;
@@ -324,7 +325,9 @@ function ReportPreviewSidebar({
                 {reportSections.slice(0, 6).map((section) => <span key={section} className="rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-[#31406B]">{section}</span>)}
               </div>
             ) : (
-              <div className="mt-3 text-[10px] font-bold text-[#647099]">{tr("preview.noSections")}</div>
+              latestReport.summary?.trim() ? (
+                <p className="mt-3 line-clamp-3 text-[12px] font-bold leading-snug text-[#31406B]">{humanReportSummary(latestReport.summary, intlLocale().startsWith("id"))}</p>
+              ) : null
             )}
           </div>
 

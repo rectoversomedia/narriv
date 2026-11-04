@@ -1002,6 +1002,23 @@ router.get("/:id/export/pdf", rateLimiters.export(), async (req, res) => {
     }
 });
 
+// GET /api/reports/:id/view - The report as the PDF shows it (totals, platforms, alerts, issues, signals),
+// so the in-app preview and the downloaded files never disagree.
+router.get("/:id/view", async (req, res) => {
+    try {
+        const scopedWorkspaceIds = await resolveScopedWorkspaceIds(req.user.id, null);
+        const { data: report, error } = await supabase.from("reports").select("*").eq("id", req.params.id).single();
+        if (error || !report || !scopedWorkspaceIds.includes(report.workspace_id)) {
+            return res.status(404).json({ error: "Report not found" });
+        }
+        const data = await collectReportData(report);
+        res.json({ ...data, createdAt: report.created_at || null });
+    } catch (err) {
+        console.error("Report view error:", err);
+        res.status(500).json({ error: "Failed to load report" });
+    }
+});
+
 // GET /api/reports/:id/export/file - Download report as PDF, CSV or XLSX
 router.get("/:id/export/file", rateLimiters.export(), async (req, res) => {
     try {

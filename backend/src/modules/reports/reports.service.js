@@ -159,25 +159,26 @@ export async function generateReport({ workspaceId, title, periodStart, periodEn
     };
 
     // ── 4. Build Report Summary Text ─────────────────────────────────────────
+    // A plain sentence a reader can repeat, not a field dump: tone, size, alerts, issues.
+    const pctS = dashboardMetrics.sentiment_percentages;
+    const fmtDay = (d) => d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Jakarta" });
     const summaryLines = [];
-    summaryLines.push(`Intelligence Report: ${start.toISOString().split("T")[0]} to ${end.toISOString().split("T")[0]}`);
-    summaryLines.push(`Total Signals: ${totalSignals} | Analyzed: ${analyzedCount}`);
-
-    if (analyzedCount > 0) {
-        summaryLines.push(`Sentiment: ${dashboardMetrics.sentiment_percentages.positive}% positive, ${dashboardMetrics.sentiment_percentages.negative}% negative, ${dashboardMetrics.sentiment_percentages.neutral}% neutral`);
+    if (totalSignals === 0) {
+        summaryLines.push(`Tidak ada sinyal yang terkumpul pada ${fmtDay(start)} – ${fmtDay(end)}.`);
+    } else {
+        const net = (pctS.positive || 0) - (pctS.negative || 0);
+        const tone = analyzedCount === 0 ? "belum dianalisis" : net <= -15 ? "cenderung negatif" : net >= 15 ? "cenderung positif" : "seimbang";
+        summaryLines.push(`${totalSignals} sinyal pada ${fmtDay(start)} – ${fmtDay(end)}, nada ${tone}${analyzedCount > 0 ? ` (${pctS.negative}% negatif, ${pctS.positive}% positif)` : ""}.`);
     }
-
     if (alertsList.length > 0) {
         const criticalHigh = alertsSummary.by_severity.critical + alertsSummary.by_severity.high;
-        summaryLines.push(`Alerts: ${alertsList.length} total (${criticalHigh} critical/high)`);
+        summaryLines.push(`${alertsList.length} peringatan${criticalHigh ? `, ${criticalHigh} di antaranya kritis/tinggi` : ""}.`);
     }
-
     if (clustersList.length > 0) {
-        summaryLines.push(`Narrative Clusters: ${clustersList.length} identified`);
+        summaryLines.push(`${clustersList.length} isu terbentuk.`);
     }
-
-    const reportSummary = summaryLines.join(". ") + ".";
-    const reportTitle = title || `Intelligence Report — ${start.toISOString().split("T")[0]} to ${end.toISOString().split("T")[0]}`;
+    const reportSummary = summaryLines.join(" ");
+    const reportTitle = title || `Laporan Narriv ${fmtDay(start)} – ${fmtDay(end)}`;
 
     // ── 5. Save Report (only if save !== false and not existing reportId) ─────
     let savedReport = null;

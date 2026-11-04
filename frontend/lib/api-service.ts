@@ -1850,6 +1850,29 @@ export async function getReportById(id: string): Promise<ReportDetailRecord | nu
   }
 }
 
+/** The report exactly as the downloaded PDF shows it (from /api/reports/:id/view). */
+export interface ReportView {
+  id: string;
+  title: string;
+  brand: string | null;
+  periodStart: string | null;
+  periodEnd: string | null;
+  createdAt: string | null;
+  totals: { signals: number; analyzed: number; positive: number; negative: number; neutral: number; mixed: number; alerts: number; criticalAlerts: number };
+  platforms: Array<{ platform: string; count: number }>;
+  alerts: Array<{ title: string; severity: string; status: string; whatHappened: string; whatToDo: string; createdAt: string | null }>;
+  issues: Array<{ title: string; signals: number; sentiment: string; impact: string }>;
+  signals: Array<{ title: string; platform: string; sentiment: string; capturedAt: string | null; url: string | null }>;
+}
+
+export async function getReportView(id: string): Promise<ReportView | null> {
+  try {
+    return await apiClient<ReportView>(`/api/reports/${id}/view`);
+  } catch {
+    return null;
+  }
+}
+
 export interface NarrativeRecord {
   id: string;
   title: string;
