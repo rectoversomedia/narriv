@@ -348,7 +348,7 @@ function NarrativeInsight({ clusters, emergingCount, language, onOpen, onPlan, o
       <CardContent className="p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h3 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{L("What is happening", "Yang sedang terjadi")}</h3>
-          <p className="text-[11px] font-bold text-[#5A6478]">{L(`From ${formatSignals(total)} signals in ${live.length} issues`, `Dari ${formatSignals(total)} sinyal dalam ${live.length} isu`)}</p>
+          <p className="text-[11px] font-bold text-[#5A6478]">{L(`From ${formatSignals(total)} mentions in ${live.length} issues`, `Dari ${formatSignals(total)} percakapan dalam ${live.length} isu`)}</p>
         </div>
 
         <button
@@ -365,7 +365,7 @@ function NarrativeInsight({ clusters, emergingCount, language, onOpen, onPlan, o
             <p className="text-[11px] font-black uppercase tracking-[0.08em]" style={{ color: readableTone(topTone.color) }}>{L("Main issue", "Isu utama")}</p>
             <p className="mt-1 text-[18px] font-black leading-tight tracking-[-0.02em] text-[#101334]">{name(top)}</p>
             <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] font-black">
-              <span className="rounded-full bg-white px-2.5 py-1 text-[#101334]">{formatSignals(top.signals)} {L("signals", "sinyal")}</span>
+              <span className="rounded-full bg-white px-2.5 py-1 text-[#101334]">{formatSignals(top.signals)} {L("mentions", "percakapan")}</span>
               <span className={cn("rounded-full px-2.5 py-1", topIsRisk ? "bg-[#C81E1E] text-white" : top.sentiment === "positive" ? "bg-[#047857] text-white" : "bg-white text-[#31406B]")}>{L(...SENTIMENT_LABEL[top.sentiment])}</span>
               {top.growth && top.growth !== "0%" ? <span className="rounded-full bg-white px-2.5 py-1 text-[#B45309]">{growthLabel(top.growth)}</span> : null}
             </div>
@@ -482,13 +482,13 @@ export default function IntelligencePage() {
       if (res && res.clustersCreated !== undefined) {
         toastHook.success(
           language === "id"
-            ? `Kluster diperbarui: ${res.clustersCreated} baru dibuat, ${res.signalsAttached || 0} sinyal digabungkan.`
+            ? `Kluster diperbarui: ${res.clustersCreated} baru dibuat, ${res.signalsAttached || 0} percakapan digabungkan.`
             : `Clusters updated: ${res.clustersCreated} created, ${res.signalsAttached || 0} signals attached.`
         );
       } else {
         toastHook.info(
           language === "id"
-            ? "Sinkronisasi selesai: Semua sinyal sudah terkelompokkan."
+            ? "Sinkronisasi selesai: Semua percakapan sudah terkelompokkan."
             : "Sync complete: All signals are clustered."
         );
       }
@@ -629,7 +629,7 @@ export default function IntelligencePage() {
     {
       label: pickL("Negative issues", "Isu negatif"),
       value: pending ? "..." : String(negativeIssues.length),
-      helper: negativeIssues.length > 0 ? pickL(`${negativeIssues.reduce((n, c) => n + c.signals, 0)} records`, `${negativeIssues.reduce((n, c) => n + c.signals, 0)} sinyal`) : pickL("none", "tidak ada"),
+      helper: negativeIssues.length > 0 ? pickL(`${negativeIssues.reduce((n, c) => n + c.signals, 0)} records`, `${negativeIssues.reduce((n, c) => n + c.signals, 0)} percakapan`) : pickL("none", "tidak ada"),
       icon: Brain,
       tone: "red" as Tone,
     },
@@ -974,7 +974,7 @@ export default function IntelligencePage() {
               {/* Size and spread in one line; the recommendation shows only when it says something new. */}
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <div className="rounded-[10px] bg-[#F5F7FC] px-3 py-2">
-                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#647099]">{pickL("Records", "Sinyal")}</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#647099]">{pickL("Records", "Percakapan")}</p>
                   <p className="text-[18px] font-black text-[#101334]">{selectedCluster.signals}</p>
                 </div>
                 <div className="rounded-[10px] bg-[#F5F7FC] px-3 py-2">

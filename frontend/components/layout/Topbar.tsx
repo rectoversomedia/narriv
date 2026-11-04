@@ -39,16 +39,22 @@ type SearchResult = {
   tone?: string;
 };
 
+// Pages the search box can jump to: title and subtitle in both languages, matched against either.
 const navLinks = [
-  { title: "Dashboard", href: "/", subtitle: { en: "Command center", id: "Pusat komando" } },
-  { title: "Signals", href: "/signals", subtitle: { en: "Digital signals", id: "Sinyal digital" } },
-  { title: "Alerts", href: "/alerts", subtitle: { en: "Priority alerts", id: "Alert prioritas" } },
-  { title: "Visibility", href: "/visibility", subtitle: { en: "AI visibility", id: "Visibilitas AI" } },
-  { title: "Intelligence", href: "/intelligence", subtitle: { en: "Narrative map", id: "Peta narasi" } },
-  { title: "Reports", href: "/reports", subtitle: { en: "Reports", id: "Laporan" } },
-  { title: "Action Plans", href: "/action-plans", subtitle: { en: "Action center", id: "Pusat tindakan" } },
-  { title: "Sources", href: "/workspace/sources", subtitle: { en: "Data sources", id: "Sumber data" } },
-  { title: "Settings", href: "/workspace/settings", subtitle: { en: "Settings", id: "Pengaturan" } },
+  { href: "/", title: { en: "Today", id: "Hari Ini" }, subtitle: { en: "Summary and today's decisions", id: "Ringkasan dan keputusan hari ini" } },
+  { href: "/brief", title: { en: "Daily brief", id: "Briefing harian" }, subtitle: { en: "Today", id: "Hari Ini" } },
+  { href: "/signals", title: { en: "Conversations", id: "Percakapan" }, subtitle: { en: "Issues", id: "Isu" } },
+  { href: "/intelligence", title: { en: "Issue map", id: "Peta isu" }, subtitle: { en: "Issues", id: "Isu" } },
+  { href: "/alerts", title: { en: "Alerts", id: "Peringatan" }, subtitle: { en: "Alerts & Tasks", id: "Peringatan & Tugas" } },
+  { href: "/action-center", title: { en: "Recommendations", id: "Rekomendasi" }, subtitle: { en: "Alerts & Tasks", id: "Peringatan & Tugas" } },
+  { href: "/action-plans", title: { en: "Action plans", id: "Rencana aksi" }, subtitle: { en: "Alerts & Tasks", id: "Peringatan & Tugas" } },
+  { href: "/workspace/cases", title: { en: "Cases", id: "Kasus" }, subtitle: { en: "Alerts & Tasks", id: "Peringatan & Tugas" } },
+  { href: "/reports", title: { en: "Reports", id: "Laporan" }, subtitle: { en: "Reports", id: "Laporan" } },
+  { href: "/visibility", title: { en: "AI answers", id: "Jawaban AI" }, subtitle: { en: "Reports", id: "Laporan" } },
+  { href: "/workspace/settings", title: { en: "Settings", id: "Pengaturan" }, subtitle: { en: "Keywords, team, notifications", id: "Kata kunci, tim, notifikasi" } },
+  { href: "/workspace/sources", title: { en: "Data sources", id: "Sumber data" }, subtitle: { en: "Settings", id: "Pengaturan" } },
+  { href: "/workspace/integrations", title: { en: "Notification channels", id: "Saluran notifikasi" }, subtitle: { en: "Settings", id: "Pengaturan" } },
+  { href: "/workspace/activity", title: { en: "Activity history", id: "Riwayat aktivitas" }, subtitle: { en: "Settings", id: "Pengaturan" } },
 ];
 
 const typeLabel: Record<string, string> = {
@@ -235,9 +241,10 @@ export function Topbar() {
           }
         });
         navLinks.forEach((nav) => {
-          const subtitle = nav.subtitle[language === "id" ? "id" : "en"];
-          if (nav.title.toLowerCase().includes(q) || subtitle.toLowerCase().includes(q)) {
-            results.push({ type: "nav", id: nav.href, title: nav.title, subtitle, href: nav.href });
+          const lang = language === "id" ? "id" : "en";
+          const words = [nav.title.en, nav.title.id, nav.subtitle.en, nav.subtitle.id].join(" ").toLowerCase();
+          if (words.includes(q)) {
+            results.push({ type: "nav", id: nav.href, title: nav.title[lang], subtitle: nav.subtitle[lang], href: nav.href });
           }
         });
         setSearchResults(results.slice(0, 8));

@@ -64,7 +64,7 @@ export function computeRisk({ signals = [], priorCount = 0, alerts = [], cluster
             score: 0,
             band: "low",
             components: [],
-            uncertainty: { level: "high", reasons: [tr("No signals in the window.", "Tidak ada sinyal di periode ini.")] },
+            uncertainty: { level: "high", reasons: [tr("No mentions in the window.", "Tidak ada percakapan di periode ini.")] },
             limitations,
             sourceIds: [],
         };
@@ -87,7 +87,7 @@ export function computeRisk({ signals = [], priorCount = 0, alerts = [], cluster
     const negatives = signals.filter((s) => upper(s.sentiment) === "NEGATIVE");
     const negShare = negatives.length / n;
     add("negative_share", negShare,
-        tr(`${negatives.length} of ${n} signals in the window are negative.`, `${negatives.length} dari ${n} sinyal di periode ini bernada negatif.`),
+        tr(`${negatives.length} of ${n} mentions in the window are negative.`, `${negatives.length} dari ${n} percakapan di periode ini bernada negatif.`),
         negatives.map((s) => s.id), { negative: negatives.length, total: n });
 
     // 2. Severity of underlying issues (as assessed during analysis).
@@ -96,8 +96,8 @@ export function computeRisk({ signals = [], priorCount = 0, alerts = [], cluster
     // High counts once, critical twice; normalized by window size (capped at 1).
     add("severity", (severe.length + critical) / n,
         severe.length
-            ? tr(`${severe.length} signal(s) rated high/critical severity (${critical} critical).`, `${severe.length} sinyal bertingkat keparahan tinggi/kritis (${critical} kritis).`)
-            : tr("No signals rated high or critical severity.", "Tidak ada sinyal bertingkat keparahan tinggi atau kritis."),
+            ? tr(`${severe.length} mention(s) rated high/critical severity (${critical} critical).`, `${severe.length} percakapan bertingkat keparahan tinggi/kritis (${critical} kritis).`)
+            : tr("No mentions rated high or critical severity.", "Tidak ada percakapan bertingkat keparahan tinggi atau kritis."),
         severe.map((s) => s.id), { highOrCritical: severe.length, critical });
 
     // 3. Volume change vs the previous equal window. No baseline => no score
@@ -110,7 +110,7 @@ export function computeRisk({ signals = [], priorCount = 0, alerts = [], cluster
                     : tr("Volume is not above the previous window.", "Volume tidak lebih tinggi dari periode sebelumnya."),
             [], { current: n, prior: priorCount, ratio: Number(ratio.toFixed(2)) });
     } else {
-        add("volume_change", 0, tr("No signals in the previous window, so volume change cannot be assessed.", "Tidak ada sinyal di periode sebelumnya, jadi perubahan volume belum bisa dinilai."), [], { current: n, prior: 0, ratio: null });
+        add("volume_change", 0, tr("No mentions in the previous window, so volume change cannot be assessed.", "Tidak ada percakapan di periode sebelumnya, jadi perubahan volume belum bisa dinilai."), [], { current: n, prior: 0, ratio: null });
         uncertainty.push(tr("No baseline window: volume change is unknown.", "Belum ada periode pembanding: perubahan volume belum diketahui."));
     }
 
@@ -140,14 +140,14 @@ export function computeRisk({ signals = [], priorCount = 0, alerts = [], cluster
     if (clusters.length > 0 && withMomentum.length === 0) uncertainty.push(tr("Narrative momentum unavailable: no member observations for the tracked clusters.", "Momentum narasi belum tersedia: belum ada pengamatan untuk klaster yang dipantau."));
     add("narrative_momentum", emerging.length / 3,
         emerging.length
-            ? tr(`${emerging.length} narrative(s) emerging: at least ${EMERGING_MIN_SIGNALS_24H} new signals in 24h and growth >= ${EMERGING_MIN_GROWTH_PCT}% vs the previous 24h (or newly appeared).`, `${emerging.length} narasi mulai muncul: minimal ${EMERGING_MIN_SIGNALS_24H} sinyal baru dalam 24 jam dan tumbuh ≥ ${EMERGING_MIN_GROWTH_PCT}% dibanding 24 jam sebelumnya (atau baru muncul).`)
+            ? tr(`${emerging.length} narrative(s) emerging: at least ${EMERGING_MIN_SIGNALS_24H} new mentions in 24h and growth >= ${EMERGING_MIN_GROWTH_PCT}% vs the previous 24h (or newly appeared).`, `${emerging.length} narasi mulai muncul: minimal ${EMERGING_MIN_SIGNALS_24H} percakapan baru dalam 24 jam dan tumbuh ≥ ${EMERGING_MIN_GROWTH_PCT}% dibanding 24 jam sebelumnya (atau baru muncul).`)
             : tr("No narrative meets the emerging criteria (fresh volume plus growth vs the previous 24h).", "Belum ada narasi yang memenuhi kriteria narasi baru (volume baru plus pertumbuhan dibanding 24 jam sebelumnya)."),
         emerging.flatMap((c) => [c.id, ...c.duplicateIds]),
         { emergingNarratives: emerging.length, duplicateClusters: duplicates, clustersWithObservations: withMomentum.length, minSignals24h: EMERGING_MIN_SIGNALS_24H, minGrowthPct: EMERGING_MIN_GROWTH_PCT });
 
-    if (n < MIN_SIGNALS_FOR_CONFIDENCE) uncertainty.push(tr(`Small sample: only ${n} signal(s) in the window.`, `Sampel kecil: hanya ${n} sinyal di periode ini.`));
+    if (n < MIN_SIGNALS_FOR_CONFIDENCE) uncertainty.push(tr(`Small sample: only ${n} mention(s) in the window.`, `Sampel kecil: hanya ${n} percakapan di periode ini.`));
     const unrated = signals.filter((s) => !s.sentiment).length;
-    if (unrated > 0) uncertainty.push(tr(`${unrated} signal(s) have no sentiment yet (unanalyzed).`, `${unrated} sinyal belum punya sentimen (belum dianalisis).`));
+    if (unrated > 0) uncertainty.push(tr(`${unrated} mention(s) have no sentiment yet (unanalyzed).`, `${unrated} percakapan belum punya sentimen (belum dianalisis).`));
 
     const score = Math.round(components.reduce((sum, c) => sum + c.contribution, 0));
     const level = uncertainty.length === 0 ? "low" : uncertainty.length === 1 ? "medium" : "high";

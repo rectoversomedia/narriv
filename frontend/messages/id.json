@@ -9,7 +9,7 @@
     "shared": {
       "liveBadge": "Sistem Intelijen Langsung",
       "loginHeadline": "Dari temuan ke aksi dalam hitungan menit, bukan hari.",
-      "loginDescription": "Narriv memantau setiap sinyal narasi di lanskap brand kamu dan mengubah risiko yang muncul menjadi aksi terkoordinasi sebelum membesar.",
+      "loginDescription": "Narriv memantau setiap percakapan di lanskap brand kamu dan mengubah risiko yang muncul menjadi aksi terkoordinasi sebelum membesar.",
       "loginCompliance": "Koneksi terenkripsi (HTTPS) · Akses workspace berbasis peran",
       "signupHeadline": "Intelijen yang bertindak, bukan sekadar memberi peringatan.",
       "signupDescription": "Gabung dengan tim yang memakai Narriv untuk lebih cepat membaca narasi yang membentuk brand sebelum menjadi headline.",
@@ -22,7 +22,7 @@
       "protected": "Data dipisahkan per workspace, dengan akses berbasis peran dan audit log.",
       "stats": {
         "confidence": "Skor keyakinan AI",
-        "latency": "Jeda dari sinyal ke peringatan",
+        "latency": "Jeda dari percakapan ke peringatan",
         "monitoring": "Pemantauan otomatis"
       }
     },
@@ -61,7 +61,7 @@
       "alreadyHaveAccess": "Sudah punya akses?",
       "signinLink": "Masuk",
       "features": {
-        "monitoring": "Pemantauan sinyal narasi real-time",
+        "monitoring": "Pemantauan percakapan real-time",
         "predictive": "Mesin peringatan prediktif dengan akurasi 91%",
         "recommendations": "Rekomendasi aksi berbasis AI",
         "visibility": "Visibilitas GEO di mesin pencarian AI"
@@ -297,7 +297,7 @@
       "action": "Aksi",
       "system": "Sistem",
       "command": "Beranda",
-      "signals": "Sinyal",
+      "signals": "Percakapan",
       "alerts": "Peringatan",
       "visibility": "Visibilitas AI",
       "intelligence": "Intelijen",
@@ -315,7 +315,7 @@
       "workspace": "Ruang Kerja Pengguna"
     },
     "topbar": {
-      "search": "Cari sinyal, topik, isu, atau kasus...",
+      "search": "Cari percakapan, topik, isu, atau kasus...",
       "user": "Pengguna",
       "workspace": "Workspace Anda"
     },
@@ -650,29 +650,29 @@
   "Signals": {
     "otherSentiment": "Netral / belum dianalisis",
     "emptyState": {
-      "title": "Belum ada sinyal",
-      "desc": "Tidak ada sinyal yang cocok dengan filter saat ini. Coba sesuaikan kata kunci atau filter Anda.",
+      "title": "Belum ada percakapan",
+      "desc": "Tidak ada percakapan yang cocok dengan filter saat ini. Coba sesuaikan kata kunci atau filter Anda.",
       "noSourcesTitle": "Belum ada sumber data terhubung",
-      "noSourcesDesc": "Hubungkan akun media sosial, platform ulasan, atau feed Anda untuk mulai menemukan sinyal.",
+      "noSourcesDesc": "Hubungkan akun media sosial, platform ulasan, atau feed Anda untuk mulai menemukan percakapan.",
       "connectSourceCta": "Hubungkan Sumber Data"
     },
     "summary": {
-      "title": "Ringkasan Sinyal AI",
+      "title": "Ringkasan Percakapan AI",
       "aiGenerated": "Dibuat oleh AI",
       "noData": "Data belum tersedia",
-      "noDataDesc": "Belum ada sinyal yang ditangkap dalam 24 jam terakhir untuk membuat ringkasan.",
-      "total": "Total Sinyal (24j)",
-      "negative": "Sinyal Negatif",
+      "noDataDesc": "Belum ada percakapan yang ditangkap dalam 24 jam terakhir untuk membuat ringkasan.",
+      "total": "Total Percakapan (24j)",
+      "negative": "Percakapan Negatif",
       "critical": "Peringatan Kritis",
       "trendLabel": "24 jam terakhir",
       "alertBackedLabel": "Dari mesin peringatan"
     },
     "followUp": {
       "title": "Yang Perlu Tindak Lanjut",
-      "desc": "Sinyal yang membutuhkan perhatian segera.",
+      "desc": "Percakapan yang membutuhkan perhatian segera.",
       "action": "Tindak Lanjuti di Rekomendasi Tindakan",
       "emptyTitle": "Tidak ada tindak lanjut",
-      "emptyDesc": "Semua aman! Belum ada sinyal mendesak."
+      "emptyDesc": "Semua aman! Belum ada percakapan mendesak."
     },
     "recommendations": {
       "title": "Rekomendasi Tindakan",
@@ -682,27 +682,27 @@
       "emptyDesc": "Narriv AI akan membuat saran tindakan jika ada pola signifikan yang terdeteksi."
     },
     "sourceDonut": {
-      "title": "Sumber Sinyal",
+      "title": "Sumber Percakapan",
       "desc": "Distribusi berdasarkan sumber data.",
       "timeframe": "30 hari terakhir",
-      "totalLabel": "Total Sinyal",
+      "totalLabel": "Total Percakapan",
       "emptyTitle": "Belum ada data sumber",
       "emptyDesc": "Hubungkan sumber data untuk melihat distribusi."
     },
     "timeline": {
-      "title": "Linimasa Sinyal",
+      "title": "Linimasa Percakapan",
       "period": "(24 Jam Terakhir)",
-      "desc": "Volume sinyal per jam.",
-      "signalsLabel": "sinyal",
+      "desc": "Volume percakapan per jam.",
+      "signalsLabel": "percakapan",
       "emptyTitle": "Belum ada data linimasa",
-      "emptyDesc": "Aktivitas sinyal akan muncul di sini saat data terkumpul."
+      "emptyDesc": "Aktivitas percakapan akan muncul di sini saat data terkumpul."
     },
     "investigationQueue": {
       "title": "Antrean Investigasi",
-      "desc": "Sinyal yang sedang dalam proses.",
+      "desc": "Percakapan yang sedang dalam proses.",
       "viewAll": "Lihat semua",
       "emptyTitle": "Tidak ada investigasi dalam antrean",
-      "emptyDesc": "Semua aman! Tidak ada sinyal yang menunggu investigasi."
+      "emptyDesc": "Semua aman! Tidak ada percakapan yang menunggu investigasi."
     },
     "createInvestigation": "Buat Investigasi",
     "modal": {
@@ -729,17 +729,17 @@
         "errorDesc": "Terjadi kesalahan saat membuat investigasi."
       }
     },
-    "eyebrow": "Sinyal",
-    "title": "Pemantauan",
+    "eyebrow": "Percakapan",
+    "title": "Percakapan",
     "subtitle": "Data yang terkumpul untuk workspace ini, dengan sumber, waktu terbit, dan tautan aslinya.",
     "createAction": "Buat Aksi",
     "creatingAction": "Membuat...",
     "createActionFailed": "Rencana aksi belum bisa dibuat. Pembuatan AI mungkin belum tersedia atau konfigurasinya belum lengkap.",
-    "search": "Cari sinyal...",
+    "search": "Cari percakapan...",
     "filter": "Filter",
-    "tableTitle": "Daftar Sinyal",
-    "tableDesc": "Pantau sinyal masuk, pilih satu baris untuk melihat konteks dan rekomendasi.",
-    "signal": "Sinyal",
+    "tableTitle": "Daftar Percakapan",
+    "tableDesc": "Pantau percakapan masuk, pilih satu baris untuk melihat konteks dan rekomendasi.",
+    "signal": "Percakapan",
     "source": "Sumber",
     "sentiment": "Sentimen",
     "confidence": "Keyakinan",
@@ -791,12 +791,12 @@
     "headerCaptured": "Ditangkap",
     "headerAction": "Aksi",
     "investigate": "Investigasi",
-    "footerLive": "{from}-{to} dari {total} sinyal",
+    "footerLive": "{from}-{to} dari {total} percakapan",
     "footerUnavailable": "Data terkini belum bisa dimuat. Tidak ada baris contoh yang ditampilkan.",
     "errorTitle": "Data terkini belum bisa dimuat",
-    "errorDesc": "Sinyal tidak dapat dimuat. Tidak ada baris yang ditampilkan agar data tetap akurat. Coba lagi.",
-    "metaErrorTitle": "Metadata sinyal belum bisa dimuat",
-    "metaErrorDesc": "Angka ringkasan tidak dapat dimuat. Daftar sinyal mungkin masih tersedia di bawah.",
+    "errorDesc": "Percakapan tidak dapat dimuat. Tidak ada baris yang ditampilkan agar data tetap akurat. Coba lagi.",
+    "metaErrorTitle": "Metadata percakapan belum bisa dimuat",
+    "metaErrorDesc": "Angka ringkasan tidak dapat dimuat. Daftar percakapan mungkin masih tersedia di bawah.",
     "fallbackUntitled": "Temuan tanpa judul",
     "fallbackNoContent": "Ringkasan konten belum tersedia.",
     "fallbackUnknownSource": "Sumber Tidak Diketahui",
@@ -811,8 +811,8 @@
     "scoreExcellent": "Sangat Baik",
     "positiveNegativeRatio": "Rasio Pos / Neg",
     "emergingSignals": "Muncul",
-    "signalIntelligenceScore": "Skor Intelijen Sinyal",
-    "scoreTooltip": "Skor mencerminkan volume sinyal, kecepatan, dan konsentrasi sentimen negatif",
+    "signalIntelligenceScore": "Skor Intelijen Percakapan",
+    "scoreTooltip": "Skor mencerminkan volume percakapan, kecepatan, dan konsentrasi sentimen negatif",
     "relatedNarratives": "Narasi Terkait",
     "relatedNarrative": "Narasi Terkait",
     "amplification": "Amplifikasi",
@@ -883,7 +883,7 @@
   },
   "signals": {
     "relatedNarratives": "Narasi Terkait",
-    "signalIntelligenceScore": "Skor Intelijen Sinyal",
+    "signalIntelligenceScore": "Skor Intelijen Percakapan",
     "amplification": "Amplifikasi",
     "relatedNarrative": "Narasi Terkait",
     "filterNarrativeType": "Tipe Narasi",
@@ -898,11 +898,11 @@
     "scoreModerate": "Sedang",
     "scoreLow": "Rendah",
     "scoreCritical": "Kritis",
-    "scoreTooltip": "Skor mencerminkan volume sinyal, kecepatan, dan konsentrasi sentimen negatif"
+    "scoreTooltip": "Skor mencerminkan volume percakapan, kecepatan, dan konsentrasi sentimen negatif"
   },
   "advancedSearch": {
     "title": "Filter Lanjutan",
-    "description": "Filter sinyal berdasarkan platform, sentimen, rentang tanggal, dan lainnya.",
+    "description": "Filter percakapan berdasarkan platform, sentimen, rentang tanggal, dan lainnya.",
     "platform": "Platform",
     "sentiment": "Sentimen",
     "dateRange": "Rentang Tanggal",
@@ -987,7 +987,7 @@
     "sandbox": {
       "title": "Pencarian AI",
       "desc": "Simulasi bagaimana AI merespons pertanyaan tentang brand Anda.",
-      "queryPlaceholder": "Cari sinyal, topik, isu, atau kasus...",
+      "queryPlaceholder": "Cari percakapan, topik, isu, atau kasus...",
       "simulateBtn": "Simulasi",
       "responseTitle": "Respon AI",
       "analysisMeta": "Metadata Analisis",
@@ -1627,7 +1627,7 @@
       "flow": {
         "title": "Alur Eskalasi",
         "desc": "(Bagaimana Narriv Mengirimkan Intelijen Kritis)",
-        "step1Title": "Sinyal Terdeteksi",
+        "step1Title": "Percakapan Terdeteksi",
         "step1Desc": "AI mendeteksi anomali",
         "step2Title": "Peringatan Dihasilkan",
         "step2Desc": "Tingkat keparahan diklasifikasikan",
@@ -1646,7 +1646,7 @@
     }
   },
   "Intelligence": {
-    "pageTitle": "Isu & Narasi",
+    "pageTitle": "Peta Isu",
     "pageSubtitle": "Pahami klaster topik, pertumbuhan narasi, dan konteks strategis.",
     "title": "Peta Topik",
     "subtitle": "Pahami topik yang sedang naik, siapa yang terlibat, dampaknya, dan risiko di baliknya.",
@@ -1703,7 +1703,7 @@
     },
     "topicMap": {
       "title": "Peta Topik",
-      "desc": "Ukuran lingkaran menunjukkan sinyal terkait; garis menghubungkan narasi yang berbagi bukti.",
+      "desc": "Ukuran lingkaran menunjukkan percakapan terkait; garis menghubungkan narasi yang berbagi bukti.",
       "allTopics": "Semua Topik",
       "filter": "Filter",
       "filterAll": "Semua Sentimen",
@@ -1727,7 +1727,7 @@
       "weak": "Sebagian",
       "strong": "Sebagian besar",
       "tip": "Klik gelembung untuk membuka analisis lengkap isunya.",
-      "high": "Lebih banyak sinyal",
+      "high": "Lebih banyak percakapan",
       "expandMap": "Perbesar peta",
       "mapControl": "Kontrol peta",
       "zoomIn": "Perbesar",
@@ -1739,7 +1739,7 @@
       "viewAll": "Lihat semua",
       "viewLess": "Lihat lebih sedikit",
       "modalTitle": "Semua Klaster Berkembang",
-      "modalSubtitle": "Jelajahi semua klaster narasi yang diurutkan berdasarkan jumlah sinyal dan kecepatan pertumbuhan."
+      "modalSubtitle": "Jelajahi semua klaster narasi yang diurutkan berdasarkan jumlah percakapan dan kecepatan pertumbuhan."
     },
     "actions": {
       "viewDetails": "Lihat detail lengkap",
@@ -1750,7 +1750,7 @@
       "errorTitle": "Detail narasi belum bisa dimuat",
       "subtitle": "Analisis narasi terperinci dan perincian sentimen.",
       "sentimentBreakdown": "Perincian Sentimen",
-      "relatedSignals": "Sinyal Terkait",
+      "relatedSignals": "Percakapan Terkait",
       "noContent": "Ringkasan konten belum tersedia.",
       "noData": "Tidak ada data detail yang tersedia untuk narasi ini.",
       "draftNote": "Rencana dibuat sebagai draf dari bukti narasi ini dan perlu ditinjau sebelum dipakai di luar.",
@@ -1768,7 +1768,7 @@
     },
     "competitorShare": {
       "title": "Porsi Narasi",
-      "totalShare": "Total Sinyal",
+      "totalShare": "Total Percakapan",
       "viewLandscape": "Lihat rincian porsi narasi"
     },
     "aiSummary": {
@@ -1776,7 +1776,7 @@
       "btn": "Lihat Laporan Wawasan Lengkap"
     },
     "aiSummaryDynamic": {
-      "box": "Narasi utama pada periode ini didominasi oleh \"{topic}\", yang saat ini memiliki {signals} sinyal dan memerlukan perhatian karena dampaknya yang {impact}.",
+      "box": "Narasi utama pada periode ini didominasi oleh \"{topic}\", yang saat ini memiliki {signals} percakapan dan memerlukan perhatian karena dampaknya yang {impact}.",
       "boxEmpty": "Tidak ada aktivitas narasi signifikan yang terdeteksi pada periode ini.",
       "bulletFastest": "Isu paling cepat berkembang: \"{topic}\" dengan pertumbuhan {growth}.",
       "bulletRisk": "\"{topic}\" menunjukkan tren sentimen {sentiment} yang kuat.",
@@ -1821,14 +1821,14 @@
       "connected": "Terhubung",
       "connectedDetail": "Data narasi dan sumber berhasil dimuat",
       "lastAnalysis": "Analisis Terakhir",
-      "lastAnalysisDetail": "Waktu sinyal terakhir dianalisis AI"
+      "lastAnalysisDetail": "Waktu percakapan terakhir dianalisis AI"
     },
     "toast": {
       "copyFailed": "Gagal menyalin ID narasi.",
       "copySuccess": "ID narasi disalin ke clipboard."
     },
     "labels": {
-      "signals": "{count} sinyal",
+      "signals": "{count} percakapan",
       "sources": "{count} sumber",
       "noData": "Tidak ada data",
       "others": "Lainnya",
@@ -1840,12 +1840,12 @@
       "topic": "Belum ada narasi terpilih",
       "priority": "Tidak ada data",
       "description": "Data narasi terkini belum tersedia.",
-      "aiRec": "Tambahkan sinyal atau coba muat ulang data terkini untuk mengisi panel ini."
+      "aiRec": "Tambahkan percakapan atau coba muat ulang data terkini untuk mengisi panel ini."
     },
     "mediumPriorityFallback": "Prioritas Sedang",
     "empty": {
       "title": "Belum ada narasi",
-      "desc": "Belum ada narasi yang teridentifikasi. Narasi muncul setelah cukup sinyal terkait terkumpul."
+      "desc": "Belum ada narasi yang teridentifikasi. Narasi muncul setelah cukup percakapan terkait terkumpul."
     },
     "error": {
       "title": "Narasi terkini belum bisa dimuat",
@@ -2063,7 +2063,7 @@
       "body": "Dalam 7 hari terakhir, sentimen negatif meningkat 18% didorong oleh keluhan pembayaran dan stabilitas aplikasi di wilayah Jabodetabek."
     },
     "aiSummaryDynamic": {
-      "insightText": "{title} adalah isu utama dengan volume tertinggi ({count} sinyal).",
+      "insightText": "{title} adalah isu utama dengan volume tertinggi ({count} percakapan).",
       "riskText": "Potensi eskalasi reputasi terkait {title}.",
       "noRiskText": "Tidak ada isu negatif kritis yang terdeteksi.",
       "movementText": "Percakapan terkait {title} naik {velocity} baru-baru ini.",
@@ -2073,7 +2073,7 @@
       "emptyRisk": "Belum ada data untuk menilai risiko.",
       "emptyMovement": "Belum ada pergerakan narasi.",
       "emptyRec": "Mengumpulkan data untuk rekomendasi.",
-      "emptyBody": "Mesin AI sedang menunggu cukupnya sinyal narasi untuk dapat menghasilkan ringkasan laporan yang komprehensif."
+      "emptyBody": "Mesin AI sedang menunggu cukupnya percakapan untuk dapat menghasilkan ringkasan laporan yang komprehensif."
     },
     "formatDonut": {
       "title": "Distribusi Format",
@@ -2283,7 +2283,7 @@
     "toggleSidebar": "Buka atau tutup sidebar",
     "toggleTheme": "Ganti tema",
     "toggleLanguage": "Ganti bahasa",
-    "search": "Cari sinyal, topik, isu, atau kasus...",
+    "search": "Cari percakapan, topik, isu, atau kasus...",
     "notifications": "Notifikasi",
     "notSignedIn": "Belum masuk",
     "noWorkspace": "Tidak ada ruang kerja"
@@ -2499,7 +2499,7 @@
         "resolutionPlaceholder": "Masukkan catatan resolusi...",
         "noResolution": "Belum ada resolusi",
         "source": "Sumber",
-        "linkedSignal": "Sinyal Terkait",
+        "linkedSignal": "Percakapan Terkait",
         "noSource": "Tidak ada sumber terkait",
         "created": "Dibuat",
         "updated": "Terakhir Diperbarui",
@@ -2798,16 +2798,16 @@
         "nextBilling": "Tagihan Berikutnya",
         "billingDateFormat": "12 Juni 2025",
         "billingDaysLeft": "(30 hari lagi)",
-        "usageTitle": "Penggunaan Sinyal (30 Hari Terakhir)",
-        "usageTotalSignals": "Total Sinyal",
+        "usageTitle": "Penggunaan Percakapan (30 Hari Terakhir)",
+        "usageTotalSignals": "Total Percakapan",
         "usageChange": "▲ 18.6% vs periode sebelumnya",
         "period30": "30 Hari Terakhir",
         "period60": "60 Hari Terakhir",
-        "metricSignalVolume": "Volume Sinyal",
+        "metricSignalVolume": "Volume Percakapan",
         "metricConnectedSources": "Sumber Terhubung",
         "metricUsersLimit": "Batas pengguna",
         "metricAiCredits": "Kredit AI",
-        "signalsUnit": "sinyal",
+        "signalsUnit": "percakapan",
         "chartDates": [
           "13 Mei",
           "18 Mei",
@@ -2827,10 +2827,10 @@
         "pauseDesc": "Hentikan sementara pengambilan data terjadwal untuk semua kata kunci. Data yang sudah ada tetap aman, dan Anda masih bisa menjalankan pengambilan manual.",
         "pauseButton": "Jeda Pemantauan",
         "deleteTitle": "Hapus Workspace",
-        "deleteDesc": "Hapus permanen workspace ini. Hanya bisa untuk workspace yang belum berisi data. Workspace yang sudah punya sinyal, peringatan, atau laporan dihapus lewat tim Narriv agar tidak ada data yang hilang tanpa sengaja.",
+        "deleteDesc": "Hapus permanen workspace ini. Hanya bisa untuk workspace yang belum berisi data. Workspace yang sudah punya percakapan, peringatan, atau laporan dihapus lewat tim Narriv agar tidak ada data yang hilang tanpa sengaja.",
         "deleteButton": "Hapus Workspace",
         "resumeTitle": "Pemantauan Sedang Dijeda",
-        "resumeDesc": "Pengambilan data terjadwal sedang berhenti. Lanjutkan agar sinyal baru kembali masuk setiap hari.",
+        "resumeDesc": "Pengambilan data terjadwal sedang berhenti. Lanjutkan agar percakapan baru kembali masuk setiap hari.",
         "resumeButton": "Lanjutkan Pemantauan"
       },
       "confirm": {
@@ -2873,7 +2873,7 @@
         "managementInfo": "Panel manajemen {label} akan terbuka.",
         "monitoringPaused": "Pemantauan dijeda. Pengambilan data terjadwal berhenti.",
         "monitoringResumed": "Pemantauan dilanjutkan.",
-        "deleteRestricted": "Workspace ini masih berisi data (sinyal, peringatan, atau laporan), jadi belum bisa dihapus dari sini. Hubungi tim Narriv untuk penghapusan permanen.",
+        "deleteRestricted": "Workspace ini masih berisi data (percakapan, peringatan, atau laporan), jadi belum bisa dihapus dari sini. Hubungi tim Narriv untuk penghapusan permanen.",
         "actionFailed": "Aksi gagal. Coba lagi sebentar lagi."
       },
       "invite": {
@@ -2947,7 +2947,7 @@
         "summaryStyle": "Gaya Ringkasan AI",
         "enableRecs": "Aktifkan Rekomendasi AI",
         "enableRecsDesc": "Tampilkan saran tindak lanjut",
-        "enablePredictive": "Aktifkan Sinyal Prediktif",
+        "enablePredictive": "Aktifkan Prediksi Isu",
         "enablePredictiveDesc": "Deteksi tanda tren membesar"
       },
       "integrationsApi": {
@@ -3055,23 +3055,31 @@
       "command": "Ringkasan",
       "signals": "Pemantauan",
       "alerts": "Peringatan Dini",
-      "visibility": "Visibilitas AI",
+      "visibility": "Jawaban AI",
       "intelligence": "Isu & Narasi",
-      "reports": "Laporan & Wawasan",
+      "reports": "Laporan",
       "askNarriv": "Tanya Narriv",
       "opportunities": "Peluang",
-      "brief": "Briefing Harian",
+      "brief": "Briefing harian",
       "timeline": "Linimasa",
       "actions": "Aksi & Tindak Lanjut",
       "alertCenter": "Pusat Peringatan",
-      "actionCenter": "Rencana Aksi",
+      "actionCenter": "Rencana aksi",
       "cases": "Kasus",
-      "dataSources": "Sumber Data",
-      "integrations": "Integrasi",
-      "activity": "Log Aktivitas",
+      "dataSources": "Sumber data",
+      "integrations": "Saluran notifikasi",
+      "activity": "Riwayat aktivitas",
       "settings": "Pengaturan",
       "reportsTab": "Laporan",
-      "actionsTab": "Rekomendasi"
+      "actionsTab": "Rekomendasi",
+      "today": "Hari Ini",
+      "issues": "Isu",
+      "tasks": "Peringatan & Tugas",
+      "todayTab": "Ringkasan",
+      "conversations": "Percakapan",
+      "issueMap": "Peta isu",
+      "alertsTab": "Peringatan",
+      "settingsTab": "Umum"
     },
     "sidebar": {
       "scoreTitle": "Skor Intelijen Narriv",
@@ -3090,7 +3098,7 @@
       "expand": "Buka menu"
     },
     "topbar": {
-      "search": "Cari sinyal, topik, isu, atau kasus...",
+      "search": "Cari percakapan, topik, isu, atau kasus...",
       "notifications": "Notifikasi",
       "logout": "Keluar",
       "notificationsTitle": "Notifikasi",
@@ -3119,8 +3127,8 @@
       "newAction": "Buat Tindakan Baru"
     },
     "metrics": {
-      "totalSignals": "Total Sinyal",
-      "analyzedSignals": "Sinyal Dianalisis",
+      "totalSignals": "Total Percakapan",
+      "analyzedSignals": "Percakapan Dianalisis",
       "positiveSent": "Positif",
       "negativeSent": "Negatif",
       "neutralSent": "Netral",
@@ -3131,16 +3139,16 @@
         "title": "Ringkasan",
         "desc": "Ringkasan real-time dari sistem Narriv. Pantau, analisis, dan ambil tindakan dengan cepat.",
         "demoMode": "Mode Demo",
-        "demoModeDesc": "Workspace demo: sinyal dan narasi berasal dari pemantauan terkini; beberapa panel menampilkan contoh ilustratif",
+        "demoModeDesc": "Workspace demo: percakapan dan narasi berasal dari pemantauan terkini; beberapa panel menampilkan contoh ilustratif",
         "customize": "Kustomisasi Dashboard",
         "refresh": "Auto refresh: 30 detik",
-        "activity": "Aktivitas Sinyal Real-time",
-        "activityDesc": "Pergerakan sinyal dalam 24 jam terakhir",
+        "activity": "Aktivitas Percakapan Real-time",
+        "activityDesc": "Pergerakan percakapan dalam 24 jam terakhir",
         "map": "Peta Aktivitas Global",
-        "mapDesc": "Sebaran sinyal berdasarkan lokasi",
+        "mapDesc": "Sebaran percakapan berdasarkan lokasi",
         "alerts": "Peringatan Terbaru",
         "topics": "Topik Terpopuler",
-        "sources": "Sumber Sinyal",
+        "sources": "Sumber Percakapan",
         "visibility": "Cuplikan Visibilitas AI",
         "quick": "Aksi Cepat",
         "status": "Sistem Status",
@@ -3161,18 +3169,18 @@
         "errorDesc": "Dasbor tidak dapat dimuat. Coba lagi.",
         "openRelated": "Buka halaman terkait",
         "close": "Tutup",
-        "emptyTrends": "Belum ada data tren sinyal untuk periode ini",
-        "emptySignals": "Belum ada sinyal terbaru",
+        "emptyTrends": "Belum ada data tren percakapan untuk periode ini",
+        "emptySignals": "Belum ada percakapan terbaru",
         "emptyTopics": "Belum ada topik yang terdeteksi",
         "emptySources": "Belum ada data kesehatan sumber",
         "emptySentiment": "Belum ada sentimen yang dianalisis",
         "emptyStatus": "Belum ada data status sistem",
-        "emptyMap": "Belum ada aktivitas sinyal yang punya lokasi. Sinyal Apify baru dengan hint lokasi akan muncul otomatis di sini.",
+        "emptyMap": "Belum ada aktivitas percakapan yang punya lokasi. Percakapan media sosial baru yang punya info lokasi akan muncul otomatis di sini.",
         "mapError": "Peta dunia belum bisa dimuat",
         "mapLive": "Terkini",
         "mapLow": "Rendah",
         "mapHigh": "Tinggi",
-        "mapSignals": "Sinyal terpetakan",
+        "mapSignals": "Percakapan terpetakan",
         "mapRegions": "Region aktif"
       },
       "quickActions": {
@@ -3201,7 +3209,7 @@
         "reportItem3Label": "Laporan Krisis",
         "reportItem3Desc": "Laporan mendalam untuk situasi krisis.",
         "analyzeTitle": "Analisis Data",
-        "analyzeDesc": "Jalankan analisis mendalam pada sinyal dan narasi yang terkumpul.",
+        "analyzeDesc": "Jalankan analisis mendalam pada percakapan dan narasi yang terkumpul.",
         "analyzeItem1Label": "Analisis Sentimen",
         "analyzeItem1Desc": "Analisis sentimen komprehensif dari semua sumber.",
         "analyzeItem2Label": "Deteksi Tren",
@@ -3232,8 +3240,8 @@
       },
       "signals": {
         "title": "Pemantauan",
-        "desc": "Pantau percakapan penting dan sinyal narasi dari semua sumber.",
-        "table": "Feed Sinyal",
+        "desc": "Pantau percakapan penting dan percakapan dari semua sumber.",
+        "table": "Aliran Percakapan",
         "tableDesc": "Diprioritaskan berdasarkan volume, sentimen, dan confidence."
       },
       "alerts": {
@@ -3264,7 +3272,7 @@
       },
       "sources": {
         "title": "Sumber Data",
-        "desc": "Kelola sumber yang digunakan Narriv untuk memantau sinyal dan topik.",
+        "desc": "Kelola sumber yang digunakan Narriv untuk memantau percakapan dan topik.",
         "connected": "Sumber Terhubung"
       },
       "settings": {
@@ -3290,6 +3298,13 @@
     "navSections": {
       "reports": "Laporan & Wawasan",
       "actions": "Aksi & Tindak Lanjut"
+    },
+    "navShort": {
+      "today": "Hari Ini",
+      "issues": "Isu",
+      "tasks": "Tugas",
+      "reports": "Laporan",
+      "settings": "Atur"
     }
   },
   "ActionPlans": {
@@ -3418,7 +3433,7 @@
     "planErrorTitle": "Detail tindakan terkini belum bisa dimuat",
     "planErrorDesc": "Detail tindakan ini tidak dapat dimuat. Coba lagi.",
     "emptyTitle": "Belum ada tindakan",
-    "emptyDesc": "Belum ada rencana aksi. Buat dari narasi, sinyal, atau peringatan.",
+    "emptyDesc": "Belum ada rencana aksi. Buat dari narasi, percakapan, atau peringatan.",
     "noMatchTitle": "Tidak ada tindakan yang cocok",
     "noMatchDesc": "Coba kata kunci, prioritas, atau status lain.",
     "filterAll": "Semua Tindakan",
@@ -3450,7 +3465,7 @@
       "crDesc": "Mitigasi dan manajemen risiko cepat",
       "srDesc": "Balasan siap pakai untuk percakapan sosial",
       "suDesc": "Kabar yang jelas untuk pemangku kepentingan internal dan eksternal",
-      "ddDesc": "Aksi berbasis bukti dari sinyal dan metrik",
+      "ddDesc": "Aksi berbasis bukti dari percakapan dan metrik",
       "hint": "AI akan menganalisis data workspace Anda dan menghasilkan rencana aksi yang sesuai.",
       "cancel": "Batal",
       "submit": "Hasilkan Rencana",
@@ -3495,7 +3510,7 @@
     "connect": "Hubungkan Sumber Baru",
     "connectDesc": "Tambah sumber data baru untuk memperluas cakupan monitoring.",
     "volume": "Volume Data per Platform (7 Hari Terakhir)",
-    "volumeDesc": "Perbandingan volume sinyal dari setiap sumber.",
+    "volumeDesc": "Perbandingan volume percakapan dari setiap sumber.",
     "distribution": "Distribusi Tipe Sumber",
     "distributionDesc": "Komposisi berdasarkan kategori sumber data.",
     "last7": "7 Hari Terakhir",
@@ -3564,7 +3579,7 @@
       "bootstrapFailed": "Preset sumber belum bisa ditambahkan. Coba lagi.",
       "deleted": "Sumber data berhasil dihapus.",
       "deleteFailed": "Gagal menghapus sumber data.",
-      "liveApiRefreshing": "Memuat ulang data sinyal dari API...",
+      "liveApiRefreshing": "Memuat ulang data percakapan dari API...",
       "activityLogMissing": "Log sinkronisasi lengkap belum tersedia.",
       "activity": {
         "emptyTitle": "Belum ada aktivitas terbaru",
@@ -3615,7 +3630,7 @@
     "activityFailed": "Gagal: {reason}",
     "activityRunning": "Mengumpulkan…",
     "collectStarted": "Pengumpulan dimulai di Apify untuk \"{keyword}\". Kartu ini diperbarui setelah selesai.",
-    "volumeEmpty": "Tidak ada sinyal tersimpan dalam 7 hari terakhir.",
+    "volumeEmpty": "Tidak ada percakapan tersimpan dalam 7 hari terakhir.",
     "errors": {
       "authentication_failed": "Apify menolak token API",
       "billing_or_quota": "kuota atau tagihan akun Apify habis",
@@ -3643,7 +3658,7 @@
     },
     "loading": {
       "title": "Memuat data dashboard",
-      "desc": "Menyiapkan sinyal, peringatan, dan rekomendasi terbaru."
+      "desc": "Menyiapkan percakapan, peringatan, dan rekomendasi terbaru."
     },
     "retry": "Coba Lagi",
     "pagination": {
@@ -3741,9 +3756,9 @@
     "event_onboarding_completed": "Onboarding selesai",
     "event_onboarding_keywords_created": "Kata kunci onboarding ditambahkan",
     "event_onboarding_workspace_configured": "Workspace dikonfigurasi",
-    "event_signal_deleted": "Sinyal dihapus",
-    "event_signal_updated": "Sinyal diperbarui",
-    "event_signals_bulk_deleted": "Sinyal dihapus massal",
+    "event_signal_deleted": "Percakapan dihapus",
+    "event_signal_updated": "Percakapan diperbarui",
+    "event_signals_bulk_deleted": "Percakapan dihapus massal",
     "event_template_deleted": "Templat laporan dihapus",
     "event_workspace_created": "Workspace dibuat",
     "event_workspace_owner_recovered": "Pemilik workspace dipulihkan",
@@ -3806,7 +3821,7 @@
     "categories": {
       "gettingStarted": "Memulai",
       "dataSources": "Sumber Data",
-      "signals": "Sinyal & Pemantauan",
+      "signals": "Percakapan & Pemantauan",
       "alerts": "Peringatan & Notifikasi",
       "ai": "AI & Otomatisasi",
       "reports": "Laporan & Analitik",
@@ -3822,7 +3837,7 @@
       "supportedPlatforms": "Platform yang Didukung",
       "apifyIntegration": "Integrasi Apify",
       "webhookSetup": "Pengaturan Webhook",
-      "whatAreSignals": "Apa itu Sinyal?",
+      "whatAreSignals": "Apa itu Percakapan?",
       "filteringSearch": "Pemfilteran & Pencarian",
       "sentimentAnalysis": "Analisis Sentimen",
       "exportingData": "Mengekspor Data",
@@ -3830,7 +3845,7 @@
       "customAlerts": "Membuat Peringatan Kustom",
       "escalationMatrix": "Matriks Eskalasi",
       "notificationChannels": "Saluran Notifikasi",
-      "aiAnalysis": "Analisis Sinyal AI",
+      "aiAnalysis": "Analisis Percakapan AI",
       "actionPlans": "Menghasilkan Rencana Aksi",
       "narrativeClustering": "Pengelompokan Narasi",
       "aiVisibility": "Laporan Visibilitas AI",
@@ -3849,7 +3864,7 @@
   "askNarriv": {
     "title": "Tanya Narriv",
     "subtitle": "Tanya apa saja soal data Anda",
-    "placeholder": "Tanya tentang narasi, sinyal, kompetitor, visibilitas AI...",
+    "placeholder": "Tanya tentang narasi, percakapan, kompetitor, visibilitas AI...",
     "send": "Kirim",
     "thinking": "Narriv sedang berpikir...",
     "confidenceHigh": "Keyakinan tinggi",
@@ -3949,14 +3964,14 @@
     "whatHappened": "Apa yang terjadi",
     "whyItMatters": "Mengapa ini penting",
     "whatToDo": "Apa yang harus dilakukan",
-    "signals": "sinyal",
+    "signals": "percakapan",
     "prompts": "prompt",
     "investigate": "Investigasi",
     "escalate": "Eskalasi",
     "resolve": "Selesaikan"
   },
   "brief": {
-    "title": "Ringkasan Intelijen Harian",
+    "title": "Briefing Harian",
     "executiveSummary": "Ringkasan Eksekutif",
     "keyDevelopments": "Pengembangan Utama",
     "narrativeChanges": "Perubahan Narasi",
@@ -4188,7 +4203,7 @@
       "narrative_momentum": "Momentum narasi"
     },
     "insufficientTitle": "Data belum cukup",
-    "insufficientDesc": "Sinyal di periode ini belum cukup untuk menghitung bagian ini. Bagian ini diperbarui otomatis begitu data masuk.",
+    "insufficientDesc": "Percakapan di periode ini belum cukup untuk menghitung bagian ini. Bagian ini diperbarui otomatis begitu data masuk.",
     "notEnoughData": "Data belum cukup",
     "riskScore": "Skor risiko",
     "riskScoreDesc": "Ancaman terhadap reputasi dalam {hours} jam terakhir. Makin rendah makin baik.",
@@ -4217,20 +4232,20 @@
     "evidence": "Bukti:",
     "alertRef": "peringatan {id}",
     "recordsCluster": "{count} catatan klaster",
-    "recordsSignal": "{count} catatan sinyal",
+    "recordsSignal": "{count} catatan percakapan",
     "uncertaintyLevel": "Ketidakpastian {level}:",
     "positive": "{value}% positif",
     "negative": "{value}% negatif",
     "neutralMixed": "{value}% netral/campuran",
     "entityIntel": "Intelijen entitas",
-    "viewSignalsFor": "Lihat sinyal yang menyebut {entity}",
+    "viewSignalsFor": "Lihat percakapan yang menyebut {entity}",
     "mentions": "{count} penyebutan",
     "neg": "neg",
     "pos": "pos",
     "viewTopEntity": "Lihat entitas teratas di Pemantauan →",
-    "predictive": "Sinyal prediktif",
-    "noPredictiveTitle": "Belum ada sinyal",
-    "noPredictiveDesc": "Sinyal saat ini belum cukup kuat untuk menghasilkan prediksi. Ini informasi, bukan kegagalan.",
+    "predictive": "Prediksi isu",
+    "noPredictiveTitle": "Belum ada percakapan",
+    "noPredictiveDesc": "Percakapan saat ini belum cukup kuat untuk menghasilkan prediksi. Ini informasi, bukan kegagalan.",
     "heuristicForecast": "Perkiraan heuristik, bukan prediksi ilmiah.",
     "confidence": "Keyakinan {value}%",
     "timeframe": "Rentang waktu: {value}",
@@ -4292,11 +4307,11 @@
     "analysisFailures": "{count} analisis gagal dalam 7 hari terakhir.",
     "missedSlots": "Jadwal yang terlewat: {slots}.",
     "partial": "Sebagian pemeriksaan status gagal; angka bisa belum lengkap.",
-    "noAnalyzed": "Belum ada sinyal yang dianalisis",
+    "noAnalyzed": "Belum ada percakapan yang dianalisis",
     "noData": "Belum ada data",
-    "coverageLater": "Cakupan analisis muncul setelah sinyal terkumpul.",
-    "coverage": "{value}% sinyal sudah dianalisis",
+    "coverageLater": "Cakupan analisis muncul setelah percakapan terkumpul.",
+    "coverage": "{value}% percakapan sudah dianalisis",
     "sentimentShare": "Porsi sentimen",
-    "ariaPanel": "Sinyal dan sentimen"
+    "ariaPanel": "Percakapan dan sentimen"
   }
 }

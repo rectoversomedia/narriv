@@ -106,7 +106,7 @@ export default function VisibilityPage() {
       <DemoBanner />
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[28px] font-black tracking-[-0.03em] text-[#101334]">{L("AI Visibility", "Visibilitas AI")}</h1>
+          <h1 className="text-[28px] font-black tracking-[-0.03em] text-[#101334]">{L("AI Answers", "Jawaban AI")}</h1>
           <p className="mt-1 text-[13px] font-semibold text-[#5A6478]">
             {L(`How often 5 AI assistants name ${brand} when people ask about your industry.`, `Seberapa sering 5 asisten AI menyebut ${brand} saat orang bertanya soal industri Anda.`)}
             {lastChecked ? <span className="ml-2 font-bold text-[#31406B]">{L("Last test", "Uji terakhir")} {fmtDate(lastChecked)}</span> : null}

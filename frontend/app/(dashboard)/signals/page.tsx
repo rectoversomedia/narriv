@@ -245,7 +245,7 @@ function SummaryPanel({ meta }: { meta?: SignalsMeta }) {
     { key: "other", label: L("Neutral & other", "Netral & lainnya"), value: other, color: "#B8C0D4" },
   ];
   const tiles = [
-    { key: "total", label: L("Signals, 24 h", "Sinyal 24 jam"), value: num(total), sub: L("collected today", "masuk hari ini"), tone: "#465FFF", rgb: "70,95,255" },
+    { key: "total", label: L("Mentions, 24 h", "Percakapan 24 jam"), value: num(total), sub: L("collected today", "masuk hari ini"), tone: "#465FFF", rgb: "70,95,255" },
     { key: "neg", label: L("Negative", "Negatif"), value: num(negative), sub: `${pct(negative)}% ${L("of today", "dari hari ini")}`, tone: "#C81E1E", rgb: "229,72,77" },
     { key: "crit", label: L("Critical alerts", "Peringatan kritis"), value: num(critical), sub: critical > 0 ? L("handle first", "tangani dulu") : L("none open", "tidak ada"), tone: critical > 0 ? "#A04606" : "#5A6478", rgb: critical > 0 ? "245,158,11" : "100,116,139" },
     { key: "pos", label: L("Positive", "Positif"), value: num(positive), sub: `${pct(positive)}% ${L("of today", "dari hari ini")}`, tone: "#047857", rgb: "18,166,106" },
@@ -262,7 +262,7 @@ function SummaryPanel({ meta }: { meta?: SignalsMeta }) {
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <span className="rounded-[10px] px-3 py-1.5 text-[20px] font-black leading-none tracking-[-0.03em]" style={{ color: verdict.color, background: verdict.bg }}>{verdict.word}</span>
-            <span className="text-[13px] font-bold text-[#3A4566]">{L(`overall tone of ${num(total)} signals in 24 h`, `nada keseluruhan dari ${num(total)} sinyal 24 jam`)}</span>
+            <span className="text-[13px] font-bold text-[#3A4566]">{L(`overall tone of ${num(total)} mentions in 24 h`, `nada keseluruhan dari ${num(total)} percakapan 24 jam`)}</span>
           </div>
 
           {total > 0 ? (
@@ -282,7 +282,7 @@ function SummaryPanel({ meta }: { meta?: SignalsMeta }) {
           ) : null}
 
           {headline ? <p className="mt-4 line-clamp-3 text-[14px] font-bold leading-6 text-[#101334]" title={headline}>{headline}</p> : (
-            <p className="mt-4 text-[13px] font-semibold text-[#5A6478]">{L("No signals in the last 24 hours yet.", "Belum ada sinyal dalam 24 jam terakhir.")}</p>
+            <p className="mt-4 text-[13px] font-semibold text-[#5A6478]">{L("No mentions in the last 24 hours yet.", "Belum ada percakapan dalam 24 jam terakhir.")}</p>
           )}
           {advice ? (
             <div className="mt-3 rounded-[12px] bg-[#101334] px-4 py-3">
@@ -772,7 +772,7 @@ function RelatedNarrativeCard({ n }: { n: { id: string; title: string; signalCou
       <div className="mt-3 flex items-end justify-between gap-2">
         <span>
           <b className="block text-[26px] font-black leading-none tracking-[-0.04em] text-[#101334]">{n.signalCount}</b>
-          <span className="text-[11px] font-bold text-[#5A6478]">{pickL("signals", "sinyal")}</span>
+          <span className="text-[11px] font-bold text-[#5A6478]">{pickL("mentions", "percakapan")}</span>
         </span>
         <span className="flex flex-wrap justify-end gap-1.5 text-[11px] font-black">
           <span className={cn("rounded-full px-2.5 py-1", look.chip)}>{look.word}</span>
@@ -792,14 +792,14 @@ function LiveRelatedNarratives() {
     <div className="mt-6 rounded-[14px] border border-[#E6EAF2] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.03)]">
       <div className="mb-4 flex items-center gap-2">
         <h3 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{t("relatedNarratives")}</h3>
-        <span title={pickL("Narrative clusters built from your workspace's signals", "Klaster narasi yang disusun dari sinyal workspace Anda")} className="cursor-help text-[#647099]"><Info size={13} /></span>
+        <span title={pickL("Narrative clusters built from your workspace's mentions", "Klaster narasi yang disusun dari percakapan workspace Anda")} className="cursor-help text-[#647099]"><Info size={13} /></span>
       </div>
       {q.isLoading ? (
         <p className="text-[12px] font-bold text-[#5A6478]">{pickL("Loading narratives…", "Memuat narasi…")}</p>
       ) : q.data === null ? (
         <p className="text-[12px] font-bold text-amber-700">{pickL("Narratives could not be loaded.", "Narasi gagal dimuat.")}</p>
       ) : items.length === 0 ? (
-        <p className="text-[12px] font-bold text-[#5A6478]">{pickL("No narrative clusters yet. They form once enough related signals are ingested.", "Belum ada narasi. Narasi terbentuk setelah cukup banyak sinyal terkait masuk.")}</p>
+        <p className="text-[12px] font-bold text-[#5A6478]">{pickL("No narrative clusters yet. They form once enough related mentions are ingested.", "Belum ada narasi. Narasi terbentuk setelah cukup banyak percakapan terkait masuk.")}</p>
       ) : (
         <div className="grid gap-4 md:grid-cols-3">
           {items.map((n) => (

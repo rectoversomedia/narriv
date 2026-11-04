@@ -113,9 +113,9 @@ function AskPulse({ summary, topIssue, onAsk, language }: { summary: DashboardSu
   const neg = Math.round(k?.negative_percentage ?? 0);
   const pos = Math.round(k?.positive_percentage ?? 0);
   const tiles = [
-    { label: L("Signals", "Sinyal"), value: (k?.total_signals ?? 0).toLocaleString(language === "id" ? "id-ID" : "en-US"), sub: L("in this workspace", "di workspace ini"), rgb: "70,95,255", color: "#3B52F5" },
-    { label: L("Negative", "Negatif"), value: `${neg}%`, sub: L("of analysed signals", "dari sinyal teranalisis"), rgb: "229,72,77", color: "#C81E1E" },
-    { label: L("Positive", "Positif"), value: `${pos}%`, sub: L("of analysed signals", "dari sinyal teranalisis"), rgb: "18,166,106", color: "#047857" },
+    { label: L("Mentions", "Percakapan"), value: (k?.total_signals ?? 0).toLocaleString(language === "id" ? "id-ID" : "en-US"), sub: L("in this workspace", "di workspace ini"), rgb: "70,95,255", color: "#3B52F5" },
+    { label: L("Negative", "Negatif"), value: `${neg}%`, sub: L("of analysed mentions", "dari percakapan teranalisis"), rgb: "229,72,77", color: "#C81E1E" },
+    { label: L("Positive", "Positif"), value: `${pos}%`, sub: L("of analysed mentions", "dari percakapan teranalisis"), rgb: "18,166,106", color: "#047857" },
   ];
   return (
     <div className="space-y-4">
@@ -130,7 +130,7 @@ function AskPulse({ summary, topIssue, onAsk, language }: { summary: DashboardSu
         <div className="rounded-[14px] bg-[#101334] p-4 text-white">
           <p className="text-[11px] font-black uppercase tracking-[0.06em] text-[#A9B4FF]">{L("Top issue", "Isu utama")}</p>
           <p className="mt-1.5 line-clamp-3 text-[14px] font-black leading-snug">{topIssue?.title ?? L("No issue yet", "Belum ada isu")}</p>
-          {topIssue ? <p className="mt-1.5 text-[11px] font-bold text-white/70">{topIssue.signalCount} {L("signals", "sinyal")}</p> : null}
+          {topIssue ? <p className="mt-1.5 text-[11px] font-bold text-white/70">{topIssue.signalCount} {L("mentions", "percakapan")}</p> : null}
         </div>
       </div>
       <div>
@@ -262,7 +262,7 @@ export default function AskPage() {
   const welcomeContent = useMemo(() => {
     return pickL(
       "Ask anything about your data. I answer only from this workspace's signals, alerts and issues, and show the records I used.",
-      "Tanya apa saja soal data Anda. Saya menjawab hanya dari sinyal, peringatan, dan isu di workspace ini, lengkap dengan sumbernya.",
+      "Tanya apa saja soal data Anda. Saya menjawab hanya dari percakapan, peringatan, dan isu di workspace ini, lengkap dengan sumbernya.",
     );
   }, []);
 
@@ -271,7 +271,7 @@ export default function AskPage() {
     role: "assistant",
     content: welcomeContent,
     links: [
-      { label: pickL("View signals", "Lihat sinyal"), href: "/signals" },
+      { label: pickL("View mentions", "Lihat percakapan"), href: "/signals" },
       { label: pickL("View dashboard", "Lihat dashboard"), href: "/" },
     ],
     isDemo: isDemoSession,

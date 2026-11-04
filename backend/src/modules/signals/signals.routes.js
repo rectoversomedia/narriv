@@ -302,7 +302,7 @@ router.get("/meta", async (req, res) => {
             badge: (a.severity || 'info').toUpperCase(),
             // What is known about it: the signal counts behind a rules alert, otherwise its workflow status.
             meta: Number.isFinite(a.metadata?.negative_count) && Number.isFinite(a.metadata?.total_count)
-                ? tr(`${a.metadata.negative_count} of ${a.metadata.total_count} signals negative`, `${a.metadata.negative_count} dari ${a.metadata.total_count} sinyal negatif`)
+                ? tr(`${a.metadata.negative_count} of ${a.metadata.total_count} mentions negative`, `${a.metadata.negative_count} dari ${a.metadata.total_count} percakapan negatif`)
                 : a.status === 'acknowledged' ? tr("Acknowledged, not resolved", "Sudah dikonfirmasi, belum selesai") : tr("Not acknowledged yet", "Belum dikonfirmasi"),
             // A date as well as the time: an unresolved alert can be days old.
             time: new Date(a.created_at).toLocaleString(requestLang() === 'id' ? 'id-ID' : 'en-GB', { timeZone: 'Asia/Jakarta', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' WIB',

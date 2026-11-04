@@ -36,7 +36,7 @@ export default function NotFound() {
 
           <Link href="/signals">
             <Button variant="outline" size="lg" className="w-full sm:w-auto">
-              {L("View signals", "Lihat sinyal")}
+              {L("View mentions", "Lihat percakapan")}
             </Button>
           </Link>
         </div>

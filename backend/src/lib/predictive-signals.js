@@ -127,6 +127,6 @@ export async function computePredictiveSignals({ workspaceId, windowHours = 24 }
         windowHours,
         signals,
         evidence,
-        disclaimer: tr("These are heuristic signals, not scientific predictions. They are intended to focus human review, not replace it.", "Ini sinyal heuristik, bukan prediksi ilmiah. Tujuannya membantu fokus tinjauan manusia, bukan menggantikannya."),
+        disclaimer: tr("These are heuristic mentions, not scientific predictions. They are intended to focus human review, not replace it.", "Ini percakapan heuristik, bukan prediksi ilmiah. Tujuannya membantu fokus tinjauan manusia, bukan menggantikannya."),
     };
 }

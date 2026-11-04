@@ -196,7 +196,7 @@ const ID_COPY: Record<string, string> = {
   "12 months": "12 bulan",
   Unlimited: "Tanpa batas",
   Custom: "Kustom",
-  "Signals Monitoring": "Pemantauan Sinyal",
+  "Signals Monitoring": "Pemantauan Percakapan",
   Alerts: "Peringatan",
   "Email Notifications": "Notifikasi Email",
   Intelligence: "Intelijen",

@@ -58,7 +58,7 @@ describe('alert rule evaluation', () => {
     const [{ payload }] = inserts();
     // Stored text follows the workspace content language (default Indonesian).
     expect(payload).toMatchObject({ workspace_id: WS, type: 'risk', severity: 'critical', status: 'open', title: 'Lonjakan Sentimen Negatif: Bank A' });
-    expect(payload.description).toBe('3 dari 4 sinyal terbaru (75%) bernada negatif untuk Bank A.');
+    expect(payload.description).toBe('3 dari 4 percakapan terbaru (75%) bernada negatif untuk Bank A.');
     expect(payload.metadata.signal_ids).toEqual(['s1', 's2', 's3']);
     const signalQuery = fake.calls.find((c) => c.table === 'signals');
     expect(signalQuery.filters).toContainEqual({ name: 'eq', args: ['workspace_id', WS] });

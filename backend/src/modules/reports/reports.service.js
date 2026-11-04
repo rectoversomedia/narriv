@@ -164,11 +164,11 @@ export async function generateReport({ workspaceId, title, periodStart, periodEn
     const fmtDay = (d) => d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Jakarta" });
     const summaryLines = [];
     if (totalSignals === 0) {
-        summaryLines.push(`Tidak ada sinyal yang terkumpul pada ${fmtDay(start)} – ${fmtDay(end)}.`);
+        summaryLines.push(`Tidak ada percakapan yang terkumpul pada ${fmtDay(start)} – ${fmtDay(end)}.`);
     } else {
         const net = (pctS.positive || 0) - (pctS.negative || 0);
         const tone = analyzedCount === 0 ? "belum dianalisis" : net <= -15 ? "cenderung negatif" : net >= 15 ? "cenderung positif" : "seimbang";
-        summaryLines.push(`${totalSignals} sinyal pada ${fmtDay(start)} – ${fmtDay(end)}, nada ${tone}${analyzedCount > 0 ? ` (${pctS.negative}% negatif, ${pctS.positive}% positif)` : ""}.`);
+        summaryLines.push(`${totalSignals} percakapan pada ${fmtDay(start)} – ${fmtDay(end)}, nada ${tone}${analyzedCount > 0 ? ` (${pctS.negative}% negatif, ${pctS.positive}% positif)` : ""}.`);
     }
     if (alertsList.length > 0) {
         const criticalHigh = alertsSummary.by_severity.critical + alertsSummary.by_severity.high;

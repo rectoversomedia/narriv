@@ -74,18 +74,18 @@ function words(lang) {
         brand: w("Brand", "Brand"),
         verdictTitle: w("Overall tone", "Nada keseluruhan"),
         verdict: { negative: w("Negative", "Negatif"), positive: w("Positive", "Positif"), balanced: w("Balanced", "Seimbang"), none: w("No data", "Belum ada data") },
-        signals: w("Signals", "Sinyal"),
+        signals: w("Mentions", "Percakapan"),
         negative: w("Negative", "Negatif"),
         positive: w("Positive", "Positif"),
         neutral: w("Neutral & other", "Netral & lainnya"),
         alerts: w("Alerts", "Peringatan"),
         criticalHigh: w("critical / high", "kritis / tinggi"),
-        ofSignals: w("of signals", "dari sinyal"),
+        ofSignals: w("of mentions", "dari percakapan"),
         sentimentTitle: w("Sentiment split", "Komposisi sentimen"),
         platformsTitle: w("Where the conversation happens", "Di mana percakapan terjadi"),
         alertsTitle: w("Alerts to act on", "Peringatan yang perlu ditindaklanjuti"),
         issuesTitle: w("Main issues", "Isu utama"),
-        signalsTitle: w("Notable signals", "Sinyal yang menonjol"),
+        signalsTitle: w("Notable mentions", "Percakapan yang menonjol"),
         whatToDo: w("Next step", "Langkah"),
         none: w("None in this period.", "Tidak ada pada periode ini."),
         footer: w("Narriv · confidential · generated from workspace records", "Narriv · rahasia · disusun dari data workspace"),
@@ -97,10 +97,10 @@ function words(lang) {
         headers: {
             property: w("Item", "Keterangan"), value: w("Value", "Nilai"),
             title: w("Title", "Judul"), severity: w("Severity", "Keparahan"), status: w("Status", "Status"), what: w("What happened", "Apa yang terjadi"), todo: w("Next step", "Langkah"), date: w("Date", "Tanggal"),
-            issue: w("Issue", "Isu"), count: w("Signals", "Sinyal"), share: w("Share", "Porsi"), sentiment: w("Sentiment", "Sentimen"), impact: w("Impact", "Dampak"),
+            issue: w("Issue", "Isu"), count: w("Mentions", "Percakapan"), share: w("Share", "Porsi"), sentiment: w("Sentiment", "Sentimen"), impact: w("Impact", "Dampak"),
             platform: w("Platform", "Platform"), url: w("Link", "Tautan"),
         },
-        sheets: { summary: w("Summary", "Ringkasan"), alerts: w("Alerts", "Peringatan"), issues: w("Issues", "Isu"), signals: w("Signals", "Sinyal"), platforms: w("Platforms", "Platform") },
+        sheets: { summary: w("Summary", "Ringkasan"), alerts: w("Alerts", "Peringatan"), issues: w("Issues", "Isu"), signals: w("Mentions", "Percakapan"), platforms: w("Platforms", "Platform") },
     };
 }
 
@@ -165,7 +165,7 @@ export function buildReportPdf(data, lang = data.language) {
     doc.fillColor(vColor[0]).text(W.verdict[v], left + 12, vy + 7);
     const line = lang === "en"
         ? `${t.signals} signals, ${t.negative}% negative and ${t.positive}% positive. ${t.alerts} alerts, ${t.criticalAlerts} of them critical or high.`
-        : `${t.signals} sinyal, ${t.negative}% negatif dan ${t.positive}% positif. ${t.alerts} peringatan, ${t.criticalAlerts} di antaranya kritis atau tinggi.`;
+        : `${t.signals} percakapan, ${t.negative}% negatif dan ${t.positive}% positif. ${t.alerts} peringatan, ${t.criticalAlerts} di antaranya kritis atau tinggi.`;
     doc.fillColor(C.body).font("Helvetica").fontSize(10.5).text(line, left + vw + 14, vy + 4, { width: width - vw - 14 });
     doc.y = vy + 46;
 

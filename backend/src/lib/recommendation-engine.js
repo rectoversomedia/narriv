@@ -50,7 +50,7 @@ export function deriveRecommendations({ riskScore = 0, riskBand = "low", reputat
     if (riskBand === "high" || riskBand === "critical") {
         out.push({
             action: "investigate",
-            reason: tr("Elevated risk score; an investigator should examine the contributing signals.", "Skor risiko meningkat; perlu ada yang memeriksa sinyal-sinyal pemicunya."),
+            reason: tr("Elevated risk score; an investigator should examine the contributing mentions.", "Skor risiko meningkat; perlu ada yang memeriksa percakapan-percakapan pemicunya."),
             priority: priorityFromScore(riskScore),
             urgency: urgencyFromBand(riskBand),
             expectedOutcome: tr("Root cause is identified within 24h or the risk is downgraded.", "Akar masalah teridentifikasi dalam 24 jam atau tingkat risikonya diturunkan."),
@@ -63,7 +63,7 @@ export function deriveRecommendations({ riskScore = 0, riskBand = "low", reputat
     if (negativeShare >= 0.5) {
         out.push({
             action: "prepare_clarification",
-            reason: tr("More than half of recent signals are negative. A clarification may pre-empt further escalation.", "Lebih dari separuh sinyal terbaru bernada negatif. Klarifikasi bisa mencegah eskalasi lebih lanjut."),
+            reason: tr("More than half of recent mentions are negative. A clarification may pre-empt further escalation.", "Lebih dari separuh percakapan terbaru bernada negatif. Klarifikasi bisa mencegah eskalasi lebih lanjut."),
             priority: "high",
             urgency: "today",
             expectedOutcome: tr("Clarification draft is ready for review before any external amplification.", "Draf klarifikasi siap ditinjau sebelum isu makin menyebar."),
@@ -125,7 +125,7 @@ export function deriveRecommendations({ riskScore = 0, riskBand = "low", reputat
     if (out.length === 0) {
         out.push({
             action: "monitor",
-            reason: tr("No risk signals elevated. Continue routine monitoring.", "Tidak ada sinyal risiko yang meningkat. Lanjutkan pemantauan rutin."),
+            reason: tr("No risk mentions elevated. Continue routine monitoring.", "Tidak ada percakapan risiko yang meningkat. Lanjutkan pemantauan rutin."),
             priority: "low",
             urgency: "monitor",
             expectedOutcome: tr("Next scheduled intelligence run.", "Run intelijen terjadwal berikutnya."),
@@ -156,11 +156,11 @@ const TAG_COMPONENTS = {
 
 const MONITOR_NEXT = {
     escalate_internal: ["Unresolved alert count and negative share in the next run.", "Jumlah peringatan yang belum selesai dan porsi negatif di run berikutnya."],
-    investigate: ["Whether the cited signals are followed by more coverage from additional sources.", "Apakah sinyal yang dirujuk diikuti pemberitaan dari sumber lain."],
-    prepare_clarification: ["Negative share and the narratives behind the cited signals.", "Porsi negatif dan narasi di balik sinyal yang dirujuk."],
-    monitor: ["Velocity and signal count of the cited narrative clusters.", "Kecepatan dan jumlah sinyal di klaster narasi yang dirujuk."],
+    investigate: ["Whether the cited mentions are followed by more coverage from additional sources.", "Apakah percakapan yang dirujuk diikuti pemberitaan dari sumber lain."],
+    prepare_clarification: ["Negative share and the narratives behind the cited mentions.", "Porsi negatif dan narasi di balik percakapan yang dirujuk."],
+    monitor: ["Velocity and mention count of the cited narrative clusters.", "Kecepatan dan jumlah percakapan di klaster narasi yang dirujuk."],
     prepare_statement: ["Reputation band and negative share in the next run.", "Tingkat reputasi dan porsi negatif di run berikutnya."],
-    brief_spokesperson: ["Media pickup of the cited signals.", "Seberapa banyak media mengangkat sinyal yang dirujuk."],
+    brief_spokesperson: ["Media pickup of the cited mentions.", "Seberapa banyak media mengangkat percakapan yang dirujuk."],
 };
 
 /**

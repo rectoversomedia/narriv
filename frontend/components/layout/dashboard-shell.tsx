@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
+import { SectionTabs } from "@/components/layout/section-tabs";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -63,7 +64,10 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             <div className="absolute -left-24 -top-32 h-[360px] w-[520px] rounded-full bg-[#C7D2FE] opacity-40 blur-[110px]" />
             <div className="absolute -right-24 -top-24 h-[320px] w-[460px] rounded-full bg-[#FBCFE8] opacity-35 blur-[110px]" />
           </div>
-          <div className="relative z-10 w-full max-w-[1600px] mx-auto">{children}</div>
+          <div className="relative z-10 w-full max-w-[1600px] mx-auto">
+            <SectionTabs />
+            {children}
+          </div>
         </main>
 
         {/* Floating Ask AI button (not shown on the Ask page itself) */}

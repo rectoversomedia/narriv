@@ -21,14 +21,14 @@ const groups: Group[] = [
         q: ["How do I get started with Narriv?", "Bagaimana cara mulai memakai Narriv?"],
         a: [
           "Create an account and complete onboarding, then add monitoring keywords in Settings → Monitoring Keywords. Scheduled monitoring runs every hour and collects news for up to 3 active keywords per workspace. Narratives, risk and recommendations are built from the signals it stores.",
-          "Buat akun dan selesaikan onboarding, lalu tambahkan kata kunci di Pengaturan → Kata Kunci Pemantauan. Pemantauan terjadwal berjalan setiap jam dan mengumpulkan berita untuk maksimal 3 kata kunci aktif per workspace. Narasi, risiko, dan rekomendasi disusun dari sinyal yang tersimpan.",
+          "Buat akun dan selesaikan onboarding, lalu tambahkan kata kunci di Pengaturan → Kata Kunci Pemantauan. Pemantauan terjadwal berjalan setiap jam dan mengumpulkan berita untuk maksimal 3 kata kunci aktif per workspace. Narasi, risiko, dan rekomendasi disusun dari percakapan yang tersimpan.",
         ],
       },
       {
         q: ["Can I ask Narriv questions about my data?", "Bisakah saya bertanya ke Narriv tentang data saya?"],
         a: [
           "Yes. Ask Narriv answers using only your workspace's signals, alerts and narratives, and shows which records it used. If the data cannot support an answer, it says so.",
-          "Bisa. Tanya Narriv menjawab hanya dari sinyal, peringatan, dan narasi di workspace Anda, dan menunjukkan data mana yang dipakai. Kalau datanya belum cukup, Narriv akan bilang terus terang.",
+          "Bisa. Tanya Narriv menjawab hanya dari percakapan, peringatan, dan narasi di workspace Anda, dan menunjukkan data mana yang dipakai. Kalau datanya belum cukup, Narriv akan bilang terus terang.",
         ],
       },
     ],
@@ -37,7 +37,7 @@ const groups: Group[] = [
     id: "signals",
     icon: BarChart3,
     color: "bg-green-500",
-    title: ["Signals & data sources", "Sinyal & sumber data"],
+    title: ["Mentions & data sources", "Percakapan & sumber data"],
     faqs: [
       {
         q: ["What data sources does Narriv support?", "Sumber data apa saja yang didukung Narriv?"],
@@ -50,7 +50,7 @@ const groups: Group[] = [
         q: ["How does sentiment analysis work?", "Bagaimana analisis sentimen bekerja?"],
         a: [
           "Each new signal is analysed by an AI model that assigns a sentiment and a confidence score. Signals that have not been analysed yet are shown as \"Not analysed\" instead of getting a default sentiment. Review AI assessments together with the linked sources.",
-          "Setiap sinyal baru dianalisis model AI yang memberi sentimen dan skor keyakinan. Sinyal yang belum dianalisis ditampilkan sebagai \"Belum dianalisis\", bukan diberi sentimen bawaan. Tinjau penilaian AI bersama tautan sumbernya.",
+          "Setiap percakapan baru dianalisis model AI yang memberi sentimen dan skor keyakinan. Percakapan yang belum dianalisis ditampilkan sebagai \"Belum dianalisis\", bukan diberi sentimen bawaan. Tinjau penilaian AI bersama tautan sumbernya.",
         ],
       },
       {
@@ -72,7 +72,7 @@ const groups: Group[] = [
         q: ["How do alerts work?", "Bagaimana peringatan bekerja?"],
         a: [
           "Narriv raises alerts automatically when it detects a qualifying spike in negative coverage, with links to the signals involved. You can also create alerts manually, assign them to a member and team, and set a deadline.",
-          "Narriv membuat peringatan otomatis saat mendeteksi lonjakan pemberitaan negatif yang signifikan, lengkap dengan tautan ke sinyalnya. Anda juga bisa membuat peringatan manual, menugaskannya ke anggota dan tim, serta memberi tenggat.",
+          "Narriv membuat peringatan otomatis saat mendeteksi lonjakan pemberitaan negatif yang signifikan, lengkap dengan tautan ke percakapannya. Anda juga bisa membuat peringatan manual, menugaskannya ke anggota dan tim, serta memberi tenggat.",
         ],
       },
       {
@@ -108,7 +108,7 @@ const groups: Group[] = [
         q: ["What export formats are available?", "Format ekspor apa saja yang tersedia?"],
         a: [
           "Signals: CSV or Excel from the Signals page. Reports: CSV, Excel or PDF from the Reports page; PDF and JSON downloads use a secure link that expires after one hour. The Daily Brief can be printed or saved as PDF from your browser.",
-          "Sinyal: CSV atau Excel dari halaman Sinyal. Laporan: CSV, Excel, atau PDF dari halaman Laporan; unduhan PDF dan JSON memakai tautan aman yang berlaku satu jam. Brief Harian bisa dicetak atau disimpan sebagai PDF dari browser.",
+          "Percakapan: CSV atau Excel dari halaman Percakapan. Laporan: CSV, Excel, atau PDF dari halaman Laporan; unduhan PDF dan JSON memakai tautan aman yang berlaku satu jam. Brief Harian bisa dicetak atau disimpan sebagai PDF dari browser.",
         ],
       },
     ],
@@ -152,7 +152,7 @@ const groups: Group[] = [
         q: ["How do I delete a workspace?", "Bagaimana cara menghapus workspace?"],
         a: [
           "The owner can delete an empty workspace in Settings → Danger Zone. A workspace that already holds signals, alerts or reports is deleted by the Narriv team, so no data is lost by accident.",
-          "Pemilik dapat menghapus workspace yang masih kosong di Pengaturan → Zona Berbahaya. Workspace yang sudah berisi sinyal, peringatan, atau laporan dihapus lewat tim Narriv, agar tidak ada data yang hilang tanpa sengaja.",
+          "Pemilik dapat menghapus workspace yang masih kosong di Pengaturan → Zona Berbahaya. Workspace yang sudah berisi percakapan, peringatan, atau laporan dihapus lewat tim Narriv, agar tidak ada data yang hilang tanpa sengaja.",
         ],
       },
     ],

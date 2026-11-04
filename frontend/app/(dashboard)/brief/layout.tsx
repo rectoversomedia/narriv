@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { createPageMetadata } from "@/lib/metadata";
-import { SectionTabs } from "@/components/layout/section-tabs";
 
 export const metadata = createPageMetadata(
   "Daily Brief",
@@ -8,10 +7,5 @@ export const metadata = createPageMetadata(
 );
 
 export default function Layout({ children }: { children: ReactNode }) {
-  return (
-    <>
-      <SectionTabs group="reports" />
-      {children}
-    </>
-  );
+  return children;
 }

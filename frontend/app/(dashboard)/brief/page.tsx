@@ -60,8 +60,8 @@ type BriefDriver = { key: string; contribution: number; reason: string; evidence
 type EvidenceCount = { type?: string; count?: number };
 
 const DRIVER_LABELS: Record<string, [string, string]> = {
-  negative_share: ["Share of negative signals", "Porsi sinyal negatif"],
-  severity: ["Signals rated high / critical", "Sinyal berbobot tinggi / kritis"],
+  negative_share: ["Share of negative mentions", "Porsi percakapan negatif"],
+  severity: ["Mentions rated high / critical", "Percakapan berbobot tinggi / kritis"],
   active_alerts: ["Alerts raised in this window", "Peringatan baru di periode ini"],
   volume_change: ["Volume spike", "Lonjakan volume"],
   narrative_momentum: ["Issue momentum", "Momentum isu"],
@@ -119,7 +119,7 @@ function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
   return (
     <div className="space-y-5">
       <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <Tile label={L("New signals", "Sinyal baru")} value={newSignals === null ? "—" : String(newSignals)} sub={L("in this window", "di periode ini")} rgb="70,95,255" color="#3B52F5" />
+        <Tile label={L("New mentions", "Percakapan baru")} value={newSignals === null ? "—" : String(newSignals)} sub={L("in this window", "di periode ini")} rgb="70,95,255" color="#3B52F5" />
         <Tile label={L("Active alerts", "Peringatan aktif")} value={activeAlerts === null ? String(newAlerts) : String(activeAlerts)} sub={L(`${newAlerts} new in this window`, `${newAlerts} baru di periode ini`)} rgb={(activeAlerts ?? newAlerts) ? "245,158,11" : "100,116,139"} color={(activeAlerts ?? newAlerts) ? "#A04606" : "#5A6478"} />
         <Tile label={L("Risk index", "Indeks risiko")} value={risk ? `${riskScore}/100` : "—"} sub={risk ? L(...risk.word) : L("not enough data", "data belum cukup")} rgb="229,72,77" color={risk?.color ?? "#5A6478"} bar={risk ? riskScore : undefined} barColor={risk?.bar} />
         <Tile label={L("Reputation", "Reputasi")} value={repLook ? `${repScore}/100` : "—"} sub={repLook ? L(...repLook.word) : L("not enough data", "data belum cukup")} rgb={repLook && repScore >= 70 ? "18,166,106" : "229,72,77"} color={repLook?.color ?? "#5A6478"} bar={repLook ? repScore : undefined} barColor={repLook?.bar} />

@@ -274,7 +274,7 @@ function SourceRow({ source, volume, maxVolume, onToggle, onDelete, onSync, sync
       <span className={cn("w-fit rounded-full px-2.5 py-1 text-[11px] font-black", STATUS_BADGE[source.statusTone])} title={source.status}>{source.status.split(":")[0]}</span>
       <div className="min-w-0">
         <div className="flex items-baseline justify-between text-[12px] font-black text-[#101334]">
-          <span>{volume} <span className="font-bold text-[#5A6478]">{pickL("records · 7 days", "sinyal · 7 hari")}</span></span>
+          <span>{volume} <span className="font-bold text-[#5A6478]">{pickL("records · 7 days", "percakapan · 7 hari")}</span></span>
         </div>
         <div className="mt-1 h-2 rounded-full bg-[#EEF1F7]"><div className="h-full rounded-full bg-[#465FFF]" style={{ width: `${volume ? Math.max(4, (volume / maxVolume) * 100) : 0}%` }} /></div>
       </div>
@@ -495,8 +495,8 @@ export default function SourcesPage() {
 
       <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <Tile label={pickL("Active sources", "Sumber aktif")} value={`${activeSources}/${totalSources}`} sub={totalSources - activeSources ? pickL(`${totalSources - activeSources} paused`, `${totalSources - activeSources} dijeda`) : pickL("all on", "semua menyala")} rgb="70,95,255" color="#3B52F5" />
-        <Tile label={pickL("Records, 7 days", "Sinyal 7 hari")} value={formatCompact(weekTotal)} sub={lastSync ? pickL(`last update ${formatSourceTime(lastSync)}`, `diperbarui ${formatSourceTime(lastSync)}`) : pickL("from every platform", "dari semua platform")} rgb="139,92,255" color="#6E44E8" />
-        <Tile label={pickL("Busiest source", "Sumber teramai")} value={top ? top.name : "—"} sub={top && weekTotal ? pickL(`${Math.round((volumeOf(top) / weekTotal) * 100)}% of records`, `${Math.round((volumeOf(top) / weekTotal) * 100)}% dari sinyal`) : pickL("no records yet", "belum ada sinyal")} rgb="18,166,106" color="#047857" />
+        <Tile label={pickL("Records, 7 days", "Percakapan 7 hari")} value={formatCompact(weekTotal)} sub={lastSync ? pickL(`last update ${formatSourceTime(lastSync)}`, `diperbarui ${formatSourceTime(lastSync)}`) : pickL("from every platform", "dari semua platform")} rgb="139,92,255" color="#6E44E8" />
+        <Tile label={pickL("Busiest source", "Sumber teramai")} value={top ? top.name : "—"} sub={top && weekTotal ? pickL(`${Math.round((volumeOf(top) / weekTotal) * 100)}% of records`, `${Math.round((volumeOf(top) / weekTotal) * 100)}% dari percakapan`) : pickL("no records yet", "belum ada percakapan")} rgb="18,166,106" color="#047857" />
         <Tile label={pickL("Need attention", "Perlu perhatian")} value={String(warningCount)} sub={byStatus.not_tested ? pickL(`${byStatus.not_tested} not tested yet`, `${byStatus.not_tested} belum diuji`) : warningCount ? pickL("check the red rows", "cek baris merah") : pickL("nothing failing", "tidak ada yang gagal")} rgb={warningCount ? "229,72,77" : "100,116,139"} color={warningCount ? "#C81E1E" : "#5A6478"} />
       </section>
 
@@ -505,7 +505,7 @@ export default function SourcesPage() {
           <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5">
             <div>
               <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{pickL("Sources watched", "Sumber yang dipantau")}</h2>
-              <p className="text-[12px] font-bold text-[#5A6478]">{pickL("Busiest first. The bar is records in the last 7 days.", "Urut dari yang paling ramai. Batang = sinyal 7 hari terakhir.")}</p>
+              <p className="text-[12px] font-bold text-[#5A6478]">{pickL("Busiest first. The bar is records in the last 7 days.", "Urut dari yang paling ramai. Batang = percakapan 7 hari terakhir.")}</p>
             </div>
             <div className="flex items-center gap-2">
               {liveConnectors.length > 6 ? (
@@ -551,10 +551,10 @@ export default function SourcesPage() {
         <aside className="flex flex-col gap-4">
           <SocialAutoCard />
           <div className="rounded-[16px] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.05)]">
-            <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{pickL("Records by platform", "Sinyal per platform")}</h2>
+            <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{pickL("Records by platform", "Percakapan per platform")}</h2>
             <p className="text-[12px] font-bold text-[#5A6478]">{pickL("last 7 days", "7 hari terakhir")}</p>
             {weekTotal === 0 ? (
-              <p className="mt-4 text-[13px] font-semibold text-[#5A6478]">{pickL("No records yet.", "Belum ada sinyal.")}</p>
+              <p className="mt-4 text-[13px] font-semibold text-[#5A6478]">{pickL("No records yet.", "Belum ada percakapan.")}</p>
             ) : (
               <ul className="mt-4 space-y-2.5">
                 {Object.entries(volumeByPlatform).sort((a, b) => b[1] - a[1]).map(([platform, n], i) => (

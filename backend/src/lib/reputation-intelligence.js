@@ -69,7 +69,7 @@ export async function computeReputationIntelligence({ workspaceId, windowHours =
             facts,
             inferences,
             evidence,
-            note: tr("No signals in the window, so reputation cannot be assessed.", "Tidak ada sinyal di periode ini, jadi reputasi belum bisa dinilai."),
+            note: tr("No mentions in the window, so reputation cannot be assessed.", "Tidak ada percakapan di periode ini, jadi reputasi belum bisa dinilai."),
         };
     }
 
@@ -87,12 +87,12 @@ export async function computeReputationIntelligence({ workspaceId, windowHours =
 
     inferences.push({
         kind: "negative_share",
-        label: negShare > 0.5 ? tr("Majority of recent signals are negative.", "Sebagian besar sinyal terbaru bernada negatif.") : tr("Negative share is moderate.", "Porsi negatif sedang."),
+        label: negShare > 0.5 ? tr("Majority of recent mentions are negative.", "Sebagian besar percakapan terbaru bernada negatif.") : tr("Negative share is moderate.", "Porsi negatif sedang."),
         value: Number(negShare.toFixed(3)),
     });
     inferences.push({
         kind: "positive_share",
-        label: posShare > 0.5 ? tr("Majority of recent signals are positive.", "Sebagian besar sinyal terbaru bernada positif.") : tr("Positive share is moderate.", "Porsi positif sedang."),
+        label: posShare > 0.5 ? tr("Majority of recent mentions are positive.", "Sebagian besar percakapan terbaru bernada positif.") : tr("Positive share is moderate.", "Porsi positif sedang."),
         value: Number(posShare.toFixed(3)),
     });
     inferences.push({

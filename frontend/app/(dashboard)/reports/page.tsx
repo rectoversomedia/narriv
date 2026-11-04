@@ -173,7 +173,7 @@ function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeReco
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <span className="rounded-[10px] px-3 py-1.5 text-[20px] font-black leading-none" style={{ color: verdict.color, background: verdict.bg }}>{verdict.word}</span>
-            <span className="text-[13px] font-bold text-[#3A4566]">{L(`overall tone of ${(k?.total_signals ?? 0).toLocaleString("en-US")} signals`, `nada keseluruhan dari ${(k?.total_signals ?? 0).toLocaleString("id-ID")} sinyal`)}</span>
+            <span className="text-[13px] font-bold text-[#3A4566]">{L(`overall tone of ${(k?.total_signals ?? 0).toLocaleString("en-US")} mentions`, `nada keseluruhan dari ${(k?.total_signals ?? 0).toLocaleString("id-ID")} percakapan`)}</span>
           </div>
           <div className="mt-3 flex h-3 overflow-hidden rounded-full bg-[#EEF1F7]">
             <span style={{ width: `${neg}%`, background: "#E5484D" }} /><span style={{ width: `${pos}%`, background: "#12A66A" }} /><span style={{ width: `${other}%`, background: "#B8C0D4" }} />
@@ -208,9 +208,9 @@ function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeReco
         </div>
 
         <div className="min-w-0 rounded-[14px] bg-[#F7F8FC] p-4">
-          <p className="text-[12px] font-black text-[#101334]">{L("Signals per day, last 7 days", "Sinyal per hari, 7 hari terakhir")}</p>
+          <p className="text-[12px] font-black text-[#101334]">{L("Mentions per day, last 7 days", "Percakapan per hari, 7 hari terakhir")}</p>
           {days.length === 0 || !days.some((d) => d.total > 0) ? (
-            <p className="mt-6 text-[12px] font-semibold text-[#5A6478]">{L("No signals in the last 7 days.", "Belum ada sinyal dalam 7 hari terakhir.")}</p>
+            <p className="mt-6 text-[12px] font-semibold text-[#5A6478]">{L("No mentions in the last 7 days.", "Belum ada percakapan dalam 7 hari terakhir.")}</p>
           ) : (
             <>
               <div className="mt-3 flex h-[150px] items-end gap-2">

@@ -3,9 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronsLeft, MoreHorizontal, X } from "lucide-react";
+import { ChevronsLeft } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
 import { navGroups } from "@/lib/navigation";
 import { useUiStore } from "@/store/useUiStore";
 
@@ -29,10 +28,9 @@ function activeRoute(pathname: string, href: string, match: string[] = []) {
 export function Sidebar() {
   const pathname = usePathname();
   const t = useTranslations("DemoApp");
-  const [open, setOpen] = useState(false);
   const sidebarCollapsed = useUiStore((state) => state.sidebarCollapsed);
   const toggleSidebar = useUiStore((state) => state.toggleSidebar);
-  const mobileItems = navGroups.flatMap((group) => group.items).slice(0, 4);
+  const mobileItems = navGroups.flatMap((group) => group.items);
 
 
   const workspaceSettingsQuery = useQuery({
@@ -70,7 +68,7 @@ export function Sidebar() {
         <nav className="mt-6 min-h-0 flex-1 space-y-5 overflow-y-auto overflow-x-hidden">
           {navGroups.map((group) => (
             <div key={group.key}>
-              <p className={`h-4 whitespace-nowrap px-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-white/40 transition-opacity duration-200 ${sidebarCollapsed ? "opacity-0" : "opacity-100"}`}>{t(`navGroups.${group.key}`)}</p>
+              {navGroups.length > 1 ? <p className={`h-4 whitespace-nowrap px-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-white/40 transition-opacity duration-200 ${sidebarCollapsed ? "opacity-0" : "opacity-100"}`}>{t(`navGroups.${group.key}`)}</p> : null}
               <div className="mt-2 grid gap-1.5">
                 {group.items.map((item) => {
                   const Icon = item.icon;
@@ -117,43 +115,16 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex h-10 items-center justify-center rounded-xl transition ${active ? "bg-[#465FFF] text-white" : "text-white/60 hover:text-white"}`}
+              aria-current={active ? "page" : undefined}
+              className={`flex h-[52px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 transition ${active ? "bg-[#465FFF] text-white" : "text-white/60 hover:text-white"}`}
             >
-              <Icon size={20} />
+              <Icon size={19} />
+              <span className="w-full truncate text-center text-[10px] font-bold leading-none">{t(`navShort.${item.key}`)}</span>
             </Link>
           );
         })}
-        <button type="button" onClick={() => setOpen(true)} className="flex h-10 items-center justify-center rounded-xl text-white/60 hover:text-white" aria-label="Open menu"><MoreHorizontal size={22} /></button>
       </nav>
 
-      {open ? (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <button type="button" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} aria-label="Close menu" />
-          <div className="absolute inset-x-3 bottom-3 max-h-[82dvh] overflow-y-auto rounded-[24px] bg-[#090D16] border border-border p-4 shadow-2xl">
-            <div className="mb-4 flex items-center justify-between">
-              <Image src="/brand/logo-p.webp" alt="Narriv" width={110} height={28} priority unoptimized className="h-7 w-auto object-contain" />
-              <button type="button" onClick={() => setOpen(false)} className="rounded-xl border border-border p-2 text-white/60 hover:text-white hover:bg-white/5"><X size={18} /></button>
-            </div>
-            <div className="grid gap-2">
-              {navGroups.flatMap((group) => group.items).map((item) => {
-                const Icon = item.icon;
-                const active = activeRoute(pathname, item.href, item.match);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setOpen(false)}
-                    className={`flex h-12 items-center gap-3 rounded-xl px-3 text-sm font-bold transition ${active ? "bg-[#465FFF] text-white" : "text-white/70 hover:bg-white/5"}`}
-                  >
-                    <Icon size={18} />
-                    {t(`nav.${item.key}`)}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      ) : null}
     </>
   );
 }

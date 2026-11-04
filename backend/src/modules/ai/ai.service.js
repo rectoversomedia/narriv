@@ -417,7 +417,7 @@ function buildFallbackSummary(signals = [], contextInfo = {}) {
         title: "AI Signal Summary",
         content: {
             en: `${negative} of ${total} signals today are negative${short ? `, led by "${short}"` : ""}.`,
-            id: `${negative} dari ${total} sinyal hari ini negatif${short ? `, terbanyak soal "${short}"` : ""}.`,
+            id: `${negative} dari ${total} percakapan hari ini negatif${short ? `, terbanyak soal "${short}"` : ""}.`,
         },
         insight: mostlyNegative
             ? { en: "Prepare a holding statement and answer the main complaint on the busiest channel.", id: "Siapkan pernyataan sementara dan jawab keluhan utama di kanal yang paling ramai." }

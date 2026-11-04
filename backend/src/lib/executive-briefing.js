@@ -51,7 +51,7 @@ export async function generateExecutiveBrief({ workspaceId, windowHours = 24 }) 
         windowHours,
         sections: {
             whatChanged: {
-                summary: tr(`${factSignalCount} new signal(s) and ${factAlertCount} new alert(s) in the last ${windowHours}h.`, `${factSignalCount} sinyal baru dan ${factAlertCount} peringatan baru dalam ${windowHours} jam terakhir.`),
+                summary: tr(`${factSignalCount} new mention(s) and ${factAlertCount} new alert(s) in the last ${windowHours}h.`, `${factSignalCount} percakapan baru dan ${factAlertCount} peringatan baru dalam ${windowHours} jam terakhir.`),
                 evidence: narrative.evidence.slice(0, 5),
             },
             biggestRisk: {
@@ -72,7 +72,7 @@ export async function generateExecutiveBrief({ workspaceId, windowHours = 24 }) 
                 evidence: entities.evidence.slice(0, 3),
             },
             opportunity: {
-                summary: predictions.signals.find((s) => s.signal === "narrative_expansion")?.label || tr("No expansion signal detected.", "Belum ada sinyal perluasan yang terdeteksi."),
+                summary: predictions.signals.find((s) => s.signal === "narrative_expansion")?.label || tr("No expansion mention detected.", "Belum ada percakapan perluasan yang terdeteksi."),
             },
             reputation: {
                 score: repScore,

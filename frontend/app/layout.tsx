@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     default: "Narriv | Narrative Intelligence",
     template: "%s | Narriv",
   },
-  description: "Narriv membantu tim memantau sinyal publik, memahami narasi, dan menentukan aksi yang tepat.",
+  description: "Narriv membantu tim memantau percakapan publik, memahami narasi, dan menentukan aksi yang tepat.",
   applicationName: "Narriv",
   icons: {
     icon: "/brand/icon-48.png",
@@ -28,14 +28,14 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Narriv | Narrative Intelligence",
-    description: "Pantau sinyal publik, alert, laporan, dan rencana aksi dari satu command center.",
+    description: "Pantau percakapan publik, alert, laporan, dan rencana aksi dari satu command center.",
     siteName: "Narriv",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "Narriv | Narrative Intelligence",
-    description: "Pantau sinyal publik, alert, laporan, dan rencana aksi dari satu command center.",
+    description: "Pantau percakapan publik, alert, laporan, dan rencana aksi dari satu command center.",
   },
 };
 

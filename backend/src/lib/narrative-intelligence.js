@@ -129,7 +129,7 @@ export async function computeNarrativeIntelligence({ workspaceId, windowHours = 
             evidence,
             generatedAt: new Date().toISOString(),
             windowHours,
-            note: tr("No signals in the window — no intelligence can be derived.", "Tidak ada sinyal di periode ini — belum ada intelijen yang bisa disusun."),
+            note: tr("No mentions in the window — no intelligence can be derived.", "Tidak ada percakapan di periode ini — belum ada intelijen yang bisa disusun."),
         };
     }
 
@@ -150,7 +150,7 @@ export async function computeNarrativeIntelligence({ workspaceId, windowHours = 
     inferences.push({
         kind: "volume_ratio",
         label: ratio === null
-            ? tr("No signals in the previous window; volume change cannot be assessed yet.", "Tidak ada sinyal di periode sebelumnya; perubahan volume belum bisa dinilai.")
+            ? tr("No mentions in the previous window; volume change cannot be assessed yet.", "Tidak ada percakapan di periode sebelumnya; perubahan volume belum bisa dinilai.")
             : ratio >= 2
                 ? tr("Mention volume has doubled or more vs the prior window.", "Volume penyebutan naik dua kali lipat atau lebih dibanding periode sebelumnya.")
                 : ratio >= 1.25
@@ -168,9 +168,9 @@ export async function computeNarrativeIntelligence({ workspaceId, windowHours = 
     inferences.push({
         kind: "negative_sentiment_share",
         label: negShare >= 0.5
-            ? tr("More than half of recent signals are negative.", "Lebih dari separuh sinyal terbaru bernada negatif.")
+            ? tr("More than half of recent mentions are negative.", "Lebih dari separuh percakapan terbaru bernada negatif.")
             : negShare >= 0.25
-                ? tr("A meaningful share of recent signals are negative.", "Sebagian cukup besar sinyal terbaru bernada negatif.")
+                ? tr("A meaningful share of recent mentions are negative.", "Sebagian cukup besar percakapan terbaru bernada negatif.")
                 : tr("Negative sentiment is not dominant in the window.", "Sentimen negatif tidak dominan di periode ini."),
         value: Number(negShare.toFixed(2)),
         signalIds: risk.components.find((c) => c.key === "negative_share").evidenceIds,

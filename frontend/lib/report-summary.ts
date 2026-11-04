@@ -17,9 +17,9 @@ export function humanReportSummary(summary: string | null | undefined, id: boole
   if (Number.isFinite(positive) && Number.isFinite(negative)) {
     const net = positive - negative;
     const tone = net <= -15 ? (id ? "cenderung negatif" : "leaning negative") : net >= 15 ? (id ? "cenderung positif" : "leaning positive") : id ? "seimbang" : "balanced";
-    parts.push(id ? `${signals} sinyal, nada ${tone} (${negative}% negatif, ${positive}% positif).` : `${signals} records, ${tone} (${negative}% negative, ${positive}% positive).`);
+    parts.push(id ? `${signals} percakapan, nada ${tone} (${negative}% negatif, ${positive}% positif).` : `${signals} records, ${tone} (${negative}% negative, ${positive}% positive).`);
   } else {
-    parts.push(id ? `${signals} sinyal.` : `${signals} records.`);
+    parts.push(id ? `${signals} percakapan.` : `${signals} records.`);
   }
   if (Number.isFinite(alerts)) parts.push(id ? `${alerts} peringatan${Number.isFinite(serious) && serious ? `, ${serious} di antaranya kritis/tinggi` : ""}.` : `${alerts} alerts${Number.isFinite(serious) && serious ? `, ${serious} critical/high` : ""}.`);
   if (Number.isFinite(clusters)) parts.push(id ? `${clusters} isu terbentuk.` : `${clusters} issues formed.`);

@@ -8,8 +8,8 @@
   "Auth": {
     "shared": {
       "liveBadge": "Live Intelligence System",
-      "loginHeadline": "From signal to action in minutes, not days.",
-      "loginDescription": "Narriv monitors every narrative signal across your brand landscape and turns emerging risks into coordinated action before they escalate.",
+      "loginHeadline": "From mention to action in minutes, not days.",
+      "loginDescription": "Narriv monitors every mention across your brand landscape and turns emerging risks into coordinated action before they escalate.",
       "loginCompliance": "Encrypted connection (HTTPS) · Role-based workspace access",
       "signupHeadline": "Intelligence that acts, not just alerts.",
       "signupDescription": "Join teams that use Narriv to stay ahead of narratives shaping their brand before they become headlines.",
@@ -22,7 +22,7 @@
       "protected": "Workspace data is isolated per workspace, with role-based access and audit logging.",
       "stats": {
         "confidence": "AI confidence score",
-        "latency": "Signal-to-alert latency",
+        "latency": "Mention-to-alert latency",
         "monitoring": "Autonomous monitoring"
       }
     },
@@ -61,7 +61,7 @@
       "alreadyHaveAccess": "Already have access?",
       "signinLink": "Sign in",
       "features": {
-        "monitoring": "Real-time narrative signal monitoring",
+        "monitoring": "Real-time mention monitoring",
         "predictive": "Predictive alert engine with 91% accuracy",
         "recommendations": "AI-powered action recommendations",
         "visibility": "GEO visibility across AI search engines"
@@ -297,7 +297,7 @@
       "action": "Action",
       "system": "System",
       "command": "Command Center",
-      "signals": "Signals",
+      "signals": "Mentions",
       "alerts": "Alerts",
       "visibility": "AI Visibility",
       "intelligence": "Intelligence",
@@ -315,7 +315,7 @@
       "workspace": "User Workspace"
     },
     "topbar": {
-      "search": "Search signals, topics, issues, or cases...",
+      "search": "Search mentions, topics, issues, or cases...",
       "user": "Testing User",
       "workspace": "User Workspace"
     },
@@ -650,29 +650,29 @@
   "Signals": {
     "otherSentiment": "Neutral / unanalyzed",
     "emptyState": {
-      "title": "No signals yet",
-      "desc": "No signals match the current filters. Try adjusting your search query or filters.",
+      "title": "No mentions yet",
+      "desc": "No mentions match the current filters. Try adjusting your search query or filters.",
       "noSourcesTitle": "No data sources connected",
-      "noSourcesDesc": "Connect your social media accounts, review platforms, or feeds to start discovering signals.",
+      "noSourcesDesc": "Connect your social media accounts, review platforms, or feeds to start discovering mentions.",
       "connectSourceCta": "Connect Data Source"
     },
     "summary": {
-      "title": "AI Signal Summary",
+      "title": "AI Mention Summary",
       "aiGenerated": "AI Generated",
       "noData": "No data available",
-      "noDataDesc": "No signals have been captured in the last 24 hours to generate a summary.",
-      "total": "Total Signals (24h)",
-      "negative": "Negative Signals",
+      "noDataDesc": "No mentions have been captured in the last 24 hours to generate a summary.",
+      "total": "Total Mentions (24h)",
+      "negative": "Negative Mentions",
       "critical": "Critical Alerts",
       "trendLabel": "Last 24 hours",
       "alertBackedLabel": "From alert engine"
     },
     "followUp": {
       "title": "Needs Follow-up",
-      "desc": "Signals requiring immediate attention.",
+      "desc": "Mentions requiring immediate attention.",
       "action": "Follow up in Action Center",
       "emptyTitle": "No follow-ups needed",
-      "emptyDesc": "You're all caught up! No urgent signals detected."
+      "emptyDesc": "You're all caught up! No urgent mentions detected."
     },
     "recommendations": {
       "title": "Action Recommendations",
@@ -682,33 +682,33 @@
       "emptyDesc": "Narriv AI will generate suggestions when significant patterns are detected."
     },
     "sourceDonut": {
-      "title": "Signal Sources",
+      "title": "Mention Sources",
       "desc": "Distribution by data source.",
       "timeframe": "Last 30 days",
-      "totalLabel": "Total Signals",
+      "totalLabel": "Total Mentions",
       "emptyTitle": "No source data",
       "emptyDesc": "Connect data sources to view distribution."
     },
     "timeline": {
-      "title": "Signal Timeline",
+      "title": "Mention Timeline",
       "period": "(Last 24 Hours)",
-      "desc": "Signal volume per hour.",
-      "signalsLabel": "signals",
+      "desc": "Mention volume per hour.",
+      "signalsLabel": "mentions",
       "emptyTitle": "No timeline data",
-      "emptyDesc": "Signal activity will appear here as data is collected."
+      "emptyDesc": "Mention activity will appear here as data is collected."
     },
     "investigationQueue": {
       "title": "Investigation Queue",
-      "desc": "Signals currently being processed.",
+      "desc": "Mentions currently being processed.",
       "viewAll": "View all",
       "emptyTitle": "No investigations in queue",
-      "emptyDesc": "All clear! No signals pending investigation."
+      "emptyDesc": "All clear! No mentions pending investigation."
     },
     "createInvestigation": "Create Investigation",
     "modal": {
       "defaultTitle": "Investigation: {title}",
       "title": "Create Investigation",
-      "desc": "Initiate a new case from this signal.",
+      "desc": "Initiate a new case from this mention.",
       "titleLabel": "Title",
       "titlePlaceholder": "e.g. Unusual login spikes in APAC",
       "priorityLabel": "Priority",
@@ -729,46 +729,46 @@
         "errorDesc": "An error occurred while creating the investigation."
       }
     },
-    "eyebrow": "Narrative Signals",
-    "title": "Monitoring",
+    "eyebrow": "Mentions",
+    "title": "Conversations",
     "subtitle": "Records collected for this workspace, with source, publication time and original link.",
     "createAction": "Create Action",
     "creatingAction": "Creating...",
     "createActionFailed": "Could not create an action plan. AI generation may be unavailable or missing configuration.",
-    "search": "Search signals...",
+    "search": "Search mentions...",
     "filter": "Filter",
-    "tableTitle": "Signal List",
-    "tableDesc": "Monitor incoming signals, select a row to inspect context and recommendation.",
-    "signal": "Signal",
+    "tableTitle": "Mention List",
+    "tableDesc": "Monitor incoming mentions, select a row to inspect context and recommendation.",
+    "signal": "Mention",
     "source": "Source",
     "sentiment": "Sentiment",
     "confidence": "Confidence",
     "action": "Action",
     "review": "Review",
     "rows": "rows",
-    "selected": "Signal Detail",
-    "noData": "No matching signals.",
+    "selected": "Mention Detail",
+    "noData": "No matching mentions.",
     "page": "Page",
     "of": "of",
     "firstPage": "First page",
     "previousPage": "Previous page",
     "nextPage": "Next page",
     "lastPage": "Last page",
-    "closeBackdrop": "Close signal detail",
+    "closeBackdrop": "Close mention detail",
     "unknown": "Unknown",
     "all": "All",
     "clear": "Clear",
     "sentimentFilter": "Filter sentiment",
     "sourceFilter": "Filter source",
     "close": "Close",
-    "fullSummary": "AI summary from source signal",
+    "fullSummary": "AI summary from source mention",
     "rawContent": "Original source content",
     "narrativeType": "Narrative type",
     "stakeholder": "Stakeholder",
     "impact": "Impact",
     "published": "Published",
     "captured": "Captured",
-    "loadingDetail": "Loading signal detail and AI analysis...",
+    "loadingDetail": "Loading mention detail and AI analysis...",
     "processing": "AI analysis is still processing",
     "noAnalysis": "AI summary is not available yet. The original source content is still shown in full below.",
     "recommended": "Recommended action",
@@ -782,7 +782,7 @@
     "filterNeutral": "Neutral",
     "filterMixed": "Mixed",
     "sortLatest": "Latest first",
-    "headerSignal": "Signal",
+    "headerSignal": "Mention",
     "headerSource": "Source",
     "headerSentiment": "Sentiment",
     "headerRelatedNarrative": "Related Narrative",
@@ -791,13 +791,13 @@
     "headerCaptured": "Captured",
     "headerAction": "Action",
     "investigate": "Investigate",
-    "footerLive": "{from}-{to} of {total} signals",
+    "footerLive": "{from}-{to} of {total} mentions",
     "footerUnavailable": "Live data unavailable. No fallback rows are shown.",
     "errorTitle": "Live data unavailable",
-    "errorDesc": "Signals could not be loaded. Nothing is shown rather than outdated rows. Try again.",
-    "metaErrorTitle": "Signal metadata unavailable",
-    "metaErrorDesc": "Summary figures could not be loaded. The signal list may still be available below.",
-    "fallbackUntitled": "Untitled signal",
+    "errorDesc": "Mentions could not be loaded. Nothing is shown rather than outdated rows. Try again.",
+    "metaErrorTitle": "Mention metadata unavailable",
+    "metaErrorDesc": "Summary figures could not be loaded. The mention list may still be available below.",
+    "fallbackUntitled": "Untitled mention",
     "fallbackNoContent": "No content summary available.",
     "fallbackUnknownSource": "Unknown Source",
     "fallbackLiveSource": "Live Source",
@@ -811,8 +811,8 @@
     "scoreExcellent": "Excellent",
     "positiveNegativeRatio": "Pos / Neg Ratio",
     "emergingSignals": "Emerging",
-    "signalIntelligenceScore": "Signal Intelligence Score",
-    "scoreTooltip": "Score reflects signal volume, velocity, and negative sentiment concentration",
+    "signalIntelligenceScore": "Mention Intelligence Score",
+    "scoreTooltip": "Score reflects mention volume, velocity, and negative sentiment concentration",
     "relatedNarratives": "Related Narratives",
     "relatedNarrative": "Related Narrative",
     "amplification": "Amplification",
@@ -883,7 +883,7 @@
   },
   "signals": {
     "relatedNarratives": "Related Narratives",
-    "signalIntelligenceScore": "Signal Intelligence Score",
+    "signalIntelligenceScore": "Mention Intelligence Score",
     "amplification": "Amplification",
     "relatedNarrative": "Related Narrative",
     "filterNarrativeType": "Narrative Type",
@@ -898,11 +898,11 @@
     "scoreModerate": "Moderate",
     "scoreLow": "Low",
     "scoreCritical": "Critical",
-    "scoreTooltip": "Score reflects signal volume, velocity, and negative sentiment concentration"
+    "scoreTooltip": "Score reflects mention volume, velocity, and negative sentiment concentration"
   },
   "advancedSearch": {
     "title": "Advanced Filters",
-    "description": "Filter signals by platform, sentiment, date range, and more.",
+    "description": "Filter mentions by platform, sentiment, date range, and more.",
     "platform": "Platform",
     "sentiment": "Sentiment",
     "dateRange": "Date Range",
@@ -987,7 +987,7 @@
     "sandbox": {
       "title": "AI Search Sandbox",
       "desc": "Simulate how AI responds to queries.",
-      "queryPlaceholder": "Search for signals, topics, issues, or cases...",
+      "queryPlaceholder": "Search for mentions, topics, issues, or cases...",
       "simulateBtn": "Simulate",
       "responseTitle": "AI Response",
       "analysisMeta": "Analysis Metadata",
@@ -1417,7 +1417,7 @@
       "flow": {
         "desc": "(How Narriv Delivers Critical Intelligence)",
         "step1Desc": "AI detects anomaly",
-        "step1Title": "Signal Detected",
+        "step1Title": "Mention Detected",
         "step2Desc": "Severity classified",
         "step2Title": "Alert Generated",
         "step3Desc": "Multi-channel delivery",
@@ -1646,7 +1646,7 @@
     }
   },
   "Intelligence": {
-    "pageTitle": "Issues & Narratives",
+    "pageTitle": "Issue Map",
     "pageSubtitle": "Understand topic clusters, narrative growth, and strategic context.",
     "title": "Topic Map",
     "subtitle": "Understand which topics are growing, who is involved, their impact, and the risks behind them.",
@@ -1697,7 +1697,7 @@
     "last7Days": "Last 7 days (May 12 - May 18, 2025)",
     "topicMap": {
       "title": "Topic Map",
-      "desc": "Circle size reflects linked signals; lines join narratives that share evidence.",
+      "desc": "Circle size reflects linked mentions; lines join narratives that share evidence.",
       "allTopics": "All Topics",
       "filter": "Filter",
       "intensity": "Size",
@@ -1715,7 +1715,7 @@
       "tip": "Click a bubble to open the issue's full analysis.",
       "expandMap": "Expand map",
       "filterAll": "All Sentiments",
-      "high": "More signals",
+      "high": "More mentions",
       "impact": {
         "critical": "Critical Impact",
         "high": "High Impact",
@@ -1731,7 +1731,7 @@
     "growingClusters": {
       "title": "Growing Narrative Clusters",
       "viewAll": "View all",
-      "modalSubtitle": "Explore all narrative clusters sorted by signal count and growth velocity.",
+      "modalSubtitle": "Explore all narrative clusters sorted by mention count and growth velocity.",
       "modalTitle": "All Growing Clusters",
       "viewLess": "View less"
     },
@@ -1746,7 +1746,7 @@
     },
     "competitorShare": {
       "title": "Narrative Share",
-      "totalShare": "Total Signals",
+      "totalShare": "Total Mentions",
       "viewLandscape": "View narrative share breakdown"
     },
     "aiSummary": {
@@ -1791,7 +1791,7 @@
       "connected": "Connected",
       "connectedDetail": "Narrative and source data loaded",
       "lastAnalysis": "Last Analysis",
-      "lastAnalysisDetail": "When a signal was last analysed by AI"
+      "lastAnalysisDetail": "When a mention was last analysed by AI"
     },
     "toast": {
       "copyFailed": "Failed to copy narrative ID.",
@@ -1802,7 +1802,7 @@
       "viewDetails": "View full details"
     },
     "aiSummaryDynamic": {
-      "box": "The main narrative this period is dominated by \"{topic}\", which currently has {signals} signals and requires attention due to its {impact} impact.",
+      "box": "The main narrative this period is dominated by \"{topic}\", which currently has {signals} mentions and requires attention due to its {impact} impact.",
       "boxEmpty": "No significant narrative activity detected in this period.",
       "bulletEmerging": "{count} new emerging narratives require monitoring.",
       "bulletFastest": "Fastest growing issue: \"{topic}\" at {growth} growth.",
@@ -1814,7 +1814,7 @@
       "errorTitle": "Narrative detail unavailable",
       "noData": "No detailed data available for this narrative.",
       "noContent": "No content summary available.",
-      "relatedSignals": "Related Signals",
+      "relatedSignals": "Related Mentions",
       "sentimentBreakdown": "Sentiment Breakdown",
       "subtitle": "Detailed narrative analysis and sentiment breakdown.",
       "draftNote": "Plans are generated as drafts from this narrative's evidence and need review before any external use.",
@@ -1822,11 +1822,11 @@
       "planResponse": "Plan a response"
     },
     "empty": {
-      "desc": "No narratives have been identified yet. They appear once enough related signals are collected.",
+      "desc": "No narratives have been identified yet. They appear once enough related mentions are collected.",
       "title": "No narratives yet"
     },
     "emptyCluster": {
-      "aiRec": "Add signals or retry loading live data to populate this panel.",
+      "aiRec": "Add mentions or retry loading live data to populate this panel.",
       "description": "Live narrative data is not available yet.",
       "priority": "No data",
       "topic": "No narrative selected"
@@ -1840,7 +1840,7 @@
       "coverage": "Coverage",
       "noData": "No data",
       "others": "Others",
-      "signals": "{count} signals",
+      "signals": "{count} mentions",
       "sources": "{count, plural, one {# source} other {# sources}}",
       "sourcesActive": "Sources Active",
       "total": "Total"
@@ -1960,7 +1960,7 @@
       "weeklyTitle": "Weekly Narrative Intelligence Brief",
       "visibilityTitle": "AI Visibility Movement Report",
       "riskTitle": "Predictive Risk Review",
-      "weeklySections": "Signals, topics, AI visibility, actions",
+      "weeklySections": "Mentions, topics, AI visibility, actions",
       "visibilitySections": "Questions, citations, competitors",
       "riskSections": "Drivers, owner actions, feedback",
       "readyStatus": "Ready for exec review",
@@ -2063,7 +2063,7 @@
       "body": "In the last 7 days, negative sentiment increased 18% driven by payment complaints and application stability in the Jabodetabek area."
     },
     "aiSummaryDynamic": {
-      "insightText": "{title} is the top issue with the highest volume ({count} signals).",
+      "insightText": "{title} is the top issue with the highest volume ({count} mentions).",
       "riskText": "Potential reputational escalation regarding {title}.",
       "noRiskText": "No critical negative issues detected.",
       "movementText": "Conversations around {title} up {velocity} recently.",
@@ -2073,7 +2073,7 @@
       "emptyRisk": "No data to assess risk.",
       "emptyMovement": "No movement data.",
       "emptyRec": "Gathering data for recommendations.",
-      "emptyBody": "The AI engine is waiting for enough narrative signals to generate a comprehensive report summary."
+      "emptyBody": "The AI engine is waiting for enough mentions to generate a comprehensive report summary."
     },
     "formatDonut": {
       "title": "Format Distribution",
@@ -2259,7 +2259,7 @@
     "productionDesc": "Live workspace data. Empty states appear when data is not yet available.",
     "nav": {
       "command": "Dashboard",
-      "signals": "Narrative Signals",
+      "signals": "Mentions",
       "intelligence": "Topic Map",
       "alerts": "Predictive Alerts",
       "visibility": "AI Visibility",
@@ -2283,7 +2283,7 @@
     "toggleSidebar": "Toggle sidebar",
     "toggleTheme": "Toggle theme",
     "toggleLanguage": "Toggle language",
-    "search": "Search signals, topics, issues, or cases...",
+    "search": "Search mentions, topics, issues, or cases...",
     "notifications": "Notifications",
     "notSignedIn": "Not signed in",
     "noWorkspace": "No workspace"
@@ -2499,7 +2499,7 @@
         "resolutionPlaceholder": "Enter resolution notes...",
         "noResolution": "No resolution yet",
         "source": "Source",
-        "linkedSignal": "Linked Signal",
+        "linkedSignal": "Linked Mention",
         "noSource": "No linked source",
         "created": "Created",
         "updated": "Last Updated",
@@ -2798,16 +2798,16 @@
         "nextBilling": "Next Billing",
         "billingDateFormat": "12 June 2025",
         "billingDaysLeft": "(30 days left)",
-        "usageTitle": "Signal Usage (Last 30 Days)",
-        "usageTotalSignals": "Total Signals",
+        "usageTitle": "Mention Usage (Last 30 Days)",
+        "usageTotalSignals": "Total Mentions",
         "usageChange": "▲ 18.6% vs previous period",
         "period30": "Last 30 Days",
         "period60": "Last 60 Days",
-        "metricSignalVolume": "Signal Volume",
+        "metricSignalVolume": "Mention Volume",
         "metricConnectedSources": "Connected Sources",
         "metricUsersLimit": "Users limit",
         "metricAiCredits": "AI Credits",
-        "signalsUnit": "signals",
+        "signalsUnit": "mentions",
         "chartDates": [
           "May 13",
           "May 18",
@@ -2827,10 +2827,10 @@
         "pauseDesc": "Temporarily stop scheduled data collection for every keyword. Existing data stays safe, and you can still run a manual collection.",
         "pauseButton": "Pause Monitoring",
         "deleteTitle": "Delete Workspace",
-        "deleteDesc": "Permanently delete this workspace. Only possible while it holds no data. A workspace that already has signals, alerts or reports is deleted by the Narriv team so no data is lost by accident.",
+        "deleteDesc": "Permanently delete this workspace. Only possible while it holds no data. A workspace that already has mentions, alerts or reports is deleted by the Narriv team so no data is lost by accident.",
         "deleteButton": "Delete Workspace",
         "resumeTitle": "Monitoring Is Paused",
-        "resumeDesc": "Scheduled data collection is stopped. Resume it so new signals come in every day again.",
+        "resumeDesc": "Scheduled data collection is stopped. Resume it so new mentions come in every day again.",
         "resumeButton": "Resume Monitoring"
       },
       "confirm": {
@@ -2873,7 +2873,7 @@
         "managementInfo": "Management panel for {label} will open.",
         "monitoringPaused": "Monitoring paused. Scheduled data collection has stopped.",
         "monitoringResumed": "Monitoring resumed.",
-        "deleteRestricted": "This workspace still holds data (signals, alerts or reports), so it cannot be deleted here. Contact the Narriv team for permanent deletion.",
+        "deleteRestricted": "This workspace still holds data (mentions, alerts or reports), so it cannot be deleted here. Contact the Narriv team for permanent deletion.",
         "actionFailed": "The action failed. Please try again shortly."
       },
       "invite": {
@@ -2947,7 +2947,7 @@
         "summaryStyle": "AI Summary Style",
         "enableRecs": "Enable AI Recommendations",
         "enableRecsDesc": "Show follow-up suggestions",
-        "enablePredictive": "Enable Predictive Signals",
+        "enablePredictive": "Enable Issue Predictions",
         "enablePredictiveDesc": "Detect growing trend signs"
       },
       "integrationsApi": {
@@ -3055,23 +3055,31 @@
       "command": "Overview",
       "signals": "Monitoring",
       "alerts": "Early Warnings",
-      "visibility": "AI Visibility",
+      "visibility": "AI answers",
       "intelligence": "Issues & Narratives",
-      "reports": "Reports & Insights",
+      "reports": "Reports",
       "askNarriv": "Ask Narriv",
       "opportunities": "Opportunities",
-      "brief": "Daily Brief",
+      "brief": "Daily brief",
       "timeline": "Timeline",
       "actions": "Actions & Follow-up",
       "alertCenter": "Alerts Center",
-      "actionCenter": "Action Plans",
+      "actionCenter": "Action plans",
       "cases": "Cases",
-      "dataSources": "Data Sources",
-      "integrations": "Integrations",
-      "activity": "Activity Log",
+      "dataSources": "Data sources",
+      "integrations": "Notification channels",
+      "activity": "Activity history",
       "settings": "Settings",
       "reportsTab": "Reports",
-      "actionsTab": "Recommendations"
+      "actionsTab": "Recommendations",
+      "today": "Today",
+      "issues": "Issues",
+      "tasks": "Alerts & Tasks",
+      "todayTab": "Summary",
+      "conversations": "Conversations",
+      "issueMap": "Issue map",
+      "alertsTab": "Alerts",
+      "settingsTab": "General"
     },
     "sidebar": {
       "scoreTitle": "Narriv Intelligence Score",
@@ -3090,7 +3098,7 @@
       "expand": "Expand menu"
     },
     "topbar": {
-      "search": "Search signals, topics, issues, or cases...",
+      "search": "Search mentions, topics, issues, or cases...",
       "notifications": "Notifications",
       "logout": "Logout",
       "notificationsTitle": "Notifications",
@@ -3119,8 +3127,8 @@
       "newAction": "Create New Action"
     },
     "metrics": {
-      "totalSignals": "Total Signals",
-      "analyzedSignals": "Analyzed Signals",
+      "totalSignals": "Total Mentions",
+      "analyzedSignals": "Analyzed Mentions",
       "positiveSent": "Positive",
       "negativeSent": "Negative",
       "neutralSent": "Neutral",
@@ -3131,16 +3139,16 @@
         "title": "Command Center",
         "desc": "Real-time summary from Narriv. Monitor, analyze, and take action quickly.",
         "demoMode": "Demo Mode",
-        "demoModeDesc": "Demo workspace: signals and narratives come from live monitoring; some panels show illustrative examples",
+        "demoModeDesc": "Demo workspace: mentions and narratives come from live monitoring; some panels show illustrative examples",
         "customize": "Customize Dashboard",
         "refresh": "Auto refresh: 30 seconds",
-        "activity": "Real-time Signal Activity",
-        "activityDesc": "Signal movement in the last 24 hours",
+        "activity": "Real-time Mention Activity",
+        "activityDesc": "Mention movement in the last 24 hours",
         "map": "Global Activity Map",
-        "mapDesc": "Signal distribution by location",
+        "mapDesc": "Mention distribution by location",
         "alerts": "Latest Alerts",
         "topics": "Popular Topics",
-        "sources": "Signal Sources",
+        "sources": "Mention Sources",
         "visibility": "AI Visibility Snapshot",
         "quick": "Quick Actions",
         "status": "System Status",
@@ -3161,18 +3169,18 @@
         "errorDesc": "The dashboard could not be loaded. Try again.",
         "openRelated": "Open related page",
         "close": "Close",
-        "emptyTrends": "No signal trend data for this period",
-        "emptySignals": "No latest signals yet",
+        "emptyTrends": "No mention trend data for this period",
+        "emptySignals": "No latest mentions yet",
         "emptyTopics": "No topics detected yet",
         "emptySources": "No source health data yet",
         "emptySentiment": "No analyzed sentiment yet",
         "emptyStatus": "No system status data yet",
-        "emptyMap": "No mapped signal activity yet. New Apify signals with location hints will appear here automatically.",
+        "emptyMap": "No mapped mention activity yet. New social media mentions with a location will appear here automatically.",
         "mapError": "World map could not be loaded",
         "mapLive": "Live",
         "mapLow": "Low",
         "mapHigh": "High",
-        "mapSignals": "Mapped signals",
+        "mapSignals": "Mapped mentions",
         "mapRegions": "Active regions"
       },
       "quickActions": {
@@ -3201,7 +3209,7 @@
         "reportItem3Label": "Crisis Report",
         "reportItem3Desc": "In-depth report for crisis situations.",
         "analyzeTitle": "Analyze Data",
-        "analyzeDesc": "Run in-depth analysis on collected signals and narratives.",
+        "analyzeDesc": "Run in-depth analysis on collected mentions and narratives.",
         "analyzeItem1Label": "Sentiment Analysis",
         "analyzeItem1Desc": "Comprehensive sentiment analysis from all sources.",
         "analyzeItem2Label": "Trend Detection",
@@ -3231,9 +3239,9 @@
         "mentions": "Latest Mention Examples"
       },
       "signals": {
-        "title": "Signals",
-        "desc": "Track important conversations and narrative signals from every source.",
-        "table": "Signal Feed",
+        "title": "Mentions",
+        "desc": "Track important conversations and mentions from every source.",
+        "table": "Mention Feed",
         "tableDesc": "Prioritized by volume, sentiment, and confidence."
       },
       "alerts": {
@@ -3264,7 +3272,7 @@
       },
       "sources": {
         "title": "Data Sources",
-        "desc": "Manage sources used by Narriv to monitor signals and topics.",
+        "desc": "Manage sources used by Narriv to monitor mentions and topics.",
         "connected": "Connected Sources"
       },
       "settings": {
@@ -3290,6 +3298,13 @@
     "navSections": {
       "reports": "Reports & Insights",
       "actions": "Actions & Follow-up"
+    },
+    "navShort": {
+      "today": "Today",
+      "issues": "Issues",
+      "tasks": "Tasks",
+      "reports": "Reports",
+      "settings": "Settings"
     }
   },
   "ActionPlans": {
@@ -3418,7 +3433,7 @@
     "planErrorTitle": "Live action detail could not be loaded",
     "planErrorDesc": "This action's details could not be loaded. Try again.",
     "emptyTitle": "No actions yet",
-    "emptyDesc": "No action plans have been created yet. Generate one from a narrative, signal or alert.",
+    "emptyDesc": "No action plans have been created yet. Generate one from a narrative, mention or alert.",
     "noMatchTitle": "No actions match your filters",
     "noMatchDesc": "Try another search term, priority, or status filter.",
     "filterAll": "All Actions",
@@ -3450,7 +3465,7 @@
       "crDesc": "Rapid risk mitigation and management",
       "srDesc": "Channel-ready replies for social conversations",
       "suDesc": "Clear updates for internal and external stakeholders",
-      "ddDesc": "Evidence-led actions based on signals and metrics",
+      "ddDesc": "Evidence-led actions based on mentions and metrics",
       "hint": "AI will analyze your workspace data and generate a tailored action plan.",
       "cancel": "Cancel",
       "submit": "Generate Plan",
@@ -3494,8 +3509,8 @@
     "settingsDesc": "General source management settings.",
     "connect": "Connect New Source",
     "connectDesc": "Add a new data source to expand monitoring coverage.",
-    "volume": "Signal Volume by Platform (Last 7 Days)",
-    "volumeDesc": "Comparison of signal volume from every source.",
+    "volume": "Mention Volume by Platform (Last 7 Days)",
+    "volumeDesc": "Comparison of mention volume from every source.",
     "distribution": "Source Type Distribution",
     "distributionDesc": "Composition by source category.",
     "last7": "Last 7 Days",
@@ -3564,7 +3579,7 @@
       "bootstrapFailed": "Default sources could not be added. Please try again.",
       "deleted": "Data source deleted successfully.",
       "deleteFailed": "Could not delete the data source.",
-      "liveApiRefreshing": "Refreshing signal data from the API...",
+      "liveApiRefreshing": "Refreshing mention data from the API...",
       "activityLogMissing": "Full sync logs are not available yet.",
       "activity": {
         "emptyTitle": "No recent activity yet",
@@ -3615,7 +3630,7 @@
     "activityFailed": "Failed: {reason}",
     "activityRunning": "Collecting…",
     "collectStarted": "Collection started on Apify for \"{keyword}\". This card updates when it finishes.",
-    "volumeEmpty": "No signals stored in the last 7 days.",
+    "volumeEmpty": "No mentions stored in the last 7 days.",
     "errors": {
       "authentication_failed": "Apify rejected the API token",
       "billing_or_quota": "the Apify account is out of usage or needs billing",
@@ -3643,7 +3658,7 @@
     },
     "loading": {
       "title": "Loading dashboard data",
-      "desc": "Preparing the latest signals, alerts, and recommendations."
+      "desc": "Preparing the latest mentions, alerts, and recommendations."
     },
     "retry": "Retry",
     "pagination": {
@@ -3741,9 +3756,9 @@
     "event_onboarding_completed": "Onboarding completed",
     "event_onboarding_keywords_created": "Onboarding keywords added",
     "event_onboarding_workspace_configured": "Workspace configured",
-    "event_signal_deleted": "Signal deleted",
-    "event_signal_updated": "Signal updated",
-    "event_signals_bulk_deleted": "Signals deleted in bulk",
+    "event_signal_deleted": "Mention deleted",
+    "event_signal_updated": "Mention updated",
+    "event_signals_bulk_deleted": "Mentions deleted in bulk",
     "event_template_deleted": "Report template deleted",
     "event_workspace_created": "Workspace created",
     "event_workspace_owner_recovered": "Workspace owner restored",
@@ -3753,7 +3768,7 @@
   "askNarriv": {
     "title": "Ask Narriv",
     "subtitle": "Your AI intelligence copilot",
-    "placeholder": "Ask about narratives, signals, competitors, AI visibility...",
+    "placeholder": "Ask about narratives, mentions, competitors, AI visibility...",
     "send": "Send",
     "thinking": "Narriv is thinking...",
     "confidenceHigh": "High confidence",
@@ -3853,14 +3868,14 @@
     "whatHappened": "What happened",
     "whyItMatters": "Why it matters",
     "whatToDo": "What to do",
-    "signals": "signals",
+    "signals": "mentions",
     "prompts": "prompts",
     "investigate": "Investigate",
     "escalate": "Escalate",
     "resolve": "Resolve"
   },
   "brief": {
-    "title": "Daily Intelligence Brief",
+    "title": "Daily Brief",
     "executiveSummary": "Executive Summary",
     "keyDevelopments": "Key Developments",
     "narrativeChanges": "Narrative Changes",
@@ -3933,7 +3948,7 @@
     "categories": {
       "gettingStarted": "Getting Started",
       "dataSources": "Data Sources",
-      "signals": "Signals & Monitoring",
+      "signals": "Mentions & Monitoring",
       "alerts": "Alerts & Notifications",
       "ai": "AI & Automation",
       "reports": "Reports & Analytics",
@@ -3949,7 +3964,7 @@
       "supportedPlatforms": "Supported Platforms",
       "apifyIntegration": "Apify Integration",
       "webhookSetup": "Webhook Setup",
-      "whatAreSignals": "What Are Signals?",
+      "whatAreSignals": "What Are Mentions?",
       "filteringSearch": "Filtering & Search",
       "sentimentAnalysis": "Sentiment Analysis",
       "exportingData": "Exporting Data",
@@ -3957,7 +3972,7 @@
       "customAlerts": "Creating Custom Alerts",
       "escalationMatrix": "Escalation Matrix",
       "notificationChannels": "Notification Channels",
-      "aiAnalysis": "AI Signal Analysis",
+      "aiAnalysis": "AI Mention Analysis",
       "actionPlans": "Generating Action Plans",
       "narrativeClustering": "Narrative Clustering",
       "aiVisibility": "AI Visibility Reports",
@@ -4188,7 +4203,7 @@
       "narrative_momentum": "Narrative momentum"
     },
     "insufficientTitle": "Insufficient data",
-    "insufficientDesc": "Narriv does not have enough signals in the current window to compute this. Once data arrives, this section updates automatically.",
+    "insufficientDesc": "Narriv does not have enough mentions in the current window to compute this. Once data arrives, this section updates automatically.",
     "notEnoughData": "Not enough data",
     "riskScore": "Risk score",
     "riskScoreDesc": "Threat to reputation in the last {hours} hours. Lower is better.",
@@ -4217,20 +4232,20 @@
     "evidence": "Evidence:",
     "alertRef": "alert {id}",
     "recordsCluster": "{count} cluster record(s)",
-    "recordsSignal": "{count} signal record(s)",
+    "recordsSignal": "{count} mention record(s)",
     "uncertaintyLevel": "{level} uncertainty:",
     "positive": "{value}% positive",
     "negative": "{value}% negative",
     "neutralMixed": "{value}% neutral/mixed",
     "entityIntel": "Entity intelligence",
-    "viewSignalsFor": "View signals mentioning {entity}",
+    "viewSignalsFor": "View mentions mentioning {entity}",
     "mentions": "{count} mentions",
     "neg": "neg",
     "pos": "pos",
-    "viewTopEntity": "View top entity in signals →",
-    "predictive": "Predictive signals",
-    "noPredictiveTitle": "No signals detected",
-    "noPredictiveDesc": "Current signals are not strong enough to produce a prediction. This is informative, not a failure.",
+    "viewTopEntity": "View top entity in mentions →",
+    "predictive": "Issue predictions",
+    "noPredictiveTitle": "No mentions detected",
+    "noPredictiveDesc": "Current mentions are not strong enough to produce a prediction. This is informative, not a failure.",
     "heuristicForecast": "Heuristic forecasts. Not scientific predictions.",
     "confidence": "Confidence {value}%",
     "timeframe": "Timeframe: {value}",
@@ -4292,11 +4307,11 @@
     "analysisFailures": "{count} analysis failure(s) in the last 7 days.",
     "missedSlots": "Missed scheduled slots: {slots}.",
     "partial": "Some status checks failed; figures may be incomplete.",
-    "noAnalyzed": "No analyzed signals yet",
+    "noAnalyzed": "No analyzed mentions yet",
     "noData": "No data",
-    "coverageLater": "Analysis coverage appears once signals are collected.",
-    "coverage": "{value}% of signals analyzed",
+    "coverageLater": "Analysis coverage appears once mentions are collected.",
+    "coverage": "{value}% of mentions analyzed",
     "sentimentShare": "Sentiment share",
-    "ariaPanel": "Signals and sentiment"
+    "ariaPanel": "Mentions and sentiment"
   }
 }

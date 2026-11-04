@@ -7,7 +7,7 @@ import { pickL, useL } from "@/lib/use-l";
 
 const WORKFLOW_LABEL: Record<string, [string, string]> = {
   ask_narriv: ["Ask Narriv", "Tanya Narriv"],
-  signal_analysis_and_sentiment: ["Signal analysis and sentiment", "Analisis sinyal dan sentimen"],
+  signal_analysis_and_sentiment: ["Mention analysis and sentiment", "Analisis percakapan dan sentimen"],
   action_plans_and_recommendations: ["Action plans and recommendations", "Rencana aksi dan rekomendasi"],
   ai_visibility: ["AI Visibility", "Visibilitas AI"],
   narrative_clustering: ["Narrative clustering", "Pengelompokan narasi"],

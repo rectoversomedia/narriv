@@ -98,7 +98,7 @@ function ReportBody({ data }: { data: ReportView }) {
   const headline = v === "none"
     ? L("No records were collected in this period.", "Tidak ada data yang terkumpul di periode ini.")
     : [
-      L(`${t.negative}% of ${t.signals} records were negative and ${t.positive}% positive`, `${t.negative}% dari ${t.signals} sinyal bernada negatif dan ${t.positive}% positif`),
+      L(`${t.negative}% of ${t.signals} records were negative and ${t.positive}% positive`, `${t.negative}% dari ${t.signals} percakapan bernada negatif dan ${t.positive}% positif`),
       topPlatform ? L(`, mostly on ${platformName(topPlatform.platform)}`, `, terbanyak di ${platformName(topPlatform.platform)}`) : "",
       t.criticalAlerts ? L(`. ${t.criticalAlerts} serious alert(s) need a response.`, `. ${t.criticalAlerts} peringatan berat perlu direspons.`) : ".",
     ].join("");
@@ -112,14 +112,14 @@ function ReportBody({ data }: { data: ReportView }) {
       </section>
 
       <section className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <Tile label={L("Records", "Sinyal")} value={String(t.signals)} sub={L(`${t.analyzed} analysed`, `${t.analyzed} sudah dianalisis`)} rgb="70,95,255" color="#3B52F5" />
-        <Tile label={L("Negative", "Negatif")} value={`${t.negative}%`} sub={L(`${count(t.negative)} records`, `${count(t.negative)} sinyal`)} rgb="229,72,77" color="#C81E1E" />
-        <Tile label={L("Positive", "Positif")} value={`${t.positive}%`} sub={L(`${count(t.positive)} records`, `${count(t.positive)} sinyal`)} rgb="18,166,106" color="#047857" />
+        <Tile label={L("Records", "Percakapan")} value={String(t.signals)} sub={L(`${t.analyzed} analysed`, `${t.analyzed} sudah dianalisis`)} rgb="70,95,255" color="#3B52F5" />
+        <Tile label={L("Negative", "Negatif")} value={`${t.negative}%`} sub={L(`${count(t.negative)} records`, `${count(t.negative)} percakapan`)} rgb="229,72,77" color="#C81E1E" />
+        <Tile label={L("Positive", "Positif")} value={`${t.positive}%`} sub={L(`${count(t.positive)} records`, `${count(t.positive)} percakapan`)} rgb="18,166,106" color="#047857" />
         <Tile label={L("Alerts", "Peringatan")} value={String(t.alerts)} sub={t.criticalAlerts ? L(`${t.criticalAlerts} critical / high`, `${t.criticalAlerts} kritis / tinggi`) : L("none serious", "tidak ada yang berat")} rgb={t.criticalAlerts ? "229,72,77" : "100,116,139"} color={t.criticalAlerts ? "#C81E1E" : "#5A6478"} />
       </section>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <Card title={L("Sentiment split", "Komposisi sentimen")} sub={L(`${t.signals} records`, `${t.signals} sinyal`)}>
+        <Card title={L("Sentiment split", "Komposisi sentimen")} sub={L(`${t.signals} records`, `${t.signals} percakapan`)}>
           <div className="flex h-4 overflow-hidden rounded-full bg-[#EEF1F7]">
             {(["negative", "mixed", "neutral", "positive"] as const).map((k) => (t[k] > 0 ? <div key={k} style={{ width: `${t[k]}%`, background: SENTIMENT[k].color }} title={`${sentLabel(k)} ${t[k]}%`} /> : null))}
           </div>
@@ -184,7 +184,7 @@ function ReportBody({ data }: { data: ReportView }) {
       ) : null}
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <Card title={L("Top issues", "Isu teratas")} sub={L("by records", "menurut jumlah sinyal")}>
+        <Card title={L("Top issues", "Isu teratas")} sub={L("by records", "menurut jumlah percakapan")}>
           {data.issues.length === 0 ? (
             <p className="text-[13px] font-semibold text-[#5A6478]">{L("No issues grouped yet.", "Belum ada isu yang terbentuk.")}</p>
           ) : (
@@ -211,9 +211,9 @@ function ReportBody({ data }: { data: ReportView }) {
           )}
         </Card>
 
-        <Card title={L("Records to read", "Sinyal yang perlu dibaca")} sub={L(`top ${Math.min(6, data.signals.length)}`, `${Math.min(6, data.signals.length)} teratas`)}>
+        <Card title={L("Records to read", "Percakapan yang perlu dibaca")} sub={L(`top ${Math.min(6, data.signals.length)}`, `${Math.min(6, data.signals.length)} teratas`)}>
           {data.signals.length === 0 ? (
-            <p className="text-[13px] font-semibold text-[#5A6478]">{L("No records in this period.", "Tidak ada sinyal di periode ini.")}</p>
+            <p className="text-[13px] font-semibold text-[#5A6478]">{L("No records in this period.", "Tidak ada percakapan di periode ini.")}</p>
           ) : (
             <ul className="divide-y divide-[#F0F2F8]">
               {data.signals.slice(0, 6).map((sig, i) => {

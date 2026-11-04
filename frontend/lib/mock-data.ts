@@ -11,9 +11,9 @@ export function text(value: Localized, language: string) {
 export { navGroups } from "./navigation";
 
 export const dashboardMetrics: Array<{ label: Localized; value: string; helper: Localized; icon: LucideIcon; tone: Tone }> = [
-  { label: { en: "Total Signals (24h)", id: "Total Sinyal (24 Jam)" }, value: "2.842", helper: { en: "+18.3% vs yesterday", id: "+18,3% vs kemarin" }, icon: Activity, tone: "purple" },
-  { label: { en: "Critical Signals", id: "Sinyal Kritis" }, value: "128", helper: { en: "+12% vs yesterday", id: "+12% vs kemarin" }, icon: Activity, tone: "red" },
-  { label: { en: "Active Signals", id: "Sinyal Aktif" }, value: "1.862", helper: { en: "+15.6% vs yesterday", id: "+15,6% vs kemarin" }, icon: CheckCircle2, tone: "green" },
+  { label: { en: "Total Mentions (24h)", id: "Total Percakapan (24 Jam)" }, value: "2.842", helper: { en: "+18.3% vs yesterday", id: "+18,3% vs kemarin" }, icon: Activity, tone: "purple" },
+  { label: { en: "Critical Mentions", id: "Percakapan Kritis" }, value: "128", helper: { en: "+12% vs yesterday", id: "+12% vs kemarin" }, icon: Activity, tone: "red" },
+  { label: { en: "Active Mentions", id: "Percakapan Aktif" }, value: "1.862", helper: { en: "+15.6% vs yesterday", id: "+15,6% vs kemarin" }, icon: CheckCircle2, tone: "green" },
   { label: { en: "AI Visibility Mentions", id: "AI Visibility Mentions" }, value: "2.451", helper: { en: "+18.7% vs yesterday", id: "+18,7% vs kemarin" }, icon: Sparkles, tone: "blue" },
   { label: { en: "Average Response", id: "Rata-rata Respon" }, value: "17m 24s", helper: { en: "8m 12s faster", id: "8m 12s lebih cepat" }, icon: Clock3, tone: "purple" },
   { label: { en: "Active Sources", id: "Sumber Aktif" }, value: "48 / 62", helper: { en: "77% connected", id: "77% terhubung" }, icon: Database, tone: "purple" },

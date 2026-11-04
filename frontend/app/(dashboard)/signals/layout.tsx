@@ -3,7 +3,7 @@ import { createPageMetadata } from "@/lib/metadata";
 
 export const metadata = createPageMetadata(
   "Signals",
-  "Pantau sinyal publik terbaru, tren percakapan, dan perubahan sentimen dari berbagai sumber."
+  "Pantau percakapan publik terbaru, trennya, dan perubahan sentimen dari berbagai sumber."
 );
 
 export default function SignalsLayout({ children }: { children: ReactNode }) {
