@@ -221,7 +221,7 @@ const runDaily = async (req, res) => {
 router.get("/daily", runDaily);
 router.post("/daily", runDaily);
 
-// Scheduled real-data ingestion (Vercel Cron, every 6 hours via four daily slots).
+// Scheduled real-data ingestion (Vercel Cron, every hour).
 const runIngest = async (req, res) => {
     if (!verifyCronSecret(req)) return res.status(401).json({ error: "Unauthorized" });
     try {

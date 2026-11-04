@@ -132,7 +132,7 @@ async function pausedWorkspaceIds(ids) {
  * One keyword from every source: Google News plus the configured official sources (YouTube, Reddit). The keyword
  * only fails when news failed and no other source produced anything.
  */
-export async function ingestKeywordAllSources({ workspaceId, keyword, limit, rss = ingestRssSignals, official = ingestOfficialSources }) {
+export async function ingestKeywordAllSources({ workspaceId, keyword, limit, withOfficial = true, rss = ingestRssSignals, official = ingestOfficialSources }) {
     let news = null;
     let newsError = null;
     try {
@@ -140,7 +140,7 @@ export async function ingestKeywordAllSources({ workspaceId, keyword, limit, rss
     } catch (err) {
         newsError = err;
     }
-    const extra = await official({ workspaceId, keyword, limit }).catch(() => null);
+    const extra = withOfficial ? await official({ workspaceId, keyword, limit }).catch(() => null) : null;
     if (newsError && !(extra?.sources || []).some((s) => s.status === "ok")) throw newsError;
     const sum = (k) => (news?.[k] || 0) + (extra?.[k] || 0);
     return {
@@ -166,9 +166,13 @@ export async function runScheduledIngestion({
     pauseMs = 300,
     concurrency = 3,
     workspaceId = null, // set for an admin's manual run of one workspace
+    officialEveryHours = 6,
 } = {}) {
     const runId = crypto.randomUUID();
     const start = Date.now();
+    // News runs every hour; YouTube and Reddit only every few hours (YouTube's free quota is 100 searches a day).
+    // A manual run always includes them.
+    const withOfficial = trigger.startsWith("manual") || workspaceId !== null || new Date(start).getUTCHours() % officialEveryHours === 0;
 
     const { logId, acquired, lockError } = await claimRun(runId, trigger, workspaceId);
     if (!acquired) {
@@ -223,7 +227,7 @@ export async function runScheduledIngestion({
             if (pauseMs > 0 && i > 0) await new Promise((r) => setTimeout(r, pauseMs));
             const itemStart = Date.now();
             try {
-                const r = await ingest({ workspaceId: ws, keyword, limit: perKeywordLimit });
+                const r = await ingest({ workspaceId: ws, keyword, limit: perKeywordLimit, withOfficial });
                 slots[i] = {
                     workspaceId: ws,
                     keyword,
@@ -259,7 +263,7 @@ export async function runScheduledIngestion({
     else if (totals.failedKeywords > 0 || totals.analysisFailed > 0 || totals.insertFailed > 0) status = "completed_with_errors";
     else if (totals.deferredKeywords > 0) status = "partial";
 
-    const summary = { runId, trigger, workspaceId: workspaceId || undefined, status, workspaces: new Set(work.map((w) => w.workspaceId)).size, keywords: work.length, totals, durationMs };
+    const summary = { runId, trigger, workspaceId: workspaceId || undefined, withOfficial, status, workspaces: new Set(work.map((w) => w.workspaceId)).size, keywords: work.length, totals, durationMs };
     const finalRow = {
         status,
         keywords_targeted: work.map((w) => w.keyword).slice(0, 100),

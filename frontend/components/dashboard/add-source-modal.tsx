@@ -44,7 +44,7 @@ export function AddSourceModal({ open, onOpenChange, onSubmit, isPending }: AddS
       onClose={close}
       size="sm"
       title={L("Add sources", "Tambah sumber")}
-      description={L("Type what to watch, pick where. Narriv collects it on the daily schedule.", "Ketik apa yang dipantau, pilih di mana. Narriv mengambilnya sesuai jadwal harian.")}
+      description={L("Type what to watch, pick where. Narriv checks it every hour.", "Ketik apa yang dipantau, pilih di mana. Narriv mengeceknya setiap jam.")}
       closeLabel={L("Close", "Tutup")}
       footer={
         <>
@@ -97,7 +97,7 @@ export function AddSourceModal({ open, onOpenChange, onSubmit, isPending }: AddS
         {keyword.trim() && count ? (
           <div className="rounded-[12px] bg-[#101334] px-4 py-3 text-white">
             <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#A9B4FF]">{L("Summary", "Ringkasan")}</p>
-            <p className="mt-0.5 text-[13px] font-bold">{L(`${count} sources will watch «${keyword.trim()}», collected daily at 07:00 WIB.`, `${count} sumber akan memantau «${keyword.trim()}», diambil setiap hari pukul 07.00 WIB.`)}</p>
+            <p className="mt-0.5 text-[13px] font-bold">{L(`${count} sources will watch «${keyword.trim()}», checked every hour.`, `${count} sumber akan memantau «${keyword.trim()}», dicek setiap jam.`)}</p>
           </div>
         ) : null}
       </div>

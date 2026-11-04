@@ -96,7 +96,7 @@ function present(rows, runs = new Map()) {
             };
         }),
         limits: { maxActive: MAX_ACTIVE_KEYWORDS, scheduledPerRun: SCHEDULED_KEYWORDS_PER_WORKSPACE },
-        note: tr(`Scheduled monitoring runs once a day (07:00 WIB) and collects up to 8 new articles for each of the first ${SCHEDULED_KEYWORDS_PER_WORKSPACE} active keywords (oldest first).`, `Pemantauan terjadwal berjalan sekali sehari (07.00 WIB) dan mengambil hingga 8 artikel baru untuk ${SCHEDULED_KEYWORDS_PER_WORKSPACE} kata kunci aktif pertama (yang paling lama ditambahkan).`),
+        note: tr(`Scheduled monitoring runs every hour and collects up to 8 new articles for each of the first ${SCHEDULED_KEYWORDS_PER_WORKSPACE} active keywords (oldest first).`, `Pemantauan terjadwal berjalan setiap jam dan mengambil hingga 8 artikel baru untuk ${SCHEDULED_KEYWORDS_PER_WORKSPACE} kata kunci aktif pertama (yang paling lama ditambahkan).`),
     };
 }
 

@@ -20,8 +20,8 @@ const groups: Group[] = [
       {
         q: ["How do I get started with Narriv?", "Bagaimana cara mulai memakai Narriv?"],
         a: [
-          "Create an account and complete onboarding, then add monitoring keywords in Settings → Monitoring Keywords. Scheduled monitoring runs once a day (07:00 WIB) and collects news for up to 3 active keywords per workspace. Narratives, risk and recommendations are built from the signals it stores.",
-          "Buat akun dan selesaikan onboarding, lalu tambahkan kata kunci di Pengaturan → Kata Kunci Pemantauan. Pemantauan terjadwal berjalan sekali sehari (07.00 WIB) dan mengumpulkan berita untuk maksimal 3 kata kunci aktif per workspace. Narasi, risiko, dan rekomendasi disusun dari sinyal yang tersimpan.",
+          "Create an account and complete onboarding, then add monitoring keywords in Settings → Monitoring Keywords. Scheduled monitoring runs every hour and collects news for up to 3 active keywords per workspace. Narratives, risk and recommendations are built from the signals it stores.",
+          "Buat akun dan selesaikan onboarding, lalu tambahkan kata kunci di Pengaturan → Kata Kunci Pemantauan. Pemantauan terjadwal berjalan setiap jam dan mengumpulkan berita untuk maksimal 3 kata kunci aktif per workspace. Narasi, risiko, dan rekomendasi disusun dari sinyal yang tersimpan.",
         ],
       },
       {

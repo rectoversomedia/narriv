@@ -219,7 +219,7 @@ function CollectionBanner({ problems, active, total }: { problems: number; activ
       </div>
       <div className="rounded-[12px] bg-white/[0.12] px-4 py-3 text-right">
         <p className="text-[10px] font-black uppercase tracking-[0.1em] text-white/70">{pickL("Schedule", "Jadwal")}</p>
-        <p className="text-[15px] font-black">{pickL("Daily, 07:00 WIB", "Setiap hari, 07.00 WIB")}</p>
+        <p className="text-[15px] font-black">{pickL("Every hour", "Setiap jam")}</p>
       </div>
     </section>
   );

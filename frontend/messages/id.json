@@ -1814,7 +1814,7 @@
       "degraded": "Terdegradasi",
       "updateFreq": "Frekuensi Pembaruan",
       "btnSettings": "Atur Kata Kunci & Sumber",
-      "dailySchedule": "Sekali sehari (07.00 WIB)",
+      "dailySchedule": "Setiap jam",
       "freshnessUnavailable": "Waktu pembaruan belum tersedia",
       "lastIngestion": "Pengambilan terakhir {time}",
       "dataConnection": "Koneksi Data",
@@ -2838,7 +2838,7 @@
         "confirm": "Ya, lanjutkan",
         "pauseDesc": "Jeda pemantauan? Pengambilan data terjadwal berhenti sampai Anda melanjutkannya. Data yang sudah ada tidak dihapus.",
         "deleteDesc": "Hapus workspace ini secara permanen? Anggota, pengaturan, dan integrasinya ikut terhapus, dan tindakan ini tidak dapat dibatalkan.",
-        "resumeDesc": "Lanjutkan pemantauan? Pengambilan data terjadwal berjalan lagi mulai jadwal berikutnya (setiap hari pukul 07.00 WIB)."
+        "resumeDesc": "Lanjutkan pemantauan? Pengambilan data terjadwal berjalan lagi mulai putaran jam berikutnya."
       },
       "deleteMemberDialog": {
         "title": "Hapus Member",

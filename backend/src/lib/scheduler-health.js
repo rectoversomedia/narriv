@@ -8,8 +8,9 @@
  * hour, so a slot only counts as missed once its grace window has passed.
  */
 
-export const INGEST_SLOTS_UTC = [0];   // pre-launch: one ingestion a day (07:00 WIB); was [0, 6, 12, 18]
-export const SLOT_GRACE_MINUTES = 75;
+// Every hour: a crisis that starts at 10:00 is in Narriv by 11:00. Most of each run is dedup, so it stays short.
+export const INGEST_SLOTS_UTC = Array.from({ length: 24 }, (_, h) => h);
+export const SLOT_GRACE_MINUTES = 50;
 
 const isScheduled = (trigger) => typeof trigger === "string" && trigger.startsWith("vercel-cron");
 

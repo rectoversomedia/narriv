@@ -95,7 +95,7 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
         <div className="min-w-0">
           <p className="text-[11px] font-black uppercase tracking-[0.14em] text-white/60">{pickL("What Narriv watches", "Yang dipantau Narriv")}</p>
           <h3 className="mt-1 text-[24px] font-black leading-tight">{t("title")}</h3>
-          <p className="mt-1 text-[13px] font-bold text-white/80">{pickL("Collected every day at 07:00 WIB from news and social media.", "Diambil setiap hari pukul 07.00 WIB dari berita dan media sosial.")}</p>
+          <p className="mt-1 text-[13px] font-bold text-white/80">{pickL("Checked every hour across news and social media.", "Dicek setiap jam di berita dan media sosial.")}</p>
         </div>
         <div className="rounded-[14px] bg-white/[0.12] px-5 py-3 text-right">
           <p className="text-[34px] font-black leading-none">{activeCount}<span className="text-[16px] font-bold text-white/60">{maxActive ? ` / ${maxActive}` : ""}</span></p>

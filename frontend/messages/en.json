@@ -1784,7 +1784,7 @@
       "degraded": "Degraded",
       "updateFreq": "Update Frequency",
       "btnSettings": "Manage Keywords & Sources",
-      "dailySchedule": "Once a day (07:00 WIB)",
+      "dailySchedule": "Every hour",
       "freshnessUnavailable": "Freshness unavailable",
       "lastIngestion": "Last collection {time}",
       "dataConnection": "Data Connection",
@@ -2838,7 +2838,7 @@
         "confirm": "Yes, continue",
         "pauseDesc": "Pause monitoring? Scheduled data collection stops until you resume it. Existing data is not deleted.",
         "deleteDesc": "Permanently delete this workspace? Its members, settings and integrations are removed too, and this cannot be undone.",
-        "resumeDesc": "Resume monitoring? Scheduled data collection runs again from the next slot (daily at 07:00 WIB)."
+        "resumeDesc": "Resume monitoring? Scheduled data collection runs again from the next hourly run."
       },
       "deleteMemberDialog": {
         "title": "Remove Member",

@@ -71,4 +71,11 @@ describe('Official sources', () => {
     await expect(ingestKeywordAllSources({ workspaceId: 'ws', keyword: 'k', rss: newsDown, official })).resolves.toMatchObject({ newSignalsCreated: 2 });
     await expect(ingestKeywordAllSources({ workspaceId: 'ws', keyword: 'k', rss: newsDown, official: async () => ({ sources: [] }) })).rejects.toThrow('HTTP 500');
   });
+
+  it('skips the official sources on the hourly news-only runs', async () => {
+    const official = jest.fn(async () => ({ totalFetched: 3, newSignalsCreated: 2, sources: [] }));
+    const merged = await ingestKeywordAllSources({ workspaceId: 'ws', keyword: 'k', withOfficial: false, rss: async () => ({ totalFetched: 5, newSignalsCreated: 1 }), official });
+    expect(official).not.toHaveBeenCalled();
+    expect(merged).toMatchObject({ totalFetched: 5, newSignalsCreated: 1 });
+  });
 });

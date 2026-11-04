@@ -43,10 +43,16 @@ describe('schedulerHealth', () => {
     expect(h.missedSlotsLast24h).not.toContain('2026-10-11T12:00:00.000Z');
   });
 
-  it('expects one 00:00 UTC slot a day by default (pre-launch schedule)', () => {
-    const h = schedulerHealth([run('2026-10-11T00:05:00Z', 'vercel-cron:0')], NOW);
-    expect(h.expectedSlotsLast24h).toBe(1);
+  it('expects a slot every hour by default and finds none missed when each hour ran', () => {
+    const hourly = Array.from({ length: 26 }, (_, i) => run(new Date(NOW - i * 3600 * 1000 - 5 * 60 * 1000).toISOString(), 'vercel-cron:hourly'));
+    const h = schedulerHealth(hourly, NOW);
+    expect(h.expectedSlotsLast24h).toBeGreaterThanOrEqual(23);
     expect(h.missedSlotsLast24h).toEqual([]);
+  });
+
+  it('flags the hours that did not run', () => {
+    const h = schedulerHealth([run(new Date(NOW - 10 * 60 * 1000).toISOString(), 'vercel-cron:hourly')], NOW);
+    expect(h.missedSlotsLast24h.length).toBeGreaterThan(20);
   });
 
   it('reports nothing as run when there are no logs', () => {
