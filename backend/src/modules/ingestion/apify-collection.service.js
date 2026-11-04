@@ -206,7 +206,7 @@ export function publicCollection(row) {
     };
 }
 
-export async function startCollection({ workspaceId, presetKey, sourceId = null, keyword: requestedKeyword, userId }) {
+export async function startCollection({ workspaceId, presetKey, sourceId = null, keyword: requestedKeyword, userId, scheduled = false }) {
     if (!isCollectionConfigured()) throw new CollectionError("APIFY_NOT_CONFIGURED", "Apify is not configured on the server.", 503);
     let source = null;
     if (sourceId) {
@@ -243,7 +243,9 @@ export async function startCollection({ workspaceId, presetKey, sourceId = null,
 
     const history = await workspaceRuns(workspaceId, 24 * 3600 * 1000);
     const activeSince = Date.now() - ACTIVE_WINDOW_MS;
-    if (history.some((r) => ACTIVE_STATUSES.includes(r.status) && new Date(r.created_at).getTime() >= activeSince)) {
+    // A person gets one collection at a time; the scheduler may run different platforms side by side.
+    const blocks = (r) => ACTIVE_STATUSES.includes(r.status) && new Date(r.created_at).getTime() >= activeSince && (!scheduled || r.metadata?.platform === platform);
+    if (history.some(blocks)) {
         throw new CollectionError("COLLECTION_ACTIVE", "A collection for this workspace is still running. Check its status first.", 409);
     }
     if (history.length >= dailyRunLimit()) {
@@ -260,7 +262,8 @@ export async function startCollection({ workspaceId, presetKey, sourceId = null,
         keyword,
         maxItems: COLLECTION_MAX_ITEMS,
         maxTotalChargeUsd: runChargeCapUsd(),
-        startedBy: userId,
+        startedBy: scheduled ? "scheduler" : userId,
+        scheduled: scheduled || undefined,
         startedAt: new Date().toISOString(),
     };
     const { data: row, error: insertErr } = await baseSupabaseAdmin
@@ -271,7 +274,7 @@ export async function startCollection({ workspaceId, presetKey, sourceId = null,
     if (insertErr || !row) throw new CollectionError("LOG_UNAVAILABLE", "The collection could not be recorded, so it was not started.", 500);
 
     // Two simultaneous requests both pass the check above; the earliest row wins.
-    const contenders = (await workspaceRuns(workspaceId, ACTIVE_WINDOW_MS)).filter((r) => ACTIVE_STATUSES.includes(r.status));
+    const contenders = (await workspaceRuns(workspaceId, ACTIVE_WINDOW_MS)).filter((r) => ACTIVE_STATUSES.includes(r.status) && (!scheduled || r.metadata?.platform === platform));
     if (contenders[0] && contenders[0].id !== row.id) {
         await updateLog(row.id, "skipped_overlap", { ...metadata, finishedAt: new Date().toISOString() });
         throw new CollectionError("COLLECTION_ACTIVE", "A collection for this workspace is still running. Check its status first.", 409);

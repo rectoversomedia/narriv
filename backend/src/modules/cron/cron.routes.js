@@ -237,3 +237,17 @@ const runIngest = async (req, res) => {
 
 router.get("/ingest", runIngest);
 router.post("/ingest", runIngest);
+
+// Scheduled social collection for the workspaces the Narriv team enabled (hourly at :30, capped per month).
+const runSocial = async (req, res) => {
+    if (!verifyCronSecret(req)) return res.status(401).json({ error: "Unauthorized" });
+    try {
+        const { runSocialSchedule } = await import("../ingestion/social-schedule.service.js");
+        res.json(await runSocialSchedule());
+    } catch (error) {
+        logStructured("error", "cron_social_failed", { error: error.message });
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+router.get("/social", runSocial);
+router.post("/social", runSocial);

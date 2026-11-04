@@ -12,7 +12,7 @@ import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { AddSourceModal } from "@/components/dashboard/add-source-modal";
-import { bootstrapDefaultSources, getSources, updateSource, deleteSource, runBatchSourceIngestion, startPlatformCollection, getSourceHealth, getSourceCoverage, fetchLatestSignals, type SourceRecord, type SourceHealthResponse, type ConnectorStatus } from "@/lib/api-service";
+import { bootstrapDefaultSources, getSources, updateSource, deleteSource, runBatchSourceIngestion, startPlatformCollection, getSourceHealth, getSourceCoverage, fetchLatestSignals, getSocialAutoStatus, type SourceRecord, type SourceHealthResponse, type ConnectorStatus } from "@/lib/api-service";
 import { usePlatformCollections } from "@/components/dashboard/platform-collection-panel";
 import { getPipelineStatus, timeAgo } from "@/lib/intelligence-api";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
@@ -222,6 +222,39 @@ function CollectionBanner({ problems, active, total }: { problems: number; activ
         <p className="text-[15px] font-black">{pickL("Every hour", "Setiap jam")}</p>
       </div>
     </section>
+  );
+}
+
+/** Read-only: whether the Narriv team scheduled social collection for this workspace, and how often. */
+function SocialAutoCard() {
+  const query = useQuery({ queryKey: ["social-auto"], queryFn: getSocialAutoStatus, staleTime: 5 * 60 * 1000 });
+  const s = query.data;
+  if (!s) return null;
+  const names: Record<string, string> = { x: "X", tiktok: "TikTok", instagram: "Instagram", youtube: "YouTube", facebook: "Facebook", threads: "Threads" };
+  return (
+    <div className="rounded-[16px] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.05)]">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{pickL("Social media, automatic", "Media sosial otomatis")}</h2>
+        <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-black", s.crisis ? "bg-[#C81E1E] text-white" : s.enabled ? "bg-[#12A66A] text-white" : "bg-[#EEF1F6] text-[#5A6478]")}>
+          {s.crisis ? pickL("Crisis mode", "Mode krisis") : s.enabled ? pickL("On", "Aktif") : pickL("Off", "Belum aktif")}
+        </span>
+      </div>
+      {s.enabled ? (
+        <>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {s.platforms.map((p) => <span key={p} className="inline-flex items-center gap-1.5 rounded-full bg-[#F4F6FC] px-2.5 py-1 text-[11px] font-black text-[#31406B]"><PlatformIcon platform={p === "x" ? "twitter" : p} className="size-3.5" />{names[p] ?? p}</span>)}
+          </div>
+          <p className="mt-3 text-[12px] font-bold text-[#5A6478]">
+            {s.crisis
+              ? pickL("Collected 3 times a day (08:00, 12:00, 16:00 WIB) while a critical alert is open.", "Diambil 3× sehari (08.00, 12.00, 16.00 WIB) selama ada peringatan kritis.")
+              : pickL("Collected every day at 08:00 WIB.", "Diambil setiap hari pukul 08.00 WIB.")}
+          </p>
+          {s.lastScheduledAt ? <p className="mt-1 text-[11px] font-bold text-[#8A93AD]">{pickL("last run", "terakhir")} {formatSourceTime(s.lastScheduledAt)}</p> : null}
+        </>
+      ) : (
+        <p className="mt-2 text-[12px] font-bold text-[#5A6478]">{pickL("Scheduled X, TikTok and Instagram collection is set up by the Narriv team. Contact us to switch it on.", "Pengambilan terjadwal X, TikTok, dan Instagram diatur oleh tim Narriv. Hubungi kami untuk mengaktifkannya.")}</p>
+      )}
+    </div>
   );
 }
 
@@ -516,6 +549,7 @@ export default function SourcesPage() {
         </div>
 
         <aside className="flex flex-col gap-4">
+          <SocialAutoCard />
           <div className="rounded-[16px] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.05)]">
             <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{pickL("Records by platform", "Sinyal per platform")}</h2>
             <p className="text-[12px] font-bold text-[#5A6478]">{pickL("last 7 days", "7 hari terakhir")}</p>

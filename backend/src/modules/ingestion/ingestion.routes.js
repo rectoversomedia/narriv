@@ -157,6 +157,17 @@ router.get("/collect", memberWorkspace, async (req, res) => {
     }
 });
 
+// Read-only: whether the Narriv team switched on scheduled social collection for this workspace, and its spend.
+router.get("/social-auto", memberWorkspace, async (req, res) => {
+    try {
+        const { socialStatus } = await import("./social-schedule.service.js");
+        return res.json(await socialStatus(req.scopedWorkspaceId));
+    } catch (err) {
+        logStructured("warn", "social_status_failed", { error: err?.message });
+        return res.status(500).json({ error: "Status unavailable" });
+    }
+});
+
 router.post("/collect", requireWorkspaceRole(MANAGER_ROLES), async (req, res) => {
     try {
         const { preset, sourceId, keyword } = req.body || {};

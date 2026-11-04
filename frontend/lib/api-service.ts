@@ -1873,6 +1873,26 @@ export async function getReportView(id: string): Promise<ReportView | null> {
   }
 }
 
+/** Scheduled social collection, switched on per workspace by the Narriv team (read-only for clients). */
+export interface SocialAutoStatus {
+  enabled: boolean;
+  crisis: boolean;
+  crisisMode: boolean;
+  platforms: string[];
+  roundsPerDay: number;
+  monthSpendUsd: number;
+  monthCapUsd: number;
+  lastScheduledAt: string | null;
+}
+
+export async function getSocialAutoStatus(): Promise<SocialAutoStatus | null> {
+  try {
+    return await apiClient<SocialAutoStatus>("/api/ingestion/social-auto");
+  } catch {
+    return null;
+  }
+}
+
 export interface NarrativeRecord {
   id: string;
   title: string;

@@ -145,3 +145,37 @@ curl https://<backend-url>/metrics
 **SSE/realtime not working:** SSE requires a persistent connection. BullMQ workers must be running. With `ENABLE_WORKERS=false` on Vercel, realtime features are degraded.
 
 **Build fails on Vercel:** Check that the backend's `vercel.json` has `"buildCommand": "node build.mjs"` and the frontend's has `"buildCommand": "npm run build"`. Both projects build independently.
+
+## Social media collection (X, TikTok, Instagram) — cost control
+
+Scheduled social collection runs through Apify and costs money, so it is **off for every workspace** until the
+Narriv team switches it on. Clients only see its status (Data Sources page); they cannot change it.
+
+From `backend/`:
+
+```bash
+node --env-file=.env scripts/social-auto.mjs list                       # workspaces with active keywords
+node --env-file=.env scripts/social-auto.mjs on <workspace> --cap 25    # switch on, $25/month ceiling
+node --env-file=.env scripts/social-auto.mjs set <workspace> --platforms x,instagram --cap 10 --no-crisis
+node --env-file=.env scripts/social-auto.mjs status                     # spend this month per workspace
+node --env-file=.env scripts/social-auto.mjs off <workspace>
+```
+
+How it spends (cron `/api/cron/social`, hourly at :30):
+- one round a day at 08:00 WIB: one run per chosen platform for the workspace's first active keyword;
+- crisis mode (default on): three rounds (08:00, 12:00, 16:00 WIB) while a critical alert from the last 72 h is open;
+- each run is capped at `APIFY_COLLECTION_MAX_CHARGE_USD` (0.25) and 20 posts; a run without a bill yet counts at its
+  full cap, so the ceilings hold before Apify reports the cost.
+
+Limits (backend env on Vercel):
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `SOCIAL_MONTHLY_CAP_TOTAL_USD` | 75 | all workspaces together, per calendar month |
+| `SOCIAL_MONTHLY_CAP_PER_WORKSPACE_USD` | 25 | per workspace, unless `--cap` sets its own |
+| `SOCIAL_AUTO_PAUSED` | unset | `1` stops every scheduled social run immediately |
+
+Also set a monthly usage limit in the Apify console (Billing → Limits) as the provider-side stop.
+
+News (Google News RSS) is checked every hour for every workspace and is free; YouTube and Reddit (when their keys
+are set) run every 6 hours to stay inside their free quotas.
