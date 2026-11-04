@@ -1,209 +1,190 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, TrendingUp, TrendingDown, Minus, ArrowUp, ArrowDown, ArrowRight } from "lucide-react";
-import { NarrativeMap } from "@/components/intelligence/narrative-map";
+import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { isDemoMode } from "@/lib/demo-mock-data";
 import { useCodeLabels } from "@/components/intelligence/intelligence-panels";
-import { useUiStore, intlLocale } from "@/store/useUiStore";
+import { useUiStore } from "@/store/useUiStore";
+import type { ExecutiveBriefPayload } from "@/lib/intelligence-api";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+/**
+ * Daily brief: the workspace's grounded executive brief in numbers first (new signals, new alerts, risk
+ * index, reputation), then what drives the risk, the suggested steps and what to watch. Nothing here is
+ * invented: every figure comes from the brief the backend computes from stored records.
+ */
 
 type DateRange = "today" | "last7days" | "last30days";
-
-// Trailing evidence window for the live brief.
 const WINDOW_HOURS: Record<DateRange, number> = { today: 24, last7days: 168, last30days: 720 };
-
-// ---------------------------------------------------------------------------
-// Demo data
-// ---------------------------------------------------------------------------
-
-// One coherent illustrative scenario (a retail bank after an app-login outage). The figures agree with each other
-// across sections (summary, developments, AI visibility table, snapshot); none is measured from a workspace.
-function sampleBrief(L: (en: string, id: string) => string, locale: string) {
-  return {
-    DEMO_DATE_FORMATTED: new Date("2026-08-27T08:00:00+07:00").toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", year: "numeric" }),
-    EXECUTIVE_SUMMARY: {
-      criticalAlerts: 2,
-      netSentimentShift: -4,
-      aiVisibility: 68,
-      competitorNote: L("Competitor Bank Jago gained 3 points in the 'best digital bank' prompt category.", "Kompetitor Bank Jago naik 3 poin di kategori prompt 'bank digital terbaik'."),
-    },
-    KEY_DEVELOPMENTS: [
-      { severity: "CRITICAL", bg: "bg-red-50", border: "border-[#E6EAF2]", dot: "bg-red-500", title: L("App login failures viral on X", "Gangguan login aplikasi viral di X"), signals: 127, growth: "+38%", time: L("2h ago", "2 jam lalu") },
-      { severity: "HIGH", bg: "bg-amber-50", border: "border-[#E6EAF2]", dot: "bg-amber-500", title: L("AI visibility on Gemini down 4 points — Bank Jago overtaking", "Visibilitas AI di Gemini turun 4 poin — Bank Jago menyalip"), signals: 89, growth: L("-4 pts", "-4 poin"), time: L("4h ago", "4 jam lalu") },
-      { severity: "MEDIUM", bg: "bg-blue-50", border: "border-[#E6EAF2]", dot: "bg-blue-500", title: L("Complaints about interbank transfer fees rising", "Keluhan biaya transfer antarbank meningkat"), signals: 212, growth: "+46%", time: L("24h ago", "24 jam lalu") },
-      { severity: "LOW", bg: "bg-slate-50", border: "border-slate-200", dot: "bg-slate-400", title: L("SME financial-literacy programme earning positive coverage", "Program literasi keuangan UMKM mendapat liputan positif"), signals: 42, growth: "+22%", time: L("12h ago", "12 jam lalu") },
-    ],
-    NARRATIVE_CHANGES: [
-      { direction: "growing" as const, label: L("Mobile app experience complaints", "Keluhan pengalaman aplikasi"), delta: "+38%" },
-      { direction: "growing" as const, label: L("Transfer and admin fees", "Biaya transfer & admin"), delta: "+46%" },
-      { direction: "declining" as const, label: L("Account security mentions", "Penyebutan keamanan akun"), delta: "-12%" },
-      { direction: "stable" as const, label: L("SME programmes", "Program UMKM"), delta: "+4%" },
-    ],
-    RISKS: [
-      L("Service disruption narrative escalating — 3 critical signals, 2h ago", "Narasi gangguan layanan meningkat — 3 sinyal kritis, 2 jam lalu"),
-      L("AI platforms quoting outdated fee information", "Platform AI mengutip informasi biaya yang sudah kedaluwarsa"),
-      L("Regulatory discussion of transfer fees increasing (+23% this week)", "Diskusi regulasi soal biaya transfer meningkat (+23% minggu ini)"),
-    ],
-    OPPORTUNITIES: [
-      L("No bank owns the 'safest bank for SMEs' position — create a content campaign", "Belum ada bank yang menguasai posisi 'bank paling aman untuk UMKM' — buat kampanye konten"),
-      L("Financial-literacy narrative growing with no clear leader — whitespace opportunity", "Narasi literasi keuangan tumbuh tanpa pemimpin yang jelas — peluang mengisi ruang kosong"),
-      L("AI visibility gap in the 'best digital bank for SMEs' prompt — priority improvement area", "Celah visibilitas AI di prompt 'bank digital terbaik untuk UMKM' — area perbaikan prioritas"),
-    ],
-    COMPETITORS: [
-      { name: "Bank Jago", sentiment: L("+18 narrative momentum", "+18 momentum narasi"), ai: L("+3 AI visibility points", "+3 poin visibilitas AI"), note: L("community banking campaign", "kampanye community banking"), tone: "negative" as const },
-      { name: "GoPay", sentiment: L("Stable share of voice", "Pangsa suara stabil"), ai: L("+12% AI visibility", "+12% visibilitas AI"), note: L("QR payment feature launch", "peluncuran fitur pembayaran QR"), tone: "positive" as const },
-      { name: "OVO", sentiment: L("Declining narrative momentum", "Momentum narasi menurun"), ai: L("Less AI coverage this week", "Liputan AI berkurang minggu ini"), note: "", tone: "neutral" as const },
-    ],
-    // average 68.75 → 67.75: the "68" in the summary
-    AI_VISIBILITY: [
-      { engine: "ChatGPT", from: 70, to: 68, delta: -2 },
-      { engine: "Gemini", from: 74, to: 70, delta: -4 },
-      { engine: "Perplexity", from: 66, to: 68, delta: +2 },
-      { engine: "Claude", from: 65, to: 65, delta: 0 },
-    ],
-    RECOMMENDED_ACTIONS: [
-      { priority: "IMMEDIATE", priorityColor: "bg-red-600", text: L("Investigate and respond to the app login failure complaints", "Selidiki dan tanggapi keluhan gangguan login aplikasi") },
-      { priority: "HIGH", priorityColor: "bg-amber-700", text: L("Update fee information on official channels so AI platforms quote current figures", "Perbarui informasi biaya di kanal resmi agar platform AI mengutip angka terbaru") },
-      { priority: "HIGH", priorityColor: "bg-amber-700", text: L("Increase authoritative coverage around digital security", "Perbanyak liputan otoritatif soal keamanan digital") },
-      { priority: "MEDIUM", priorityColor: "bg-blue-600", text: L("Create educational content for the SME financial-literacy programme", "Buat konten edukasi untuk program literasi keuangan UMKM") },
-      { priority: "MEDIUM", priorityColor: "bg-blue-600", text: L("Benchmark and improve AI visibility for key category prompts", "Ukur dan tingkatkan visibilitas AI untuk prompt kategori utama") },
-    ],
-    NARRATIVES_MAP_DATA: [
-      { id: "n1", title: L("App Experience", "Pengalaman Aplikasi"), volume: 847, sentiment: "negative" as const, momentum: "growing" as const, growth: 38 },
-      { id: "n2", title: L("Transfer Fees", "Biaya Transfer"), volume: 562, sentiment: "mixed" as const, momentum: "escalating" as const, growth: 46 },
-      { id: "n3", title: L("App Stability", "Stabilitas Aplikasi"), volume: 412, sentiment: "negative" as const, momentum: "growing" as const, growth: 38 },
-      { id: "n4", title: L("Sustainable Finance", "Keuangan Berkelanjutan"), volume: 142, sentiment: "positive" as const, momentum: "stable" as const, growth: 22 },
-      { id: "n5", title: L("Customer Service", "Layanan Nasabah"), volume: 380, sentiment: "negative" as const, momentum: "declining" as const, growth: -8 },
-      { id: "n6", title: L("Product Innovation", "Inovasi Produk"), volume: 198, sentiment: "positive" as const, momentum: "stable" as const, growth: 5 },
-      { id: "n7", title: L("Interest Rates", "Suku Bunga"), volume: 290, sentiment: "mixed" as const, momentum: "stable" as const, growth: 12 },
-      { id: "n8", title: L("Competitor Movement", "Pergerakan Kompetitor"), volume: 165, sentiment: "neutral" as const, momentum: "declining" as const, growth: -3 },
-    ],
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
-
-function DateRangeSelector({
-  value,
-  onChange,
-  t,
-}: {
-  value: DateRange;
-  onChange: (v: DateRange) => void;
-  t: (key: string, opts?: Record<string, unknown>) => string;
-}) {
-  const L = useL();
-  const options: { value: DateRange; label: string }[] = [
-    { value: "today", label: L("Last 24 Hours", "24 Jam Terakhir") },
-    { value: "last7days", label: L("Last 7 Days", "7 Hari Terakhir") },
-    { value: "last30days", label: L("Last 30 Days", "30 Hari Terakhir") },
-  ];
-
-  return (
-    <div className="relative inline-block">
-      <select
-        aria-label={L("Date range", "Rentang waktu")}
-        value={value}
-        onChange={(e) => onChange(e.target.value as DateRange)}
-        className={cn(
-          "h-9 appearance-none rounded-[8px] border border-slate-200 bg-white pl-3 pr-8",
-          "text-[13px] font-medium text-[#101334] cursor-pointer",
-          "focus:outline-none focus:ring-2 focus:ring-[#465FFF]/30"
-        )}
-      >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown
-        className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5A6478]"
-        strokeWidth={2}
-      />
-    </div>
-  );
-}
-
-function SectionDivider({ label }: { label: string }) {
-  return (
-    <div className="mb-5 flex items-center gap-3">
-      <span className="text-[13px] font-bold uppercase tracking-widest text-[#3B52F5]">
-        {label}
-      </span>
-      <div className="flex-1 border-t border-slate-200" />
-    </div>
-  );
-}
-
-function SeverityBadge({ severity }: { severity: string }) {
-  const L = useL();
-  const label: Record<string, string> = { CRITICAL: L("Critical", "Kritis"), HIGH: L("High", "Tinggi"), MEDIUM: L("Medium", "Sedang"), LOW: L("Low", "Rendah") };
-  const config: Record<string, { bg: string; text: string }> = {
-    CRITICAL: { bg: "bg-red-50", text: "text-red-700" },
-    HIGH: { bg: "bg-amber-50", text: "text-amber-700" },
-    MEDIUM: { bg: "bg-blue-50", text: "text-blue-600" },
-    LOW: { bg: "bg-slate-50", text: "text-[#5A6478]" },
-  };
-  const cfg = config[severity] ?? config.LOW;
-  return (
-    <span
-      className={cn(
-        "rounded-[6px] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
-        cfg.bg,
-        cfg.text
-      )}
-    >
-      {label[severity] ?? severity}
-    </span>
-  );
-}
-
-function DirectionIcon({ direction }: { direction: "growing" | "declining" | "stable" }) {
-  if (direction === "growing")
-    return <ArrowUp className="h-4 w-4 flex-shrink-0 text-green-700" strokeWidth={2.5} />;
-  if (direction === "declining")
-    return <ArrowDown className="h-4 w-4 flex-shrink-0 text-red-700" strokeWidth={2.5} />;
-  return <ArrowRight className="h-4 w-4 flex-shrink-0 text-[#5A6478]" strokeWidth={2.5} />;
-}
-
-function DeltaChip({ delta }: { delta: string }) {
-  const isPositive = delta.startsWith("+");
-  const isNeutral = !delta.startsWith("+") && !delta.startsWith("-");
-  return (
-    <span
-      className={cn(
-        "rounded-full px-2 py-0.5 text-[11px] font-bold",
-        isNeutral && "bg-slate-100 text-[#5A6478]",
-        isPositive && "bg-green-50 text-green-700",
-        !isPositive && !isNeutral && "bg-red-50 text-red-700"
-      )}
-    >
-      {delta}
-    </span>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Main Page
-// ---------------------------------------------------------------------------
 
 function useL() {
   const language = useUiStore((state) => state.language);
   return (en: string, id: string) => (language === "id" ? id : en);
 }
 
-function LiveExecutiveBrief({ windowHours }: { windowHours: number }) {
+function DateRangeSelector({ value, onChange }: { value: DateRange; onChange: (v: DateRange) => void }) {
   const L = useL();
+  const options: { value: DateRange; label: string }[] = [
+    { value: "today", label: L("Last 24 hours", "24 jam terakhir") },
+    { value: "last7days", label: L("Last 7 days", "7 hari terakhir") },
+    { value: "last30days", label: L("Last 30 days", "30 hari terakhir") },
+  ];
+  return (
+    <div className="relative inline-block">
+      <select
+        aria-label={L("Date range", "Rentang waktu")}
+        value={value}
+        onChange={(e) => onChange(e.target.value as DateRange)}
+        className="h-10 cursor-pointer appearance-none rounded-[10px] border border-[#DDE3EF] bg-white pl-3 pr-8 text-[13px] font-bold text-[#101334] focus:outline-none focus:ring-2 focus:ring-[#465FFF]/30"
+      >
+        {options.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5A6478]" strokeWidth={2} />
+    </div>
+  );
+}
+
+type BriefDriver = { key: string; contribution: number; reason: string; evidenceIds?: string[] };
+type EvidenceCount = { type?: string; count?: number };
+
+const DRIVER_LABELS: Record<string, [string, string]> = {
+  negative_share: ["Share of negative signals", "Porsi sinyal negatif"],
+  severity: ["High / critical severity", "Keparahan tinggi / kritis"],
+  active_alerts: ["Open alerts", "Peringatan belum selesai"],
+  volume_change: ["Volume spike", "Lonjakan volume"],
+  narrative_momentum: ["Issue momentum", "Momentum isu"],
+};
+
+function riskLook(score: number) {
+  if (score >= 70) return { color: "#9B1C1C", bar: "#C81E1E", word: ["Critical", "Kritis"] as [string, string] };
+  if (score >= 50) return { color: "#C81E1E", bar: "#E5484D", word: ["High", "Tinggi"] as [string, string] };
+  if (score >= 30) return { color: "#A04606", bar: "#F59E0B", word: ["Moderate", "Sedang"] as [string, string] };
+  return { color: "#047857", bar: "#12A66A", word: ["Low", "Rendah"] as [string, string] };
+}
+
+function reputationLook(score: number) {
+  if (score >= 70) return { color: "#047857", bar: "#12A66A", word: ["Healthy", "Sehat"] as [string, string] };
+  if (score >= 45) return { color: "#A04606", bar: "#F59E0B", word: ["Watch", "Waspada"] as [string, string] };
+  return { color: "#C81E1E", bar: "#E5484D", word: ["At risk", "Berisiko"] as [string, string] };
+}
+
+function Tile({ label, value, sub, rgb, color, bar, barColor }: { label: string; value: string; sub: string; rgb: string; color: string; bar?: number; barColor?: string }) {
+  return (
+    <div className="rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${rgb},0.12), rgba(${rgb},0.02) 60%)` }}>
+      <p className="text-[11px] font-black uppercase tracking-[0.06em]" style={{ color }}>{label}</p>
+      <p className="mt-2 text-[32px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</p>
+      {typeof bar === "number" ? <div className="mt-3 h-2 rounded-full bg-[#EEF1F7]"><div className="h-full rounded-full" style={{ width: `${Math.max(2, Math.min(100, bar))}%`, background: barColor }} /></div> : null}
+      <p className="mt-2 text-[12px] font-bold" style={{ color: typeof bar === "number" ? color : "#5A6478" }}>{sub}</p>
+    </div>
+  );
+}
+
+function LiveBrief({ data }: { data: ExecutiveBriefPayload }) {
+  const L = useL();
+  const code = useCodeLabels();
+  const sections = data.sections;
+  const evidence = (sections.whatChanged as unknown as { evidence?: EvidenceCount[] }).evidence ?? [];
+  const newSignals = evidence.find((e) => e.type === "signals_table_query")?.count ?? null;
+  // New alerts are listed one by one in the evidence.
+  const newAlerts = evidence.filter((e) => e.type === "alert").length;
+  const riskScore = Number(/(\d+)\s*\/\s*100/.exec(sections.biggestRisk?.summary ?? "")?.[1] ?? NaN);
+  const rep = sections.reputation as unknown as { score?: number | string };
+  const repScore = Number(rep?.score ?? NaN);
+  const risk = Number.isFinite(riskScore) ? riskLook(riskScore) : null;
+  const repLook = Number.isFinite(repScore) ? reputationLook(repScore) : null;
+  const drivers = ((sections.biggestRisk as unknown as { drivers?: BriefDriver[] }).drivers ?? []).filter((d) => d.contribution > 0).sort((a, b) => b.contribution - a.contribution);
+  const maxDriver = Math.max(1, ...drivers.map((d) => d.contribution));
+  const emerging = ((sections.emergingIssue as unknown as { items?: Array<{ title?: string }> }).items ?? []).filter((i) => i.title);
+  const actions = sections.recommendedActions ?? [];
+  const watch = sections.whatToWatchNext ?? [];
+  const levelTone = (p: string) => (p === "critical" || p === "high" ? "bg-[#C81E1E] text-white" : p === "medium" ? "bg-[#F59E0B] text-white" : "bg-[#E5F6EE] text-[#047857]");
+
+  return (
+    <div className="space-y-5">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Tile label={L("New signals", "Sinyal baru")} value={newSignals === null ? "—" : String(newSignals)} sub={L("in this window", "di periode ini")} rgb="70,95,255" color="#3B52F5" />
+        <Tile label={L("New alerts", "Peringatan baru")} value={String(newAlerts)} sub={newAlerts ? L("check Early Warnings", "cek Peringatan Dini") : L("none", "tidak ada")} rgb={newAlerts ? "245,158,11" : "100,116,139"} color={newAlerts ? "#A04606" : "#5A6478"} />
+        <Tile label={L("Risk index", "Indeks risiko")} value={risk ? `${riskScore}/100` : "—"} sub={risk ? L(...risk.word) : L("not enough data", "data belum cukup")} rgb="229,72,77" color={risk?.color ?? "#5A6478"} bar={risk ? riskScore : undefined} barColor={risk?.bar} />
+        <Tile label={L("Reputation", "Reputasi")} value={repLook ? `${repScore}/100` : "—"} sub={repLook ? L(...repLook.word) : L("not enough data", "data belum cukup")} rgb={repLook && repScore >= 70 ? "18,166,106" : "229,72,77"} color={repLook?.color ?? "#5A6478"} bar={repLook ? repScore : undefined} barColor={repLook?.bar} />
+      </section>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        <section className="rounded-[16px] border border-[#E6EAF2] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.03)]">
+          <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{L("What drives the risk", "Yang mendorong risiko")}</h2>
+          <p className="mt-1 text-[11px] font-bold text-[#5A6478]">{L("Points added to the risk index", "Poin yang menambah indeks risiko")}</p>
+          {drivers.length === 0 ? (
+            <p className="mt-4 text-[13px] font-semibold text-[#047857]">{L("No risk component is elevated.", "Tidak ada komponen risiko yang meningkat.")}</p>
+          ) : (
+            <div className="mt-4 space-y-3">
+              {drivers.map((d) => (
+                <div key={d.key}>
+                  <div className="flex items-baseline justify-between gap-3 text-[13px] font-black text-[#101334]">
+                    <span>{L(...(DRIVER_LABELS[d.key] ?? [d.key.replace(/_/g, " "), d.key.replace(/_/g, " ")]))}</span>
+                    <span className="text-[#C81E1E]">+{Math.round(d.contribution * 10) / 10}</span>
+                  </div>
+                  <div className="mt-1.5 h-2.5 rounded-full bg-[#F4E5E5]"><div className="h-full rounded-full bg-[#E5484D]" style={{ width: `${(d.contribution / maxDriver) * 100}%` }} /></div>
+                  <p className="mt-1 line-clamp-1 text-[11px] font-semibold text-[#5A6478]" title={d.reason}>{d.reason}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          {emerging.length ? (
+            <div className="mt-4 rounded-[12px] bg-[#FFF3DC] p-3">
+              <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#A04606]">{L("Gaining momentum", "Sedang naik")}</p>
+              {emerging.slice(0, 3).map((i) => <p key={i.title} className="mt-1 text-[13px] font-black text-[#101334]">{i.title}</p>)}
+            </div>
+          ) : null}
+        </section>
+
+        <section className="rounded-[16px] border border-[#E6EAF2] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.03)]">
+          <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{L("Suggested next steps", "Langkah yang disarankan")}</h2>
+          <p className="mt-1 text-[11px] font-bold text-[#5A6478]">{L("Suggestions only; a person approves before anything is done.", "Hanya saran; seseorang menyetujui sebelum dijalankan.")}</p>
+          {actions.length === 0 ? (
+            <p className="mt-4 text-[13px] font-semibold text-[#5A6478]">{L("No step suggested.", "Tidak ada langkah yang disarankan.")}</p>
+          ) : (
+            <ol className="mt-4 space-y-2.5">
+              {actions.slice(0, 5).map((a, i) => (
+                <li key={`${a.action}-${i}`} className="flex gap-3 rounded-[12px] bg-[#F4F6FC] p-3">
+                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#101334] text-[12px] font-black text-white">{i + 1}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[14px] font-black text-[#101334] first-letter:uppercase">{code.action(a.action)}</span>
+                      <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-black", levelTone(a.priority))}>{code.level(a.priority)}</span>
+                      <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-black text-[#31406B]">{code.urgency(a.urgency)}</span>
+                    </div>
+                    <p className="mt-1 line-clamp-2 text-[12px] font-semibold leading-snug text-[#3A4566]">{a.reason}</p>
+                    <p className="mt-1 text-[11px] font-black text-[#3B52F5]">{L("Confidence", "Keyakinan")} {Math.round((a.confidence ?? 0) * 100)}%</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+      </div>
+
+      {watch.length ? (
+        <section className="rounded-[16px] bg-[#101334] p-5 text-white">
+          <h2 className="text-[11px] font-black uppercase tracking-[0.1em] text-[#A9B4FF]">{L("What to watch next", "Yang perlu dipantau berikutnya")}</h2>
+          <ul className="mt-3 grid gap-2 md:grid-cols-2">
+            {watch.map((w, i) => (
+              <li key={i} className="rounded-[12px] bg-white/[0.07] p-3 text-[13px] font-bold leading-snug">
+                {w.label}
+                {typeof w.confidence === "number" ? <span className="ml-2 text-[11px] font-black text-white/60">{Math.round(w.confidence * 100)}%</span> : null}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+    </div>
+  );
+}
+
+export default function DailyIntelligenceBriefPage() {
+  const t = useTranslations("brief");
+  const L = useL();
+  const [dateRange, setDateRange] = useState<DateRange>("today");
+  const windowHours = WINDOW_HOURS[dateRange];
   const { data, isLoading, isError } = useQuery({
     queryKey: ["brief", "live", windowHours],
     queryFn: async () => (await import("@/lib/intelligence-api")).getExecutiveBrief(windowHours),
@@ -212,532 +193,31 @@ function LiveExecutiveBrief({ windowHours }: { windowHours: number }) {
   });
 
   return (
-    <div>
-      <div>
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-card">
-          <div className="flex items-center justify-between">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#5A6478]">{L("Live executive brief", "Ringkasan eksekutif live")}</div>
-            {isLoading ? (
-              <span className="text-[12px] text-[#5A6478]">{L("Loading…", "Memuat…")}</span>
-            ) : isError ? (
-              <span className="text-[12px] text-rose-600">{L("Backend unavailable", "Layanan belum tersedia")}</span>
-            ) : data?.grounded ? (
-              <span className="text-[12px] text-emerald-700">{L("Grounded in current data", "Berdasarkan data terkini")}</span>
-            ) : (
-              <span className="text-[12px] text-[#5A6478]">{L("Insufficient data", "Data belum cukup")}</span>
-            )}
-          </div>
-          {data && data.grounded ? (
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div className="rounded-lg border border-slate-200 bg-white p-3">
-                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#5A6478]">{L("What changed", "Apa yang berubah")}</div>
-                <p className="mt-1 text-[12.5px] text-slate-800">{data.sections?.whatChanged?.summary || "—"}</p>
-              </div>
-              <div className="rounded-lg border border-slate-200 bg-white p-3">
-                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#5A6478]">{L("Biggest risk", "Risiko terbesar")}</div>
-                <p className="mt-1 text-[12.5px] text-slate-800">{data.sections?.biggestRisk?.summary || "—"}</p>
-              </div>
-              <div className="rounded-lg border border-slate-200 bg-white p-3">
-                <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#5A6478]">{L("Reputation", "Reputasi")}</div>
-                <p className="mt-1 text-[12.5px] text-slate-800">{data.sections?.reputation?.summary || "—"}</p>
-              </div>
-            </div>
-          ) : null}
-          {data && data.grounded ? <LiveBriefDetails data={data} /> : null}
-          {data && !data.grounded && !isLoading ? (
-            <p className="mt-3 text-[12.5px] text-[#5A6478]">
-              {L("There is not enough recent data in this workspace to produce a brief. It will appear after sources and monitoring keywords have been ingested.", "Data terbaru di workspace ini belum cukup untuk menyusun ringkasan. Ringkasan akan muncul setelah sumber dan kata kunci pemantauan diambil datanya.")}
-            </p>
-          ) : null}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
-type BriefDriver = { key: string; contribution: number; reason: string; evidenceIds: string[] };
-
-/** Grounded detail for the live brief: risk drivers, uncertainty, actions and what to watch. */
-function LiveBriefDetails({ data }: { data: import("@/lib/intelligence-api").ExecutiveBriefPayload }) {
-  const L = useL();
-  const code = useCodeLabels();
-  const risk = data.sections?.biggestRisk as unknown as { drivers?: BriefDriver[]; uncertainty?: { level: string; reasons: string[] } | null };
-  const drivers = risk?.drivers || [];
-  const actions = data.sections?.recommendedActions || [];
-  const watch = data.sections?.whatToWatchNext || [];
-  return (
-    <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
-      <div className="rounded-lg border border-slate-200 bg-white p-3">
-        <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#5A6478]">{L("What drives the risk index", "Pendorong indeks risiko")}</div>
-        {drivers.length === 0 ? (
-          <p className="mt-1 text-[12.5px] text-[#5A6478]">{L("No risk component is elevated.", "Tidak ada komponen risiko yang meningkat.")}</p>
-        ) : (
-          <ul className="mt-1.5 space-y-1.5">
-            {drivers.map((d) => (
-              <li key={d.key} className="text-[12.5px] text-slate-700">
-                <span className="font-semibold tabular-nums text-slate-900">+{d.contribution}</span> {d.reason}
-                {d.evidenceIds?.length ? <span className="text-[#5A6478]"> · {L(`${d.evidenceIds.length} record(s)`, `${d.evidenceIds.length} catatan`)}</span> : null}
-              </li>
-            ))}
-          </ul>
-        )}
-        {risk?.uncertainty?.reasons?.length ? (
-          <p className="mt-2 text-[11.5px] text-amber-700">{L(`${risk.uncertainty.level} uncertainty:`, `Ketidakpastian ${({ low: "rendah", medium: "sedang", high: "tinggi" } as Record<string, string>)[risk.uncertainty.level] ?? risk.uncertainty.level}:`)} {risk.uncertainty.reasons.join(" ")}</p>
-        ) : null}
-        <p className="mt-2 text-[11px] text-[#5A6478]">{L("Heuristic index for prioritization, not a probability.", "Indeks heuristik untuk prioritas, bukan probabilitas.")}</p>
-        {data.sections?.emergingIssue?.summary ? (
-          <p className="mt-2 text-[12.5px] text-slate-700"><span className="font-semibold">{L("Emerging", "Berkembang")}: </span>{data.sections.emergingIssue.summary}</p>
-        ) : null}
-      </div>
-      <div className="rounded-lg border border-slate-200 bg-white p-3">
-        <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#5A6478]">{L("Recommended actions (suggested, require approval)", "Rekomendasi tindakan (saran, perlu persetujuan)")}</div>
-        {actions.length === 0 ? (
-          <p className="mt-1 text-[12.5px] text-[#5A6478]">{L("No actions suggested.", "Tidak ada tindakan yang disarankan.")}</p>
-        ) : (
-          <ul className="mt-1.5 space-y-2">
-            {actions.map((a, i) => (
-              <li key={`${a.action}-${i}`} className="text-[12.5px]">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="font-semibold text-slate-900 first-letter:uppercase">{code.action(a.action)}</span>
-                  <span className="rounded border border-slate-200 bg-slate-50 px-1.5 text-[10.5px] font-semibold text-slate-600">{code.level(a.priority)}</span>
-                  <span className="rounded border border-slate-200 bg-slate-50 px-1.5 text-[10.5px] font-semibold text-slate-600">{code.urgency(a.urgency)}</span>
-                </div>
-                <p className="mt-0.5 text-slate-600">{a.reason}</p>
-                <p className="mt-0.5 text-[11px] text-[#5A6478]">
-                  {L("Confidence", "Keyakinan")} {Math.round((a.confidence ?? 0) * 100)}%
-                  {a.sourceIds ? ` · ${a.sourceIds.length ? L(`${a.sourceIds.length} source record(s)`, `${a.sourceIds.length} catatan sumber`) : L("aggregate metrics only", "hanya metrik agregat")}` : ""}
-                </p>
-                {a.limitations?.length ? <p className="mt-0.5 text-[11px] text-amber-700">{a.limitations[0]}</p> : null}
-              </li>
-            ))}
-          </ul>
-        )}
-        {watch.length ? (
-          <div className="mt-2 border-t border-slate-100 pt-2">
-            <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#5A6478]">{L("What to watch next", "Yang perlu dipantau berikutnya")}</div>
-            <ul className="mt-1 list-disc pl-4 text-[12px] text-slate-600">
-              {watch.map((w, i) => <li key={i}>{w.label}</li>)}
-            </ul>
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-export default function DailyIntelligenceBriefPage() {
-  const t = useTranslations("brief");
-  const [dateRange, setDateRange] = useState<DateRange>("today");
-  // Read after mount (localStorage-backed) to avoid a hydration mismatch.
-  const [isDemo, setIsDemo] = useState(false);
-  const language = useUiStore((state) => state.language);
-  useEffect(() => setIsDemo(isDemoMode()), []);
-  const L = useL();
-  const { DEMO_DATE_FORMATTED, EXECUTIVE_SUMMARY, KEY_DEVELOPMENTS, NARRATIVE_CHANGES, RISKS, OPPORTUNITIES, COMPETITORS, AI_VISIBILITY, RECOMMENDED_ACTIONS, NARRATIVES_MAP_DATA } = sampleBrief(L, intlLocale());
-
-  // Uses the browser's print dialog (Save as PDF). Nothing is sent anywhere.
-  const handlePrint = () => window.print();
-
-  return (
-    <div className="flex flex-col gap-6">
-      {/* Page header */}
-      <div>
+    <div className="flex flex-col gap-5">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-[#3B52F5]">
-                {L("Reports & Insights", "Laporan & Wawasan")}
-              </p>
-              <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <DateRangeSelector value={dateRange} onChange={setDateRange} t={t as (key: string, opts?: Record<string, unknown>) => string} />
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={handlePrint}
-                  className={cn(
-                    "flex h-9 items-center gap-1.5 rounded-[8px] border border-slate-200 bg-white px-3",
-                    "text-[13px] font-medium text-[#101334] transition-colors",
-                    "hover:bg-slate-50 active:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#465FFF]/30"
-                  )}
-                >
-                  {L("Print / Save as PDF", "Cetak / Simpan PDF")}
-                </button>
-              </div>
-            </div>
-          </div>
+          <h1 className="text-[28px] font-black leading-tight tracking-[-0.03em] text-[#101334]">{t("title")}</h1>
+          <p className="mt-1 text-[13px] font-semibold text-[#5A6478]">{L("The period on one page, from your workspace's own records.", "Periode ini dalam satu halaman, dari data workspace Anda sendiri.")}</p>
         </div>
-      </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <DateRangeSelector value={dateRange} onChange={setDateRange} />
+          {/* The browser's print dialog (Save as PDF); nothing is sent anywhere. */}
+          <button type="button" onClick={() => window.print()} className="h-10 rounded-[10px] border border-[#DDE3EF] bg-white px-4 text-[13px] font-black text-[#31406B] transition hover:bg-[#F8FAFF]">
+            {L("Print / Save as PDF", "Cetak / Simpan PDF")}
+          </button>
+        </div>
+      </header>
 
-      {/* Live executive brief from backend intelligence API */}
-      <LiveExecutiveBrief windowHours={WINDOW_HOURS[dateRange]} />
-
-      {/* Sample document: demo sandbox only. Live workspaces see the grounded brief above. */}
-      {isDemo && (
-      <div>
-        {/* Its figures (competitors, scores) are invented for illustration and must never read as findings. */}
-        <p role="note" className="mb-4 rounded-[10px] border border-transparent bg-[#8B5CFF]/10 px-4 py-3 text-[13px] font-semibold text-[#5B33C9]">
-          {language === "id"
-            ? "Contoh ilustrasi format laporan. Angka, kompetitor, dan temuan di bawah ini tidak diukur dari workspace mana pun. Ringkasan berdasarkan data nyata ada di atas."
-            : "Illustrative example of the report format. The figures, competitors and findings below are not measured from any workspace. The brief based on real data is above."}
+      {isLoading ? (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{Array.from({ length: 4 }, (_, i) => <div key={i} className="h-[120px] animate-pulse rounded-[14px] bg-[#EEF1F7]" />)}</div>
+      ) : isError || !data ? (
+        <p className="rounded-[14px] bg-[#FDECEC] p-4 text-[13px] font-bold text-[#C81E1E]">{L("The brief could not be loaded. Try again in a moment.", "Ringkasan gagal dimuat. Coba lagi sebentar lagi.")}</p>
+      ) : !data.grounded ? (
+        <p className="rounded-[14px] bg-white p-5 text-[13px] font-semibold text-[#5A6478] shadow-[0_2px_12px_rgba(16,24,40,0.05)]">
+          {L("There is not enough recent data in this workspace for a brief yet. It appears once sources and keywords have collected records.", "Data terbaru di workspace ini belum cukup untuk ringkasan. Ringkasan muncul setelah sumber dan kata kunci mengumpulkan data.")}
         </p>
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-
-          {/* Left column — narrative map + main document */}
-          <div className="lg:col-span-2 space-y-8">
-
-            {/* Document card */}
-            <div className="overflow-hidden rounded-[16px] border border-slate-200 bg-white shadow-sm">
-              {/* Document header banner */}
-              <div className="bg-[#101334] px-8 py-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="mb-1 flex items-center gap-2">
-                      <span className="text-[11px] font-semibold uppercase tracking-widest text-[#8EA0FF]">
-                        Narriv
-                      </span>
-                    </div>
-                    <h2 className="text-[18px] font-bold text-white">{t("title")}</h2>
-                    <p className="mt-1 text-[13px] text-slate-400">
-                      {DEMO_DATE_FORMATTED} &mdash; Demo
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <span className="inline-block rounded-[6px] bg-[#465FFF]/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#8EA0FF]">
-                      {L("Confidential", "Rahasia")}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Document sections */}
-              <div className="px-8 py-6 space-y-8">
-
-                {/* Executive Summary */}
-                <section>
-                  <SectionDivider label={t("executiveSummary")} />
-                  <div className="space-y-3">
-                    {/* KPI row */}
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="rounded-[10px] border border-slate-200 bg-slate-50 p-4 text-center">
-                        <p className="text-[11px] font-semibold text-[#5A6478]">{L("Critical Alerts", "Peringatan Kritis")}</p>
-                        <p className="mt-1 text-[24px] font-bold text-red-700">
-                          {EXECUTIVE_SUMMARY.criticalAlerts}
-                        </p>
-                        <p className="text-[11px] text-[#5A6478]">{L("active", "aktif")}</p>
-                      </div>
-                      <div className="rounded-[10px] border border-slate-200 bg-slate-50 p-4 text-center">
-                        <p className="text-[11px] font-semibold text-[#5A6478]">{L("Net Sentiment", "Sentimen Bersih")}</p>
-                        <p className="mt-1 text-[24px] font-bold text-red-700">
-                          {EXECUTIVE_SUMMARY.netSentimentShift}%
-                        </p>
-                        <p className="text-[11px] text-[#5A6478]">{L("shift vs last period", "perubahan vs periode lalu")}</p>
-                      </div>
-                      <div className="rounded-[10px] border border-slate-200 bg-slate-50 p-4 text-center">
-                        <p className="text-[11px] font-semibold text-[#5A6478]">{L("AI Visibility", "Visibilitas AI")}</p>
-                        <p className="mt-1 text-[24px] font-bold text-[#3B52F5]">
-                          {EXECUTIVE_SUMMARY.aiVisibility}
-                        </p>
-                        <p className="text-[11px] text-[#5A6478]">{L("score", "skor")}</p>
-                      </div>
-                    </div>
-                    <p className="text-[14px] leading-relaxed text-[#5F6B94]">
-                      {L(`${EXECUTIVE_SUMMARY.criticalAlerts} critical alerts active. Net sentiment moved`, `${EXECUTIVE_SUMMARY.criticalAlerts} peringatan kritis aktif. Sentimen bersih bergeser`)}{" "}
-                      <span className="font-semibold text-red-700">
-                        {EXECUTIVE_SUMMARY.netSentimentShift}%
-                      </span>{" "}
-                      {L("after the app login outage. AI visibility edged down to", "setelah gangguan login aplikasi. Visibilitas AI turun tipis ke")}{" "}
-                      <span className="font-semibold text-[#101334]">
-                        {EXECUTIVE_SUMMARY.aiVisibility}
-                      </span>
-                      .{" "}
-                      <span className="text-[#101334]">{EXECUTIVE_SUMMARY.competitorNote}</span>
-                    </p>
-                  </div>
-                </section>
-
-                {/* Key Developments */}
-                <section>
-                  <SectionDivider label={t("keyDevelopments")} />
-                  <div className="space-y-3">
-                    {KEY_DEVELOPMENTS.map((dev, i) => (
-                      <div
-                        key={i}
-                        className={cn(
-                          "flex items-start gap-3 rounded-[10px] border p-4",
-                          dev.bg,
-                          dev.border
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            "mt-0.5 h-2 w-2 flex-shrink-0 rounded-full",
-                            dev.dot
-                          )}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="mb-1 flex flex-wrap items-center gap-2">
-                            <SeverityBadge severity={dev.severity} />
-                            <span className="text-[13px] font-semibold text-[#101334]">
-                              {dev.title}
-                            </span>
-                          </div>
-                          <div className="flex flex-wrap gap-3 text-[12px] text-[#5A6478]">
-                            <span>{L(`${dev.signals} signals`, `${dev.signals} sinyal`)}</span>
-                            <span className="font-medium text-slate-700">{dev.growth}</span>
-                            <span>{dev.time}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-
-                {/* Narrative Changes */}
-                <section>
-                  <SectionDivider label={t("narrativeChanges")} />
-                  <div className="space-y-2">
-                    {NARRATIVE_CHANGES.map((item, i) => (
-                      <div key={i} className="flex items-center gap-3 rounded-[8px] px-3 py-2.5 hover:bg-slate-50">
-                        <DirectionIcon direction={item.direction} />
-                        <span className="flex-1 text-[14px] text-[#101334]">{item.label}</span>
-                        <DeltaChip delta={item.delta} />
-                      </div>
-                    ))}
-                  </div>
-                </section>
-
-                {/* Risks */}
-                <section>
-                  <SectionDivider label={t("risks")} />
-                  <ul className="space-y-2.5">
-                    {RISKS.map((risk, i) => (
-                      <li key={i} className="flex items-start gap-3">
-                        <span className="text-[14px] leading-relaxed text-[#5F6B94]">{risk}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-
-                {/* Opportunities */}
-                <section>
-                  <SectionDivider label={t("opportunities")} />
-                  <ul className="space-y-2.5">
-                    {OPPORTUNITIES.map((opp, i) => (
-                      <li key={i} className="flex items-start gap-3">
-                        <span className="text-[14px] leading-relaxed text-[#5F6B94]">{opp}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-
-                {/* Competitor Watch */}
-                <section>
-                  <SectionDivider label={t("competitorWatch")} />
-                  <div className="space-y-3">
-                    {COMPETITORS.map((comp, i) => (
-                      <div
-                        key={i}
-                        className="rounded-[10px] border border-slate-200 bg-white p-4"
-                      >
-                        <div className="mb-2 flex items-center justify-between">
-                          <span className="text-[14px] font-bold text-[#101334]">{comp.name}</span>
-                          <span
-                            className={cn(
-                              "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
-                              comp.tone === "positive" && "bg-green-50 text-green-700",
-                              comp.tone === "negative" && "bg-red-50 text-red-700",
-                              comp.tone === "neutral" && "bg-slate-100 text-[#5A6478]"
-                            )}
-                          >
-                            {comp.sentiment}
-                          </span>
-                        </div>
-                        <div className="space-y-1 text-[13px] text-[#5F6B94]">
-                          <p>
-                            <span className="font-medium text-[#101334]">{L("AI", "AI")}:</span> {comp.ai}
-                          </p>
-                          {comp.note && <p className="text-[#5A6478]">{comp.note}</p>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-
-                {/* AI Visibility Changes */}
-                <section>
-                  <SectionDivider label={t("aiVisibilityChanges")} />
-                  <div className="overflow-x-auto rounded-[10px] border border-slate-200">
-                    <table className="w-full min-w-[360px]">
-                      <thead>
-                        <tr className="bg-slate-50">
-                          <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-[#5A6478]">
-                            {L("Platform", "Platform")}
-                          </th>
-                          <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-[#5A6478]">
-                            {L("Previous", "Sebelumnya")}
-                          </th>
-                          <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-[#5A6478]">
-                            {L("Current", "Sekarang")}
-                          </th>
-                          <th className="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-[#5A6478]">
-                            {L("Change", "Perubahan")}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {AI_VISIBILITY.map((row, i) => (
-                          <tr key={i} className="hover:bg-slate-50/60">
-                            <td className="px-4 py-3 text-[14px] font-medium text-[#101334]">
-                              {row.engine}
-                            </td>
-                            <td className="px-4 py-3 text-center text-[14px] text-[#5A6478]">
-                              {row.from}%
-                            </td>
-                            <td className="px-4 py-3 text-center text-[14px] font-semibold text-[#101334]">
-                              {row.to}%
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <span
-                                className={cn(
-                                  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-bold",
-                                  row.delta > 0 && "bg-green-50 text-green-700",
-                                  row.delta < 0 && "bg-red-50 text-red-700",
-                                  row.delta === 0 && "bg-slate-100 text-[#5A6478]"
-                                )}
-                              >
-                                {row.delta > 0 ? (
-                                  <TrendingUp className="h-3 w-3" strokeWidth={2.5} />
-                                ) : row.delta < 0 ? (
-                                  <TrendingDown className="h-3 w-3" strokeWidth={2.5} />
-                                ) : (
-                                  <Minus className="h-3 w-3" strokeWidth={2.5} />
-                                )}
-                                {row.delta > 0 ? `+${row.delta}` : row.delta === 0 ? "—" : row.delta}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </section>
-
-                {/* Recommended Actions */}
-                <section>
-                  <SectionDivider label={t("recommendedActions")} />
-                  <ol className="space-y-3">
-                    {RECOMMENDED_ACTIONS.map((action, i) => (
-                      <li key={i} className="flex items-start gap-3">
-                        <div
-                          className={cn(
-                            "mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white",
-                            action.priorityColor
-                          )}
-                        >
-                          {i + 1}
-                        </div>
-                        <div className="flex-1">
-                          <div className="mb-0.5 flex items-center gap-2">
-                            <span
-                              className={cn(
-                                "rounded-[4px] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white",
-                                action.priorityColor
-                              )}
-                            >
-                              {({ IMMEDIATE: L("Immediate", "Segera"), HIGH: L("High", "Tinggi"), MEDIUM: L("Medium", "Sedang"), LOW: L("Low", "Rendah") } as Record<string, string>)[action.priority] ?? action.priority}
-                            </span>
-                          </div>
-                          <p className="text-[14px] leading-relaxed text-[#5F6B94]">
-                            {action.text}
-                          </p>
-                        </div>
-                      </li>
-                    ))}
-                  </ol>
-                </section>
-
-              </div>
-            </div>
-          </div>
-
-          {/* Right column — narrative map */}
-          <div className="space-y-6">
-            {/* Narrative map card */}
-            <div className="overflow-hidden rounded-[16px] border border-slate-200 bg-white shadow-sm">
-              <div className="border-b border-slate-100 px-5 py-4">
-                <h3 className="text-[14px] font-bold text-[#101334]">{L("Narrative Landscape", "Lanskap Narasi")}</h3>
-              </div>
-              <div className="p-4">
-                <div className="flex flex-wrap items-center gap-3 mb-4">
-                  {[
-                    { color: "#22c55e", label: L("Positive", "Positif") },
-                    { color: "#ef4444", label: L("Negative", "Negatif") },
-                    { color: "#f59e0b", label: L("Mixed", "Campuran") },
-                    { color: "#94a3b8", label: L("Neutral", "Netral") },
-                  ].map((item) => (
-                    <div key={item.label} className="flex items-center gap-1.5">
-                      <span
-                        className="h-2.5 w-2.5 rounded-full"
-                        style={{ backgroundColor: item.color }}
-                      />
-                      <span className="text-[11px] text-[#5A6478]">{item.label}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-center gap-2 mb-4 text-[11px] text-[#5A6478]">
-                  <span className="font-semibold text-[#5A6478]">{L("Legend:", "Keterangan:")}</span>
-                  <span>{L("Growing", "Tumbuh")}</span>
-                  <span className="text-slate-300">·</span>
-                  <svg width="12" height="12" viewBox="0 0 12 12" className="text-green-700">
-                    <path
-                      d="M6 2 L10 7 L8.5 7 L8.5 10 L3.5 10 L3.5 7 L2 7 Z"
-                      fill="currentColor"
-                    />
-                  </svg>
-                  <span>{L("Escalating", "Meningkat tajam")}</span>
-                </div>
-                <NarrativeMap
-                  brandName="Narriv"
-                  narratives={NARRATIVES_MAP_DATA}
-                />
-              </div>
-            </div>
-
-            {/* Quick stats card */}
-            <div className="overflow-hidden rounded-[16px] border border-slate-200 bg-white shadow-sm">
-              <div className="border-b border-slate-100 px-5 py-4">
-                <h3 className="text-[14px] font-bold text-[#101334]">{L("Signal Snapshot", "Cuplikan Sinyal")}</h3>
-              </div>
-              <div className="p-5 space-y-4">
-                {[
-                  { label: L("Total Signals", "Total Sinyal"), value: (12847).toLocaleString(intlLocale()), delta: "+8%", positive: true },
-                  { label: L("Analyzed", "Dianalisis"), value: (11234).toLocaleString(intlLocale()), delta: "+12%", positive: true },
-                  { label: L("Negative", "Negatif"), value: "22%", delta: "+4%", positive: false },
-                  { label: L("AI Visibility", "Visibilitas AI"), value: "68", delta: "-1", positive: false },
-                ].map((stat) => (
-                  <div key={stat.label} className="flex items-center justify-between">
-                    <span className="text-[13px] text-[#5A6478]">{stat.label}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[14px] font-bold text-[#101334]">{stat.value}</span>
-                      <span
-                        className={cn(
-                          "text-[11px] font-bold",
-                          stat.positive ? "text-green-700" : "text-red-700"
-                        )}
-                      >
-                        {stat.delta}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      ) : (
+        <LiveBrief data={data} />
       )}
     </div>
   );

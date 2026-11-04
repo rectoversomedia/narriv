@@ -79,6 +79,16 @@ function formatWorkflowStatus(status: ActionStatus, t: (key: string) => string) 
   return t("statusActive");
 }
 
+const IMPACT_WORDS: Record<string, [string, string]> = {
+  critical: ["Critical", "Kritis"], high: ["High", "Tinggi"], medium: ["Medium", "Sedang"], low: ["Low", "Rendah"],
+  negative: ["Negative", "Negatif"], positive: ["Positive", "Positif"], neutral: ["Neutral", "Netral"], mixed: ["Mixed", "Campuran"],
+};
+function impactWord(code?: string | null) {
+  if (!code) return "";
+  const pair = IMPACT_WORDS[code.toLowerCase()];
+  return pair ? pickL(pair[0], pair[1]) : code;
+}
+
 function buildActionItems(records: ActionQueueRecord[], t: (key: string) => string, members: WorkspaceMemberRecord[]): ActionItem[] {
   return records.map((record) => {
     const priority = normalizePriority(record);
@@ -91,7 +101,7 @@ function buildActionItems(records: ActionQueueRecord[], t: (key: string) => stri
       id: record.id,
       title: record.title,
       issue: record.alert?.title || record.cluster?.title || t("livePlanLabel"),
-      impact: record.escalationLevel || record.alert?.severity || record.cluster?.sentiment || t("liveReviewLabel"),
+      impact: impactWord(record.escalationLevel || record.alert?.severity || record.cluster?.sentiment) || t("liveReviewLabel"),
       response: "",
       owner: assigneeName(record.assignedTo, members) || t("unassignedOwner"),
       role: record.assignedTeam || t("liveRoleLabel"),
@@ -116,27 +126,19 @@ function Panel({ children, className }: { children: ReactNode; className?: strin
   );
 }
 
-function MetricCard({ label, value, helper, trend, icon: Icon, tone, negative = false }: { label: string; value: string; helper?: string; trend?: number | null; icon: LucideIcon; tone: Tone; negative?: boolean }) {
+function MetricCard({ label, value, helper, trend, tone, negative = false }: { label: string; value: string; helper?: string; trend?: number | null; icon?: LucideIcon; tone: Tone; negative?: boolean }) {
   const style = toneStyles[tone];
-  const isTrendNegative = trend != null && trend < 0;
-  const isNegativeDisplay = negative || isTrendNegative;
+  const isNegativeDisplay = negative || (trend != null && trend < 0);
+  // "No earlier period to compare" carries no information; show it nowhere rather than five times.
+  const showHelper = helper && !/sebelumnya untuk dibandingkan|previous period to compare/i.test(helper);
   return (
-    <Panel className="overflow-hidden">
-      <CardContent className="flex min-h-[94px] items-center gap-4 p-4">
-        <span className="min-w-0">
-          <span className="block text-[12px] font-extrabold text-[#5F6B94]">{label}</span>
-          <span className="mt-1 block text-[27px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</span>
-          {/* Arrows only for a measured, non-zero change; everything else is plain context. */}
-          {trend != null && trend !== 0 ? (
-            <span className={cn("mt-2 flex items-center gap-1 text-[11px] font-black", isNegativeDisplay ? "text-[#C81E1E]" : "text-[#047857]")}>
-              <span aria-hidden="true">{trend > 0 ? "▲" : "▼"}</span> {helper}
-            </span>
-          ) : helper ? (
-            <span className="mt-2 block text-[11px] font-bold text-[#5F6B94]">{helper}</span>
-          ) : null}
-        </span>
-      </CardContent>
-    </Panel>
+    <div className="min-h-[104px] rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${style.rgb},0.11), rgba(${style.rgb},0.02) 60%)` }}>
+      <p className="text-[11px] font-black uppercase tracking-[0.06em]" style={{ color: style.color }}>{label}</p>
+      <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-[#101334]">{value}</p>
+      {trend != null && trend !== 0 ? (
+        <p className={cn("mt-2 flex items-center gap-1 text-[11px] font-black", isNegativeDisplay ? "text-[#C81E1E]" : "text-[#047857]")}><span aria-hidden="true">{trend > 0 ? "▲" : "▼"}</span> {helper}</p>
+      ) : showHelper ? <p className="mt-2 text-[11px] font-bold text-[#5A6478]">{helper}</p> : null}
+    </div>
   );
 }
 
@@ -549,19 +551,26 @@ export default function ActionPlansPage() {
             </div>
             <h3 className="mt-4 text-[18px] font-black text-[#101334]">{selectedAction?.title ?? latestPlan?.id ?? t("detail")}</h3>
             <p className="mt-3 text-[12px] font-semibold leading-relaxed text-[#53608C]">{latestPlan?.inputNarrative}</p>
-            <div className="mt-5 grid gap-3 sm:grid-cols-4">
-              {[selectedIssue, selectedImpact, selectedStatusLabel, selectedDue].map((item, index) => (
-                <div key={index} className="rounded-[10px] bg-[#FBFCFF] p-3">
-                  <p className="text-[10px] font-black text-[#647099]">{[t("categoryLabel"), t("impactFieldLabel"), t("statusFieldLabel"), t("dueDateLabel")][index]}</p>
-                  <p className="mt-1 text-[11px] font-black text-[#3B52F5]">{item}</p>
-                </div>
-              ))}
+            {/* The issue gets the full width; impact and due date sit side by side (status is already a pill above). */}
+            <div className="mt-5 rounded-[12px] bg-[#EEF1FF] p-3.5">
+              <p className="text-[10px] font-black uppercase tracking-[0.07em] text-[#3B52F5]">{t("categoryLabel")}</p>
+              <p className="mt-1 text-[14px] font-black leading-snug text-[#101334]">{selectedIssue}</p>
+            </div>
+            <div className="mt-2.5 grid grid-cols-2 gap-2.5">
+              <div className="rounded-[12px] bg-[#FDECEC] p-3.5">
+                <p className="text-[10px] font-black uppercase tracking-[0.07em] text-[#C81E1E]">{t("impactFieldLabel")}</p>
+                <p className="mt-1 text-[16px] font-black text-[#101334]">{impactWord(String(selectedImpact)) || selectedImpact}</p>
+              </div>
+              <div className="rounded-[12px] bg-[#FFF3DC] p-3.5">
+                <p className="text-[10px] font-black uppercase tracking-[0.07em] text-[#A04606]">{t("dueDateLabel")}</p>
+                <p className="mt-1 text-[16px] font-black text-[#101334]">{selectedDue}</p>
+              </div>
             </div>
             <div className="mt-5">
               <p className="text-[12px] font-black text-[#101334]">{t("aiStepsTitle")}</p>
               <div className="mt-2 grid gap-2">
                 {(detailSteps ?? []).slice(0, 3).map(([item, owner], stepIndex) => (
-                  <div key={`${stepIndex}:${item}`} className="flex items-center justify-between rounded-[8px] border border-[#E8ECF5] px-3 py-2 text-[12px] font-semibold text-[#53608C]">
+                  <div key={`${stepIndex}:${item}`} className="flex items-center justify-between gap-3 rounded-[10px] bg-[#F4F6FC] px-3 py-2.5 text-[13px] font-bold text-[#101334]">
                     <span className="flex items-center gap-2">{item}</span>
                     <span className="text-[10px] font-black text-[#5F6B94]">{owner}</span>
                   </div>

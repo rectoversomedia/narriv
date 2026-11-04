@@ -174,49 +174,95 @@ function SentimentChart({ dashboard }: { dashboard?: DashboardSummary | null }) 
 
 
 function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeRecord[] | null, dashboard?: DashboardSummary | null }) {
-  const tr = useTranslations("Reports");
-  
-  let insightText = tr("aiSummaryDynamic.emptyInsight");
-  let riskText = tr("aiSummaryDynamic.emptyRisk");
-  let movementText = tr("aiSummaryDynamic.emptyMovement");
-  let recommendationText = tr("aiSummaryDynamic.emptyRec");
-  let bodyText = tr("aiSummaryDynamic.emptyBody");
-
-  if (narratives && narratives.length > 0) {
-    const top = narratives[0];
-    const negative = narratives.filter(n => n.sentiment === "negative" || n.sentiment === "negatif")[0];
-    const sortedGrowth = [...narratives].sort((a,b) => parseFloat(b.velocity) - parseFloat(a.velocity));
-    const fastest = sortedGrowth[0];
-
-    insightText = tr("aiSummaryDynamic.insightText", { title: top.title, count: top.signalCount.toLocaleString() });
-    riskText = negative ? tr("aiSummaryDynamic.riskText", { title: negative.title }) : tr("aiSummaryDynamic.noRiskText");
-    movementText = tr("aiSummaryDynamic.movementText", { title: fastest.title, velocity: fastest.velocity });
-    recommendationText = tr("aiSummaryDynamic.recommendationText", { rec: top.recommendedFocus || "-" });
-    bodyText = tr("aiSummaryDynamic.body", { title: top.title, otherCount: Math.max(0, narratives.length - 1) });
-  }
+  const L = (en: string, id: string) => pickL(en, id);
+  const k = dashboard?.kpis;
+  const neg = Math.round(k?.negative_percentage ?? 0);
+  const pos = Math.round(k?.positive_percentage ?? 0);
+  const other = Math.max(0, 100 - neg - pos);
+  const net = pos - neg;
+  const verdict = !k || (k.total_signals ?? 0) === 0
+    ? { word: L("No data", "Belum ada data"), color: "#5A6478", bg: "#F1F4FA" }
+    : net <= -15 ? { word: L("Negative", "Negatif"), color: "#C81E1E", bg: "#FDECEC" }
+      : net >= 15 ? { word: L("Positive", "Positif"), color: "#047857", bg: "#E5F6EE" }
+        : { word: L("Balanced", "Seimbang"), color: "#31406B", bg: "#EEF1F8" };
+  const list = narratives ?? [];
+  const top = list[0];
+  const totalInIssues = list.reduce((sum, n) => sum + (n.signalCount || 0), 0) || 1;
+  const risk = list.find((n) => /neg/i.test(n.sentiment));
+  const fastest = [...list].sort((a, b) => (parseFloat(b.velocity) || 0) - (parseFloat(a.velocity) || 0))[0];
+  const days = dashboard?.sentiment_trend ?? [];
+  const maxDay = Math.max(1, ...days.map((d) => d.total));
 
   return (
     <Panel className="p-5">
-      <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_220px]">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{tr("aiSummary.title")}</h2>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black text-[#6E44E8]">
-              {tr("aiSummary.generated")}
-            </span>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{L("This period at a glance", "Ringkasan periode ini")}</h2>
+            <span className="rounded-full bg-[#8B5CFF]/10 px-2 py-0.5 text-[10px] font-black text-[#6E44E8]">{L("From your data", "Dari data Anda")}</span>
           </div>
-          <p className="mt-3 max-w-[660px] text-[14px] font-semibold leading-6 text-navy">
-            {bodyText}
-          </p>
-          <div className="mt-5 grid gap-x-5 gap-y-4 sm:grid-cols-2">
-            <SummaryPoint color="#465FFF" title={tr("aiSummary.insightTitle")} text={insightText} />
-            <SummaryPoint color="#EF4444" title={tr("aiSummary.riskTitle")} text={riskText} />
-            <SummaryPoint color="#F59E0B" title={tr("aiSummary.movementTitle")} text={movementText} />
-            <SummaryPoint color="#10B981" title={tr("aiSummary.recommendationTitle")} text={recommendationText} />
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <span className="rounded-[10px] px-3 py-1.5 text-[20px] font-black leading-none" style={{ color: verdict.color, background: verdict.bg }}>{verdict.word}</span>
+            <span className="text-[13px] font-bold text-[#3A4566]">{L(`overall tone of ${(k?.total_signals ?? 0).toLocaleString("en-US")} signals`, `nada keseluruhan dari ${(k?.total_signals ?? 0).toLocaleString("id-ID")} sinyal`)}</span>
           </div>
+          <div className="mt-3 flex h-3 overflow-hidden rounded-full bg-[#EEF1F7]">
+            <span style={{ width: `${neg}%`, background: "#E5484D" }} /><span style={{ width: `${pos}%`, background: "#12A66A" }} /><span style={{ width: `${other}%`, background: "#B8C0D4" }} />
+          </div>
+          <div className="mt-1.5 flex flex-wrap gap-x-4 text-[12px] font-bold text-[#3A4566]">
+            <span><b className="text-[#C81E1E]">{neg}%</b> {L("negative", "negatif")}</span>
+            <span><b className="text-[#047857]">{pos}%</b> {L("positive", "positif")}</span>
+            <span><b className="text-[#5A6478]">{other}%</b> {L("neutral & other", "netral & lainnya")}</span>
+          </div>
+
+          {top ? (
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-[12px] bg-[#EEF1FF] p-3.5">
+                <p className="text-[10px] font-black uppercase tracking-[0.07em] text-[#3B52F5]">{L("Main issue", "Isu utama")}</p>
+                <p className="mt-1 text-[22px] font-black leading-none text-[#101334]">{Math.round((top.signalCount / totalInIssues) * 100)}%</p>
+                <p className="mt-1 line-clamp-2 text-[12px] font-bold leading-snug text-[#3A4566]">{top.title}</p>
+              </div>
+              <div className="rounded-[12px] bg-[#FDECEC] p-3.5">
+                <p className="text-[10px] font-black uppercase tracking-[0.07em] text-[#C81E1E]">{L("Biggest risk", "Risiko terbesar")}</p>
+                <p className="mt-1 text-[22px] font-black leading-none text-[#101334]">{risk ? risk.signalCount : 0}</p>
+                <p className="mt-1 line-clamp-2 text-[12px] font-bold leading-snug text-[#3A4566]">{risk ? risk.title : L("No negative issue", "Tidak ada isu negatif")}</p>
+              </div>
+              <div className="rounded-[12px] bg-[#FFF3DC] p-3.5">
+                <p className="text-[10px] font-black uppercase tracking-[0.07em] text-[#A04606]">{L("Fastest rising", "Naik paling cepat")}</p>
+                <p className="mt-1 text-[22px] font-black leading-none text-[#101334]">{fastest?.velocity || "—"}</p>
+                <p className="mt-1 line-clamp-2 text-[12px] font-bold leading-snug text-[#3A4566]">{fastest?.title}</p>
+              </div>
+            </div>
+          ) : (
+            <p className="mt-4 text-[13px] font-semibold text-[#5A6478]">{L("No issue has formed in this period yet.", "Belum ada isu yang terbentuk pada periode ini.")}</p>
+          )}
         </div>
-        <div className="w-full pt-4 border-t md:pt-0 md:border-t-0">
-          <SentimentChart dashboard={dashboard} />
+
+        <div className="min-w-0 rounded-[14px] bg-[#F7F8FC] p-4">
+          <p className="text-[12px] font-black text-[#101334]">{L("Signals per day, last 7 days", "Sinyal per hari, 7 hari terakhir")}</p>
+          {days.length === 0 || !days.some((d) => d.total > 0) ? (
+            <p className="mt-6 text-[12px] font-semibold text-[#5A6478]">{L("No signals in the last 7 days.", "Belum ada sinyal dalam 7 hari terakhir.")}</p>
+          ) : (
+            <>
+              <div className="mt-3 flex h-[150px] items-end gap-2">
+                {days.map((d) => (
+                  <div key={d.date} className="flex h-full flex-1 flex-col items-center justify-end gap-1" title={`${d.date}: ${d.total}`}>
+                    <span className="text-[11px] font-black text-[#101334]">{d.total}</span>
+                    <div className="flex w-full max-w-[34px] flex-col-reverse overflow-hidden rounded-t-[6px]" style={{ height: `${Math.max(4, (d.total / maxDay) * 100)}%` }}>
+                      <span style={{ flex: d.negative, background: "#E5484D" }} />
+                      <span style={{ flex: d.positive, background: "#12A66A" }} />
+                      <span style={{ flex: d.neutral + d.mixed + d.unanalyzed, background: "#B8C0D4" }} />
+                    </div>
+                    <span className="text-[10px] font-bold text-[#5A6478]">{new Date(d.date).toLocaleDateString(pickL("en-US", "id-ID"), { day: "numeric", month: "short" })}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-2 flex flex-wrap gap-x-3 text-[11px] font-bold text-[#3A4566]">
+                <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[#E5484D]" />{L("Negative", "Negatif")}</span>
+                <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[#12A66A]" />{L("Positive", "Positif")}</span>
+                <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[#B8C0D4]" />{L("Neutral & other", "Netral & lainnya")}</span>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </Panel>
@@ -264,44 +310,18 @@ function ReportPreviewSidebar({
         </div>
       ) : latestReport ? (
         <>
-          <div className="mt-4 rounded-[12px] border border-[#DDE3EF] bg-[#F8FAFF] p-4">
-            <div className="flex items-center gap-3">
+          <div className="mt-4 rounded-[12px] bg-[#EEF1FF] p-4">
+            <div className="flex items-start gap-3">
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] font-black text-[#101334]">{reportTitle}</p>
+                <p className="line-clamp-2 text-[14px] font-black leading-snug text-[#101334]">{reportTitle}</p>
                 <p className="mt-0.5 text-[10px] font-bold text-[#5F6B94]">{tr("preview.latestReport")}</p>
               </div>
               {reportStatus && <StatusBadge status={reportStatus} />}
             </div>
 
             {reportSections.length > 0 ? (
-              <div className="mt-4 grid grid-cols-[82px_1fr] gap-4">
-                <div className="relative h-[108px] w-[82px] shrink-0 select-none overflow-hidden rounded-[6px] border border-[#E6EAF2] bg-white p-1.5 shadow-[0_4px_12px_rgba(15,23,42,0.04)]">
-                  <div className="flex items-center gap-1 border-b border-[#EDF1F7] pb-1">
-                    <span className="h-2 w-2 rounded-full bg-[#465FFF]" />
-                    <span className="h-1 w-8 rounded-full bg-[#D8DEEF]" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-1 py-2">
-                    <span className="h-10 rounded-[4px] bg-[#EEF0FF]" />
-                    <span className="space-y-1.5">
-                      <span className="block h-1 w-full rounded-full bg-[#D8DEEF]" />
-                      <span className="block h-1 w-5/6 rounded-full bg-[#EDF1F7]" />
-                      <span className="block h-1 w-4/6 rounded-full bg-[#EDF1F7]" />
-                    </span>
-                  </div>
-                  <div className="space-y-1.5">
-                    <span className="block h-1 w-full rounded-full bg-[#EDF1F7]" />
-                    <span className="block h-1 w-5/6 rounded-full bg-[#EDF1F7]" />
-                  </div>
-                </div>
-
-                <div className="min-w-0 space-y-2.5 self-center">
-                  {reportSections.slice(0, 4).map((section) => (
-                    <div key={section} className="flex items-center justify-between gap-2 text-[9.5px] font-black text-[#31406B]">
-                      <span className="flex min-w-0 items-center gap-2"><span className="truncate">{section}</span></span>
-                      <span className="text-[#047857]">{tr("preview.ready")}</span>
-                    </div>
-                  ))}
-                </div>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {reportSections.slice(0, 6).map((section) => <span key={section} className="rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-[#31406B]">{section}</span>)}
               </div>
             ) : (
               <div className="mt-3 text-[10px] font-bold text-[#647099]">{tr("preview.noSections")}</div>
@@ -663,90 +683,33 @@ function formatChartDate(date: string) {
 function TimelineChart({ data }: { data: ReportsAnalyticsResponse["trend_timeline"] }) {
   const tr = useTranslations("Reports");
   const series = data.map((item) => item.count);
-  const hasData = series.length > 0 && series.some((v) => v > 0);
-
-  const width = 520;
-  const height = 170;
-  const padding = 14;
-  const chartHeight = height - padding * 2 - 20;
-
-  // Dynamic Y-axis
-  const max = hasData ? Math.max(...series) : 1;
-  const yMax = Math.ceil(max / 5) * 5 || 5;
-  const yTicks = [0, Math.round(yMax * 0.25), Math.round(yMax * 0.5), Math.round(yMax * 0.75), yMax];
-  const yPositions = yTicks.map((tick) => padding + (1 - tick / yMax) * chartHeight);
-
-  // Build path
-  const path = hasData ? series.map((value, index) => {
-    const x = padding + (index / (series.length - 1)) * (width - padding * 2);
-    const y = padding + (1 - value / yMax) * chartHeight;
-    return `${index === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
-  }).join(" ") : "";
-
-  const area = path ? `${path} L ${width - padding} ${height - 22} L ${padding} ${height - 22} Z` : "";
-
-  // Peak position
-  const peakIndex = hasData ? series.indexOf(max) : -1;
-  const peakDate = peakIndex >= 0 ? formatChartDate(data[peakIndex].date) : "";
-  const peakX = peakIndex >= 0 ? padding + (peakIndex / (series.length - 1)) * (width - padding * 2) : 0;
-  const peakXPct = ((peakX / width) * 100).toFixed(1);
-
-  // X-axis labels (up to 5 evenly spaced)
-  const xLabels = data.length > 0
-    ? [0, Math.floor((data.length - 1) / 4), Math.floor((data.length - 1) / 2), Math.floor(((data.length - 1) * 3) / 4), data.length - 1]
-        .filter((value, index, arr) => arr.indexOf(value) === index)
-        .map((index) => ({ label: formatChartDate(data[index].date), index }))
-    : [];
-
+  const hasData = series.some((v) => v > 0);
+  const max = Math.max(1, ...series);
+  const total = series.reduce((sum, v) => sum + v, 0);
+  const every = Math.max(1, Math.ceil(data.length / 7));
   return (
-    <Panel className="p-4">
-      <h3 className="text-[16px] font-black text-[#101334]">{tr("timeline.title")} <span className="text-[11px] font-bold text-[#5F6B94]">{tr("timeline.period")}</span></h3>
-
-      {hasData ? (
-        <div className="relative mt-5 h-[190px] rounded-[12px] bg-gradient-to-b from-white to-[#F8FAFF]">
-          {/* Y Axis */}
-          <div className="absolute left-0 top-0 bottom-[22px] flex w-[38px] flex-col justify-between py-1 text-right text-[9px] font-bold text-[#647099] pointer-events-none">
-            {yTicks.slice().reverse().map((tick) => <span key={tick}>{tick}</span>)}
-          </div>
-
-          {/* Chart plot */}
-          <div className="absolute inset-0 left-[40px] bottom-[22px] overflow-hidden">
-            <svg className="chart-enter chart-line-draw h-full w-full" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
-              <defs>
-                <linearGradient id="reports-timeline-grad" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="#465FFF" stopOpacity="0.22" />
-                  <stop offset="100%" stopColor="#465FFF" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              {/* Dynamic Gridlines */}
-              {yPositions.slice(1).map((y) => <line key={y} x1="0" x2={width} y1={y} y2={y} stroke="#EDF1F7" strokeWidth="1" />)}
-              {area ? <path d={area} fill="url(#reports-timeline-grad)" /> : null}
-              {path ? <path d={path} fill="none" stroke="#465FFF" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" vectorEffect="non-scaling-stroke" /> : null}
-            </svg>
-
-            {/* Peak tooltip */}
-            {peakIndex >= 0 ? (
-              <div className="absolute top-[12px] flex flex-col items-center" style={{ left: `${peakXPct}%`, transform: "translateX(-50%)" }}>
-                <span className="rounded-[8px] bg-[#101334] px-2.5 py-1.5 text-center shadow-lg whitespace-nowrap">
-                  <b className="block text-[8px] font-black text-white">{peakDate}</b>
-                  <span className="text-[9.5px] font-black text-white">{tr("timeline.peak", { count: max })}</span>
-                </span>
-                <span className="h-8 border-l border-dashed border-[#8B95B8]" />
-                <span className="h-2.5 w-2.5 rounded-full border-2 border-white bg-[#465FFF] ring-4 ring-[#465FFF]/15" />
-              </div>
-            ) : null}
-          </div>
-
-          {/* X Axis Labels */}
-          <div className="absolute inset-x-0 bottom-0 flex justify-between pl-[40px] text-[9px] font-bold text-[#5F6B94]">
-            {xLabels.map((item) => <span key={item.index}>{item.label}</span>)}
-          </div>
-        </div>
+    <Panel className="p-5">
+      <div className="flex items-baseline justify-between gap-3">
+        <h3 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{tr("timeline.title")} <span className="text-[11px] font-bold text-[#5F6B94]">{tr("timeline.period")}</span></h3>
+        {hasData ? <span className="text-[13px] font-black text-[#101334]">{total} <span className="font-bold text-[#5A6478]">{pickL("reports", "laporan")}</span></span> : null}
+      </div>
+      {!hasData ? (
+        <p className="mt-6 text-[12px] font-semibold text-[#5A6478]">{pickL("No report created in this period.", "Belum ada laporan dibuat pada periode ini.")}</p>
       ) : (
-        <div className="flex flex-col items-center justify-center py-10 text-center">
-          <p className="text-[13px] font-bold text-[#53608C]">{tr("timeline.noData")}</p>
-          <p className="mt-1 text-[11px] font-bold text-[#647099]">{tr("timeline.noDataDesc")}</p>
-        </div>
+        <>
+          <div className="mt-4 flex h-[150px] items-end gap-1.5 rounded-[12px] bg-[#F7F8FC] px-2 pt-3">
+            {data.map((d, i) => (
+              <div key={d.date} className="flex h-full flex-1 flex-col items-center justify-end gap-1" title={`${formatChartDate(d.date)}: ${d.count}`}>
+                {d.count > 0 ? <span className="text-[10px] font-black text-[#101334]">{d.count}</span> : null}
+                <div className="w-full rounded-t-[4px]" style={{ height: d.count > 0 ? `${Math.max(8, (d.count / max) * 100)}%` : "2px", background: d.count === max ? "#465FFF" : d.count > 0 ? "#9AA9FF" : "#E3E7F1" }} />
+                <span className="sr-only">{i}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-1.5 flex gap-1.5 px-2 text-[10px] font-bold text-[#5F6B94]">
+            {data.map((d, i) => <span key={d.date} className="flex-1 text-center">{i % every === 0 ? formatChartDate(d.date) : ""}</span>)}
+          </div>
+        </>
       )}
     </Panel>
   );
@@ -1221,8 +1184,8 @@ export default function ReportsPage() {
       </div>
 
       {/* Bottom Distribution charts */}
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.15fr)_minmax(0,0.9fr)]">
-        <FormatDonut distribution={liveFormatDistribution} />
+      <div className={cn("grid gap-4", liveFormatDistribution.length > 0 ? "lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.15fr)_minmax(0,0.9fr)]" : "lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]")}>
+        {liveFormatDistribution.length > 0 ? <FormatDonut distribution={liveFormatDistribution} /> : null}
         <TimelineChart data={liveTrendTimeline} />
             <PopularReports reports={livePopularReports} onViewAll={() => setIsPopularModalOpen(true)} />
         </div>
