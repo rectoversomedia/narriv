@@ -164,8 +164,10 @@ export const markAllAsRead = async (req, res) => {
     }
 };
 
-// SSE Stream endpoint
+// SSE Stream endpoint. On Vercel a held-open stream bills the function for its whole lifetime (up to maxDuration,
+// then the browser reconnects), so it answers 204 there and clients rely on polling.
 export const streamNotifications = async (req, res) => {
+    if (process.env.VERCEL) return res.status(204).end();
     try {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
         const workspaceId = workspaceIds[0];

@@ -25,7 +25,8 @@ const cleanupIntervals = new Map();
  * GET /api/realtime/stream
  * SSE endpoint for real-time updates
  */
-router.get("/stream", verifyTokenSSE, async (req, res) => {
+router.get("/stream", (req, res, next) => (process.env.VERCEL ? res.status(204).end() : next()), verifyTokenSSE, async (req, res) => {
+    // On Vercel a held-open stream bills the function continuously; clients poll instead (see app-notifications).
     try {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
         const workspaceId = workspaceIds[0] || (req.user.isDemo ? DEMO_WORKSPACE_ID : req.user.id);

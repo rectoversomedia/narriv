@@ -65,7 +65,8 @@ export function SSERealtimeProvider({
 
   const { status, isConnected, isConnecting, reconnect } = useSSE({
     ...options,
-    autoConnect: options.autoConnect ?? true,
+    // Off by default: a held-open stream keeps a Vercel function billed for every open tab. Data refreshes by polling.
+    autoConnect: options.autoConnect ?? false,
     // Bump key when auth changes so useSSE re-runs with fresh auth state
     authVersion,
   });

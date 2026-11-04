@@ -15,7 +15,6 @@ import { useUiStore } from "@/store/useUiStore";
 import { logoutSession, getNotifications, getAlerts, getNarratives, markNotificationAsRead, markAllNotificationsAsRead, type AppNotification, type Alert as ApiAlert, type NarrativeRecord, type NotificationsResponse } from "@/lib/api-service";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSSEContext } from "@/components/providers/SSEProvider";
-import { isDemoMode } from "@/lib/demo-mock-data";
 import { WorkspaceSwitcher } from "@/components/layout/workspace-switcher";
 import { useWorkspaceStore } from "@/store/useWorkspaceStore";
 
@@ -110,7 +109,6 @@ export function Topbar() {
   const user = useAuthStore((state) => state.user);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notificationNow, setNotificationNow] = useState(0);
-  const [notificationStreamStatus, setNotificationStreamStatus] = useState<"idle" | "connected" | "degraded">("idle");
 
   // SSE connection status for Live indicator
   const { status: sseStatus } = useSSEContext();
@@ -171,44 +169,8 @@ export function Topbar() {
     onSettled: () => queryClient.invalidateQueries({ queryKey: notificationsQueryKey })
   });
 
-  useEffect(() => {
-    if (!token || isDemoMode()) {
-      setNotificationStreamStatus("idle");
-      return;
-    }
-
-    // Pass token as query param — EventSource cannot send custom headers.
-    // Vercel Edge strips HttpOnly cookies from cross-origin SSE requests,
-    // so we send the JWT as a query param. The backend's verifyTokenSSE
-    // middleware reads ?token=<jwt> for SSE endpoints only.
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const sseUrl = `${baseUrl.replace(/\/$/, "")}/api/notifications/stream?token=${encodeURIComponent(token || "")}`;
-
-    const sse = new EventSource(sseUrl, { withCredentials: true });
-
-    sse.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === "connected") {
-          setNotificationStreamStatus("connected");
-          return;
-        }
-        if (data.type === "new_notification") {
-          queryClient.invalidateQueries({ queryKey: notificationsQueryKey });
-        } else if (data.type === "dashboard_update") {
-          queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
-        }
-      } catch {}
-    };
-
-    sse.onerror = () => {
-      setNotificationStreamStatus("degraded");
-    };
-
-    return () => {
-      sse.close();
-    };
-  }, [token, queryClient]);
+  // Notifications refresh by polling (refetchInterval above). A live stream kept a backend function open for
+  // every tab, which is billed continuously on Vercel.
 
   const notifData = notificationsQuery.data?.data || [];
   const unreadCount = notificationsQuery.data?.meta?.unreadCount || 0;
@@ -403,11 +365,6 @@ export function Topbar() {
                 <div>
                   <div className="flex items-center gap-2">
                     <PopoverTitle className="text-[15px] font-black text-slate-950">{t("notificationsTitle")}</PopoverTitle>
-                    {notificationStreamStatus === "degraded" ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-black text-amber-700">
-                        {t("notificationsPolling")}
-                      </span>
-                    ) : null}
                   </div>
                   <PopoverDescription className="mt-1 text-xs font-semibold text-[#5A6478]">
                     {unreadCount > 0 ? t("notificationsUnread", { count: unreadCount }) : t("notificationsAllCaughtUp")}
