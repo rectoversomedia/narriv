@@ -100,6 +100,11 @@ function NotificationState({ icon: Icon, title, description, action }: { icon: L
   );
 }
 
+const initials = (name?: string | null) => {
+  const parts = (name || "User").trim().split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? "U") + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
+};
+
 export function Topbar() {
   const router = useRouter();
   const t = useTranslations("DemoApp.topbar");
@@ -338,23 +343,33 @@ export function Topbar() {
         )}
       </div>
 
-      <div className="flex flex-1 items-center justify-end gap-5">
+      <div className="flex flex-1 items-center justify-end gap-3">
         {/* Live connection status indicator */}
         {/* Only claim live updates while the event stream is actually connected. */}
         {sseStatus === "connected" ? <LiveIndicator status={sseStatus} /> : null}
-        <button type="button" onClick={() => startTransition(toggleLanguage)} className="hidden items-center gap-2 rounded-[8px] border border-border px-3 py-2 text-xs font-bold text-[var(--text-soft)] transition-all duration-200 hover:border-[#465FFF] hover:text-[var(--text)] hover: active:scale-[0.98] sm:flex" aria-label="Switch language">
-          <span key={language} className="inline-block min-w-5 animate-in fade-in slide-in-from-bottom-1 duration-200">
-            {language.toUpperCase()}
-          </span>
-        </button>
+        {/* Both languages visible; the active one is filled, a click switches. */}
+        <div role="group" aria-label="Language" className="hidden h-10 items-center rounded-[10px] bg-[#EEF1F7] p-1 sm:flex">
+          {(["id", "en"] as const).map((code) => (
+            <button
+              key={code}
+              type="button"
+              aria-pressed={language === code}
+              onClick={() => { if (language !== code) startTransition(toggleLanguage); }}
+              className={`h-8 min-w-[38px] rounded-[8px] px-2.5 text-[12px] font-black transition ${language === code ? "bg-white text-[#101334] shadow-sm" : "text-[#5A6478] hover:text-[#101334]"}`}
+            >
+              {code.toUpperCase()}
+            </button>
+          ))}
+        </div>
         <Popover open={notificationsOpen} onOpenChange={handleNotificationsOpenChange}>
           <PopoverTrigger
             type="button"
-            className="relative inline-flex h-10 w-10 items-center justify-center rounded-[10px] text-[var(--text)] transition hover:bg-slate-100 hover:text-[#3B52F5]"
+            className="relative inline-flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#EEF1F7] text-[#101334] transition hover:bg-[#E3E7F1] hover:text-[#3B52F5]"
             aria-label={t("notifications")}
           >
+            <Bell size={18} strokeWidth={2.2} />
             {unreadCount > 0 ? (
-              <span className="absolute right-0.5 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#C81E1E] px-1 text-[10px] font-black text-white ring-2 ring-white">
+              <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#C81E1E] px-1 text-[10px] font-black text-white ring-2 ring-white">
                 {unreadBadge}
               </span>
             ) : null}
@@ -455,19 +470,19 @@ export function Topbar() {
             </div>
           </PopoverContent>
         </Popover>
-        <div className="hidden h-8 w-px bg-border sm:block" />
-        <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#465FFF] text-[16px] font-bold text-white">
-            {user?.name ? user.name.slice(0, 2).toUpperCase() : "TU"}
+        {/* The account as one pill: initials, name, workspace, and sign-out at the end. */}
+        <div className="flex h-12 items-center gap-2.5 rounded-[12px] bg-white py-1 pl-1 pr-1.5 shadow-[0_2px_10px_rgba(16,24,40,0.06)]">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-gradient-to-br from-[#465FFF] to-[#8B5CFF] text-[14px] font-black text-white">
+            {initials(user?.name)}
           </div>
-          <div className="hidden sm:block">
-            <p className="text-[15px] font-bold text-[var(--text)]">{user?.name || "User"}</p>
-            <WorkspaceSwitcher />
+          <div className="hidden min-w-0 max-w-[180px] sm:block">
+            <p className="truncate text-[13px] font-black leading-tight text-[#101334]">{user?.name || "User"}</p>
+            <div className="truncate text-[12px] leading-tight [&_p]:mt-0 [&_p]:text-[12px]"><WorkspaceSwitcher /></div>
           </div>
+          <button type="button" onClick={handleLogout} className="ml-1 flex size-9 items-center justify-center rounded-[9px] text-[#8A93AD] transition-colors hover:bg-[#FDECEC] hover:text-[#C81E1E]" aria-label={t("logout")} title={t("logout")}>
+            <LogOut size={16} />
+          </button>
         </div>
-        <button type="button" onClick={handleLogout} className="rounded-xl p-2 text-[var(--text-muted)] hover:bg-slate-100 hover:text-[#C81E1E] transition-colors" aria-label={t("logout")} title={t("logout")}>
-          <LogOut size={18} />
-        </button>
       </div>
     </header>
   );

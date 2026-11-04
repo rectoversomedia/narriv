@@ -2,13 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, CalendarDays, ShieldCheck, UserRound } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton } from "@/components/dashboard/dashboard-states";
 import { useTranslations } from "next-intl";
 import { useUiStore } from "@/store/useUiStore";
 import { getActivityLogs, type ActivityLogEntry } from "@/lib/api-service";
-import { cn } from "@/lib/utils";
+import { intlLocale } from "@/store/useUiStore";
 import { pickL } from "@/lib/use-l";
 
 const emptyActivityRows: ActivityLogEntry[] = [];
@@ -91,25 +89,6 @@ function formatEventName(event: string, t?: ActivityTranslator) {
     .join(" ");
 }
 
-function eventVariant(event: string): "default" | "green" | "amber" | "red" | "purple" | "slate" {
-  if (event.includes("failed") || event.includes("deleted") || event.includes("delete")) return "red";
-  if (event.includes("created") || event.includes("success") || event.includes("uploaded")) return "green";
-  if (event.includes("updated") || event.includes("change")) return "default";
-  if (event.includes("login") || event.includes("logout")) return "purple";
-  if (event.includes("reset") || event.includes("warning")) return "amber";
-  return "slate";
-}
-
-function formatDateTime(value: string, locale: string) {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return new Intl.DateTimeFormat(locale === "id" ? "id-ID" : "en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
-}
-
 function formatRelativeTime(value: string, locale: string, t: ActivityTranslator) {
   if (!value) return t("justNow");
   const time = new Date(value).getTime();
@@ -134,28 +113,86 @@ function formatRelativeTime(value: string, locale: string, t: ActivityTranslator
   return t("justNow");
 }
 
-function metadataSummary(metadata: ActivityLogEntry["metadata"], t: ActivityTranslator) {
-  if (!metadata) return t("noMetadata");
-
-  // Ids (workspace, actor, plan, …) mean nothing to a reader; show the descriptive fields.
-  const isId = (key: string, value: unknown) =>
-    /(^id$|Id$|_id$)/.test(key) || (typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(value)) || (typeof value === "string" && value.startsWith("demo_"));
-  const visibleEntries = Object.entries(metadata)
-    // "demo: true" is a seeding marker, not something that happened.
-    .filter(([key, value]) => !isId(key, value) && value !== null && value !== "" && key !== "demo")
-    .slice(0, 3);
-
-  if (visibleEntries.length === 0) return t("recordedMetadata");
-
-  return visibleEntries
-    .map(([key, value]) => `${formatEventName(key, t)}: ${typeof value === "object" ? JSON.stringify(value) : String(value)}`)
-    .join(" · ");
-}
-
 function actorName(log: ActivityLogEntry) {
   if (log.user?.name || log.user?.email) return log.user.name || log.user.email;
   if (log.userId?.startsWith("demo")) return pickL("Demo visitor", "Pengunjung demo");
   return log.userId ? pickL("Former member", "Mantan anggota") : pickL("System", "Sistem");
+}
+
+// What happened, as a verb a person would say, and the colour of its group.
+const VERBS: Record<string, [string, string]> = {
+  alert_created: ["raised the alert", "membuat peringatan"],
+  new_high_risk_alert: ["flagged a high-risk alert", "menandai peringatan berisiko tinggi"],
+  alert_escalated_overdue: ["escalated an overdue alert", "mengeskalasi peringatan yang lewat tenggat"],
+  alert_escalated_unresolved_critical_risk: ["escalated a critical alert", "mengeskalasi peringatan kritis"],
+  assignment_change: ["changed the owner of", "mengubah penanggung jawab"],
+  escalation_change: ["changed the escalation of", "mengubah eskalasi"],
+  case_created: ["opened the case", "membuka kasus"],
+  case_updated: ["updated the case", "memperbarui kasus"],
+  case_deleted: ["deleted the case", "menghapus kasus"],
+  action_plan_generated: ["created the plan", "membuat rencana"],
+  multi_step_action_plan_generated: ["created the plan", "membuat rencana"],
+  action_plan_status_change: ["moved the plan", "memindahkan status rencana"],
+  action_status_updated: ["updated an action", "memperbarui aksi"],
+  report_created: ["created the report", "membuat laporan"],
+  report_generated_from_template: ["created from a template", "membuat laporan dari templat"],
+  report_export_created: ["exported a report", "mengekspor laporan"],
+  report_email_sent: ["emailed a report", "mengirim laporan lewat email"],
+  monitoring_keyword_created: ["added the keyword", "menambah kata kunci"],
+  monitoring_keyword_updated: ["changed the keyword", "mengubah kata kunci"],
+  monitoring_keyword_deleted: ["removed the keyword", "menghapus kata kunci"],
+  source_created: ["added the source", "menambah sumber"],
+  source_updated: ["changed the source", "mengubah sumber"],
+  source_deleted: ["removed the source", "menghapus sumber"],
+  default_sources_bootstrapped: ["set up the default sources", "memasang sumber bawaan"],
+  workspace_member_added: ["added a member as", "menambah anggota sebagai"],
+  workspace_member_deleted: ["removed a member", "mengeluarkan anggota"],
+  workspace_settings_updated: ["updated the workspace", "memperbarui workspace"],
+  workspace_logo_uploaded: ["uploaded a new logo", "mengunggah logo baru"],
+  integration_created: ["connected", "menghubungkan"],
+  integration_deleted: ["disconnected", "memutus"],
+  integration_tested: ["sent a test to", "mengirim uji ke"],
+  login: ["signed in", "masuk"],
+  logout: ["signed out", "keluar"],
+  failed_login: ["failed to sign in", "gagal masuk"],
+  password_change: ["changed their password", "mengganti kata sandi"],
+};
+
+const GROUPS: Array<{ key: string; label: [string, string]; color: string; test: (e: string) => boolean }> = [
+  { key: "alerts", label: ["Alerts & cases", "Peringatan & kasus"], color: "#E5484D", test: (e) => /alert|case|escalat|assignment/.test(e) },
+  { key: "actions", label: ["Plans", "Rencana"], color: "#12A66A", test: (e) => /action/.test(e) },
+  { key: "reports", label: ["Reports", "Laporan"], color: "#465FFF", test: (e) => /report|template/.test(e) },
+  { key: "sources", label: ["Sources & keywords", "Sumber & kata kunci"], color: "#8B5CFF", test: (e) => /source|keyword|ingestion|integration/.test(e) },
+  { key: "team", label: ["Team & access", "Tim & akses"], color: "#64748B", test: () => true },
+];
+const groupOf = (event: string) => GROUPS.find((g) => g.test(event)) ?? GROUPS[GROUPS.length - 1];
+
+/** The object the event acted on, from the descriptive metadata (never an id). */
+function objectOf(log: ActivityLogEntry) {
+  const m = (log.metadata ?? {}) as Record<string, unknown>;
+  const pick = (k: string) => (typeof m[k] === "string" && m[k] ? String(m[k]) : null);
+  const title = pick("title") || pick("name") || pick("keyword") || pick("brandName") || pick("brand_name");
+  const format = pick("format");
+  const role = pick("role");
+  const ROLE: Record<string, [string, string]> = { owner: ["Owner", "Pemilik"], admin: ["Admin", "Admin"], analyst: ["Analyst", "Analis"], viewer: ["Viewer", "Pembaca"] };
+  return { title, extra: format ? format.toUpperCase() : role ? (ROLE[role] ? pickL(...ROLE[role]) : role) : null };
+}
+
+function personOf(log: ActivityLogEntry) {
+  const full = actorName(log);
+  const [name, ...role] = full.split(" · ");
+  return { name, role: role.join(" · ") || null };
+}
+
+const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase() || "?";
+
+function dayLabel(iso: string) {
+  const d = new Date(iso);
+  const today = new Date();
+  const yesterday = new Date(Date.now() - 86400000);
+  if (d.toDateString() === today.toDateString()) return pickL("Today", "Hari ini");
+  if (d.toDateString() === yesterday.toDateString()) return pickL("Yesterday", "Kemarin");
+  return d.toLocaleDateString(intlLocale(), { weekday: "long", day: "numeric", month: "long" });
 }
 
 export default function ActivityPage() {
@@ -169,176 +206,133 @@ export default function ActivityPage() {
 
   const activityQuery = useQuery({
     queryKey: ["activity-logs", { page, eventType, dateFrom, dateTo }],
-    queryFn: () => getActivityLogs({
-      page,
-      limit: 12,
-      eventType: eventType || undefined,
-      dateFrom: dateFrom || undefined,
-      dateTo: dateTo || undefined,
-    }),
+    queryFn: () => getActivityLogs({ page, limit: 20, eventType: eventType || undefined, dateFrom: dateFrom || undefined, dateTo: dateTo || undefined }),
   });
 
   const rows = activityQuery.data?.data || emptyActivityRows;
   const meta = activityQuery.data?.meta;
   const isFiltered = Boolean(eventType || dateFrom || dateTo);
 
-  const metrics = useMemo(() => {
+  const stats = useMemo(() => {
     const today = new Date().toDateString();
-    const fallbackActors = new Set(rows.map((row) => row.userId || actorName(row))).size;
-    const fallbackToday = rows.filter((row) => new Date(row.createdAt).toDateString() === today).length;
-    const fallbackEventTypes = new Set(rows.map((row) => row.event)).size;
+    const byGroup = new Map<string, number>();
+    rows.forEach((r) => { const g = groupOf(r.event).key; byGroup.set(g, (byGroup.get(g) ?? 0) + 1); });
+    const busiest = [...byGroup.entries()].sort((a, b) => b[1] - a[1])[0];
+    const people = new Map<string, number>();
+    rows.forEach((r) => { const n = personOf(r).name; people.set(n, (people.get(n) ?? 0) + 1); });
+    const topPerson = [...people.entries()].sort((a, b) => b[1] - a[1])[0];
+    return {
+      total: meta?.total ?? rows.length,
+      today: meta?.summary?.today ?? rows.filter((r) => new Date(r.createdAt).toDateString() === today).length,
+      actors: meta?.summary?.actors ?? people.size,
+      busiest: busiest ? GROUPS.find((g) => g.key === busiest[0]) ?? null : null,
+      topPerson: topPerson?.[0] ?? null,
+    };
+  }, [rows, meta]);
 
-    return [
-      { label: t("metricsTotal"), value: meta?.total ?? rows.length, helper: t("metricsTotalHelper"), tone: "blue", icon: Activity },
-      { label: t("metricsActors"), value: meta?.summary?.actors ?? fallbackActors, helper: t("metricsActorsHelper"), tone: "purple", icon: UserRound },
-      { label: t("metricsToday"), value: meta?.summary?.today ?? fallbackToday, helper: t("metricsTodayHelper"), tone: "green", icon: CalendarDays },
-      { label: t("metricsTypes"), value: meta?.summary?.eventTypes ?? fallbackEventTypes, helper: t("metricsTypesHelper"), tone: "amber", icon: ShieldCheck },
-    ];
-  }, [meta?.summary?.actors, meta?.summary?.eventTypes, meta?.summary?.today, meta?.total, rows, t]);
+  // Rows grouped under their day, newest first (the API already sorts).
+  const days = useMemo(() => {
+    const out: Array<{ label: string; items: ActivityLogEntry[] }> = [];
+    rows.forEach((r) => {
+      const label = dayLabel(r.createdAt);
+      if (out.at(-1)?.label === label) out.at(-1)!.items.push(r);
+      else out.push({ label, items: [r] });
+    });
+    return out;
+  }, [rows]);
 
-  const resetFilters = () => {
-    setEventType("");
-    setDateFrom("");
-    setDateTo("");
-    setPage(1);
-  };
+  const resetFilters = () => { setEventType(""); setDateFrom(""); setDateTo(""); setPage(1); };
+  const field = "h-10 rounded-[10px] bg-[#F4F6FC] px-3 text-[13px] font-bold text-[#101334] outline-none focus:ring-2 focus:ring-[#465FFF]/30";
+  const tiles = [
+    { label: pickL("Activities", "Aktivitas"), value: stats.total.toLocaleString(intlLocale()), sub: pickL("recorded in total", "tercatat seluruhnya"), rgb: "70,95,255", color: "#3B52F5" },
+    { label: pickL("Today", "Hari ini"), value: String(stats.today), sub: stats.today ? pickL("actions today", "aksi hari ini") : pickL("quiet so far", "belum ada aksi"), rgb: "18,166,106", color: "#047857" },
+    { label: pickL("Most active", "Paling aktif"), value: stats.topPerson ?? "—", sub: pickL(`${stats.actors} people acted`, `${stats.actors} orang beraksi`), rgb: "139,92,255", color: "#6E44E8" },
+    { label: pickL("Most frequent", "Paling sering"), value: stats.busiest ? pickL(...stats.busiest.label) : "—", sub: pickL("on this page", "di halaman ini"), rgb: "245,158,11", color: "#A04606" },
+  ];
 
   return (
-    <div className="space-y-6 pb-6">
-      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="mt-3 text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{t("title")}</h1>
-        </div>
-        <button
-          type="button"
-          onClick={() => activityQuery.refetch()}
-          disabled={activityQuery.isFetching}
-          className="inline-flex items-center justify-center gap-2 rounded-[8px] border border-slate-200 bg-white px-4 py-2.5 text-sm font-black text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-        >
+    <div className="space-y-5 pb-6">
+      <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <h1 className="text-[28px] font-black leading-tight tracking-[-0.02em] text-[#101334]">{t("title")}</h1>
+        <button type="button" onClick={() => activityQuery.refetch()} disabled={activityQuery.isFetching} className="h-10 rounded-[10px] bg-white px-4 text-[13px] font-black text-[#101334] shadow-sm transition hover:bg-[#F8FAFF] disabled:opacity-60">
           {t("refresh")}
         </button>
       </header>
 
-      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        {metrics.map((metric, index) => {
-          // Each stat gets its own colour wash (blue, green, purple, amber), no outline.
-          const wash = ["70,95,255", "18,166,106", "139,92,255", "245,158,11"][index % 4];
-          return (
-            <div key={metric.label} className="rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${wash},0.11), rgba(${wash},0.02) 60%)` }}>
-              <div className="flex items-center gap-3">
-                <div className="min-w-0">
-                  <p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{metric.label}</p>
-                  <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-slate-950">{metric.value.toLocaleString(uiLanguage === "id" ? "id-ID" : "en-US")}</p>
-                </div>
-              </div>
-              <p className="mt-3 text-[11px] font-bold text-[#5A6478]">{metric.helper}</p>
-            </div>
-          );
-        })}
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {tiles.map((tile) => (
+          <div key={tile.label} className="rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${tile.rgb},0.12), rgba(${tile.rgb},0.02) 60%)` }}>
+            <p className="text-[11px] font-black uppercase tracking-[0.06em]" style={{ color: tile.color }}>{tile.label}</p>
+            <p className="mt-2 truncate text-[26px] font-black leading-none tracking-[-0.03em] text-[#101334]" title={tile.value}>{tile.value}</p>
+            <p className="mt-2 text-[12px] font-bold text-[#5A6478]">{tile.sub}</p>
+          </div>
+        ))}
       </section>
 
-      <section className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="mb-3 flex items-center gap-2 text-[12px] font-black uppercase tracking-[0.12em] text-[#5A6478]">
-          {t("filterTitle")}
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 sm:items-end lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
-          <label className="grid gap-1.5">
+      <section className="rounded-[16px] bg-white shadow-[0_2px_12px_rgba(16,24,40,0.05)]">
+        <div className="flex flex-wrap items-end gap-3 border-b border-[#F0F2F8] p-4">
+          <label className="grid min-w-[220px] flex-1 gap-1">
             <span className="text-[11px] font-black text-[#5A6478]">{t("filterEvent")}</span>
-            <select
-              value={eventType}
-              onChange={(event) => { setEventType(event.target.value); setPage(1); }}
-              className="h-10 rounded-[8px] border border-slate-200 bg-slate-50 px-3 text-[16px] font-bold text-slate-700 outline-none transition focus:border-[#465FFF] focus:ring-2 focus:ring-[#465FFF]/15 md:text-sm"
-            >
-              {eventOptions.map((option) => <option key={option.value || "all"} value={option.value}>{option.label}</option>)}
+            <select value={eventType} onChange={(e) => { setEventType(e.target.value); setPage(1); }} className={field}>
+              {eventOptions.map((o) => <option key={o.value || "all"} value={o.value}>{o.label}</option>)}
             </select>
           </label>
-          <label className="grid gap-1.5">
+          <label className="grid gap-1">
             <span className="text-[11px] font-black text-[#5A6478]">{t("filterFrom")}</span>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(event) => { setDateFrom(event.target.value); setPage(1); }}
-              className="h-10 rounded-[8px] border border-slate-200 bg-slate-50 px-3 text-[16px] font-bold text-slate-700 outline-none transition focus:border-[#465FFF] focus:ring-2 focus:ring-[#465FFF]/15 md:text-sm"
-            />
+            <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} className={field} />
           </label>
-          <label className="grid gap-1.5">
+          <label className="grid gap-1">
             <span className="text-[11px] font-black text-[#5A6478]">{t("filterTo")}</span>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(event) => { setDateTo(event.target.value); setPage(1); }}
-              className="h-10 rounded-[8px] border border-slate-200 bg-slate-50 px-3 text-[16px] font-bold text-slate-700 outline-none transition focus:border-[#465FFF] focus:ring-2 focus:ring-[#465FFF]/15 md:text-sm"
-            />
+            <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} className={field} />
           </label>
-          <button
-            type="button"
-            onClick={resetFilters}
-            disabled={!isFiltered}
-            className="h-10 rounded-[8px] border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45"
-          >
-            {t("filterReset")}
-          </button>
+          {isFiltered ? <button type="button" onClick={resetFilters} className="h-10 rounded-[10px] px-3 text-[12px] font-black text-[#3B52F5] hover:bg-[#EEF1FF]">{t("filterReset")}</button> : null}
+          <div className="ml-auto hidden flex-wrap gap-2 lg:flex">
+            {GROUPS.map((g) => <span key={g.key} className="flex items-center gap-1.5 text-[11px] font-bold text-[#5A6478]"><span className="size-2.5 rounded-full" style={{ background: g.color }} />{pickL(...g.label)}</span>)}
+          </div>
         </div>
-      </section>
 
-      <section className="overflow-hidden rounded-[16px] border border-slate-200 bg-white shadow-sm">
         {activityQuery.isError || activityQuery.data === null ? (
-          <DashboardErrorState
-            title={t("errorTitle")}
-            description={t("errorDesc")}
-            onRetry={() => activityQuery.refetch()}
-          />
+          <div className="p-5"><DashboardErrorState title={t("errorTitle")} description={t("errorDesc")} onRetry={() => activityQuery.refetch()} /></div>
         ) : activityQuery.isPending ? (
-          <div className="p-4"><TableSkeleton rows={8} columns={4} /></div>
+          <div className="p-5"><TableSkeleton rows={8} columns={3} /></div>
         ) : rows.length === 0 ? (
-          <DashboardEmptyState
-            title={t("emptyTitle")}
-            description={t("emptyDesc")}
-            icon="inbox"
-          />
+          <div className="p-5"><DashboardEmptyState title={t("emptyTitle")} description={t("emptyDesc")} icon="inbox" /></div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[860px] text-left text-sm">
-              <thead className="border-b border-slate-100 bg-slate-50">
-                <tr>
-                  <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">{t("colEvent")}</th>
-                  <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">{t("colActor")}</th>
-                  <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">{t("colMeta")}</th>
-                  <th className="px-6 py-4 text-right text-[11px] font-black uppercase tracking-[0.12em] text-[#5A6478]">{t("colTime")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {rows.map((log) => (
-                  <tr key={log.id} className="transition hover:bg-slate-50/70">
-                    <td className="px-6 py-4 align-top">
-                      <div className="flex items-start gap-3">
-                        <div>
-                          <Badge variant={eventVariant(log.event)} className="rounded-full normal-case tracking-normal">
-                            {formatEventName(log.event, t)}
-                          </Badge>
+          <div className="p-5">
+            {days.map((day) => (
+              <div key={day.label} className="mb-5 last:mb-0">
+                <p className="mb-2 text-[11px] font-black uppercase tracking-[0.1em] text-[#8A93AD]">{day.label}</p>
+                <ol className="relative space-y-1 before:absolute before:bottom-3 before:left-[19px] before:top-3 before:w-0.5 before:bg-[#EEF1F7]">
+                  {day.items.map((log) => {
+                    const g = groupOf(log.event);
+                    const who = personOf(log);
+                    const obj = objectOf(log);
+                    const verb = VERBS[log.event] ? pickL(...VERBS[log.event]) : formatEventName(log.event, t).toLowerCase();
+                    return (
+                      <li key={log.id} className="relative flex items-start gap-3 rounded-[12px] px-1 py-2 transition hover:bg-[#FAFBFF]">
+                        <span className="relative z-10 flex size-10 shrink-0 items-center justify-center rounded-full text-[12px] font-black text-white ring-4 ring-white" style={{ background: g.color }}>{initials(who.name)}</span>
+                        <div className="min-w-0 flex-1 pt-0.5">
+                          <p className="text-[13px] leading-snug text-[#3A4566]">
+                            <b className="font-black text-[#101334]">{who.name}</b> {verb}
+                            {obj.title ? <> <b className="font-black text-[#101334]">«{obj.title}»</b></> : null}
+                            {obj.extra ? <span className="ml-1.5 rounded-full bg-[#EEF1F7] px-2 py-0.5 text-[10px] font-black text-[#31406B]">{obj.extra}</span> : null}
+                          </p>
+                          <p className="mt-0.5 text-[11px] font-bold text-[#8A93AD]">
+                            {who.role ? `${who.role} · ` : ""}{formatRelativeTime(log.createdAt, uiLanguage, t)} · {new Date(log.createdAt).toLocaleTimeString(intlLocale(), { hour: "2-digit", minute: "2-digit" })}
+                          </p>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 align-top">
-                      <p className="font-black text-slate-900">{actorName(log)}</p>
-                      {log.user?.email && log.user.name ? <p className="mt-1 text-xs font-semibold text-[#5A6478]">{log.user.email}</p> : null}
-                    </td>
-                    <td className="max-w-[360px] px-6 py-4 align-top">
-                      <p className="line-clamp-2 text-sm font-semibold leading-6 text-slate-600">{metadataSummary(log.metadata, t)}</p>
-                    </td>
-                    <td className="px-6 py-4 text-right align-top">
-                      <p className="font-black text-slate-900">{formatRelativeTime(log.createdAt, uiLanguage, t)}</p>
-                      <p className="mt-1 text-xs font-semibold text-[#5A6478]">{formatDateTime(log.createdAt, uiLanguage)}</p>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        <span className="mt-1 hidden shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black sm:inline" style={{ background: `${g.color}1A`, color: g.color === "#64748B" ? "#475569" : g.color }}>{pickL(...g.label)}</span>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>
+            ))}
           </div>
         )}
 
         {meta && meta.totalPages > 1 ? (
-          <div className="border-t border-slate-100 p-4">
+          <div className="border-t border-[#F0F2F8] p-4">
             <DashboardPagination pagination={meta} onPageChange={setPage} disabled={activityQuery.isFetching} />
           </div>
         ) : null}

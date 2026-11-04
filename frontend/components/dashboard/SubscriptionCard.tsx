@@ -161,68 +161,43 @@ export function SubscriptionCard({ onUpgradeClick }: SubscriptionCardProps) {
     },
   ];
 
+  void PlanIcon; void gradientClass; void bgClass;
+  const fmt = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}K` : String(n));
+
+  // The plan as a header strip and one tile per limit: used / limit, a thick bar, and how much is left.
   return (
-    <div className={cn("rounded-xl border p-4", bgClass)}>
-      {/* Header */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-[13px] font-black text-slate-900">
-                {subscription.plan?.name || planKey.toUpperCase()}
-              </h3>
-              {subscription.plan?.status === "active" && (
-                <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700">
-                  {L("Active", "Aktif")}
-                </span>
-              )}
-            </div>
-            <p className="text-[10px] text-[#5A6478]">
-              {PLAN_TAGLINE[planKey] ? L(...PLAN_TAGLINE[planKey]) : subscription.plan?.tagline || L("Your current plan", "Paket Anda saat ini")}
-            </p>
+    <section className="rounded-[16px] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.05)]">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-black uppercase tracking-[0.1em] text-[#8A93AD]">{L("Your plan", "Paket Anda")}</p>
+          <div className="mt-0.5 flex items-center gap-2">
+            <h3 className="text-[20px] font-black text-[#101334]">{subscription.plan?.name || planKey.toUpperCase()}</h3>
+            {subscription.plan?.status === "active" ? <span className="rounded-full bg-[#12A66A] px-2 py-0.5 text-[10px] font-black text-white">{L("Active", "Aktif")}</span> : null}
           </div>
-        </div>
-
-        <Link
-          href="/pricing"
-          onClick={onUpgradeClick}
-          className={cn(
-            "flex items-center gap-1 rounded-lg px-3 py-1.5 text-[11px] font-bold transition-colors",
-            "bg-[#465FFF] text-white shadow-sm hover:bg-[#3B52F5]"
-          )}
-        >
-          Upgrade
-          <ArrowRight size={12} />
-        </Link>
-      </div>
-
-      {/* Usage Bars */}
-      <div className="space-y-3">
-        {usageItems.map((item) => (
-          <UsageBar
-            key={item.label}
-            label={item.label}
-            used={item.used}
-            limit={item.limit}
-            icon={item.icon}
-            color={gradientClass.split(" ")[1]}
-          />
-        ))}
-      </div>
-
-      {/* Trial/Billing Info */}
-      {(subscription.trialEndsAt || subscription.expiresAt) && (
-        <div className="mt-4 rounded-lg bg-white/60 p-2.5">
-          <p className="text-[10px] font-semibold text-[#5A6478]">
-            {subscription.trialEndsAt ? (
-              <>Trial ends: {new Date(subscription.trialEndsAt).toLocaleDateString()}</>
-            ) : subscription.expiresAt ? (
-              <>Renews: {new Date(subscription.expiresAt).toLocaleDateString()}</>
-            ) : null}
+          <p className="text-[12px] font-bold text-[#5A6478]">
+            {PLAN_TAGLINE[planKey] ? L(...PLAN_TAGLINE[planKey]) : subscription.plan?.tagline || L("Your current plan", "Paket Anda saat ini")}
+            {subscription.trialEndsAt ? ` · ${L("trial ends", "trial berakhir")} ${new Date(subscription.trialEndsAt).toLocaleDateString()}` : subscription.expiresAt ? ` · ${L("renews", "diperpanjang")} ${new Date(subscription.expiresAt).toLocaleDateString()}` : ""}
           </p>
         </div>
-      )}
-    </div>
+        <Link href="/pricing" onClick={onUpgradeClick} className="flex h-10 items-center gap-1.5 rounded-[10px] bg-[#465FFF] px-4 text-[13px] font-black text-white shadow-sm transition hover:bg-[#3B52F5]">
+          {L("Upgrade", "Tingkatkan")} <ArrowRight size={14} />
+        </Link>
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-3 xl:grid-cols-5">
+        {usageItems.map((item) => {
+          const pct = Math.min(100, Math.round((item.used / Math.max(1, item.limit)) * 100));
+          const color = pct >= 90 ? "#E5484D" : pct >= 70 ? "#F59E0B" : "#465FFF";
+          return (
+            <div key={item.label} className="rounded-[12px] bg-[#F7F8FC] p-3.5">
+              <p className="text-[11px] font-black uppercase tracking-[0.06em] text-[#5A6478]">{item.label}</p>
+              <p className="mt-1 text-[20px] font-black leading-none text-[#101334]">{fmt(item.used)}<span className="text-[13px] font-bold text-[#8A93AD]"> / {fmt(item.limit)}</span></p>
+              <div className="mt-2 h-2 rounded-full bg-[#E6EAF2]"><div className="h-full rounded-full" style={{ width: `${Math.max(2, pct)}%`, background: color }} /></div>
+              <p className="mt-1.5 text-[11px] font-bold" style={{ color: pct >= 90 ? "#C81E1E" : "#5A6478" }}>{pct >= 90 ? L("almost full", "hampir penuh") : L(`${pct}% used`, `${pct}% terpakai`)}</p>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 

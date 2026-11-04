@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Webhook, Pause, Play, RefreshCw, UserCheck, Upload, ChevronDown, ArrowRight, Lock, Trash, Database, Cloud } from "lucide-react";
+import { Webhook, Pause, Play, RefreshCw, Upload, ChevronDown, ArrowRight, Lock, Trash, Database, Cloud } from "lucide-react";
 import { DashboardEmptyState, DashboardErrorState, TableSkeleton } from "@/components/dashboard/dashboard-states";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useToast } from "@/components/ui/toast";
@@ -93,7 +93,7 @@ function buildMemberRows(records: WorkspaceMemberRecord[], labels: { defaultName
 // Custom Panel Component
 function Panel({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <section className={cn("rounded-[14px] border border-[#DDE3EF] bg-white p-6 shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)}>
+    <section className={cn("rounded-[16px] bg-white p-6 shadow-[0_2px_12px_rgba(16,24,40,0.05)]", className)}>
       {children}
     </section>
   );
@@ -689,7 +689,7 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-x-auto rounded-[12px] border border-[#EDF1F7] bg-white">
+          <div className="flex-1">
             {membersQuery.isPending ? (
               <TableSkeleton rows={4} columns={6} className="border-0 shadow-none" />
             ) : membersQuery.isError || membersQuery.data === null ? (
@@ -697,83 +697,32 @@ export default function SettingsPage() {
             ) : members.length === 0 ? (
               <DashboardEmptyState title={ts("membersEmptyTitle")} description={ts("membersEmptyDesc")} icon="inbox" minHeight="min-h-[280px]" />
             ) : (
-            <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={ts("membersCard.title")}>
-              <table className="w-full min-w-[580px] border-collapse text-left">
-              <thead>
-                <tr className="border-b border-[#E6EAF2] bg-[#FBFCFF] text-[10px] font-black uppercase tracking-[0.1em] text-[#5F6B94]">
-                  <th className="px-4 py-3">{ts("table.user")}</th>
-                  <th className="px-4 py-3">{ts("table.role")}</th>
-                  <th className="px-4 py-3">{ts("table.permission")}</th>
-                  <th className="px-4 py-3">{ts("table.lastActive")}</th>
-                  <th className="px-4 py-3">{ts("table.status")}</th>
-                  <th className="px-4 py-3 text-right">{ts("table.action")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#EDF1F7] text-[11.5px] font-bold">
-                {members.map((member, idx) => (
-                  <tr key={member.email} className="transition hover:bg-[#F8FAFF]">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <span className={cn(
-                          "flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-black text-white",
-                          member.tone === "purple" ? "bg-purple-600" : member.tone === "blue" ? "bg-[#465FFF]" : member.tone === "emerald" ? "bg-emerald-600" : "bg-slate-500"
-                        )}>
-                          {member.initials}
-                        </span>
-                        <div>
-                          <span className="block font-black text-[#101334]">{member.name}</span>
-                          <span className="block text-[10px] text-[#5A6478] font-semibold">{member.email}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={cn("inline-block rounded px-2 py-0.5 text-[9.5px] font-black border", roleStyles[member.role])}>
-                        {member.role}
+            <ul className="divide-y divide-[#F0F2F8]" aria-label={ts("membersCard.title")}>
+              {members.map((member) => {
+                const [personName, ...jobParts] = member.name.split(" · ");
+                return (
+                  <li key={member.email} className="flex flex-col gap-2 px-1 py-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-full text-[12px] font-black text-white", member.tone === "purple" ? "bg-[#8B5CFF]" : member.tone === "blue" ? "bg-[#465FFF]" : member.tone === "emerald" ? "bg-[#12A66A]" : "bg-[#64748B]")}>
+                        {member.initials}
                       </span>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">{member.permission}</td>
-                    <td className="px-4 py-3 text-[#5A6478] font-semibold">{member.time}</td>
-                    <td className="px-4 py-3">
-                      <span className={cn(
-                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-[9.5px] font-black border",
-                        member.status === memberLabels.statusActive 
-                          ? "bg-emerald-50 text-emerald-700 border-transparent" 
-                          : "bg-rose-50 text-rose-700 border-transparent"
-                      )}>
-                        {member.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="relative inline-block">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const action = member.status === memberLabels.statusActive ? memberLabels.statusInactive : memberLabels.statusActive;
-                            const updated = [...members];
-                            updated[idx].status = action;
-                            setMemberOverrides(updated);
-                            showToast(ts("memberStatusChanged", { name: member.name, action }));
-                          }}
-                          className="rounded-md border border-[#DDE3EF] bg-white p-1 text-[#5A6478] hover:text-[#3B52F5] hover:bg-[#EEF2FF]"
-                          title={member.status === memberLabels.statusActive ? ts("deactivateUser") : ts("activateUser")}
-                        >
-                          <UserCheck size={14} />
-                        </button>
-                          <button
-                            type="button"
-                            onClick={() => setMemberToDelete(member)}
-                            className="ml-1 rounded-md border border-[#DDE3EF] bg-white p-1 text-[#5A6478] hover:text-rose-600 hover:bg-rose-50"
-                            title={ts("removeUser")}
-                        >
-                          <Trash size={14} />
-                        </button>
+                      <div className="min-w-0">
+                        <p className="truncate text-[14px] font-black text-[#101334]">{personName}</p>
+                        <p className="truncate text-[11px] font-bold text-[#5A6478]">{jobParts.length ? `${jobParts.join(" · ")} · ` : ""}{member.email}</p>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 pl-[52px]">
+                      <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-black", roleStyles[member.role])}>{member.role}</span>
+                      <span className="rounded-full bg-[#F4F6FC] px-2.5 py-1 text-[11px] font-bold text-[#31406B]">{member.permission}</span>
+                      <span className="text-[11px] font-bold text-[#8A93AD]">{L("joined", "bergabung")} {member.time}</span>
+                      <button type="button" onClick={() => setMemberToDelete(member)} title={ts("removeUser")} aria-label={ts("removeUser")} className="ml-auto flex size-8 items-center justify-center rounded-[8px] text-[#8A93AD] transition hover:bg-[#FDECEC] hover:text-[#C81E1E]">
+                        <Trash size={14} />
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
             )}
           </div>
         </Panel>

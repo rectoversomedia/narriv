@@ -53,50 +53,49 @@ export function AiProvidersPanel() {
   const data = providersQuery.data;
   const L = useL();
 
+  const prettyModel = (m?: string | null) => (m ? m.replace(/^gpt-/i, "GPT-").replace(/-mini$/i, " mini").replace(/^claude-/i, "Claude ") : null);
+  const providerName = (p?: string | null) => (p === "openai" ? "OpenAI" : p === "anthropic" ? "Claude" : p ?? "");
+  const usingAi = data?.workflows.filter((w) => w.provider).length ?? 0;
   return (
-    <section className="rounded-[14px] border border-[#DDE3EF] bg-white p-6 shadow-[0_2px_12px_rgba(16,24,40,0.03)]">
-      <div className="flex items-start gap-3">
+    <section className="rounded-[16px] bg-white p-5 shadow-[0_2px_12px_rgba(16,24,40,0.05)]">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="text-[13.5px] font-black text-[#101334]">{L("AI providers", "Penyedia AI")}</h3>
-          <p className="text-[10px] font-semibold text-[#5F6B94]">{L("The model behind each workflow. Routing profile:", "Model di balik tiap alur kerja. Profil routing:")} {data?.profile ?? "…"}.</p>
+          <h3 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{L("AI behind Narriv", "AI di balik Narriv")}</h3>
+          <p className="text-[12px] font-bold text-[#5A6478]">{data ? L(`${usingAi} of ${data.workflows.length} features use an AI model; the rest run on rules.`, `${usingAi} dari ${data.workflows.length} fitur memakai model AI; sisanya berbasis aturan.`) : "…"}</p>
         </div>
+        {data ? (
+          <div className="flex gap-2">
+            {([["OpenAI", data.providers.openai.configured], ["Claude", data.providers.anthropic.configured]] as const).map(([name, on]) => (
+              <span key={name} className={on ? "rounded-full bg-[#E5F6EE] px-2.5 py-1 text-[11px] font-black text-[#047857]" : "rounded-full bg-[#EEF1F6] px-2.5 py-1 text-[11px] font-black text-[#5A6478]"}>{name} {on ? L("connected", "terpasang") : L("not set", "belum")}</span>
+            ))}
+          </div>
+        ) : null}
       </div>
       {providersQuery.isError ? (
-        <p className="mt-4 text-[11px] font-semibold text-[#C81E1E]">{L("Provider information could not be loaded.", "Informasi penyedia belum bisa dimuat.")}</p>
+        <p className="mt-4 text-[12px] font-semibold text-[#C81E1E]">{L("Provider information could not be loaded.", "Informasi penyedia belum bisa dimuat.")}</p>
       ) : !data ? (
         <div className="mt-4 h-24 animate-pulse rounded-lg bg-slate-100" aria-busy="true" />
       ) : (
         <>
-          <div className="mt-4 overflow-x-auto" tabIndex={0} role="region" aria-label={L("AI model per workflow", "Model AI per alur kerja")}>
-            <table className="w-full min-w-[420px] text-left text-[11px]">
-              <thead>
-                <tr className="border-b border-[#EEF1F7] text-[10px] font-black uppercase tracking-[0.08em] text-[#5A6478]">
-                  <th className="py-2 pr-3">{L("Workflow", "Alur kerja")}</th>
-                  <th className="py-2 pr-3">{L("Provider", "Penyedia")}</th>
-                  <th className="py-2">{L("Model", "Model")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#EEF1F7] font-semibold text-[#31406B]">
-                {data.workflows.map((w) => (
-                  <tr key={w.workflow}>
-                    <td className="py-2 pr-3">{WORKFLOW_LABEL[w.workflow] ? L(...WORKFLOW_LABEL[w.workflow]) : w.workflow}</td>
-                    <td className="py-2 pr-3">{w.provider ?? L("None", "Tidak ada")}</td>
-                    <td className="py-2">{w.model ?? (w.note || L("No language model", "Tanpa model bahasa"))}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="mt-2 text-[10px] font-semibold text-[#5A6478]">
-            {L("Keys configured on the server:", "Kunci yang terpasang di server:")} OpenAI {data.providers.openai.configured ? L("yes", "ya") : L("no", "tidak")}, Anthropic {data.providers.anthropic.configured ? L("yes", "ya") : L("no", "tidak")}.
-          </p>
+          <ul className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {data.workflows.map((w) => (
+              <li key={w.workflow} className="flex items-center justify-between gap-2 rounded-[12px] bg-[#F7F8FC] px-3.5 py-3">
+                <span className="text-[13px] font-black text-[#101334]">{WORKFLOW_LABEL[w.workflow] ? L(...WORKFLOW_LABEL[w.workflow]) : w.workflow}</span>
+                {w.provider ? (
+                  <span className="shrink-0 rounded-full bg-[#EEF1FF] px-2.5 py-1 text-[11px] font-black text-[#3B52F5]">{providerName(w.provider)} · {prettyModel(w.model)}</span>
+                ) : (
+                  <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-[#5A6478]">{L("Rules", "Aturan")}</span>
+                )}
+              </li>
+            ))}
+          </ul>
           {canManage ? (
             <div className="mt-3">
-              <button type="button" onClick={() => check.mutate()} disabled={check.isPending} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#DDE3EF] bg-white px-3 text-[11px] font-black text-[#31406B] hover:bg-slate-50 disabled:opacity-60">
+              <button type="button" onClick={() => check.mutate()} disabled={check.isPending} className="inline-flex h-9 items-center gap-1.5 rounded-[10px] bg-[#101334] px-3.5 text-[12px] font-black text-white hover:bg-[#1F2452] disabled:opacity-60">
                 {check.isPending ? <Loader2 size={13} className="animate-spin" aria-hidden="true" /> : null}
                 {L("Test connections", "Tes koneksi")}
               </button>
-              <p className="mt-1 text-[10px] font-semibold text-[#5A6478]">{L("Sends a one-word test prompt to each configured AI provider (no client data; a fraction of a cent) and reads the Apify account status (no scraping).", "Mengirim prompt uji satu kata ke tiap penyedia AI yang terpasang (tanpa data klien; biaya sangat kecil) dan membaca status akun Apify (tanpa scraping).")}</p>
+              <p className="mt-1.5 text-[11px] font-semibold text-[#5A6478]">{L("Sends a one-word test prompt to each configured AI provider (no client data; a fraction of a cent) and reads the Apify account status (no scraping).", "Mengirim prompt uji satu kata ke tiap penyedia AI yang terpasang (tanpa data klien; biaya sangat kecil) dan membaca status akun Apify (tanpa scraping).")}</p>
               {check.isError ? <p role="alert" className="mt-2 text-[11px] font-semibold text-[#C81E1E]">{check.error instanceof Error ? check.error.message : L("The test failed.", "Tes gagal.")}</p> : null}
               {check.data ? (
                 <ul className="mt-2 space-y-1 text-[11px] font-semibold text-[#31406B]" role="status">
