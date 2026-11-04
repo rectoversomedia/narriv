@@ -14,7 +14,6 @@ import { deleteCurrentWorkspace, setMonitoringPaused, getNotificationSettings, u
 import { cn } from "@/lib/utils";
 import { useWorkspaceStore } from "@/store/useWorkspaceStore";
 import { MonitoringKeywordsPanel } from "@/components/dashboard/monitoring-keywords-panel";
-import { SubscriptionCard } from "@/components/dashboard/SubscriptionCard";
 import { UpgradeModal } from "@/components/dashboard/UpgradeModal";
 import { Field, ModalShell, inputClass, primaryButtonClass, secondaryButtonClass } from "@/components/ui/modal-shell";
 import { AiProvidersPanel } from "@/components/dashboard/ai-providers-panel";
@@ -474,7 +473,6 @@ export default function SettingsPage() {
       </div>
 
       {/* Subscription Card */}
-      <SubscriptionCard onUpgradeClick={() => setShowUpgradeModal(true)} />
 
       {workspaceSettingsQuery.data === null ? (
         <div className="rounded-[12px] border border-dashed border-transparent bg-[#FBFAFF] px-5 py-4 flex items-center justify-between gap-4">
@@ -528,10 +526,11 @@ export default function SettingsPage() {
           <form onSubmit={handleSaveWorkspaceInfo} className="grid gap-4">
             {/* Logo and inputs side-by-side or stacked */}
             <div className="grid gap-5 sm:grid-cols-1">
-              <div className="flex flex-col items-center">
-                <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl bg-slate-950 border border-slate-800 shadow-inner">
-                  <Image src={activeLogo} alt={ts("workspaceInfo.logoAlt")} width={60} height={60} unoptimized={activeLogo.startsWith("http")} className={cn("object-contain transition-opacity", uploadLogoMutation.isPending && "opacity-45")} />
-                  {uploadLogoMutation.isPending ? <span className="absolute inset-x-2 bottom-2 rounded-full bg-white/95 px-2 py-1 text-center text-[8px] font-black uppercase tracking-wide text-[#3B52F5] shadow-sm">{ts("workspaceInfo.logoUploading")}</span> : null}
+              {/* Logo on a light tile, with the change button and the format beside it. */}
+              <div className="flex items-center gap-4 rounded-[14px] bg-[#F7F8FC] p-3">
+                <div className="relative flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-white shadow-[0_2px_8px_rgba(16,24,40,0.08)]">
+                  <Image src={activeLogo} alt={ts("workspaceInfo.logoAlt")} width={56} height={56} unoptimized={activeLogo.startsWith("http")} className={cn("max-h-14 w-auto object-contain transition-opacity", uploadLogoMutation.isPending && "opacity-45")} />
+                  {uploadLogoMutation.isPending ? <span className="absolute inset-0 flex items-center justify-center bg-white/70"><RefreshCw size={16} className="animate-spin text-[#3B52F5]" /></span> : null}
                 </div>
                 <input
                   ref={logoInputRef}
@@ -541,18 +540,19 @@ export default function SettingsPage() {
                   aria-label={ts("logo.changeLogo")}
                   onChange={handleLogoFileChange}
                 />
-                <button
-                  type="button"
-                  title={ts("logo.changeLogo")}
-                  aria-label={ts("logo.changeLogo")}
-                  onClick={handleLogoUpload}
-                  disabled={uploadLogoMutation.isPending}
-                  className="mt-2.5 flex h-7 w-full items-center justify-center rounded-lg border border-[#DDE3EF] bg-white text-[#3B52F5] shadow-sm transition hover:bg-slate-50 hover:text-[#31406B] disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {uploadLogoMutation.isPending ? <RefreshCw size={14} className="animate-spin" /> : <Upload size={14} strokeWidth={2.5} />}
-                </button>
-                <span className="mt-1 text-center text-[9px] font-semibold text-[#5A6478]">{ts("logo.formatHint")}</span>
-                {logoError ? <span className="mt-1 text-center text-[9px] font-bold text-[#C81E1E]">{logoError}</span> : null}
+                <div className="min-w-0">
+                  <p className="text-[13px] font-black text-[#101334]">{L("Workspace logo", "Logo workspace")}</p>
+                  <p className="text-[11px] font-semibold text-[#5A6478]">{ts("logo.formatHint")}</p>
+                  <button
+                    type="button"
+                    onClick={handleLogoUpload}
+                    disabled={uploadLogoMutation.isPending}
+                    className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-[8px] bg-white px-3 text-[12px] font-black text-[#3B52F5] shadow-sm transition hover:bg-[#EEF1FF] disabled:opacity-60"
+                  >
+                    <Upload size={13} strokeWidth={2.5} /> {uploadLogoMutation.isPending ? ts("workspaceInfo.logoUploading") : L("Change logo", "Ganti logo")}
+                  </button>
+                  {logoError ? <p className="mt-1 text-[11px] font-bold text-[#C81E1E]">{logoError}</p> : null}
+                </div>
               </div>
 
               <div className="space-y-3.5">
