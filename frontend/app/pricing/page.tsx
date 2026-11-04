@@ -4,7 +4,7 @@ import { Fragment, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useL } from "@/lib/use-l";
-import { Users, ArrowRight, Brain, Target, Crown, Rocket, MessageCircle, FileText, Workflow, Sliders } from "lucide-react";
+import { ArrowRight, Brain, Target, Crown, Rocket, MessageCircle, FileText, Workflow, Sliders } from "lucide-react";
 
 // Subscription plans matching pricing image
 const plans = [
@@ -305,7 +305,6 @@ export default function PricingPage() {
           {plans.map((plan) => {
             const price = Math.round(plan.price * discount);
             const isCustom = plan.id === "command";
-            const PlanIcon = plan.icon;
 
             return (
               <div
@@ -549,6 +548,17 @@ export default function PricingPage() {
               {t("contactSales")}
             </Link>
           </div>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm font-bold text-white/80">
+            <a href="/contoh-laporan-narriv.pdf" target="_blank" rel="noopener" className="inline-flex items-center gap-2 underline-offset-4 hover:text-white hover:underline">
+              <FileText size={16} />
+              {L("See a sample board report (PDF)", "Lihat contoh laporan untuk BOD (PDF)")}
+            </a>
+            <Link href="/login" className="inline-flex items-center gap-2 underline-offset-4 hover:text-white hover:underline">
+              {L("Try the live demo", "Coba demo langsung")}
+              <ArrowRight size={16} />
+            </Link>
+          </div>
+          <p className="mt-3 text-xs text-white/50">{L("Sample data from a fictional bank.", "Contoh memakai data bank fiktif.")}</p>
         </div>
       </section>
 

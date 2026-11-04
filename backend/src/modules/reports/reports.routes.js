@@ -1051,7 +1051,7 @@ router.get("/:id/export/file", rateLimiters.export(), async (req, res) => {
         if (normalizedFormat === "xlsx") {
             res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             res.setHeader("Content-Disposition", `attachment; filename="${reportFileName(data, "xlsx")}"`);
-            return res.send(buildReportXlsx(data, lang));
+            return res.send(await buildReportXlsx(data, lang));
         }
         res.setHeader("Content-Type", "text/csv; charset=utf-8");
         res.setHeader("Content-Disposition", `attachment; filename="${reportFileName(data, "csv")}"`);

@@ -1,16 +1,13 @@
 "use client";
 
 import { humanReportSummary } from "@/lib/report-summary";
-import Image from "next/image";
 import Link from "next/link";
 import { type ComponentPropsWithoutRef, type ReactNode, useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Calendar, CalendarClock, ChevronDown, Clock, Download, FileText, Mail, Plus, RefreshCcw, Search, Share2, Trash2, Edit2, X, type LucideIcon } from "lucide-react";
+import { ArrowRight, Calendar, CalendarClock, ChevronDown, Clock, Download, FileText, Mail, Plus, RefreshCcw, Search, Share2, Trash2, Edit2, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import { SentimentTrendChart } from "@/components/dashboard/sentiment-trend-chart";
 import { useToast } from "@/components/ui/toast";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton, formatPaginationSummary } from "@/components/dashboard/dashboard-states";
 import { getReports, getReportTemplates, createReportTemplate, updateReportTemplate, deleteReportTemplate, getReportsAnalytics, createReportExport, getReportExportStatus, downloadReportFile, getNarratives, getDashboardSummary, getReportSchedules, createReportSchedule, updateReportSchedule, deleteReportSchedule, toggleReportSchedule, generateReportFromTemplate, sendReportEmail, sendTestScheduleEmail, type PaginationInfo, type ReportRecord, type ReportsAnalyticsResponse, type NarrativeRecord, type DashboardSummary, type ReportTemplate, type ReportScheduleRecord } from "@/lib/api-service";
@@ -144,34 +141,6 @@ function MetricCard({ label, value, helper, tone }: { label: string; value: stri
   );
 }
 
-function SentimentChart({ dashboard }: { dashboard?: DashboardSummary | null }) {
-  const tr = useTranslations("Reports");
-  const days = dashboard?.sentiment_trend ?? null;
-  const hasSignals = Boolean(days?.some((d) => d.total > 0));
-  return (
-    <div className="flex h-full min-h-[160px] flex-col border-t border-line-soft pt-4 md:border-l md:border-t-0 md:pl-5 md:pt-0">
-      <h4 className="text-[12px] font-bold text-navy">{tr("sentimentChart.title")}</h4>
-      <p className="mt-0.5 text-[10px] font-medium text-subtle">{pickL("Signals per day (UTC days)", "Sinyal per hari (hari UTC)")}</p>
-      <div className="mt-2">
-        {!days ? (
-          <p className="mt-6 text-[11px] font-medium text-subtle">Sentiment trend is not available right now.</p>
-        ) : !hasSignals ? (
-          <p className="mt-6 text-[11px] font-medium text-subtle">{pickL("No signals were captured in the last 7 days.", "Belum ada sinyal yang tertangkap dalam 7 hari terakhir.")}</p>
-        ) : (
-          <SentimentTrendChart
-            days={days}
-            labels={{ positive: tr("sentimentChart.positive"), neutral: tr("sentimentChart.neutral"), negative: tr("sentimentChart.negative"), mixed: "Mixed", unanalyzed: "Not analyzed", noSignals: "No signals captured" }}
-          />
-        )}
-      </div>
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-semibold text-body">
-        <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded-full bg-[#10B981]" />{tr("sentimentChart.positive")}</span>
-        <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded-full bg-[#465FFF]" />{tr("sentimentChart.neutral")}</span>
-        <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 rounded-full bg-[#EF4444]" />{tr("sentimentChart.negative")}</span>
-      </div>
-    </div>
-  );
-}
 
 
 function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeRecord[] | null, dashboard?: DashboardSummary | null }) {
@@ -270,17 +239,6 @@ function AIReportSummary({ narratives, dashboard }: { narratives?: NarrativeReco
   );
 }
 
-function SummaryPoint({ color, title, text }: { color: string; title: string; text: string }) {
-  return (
-    <div className="flex gap-2.5">
-      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} />
-      <div className="min-w-0">
-        <p className="text-[12px] font-bold text-navy">{title}</p>
-        <p className="mt-1 text-[12px] font-medium leading-5 text-body">{text}</p>
-      </div>
-    </div>
-  );
-}
 
 function ReportPreviewSidebar({
   latestReport,
@@ -371,7 +329,6 @@ function QuickActions({ onShare, onSchedule, onCreate, onViewHistory }: { onShar
       <h3 className="text-[16px] font-black tracking-[-0.03em] text-[#101334]">{tr("quickActions.title")}</h3>
       <div className="mt-4 space-y-2">
         {quickActions.map((action) => {
-          const Icon = action.icon;
           return (
             <button
               key={action.key}
@@ -406,21 +363,6 @@ function StatusBadge({ status }: { status: ReportStatus }) {
   return <span className={cn("rounded-[7px] px-2 py-0.5 text-[9.5px] font-black tracking-[0.05em]", styles[status])}>{tr(`statusBadge.${status}`)}</span>;
 }
 
-function ProgressBar({ value, tone }: { value: number; tone: Tone }) {
-  const barColors: Record<Tone, string> = {
-    blue: "bg-[#465FFF]",
-    purple: "bg-[#8B5CFF]",
-    green: "bg-[#10B981]",
-    red: "bg-[#EF4444]",
-    amber: "bg-[#F59E0B]",
-    slate: "bg-[#64748B]",
-  };
-  return (
-    <div className="h-1.5 w-[80px] rounded-full bg-[#EDF1F7] overflow-hidden shrink-0">
-      <div className={cn("h-full rounded-full", barColors[tone])} style={{ width: `${value}%` }} />
-    </div>
-  );
-}
 
 function ReportsTable({
   rows,
@@ -526,8 +468,45 @@ function ReportsTable({
         ))}
       </div>
 
+      {/* Phone: one card per report */}
+      <div className="mt-4 space-y-2.5 md:hidden">
+        {visibleRows.length > 0 ? visibleRows.map((report) => (
+          <div key={report.id} className="rounded-[12px] border border-[#E6EAF2] bg-white p-3.5">
+            <div className="flex items-start justify-between gap-3">
+              <Link href={`/reports/${report.id}`} className="min-w-0 text-[13px] font-black leading-snug text-[#101334] hover:text-[#3B52F5]">
+                {report.title}
+              </Link>
+              <StatusBadge status={report.status} />
+            </div>
+            <p className="mt-1.5 text-[11px] font-bold text-[#5F6B94]">{report.type} · {report.period}</p>
+            <p className="mt-0.5 text-[10.5px] font-bold text-[#647099]">{report.created} {report.createdTime}</p>
+            <div className="mt-3 grid grid-cols-4 gap-1.5">
+              <Link href={`/reports/${report.id}`} className="inline-flex items-center justify-center rounded-md bg-[#465FFF] px-2 py-2 text-[11px] font-black text-white">
+                {pickL("Open", "Buka")}
+              </Link>
+              {(["pdf", "xlsx", "csv"] as const).map((format) => (
+                <button
+                  key={format}
+                  type="button"
+                  onClick={() => (format === "pdf" ? onExport(String(report.id)) : onExportFile?.(String(report.id), format))}
+                  disabled={isFetching}
+                  className="inline-flex items-center justify-center rounded-md border border-[#DDE3EF] bg-white px-2 py-2 text-[11px] font-black text-[#5F6B94] disabled:opacity-50"
+                >
+                  {format === "xlsx" ? "Excel" : format.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+        )) : (
+          <div className="rounded-[12px] border border-dashed border-[#DDE3EF] px-4 py-8 text-center">
+            <p className="text-[13px] font-black text-[#101334]">{tr("noMatch")}</p>
+            <p className="mt-1 text-[11px] font-bold text-[#5F6B94]">{tr("noMatchDesc")}</p>
+          </div>
+        )}
+      </div>
+
       {/* Table */}
-      <div className="mt-4 overflow-x-auto">
+      <div className="mt-4 hidden overflow-x-auto md:block">
         <table className="w-full min-w-[780px] border-collapse text-left">
           <thead>
             <tr className="border-b border-[#E6EAF2] text-[9.5px] font-black uppercase tracking-[0.15em] text-[#5F6B94]">

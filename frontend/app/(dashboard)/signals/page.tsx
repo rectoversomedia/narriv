@@ -1,27 +1,19 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useDeferredValue, useEffect, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { intlLocale, useUiStore } from "@/store/useUiStore";
 import { MONITORING_PERIODS, issueHref, monitoringHref, parseMonitoringFilters, periodStart, type MonitoringFilters } from "@/lib/evidence-links";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ArrowRight, Check, FileText, Info, Loader2, Search, ShieldCheck, Sparkles, Star, Trash2, Zap, X, Globe, ExternalLink } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, Info, Loader2, Search, Sparkles, Trash2, X, ExternalLink } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
-import {
-  AppStore,
-  Facebook,
-  GooglePlay,
-  Instagram,
-  TikTokDark,
-} from "@ridemountainpig/svgl-react";
 import { cn } from "@/lib/utils";
 import { CreateInvestigationModal } from "./components/create-investigation-modal";
 import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components/create-action-plan-modal";
 import { AdvancedSearchModal, ActiveFiltersChips } from "./components/advanced-search-modal";
 import { DashboardEmptyState, DashboardErrorState, DashboardPagination, TableSkeleton } from "@/components/dashboard/dashboard-states";
-import { getNarratives, getDateRangeOptions, getSignals, getSources, type PaginationInfo, type Signal, getSignalsMeta, type SignalsMeta, bulkDeleteSignals, bulkAnalyzeSignals, bulkCreateAlertsFromSignals, searchSignals, fetchLatestSignals, downloadSignalsExport, type AdvancedSearchFilters, type SearchSignalsResponse } from "@/lib/api-service";
+import { getNarratives, getSignals, getSources, type PaginationInfo, type Signal, getSignalsMeta, type SignalsMeta, bulkDeleteSignals, bulkAnalyzeSignals, bulkCreateAlertsFromSignals, searchSignals, fetchLatestSignals, downloadSignalsExport, type AdvancedSearchFilters, type SearchSignalsResponse } from "@/lib/api-service";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { DemoBanner } from "@/components/ui/demo-banner";
 import { pickL } from "@/lib/use-l";
@@ -30,7 +22,7 @@ import { PlatformIcon } from "@/components/ui/platform-icon";
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Sentiment = "NEGATIVE" | "POSITIVE" | "NEUTRAL" | "MIXED" | "UNANALYZED";
 type SignalFilter = "all" | "negative" | "positive" | "neutral" | "mixed";
-type SourceKey = keyof typeof sourceIcons;
+type SourceKey = "web" | "x" | "tiktok" | "instagram" | "facebook" | "playstore" | "appstore" | "ticket";
 
 type SignalRow = {
   id: string;
@@ -67,22 +59,6 @@ const toneStyles: Record<Tone, { color: string; rgb: string; soft: string; text:
   slate: { color: "#64748B", rgb: "100,116,139", soft: "bg-slate-100", text: "text-[#5A6478]", border: "border-slate-200" },
 };
 
-const sourceIcons = {
-  web: <span className="flex size-5 items-center justify-center rounded-[5px] bg-white text-[#5A6478]"><Globe className="size-3" /></span>,
-  x: (
-    <span className="flex size-5 items-center justify-center rounded-[5px] bg-[#111827] text-white">
-      <svg viewBox="0 0 24 24" className="size-3 fill-current" aria-hidden="true">
-        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-      </svg>
-    </span>
-  ),
-  tiktok: <span className="flex size-5 items-center justify-center rounded-[5px] bg-white text-[#111827]"><TikTokDark className="size-3" /></span>,
-  instagram: <span className="flex size-5 items-center justify-center rounded-[5px] bg-white"><Instagram className="size-3" /></span>,
-  facebook: <span className="flex size-5 items-center justify-center rounded-[5px] bg-white"><Facebook className="size-3" /></span>,
-  playstore: <span className="flex size-5 items-center justify-center rounded-[5px] bg-white"><GooglePlay className="size-3" /></span>,
-  appstore: <span className="flex size-5 items-center justify-center rounded-[5px] bg-white"><AppStore className="size-3" /></span>,
-  ticket: <span className="flex size-5 items-center justify-center rounded-[5px] bg-[#8B5CFF]/10 text-[#6E44E8]"><FileText size={12} /></span>,
-};
 
 
 
@@ -330,9 +306,7 @@ function SummaryPanel({ meta }: { meta?: SignalsMeta }) {
   );
 }
 
-function SentimentIcon({ sentiment, tone }: { sentiment: Sentiment; tone: SignalRow["sentimentTone"] }) {
-  const style = toneStyles[tone];
-  const Icon = sentiment === "NEGATIVE" ? AlertTriangle : sentiment === "POSITIVE" ? ShieldCheck : Sparkles;
+function SentimentIcon({ sentiment: _sentiment, tone: _tone }: { sentiment: Sentiment; tone: SignalRow["sentimentTone"] }) {
   return null;
 }
 
@@ -354,34 +328,14 @@ function SentimentBadge({ sentiment }: { sentiment: Sentiment }) {
   return <span className={cn("whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-black", styles[sentiment])}>{pickL(...labels[sentiment])}</span>;
 }
 
-function TagBadge({ tag }: { tag: string }) {
-  const styles: Record<string, string> = {
-    "Reputation Risk": "bg-[#EF4444]/10 text-[#C81E1E]",
-    "Customer Experience": "bg-[#F97316]/10 text-[#F97316]",
-    "Operational Risk": "bg-[#F59E0B]/12 text-[#A04606]",
-    "Marketing Opportunity": "bg-[#10B981]/10 text-[#047857]",
-    "+1": "bg-[#EEF2FF] text-[#3B52F5]",
-  };
-  return <span className={cn("rounded-full px-2 py-1 text-[9px] font-black", styles[tag] ?? "bg-slate-100 text-[#5A6478]")}>{tag}</span>;
-}
 
 function AnalysisBadge({ status, confidence }: { status: "analyzed" | "unanalyzed"; confidence: number | null }) {
   if (status !== "analyzed") return <span className="text-[12px] font-bold text-[#8A93AD]">{pickL("Not yet", "Belum")}</span>;
   return <span className="text-[12px] font-black text-[#3B52F5]">{confidence === null ? pickL("Done", "Selesai") : `${Math.round(confidence * 100)}%`}</span>;
 }
 
-function SourceIconList({ row }: { row: SignalRow }) {
-  return (
-    <div>
-      <p className="mb-2 text-[10px] font-black text-[#5F6B94]">{row.sourceType}</p>
-      <div className="flex items-center gap-1.5">
-        {row.sources.map((source) => <span key={source} className="flex size-5 items-center justify-center rounded-[6px] border border-[#E6EAF2] bg-white">{sourceIcons[source]}</span>)}
-      </div>
-    </div>
-  );
-}
 
-function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, footerText, pagination, onPageChange, isFetching, className, tTimeRange, tSignals, onInvestigate, onGenerateActionPlan, selectedIds, onSelectionChange, onBulkAnalyze, onBulkDelete, onBulkCreateAlert, isBulkProcessing }: { activeFilter: SignalFilter; setActiveFilter: (value: SignalFilter) => void; query: string; setQuery: (value: string) => void; rows: SignalRow[]; footerText: string; pagination?: PaginationInfo | null; onPageChange: (page: number) => void; isFetching?: boolean; className?: string; tTimeRange: (key: string) => string; tSignals: (key: string) => string; onInvestigate: (row: SignalRow) => void; onGenerateActionPlan?: (row: SignalRow) => void; selectedIds: Set<string>; onSelectionChange: (ids: Set<string>) => void; onBulkAnalyze: () => void; onBulkDelete: () => void; onBulkCreateAlert: () => void; isBulkProcessing: boolean }) {
+function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, footerText, pagination, onPageChange, isFetching, className, tTimeRange: _tTimeRange, tSignals, onInvestigate, onGenerateActionPlan, selectedIds, onSelectionChange, onBulkAnalyze, onBulkDelete, onBulkCreateAlert, isBulkProcessing }: { activeFilter: SignalFilter; setActiveFilter: (value: SignalFilter) => void; query: string; setQuery: (value: string) => void; rows: SignalRow[]; footerText: string; pagination?: PaginationInfo | null; onPageChange: (page: number) => void; isFetching?: boolean; className?: string; tTimeRange: (key: string) => string; tSignals: (key: string) => string; onInvestigate: (row: SignalRow) => void; onGenerateActionPlan?: (row: SignalRow) => void; selectedIds: Set<string>; onSelectionChange: (ids: Set<string>) => void; onBulkAnalyze: () => void; onBulkDelete: () => void; onBulkCreateAlert: () => void; isBulkProcessing: boolean }) {
   const t = useTranslations("Signals");
   const tabs: Array<{ value: SignalFilter; label: string }> = [
     { value: "all", label: tSignals("filterAll") },
@@ -632,7 +586,6 @@ function FollowUpPanel({ data }: { data?: SignalsMeta["followUps"] }) {
         <div className="mt-4 space-y-2.5">
           {(data || []).map((item, keyIdx) => {
             const style = toneStyles[item.tone as Tone];
-            const Icon = item.tone === "green" ? Star : Zap;
             return (
               <div key={`${item.title}:${keyIdx}`} className={cn("grid grid-cols-1 gap-3 rounded-[12px] border p-3 sm:grid-cols-[minmax(0,1fr)_auto]", item.tone === "red" ? "border-transparent bg-[#FFF5F5]" : item.tone === "amber" ? "border-transparent bg-[#FFF9F0]" : "border-transparent bg-[#F1FCF6]")}>
                 <span className="min-w-0"><span className="line-clamp-2 block text-[12px] font-black leading-snug text-[#101334]" title={item.title}>{item.title}</span><span className="mt-1 block text-[10px] font-bold text-[#58648C]">{item.meta}</span></span>
@@ -787,7 +740,6 @@ function InvestigationQueue({ data }: { data?: SignalsMeta["investigationQueue"]
       ) : (
         <div className="mt-4 space-y-3">
           {data.map((item, keyIdx) => {
-            const style = toneStyles[item.tone as Tone];
             return (
               <div key={`${item.title}:${keyIdx}`} className="grid grid-cols-1 gap-3 rounded-[11px] bg-[#F4F6FC] p-3 sm:grid-cols-[minmax(0,1fr)_auto]">
                 <span className="min-w-0">
@@ -881,7 +833,6 @@ export default function SignalsPage() {
   const [isFetchingSignals, setIsFetchingSignals] = useState(false);
   const [isExporting, setIsExporting] = useState<"csv" | "xlsx" | null>(null);
   const deferredQuery = useDeferredValue(query);
-  const dateRange = getDateRangeOptions("24h");
   const queryClient = useQueryClient();
 
   const handleExport = async (format: "csv" | "xlsx") => {

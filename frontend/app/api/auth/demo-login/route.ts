@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
-  request: NextRequest,
-  context: { params: Promise<Record<string, string>> }
+  _request: NextRequest,
+  _context: { params: Promise<Record<string, string>> }
 ) {
   try {
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || "https://narriv-api.vercel.app";

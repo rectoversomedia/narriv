@@ -122,3 +122,29 @@ export const verifyTokenSSE = (req, res, next) => {
         return res.status(401).json({ error: "Invalid access token.", code: "INVALID_TOKEN" });
     }
 };
+
+// Demo sessions (the public "see the demo" login) share one sample workspace, so they may look but not change
+// anything or start paid work (AI analysis, Ask AI, Apify runs, monitoring runs). Reads pass, and so do the few
+// POSTs that only read or end the session.
+const DEMO_ALLOWED_WRITES = [/^\/auth\//, /^\/subscriptions\/check-(feature|limit)$/, /^\/notifications(\/|$)/];
+
+export const demoReadOnly = (req, res, next) => {
+    if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return next();
+    const secret = process.env.JWT_SECRET;
+    const header = req.headers["authorization"];
+    const token = (header && header.split(" ")[1]) || parseCookies(req.headers["cookie"] || "")["narriv_auth"];
+    if (!secret || !token) return next();
+    let claims;
+    try {
+        claims = jwt.verify(token, secret);
+    } catch {
+        return next(); // the route's own verifyToken answers an invalid token
+    }
+    const isDemo = claims?.isDemo === true || String(claims?.id || "").startsWith("demo");
+    if (!isDemo || DEMO_ALLOWED_WRITES.some((pattern) => pattern.test(req.path))) return next();
+    return res.status(403).json({
+        error: "This is the Narriv demo: you can look around, but changes are turned off. Sign up to use your own workspace.",
+        errorId: "Ini demo Narriv: semua bisa dilihat, tapi perubahan dimatikan. Daftar untuk memakai workspace sendiri.",
+        code: "DEMO_READ_ONLY",
+    });
+};

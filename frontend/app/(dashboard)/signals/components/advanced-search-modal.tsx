@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { X, Search, Loader2, Filter } from "lucide-react";
+import { X, Search, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { searchSignals, type AdvancedSearchFilters, type SearchSignalsResponse } from "@/lib/api-service";
@@ -71,7 +71,7 @@ export function AdvancedSearchModal({
   open,
   onOpenChange,
   onApplyFilters,
-  isSearching = false,
+  isSearching: _isSearching = false,
 }: AdvancedSearchModalProps) {
   const t = useTranslations("advancedSearch");
   const titleId = useId();

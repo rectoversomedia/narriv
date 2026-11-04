@@ -1,21 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import {
-  Activity,
-  BarChart3,
-  Bell,
-  Bot,
-  CheckCircle2,
-  Clock3,
-  Database,
-  FileText,
-  Headphones,
-  LineChart,
-  MessageCircle,
-  Newspaper,
-  Settings,
-  Sparkles,
-  Users,
-} from "lucide-react";
+import { Activity, BarChart3, Bell, CheckCircle2, Clock3, Database, FileText, Headphones, LineChart, MessageCircle, Newspaper, Settings, Sparkles, Users } from "lucide-react";
 
 export type Localized = Record<"en" | "id", string>;
 export type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";

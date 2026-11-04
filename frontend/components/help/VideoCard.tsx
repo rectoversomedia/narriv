@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Play } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import type { VideoWalkthrough } from "./video-walkthroughs";
 import { VideoPlayer } from "./VideoPlayer";
 

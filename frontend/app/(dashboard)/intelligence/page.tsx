@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef, type ReactNode } from "react";
-import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Bot, Brain, Check, ChevronDown, ChevronRight, Database, Info, Layers3, Maximize2, Minimize2, MoreHorizontal, Network, RefreshCcw, RotateCcw, Target, TrendingUp, ZoomIn, ZoomOut, type LucideIcon } from "lucide-react";
+import { Bot, Brain, Check, ChevronDown, ChevronRight, Database, Info, Layers3, Maximize2, Minimize2, MoreHorizontal, Network, RefreshCcw, RotateCcw, Target, TrendingUp, ZoomIn, ZoomOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardEmptyState, DashboardErrorState, PanelSkeleton } from "@/components/dashboard/dashboard-states";
@@ -143,7 +142,7 @@ function impactToPriorityTone(impact: string): Tone {
 }
 
 function buildNarrativeClusters(records: NarrativeRecord[], labels: { sources: (count: number) => string; mediumPriority: string }): Cluster[] {
-  return records.map((record, index) => {
+  return records.map((record, _index) => {
     const tone = sentimentToTone(record.sentiment);
     const priorityTone = impactToPriorityTone(record.impact);
     const sentimentHex = sentimentColor[tone === "green" ? "positive" : tone === "red" ? "negative" : "neutral"];
@@ -229,7 +228,6 @@ function buildLifecycleFromClusters(clusters: Cluster[]) {
 
   const series = Object.fromEntries(
     (Object.keys(counts) as LifecycleKey[]).map((key) => {
-      const count = counts[key];
       // No per-stage history is stored, so no trend line is drawn (previously synthesized from the count).
       return [key, [] as number[]];
     })
@@ -259,11 +257,6 @@ function Panel({ children, className, onClick }: { children: ReactNode; classNam
   );
 }
 
-function IconHalo({ icon: Icon, tone }: { icon: LucideIcon; tone: Tone }) {
-  const toneStyle = toneStyles[tone];
-
-  return null;
-}
 
 function Sparkline({ values, color }: { values: number[]; color: string }) {
   const safeValues = values.length > 1 ? values : [0, 0];
@@ -288,8 +281,7 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
   );
 }
 
-function ClusterIcon({ tone }: { tone: Tone }) {
-  const toneStyle = toneStyles[tone];
+function ClusterIcon({ tone: _tone }: { tone: Tone }) {
 
   return null;
 }
@@ -608,7 +600,6 @@ export default function IntelligencePage() {
   
   const isApiHealthy = !isLiveUnavailable && !isSourcesUnavailable;
 
-  const selectedTone = toneStyles[selectedCluster.tone];
   const maxClusterSignals = Math.max(1, ...clusters.map((c) => c.signals));
   const narrativeShareData = buildNarrativeShareData(clusters, { noData: ti("labels.noData"), others: ti("labels.others") });
   const lifecycle = buildLifecycleFromClusters(clusters);
@@ -1039,8 +1030,6 @@ export default function IntelligencePage() {
       <footer className="mt-1 flex flex-col gap-5 border-t border-[#E9EDF5] pt-5 xl:flex-row xl:items-center xl:justify-between">
         <div className="grid flex-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {footerItems.map((item, index) => {
-            const Icon = item.icon;
-            const toneStyle = toneStyles[item.tone];
             return (
               <div key={item.title} className={cn("flex gap-3 xl:border-r xl:border-[#E9EDF5] xl:pr-5", index === footerItems.length - 1 && "xl:border-r-0")}> 
                 <div className="min-w-0 flex-1">

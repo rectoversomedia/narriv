@@ -41,3 +41,31 @@ describe('demo workspace members', () => {
     expect(maskEmail(null)).toBeNull();
   });
 });
+
+describe('demo sessions are read-only', () => {
+  const demo = sign({ id: 'demo_test', email: 'demo@narriv.ai', isDemo: true });
+
+  test.each([
+    ['post', '/api/ingestion/run-keywords'],
+    ['post', '/api/ingestion/collect'],
+    ['post', '/api/ai/ask'],
+    ['post', '/api/signals/batch-analyze'],
+    ['post', '/api/workspace/cases'],
+    ['patch', '/api/alerts/a1'],
+    ['delete', '/api/workspace/keywords/k1'],
+  ])('%s %s is refused with DEMO_READ_ONLY', async (method, path) => {
+    const res = await request(app)[method](path).set(demo).send({});
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('DEMO_READ_ONLY');
+  });
+
+  test('reads and session calls still work', async () => {
+    expect((await request(app).get('/api/workspaces').set(demo)).status).toBe(200);
+    expect((await request(app).post('/api/auth/logout').set(demo).send({})).body.code).not.toBe('DEMO_READ_ONLY');
+  });
+
+  test('a real member is not affected', async () => {
+    const res = await request(app).post('/api/workspace/cases').set(sign({ id: OWNER, email: 'alex@narriv.ai' })).send({});
+    expect(res.body.code).not.toBe('DEMO_READ_ONLY');
+  });
+});

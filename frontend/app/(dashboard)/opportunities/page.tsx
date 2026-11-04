@@ -204,7 +204,6 @@ function OpportunityCard({ opp, t }: { opp: Opportunity; t: (key: string) => str
   const priorityCfg = PRIORITY_CONFIG[opp.priority];
   const confidenceCfg = CONFIDENCE_CONFIG[opp.confidence];
   const trendCfg = TREND_CONFIG[opp.trend];
-  const TrendIcon = trendCfg.icon;
 
   return (
     <div className="flex flex-col gap-0 rounded-[14px] border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md">
@@ -294,10 +293,10 @@ function OpportunityCard({ opp, t }: { opp: Opportunity; t: (key: string) => str
 // ---------------------------------------------------------------------------
 
 function MetricCard({
-  icon: Icon,
+  icon: _Icon,
   label,
   value,
-  tone,
+  tone: _tone,
   helper,
 }: {
   icon: typeof Zap;
@@ -306,14 +305,6 @@ function MetricCard({
   tone: "blue" | "green" | "amber" | "purple" | "slate";
   helper?: string;
 }) {
-  const toneStyles: Record<string, { bg: string; text: string }> = {
-    blue:   { bg: "bg-blue-50",   text: "text-blue-600"   },
-    green:  { bg: "bg-green-50",  text: "text-green-700"  },
-    amber:  { bg: "bg-amber-50",  text: "text-amber-700"  },
-    purple: { bg: "bg-purple-50", text: "text-purple-600" },
-    slate:  { bg: "bg-slate-50",  text: "text-slate-600"  },
-  };
-  const style = toneStyles[tone] ?? toneStyles.slate;
 
   return (
     <Card className="border-slate-100 shadow-sm">

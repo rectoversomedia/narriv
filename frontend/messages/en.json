@@ -3891,26 +3891,26 @@
     "faqTitle": "Frequently Asked Questions",
     "faq1": {
       "q": "Can I change plans later?",
-      "a": "Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately."
+      "a": "Yes. Contact the Narriv team and we change your workspace's plan."
     },
     "faq2": {
       "q": "What payment methods do you accept?",
-      "a": "We accept all major credit cards, bank transfers, and invoicing for annual plans."
+      "a": "Bank transfer against an invoice, for monthly and annual plans."
     },
     "faq3": {
       "q": "Is there a free trial?",
-      "a": "Yes! All plans include a 14-day free trial with full access to all features."
+      "a": "Yes. A 14-day trial with full access, arranged with the Narriv team."
     },
     "faq4": {
       "q": "What happens if I exceed my limits?",
-      "a": "We'll notify you when you're approaching your limit. You can upgrade anytime to avoid disruption."
+      "a": "We tell you when you are close to a limit, then decide with you whether a bigger plan is needed."
     },
     "faq5": {
       "q": "Do you offer custom enterprise plans?",
       "a": "Yes, the Command plan includes custom integrations, dedicated infrastructure, and enterprise SLAs."
     },
     "ctaTitle": "Ready to get started?",
-    "ctaSubtitle": "Join thousands of teams using Narriv to monitor and respond to narratives.",
+    "ctaSubtitle": "See in 14 days how Narriv tracks your brand's issues and shows the next step.",
     "ctaButton": "Start Your Free Trial",
     "terms": "Terms of Service",
     "privacy": "Privacy Policy",

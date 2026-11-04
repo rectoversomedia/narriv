@@ -29,13 +29,9 @@ const toneColor: Record<Tone, string> = {
 const chartTick = { fill: "#53608C", fontSize: 11, fontWeight: 700 };
 const tooltipContentStyle = { border: "1px solid #E1E6F2", borderRadius: 10, boxShadow: "0 18px 44px rgba(16,19,52,.12)" };
 const activityMargin = { left: -18, right: 8, top: 12, bottom: 0 };
-const aiMentionsMargin = { left: -16, right: 12, top: 16, bottom: 0 };
 const activityCursor = { stroke: "#465FFF", strokeWidth: 1 };
 const activityDot = { r: 3, fill: "#465FFF", stroke: "#fff", strokeWidth: 2 };
 const activityActiveDot = { r: 5 };
-const brandDot = { r: 4, fill: "#465FFF", stroke: "#fff", strokeWidth: 2 };
-const competitorDot = { r: 3, fill: "#38A7FF", stroke: "#fff", strokeWidth: 2 };
-const secondaryDot = { r: 3, fill: "#12B76A", stroke: "#fff", strokeWidth: 2 };
 
 type SeriesPoint = {
   label: string;

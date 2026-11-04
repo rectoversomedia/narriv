@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
-import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -14,7 +13,6 @@ import { deleteCurrentWorkspace, setMonitoringPaused, getNotificationSettings, u
 import { cn } from "@/lib/utils";
 import { useWorkspaceStore } from "@/store/useWorkspaceStore";
 import { MonitoringKeywordsPanel } from "@/components/dashboard/monitoring-keywords-panel";
-import { UpgradeModal } from "@/components/dashboard/UpgradeModal";
 import { Field, ModalShell, inputClass, primaryButtonClass, secondaryButtonClass } from "@/components/ui/modal-shell";
 import { pickL, useL } from "@/lib/use-l";
 
@@ -247,16 +245,6 @@ export default function SettingsPage() {
 
   // State: Notifications
   const [notifEmail, setNotifEmail] = useState<boolean | null>(null);
-
-
-  // State: AI Preferences
-
-  // State: Security
-
-  // State: Upgrade Modal
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [upgradeFeature, setUpgradeFeature] = useState<string | undefined>();
-  const [upgradeLimit, setUpgradeLimit] = useState<string | undefined>();
 
 
   // Confirmation Modal State (Danger Zone)
@@ -979,13 +967,6 @@ export default function SettingsPage() {
         onOpenChange={(open) => {
           if (!open) setMemberToDelete(null);
         }}
-      />
-
-      <UpgradeModal
-        isOpen={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
-        feature={upgradeFeature}
-        limit={upgradeLimit}
       />
     </div>
   );

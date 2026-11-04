@@ -12,44 +12,6 @@ import type { LucideIcon } from "lucide-react";
 
 type StateTone = "blue" | "purple" | "green" | "amber" | "red" | "slate";
 
-const toneStyles: Record<StateTone, { bg: string; text: string; ring: string; button: string }> = {
-  blue: {
-    bg: "bg-[#465FFF]/10",
-    text: "text-[#3B52F5]",
-    ring: "ring-[#465FFF]/15",
-    button: "bg-[#465FFF] hover:bg-[#3b52d9]",
-  },
-  purple: {
-    bg: "bg-[#8B5CFF]/10",
-    text: "text-[#6E44E8]",
-    ring: "ring-[#8B5CFF]/15",
-    button: "bg-[#8B5CFF] hover:bg-[#764ee6]",
-  },
-  green: {
-    bg: "bg-[#10B981]/10",
-    text: "text-[#047857]",
-    ring: "ring-[#10B981]/15",
-    button: "bg-[#10B981] hover:bg-[#0ea371]",
-  },
-  amber: {
-    bg: "bg-[#F59E0B]/10",
-    text: "text-[#A04606]",
-    ring: "ring-[#F59E0B]/15",
-    button: "bg-[#F59E0B] hover:bg-[#d98b08]",
-  },
-  red: {
-    bg: "bg-[#EF4444]/10",
-    text: "text-[#C81E1E]",
-    ring: "ring-[#EF4444]/15",
-    button: "bg-[#EF4444] hover:bg-[#dc3333]",
-  },
-  slate: {
-    bg: "bg-slate-100",
-    text: "text-[#5A6478]",
-    ring: "ring-slate-200",
-    button: "bg-slate-900 hover:bg-slate-800",
-  },
-};
 
 interface StateShellProps {
   title: string;
@@ -61,8 +23,7 @@ interface StateShellProps {
   minHeight?: string;
 }
 
-function StateShell({ title, description, icon: Icon, tone = "purple", action, className, minHeight = "min-h-[320px]" }: StateShellProps) {
-  const styles = toneStyles[tone];
+function StateShell({ title, description, icon: _Icon, tone: _tone = "purple", action, className, minHeight = "min-h-[320px]" }: StateShellProps) {
 
   return (
     <div

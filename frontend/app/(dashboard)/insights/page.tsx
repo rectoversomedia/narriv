@@ -3,21 +3,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown } from "lucide-react";
-import { DashboardEmptyState, DashboardErrorState } from "@/components/dashboard/dashboard-states";
+import { DashboardErrorState } from "@/components/dashboard/dashboard-states";
 import { Skeleton } from "@/components/ui/Skeleton";
-import {
-  getNarrativeIntelligence,
-  getEntityIntelligence,
-  getReputationIntelligence,
-  getPredictiveSignals,
-  getTrend,
-  getGeoIntelligence,
-  type NarrativeIntelligencePayload,
-  type EntityIntelligencePayload,
-  type ReputationIntelligencePayload,
-  type PredictiveSignalsPayload,
-  type GeoIntelligencePayload,
-} from "@/lib/intelligence-api";
+import { getTrend, getGeoIntelligence, type GeoIntelligencePayload } from "@/lib/intelligence-api";
 import { NarrativeLandscapePanel, ReputationPanel, EntityPanel, PredictiveSignalsPanel } from "@/components/intelligence/intelligence-panels";
 
 const WINDOWS = [

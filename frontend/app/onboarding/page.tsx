@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { pickL } from "@/lib/use-l";
 import {
@@ -12,7 +11,6 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import { useRouter } from "next/navigation";
 import { ArrowRight, BarChart3, Bell, Check, CheckCircle2, ChevronDown, Globe2, Headphones, Lightbulb, Mail, MessageCircle, Mic, Newspaper, Share2, Shield, ShoppingCart, Sparkles, Users, X, type LucideIcon } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import {
@@ -136,9 +134,7 @@ const DEFAULT_GOALS: Array<{
 // ─── Root Page ────────────────────────────────────────────────────────────────
 
 export default function OnboardingPage() {
-  const t = useTranslations("OnboardingDesign");
   const toast = useToast();
-  const router = useRouter();
 
   const [step, setStep] = useState<Step | "processing">(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -361,7 +357,7 @@ export default function OnboardingPage() {
       setProcessingProgress(0);
       toast.error(msg);
     }
-  }, [data, router, toast]);
+  }, [data, toast]);
 
   useEffect(() => {
     if (step === "processing" && !isSubmitting) {
@@ -864,7 +860,6 @@ function SourcesStep({
         <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{pickL("Quick Select by Category", "Pilih cepat per kategori")}</h2>
         <div className="flex flex-wrap gap-3">
           {categories.map((cat) => {
-            const Icon = categoryIcons[cat] || Globe2;
             const active = selectedCats.includes(cat);
             return (
               <button
@@ -941,7 +936,7 @@ function SourcesStep({
 }
 
 function SourceCard({
-  icon: Icon,
+  icon: _Icon,
   title,
   desc,
   active,
@@ -1013,7 +1008,7 @@ function NotificationsStep({
       <div className="space-y-4">
         <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{t("alertTypes")}</h2>
         <div className="grid gap-3 lg:grid-cols-2">
-          {alertTypes.map(({ key, label, desc, icon: Icon, color }) => (
+          {alertTypes.map(({ key, label, desc, icon: _Icon, color: _color }) => (
             <button
               key={key}
               type="button"
@@ -1040,7 +1035,7 @@ function NotificationsStep({
       <div className="space-y-4">
         <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{t("channels")}</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {channels.map(({ key, label, icon: Icon }) => (
+          {channels.map(({ key, label, icon: _Icon }) => (
             <button
               key={key}
               type="button"

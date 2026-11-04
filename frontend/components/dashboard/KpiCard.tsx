@@ -9,7 +9,7 @@ interface KpiCardProps {
   iconColor?: string;
 }
 
-export function KpiCard({ title, value, subtitle, icon: Icon, iconColor = "text-[#5A6478]" }: KpiCardProps) {
+export function KpiCard({ title, value, subtitle, icon: _Icon, iconColor: _iconColor = "text-[#5A6478]" }: KpiCardProps) {
   return (
     <div className="rounded-xl border border-slate-100 bg-white p-5 flex flex-col justify-between transition-all duration-300 hover:border-slate-200 hover:shadow-sm">
       <div className="flex justify-between items-center">

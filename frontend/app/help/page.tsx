@@ -207,7 +207,6 @@ export default function HelpCenterPage() {
               {L("All topics", "Semua topik")}
             </button>
             {groups.map((g) => {
-              const Icon = g.icon;
               const active = activeGroup === g.id;
               return (
                 <button
@@ -227,7 +226,6 @@ export default function HelpCenterPage() {
               <p className="text-sm text-[#5A6478]">{L("No answers match. Contact support below.", "Tidak ada jawaban yang cocok. Hubungi dukungan di bawah.")}</p>
             ) : (
               visibleGroups.map((g) => {
-                const Icon = g.icon;
                 return (
                   <div key={g.id}>
                     <h2 className="mb-4 flex items-center gap-3 text-lg font-bold text-slate-900">

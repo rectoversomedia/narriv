@@ -49,34 +49,6 @@ const priorityStyles: Record<CasePriority, string> = {
   low: "bg-[#64748B]/10 text-[#475569]",
 };
 
-const toneMap: Record<string, { bg: string; text: string; ring: string }> = {
-  blue: {
-    bg: "bg-[#465FFF]/10",
-    text: "text-[#3B52F5]",
-    ring: "ring-[#465FFF]/15",
-  },
-  purple: {
-    bg: "bg-[#8B5CFF]/10",
-    text: "text-[#6E44E8]",
-    ring: "ring-[#8B5CFF]/15",
-  },
-  green: {
-    bg: "bg-[#10B981]/10",
-    text: "text-[#047857]",
-    ring: "ring-[#10B981]/15",
-  },
-  amber: {
-    bg: "bg-[#F59E0B]/10",
-    text: "text-[#A04606]",
-    ring: "ring-[#F59E0B]/15",
-  },
-  red: {
-    bg: "bg-[#EF4444]/10",
-    text: "text-[#C81E1E]",
-    ring: "ring-[#EF4444]/15",
-  },
-  slate: { bg: "bg-slate-100", text: "text-[#5A6478]", ring: "ring-slate-200" },
-};
 
 /* ─── Helpers ─── */
 function dateInputToIsoDateTime(value: FormDataEntryValue | null) {
@@ -140,7 +112,7 @@ function MetricCard({
   label,
   value,
   helper,
-  icon: Icon,
+  icon: _Icon,
   tone,
 }: {
   label: string;
@@ -150,7 +122,6 @@ function MetricCard({
   tone: Tone;
 }) {
   const locale = useUiStore((state) => state.language);
-  const style = toneMap[tone];
 
   return (
     <div className="overflow-hidden rounded-[14px] bg-white p-4 shadow-[0_2px_12px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, ${TONE_HEX[tone] ?? "#465FFF"}1F, ${TONE_HEX[tone] ?? "#465FFF"}05 60%)` }}>
@@ -436,8 +407,6 @@ export default function CasesPage() {
   const tCreate = useTranslations("Workspace.cases.create");
   const tMetrics = useTranslations("Workspace.cases.metrics");
   const locale = useUiStore((state) => state.language);
-  const dialogTitleId = useId();
-  const dialogDescId = useId();
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const createFormRef = useRef<HTMLFormElement | null>(null);
   const queryClient = useQueryClient();
@@ -810,7 +779,70 @@ export default function CasesPage() {
             }
           />
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Phone: one card per case, status and priority still editable */}
+          <div className="space-y-2.5 p-3 md:hidden">
+            {data.map((item) => {
+              const deadlineInfo = formatDeadline(item.deadline, locale);
+              const owner = assigneeName(item.assignedTo, members) || item.assignedTeam || t("table.unassigned");
+              return (
+                <div key={item.id} className="rounded-[12px] border border-[#E6EAF2] bg-white p-3.5">
+                  <button type="button" onClick={() => setDetailCaseId(item.id)} className="block w-full text-left">
+                    <p className="text-[13px] font-black leading-snug text-[#101334]">{item.title}</p>
+                    {item.description && <p className="mt-0.5 line-clamp-2 text-[11px] font-bold text-[#5F6B94]">{item.description}</p>}
+                  </button>
+                  <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                    <select
+                      value={item.status}
+                      onChange={(e) => updateStatusMutation.mutate({ id: item.id, status: e.target.value })}
+                      disabled={updateStatusMutation.isPending}
+                      aria-label={t("table.updateStatus", { title: item.title })}
+                      className={cn("rounded-full border-0 px-2.5 py-1.5 text-[11px] font-black outline-none disabled:opacity-50", statusStyles[item.status as CaseStatus] || statusStyles.open)}
+                    >
+                      <option value="open">{tStatus("open")}</option>
+                      <option value="in_progress">{tStatus("in_progress")}</option>
+                      <option value="resolved">{tStatus("resolved")}</option>
+                      <option value="closed">{tStatus("closed")}</option>
+                    </select>
+                    <select
+                      value={item.priority || "medium"}
+                      onChange={(e) => updatePriorityMutation.mutate({ id: item.id, priority: e.target.value })}
+                      disabled={updatePriorityMutation.isPending}
+                      aria-label={t("table.updatePriority", { title: item.title })}
+                      className={cn("rounded-full border-0 px-2.5 py-1.5 text-[11px] font-black outline-none disabled:opacity-50", priorityStyles[(item.priority as CasePriority) || "medium"])}
+                    >
+                      <option value="low">{tStatus("low")}</option>
+                      <option value="medium">{tStatus("medium")}</option>
+                      <option value="high">{tStatus("high")}</option>
+                      <option value="critical">{tStatus("critical")}</option>
+                    </select>
+                  </div>
+                  <div className="mt-2.5 grid grid-cols-2 gap-2 text-[11px] font-bold">
+                    <div>
+                      <p className="text-[9.5px] font-black uppercase tracking-[0.12em] text-[#647099]">{t("table.assignee")}</p>
+                      <p className="mt-0.5 truncate text-[#31406B]">{owner}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9.5px] font-black uppercase tracking-[0.12em] text-[#647099]">{t("table.deadline")}</p>
+                      <p className={cn("mt-0.5", deadlineInfo?.isPast ? "text-[#C81E1E]" : "text-[#31406B]")}>{deadlineInfo ? deadlineInfo.formatted : t("table.noDeadline")}</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between border-t border-[#EDF1F7] pt-2.5">
+                    <span className="text-[10.5px] font-bold text-[#647099]">{formatRelativeTime(item.createdAt, locale)}</span>
+                    <div className="flex items-center gap-1">
+                      <button type="button" onClick={() => setDetailCaseId(item.id)} aria-label={t("table.viewCase", { title: item.title })} className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#647099] hover:bg-[#F0F3FF] hover:text-[#3B52F5]">
+                        <Eye size={16} />
+                      </button>
+                      <button type="button" onClick={() => setDeleteId(item.id)} aria-label={t("table.deleteCase", { title: item.title })} className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#647099] hover:bg-[#FFF4F4] hover:text-[#C81E1E]">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[960px] text-left text-sm">
               <thead className="border-b border-slate-100 bg-slate-50">
                 <tr>
@@ -993,6 +1025,7 @@ export default function CasesPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
 
         {/* Footer — total + pagination */}

@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { useUiStore } from "@/store/useUiStore";
 import { Send, TrendingUp, Zap, AlertTriangle, Users, Compass, BarChart2, Activity, ChevronDown, ChevronRight } from "lucide-react";
-import { CardContent } from "@/components/ui/card";
 import { getNarratives, getDashboardSummary } from "@/lib/api-service";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import type { NarrativeRecord, DashboardSummary } from "@/lib/api-service";
@@ -100,20 +99,6 @@ function ConfidenceChip({ confidence, t }: { confidence: Confidence; t: (key: st
   );
 }
 
-function TypingIndicator({ text }: { text: string }) {
-  return (
-    <div className="flex items-start gap-3 px-4">
-      <div className="flex flex-col gap-1.5 rounded-2xl rounded-tl-sm border border-slate-100 bg-white px-4 py-3 shadow-sm">
-        <p className="text-[12px] font-semibold text-[#5A6478]">{text}</p>
-        <div className="flex items-center gap-1">
-          <span className="h-1.5 w-1.5 typing-dot rounded-full bg-slate-300 [animation-delay:0ms]" />
-          <span className="h-1.5 w-1.5 typing-dot rounded-full bg-slate-300 [animation-delay:150ms]" />
-          <span className="h-1.5 w-1.5 typing-dot rounded-full bg-slate-300 [animation-delay:300ms]" />
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Main page
@@ -164,7 +149,6 @@ function AskPulse({ summary, topIssue, onAsk, language }: { summary: DashboardSu
 }
 
 export default function AskPage() {
-  const t = useTranslations("DemoApp");
   const tAsk = useTranslations("askNarriv");
   const user = useAuthStore((state) => state.user);
   const isDemoSession = isDemoUser(user);
@@ -332,7 +316,6 @@ export default function AskPage() {
                 {pickL("Suggested questions", "Pertanyaan yang disarankan")}
               </p>
               {SUGGESTED_CATEGORIES.map((cat) => {
-                const Icon = cat.icon;
                 return (
                   <button
                     key={cat.id}

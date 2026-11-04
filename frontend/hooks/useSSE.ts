@@ -5,6 +5,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { SSERealtimeClient, type SSEStreamOptions } from "@/lib/api-service";
 import { isDemoMode } from "@/lib/demo-mock-data";
 import { useToast } from "@/components/ui/toast";
+import { pickL } from "@/lib/use-l";
+
+const NOOP_TOAST = { showToast: () => {}, success: () => {}, error: () => {}, info: () => {} };
 
 export type SSEConnectionStatus = "connecting" | "connected" | "disconnected" | "error";
 
@@ -147,14 +150,8 @@ export function useSSE(options: UseSSEOptions = {}) {
   } = options;
 
   const queryClient = useQueryClient();
-  const toastContext = useToast();
-  // Use a no-op toast during hydration when ToastContext is null
-  const toast = toastContext ?? {
-    showToast: () => {},
-    success: () => {},
-    error: () => {},
-    info: () => {},
-  };
+  // A no-op toast during hydration when ToastContext is null (one shared object, so callbacks stay stable)
+  const toast = useToast() ?? NOOP_TOAST;
   const clientRef = useRef<SSERealtimeClient | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true); // Prevents SSE from starting in demo mode after initial render
@@ -220,9 +217,11 @@ export function useSSE(options: UseSSEOptions = {}) {
         log("Alert created", data);
         queryClient.invalidateQueries({ queryKey: ["alerts"] });
         queryClient.invalidateQueries({ queryKey: ["alerts-summary"] });
-        const alertData = data as AlertCreatedData;
-        toast.info(alertData.title, "New Alert Created");
-        onAlertCreated?.(alertData);
+        {
+          const alertData = data as AlertCreatedData;
+          toast.info(alertData.title, pickL("New alert", "Peringatan baru"));
+          onAlertCreated?.(alertData);
+        }
         break;
 
       case "alert.updated":
@@ -236,26 +235,32 @@ export function useSSE(options: UseSSEOptions = {}) {
         log("Alert status changed", data);
         queryClient.invalidateQueries({ queryKey: ["alerts"] });
         queryClient.invalidateQueries({ queryKey: ["alerts-summary"] });
-        const statusData = data as AlertStatusChangedData;
-        toast.info(`Alert status changed to ${statusData.newStatus}`, "Alert Updated");
-        onAlertStatusChanged?.(statusData);
+        {
+          const statusData = data as AlertStatusChangedData;
+          toast.info(pickL(`Alert status is now ${statusData.newStatus}`, `Status peringatan sekarang ${statusData.newStatus}`), pickL("Alert updated", "Peringatan diperbarui"));
+          onAlertStatusChanged?.(statusData);
+        }
         break;
 
       case "alert.escalated":
         log("Alert escalated", data);
         queryClient.invalidateQueries({ queryKey: ["alerts"] });
         queryClient.invalidateQueries({ queryKey: ["alerts-summary"] });
-        const escalatedData = data as AlertEscalatedData;
-        toast.error(`Alert escalated to ${escalatedData.escalationLevel}`, "Alert Escalated");
-        onAlertEscalated?.(escalatedData);
+        {
+          const escalatedData = data as AlertEscalatedData;
+          toast.error(pickL(`Alert escalated to ${escalatedData.escalationLevel}`, `Peringatan dinaikkan ke ${escalatedData.escalationLevel}`), pickL("Alert escalated", "Peringatan dinaikkan"));
+          onAlertEscalated?.(escalatedData);
+        }
         break;
 
       case "notification":
         log("Notification", data);
         queryClient.invalidateQueries({ queryKey: ["notifications"] });
-        const notifData = data as NotificationData;
-        toast.info(notifData.message, notifData.title);
-        onNotification?.(notifData);
+        {
+          const notifData = data as NotificationData;
+          toast.info(notifData.message, notifData.title);
+          onNotification?.(notifData);
+        }
         break;
 
       case "action_plan.created":
@@ -271,12 +276,12 @@ export function useSSE(options: UseSSEOptions = {}) {
       case "report.generated":
         log("Report generated", data);
         queryClient.invalidateQueries({ queryKey: ["reports"] });
-        toast.success("New report is ready", "Report Generated");
+        toast.success(pickL("The new report is ready", "Laporan baru sudah siap"), pickL("Report ready", "Laporan siap"));
         break;
 
       case "report.exported":
         log("Report exported", data);
-        toast.success("Report export completed", "Report Exported");
+        toast.success(pickL("The report file is ready", "File laporan sudah siap"), pickL("Export done", "Ekspor selesai"));
         break;
 
       default:
@@ -297,7 +302,6 @@ export function useSSE(options: UseSSEOptions = {}) {
     onAlertStatusChanged,
     onAlertEscalated,
     onNotification,
-    authVersion,
   ]);
 
   // Separate callback so it can be referenced by the connect useCallback below
@@ -342,7 +346,6 @@ export function useSSE(options: UseSSEOptions = {}) {
       onError: (error) => {
         log("Error:", error.message);
         updateStatus("error");
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- circular deps via connectFnRef is intentional; ref always holds latest connect
         reconnect();
       },
       onDisconnect: () => {
@@ -354,6 +357,9 @@ export function useSSE(options: UseSSEOptions = {}) {
 
     clientRef.current = new SSERealtimeClient(sseOptions);
     clientRef.current.connect();
+    // authVersion is listed so a new login opens a fresh stream; reconnect is left out because it calls connect
+    // (circular), and connectFnRef always holds the latest connect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [log, updateStatus, handleMessage, authVersion]);
 
   const disconnect = useCallback(() => {

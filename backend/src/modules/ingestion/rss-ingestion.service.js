@@ -152,18 +152,57 @@ export async function fetchRssFeed(url, options = {}) {
   }
 }
 
+// Google News editions queried for Indonesia: Indonesian first, then the English edition, which carries
+// coverage the Indonesian one misses (The Jakarta Post, Jakarta Globe, Reuters, Bloomberg on Indonesia).
+export const GOOGLE_NEWS_EDITIONS = {
+  id: { params: "hl=id&gl=ID&ceid=ID:id", language: "id" },
+  en: { params: "hl=en-ID&gl=ID&ceid=ID:en", language: "en" },
+};
+
 /**
- * Fetch Google News RSS for a specific brand or topic query in Indonesia
+ * Fetch Google News RSS for a specific brand or topic query in Indonesia (one edition).
  */
 export async function fetchGoogleNewsRss(keyword, options = {}) {
   const query = (keyword || "perbankan indonesia").trim();
-  const encodedQuery = encodeURIComponent(query);
-  const rssUrl = `https://news.google.com/rss/search?q=${encodedQuery}&hl=id&gl=ID&ceid=ID:id`;
+  const edition = GOOGLE_NEWS_EDITIONS[options.edition] || GOOGLE_NEWS_EDITIONS.id;
+  const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&${edition.params}`;
 
   logStructured("info", "google_news_rss_fetch_start", { keyword: query, url: rssUrl });
   const items = await fetchRssFeed(rssUrl, options);
   const limit = options.limit || 15;
-  return items.slice(0, limit);
+  return items.slice(0, limit).map((item) => ({ ...item, language: edition.language }));
+}
+
+// The English edition also returns some Indonesian headlines; a few very common Indonesian words tell them apart.
+const INDONESIAN_WORDS = /\b(dan|yang|di|ke|dari|untuk|dengan|ini|itu|bagi|pada|akan|tidak|lebih|raih|jadi|soal)\b/i;
+export const headlineLanguage = (title, fallback) => (INDONESIAN_WORDS.test(String(title || "")) ? "id" : fallback);
+
+/**
+ * Both editions for one keyword: up to `limit` Indonesian items plus up to a third as many English ones that
+ * are not the same story (same link or same title). Every item becomes an analysed signal, so the English
+ * share is kept small to hold AI cost down. The English edition failing never fails the run.
+ */
+export async function fetchGoogleNewsAllEditions(keyword, { limit = 10, fetchEdition = fetchGoogleNewsRss } = {}) {
+  const extra = Math.max(1, Math.ceil(limit / 3));
+  const [local, english] = await Promise.all([
+    fetchEdition(keyword, { limit, edition: "id" }),
+    fetchEdition(keyword, { limit: extra * 2, edition: "en" }).catch((error) => {
+      logStructured("warn", "google_news_en_failed", { keyword, error: error?.message || String(error) });
+      return [];
+    }),
+  ]);
+  const key = (item) => String(item.title || "").toLowerCase().replace(/\s+-\s+[^-]+$/, "").replace(/[^a-z0-9]+/g, "");
+  const seenUrls = new Set(local.map((item) => item.url));
+  const seenTitles = new Set(local.map(key));
+  const added = [];
+  for (const item of english) {
+    if (added.length >= extra) break;
+    if (seenUrls.has(item.url) || seenTitles.has(key(item))) continue;
+    seenUrls.add(item.url);
+    seenTitles.add(key(item));
+    added.push({ ...item, language: headlineLanguage(item.title, "en") });
+  }
+  return [...local, ...added];
 }
 
 /**
@@ -282,7 +321,7 @@ export async function ingestRssSignals({
       const safeUrl = await assertPublicHttpUrl(rssUrl);
       fetchedItems = await fetchRssFeed(safeUrl, { limit, untrusted: true });
     } else {
-      fetchedItems = await fetchGoogleNewsRss(targetKeyword, { limit });
+      fetchedItems = await fetchGoogleNewsAllEditions(targetKeyword, { limit });
     }
   } catch (fetchErr) {
     logStructured("error", "rss_fetch_failed", { error: fetchErr.message, keyword: targetKeyword, rssUrl });
@@ -309,7 +348,8 @@ export async function ingestRssSignals({
       url: item.url,
       author: item.publisher,
       publishedAt: item.publishedAt,
-      metadata: { publisher: item.publisher },
+      language: item.language,
+      metadata: { publisher: item.publisher, ...(item.language === "en" ? { edition: "en" } : {}) },
     })),
     {
       workspaceId,
@@ -317,7 +357,7 @@ export async function ingestRssSignals({
       platform: "news",
       keyword: targetKeyword,
       ingestionType: "rss",
-      // Google News is queried for Indonesia in Indonesian (hl=id&gl=ID).
+      // Google News is queried for Indonesia (gl=ID); each item carries its edition language.
       signalDefaults: { region: "ID", language: "id" },
     },
   );

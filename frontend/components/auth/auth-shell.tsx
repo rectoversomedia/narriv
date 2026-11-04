@@ -1,12 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { SUPPORT_EMAIL } from "@/lib/support";
 import { useTranslations } from "next-intl";
 import type { ChangeEvent, ClipboardEvent, InputHTMLAttributes, KeyboardEvent, MouseEvent, ReactNode } from "react";
 import { useRef, useState } from "react";
-import { cn } from "@/lib/utils";
 import type { UseFormRegisterReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";

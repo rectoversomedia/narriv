@@ -6,7 +6,7 @@ export const alertIdParamsSchema = z.object({
 
 export const updateAlertStatusBodySchema = z.object({
     status: z.enum(["open", "acknowledged", "resolved"], {
-        errorMap: () => ({ message: "status must be one of: open, acknowledged, resolved" }),
+        error: () => "status must be one of: open, acknowledged, resolved",
     }),
 });
 

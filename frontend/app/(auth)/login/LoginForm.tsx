@@ -38,7 +38,7 @@ export function LoginForm() {
       hasFiredRegisteredToast.current = true;
       toast.success(pickL("Account created. Please sign in.", "Akun berhasil dibuat. Silakan masuk."));
     }
-  }, [isRegistered]);
+  }, [isRegistered, toast]);
 
   // Derive oauthError without a mounted guard — useSearchParams in a Suspense
   // boundary is safe in Next.js 15 App Router. Reading it directly avoids the

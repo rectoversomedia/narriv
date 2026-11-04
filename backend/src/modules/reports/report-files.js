@@ -7,7 +7,7 @@
  */
 
 import PDFDocument from "pdfkit";
-import XLSX from "xlsx";
+import { buildXlsx } from "../../lib/spreadsheet.js";
 import supabase from "../../lib/supabase.js";
 import { generateReport } from "./reports.service.js";
 
@@ -285,8 +285,10 @@ export function buildReportPdf(data, lang = data.language) {
             doc.circle(left + 4, y + 6, 4).fill(sColor);
             doc.fillColor(C.ink).font("Helvetica-Bold").fontSize(10).text(s.title, left + 14, y, { width: width - 120 });
             doc.fillColor(C.muted).font("Helvetica").fontSize(8.5).text(`${W.platformName(s.platform)} · ${W.sentiment[s.sentiment] || s.sentiment || "—"}`, left + 14, doc.y + 1, { width: width - 120 });
+            const rowEnd = doc.y;
+            // The date sits beside the title; drawing it moves doc.y back up, so the row's end is restored after.
             doc.fillColor(C.muted).font("Helvetica").fontSize(8.5).text(fmtDate(s.capturedAt, W.locale), left + width - 100, y, { width: 100, align: "right" });
-            doc.y += 8;
+            doc.y = rowEnd + 8;
         }
     }
 
@@ -294,6 +296,8 @@ export function buildReportPdf(data, lang = data.language) {
     const range = doc.bufferedPageRange();
     for (let i = range.start; i < range.start + range.count; i++) {
         doc.switchToPage(i);
+        // The footer sits inside the bottom margin; without lifting it, pdfkit starts a blank page for each line.
+        doc.page.margins.bottom = 0;
         const fy = doc.page.height - 36;
         doc.moveTo(left, fy - 8).lineTo(left + width, fy - 8).lineWidth(0.5).strokeColor(C.line).stroke();
         doc.fillColor(C.muted).font("Helvetica").fontSize(8).text(W.footer, left, fy, { width: width - 80, lineBreak: false });
@@ -355,25 +359,18 @@ export function buildReportCsv(data, lang = data.language) {
 }
 
 /** XLSX buffer: one sheet per section, sized columns, filters on the data tables. */
-export function buildReportXlsx(data, lang = data.language) {
+export async function buildReportXlsx(data, lang = data.language) {
     const T = tables(data, lang);
-    const wb = XLSX.utils.book_new();
-    const add = (name, rows, widths, filter = true) => {
-        if (rows.length <= 1 && name !== T.W.sheets.summary) return;
-        const ws = XLSX.utils.aoa_to_sheet(rows);
-        ws["!cols"] = widths.map((wch) => ({ wch }));
-        if (filter && rows.length > 1) ws["!autofilter"] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: rows.length - 1, c: rows[0].length - 1 } }) };
-        XLSX.utils.book_append_sheet(wb, ws, name.slice(0, 31));
-    };
-    add(T.W.sheets.summary, T.summary, [28, 60], false);
-    add(T.W.sheets.alerts, T.alerts, [44, 12, 14, 60, 60, 20]);
-    add(T.W.sheets.issues, T.issues, [52, 10, 10, 14, 12]);
-    add(T.W.sheets.platforms, T.platforms, [22, 10, 10]);
-    add(T.W.sheets.signals, T.signals, [70, 16, 14, 20, 40]);
-    return XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+    const sheets = [
+        { name: T.W.sheets.summary, rows: T.summary, widths: [28, 60], filter: false },
+        { name: T.W.sheets.alerts, rows: T.alerts, widths: [44, 12, 14, 60, 60, 20] },
+        { name: T.W.sheets.issues, rows: T.issues, widths: [52, 10, 10, 14, 12] },
+        { name: T.W.sheets.platforms, rows: T.platforms, widths: [22, 10, 10] },
+        { name: T.W.sheets.signals, rows: T.signals, widths: [70, 16, 14, 20, 40] },
+    ];
+    return buildXlsx(sheets.filter((sheet) => sheet.rows.length > 1 || sheet.name === T.W.sheets.summary));
 }
 
-/** A safe file name from the report title. */
 export function reportFileName(data, ext) {
     const slug = String(data.title || "laporan").normalize("NFKD").replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-").toLowerCase().slice(0, 60) || "laporan";
     return `narriv-${slug}-${String(data.periodEnd || data.generatedAt).slice(0, 10)}.${ext}`;

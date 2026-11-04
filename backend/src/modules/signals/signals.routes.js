@@ -10,7 +10,7 @@ import { logStructured } from "../../lib/logger.js";
 import { globalEvents } from "../app-notifications/app-notifications.events.js";
 import { recordAuditLog } from "../../lib/audit.js";
 import { wrapAsync } from "../../lib/sentry.js";
-import XLSX from "xlsx";
+import { buildXlsx, objectsToRows, rowsToCsv } from "../../lib/spreadsheet.js";
 import { classifyRecord, loadRelevanceContext } from "../../lib/brand-relevance.js";
 
 const router = express.Router();
@@ -259,18 +259,16 @@ router.get("/export", async (req, res) => {
         }));
 
         const normalizedFormat = String(format).toLowerCase() === "xlsx" ? "xlsx" : "csv";
-        const ws = XLSX.utils.json_to_sheet(rows.length > 0 ? rows : [{ Note: "No signals found" }]);
+        const table = objectsToRows(rows.length > 0 ? rows : [{ Note: "No signals found" }]);
 
         if (normalizedFormat === "xlsx") {
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Signals");
-            const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+            const buffer = await buildXlsx([{ name: "Signals", rows: table }]);
 
             res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             res.setHeader("Content-Disposition", `attachment; filename="narriv-signals-${new Date().toISOString().split("T")[0]}.xlsx"`);
             return res.send(buffer);
         } else {
-            const csv = XLSX.utils.sheet_to_csv(ws);
+            const csv = rowsToCsv(table);
             res.setHeader("Content-Type", "text/csv; charset=utf-8");
             res.setHeader("Content-Disposition", `attachment; filename="narriv-signals-${new Date().toISOString().split("T")[0]}.csv"`);
             return res.send(csv);

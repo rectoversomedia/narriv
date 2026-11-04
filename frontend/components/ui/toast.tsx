@@ -89,7 +89,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       <div className="fixed bottom-5 right-5 z-[90] flex w-[calc(100vw-40px)] max-w-[390px] flex-col gap-3" aria-live="polite" aria-atomic="true">
         {toasts.map((toast) => {
           const styles = toneStyles[toast.tone];
-          const Icon = styles.Icon;
 
           return (
             <div key={toast.id} className={cn("flex items-start gap-3 rounded-[14px] border px-4 py-3 shadow-[0_18px_48px_rgba(15,23,42,0.14)] backdrop-blur animate-in fade-in slide-in-from-bottom-3", styles.shell)} role={toast.tone === "error" ? "alert" : "status"}>

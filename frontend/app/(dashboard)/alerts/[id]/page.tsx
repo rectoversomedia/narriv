@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { AlertTriangle } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -77,20 +76,7 @@ function getDisplayEscalationRecords(records: EscalationMatrixRecord[] | null | 
   return [...(records ?? [])].sort((a, b) => a.order - b.order || a.level.localeCompare(b.level));
 }
 
-function StatusBadge({ children, tone }: { children: string; tone: DetailTone }) {
-  return <span className={`rounded-[8px] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] ${toneClass[tone].badge}`}>{children}</span>;
-}
 
-function DetailStat({ icon: Icon, label, value, tone = "slate" }: { icon: typeof AlertTriangle; label: string; value: string; tone?: DetailTone }) {
-  return (
-    <div className="rounded-[14px] border border-[#E6EAF2] bg-white p-4 shadow-[0_1px_4px_rgba(16,24,40,0.03)]">
-      <div className="flex items-center gap-2">
-        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#647099]">{label}</p>
-      </div>
-      <p className="mt-3 truncate text-[15px] font-black text-[#101334]" title={value}>{value}</p>
-    </div>
-  );
-}
 
 function severityLabel(severity: string | null | undefined, L: (en: string, id: string) => string) {
   const v = String(severity || "").toLowerCase();
@@ -119,7 +105,7 @@ function sentimentTag(sentiment: string | null | undefined) {
 function AssignmentCard({
   alert,
   members,
-  escalationRecords,
+  escalationRecords: _escalationRecords,
   isLoadingOptions,
   isSaving,
   onSave,
@@ -137,7 +123,6 @@ function AssignmentCard({
   const [deadline, setDeadline] = useState(toDateTimeLocalValue(alert?.deadline));
   const [escalationLevel, setEscalationLevel] = useState<EscalationLevel>((alert?.escalationLevel ?? alert?.severity ?? "medium") as EscalationLevel);
   const tone = mapSeverityTone(alert?.severity);
-  const activeEscalationRecords = escalationRecords.filter((record) => record.isActive);
 
   const handleSaveAssignment = () => {
     onSave({
@@ -272,8 +257,6 @@ export default function AlertDetailPage() {
 
   const L = useL();
   const title = liveData?.title ?? td("empty.title");
-  const source = liveData?.type ?? "-";
-  const issue = liveData?.type ?? "-";
   const whatHappened = liveData?.whatHappened || (liveData as any)?.what_happened || (liveData as any)?.description || td("section.empty");
   const whyItMatters = liveData?.whyItMatters || (liveData as any)?.why_it_matters || td("section.empty");
   const whatToDo = liveData?.whatToDo || (liveData as any)?.what_to_do || td("section.empty");

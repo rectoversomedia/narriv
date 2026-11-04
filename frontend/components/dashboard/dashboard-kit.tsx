@@ -68,8 +68,7 @@ export function SecondaryAction({ children, className = "", onClick }: { childre
   );
 }
 
-export function MetricTile({ label, value, helper, icon: Icon, tone }: { label: string; value: string; helper: string; icon: LucideIcon; tone: Tone }) {
-  const styles = toneMap[tone] ?? toneMap.purple;
+export function MetricTile({ label, value, helper, icon: _Icon, tone: _tone }: { label: string; value: string; helper: string; icon: LucideIcon; tone: Tone }) {
   const isNegative = helper.startsWith("-");
   return (
     <AppCard>
@@ -162,7 +161,6 @@ export function MiniSpark({ tone = "purple" }: { tone?: Tone }) {
   );
 }
 
-export function IconBubble({ icon: Icon, tone = "purple", className = "" }: { icon: LucideIcon; tone?: Tone; className?: string }) {
-  const styles = toneMap[tone] ?? toneMap.purple;
+export function IconBubble({ icon: _Icon, tone: _tone = "purple", className: _className = "" }: { icon: LucideIcon; tone?: Tone; className?: string }) {
   return null;
 }

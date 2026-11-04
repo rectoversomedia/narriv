@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { AuthShell, CenterIcon, HelpAction, InfoCallout, PrimaryButton, SecondaryLinkButton, VerificationCodeInput } from "@/components/auth/auth-shell";
 import { requestPasswordReset, verifyPasswordResetCode } from "@/lib/api-service";
-import { cn } from "@/lib/utils";
 
 export default function VerifyCodePage() {
   const router = useRouter();

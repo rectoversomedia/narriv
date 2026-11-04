@@ -32,14 +32,6 @@ function JourneyProgress({ steps }: { steps: Step[] }) {
   );
 }
 
-function Block({ title, children, tint }: { title: string; children: React.ReactNode; tint: string }) {
-  return (
-    <div className="min-w-0 rounded-[12px] p-3.5" style={{ background: tint }}>
-      <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{title}</p>
-      <div className="mt-1 text-[13px] font-semibold leading-snug text-[#101334]">{children}</div>
-    </div>
-  );
-}
 
 /**
  * Recommended Actions: each recommendation shown with the finding behind it,

@@ -3,9 +3,7 @@ import { z } from "zod";
 const SOURCE_TYPES = ["news", "web", "forum", "social", "video", "podcast"];
 
 const sourceTypeSchema = z.enum(SOURCE_TYPES, {
-    errorMap: () => ({
-        message: `Invalid source type. Must be one of: ${SOURCE_TYPES.join(", ")}.`,
-    }),
+    error: () => `Invalid source type. Must be one of: ${SOURCE_TYPES.join(", ")}.`,
 });
 
 const actorIdSchema = z
@@ -24,7 +22,7 @@ const workspaceIdSchema = z
 
 export const createSourceBodySchema = z.object({
     name: z
-        .string({ required_error: "name is required." })
+        .string({ error: (issue) => (issue.input === undefined ? "name is required." : undefined) })
         .trim()
         .min(1, "name is required."),
     type: sourceTypeSchema,

@@ -2,48 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ArrowDown, ArrowRight, Bell, Check, ChevronDown, ChevronRight, CircleCheck, Headphones, HelpCircle, Loader2, Mail, MoreVertical, Search, Shield, Star, Users, X, CheckCircle2, type LucideIcon } from "lucide-react";
+import { AlertTriangle, ArrowRight, Bell, Check, ChevronDown, ChevronRight, CircleCheck, HelpCircle, Loader2, Mail, MoreVertical, Search, Shield, Users, X, CheckCircle2, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import {
-  AppStore,
-  Discourse,
-  Facebook,
-  GooglePlay,
-  Instagram,
-  Slack,
-  TikTokDark,
-  WhatsApp,
-  XLight,
-} from "@ridemountainpig/svgl-react";
+import { Slack, WhatsApp } from "@ridemountainpig/svgl-react";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import { assigneeName, memberName } from "@/lib/member-name";
 import { teamOptions } from "@/lib/teams";
 import { ModalShell } from "@/components/ui/modal-shell";
-import {
-  createAlert,
-  getAlerts,
-  getAlertsSummary,
-  getEscalationMatrix,
-  getIntegrations,
-  getNotificationSettings,
-  getSources,
-  getWorkspaceMembers,
-  updateAlertStatus,
-  updateAlertAssignment,
-  updateEscalationMatrix,
-  updateNotificationSettings,
-  bulkUpdateAlerts,
-  bulkAssignAlerts,
-  type Alert,
-  type EscalationMatrixRecord,
-  type IntegrationRecord,
-  type NotificationRuleRecord,
-  type NotificationRuleTrigger,
-  type WorkspaceMemberRecord,
-} from "@/lib/api-service";
+import { createAlert, getAlerts, getAlertsSummary, getEscalationMatrix, getIntegrations, getNotificationSettings, getSources, getWorkspaceMembers, updateAlertStatus, updateAlertAssignment, updateEscalationMatrix, updateNotificationSettings, bulkUpdateAlerts, type Alert, type EscalationMatrixRecord, type IntegrationRecord, type NotificationRuleRecord, type NotificationRuleTrigger, type WorkspaceMemberRecord } from "@/lib/api-service";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { intlLocale } from "@/store/useUiStore";
 import { DemoBanner } from "@/components/ui/demo-banner";
@@ -52,7 +20,7 @@ import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type AlertStatus = "New" | "Investigating" | "Escalated" | "Resolved";
-type SourceKey = keyof typeof sourceIcons;
+type SourceKey = "x" | "instagram" | "tiktok" | "facebook" | "appstore" | "googleplay" | "support" | "discourse";
 
 type ToneStyle = {
   color: string;
@@ -117,16 +85,6 @@ const toneStyles: Record<Tone, ToneStyle> = {
   slate: { color: "#64748B", rgb: "100,116,139", soft: "bg-slate-100", text: "text-[#5A6478]", border: "border-slate-200" },
 };
 
-const sourceIcons = {
-  x: <XLight className="size-3.5" />,
-  instagram: <Instagram className="size-3.5" />,
-  tiktok: <TikTokDark className="size-3.5" />,
-  facebook: <Facebook className="size-3.5" />,
-  appstore: <AppStore className="size-3.5" />,
-  googleplay: <GooglePlay className="size-3.5" />,
-  support: <Headphones className="size-3.5 text-[#3B52F5]" strokeWidth={2.4} />,
-  discourse: <Discourse className="size-3.5" />,
-};
 
 // 87186 -> "60d 13h"; 200 -> "3h 20m"; 45 -> "45m".
 function formatMinutes(totalMinutes: number) {
@@ -139,42 +97,11 @@ function formatMinutes(totalMinutes: number) {
   return `${mins}m`;
 }
 
-function makeLinePath(values: number[], width: number, height: number, padding: number) {
-  const max = Math.max(...values);
-  const min = Math.min(...values);
-  const range = max - min || 1;
-
-  return values.map((value, index) => {
-    const x = padding + (index / (values.length - 1)) * (width - padding * 2);
-    const y = padding + (1 - (value - min) / range) * (height - padding * 2);
-    return `${index === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
-  }).join(" ");
-}
 
 function Panel({ children, className }: { children: ReactNode; className?: string }) {
   return <section className={cn("rounded-[14px] border border-[#DDE3EF] bg-white shadow-[0_2px_12px_rgba(16,24,40,0.03)]", className)}>{children}</section>;
 }
 
-function Sparkline({ values, tone, id, className = "h-8" }: { values: number[]; tone: Tone; id: string; className?: string }) {
-  const style = toneStyles[tone];
-  const width = 150;
-  const height = 42;
-  const path = makeLinePath(values.length > 1 ? values : [0, 0], width, height, 5);
-  const areaPath = `${path} L ${width - 2} ${height} L 2 ${height} Z`;
-
-  return (
-    <svg className={cn("chart-line-draw w-full overflow-visible", className)} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
-      <defs>
-        <linearGradient id={id} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor={style.color} stopOpacity="0.22" />
-          <stop offset="100%" stopColor={style.color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={areaPath} fill={`url(#${id})`} />
-      <path d={path} fill="none" stroke={style.color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.3" />
-    </svg>
-  );
-}
 
 function buildMetricCards(ta: ReturnType<typeof useTranslations<"Alerts">>, summary: Awaited<ReturnType<typeof getAlertsSummary>>, openCritical: number): Metric[] {
   const total = summary?.total ?? 0;
@@ -241,29 +168,7 @@ function MetricCardSkeleton() {
   );
 }
 
-function SourceIconList({ label, sources, extraSources }: { label: string; sources: SourceKey[]; extraSources: number }) {
-  return (
-    <div>
-      {label ? <p className="mb-2 text-[9px] font-black text-[#5F6B94]">{label}</p> : null}
-      <div className="flex items-center gap-1.5">
-        {sources.length === 0 ? <span className="text-[10px] font-black text-[#31406B]">{pickL("News", "Berita")}</span> : null}
-        {sources.map((source) => (
-          <span key={source} className="flex size-[22px] items-center justify-center rounded-[6px] border border-[#E6EAF2] bg-white shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
-            {sourceIcons[source]}
-          </span>
-        ))}
-        {extraSources > 0 ? <span className="rounded-full bg-[#F1F4FB] px-1.5 py-0.5 text-[9px] font-black text-[#5F6B94]">+{extraSources}</span> : null}
-      </div>
-    </div>
-  );
-}
 
-function AlertIcon({ tone }: { tone: AlertRow["tone"] }) {
-  const style = toneStyles[tone];
-  const Icon = tone === "green" ? Star : tone === "blue" ? HelpCircle : AlertTriangle;
-
-  return null;
-}
 
 function StatusBadge({ status }: { status: AlertStatus }) {
   const styles: Record<AlertStatus, string> = {

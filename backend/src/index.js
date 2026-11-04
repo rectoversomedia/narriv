@@ -49,7 +49,7 @@ import redis from "./lib/redis.js";
 import { globalErrorHandler, notFoundHandler } from "./middlewares/error-handler.js";
 import { requestTimeout, TIMEOUTS } from "./middlewares/request-timeout.js";
 import { rateLimit, RATE_LIMITS } from "./middlewares/rate-limit.js";
-import { verifyToken } from "./middlewares/auth.middleware.js";
+import { verifyToken, demoReadOnly } from "./middlewares/auth.middleware.js";
 import { buildCorsOriginChecker, enforceHttps } from "./middlewares/security.js";
 import { securityHeaders, sensitiveDataHeaders, apiSecurityHeaders } from "./middlewares/security-headers.js";
 import { initializeRateLimiter } from "./middlewares/rate-limit.js";
@@ -136,6 +136,7 @@ app.use(validateContentType);
 // Request logging
 app.use(requestLogger);
 app.use(workspaceContextMiddleware);
+app.use(demoReadOnly);
 
 // Request timeout (cron and AI backfill run sequential AI calls and need longer budgets)
 const defaultTimeout = requestTimeout(TIMEOUTS.default);

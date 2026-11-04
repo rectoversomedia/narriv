@@ -6,7 +6,6 @@ import { useTranslations } from "next-intl";
 import { AuthShell, CenterIcon, HelpAction, InfoCallout, PrimaryButton, SecondaryLinkButton, VerificationCodeInput } from "@/components/auth/auth-shell";
 import { resendVerificationCode, verifyEmailCode } from "@/lib/api-service";
 import { useAuthStore } from "@/store/useAuthStore";
-import { cn } from "@/lib/utils";
 
 export default function VerifyEmailPage() {
   const router = useRouter();

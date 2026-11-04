@@ -14,7 +14,7 @@ export const updateWorkspaceSettingsBodySchema = z.object({
     notificationEmail: z.string().trim().email("notificationEmail format is invalid.").optional().nullable(),
     whatsappPIC: z.string().trim().min(6, "whatsappPIC is too short.").max(32, "whatsappPIC is too long.").optional().nullable(),
     // Language of the content Narriv writes and stores for this workspace (alert titles and descriptions).
-    language: z.enum(["id", "en"], { errorMap: () => ({ message: "language must be id or en." }) }).optional(),
+    language: z.enum(["id", "en"], { error: () => "language must be id or en." }).optional(),
 }).refine((data) => {
     const updatableFields = ["brandName", "industry", "timezone", "notificationEmail", "whatsappPIC", "language"];
     return updatableFields.some((key) => Object.prototype.hasOwnProperty.call(data, key));
@@ -24,7 +24,7 @@ export const updateWorkspaceSettingsBodySchema = z.object({
 
 export const monitoringPauseBodySchema = z.object({
     workspaceId: z.string().uuid("workspaceId must be a valid UUID.").optional(),
-    paused: z.boolean({ required_error: "paused is required." }),
+    paused: z.boolean({ error: (issue) => (issue.input === undefined ? "paused is required." : undefined) }),
 }).strict();
 
 export const workspaceMembersQuerySchema = z.object({
@@ -37,7 +37,7 @@ export const createWorkspaceMemberBodySchema = z.object({
     email: z.string().trim().email("email format is invalid.").optional(),
     name: z.string().trim().min(2, "name must be at least 2 characters.").max(120, "name is too long.").optional(),
     role: z.enum(WORKSPACE_MEMBER_ROLES, {
-        errorMap: () => ({ message: `role must be one of: ${WORKSPACE_MEMBER_ROLES.join(", ")}` }),
+        error: () => `role must be one of: ${WORKSPACE_MEMBER_ROLES.join(", ")}`,
     }),
 }).refine((data) => Boolean(data.userId || data.email), {
     message: "Either userId or email is required.",
@@ -52,6 +52,6 @@ export const deleteWorkspaceBodySchema = z.object({
     workspaceId: z.string().uuid("workspaceId must be a valid UUID.").optional(),
     reason: z.string().trim().min(1, "reason is required.").max(300, "reason is too long."),
     confirmText: z.literal("DELETE_WORKSPACE", {
-        errorMap: () => ({ message: "confirmText must be exactly DELETE_WORKSPACE." }),
+        error: () => "confirmText must be exactly DELETE_WORKSPACE.",
     }),
 });

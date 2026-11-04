@@ -90,7 +90,7 @@ function getNotificationMeta(type: string) {
   return { dotTone: "blue" as NotificationTone, badgeVariant: "default" as const, label: "Info" };
 }
 
-function NotificationState({ icon: Icon, title, description, action }: { icon: LucideIcon; title: string; description: string; action?: React.ReactNode }) {
+function NotificationState({ icon: _Icon, title, description, action }: { icon: LucideIcon; title: string; description: string; action?: React.ReactNode }) {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-10 text-center">
       <p className="mt-3 text-sm font-black text-slate-800">{title}</p>

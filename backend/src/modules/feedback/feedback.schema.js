@@ -3,11 +3,11 @@ import { z } from "zod";
 const FEEDBACK_ACTIONS = ["accepted", "edited", "rejected"];
 
 export const submitFeedbackBodySchema = z.object({
-    workspaceId: z.string({ required_error: "workspaceId is required." }).uuid("workspaceId must be a valid UUID."),
-    targetType: z.string({ required_error: "targetType is required." }).trim().min(1, "targetType is required."),
-    targetId: z.string({ required_error: "targetId is required." }).trim().min(1, "targetId is required."),
+    workspaceId: z.string({ error: (issue) => (issue.input === undefined ? "workspaceId is required." : undefined) }).uuid("workspaceId must be a valid UUID."),
+    targetType: z.string({ error: (issue) => (issue.input === undefined ? "targetType is required." : undefined) }).trim().min(1, "targetType is required."),
+    targetId: z.string({ error: (issue) => (issue.input === undefined ? "targetId is required." : undefined) }).trim().min(1, "targetId is required."),
     action: z.enum(FEEDBACK_ACTIONS, {
-        errorMap: () => ({ message: `action must be one of: ${FEEDBACK_ACTIONS.join(", ")}` }),
+        error: () => `action must be one of: ${FEEDBACK_ACTIONS.join(", ")}`,
     }),
     originalOutput: z.any().optional().nullable(),
     editedOutput: z.any().optional().nullable(),

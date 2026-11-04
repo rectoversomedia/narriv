@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createSignalBodySchema = z.object({
-    content: z.string({ required_error: "'content' field is required." }).trim().min(1, "'content' field is required."),
+    content: z.string({ error: (issue) => (issue.input === undefined ? "'content' field is required." : undefined) }).trim().min(1, "'content' field is required."),
     sentiment: z.string().trim().optional().nullable(),
     workspaceId: z.string().uuid("workspaceId must be a valid UUID.").optional(),
 });

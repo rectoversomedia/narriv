@@ -8,7 +8,7 @@ export const actionPlanIdParamsSchema = z.object({
 
 export const submitActionPlanFeedbackBodySchema = z.object({
     action: z.enum(FEEDBACK_ACTIONS, {
-        errorMap: () => ({ message: `action must be one of: ${FEEDBACK_ACTIONS.join(", ")}` }),
+        error: () => `action must be one of: ${FEEDBACK_ACTIONS.join(", ")}`,
     }),
     reason: z.string().trim().max(1000, "reason is too long.").optional().nullable(),
     comment: z.string().trim().max(1000, "comment is too long.").optional().nullable(),

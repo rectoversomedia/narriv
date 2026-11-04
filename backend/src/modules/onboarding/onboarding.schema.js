@@ -29,7 +29,7 @@ export const onboardingTeamBodySchema = z.object({
     members: z.array(z.object({
         email: z.string().email("Invalid email format."),
         role: z.enum(["admin", "analyst", "viewer"], {
-            errorMap: () => ({ message: "role must be one of: admin, analyst, viewer" }),
+            error: () => "role must be one of: admin, analyst, viewer",
         }),
     })).min(1, "At least one member is required.").max(10, "Maximum 10 members per onboarding."),
 });

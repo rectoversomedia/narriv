@@ -97,14 +97,16 @@ export async function apiClient<T>(
   }
 
   if (!response.ok) {
-    let errorData: { error?: string; message?: string } | null = null;
+    let errorData: { error?: string; errorId?: string; message?: string } | null = null;
     try {
       errorData = await response.json();
     } catch {
       // Ignore JSON parse errors on error responses
     }
 
+    // The backend may send an Indonesian copy of a user-facing message next to the English one.
     const message =
+      (useUiStore.getState().language === "id" ? errorData?.errorId : undefined) ||
       errorData?.error ||
       errorData?.message ||
       `Request failed (${response.status})`;
