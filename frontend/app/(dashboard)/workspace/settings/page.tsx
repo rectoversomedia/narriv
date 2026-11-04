@@ -510,6 +510,9 @@ export default function SettingsPage() {
         </div>
       ) : null}
 
+      {/* What the workspace watches comes first: it decides everything else on Narriv. */}
+      <MonitoringKeywordsPanel />
+
       {/* Row 1: Workspace & User Management */}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1.45fr)]">
         
@@ -723,7 +726,6 @@ export default function SettingsPage() {
         </Panel>
       </div>
 
-      <MonitoringKeywordsPanel />
 
 
 

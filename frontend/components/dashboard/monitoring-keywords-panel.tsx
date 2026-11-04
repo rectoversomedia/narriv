@@ -84,133 +84,121 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
 
   const keywords = keywordsQuery.data?.data ?? [];
 
+  const activeCount = keywords.filter((k) => k.isActive).length;
+  const maxActive = keywordsQuery.data?.limits?.maxActive ?? null;
+  const iconBtn = "flex size-8 items-center justify-center rounded-[8px] text-[#5A6478] transition hover:bg-[#EEF1F7] disabled:opacity-50";
+
   return (
-    <section id="keywords" className={cn("scroll-mt-24 rounded-[16px] bg-white p-6 shadow-[0_2px_12px_rgba(16,24,40,0.05)]", className)}>
-      <div className="flex items-start gap-3">
+    <section id="keywords" className={cn("scroll-mt-24 overflow-hidden rounded-[18px] bg-white shadow-[0_8px_28px_rgba(16,19,52,0.10)]", className)}>
+      {/* The most important setting: what Narriv watches. Big, on top, with the count. */}
+      <div className="flex flex-wrap items-end justify-between gap-4 bg-gradient-to-br from-[#101334] via-[#18206B] to-[#2B2F9E] px-6 py-5 text-white">
         <div className="min-w-0">
-          <h3 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{t("title")}</h3>
-          {/* One plain sentence instead of the scheduler's internal limits. */}
-          <p className="mt-0.5 text-[12px] font-bold text-[#5A6478]">
-            {pickL(`${(keywordsQuery.data?.data ?? []).filter((k) => k.isActive).length} active keywords, collected every day at 07:00 WIB.`, `${(keywordsQuery.data?.data ?? []).filter((k) => k.isActive).length} kata kunci aktif, diambil setiap hari pukul 07.00 WIB.`)}
-          </p>
+          <p className="text-[11px] font-black uppercase tracking-[0.14em] text-white/60">{pickL("What Narriv watches", "Yang dipantau Narriv")}</p>
+          <h3 className="mt-1 text-[24px] font-black leading-tight">{t("title")}</h3>
+          <p className="mt-1 text-[13px] font-bold text-white/80">{pickL("Collected every day at 07:00 WIB from news and social media.", "Diambil setiap hari pukul 07.00 WIB dari berita dan media sosial.")}</p>
+        </div>
+        <div className="rounded-[14px] bg-white/[0.12] px-5 py-3 text-right">
+          <p className="text-[34px] font-black leading-none">{activeCount}<span className="text-[16px] font-bold text-white/60">{maxActive ? ` / ${maxActive}` : ""}</span></p>
+          <p className="mt-1 text-[11px] font-black uppercase tracking-[0.08em] text-white/70">{pickL("active keywords", "kata kunci aktif")}</p>
         </div>
       </div>
 
+      <div className="p-6">
       {keywordsQuery.isLoading ? (
-        <div className="mt-4 space-y-2" aria-busy="true">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="h-9 animate-pulse rounded-lg bg-slate-100" />
-          ))}
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-busy="true">
+          {[0, 1, 2].map((i) => <div key={i} className="h-[132px] animate-pulse rounded-[14px] bg-slate-100" />)}
         </div>
       ) : keywordsQuery.isError ? (
-        <div className="mt-4 flex items-center justify-between rounded-lg border border-transparent bg-rose-50 px-3 py-2 text-[11px] font-semibold text-rose-700">
+        <div className="flex items-center justify-between rounded-[12px] bg-[#FDECEC] px-4 py-3 text-[12px] font-bold text-[#C81E1E]">
           <span>{t("loadFailed")}</span>
-          <button type="button" onClick={() => keywordsQuery.refetch()} className="font-black underline">
-            {t("retry")}
-          </button>
+          <button type="button" onClick={() => keywordsQuery.refetch()} className="font-black underline">{t("retry")}</button>
         </div>
       ) : (
         <>
           {canEdit ? (
-            <form onSubmit={submit} className="mt-4 flex gap-2">
+            <form onSubmit={submit} className="flex gap-2 rounded-[14px] bg-[#EEF1FF] p-2">
               <input
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 maxLength={100}
-                placeholder={t("placeholder")}
+                placeholder={pickL("Add a brand, product or person to watch, e.g. Arunika Mobile", "Tambah brand, produk, atau tokoh yang dipantau, mis. Arunika Mobile")}
                 aria-label={t("placeholder")}
-                className="h-9 min-w-0 flex-1 rounded-lg border border-[#DDE3EF] bg-slate-50 px-3 text-[11px] font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#465FFF]/20"
+                className="h-12 min-w-0 flex-1 rounded-[10px] bg-white px-4 text-[15px] font-bold text-[#101334] outline-none placeholder:text-[#A8B0C7] focus:ring-2 focus:ring-[#465FFF]/40"
               />
-              <button
-                type="submit"
-                disabled={busy || draft.trim().length < 2}
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#465FFF] px-3 text-[11px] font-black text-white disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {createMutation.isPending ? t("adding") : t("add")}
+              <button type="submit" disabled={busy || draft.trim().length < 2} className="h-12 shrink-0 rounded-[10px] bg-[#465FFF] px-5 text-[14px] font-black text-white transition hover:bg-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50">
+                {createMutation.isPending ? t("adding") : `+ ${t("add")}`}
               </button>
             </form>
           ) : (
-            <p className="mt-4 rounded-[10px] bg-[#F4F6FC] px-3 py-2 text-[11px] font-semibold text-[#5A6478]">{t("readOnly")}</p>
+            <p className="rounded-[12px] bg-[#F4F6FC] px-4 py-3 text-[12px] font-bold text-[#5A6478]">{t("readOnly")}</p>
           )}
 
           {keywords.length === 0 ? (
-            <p className="mt-4 text-[11px] font-semibold text-[#5A6478]">{t("empty")}</p>
+            <div className="mt-4 rounded-[14px] bg-[#FFF3DC] px-5 py-4">
+              <p className="text-[15px] font-black text-[#A04606]">{pickL("Nothing is being watched yet", "Belum ada yang dipantau")}</p>
+              <p className="text-[12px] font-bold text-[#A04606]/80">{t("empty")}</p>
+            </div>
           ) : (
-            <ul className="mt-4 divide-y divide-[#EEF1F7]">
-              {keywords.map((k) => (
-                <li key={k.id} className="flex flex-wrap items-center gap-2 py-2">
-                  {editing?.id === k.id ? (
-                    <form
-                      className="flex min-w-0 flex-1 gap-2"
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        const value = editing.value.trim();
-                        if (value.length >= 2 && value !== k.keyword) updateMutation.mutate({ id: k.id, input: { keyword: value } });
-                        else setEditing(null);
-                      }}
-                    >
-                      <input
-                        autoFocus
-                        value={editing.value}
-                        maxLength={100}
-                        onChange={(e) => setEditing({ id: k.id, value: e.target.value })}
-                        aria-label={t("rename")}
-                        className="h-8 min-w-0 flex-1 rounded-md border border-[#DDE3EF] bg-white px-2 text-[11px] font-semibold text-slate-700 focus:outline-none"
-                      />
-                      <button type="submit" disabled={busy} title={t("save")} className="rounded-md border border-[#DDE3EF] p-1.5 text-emerald-700 hover:bg-emerald-50">
-                        <Check size={13} />
-                      </button>
-                      <button type="button" onClick={() => setEditing(null)} title={t("cancel")} className="rounded-md border border-[#DDE3EF] p-1.5 text-[#5A6478] hover:bg-slate-50">
-                        <X size={13} />
-                      </button>
-                    </form>
-                  ) : (
-                    <>
-                      <span className="min-w-0 flex-1">
-                        <span className={cn("block truncate text-[11.5px] font-black", k.isActive ? "text-[#101334]" : "text-[#5A6478]")}>{k.keyword}</span>
-                        <LastRunLine keyword={k} t={t} />
-                      </span>
-                      <KeywordStatus keyword={k} t={t} />
-                      {canEdit ? (
-                        <span className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() => updateMutation.mutate({ id: k.id, input: { isActive: !k.isActive } })}
-                            title={k.isActive ? t("deactivate") : t("activate")}
-                            className="rounded-md border border-[#DDE3EF] p-1.5 text-[#5A6478] hover:bg-slate-50 disabled:opacity-50"
-                          >
-                            {k.isActive ? <Pause size={12} /> : <Play size={12} />}
+            <ul className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {keywords.map((k) => {
+                const run = k.lastRun && k.isActive && run_ok(k.lastRun.status) ? k.lastRun : null;
+                return (
+                  <li key={k.id} className={cn("flex flex-col rounded-[14px] p-4", k.isActive ? "bg-[#F7F8FC]" : "bg-[#F7F8FC] opacity-60")}>
+                    {editing?.id === k.id ? (
+                      <form
+                        className="flex gap-2"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          const value = editing.value.trim();
+                          if (value.length >= 2 && value !== k.keyword) updateMutation.mutate({ id: k.id, input: { keyword: value } });
+                          else setEditing(null);
+                        }}
+                      >
+                        <input autoFocus value={editing.value} maxLength={100} onChange={(e) => setEditing({ id: k.id, value: e.target.value })} aria-label={t("rename")} className="h-10 min-w-0 flex-1 rounded-[10px] bg-white px-3 text-[14px] font-black text-[#101334] outline-none focus:ring-2 focus:ring-[#465FFF]/40" />
+                        <button type="submit" disabled={busy} title={t("save")} className="flex size-10 items-center justify-center rounded-[10px] bg-[#12A66A] text-white"><Check size={15} /></button>
+                        <button type="button" onClick={() => setEditing(null)} title={t("cancel")} className="flex size-10 items-center justify-center rounded-[10px] bg-white text-[#5A6478]"><X size={15} /></button>
+                      </form>
+                    ) : (
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="min-w-0 break-words text-[18px] font-black leading-tight text-[#101334]">{k.keyword}</p>
+                        <KeywordStatus keyword={k} t={t} />
+                      </div>
+                    )}
+                    {/* The last collection in three numbers. */}
+                    {run ? (
+                      <div className="mt-3 grid grid-cols-3 gap-1.5">
+                        {([[pickL("Found", "Ditemukan"), run.fetched ?? 0, "#101334"], [pickL("New", "Baru"), run.inserted ?? 0, "#047857"], [pickL("Duplicates", "Duplikat"), run.deduplicated ?? 0, "#8A93AD"]] as const).map(([label, n, color]) => (
+                          <div key={label} className="rounded-[10px] bg-white px-2.5 py-2">
+                            <p className="text-[18px] font-black leading-none" style={{ color }}>{n}</p>
+                            <p className="mt-1 text-[10px] font-black uppercase tracking-[0.04em] text-[#8A93AD]">{label}</p>
+                          </div>
+                        ))}
+                        {(run.fetched ?? 0) === 0 ? <p className="col-span-3 mt-1 rounded-[8px] bg-[#FFF3DC] px-2.5 py-1.5 text-[11px] font-bold text-[#A04606]">{pickL("Nothing found: try a more common name or spelling.", "Tidak ada hasil: coba nama atau ejaan yang lebih umum.")}</p> : null}
+                      </div>
+                    ) : (
+                      <div className="mt-3"><LastRunLine keyword={k} t={t} /></div>
+                    )}
+                    <div className="mt-auto flex items-center justify-between gap-2 pt-3">
+                      <span className="text-[11px] font-bold text-[#8A93AD]">{k.lastRun ? pickL(`last run ${timeAgo(k.lastRun.at)}`, `terakhir ${timeAgo(k.lastRun.at)}`) : pickL("not run yet", "belum pernah diambil")}</span>
+                      {canEdit && editing?.id !== k.id ? (
+                        <span className="flex items-center gap-0.5">
+                          <button type="button" disabled={busy} onClick={() => updateMutation.mutate({ id: k.id, input: { isActive: !k.isActive } })} title={k.isActive ? t("deactivate") : t("activate")} className={iconBtn}>
+                            {k.isActive ? <Pause size={14} /> : <Play size={14} />}
                           </button>
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() => setEditing({ id: k.id, value: k.keyword })}
-                            title={t("rename")}
-                            className="rounded-md border border-[#DDE3EF] p-1.5 text-[#5A6478] hover:bg-slate-50 disabled:opacity-50"
-                          >
-                            <Pencil size={12} />
-                          </button>
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() => setToDelete(k)}
-                            title={t("delete")}
-                            className="rounded-md border border-[#DDE3EF] p-1.5 text-[#5A6478] hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"
-                          >
-                            <Trash2 size={12} />
-                          </button>
+                          <button type="button" disabled={busy} onClick={() => setEditing({ id: k.id, value: k.keyword })} title={t("rename")} className={iconBtn}><Pencil size={14} /></button>
+                          <button type="button" disabled={busy} onClick={() => setToDelete(k)} title={t("delete")} className={cn(iconBtn, "hover:bg-[#FDECEC] hover:text-[#C81E1E]")}><Trash2 size={14} /></button>
                         </span>
                       ) : null}
-                    </>
-                  )}
-                </li>
-              ))}
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
           {canEdit && keywords.some((k) => k.isActive) ? <RunMonitoringNow onDone={() => queryClient.invalidateQueries()} /> : null}
         </>
       )}
+      </div>
 
       <ConfirmationDialog
         open={Boolean(toDelete)}
@@ -231,19 +219,21 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
 }
 
 const STATUS_STYLE: Record<string, string> = {
-  active: "border-transparent bg-[#F1FCF6] text-[#047857]",
-  failing: "border-transparent bg-rose-50 text-rose-700",
-  paused: "border-slate-200 bg-slate-100 text-[#5A6478]",
-  awaiting_first_run: "border-transparent bg-sky-50 text-sky-700",
-  not_in_rotation: "border-transparent bg-amber-50 text-amber-700",
+  active: "bg-[#12A66A] text-white",
+  failing: "bg-[#C81E1E] text-white",
+  paused: "bg-[#E3E7F1] text-[#5A6478]",
+  awaiting_first_run: "bg-[#EEF1FF] text-[#3B52F5]",
+  not_in_rotation: "bg-[#FFF3DC] text-[#A04606]",
 };
 
 type T = ReturnType<typeof useTranslations<"Workspace.settings.keywords">>;
 
+const run_ok = (status: string) => status !== "failed" && status !== "deferred";
+
 function KeywordStatus({ keyword, t }: { keyword: MonitoringKeyword; t: T }) {
   const status = keyword.monitoringStatus ?? (!keyword.isActive ? "paused" : keyword.scheduled ? "awaiting_first_run" : "not_in_rotation");
   return (
-    <span className={cn("shrink-0 rounded-md border px-2 py-0.5 text-[9px] font-black", STATUS_STYLE[status])}>
+    <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black", STATUS_STYLE[status])}>
       {t(`status_${status}`)}
     </span>
   );
@@ -253,11 +243,11 @@ function LastRunLine({ keyword, t }: { keyword: MonitoringKeyword; t: T }) {
   const run = keyword.lastRun;
   if (!run || !keyword.isActive) return null;
   if (run.status === "failed") {
-    return <span className="block text-[9.5px] font-semibold text-rose-600">{t("lastRunFailed", { time: timeAgo(run.at), reason: run.errorCategory || "unknown" })}</span>;
+    return <span className="block text-[12px] font-bold text-[#C81E1E]">{t("lastRunFailed", { time: timeAgo(run.at), reason: run.errorCategory || "unknown" })}</span>;
   }
   if (run.status === "deferred") return null;
   return (
-    <span className="block text-[9.5px] font-semibold text-[#5A6478]">
+    <span className="block text-[12px] font-bold text-[#5A6478]">
       {t("lastRun", { time: timeAgo(run.at), fetched: run.fetched ?? 0, inserted: run.inserted ?? 0, duplicates: run.deduplicated ?? 0 })}
     </span>
   );
@@ -306,20 +296,20 @@ function RunMonitoringNow({ onDone }: { onDone: () => void }) {
   const result = mutation.data;
   const failure = mutation.isError ? describeRunError(mutation.error as RunError) : null;
   return (
-    <div className="mt-4 rounded-lg border border-[#DDE3EF] bg-[#FBFCFF] p-3">
+    <div className="mt-4 rounded-[14px] bg-[#F7F8FC] p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[11.5px] font-black text-[#101334]">{pickL("Run monitoring now", "Jalankan pemantauan sekarang")}</p>
-          <p className="text-[10px] font-semibold text-[#5A6478]">{pickL("Collects the latest public news for up to 3 active keywords (8 articles each) and analyses it. Takes up to 2 minutes; one run per 10 minutes.", "Mengambil berita publik terbaru untuk hingga 3 kata kunci aktif (8 artikel per kata kunci) lalu menganalisisnya. Butuh hingga 2 menit; satu run per 10 menit.")}</p>
+          <p className="text-[14px] font-black text-[#101334]">{pickL("Need the latest now?", "Butuh data terbaru sekarang?")}</p>
+          <p className="text-[11px] font-semibold text-[#5A6478]">{pickL("Collects the latest public news for up to 3 active keywords (8 articles each) and analyses it. Takes up to 2 minutes; one run per 10 minutes.", "Mengambil berita publik terbaru untuk hingga 3 kata kunci aktif (8 artikel per kata kunci) lalu menganalisisnya. Butuh hingga 2 menit; satu run per 10 menit.")}</p>
         </div>
         <button
           type="button"
           onClick={() => mutation.mutate()}
           disabled={mutation.isPending}
-          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-[#465FFF] px-3 text-[11px] font-black text-white hover:bg-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-[10px] bg-[#101334] px-4 text-[13px] font-black text-white hover:bg-[#1F2452] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {mutation.isPending ? <Loader2 size={13} className="animate-spin" aria-hidden="true" /> : <RefreshCw size={13} aria-hidden="true" />}
-          {mutation.isPending ? "Running…" : "Run now"}
+          {mutation.isPending ? pickL("Running…", "Berjalan…") : pickL("Run now", "Jalankan sekarang")}
         </button>
       </div>
       {failure ? (
