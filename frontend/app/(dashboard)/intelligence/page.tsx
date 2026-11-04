@@ -66,6 +66,18 @@ type ToneStyle = {
   badge: "default" | "green" | "amber" | "red" | "purple" | "slate";
 };
 
+// Impact arrives as a raw level ("HIGH"); show it as a word in both languages.
+const IMPACT_LABELS: Record<string, LocalizedText> = {
+  critical: { en: "Critical impact", id: "Dampak kritis" },
+  high: { en: "High impact", id: "Dampak tinggi" },
+  medium: { en: "Medium impact", id: "Dampak sedang" },
+  low: { en: "Low impact", id: "Dampak rendah" },
+};
+function impactLabel(impact: string | null | undefined, fallback: string): LocalizedText {
+  const known = impact ? IMPACT_LABELS[impact.toLowerCase()] : undefined;
+  return known ?? { en: impact || fallback, id: impact || fallback };
+}
+
 const toneStyles: Record<Tone, ToneStyle> = {
   blue: { color: "#465FFF", rgb: "70,95,255", badge: "default" },
   purple: { color: "#8B5CFF", rgb: "139,92,255", badge: "purple" },
@@ -143,10 +155,7 @@ function buildNarrativeClusters(records: NarrativeRecord[], labels: { sources: (
       growth: record.velocity,
       tone,
       sentiment: tone === "green" ? "positive" : tone === "red" ? "negative" : "neutral",
-      priority: {
-        en: record.impact || labels.mediumPriority,
-        id: record.impact || labels.mediumPriority,
-      },
+      priority: impactLabel(record.impact, labels.mediumPriority),
       priorityTone,
       description: {
         en: record.description || record.recommendedFocus,
