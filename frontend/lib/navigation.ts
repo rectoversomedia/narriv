@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Bell, FileText, Home, MessagesSquare, Settings } from "lucide-react";
+import { Bell, BellRing, Briefcase, Database, FileText, History, Home, LayoutDashboard, Lightbulb, ListChecks, MessagesSquare, Network, Newspaper, Send, Settings, SlidersHorizontal, Sparkles } from "lucide-react";
 
 // Five menus, each answering one question a director has:
 //   Hari Ini — what is happening and what do I decide today?
@@ -23,32 +23,33 @@ export const navGroups: Array<{ key: string; items: Array<{ key: string; href: s
 ];
 
 // The pages inside each menu, shown as tabs at the top of those pages (existing routes unchanged).
+// `satisfies` keeps the literal keys for the translation lookups while checking every tab has an icon.
 export const SECTION_TABS = {
   today: [
-    { key: "todayTab", href: "/" },
-    { key: "brief", href: "/brief" },
+    { key: "todayTab", href: "/", icon: LayoutDashboard },
+    { key: "brief", href: "/brief", icon: Newspaper },
   ],
   issues: [
-    { key: "conversations", href: "/signals" },
-    { key: "issueMap", href: "/intelligence" },
+    { key: "conversations", href: "/signals", icon: MessagesSquare },
+    { key: "issueMap", href: "/intelligence", icon: Network },
   ],
   tasks: [
-    { key: "alertsTab", href: "/alerts" },
-    { key: "actionsTab", href: "/action-center" },
-    { key: "actionCenter", href: "/action-plans" },
-    { key: "cases", href: "/workspace/cases" },
+    { key: "alertsTab", href: "/alerts", icon: BellRing },
+    { key: "actionsTab", href: "/action-center", icon: Lightbulb },
+    { key: "actionCenter", href: "/action-plans", icon: ListChecks },
+    { key: "cases", href: "/workspace/cases", icon: Briefcase },
   ],
   reports: [
-    { key: "reportsTab", href: "/reports" },
-    { key: "visibility", href: "/visibility" },
+    { key: "reportsTab", href: "/reports", icon: FileText },
+    { key: "visibility", href: "/visibility", icon: Sparkles },
   ],
   settings: [
-    { key: "settingsTab", href: "/workspace/settings" },
-    { key: "dataSources", href: "/workspace/sources" },
-    { key: "integrations", href: "/workspace/integrations" },
-    { key: "activity", href: "/workspace/activity" },
+    { key: "settingsTab", href: "/workspace/settings", icon: SlidersHorizontal },
+    { key: "dataSources", href: "/workspace/sources", icon: Database },
+    { key: "integrations", href: "/workspace/integrations", icon: Send },
+    { key: "activity", href: "/workspace/activity", icon: History },
   ],
-} as const;
+} as const satisfies Record<string, ReadonlyArray<{ key: string; href: string; icon: LucideIcon }>>;
 
 export type SectionKey = keyof typeof SECTION_TABS;
 

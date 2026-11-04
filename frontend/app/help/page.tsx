@@ -129,8 +129,8 @@ const groups: Group[] = [
       {
         q: ["Can I see who changed what?", "Bisakah saya melihat siapa mengubah apa?"],
         a: [
-          "Yes. The Activity Log records sign-ins, setting changes, alert assignments, exports and other actions per workspace.",
-          "Bisa. Log Aktivitas mencatat login, perubahan pengaturan, penugasan peringatan, ekspor, dan aksi lain per workspace.",
+          "Yes. The activity history records sign-ins, setting changes, alert assignments, exports and other actions per workspace.",
+          "Bisa. Riwayat Aktivitas mencatat login, perubahan pengaturan, penugasan peringatan, ekspor, dan aksi lain per workspace.",
         ],
       },
     ],

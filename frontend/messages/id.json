@@ -3669,7 +3669,7 @@
     }
   },
   "ActivityLog": {
-    "title": "Log Aktivitas",
+    "title": "Riwayat Aktivitas",
     "subtitle": "Jejak Audit Workspace",
     "desc": "Pantau perubahan penting di workspace: autentikasi, anggota, sumber data, kasus, integrasi, dan pengaturan.",
     "refresh": "Perbarui",

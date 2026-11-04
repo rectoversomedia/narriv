@@ -3669,7 +3669,7 @@
     }
   },
   "ActivityLog": {
-    "title": "Activity Log",
+    "title": "Activity History",
     "subtitle": "Workspace Audit Trail",
     "desc": "Monitor important workspace changes: authentication, members, data sources, cases, integrations, and settings.",
     "refresh": "Refresh",
