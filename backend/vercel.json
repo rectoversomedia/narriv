@@ -4,6 +4,9 @@
     "deploymentEnabled": false
   },
   "version": 2,
+  "regions": [
+    "hnd1"
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
