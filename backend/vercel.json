@@ -27,5 +27,6 @@
     "api/index.js": {
       "maxDuration": 300
     }
-  }
+  },
+  "buildCommand": "npm install --ignore-scripts --include=dev && npm run build"
 }
