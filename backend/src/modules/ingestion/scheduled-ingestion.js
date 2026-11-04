@@ -2,7 +2,7 @@
  * Scheduled real-data ingestion (invoked by Vercel Cron via /cron/ingest).
  *
  * For every workspace with explicitly configured active monitoring keywords,
- * fetch Google News RSS per keyword through the existing ingestRssSignals()
+ * fetch Google News RSS (plus YouTube and Reddit when their API keys are set) per keyword through the shared
  * pipeline (dedup -> persist -> AI analysis -> clustering -> alert rules).
  *
  * Bounded: stops starting new keywords once the time budget is spent and
@@ -15,6 +15,7 @@ import crypto from "crypto";
 import { baseSupabaseAdmin } from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
 import { ingestRssSignals } from "./rss-ingestion.service.js";
+import { ingestOfficialSources } from "./official-sources.service.js";
 
 const JOB_NAME = "scheduled-rss-ingestion";
 
@@ -127,13 +128,41 @@ async function pausedWorkspaceIds(ids) {
     return new Set((data || []).filter((w) => w.settings?.monitoringPaused === true).map((w) => w.id));
 }
 
+/**
+ * One keyword from every source: Google News plus the configured official sources (YouTube, Reddit). The keyword
+ * only fails when news failed and no other source produced anything.
+ */
+export async function ingestKeywordAllSources({ workspaceId, keyword, limit, rss = ingestRssSignals, official = ingestOfficialSources }) {
+    let news = null;
+    let newsError = null;
+    try {
+        news = await rss({ workspaceId, keyword, limit });
+    } catch (err) {
+        newsError = err;
+    }
+    const extra = await official({ workspaceId, keyword, limit }).catch(() => null);
+    if (newsError && !(extra?.sources || []).some((s) => s.status === "ok")) throw newsError;
+    const sum = (k) => (news?.[k] || 0) + (extra?.[k] || 0);
+    return {
+        totalFetched: sum("totalFetched"),
+        newSignalsCreated: sum("newSignalsCreated"),
+        skippedDuplicates: sum("skippedDuplicates"),
+        analyzed: sum("analyzed"),
+        analysisFailed: sum("analysisFailed"),
+        insertFailed: sum("insertFailed"),
+        clustering: { clustersCreated: (news?.clustering?.clustersCreated || 0) + (extra?.clustersCreated || 0) },
+        alerts: [...(Array.isArray(news?.alerts) ? news.alerts : []), ...(extra?.alerts || [])],
+        sources: [{ platform: "news", status: newsError ? "failed" : "ok" }, ...(extra?.sources || [])],
+    };
+}
+
 export async function runScheduledIngestion({
     budgetMs = 240000,
     perKeywordLimit = 8,
     maxKeywordsPerWorkspace = 3,
     maxWorkspaces = 25,
     trigger = "cron",
-    ingest = ingestRssSignals,
+    ingest = ingestKeywordAllSources,
     pauseMs = 300,
     concurrency = 3,
     workspaceId = null, // set for an admin's manual run of one workspace
@@ -207,6 +236,7 @@ export async function runScheduledIngestion({
                     insertFailed: r.insertFailed || 0,
                     clustersCreated: r.clustering?.clustersCreated || 0,
                     alerts: Array.isArray(r.alerts) ? r.alerts.length : 0,
+                    sources: r.sources,
                     durationMs: Date.now() - itemStart,
                 };
             } catch (err) {
