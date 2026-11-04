@@ -119,6 +119,50 @@ function TypingIndicator({ text }: { text: string }) {
 // Main page
 // ---------------------------------------------------------------------------
 
+const QUICK_TONES = ["#465FFF", "#E5484D", "#F59E0B", "#12A66A", "#8B5CFF", "#0EA5E9", "#F97316", "#64748B"];
+
+/** While the chat is empty: the workspace in four numbers, then one-tap questions. */
+function AskPulse({ summary, topIssue, onAsk, language }: { summary: DashboardSummary; topIssue: NarrativeRecord | null; onAsk: (q: string) => void; language: "en" | "id" }) {
+  const L = (en: string, id: string) => (language === "id" ? id : en);
+  const k = summary.kpis;
+  const neg = Math.round(k?.negative_percentage ?? 0);
+  const pos = Math.round(k?.positive_percentage ?? 0);
+  const tiles = [
+    { label: L("Signals", "Sinyal"), value: (k?.total_signals ?? 0).toLocaleString(language === "id" ? "id-ID" : "en-US"), sub: L("in this workspace", "di workspace ini"), rgb: "70,95,255", color: "#3B52F5" },
+    { label: L("Negative", "Negatif"), value: `${neg}%`, sub: L("of analysed signals", "dari sinyal teranalisis"), rgb: "229,72,77", color: "#C81E1E" },
+    { label: L("Positive", "Positif"), value: `${pos}%`, sub: L("of analysed signals", "dari sinyal teranalisis"), rgb: "18,166,106", color: "#047857" },
+  ];
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-4">
+        {tiles.map((t) => (
+          <div key={t.label} className="rounded-[14px] bg-white p-4 shadow-[0_2px_10px_rgba(16,24,40,0.05)]" style={{ backgroundImage: `linear-gradient(160deg, rgba(${t.rgb},0.12), rgba(${t.rgb},0.02) 65%)` }}>
+            <p className="text-[11px] font-black uppercase tracking-[0.06em]" style={{ color: t.color }}>{t.label}</p>
+            <p className="mt-1.5 text-[28px] font-black leading-none tracking-[-0.04em] text-[#101334]">{t.value}</p>
+            <p className="mt-1.5 text-[11px] font-bold text-[#5A6478]">{t.sub}</p>
+          </div>
+        ))}
+        <div className="rounded-[14px] bg-[#101334] p-4 text-white">
+          <p className="text-[11px] font-black uppercase tracking-[0.06em] text-[#A9B4FF]">{L("Top issue", "Isu utama")}</p>
+          <p className="mt-1.5 line-clamp-3 text-[14px] font-black leading-snug">{topIssue?.title ?? L("No issue yet", "Belum ada isu")}</p>
+          {topIssue ? <p className="mt-1.5 text-[11px] font-bold text-white/70">{topIssue.signalCount} {L("signals", "sinyal")}</p> : null}
+        </div>
+      </div>
+      <div>
+        <p className="mb-2 text-[11px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{L("Ask in one tap", "Tanya sekali klik")}</p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {SUGGESTED_CATEGORIES.slice(0, 6).map((cat, i) => (
+            <button key={cat.id} type="button" onClick={() => onAsk(cat.question[language])} className="flex items-center gap-3 rounded-[12px] bg-white px-4 py-3 text-left shadow-[0_2px_10px_rgba(16,24,40,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(16,24,40,0.08)]">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full text-[12px] font-black text-white" style={{ background: QUICK_TONES[i % QUICK_TONES.length] }}>{i + 1}</span>
+              <span className="text-[13px] font-bold leading-snug text-[#101334]">{cat.question[language]}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AskPage() {
   const t = useTranslations("DemoApp");
   const tAsk = useTranslations("askNarriv");
@@ -232,17 +276,11 @@ export default function AskPage() {
 
   // Dynamic welcome message — uses loaded real or mock data
   const welcomeContent = useMemo(() => {
-    const intro = pickL(
-      "Hello! I'm Narriv, your AI intelligence copilot. I answer questions using only your workspace's signals, alerts and narratives, and cite the records I used. If the data can't support an answer, I'll say so.",
-      "Halo! Saya Narriv, asisten intelijen AI Anda. Saya menjawab hanya dari sinyal, peringatan, dan narasi di workspace Anda, lengkap dengan data yang saya pakai. Kalau datanya belum cukup untuk menjawab, saya akan bilang terus terang.",
+    return pickL(
+      "Ask anything about your data. I answer only from this workspace's signals, alerts and issues, and show the records I used.",
+      "Tanya apa saja soal data Anda. Saya menjawab hanya dari sinyal, peringatan, dan isu di workspace ini, lengkap dengan sumbernya.",
     );
-    const total = dashboardSummary?.kpis?.total_signals;
-    if (typeof total !== "number") return intro;
-    return `${intro}\n\n${pickL(
-      `Your workspace currently holds ${total.toLocaleString("en-US")} signals. Try one of the suggested questions, or ask in your own words.`,
-      `Workspace Anda saat ini berisi ${total.toLocaleString("id-ID")} sinyal. Coba salah satu pertanyaan yang disarankan, atau tanyakan dengan kalimat Anda sendiri.`,
-    )}`;
-  }, [dashboardSummary]);
+  }, []);
 
   const WELCOME_MESSAGE = useMemo<Message>(() => ({
     id: "welcome",
@@ -346,7 +384,7 @@ export default function AskPage() {
               onClick={clearChat}
               className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-[12px] font-bold text-[#5A6478] transition hover:border-red-200 hover:bg-red-50 hover:text-red-700"
             >
-              Clear
+              {pickL("Clear", "Hapus percakapan")}
             </button>
           )}
         </div>
@@ -407,9 +445,9 @@ export default function AskPage() {
                     {msg.metrics && msg.metrics.length > 0 && (
                       <div className="mt-3 grid grid-cols-3 gap-2">
                         {msg.metrics.map((m, i) => (
-                          <div key={i} className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5 text-center">
-                            <p className="text-[11px] font-bold text-[#5A6478]">{m.label}</p>
-                            <p className="mt-0.5 text-[14px] font-black text-slate-900">{m.value || "—"}</p>
+                          <div key={i} className="rounded-xl bg-[#EEF1FF] px-3 py-2.5 text-center">
+                            <p className="text-[11px] font-bold text-[#3B52F5]">{m.label}</p>
+                            <p className="mt-0.5 text-[18px] font-black text-slate-900">{m.value || "—"}</p>
                           </div>
                         ))}
                       </div>
@@ -459,6 +497,10 @@ export default function AskPage() {
                 </div>
               );
             })}
+
+            {messages.length <= 1 && dashboardSummary ? (
+              <AskPulse summary={dashboardSummary} topIssue={narratives?.data?.[0] ?? null} onAsk={sendMessage} language={language} />
+            ) : null}
 
             {isTyping && (
               <div className="flex items-start gap-3">
