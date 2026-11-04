@@ -1,15 +1,27 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
-import { navGroups, SECTION_TABS } from "../../lib/navigation.ts";
+import { navGroups, SECTION_TABS, sectionForPath } from "../../lib/navigation.ts";
 
 const page = (href) => `app/(dashboard)${href === "/" ? "" : href}/page.tsx`;
 const messages = (lang) => JSON.parse(readFileSync(`messages/${lang}.json`, "utf8")).DemoApp;
 
-test("primary navigation follows the decision journey; configuration sits under Administration", () => {
-  const [main, admin] = navGroups;
-  assert.deepEqual(main.items.map((i) => i.href), ["/", "/signals", "/intelligence", "/alerts", "/visibility", "/ask", "/reports", "/action-center"]);
-  assert.deepEqual(admin.items.map((i) => i.href), ["/workspace/sources", "/workspace/integrations", "/workspace/activity", "/workspace/settings"]);
+test("navigation is five menus, one question each, and every menu's tabs start at its own page", () => {
+  assert.equal(navGroups.length, 1);
+  const items = navGroups[0].items;
+  assert.deepEqual(items.map((i) => i.key), ["today", "issues", "tasks", "reports", "settings"]);
+  assert.deepEqual(items.map((i) => i.href), ["/", "/signals", "/alerts", "/reports", "/workspace/settings"]);
+  for (const item of items) assert.equal(SECTION_TABS[item.key][0].href, item.href, `${item.key}: first tab is the menu's page`);
+  for (const item of items) for (const tab of SECTION_TABS[item.key]) assert.ok(tab.href === item.href || (item.match ?? []).includes(tab.href), `${tab.href} lights up ${item.key}`);
+});
+
+test("a page belongs to the menu whose tabs list it", () => {
+  assert.equal(sectionForPath("/brief"), "today");
+  assert.equal(sectionForPath("/intelligence"), "issues");
+  assert.equal(sectionForPath("/workspace/cases"), "tasks");
+  assert.equal(sectionForPath("/visibility"), "reports");
+  assert.equal(sectionForPath("/workspace/activity"), "settings");
+  assert.equal(sectionForPath("/alerts/123"), null);
 });
 
 test("every linked route exists, and consolidated pages stay reachable", () => {
@@ -17,23 +29,27 @@ test("every linked route exists, and consolidated pages stay reachable", () => {
   for (const item of all) assert.ok(existsSync(page(item.href)), `missing page for ${item.href}`);
   for (const tabs of Object.values(SECTION_TABS)) for (const tab of tabs) assert.ok(existsSync(page(tab.href)), `missing page for ${tab.href}`);
   const reachable = new Set([...all.flatMap((i) => [i.href, ...(i.match ?? [])]), ...Object.values(SECTION_TABS).flat().map((t) => t.href)]);
-  for (const href of ["/brief", "/action-plans", "/workspace/cases", "/action-center", "/reports"]) assert.ok(reachable.has(href), `${href} is not reachable from navigation`);
+  for (const href of ["/brief", "/intelligence", "/action-center", "/action-plans", "/workspace/cases", "/visibility", "/workspace/sources", "/workspace/integrations", "/workspace/activity"]) assert.ok(reachable.has(href), `${href} is not reachable from navigation`);
+  // Ask Narriv is the floating button in the shell, not a menu.
+  assert.match(readFileSync("components/layout/dashboard-shell.tsx", "utf8"), /href="\/ask"/);
 });
 
 test("every navigation and tab label is translated in English and Indonesian", () => {
   for (const lang of ["en", "id"]) {
     const m = messages(lang);
     for (const group of navGroups) {
-      assert.ok(m.navGroups[group.key], `${lang}: navGroups.${group.key}`);
-      for (const item of group.items) assert.ok(m.nav[item.key], `${lang}: nav.${item.key}`);
+      for (const item of group.items) {
+        assert.ok(m.nav[item.key], `${lang}: nav.${item.key}`);
+        assert.ok(m.navShort[item.key], `${lang}: navShort.${item.key}`);
+      }
     }
     for (const [section, tabs] of Object.entries(SECTION_TABS)) {
-      assert.ok(m.navSections[section], `${lang}: navSections.${section}`);
+      assert.ok(m.nav[section], `${lang}: nav.${section}`);
       for (const tab of tabs) assert.ok(m.nav[tab.key], `${lang}: nav.${tab.key}`);
     }
   }
-  assert.equal(messages("id").nav.command, "Ringkasan");
-  assert.equal(messages("id").nav.alerts, "Peringatan Dini");
+  assert.equal(messages("id").nav.today, "Hari Ini");
+  assert.equal(messages("id").nav.tasks, "Peringatan & Tugas");
 });
 
 test("Overview strings exist in both languages for every finding and action code", () => {
