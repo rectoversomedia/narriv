@@ -6,11 +6,11 @@ import { navGroups, SECTION_TABS, sectionForPath } from "../../lib/navigation.ts
 const page = (href) => `app/(dashboard)${href === "/" ? "" : href}/page.tsx`;
 const messages = (lang) => JSON.parse(readFileSync(`messages/${lang}.json`, "utf8")).DemoApp;
 
-test("navigation is five menus, one question each, and every menu's tabs start at its own page", () => {
+test("navigation is four menus, one question each, and every menu's tabs start at its own page", () => {
   assert.equal(navGroups.length, 1);
   const items = navGroups[0].items;
-  assert.deepEqual(items.map((i) => i.key), ["today", "issues", "tasks", "reports", "settings"]);
-  assert.deepEqual(items.map((i) => i.href), ["/", "/signals", "/alerts", "/reports", "/workspace/settings"]);
+  assert.deepEqual(items.map((i) => i.key), ["today", "issues", "tasks", "reports"]);
+  assert.deepEqual(items.map((i) => i.href), ["/", "/signals", "/alerts", "/reports"]);
   for (const item of items) assert.equal(SECTION_TABS[item.key][0].href, item.href, `${item.key}: first tab is the menu's page`);
   for (const item of items) for (const tab of SECTION_TABS[item.key]) assert.ok(tab.href === item.href || (item.match ?? []).includes(tab.href), `${tab.href} lights up ${item.key}`);
 });
@@ -30,6 +30,10 @@ test("every linked route exists, and consolidated pages stay reachable", () => {
   for (const tabs of Object.values(SECTION_TABS)) for (const tab of tabs) assert.ok(existsSync(page(tab.href)), `missing page for ${tab.href}`);
   const reachable = new Set([...all.flatMap((i) => [i.href, ...(i.match ?? [])]), ...Object.values(SECTION_TABS).flat().map((t) => t.href)]);
   for (const href of ["/brief", "/intelligence", "/action-center", "/action-plans", "/workspace/cases", "/visibility", "/workspace/sources", "/workspace/integrations", "/workspace/activity"]) assert.ok(reachable.has(href), `${href} is not reachable from navigation`);
+  // Settings and Help open from the account menu at the top right.
+  const topbar = readFileSync("components/layout/Topbar.tsx", "utf8");
+  assert.match(topbar, /href="\/workspace\/settings"/);
+  assert.match(topbar, /href="\/help"/);
   // Ask Narriv is the floating button in the shell, not a menu.
   assert.match(readFileSync("components/layout/dashboard-shell.tsx", "utf8"), /href="\/ask"/);
 });

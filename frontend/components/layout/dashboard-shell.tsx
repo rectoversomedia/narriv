@@ -1,8 +1,8 @@
 "use client";
 
-import { MessageCircle } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { SectionTabs } from "@/components/layout/section-tabs";
@@ -10,7 +10,6 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useUiStore } from "@/store/useUiStore";
-import { pickL } from "@/lib/use-l";
 
 export function DashboardShell({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -59,7 +58,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
       <div className={`flex min-h-screen flex-col transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${sidebarCollapsed ? "lg:pl-[72px]" : "lg:pl-[240px]"}`}>
         <Topbar />
         {/* A soft colour wash behind every page: white cards read as cards, and pages are not flat grey. */}
-        <main className="relative flex-1 bg-[linear-gradient(180deg,#F5F7FF_0%,#F8F6FF_40%,#FAFBFF_100%)] px-4 pb-32 pt-6 sm:px-6 lg:px-6 lg:pb-10 2xl:px-8">
+        <main className="relative flex-1 bg-[linear-gradient(180deg,#F5F7FF_0%,#F8F6FF_40%,#FAFBFF_100%)] px-4 pb-32 pt-6 sm:px-6 lg:px-6 lg:pb-24 2xl:px-8">
           <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[420px] overflow-hidden">
             <div className="absolute -left-24 -top-32 h-[360px] w-[520px] rounded-full bg-[#C7D2FE] opacity-40 blur-[110px]" />
             <div className="absolute -right-24 -top-24 h-[320px] w-[460px] rounded-full bg-[#FBCFE8] opacity-35 blur-[110px]" />
@@ -70,15 +69,17 @@ export function DashboardShell({ children }: { children: ReactNode }) {
           </div>
         </main>
 
-        {/* Floating Ask AI button on phones (not shown on the Ask page itself) */}
-        {pathname?.startsWith("/ask") ? null : <Link
-          href="/ask"
-          className="fixed bottom-24 right-4 z-40 flex size-12 items-center justify-center rounded-full bg-[#465FFF] text-white shadow-[0_8px_24px_rgba(70,95,255,0.4)] transition-all hover:bg-[#3b50d8] active:scale-95 sm:right-6 lg:hidden"
-          aria-label={pickL("Ask Narriv", "Tanya Narriv")}
-        >
-          {/* Phones only: on desktop Ask AI is a button in the top bar, so nothing floats over the content. */}
-          <MessageCircle size={20} strokeWidth={2.4} />
-        </Link>}
+        {/* Ask Narriv floats bottom right on every page (not on the Ask page itself): the round Narriv mark and its name. */}
+        {pathname?.startsWith("/ask") ? null : (
+          <Link
+            href="/ask"
+            aria-label="Ask Narriv"
+            className="fixed bottom-24 right-4 z-40 flex items-center gap-2.5 rounded-full bg-[#101334] py-1.5 pl-1.5 pr-4 text-white shadow-[0_12px_32px_rgba(16,19,52,0.35)] ring-1 ring-white/10 transition hover:-translate-y-0.5 hover:bg-[#18206B] active:scale-95 sm:right-6 lg:bottom-6"
+          >
+            <Image src="/brand/logo-bulat.webp" alt="" width={36} height={36} unoptimized className="size-9 rounded-full object-cover" />
+            <span className="text-[13px] font-black">Ask Narriv</span>
+          </Link>
+        )}
       </div>
     </div>
   );

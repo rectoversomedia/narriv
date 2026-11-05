@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronsLeft, ChevronsUpDown, CircleHelp } from "lucide-react";
+import { ChevronsLeft, ChevronsUpDown } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
 import { BrandMark } from "@/components/dashboard/brand-hero";
@@ -24,8 +24,8 @@ const fade = (hidden: boolean) => cn("whitespace-nowrap transition-opacity durat
 
 /**
  * Desktop: the Narriv wordmark lined up with the top bar, the client's workspace, the five menus (the open one
- * lists its pages, the same ones as the tabs on the page), then whether monitoring is running. Phones get the
- * bottom bar instead.
+ * lists its pages, the same ones as the tabs on the page), then whether monitoring is running. Settings and Help
+ * are in the account menu at the top right. Phones get the bottom bar instead.
  */
 export function Sidebar() {
   const pathname = usePathname();
@@ -135,14 +135,6 @@ export function Sidebar() {
                 <span className="mt-0.5 block truncate text-[11px] font-medium text-white/50">{status.sub}</span>
               </span>
             </Link>
-            <Link
-              href="/help"
-              title={collapsed ? L("Help", "Bantuan") : undefined}
-              className="flex h-10 items-center gap-3 rounded-[10px] px-[15px] text-[13px] font-semibold text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white"
-            >
-              <CircleHelp size={18} strokeWidth={2} className="shrink-0" />
-              <span className={fade(collapsed)}>{L("Help", "Bantuan")}</span>
-            </Link>
             <button
               type="button"
               onClick={toggleSidebar}
@@ -157,7 +149,7 @@ export function Sidebar() {
         </div>
       </aside>
 
-      <nav className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 rounded-2xl border border-border bg-[#090D16]/90 p-1.5 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] lg:hidden">
+      <nav className="fixed inset-x-3 bottom-3 z-40 grid grid-cols-4 rounded-2xl border border-border bg-[#090D16]/90 p-1.5 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] lg:hidden">
         {mobileItems.map((item) => {
           const Icon = item.icon;
           const active = activeRoute(pathname, item.href, item.match);

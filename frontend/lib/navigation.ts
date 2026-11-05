@@ -1,12 +1,13 @@
 import type { LucideIcon } from "lucide-react";
-import { BarChart3, Bell, BellRing, CalendarClock, Briefcase, Database, FileText, History, Home, LayoutDashboard, Lightbulb, ListChecks, MessagesSquare, Network, Newspaper, Send, Settings, SlidersHorizontal, Sparkle, Sparkles } from "lucide-react";
+import { BarChart3, Bell, BellRing, CalendarClock, Briefcase, Database, FileText, History, Home, LayoutDashboard, Lightbulb, ListChecks, MessagesSquare, Network, Newspaper, Send, SlidersHorizontal, Sparkle, Sparkles } from "lucide-react";
 
-// Five menus, each answering one question a director has:
+// Four menus, each answering one question a director has:
 //   Hari Ini — what is happening and what do I decide today?
 //   Isu — what are people saying, and which of it is dangerous?
 //   Peringatan & Tugas — what needs handling, who owns it, how far along is it?
 //   Laporan — what do I send to the board or the client?
-//   Pengaturan — what is monitored, and where do notifications go?
+// Pengaturan (what is monitored, where notifications go) is not a menu: it opens from the account menu at the top
+// right, and its pages still get their tabs.
 // Ask Narriv is the floating button on every page, not a menu. `match` lists the existing routes that belong to
 // an item, so old URLs keep working and light up the right menu.
 export const navGroups: Array<{ key: string; items: Array<{ key: string; href: string; icon: LucideIcon; match?: string[] }> }> = [
@@ -17,7 +18,6 @@ export const navGroups: Array<{ key: string; items: Array<{ key: string; href: s
       { key: "issues", href: "/signals", icon: MessagesSquare, match: ["/intelligence", "/opportunities", "/timeline"] },
       { key: "tasks", href: "/alerts", icon: Bell, match: ["/alert-center", "/action-center", "/action-plans", "/actions", "/workspace/cases"] },
       { key: "reports", href: "/reports", icon: FileText, match: ["/visibility"] },
-      { key: "settings", href: "/workspace/settings", icon: Settings, match: ["/workspace/sources", "/workspace/integrations", "/workspace/activity"] },
     ],
   },
 ];

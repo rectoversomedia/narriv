@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useRef, useState } from "react";
-import { Bell, ChevronDown, CircleHelp, Inbox, LogOut, Search, Settings, Sparkles, WifiOff, X } from "lucide-react";
+import { Bell, ChevronDown, CircleHelp, Inbox, LogOut, Search, Settings, WifiOff, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +16,7 @@ import { logoutSession, getNotifications, getAlerts, getNarratives, markNotifica
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSSEContext } from "@/components/providers/SSEProvider";
 import { ROLE_LABEL, WorkspaceOptions, useMyWorkspaces } from "@/components/layout/workspace-switcher";
-import { pickL, useL } from "@/lib/use-l";
+import { useL } from "@/lib/use-l";
 import { useWorkspaceStore } from "@/store/useWorkspaceStore";
 
 
@@ -413,10 +413,6 @@ export function Topbar() {
         {/* Live connection status indicator */}
         {/* Only claim live updates while the event stream is actually connected. */}
         {sseStatus === "connected" ? <LiveIndicator status={sseStatus} /> : null}
-        <Link href="/ask" className="hidden h-10 items-center gap-2 rounded-[10px] bg-[#465FFF] px-4 text-[13px] font-black text-white shadow-[0_6px_16px_rgba(70,95,255,0.3)] transition hover:bg-[#3B52F5] lg:inline-flex">
-          <Sparkles size={16} strokeWidth={2.4} aria-hidden="true" />
-          {pickL("Ask AI", "Tanya AI")}
-        </Link>
         {/* Both languages visible; the active one is filled, a click switches. */}
         <div role="group" aria-label="Language" className="hidden h-10 items-center rounded-[10px] bg-[#EEF1F7] p-1 sm:flex">
           {(["id", "en"] as const).map((code) => (
