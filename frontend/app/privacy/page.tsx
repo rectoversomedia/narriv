@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Privacy Policy (draft) — Narriv", 
 export default function PrivacyDraftPage() {
   return (
     <LegalDraft title="Privacy Policy">
-      <p>This policy describes how [COMPANY LEGAL NAME] (&quot;we&quot;) processes personal data in Narriv. Effective date: [DATE — set on approval].</p>
+      <p>This policy describes how PT Primer Rectoverso Media (&quot;we&quot;) processes personal data in Narriv. Effective date: [DATE — set on approval].</p>
       <h2>1. Data we process</h2>
       <ul>
         <li>Account data: name, email address, password hash, and sign-in records.</li>

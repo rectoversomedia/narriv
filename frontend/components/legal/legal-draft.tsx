@@ -14,7 +14,7 @@ export function LegalDraft({ title, children }: { title: string; children: React
         <div className="rounded-[22px] bg-white p-6 shadow-[0_1px_2px_rgba(16,19,52,0.06),0_12px_32px_rgba(16,19,52,0.08)] sm:p-10">
           <div role="note" className="rounded-2xl bg-[#FEF6E4] p-4 text-sm font-semibold text-[#8A4B08]">
             DRAFT — not in effect. This document has not been reviewed or approved by Narriv&apos;s owner or legal counsel.
-            Bracketed items such as [COMPANY LEGAL NAME] must be completed before publication. Nothing on this page is a binding commitment.
+            Bracketed items such as [REGISTERED ADDRESS] must be completed before publication. Nothing on this page is a binding commitment.
           </div>
           <div className="mt-6 space-y-5 text-[15px] leading-7 text-[#31406B] [&_h2]:mt-8 [&_h2]:text-[18px] [&_h2]:font-black [&_h2]:text-[#101334] [&_li]:ml-5 [&_li]:list-disc">
             {children}

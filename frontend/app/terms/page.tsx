@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Terms of Service (draft) — Narriv"
 export default function TermsDraftPage() {
   return (
     <LegalDraft title="Terms of Service">
-      <p>These terms govern use of Narriv, provided by [COMPANY LEGAL NAME], [REGISTERED ADDRESS] (&quot;we&quot;). Effective date: [DATE — set on approval].</p>
+      <p>These terms govern use of Narriv, provided by PT Primer Rectoverso Media, [REGISTERED ADDRESS] (&quot;we&quot;). Effective date: [DATE — set on approval].</p>
       <h2>1. The service</h2>
       <p>Narriv monitors publicly available online content for keywords your workspace configures, analyses it with automated systems including third-party AI models, and presents signals, narratives, risk indicators and recommendations. AI-generated content is a draft for human review; Narriv does not publish or send content on your behalf.</p>
       <h2>2. Accounts and workspaces</h2>
