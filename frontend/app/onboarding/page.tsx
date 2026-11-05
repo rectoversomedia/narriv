@@ -713,7 +713,7 @@ function KeywordsStep({
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={full}
-              placeholder={full ? pickL("All 3 keywords added", "3 kata kunci sudah terisi") : base ? pickL(`e.g. ${base}`, `mis. ${base}`) : t("placeholder")}
+              placeholder={full ? pickL("All 3 added", "Sudah 3 kata kunci") : base ? pickL(`e.g. ${base}`, `mis. ${base}`) : t("placeholder")}
               className="form-input min-w-0 flex-1 disabled:bg-[#F8F9FF]"
             />
             <button
