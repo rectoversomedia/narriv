@@ -1,501 +1,294 @@
 "use client";
 
-import { Fragment, useState } from "react";
-import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { Fragment, useState } from "react";
+import { ArrowRight, Check, ChevronDown, FileText, Minus } from "lucide-react";
+import { SiteFooter, SiteHeader } from "@/components/marketing/site-chrome";
 import { useL } from "@/lib/use-l";
-import { ArrowRight, Brain, Target, Crown, Rocket, MessageCircle, FileText, Workflow, Sliders } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-// Subscription plans matching pricing image
-const plans = [
+// Plans are agreed with the Narriv team; the app does not gate features by plan. Every line on this page is a
+// feature that works today. Keywords: each brand's first three active keywords are checked every hour
+// (backend SCHEDULED_KEYWORDS_PER_WORKSPACE).
+
+type PlanId = "pilot" | "intelligence" | "decision" | "command";
+type Copy = [string, string];
+
+const PLANS: Array<{
+  id: PlanId;
+  name: string;
+  price: number | null;
+  from?: number;
+  tagline: Copy;
+  audience: Copy;
+  popular?: boolean;
+  limits: { brands: Copy; users: Copy; retention: Copy };
+  adds: Copy[];
+}> = [
   {
     id: "pilot",
-    name: "PILOT",
-    tagline: "Validate the value.",
-    icon: Rocket,
+    name: "Pilot",
     price: 5_000_000,
-    period: "month",
-    description: "Pilot projects and proofs of concept",
-    popular: false,
-    limits: {
-      topics: 5,
-      users: 1,
-      retention: "30 days",
-    },
-    included: [
-      "Signals Monitoring",
-      "Alerts",
-      "Email Notifications",
-    ],
-    excluded: [
-      "Intelligence",
-      "AI Visibility",
-      "WhatsApp Notifications",
-      "Action Center",
-      "Slack/Teams Integration",
-      "API Access",
+    tagline: ["Validate the value.", "Buktikan nilainya."],
+    audience: ["Pilot projects and proofs of concept", "Proyek percontohan dan uji konsep"],
+    limits: { brands: ["1", "1"], users: ["1", "1"], retention: ["30 days", "30 hari"] },
+    adds: [
+      ["News and YouTube, checked hourly", "Berita dan YouTube, dicek tiap jam"],
+      ["Alerts with an owner and a deadline", "Peringatan dengan PJ dan tenggat"],
+      ["Daily briefing and Ask Narriv", "Briefing harian dan Ask Narriv"],
+      ["Reports in PDF, Excel and email", "Laporan PDF, Excel, dan email"],
     ],
   },
   {
     id: "intelligence",
-    name: "INTELLIGENCE",
-    tagline: "Understand what matters.",
-    icon: Brain,
+    name: "Intelligence",
     price: 25_000_000,
-    period: "month",
-    description: "Corporate communications, brand, and reputation teams",
     popular: true,
-    limits: {
-      topics: 50,
-      users: 10,
-      retention: "12 months",
-    },
-    included: [
-      "Signals Monitoring",
-      "Alerts",
-      "Intelligence",
-      "AI Visibility",
-      "WhatsApp Notifications",
-      "Monthly Executive Report",
-    ],
-    excluded: [
-      "Action Center",
-      "Slack/Teams Integration",
-      "Weekly Report",
-      "Custom AI Models",
-      "API Access",
+    tagline: ["Understand what matters.", "Pahami yang penting."],
+    audience: ["Corporate comms, brand and reputation teams", "Tim komunikasi korporat, brand, dan reputasi"],
+    limits: { brands: ["1", "1"], users: ["10", "10"], retention: ["12 months", "12 bulan"] },
+    adds: [
+      ["Everything in Pilot", "Semua di Pilot"],
+      ["AI visibility: ChatGPT, Claude and more", "Visibilitas di AI: ChatGPT, Claude, dan lainnya"],
+      ["Scheduled reports for the board", "Laporan terjadwal untuk direksi"],
+      ["Cases and response plans", "Kasus dan rencana respons"],
     ],
   },
   {
     id: "decision",
-    name: "DECISION",
-    tagline: "Turn intelligence into action.",
-    icon: Target,
+    name: "Decision",
     price: 50_000_000,
-    period: "month",
-    description: "Large organizations managing multiple brands, products, and issues",
-    popular: false,
-    limits: {
-      topics: 200,
-      users: 50,
-      retention: "12 months",
-    },
-    included: [
-      "Everything in Intelligence",
-      "Action Center",
-      "Escalation Workflow",
-      "Slack Integration",
-      "Microsoft Teams Integration",
-      "WhatsApp Alerts",
-      "Weekly Executive Brief",
-    ],
-    excluded: [
-      "Custom AI Models",
-      "API Access",
-      "Dedicated Infrastructure",
-      "Enterprise SLA",
+    tagline: ["Turn intelligence into action.", "Ubah wawasan jadi tindakan."],
+    audience: ["Organisations with several brands or products", "Organisasi dengan beberapa brand atau produk"],
+    limits: { brands: ["3", "3"], users: ["50", "50"], retention: ["12 months", "12 bulan"] },
+    adds: [
+      ["Everything in Intelligence", "Semua di Intelligence"],
+      ["Instagram, TikTok, X and Facebook", "Instagram, TikTok, X, dan Facebook"],
+      ["Slack, Microsoft Teams and webhooks", "Slack, Microsoft Teams, dan webhook"],
+      ["Escalation matrix", "Matriks eskalasi"],
     ],
   },
   {
     id: "command",
-    name: "COMMAND",
-    tagline: "Operationalize intelligence.",
-    icon: Crown,
-    price: 100_000_000,
-    period: "month+",
-    description: "Banks, telcos, ministries, and enterprise organizations",
-    popular: false,
-    limits: {
-      topics: "Unlimited",
-      users: "Unlimited",
-      retention: "Custom",
-    },
-    included: [
-      "Everything in Decision",
-      "Custom AI Models",
-      "API Access",
-      "Dedicated Infrastructure",
-      "Enterprise SLA",
-      "Dedicated Success Manager",
-      "Quarterly Strategic Review",
-    ],
-    excluded: [],
-  },
-];
-
-// Feature comparison table
-const comparisonFeatures = [
-  {
-    category: "Core Intelligence",
-    icon: Brain,
-    items: [
-      { name: "Signals Monitoring", pilot: true, intelligence: true, decision: true, command: true },
-      { name: "Alerts", pilot: true, intelligence: true, decision: true, command: true },
-      { name: "Intelligence", pilot: false, intelligence: true, decision: true, command: true },
-      { name: "AI Visibility", pilot: false, intelligence: true, decision: true, command: true },
-    ],
-  },
-  {
-    category: "Notifications",
-    icon: MessageCircle,
-    items: [
-      { name: "Email Notifications", pilot: true, intelligence: true, decision: true, command: true },
-      { name: "WhatsApp Notifications", pilot: false, intelligence: true, decision: true, command: true },
-    ],
-  },
-  {
-    category: "Action & Workflow",
-    icon: Workflow,
-    items: [
-      { name: "Action Center", pilot: false, intelligence: false, decision: true, command: true },
-      { name: "Escalation Workflow", pilot: false, intelligence: false, decision: true, command: true },
-    ],
-  },
-  {
-    category: "Integrations",
-    icon: Sliders,
-    items: [
-      { name: "Slack Integration", pilot: false, intelligence: false, decision: true, command: true },
-      { name: "Microsoft Teams", pilot: false, intelligence: false, decision: true, command: true },
-      { name: "API Access", pilot: false, intelligence: false, decision: false, command: true },
-    ],
-  },
-  {
-    category: "Reports",
-    icon: FileText,
-    items: [
-      { name: "Monthly Executive Report", pilot: false, intelligence: true, decision: true, command: true },
-      { name: "Weekly Executive Brief", pilot: false, intelligence: false, decision: true, command: true },
-    ],
-  },
-  {
-    category: "Enterprise",
-    icon: Crown,
-    items: [
-      { name: "Custom AI Models", pilot: false, intelligence: false, decision: false, command: true },
-      { name: "Dedicated Infrastructure", pilot: false, intelligence: false, decision: false, command: true },
-      { name: "Enterprise SLA", pilot: false, intelligence: false, decision: false, command: true },
-      { name: "Dedicated Success Manager", pilot: false, intelligence: false, decision: false, command: true },
-      { name: "Quarterly Strategic Review", pilot: false, intelligence: false, decision: false, command: true },
+    name: "Command",
+    price: null,
+    from: 100_000_000,
+    tagline: ["Run it across the organisation.", "Jalankan di seluruh organisasi."],
+    audience: ["Banks, telcos, ministries and agencies", "Bank, telko, kementerian, dan agensi"],
+    limits: { brands: ["Custom", "Kustom"], users: ["No limit", "Bebas"], retention: ["Custom", "Kustom"] },
+    adds: [
+      ["Everything in Decision", "Semua di Decision"],
+      ["A dedicated success manager", "Success manager khusus"],
+      ["Quarterly strategy review", "Tinjauan strategi tiap kuartal"],
+      ["Service level agreement", "Perjanjian tingkat layanan (SLA)"],
     ],
   },
 ];
 
+const ORDER: PlanId[] = ["pilot", "intelligence", "decision", "command"];
+const from = (id: PlanId) => ORDER.slice(ORDER.indexOf(id));
 
-// Indonesian for the plan and comparison copy above (plan names stay as product names).
-const ID_COPY: Record<string, string> = {
-  "Validate the value.": "Buktikan nilainya.",
-  "Pilot projects and proofs of concept": "Proyek percontohan dan uji konsep",
-  "Understand what matters.": "Pahami yang penting.",
-  "Corporate communications, brand, and reputation teams": "Tim komunikasi korporat, brand, dan reputasi",
-  "Turn intelligence into action.": "Ubah intelijen jadi tindakan.",
-  "Large organizations managing multiple brands, products, and issues": "Organisasi besar yang mengelola banyak brand, produk, dan isu",
-  "Operationalize intelligence.": "Jadikan intelijen bagian dari operasional.",
-  "Banks, telcos, ministries, and enterprise organizations": "Bank, telko, kementerian, dan organisasi enterprise",
-  "30 days": "30 hari",
-  "12 months": "12 bulan",
-  Unlimited: "Tanpa batas",
-  Custom: "Kustom",
-  "Signals Monitoring": "Pemantauan Percakapan",
-  Alerts: "Peringatan",
-  "Email Notifications": "Notifikasi Email",
-  Intelligence: "Intelijen",
-  "AI Visibility": "Visibilitas AI",
-  "WhatsApp Notifications": "Notifikasi WhatsApp",
-  "Action Center": "Action Center",
-  "Slack/Teams Integration": "Integrasi Slack/Teams",
-  "API Access": "Akses API",
-  "Monthly Executive Report": "Laporan Eksekutif Bulanan",
-  "Weekly Report": "Laporan Mingguan",
-  "Custom AI Models": "Model AI Kustom",
-  "Everything in Intelligence": "Semua fitur Intelligence",
-  "Escalation Workflow": "Alur Eskalasi",
-  "Slack Integration": "Integrasi Slack",
-  "Microsoft Teams Integration": "Integrasi Microsoft Teams",
-  "Microsoft Teams": "Microsoft Teams",
-  "WhatsApp Alerts": "Peringatan WhatsApp",
-  "Weekly Executive Brief": "Ringkasan Eksekutif Mingguan",
-  "Dedicated Infrastructure": "Infrastruktur Khusus",
-  "Enterprise SLA": "SLA Enterprise",
-  "Everything in Decision": "Semua fitur Decision",
-  "Dedicated Success Manager": "Success Manager Khusus",
-  "Quarterly Strategic Review": "Tinjauan Strategis Kuartalan",
-  "Core Intelligence": "Intelijen Inti",
-  Notifications: "Notifikasi",
-  "Action & Workflow": "Aksi & Alur Kerja",
-  Integrations: "Integrasi",
-  Reports: "Laporan",
-  Enterprise: "Enterprise",
-};
+const COMPARE: Array<{ group: Copy; rows: Array<{ label: Copy; plans: PlanId[] | Record<PlanId, Copy> }> }> = [
+  {
+    group: ["Capacity", "Kapasitas"],
+    rows: [
+      { label: ["Brands monitored", "Brand yang dipantau"], plans: { pilot: ["1", "1"], intelligence: ["1", "1"], decision: ["3", "3"], command: ["As needed", "Sesuai kebutuhan"] } },
+      { label: ["Keywords checked hourly, per brand", "Kata kunci dicek tiap jam, per brand"], plans: { pilot: ["3", "3"], intelligence: ["3", "3"], decision: ["3", "3"], command: ["3", "3"] } },
+      { label: ["Users", "Pengguna"], plans: { pilot: ["1", "1"], intelligence: ["10", "10"], decision: ["50", "50"], command: ["Unlimited", "Tanpa batas"] } },
+      { label: ["Data kept for", "Data disimpan"], plans: { pilot: ["30 days", "30 hari"], intelligence: ["12 months", "12 bulan"], decision: ["12 months", "12 bulan"], command: ["Custom", "Kustom"] } },
+    ],
+  },
+  {
+    group: ["Monitoring", "Pemantauan"],
+    rows: [
+      { label: ["Online news and YouTube, hourly", "Berita online dan YouTube, tiap jam"], plans: from("pilot") },
+      { label: ["Sentiment and issues, automatic", "Sentimen dan isu otomatis"], plans: from("pilot") },
+      { label: ["Instagram, TikTok, X, Facebook", "Instagram, TikTok, X, Facebook"], plans: from("decision") },
+      { label: ["AI visibility", "Visibilitas di AI"], plans: from("intelligence") },
+    ],
+  },
+  {
+    group: ["Action", "Tindakan"],
+    rows: [
+      { label: ["Alerts with owner and deadline", "Peringatan dengan PJ dan tenggat"], plans: from("pilot") },
+      { label: ["Email notifications", "Notifikasi email"], plans: from("pilot") },
+      { label: ["Cases and response plans", "Kasus dan rencana respons"], plans: from("intelligence") },
+      { label: ["Escalation matrix", "Matriks eskalasi"], plans: from("decision") },
+      { label: ["Slack, Teams, webhooks", "Slack, Teams, webhook"], plans: from("decision") },
+    ],
+  },
+  {
+    group: ["Reports", "Laporan"],
+    rows: [
+      { label: ["Daily briefing and Ask Narriv", "Briefing harian dan Ask Narriv"], plans: from("pilot") },
+      { label: ["Export to PDF, Excel, email", "Ekspor PDF, Excel, email"], plans: from("pilot") },
+      { label: ["Scheduled reports", "Laporan terjadwal"], plans: from("intelligence") },
+    ],
+  },
+  {
+    group: ["Service", "Layanan"],
+    rows: [
+      { label: ["Success manager and quarterly review", "Success manager dan tinjauan kuartalan"], plans: from("command") },
+      { label: ["Service level agreement", "SLA"], plans: from("command") },
+    ],
+  },
+];
 
-function formatPrice(price: number): string {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-  }).format(price);
-}
-
-function CheckIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
-
-function XIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
-}
+const rupiah = (n: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n);
+const short = (n: number) => `Rp${(n / 1_000_000).toLocaleString("id-ID")} jt`;
 
 export default function PricingPage() {
-  const t = useTranslations("Pricing");
   const L = useL();
-  const tx = (text: string | number) => (typeof text === "string" ? L(text, ID_COPY[text] ?? text) : text);
-  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
+  const P = (c: Copy) => L(c[0], c[1]);
+  const [annual, setAnnual] = useState(false);
+  const discount = annual ? 0.8 : 1;
 
-  const discount = billingPeriod === "annual" ? 0.8 : 1; // 20% discount for annual
+  const faqs: Array<[Copy, Copy]> = [
+    [["Is there a free trial?", "Apakah ada uji coba gratis?"], ["Yes: 14 days with full access, set up with the Narriv team. The live demo needs no sign-up at all.", "Ada. Uji coba 14 hari dengan akses penuh, diatur bersama tim Narriv. Demo langsung bahkan tanpa daftar."]],
+    [["How do we pay?", "Bagaimana cara bayarnya?"], ["Bank transfer against an invoice, monthly or yearly. Yearly is 20% cheaper.", "Transfer bank dengan invoice, bulanan atau tahunan. Tahunan lebih hemat 20%."]],
+    [["Can we change plans later?", "Bisa ganti paket nanti?"], ["Yes. Tell the Narriv team and we change your workspace's plan.", "Bisa. Hubungi tim Narriv, lalu kami yang mengubah paket workspace Anda."]],
+    [["What counts as a brand?", "Apa yang dihitung sebagai brand?"], ["One workspace: a brand, product or client with its own keywords, alerts and reports.", "Satu workspace: satu brand, produk, atau klien dengan kata kunci, peringatan, dan laporannya sendiri."]],
+    [["Why is social media not in every plan?", "Kenapa media sosial tidak ada di semua paket?"], ["Collecting Instagram, TikTok, X and Facebook has a real cost per run, so it is included from Decision and switched on by the Narriv team.", "Pengambilan data Instagram, TikTok, X, dan Facebook ada biaya nyata tiap kali jalan, jadi tersedia mulai paket Decision dan diaktifkan oleh tim Narriv."]],
+  ];
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="relative overflow-hidden bg-[#101334] px-6 py-20 text-white">
-        <div className="relative z-10 mx-auto max-w-5xl text-center">
-          <p className="mb-4 text-[12px] font-semibold uppercase tracking-[0.14em] text-[#A5B4FC]">{L("Pricing", "Harga")}</p>
-          <h1 className="text-[34px] font-bold leading-tight tracking-[-0.02em] sm:text-[42px]">{t("title")}</h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-300 sm:text-xl">{t("subtitle")}</p>
-
-          {/* Billing Toggle */}
-          <div className="mt-10 inline-flex items-center gap-4 rounded-full border border-white/20 bg-white/10 p-1.5 backdrop-blur-sm">
-            <button
-              onClick={() => setBillingPeriod("monthly")}
-              className={`rounded-full px-6 py-2.5 text-sm font-semibold transition ${
-                billingPeriod === "monthly"
-                  ? "bg-white text-slate-900 shadow-lg"
-                  : "text-white/80 hover:text-white"
-              }`}
-            >
-              {t("monthly")}
-            </button>
-            <button
-              onClick={() => setBillingPeriod("annual")}
-              className={`rounded-full px-6 py-2.5 text-sm font-semibold transition flex items-center gap-2 ${
-                billingPeriod === "annual"
-                  ? "bg-white text-slate-900 shadow-lg"
-                  : "text-white/80 hover:text-white"
-              }`}
-            >
-              {t("annual")}
-              <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-xs font-bold text-green-400">
-                <span>-20%</span>
-              </span>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Pricing Cards */}
-      <section className="px-6 py-16">
-        <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-4">
-          {plans.map((plan) => {
-            const price = Math.round(plan.price * discount);
-            const isCustom = plan.id === "command";
-
-            return (
-              <div
-                key={plan.id}
-                className={`relative rounded-2xl border p-6 sm:p-8 ${
-                  plan.popular
-                    ? "border-[#465FFF] bg-white shadow-md ring-2 ring-[#465FFF]"
-                    : "border-slate-200 bg-white shadow-lg"
-                }`}
+    <div className="min-h-dvh bg-[#F5F7FC] text-[#101334]">
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#0B0E2A] via-[#151B5E] to-[#2B2F9E] pb-28 text-white">
+        <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-120px] h-[420px] w-[900px] -translate-x-1/2 rounded-full bg-[#6D7CFF] opacity-25 blur-[120px]" />
+        <SiteHeader />
+        <div className="relative mx-auto max-w-3xl px-4 pt-10 text-center sm:px-6">
+          <p className="text-[12px] font-black uppercase tracking-[0.16em] text-[#A5B4FF]">{L("Pricing", "Harga")}</p>
+          <h1 className="mt-3 text-[34px] font-black leading-[1.1] tracking-[-0.03em] sm:text-[46px]">{L("One plan per stage of your team.", "Satu paket untuk tiap tahap tim Anda.")}</h1>
+          <p className="mx-auto mt-4 max-w-xl text-[16px] font-medium text-white/75">{L("Every plan starts with a 14-day trial on your own brand.", "Semua paket dimulai dengan uji coba 14 hari memakai brand Anda sendiri.")}</p>
+          <div role="group" aria-label={L("Billing period", "Periode tagihan")} className="mt-8 inline-flex rounded-full bg-white/10 p-1">
+            {[
+              { v: false, label: L("Monthly", "Bulanan") },
+              { v: true, label: L("Yearly", "Tahunan") },
+            ].map((o) => (
+              <button
+                key={String(o.v)}
+                type="button"
+                aria-pressed={annual === o.v}
+                onClick={() => setAnnual(o.v)}
+                className={cn("flex h-10 items-center gap-2 rounded-full px-5 text-[14px] font-bold transition", annual === o.v ? "bg-white text-[#101334]" : "text-white/75 hover:text-white")}
               >
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-600 px-4 py-1.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/30">
-                      <span>{t("mostPopular")}</span>
-                    </span>
-                  </div>
-                )}
-
-                {/* Plan Header */}
-                <div className="text-center">
-                  <h3 className="text-xl font-bold text-slate-900">{plan.name}</h3>
-                  <p className="mt-1 text-sm text-[#5A6478]">{tx(plan.tagline)}</p>
-                  <p className="mt-2 text-xs text-[#5A6478]">{tx(plan.description)}</p>
-                </div>
-
-                {/* Price */}
-                <div className="mt-6 text-center">
-                  {isCustom ? (
-                    <div className="text-[26px] font-bold leading-tight text-slate-900 xl:text-[28px]"><span>{tx("Custom")}</span></div>
-                  ) : (
-                    <>
-                      {/* Price and period wrap as a unit so long rupiah amounts never overflow the card. */}
-                      <div className="flex flex-wrap items-baseline justify-center gap-x-1 text-[26px] font-bold leading-tight tabular-nums text-slate-900 xl:text-[28px]">
-                        <span className="whitespace-nowrap">{formatPrice(price)}</span>
-                        <span className="text-[14px] font-normal text-[#5A6478]">/{plan.period === "month+" ? L("month+", "bulan+") : L("month", "bulan")}</span>
-                      </div>
-                      {billingPeriod === "annual" && (
-                        <span>{L(`Save ${formatPrice(plan.price - price)}/month`, `Hemat ${formatPrice(plan.price - price)}/bulan`)}</span>
-                      )}
-                    </>
-                  )}
-                </div>
-
-                {/* CTA Button */}
-                <Link
-                  href={isCustom ? "/help#contact" : `/signup?plan=${plan.id}`}
-                  className={`mt-8 block w-full rounded-xl py-3.5 text-center text-base font-bold transition ${
-                    plan.popular
-                      ? "bg-[#465FFF] text-white shadow-sm hover:bg-[#3B52F5]"
-                      : "border-2 border-slate-200 text-slate-900 hover:border-indigo-500 hover:text-indigo-600"
-                  }`}
-                >
-                  {isCustom ? t("contactSales") : plan.price ? t("startTrial") : t("contactSales")}
-                </Link>
-
-                {/* Limits */}
-                <div className="mt-6 space-y-3 border-t border-slate-100 pt-6">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-[#5A6478]">{L("Intelligence topics", "Topik intelijen")}</span>
-                    <span className="font-semibold text-slate-900">{tx(plan.limits.topics)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-[#5A6478]">{L("Users", "Pengguna")}</span>
-                    <span className="font-semibold text-slate-900">{tx(plan.limits.users)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-[#5A6478]">{L("Data retention", "Retensi data")}</span>
-                    <span className="font-semibold text-slate-900">{tx(plan.limits.retention)}</span>
-                  </div>
-                </div>
-
-                {/* Features */}
-                <div className="mt-6 space-y-3">
-                  {plan.included.map((feature) => (
-                    <div key={feature} className="flex items-start gap-3">
-                      <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-700">
-                        <CheckIcon className="h-3 w-3" />
-                      </div>
-                      <span className="text-sm text-slate-600">{tx(feature)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+                {o.label}
+                {o.v ? <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-black", annual ? "bg-[#E8F7F0] text-[#047857]" : "bg-[#22C55E]/20 text-[#86EFAC]")}>-20%</span> : null}
+              </button>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Feature Comparison Table */}
-      <section className="px-6 py-16">
-        <div className="mx-auto max-w-6xl">
-          <div className="text-center">
-            <h2 className="text-3xl font-black text-slate-900">{t("compareTitle")}</h2>
-            <p className="mt-4 text-lg text-[#5A6478]">{t("compareSubtitle")}</p>
-          </div>
+      {/* Plans */}
+      <section className="relative mx-auto -mt-16 max-w-6xl px-4 sm:px-6">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {PLANS.map((plan) => (
+            <div
+              key={plan.id}
+              className={cn(
+                "relative flex flex-col rounded-[22px] p-6",
+                plan.popular ? "bg-[#101334] text-white shadow-[0_24px_60px_rgba(16,19,52,0.35)]" : "bg-white shadow-[0_1px_2px_rgba(16,19,52,0.06),0_12px_32px_rgba(16,19,52,0.08)]",
+              )}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-[20px] font-black">{plan.name}</h2>
+                {plan.popular ? <span className="rounded-full bg-[#465FFF] px-2.5 py-1 text-[11px] font-black text-white">{L("Most chosen", "Paling dipilih")}</span> : null}
+              </div>
+              <p className={cn("mt-1 text-[14px] font-semibold", plan.popular ? "text-[#A5B4FF]" : "text-[#465FFF]")}>{P(plan.tagline)}</p>
+              <p className={cn("mt-1 text-[13px] font-medium", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>{P(plan.audience)}</p>
 
-          <div className="mt-12 overflow-x-auto">
-            <table className="w-full min-w-[640px]">
+              <div className="mt-6 min-h-[64px]">
+                {plan.price ? (
+                  <>
+                    <p className="text-[28px] font-black leading-none tracking-[-0.02em] tabular-nums">{short(Math.round(plan.price * discount))}</p>
+                    <p className={cn("mt-1.5 text-[13px] font-semibold", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>
+                      {L("per month", "per bulan")}
+                      {annual ? ` · ${L("save", "hemat")} ${rupiah(plan.price - Math.round(plan.price * discount))}` : ""}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[28px] font-black leading-none tracking-[-0.02em]">{L("Custom", "Kustom")}</p>
+                    <p className={cn("mt-1.5 text-[13px] font-semibold", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>{L(`from ${short(plan.from ?? 0)} per month`, `mulai ${short(plan.from ?? 0)} per bulan`)}</p>
+                  </>
+                )}
+              </div>
+
+              <dl className={cn("mt-5 grid grid-cols-3 gap-2 rounded-2xl p-3 text-center", plan.popular ? "bg-white/[0.08]" : "bg-[#F5F7FF]")}>
+                {[
+                  { k: L("Brands", "Brand"), v: P(plan.limits.brands) },
+                  { k: L("Users", "Pengguna"), v: P(plan.limits.users) },
+                  { k: L("Data", "Data"), v: P(plan.limits.retention) },
+                ].map((x) => (
+                  <div key={x.k} className="min-w-0">
+                    <dt className={cn("text-[11px] font-bold uppercase tracking-[0.06em]", plan.popular ? "text-white/50" : "text-[#5F6B94]")}>{x.k}</dt>
+                    <dd className="mt-1 text-[13px] font-black leading-tight">{x.v}</dd>
+                  </div>
+                ))}
+              </dl>
+
+              <ul className="mt-5 flex-1 space-y-2.5">
+                {plan.adds.map((f, i) => (
+                  <li key={f[0]} className={cn("flex items-start gap-2.5 text-[14px] font-medium", plan.popular ? "text-white/85" : "text-[#31406B]", i === 0 && plan.id !== "pilot" && "font-bold")}>
+                    <Check size={16} strokeWidth={3} aria-hidden="true" className={cn("mt-0.5 shrink-0", plan.popular ? "text-[#86EFAC]" : "text-[#12A66A]")} />
+                    {P(f)}
+                  </li>
+                ))}
+              </ul>
+
+              <Link
+                href={plan.price ? `/signup?plan=${plan.id}` : "/help#contact"}
+                className={cn(
+                  "mt-6 flex h-12 items-center justify-center gap-2 rounded-xl text-[15px] font-bold transition",
+                  plan.popular ? "bg-[#465FFF] text-white hover:bg-[#3B52F5]" : "bg-[#101334] text-white hover:bg-[#1B2155]",
+                )}
+              >
+                {plan.price ? L("Start the 14-day trial", "Mulai uji coba 14 hari") : L("Talk to us", "Hubungi kami")}
+                <ArrowRight size={16} aria-hidden="true" />
+              </Link>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Comparison */}
+      <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-[12px] font-black uppercase tracking-[0.16em] text-[#465FFF]">{L("Compare", "Bandingkan")}</p>
+          <h2 className="mt-2 text-[28px] font-black leading-tight tracking-[-0.02em] sm:text-[34px]">{L("What each plan includes.", "Isi tiap paket.")}</h2>
+        </div>
+        <div className="mt-10 overflow-hidden rounded-[22px] bg-white shadow-[0_1px_2px_rgba(16,19,52,0.06),0_12px_32px_rgba(16,19,52,0.07)]">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] text-left">
               <thead>
-                <tr className="border-b-2 border-slate-200">
-                  <th className="py-4 pr-4 text-left text-sm font-bold text-slate-900">
-                    {L("Feature", "Fitur")}
-                  </th>
-                  <th className="px-4 py-4 text-center text-sm font-bold text-slate-600">
-                    PILOT
-                  </th>
-                  <th className="px-4 py-4 text-center text-sm font-bold text-indigo-600">
-                    INTELLIGENCE
-                  </th>
-                  <th className="px-4 py-4 text-center text-sm font-bold text-slate-600">
-                    DECISION
-                  </th>
-                  <th className="px-4 py-4 text-center text-sm font-bold text-slate-600">
-                    COMMAND
-                  </th>
+                <tr className="bg-[#101334] text-white">
+                  <th className="px-5 py-4 text-[13px] font-bold">{L("Feature", "Fitur")}</th>
+                  {PLANS.map((p) => <th key={p.id} className={cn("px-3 py-4 text-center text-[14px] font-black", p.popular && "bg-[#465FFF]")}>{p.name}</th>)}
                 </tr>
               </thead>
               <tbody>
-                {comparisonFeatures.map((category) => (
-                  <Fragment key={category.category}>
-                    <tr className="bg-slate-50">
-                      <td colSpan={5} className="py-3 px-4">
-                        <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
-                          <category.icon size={16} className="text-indigo-500" />
-                          {tx(category.category)}
-                        </div>
-                      </td>
+                {COMPARE.map((g) => (
+                  <Fragment key={g.group[0]}>
+                    <tr className="bg-[#F5F7FF]">
+                      <td colSpan={5} className="px-5 py-2.5 text-[12px] font-black uppercase tracking-[0.08em] text-[#465FFF]">{P(g.group)}</td>
                     </tr>
-                    {category.items.map((item) => (
-                      <tr key={item.name} className="border-b border-slate-100">
-                        <td className="py-4 pr-4 text-sm text-slate-600">{tx(item.name)}</td>
-                        <td className="px-4 py-4 text-center">
-                          {typeof item.pilot === "boolean" ? (
-                            item.pilot ? (
-                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-700">
-                                <CheckIcon className="h-3.5 w-3.5" />
-                              </span>
+                    {g.rows.map((row) => (
+                      <tr key={row.label[0]} className="even:bg-[#FAFBFF]">
+                        <td className="px-5 py-3.5 text-[14px] font-semibold text-[#31406B]">{P(row.label)}</td>
+                        {ORDER.map((id) => (
+                          <td key={id} className="px-3 py-3.5 text-center">
+                            {Array.isArray(row.plans) ? (
+                              row.plans.includes(id) ? (
+                                <span className="inline-flex size-6 items-center justify-center rounded-full bg-[#E8F7F0] text-[#047857]"><Check size={14} strokeWidth={3} aria-label={L("Included", "Termasuk")} /></span>
+                              ) : (
+                                <span className="inline-flex size-6 items-center justify-center text-[#B8BED6]"><Minus size={14} aria-label={L("Not included", "Tidak termasuk")} /></span>
+                              )
                             ) : (
-                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[#5A6478]">
-                                <XIcon className="h-3.5 w-3.5" />
-                              </span>
-                            )
-                          ) : (
-                            <span className="text-sm font-medium text-slate-900">{item.pilot}</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-4 text-center">
-                          {typeof item.intelligence === "boolean" ? (
-                            item.intelligence ? (
-                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
-                                <CheckIcon className="h-3.5 w-3.5" />
-                              </span>
-                            ) : (
-                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[#5A6478]">
-                                <XIcon className="h-3.5 w-3.5" />
-                              </span>
-                            )
-                          ) : (
-                            <span className="text-sm font-medium text-indigo-600">{item.intelligence}</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-4 text-center">
-                          {typeof item.decision === "boolean" ? (
-                            item.decision ? (
-                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-700">
-                                <CheckIcon className="h-3.5 w-3.5" />
-                              </span>
-                            ) : (
-                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[#5A6478]">
-                                <XIcon className="h-3.5 w-3.5" />
-                              </span>
-                            )
-                          ) : (
-                            <span className="text-sm font-medium text-slate-900">{item.decision}</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-4 text-center">
-                          {typeof item.command === "boolean" ? (
-                            item.command ? (
-                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-700">
-                                <CheckIcon className="h-3.5 w-3.5" />
-                              </span>
-                            ) : (
-                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[#5A6478]">
-                                <XIcon className="h-3.5 w-3.5" />
-                              </span>
-                            )
-                          ) : (
-                            <span className="text-sm font-bold text-slate-900">{item.command}</span>
-                          )}
-                        </td>
+                              <span className="text-[14px] font-black">{P(row.plans[id])}</span>
+                            )}
+                          </td>
+                        ))}
                       </tr>
                     ))}
                   </Fragment>
@@ -506,74 +299,46 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* FAQ */}
-      <section className="px-6 py-16">
-        <div className="mx-auto max-w-3xl">
-          <h2 className="text-center text-3xl font-black text-slate-900">{t("faqTitle")}</h2>
-
-          <div className="mt-12 space-y-6">
-            {[
-              { q: t("faq1.q"), a: t("faq1.a") },
-              { q: t("faq2.q"), a: t("faq2.a") },
-              { q: t("faq3.q"), a: t("faq3.a") },
-              { q: t("faq4.q"), a: t("faq4.a") },
-              { q: t("faq5.q"), a: t("faq5.a") },
-            ].map((item, idx) => (
-              <div key={idx} className="rounded-xl border border-slate-200 p-6">
-                <h3 className="text-base font-bold text-slate-900">{item.q}</h3>
-                <p className="mt-3 text-sm text-slate-600 leading-relaxed">{item.a}</p>
-              </div>
-            ))}
-          </div>
+      {/* Questions */}
+      <section className="mx-auto max-w-3xl px-4 pb-20 sm:px-6">
+        <div className="text-center">
+          <p className="text-[12px] font-black uppercase tracking-[0.16em] text-[#465FFF]">FAQ</p>
+          <h2 className="mt-2 text-[28px] font-black leading-tight tracking-[-0.02em] sm:text-[34px]">{L("About plans and billing.", "Soal paket dan pembayaran.")}</h2>
+        </div>
+        <div className="mt-10 space-y-3">
+          {faqs.map(([q, a]) => (
+            <details key={q[0]} className="group rounded-2xl bg-white px-5 py-4 shadow-[0_1px_2px_rgba(16,19,52,0.06),0_8px_24px_rgba(16,19,52,0.05)] sm:px-6">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[16px] font-bold [&::-webkit-details-marker]:hidden">
+                {P(q)}
+                <ChevronDown size={18} aria-hidden="true" className="shrink-0 text-[#465FFF] transition group-open:rotate-180" />
+              </summary>
+              <p className="mt-3 text-[15px] font-medium leading-relaxed text-[#5F6B94]">{P(a)}</p>
+            </details>
+          ))}
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="px-6 py-20">
-        <div className="mx-auto max-w-4xl rounded-3xl bg-[#101334] px-8 py-16 text-center text-white">
-          <h2 className="text-3xl font-black tracking-tight sm:text-4xl">{t("ctaTitle")}</h2>
-          <p className="mx-auto mt-4 max-w-xl text-lg text-white/80">{t("ctaSubtitle")}</p>
-          <div className="mt-10 flex flex-wrap justify-center gap-4">
-            <Link
-              href="/signup"
-              className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 text-base font-bold text-indigo-600 shadow-xl hover:scale-[1.02] transition"
-            >
-              {t("ctaButton")}
-              <ArrowRight size={18} />
+      {/* Closing call to action */}
+      <section className="px-4 pb-20 sm:px-6">
+        <div className="relative mx-auto max-w-5xl overflow-hidden rounded-[28px] bg-gradient-to-br from-[#101334] via-[#18206B] to-[#2B2F9E] px-6 py-14 text-center text-white">
+          <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-0 h-[240px] w-[600px] -translate-x-1/2 rounded-full bg-[#6D7CFF] opacity-30 blur-[90px]" />
+          <h2 className="relative text-[28px] font-black leading-tight tracking-[-0.02em] sm:text-[36px]">{L("Not sure which plan fits?", "Belum yakin paket mana yang cocok?")}</h2>
+          <p className="relative mx-auto mt-3 max-w-xl text-[16px] font-medium text-white/70">{L("Start with the trial. We look at the results with you after 14 days.", "Mulai dari uji coba. Setelah 14 hari, kami tinjau hasilnya bersama Anda.")}</p>
+          <div className="relative mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link href="/signup" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-white px-6 text-[15px] font-bold text-[#101334] hover:bg-white/90">
+              {L("Start the trial", "Mulai uji coba")}
+              <ArrowRight size={17} aria-hidden="true" />
             </Link>
-            <Link
-              href="/help#contact"
-              className="inline-flex items-center gap-2 rounded-xl border-2 border-white/30 px-8 py-4 text-base font-bold text-white hover:bg-white/10 transition"
-            >
-              {t("contactSales")}
-            </Link>
+            <Link href="/help#contact" className="inline-flex h-12 items-center justify-center rounded-xl bg-white/10 px-6 text-[15px] font-bold text-white hover:bg-white/15">{L("Talk to us", "Hubungi kami")}</Link>
           </div>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm font-bold text-white/80">
-            <a href="/contoh-laporan-narriv.pdf" target="_blank" rel="noopener" className="inline-flex items-center gap-2 underline-offset-4 hover:text-white hover:underline">
-              <FileText size={16} />
-              {L("See a sample board report (PDF)", "Lihat contoh laporan untuk BOD (PDF)")}
-            </a>
-            <Link href="/login" className="inline-flex items-center gap-2 underline-offset-4 hover:text-white hover:underline">
-              {L("Try the live demo", "Coba demo langsung")}
-              <ArrowRight size={16} />
-            </Link>
-          </div>
-          <p className="mt-3 text-xs text-white/50">{L("Sample data from a fictional bank.", "Contoh memakai data bank fiktif.")}</p>
+          <a href="/contoh-laporan-narriv.pdf" target="_blank" rel="noopener" className="relative mt-6 inline-flex items-center gap-2 text-[14px] font-bold text-white/80 underline-offset-4 hover:text-white hover:underline">
+            <FileText size={16} aria-hidden="true" />
+            {L("See a sample board report (PDF)", "Lihat contoh laporan untuk direksi (PDF)")}
+          </a>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 px-6 py-12">
-        <div className="mx-auto max-w-6xl flex flex-wrap items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
-            <span className="text-xl font-bold text-slate-900">Narriv</span>
-          </div>
-          <div className="flex items-center gap-8 text-sm text-[#5A6478]">
-            <Link href="/help#contact" className="hover:text-slate-900">{t("contact")}</Link>
-          </div>
-          <p className="text-sm text-[#5A6478]">© {new Date().getFullYear()} Narriv. {L("All rights reserved.", "Hak cipta dilindungi.")}</p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

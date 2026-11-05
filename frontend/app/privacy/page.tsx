@@ -15,7 +15,7 @@ export default function PrivacyDraftPage() {
         <li>Usage and AI accounting data: request logs and AI token usage per workspace.</li>
       </ul>
       <h2>2. Service providers</h2>
-      <p>Narriv runs on third-party infrastructure. Based on the current system these include hosting (Vercel), database (Supabase), AI analysis (OpenAI) and, where configured, data collection providers (Apify). [CONFIRM THE FINAL PROCESSOR LIST, DATA LOCATIONS AND TRANSFER MECHANISMS — owner and legal to complete.]</p>
+      <p>Narriv runs on third-party infrastructure. Based on the current system these include hosting (Vercel), database (Supabase), AI analysis (OpenAI; Anthropic for AI-visibility tests), email delivery (Resend), Google (YouTube Data API and Google sign-in) and, where configured, social media collection (Apify). [CONFIRM THE FINAL PROCESSOR LIST, DATA LOCATIONS AND TRANSFER MECHANISMS — owner and legal to complete.]</p>
       <h2>3. Purposes and legal bases</h2>
       <p>[PURPOSES, LEGAL BASES AND APPLICABLE LAW (for example Indonesia&apos;s PDP Law) — legal to complete.]</p>
       <h2>4. Retention</h2>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { SiteFooter, SiteHeader } from "@/components/marketing/site-chrome";
 import { SUPPORT_EMAIL } from "@/lib/support";
 import { useL } from "@/lib/use-l";
 import { Search, ChevronDown, Zap, BarChart3, Bell, FileText, Users, Settings } from "lucide-react";
@@ -42,8 +42,8 @@ const groups: Group[] = [
       {
         q: ["What data sources does Narriv support?", "Sumber data apa saja yang didukung Narriv?"],
         a: [
-          "Scheduled monitoring collects online news for your active keywords. Other connectors are listed on the Data Sources page with their real status; a connector only collects data once it is configured and healthy.",
-          "Pemantauan terjadwal mengumpulkan berita online untuk kata kunci aktif Anda. Konektor lain tercantum di halaman Sumber Data beserta status sebenarnya; konektor baru mengambil data setelah dikonfigurasi dan berjalan normal.",
+          "Online news and YouTube are checked every hour for your first three active keywords. Instagram, TikTok, X and Facebook are switched on by the Narriv team for your plan. The Data Sources page shows each source's real status.",
+          "Berita online dan YouTube dicek setiap jam untuk tiga kata kunci aktif pertama Anda. Instagram, TikTok, X, dan Facebook diaktifkan oleh tim Narriv sesuai paket. Halaman Sumber Data menampilkan status sebenarnya dari tiap sumber.",
         ],
       },
       {
@@ -85,8 +85,8 @@ const groups: Group[] = [
       {
         q: ["Where are notifications sent?", "Notifikasi dikirim ke mana?"],
         a: [
-          "Only to the channels you configure: Slack, Microsoft Teams or webhook integrations on the Integrations page, plus the email and WhatsApp settings in Settings → Notifications.",
-          "Hanya ke kanal yang Anda atur: integrasi Slack, Microsoft Teams, atau webhook di halaman Integrasi, serta pengaturan email dan WhatsApp di Pengaturan → Notifikasi.",
+          "Alerts always appear in Narriv. They also go to email when it is switched on in the notification settings, and to Slack, Microsoft Teams or a webhook connected on the Integrations page. WhatsApp is coming soon.",
+          "Peringatan selalu muncul di Narriv. Peringatan juga dikirim ke email bila dinyalakan di pengaturan notifikasi, serta ke Slack, Microsoft Teams, atau webhook yang disambungkan di halaman Integrasi. WhatsApp segera hadir.",
         ],
       },
     ],
@@ -173,36 +173,36 @@ export default function HelpCenterPage() {
     .filter((g) => g.faqs.length > 0);
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 px-6 py-16 text-white">
-        <div className="mx-auto max-w-4xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur-sm">
-            {L("Help Center", "Pusat Bantuan")}
-          </div>
-          <h1 className="text-[32px] font-bold leading-tight tracking-[-0.02em] sm:text-[40px]">{L("How can we help you?", "Ada yang bisa kami bantu?")}</h1>
-          <p className="mx-auto mt-4 max-w-xl text-lg text-slate-300">
+    <div className="min-h-dvh bg-[#F5F7FC] text-[#101334]">
+      <header className="relative overflow-hidden bg-gradient-to-br from-[#0B0E2A] via-[#151B5E] to-[#2B2F9E] pb-16 text-white">
+        <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-120px] h-[420px] w-[900px] -translate-x-1/2 rounded-full bg-[#6D7CFF] opacity-25 blur-[120px]" />
+        <SiteHeader />
+        <div className="relative mx-auto max-w-4xl px-4 pt-8 text-center sm:px-6">
+          <p className="text-[12px] font-black uppercase tracking-[0.16em] text-[#A5B4FF]">{L("Help Center", "Pusat Bantuan")}</p>
+          <h1 className="mt-3 text-[34px] font-black leading-tight tracking-[-0.03em] sm:text-[46px]">{L("How can we help you?", "Ada yang bisa kami bantu?")}</h1>
+          <p className="mx-auto mt-4 max-w-xl text-[16px] font-medium text-white/75">
             {L("Search the answers below or pick a topic.", "Cari jawaban di bawah atau pilih topik.")}
           </p>
           <div className="relative mx-auto mt-8 max-w-xl">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#465FFF]" size={20} aria-hidden="true" />
             <input
               type="text"
               placeholder={L("Search for answers…", "Cari jawaban…")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-xl border border-white/20 bg-white/10 py-4 pl-12 pr-4 text-white backdrop-blur-sm transition-all placeholder:text-slate-300 focus:border-indigo-400 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-indigo-400/50"
+              className="h-14 w-full rounded-2xl bg-white pl-12 pr-4 text-[15px] font-medium text-[#101334] shadow-[0_12px_32px_rgba(8,10,40,0.35)] placeholder:text-[#8A93B5] focus:outline-none focus:ring-4 focus:ring-[#465FFF]/30"
             />
           </div>
         </div>
       </header>
 
-      <main className="px-6 py-12">
+      <main className="px-4 py-12 sm:px-6">
         <section className="mx-auto max-w-4xl">
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => setActiveGroup(null)}
-              className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${!activeGroup ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"}`}
+              className={`rounded-full px-4 py-2 text-sm font-bold transition ${!activeGroup ? "bg-[#465FFF] text-white shadow-[0_3px_8px_rgba(70,95,255,0.3)]" : "bg-white text-[#31406B] shadow-sm hover:text-[#101334]"}`}
             >
               {L("All topics", "Semua topik")}
             </button>
@@ -213,7 +213,7 @@ export default function HelpCenterPage() {
                   key={g.id}
                   type="button"
                   onClick={() => setActiveGroup(active ? null : g.id)}
-                  className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${active ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"}`}
+                  className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition ${active ? "bg-[#465FFF] text-white shadow-[0_3px_8px_rgba(70,95,255,0.3)]" : "bg-white text-[#31406B] shadow-sm hover:text-[#101334]"}`}
                 >
                   {pick(g.title)}
                 </button>
@@ -228,7 +228,7 @@ export default function HelpCenterPage() {
               visibleGroups.map((g) => {
                 return (
                   <div key={g.id}>
-                    <h2 className="mb-4 flex items-center gap-3 text-lg font-bold text-slate-900">
+                    <h2 className="mb-4 flex items-center gap-3 text-[12px] font-black uppercase tracking-[0.12em] text-[#465FFF]">
                       {pick(g.title)}
                     </h2>
                     <div className="space-y-3">
@@ -236,18 +236,18 @@ export default function HelpCenterPage() {
                         const key = `${g.id}:${faq.q[0]}`;
                         const open = expanded === key || Boolean(query);
                         return (
-                          <div key={key} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                          <div key={key} className="overflow-hidden rounded-2xl bg-white shadow-[0_1px_2px_rgba(16,19,52,0.06),0_8px_24px_rgba(16,19,52,0.05)]">
                             <button
                               type="button"
                               onClick={() => setExpanded(expanded === key ? null : key)}
                               aria-expanded={open}
                               className="flex w-full items-center justify-between gap-4 p-5 text-left"
                             >
-                              <span className="font-medium text-slate-900">{pick(faq.q)}</span>
-                              <ChevronDown size={18} className={`shrink-0 text-[#5A6478] transition-transform ${open ? "rotate-180" : ""}`} />
+                              <span className="text-[16px] font-bold text-[#101334]">{pick(faq.q)}</span>
+                              <ChevronDown size={18} aria-hidden="true" className={`shrink-0 text-[#465FFF] transition-transform ${open ? "rotate-180" : ""}`} />
                             </button>
                             {open && (
-                              <div className="border-t border-slate-100 px-5 pb-5 pt-4 text-sm leading-relaxed text-slate-600">{pick(faq.a)}</div>
+                              <div className="px-5 pb-5 text-[15px] font-medium leading-relaxed text-[#5F6B94]">{pick(faq.a)}</div>
                             )}
                           </div>
                         );
@@ -261,13 +261,13 @@ export default function HelpCenterPage() {
         </section>
 
         <section id="contact" className="mx-auto mt-16 max-w-4xl scroll-mt-24">
-          <div className="rounded-2xl bg-[#101334] p-8 text-center text-white">
+          <div className="rounded-[28px] bg-gradient-to-br from-[#101334] via-[#18206B] to-[#2B2F9E] p-8 text-center text-white sm:p-10">
             <h2 className="text-2xl font-bold">{L("Still need help?", "Masih butuh bantuan?")}</h2>
             {SUPPORT_EMAIL ? (
               <div className="mt-6 flex flex-wrap justify-center gap-4">
                 <a
                   href={`mailto:${SUPPORT_EMAIL}`}
-                  className="inline-flex items-center gap-2 rounded-lg border-2 border-white/30 px-6 py-3 font-bold text-white transition-colors hover:bg-white/10"
+                  className="inline-flex h-12 items-center gap-2 rounded-xl bg-white px-6 font-bold text-[#101334] transition-colors hover:bg-white/90"
                 >
                   {L("Email support", "Email dukungan")} ({SUPPORT_EMAIL})
                 </a>
@@ -284,15 +284,7 @@ export default function HelpCenterPage() {
         </section>
       </main>
 
-      <footer className="border-t border-slate-200 bg-white px-6 py-8">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-6 text-sm text-[#5A6478]">
-            <Link href="/" className="hover:text-slate-900">{L("Back to dashboard", "Kembali ke dashboard")}</Link>
-            <Link href="/help#contact" className="hover:text-slate-900">{L("Contact", "Kontak")}</Link>
-          </div>
-          <p className="text-sm text-[#5A6478]">© {new Date().getFullYear()} Narriv. {L("All rights reserved.", "Hak cipta dilindungi.")}</p>
-        </div>
-      </footer>
+      <div className="pt-4"><SiteFooter /></div>
     </div>
   );
 }

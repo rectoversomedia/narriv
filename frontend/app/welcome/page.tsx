@@ -1,15 +1,14 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
-import { ArrowRight, Bell, CalendarClock, FileText, Loader2, Radar, UserCheck } from "lucide-react";
+import { ArrowRight, Bell, CalendarClock, ChevronDown, FileText, Loader2, Radar, UserCheck } from "lucide-react";
 import { startDemoLogin } from "@/components/auth/auth-shell";
+import { SiteFooter, SiteHeader } from "@/components/marketing/site-chrome";
 import { AI_ENGINES } from "@/components/ui/ai-engines";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
-import { useUiStore } from "@/store/useUiStore";
 
 // The public landing page, served at "/" to visitors who are not signed in (see proxy.ts).
 // Every number on it is either a product fact or labelled as sample data from the fictional demo bank.
@@ -40,29 +39,6 @@ function DemoButton({ className, children }: { className?: string; children: Rea
       </button>
       {failed ? <span role="alert" className="text-[12px] font-semibold text-[#FCA5A5]">{L("The demo could not open. Try again.", "Demo gagal dibuka. Coba lagi.")}</span> : null}
     </span>
-  );
-}
-
-function LanguageSwitch({ dark = false }: { dark?: boolean }) {
-  const language = useUiStore((s) => s.language);
-  const setLanguage = useUiStore((s) => s.setLanguage);
-  return (
-    <div role="group" aria-label="Bahasa / Language" className={cn("flex rounded-[9px] p-0.5", dark ? "bg-white/10" : "bg-[#EEF1F7]")}>
-      {(["id", "en"] as const).map((code) => (
-        <button
-          key={code}
-          type="button"
-          aria-pressed={language === code}
-          onClick={() => setLanguage(code)}
-          className={cn(
-            "h-7 min-w-[34px] rounded-[7px] px-2 text-[12px] font-black uppercase",
-            language === code ? (dark ? "bg-white text-[#101334]" : "bg-white text-[#101334] shadow-sm") : dark ? "text-white/60" : "text-[#5A6478]",
-          )}
-        >
-          {code}
-        </button>
-      ))}
-    </div>
   );
 }
 
@@ -170,21 +146,23 @@ export default function WelcomePage() {
     { title: L("PR agencies", "Agensi PR"), text: L("One account for every client, with each client's data kept apart.", "Satu akun untuk semua klien, dan data tiap klien tidak tercampur.") },
   ];
 
+  // Questions a prospect asks before a trial; answers describe only what Narriv does today.
+  const faqs = [
+    { q: L("How fast will I see results?", "Seberapa cepat hasilnya terlihat?"), a: L("The first news and YouTube results arrive about a minute after setup. From then on Narriv checks every hour.", "Hasil pertama dari berita dan YouTube masuk sekitar satu menit setelah pengaturan. Setelah itu Narriv mengecek setiap jam.") },
+    { q: L("Which sources does Narriv watch?", "Sumber apa saja yang dipantau?"), a: L("Indonesian online news and YouTube from day one. Instagram, TikTok, X and Facebook are switched on per plan.", "Berita online Indonesia dan YouTube langsung aktif. Instagram, TikTok, X, dan Facebook diaktifkan sesuai paket.") },
+    { q: L("How is this different from a social listening tool?", "Apa bedanya dengan tool social listening?"), a: L("Most tools stop at charts. Narriv turns a rising issue into an alert with an owner and a deadline, suggests a response plan, and writes the board report.", "Kebanyakan tool berhenti di grafik. Narriv mengubah isu yang naik jadi peringatan dengan penanggung jawab dan tenggat, menyarankan rencana respons, dan menyusun laporan untuk direksi.") },
+    { q: L("Can I trust the AI's reading?", "Bisakah analisis AI-nya dipercaya?"), a: L("Every number links back to the original article or post, so the team can check it in one click.", "Setiap angka bisa diklik sampai ke artikel atau postingan aslinya, jadi tim bisa memeriksanya dalam satu klik.") },
+    { q: L("Is our data kept separate?", "Apakah data kami terpisah?"), a: L("Each client has its own workspace. Members only see the workspaces they were invited to, and every change is recorded in the activity history.", "Tiap klien punya workspace sendiri. Anggota hanya melihat workspace yang mengundangnya, dan setiap perubahan tercatat di riwayat aktivitas.") },
+    { q: L("Can we try it first?", "Bisa dicoba dulu?"), a: L("Yes. Open the live demo without signing up, or try 14 days with your own brand.", "Bisa. Buka demo langsung tanpa daftar, atau coba 14 hari dengan brand Anda sendiri.") },
+  ];
+
   return (
     <div className="min-h-dvh bg-[#F5F7FC] text-[#101334]">
       {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-to-br from-[#0B0E2A] via-[#151B5E] to-[#2B2F9E] text-white">
         <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-120px] h-[420px] w-[900px] -translate-x-1/2 rounded-full bg-[#6D7CFF] opacity-25 blur-[120px]" />
 
-        <header className="relative mx-auto flex h-[72px] max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
-          <Image src="/brand/logo-p.webp" alt="Narriv" width={128} height={48} priority className="h-8 w-auto" />
-          <nav className="flex items-center gap-2 sm:gap-4">
-            <Link href="/pricing" className="hidden text-[14px] font-semibold text-white/75 hover:text-white sm:block">{L("Pricing", "Harga")}</Link>
-            <Link href="/help" className="hidden text-[14px] font-semibold text-white/75 hover:text-white sm:block">{L("Help", "Bantuan")}</Link>
-            <LanguageSwitch dark />
-            <Link href="/login" className="flex h-9 items-center rounded-[10px] bg-white px-3.5 text-[14px] font-bold text-[#101334] hover:bg-white/90">{L("Sign in", "Masuk")}</Link>
-          </nav>
-        </header>
+        <SiteHeader />
 
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pb-16 pt-8 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:pb-24 lg:pt-14">
           <div className="text-center lg:text-left">
@@ -325,12 +303,31 @@ export default function WelcomePage() {
         </div>
       </section>
 
+      {/* Questions before a trial */}
+      <section id="faq" className="mx-auto max-w-3xl scroll-mt-6 px-4 py-20 sm:px-6">
+        <SectionTitle eyebrow="FAQ" title={L("Questions before you start.", "Pertanyaan sebelum mulai.")} />
+        <div className="mt-10 space-y-3">
+          {faqs.map((f) => (
+            <details key={f.q} className="group rounded-2xl bg-white px-5 py-4 shadow-[0_1px_2px_rgba(16,19,52,0.06),0_8px_24px_rgba(16,19,52,0.05)] sm:px-6">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[16px] font-bold [&::-webkit-details-marker]:hidden">
+                {f.q}
+                <ChevronDown size={18} aria-hidden="true" className="shrink-0 text-[#465FFF] transition group-open:rotate-180" />
+              </summary>
+              <p className="mt-3 text-[15px] font-medium leading-relaxed text-[#5F6B94]">{f.a}</p>
+            </details>
+          ))}
+        </div>
+        <p className="mt-6 text-center text-[14px] font-medium text-[#5F6B94]">
+          {L("More answers in ", "Jawaban lain ada di ")}<Link href="/help" className="font-bold text-[#465FFF] hover:underline">{L("Help", "Bantuan")}</Link>.
+        </p>
+      </section>
+
       {/* Closing call to action */}
       <section className="px-4 py-20 sm:px-6">
         <div className="relative mx-auto max-w-5xl overflow-hidden rounded-[28px] bg-gradient-to-br from-[#101334] via-[#18206B] to-[#2B2F9E] px-6 py-14 text-center text-white">
           <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-0 h-[240px] w-[600px] -translate-x-1/2 rounded-full bg-[#6D7CFF] opacity-30 blur-[90px]" />
           <h2 className="relative text-[28px] font-black leading-tight tracking-[-0.02em] sm:text-[38px]">
-            {L("Try it for two weeks with your own brand.", "Coba dua minggu dengan brand Anda sendiri.")}
+            {L("Try it for 14 days with your own brand.", "Coba 14 hari dengan brand Anda sendiri.")}
           </h2>
           <p className="relative mx-auto mt-3 max-w-xl text-[16px] font-medium text-white/70">
             {L("Set up takes five minutes. The first results arrive within a minute.", "Pengaturan lima menit. Hasil pertama masuk dalam satu menit.")}
@@ -345,17 +342,7 @@ export default function WelcomePage() {
         </div>
       </section>
 
-      <footer className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 pb-10 text-[13px] font-semibold text-[#5F6B94] sm:flex-row sm:px-6">
-        <Image src="/brand/logo-h.webp" alt="Narriv" width={96} height={36} className="h-6 w-auto" />
-        <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2">
-          <Link href="/pricing" className="hover:text-[#101334]">{L("Pricing", "Harga")}</Link>
-          <Link href="/help" className="hover:text-[#101334]">{L("Help", "Bantuan")}</Link>
-          <Link href="/privacy" className="hover:text-[#101334]">{L("Privacy", "Privasi")}</Link>
-          <Link href="/terms" className="hover:text-[#101334]">{L("Terms", "Ketentuan")}</Link>
-          <Link href="/login" className="hover:text-[#101334]">{L("Sign in", "Masuk")}</Link>
-        </nav>
-        <LanguageSwitch />
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
