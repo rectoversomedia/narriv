@@ -20,4 +20,4 @@ Allow: /intelligence
 Allow: /action-plans
 
 # Sitemap
-Sitemap: https://narriv.digital/sitemap.xml
+Sitemap: https://www.narriv.digital/sitemap.xml

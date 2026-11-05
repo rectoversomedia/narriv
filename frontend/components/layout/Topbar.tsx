@@ -171,6 +171,7 @@ function AccountMenu({ name, email, onLogout }: { name: string; email: string; o
 }
 
 export function Topbar() {
+  const L = useL();
   const router = useRouter();
   const t = useTranslations("DemoApp.topbar");
   const language = useUiStore((state) => state.language);
@@ -254,6 +255,8 @@ export function Topbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Phones have no room for the search box in the bar: the search button opens it below the bar.
+  const [mobileSearch, setMobileSearch] = useState(false);
 
   const searchAlertsQuery = useQuery({
     queryKey: ["search-alerts", { q: searchQuery }],
@@ -329,6 +332,7 @@ export function Topbar() {
   const handleResultClick = (href: string) => {
     setSearchOpen(false);
     setSearchQuery("");
+    setMobileSearch(false);
     router.push(href);
   };
 
@@ -348,12 +352,21 @@ export function Topbar() {
   };
 
   return (
-    <header className="sticky top-0 z-[100] flex h-[88px] items-center justify-between border-b border-border bg-background/60 px-5 backdrop-blur-xl sm:px-8 lg:px-10 xl:px-12">
-      {/* Brand on small screens, where the sidebar is replaced by the bottom navigation. */}
-      <Link href="/" className="flex shrink-0 items-center lg:hidden" aria-label="Narriv dashboard">
+    <header className="sticky top-0 z-[100] grid h-[88px] grid-cols-[1fr_auto_1fr] items-center border-b border-border bg-background/60 px-5 backdrop-blur-xl sm:px-8 lg:flex lg:justify-between lg:px-10 xl:px-12">
+      {/* Phones: search on the left, the brand centred, alerts and account on the right. */}
+      <button
+        type="button"
+        onClick={() => { setMobileSearch((v) => !v); setTimeout(() => inputRef.current?.focus(), 0); }}
+        aria-label={L("Search", "Cari")}
+        aria-expanded={mobileSearch}
+        className="flex size-10 items-center justify-center justify-self-start rounded-[10px] bg-[#EEF1F7] text-[#31406B] lg:hidden"
+      >
+        {mobileSearch ? <X size={18} aria-hidden="true" /> : <Search size={18} aria-hidden="true" />}
+      </button>
+      <Link href="/" className="flex shrink-0 items-center justify-self-center lg:hidden" aria-label="Narriv dashboard">
         <Image src="/brand/logo-h.webp" alt="Narriv" width={96} height={36} priority unoptimized className="h-8 w-auto object-contain" />
       </Link>
-      <div ref={searchRef} className="relative hidden w-full max-w-[530px] lg:block">
+      <div ref={searchRef} className={`w-full lg:relative lg:block lg:max-w-[530px] ${mobileSearch ? "fixed inset-x-4 top-[96px] z-[110] block rounded-[12px] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.18)]" : "hidden"}`}>
         <label className="flex h-[48px] items-center gap-4 rounded-[8px] border border-border bg-slate-50 px-5 text-[var(--text-soft)] focus-within:border-[#465FFF]/50 focus-within: transition-all">
           <Search size={20} className="text-[var(--text-muted)]" />
           <input
@@ -395,7 +408,7 @@ export function Topbar() {
             </div>
             <div className="border-t border-slate-100 bg-slate-50/80 px-3 py-2">
               <p className="text-center text-[11px] font-bold text-[#5A6478]">
-                {searchResults.length} hasil ditemukan
+                {L(`${searchResults.length} results`, `${searchResults.length} hasil ditemukan`)}
               </p>
             </div>
           </div>
@@ -403,8 +416,8 @@ export function Topbar() {
 
         {searchOpen && searchQuery.trim().length >= 2 && searchResults.length === 0 && (
           <div className="absolute left-0 top-full z-50 mt-2 w-full rounded-[14px] border border-slate-200 bg-white p-6 text-center shadow-[0_24px_70px_rgba(15,23,42,0.16)]">
-            <p className="mt-2 text-[13px] font-bold text-[#5A6478]">Tidak ada hasil untuk &quot;{searchQuery}&quot;</p>
-            <p className="mt-1 text-[11px] font-semibold text-[#5A6478]">Coba kata kunci lain</p>
+            <p className="mt-2 text-[13px] font-bold text-[#5A6478]">{L(`No results for "${searchQuery}"`, `Tidak ada hasil untuk "${searchQuery}"`)}</p>
+            <p className="mt-1 text-[11px] font-semibold text-[#5A6478]">{L("Try another word", "Coba kata kunci lain")}</p>
           </div>
         )}
       </div>

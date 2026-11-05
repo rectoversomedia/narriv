@@ -35,15 +35,17 @@ export function LanguageSwitch({ dark = false }: { dark?: boolean }) {
 export function SiteHeader() {
   const L = useL();
   return (
-    <header className="relative mx-auto flex h-[72px] max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
-      <Link href="/" aria-label="Narriv">
+    // Phones: language on the left, the brand centred, sign-in on the right. Wider screens: brand left, menu right.
+    <header className="relative mx-auto grid h-[72px] max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:flex sm:justify-between sm:px-6">
+      <div className="justify-self-start sm:hidden"><LanguageSwitch dark /></div>
+      <Link href="/" aria-label="Narriv" className="justify-self-center">
         <Image src="/brand/logo-p.webp" alt="Narriv" width={128} height={48} priority className="h-8 w-auto" />
       </Link>
-      <nav className="flex items-center gap-2 sm:gap-4">
+      <nav className="flex items-center justify-self-end gap-2 sm:gap-4">
         <Link href="/pricing" className="hidden text-[14px] font-semibold text-white/75 hover:text-white sm:block">{L("Pricing", "Harga")}</Link>
         <Link href="/welcome#faq" className="hidden text-[14px] font-semibold text-white/75 hover:text-white sm:block">FAQ</Link>
         <Link href="/help" className="hidden text-[14px] font-semibold text-white/75 hover:text-white md:block">{L("Help", "Bantuan")}</Link>
-        <LanguageSwitch dark />
+        <span className="hidden sm:block"><LanguageSwitch dark /></span>
         <Link href="/login" className="flex h-9 items-center rounded-[10px] bg-white px-3.5 text-[14px] font-bold text-[#101334] hover:bg-white/90">{L("Sign in", "Masuk")}</Link>
       </nav>
     </header>

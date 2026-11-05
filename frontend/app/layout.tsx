@@ -14,7 +14,11 @@ const poppins = Poppins({
   display: "swap",
 });
 
+// The picture shown when a Narriv link is shared (WhatsApp, LinkedIn, X).
+const OG_IMAGE = { url: "/og-image.jpg", width: 1200, height: 630, alt: "Narriv: tahu isu brand Anda sebelum jadi viral" };
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.narriv.digital"),
   title: {
     default: "Narriv | Narrative Intelligence",
     template: "%s | Narriv",
@@ -31,11 +35,13 @@ export const metadata: Metadata = {
     description: "Pantau percakapan publik, alert, laporan, dan rencana aksi dari satu command center.",
     siteName: "Narriv",
     type: "website",
+    images: [OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
     title: "Narriv | Narrative Intelligence",
     description: "Pantau percakapan publik, alert, laporan, dan rencana aksi dari satu command center.",
+    images: [OG_IMAGE.url],
   },
 };
 
@@ -46,7 +52,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="id"
       className={cn("h-full", "antialiased", poppins.variable, "font-sans")}
       suppressHydrationWarning
     >
