@@ -13,6 +13,30 @@ import { generateReport } from "./reports.service.js";
 
 const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
 
+/** Mentions and sentiment shares for one window, counted the way generateReport counts them. */
+async function periodTotals(workspaceId, start, end) {
+    const { data } = await supabase
+        .from("signals")
+        .select("sentiment, analyses:signal_analyses(sentiment)")
+        .eq("workspace_id", workspaceId)
+        .gte("captured_at", start.toISOString())
+        .lt("captured_at", end.toISOString())
+        .limit(20000);
+    let positive = 0, negative = 0, analysed = 0;
+    for (const row of data || []) {
+        const s = String(row.analyses?.[0]?.sentiment || row.sentiment || "").toLowerCase();
+        if (!["positive", "negative", "neutral", "mixed"].includes(s)) continue;
+        analysed++;
+        if (s === "positive") positive++;
+        if (s === "negative") negative++;
+    }
+    return {
+        signals: (data || []).length,
+        negative: analysed ? Math.round((negative / analysed) * 100) : 0,
+        positive: analysed ? Math.round((positive / analysed) * 100) : 0,
+    };
+}
+
 /** Everything a report file shows, from the stored report plus the live sections for its period. */
 export async function collectReportData(report) {
     const periodStart = report.content?.period_start || report.period_start;
@@ -30,6 +54,16 @@ export async function collectReportData(report) {
     const alerts = ((sections.alerts?.items?.length ? sections.alerts.items : stored.alerts?.items) || [])
         .slice()
         .sort((a, b) => (SEVERITY_ORDER[a.severity] ?? 9) - (SEVERITY_ORDER[b.severity] ?? 9));
+
+    // The same-length window just before this one, so every headline number can say whether it went up or down.
+    const start = new Date(periodStart), end = new Date(periodEnd);
+    const span = end.getTime() - start.getTime();
+    const previous = Number.isFinite(span) && span > 0 ? await periodTotals(report.workspace_id, new Date(start.getTime() - span), start) : null;
+
+    // Owners by name: an alert is assigned to a team, a member (user id), or both.
+    const ownerIds = [...new Set(alerts.map((a) => a.assignedTo || a.assigned_to).filter(Boolean))];
+    const { data: owners } = ownerIds.length ? await supabase.from("users").select("id, name").in("id", ownerIds) : { data: [] };
+    const ownerName = new Map((owners || []).map((u) => [u.id, u.name]));
     const pct = metrics.sentiment_percentages || {};
     return {
         id: report.id,
@@ -51,8 +85,19 @@ export async function collectReportData(report) {
             alerts: Number(sections.alerts?.total ?? alerts.length),
             criticalAlerts: alerts.filter((a) => a.severity === "critical" || a.severity === "high").length,
         },
+        previous,
         platforms: (metrics.platform_distribution || []).map((p) => ({ platform: p.platform || p.name || "lainnya", count: Number(p.count || p.value || 0) })).filter((p) => p.count > 0).sort((a, b) => b.count - a.count),
-        alerts: alerts.map((a) => ({ title: a.title, severity: a.severity, status: a.status, whatHappened: a.whatHappened || a.what_happened || "", whatToDo: a.whatToDo || a.what_to_do || "", createdAt: a.createdAt || a.created_at || null })),
+        alerts: alerts.map((a) => {
+            const team = a.assignedTeam || a.assigned_team || null;
+            const person = ownerName.get(a.assignedTo || a.assigned_to) || null;
+            return {
+                title: a.title, severity: a.severity, status: a.status,
+                whatHappened: a.whatHappened || a.what_happened || "", whatToDo: a.whatToDo || a.what_to_do || "",
+                owner: [person, team].filter(Boolean).join(" · ") || null,
+                deadline: a.deadline || null,
+                createdAt: a.createdAt || a.created_at || null,
+            };
+        }),
         issues: (clusters || []).map((c) => ({ title: c.title, signals: Number(c.signal_count || 0), sentiment: c.sentiment || "neutral", impact: c.impact || "" })),
         signals: (full?.topSignals || metrics.top_signals || []).map((s) => ({ title: s.title, platform: s.platform, sentiment: String(s.sentiment || "").toLowerCase(), capturedAt: s.capturedAt || s.captured_at || null, url: s.url || s.source_url || null })),
     };
@@ -84,6 +129,16 @@ function words(lang) {
         sentimentTitle: w("Sentiment split", "Komposisi sentimen"),
         platformsTitle: w("Where the conversation happens", "Di mana percakapan terjadi"),
         alertsTitle: w("Alerts to act on", "Peringatan yang perlu ditindaklanjuti"),
+        decideTitle: w("To decide", "Yang perlu diputuskan"),
+        decideNone: w("Nothing open needs a decision in this period.", "Tidak ada peringatan terbuka yang perlu diputuskan pada periode ini."),
+        otherAlertsTitle: w("Other alerts", "Peringatan lainnya"),
+        owner: w("Owner", "PJ"),
+        noOwner: w("no owner yet", "belum ada PJ"),
+        due: w("Due", "Tenggat"),
+        overdue: w("overdue", "lewat tenggat"),
+        vsPrev: w("vs previous period", "vs periode lalu"),
+        points: w("pts", "poin"),
+        noPrev: w("no earlier data", "belum ada pembanding"),
         issuesTitle: w("Main issues", "Isu utama"),
         signalsTitle: w("Notable mentions", "Percakapan yang menonjol"),
         whatToDo: w("Next step", "Langkah"),
@@ -166,15 +221,31 @@ export function buildReportPdf(data, lang = data.language) {
     const line = lang === "en"
         ? `${t.signals} signals, ${t.negative}% negative and ${t.positive}% positive. ${t.alerts} alerts, ${t.criticalAlerts} of them critical or high.`
         : `${t.signals} percakapan, ${t.negative}% negatif dan ${t.positive}% positif. ${t.alerts} peringatan, ${t.criticalAlerts} di antaranya kritis atau tinggi.`;
-    doc.fillColor(C.body).font("Helvetica").fontSize(10.5).text(line, left + vw + 14, vy + 4, { width: width - vw - 14 });
-    doc.y = vy + 46;
+    const p = data.previous;
+    const change = p && p.signals
+        ? (() => {
+            const d = t.negative - p.negative;
+            if (lang === "en") return d === 0 ? ` Negative share unchanged from the previous period (${p.negative}%).` : ` Negative share ${d > 0 ? "up" : "down"} ${Math.abs(d)} points from the previous period (${p.negative}% to ${t.negative}%).`;
+            return d === 0 ? ` Porsi negatif sama dengan periode sebelumnya (${p.negative}%).` : ` Porsi negatif ${d > 0 ? "naik" : "turun"} ${Math.abs(d)} poin dari periode sebelumnya (${p.negative}% menjadi ${t.negative}%).`;
+        })()
+        : "";
+    doc.fillColor(C.body).font("Helvetica").fontSize(10.5).text(line + change, left + vw + 14, vy + 4, { width: width - vw - 14 });
+    doc.y = Math.max(vy + 46, doc.y + 12);
 
     // KPI tiles
+    // Each change is coloured by whether it is good news: more negative is red, more positive is green.
+    const delta = (now, before, unit, goodWhenUp) => {
+        if (!p || !p.signals) return { text: W.noPrev, color: C.muted };
+        const d = now - before;
+        const sign = d > 0 ? "+" : d < 0 ? "-" : "±";
+        const color = d === 0 || goodWhenUp === null ? C.muted : (d > 0) === goodWhenUp ? C.greenDark : C.redDark;
+        return { text: `${sign}${Math.abs(d)}${unit} ${W.vsPrev}`, color };
+    };
     const tiles = [
-        { label: W.signals, value: String(t.signals), sub: `${t.analyzed} ${lang === "en" ? "analysed" : "teranalisis"}`, fg: C.blue, bg: "#EEF1FF" },
-        { label: W.negative, value: `${t.negative}%`, sub: W.ofSignals, fg: C.redDark, bg: C.redSoft },
-        { label: W.positive, value: `${t.positive}%`, sub: W.ofSignals, fg: C.greenDark, bg: C.greenSoft },
-        { label: W.alerts, value: String(t.alerts), sub: `${t.criticalAlerts} ${W.criticalHigh}`, fg: C.amberDark, bg: C.amberSoft },
+        { label: W.signals, value: String(t.signals), sub: delta(t.signals, p?.signals ?? 0, "", null), fg: C.blue, bg: "#EEF1FF" },
+        { label: W.negative, value: `${t.negative}%`, sub: delta(t.negative, p?.negative ?? 0, ` ${W.points}`, false), fg: C.redDark, bg: C.redSoft },
+        { label: W.positive, value: `${t.positive}%`, sub: delta(t.positive, p?.positive ?? 0, ` ${W.points}`, true), fg: C.greenDark, bg: C.greenSoft },
+        { label: W.alerts, value: String(t.alerts), sub: { text: `${t.criticalAlerts} ${W.criticalHigh}`, color: C.muted }, fg: C.amberDark, bg: C.amberSoft },
     ];
     const gap = 10;
     const tw = (width - gap * 3) / 4;
@@ -184,7 +255,7 @@ export function buildReportPdf(data, lang = data.language) {
         doc.roundedRect(x, ty, tw, 70, 10).fill(tile.bg);
         doc.fillColor(tile.fg).font("Helvetica-Bold").fontSize(8).text(tile.label.toUpperCase(), x + 12, ty + 11, { width: tw - 24, characterSpacing: 0.8 });
         doc.fillColor(C.navy).font("Helvetica-Bold").fontSize(22).text(tile.value, x + 12, ty + 25, { width: tw - 24 });
-        doc.fillColor(C.muted).font("Helvetica").fontSize(8.5).text(tile.sub, x + 12, ty + 52, { width: tw - 24 });
+        doc.fillColor(tile.sub.color).font("Helvetica-Bold").fontSize(8.5).text(tile.sub.text, x + 12, ty + 52, { width: tw - 24 });
     });
     doc.y = ty + 88;
 
@@ -195,6 +266,45 @@ export function buildReportPdf(data, lang = data.language) {
         doc.moveTo(left, doc.y + 4).lineTo(left + width, doc.y + 4).lineWidth(0.6).strokeColor(C.line).stroke();
         doc.y += 12;
     };
+
+    // What the board has to decide: the three most severe alerts still open, with who holds them and by when.
+    const open = data.alerts.filter((a) => a.status !== "resolved");
+    const decide = open.slice(0, 3);
+    const decideSet = new Set(decide);
+    heading(W.decideTitle);
+    if (!decide.length) doc.fillColor(C.muted).font("Helvetica").fontSize(10).text(W.decideNone, left, doc.y);
+    decide.forEach((a, i) => {
+        const [fg] = SEV_COLOR[a.severity] || [C.ink];
+        const textW = width - 44 - 90;
+        const overdue = a.deadline && new Date(a.deadline).getTime() < Date.now();
+        const meta = [
+            `${W.owner}: ${a.owner || W.noOwner}`,
+            a.deadline ? `${W.due}: ${fmtDate(a.deadline, W.locale, true)}${overdue ? ` (${W.overdue})` : ""}` : null,
+            W.status[a.status] || a.status,
+        ].filter(Boolean).join("   ·   ");
+        doc.font("Helvetica-Bold").fontSize(11);
+        const hTitle = doc.heightOfString(a.title, { width: textW });
+        doc.font("Helvetica").fontSize(9);
+        const hMeta = doc.heightOfString(meta, { width: width - 44 });
+        const hTodo = a.whatToDo ? doc.heightOfString(`${W.whatToDo}: ${a.whatToDo}`, { width: width - 44 }) : 0;
+        const h = 14 + hTitle + 4 + hMeta + (hTodo ? hTodo + 5 : 0) + 12;
+        ensure(h + 8);
+        const y = doc.y;
+        doc.roundedRect(left, y, width, h, 10).fill(C.soft);
+        doc.circle(left + 18, y + 20, 9).fill(fg);
+        doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(9).text(String(i + 1), left + 12, y + 16.5, { width: 12, align: "center" });
+        const pill = (W.severity[a.severity] || a.severity || "").toUpperCase();
+        doc.font("Helvetica-Bold").fontSize(8);
+        const pw = doc.widthOfString(pill) + 14;
+        doc.roundedRect(left + width - pw - 12, y + 12, pw, 16, 8).fill(fg);
+        doc.fillColor("#FFFFFF").text(pill, left + width - pw - 5, y + 16.5);
+        doc.fillColor(C.navy).font("Helvetica-Bold").fontSize(11).text(a.title, left + 34, y + 13, { width: textW });
+        let cy = y + 13 + hTitle + 4;
+        doc.fillColor(a.owner && !overdue ? C.body : C.redDark).font("Helvetica-Bold").fontSize(9).text(meta, left + 34, cy, { width: width - 44 });
+        cy += hMeta + 5;
+        if (a.whatToDo) doc.fillColor(fg).font("Helvetica-Bold").fontSize(9.5).text(`${W.whatToDo}: `, left + 34, cy, { continued: true, width: width - 44 }).fillColor(C.ink).font("Helvetica").text(a.whatToDo);
+        doc.y = y + h + 8;
+    });
 
     // Sentiment bar
     heading(W.sentimentTitle);
@@ -214,6 +324,8 @@ export function buildReportPdf(data, lang = data.language) {
 
     // Platforms
     if (data.platforms.length) {
+        // The list moves to the next page whole rather than leaving one row behind.
+        ensure(60 + Math.min(7, data.platforms.length) * 20);
         heading(W.platformsTitle);
         const max = Math.max(...data.platforms.map((p) => p.count));
         const total = data.platforms.reduce((s, p) => s + p.count, 0) || 1;
@@ -229,10 +341,10 @@ export function buildReportPdf(data, lang = data.language) {
         }
     }
 
-    // Alerts
-    heading(W.alertsTitle);
-    if (!data.alerts.length) doc.fillColor(C.muted).font("Helvetica").fontSize(10).text(W.none);
-    for (const a of data.alerts.slice(0, 8)) {
+    // The remaining alerts (the ones above are not repeated)
+    const others = data.alerts.filter((a) => !decideSet.has(a));
+    if (others.length) heading(W.otherAlertsTitle);
+    for (const a of others.slice(0, 8)) {
         const [fg, bg] = SEV_COLOR[a.severity] || [C.ink, C.soft];
         doc.font("Helvetica").fontSize(9.5);
         const textW = width - 28;

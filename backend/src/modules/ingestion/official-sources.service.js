@@ -7,6 +7,7 @@
 
 import { logStructured } from "../../lib/logger.js";
 import { persistCollectedRecords } from "./signal-persistence.js";
+import { mentionsKeyword, phraseQuery } from "../../lib/keyword-match.js";
 
 const TIMEOUT_MS = 15_000;
 const LOOKBACK_DAYS = 7;
@@ -39,7 +40,7 @@ const decodeEntities = (s) => String(s || "").replace(/&amp;/g, "&").replace(/&q
 export async function fetchYouTubeVideos(keyword, { limit = 8, fetchImpl = fetch, now = Date.now() } = {}) {
     const params = new URLSearchParams({
         part: "snippet",
-        q: keyword,
+        q: phraseQuery(keyword),
         type: "video",
         order: "date",
         maxResults: String(Math.min(Math.max(limit, 1), 25)),
@@ -51,6 +52,8 @@ export async function fetchYouTubeVideos(keyword, { limit = 8, fetchImpl = fetch
     const json = await getJson(`https://www.googleapis.com/youtube/v3/search?${params}`, {}, fetchImpl);
     return (json.items || [])
         .filter((item) => item.id?.videoId && item.snippet)
+        // YouTube search is loose even with quotes: keep only videos whose own text names the keyword.
+        .filter(({ snippet }) => mentionsKeyword(`${decodeEntities(snippet.title)} ${decodeEntities(snippet.description)} ${snippet.channelTitle || ""}`, keyword))
         .map(({ id, snippet }) => {
             const title = decodeEntities(snippet.title);
             return {

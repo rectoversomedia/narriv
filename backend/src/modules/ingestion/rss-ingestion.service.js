@@ -12,6 +12,7 @@ import supabaseAdmin from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
 import { assertPublicHttpUrl } from "../../lib/url-safety.js";
 import { persistCollectedRecords, existsInWorkspace, runWithConcurrency } from "./signal-persistence.js";
+import { phraseQuery } from "../../lib/keyword-match.js";
 
 export { assertPublicHttpUrl, existsInWorkspace, runWithConcurrency };
 
@@ -163,7 +164,8 @@ export const GOOGLE_NEWS_EDITIONS = {
  * Fetch Google News RSS for a specific brand or topic query in Indonesia (one edition).
  */
 export async function fetchGoogleNewsRss(keyword, options = {}) {
-  const query = (keyword || "perbankan indonesia").trim();
+  // A multi-word keyword is searched as an exact phrase, so "Kopi Senja" does not return every story about coffee.
+  const query = phraseQuery(keyword || "perbankan indonesia");
   const edition = GOOGLE_NEWS_EDITIONS[options.edition] || GOOGLE_NEWS_EDITIONS.id;
   const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&${edition.params}`;
 

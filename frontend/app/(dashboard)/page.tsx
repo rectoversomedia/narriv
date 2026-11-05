@@ -416,8 +416,8 @@ export default function DashboardPage() {
                         </div>
                         <div className="flex items-center gap-5 text-right">
                           <div>
-                            <p className="text-[11px] font-bold opacity-80">{L("Net score", "Skor bersih")}</p>
-                            <p className="text-[20px] font-black tabular-nums leading-tight">{net > 0 ? `+${net}` : net}</p>
+                            <p className="text-[11px] font-bold opacity-80">{L("Positive − negative", "Positif − negatif")}</p>
+                            <p className="text-[20px] font-black tabular-nums leading-tight">{net > 0 ? `+${net}` : net} <span className="text-[12px] font-bold opacity-70">{L("pts", "poin")}</span></p>
                           </div>
                           <div>
                             <p className="text-[11px] font-bold opacity-80">{L("Data", "Data")}</p>
@@ -532,7 +532,7 @@ export default function DashboardPage() {
                 </ol>
               )}
             </Card>
-            <Card title={L("Visibility in AI (GEO)", "Visibilitas di AI (GEO)")} link={{ href: "/visibility", label: L("Details", "Detail") }}>
+            <Card title={L("Visibility in AI answers", "Visibilitas di jawaban AI")} link={{ href: "/visibility", label: L("Details", "Detail") }}>
               {geoQuery.isLoading ? (
                 <div className="space-y-2">{[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
               ) : (

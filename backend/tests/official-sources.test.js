@@ -18,15 +18,17 @@ describe('Official sources', () => {
   it('maps YouTube search results to records with stable ids and Indonesian region', async () => {
     process.env.YOUTUBE_API_KEY = 'yt-key';
     const fetchImpl = jest.fn(async () => jsonResponse({ items: [
-      { id: { videoId: 'abc123' }, snippet: { title: 'Bank &amp; Nasabah', description: 'Ulasan', channelTitle: 'Kanal', channelId: 'c1', publishedAt: '2026-11-03T01:00:00Z' } },
+      { id: { videoId: 'abc123' }, snippet: { title: 'Bank Arunika &amp; Nasabah', description: 'Ulasan', channelTitle: 'Kanal', channelId: 'c1', publishedAt: '2026-11-03T01:00:00Z' } },
+      { id: { videoId: 'off1' }, snippet: { title: 'Bank sampah warga', description: 'Ulasan lingkungan', channelTitle: 'Kanal', publishedAt: '2026-11-03T01:00:00Z' } },
       { id: {}, snippet: { title: 'no video id' } },
     ] }));
     const records = await fetchYouTubeVideos('bank arunika', { limit: 5, fetchImpl });
     const url = new URL(fetchImpl.mock.calls[0][0]);
     expect(url.searchParams.get('regionCode')).toBe('ID');
     expect(url.searchParams.get('maxResults')).toBe('5');
+    expect(url.searchParams.get('q')).toBe('"bank arunika"');
     expect(records).toHaveLength(1);
-    expect(records[0]).toMatchObject({ externalId: 'youtube:abc123', title: 'Bank & Nasabah', url: 'https://www.youtube.com/watch?v=abc123', author: 'Kanal' });
+    expect(records[0]).toMatchObject({ externalId: 'youtube:abc123', title: 'Bank Arunika & Nasabah', url: 'https://www.youtube.com/watch?v=abc123', author: 'Kanal' });
   });
 
   it('gets an app token for Reddit, skips NSFW posts, and keeps engagement', async () => {

@@ -117,6 +117,9 @@ export async function generateReport({ workspaceId, title, periodStart, periodEn
             whatHappened: a.what_happened,
             whyItMatters: a.why_it_matters,
             whatToDo: a.what_to_do,
+            assignedTeam: a.assigned_team || null,
+            assignedTo: a.assigned_to || null,
+            deadline: a.deadline || null,
             createdAt: a.created_at
         }))
     };
