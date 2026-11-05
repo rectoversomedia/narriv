@@ -111,7 +111,8 @@ Analyze the above and provide the strategic insights in JSON.`;
 /**
  * Builds the strict system prompt for cluster analysis.
  */
-function buildClusterAnalysisSystemPrompt() {
+function buildClusterAnalysisSystemPrompt(lang = "id") {
+    const language = lang === "en" ? "English" : "Indonesian (Bahasa Indonesia)";
     return `You are a strategic intelligence analyst for a PR & crisis communications platform.
 Your task is to analyze a cluster of related signals and provide a narrative summary.
 
@@ -122,6 +123,7 @@ STRICT RULES:
 4. "description" must be a 1-2 sentence summary of the overarching narrative.
 5. "dominant_sentiment" must be exactly one of: "positive", "neutral", "negative", "mixed".
 6. "impact" must be exactly one of: "LOW", "MEDIUM", "HIGH", "CRITICAL".
+7. Write "title" and "description" in ${language}, whatever language the signals are in.
 
 REQUIRED OUTPUT FORMAT (pure JSON):
 {
@@ -355,13 +357,13 @@ export const enhanceAlert = async (alertData, signalsContext) => {
  * @param {string} signalsContext - Summarized text of signals in the cluster.
  * @returns {Promise<object>} - { title, description, dominant_sentiment, impact }
  */
-export const analyzeCluster = async (signalsContext) => {
+export const analyzeCluster = async (signalsContext, lang = "id") => {
     if (!OPENAI_API_KEY) {
         logStructured("warn", "[AI] Cannot analyze cluster: Missing API key.");
         return null;
     }
 
-    const systemPrompt = buildClusterAnalysisSystemPrompt();
+    const systemPrompt = buildClusterAnalysisSystemPrompt(lang);
     const userMessage = buildClusterAnalysisUserMessage(signalsContext);
 
     const messages = [

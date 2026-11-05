@@ -6,12 +6,12 @@ import {
   useState,
   useEffect,
   useCallback,
-  useMemo,
   type ChangeEvent,
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import { ArrowRight, BarChart3, Bell, Check, CheckCircle2, ChevronDown, Globe2, Headphones, Lightbulb, Mail, MessageCircle, Mic, Newspaper, Share2, Shield, ShoppingCart, Sparkles, Users, X, type LucideIcon } from "lucide-react";
+import { ArrowRight, BarChart3, Bell, Check, ChevronDown, Headphones, Lightbulb, Mail, Shield, Users, X, type LucideIcon } from "lucide-react";
+import { PlatformIcon } from "@/components/ui/platform-icon";
 import { useToast } from "@/components/ui/toast";
 import {
   createOnboardingWorkspace,
@@ -38,19 +38,16 @@ type ProfileData = {
   goals: string[];
 };
 
+// Only what the backend acts on (workspace notification settings); in-app notifications are always on.
 type NotificationsData = {
   emailEnabled: boolean;
-  inAppEnabled: boolean;
-  telegramEnabled: boolean;
   whatsappEnabled: boolean;
-  alertSpike: boolean;
-  alertNegative: boolean;
-  alertViral: boolean;
-  alertComplaint: boolean;
-  realtimeEnabled: boolean;
-  dailyEnabled: boolean;
-  weeklyEnabled: boolean;
+  escalationEnabled: boolean;
+  reminderEnabled: boolean;
 };
+
+// Each workspace's first three active keywords are checked every hour (backend SCHEDULED_KEYWORDS_PER_WORKSPACE).
+const MAX_ONBOARDING_KEYWORDS = 3;
 
 type OnboardingData = {
   profile: ProfileData;
@@ -154,16 +151,9 @@ export default function OnboardingPage() {
     sources: [],
     notifications: {
       emailEnabled: true,
-      inAppEnabled: true,
-      telegramEnabled: false,
       whatsappEnabled: false,
-      alertSpike: true,
-      alertNegative: true,
-      alertViral: true,
-      alertComplaint: true,
-      realtimeEnabled: true,
-      dailyEnabled: true,
-      weeklyEnabled: false,
+      escalationEnabled: true,
+      reminderEnabled: true,
     },
     team: [],
   });
@@ -330,8 +320,8 @@ export default function OnboardingPage() {
         workspaceId: workspace.id,
         emailEnabled: data.notifications.emailEnabled,
         whatsappEnabled: data.notifications.whatsappEnabled,
-        escalationNotifications: data.notifications.alertNegative,
-        reminderNotifications: data.notifications.dailyEnabled,
+        escalationNotifications: data.notifications.escalationEnabled,
+        reminderNotifications: data.notifications.reminderEnabled,
       });
       if (data.team.length > 0) {
         await createOnboardingTeam({ workspaceId: workspace.id, members: data.team });
@@ -368,13 +358,13 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-dvh bg-[#F8F9FF] text-[#111536]">
       {/* Top bar */}
-      <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-[#E8EAF6] bg-white/80 backdrop-blur-md px-6 lg:px-10">
+      <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-[#E8EAF6] bg-white/80 px-4 backdrop-blur-md sm:px-6 lg:px-10">
         <div className="flex items-center gap-3">
-          <img src="/brand/logo-h.webp" alt="Narriv" width={120} height={80} className="object-contain" />
+          <img src="/brand/logo-h.webp" alt="Narriv" width={120} height={80} className="w-[96px] object-contain sm:w-[120px]" />
         </div>
 
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-semibold text-[#5F6B94]">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <span className="whitespace-nowrap text-sm font-semibold text-[#5F6B94]">
             {step === "processing" ? 5 : step} {pickL("of", "dari")} 5
           </span>
           <div className="h-6 w-px bg-[#D6DDEC]" />
@@ -383,14 +373,15 @@ export default function OnboardingPage() {
             href="/help#contact"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex h-9 items-center gap-2 rounded-full border border-[#D6DDEC] bg-white px-4 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#465FFF] hover:text-[#3B52F5]"
+            className="flex h-9 items-center gap-2 whitespace-nowrap rounded-full border border-[#D6DDEC] bg-white px-3.5 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#465FFF] hover:text-[#3B52F5] sm:px-4"
           >
-            {pickL("Need help?", "Butuh bantuan?")}
+            <span className="sm:hidden">{pickL("Help", "Bantuan")}</span>
+            <span className="hidden sm:inline">{pickL("Need help?", "Butuh bantuan?")}</span>
           </a>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-10">
+      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-10">
         {step !== "processing" && <StepIndicator current={step as Step} />}
 
         <div className="mt-8">
@@ -402,7 +393,7 @@ export default function OnboardingPage() {
             />
           ) : (
             <div className="rounded-2xl border border-[#E8EAF6] bg-white shadow-sm">
-              <div className="p-8 lg:p-10">
+              <div className="p-5 sm:p-8 lg:p-10">
                 {step === 1 && (
                   <ProfileStep data={data.profile} onChange={updateProfile} />
                 )}
@@ -421,7 +412,7 @@ export default function OnboardingPage() {
                 {step === 5 && <PreviewStep data={data} />}
               </div>
 
-              <div className="flex items-center justify-between border-t border-[#F0F2FA] px-8 py-6 lg:px-10">
+              <div className="flex items-center justify-between border-t border-[#F0F2FA] px-5 py-5 sm:px-8 sm:py-6 lg:px-10">
                 {step === 1 ? (
                   <button
                     type="button"
@@ -693,12 +684,14 @@ function KeywordsStep({
 
   const add = (kw: string) => {
     const trimmed = kw.trim();
-    if (!trimmed || keywords.includes(trimmed) || keywords.length >= 25) return;
+    if (!trimmed || keywords.some((k) => k.toLowerCase() === trimmed.toLowerCase()) || keywords.length >= MAX_ONBOARDING_KEYWORDS) return;
     onChange([...keywords, trimmed]);
     setInput("");
   };
 
   const remove = (kw: string) => onChange(keywords.filter((k) => k !== kw));
+
+  const full = keywords.length >= MAX_ONBOARDING_KEYWORDS;
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") { e.preventDefault(); add(input); }
@@ -719,13 +712,14 @@ function KeywordsStep({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={t("placeholder")}
-              className="form-input flex-1"
+              disabled={full}
+              placeholder={full ? pickL("All 3 keywords added", "3 kata kunci sudah terisi") : base ? pickL(`e.g. ${base}`, `mis. ${base}`) : t("placeholder")}
+              className="form-input min-w-0 flex-1 disabled:bg-[#F8F9FF]"
             />
             <button
               type="button"
               onClick={() => add(input)}
-              disabled={!input.trim()}
+              disabled={!input.trim() || full}
               className="flex h-12 items-center gap-2 rounded-xl border border-[#D6DDEC] bg-white px-5 text-sm font-semibold text-[#3E4975] transition-colors hover:border-[#465FFF] hover:text-[#3B52F5] disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {t("add")}
@@ -740,7 +734,7 @@ function KeywordsStep({
               key={s}
               type="button"
               onClick={() => add(s)}
-              disabled={keywords.includes(s) || keywords.length >= 50}
+              disabled={keywords.some((k) => k.toLowerCase() === s.toLowerCase()) || full}
               className="inline-flex items-center gap-1.5 rounded-full border border-[#E8EAF6] bg-white px-3 py-1.5 text-xs font-semibold text-[#3E4975] transition-colors hover:border-[#465FFF] hover:text-[#3B52F5] disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {s}
@@ -752,8 +746,11 @@ function KeywordsStep({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{t("yourKeywords")}</h2>
-          <span className="text-xs font-semibold text-[#647099]">{keywords.length}/50</span>
+          <span className="text-xs font-semibold text-[#647099]">{keywords.length}/{MAX_ONBOARDING_KEYWORDS}</span>
         </div>
+        <p className="text-xs font-medium text-[#5F6B94]">
+          {pickL("Each keyword is checked every hour. You can change them anytime in Settings.", "Tiap kata kunci dicek setiap jam. Bisa diganti kapan saja di Pengaturan.")}
+        </p>
 
         {keywords.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#E8EAF6] py-12 text-center">
@@ -802,20 +799,9 @@ function SourcesStep({
   onChange: (s: OnboardingData["sources"]) => void;
 }) {
   const t = useTranslations("OnboardingDesign.sources");
-  const [templates, setTemplates] = useState<
-    Record<string, Array<{ id: string; name: string; description: string | null; category: string }>>
-  >({});
+  const [templates, setTemplates] = useState<Record<string, Array<{ id: string; name: string; category: string }>>>({});
   const [loading, setLoading] = useState(true);
-  const [selectedCats, setSelectedCats] = useState<string[]>(["news", "social"]);
-
-  const categoryIcons: Record<string, LucideIcon> = {
-    news: Globe2,
-    social: Share2,
-    forum: MessageCircle,
-    review: ShoppingCart,
-    blog: Newspaper,
-    podcast: Mic,
-  };
+  const [wantSocial, setWantSocial] = useState(() => sources.some((s) => s.type === "social"));
 
   useEffect(() => {
     getSourceTemplates()
@@ -824,152 +810,80 @@ function SourcesStep({
       .finally(() => setLoading(false));
   }, []);
 
-  // Sync sources whenever selected categories or templates change.
-  // Must live in useEffect to avoid stale-closure: onChange would otherwise
-  // capture the `templates` value from the render where the click happened.
+  // News is always collected. Social media is saved as a request: the Narriv team switches it on per workspace.
+  // Synced in an effect so onChange never sees stale templates.
   useEffect(() => {
     if (loading) return;
-    const newSources: OnboardingData["sources"] = [];
-    selectedCats.forEach((catName) => {
-      (templates[catName] || []).forEach((tmpl) => {
-        newSources.push({ name: tmpl.name, type: tmpl.category, sourceTemplateId: tmpl.id });
-      });
-    });
-    onChange(newSources);
-  }, [selectedCats, templates, loading, onChange]);
+    const pick = (cat: string) => (templates[cat] || []).map((tmpl) => ({ name: tmpl.name, type: tmpl.category, sourceTemplateId: tmpl.id }));
+    const next = [...pick("news"), ...(wantSocial ? pick("social") : [])];
+    onChange(next.length ? next : [{ name: "Berita Online", type: "news" }]);
+  }, [wantSocial, templates, loading, onChange]);
 
-  const toggleCategory = (cat: string) => {
-    if (selectedCats.includes(cat)) {
-      if (selectedCats.length === 1) return; // keep at least one
-      setSelectedCats(selectedCats.filter((c) => c !== cat));
-    } else {
-      setSelectedCats([...selectedCats, cat]);
-    }
-  };
-
-  const categories = useMemo(() => Object.keys(templates), [templates]);
+  const live = [
+    { key: "news", name: pickL("Online news", "Berita online"), desc: pickL("Every Indonesian news portal: Kompas, Detik, CNN Indonesia, Tempo and more.", "Semua portal berita Indonesia: Kompas, Detik, CNN Indonesia, Tempo, dan lainnya.") },
+    { key: "youtube", name: "YouTube", desc: pickL("Videos that mention your keywords.", "Video yang menyebut kata kunci Anda.") },
+  ];
+  const social = ["instagram", "tiktok", "x", "facebook"];
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-[#111536]">{t("title")}</h1>
-        <p className="mt-1.5 text-sm font-medium text-[#5F6B94]">{t("desc")}</p>
+        <p className="mt-1.5 text-sm font-medium text-[#5F6B94]">{pickL("Where Narriv looks for your keywords.", "Tempat Narriv mencari kata kunci Anda.")}</p>
       </div>
 
       <div className="space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{pickL("Quick Select by Category", "Pilih cepat per kategori")}</h2>
-        <div className="flex flex-wrap gap-3">
-          {categories.map((cat) => {
-            const active = selectedCats.includes(cat);
-            return (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => toggleCategory(cat)}
-                className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-all ${
-                  active
-                    ? "border-[#465FFF] bg-[#465FFF] text-white shadow-sm"
-                    : "border-[#E8EAF6] bg-white text-[#3E4975] hover:border-[#B8BDD8]"
-                }`}
-              >
-                {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                <span className="opacity-60">({templates[cat]?.length ?? 0})</span>
-              </button>
-            );
-          })}
+        <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{pickL("On from day one", "Langsung aktif")}</h2>
+        <div className="grid gap-3 lg:grid-cols-2">
+          {live.map((src) => (
+            <div key={src.key} className="flex items-start gap-4 rounded-xl bg-[#F8F6FF] p-5 shadow-[0_0_0_1px_rgba(70,95,255,0.18)]">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white p-2 shadow-sm">
+                <PlatformIcon platform={src.key} className="size-6" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-bold text-[#111536]">{src.name}</p>
+                  <span className="rounded-full bg-[#E8F7F0] px-2 py-0.5 text-[11px] font-bold text-[#047857]">{pickL("Every hour", "Tiap jam")}</span>
+                </div>
+                <p className="mt-1 text-xs font-medium leading-relaxed text-[#5F6B94]">{src.desc}</p>
+              </div>
+              <Check size={18} strokeWidth={3} className="mt-1 shrink-0 text-[#465FFF]" aria-hidden="true" />
+            </div>
+          ))}
         </div>
       </div>
 
       <div className="space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{t("choose")}</h2>
-
-        {loading ? (
-          <div className="grid gap-4 lg:grid-cols-2">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-24 rounded-xl border border-[#F0F2FA] bg-[#F8F9FF] animate-pulse" />
+        <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{pickL("Social media", "Media sosial")}</h2>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={wantSocial}
+          onClick={() => setWantSocial((v) => !v)}
+          className={`flex w-full flex-col gap-4 rounded-xl p-5 text-left transition-all sm:flex-row sm:items-center ${
+            wantSocial ? "bg-[#F8F6FF] shadow-[0_0_0_1px_rgba(70,95,255,0.18)]" : "bg-white shadow-[0_0_0_1px_#E8EAF6] hover:shadow-[0_0_0_1px_#B8BDD8]"
+          }`}
+        >
+          <span className="flex shrink-0 -space-x-2">
+            {social.map((key) => (
+              <span key={key} className="flex size-10 items-center justify-center rounded-full bg-white p-2 shadow-sm ring-2 ring-white">
+                <PlatformIcon platform={key} className="size-5" />
+              </span>
             ))}
-          </div>
-        ) : (
-          <div className="grid gap-4 lg:grid-cols-2">
-            {categories.flatMap((cat) =>
-              (templates[cat] || []).map((tmpl) => {
-                const Icon = categoryIcons[cat] || Globe2;
-                const isActive = selectedCats.includes(cat);
-                return (
-                  <SourceCard
-                    key={tmpl.id}
-                    icon={Icon}
-                    title={tmpl.name}
-                    desc={tmpl.description ?? `${cat} source`}
-                    active={isActive}
-                    onToggle={() => toggleCategory(cat)}
-                  />
-                );
-              })
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className="flex items-center justify-between rounded-xl border border-[#E8EAF6] bg-[#FAFBFF] px-6 py-4">
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-bold text-[#111536]">
-            {sources.length} source{sources.length !== 1 ? "s" : ""} selected
           </span>
-        </div>
-        {sources.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {[...new Set(sources.map((s) => s.type))].map((type) => {
-              const Icon = categoryIcons[type];
-              return (
-                <span key={type} className="inline-flex items-center gap-1.5 rounded-full bg-[#465FFF]/10 px-3 py-1 text-xs font-semibold text-[#3B52F5]">
-                  {Icon && <Icon size={12} />}
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
-                </span>
-              );
-            })}
-          </div>
-        )}
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-bold text-[#111536]">Instagram, TikTok, X, Facebook</span>
+            <span className="mt-1 block text-xs font-medium leading-relaxed text-[#5F6B94]">
+              {pickL("Switched on by the Narriv team for your plan. Turn this on and we will contact you.", "Diaktifkan tim Narriv sesuai paket Anda. Nyalakan ini dan kami akan menghubungi Anda.")}
+            </span>
+          </span>
+          <span className="flex items-center gap-3 self-start sm:self-auto">
+            <span className="text-xs font-bold text-[#3E4975]">{wantSocial ? pickL("Requested", "Diminta") : pickL("Request", "Minta")}</span>
+            <ToggleSwitch active={wantSocial} onChange={() => setWantSocial((v) => !v)} />
+          </span>
+        </button>
       </div>
     </div>
-  );
-}
-
-function SourceCard({
-  icon: _Icon,
-  title,
-  desc,
-  active,
-  onToggle,
-}: {
-  icon: LucideIcon;
-  title: string;
-  desc: string;
-  active: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      className={`flex items-start gap-4 rounded-xl border p-5 text-left transition-all ${
-        active
-          ? "border-[#465FFF] bg-[#F8F6FF] shadow-[0_0_0_3px_rgba(47,32,255,0.08)]"
-          : "border-[#E8EAF6] bg-white hover:border-[#B8BDD8]"
-      }`}
-    >
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-bold text-[#111536]">{title}</p>
-        <p className="mt-1 text-xs font-medium text-[#5F6B94] leading-relaxed">{desc}</p>
-      </div>
-      <div
-        className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-all ${
-          active ? "border-[#465FFF] bg-[#465FFF]" : "border-[#D6DDEC] bg-white"
-        }`}
-      >
-        {active && <Check size={10} strokeWidth={3} className="text-white" />}
-      </div>
-    </button>
   );
 }
 
@@ -984,102 +898,40 @@ function NotificationsStep({
 }) {
   const t = useTranslations("OnboardingDesign.notifications");
 
-  const alertTypes = [
-    { key: "alertSpike" as const, label: t("spike"), desc: t("spikeDesc"), icon: BarChart3, color: "#8B5CFF" },
-    { key: "alertNegative" as const, label: t("negative"), desc: t("negativeDesc"), icon: Shield, color: "#EF4444" },
-    { key: "alertViral" as const, label: t("viral"), desc: t("viralDesc"), icon: Sparkles, color: "#F59E0B" },
-    { key: "alertComplaint" as const, label: t("complaint"), desc: t("complaintDesc"), icon: Headphones, color: "#10B981" },
-  ];
-
-  const channels = [
-    { key: "emailEnabled" as const, label: t("email"), icon: Mail },
-    { key: "inAppEnabled" as const, label: "In-app", icon: Bell },
-    { key: "telegramEnabled" as const, label: "Telegram", icon: MessageCircle },
-    { key: "whatsappEnabled" as const, label: "WhatsApp", icon: MessageCircle },
+  const rows = [
+    { key: "emailEnabled" as const, icon: Mail, title: pickL("Email for important alerts", "Email untuk peringatan penting"), desc: pickL("Critical and high alerts go to your inbox.", "Peringatan kritis dan tinggi dikirim ke inbox Anda.") },
+    { key: "escalationEnabled" as const, icon: Shield, title: pickL("Escalations", "Eskalasi"), desc: pickL("Tell me when an alert is escalated to a higher level.", "Beri tahu saya saat peringatan dinaikkan ke level lebih tinggi.") },
+    { key: "reminderEnabled" as const, icon: Bell, title: pickL("Deadline reminders", "Pengingat tenggat"), desc: pickL("Remind the owner before a task passes its deadline.", "Ingatkan penanggung jawab sebelum tugas lewat tenggat.") },
   ];
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-[#111536]">{t("title")}</h1>
-        <p className="mt-1.5 text-sm font-medium text-[#5F6B94]">{t("desc")}</p>
+        <p className="mt-1.5 text-sm font-medium text-[#5F6B94]">{pickL("Alerts always appear in Narriv. Choose what else reaches you.", "Peringatan selalu muncul di Narriv. Pilih apa lagi yang dikirim ke Anda.")}</p>
       </div>
 
-      <div className="space-y-4">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{t("alertTypes")}</h2>
-        <div className="grid gap-3 lg:grid-cols-2">
-          {alertTypes.map(({ key, label, desc, icon: _Icon, color: _color }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => onChange({ [key]: !data[key] })}
-              className={`flex items-start gap-4 rounded-xl border p-5 text-left transition-all ${
-                data[key]
-                  ? "border-[#465FFF] bg-[#F8F6FF] shadow-[0_0_0_3px_rgba(47,32,255,0.08)]"
-                  : "border-[#E8EAF6] bg-white hover:border-[#B8BDD8]"
-              }`}
-            >
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-[#111536]">{label}</p>
-                <p className="mt-1 text-xs font-medium text-[#5F6B94] leading-relaxed">{desc}</p>
-              </div>
-              <ToggleSwitch
-                active={data[key]}
-                onChange={() => onChange({ [key]: !data[key] })}
-              />
-            </button>
-          ))}
-        </div>
+      <div className="grid gap-3">
+        {rows.map(({ key, icon: Icon, title, desc }) => (
+          <div
+            key={key}
+            className={`flex items-center gap-4 rounded-xl p-5 transition-all ${data[key] ? "bg-[#F8F6FF] shadow-[0_0_0_1px_rgba(70,95,255,0.18)]" : "bg-white shadow-[0_0_0_1px_#E8EAF6]"}`}
+          >
+            <span className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${data[key] ? "bg-[#465FFF] text-white" : "bg-[#F0F2FA] text-[#647099]"}`}>
+              <Icon size={18} aria-hidden="true" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-[#111536]">{title}</p>
+              <p className="mt-0.5 text-xs font-medium leading-relaxed text-[#5F6B94]">{desc}</p>
+            </div>
+            <ToggleSwitch active={data[key]} onChange={() => onChange({ [key]: !data[key] })} />
+          </div>
+        ))}
       </div>
 
-      <div className="space-y-4">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{t("channels")}</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {channels.map(({ key, label, icon: _Icon }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => onChange({ [key]: !data[key] })}
-              className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-all ${
-                data[key] ? "border-[#465FFF] bg-[#F8F6FF]" : "border-[#E8EAF6] bg-white hover:border-[#B8BDD8]"
-              }`}
-            >
-              <span className={`text-sm font-semibold ${data[key] ? "text-[#111536]" : "text-[#5F6B94]"}`}>
-                {label}
-              </span>
-              <div className="ml-auto">
-                <ToggleSwitch active={data[key]} onChange={() => onChange({ [key]: !data[key] })} />
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{t("frequency")}</h2>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {[
-            { key: "dailyEnabled" as const, title: t("daily"), sub: pickL("Every day, 08:00", "Setiap hari, 08.00") },
-            { key: "weeklyEnabled" as const, title: t("weekly"), sub: pickL("Every Monday, 09:00", "Setiap Senin, 09.00") },
-            { key: "realtimeEnabled" as const, title: t("realtime"), sub: t("realtimeDesc") },
-          ].map(({ key, title, sub }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => onChange({ [key]: !data[key] })}
-              className={`flex items-center justify-between rounded-xl border p-5 text-left transition-all ${
-                data[key] ? "border-[#465FFF] bg-[#F8F6FF]" : "border-[#E8EAF6] bg-white"
-              }`}
-            >
-              <div>
-                <p className="text-sm font-bold text-[#111536]">{title}</p>
-                <p className="mt-1 text-xs font-medium text-[#5F6B94]">{sub}</p>
-              </div>
-              <ToggleSwitch active={data[key]} onChange={() => onChange({ [key]: !data[key] })} />
-            </button>
-          ))}
-        </div>
-      </div>
+      <p className="text-xs font-medium text-[#647099]">
+        {pickL("WhatsApp and Telegram are coming soon. Slack, Teams and webhooks can be connected later in Settings.", "WhatsApp dan Telegram segera hadir. Slack, Teams, dan webhook bisa disambungkan nanti di Pengaturan.")}
+      </p>
     </div>
   );
 }
@@ -1108,128 +960,64 @@ function ToggleSwitch({ active, onChange }: { active: boolean; onChange: () => v
 
 function PreviewStep({ data }: { data: OnboardingData }) {
   const t = useTranslations("OnboardingDesign.preview");
+  const socialRequested = data.sources.some((s) => s.type === "social");
+  const sent = [data.notifications.emailEnabled && "Email", data.notifications.escalationEnabled && pickL("Escalations", "Eskalasi"), data.notifications.reminderEnabled && pickL("Reminders", "Pengingat")].filter(Boolean) as string[];
 
-  const activeAlertTypes = [
-    data.notifications.alertSpike && pickL("Mention spike", "Lonjakan penyebutan"),
-    data.notifications.alertNegative && pickL("Negative sentiment", "Sentimen negatif"),
-    data.notifications.alertViral && pickL("Viral issue", "Isu viral"),
-    data.notifications.alertComplaint && pickL("Customer complaints", "Keluhan pelanggan"),
-  ].filter(Boolean);
+  const tiles = [
+    { value: data.keywords.length, label: pickL("keywords, checked hourly", "kata kunci, dicek tiap jam") },
+    { value: 2, label: pickL("sources live now", "sumber langsung aktif") },
+    { value: sent.length, label: pickL("notifications on", "notifikasi aktif") },
+  ];
 
-  const activeChannels = [
-    data.notifications.emailEnabled && "Email",
-    data.notifications.inAppEnabled && "In-app",
-    data.notifications.telegramEnabled && "Telegram",
-    data.notifications.whatsappEnabled && "WhatsApp",
-  ].filter(Boolean);
-
-  const summaryRows = [
-    { label: pickL("Name", "Nama"), value: data.profile.name || "—" },
-    { label: pickL("Role", "Jabatan"), value: data.profile.role || "—" },
-    { label: pickL("Company", "Perusahaan"), value: data.profile.company || "—" },
-    { label: pickL("Industry", "Industri"), value: data.profile.industry ? (INDUSTRY_ID[data.profile.industry] ? pickL(data.profile.industry, INDUSTRY_ID[data.profile.industry]) : data.profile.industry) : "—" },
-    {
-      label: pickL("Keywords", "Kata kunci"),
-      value: pickL(`${data.keywords.length} keyword${data.keywords.length !== 1 ? "s" : ""}`, `${data.keywords.length} kata kunci`),
-    },
-    {
-      label: pickL("Data Sources", "Sumber data"),
-      value: pickL(`${data.sources.length} source${data.sources.length !== 1 ? "s" : ""}`, `${data.sources.length} sumber`),
-    },
-    { label: pickL("Alert Types", "Jenis peringatan"), value: pickL(`${activeAlertTypes.length} active`, `${activeAlertTypes.length} aktif`) },
-    { label: pickL("Channels", "Saluran"), value: pickL(`${activeChannels.length} active`, `${activeChannels.length} aktif`) },
+  const next = [
+    { when: pickL("In about a minute", "Sekitar 1 menit"), what: pickL("The first news and YouTube results arrive and are scored for sentiment.", "Berita dan YouTube pertama masuk dan dinilai sentimennya.") },
+    { when: pickL("Every hour", "Setiap jam"), what: pickL("Narriv checks again and groups mentions into issues.", "Narriv mengecek lagi dan mengelompokkan percakapan jadi isu.") },
+    { when: pickL("When something spikes", "Saat ada lonjakan"), what: data.notifications.emailEnabled ? pickL("An alert appears in Narriv and in your email.", "Peringatan muncul di Narriv dan email Anda.") : pickL("An alert appears in Narriv.", "Peringatan muncul di Narriv.") },
   ];
 
   return (
     <div className="space-y-8">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#111536]">{t("title")}</h1>
-          <p className="mt-1.5 text-sm font-medium text-[#5F6B94]">{t("desc")}</p>
-        </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#10B981]/12 px-4 py-2 text-xs font-bold text-[#047857]">
-          {pickL("Ready", "Siap")}
-        </span>
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-[#111536]">{pickL("Ready to start", "Siap dimulai")}</h1>
+        <p className="mt-1.5 text-sm font-medium text-[#5F6B94]">{t("readyText")}</p>
       </div>
 
-      {data.keywords.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">
-            {pickL("Keywords you will monitor", "Kata kunci yang akan dipantau")}
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {data.keywords.map((kw) => (
-              <span
-                key={kw}
-                className="inline-flex items-center gap-1.5 rounded-full bg-[#465FFF]/10 px-4 py-2 text-sm font-semibold text-[#3B52F5]"
-              >
-                {kw}
-              </span>
-            ))}
-          </div>
+      {/* The brand, the way it will look at the top of the dashboard. */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#101334] via-[#18206B] to-[#2B2F9E] px-5 pb-5 pt-6 text-center text-white">
+        <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-0 h-[160px] w-[420px] -translate-x-1/2 rounded-full bg-[#6D7CFF] opacity-30 blur-[80px]" />
+        <p className="relative text-[11px] font-black uppercase tracking-[0.16em] text-white/60">{pickL("Monitoring", "Pemantauan")}</p>
+        <p className="relative mt-1 truncate text-[26px] font-black tracking-[-0.02em]">{data.profile.company || "—"}</p>
+        <div className="relative mt-3 flex flex-wrap justify-center gap-1.5">
+          {data.keywords.map((kw) => (
+            <span key={kw} className="rounded-full bg-white/[0.12] px-3 py-1 text-[13px] font-semibold">{kw}</span>
+          ))}
         </div>
-      )}
-
-      {data.sources.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{pickL("Data Sources", "Sumber Data")}</h2>
-          <div className="flex flex-wrap gap-2">
-            {[...new Set(data.sources.map((s) => s.type))].map((type) => (
-              <span
-                key={type}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[#E8EAF6] bg-white px-4 py-2 text-sm font-semibold text-[#3E4975]"
-              >
-                {type.charAt(0).toUpperCase() + type.slice(1)} (
-                {data.sources.filter((s) => s.type === type).length})
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {activeAlertTypes.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">
-            {pickL("Alerts & notifications", "Peringatan & notifikasi")}
-          </h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {activeAlertTypes.map(
-              (label) =>
-                label && (
-                  <div
-                    key={label}
-                    className="flex items-center gap-3 rounded-xl border border-[#E8EAF6] bg-[#FAFBFF] px-4 py-3"
-                  >
-                    <span className="text-sm font-semibold text-[#111536]">{label}</span>
-                  </div>
-                )
-            )}
-          </div>
-        </div>
-      )}
-
-      <div className="border-t border-[#F0F2FA]" />
-
-      <div className="rounded-xl border border-[#E8EAF6] overflow-hidden">
-        <div className="border-b border-[#F0F2FA] bg-[#FAFBFF] px-6 py-4">
-          <h2 className="text-sm font-bold text-[#111536]">{t("summaryTitle")}</h2>
-        </div>
-        <div className="divide-y divide-[#F0F2FA]">
-          {summaryRows.map(({ label, value }) => (
-            <div key={label} className="flex items-center justify-between px-6 py-4">
-              <span className="text-sm font-medium text-[#5F6B94]">{label}</span>
-              <span className="text-sm font-semibold text-[#111536]">{value}</span>
+        <div className="relative mt-5 grid grid-cols-3 gap-2">
+          {tiles.map((tile) => (
+            <div key={tile.label} className="rounded-xl bg-white px-2 py-3 text-[#111536]">
+              <p className="text-[26px] font-black leading-none">{tile.value}</p>
+              <p className="mt-1.5 text-[11px] font-semibold leading-tight text-[#5F6B94]">{tile.label}</p>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="flex items-start gap-4 rounded-xl border border-transparent bg-[#F0FFF8] p-6">
-        <CheckCircle2 size={24} className="mt-0.5 shrink-0 text-[#047857]" />
-        <div>
-          <p className="text-base font-bold text-[#111536]">{t("readyTitle")}</p>
-          <p className="mt-1 text-sm font-medium text-[#5F6B94]">{t("readyText")}</p>
-        </div>
+      <div className="space-y-3">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-[#647099]">{pickL("What happens next", "Yang terjadi setelah ini")}</h2>
+        <ol className="space-y-2">
+          {next.map((step, i) => (
+            <li key={step.when} className="flex items-start gap-3 rounded-xl bg-[#FAFBFF] px-4 py-3">
+              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#465FFF] text-[12px] font-black text-white">{i + 1}</span>
+              <span className="min-w-0">
+                <span className="block text-sm font-bold text-[#111536]">{step.when}</span>
+                <span className="block text-xs font-medium leading-relaxed text-[#5F6B94]">{step.what}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+        {socialRequested ? (
+          <p className="text-xs font-medium text-[#5F6B94]">{pickL("Social media: requested. The Narriv team will contact you to switch it on.", "Media sosial: sudah diminta. Tim Narriv akan menghubungi Anda untuk mengaktifkannya.")}</p>
+        ) : null}
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import supabase from "../../lib/supabase.js";
 import { analyzeCluster } from "../ai/ai.service.js";
+import { workspaceLanguage } from "../../lib/workspace-language.js";
 import { logStructured } from "../../lib/logger.js";
 
 // Helper to extract basic keywords (lowercase, basic stop words removed, bilingual EN + ID)
@@ -211,6 +212,8 @@ export const runClustering = async (workspaceId) => {
 
     // 6. Generate AI labels and save new narrative clusters to DB
     let createdCount = 0;
+    // Issue titles are stored and shared by every member, so they follow the workspace's content language.
+    const lang = clusters.length ? await workspaceLanguage(workspaceId) : "id";
     for (const cluster of clusters) {
         const signalsContext = cluster
             .slice(0, 8)
@@ -220,7 +223,7 @@ export const runClustering = async (workspaceId) => {
         logStructured("info", "clustering_analyzing_cluster", { signalCount: cluster.length });
         let aiAnalysis = null;
         try {
-            aiAnalysis = await analyzeCluster(signalsContext);
+            aiAnalysis = await analyzeCluster(signalsContext, lang);
         } catch (aiErr) {
             logStructured("warn", "clustering_ai_analysis_fallback", { error: aiErr.message });
         }
@@ -233,9 +236,11 @@ export const runClustering = async (workspaceId) => {
         
         const fallbackTitle = cluster[0]?.title 
             ? `${cluster[0].title.split(" - ")[0].substring(0, 45)}`
-            : (allClusterKeywords.slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ") || "Emerging Topic");
+            : (allClusterKeywords.slice(0, 3).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ") || (lang === "en" ? "Emerging Topic" : "Topik baru"));
         const title = aiAnalysis?.title || fallbackTitle;
-        const description = aiAnalysis?.description || `Cluster of ${cluster.length} signals regarding ${allClusterKeywords.slice(0, 5).join(", ")}.`;
+        const description = aiAnalysis?.description || (lang === "en"
+            ? `Cluster of ${cluster.length} signals regarding ${allClusterKeywords.slice(0, 5).join(", ")}.`
+            : `${cluster.length} percakapan tentang ${allClusterKeywords.slice(0, 5).join(", ")}.`);
         const mainNarrative = aiAnalysis?.description || description;
 
         // Insert new cluster into DB
