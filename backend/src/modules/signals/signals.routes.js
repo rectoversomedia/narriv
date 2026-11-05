@@ -284,18 +284,46 @@ router.get("/export", async (req, res) => {
 router.get("/meta", async (req, res) => {
     try {
         const workspaceIds = await getUserWorkspaceIds(req.user.id);
-        const inClause = workspaceIds.map(id => `'${id}'`).join(',');
 
-        // Fetch alerts
-        const { data: rawAlerts, error: alertsError } = await supabase
-            .from('alerts')
-            .select('title, severity, status, created_at, metadata')
-            .in('workspace_id', workspaceIds)
-            .neq('status', 'resolved')
-            .order('created_at', { ascending: false })
-            .limit(3);
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+        // The queries are independent, so they run together rather than one after another.
+        const [
+            { data: rawAlerts, error: alertsError },
+            { data: rawActionPlans, error: actionPlansError },
+            { data: allSignals, error: signalsError },
+            { data: timelineData, error: timelineError },
+            { data: rawCases, error: casesError },
+            { count: negativeCount, error: negativeError },
+            { count: positiveCount, error: positiveError },
+            { count: criticalCount, error: criticalError },
+            { data: recentSignalsForSummary },
+        ] = await Promise.all([
+            supabase.from('alerts').select('title, severity, status, created_at, metadata').in('workspace_id', workspaceIds).neq('status', 'resolved').order('created_at', { ascending: false }).limit(3),
+            supabase.from('action_plans').select('title, description, priority').in('workspace_id', workspaceIds).order('created_at', { ascending: false }).limit(4),
+            // Platform counts over the last 30 days (labelled so on the page); all-time grew without bound.
+            supabase.from('signals').select('platform').in('workspace_id', workspaceIds).gte('captured_at', since30d).limit(5000),
+            supabase.from('signals').select('captured_at').in('workspace_id', workspaceIds).gte('captured_at', twentyFourHoursAgo),
+            supabase.from('cases').select('title, status, assignee_id').in('workspace_id', workspaceIds).order('created_at', { ascending: false }).limit(3),
+            supabase.from('signals').select('*', { count: 'exact', head: true }).in('workspace_id', workspaceIds).ilike('sentiment', 'NEGATIVE').gte('captured_at', twentyFourHoursAgo),
+            // Neutral/unanalyzed are not positive.
+            supabase.from('signals').select('*', { count: 'exact', head: true }).in('workspace_id', workspaceIds).ilike('sentiment', 'POSITIVE').gte('captured_at', twentyFourHoursAgo),
+            supabase.from('alerts').select('*', { count: 'exact', head: true }).in('workspace_id', workspaceIds).in('severity', ['critical', 'high']).gte('created_at', twentyFourHoursAgo),
+            // Recent signals power the AI summary.
+            supabase.from('signals').select('title, content, sentiment, platform').in('workspace_id', workspaceIds).order('captured_at', { ascending: false }).limit(8),
+        ]);
 
         if (alertsError) throw alertsError;
+        if (actionPlansError) throw actionPlansError;
+        if (signalsError) throw signalsError;
+        if (timelineError) throw timelineError;
+        if (negativeError) throw negativeError;
+        if (positiveError) throw positiveError;
+        if (criticalError) throw criticalError;
+        if (casesError) {
+            logStructured("warn", "cases_fetch_in_meta_failed", { error: casesError.message });
+        }
 
         const followUps = (rawAlerts || []).map(a => ({
             title: a.title,
@@ -309,32 +337,12 @@ router.get("/meta", async (req, res) => {
             tone: a.severity === 'critical' ? 'red' : 'amber'
         }));
 
-        // Fetch action plans
-        const { data: rawActionPlans, error: actionPlansError } = await supabase
-            .from('action_plans')
-            .select('title, description, priority')
-            .in('workspace_id', workspaceIds)
-            .order('created_at', { ascending: false })
-            .limit(4);
-
-        if (actionPlansError) throw actionPlansError;
-
         const recommendations = (rawActionPlans || []).map(ap => ({
             title: ap.title,
             desc: ap.description,
             badge: ap.priority,
             tone: 'purple'
         }));
-
-        // Platform counts over the last 30 days (labelled so on the page); all-time grew without bound.
-        const { data: allSignals, error: signalsError } = await supabase
-            .from('signals')
-            .select('platform')
-            .in('workspace_id', workspaceIds)
-            .gte('captured_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
-            .limit(5000);
-
-        if (signalsError) throw signalsError;
 
         // Group by platform manually
         const platformCountsMap = {};
@@ -355,15 +363,6 @@ router.get("/meta", async (req, res) => {
             };
         });
 
-        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        const { data: timelineData, error: timelineError } = await supabase
-            .from('signals')
-            .select('captured_at')
-            .in('workspace_id', workspaceIds)
-            .gte('captured_at', twentyFourHoursAgo);
-
-        if (timelineError) throw timelineError;
-
         const timeline = Array(24).fill(0);
         const timelineLabels = Array(24).fill('');
 
@@ -381,18 +380,6 @@ router.get("/meta", async (req, res) => {
         });
 
         const totalSignals24h = (timelineData || []).length;
-
-        // Fetch cases
-        const { data: rawCases, error: casesError } = await supabase
-            .from('cases')
-            .select('title, status, assignee_id')
-            .in('workspace_id', workspaceIds)
-            .order('created_at', { ascending: false })
-            .limit(3);
-
-        if (casesError) {
-            logStructured("warn", "cases_fetch_in_meta_failed", { error: casesError.message });
-        }
 
         let investigationQueue = [];
 
@@ -422,36 +409,6 @@ router.get("/meta", async (req, res) => {
             }));
         }
 
-        // Count negative signals in 24h
-        const { count: negativeCount, error: negativeError } = await supabase
-            .from('signals')
-            .select('*', { count: 'exact', head: true })
-            .in('workspace_id', workspaceIds)
-            .ilike('sentiment', 'NEGATIVE')
-            .gte('captured_at', twentyFourHoursAgo);
-
-        if (negativeError) throw negativeError;
-
-        // Count positive signals in 24h (neutral/unanalyzed are not positive)
-        const { count: positiveCount, error: positiveError } = await supabase
-            .from('signals')
-            .select('*', { count: 'exact', head: true })
-            .in('workspace_id', workspaceIds)
-            .ilike('sentiment', 'POSITIVE')
-            .gte('captured_at', twentyFourHoursAgo);
-
-        if (positiveError) throw positiveError;
-
-        // Count critical alerts in 24h
-        const { count: criticalCount, error: criticalError } = await supabase
-            .from('alerts')
-            .select('*', { count: 'exact', head: true })
-            .in('workspace_id', workspaceIds)
-            .in('severity', ['critical', 'high'])
-            .gte('created_at', twentyFourHoursAgo);
-
-        if (criticalError) throw criticalError;
-
         const negativeSignals24h = negativeCount || 0;
         const criticalAlerts24h = criticalCount || 0;
 
@@ -461,14 +418,6 @@ router.get("/meta", async (req, res) => {
             positiveSignals24h: positiveCount || 0,
             criticalSignals24h: criticalAlerts24h
         };
-
-        // Fetch recent signals to power dynamic AI narrative summary
-        const { data: recentSignalsForSummary } = await supabase
-            .from('signals')
-            .select('title, content, sentiment, platform')
-            .in('workspace_id', workspaceIds)
-            .order('captured_at', { ascending: false })
-            .limit(8);
 
         const aiSummary = await generateSignalsSummary(recentSignalsForSummary || [], metrics);
 

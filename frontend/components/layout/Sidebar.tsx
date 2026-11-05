@@ -23,7 +23,7 @@ function activeRoute(pathname: string, href: string, match: string[] = []) {
 const fade = (hidden: boolean) => cn("whitespace-nowrap transition-opacity duration-200", hidden ? "pointer-events-none opacity-0" : "opacity-100");
 
 /**
- * Desktop: the Narriv wordmark lined up with the top bar, the client's workspace, the five menus (the open one
+ * Desktop: the Narriv wordmark lined up with the top bar, the client's workspace, the four menus (the open one
  * lists its pages, the same ones as the tabs on the page), then whether monitoring is running. Settings and Help
  * are in the account menu at the top right. Phones get the bottom bar instead.
  */
