@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import crypto from "crypto";
 
 const publicPaths = [
+  "/welcome",
   "/pricing",
   "/help",
   "/terms",
@@ -76,6 +77,11 @@ export function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL("/", request.url));
     }
     return NextResponse.next();
+  }
+
+  // Visitors who are not signed in see the landing page at the root; signed-in users get the dashboard there.
+  if (!authenticated && pathname === "/") {
+    return NextResponse.rewrite(new URL("/welcome", request.url));
   }
 
   if (!authenticated) {

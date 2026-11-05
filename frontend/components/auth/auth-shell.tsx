@@ -274,62 +274,66 @@ export function SocialButtons() {
   );
 }
 
+/**
+ * Signs in to the read-only demo workspace through the frontend proxy (which sets the narriv_auth cookie) and opens
+ * the dashboard. Throws with a readable message when it fails. Used by the login page and the landing page.
+ */
+export async function startDemoLogin() {
+  // Call frontend proxy route — it calls the backend and sets the narriv_auth cookie
+  // on narriv.digital so the middleware can read it.
+  const response = await fetch("/api/auth/demo-login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || "Demo login failed");
+  }
+
+  const data = await response.json();
+
+  // Store auth state from server response
+  const zustandState = {
+    state: {
+      token: data.accessToken,
+      refreshToken: data.refreshToken,
+      user: data.user,
+      isAuthenticated: true,
+    },
+    version: 0,
+  };
+  localStorage.setItem("narriv-auth", JSON.stringify(zustandState));
+
+  // Store legacy keys for page-load restoration
+  localStorage.setItem("narriv_demo_user", JSON.stringify(data.user));
+  localStorage.setItem("narriv_demo_token", data.accessToken);
+  localStorage.setItem("narriv_demo_refresh_token", data.refreshToken);
+
+  // SECURITY FIX: Dispatch custom event WITH server-provided tokens
+  // Tokens must come from server-side validation
+  window.dispatchEvent(new CustomEvent("narriv_demo_login", {
+    detail: {
+      user: data.user,
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+    }
+  }));
+
+  // Redirect to dashboard
+  window.location.href = "/?demo=true";
+}
+
 function DemoButton() {
   const t = useTranslations("AuthDesign");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleDemoLogin = async () => {
-    // SECURITY FIX: Demo mode now requires server-side authentication
-    // Direct localStorage manipulation bypasses security - we must validate at server
     setIsLoading(true);
-
     try {
-      // Call frontend proxy route — it calls the backend and sets the narriv_auth cookie
-      // on narriv.digital so the middleware can read it.
-      const response = await fetch("/api/auth/demo-login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Demo login failed");
-      }
-
-      const data = await response.json();
-
-      // Store auth state from server response
-      const zustandState = {
-        state: {
-          token: data.accessToken,
-          refreshToken: data.refreshToken,
-          user: data.user,
-          isAuthenticated: true,
-        },
-        version: 0,
-      };
-      localStorage.setItem("narriv-auth", JSON.stringify(zustandState));
-
-      // Store legacy keys for page-load restoration
-      localStorage.setItem("narriv_demo_user", JSON.stringify(data.user));
-      localStorage.setItem("narriv_demo_token", data.accessToken);
-      localStorage.setItem("narriv_demo_refresh_token", data.refreshToken);
-
-      // SECURITY FIX: Dispatch custom event WITH server-provided tokens
-      // Tokens must come from server-side validation
-      window.dispatchEvent(new CustomEvent("narriv_demo_login", {
-        detail: {
-          user: data.user,
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-        }
-      }));
-
-      // Redirect to dashboard
-      window.location.href = "/?demo=true";
+      await startDemoLogin();
     } catch (error) {
       console.error("Demo login error:", error);
-      // Show error message to user
       alert(error instanceof Error ? error.message : "Demo login failed. Please try again.");
     } finally {
       setIsLoading(false);
