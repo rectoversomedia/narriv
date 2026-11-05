@@ -13,18 +13,20 @@ import { generateReport } from "./reports.service.js";
 
 const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
 
-/** Mentions and sentiment shares for one window, counted the way generateReport counts them. */
+/** Mentions and sentiment shares for one window, from each signal's stored sentiment (as the dashboard counts them). */
 async function periodTotals(workspaceId, start, end) {
-    const { data } = await supabase
+    const { data, error } = await supabase
         .from("signals")
-        .select("sentiment, analyses:signal_analyses(sentiment)")
+        .select("sentiment")
         .eq("workspace_id", workspaceId)
         .gte("captured_at", start.toISOString())
         .lt("captured_at", end.toISOString())
         .limit(20000);
+    // A failed query means "unknown", never "zero mentions last period".
+    if (error) return null;
     let positive = 0, negative = 0, analysed = 0;
     for (const row of data || []) {
-        const s = String(row.analyses?.[0]?.sentiment || row.sentiment || "").toLowerCase();
+        const s = String(row.sentiment || "").toLowerCase();
         if (!["positive", "negative", "neutral", "mixed"].includes(s)) continue;
         analysed++;
         if (s === "positive") positive++;
@@ -138,7 +140,6 @@ function words(lang) {
         overdue: w("overdue", "lewat tenggat"),
         vsPrev: w("vs previous period", "vs periode lalu"),
         points: w("pts", "poin"),
-        noPrev: w("no earlier data", "belum ada pembanding"),
         issuesTitle: w("Main issues", "Isu utama"),
         signalsTitle: w("Notable mentions", "Percakapan yang menonjol"),
         whatToDo: w("Next step", "Langkah"),
@@ -234,17 +235,17 @@ export function buildReportPdf(data, lang = data.language) {
 
     // KPI tiles
     // Each change is coloured by whether it is good news: more negative is red, more positive is green.
-    const delta = (now, before, unit, goodWhenUp) => {
-        if (!p || !p.signals) return { text: W.noPrev, color: C.muted };
+    const delta = (now, before, unit, goodWhenUp, fallback) => {
+        if (!p || !p.signals) return { text: fallback, color: C.muted };
         const d = now - before;
         const sign = d > 0 ? "+" : d < 0 ? "-" : "±";
         const color = d === 0 || goodWhenUp === null ? C.muted : (d > 0) === goodWhenUp ? C.greenDark : C.redDark;
         return { text: `${sign}${Math.abs(d)}${unit} ${W.vsPrev}`, color };
     };
     const tiles = [
-        { label: W.signals, value: String(t.signals), sub: delta(t.signals, p?.signals ?? 0, "", null), fg: C.blue, bg: "#EEF1FF" },
-        { label: W.negative, value: `${t.negative}%`, sub: delta(t.negative, p?.negative ?? 0, ` ${W.points}`, false), fg: C.redDark, bg: C.redSoft },
-        { label: W.positive, value: `${t.positive}%`, sub: delta(t.positive, p?.positive ?? 0, ` ${W.points}`, true), fg: C.greenDark, bg: C.greenSoft },
+        { label: W.signals, value: String(t.signals), sub: delta(t.signals, p?.signals ?? 0, "", null, `${t.analyzed} ${lang === "en" ? "analysed" : "teranalisis"}`), fg: C.blue, bg: "#EEF1FF" },
+        { label: W.negative, value: `${t.negative}%`, sub: delta(t.negative, p?.negative ?? 0, ` ${W.points}`, false, W.ofSignals), fg: C.redDark, bg: C.redSoft },
+        { label: W.positive, value: `${t.positive}%`, sub: delta(t.positive, p?.positive ?? 0, ` ${W.points}`, true, W.ofSignals), fg: C.greenDark, bg: C.greenSoft },
         { label: W.alerts, value: String(t.alerts), sub: { text: `${t.criticalAlerts} ${W.criticalHigh}`, color: C.muted }, fg: C.amberDark, bg: C.amberSoft },
     ];
     const gap = 10;
@@ -284,8 +285,9 @@ export function buildReportPdf(data, lang = data.language) {
         ].filter(Boolean).join("   ·   ");
         doc.font("Helvetica-Bold").fontSize(11);
         const hTitle = doc.heightOfString(a.title, { width: textW });
-        doc.font("Helvetica").fontSize(9);
+        doc.font("Helvetica-Bold").fontSize(9);
         const hMeta = doc.heightOfString(meta, { width: width - 44 });
+        doc.font("Helvetica").fontSize(9.5);
         const hTodo = a.whatToDo ? doc.heightOfString(`${W.whatToDo}: ${a.whatToDo}`, { width: width - 44 }) : 0;
         const h = 14 + hTitle + 4 + hMeta + (hTodo ? hTodo + 5 : 0) + 12;
         ensure(h + 8);
