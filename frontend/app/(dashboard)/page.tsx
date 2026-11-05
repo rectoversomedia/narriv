@@ -28,6 +28,7 @@ import {
 import { getPipelineStatus, getRecommendations, timeAgo, type IntelligenceRecommendation } from "@/lib/intelligence-api";
 import { useCodeLabels } from "@/components/intelligence/intelligence-panels";
 import { BrandHero } from "@/components/dashboard/brand-hero";
+import { AI_ENGINES } from "@/components/ui/ai-engines";
 import { DemoBanner } from "@/components/ui/demo-banner";
 import { SentimentTrendChart } from "@/components/dashboard/sentiment-trend-chart";
 import { PlatformIcon } from "@/components/ui/platform-icon";
@@ -43,13 +44,7 @@ const PERIOD_HOURS: Record<DateRangeKey, number> = { "24h": 24, "7d": 168, "30d"
 const PERIOD_DAYS: Record<DateRangeKey, number> = { "24h": 1, "7d": 7, "30d": 30 };
 const SEVERITY_RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
 const PRIORITY_RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
-const GEO_ENGINES = [
-  { key: "chatgpt", name: "ChatGPT" },
-  { key: "gemini", name: "Gemini" },
-  { key: "claude", name: "Claude" },
-  { key: "perplexity", name: "Perplexity" },
-  { key: "deepseek", name: "DeepSeek" },
-];
+const GEO_ENGINES = AI_ENGINES;
 const PLATFORM_NAMES: Record<string, string> = { twitter: "X", x: "X", instagram: "Instagram", facebook: "Facebook", tiktok: "TikTok", youtube: "YouTube", reddit: "Reddit" };
 const SOCIAL_PLATFORMS = ["twitter", "instagram", "facebook", "tiktok", "youtube"];
 const BAR_COLORS = ["#465FFF", "#8B5CFF", "#10B981", "#F59E0B", "#EF4444", "#0EA5E9"];
@@ -562,7 +557,7 @@ export default function DashboardPage() {
                       const result = geoByKey.get(engine.key);
                       const status = engineStatus.get(engine.key);
                       const value = result ? `${Math.round(result.visibilityScore)}/100` : status?.configured ? L("not tested", "belum diuji") : L("not connected", "belum terhubung");
-                      return <Bar key={engine.key} label={engine.name} value={value} share={result ? Math.min(100, Math.max(0, result.visibilityScore)) : 0} color={BAR_COLORS[index % BAR_COLORS.length]} href="/visibility" muted={!result} />;
+                      return <Bar key={engine.key} label={<span className="flex items-center gap-2"><span className="flex size-6 items-center justify-center rounded-[7px] bg-white shadow-[0_1px_3px_rgba(16,19,52,0.12)]"><engine.Logo className="size-4" /></span>{engine.name}</span>} value={value} share={result ? Math.min(100, Math.max(0, result.visibilityScore)) : 0} color={BAR_COLORS[index % BAR_COLORS.length]} href="/visibility" muted={!result} />;
                     })}
                   </div>
                   <p className="mt-3 text-[11px] font-semibold text-[#5A6478]">

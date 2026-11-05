@@ -69,15 +69,15 @@ export function DashboardShell({ children }: { children: ReactNode }) {
           </div>
         </main>
 
-        {/* Ask Narriv floats bottom right on every page (not on the Ask page itself): the round Narriv mark and its name. */}
+        {/* Ask Narriv floats bottom right on every page (not on the Ask page itself): the round Narriv mark, its name under it. */}
         {pathname?.startsWith("/ask") ? null : (
           <Link
             href="/ask"
             aria-label="Ask Narriv"
-            className="fixed bottom-24 right-4 z-40 flex items-center gap-2.5 rounded-full bg-[#101334] py-1.5 pl-1.5 pr-4 text-white shadow-[0_12px_32px_rgba(16,19,52,0.35)] ring-1 ring-white/10 transition hover:-translate-y-0.5 hover:bg-[#18206B] active:scale-95 sm:right-6 lg:bottom-6"
+            className="group fixed bottom-[88px] right-3 z-40 flex flex-col items-center sm:right-6 lg:bottom-6"
           >
-            <Image src="/brand/logo-bulat.webp" alt="" width={36} height={36} unoptimized className="size-9 rounded-full object-cover" />
-            <span className="text-[13px] font-black">Ask Narriv</span>
+            <Image src="/brand/logo-bulat.webp" alt="" width={56} height={56} unoptimized className="size-12 rounded-full object-cover shadow-[0_10px_28px_rgba(70,40,200,0.45)] ring-2 ring-white transition group-hover:-translate-y-0.5 group-active:scale-95 lg:size-14" />
+            <span className="-mt-2 rounded-full bg-[#101334] px-2.5 py-1 text-[11px] font-black leading-none text-white shadow-[0_4px_12px_rgba(16,19,52,0.3)]">Ask Narriv</span>
           </Link>
         )}
       </div>

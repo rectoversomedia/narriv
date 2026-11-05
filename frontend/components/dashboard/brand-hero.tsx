@@ -61,12 +61,12 @@ export function BrandHero({
       <div className="relative flex flex-col items-center text-center">
         <BrandMark name={brandName} logoUrl={logoUrl} />
         <p className="mt-4 text-[11px] font-black uppercase tracking-[0.16em] text-white/60">{eyebrow}</p>
-        <h2 className="mt-1 max-w-full truncate text-[30px] font-black leading-tight tracking-[-0.02em] sm:text-[34px]">{brandName}</h2>
-        <ul className="mt-3 flex flex-wrap justify-center gap-2">
+        <h2 className="mt-1 max-w-full truncate text-[26px] font-black leading-tight tracking-[-0.02em] sm:text-[34px]">{brandName}</h2>
+        <ul className="mt-3 flex flex-wrap justify-center gap-1.5 sm:gap-2">
           {pills.map((pill, i) => {
             const Icon = pill.icon;
             return (
-              <li key={i} className="flex items-center gap-1.5 rounded-full bg-white/[0.12] px-3.5 py-1.5 text-[13px] font-semibold text-white/85 backdrop-blur-sm">
+              <li key={i} className="flex items-center gap-1.5 rounded-full bg-white/[0.12] px-2.5 py-1 text-[12px] font-semibold text-white/85 backdrop-blur-sm sm:px-3.5 sm:py-1.5 sm:text-[13px]">
                 <Icon size={14} strokeWidth={2.4} aria-hidden="true" className="text-[#A5B4FF]" />
                 {pill.value !== undefined ? <b className="font-black text-white">{pill.value}</b> : null}
                 {pill.label}

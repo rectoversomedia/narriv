@@ -262,3 +262,11 @@ button {
     @apply border-[#465FFF] ring-2 ring-[#465FFF]/20;
   }
 }
+
+/* Phones: nothing smaller than 11px. Labels sized for desktop (8–10.5px) are unreadable on a 390px screen.
+   Unlayered, so it wins over the Tailwind utilities; desktop sizes are untouched. */
+@media (max-width: 639px) {
+  .text-\[8px\], .text-\[9px\], .text-\[9\.5px\], .text-\[10px\], .text-\[10\.5px\] {
+    font-size: 11px;
+  }
+}

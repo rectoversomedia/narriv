@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, type ComponentType, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ClaudeAI, DeepSeek, Gemini, OpenAILight, PerplexityAI } from "@ridemountainpig/svgl-react";
+import { AI_ENGINES } from "@/components/ui/ai-engines";
 import { DashboardErrorState, MetricRowSkeleton } from "@/components/dashboard/dashboard-states";
 import { getVisibilitySummary, getVisibilityTrends, getWorkspaceSettings, runGeoAllEngines } from "@/lib/api-service";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
@@ -16,13 +16,7 @@ import { cn } from "@/lib/utils";
  * and who they name instead. Numbers first: one score, one card per assistant, one question × assistant grid.
  */
 
-const ENGINES: Array<{ key: string; name: string; Logo: ComponentType<{ className?: string }> }> = [
-  { key: "chatgpt", name: "ChatGPT", Logo: OpenAILight },
-  { key: "gemini", name: "Gemini", Logo: Gemini },
-  { key: "claude", name: "Claude", Logo: ClaudeAI },
-  { key: "perplexity", name: "Perplexity", Logo: PerplexityAI },
-  { key: "deepseek", name: "DeepSeek", Logo: DeepSeek },
-];
+const ENGINES = AI_ENGINES;
 
 function scoreLook(score: number) {
   if (score >= 60) return { color: "#047857", bg: "#E5F6EE", bar: "#12A66A", word: ["Strong", "Kuat"] as [string, string] };
@@ -215,7 +209,35 @@ export default function VisibilityPage() {
                 <h2 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{L("Test questions, per assistant", "Pertanyaan uji, per asisten")}</h2>
                 <p className="text-[11px] font-bold text-[#5A6478]">{L("Yes = your brand is named", "Ya = brand Anda disebut")}</p>
               </div>
-              <div className="mt-4 overflow-hidden rounded-[12px]">
+              {/* Phones: one card per question, the five assistants as logo + Yes/No under it. */}
+              <ul className="mt-4 space-y-2.5 sm:hidden">
+                {matrix.map((row) => {
+                  const cells = ENGINES.map((e) => row.engines[e.key]);
+                  const asked = cells.filter(Boolean).length;
+                  const named = cells.filter((c) => c?.mentioned).length;
+                  const weak = asked > 0 && named / asked < 0.5;
+                  return (
+                    <li key={row.prompt} className={cn("rounded-[12px] p-3", weak ? "bg-[#FDF0F0]" : "bg-[#F7F8FC]")}>
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="text-[14px] font-bold leading-snug text-[#101334]">{row.prompt}</p>
+                        <span className={cn("shrink-0 text-[15px] font-black", weak ? "text-[#C81E1E]" : "text-[#047857]")}>{named}/{asked}</span>
+                      </div>
+                      <div className="mt-2.5 grid grid-cols-5 gap-1.5">
+                        {cells.map((c, i) => {
+                          const { key, name, Logo } = ENGINES[i];
+                          return (
+                            <div key={key} title={name} className={cn("flex flex-col items-center gap-1 rounded-[9px] py-1.5", !c ? "bg-white/60" : c.mentioned ? "bg-[#E5F6EE]" : "bg-[#F6D5D5]")}>
+                              <Logo className="size-4" />
+                              <span className={cn("text-[11px] font-black", !c ? "text-[#B8C0D4]" : c.mentioned ? "text-[#047857]" : "text-[#9B1C1C]")}>{!c ? "—" : c.mentioned ? L("Yes", "Ya") : L("No", "Tidak")}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="mt-4 hidden overflow-hidden rounded-[12px] sm:block">
                 <table className="w-full table-fixed text-left">
                   <colgroup><col /><col className="w-[60px]" /><col className="w-[60px]" /><col className="w-[60px]" /><col className="w-[60px]" /><col className="w-[60px]" /><col className="w-[60px]" /></colgroup>
                   <thead>
