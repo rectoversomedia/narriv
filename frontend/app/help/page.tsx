@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { SiteFooter, SiteHeader } from "@/components/marketing/site-chrome";
-import { SUPPORT_EMAIL } from "@/lib/support";
+import { SUPPORT_EMAIL, SUPPORT_WHATSAPP, SUPPORT_WHATSAPP_URL } from "@/lib/support";
 import { useL } from "@/lib/use-l";
 import { Search, ChevronDown, Zap, BarChart3, Bell, FileText, Users, Settings } from "lucide-react";
 
@@ -262,24 +262,23 @@ export default function HelpCenterPage() {
 
         <section id="contact" className="mx-auto mt-16 max-w-4xl scroll-mt-24">
           <div className="rounded-[28px] bg-gradient-to-br from-[#101334] via-[#18206B] to-[#2B2F9E] p-8 text-center text-white sm:p-10">
-            <h2 className="text-2xl font-bold">{L("Still need help?", "Masih butuh bantuan?")}</h2>
-            {SUPPORT_EMAIL ? (
-              <div className="mt-6 flex flex-wrap justify-center gap-4">
-                <a
-                  href={`mailto:${SUPPORT_EMAIL}`}
-                  className="inline-flex h-12 items-center gap-2 rounded-xl bg-white px-6 font-bold text-[#101334] transition-colors hover:bg-white/90"
-                >
-                  {L("Email support", "Email dukungan")} ({SUPPORT_EMAIL})
+            <h2 className="text-2xl font-bold">{L("Talk to us", "Hubungi kami")}</h2>
+            <p className="mt-2 text-white/75">{L("Questions about Narriv, a trial or a plan? Message us.", "Ada pertanyaan soal Narriv, uji coba, atau paket? Kirim pesan ke kami.")}</p>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <a
+                href={SUPPORT_WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-12 items-center gap-2 rounded-xl bg-white px-6 font-bold text-[#101334] transition-colors hover:bg-white/90"
+              >
+                WhatsApp {SUPPORT_WHATSAPP.display}
+              </a>
+              {SUPPORT_EMAIL ? (
+                <a href={`mailto:${SUPPORT_EMAIL}`} className="inline-flex h-12 items-center gap-2 rounded-xl bg-white/10 px-6 font-bold text-white transition-colors hover:bg-white/15">
+                  {SUPPORT_EMAIL}
                 </a>
-              </div>
-            ) : (
-              <p className="mt-2 text-white/80">
-                {L(
-                  "A support mailbox has not been published yet. Please contact your Narriv account representative or your workspace owner.",
-                  "Alamat email dukungan belum dipublikasikan. Silakan hubungi perwakilan akun Narriv Anda atau pemilik workspace.",
-                )}
-              </p>
-            )}
+              ) : null}
+            </div>
           </div>
         </section>
       </main>
