@@ -366,7 +366,7 @@ export function Topbar() {
       <Link href="/" className="flex shrink-0 items-center justify-self-center lg:hidden" aria-label="Narriv dashboard">
         <Image src="/brand/logo-h.webp" alt="Narriv" width={96} height={36} priority unoptimized className="h-8 w-auto object-contain" />
       </Link>
-      <div ref={searchRef} className={`w-full lg:relative lg:block lg:max-w-[530px] ${mobileSearch ? "fixed inset-x-4 top-[96px] z-[110] block rounded-[12px] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.18)]" : "hidden"}`}>
+      <div ref={searchRef} className={`lg:relative lg:block lg:w-full lg:max-w-[530px] ${mobileSearch ? "fixed inset-x-4 top-[96px] z-[110] block rounded-[12px] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.18)]" : "hidden"}`}>
         <label className="flex h-[48px] items-center gap-4 rounded-[8px] border border-border bg-slate-50 px-5 text-[var(--text-soft)] focus-within:border-[#465FFF]/50 focus-within: transition-all">
           <Search size={20} className="text-[var(--text-muted)]" />
           <input
