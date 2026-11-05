@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useRef, useState } from "react";
-import { Bell, Inbox, LogOut, Search, WifiOff, X } from "lucide-react";
+import { Bell, ChevronDown, CircleHelp, Inbox, LogOut, Search, Settings, Sparkles, WifiOff, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +15,8 @@ import { useUiStore } from "@/store/useUiStore";
 import { logoutSession, getNotifications, getAlerts, getNarratives, markNotificationAsRead, markAllNotificationsAsRead, type AppNotification, type Alert as ApiAlert, type NarrativeRecord, type NotificationsResponse } from "@/lib/api-service";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSSEContext } from "@/components/providers/SSEProvider";
-import { WorkspaceSwitcher } from "@/components/layout/workspace-switcher";
+import { ROLE_LABEL, WorkspaceOptions, useMyWorkspaces } from "@/components/layout/workspace-switcher";
+import { pickL, useL } from "@/lib/use-l";
 import { useWorkspaceStore } from "@/store/useWorkspaceStore";
 
 
@@ -113,6 +114,61 @@ const initials = (name?: string | null) => {
   const parts = (name || "User").trim().split(/\s+/).filter(Boolean);
   return ((parts[0]?.[0] ?? "U") + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
 };
+
+/**
+ * The signed-in person: initials and name, opening their role, account links and sign-out. Sign-out sits inside
+ * the menu so it is never one stray click away. Phones, which have no sidebar, also switch workspace here.
+ */
+function AccountMenu({ name, email, onLogout }: { name: string; email: string; onLogout: () => void }) {
+  const L = useL();
+  const [open, setOpen] = useState(false);
+  const { isDemo, current } = useMyWorkspaces();
+  const language = useUiStore((state) => state.language);
+  const toggleLanguage = useUiStore((state) => state.toggleLanguage);
+  const role = isDemo ? L("Demo visitor", "Pengunjung demo") : current?.role && ROLE_LABEL[current.role] ? L(...ROLE_LABEL[current.role]) : L("Member", "Anggota");
+  const item = "flex h-10 w-full items-center gap-2.5 rounded-[10px] px-2.5 text-left text-[13px] font-semibold text-[#31406B] transition hover:bg-slate-50 hover:text-[#101334]";
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger type="button" aria-label={L("Account", "Akun")} className="flex h-10 items-center gap-2.5 rounded-[10px] py-1 pl-1 pr-2 transition hover:bg-[#EEF1F7]">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-[9px] bg-gradient-to-br from-[#465FFF] to-[#8B5CFF] text-[12px] font-black text-white">{initials(name)}</span>
+        <span className="hidden min-w-0 max-w-[160px] text-left sm:block">
+          <span className="block truncate text-[13px] font-black leading-tight text-[#101334]">{name}</span>
+          <span className="block truncate text-[11px] font-semibold leading-tight text-[#5A6478]">{role}</span>
+        </span>
+        <ChevronDown size={15} aria-hidden="true" className="hidden shrink-0 text-[#8A93AD] sm:block" />
+      </PopoverTrigger>
+      <PopoverContent align="end" sideOffset={10} className="w-[min(300px,calc(100vw-2rem))] gap-0 rounded-[14px] border border-slate-200 bg-white p-1.5 text-slate-900 shadow-[0_18px_50px_rgba(15,23,42,0.14)] ring-0">
+        <div className="px-2.5 pb-2.5 pt-1.5">
+          <p className="truncate text-[14px] font-black text-[#101334]">{name}</p>
+          {email ? <p className="truncate text-[12px] text-[#5A6478]">{email}</p> : null}
+          <span className="mt-1.5 inline-block rounded-full bg-[#EEF1FF] px-2 py-0.5 text-[11px] font-bold text-[#3B52F5]">{role}</span>
+        </div>
+        {!isDemo ? <div className="border-t border-slate-100 pt-1 lg:hidden"><WorkspaceOptions onDone={() => setOpen(false)} /></div> : null}
+        {/* The language toggle is hidden in the bar on phones; it lives here instead. */}
+        <div className="flex items-center justify-between border-t border-slate-100 px-2.5 py-2 sm:hidden">
+          <span className="text-[13px] font-semibold text-[#31406B]">{L("Language", "Bahasa")}</span>
+          <div role="group" aria-label={L("Language", "Bahasa")} className="flex rounded-[9px] bg-[#EEF1F7] p-0.5">
+            {(["id", "en"] as const).map((code) => (
+              <button key={code} type="button" aria-pressed={language === code} onClick={() => { if (language !== code) startTransition(toggleLanguage); }} className={`h-7 min-w-[36px] rounded-[7px] px-2 text-[12px] font-black ${language === code ? "bg-white text-[#101334] shadow-sm" : "text-[#5A6478]"}`}>
+                {code.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="border-t border-slate-100 py-1">
+          <Link href="/workspace/settings" onClick={() => setOpen(false)} className={item}><Settings size={16} aria-hidden="true" />{L("Settings", "Pengaturan")}</Link>
+          <Link href="/help" onClick={() => setOpen(false)} className={item}><CircleHelp size={16} aria-hidden="true" />{L("Help", "Bantuan")}</Link>
+        </div>
+        <div className="border-t border-slate-100 pt-1">
+          <button type="button" onClick={() => { setOpen(false); onLogout(); }} className={`${item} text-[#C81E1E] hover:bg-[#FDECEC] hover:text-[#B42318]`}>
+            <LogOut size={16} aria-hidden="true" />
+            {L("Sign out", "Keluar")}
+          </button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export function Topbar() {
   const router = useRouter();
@@ -357,6 +413,10 @@ export function Topbar() {
         {/* Live connection status indicator */}
         {/* Only claim live updates while the event stream is actually connected. */}
         {sseStatus === "connected" ? <LiveIndicator status={sseStatus} /> : null}
+        <Link href="/ask" className="hidden h-10 items-center gap-2 rounded-[10px] bg-[#465FFF] px-4 text-[13px] font-black text-white shadow-[0_6px_16px_rgba(70,95,255,0.3)] transition hover:bg-[#3B52F5] lg:inline-flex">
+          <Sparkles size={16} strokeWidth={2.4} aria-hidden="true" />
+          {pickL("Ask AI", "Tanya AI")}
+        </Link>
         {/* Both languages visible; the active one is filled, a click switches. */}
         <div role="group" aria-label="Language" className="hidden h-10 items-center rounded-[10px] bg-[#EEF1F7] p-1 sm:flex">
           {(["id", "en"] as const).map((code) => (
@@ -480,19 +540,7 @@ export function Topbar() {
             </div>
           </PopoverContent>
         </Popover>
-        {/* The account as one pill: initials, name, workspace, and sign-out at the end. */}
-        <div className="flex h-12 items-center gap-2.5 rounded-[12px] bg-white py-1 pl-1 pr-1.5 shadow-[0_2px_10px_rgba(16,24,40,0.06)]">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-gradient-to-br from-[#465FFF] to-[#8B5CFF] text-[14px] font-black text-white">
-            {initials(user?.name)}
-          </div>
-          <div className="hidden min-w-0 max-w-[180px] sm:block">
-            <p className="truncate text-[13px] font-black leading-tight text-[#101334]">{user?.name || "User"}</p>
-            <div className="truncate text-[12px] leading-tight [&_p]:mt-0 [&_p]:text-[12px]"><WorkspaceSwitcher /></div>
-          </div>
-          <button type="button" onClick={handleLogout} className="ml-1 flex size-9 items-center justify-center rounded-[9px] text-[#8A93AD] transition-colors hover:bg-[#FDECEC] hover:text-[#C81E1E]" aria-label={t("logout")} title={t("logout")}>
-            <LogOut size={16} />
-          </button>
-        </div>
+        <AccountMenu name={user?.name || "User"} email={user?.email ?? ""} onLogout={handleLogout} />
       </div>
     </header>
   );

@@ -3,16 +3,16 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronsLeft, CircleHelp } from "lucide-react";
+import { ChevronsLeft, ChevronsUpDown, CircleHelp } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
 import { BrandMark } from "@/components/dashboard/brand-hero";
+import { ROLE_LABEL, WorkspaceSwitcher, useMyWorkspaces } from "@/components/layout/workspace-switcher";
 import { getMonitoringKeywords, getWorkspaceSettings } from "@/lib/api-service";
 import { SECTION_TABS, navGroups, type SectionKey } from "@/lib/navigation";
 import { timeAgo } from "@/lib/intelligence-api";
 import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
-import { isDemoSession, useAuthStore } from "@/store/useAuthStore";
 import { useUiStore } from "@/store/useUiStore";
 
 function activeRoute(pathname: string, href: string, match: string[] = []) {
@@ -33,13 +33,14 @@ export function Sidebar() {
   const L = useL();
   const collapsed = useUiStore((state) => state.sidebarCollapsed);
   const toggleSidebar = useUiStore((state) => state.toggleSidebar);
-  const user = useAuthStore((state) => state.user);
   const mobileItems = navGroups.flatMap((group) => group.items);
 
   const workspace = useQuery({ queryKey: ["workspace-settings"], queryFn: getWorkspaceSettings, staleTime: 30 * 1000 }).data;
   const keywords = useQuery({ queryKey: ["monitoring-keywords"], queryFn: getMonitoringKeywords, staleTime: 30 * 1000 }).data;
 
-  const brandName = workspace?.brandName || L("Your workspace", "Workspace Anda");
+  const { isDemo, current } = useMyWorkspaces();
+  const brandName = workspace?.brandName || current?.name || L("Your workspace", "Workspace Anda");
+  const workspaceSubtitle = isDemo ? L("Demo workspace", "Workspace demo") : current?.role && ROLE_LABEL[current.role] ? L(...ROLE_LABEL[current.role]) : L("Workspace", "Workspace");
   const activeKeywords = (keywords?.data ?? []).filter((k) => k.isActive);
   const lastRunAt = activeKeywords.map((k) => k.lastRun?.at).filter((v): v is string => Boolean(v)).sort().pop() ?? null;
   const paused = workspace?.monitoringPaused === true;
@@ -61,18 +62,18 @@ export function Sidebar() {
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col px-3 pb-4 pt-4">
-          {/* The client's workspace: their logo (or initials) and name, opening the workspace settings. */}
-          <Link
-            href="/workspace/settings"
+          {/* The client's workspace: their logo (or initials), name and the user's role; opens the workspace picker. */}
+          <WorkspaceSwitcher
             title={collapsed ? brandName : undefined}
-            className={cn("flex shrink-0 items-center gap-3 rounded-[14px] transition-colors hover:bg-white/[0.08]", collapsed ? "justify-center p-1" : "bg-white/[0.05] p-2.5")}
+            className={cn("flex w-full shrink-0 items-center gap-3 rounded-[14px] transition-colors hover:bg-white/[0.08]", collapsed ? "justify-center p-1" : "bg-white/[0.05] p-2.5")}
           >
             <BrandMark small name={brandName} logoUrl={workspace?.logoUrl} />
-            <span className={cn("min-w-0", fade(collapsed))}>
+            <span className={cn("min-w-0 flex-1", fade(collapsed))}>
               <span className="block truncate text-[14px] font-bold leading-tight">{brandName}</span>
-              <span className="mt-0.5 block truncate text-[11px] font-semibold text-white/50">{isDemoSession(user) ? L("Demo workspace", "Workspace demo") : L("Workspace", "Workspace")}</span>
+              <span className="mt-0.5 block truncate text-[11px] font-semibold text-white/50">{workspaceSubtitle}</span>
             </span>
-          </Link>
+            {!isDemo && !collapsed ? <ChevronsUpDown size={15} aria-hidden="true" className="shrink-0 text-white/40" /> : null}
+          </WorkspaceSwitcher>
 
           <nav aria-label={L("Main menu", "Menu utama")} className="mt-5 min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
             <p className={cn("mb-2 px-3 text-[10px] font-extrabold uppercase tracking-[0.12em] text-white/35", fade(collapsed))}>{L("Menu", "Menu")}</p>

@@ -70,15 +70,14 @@ export function DashboardShell({ children }: { children: ReactNode }) {
           </div>
         </main>
 
-        {/* Floating Ask AI button (not shown on the Ask page itself) */}
+        {/* Floating Ask AI button on phones (not shown on the Ask page itself) */}
         {pathname?.startsWith("/ask") ? null : <Link
           href="/ask"
-          className="fixed bottom-24 right-4 z-40 flex size-12 items-center justify-center gap-2 rounded-full bg-[#465FFF] text-white shadow-[0_8px_24px_rgba(70,95,255,0.4)] transition-all hover:bg-[#3b50d8] active:scale-95 sm:right-6 lg:bottom-6 lg:right-6 lg:size-auto lg:px-4 lg:py-3"
+          className="fixed bottom-24 right-4 z-40 flex size-12 items-center justify-center rounded-full bg-[#465FFF] text-white shadow-[0_8px_24px_rgba(70,95,255,0.4)] transition-all hover:bg-[#3b50d8] active:scale-95 sm:right-6 lg:hidden"
           aria-label={pickL("Ask Narriv", "Tanya Narriv")}
         >
-          {/* A round icon on phones so it does not cover the content; the label returns on desktop. */}
-          <MessageCircle size={20} strokeWidth={2.4} className="lg:hidden" />
-          <span className="hidden text-[13px] font-bold lg:inline">{pickL("Ask AI", "Tanya AI")}</span>
+          {/* Phones only: on desktop Ask AI is a button in the top bar, so nothing floats over the content. */}
+          <MessageCircle size={20} strokeWidth={2.4} />
         </Link>}
       </div>
     </div>
