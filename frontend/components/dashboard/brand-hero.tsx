@@ -7,16 +7,22 @@ import { resolveBackendAssetUrl } from "@/lib/asset-url";
 import { cn } from "@/lib/utils";
 
 /** The workspace's logo on a white tile, or its initials when no logo was uploaded (or it fails to load). */
-export function BrandMark({ name, logoUrl, className }: { name: string; logoUrl?: string | null; className?: string }) {
+export function BrandMark({ name, logoUrl, small = false, className }: { name: string; logoUrl?: string | null; small?: boolean; className?: string }) {
   const [failed, setFailed] = useState(false);
   const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("") || "N";
   return (
-    <span className={cn("flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-[20px] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.25)] ring-4 ring-white/10", className)}>
+    <span
+      className={cn(
+        "flex shrink-0 items-center justify-center overflow-hidden bg-white",
+        small ? "size-10 rounded-[12px]" : "size-[72px] rounded-[20px] shadow-[0_10px_30px_rgba(0,0,0,0.25)] ring-4 ring-white/10",
+        className,
+      )}
+    >
       {logoUrl && !failed ? (
         // Uploaded logos live on the API host, so a plain img rather than next/image.
-        <img src={resolveBackendAssetUrl(logoUrl)} alt={name} className="size-full object-contain p-2.5" onError={() => setFailed(true)} />
+        <img src={resolveBackendAssetUrl(logoUrl)} alt={name} className={cn("size-full object-contain", small ? "p-1.5" : "p-2.5")} onError={() => setFailed(true)} />
       ) : (
-        <span aria-hidden="true" className="bg-gradient-to-br from-[#465FFF] to-[#8B5CFF] bg-clip-text text-[26px] font-black tracking-[-0.02em] text-transparent">{initials}</span>
+        <span aria-hidden="true" className={cn("bg-gradient-to-br from-[#465FFF] to-[#8B5CFF] bg-clip-text font-black tracking-[-0.02em] text-transparent", small ? "text-[15px]" : "text-[26px]")}>{initials}</span>
       )}
     </span>
   );
