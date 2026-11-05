@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { timeAgo } from "@/lib/intelligence-api";
 import { pickL } from "@/lib/use-l";
+import { isDemoSession, useAuthStore } from "@/store/useAuthStore";
 import { intlLocale } from "@/store/useUiStore";
 
 const QUERY_KEY = ["monitoring-keywords"];
@@ -40,6 +41,7 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
 
   const keywordsQuery = useQuery({ queryKey: QUERY_KEY, queryFn: getMonitoringKeywords, staleTime: 30 * 1000 });
   const workspaceQuery = useQuery({ queryKey: ["workspace-settings"], queryFn: () => getWorkspaceSettings(), staleTime: 60 * 1000 });
+  const isDemo = isDemoSession(useAuthStore((s) => s.user));
   const canEdit = Boolean(keywordsQuery.data?.canEdit);
 
   const onSaved = (data: MonitoringKeywordsResponse) => {
@@ -101,7 +103,8 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
         logoUrl={workspaceQuery.data?.logoUrl}
         pills={[
           { icon: Tags, value: maxActive ? `${activeCount} / ${maxActive}` : activeCount, label: pickL("active keywords", "kata kunci aktif") },
-          { icon: Clock3, label: pickL("Checked every hour", "Dicek setiap jam") },
+          // The demo bank is fictional, so it is not fetched live; its sample data is reset every night.
+          { icon: Clock3, label: isDemo ? pickL("Sample data, reset nightly", "Data contoh, diperbarui tiap malam") : pickL("Checked every hour", "Dicek setiap jam") },
           { icon: Newspaper, label: pickL("News and social media", "Berita dan media sosial") },
         ]}
       />

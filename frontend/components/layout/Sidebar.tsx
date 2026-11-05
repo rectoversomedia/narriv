@@ -46,7 +46,10 @@ export function Sidebar() {
   const paused = workspace?.monitoringPaused === true;
   const status = paused
     ? { dot: "bg-[#F59E0B]", title: L("Monitoring paused", "Pemantauan dijeda"), sub: L("Resume it in Settings", "Lanjutkan di Pengaturan") }
-    : activeKeywords.length
+    : isDemo
+      // The demo bank is fictional, so it is not fetched live; its sample data is reset every night.
+      ? { dot: "bg-[#22C55E]", title: L("Demo data", "Data demo"), sub: L("Sample data, reset nightly", "Data contoh, diperbarui tiap malam") }
+      : activeKeywords.length
       ? { dot: "bg-[#22C55E]", title: L("Monitoring is on", "Pemantauan aktif"), sub: L(`${activeKeywords.length} keywords · checked ${lastRunAt ? timeAgo(lastRunAt) : "hourly"}`, `${activeKeywords.length} kata kunci · dicek ${lastRunAt ? timeAgo(lastRunAt) : "tiap jam"}`) }
       : { dot: "bg-white/40", title: L("No keywords yet", "Belum ada kata kunci"), sub: L("Add one in Settings", "Tambah di Pengaturan") };
 
@@ -127,7 +130,7 @@ export function Sidebar() {
               className={cn("mb-2 flex items-center gap-3 rounded-[12px] transition-colors hover:bg-white/[0.08]", collapsed ? "justify-center py-3" : "bg-white/[0.05] px-3 py-2.5")}
             >
               <span className="relative flex size-2.5 shrink-0">
-                {!paused && activeKeywords.length ? <span aria-hidden="true" className={cn("absolute inset-0 animate-ping rounded-full opacity-60", status.dot)} /> : null}
+                {!paused && !isDemo && activeKeywords.length ? <span aria-hidden="true" className={cn("absolute inset-0 animate-ping rounded-full opacity-60", status.dot)} /> : null}
                 <span className={cn("relative size-2.5 rounded-full", status.dot)} />
               </span>
               <span className={cn("min-w-0", fade(collapsed))}>
