@@ -10,15 +10,7 @@ import { useUiStore } from "@/store/useUiStore";
 
 import { useQuery } from "@tanstack/react-query";
 import { getWorkspaceSettings } from "@/lib/api-service";
-
-function resolveBackendAssetUrl(url: string) {
-  if (/^https?:\/\//.test(url)) return url;
-  if (url.startsWith("/uploads/")) {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:3000";
-    return `${baseUrl}${url}`;
-  }
-  return url;
-}
+import { resolveBackendAssetUrl } from "@/lib/asset-url";
 
 function activeRoute(pathname: string, href: string, match: string[] = []) {
   if (href === "/") return pathname === "/";

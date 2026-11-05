@@ -13,6 +13,7 @@ import { deleteCurrentWorkspace, setMonitoringPaused, getNotificationSettings, u
 import { cn } from "@/lib/utils";
 import { useWorkspaceStore } from "@/store/useWorkspaceStore";
 import { MonitoringKeywordsPanel } from "@/components/dashboard/monitoring-keywords-panel";
+import { resolveBackendAssetUrl } from "@/lib/asset-url";
 import { Field, ModalShell, inputClass, primaryButtonClass, secondaryButtonClass } from "@/components/ui/modal-shell";
 import { pickL, useL } from "@/lib/use-l";
 
@@ -34,15 +35,6 @@ function initialsFromName(name: string, fallback: string) {
 
 const LOGO_MAX_SIZE_BYTES = 2 * 1024 * 1024;
 const LOGO_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/jpg", "image/webp", "image/svg+xml"]);
-
-function resolveBackendAssetUrl(url: string) {
-  if (/^https?:\/\//.test(url)) return url;
-  if (url.startsWith("/uploads/")) {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:3000";
-    return `${baseUrl}${url}`;
-  }
-  return url;
-}
 
 function readFileAsBase64(file: File) {
   return new Promise<string>((resolve, reject) => {

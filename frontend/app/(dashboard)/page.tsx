@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { CalendarDays, Clock3, Settings2, Tags } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -26,6 +27,7 @@ import {
 } from "@/lib/api-service";
 import { getPipelineStatus, getRecommendations, timeAgo, type IntelligenceRecommendation } from "@/lib/intelligence-api";
 import { useCodeLabels } from "@/components/intelligence/intelligence-panels";
+import { BrandHero } from "@/components/dashboard/brand-hero";
 import { DemoBanner } from "@/components/ui/demo-banner";
 import { SentimentTrendChart } from "@/components/dashboard/sentiment-trend-chart";
 import { PlatformIcon } from "@/components/ui/platform-icon";
@@ -297,6 +299,8 @@ export default function DashboardPage() {
   const neverCollected = !isDemoSession && pipelineQuery.isSuccess && !lastDataAt && total === 0;
   const periodWord = { "24h": L("24 hours", "24 jam"), "7d": L("7 days", "7 hari"), "30d": L("30 days", "30 hari") };
 
+  const showHero = !neverCollected && Boolean(summary?.keyword_breakdown?.length || workspaceQuery.data?.brandName);
+
   return (
     <div className="space-y-5 pb-6">
       {isDemoSession ? <DemoBanner /> : null}
@@ -304,7 +308,7 @@ export default function DashboardPage() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-[28px] font-black leading-tight tracking-[-0.02em] text-[#101334]">{L("Overview", "Ringkasan")}</h1>
-          {lastDataAt ? <p className="mt-1 text-[13px] font-medium text-[#5A6478]">{L("Last data", "Data terakhir")}: <b className="font-black text-[#101334]">{timeAgo(lastDataAt)}</b></p> : null}
+          {lastDataAt && !showHero ? <p className="mt-1 text-[13px] font-medium text-[#5A6478]">{L("Last data", "Data terakhir")}: <b className="font-black text-[#101334]">{timeAgo(lastDataAt)}</b></p> : null}
         </div>
         <div role="group" aria-label={L("Period", "Periode")} className="flex rounded-[10px] border border-[#DDE3EF] bg-white p-1">
           {(["24h", "7d", "30d"] as DateRangeKey[]).map((key) => (
@@ -316,20 +320,20 @@ export default function DashboardPage() {
       </header>
 
       {/* What this workspace watches: the brand and every active keyword, each opening its records. */}
-      {!neverCollected && (summary?.keyword_breakdown?.length || workspaceQuery.data?.brandName) ? (
-        <section aria-label={L("Monitoring focus", "Fokus pemantauan")} className="overflow-hidden rounded-[16px] bg-gradient-to-br from-[#101334] via-[#18206B] to-[#2B2F9E] p-5 text-white shadow-[0_12px_32px_rgba(16,19,52,0.22)]">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white/60">{L("Monitoring focus", "Fokus pemantauan")}</p>
-              <p className="mt-1 truncate text-[24px] font-black leading-tight">{workspaceQuery.data?.brandName || L("Your brand", "Brand Anda")}</p>
-              <p className="mt-0.5 text-[12px] font-semibold text-white/70">
-                {L(`${summary?.keyword_breakdown?.length ?? 0} keywords monitored, ${periodWord[period]}`, `${summary?.keyword_breakdown?.length ?? 0} kata kunci dipantau, ${periodWord[period]}`)}
-              </p>
-            </div>
-            <Link href="/workspace/settings#keywords" className="shrink-0 rounded-[9px] border border-white/25 px-3 py-1.5 text-[12px] font-black text-white transition hover:bg-white/10">{L("Manage keywords", "Atur kata kunci")}</Link>
-          </div>
+      {showHero ? (
+        <BrandHero
+          eyebrow={L("Monitoring focus", "Fokus pemantauan")}
+          brandName={workspaceQuery.data?.brandName || L("Your brand", "Brand Anda")}
+          logoUrl={workspaceQuery.data?.logoUrl}
+          pills={[
+            { icon: Tags, value: summary?.keyword_breakdown?.length ?? 0, label: L("keywords monitored", "kata kunci dipantau") },
+            { icon: CalendarDays, label: L(`Last ${periodWord[period]}`, `${periodWord[period]} terakhir`) },
+            ...(lastDataAt ? [{ icon: Clock3, label: L(`Latest data ${timeAgo(lastDataAt)}`, `Data terbaru ${timeAgo(lastDataAt)}`) }] : []),
+          ]}
+          action={<Link href="/workspace/settings#keywords" className="inline-flex items-center gap-1.5 rounded-[10px] bg-white/[0.12] px-3 py-2 text-[12px] font-black text-white transition hover:bg-white/20"><Settings2 size={14} aria-hidden="true" />{L("Manage keywords", "Atur kata kunci")}</Link>}
+        >
           {summary?.keyword_breakdown?.length ? (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className={cn("grid gap-3 sm:grid-cols-2", summary.keyword_breakdown.length >= 3 ? "xl:grid-cols-3" : "")}>
               {summary.keyword_breakdown.map((k) => {
                 const neutral = k.neutral ?? Math.max(0, k.count - k.negative - k.positive - (k.mixed ?? 0));
                 const parts = [
@@ -373,9 +377,9 @@ export default function DashboardPage() {
               })}
             </div>
           ) : (
-            <p className="mt-3 text-[12px] font-semibold text-white/70">{L("No active keywords yet.", "Belum ada kata kunci aktif.")}</p>
+            <p className="text-center text-[13px] font-semibold text-white/70">{L("No active keywords yet.", "Belum ada kata kunci aktif.")}</p>
           )}
-        </section>
+        </BrandHero>
       ) : null}
 
       {liveError ? (

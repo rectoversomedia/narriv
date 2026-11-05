@@ -3,13 +3,15 @@
 import { useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Loader2, Pause, Pencil, Play, RefreshCw, Trash2, X } from "lucide-react";
+import { Check, Clock3, Loader2, Newspaper, Pause, Pencil, Play, RefreshCw, Tags, Trash2, X } from "lucide-react";
+import { BrandHero } from "@/components/dashboard/brand-hero";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useToast } from "@/components/ui/toast";
 import {
   createMonitoringKeyword,
   deleteMonitoringKeyword,
   getMonitoringKeywords,
+  getWorkspaceSettings,
   runKeywordMonitoring,
   updateMonitoringKeyword,
   type MonitoringRunResponse,
@@ -37,6 +39,7 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
   const [toDelete, setToDelete] = useState<MonitoringKeyword | null>(null);
 
   const keywordsQuery = useQuery({ queryKey: QUERY_KEY, queryFn: getMonitoringKeywords, staleTime: 30 * 1000 });
+  const workspaceQuery = useQuery({ queryKey: ["workspace-settings"], queryFn: () => getWorkspaceSettings(), staleTime: 60 * 1000 });
   const canEdit = Boolean(keywordsQuery.data?.canEdit);
 
   const onSaved = (data: MonitoringKeywordsResponse) => {
@@ -91,17 +94,17 @@ export function MonitoringKeywordsPanel({ className }: { className?: string }) {
   return (
     <section id="keywords" className={cn("scroll-mt-24 overflow-hidden rounded-[18px] bg-white shadow-[0_8px_28px_rgba(16,19,52,0.10)]", className)}>
       {/* The most important setting: what Narriv watches. Big, on top, with the count. */}
-      <div className="flex flex-wrap items-end justify-between gap-4 bg-gradient-to-br from-[#101334] via-[#18206B] to-[#2B2F9E] px-6 py-5 text-white">
-        <div className="min-w-0">
-          <p className="text-[11px] font-black uppercase tracking-[0.14em] text-white/60">{pickL("What Narriv watches", "Yang dipantau Narriv")}</p>
-          <h3 className="mt-1 text-[24px] font-black leading-tight">{t("title")}</h3>
-          <p className="mt-1 text-[13px] font-bold text-white/80">{pickL("Checked every hour across news and social media.", "Dicek setiap jam di berita dan media sosial.")}</p>
-        </div>
-        <div className="rounded-[14px] bg-white/[0.12] px-5 py-3 text-right">
-          <p className="text-[34px] font-black leading-none">{activeCount}<span className="text-[16px] font-bold text-white/60">{maxActive ? ` / ${maxActive}` : ""}</span></p>
-          <p className="mt-1 text-[11px] font-black uppercase tracking-[0.08em] text-white/70">{pickL("active keywords", "kata kunci aktif")}</p>
-        </div>
-      </div>
+      <BrandHero
+        className="rounded-none shadow-none"
+        eyebrow={t("title")}
+        brandName={workspaceQuery.data?.brandName || pickL("Your brand", "Brand Anda")}
+        logoUrl={workspaceQuery.data?.logoUrl}
+        pills={[
+          { icon: Tags, value: maxActive ? `${activeCount} / ${maxActive}` : activeCount, label: pickL("active keywords", "kata kunci aktif") },
+          { icon: Clock3, label: pickL("Checked every hour", "Dicek setiap jam") },
+          { icon: Newspaper, label: pickL("News and social media", "Berita dan media sosial") },
+        ]}
+      />
 
       <div className="p-6">
       {keywordsQuery.isLoading ? (
