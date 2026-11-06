@@ -160,7 +160,7 @@ export default function PricingPage() {
           <p className="text-[12px] font-black uppercase tracking-[0.2em] text-[#A5B4FF]">{L("Pricing", "Harga")}</p>
           <h1 className="mt-3 text-balance text-[34px] font-black leading-[1.06] tracking-[-0.03em] sm:text-[52px]">
             {L("One plan", "Satu paket")}{" "}
-            <span className={cn("bg-gradient-to-r from-[#C7CEFF] via-[#A5B4FF] to-[#F5B8E3] bg-clip-text text-transparent", SERIF)}><i>{L("for each stage of your team.", "untuk tiap tahap tim Anda.")}</i></span>
+            <span className={cn("bg-gradient-to-r from-[#8EA0FF] via-[#B8A6FF] to-[#F5A3DA] bg-clip-text text-transparent", SERIF)}>{L("for each stage of your team.", "untuk tiap tahap tim Anda.")}</span>
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-[16px] font-medium text-white/60">{L("Every plan starts with a 14-day trial on your own brand.", "Semua paket dimulai dengan uji coba 14 hari memakai brand Anda sendiri.")}</p>
           <div role="group" aria-label={L("Billing period", "Periode tagihan")} className="mt-8 inline-flex rounded-full bg-white/10 p-1">
@@ -201,13 +201,13 @@ export default function PricingPage() {
                 </span>
               ) : null}
 
-              <div>
+              <div className="text-center">
                 <h2 className="text-[20px] font-black">{plan.name}</h2>
                 <p className={cn("mt-1 text-[14px] font-semibold", plan.popular ? "text-[#A5B4FF]" : "text-[#465FFF]")}>{P(plan.tagline)}</p>
                 <p className={cn("mt-1 text-[13px] font-medium", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>{P(plan.audience)}</p>
               </div>
 
-              <div>
+              <div className="text-center">
                 {plan.price ? (
                   <>
                     <p className="whitespace-nowrap text-[26px] font-black leading-none tracking-[-0.02em] tabular-nums">{rupiah(Math.round(plan.price * discount))}</p>
@@ -265,7 +265,7 @@ export default function PricingPage() {
       <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-[12px] font-black uppercase tracking-[0.2em] text-[#465FFF]">{L("Compare", "Bandingkan")}</p>
-          <h2 className="mt-2 text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[40px]">{L("What", "Isi")} <span className={cn("text-[#465FFF]", SERIF)}><i>{L("each plan includes.", "tiap paket.")}</i></span></h2>
+          <h2 className="mt-2 text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[40px]">{L("What", "Isi")} <span className={cn("bg-gradient-to-r from-[#465FFF] to-[#9B4DDB] bg-clip-text text-transparent", SERIF)}>{L("each plan includes.", "tiap paket.")}</span></h2>
         </div>
         <div className="mt-10 overflow-hidden rounded-[22px] bg-white shadow-[0_1px_2px_rgba(16,19,52,0.06),0_12px_32px_rgba(16,19,52,0.07)]">
           <div className="overflow-x-auto">
@@ -312,7 +312,7 @@ export default function PricingPage() {
       <section className="mx-auto grid max-w-6xl gap-10 px-4 pb-20 sm:px-6 lg:grid-cols-[0.8fr_1.4fr] lg:gap-20">
         <div>
           <p className="text-[12px] font-black uppercase tracking-[0.2em] text-[#465FFF]">FAQ</p>
-          <h2 className="mt-2 text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[40px]">{L("About plans", "Soal paket")} <span className={cn("text-[#465FFF]", SERIF)}><i>{L("and billing.", "dan pembayaran.")}</i></span></h2>
+          <h2 className="mt-2 text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[40px]">{L("About plans", "Soal paket")} <span className={cn("bg-gradient-to-r from-[#465FFF] to-[#9B4DDB] bg-clip-text text-transparent", SERIF)}>{L("and billing.", "dan pembayaran.")}</span></h2>
         </div>
         <div className={cn("border-t", RULE)}>
           {faqs.map(([q, a]) => (
@@ -332,7 +332,7 @@ export default function PricingPage() {
         <div className={cn("relative mx-auto max-w-6xl overflow-hidden rounded-[32px] px-6 py-16 text-center text-white", INK)}>
           <div aria-hidden="true" className={cn("pointer-events-none absolute inset-0", GRID)} />
           <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-0 h-[320px] w-[760px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(70,95,255,0.45),transparent)]" />
-          <h2 className="relative text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[44px]">{L("Not sure", "Belum yakin")} <span className={cn("text-[#C7CEFF]", SERIF)}><i>{L("which plan fits?", "paket mana yang cocok?")}</i></span></h2>
+          <h2 className="relative text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[44px]">{L("Not sure", "Belum yakin")} <span className={cn("bg-gradient-to-r from-[#8EA0FF] via-[#B8A6FF] to-[#F5A3DA] bg-clip-text text-transparent", SERIF)}>{L("which plan fits?", "paket mana yang cocok?")}</span></h2>
           <p className="relative mx-auto mt-3 max-w-xl text-[16px] font-medium text-white/70">{L("Start with the trial. We look at the results with you after 14 days.", "Mulai dari uji coba. Setelah 14 hari, kami tinjau hasilnya bersama Anda.")}</p>
           <div className="relative mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link href="/signup" className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-white px-6 text-[15px] font-bold text-[#070A1F] shadow-[0_12px_40px_rgba(165,180,255,0.35)] hover:bg-[#EEF1FF]">

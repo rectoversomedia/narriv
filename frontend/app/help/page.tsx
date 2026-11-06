@@ -181,7 +181,7 @@ export default function HelpCenterPage() {
         <SiteHeader />
         <div className="relative mx-auto max-w-4xl px-4 pt-8 text-center sm:px-6">
           <p className="text-[12px] font-black uppercase tracking-[0.2em] text-[#A5B4FF]">{L("Help Center", "Pusat Bantuan")}</p>
-          <h1 className="mt-3 text-[34px] font-black leading-tight tracking-[-0.03em] sm:text-[46px]">{L("How can", "Ada yang bisa")}{" "}<span className={cn("bg-gradient-to-r from-[#C7CEFF] via-[#A5B4FF] to-[#F5B8E3] bg-clip-text text-transparent", SERIF)}><i>{L("we help?", "kami bantu?")}</i></span></h1>
+          <h1 className="mt-3 text-[34px] font-black leading-tight tracking-[-0.03em] sm:text-[46px]">{L("How can", "Ada yang bisa")}{" "}<span className={cn("bg-gradient-to-r from-[#8EA0FF] via-[#B8A6FF] to-[#F5A3DA] bg-clip-text text-transparent", SERIF)}>{L("we help?", "kami bantu?")}</span></h1>
           <p className="mx-auto mt-4 max-w-xl text-[16px] font-medium text-white/75">
             {L("Search the answers below or pick a topic.", "Cari jawaban di bawah atau pilih topik.")}
           </p>

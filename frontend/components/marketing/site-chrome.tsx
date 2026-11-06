@@ -8,12 +8,12 @@ import { useUiStore } from "@/store/useUiStore";
 
 // The header, footer and look shared by the public pages (landing, pricing, help, legal), so they read as one site.
 
-/** Editorial serif for accent lines (font loaded in app/layout.tsx). */
-export const SERIF = "[font-family:var(--font-serif),Georgia,serif] font-normal tracking-[-0.01em]";
+/** The accent words in a headline: same typeface, heaviest weight, coloured by the caller (no italics). */
+export const SERIF = "font-black tracking-[-0.035em]";
 /** The ink background of dark sections. */
 export const INK = "bg-[#070A1F]";
-/** A faint grid that fades out, laid over dark sections. */
-export const GRID = "bg-[linear-gradient(rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-[size:56px_56px] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_75%)]";
+/** A soft light from the top of dark sections; no pattern. */
+export const GRID = "bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(120,135,255,0.16),transparent_70%)]";
 /** Warm paper for light sections, and the hairline colour on it. */
 export const PAPER = "bg-[#F6F5F1]";
 export const RULE = "border-[#DDDAD0]";
