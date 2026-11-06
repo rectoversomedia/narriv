@@ -19,6 +19,7 @@ import { logStructured } from "../../lib/logger.js";
 import { DEMO_WORKSPACE_ID } from "../../lib/workspace-access.js";
 import { isPlatformAdmin, requirePlatformAdmin } from "../../lib/platform-admin.js";
 import { PLAN_KEYS, planStatus } from "../../lib/workspace-plan.js";
+import { calculateCost } from "../../lib/model-pricing.js";
 import { PLATFORM_PRESET, runSpend, socialConfig, totalCapUsd } from "../ingestion/social-schedule.service.js";
 import { COLLECTION_JOB_NAME } from "../ingestion/apify-collection.service.js";
 
@@ -27,6 +28,10 @@ router.use(verifyToken);
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const SOCIAL_PLATFORMS = ["x", "tiktok", "instagram", "facebook", "youtube", "threads"];
+
+// Accounts the team and automated tests made, so the panel can hide them from the client counts (display only).
+const TEST_EMAIL = /(@narriv\.(test|ai)$|@example\.(com|org)$|@resend\.dev$|@qatestcorp\.com$|playwright|audit-test|^qa[.\-_+]|[.\-_+]qa@|tester)/i;
+const TEST_NAME = /\b(test|tester|qa|playwright|audit)\b/i;
 
 router.get("/me", async (req, res, next) => {
     try {
@@ -56,7 +61,7 @@ router.get("/workspaces", requirePlatformAdmin, async (req, res) => {
             db.from("monitoring_keywords").select("workspace_id").in("workspace_id", ids).eq("is_active", true).limit(5000),
             db.from("signals").select("workspace_id, captured_at").in("workspace_id", ids).gte("captured_at", since30).limit(50000),
             db.from("alerts").select("workspace_id").in("workspace_id", ids).neq("status", "resolved").limit(10000),
-            db.from("token_usage").select("workspace_id, cost").in("workspace_id", ids).gte("created_at", monthStart).limit(50000),
+            db.from("token_usage").select("workspace_id, model, input_tokens, output_tokens").in("workspace_id", ids).gte("created_at", monthStart).limit(50000),
             db.from("cron_ingestion_logs").select("status, metadata").eq("job_name", COLLECTION_JOB_NAME).gte("created_at", monthStart).limit(5000),
         ]);
 
@@ -71,7 +76,9 @@ router.get("/workspaces", requirePlatformAdmin, async (req, res) => {
         const lastSignal = new Map();
         for (const s of signals.data || []) if (!lastSignal.has(s.workspace_id) || s.captured_at > lastSignal.get(s.workspace_id)) lastSignal.set(s.workspace_id, s.captured_at);
         const aiCost = new Map();
-        for (const t of tokens.data || []) aiCost.set(t.workspace_id, (aiCost.get(t.workspace_id) || 0) + Number(t.cost || 0));
+        // token_usage.cost is numeric(10,2), which rounds a single call (fractions of a cent) to 0, so the cost is
+        // worked out from the tokens with the same price table that records it.
+        for (const t of tokens.data || []) aiCost.set(t.workspace_id, (aiCost.get(t.workspace_id) || 0) + calculateCost(t.model || "gpt-4o-mini", Number(t.input_tokens || 0), Number(t.output_tokens || 0)));
         const socialSpend = new Map();
         for (const r of social.data || []) {
             const ws = r.metadata?.workspaceId;
@@ -88,6 +95,7 @@ router.get("/workspaces", requirePlatformAdmin, async (req, res) => {
                 name: w.name,
                 createdAt: w.created_at,
                 isDemo: w.id === DEMO_WORKSPACE_ID,
+                isTest: TEST_EMAIL.test(ownerUser?.email || "") || TEST_NAME.test(w.name || ""),
                 owner: ownerUser ? { name: ownerUser.name, email: ownerUser.email } : null,
                 ...planStatus(settings, now),
                 monitoringPaused: settings.monitoringPaused === true,
@@ -97,7 +105,7 @@ router.get("/workspaces", requirePlatformAdmin, async (req, res) => {
                 signals30d: signalCount.get(w.id) || 0,
                 lastSignalAt: lastSignal.get(w.id) || null,
                 openAlerts: openAlerts.get(w.id) || 0,
-                aiCostMonth: Number((aiCost.get(w.id) || 0).toFixed(2)),
+                aiCostMonth: Number((aiCost.get(w.id) || 0).toFixed(4)),
             };
         });
 
@@ -109,7 +117,7 @@ router.get("/workspaces", requirePlatformAdmin, async (req, res) => {
             expired: real.filter((w) => w.trialExpired).length,
             paid: real.filter((w) => ["pilot", "intelligence", "decision", "command"].includes(w.plan)).length,
             socialOn: real.filter((w) => w.social.enabled).length,
-            aiCostMonth: Number(real.reduce((n, w) => n + w.aiCostMonth, 0).toFixed(2)),
+            aiCostMonth: Number(real.reduce((n, w) => n + w.aiCostMonth, 0).toFixed(4)),
             socialSpendMonth: Number(real.reduce((n, w) => n + w.social.spendUsd, 0).toFixed(2)),
         };
         res.json({ data, totals, socialCapUsd: totalCapUsd(), generatedAt: new Date(now).toISOString() });

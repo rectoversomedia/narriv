@@ -8,6 +8,8 @@ export interface AdminWorkspace {
   name: string;
   createdAt: string;
   isDemo: boolean;
+  /** Made by the team or automated tests (by owner email or name); hidden from client counts by default. */
+  isTest: boolean;
   owner: { name: string | null; email: string | null } | null;
   plan: WorkspacePlanKey | null;
   trialEndsAt: string | null;

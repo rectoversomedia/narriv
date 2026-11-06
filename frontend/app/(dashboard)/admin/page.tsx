@@ -29,7 +29,7 @@ const SOCIAL_NAME: Record<string, string> = { instagram: "Instagram", tiktok: "T
 
 type Filter = "all" | "trial" | "soon" | "expired" | "paid" | "social" | "paused";
 
-const usd = (n: number) => `$${n.toFixed(2)}`;
+const usd = (n: number) => (n > 0 && n < 0.01 ? "<$0.01" : `$${n.toFixed(2)}`);
 const fmtDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(intlLocale(), { day: "numeric", month: "short", year: "numeric" }) : "—");
 
 /** Plan pill: trial shows days left, a lapsed trial is red, a paid plan is green; no plan set is grey. */
@@ -270,6 +270,8 @@ export default function AdminPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const [q, setQ] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
+  // Test accounts and empty sign-up workspaces are hidden by default so the counts are real clients.
+  const [hideNoise, setHideNoise] = useState(true);
 
   const quickPause = useMutation({
     mutationFn: ({ id, paused }: { id: string; paused: boolean }) => updateAdminWorkspace(id, { monitoringPaused: paused }),
@@ -277,8 +279,11 @@ export default function AdminPage() {
     onError: () => toast.error(L("Could not save.", "Gagal menyimpan.")),
   });
 
+  const isNoise = (w: AdminWorkspace) => w.isTest || (!w.isDemo && !w.plan && w.keywords === 0 && w.signals30d === 0);
+  const base = useMemo(() => (list.data?.data ?? []).filter((w) => !hideNoise || !isNoise(w)), [list.data, hideNoise]);
+  const hiddenCount = (list.data?.data.length ?? 0) - base.length;
   const rows = useMemo(() => {
-    const all = list.data?.data ?? [];
+    const all = base;
     const needle = q.trim().toLowerCase();
     return all
       .filter((w) => !needle || `${w.name} ${w.owner?.email ?? ""} ${w.owner?.name ?? ""}`.toLowerCase().includes(needle))
@@ -293,7 +298,7 @@ export default function AdminPage() {
       })
       // Demo last; the rest by what needs attention: lapsed trials, then trials ending soonest, then newest.
       .sort((a, b) => Number(a.isDemo) - Number(b.isDemo) || Number(b.trialExpired) - Number(a.trialExpired) || (a.trialDaysLeft ?? 999) - (b.trialDaysLeft ?? 999) || b.createdAt.localeCompare(a.createdAt));
-  }, [list.data, q, filter]);
+  }, [base, q, filter]);
   const open = list.data?.data.find((w) => w.id === openId) ?? null;
 
   if (me.isLoading) return <div className="space-y-4"><Skeleton className="h-10 w-64 rounded-xl" /><Skeleton className="h-28 rounded-2xl" /></div>;
@@ -308,7 +313,20 @@ export default function AdminPage() {
     );
   }
 
-  const t = list.data?.totals;
+  // Counts follow what is shown (with or without test accounts); the demo never counts.
+  const t = list.data ? (() => {
+    const real = base.filter((w) => !w.isDemo);
+    return {
+      workspaces: real.length,
+      trials: real.filter((w) => w.plan === "trial" && !w.trialExpired).length,
+      endingSoon: real.filter((w) => w.plan === "trial" && !w.trialExpired && (w.trialDaysLeft ?? 99) <= 3).length,
+      expired: real.filter((w) => w.trialExpired).length,
+      paid: real.filter((w) => ["pilot", "intelligence", "decision", "command"].includes(w.plan ?? "")).length,
+      socialOn: real.filter((w) => w.social.enabled).length,
+      aiCostMonth: real.reduce((n, w) => n + w.aiCostMonth, 0),
+      socialSpendMonth: real.reduce((n, w) => n + w.social.spendUsd, 0),
+    };
+  })() : undefined;
   const tiles: Array<{ key: Filter | null; v: string | number; l: string; tone: string }> = [
     { key: "all", v: t?.workspaces ?? "…", l: L("clients", "klien"), tone: "text-[#101334]" },
     { key: "trial", v: t?.trials ?? "…", l: L("on trial", "uji coba aktif"), tone: "text-[#3B52F5]" },
@@ -374,10 +392,16 @@ export default function AdminPage() {
             </button>
           ))}
         </div>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <label className="flex h-11 cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-xl bg-white px-3.5 text-[13px] font-bold text-[#31406B] shadow-sm">
+          <Toggle on={hideNoise} onChange={setHideNoise} label={L("Hide test accounts and empty workspaces", "Sembunyikan akun tes dan workspace kosong")} />
+          {L(`Hide tests & empty${hideNoise && hiddenCount ? ` (${hiddenCount})` : ""}`, `Sembunyikan tes & kosong${hideNoise && hiddenCount ? ` (${hiddenCount})` : ""}`)}
+        </label>
         <label className="flex h-11 items-center gap-2.5 rounded-xl bg-white px-3.5 shadow-sm lg:w-[320px]">
           <Search size={17} className="text-[#465FFF]" aria-hidden="true" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={L("Search client or owner email", "Cari klien atau email pemilik")} className="min-w-0 flex-1 bg-transparent text-[14px] font-semibold outline-none placeholder:text-[#8A93B5]" />
         </label>
+        </div>
       </div>
 
       {/* List */}
@@ -415,7 +439,7 @@ export default function AdminPage() {
                 {rows.map((w) => (
                   <tr key={w.id} className={cn("text-[14px] transition even:bg-[#FAFBFF]", w.isDemo ? "opacity-70" : "cursor-pointer hover:bg-[#F5F7FF]")} onClick={() => !w.isDemo && setOpenId(w.id)}>
                     <td className="max-w-[280px] px-5 py-3.5">
-                      <p className="truncate font-black text-[#101334]">{w.name}</p>
+                      <p className="flex items-center gap-2 truncate font-black text-[#101334]">{w.name}{w.isTest ? <span className="rounded-full bg-[#F1F3F8] px-2 py-0.5 text-[10px] font-black uppercase text-[#5F6B94]">{L("test", "tes")}</span> : null}</p>
                       <p className="truncate text-[12px] font-medium text-[#5F6B94]">{w.owner?.email || "—"} · {fmtDate(w.createdAt)}</p>
                     </td>
                     <td className="px-3 py-3.5"><PlanPill w={w} /></td>
