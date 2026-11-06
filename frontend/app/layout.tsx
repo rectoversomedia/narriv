@@ -25,10 +25,14 @@ export const metadata: Metadata = {
   },
   description: "Narriv membantu tim memantau percakapan publik, memahami narasi, dan menentukan aksi yang tepat.",
   applicationName: "Narriv",
+  // New file names so browsers that cached the old round icon fetch the square "N." mark.
   icons: {
-    icon: "/brand/icon-48.png",
-    shortcut: "/brand/icon-48.png",
-    apple: "/brand/apple-icon-180.png",
+    icon: [
+      { url: "/brand/favicon-n-48.png", sizes: "48x48", type: "image/png" },
+      { url: "/brand/favicon-n-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    shortcut: "/brand/favicon-n-48.png",
+    apple: "/brand/apple-icon-n-180.png",
   },
   openGraph: {
     title: "Narriv | Narrative Intelligence",
