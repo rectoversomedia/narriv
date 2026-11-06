@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
-import { ArrowRight, ArrowUpRight, ChevronDown, FileText, Loader2, UserCheck } from "lucide-react";
+import { ArrowRight, ArrowUpRight, BellRing, Building2, ChevronDown, Clock3, FileText, Layers, LineChart, Loader2, Megaphone, Radar, UserCheck, type LucideIcon } from "lucide-react";
 import { startDemoLogin } from "@/components/auth/auth-shell";
 import { GRID, INK, SERIF as serif, SiteFooter, SiteHeader } from "@/components/marketing/site-chrome";
 import { AI_ENGINES } from "@/components/ui/ai-engines";
@@ -44,21 +44,39 @@ function DemoButton({ className, children }: { className?: string; children: Rea
   );
 }
 
-/** The product, composed: a dashboard window with an alert and an AI score floating over it (sample data). */
+/** A label beside the product picture that says what the part next to it does. */
+function Callout({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-white/[0.07] px-3 py-1.5 text-[12px] font-bold text-white/85 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]">
+      <span className="flex size-5 items-center justify-center rounded-full bg-[#465FFF]"><Icon size={12} aria-hidden="true" /></span>
+      {children}
+    </span>
+  );
+}
+
+/**
+ * The product, composed so it explains itself: a dashboard window (brand, risk, a spike with its cause, the sources
+ * and the top issues), the alert it raised with an owner, and the AI score, with labels naming each part. Sample data.
+ */
 function ProductStage() {
   const L = useL();
-  const sentiment = [
-    { pct: 33, color: "#12A66A" },
-    { pct: 13, color: "#94A3B8" },
-    { pct: 12, color: "#F59E0B" },
-    { pct: 42, color: "#E5484D" },
+  const days = [9, 11, 10, 12, 11, 14, 13, 15, 14, 18, 31, 44];
+  const max = Math.max(...days);
+  const x = (i: number) => (i / (days.length - 1)) * 300;
+  const y = (v: number) => 78 - (v / max) * 66;
+  const path = days.map((v, i) => `${x(i)},${y(v)}`).join(" ");
+  const sources = [
+    { key: "news", n: 84 },
+    { key: "instagram", n: 46 },
+    { key: "tiktok", n: 37 },
+    { key: "youtube", n: 31 },
+    { key: "x", n: 19 },
   ];
-  const spark = [12, 14, 11, 16, 15, 22, 19, 28, 24, 34, 31, 44];
-  const max = Math.max(...spark);
-  const path = spark.map((v, i) => `${(i / (spark.length - 1)) * 300},${70 - (v / max) * 60}`).join(" ");
   return (
-    <div className="relative mx-auto w-full max-w-[600px] pb-10 pt-6 sm:pb-14">
+    <div className="relative mx-auto w-full max-w-[600px]">
+    <div className="relative pb-16 pt-8">
       <div aria-hidden="true" className="absolute -inset-10 rounded-[60px] bg-[radial-gradient(closest-side,rgba(109,124,255,0.45),transparent)] blur-2xl" />
+
 
       {/* Window */}
       <div className="relative overflow-hidden rounded-[22px] bg-[#0E1335]/80 p-1.5 shadow-[0_40px_120px_rgba(0,0,0,0.55),inset_0_0_0_1px_rgba(255,255,255,0.08)] backdrop-blur">
@@ -66,7 +84,7 @@ function ProductStage() {
           <span className="size-2.5 rounded-full bg-white/15" />
           <span className="size-2.5 rounded-full bg-white/15" />
           <span className="size-2.5 rounded-full bg-white/15" />
-          <span className="ml-3 truncate text-[11px] font-semibold text-white/40">narriv.digital · {L("Summary", "Ringkasan")}</span>
+          <span className="ml-3 truncate text-[11px] font-semibold text-white/40">narriv.digital · {L("Today", "Hari ini")}</span>
         </div>
         <div className="rounded-[17px] bg-[#FBFAF7] p-4 text-[#101334] sm:p-5">
           <div className="flex items-start justify-between gap-3">
@@ -77,53 +95,91 @@ function ProductStage() {
             </div>
             <span className="rounded-full bg-[#FDECEC] px-2.5 py-1 text-[11px] font-black text-[#B42318]">{L("Risk: high", "Risiko: tinggi")}</span>
           </div>
+
           <div className="mt-4 grid grid-cols-3 divide-x divide-[#ECEAE3]">
             {[
-              { v: "217", l: L("mentions", "percakapan") },
+              { v: "217", l: L("mentions, 30 days", "percakapan, 30 hari") },
               { v: "42%", l: L("negative", "negatif"), tone: "text-[#B42318]" },
-              { v: "6", l: L("open alerts", "peringatan") },
+              { v: "6", l: L("open alerts", "peringatan aktif") },
             ].map((s) => (
               <div key={s.l} className="px-3 first:pl-0">
-                <p className={cn("text-[26px] font-black leading-none tabular-nums", s.tone)}>{s.v}</p>
+                <p className={cn("text-[24px] font-black leading-none tabular-nums", s.tone)}>{s.v}</p>
                 <p className="mt-1 text-[11px] font-semibold text-[#6B7080]">{s.l}</p>
               </div>
             ))}
           </div>
-          <svg viewBox="0 0 300 74" className="mt-4 h-16 w-full" aria-hidden="true">
-            <defs>
-              <linearGradient id="sparkfill" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0" stopColor="#465FFF" stopOpacity="0.25" />
-                <stop offset="1" stopColor="#465FFF" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <polygon points={`0,74 ${path} 300,74`} fill="url(#sparkfill)" />
-            <polyline points={path} fill="none" stroke="#465FFF" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-          </svg>
-          <div className="mt-2 flex h-2 overflow-hidden rounded-full">
-            {sentiment.map((s, i) => <span key={i} style={{ width: `${s.pct}%`, backgroundColor: s.color }} />)}
+
+          {/* The spike, named */}
+          <div className="relative mt-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-[11px] font-bold text-[#6B7080]">{L("Mentions per day", "Percakapan per hari")}</p>
+              <span className="rounded-full bg-[#101334] px-2.5 py-1 text-[10px] font-black text-white">{L("3× in 24h · app outage", "3× dalam 24 jam · gangguan aplikasi")}</span>
+            </div>
+            <svg viewBox="0 0 300 82" className="mt-1 h-[72px] w-full overflow-visible" aria-hidden="true">
+              <defs>
+                <linearGradient id="sparkfill" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0" stopColor="#E5484D" stopOpacity="0.22" />
+                  <stop offset="1" stopColor="#E5484D" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <polygon points={`0,82 ${path} 300,82`} fill="url(#sparkfill)" />
+              <polyline points={path} fill="none" stroke="#E5484D" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+              <circle cx={x(days.length - 1)} cy={y(max)} r="5" fill="#E5484D" stroke="#FBFAF7" strokeWidth="2.5" />
+            </svg>
           </div>
+
+          {/* Where it came from */}
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-[#ECEAE3] pt-3">
+            {sources.map((src) => (
+              <span key={src.key} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#31406B]">
+                <PlatformIcon platform={src.key} className="size-3.5" />
+                {src.n}
+              </span>
+            ))}
+          </div>
+
+          {/* Top issues */}
+          <ul className="mt-3 space-y-1.5">
+            {[
+              { t: L("Arunika Mobile outage at peak hours", "Gangguan Arunika Mobile di jam sibuk"), s: L("Negative", "Negatif"), tone: "bg-[#FDECEC] text-[#B42318]", n: 46 },
+              { t: L("SME programme praised", "Program UMKM dipuji"), s: L("Positive", "Positif"), tone: "bg-[#E8F7F0] text-[#047857]", n: 34 },
+            ].map((it) => (
+              <li key={it.t} className="flex items-center gap-2 rounded-lg bg-white px-2.5 py-2 shadow-[0_1px_2px_rgba(16,19,52,0.06)]">
+                <span className="min-w-0 flex-1 truncate text-[12px] font-bold">{it.t}</span>
+                <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black", it.tone)}>{it.s}</span>
+                <span className="w-6 shrink-0 text-right text-[12px] font-black tabular-nums">{it.n}</span>
+              </li>
+            ))}
+          </ul>
           {/* Room for the floating alert, so it never covers the numbers. */}
-          <div className="h-20 sm:h-16" aria-hidden="true" />
+          <div className="h-28 sm:h-16" aria-hidden="true" />
         </div>
       </div>
 
-      {/* Alert, floating */}
-      <div className="absolute -bottom-2 left-0 w-[78%] max-w-[330px] rounded-[18px] bg-white p-4 text-[#101334] shadow-[0_24px_60px_rgba(5,8,30,0.45)] sm:-left-8">
+      {/* The alert it raised, floating */}
+      <div className="absolute bottom-0 left-0 w-[80%] max-w-[340px] rounded-[18px] bg-white p-4 text-[#101334] shadow-[0_24px_60px_rgba(5,8,30,0.45)] sm:-left-8">
         <div className="flex items-center gap-2">
           <span className="relative flex size-2.5">
             <span className="absolute inset-0 animate-ping rounded-full bg-[#E5484D] opacity-60" />
             <span className="relative size-2.5 rounded-full bg-[#E5484D]" />
           </span>
-          <span className="text-[11px] font-black uppercase tracking-[0.12em] text-[#B42318]">{L("Critical · 2h ago", "Kritis · 2 jam lalu")}</span>
+          <span className="text-[11px] font-black uppercase tracking-[0.12em] text-[#B42318]">{L("Critical alert · sent to email", "Peringatan kritis · terkirim ke email")}</span>
         </div>
         <p className="mt-1.5 text-[14px] font-black leading-snug">{L("Arunika Mobile outage at peak hours", "Gangguan Arunika Mobile di jam sibuk")}</p>
-        <p className="mt-1.5 flex items-center gap-1.5 text-[12px] font-semibold text-[#6B7080]"><UserCheck size={13} aria-hidden="true" /> {L("Digital team · due in 4 hours", "Tim Digital · tenggat 4 jam lagi")}</p>
+        <p className="mt-1.5 flex items-center gap-1.5 text-[12px] font-semibold text-[#6B7080]"><UserCheck size={13} aria-hidden="true" /> {L("Owner: Digital team · due in 4 hours", "PJ: Tim Digital · tenggat 4 jam lagi")}</p>
       </div>
 
       {/* AI score, floating */}
-      <div className="absolute -right-2 top-0 hidden rounded-[16px] bg-[#101334] px-4 py-3 text-white shadow-[0_20px_50px_rgba(5,8,30,0.5),inset_0_0_0_1px_rgba(255,255,255,0.08)] sm:block">
+      <div className="absolute -right-3 top-0 hidden rounded-[16px] bg-[#101334] px-4 py-3 text-white shadow-[0_20px_50px_rgba(5,8,30,0.5),inset_0_0_0_1px_rgba(255,255,255,0.08)] sm:block">
         <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#A5B4FF]">{L("Named by ChatGPT", "Disebut ChatGPT")}</p>
         <p className="mt-0.5 text-[24px] font-black leading-none">62<span className="text-[13px] font-bold text-white/50">/100</span></p>
+      </div>
+    </div>
+      {/* What the picture shows, in three plain labels. */}
+      <div className="relative mt-5 flex flex-wrap justify-center gap-2">
+        <Callout icon={Clock3}>{L("Checked every hour", "Dicek tiap jam")}</Callout>
+        <Callout icon={Layers}>{L("All sources, one screen", "Semua sumber, satu layar")}</Callout>
+        <Callout icon={BellRing}>{L("Who acts, by when", "Siapa bertindak, kapan")}</Callout>
       </div>
     </div>
   );
@@ -224,6 +280,7 @@ export default function WelcomePage() {
             {[
               {
                 n: "01",
+                icon: Radar,
                 title: L("Watch", "Pantau"),
                 text: L("News, YouTube and social media are read every hour and scored for sentiment.", "Berita, YouTube, dan media sosial dibaca setiap jam dan dinilai sentimennya."),
                 ui: (
@@ -239,6 +296,7 @@ export default function WelcomePage() {
               },
               {
                 n: "02",
+                icon: BellRing,
                 title: L("Alert", "Peringatkan"),
                 text: L("A rising issue becomes an alert with a severity, an owner and a deadline, sent to email.", "Isu yang naik jadi peringatan dengan tingkat keparahan, penanggung jawab, dan tenggat, lalu dikirim ke email."),
                 ui: (
@@ -251,6 +309,7 @@ export default function WelcomePage() {
               },
               {
                 n: "03",
+                icon: FileText,
                 title: L("Report", "Laporkan"),
                 text: L("Every Monday the board gets a one-page brief by email: what changed and what to decide.", "Setiap Senin direksi menerima ringkasan satu halaman lewat email: apa yang berubah dan apa yang perlu diputuskan."),
                 ui: (
@@ -265,7 +324,7 @@ export default function WelcomePage() {
               },
             ].map((step) => (
               <li key={step.n} className="relative pl-16">
-                <span className="absolute left-0 top-0 flex size-10 items-center justify-center rounded-full bg-[#101334] text-[13px] font-black text-white">{step.n}</span>
+                <span className="absolute left-0 top-0 flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-[#465FFF] to-[#7B4FE0] text-white shadow-[0_8px_20px_rgba(70,95,255,0.35)]"><step.icon size={18} aria-hidden="true" /></span>
                 <h3 className="text-[22px] font-black tracking-[-0.01em]">{step.title}</h3>
                 <p className="mt-1.5 max-w-lg text-[15px] font-medium leading-relaxed text-[#5B6070]">{step.text}</p>
                 <div className="mt-4 rounded-2xl bg-white px-4 py-3.5 shadow-[0_1px_0_rgba(16,19,52,0.04),0_18px_40px_-18px_rgba(16,19,52,0.25)]">{step.ui}</div>
@@ -354,13 +413,13 @@ export default function WelcomePage() {
         </div>
         <div className="mt-12 grid border-t border-[#DDDAD0] md:grid-cols-3 md:divide-x md:divide-[#DDDAD0]">
           {[
-            { n: "01", title: L("Board & executives", "Direksi"), text: L("One page every Monday: how risky the week was, what changed, and who is handling it.", "Satu halaman tiap Senin: seberapa berisiko minggu ini, apa yang berubah, dan siapa yang menangani.") },
-            { n: "02", title: L("Corporate comms & PR", "Corcomm & PR"), text: L("See an issue while it is small, with an owner, a deadline and a response plan to start from.", "Lihat isu saat masih kecil, lengkap dengan penanggung jawab, tenggat, dan rencana respons sebagai titik awal.") },
-            { n: "03", title: L("PR agencies", "Agensi PR"), text: L("Every client in one account, each in its own workspace, compared with their competitors.", "Semua klien dalam satu akun, masing-masing di workspace sendiri, dan dibandingkan dengan kompetitornya.") },
+            { n: "01", icon: LineChart, title: L("Board & executives", "Direksi"), text: L("One page every Monday: how risky the week was, what changed, and who is handling it.", "Satu halaman tiap Senin: seberapa berisiko minggu ini, apa yang berubah, dan siapa yang menangani.") },
+            { n: "02", icon: Megaphone, title: L("Corporate comms & PR", "Corcomm & PR"), text: L("See an issue while it is small, with an owner, a deadline and a response plan to start from.", "Lihat isu saat masih kecil, lengkap dengan penanggung jawab, tenggat, dan rencana respons sebagai titik awal.") },
+            { n: "03", icon: Building2, title: L("PR agencies", "Agensi PR"), text: L("Every client in one account, each in its own workspace, compared with their competitors.", "Semua klien dalam satu akun, masing-masing di workspace sendiri, dan dibandingkan dengan kompetitornya.") },
           ].map((a) => (
             <div key={a.n} className="border-b border-[#DDDAD0] px-4 py-8 text-center md:border-b-0 md:px-8">
-              <span className="text-[14px] font-black tracking-[0.2em] text-[#465FFF]">{a.n}</span>
-              <h3 className="mt-4 text-[20px] font-black">{a.title}</h3>
+              <span className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#465FFF] to-[#7B4FE0] text-white shadow-[0_10px_24px_rgba(70,95,255,0.3)]"><a.icon size={22} aria-hidden="true" /></span>
+              <h3 className="mt-5 text-[20px] font-black">{a.title}</h3>
               <p className="mt-2 text-[15px] font-medium leading-relaxed text-[#5B6070]">{a.text}</p>
             </div>
           ))}
