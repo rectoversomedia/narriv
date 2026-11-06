@@ -597,6 +597,10 @@ export async function completeOnboarding(req, res) {
             },
         });
 
+        // A weekly report for the board from day one (Monday 08:00 WIB); the client can change it on the Reports page.
+        const { ensureWeeklyBoardReport } = await import("../reports/report-schedules.js");
+        await ensureWeeklyBoardReport(workspaceId);
+
         return res.json({
             success: true,
             workspace: {

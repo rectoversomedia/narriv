@@ -301,7 +301,7 @@ describe('monitoring keywords', () => {
   });
 
   it('enforces the active keyword limit', async () => {
-    for (let i = 0; i < 25; i++) db.table('monitoring_keywords').push({ id: `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`, workspace_id: WS, keyword: `kw ${i}`, is_active: true, created_at: `2026-01-01T00:00:${String(i).padStart(2, '0')}Z` });
+    for (let i = 0; i < 50; i++) db.table('monitoring_keywords').push({ id: `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`, workspace_id: WS, keyword: `kw ${i}`, is_active: true, created_at: `2026-01-01T00:00:${String(i).padStart(2, '0')}Z` });
     expect((await post(OWNER, 'one more')).status).toBe(422);
   });
 });

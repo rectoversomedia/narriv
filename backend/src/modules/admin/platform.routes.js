@@ -27,6 +27,8 @@ const router = express.Router();
 router.use(verifyToken);
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+// Providers bill in US dollars; the panel shows rupiah at this rate (env USD_IDR_RATE).
+const usdToIdr = () => { const r = Number(process.env.USD_IDR_RATE); return Number.isFinite(r) && r > 1000 ? r : 16300; };
 const SOCIAL_PLATFORMS = ["x", "tiktok", "instagram", "facebook", "youtube", "threads"];
 
 // Accounts the team and automated tests made, so the panel can hide them from the client counts (display only).
@@ -53,7 +55,7 @@ router.get("/workspaces", requirePlatformAdmin, async (req, res) => {
         const { data: workspaces, error } = await db.from("workspaces").select("id, name, created_at, settings").order("created_at", { ascending: false }).limit(500);
         if (error) throw error;
         const ids = (workspaces || []).map((w) => w.id);
-        if (!ids.length) return res.json({ data: [], totals: {}, socialCapUsd: totalCapUsd() });
+        if (!ids.length) return res.json({ data: [], totals: {}, socialCapUsd: totalCapUsd(), usdToIdr: usdToIdr() });
 
         // The numbers are independent, so they are fetched together.
         const [members, keywords, signals, alerts, tokens, social] = await Promise.all([
@@ -99,6 +101,8 @@ router.get("/workspaces", requirePlatformAdmin, async (req, res) => {
                 owner: ownerUser ? { name: ownerUser.name, email: ownerUser.email } : null,
                 ...planStatus(settings, now),
                 monitoringPaused: settings.monitoringPaused === true,
+                keywordLimitOverride: Number.isInteger(settings.keywordLimit) ? settings.keywordLimit : null,
+                billing: { status: settings.billing?.status || "none", nextInvoiceAt: settings.billing?.nextInvoiceAt || null, note: settings.billing?.note || "" },
                 social: { enabled: cfg.enabled, platforms: cfg.platforms, monthlyCapUsd: cfg.monthlyCapUsd, crisisMode: cfg.crisisMode, spendUsd: Number((socialSpend.get(w.id) || 0).toFixed(2)) },
                 members: memberCount.get(w.id) || 0,
                 keywords: keywordCount.get(w.id) || 0,
@@ -120,7 +124,7 @@ router.get("/workspaces", requirePlatformAdmin, async (req, res) => {
             aiCostMonth: Number(real.reduce((n, w) => n + w.aiCostMonth, 0).toFixed(4)),
             socialSpendMonth: Number(real.reduce((n, w) => n + w.social.spendUsd, 0).toFixed(2)),
         };
-        res.json({ data, totals, socialCapUsd: totalCapUsd(), generatedAt: new Date(now).toISOString() });
+        res.json({ data, totals, socialCapUsd: totalCapUsd(), usdToIdr: usdToIdr(), generatedAt: new Date(now).toISOString() });
     } catch (error) {
         logStructured("error", "admin_workspaces_failed", { error: error?.message || error });
         res.status(500).json({ error: "Could not load workspaces." });
@@ -131,6 +135,13 @@ const patchBody = z.object({
     plan: z.enum(PLAN_KEYS).optional(),
     trialEndsAt: z.string().datetime({ offset: true }).nullable().optional(),
     monitoringPaused: z.boolean().optional(),
+    // null returns to the plan's own limit.
+    keywordLimit: z.number().int().min(1).max(50).nullable().optional(),
+    billing: z.object({
+        status: z.enum(["none", "paid", "due", "overdue"]).optional(),
+        nextInvoiceAt: z.string().datetime({ offset: true }).nullable().optional(),
+        note: z.string().max(300).optional(),
+    }).optional(),
     social: z.object({
         enabled: z.boolean().optional(),
         platforms: z.array(z.enum(SOCIAL_PLATFORMS)).min(1).optional(),
@@ -161,6 +172,17 @@ router.patch("/workspaces/:id", requirePlatformAdmin, validateRequest({ params: 
             else { settings.trialEndsAt = new Date(body.trialEndsAt).toISOString(); settings.plan = "trial"; }
         }
         if (body.monitoringPaused !== undefined) settings.monitoringPaused = body.monitoringPaused;
+        if (body.keywordLimit !== undefined) {
+            if (body.keywordLimit === null) delete settings.keywordLimit;
+            else settings.keywordLimit = body.keywordLimit;
+        }
+        if (body.billing) {
+            const b = { ...(settings.billing || {}) };
+            if (body.billing.status !== undefined) b.status = body.billing.status;
+            if (body.billing.nextInvoiceAt !== undefined) b.nextInvoiceAt = body.billing.nextInvoiceAt ? new Date(body.billing.nextInvoiceAt).toISOString() : null;
+            if (body.billing.note !== undefined) b.note = body.billing.note.trim();
+            settings.billing = b;
+        }
         if (body.social) {
             if (body.social.enabled !== undefined) settings.socialAuto = body.social.enabled;
             const cfg = { ...(settings.socialConfig || {}) };

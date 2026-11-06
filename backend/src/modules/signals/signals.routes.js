@@ -3,7 +3,7 @@ import { requestLang, tr } from "../../lib/request-context.js";
 import supabase from "../../lib/supabase.js";
 import { analyzeSignal, generateSignalsSummary } from "../ai/ai.service.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
-import { getUserWorkspaceIds, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
+import { getUserWorkspaceIds, getWorkspaceRole, resolveWorkspaceIdForUser } from "../../lib/workspace-access.js";
 import { validateRequest } from "../../middlewares/validate-request.js";
 import { createSignalBodySchema, signalIdParamsSchema } from "./signals.schema.js";
 import { logStructured } from "../../lib/logger.js";
@@ -698,14 +698,31 @@ router.patch("/:id", async (req, res) => {
             return res.status(403).json({ error: "Access denied" });
         }
 
+        // Viewers read; owners, admins and analysts may correct a record.
+        const role = await getWorkspaceRole(req.user.id, existingSignal.workspace_id);
+        if (!role || role === "viewer") {
+            return res.status(403).json({ error: "Your role cannot change records.", code: "ROLE_NOT_ALLOWED" });
+        }
+
         // Allowed fields to update
         const { sentiment, severity, topics, metadata } = req.body;
         const updateData = {};
 
-        if (sentiment !== undefined) updateData.sentiment = sentiment;
+        if (sentiment !== undefined) {
+            const value = String(sentiment).toUpperCase();
+            if (!["POSITIVE", "NEGATIVE", "NEUTRAL", "MIXED"].includes(value)) {
+                return res.status(400).json({ error: "sentiment must be positive, negative, neutral or mixed", code: "INVALID_SENTIMENT" });
+            }
+            updateData.sentiment = value;
+        }
         if (severity !== undefined) updateData.severity = severity;
         if (topics !== undefined) updateData.topics = topics;
         if (metadata !== undefined) updateData.metadata = metadata;
+        if (updateData.sentiment) {
+            // Marked as a person's correction, so it can be told apart from the AI's reading.
+            const { data: current } = await supabase.from('signals').select('metadata, sentiment').eq('id', id).single();
+            updateData.metadata = { ...(current?.metadata || {}), ...(updateData.metadata || {}), sentimentCorrected: { from: current?.sentiment ?? null, to: updateData.sentiment, by: req.user.id, at: new Date().toISOString() } };
+        }
 
         if (Object.keys(updateData).length === 0) {
             return res.status(400).json({ error: "No valid fields to update" });

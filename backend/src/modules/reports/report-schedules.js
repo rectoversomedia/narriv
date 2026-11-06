@@ -104,7 +104,10 @@ export async function runDueReportSchedules({ now = new Date(), generate, db = b
             const end = now;
             const span = row.cadence === "daily" ? 1 : row.cadence === "monthly" ? 30 : 7;
             const report = await generate({ workspaceId: row.workspace_id, templateKey: record.templateKey, options: { dateRange: { start: new Date(end.getTime() - span * 864e5).toISOString(), end: end.toISOString() } } });
-            results.push({ scheduleId: row.id, reportId: report?.id ?? null, status: "ok" });
+            // Send it to its readers (notification email or owners), with the PDF attached.
+            const { deliverScheduledReport } = await import("./report-delivery.js");
+            const delivery = report?.id ? await deliverScheduledReport(report.id) : { sent: false, reason: "no_report" };
+            results.push({ scheduleId: row.id, reportId: report?.id ?? null, status: "ok", emailed: delivery.sent, emailSkip: delivery.reason ?? null });
         } catch (err) {
             results.push({ scheduleId: row.id, status: "failed", error: String(err?.message || err).slice(0, 200) });
         }
@@ -115,4 +118,33 @@ export async function runDueReportSchedules({ now = new Date(), generate, db = b
     }
     logStructured("info", "report_schedules_run", { due: (rows || []).length, ok: results.filter((r) => r.status === "ok").length });
     return { ok: true, ran: results.length, results };
+}
+
+/**
+ * Every new workspace gets one weekly board report (Executive Brief, Monday 08:00 WIB) unless it already has a
+ * schedule. The client can switch it off or change it on the Reports page. Never throws.
+ */
+export async function ensureWeeklyBoardReport(workspaceId, lang = "id", db = baseSupabaseAdmin) {
+    try {
+        const { count } = await db.from("report_schedules").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId);
+        if ((count || 0) > 0) return { created: false, reason: "has_schedule" };
+        const templateId = await templateRowId(workspaceId, "executive_brief", db);
+        if (!templateId) return { created: false, reason: "no_template" };
+        const plan = { cadence: "weekly", dayOfWeek: 1, timeOfDay: "08:00" };
+        const { error } = await db.from("report_schedules").insert({
+            workspace_id: workspaceId,
+            template_id: templateId,
+            name: lang === "en" ? "Weekly report for the board" : "Laporan mingguan untuk direksi",
+            cadence: plan.cadence,
+            day_of_week: plan.dayOfWeek,
+            time_of_day: plan.timeOfDay,
+            is_active: true,
+            next_run_at: nextRunAt(plan).toISOString(),
+        });
+        if (error) throw error;
+        return { created: true };
+    } catch (error) {
+        logStructured("warn", "weekly_board_report_setup_failed", { workspaceId, error: error?.message || error });
+        return { created: false, reason: "error" };
+    }
 }

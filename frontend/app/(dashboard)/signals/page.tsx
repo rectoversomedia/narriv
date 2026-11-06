@@ -18,6 +18,8 @@ import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore"
 import { DemoBanner } from "@/components/ui/demo-banner";
 import { pickL } from "@/lib/use-l";
 import { PlatformIcon } from "@/components/ui/platform-icon";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { correctSignalSentiment, getWorkspaceSettings, type CorrectableSentiment } from "@/lib/api-service";
 
 type Tone = "blue" | "purple" | "green" | "red" | "amber" | "slate";
 type Sentiment = "NEGATIVE" | "POSITIVE" | "NEUTRAL" | "MIXED" | "UNANALYZED";
@@ -329,6 +331,47 @@ function SentimentBadge({ sentiment }: { sentiment: Sentiment }) {
 }
 
 
+/**
+ * The sentiment label, which a team member can click to correct when the AI read it wrong. The record changes at
+ * once (counts follow) and the correction is logged as AI feedback. Read-only in the demo.
+ */
+function SentimentCorrector({ id, sentiment }: { id: string; sentiment: Sentiment }) {
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const isDemo = isDemoUser(useAuthStore((s) => s.user));
+  const workspaceId = useQuery({ queryKey: ["workspace-settings"], queryFn: getWorkspaceSettings, staleTime: 60 * 1000, enabled: !isDemo }).data?.workspaceId ?? null;
+  const [open, setOpen] = useState(false);
+  const fix = useMutation({
+    mutationFn: (to: CorrectableSentiment) => correctSignalSentiment({ signalId: id, workspaceId, from: sentiment, to }),
+    onSuccess: () => { setOpen(false); toast.success(pickL("Corrected. Thanks, this improves the analysis.", "Sudah dikoreksi. Terima kasih, ini membantu analisis.")); void queryClient.invalidateQueries(); },
+    onError: () => toast.error(pickL("Could not save. Viewers cannot change records.", "Gagal menyimpan. Pembaca tidak bisa mengubah data.")),
+  });
+  if (isDemo) return <SentimentBadge sentiment={sentiment} />;
+  const choices: Array<[CorrectableSentiment, string, string]> = [["POSITIVE", "Positive", "Positif"], ["NEUTRAL", "Neutral", "Netral"], ["MIXED", "Mixed", "Campuran"], ["NEGATIVE", "Negative", "Negatif"]];
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger type="button" title={pickL("Wrong? Correct the sentiment", "Salah? Koreksi sentimen")} aria-label={pickL("Correct the sentiment", "Koreksi sentimen")} className="rounded-full transition hover:ring-2 hover:ring-[#465FFF]/25">
+        <SentimentBadge sentiment={sentiment} />
+      </PopoverTrigger>
+      <PopoverContent align="start" sideOffset={6} className="w-[200px] gap-0 rounded-[12px] border border-slate-200 bg-white p-1.5 text-slate-900 shadow-[0_12px_32px_rgba(15,23,42,0.14)] ring-0">
+        <p className="px-2 pb-1.5 pt-1 text-[11px] font-black uppercase tracking-[0.08em] text-[#5A6478]">{pickL("Correct sentiment", "Sentimen yang benar")}</p>
+        {choices.map(([key, en, idText]) => (
+          <button
+            key={key}
+            type="button"
+            disabled={fix.isPending || key === sentiment}
+            onClick={() => fix.mutate(key)}
+            className="flex w-full items-center justify-between rounded-[8px] px-2 py-2 text-left text-[13px] font-semibold text-[#31406B] hover:bg-slate-50 disabled:opacity-50"
+          >
+            {pickL(en, idText)}
+            {key === sentiment ? <Check size={14} className="text-[#3B52F5]" aria-hidden="true" /> : fix.isPending && fix.variables === key ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : null}
+          </button>
+        ))}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function AnalysisBadge({ status, confidence }: { status: "analyzed" | "unanalyzed"; confidence: number | null }) {
   if (status !== "analyzed") return <span className="text-[12px] font-bold text-[#8A93AD]">{pickL("Not yet", "Belum")}</span>;
   return <span className="text-[12px] font-black text-[#3B52F5]">{confidence === null ? pickL("Done", "Selesai") : `${Math.round(confidence * 100)}%`}</span>;
@@ -437,7 +480,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-semibold leading-snug text-navy">{row.title}</p>
                   <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                    <SentimentBadge sentiment={row.sentiment} />
+                    <SentimentCorrector id={row.id} sentiment={row.sentiment} />
                     <RelevanceBadge relevance={row.relevance} />
                   </div>
                   <p className="mt-1 text-[11px] text-[#5A6478]">
@@ -520,7 +563,7 @@ function SignalsTable({ activeFilter, setActiveFilter, query, setQuery, rows, fo
                     )}
                   </td>
                   <td className="px-2.5 py-3 align-middle"><span className="line-clamp-2 break-words text-[12px] font-bold leading-snug text-[#31406B]" title={row.publisher}>{row.publisher}</span></td>
-                  <td className="px-2.5 py-3 align-middle"><SentimentBadge sentiment={row.sentiment} /></td>
+                  <td className="px-2.5 py-3 align-middle"><SentimentCorrector id={row.id} sentiment={row.sentiment} /></td>
                   <td className="px-2.5 py-3 align-middle">
                     {row.narratives[0] ? (
                       <Link href={monitoringHref({ narrative: row.narratives[0].id })} className="line-clamp-2 break-words text-[12px] font-bold leading-snug text-[#3B52F5] hover:underline" title={row.relatedNarrative}>

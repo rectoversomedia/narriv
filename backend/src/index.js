@@ -35,6 +35,7 @@ import subscriptionsRoutes from "./modules/subscriptions/subscriptions.routes.js
 import cronRoutes from "./modules/cron/cron.routes.js";
 import ownershipRoutes from "./modules/admin/ownership.routes.js";
 import platformAdminRoutes from "./modules/admin/platform.routes.js";
+import competitorsRoutes from "./modules/competitors/competitors.routes.js";
 import migrateRoutes from "./modules/migrate/migrate.routes.js";
 import pipelineRoutes from "./modules/pipeline/pipeline.routes.js";
 import keywordsRoutes from "./modules/keywords/keywords.routes.js";
@@ -198,6 +199,7 @@ app.use("/workspaces", rateLimit({ ...RATE_LIMITS.api_default, prefix: "workspac
 app.use("/workspace", sensitiveDataHeaders, workspaceSettingsRoutes);
 app.use("/workspace/activity", activityRoutes);
 app.use("/workspace/keywords", rateLimit(RATE_LIMITS.api_default), keywordsRoutes);
+app.use("/workspace/competitors", rateLimit(RATE_LIMITS.api_default), competitorsRoutes);
 app.use("/onboarding", onboardingRoutes);
 app.use("/workspace/cases", casesRoutes);
 app.use("/workspace/integrations", integrationsRoutes);

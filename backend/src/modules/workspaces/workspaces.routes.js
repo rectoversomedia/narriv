@@ -92,6 +92,11 @@ router.post("/", validateRequest({ body: createBody }), async (req, res) => {
         if (wsError || !workspace) throw wsError || new Error("workspace insert returned no row");
 
         const { error: memberError } = await db.from("workspace_members").insert({ workspace_id: workspace.id, user_id: req.user.id, role: "owner" });
+        if (!memberError) {
+            // Same as a client who onboards: a weekly board report from day one.
+            const { ensureWeeklyBoardReport } = await import("../reports/report-schedules.js");
+            await ensureWeeklyBoardReport(workspace.id);
+        }
         if (memberError) {
             await db.from("workspaces").delete().eq("id", workspace.id);
             throw memberError;

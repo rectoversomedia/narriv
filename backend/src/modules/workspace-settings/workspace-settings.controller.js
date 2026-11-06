@@ -6,6 +6,7 @@ import { logStructured } from "../../lib/logger.js";
 import { DEFAULT_TIMEZONE, normalizeTimezone } from "../../lib/timezone.js";
 import { forgetWorkspaceLanguage } from "../../lib/workspace-language.js";
 import { planStatus } from "../../lib/workspace-plan.js";
+import { isWhatsAppConfigured } from "../notifications/notification-providers.js";
 
 function toSafeDefaults(workspaceId) {
     return {
@@ -51,6 +52,8 @@ export async function getWorkspaceSettings(req, res) {
             monitoring_paused: workspaceData?.settings?.monitoringPaused === true,
             // Plan and trial for the in-app trial banner; set by the Narriv team in the admin panel.
             plan_status: planStatus(workspaceData?.settings || {}),
+            // WhatsApp alerts need Narriv's sender (FONNTE_TOKEN); until then the app says it is coming soon.
+            whatsapp_sender_ready: isWhatsAppConfigured(),
         };
 
         if (!settings) {

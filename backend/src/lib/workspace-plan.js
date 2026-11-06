@@ -30,7 +30,18 @@ export function planStatus(settings, now = Date.now()) {
     const trialEndsAt = plan === "trial" && settings?.trialEndsAt ? settings.trialEndsAt : null;
     const end = trialEndsAt ? new Date(trialEndsAt).getTime() : NaN;
     const trialDaysLeft = Number.isFinite(end) ? Math.max(0, Math.ceil((end - now) / DAY_MS)) : null;
-    return { plan, trialEndsAt, trialDaysLeft, trialExpired: trialExpired(settings, now) };
+    return { plan, trialEndsAt, trialDaysLeft, trialExpired: trialExpired(settings, now), hourlyKeywords: hourlyKeywordLimit(settings) };
+}
+
+/** Keywords checked every hour per plan. A workspace without a plan keeps the original 3. */
+export const HOURLY_KEYWORDS = { trial: 3, pilot: 3, intelligence: 10, decision: 25, command: 50 };
+export const MAX_HOURLY_KEYWORDS = 50;
+
+/** The hourly keyword limit for a workspace: the team's override (settings.keywordLimit), else its plan's. */
+export function hourlyKeywordLimit(settings) {
+    const override = Number(settings?.keywordLimit);
+    if (Number.isInteger(override) && override >= 1) return Math.min(override, MAX_HOURLY_KEYWORDS);
+    return HOURLY_KEYWORDS[settings?.plan] ?? 3;
 }
 
 /** True when scheduled collection should skip the workspace: paused by its owner, or its trial ran out. */

@@ -16,6 +16,10 @@ export interface AdminWorkspace {
   trialDaysLeft: number | null;
   trialExpired: boolean;
   monitoringPaused: boolean;
+  /** Keywords checked every hour: the plan's number, or the team's override. */
+  hourlyKeywords: number;
+  keywordLimitOverride: number | null;
+  billing: { status: BillingStatus; nextInvoiceAt: string | null; note: string };
   social: { enabled: boolean; platforms: string[]; monthlyCapUsd: number; crisisMode: boolean; spendUsd: number };
   members: number;
   keywords: number;
@@ -24,6 +28,8 @@ export interface AdminWorkspace {
   openAlerts: number;
   aiCostMonth: number;
 }
+
+export type BillingStatus = "none" | "paid" | "due" | "overdue";
 
 export interface AdminTotals {
   workspaces: number;
@@ -40,6 +46,8 @@ export interface AdminWorkspacesResponse {
   data: AdminWorkspace[];
   totals: AdminTotals;
   socialCapUsd: number;
+  /** Rupiah per US dollar used to show costs (providers bill in dollars). */
+  usdToIdr: number;
   generatedAt: string;
 }
 
@@ -47,6 +55,8 @@ export interface AdminWorkspacePatch {
   plan?: WorkspacePlanKey;
   trialEndsAt?: string | null;
   monitoringPaused?: boolean;
+  keywordLimit?: number | null;
+  billing?: { status?: BillingStatus; nextInvoiceAt?: string | null; note?: string };
   social?: { enabled?: boolean; platforms?: string[]; monthlyCapUsd?: number; crisisMode?: boolean };
 }
 

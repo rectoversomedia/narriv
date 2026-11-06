@@ -32,7 +32,8 @@ export function isEmailConfigured() {
  * @param {string} [options.from]    - Override sender (defaults to EMAIL_FROM).
  * @returns {Promise<{ id: string } | null>} Resend message ID or null on failure / not configured.
  */
-export async function sendEmail({ to, subject, html, text, from }) {
+/** attachments: [{ filename, content: Buffer }] (Resend accepts them as-is). */
+export async function sendEmail({ to, subject, html, text, from, attachments }) {
     const client = getClient();
 
     if (!client) {
@@ -51,6 +52,7 @@ export async function sendEmail({ to, subject, html, text, from }) {
             subject,
             html,
             ...(text ? { text } : {}),
+            ...(attachments?.length ? { attachments } : {}),
         });
 
         if (error) {

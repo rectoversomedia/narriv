@@ -4,6 +4,7 @@ import { globalEvents } from "../app-notifications/app-notifications.events.js";
 import { logStructured } from "../../lib/logger.js";
 import { workspaceLanguage } from "../../lib/workspace-language.js";
 import { dispatchAlertToWebhooks } from "../integrations/webhook-dispatcher.service.js";
+import { DEMO_WORKSPACE_ID } from "../../lib/workspace-access.js";
 
 const SOURCE_STRENGTH = {
     news: 1,
@@ -82,6 +83,26 @@ export async function notifyAndRecord(alert) {
     } catch (err) {
         result = { dispatched: 0, total: 0, results: [], error: err.message };
     }
+    // Critical and high alerts also go straight to the people: email (notification email, else the owners) and
+    // WhatsApp when switched on. Sent once per alert (a webhook retry does not resend), never from the demo.
+    let direct = alert.metadata?.notification?.direct || null;
+    if (!direct && ["critical", "high"].includes(String(alert.severity).toLowerCase()) && alert.workspace_id !== DEMO_WORKSPACE_ID) {
+        try {
+            const { notifyNewHighRiskAlert } = await import("../notifications/notification-dispatch.service.js");
+            const r = await notifyNewHighRiskAlert({
+                workspaceId: alert.workspace_id,
+                alertId: alert.id,
+                title: alert.title,
+                severity: String(alert.severity).toLowerCase(),
+                whatHappened: alert.what_happened || alert.whatHappened || null,
+                whatToDo: alert.what_to_do || alert.whatToDo || null,
+            });
+            direct = { at: new Date().toISOString(), delivered: r.delivered, channels: (r.results || []).map((x) => ({ provider: x.provider, delivered: x.delivered })) };
+        } catch (err) {
+            direct = { at: new Date().toISOString(), delivered: false, error: String(err?.message || err).slice(0, 160) };
+            logStructured("warn", "alert_direct_notify_failed", { alertId: alert.id, error: err?.message || err });
+        }
+    }
     const failed = (result.results || []).filter((r) => r.status === "failed");
     const notification = {
         status: result.error ? "error" : result.total === 0 ? "no_active_integrations" : failed.length > 0 ? "failed" : "delivered",
@@ -90,6 +111,7 @@ export async function notifyAndRecord(alert) {
         failedIntegrationIds: failed.map((r) => r.integrationId),
         attempts: (alert.metadata?.notification?.attempts || 0) + 1,
         lastAttemptAt: new Date().toISOString(),
+        ...(direct ? { direct } : {}),
     };
     const { error } = await supabase
         .from("alerts")

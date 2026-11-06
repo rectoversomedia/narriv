@@ -287,6 +287,18 @@ export default function SettingsPage() {
     },
   });
   const toggleEmail = (next: boolean) => { setNotifEmail(next); notificationMutation.mutate({ emailEnabled: next }); };
+  // WhatsApp alerts (critical and high) go from Narriv's number to the numbers saved here.
+  const whatsappReady = workspaceSettingsQuery.data?.whatsappSenderReady === true;
+  const [notifWhatsapp, setNotifWhatsapp] = useState<boolean | null>(null);
+  const whatsappOn = notifWhatsapp ?? notificationQuery.data?.whatsappEnabled ?? false;
+  const toggleWhatsapp = (next: boolean) => { setNotifWhatsapp(next); notificationMutation.mutate({ whatsappEnabled: next }); };
+  const [waNumbers, setWaNumbers] = useState<string | null>(null);
+  const waNumbersValue = waNumbers ?? workspaceSettingsQuery.data?.whatsappPIC ?? "";
+  const waNumbersMutation = useMutation({
+    mutationFn: () => updateWorkspaceSettings({ whatsappPIC: waNumbersValue.trim() || null }),
+    onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ["workspace-settings"] }); setWaNumbers(null); showToast(ts("toast.saveSuccess")); },
+    onError: () => showToast(ts("toast.saveFailed"), "error"),
+  });
 
 
   const handleSaveWorkspaceInfo = (e: FormEvent) => {
@@ -725,7 +737,28 @@ export default function SettingsPage() {
               </div>
               <Switch label={ts("notifications.emailAlerts")} checked={notifEmailValue} onChange={toggleEmail} disabled={notificationMutation.isPending} />
             </div>
-            {/* WhatsApp, Slack, Teams and Google Chat are all set up on the Integrations page. */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="block text-[11px] font-black text-[#101334]">{L("WhatsApp for critical alerts", "WhatsApp untuk peringatan kritis")}</span>
+                  <span className="block text-[9.5px] text-[#5A6478] font-semibold">{whatsappReady ? L("Critical and high alerts, sent from Narriv's number", "Peringatan kritis dan tinggi, dikirim dari nomor Narriv") : L("Coming soon", "Segera hadir")}</span>
+                </div>
+                <Switch label={L("WhatsApp alerts", "Peringatan WhatsApp")} checked={whatsappReady && whatsappOn} onChange={toggleWhatsapp} disabled={!whatsappReady || notificationMutation.isPending} />
+              </div>
+              {whatsappReady && whatsappOn ? (
+                <div className="flex gap-2">
+                  <input
+                    aria-label={L("WhatsApp numbers", "Nomor WhatsApp")}
+                    value={waNumbersValue}
+                    onChange={(e) => setWaNumbers(e.target.value)}
+                    placeholder={L("e.g. 0812..., 0813... (comma-separated)", "mis. 0812..., 0813... (pisahkan koma)")}
+                    className={cn(inputClass, "h-9 min-w-0 flex-1 text-[12px]")}
+                  />
+                  <button type="button" onClick={() => waNumbersMutation.mutate()} disabled={waNumbers === null || waNumbersMutation.isPending} className={cn(primaryButtonClass, "h-9 px-3 text-[12px]")}>{L("Save", "Simpan")}</button>
+                </div>
+              ) : null}
+            </div>
+            {/* Slack, Teams, Google Chat and webhooks are set up on the Integrations page. */}
             <Link href="/workspace/integrations" className="flex items-center justify-between rounded-[10px] bg-[#E9FBF0] px-3 py-2.5 transition hover:bg-[#DDF7E7]">
               <span>
                 <span className="block text-[11px] font-black text-[#101334]">{L("WhatsApp, Slack, Teams & Google Chat", "WhatsApp, Slack, Teams & Google Chat")}</span>

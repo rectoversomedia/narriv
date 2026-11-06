@@ -19,8 +19,10 @@ import { resolveWorkspaceIdForUser, requireWorkspaceRole, MANAGER_ROLES, getWork
 import supabase from "../../lib/supabase.js";
 import { recordAuditLog } from "../../lib/audit.js";
 import { logStructured } from "../../lib/logger.js";
+import { MAX_HOURLY_KEYWORDS, hourlyKeywordLimit } from "../../lib/workspace-plan.js";
 
-export const MAX_ACTIVE_KEYWORDS = 25;
+export const MAX_ACTIVE_KEYWORDS = MAX_HOURLY_KEYWORDS;
+/** Default for workspaces without a plan; the plan sets the real number (lib/workspace-plan.js). */
 export const SCHEDULED_KEYWORDS_PER_WORKSPACE = 3;
 
 const router = express.Router();
@@ -82,9 +84,9 @@ export function keywordMonitoringStatus({ isActive, scheduled, lastRun }) {
     return "active";
 }
 
-function present(rows, runs = new Map()) {
+function present(rows, runs = new Map(), scheduledPerRun = SCHEDULED_KEYWORDS_PER_WORKSPACE) {
     const active = rows.filter((r) => r.is_active);
-    const scheduledIds = new Set(active.slice(0, SCHEDULED_KEYWORDS_PER_WORKSPACE).map((r) => r.id));
+    const scheduledIds = new Set(active.slice(0, scheduledPerRun).map((r) => r.id));
     return {
         data: rows.map((r) => {
             const scheduled = scheduledIds.has(r.id);
@@ -95,9 +97,15 @@ function present(rows, runs = new Map()) {
                 monitoringStatus: keywordMonitoringStatus({ isActive: r.is_active, scheduled, lastRun }),
             };
         }),
-        limits: { maxActive: MAX_ACTIVE_KEYWORDS, scheduledPerRun: SCHEDULED_KEYWORDS_PER_WORKSPACE },
-        note: tr(`Scheduled monitoring runs every hour and collects up to 8 new articles for each of the first ${SCHEDULED_KEYWORDS_PER_WORKSPACE} active keywords (oldest first).`, `Pemantauan terjadwal berjalan setiap jam dan mengambil hingga 8 artikel baru untuk ${SCHEDULED_KEYWORDS_PER_WORKSPACE} kata kunci aktif pertama (yang paling lama ditambahkan).`),
+        limits: { maxActive: MAX_ACTIVE_KEYWORDS, scheduledPerRun },
+        note: tr(`Scheduled monitoring runs every hour and collects up to 8 new articles for each of the first ${scheduledPerRun} active keywords (oldest first).`, `Pemantauan terjadwal berjalan setiap jam dan mengambil hingga 8 artikel baru untuk ${scheduledPerRun} kata kunci aktif pertama (yang paling lama ditambahkan).`),
     };
+}
+
+/** How many of the workspace's active keywords are checked every hour, from its plan (lib/workspace-plan.js). */
+async function scheduledLimit(workspaceId) {
+    const { data } = await supabase.from("workspaces").select("settings").eq("id", workspaceId).maybeSingle();
+    return hourlyKeywordLimit(data?.settings || {});
 }
 
 async function isDuplicate(workspaceId, keyword, exceptId = null) {
@@ -115,7 +123,7 @@ router.get("/", async (req, res) => {
     }
     const role = await getWorkspaceRole(req.user.id, ws);
     const { runs, error: runsError } = await latestKeywordRuns(ws);
-    return res.json({ ...present(data || [], runs), canEdit: MANAGER_ROLES.includes(role), runHistoryAvailable: !runsError });
+    return res.json({ ...present(data || [], runs, await scheduledLimit(ws)), canEdit: MANAGER_ROLES.includes(role), runHistoryAvailable: !runsError });
 });
 
 router.post("/", validateRequest({ body: createBody }), requireWorkspaceRole(MANAGER_ROLES), async (req, res) => {
@@ -137,7 +145,8 @@ router.post("/", validateRequest({ body: createBody }), requireWorkspaceRole(MAN
     }
     await recordAuditLog({ userId: req.user.id, workspaceId: ws, event: "monitoring_keyword_created", metadata: { keywordId: data.id, keyword } });
     const { data: all } = await listKeywords(ws);
-    return res.status(201).json({ keyword: present(all || []).data.find((k) => k.id === data.id), ...present(all || []) });
+    const shown = present(all || [], undefined, await scheduledLimit(ws));
+    return res.status(201).json({ keyword: shown.data.find((k) => k.id === data.id), ...shown });
 });
 
 router.patch("/:id", validateRequest({ params: idParams, body: updateBody }), requireWorkspaceRole(MANAGER_ROLES), async (req, res) => {
@@ -166,7 +175,7 @@ router.patch("/:id", validateRequest({ params: idParams, body: updateBody }), re
     }
     await recordAuditLog({ userId: req.user.id, workspaceId: ws, event: "monitoring_keyword_updated", metadata: { keywordId: row.id, ...patch } });
     const { data: all } = await listKeywords(ws);
-    return res.json(present(all || []));
+    return res.json(present(all || [], undefined, await scheduledLimit(ws)));
 });
 
 router.delete("/:id", validateRequest({ params: idParams }), requireWorkspaceRole(MANAGER_ROLES), async (req, res) => {
@@ -180,7 +189,7 @@ router.delete("/:id", validateRequest({ params: idParams }), requireWorkspaceRol
     }
     await recordAuditLog({ userId: req.user.id, workspaceId: ws, event: "monitoring_keyword_deleted", metadata: { keywordId: row.id, keyword: row.keyword } });
     const { data: all } = await listKeywords(ws);
-    return res.json(present(all || []));
+    return res.json(present(all || [], undefined, await scheduledLimit(ws)));
 });
 
 export default router;

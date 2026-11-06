@@ -17,7 +17,7 @@ import { logStructured } from "../../lib/logger.js";
 import { ingestRssSignals } from "./rss-ingestion.service.js";
 import { ingestOfficialSources } from "./official-sources.service.js";
 import { DEMO_WORKSPACE_ID } from "../../lib/workspace-access.js";
-import { monitoringStopped } from "../../lib/workspace-plan.js";
+import { hourlyKeywordLimit, monitoringStopped } from "../../lib/workspace-plan.js";
 
 const JOB_NAME = "scheduled-rss-ingestion";
 
@@ -36,12 +36,14 @@ function categorizeError(err) {
  * schedule became daily (the offset jumped by 4 each run).
  */
 export function buildWorkList(keywordRows, { maxKeywordsPerWorkspace = 3, maxWorkspaces = 25, rotation = 0, lastProcessed = null } = {}) {
+    // A number applies to every workspace; a function gives each workspace its plan's limit.
+    const limitFor = typeof maxKeywordsPerWorkspace === "function" ? maxKeywordsPerWorkspace : () => maxKeywordsPerWorkspace;
     const byWorkspace = new Map();
     for (const row of keywordRows || []) {
         const keyword = String(row.keyword || "").trim();
         if (!row.workspace_id || !keyword) continue;
         const list = byWorkspace.get(row.workspace_id) || [];
-        if (!list.some((k) => k.toLowerCase() === keyword.toLowerCase()) && list.length < maxKeywordsPerWorkspace) {
+        if (!list.some((k) => k.toLowerCase() === keyword.toLowerCase()) && list.length < limitFor(row.workspace_id)) {
             list.push(keyword);
         }
         byWorkspace.set(row.workspace_id, list);
@@ -124,11 +126,10 @@ async function claimRun(runId, trigger, workspaceId = null) {
     return { logId: row.id, acquired: !leader || leader === row.id };
 }
 
-async function pausedWorkspaceIds(ids) {
-    if (!ids.length) return new Set();
+async function workspaceSettings(ids) {
+    if (!ids.length) return new Map();
     const { data } = await baseSupabaseAdmin.from("workspaces").select("id, settings").in("id", ids);
-    // Paused by the owner, or a trial that ran out (lib/workspace-plan.js).
-    return new Set((data || []).filter((w) => monitoringStopped(w.settings)).map((w) => w.id));
+    return new Map((data || []).map((w) => [w.id, w.settings || {}]));
 }
 
 /**
@@ -162,7 +163,7 @@ export async function ingestKeywordAllSources({ workspaceId, keyword, limit, wit
 export async function runScheduledIngestion({
     budgetMs = 240000,
     perKeywordLimit = 8,
-    maxKeywordsPerWorkspace = 3,
+    maxKeywordsPerWorkspace = null, // null: each workspace's plan decides (lib/workspace-plan.js)
     maxWorkspaces = 25,
     trigger = "cron",
     ingest = ingestKeywordAllSources,
@@ -203,13 +204,15 @@ export async function runScheduledIngestion({
         results.push({ error: kwErr.message, errorCategory: "keyword_query_failed" });
     } else {
         // A scheduled run skips workspaces whose owner paused monitoring (Settings → Danger zone); a manual run does not.
-        const pausedIds = workspaceId ? new Set() : await pausedWorkspaceIds([...new Set((keywordRows || []).map((r) => r.workspace_id))]);
+        const settingsById = await workspaceSettings([...new Set((keywordRows || []).map((r) => r.workspace_id))]);
+        // Paused by the owner, or a trial that ran out (lib/workspace-plan.js).
+        const pausedIds = workspaceId ? new Set() : new Set([...settingsById].filter(([, s]) => monitoringStopped(s)).map(([id]) => id));
         if (pausedIds.size) keywordRows = keywordRows.filter((r) => !pausedIds.has(r.workspace_id));
         // The demo workspace watches a fictional bank: live news would only add unrelated articles (and alerts) to it.
         // Its data is refreshed by the nightly demo reseed instead.
         if (!workspaceId) keywordRows = keywordRows.filter((r) => r.workspace_id !== DEMO_WORKSPACE_ID);
         work = buildWorkList(keywordRows, {
-            maxKeywordsPerWorkspace,
+            maxKeywordsPerWorkspace: maxKeywordsPerWorkspace ?? ((ws) => hourlyKeywordLimit(settingsById.get(ws))),
             maxWorkspaces,
             rotation: Math.floor(start / (6 * 3600 * 1000)),
             lastProcessed: workspaceId ? null : await lastProcessedByWorkspace(),

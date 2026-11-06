@@ -36,6 +36,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/toast";
 import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components/create-action-plan-modal";
 import { issueHref, monitoringHref, type MonitoringPeriod } from "@/lib/evidence-links";
+import { CompetitorCard } from "@/components/dashboard/competitor-card";
 
 // One screen, one period, five answers: how coverage leans, what to do, which issues are hot, where the
 // records come from, and how AI assistants talk about the brand. Short labels; every number opens its records.
@@ -148,7 +149,7 @@ function FirstRun() {
   const queryClient = useQueryClient();
   const keywordsQuery = useQuery({ queryKey: ["monitoring-keywords"], queryFn: getMonitoringKeywords, staleTime: 30 * 1000 });
   const run = useMutation({
-    mutationFn: runKeywordMonitoring,
+    mutationFn: () => runKeywordMonitoring({ firstRun: true }),
     onSuccess: () => void queryClient.invalidateQueries(),
     onError: (err: Error & { status?: number; code?: string }) => {
       // The server keeps going after the browser stops waiting; look again in a minute.
@@ -568,6 +569,9 @@ export default function DashboardPage() {
               )}
             </Card>
           </div>
+
+            {/* The demo brand is fictional, so news counts would all be zero there. */}
+            {!isDemoSession ? <CompetitorCard /> : null}
 
             <Card title={L("Sources", "Sumber data")} link={{ href: "/workspace/sources", label: L("Manage", "Kelola") }}>
             {summaryQuery.isLoading ? (

@@ -8,7 +8,7 @@ import { CalendarClock, Check, ChevronRight, Loader2, Pause, Play, RefreshCw, Se
 import { Skeleton } from "@/components/ui/Skeleton";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { useToast } from "@/components/ui/toast";
-import { getAdminMe, getAdminWorkspaces, updateAdminWorkspace, type AdminWorkspace, type AdminWorkspacePatch, type WorkspacePlanKey } from "@/lib/api-service";
+import { getAdminMe, getAdminWorkspaces, updateAdminWorkspace, type AdminWorkspace, type AdminWorkspacePatch, type BillingStatus, type WorkspacePlanKey } from "@/lib/api-service";
 import { timeAgo } from "@/lib/intelligence-api";
 import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
@@ -25,11 +25,25 @@ const PLANS: Array<{ key: WorkspacePlanKey; en: string; id: string }> = [
   { key: "command", en: "Command", id: "Command" },
 ];
 const SOCIAL = ["instagram", "tiktok", "x", "facebook"] as const;
+const PLAN_KEYWORDS: Record<WorkspacePlanKey, number> = { trial: 3, pilot: 3, intelligence: 10, decision: 25, command: 50 };
+const BILLING: Array<{ key: BillingStatus; en: string; id: string }> = [
+  { key: "none", en: "Not set", id: "Belum diatur" },
+  { key: "paid", en: "Paid", id: "Lunas" },
+  { key: "due", en: "Due", id: "Jatuh tempo" },
+  { key: "overdue", en: "Overdue", id: "Terlambat" },
+];
 const SOCIAL_NAME: Record<string, string> = { instagram: "Instagram", tiktok: "TikTok", x: "X", facebook: "Facebook" };
 
 type Filter = "all" | "trial" | "soon" | "expired" | "paid" | "social" | "paused";
 
-const usd = (n: number) => (n > 0 && n < 0.01 ? "<$0.01" : `$${n.toFixed(2)}`);
+// Costs are stored in US dollars (what the providers bill) and shown in rupiah at the server's rate.
+let RATE = 16300;
+const rp = (usdAmount: number) => {
+  const idr = usdAmount * RATE;
+  if (idr > 0 && idr < 1) return "<Rp1";
+  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(idr);
+};
+const usd = rp;
 const fmtDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(intlLocale(), { day: "numeric", month: "short", year: "numeric" }) : "—");
 
 /** Plan pill: trial shows days left, a lapsed trial is red, a paid plan is green; no plan set is grey. */
@@ -91,8 +105,12 @@ function WorkspacePanel({ w, socialCapUsd, onClose }: { w: AdminWorkspace; socia
   const [paused, setPaused] = useState(w.monitoringPaused);
   const [socialOn, setSocialOn] = useState(w.social.enabled);
   const [platforms, setPlatforms] = useState<string[]>(w.social.platforms.filter((p) => (SOCIAL as readonly string[]).includes(p)));
-  const [cap, setCap] = useState(String(w.social.monthlyCapUsd));
+  const [cap, setCap] = useState(String(Math.round(w.social.monthlyCapUsd * RATE)));
   const [crisis, setCrisis] = useState(w.social.crisisMode);
+  const [kwOverride, setKwOverride] = useState(w.keywordLimitOverride === null ? "" : String(w.keywordLimitOverride));
+  const [billStatus, setBillStatus] = useState<BillingStatus>(w.billing?.status ?? "none");
+  const [billDate, setBillDate] = useState(w.billing?.nextInvoiceAt ? w.billing.nextInvoiceAt.slice(0, 10) : "");
+  const [billNote, setBillNote] = useState(w.billing?.note ?? "");
 
   const addDays = (days: number) => {
     const base = trialEnd ? new Date(`${trialEnd}T00:00:00`) : new Date();
@@ -109,17 +127,27 @@ function WorkspacePanel({ w, socialCapUsd, onClose }: { w: AdminWorkspace; socia
       if (iso && iso.slice(0, 10) !== (w.trialEndsAt ?? "").slice(0, 10)) p.trialEndsAt = iso;
     }
     if (paused !== w.monitoringPaused) p.monitoringPaused = paused;
-    const capNum = Number(cap);
+    const capNum = Number((Number(cap) / RATE).toFixed(2));
     const social: NonNullable<AdminWorkspacePatch["social"]> = {};
     if (socialOn !== w.social.enabled) social.enabled = socialOn;
     if (platforms.length && platforms.slice().sort().join() !== w.social.platforms.filter((x) => (SOCIAL as readonly string[]).includes(x)).sort().join()) social.platforms = platforms;
     if (Number.isFinite(capNum) && capNum !== w.social.monthlyCapUsd) social.monthlyCapUsd = capNum;
     if (crisis !== w.social.crisisMode) social.crisisMode = crisis;
     if (Object.keys(social).length) p.social = social;
+    const kw = kwOverride.trim() === "" ? null : Number(kwOverride);
+    if (kw !== w.keywordLimitOverride && (kw === null || (Number.isInteger(kw) && kw >= 1 && kw <= 50))) p.keywordLimit = kw;
+    const billing: NonNullable<AdminWorkspacePatch["billing"]> = {};
+    if (billStatus !== (w.billing?.status ?? "none")) billing.status = billStatus;
+    const billIso = billDate ? new Date(`${billDate}T09:00:00+07:00`).toISOString() : null;
+    if ((billIso ?? "").slice(0, 10) !== (w.billing?.nextInvoiceAt ?? "").slice(0, 10)) billing.nextInvoiceAt = billIso;
+    if (billNote.trim() !== (w.billing?.note ?? "")) billing.note = billNote.trim();
+    if (Object.keys(billing).length) p.billing = billing;
     return p;
-  }, [plan, trialEnd, paused, socialOn, platforms, cap, crisis, w]);
+  }, [plan, trialEnd, paused, socialOn, platforms, cap, crisis, kwOverride, billStatus, billDate, billNote, w]);
   const dirty = Object.keys(patch).length > 0;
-  const capInvalid = !Number.isFinite(Number(cap)) || Number(cap) < 0 || Number(cap) > socialCapUsd;
+  const capInvalid = !Number.isFinite(Number(cap)) || Number(cap) < 0 || Number(cap) / RATE > socialCapUsd + 0.005;
+  const kwInvalid = kwOverride.trim() !== "" && !(Number.isInteger(Number(kwOverride)) && Number(kwOverride) >= 1 && Number(kwOverride) <= 50);
+  const planKeywords = plan ? PLAN_KEYWORDS[plan] : 3;
 
   const save = useMutation({
     mutationFn: () => updateAdminWorkspace(w.id, patch),
@@ -202,6 +230,48 @@ function WorkspacePanel({ w, socialCapUsd, onClose }: { w: AdminWorkspace; socia
             <Toggle on={!paused} onChange={(v) => setPaused(!v)} label={L("Monitoring on", "Pemantauan aktif")} />
           </section>
 
+          <section className={section} aria-labelledby="kw-h">
+            <h3 id="kw-h" className="text-[13px] font-black text-[#101334]">{L("Keywords checked hourly", "Kata kunci dicek tiap jam")}</h3>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <input
+                aria-label={L("Custom limit", "Batas khusus")}
+                inputMode="numeric"
+                value={kwOverride}
+                onChange={(e) => setKwOverride(e.target.value)}
+                placeholder={String(planKeywords)}
+                className={cn("h-10 w-20 rounded-[10px] bg-white px-3 text-[14px] font-bold text-[#101334] shadow-sm outline-none focus:ring-2", kwInvalid ? "ring-2 ring-[#E5484D]/40" : "focus:ring-[#465FFF]/30")}
+              />
+              <span className="text-[12px] font-medium text-[#5F6B94]">{L(`Plan default ${planKeywords}. Leave empty to follow the plan (max 50).`, `Bawaan paket ${planKeywords}. Kosongkan untuk mengikuti paket (maks 50).`)}</span>
+            </div>
+          </section>
+
+          <section className={section} aria-labelledby="bill-h">
+            <h3 id="bill-h" className="text-[13px] font-black text-[#101334]">{L("Billing", "Tagihan")}</h3>
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              {BILLING.map((b) => (
+                <button
+                  key={b.key}
+                  type="button"
+                  aria-pressed={billStatus === b.key}
+                  onClick={() => setBillStatus(b.key)}
+                  className={cn("rounded-full px-3 py-1.5 text-[13px] font-bold transition", billStatus === b.key ? (b.key === "overdue" ? "bg-[#B42318] text-white" : b.key === "due" ? "bg-[#B45309] text-white" : b.key === "paid" ? "bg-[#047857] text-white" : "bg-[#465FFF] text-white") : "bg-white text-[#31406B] shadow-sm")}
+                >
+                  {L(b.en, b.id)}
+                </button>
+              ))}
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-[auto_1fr]">
+              <label className="flex flex-col gap-1 text-[12px] font-bold text-[#5F6B94]">
+                {L("Next invoice", "Invoice berikutnya")}
+                <input type="date" value={billDate} onChange={(e) => setBillDate(e.target.value)} className="h-10 rounded-[10px] bg-white px-3 text-[14px] font-semibold text-[#101334] shadow-sm outline-none focus:ring-2 focus:ring-[#465FFF]/30" />
+              </label>
+              <label className="flex flex-col gap-1 text-[12px] font-bold text-[#5F6B94]">
+                {L("Note", "Catatan")}
+                <input value={billNote} maxLength={300} onChange={(e) => setBillNote(e.target.value)} placeholder={L("e.g. INV-2026-011, Rp25 jt", "mis. INV-2026-011, Rp25 jt")} className="h-10 rounded-[10px] bg-white px-3 text-[14px] font-semibold text-[#101334] shadow-sm outline-none focus:ring-2 focus:ring-[#465FFF]/30" />
+              </label>
+            </div>
+          </section>
+
           <section className={section} aria-labelledby="social-h">
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -231,8 +301,8 @@ function WorkspacePanel({ w, socialCapUsd, onClose }: { w: AdminWorkspace; socia
                 })}
               </div>
               <div className="flex flex-wrap items-center gap-3">
-                <label htmlFor="cap" className="text-[12px] font-bold text-[#5F6B94]">{L("Monthly cap (USD)", "Batas per bulan (USD)")}</label>
-                <input id="cap" inputMode="decimal" value={cap} disabled={!socialOn} onChange={(e) => setCap(e.target.value)} className={cn("h-10 w-24 rounded-[10px] bg-white px-3 text-[14px] font-bold text-[#101334] shadow-sm outline-none focus:ring-2", capInvalid ? "ring-2 ring-[#E5484D]/40" : "focus:ring-[#465FFF]/30")} />
+                <label htmlFor="cap" className="text-[12px] font-bold text-[#5F6B94]">{L("Monthly cap (Rp)", "Batas per bulan (Rp)")}</label>
+                <input id="cap" inputMode="decimal" value={cap} disabled={!socialOn} onChange={(e) => setCap(e.target.value)} className={cn("h-10 w-32 rounded-[10px] bg-white px-3 text-[14px] font-bold text-[#101334] shadow-sm outline-none focus:ring-2", capInvalid ? "ring-2 ring-[#E5484D]/40" : "focus:ring-[#465FFF]/30")} />
                 <span className="text-[12px] font-medium text-[#5F6B94]">{L(`max ${usd(socialCapUsd)} across all clients`, `maks ${usd(socialCapUsd)} untuk semua klien`)}</span>
               </div>
               <div className="flex items-center justify-between gap-4">
@@ -247,7 +317,7 @@ function WorkspacePanel({ w, socialCapUsd, onClose }: { w: AdminWorkspace; socia
           <button type="button" onClick={onClose} className="h-11 rounded-xl px-4 text-[14px] font-bold text-[#31406B] hover:bg-[#F5F7FF]">{L("Cancel", "Batal")}</button>
           <button
             type="button"
-            disabled={!dirty || capInvalid || save.isPending}
+            disabled={!dirty || capInvalid || kwInvalid || save.isPending}
             onClick={() => save.mutate()}
             className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#465FFF] px-5 text-[14px] font-bold text-white shadow-[0_6px_16px_rgba(70,95,255,0.35)] transition hover:bg-[#3B52F5] disabled:opacity-50 disabled:shadow-none"
           >
@@ -299,6 +369,7 @@ export default function AdminPage() {
       // Demo last; the rest by what needs attention: lapsed trials, then trials ending soonest, then newest.
       .sort((a, b) => Number(a.isDemo) - Number(b.isDemo) || Number(b.trialExpired) - Number(a.trialExpired) || (a.trialDaysLeft ?? 999) - (b.trialDaysLeft ?? 999) || b.createdAt.localeCompare(a.createdAt));
   }, [base, q, filter]);
+  if (list.data?.usdToIdr) RATE = list.data.usdToIdr;
   const open = list.data?.data.find((w) => w.id === openId) ?? null;
 
   if (me.isLoading) return <div className="space-y-4"><Skeleton className="h-10 w-64 rounded-xl" /><Skeleton className="h-28 rounded-2xl" /></div>;
@@ -374,7 +445,7 @@ export default function AdminPage() {
             </button>
           ))}
         </div>
-        {t ? <p className="relative mt-3 text-[12px] font-medium text-white/60">{L(`AI ${usd(t.aiCostMonth)} · social media ${usd(t.socialSpendMonth)} of ${usd(list.data?.socialCapUsd ?? 0)} · ${t.socialOn} client(s) with social on`, `AI ${usd(t.aiCostMonth)} · media sosial ${usd(t.socialSpendMonth)} dari ${usd(list.data?.socialCapUsd ?? 0)} · ${t.socialOn} klien dengan media sosial aktif`)}</p> : null}
+        {t ? <p className="relative mt-3 text-[12px] font-medium text-white/60">{L(`AI ${usd(t.aiCostMonth)} · social media ${usd(t.socialSpendMonth)} of ${usd(list.data?.socialCapUsd ?? 0)} · ${t.socialOn} client(s) with social on · rate Rp${RATE.toLocaleString("id-ID")}/USD`, `AI ${usd(t.aiCostMonth)} · media sosial ${usd(t.socialSpendMonth)} dari ${usd(list.data?.socialCapUsd ?? 0)} · ${t.socialOn} klien dengan media sosial aktif · kurs Rp${RATE.toLocaleString("id-ID")}/USD`)}</p> : null}
       </section>
 
       {/* Filters and search */}
@@ -442,7 +513,12 @@ export default function AdminPage() {
                       <p className="flex items-center gap-2 truncate font-black text-[#101334]">{w.name}{w.isTest ? <span className="rounded-full bg-[#F1F3F8] px-2 py-0.5 text-[10px] font-black uppercase text-[#5F6B94]">{L("test", "tes")}</span> : null}</p>
                       <p className="truncate text-[12px] font-medium text-[#5F6B94]">{w.owner?.email || "—"} · {fmtDate(w.createdAt)}</p>
                     </td>
-                    <td className="px-3 py-3.5"><PlanPill w={w} /></td>
+                    <td className="px-3 py-3.5">
+                      <PlanPill w={w} />
+                      {w.billing?.status === "overdue" || w.billing?.status === "due" ? (
+                        <p className={cn("mt-1 text-[11px] font-black", w.billing.status === "overdue" ? "text-[#B42318]" : "text-[#B45309]")}>{w.billing.status === "overdue" ? L("Payment overdue", "Tagihan terlambat") : L("Payment due", "Tagihan jatuh tempo")}</p>
+                      ) : null}
+                    </td>
                     <td className="px-3 py-3.5">
                       <MonitoringState w={w} />
                       <p className="whitespace-nowrap text-[11px] font-medium text-[#8A93B5]">{w.lastSignalAt ? L(`last data ${timeAgo(w.lastSignalAt)}`, `data terakhir ${timeAgo(w.lastSignalAt)}`) : L("no data yet", "belum ada data")}</p>

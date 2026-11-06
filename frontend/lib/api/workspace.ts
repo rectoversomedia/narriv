@@ -190,6 +190,8 @@ export interface WorkspaceSettingsResponse {
   monitoringPaused: boolean;
   /** Plan and trial, set by the Narriv team; null fields on workspaces from before plans existed. */
   planStatus: PlanStatus;
+  /** Narriv's WhatsApp sender is set up, so WhatsApp alerts can be switched on. */
+  whatsappSenderReady: boolean;
 }
 
 export type WorkspacePlanKey = "trial" | "pilot" | "intelligence" | "decision" | "command";
@@ -198,6 +200,8 @@ export interface PlanStatus {
   trialEndsAt: string | null;
   trialDaysLeft: number | null;
   trialExpired: boolean;
+  /** Keywords checked every hour on this plan. */
+  hourlyKeywords?: number;
 }
 
 export interface UpdateWorkspaceSettingsInput {
@@ -254,6 +258,7 @@ export async function getWorkspaceSettings(): Promise<WorkspaceSettingsResponse 
       onboarding_completed: raw.onboarding_completed as boolean | undefined,
       monitoringPaused: raw.monitoring_paused === true,
       planStatus: (raw.plan_status as PlanStatus | undefined) ?? { plan: null, trialEndsAt: null, trialDaysLeft: null, trialExpired: false },
+      whatsappSenderReady: raw.whatsapp_sender_ready === true,
     };
   } catch {
     return null;
@@ -349,8 +354,9 @@ export interface MonitoringRunResponse {
 }
 
 /** Owner/admin: run monitoring now for the selected workspace's active keywords. Throws with the server message (no keywords, cooldown, permission). */
-export async function runKeywordMonitoring(): Promise<MonitoringRunResponse> {
-  return apiClient<MonitoringRunResponse>("/api/ingestion/run-keywords", { method: "POST", body: JSON.stringify({}), timeout: 130000 });
+export async function runKeywordMonitoring(options: { firstRun?: boolean } = {}): Promise<MonitoringRunResponse> {
+  // firstRun: a new workspace's first collection, which the server makes larger only while the workspace has no data.
+  return apiClient<MonitoringRunResponse>("/api/ingestion/run-keywords", { method: "POST", body: JSON.stringify({ firstRun: options.firstRun === true }), timeout: 130000 });
 }
 
 // --- Platform collection (Apify) -----------------------------------------------
@@ -481,4 +487,21 @@ export async function changePassword(input: { currentPassword: string; newPasswo
   } catch {
     return false;
   }
+}
+
+export interface CompetitorShareRow { name: string; isBrand: boolean; articles: number; share: number }
+export interface CompetitorsResponse {
+  brand: string | null;
+  competitors: string[];
+  maxCompetitors: number;
+  /** Online news coverage over `days` days; `cap` is Google News' per-query maximum (a count at the cap means "or more"). */
+  share: { days: number; cap: number; at: string; rows: CompetitorShareRow[] } | null;
+}
+
+export function getCompetitors(): Promise<CompetitorsResponse> {
+  return apiClient<CompetitorsResponse>("/api/workspace/competitors");
+}
+
+export function saveCompetitors(competitors: string[]): Promise<{ competitors: string[] }> {
+  return apiClient<{ competitors: string[] }>("/api/workspace/competitors", { method: "PUT", body: JSON.stringify({ competitors }) });
 }

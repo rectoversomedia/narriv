@@ -8,8 +8,8 @@ import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
 
 // Plans are agreed with the Narriv team; the app does not gate features by plan. Every line on this page is a
-// feature that works today. Keywords: each brand's first three active keywords are checked every hour
-// (backend SCHEDULED_KEYWORDS_PER_WORKSPACE).
+// feature that works today. Keywords checked every hour per brand follow the plan (backend lib/workspace-plan.js
+// HOURLY_KEYWORDS: 3 / 10 / 25 / 50).
 
 type PlanId = "pilot" | "intelligence" | "decision" | "command";
 type Copy = [string, string];
@@ -93,7 +93,7 @@ const COMPARE: Array<{ group: Copy; rows: Array<{ label: Copy; plans: PlanId[] |
     group: ["Capacity", "Kapasitas"],
     rows: [
       { label: ["Brands monitored", "Brand yang dipantau"], plans: { pilot: ["1", "1"], intelligence: ["1", "1"], decision: ["3", "3"], command: ["As needed", "Sesuai kebutuhan"] } },
-      { label: ["Keywords checked hourly, per brand", "Kata kunci dicek tiap jam, per brand"], plans: { pilot: ["3", "3"], intelligence: ["3", "3"], decision: ["3", "3"], command: ["3", "3"] } },
+      { label: ["Keywords checked hourly, per brand", "Kata kunci dicek tiap jam, per brand"], plans: { pilot: ["3", "3"], intelligence: ["10", "10"], decision: ["25", "25"], command: ["50", "50"] } },
       { label: ["Users", "Pengguna"], plans: { pilot: ["1", "1"], intelligence: ["10", "10"], decision: ["50", "50"], command: ["Unlimited", "Tanpa batas"] } },
       { label: ["Data kept for", "Data disimpan"], plans: { pilot: ["30 days", "30 hari"], intelligence: ["12 months", "12 bulan"], decision: ["12 months", "12 bulan"], command: ["Custom", "Kustom"] } },
     ],

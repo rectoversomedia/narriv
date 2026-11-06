@@ -108,12 +108,18 @@ router.post("/run-keywords", requireWorkspaceRole(MANAGER_ROLES), async (req, re
             return res.status(429).json({ status: "cooldown", error: "A monitoring run for this workspace started less than 10 minutes ago.", retryAt });
         }
 
+        // A brand-new workspace's first run collects more per source, so the board starts full instead of nearly empty.
+        // Allowed only while the workspace has no data at all, so it cannot be repeated to pull extra volume.
+        let firstFill = false;
+        if (req.body?.firstRun === true) {
+            const { count } = await baseSupabaseAdmin.from("signals").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId);
+            firstFill = (count || 0) === 0;
+        }
         const result = await runScheduledIngestion({
             workspaceId,
             trigger: `manual:${req.user.id}`,
             budgetMs: 90000,
-            perKeywordLimit: 8,
-            maxKeywordsPerWorkspace: 3,
+            perKeywordLimit: firstFill ? 20 : 8,
         });
         if (result.status === "skipped_overlap") {
             // A simultaneous request for this workspace won the race and is running.
