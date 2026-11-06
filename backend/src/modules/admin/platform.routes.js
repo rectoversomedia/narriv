@@ -28,7 +28,7 @@ router.use(verifyToken);
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 // Providers bill in US dollars; the panel shows rupiah at this rate (env USD_IDR_RATE).
-const usdToIdr = () => { const r = Number(process.env.USD_IDR_RATE); return Number.isFinite(r) && r > 1000 ? r : 16300; };
+const usdToIdr = () => { const r = Number(process.env.USD_IDR_RATE); return Number.isFinite(r) && r > 1000 ? r : 18500; };
 const SOCIAL_PLATFORMS = ["x", "tiktok", "instagram", "facebook", "youtube", "threads"];
 
 // Accounts the team and automated tests made, so the panel can hide them from the client counts (display only).

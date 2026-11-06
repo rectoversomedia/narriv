@@ -37,7 +37,7 @@ const SOCIAL_NAME: Record<string, string> = { instagram: "Instagram", tiktok: "T
 type Filter = "all" | "trial" | "soon" | "expired" | "paid" | "social" | "paused";
 
 // Costs are stored in US dollars (what the providers bill) and shown in rupiah at the server's rate.
-let RATE = 16300;
+let RATE = 18500;
 const rp = (usdAmount: number) => {
   const idr = usdAmount * RATE;
   if (idr > 0 && idr < 1) return "<Rp1";
