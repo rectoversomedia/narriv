@@ -157,8 +157,7 @@ export default function PricingPage() {
         <div aria-hidden="true" className="pointer-events-none absolute -top-40 left-1/2 h-[520px] w-[1100px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(70,95,255,0.35),transparent)]" />
         <SiteHeader />
         <div className="relative mx-auto max-w-3xl px-4 pt-10 text-center sm:px-6">
-          <p className="text-[12px] font-black uppercase tracking-[0.2em] text-[#A5B4FF]">{L("Pricing", "Harga")}</p>
-          <h1 className="mt-3 text-balance text-[34px] font-black leading-[1.06] tracking-[-0.03em] sm:text-[52px]">
+          <h1 className="text-balance text-[34px] font-black leading-[1.06] tracking-[-0.03em] sm:text-[52px]">
             {L("One plan", "Satu paket")}{" "}
             <span className={cn("bg-gradient-to-r from-[#8EA0FF] via-[#B8A6FF] to-[#F5A3DA] bg-clip-text text-transparent", SERIF)}>{L("for each stage of your team.", "untuk tiap tahap tim Anda.")}</span>
           </h1>
@@ -264,8 +263,7 @@ export default function PricingPage() {
       {/* Comparison */}
       <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-[12px] font-black uppercase tracking-[0.2em] text-[#465FFF]">{L("Compare", "Bandingkan")}</p>
-          <h2 className="mt-2 text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[40px]">{L("What", "Isi")} <span className={cn("bg-gradient-to-r from-[#465FFF] to-[#9B4DDB] bg-clip-text text-transparent", SERIF)}>{L("each plan includes.", "tiap paket.")}</span></h2>
+          <h2 className="text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[40px]">{L("What", "Isi")} <span className={cn("bg-gradient-to-r from-[#465FFF] to-[#9B4DDB] bg-clip-text text-transparent", SERIF)}>{L("each plan includes.", "tiap paket.")}</span></h2>
         </div>
         <div className="mt-10 overflow-hidden rounded-[22px] bg-white shadow-[0_1px_2px_rgba(16,19,52,0.06),0_12px_32px_rgba(16,19,52,0.07)]">
           <div className="overflow-x-auto">
@@ -311,8 +309,7 @@ export default function PricingPage() {
       {/* Questions */}
       <section className="mx-auto grid max-w-6xl gap-10 px-4 pb-20 sm:px-6 lg:grid-cols-[0.8fr_1.4fr] lg:gap-20">
         <div>
-          <p className="text-[12px] font-black uppercase tracking-[0.2em] text-[#465FFF]">FAQ</p>
-          <h2 className="mt-2 text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[40px]">{L("About plans", "Soal paket")} <span className={cn("bg-gradient-to-r from-[#465FFF] to-[#9B4DDB] bg-clip-text text-transparent", SERIF)}>{L("and billing.", "dan pembayaran.")}</span></h2>
+          <h2 className="text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[40px]">{L("About plans", "Soal paket")} <span className={cn("bg-gradient-to-r from-[#465FFF] to-[#9B4DDB] bg-clip-text text-transparent", SERIF)}>{L("and billing.", "dan pembayaran.")}</span></h2>
         </div>
         <div className={cn("border-t", RULE)}>
           {faqs.map(([q, a]) => (

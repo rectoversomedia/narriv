@@ -45,6 +45,13 @@ function DemoButton({ className, children }: { className?: string; children: Rea
 }
 
 /** A label beside the product picture that says what the part next to it does. */
+/** Brands shown under the hero; each wordmark has its own weight so the row does not read as a list. */
+const BRANDS = [
+  { name: "Tugasisten", className: "font-black tracking-[-0.04em]" },
+  { name: "JakselNews", className: "font-extrabold uppercase tracking-[0.02em] text-[20px] sm:text-[22px]" },
+  { name: "HaloDepok", className: "font-bold tracking-[-0.02em]" },
+];
+
 function Callout({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
   return (
     <span className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-white/[0.07] px-3 py-1.5 text-[12px] font-bold text-white/85 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]">
@@ -185,19 +192,9 @@ function ProductStage() {
   );
 }
 
-function Eyebrow({ children, dark = false }: { children: ReactNode; dark?: boolean }) {
-  return <p className={cn("text-[12px] font-black uppercase tracking-[0.2em]", dark ? "text-[#A5B4FF]" : "text-[#465FFF]")}>{children}</p>;
-}
-
 export default function WelcomePage() {
   const L = useL();
 
-  const facts = [
-    { v: L("Hourly", "Tiap jam"), l: L("checked automatically", "dicek otomatis") },
-    { v: "5", l: L("AI assistants tested", "asisten AI diuji") },
-    { v: L("1 click", "1 klik"), l: L("report for the board", "laporan untuk direksi") },
-    { v: "ID · EN", l: L("both languages", "dua bahasa") },
-  ];
 
   // Sample scores from the demo bank, the same numbers its dashboard shows.
   const geo = [62, 48, 55, 71, 34];
@@ -222,14 +219,7 @@ export default function WelcomePage() {
 
         <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 pb-10 pt-10 sm:px-6 lg:grid-cols-[1.15fr_1fr] lg:gap-12 lg:pb-16 lg:pt-16">
           <div className="text-center lg:text-left">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-3.5 py-1.5 text-[12px] font-bold text-white/80 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]">
-              <span className="relative flex size-2">
-                <span className="absolute inset-0 animate-ping rounded-full bg-[#22C55E] opacity-60" />
-                <span className="relative size-2 rounded-full bg-[#22C55E]" />
-              </span>
-              {L("Brand reputation monitoring", "Pemantauan reputasi brand")}
-            </span>
-            <h1 className="mt-6 text-balance text-[34px] font-black leading-[1.04] tracking-[-0.035em] sm:text-[56px]">
+            <h1 className="text-balance text-[34px] font-black leading-[1.04] tracking-[-0.035em] sm:text-[56px]">
               {L("Know your brand’s issues", "Tahu isu brand Anda")}
               <span className={cn("block bg-gradient-to-r from-[#8EA0FF] via-[#B8A6FF] to-[#F5A3DA] bg-clip-text pb-1 text-transparent", serif)}>
                 {L("before they go viral.", "sebelum jadi viral.")}
@@ -252,16 +242,19 @@ export default function WelcomePage() {
           <ProductStage />
         </div>
 
-        {/* Facts, ruled */}
+        {/* Brands that use Narriv, as wordmarks until their logo files are added. */}
         <div className="relative mx-auto max-w-6xl px-4 pb-14 sm:px-6">
-          <dl className="grid grid-cols-2 gap-y-6 border-t border-white/10 pt-8 sm:grid-cols-4 sm:divide-x sm:divide-white/10">
-            {facts.map((f) => (
-              <div key={f.l} className="px-2 text-center sm:px-6">
-                <dt className={cn("text-[30px] leading-none text-white sm:text-[36px]", serif)}>{f.v}</dt>
-                <dd className="mt-2 text-[13px] font-semibold text-white/50">{f.l}</dd>
-              </div>
-            ))}
-          </dl>
+          <div className="border-t border-white/10 pt-8 text-center">
+            <p className="text-[13px] font-semibold text-white/45">{L("Trusted by", "Dipercaya oleh")}</p>
+            <ul className="mt-5 flex flex-wrap items-center justify-center gap-x-12 gap-y-5">
+              {BRANDS.map((b) => (
+                <li key={b.name} className={cn("text-[24px] leading-none text-white/80 sm:text-[28px]", b.className)}>
+                  {b.name}
+                </li>
+              ))}
+              <li className="text-[15px] font-semibold text-white/45">{L("and many more", "dan banyak lagi")}</li>
+            </ul>
+          </div>
         </div>
       </section>
 
@@ -269,8 +262,7 @@ export default function WelcomePage() {
       <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
         <div className="grid gap-12 lg:grid-cols-[0.9fr_1.4fr] lg:gap-20">
           <div className="lg:sticky lg:top-10 lg:self-start">
-            <Eyebrow>{L("How it works", "Cara kerja")}</Eyebrow>
-            <h2 className="mt-3 text-[32px] font-black leading-[1.08] tracking-[-0.03em] sm:text-[44px]">
+            <h2 className="text-[32px] font-black leading-[1.08] tracking-[-0.03em] sm:text-[44px]">
               {L("From a mention", "Dari satu percakapan")} <span className={cn("bg-gradient-to-r from-[#465FFF] to-[#9B4DDB] bg-clip-text text-transparent", serif)}>{L("to a decision.", "sampai keputusan.")}</span>
             </h2>
             <p className="mt-4 max-w-sm text-[16px] font-medium leading-relaxed text-[#5B6070]">{L("No dashboards to babysit. Narriv watches, decides what matters, and hands it to the right person.", "Tidak perlu memelototi dashboard. Narriv memantau, memilah yang penting, lalu menyerahkannya ke orang yang tepat.")}</p>
@@ -339,8 +331,7 @@ export default function WelcomePage() {
         <div className="border-y border-[#DDDAD0] py-10">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-sm">
-              <Eyebrow>{L("Sources", "Sumber")}</Eyebrow>
-              <h2 className="mt-2 text-[26px] font-black leading-tight tracking-[-0.02em]">{L("Where your brand is talked about.", "Tempat brand Anda dibicarakan.")}</h2>
+              <h2 className="text-[26px] font-black leading-tight tracking-[-0.02em]">{L("Where your brand is talked about.", "Tempat brand Anda dibicarakan.")}</h2>
             </div>
             <ul className="grid grid-cols-3 gap-x-8 gap-y-5 sm:grid-cols-6">
               {[
@@ -368,8 +359,7 @@ export default function WelcomePage() {
         <div aria-hidden="true" className="pointer-events-none absolute left-[-10%] top-1/2 h-[460px] w-[640px] -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(70,95,255,0.3),transparent)]" />
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:py-28">
           <div className="text-center lg:text-left">
-            <Eyebrow dark>{L("AI visibility", "Visibilitas di AI")}</Eyebrow>
-            <h2 className="mt-3 text-[32px] font-black leading-[1.08] tracking-[-0.03em] sm:text-[46px]">
+            <h2 className="text-[32px] font-black leading-[1.08] tracking-[-0.03em] sm:text-[46px]">
               {L("Does ChatGPT", "Apakah ChatGPT")} <span className={cn("bg-gradient-to-r from-[#8EA0FF] via-[#B8A6FF] to-[#F5A3DA] bg-clip-text text-transparent", serif)}>{L("mention your brand?", "menyebut brand Anda?")}</span>
             </h2>
             <p className="mx-auto mt-4 max-w-md text-[16px] font-medium leading-relaxed text-white/60 lg:mx-0">
@@ -406,8 +396,7 @@ export default function WelcomePage() {
       {/* Who it is for: ruled columns, not cards */}
       <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
         <div className="mx-auto max-w-2xl text-center">
-          <Eyebrow>{L("Built for", "Untuk siapa")}</Eyebrow>
-          <h2 className="mt-3 text-[32px] font-black leading-[1.08] tracking-[-0.03em] sm:text-[44px]">
+          <h2 className="text-[32px] font-black leading-[1.08] tracking-[-0.03em] sm:text-[44px]">
             {L("One picture for everyone", "Satu gambaran untuk semua")} <span className={cn("bg-gradient-to-r from-[#465FFF] to-[#9B4DDB] bg-clip-text text-transparent", serif)}>{L("who answers for the brand.", "yang menjaga brand.")}</span>
           </h2>
         </div>
@@ -430,8 +419,7 @@ export default function WelcomePage() {
       <section id="faq" className="scroll-mt-6 border-t border-[#DDDAD0]">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[0.8fr_1.4fr] lg:gap-20 lg:py-24">
           <div>
-            <Eyebrow>FAQ</Eyebrow>
-            <h2 className="mt-3 text-[32px] font-black leading-[1.08] tracking-[-0.03em] sm:text-[40px]">
+            <h2 className="text-[32px] font-black leading-[1.08] tracking-[-0.03em] sm:text-[40px]">
               {L("Questions", "Pertanyaan")} <span className={cn("bg-gradient-to-r from-[#465FFF] to-[#9B4DDB] bg-clip-text text-transparent", serif)}>{L("before you start.", "sebelum mulai.")}</span>
             </h2>
             <p className="mt-4 text-[15px] font-medium text-[#5B6070]">
