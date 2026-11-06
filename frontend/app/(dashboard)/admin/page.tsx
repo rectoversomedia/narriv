@@ -378,7 +378,7 @@ export default function AdminPage() {
       </section>
 
       {/* Filters and search */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:justify-between">
         <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label={L("Filter", "Saring")}>
           {filters.map((f) => (
             <button
