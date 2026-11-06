@@ -761,7 +761,7 @@ export default function SettingsPage() {
             {/* Slack, Teams, Google Chat and webhooks are set up on the Integrations page. */}
             <Link href="/workspace/integrations" className="flex items-center justify-between rounded-[10px] bg-[#E9FBF0] px-3 py-2.5 transition hover:bg-[#DDF7E7]">
               <span>
-                <span className="block text-[11px] font-black text-[#101334]">{L("WhatsApp, Slack, Teams & Google Chat", "WhatsApp, Slack, Teams & Google Chat")}</span>
+                <span className="block text-[11px] font-black text-[#101334]">{L("Slack, Teams, Google Chat & more", "Slack, Teams, Google Chat & lainnya")}</span>
                 <span className="block text-[9.5px] font-semibold text-[#047857]">{L("Send alerts to your team's chat, set up in Integrations", "Kirim peringatan ke chat tim, atur di Integrasi")}</span>
               </span>
               <ArrowRight size={13} className="text-[#047857]" />
