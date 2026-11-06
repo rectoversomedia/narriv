@@ -6,7 +6,17 @@ import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/store/useUiStore";
 
-// The header and footer shared by the public pages (landing, pricing), so they look like one site.
+// The header, footer and look shared by the public pages (landing, pricing, help, legal), so they read as one site.
+
+/** Editorial serif for accent lines (font loaded in app/layout.tsx). */
+export const SERIF = "[font-family:var(--font-serif),Georgia,serif] font-normal tracking-[-0.01em]";
+/** The ink background of dark sections. */
+export const INK = "bg-[#070A1F]";
+/** A faint grid that fades out, laid over dark sections. */
+export const GRID = "bg-[linear-gradient(rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-[size:56px_56px] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_75%)]";
+/** Warm paper for light sections, and the hairline colour on it. */
+export const PAPER = "bg-[#F6F5F1]";
+export const RULE = "border-[#DDDAD0]";
 
 export function LanguageSwitch({ dark = false }: { dark?: boolean }) {
   const language = useUiStore((s) => s.language);
@@ -56,7 +66,7 @@ export function SiteFooter() {
   const L = useL();
   return (
     <footer className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 pb-10 text-[13px] font-semibold text-[#5F6B94] sm:flex-row sm:px-6">
-      <Image src="/brand/logo-h.webp" alt="Narriv" width={96} height={36} className="h-6 w-auto" />
+      <Image src="/brand/logo-h.webp" alt="Narriv" width={96} height={36} loading="eager" className="h-6 w-auto" />
       <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2">
         <Link href="/pricing" className="hover:text-[#101334]">{L("Pricing", "Harga")}</Link>
         <Link href="/welcome#faq" className="hover:text-[#101334]">FAQ</Link>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Fragment, useState } from "react";
 import { ArrowRight, Check, ChevronDown, FileText, Minus } from "lucide-react";
-import { SiteFooter, SiteHeader } from "@/components/marketing/site-chrome";
+import { GRID, INK, PAPER, RULE, SERIF, SiteFooter, SiteHeader } from "@/components/marketing/site-chrome";
 import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
 
@@ -75,7 +75,7 @@ const PLANS: Array<{
     from: 100_000_000,
     tagline: ["Run it across the organisation.", "Jalankan di seluruh organisasi."],
     audience: ["Banks, telcos, ministries and agencies", "Bank, telko, kementerian, dan agensi"],
-    limits: { brands: ["Custom", "Kustom"], users: ["No limit", "Bebas"], retention: ["Custom", "Kustom"] },
+    limits: { brands: ["As needed", "Sesuai kebutuhan"], users: ["Unlimited", "Tanpa batas"], retention: ["Custom", "Kustom"] },
     adds: [
       ["Everything in Decision", "Semua di Decision"],
       ["A dedicated success manager", "Success manager khusus"],
@@ -135,7 +135,6 @@ const COMPARE: Array<{ group: Copy; rows: Array<{ label: Copy; plans: PlanId[] |
 ];
 
 const rupiah = (n: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n);
-const short = (n: number) => `Rp${(n / 1_000_000).toLocaleString("id-ID")} jt`;
 
 export default function PricingPage() {
   const L = useL();
@@ -152,14 +151,18 @@ export default function PricingPage() {
   ];
 
   return (
-    <div className="min-h-dvh bg-[#F5F7FC] text-[#101334]">
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#0B0E2A] via-[#151B5E] to-[#2B2F9E] pb-28 text-white">
-        <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-120px] h-[420px] w-[900px] -translate-x-1/2 rounded-full bg-[#6D7CFF] opacity-25 blur-[120px]" />
+    <div className={cn("min-h-dvh text-[#101334]", PAPER)}>
+      <section className={cn("relative overflow-hidden pb-28 text-white", INK)}>
+        <div aria-hidden="true" className={cn("pointer-events-none absolute inset-0", GRID)} />
+        <div aria-hidden="true" className="pointer-events-none absolute -top-40 left-1/2 h-[520px] w-[1100px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(70,95,255,0.35),transparent)]" />
         <SiteHeader />
         <div className="relative mx-auto max-w-3xl px-4 pt-10 text-center sm:px-6">
-          <p className="text-[12px] font-black uppercase tracking-[0.16em] text-[#A5B4FF]">{L("Pricing", "Harga")}</p>
-          <h1 className="mt-3 text-[34px] font-black leading-[1.1] tracking-[-0.03em] sm:text-[46px]">{L("One plan per stage of your team.", "Satu paket untuk tiap tahap tim Anda.")}</h1>
-          <p className="mx-auto mt-4 max-w-xl text-[16px] font-medium text-white/75">{L("Every plan starts with a 14-day trial on your own brand.", "Semua paket dimulai dengan uji coba 14 hari memakai brand Anda sendiri.")}</p>
+          <p className="text-[12px] font-black uppercase tracking-[0.2em] text-[#A5B4FF]">{L("Pricing", "Harga")}</p>
+          <h1 className="mt-3 text-balance text-[34px] font-black leading-[1.06] tracking-[-0.03em] sm:text-[52px]">
+            {L("One plan", "Satu paket")}{" "}
+            <span className={cn("bg-gradient-to-r from-[#C7CEFF] via-[#A5B4FF] to-[#F5B8E3] bg-clip-text text-transparent", SERIF)}><i>{L("for each stage of your team.", "untuk tiap tahap tim Anda.")}</i></span>
+          </h1>
+          <p className="mx-auto mt-4 max-w-xl text-[16px] font-medium text-white/60">{L("Every plan starts with a 14-day trial on your own brand.", "Semua paket dimulai dengan uji coba 14 hari memakai brand Anda sendiri.")}</p>
           <div role="group" aria-label={L("Billing period", "Periode tagihan")} className="mt-8 inline-flex rounded-full bg-white/10 p-1">
             {[
               { v: false, label: L("Monthly", "Bulanan") },
@@ -182,53 +185,59 @@ export default function PricingPage() {
 
       {/* Plans */}
       <section className="relative mx-auto -mt-16 max-w-6xl px-4 sm:px-6">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {/* Each card's parts (heading, price, limits, features, button) sit on shared rows, so they line up across cards. */}
+        <div className="grid gap-x-4 gap-y-8 md:grid-cols-2 xl:grid-cols-4">
           {PLANS.map((plan) => (
             <div
               key={plan.id}
               className={cn(
-                "relative flex flex-col rounded-[22px] p-6",
+                "relative grid grid-rows-subgrid gap-y-5 rounded-[22px] p-6 [grid-row:span_5]",
                 plan.popular ? "bg-[#101334] text-white shadow-[0_24px_60px_rgba(16,19,52,0.35)]" : "bg-white shadow-[0_1px_2px_rgba(16,19,52,0.06),0_12px_32px_rgba(16,19,52,0.08)]",
               )}
             >
-              <div className="flex items-center justify-between gap-2">
-                <h2 className="text-[20px] font-black">{plan.name}</h2>
-                {plan.popular ? <span className="rounded-full bg-[#465FFF] px-2.5 py-1 text-[11px] font-black text-white">{L("Most chosen", "Paling dipilih")}</span> : null}
-              </div>
-              <p className={cn("mt-1 text-[14px] font-semibold", plan.popular ? "text-[#A5B4FF]" : "text-[#465FFF]")}>{P(plan.tagline)}</p>
-              <p className={cn("mt-1 text-[13px] font-medium", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>{P(plan.audience)}</p>
+              {plan.popular ? (
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#465FFF] px-3 py-1 text-[11px] font-black uppercase tracking-[0.08em] text-white shadow-[0_6px_16px_rgba(70,95,255,0.4)]">
+                  {L("Most chosen", "Paling dipilih")}
+                </span>
+              ) : null}
 
-              <div className="mt-6 min-h-[64px]">
+              <div>
+                <h2 className="text-[20px] font-black">{plan.name}</h2>
+                <p className={cn("mt-1 text-[14px] font-semibold", plan.popular ? "text-[#A5B4FF]" : "text-[#465FFF]")}>{P(plan.tagline)}</p>
+                <p className={cn("mt-1 text-[13px] font-medium", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>{P(plan.audience)}</p>
+              </div>
+
+              <div>
                 {plan.price ? (
                   <>
-                    <p className="text-[28px] font-black leading-none tracking-[-0.02em] tabular-nums">{short(Math.round(plan.price * discount))}</p>
+                    <p className="whitespace-nowrap text-[26px] font-black leading-none tracking-[-0.02em] tabular-nums">{rupiah(Math.round(plan.price * discount))}</p>
                     <p className={cn("mt-1.5 text-[13px] font-semibold", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>
                       {L("per month", "per bulan")}
-                      {annual ? ` · ${L("save", "hemat")} ${rupiah(plan.price - Math.round(plan.price * discount))}` : ""}
+                      {annual ? <span className="block">{L("save", "hemat")} {rupiah(plan.price - Math.round(plan.price * discount))}</span> : null}
                     </p>
                   </>
                 ) : (
                   <>
-                    <p className="text-[28px] font-black leading-none tracking-[-0.02em]">{L("Custom", "Kustom")}</p>
-                    <p className={cn("mt-1.5 text-[13px] font-semibold", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>{L(`from ${short(plan.from ?? 0)} per month`, `mulai ${short(plan.from ?? 0)} per bulan`)}</p>
+                    <p className="text-[26px] font-black leading-none tracking-[-0.02em]">{L("Custom", "Kustom")}</p>
+                    <p className={cn("mt-1.5 text-[13px] font-semibold", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>{L(`from ${rupiah(plan.from ?? 0)} per month`, `mulai ${rupiah(plan.from ?? 0)} per bulan`)}</p>
                   </>
                 )}
               </div>
 
-              <dl className={cn("mt-5 grid grid-cols-3 gap-2 rounded-2xl p-3 text-center", plan.popular ? "bg-white/[0.08]" : "bg-[#F5F7FF]")}>
+              <dl className={cn("space-y-2 self-start rounded-2xl px-4 py-3.5", plan.popular ? "bg-white/[0.08]" : "bg-[#F5F7FF]")}>
                 {[
                   { k: L("Brands", "Brand"), v: P(plan.limits.brands) },
                   { k: L("Users", "Pengguna"), v: P(plan.limits.users) },
-                  { k: L("Data", "Data"), v: P(plan.limits.retention) },
+                  { k: L("Data kept", "Data disimpan"), v: P(plan.limits.retention) },
                 ].map((x) => (
-                  <div key={x.k} className="min-w-0">
-                    <dt className={cn("text-[11px] font-bold uppercase tracking-[0.06em]", plan.popular ? "text-white/50" : "text-[#5F6B94]")}>{x.k}</dt>
-                    <dd className="mt-1 text-[13px] font-black leading-tight">{x.v}</dd>
+                  <div key={x.k} className="flex items-center justify-between gap-3 text-[13px]">
+                    <dt className={cn("font-semibold", plan.popular ? "text-white/60" : "text-[#5F6B94]")}>{x.k}</dt>
+                    <dd className="whitespace-nowrap font-black">{x.v}</dd>
                   </div>
                 ))}
               </dl>
 
-              <ul className="mt-5 flex-1 space-y-2.5">
+              <ul className="space-y-2.5">
                 {plan.adds.map((f, i) => (
                   <li key={f[0]} className={cn("flex items-start gap-2.5 text-[14px] font-medium", plan.popular ? "text-white/85" : "text-[#31406B]", i === 0 && plan.id !== "pilot" && "font-bold")}>
                     <Check size={16} strokeWidth={3} aria-hidden="true" className={cn("mt-0.5 shrink-0", plan.popular ? "text-[#86EFAC]" : "text-[#12A66A]")} />
@@ -240,7 +249,7 @@ export default function PricingPage() {
               <Link
                 href={plan.price ? `/signup?plan=${plan.id}` : "/help#contact"}
                 className={cn(
-                  "mt-6 flex h-12 items-center justify-center gap-2 rounded-xl text-[15px] font-bold transition",
+                  "flex h-12 items-center justify-center gap-2 self-end rounded-xl text-[15px] font-bold transition",
                   plan.popular ? "bg-[#465FFF] text-white hover:bg-[#3B52F5]" : "bg-[#101334] text-white hover:bg-[#1B2155]",
                 )}
               >
@@ -255,14 +264,14 @@ export default function PricingPage() {
       {/* Comparison */}
       <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-[12px] font-black uppercase tracking-[0.16em] text-[#465FFF]">{L("Compare", "Bandingkan")}</p>
-          <h2 className="mt-2 text-[28px] font-black leading-tight tracking-[-0.02em] sm:text-[34px]">{L("What each plan includes.", "Isi tiap paket.")}</h2>
+          <p className="text-[12px] font-black uppercase tracking-[0.2em] text-[#465FFF]">{L("Compare", "Bandingkan")}</p>
+          <h2 className="mt-2 text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[40px]">{L("What", "Isi")} <span className={cn("text-[#465FFF]", SERIF)}><i>{L("each plan includes.", "tiap paket.")}</i></span></h2>
         </div>
         <div className="mt-10 overflow-hidden rounded-[22px] bg-white shadow-[0_1px_2px_rgba(16,19,52,0.06),0_12px_32px_rgba(16,19,52,0.07)]">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-left">
               <thead>
-                <tr className="bg-[#101334] text-white">
+                <tr className="bg-[#070A1F] text-white">
                   <th className="px-5 py-4 text-[13px] font-bold">{L("Feature", "Fitur")}</th>
                   {PLANS.map((p) => <th key={p.id} className={cn("px-3 py-4 text-center text-[14px] font-black", p.popular && "bg-[#465FFF]")}>{p.name}</th>)}
                 </tr>
@@ -300,19 +309,19 @@ export default function PricingPage() {
       </section>
 
       {/* Questions */}
-      <section className="mx-auto max-w-3xl px-4 pb-20 sm:px-6">
-        <div className="text-center">
-          <p className="text-[12px] font-black uppercase tracking-[0.16em] text-[#465FFF]">FAQ</p>
-          <h2 className="mt-2 text-[28px] font-black leading-tight tracking-[-0.02em] sm:text-[34px]">{L("About plans and billing.", "Soal paket dan pembayaran.")}</h2>
+      <section className="mx-auto grid max-w-6xl gap-10 px-4 pb-20 sm:px-6 lg:grid-cols-[0.8fr_1.4fr] lg:gap-20">
+        <div>
+          <p className="text-[12px] font-black uppercase tracking-[0.2em] text-[#465FFF]">FAQ</p>
+          <h2 className="mt-2 text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[40px]">{L("About plans", "Soal paket")} <span className={cn("text-[#465FFF]", SERIF)}><i>{L("and billing.", "dan pembayaran.")}</i></span></h2>
         </div>
-        <div className="mt-10 space-y-3">
+        <div className={cn("border-t", RULE)}>
           {faqs.map(([q, a]) => (
-            <details key={q[0]} className="group rounded-2xl bg-white px-5 py-4 shadow-[0_1px_2px_rgba(16,19,52,0.06),0_8px_24px_rgba(16,19,52,0.05)] sm:px-6">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[16px] font-bold [&::-webkit-details-marker]:hidden">
+            <details key={q[0]} className={cn("group border-b", RULE)}>
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-5 text-[17px] font-bold [&::-webkit-details-marker]:hidden">
                 {P(q)}
-                <ChevronDown size={18} aria-hidden="true" className="shrink-0 text-[#465FFF] transition group-open:rotate-180" />
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white text-[#465FFF] shadow-sm transition group-open:rotate-180"><ChevronDown size={16} aria-hidden="true" /></span>
               </summary>
-              <p className="mt-3 text-[15px] font-medium leading-relaxed text-[#5F6B94]">{P(a)}</p>
+              <p className="-mt-1 pb-5 pr-12 text-[15px] font-medium leading-relaxed text-[#5B6070]">{P(a)}</p>
             </details>
           ))}
         </div>
@@ -320,16 +329,17 @@ export default function PricingPage() {
 
       {/* Closing call to action */}
       <section className="px-4 pb-20 sm:px-6">
-        <div className="relative mx-auto max-w-5xl overflow-hidden rounded-[28px] bg-gradient-to-br from-[#101334] via-[#18206B] to-[#2B2F9E] px-6 py-14 text-center text-white">
-          <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-0 h-[240px] w-[600px] -translate-x-1/2 rounded-full bg-[#6D7CFF] opacity-30 blur-[90px]" />
-          <h2 className="relative text-[28px] font-black leading-tight tracking-[-0.02em] sm:text-[36px]">{L("Not sure which plan fits?", "Belum yakin paket mana yang cocok?")}</h2>
+        <div className={cn("relative mx-auto max-w-6xl overflow-hidden rounded-[32px] px-6 py-16 text-center text-white", INK)}>
+          <div aria-hidden="true" className={cn("pointer-events-none absolute inset-0", GRID)} />
+          <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-0 h-[320px] w-[760px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(70,95,255,0.45),transparent)]" />
+          <h2 className="relative text-[30px] font-black leading-tight tracking-[-0.03em] sm:text-[44px]">{L("Not sure", "Belum yakin")} <span className={cn("text-[#C7CEFF]", SERIF)}><i>{L("which plan fits?", "paket mana yang cocok?")}</i></span></h2>
           <p className="relative mx-auto mt-3 max-w-xl text-[16px] font-medium text-white/70">{L("Start with the trial. We look at the results with you after 14 days.", "Mulai dari uji coba. Setelah 14 hari, kami tinjau hasilnya bersama Anda.")}</p>
           <div className="relative mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link href="/signup" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-white px-6 text-[15px] font-bold text-[#101334] hover:bg-white/90">
+            <Link href="/signup" className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-white px-6 text-[15px] font-bold text-[#070A1F] shadow-[0_12px_40px_rgba(165,180,255,0.35)] hover:bg-[#EEF1FF]">
               {L("Start the trial", "Mulai uji coba")}
               <ArrowRight size={17} aria-hidden="true" />
             </Link>
-            <Link href="/help#contact" className="inline-flex h-12 items-center justify-center rounded-xl bg-white/10 px-6 text-[15px] font-bold text-white hover:bg-white/15">{L("Talk to us", "Hubungi kami")}</Link>
+            <Link href="/help#contact" className="inline-flex h-12 items-center justify-center rounded-full px-6 text-[15px] font-bold text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)] hover:bg-white/[0.06]">{L("Talk to us", "Hubungi kami")}</Link>
           </div>
           <a href="/contoh-laporan-narriv.pdf" target="_blank" rel="noopener" className="relative mt-6 inline-flex items-center gap-2 text-[14px] font-bold text-white/80 underline-offset-4 hover:text-white hover:underline">
             <FileText size={16} aria-hidden="true" />

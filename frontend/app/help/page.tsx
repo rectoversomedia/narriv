@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { SiteFooter, SiteHeader } from "@/components/marketing/site-chrome";
+import { GRID, INK, PAPER, SERIF, SiteFooter, SiteHeader } from "@/components/marketing/site-chrome";
+import { cn } from "@/lib/utils";
 import { SUPPORT_EMAIL, SUPPORT_WHATSAPP, SUPPORT_WHATSAPP_URL } from "@/lib/support";
 import { useL } from "@/lib/use-l";
 import { Search, ChevronDown, Zap, BarChart3, Bell, FileText, Users, Settings } from "lucide-react";
@@ -173,13 +174,14 @@ export default function HelpCenterPage() {
     .filter((g) => g.faqs.length > 0);
 
   return (
-    <div className="min-h-dvh bg-[#F5F7FC] text-[#101334]">
-      <header className="relative overflow-hidden bg-gradient-to-br from-[#0B0E2A] via-[#151B5E] to-[#2B2F9E] pb-16 text-white">
-        <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-120px] h-[420px] w-[900px] -translate-x-1/2 rounded-full bg-[#6D7CFF] opacity-25 blur-[120px]" />
+    <div className={cn("min-h-dvh text-[#101334]", PAPER)}>
+      <header className={cn("relative overflow-hidden pb-16 text-white", INK)}>
+        <div aria-hidden="true" className={cn("pointer-events-none absolute inset-0", GRID)} />
+        <div aria-hidden="true" className="pointer-events-none absolute -top-40 left-1/2 h-[520px] w-[1100px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(70,95,255,0.35),transparent)]" />
         <SiteHeader />
         <div className="relative mx-auto max-w-4xl px-4 pt-8 text-center sm:px-6">
-          <p className="text-[12px] font-black uppercase tracking-[0.16em] text-[#A5B4FF]">{L("Help Center", "Pusat Bantuan")}</p>
-          <h1 className="mt-3 text-[34px] font-black leading-tight tracking-[-0.03em] sm:text-[46px]">{L("How can we help you?", "Ada yang bisa kami bantu?")}</h1>
+          <p className="text-[12px] font-black uppercase tracking-[0.2em] text-[#A5B4FF]">{L("Help Center", "Pusat Bantuan")}</p>
+          <h1 className="mt-3 text-[34px] font-black leading-tight tracking-[-0.03em] sm:text-[46px]">{L("How can", "Ada yang bisa")}{" "}<span className={cn("bg-gradient-to-r from-[#C7CEFF] via-[#A5B4FF] to-[#F5B8E3] bg-clip-text text-transparent", SERIF)}><i>{L("we help?", "kami bantu?")}</i></span></h1>
           <p className="mx-auto mt-4 max-w-xl text-[16px] font-medium text-white/75">
             {L("Search the answers below or pick a topic.", "Cari jawaban di bawah atau pilih topik.")}
           </p>

@@ -267,7 +267,7 @@ function WorkspacePanel({ w, socialCapUsd, onClose }: { w: AdminWorkspace; socia
               </label>
               <label className="flex flex-col gap-1 text-[12px] font-bold text-[#5F6B94]">
                 {L("Note", "Catatan")}
-                <input value={billNote} maxLength={300} onChange={(e) => setBillNote(e.target.value)} placeholder={L("e.g. INV-2026-011, Rp25 jt", "mis. INV-2026-011, Rp25 jt")} className="h-10 rounded-[10px] bg-white px-3 text-[14px] font-semibold text-[#101334] shadow-sm outline-none focus:ring-2 focus:ring-[#465FFF]/30" />
+                <input value={billNote} maxLength={300} onChange={(e) => setBillNote(e.target.value)} placeholder={L("e.g. INV-2026-011, Rp25.000.000", "mis. INV-2026-011, Rp25.000.000")} className="h-10 rounded-[10px] bg-white px-3 text-[14px] font-semibold text-[#101334] shadow-sm outline-none focus:ring-2 focus:ring-[#465FFF]/30" />
               </label>
             </div>
           </section>

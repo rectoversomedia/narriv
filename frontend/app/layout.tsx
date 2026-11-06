@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
-import { Poppins } from "next/font/google";
+import { Instrument_Serif, Poppins } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { ReactQueryProvider } from "@/components/providers/react-query-provider";
 import { IntlProvider } from "@/components/providers/intl-provider";
 import { ToastProvider } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
+
+// An editorial serif for accent lines on the public pages; the product itself stays on Poppins.
+const serif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], variable: "--font-serif", display: "swap" });
 
 const poppins = Poppins({
   variable: "--font-sans",
@@ -57,7 +60,7 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={cn("h-full", "antialiased", poppins.variable, "font-sans")}
+      className={cn("h-full", "antialiased", poppins.variable, serif.variable, "font-sans")}
       suppressHydrationWarning
     >
       <head>

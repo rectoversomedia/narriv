@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { SiteFooter, SiteHeader } from "@/components/marketing/site-chrome";
+import { GRID, INK, PAPER, SiteFooter, SiteHeader } from "@/components/marketing/site-chrome";
+import { cn } from "@/lib/utils";
 import { useL } from "@/lib/use-l";
 
 /**
@@ -11,9 +12,10 @@ import { useL } from "@/lib/use-l";
 export function LegalDraft({ title, updated, id, en, draft = true }: { title: [string, string]; updated: [string, string]; id: ReactNode; en: ReactNode; draft?: boolean }) {
   const L = useL();
   return (
-    <div className="min-h-dvh bg-[#F5F7FC] text-[#101334]">
-      <header className="relative overflow-hidden bg-gradient-to-br from-[#0B0E2A] via-[#151B5E] to-[#2B2F9E] pb-14 text-white">
-        <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[-120px] h-[420px] w-[900px] -translate-x-1/2 rounded-full bg-[#6D7CFF] opacity-25 blur-[120px]" />
+    <div className={cn("min-h-dvh text-[#101334]", PAPER)}>
+      <header className={cn("relative overflow-hidden pb-14 text-white", INK)}>
+        <div aria-hidden="true" className={cn("pointer-events-none absolute inset-0", GRID)} />
+        <div aria-hidden="true" className="pointer-events-none absolute -top-40 left-1/2 h-[520px] w-[1100px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(70,95,255,0.35),transparent)]" />
         <SiteHeader />
         <h1 className="relative mx-auto mt-8 max-w-3xl px-4 text-center text-[34px] font-black leading-tight tracking-[-0.03em] sm:px-6 sm:text-[44px]">{L(title[0], title[1])}</h1>
         <p className="relative mt-3 text-center text-[14px] font-semibold text-white/60">{L(updated[0], updated[1])}</p>
