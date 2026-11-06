@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarClock, Check, ChevronRight, Loader2, Pause, Play, RefreshCw, Search, ShieldCheck, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -34,17 +35,17 @@ const fmtDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(
 /** Plan pill: trial shows days left, a lapsed trial is red, a paid plan is green; no plan set is grey. */
 function PlanPill({ w }: { w: AdminWorkspace }) {
   const L = useL();
-  if (w.isDemo) return <span className="rounded-full bg-[#EEF1FF] px-2.5 py-1 text-[11px] font-black text-[#3B52F5]">Demo</span>;
+  if (w.isDemo) return <span className="whitespace-nowrap rounded-full bg-[#EEF1FF] px-2.5 py-1 text-[11px] font-black text-[#3B52F5]">Demo</span>;
   if (w.plan === "trial") {
-    if (w.trialExpired) return <span className="rounded-full bg-[#FDECEC] px-2.5 py-1 text-[11px] font-black text-[#B42318]">{L("Trial ended", "Uji coba habis")}</span>;
+    if (w.trialExpired) return <span className="whitespace-nowrap rounded-full bg-[#FDECEC] px-2.5 py-1 text-[11px] font-black text-[#B42318]">{L("Trial ended", "Uji coba habis")}</span>;
     const soon = (w.trialDaysLeft ?? 99) <= 3;
-    return <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-black", soon ? "bg-[#FEF6E4] text-[#B45309]" : "bg-[#EEF1FF] text-[#3B52F5]")}>{L(`Trial · ${w.trialDaysLeft} days left`, `Uji coba · ${w.trialDaysLeft} hari lagi`)}</span>;
+    return <span className={cn("whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-black", soon ? "bg-[#FEF6E4] text-[#B45309]" : "bg-[#EEF1FF] text-[#3B52F5]")}>{L(`Trial · ${w.trialDaysLeft} days left`, `Uji coba · ${w.trialDaysLeft} hari lagi`)}</span>;
   }
   if (w.plan) {
     const p = PLANS.find((x) => x.key === w.plan);
-    return <span className="rounded-full bg-[#E8F7F0] px-2.5 py-1 text-[11px] font-black text-[#047857]">{p ? L(p.en, p.id) : w.plan}</span>;
+    return <span className="whitespace-nowrap rounded-full bg-[#E8F7F0] px-2.5 py-1 text-[11px] font-black text-[#047857]">{p ? L(p.en, p.id) : w.plan}</span>;
   }
-  return <span className="rounded-full bg-[#F1F3F8] px-2.5 py-1 text-[11px] font-black text-[#5F6B94]">{L("No plan", "Belum ada paket")}</span>;
+  return <span className="whitespace-nowrap rounded-full bg-[#F1F3F8] px-2.5 py-1 text-[11px] font-black text-[#5F6B94]">{L("No plan", "Belum ada paket")}</span>;
 }
 
 function MonitoringState({ w }: { w: AdminWorkspace }) {
@@ -137,8 +138,9 @@ function WorkspacePanel({ w, socialCapUsd, onClose }: { w: AdminWorkspace; socia
   }, [onClose]);
 
   const section = "rounded-2xl bg-[#F5F7FF] p-4";
-  return (
-    <div className="fixed inset-0 z-[150] flex items-end justify-end bg-[#0B0E2A]/40 sm:items-stretch" role="dialog" aria-modal="true" aria-labelledby="ws-panel-title" onClick={onClose}>
+  // Portalled to <body> so it sits above the top bar, the phone menu and the Ask Narriv button.
+  return createPortal(
+    <div className="fixed inset-0 z-[300] flex items-end justify-end bg-[#0B0E2A]/40 sm:items-stretch" role="dialog" aria-modal="true" aria-labelledby="ws-panel-title" onClick={onClose}>
       <div className="flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[24px] bg-white shadow-[0_-20px_60px_rgba(8,10,40,0.3)] sm:max-h-none sm:max-w-[460px] sm:rounded-none" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-3 bg-gradient-to-br from-[#101334] via-[#18206B] to-[#2B2F9E] px-5 pb-5 pt-5 text-white">
           <div className="min-w-0">
@@ -254,7 +256,8 @@ function WorkspacePanel({ w, socialCapUsd, onClose }: { w: AdminWorkspace; socia
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -396,7 +399,7 @@ export default function AdminPage() {
           <div className="hidden overflow-hidden rounded-[22px] bg-white shadow-[0_1px_2px_rgba(16,19,52,0.06),0_12px_32px_rgba(16,19,52,0.07)] lg:block">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-[#F5F7FF] text-[11px] font-black uppercase tracking-[0.08em] text-[#5F6B94]">
+                <tr className="whitespace-nowrap bg-[#F5F7FF] text-[11px] font-black uppercase tracking-[0.08em] text-[#5F6B94]">
                   <th className="px-5 py-3">{L("Client", "Klien")}</th>
                   <th className="px-3 py-3">{L("Plan", "Paket")}</th>
                   <th className="px-3 py-3">{L("Monitoring", "Pemantauan")}</th>
@@ -418,7 +421,7 @@ export default function AdminPage() {
                     <td className="px-3 py-3.5"><PlanPill w={w} /></td>
                     <td className="px-3 py-3.5">
                       <MonitoringState w={w} />
-                      <p className="text-[11px] font-medium text-[#8A93B5]">{w.lastSignalAt ? L(`last data ${timeAgo(w.lastSignalAt)}`, `data terakhir ${timeAgo(w.lastSignalAt)}`) : L("no data yet", "belum ada data")}</p>
+                      <p className="whitespace-nowrap text-[11px] font-medium text-[#8A93B5]">{w.lastSignalAt ? L(`last data ${timeAgo(w.lastSignalAt)}`, `data terakhir ${timeAgo(w.lastSignalAt)}`) : L("no data yet", "belum ada data")}</p>
                     </td>
                     <td className="px-3 py-3.5 text-right font-black tabular-nums">{w.keywords}</td>
                     <td className="px-3 py-3.5 text-right font-black tabular-nums">{w.signals30d}</td>
