@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useRef, useState } from "react";
-import { Bell, ChevronDown, CircleHelp, Inbox, LogOut, Search, Settings, WifiOff, X } from "lucide-react";
+import { Bell, ChevronDown, CircleHelp, Inbox, LogOut, Search, Settings, ShieldCheck, WifiOff, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitl
 import { LiveIndicator } from "@/components/ui/LiveIndicator";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useUiStore } from "@/store/useUiStore";
-import { logoutSession, getNotifications, getAlerts, getNarratives, markNotificationAsRead, markAllNotificationsAsRead, type AppNotification, type Alert as ApiAlert, type NarrativeRecord, type NotificationsResponse } from "@/lib/api-service";
+import { getAdminMe, logoutSession, getNotifications, getAlerts, getNarratives, markNotificationAsRead, markAllNotificationsAsRead, type AppNotification, type Alert as ApiAlert, type NarrativeRecord, type NotificationsResponse } from "@/lib/api-service";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSSEContext } from "@/components/providers/SSEProvider";
 import { ROLE_LABEL, WorkspaceOptions, useMyWorkspaces } from "@/components/layout/workspace-switcher";
@@ -125,6 +125,8 @@ function AccountMenu({ name, email, onLogout }: { name: string; email: string; o
   const { isDemo, current } = useMyWorkspaces();
   const language = useUiStore((state) => state.language);
   const toggleLanguage = useUiStore((state) => state.toggleLanguage);
+  // The admin panel link shows only for the Narriv team (the backend decides).
+  const isAdmin = useQuery({ queryKey: ["admin", "me"], queryFn: getAdminMe, enabled: !isDemo, staleTime: 5 * 60 * 1000 }).data === true;
   const role = isDemo ? L("Demo visitor", "Pengunjung demo") : current?.role && ROLE_LABEL[current.role] ? L(...ROLE_LABEL[current.role]) : L("Member", "Anggota");
   const item = "flex h-10 w-full items-center gap-2.5 rounded-[10px] px-2.5 text-left text-[13px] font-semibold text-[#31406B] transition hover:bg-slate-50 hover:text-[#101334]";
   return (
@@ -158,6 +160,7 @@ function AccountMenu({ name, email, onLogout }: { name: string; email: string; o
         <div className="border-t border-slate-100 py-1">
           <Link href="/workspace/settings" onClick={() => setOpen(false)} className={item}><Settings size={16} aria-hidden="true" />{L("Settings", "Pengaturan")}</Link>
           <Link href="/help" onClick={() => setOpen(false)} className={item}><CircleHelp size={16} aria-hidden="true" />{L("Help", "Bantuan")}</Link>
+          {isAdmin ? <Link href="/admin" onClick={() => setOpen(false)} className={`${item} text-[#3B52F5]`}><ShieldCheck size={16} aria-hidden="true" />{L("Admin panel", "Admin panel")}</Link> : null}
         </div>
         <div className="border-t border-slate-100 pt-1">
           <button type="button" onClick={() => { setOpen(false); onLogout(); }} className={`${item} text-[#C81E1E] hover:bg-[#FDECEC] hover:text-[#B42318]`}>

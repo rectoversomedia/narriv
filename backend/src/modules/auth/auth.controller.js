@@ -7,6 +7,7 @@ import { passwordResetCode, passwordResetConfirmation, emailVerificationCode } f
 import { logStructured } from "../../lib/logger.js";
 import { invalidateUserSessions } from "../../middlewares/session.middleware.js";
 import { DEMO_WORKSPACE_ID } from "../../lib/workspace-access.js";
+import { newTrialSettings } from "../../lib/workspace-plan.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const ACCESS_TOKEN_TTL = process.env.ACCESS_TOKEN_TTL || "1h";
@@ -448,7 +449,7 @@ export const register = async (req, res) => {
             id: workspaceId,
             name: workspaceBrandName,
             slug: workspaceSlug,
-            settings: { timezone: "Asia/Jakarta", language: "id", role: role || null },
+            settings: { timezone: "Asia/Jakarta", language: "id", role: role || null, ...newTrialSettings() },
         });
         if (wsError) {
             logStructured("error", "register_workspace_create_failed", { error: wsError.message, code: wsError.code });
@@ -1563,7 +1564,7 @@ async function handleOAuthLogin(res, { provider, providerAccountId, email, name,
                 id: workspaceId,
                 name: `${name || "My"}'s Workspace`,
                 slug: workspaceSlug,
-                settings: { timezone: "Asia/Jakarta", language: "id" },
+                settings: { timezone: "Asia/Jakarta", language: "id", ...newTrialSettings() },
             });
             if (wsError2) logStructured("warn", "oauth_workspace_create_failed", { error: wsError2.message });
 

@@ -8,6 +8,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { SectionTabs } from "@/components/layout/section-tabs";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
+import { TrialBanner } from "@/components/layout/trial-banner";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useUiStore } from "@/store/useUiStore";
 
@@ -64,6 +65,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             <div className="absolute -right-24 -top-24 h-[320px] w-[460px] rounded-full bg-[#FBCFE8] opacity-35 blur-[110px]" />
           </div>
           <div className="relative z-10 w-full max-w-[1600px] mx-auto">
+            <TrialBanner />
             <SectionTabs />
             {children}
           </div>

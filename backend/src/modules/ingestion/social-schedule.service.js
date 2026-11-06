@@ -13,6 +13,7 @@
 import { baseSupabaseAdmin } from "../../lib/supabase.js";
 import { logStructured } from "../../lib/logger.js";
 import { COLLECTION_JOB_NAME, isCollectionConfigured, startCollection, syncPendingCollections } from "./apify-collection.service.js";
+import { monitoringStopped } from "../../lib/workspace-plan.js";
 
 export const SOCIAL_PRESETS = ["twitter-x-latest", "tiktok-hashtag", "instagram-posts"];
 export const PLATFORM_PRESET = { x: "twitter-x-latest", tiktok: "tiktok-hashtag", instagram: "instagram-posts", youtube: "youtube-search", facebook: "facebook-posts", threads: "threads-search" };
@@ -104,10 +105,10 @@ export async function runSocialSchedule({ now = Date.now(), start = startCollect
     summary.synced = await sync({ deadline: Date.now() + 60000 }).catch((err) => ({ error: err?.message }));
     if (!summary.configured || globallyPaused()) return { ...summary, paused: globallyPaused() };
 
-    // 2. Workspaces the Narriv team enabled, not paused by their owner.
+    // 2. Workspaces the Narriv team enabled, not paused by their owner and not past the end of a trial.
     const { data: workspaces, error } = await baseSupabaseAdmin.from("workspaces").select("id, settings").limit(1000);
     if (error) return { ...summary, error: error.message };
-    const enabled = (workspaces || []).filter((w) => socialConfig(w.settings).enabled && w.settings?.monitoringPaused !== true);
+    const enabled = (workspaces || []).filter((w) => socialConfig(w.settings).enabled && !monitoringStopped(w.settings, now));
     summary.workspaces = enabled.length;
     if (!enabled.length) return summary;
 

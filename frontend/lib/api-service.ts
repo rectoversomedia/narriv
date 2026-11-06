@@ -13,6 +13,7 @@ export * from "./api/feeds";
 export * from "./api/workspace";
 export * from "./api/setup";
 export * from "./api/operations";
+export * from "./api/admin";
 export * from "./api/reports";
 export * from "./api/insights";
 export * from "./api/realtime";

@@ -188,6 +188,16 @@ export interface WorkspaceSettingsResponse {
   onboarding_completed?: boolean;
   /** Scheduled monitoring is paused for this workspace (Settings → Danger zone). */
   monitoringPaused: boolean;
+  /** Plan and trial, set by the Narriv team; null fields on workspaces from before plans existed. */
+  planStatus: PlanStatus;
+}
+
+export type WorkspacePlanKey = "trial" | "pilot" | "intelligence" | "decision" | "command";
+export interface PlanStatus {
+  plan: WorkspacePlanKey | null;
+  trialEndsAt: string | null;
+  trialDaysLeft: number | null;
+  trialExpired: boolean;
 }
 
 export interface UpdateWorkspaceSettingsInput {
@@ -243,6 +253,7 @@ export async function getWorkspaceSettings(): Promise<WorkspaceSettingsResponse 
       updatedAt: (raw.updatedAt as string) || (raw.updated_at as string) || null,
       onboarding_completed: raw.onboarding_completed as boolean | undefined,
       monitoringPaused: raw.monitoring_paused === true,
+      planStatus: (raw.plan_status as PlanStatus | undefined) ?? { plan: null, trialEndsAt: null, trialDaysLeft: null, trialExpired: false },
     };
   } catch {
     return null;

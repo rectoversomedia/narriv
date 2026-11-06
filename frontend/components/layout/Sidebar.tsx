@@ -43,8 +43,11 @@ export function Sidebar() {
   const workspaceSubtitle = isDemo ? L("Demo workspace", "Workspace demo") : current?.role && ROLE_LABEL[current.role] ? L(...ROLE_LABEL[current.role]) : L("Workspace", "Workspace");
   const activeKeywords = (keywords?.data ?? []).filter((k) => k.isActive);
   const lastRunAt = activeKeywords.map((k) => k.lastRun?.at).filter((v): v is string => Boolean(v)).sort().pop() ?? null;
-  const paused = workspace?.monitoringPaused === true;
-  const status = paused
+  const trialEnded = workspace?.planStatus?.trialExpired === true;
+  const paused = workspace?.monitoringPaused === true || trialEnded;
+  const status = trialEnded
+    ? { dot: "bg-[#E5484D]", title: L("Trial ended", "Uji coba berakhir"), sub: L("Monitoring is stopped", "Pemantauan dihentikan") }
+    : workspace?.monitoringPaused === true
     ? { dot: "bg-[#F59E0B]", title: L("Monitoring paused", "Pemantauan dijeda"), sub: L("Resume it in Settings", "Lanjutkan di Pengaturan") }
     : isDemo
       // The demo bank is fictional, so it is not fetched live; its sample data is reset every night.

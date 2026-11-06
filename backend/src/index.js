@@ -34,6 +34,7 @@ import realtimeRoutes from "./modules/realtime/realtime.routes.js";
 import subscriptionsRoutes from "./modules/subscriptions/subscriptions.routes.js";
 import cronRoutes from "./modules/cron/cron.routes.js";
 import ownershipRoutes from "./modules/admin/ownership.routes.js";
+import platformAdminRoutes from "./modules/admin/platform.routes.js";
 import migrateRoutes from "./modules/migrate/migrate.routes.js";
 import pipelineRoutes from "./modules/pipeline/pipeline.routes.js";
 import keywordsRoutes from "./modules/keywords/keywords.routes.js";
@@ -211,6 +212,7 @@ app.use("/pipeline", rateLimit(RATE_LIMITS.api_default), pipelineRoutes);
 app.use("/cron", cronRoutes);
 app.use("/migrate", migrateRoutes);
 app.use("/admin/ownership", rateLimit({ ...RATE_LIMITS.auth, prefix: "admin-ownership" }), ownershipRoutes);
+app.use("/admin/platform", rateLimit({ ...RATE_LIMITS.api_default, prefix: "admin-platform" }), platformAdminRoutes);
 
 // Sentry error handler (must be before error handler)
 if (process.env.SENTRY_DSN) {

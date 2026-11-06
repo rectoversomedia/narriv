@@ -5,6 +5,7 @@ import { workspaceHasOwner, resolveWorkspaceIdForUser } from "../../lib/workspac
 import { logStructured } from "../../lib/logger.js";
 import { DEFAULT_TIMEZONE, normalizeTimezone } from "../../lib/timezone.js";
 import { forgetWorkspaceLanguage } from "../../lib/workspace-language.js";
+import { planStatus } from "../../lib/workspace-plan.js";
 
 function toSafeDefaults(workspaceId) {
     return {
@@ -48,6 +49,8 @@ export async function getWorkspaceSettings(req, res) {
         const workspaceFlags = {
             onboarding_completed: workspaceData?.onboarding_completed ?? false,
             monitoring_paused: workspaceData?.settings?.monitoringPaused === true,
+            // Plan and trial for the in-app trial banner; set by the Narriv team in the admin panel.
+            plan_status: planStatus(workspaceData?.settings || {}),
         };
 
         if (!settings) {

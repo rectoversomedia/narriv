@@ -17,6 +17,7 @@ import { logStructured } from "../../lib/logger.js";
 import { ingestRssSignals } from "./rss-ingestion.service.js";
 import { ingestOfficialSources } from "./official-sources.service.js";
 import { DEMO_WORKSPACE_ID } from "../../lib/workspace-access.js";
+import { monitoringStopped } from "../../lib/workspace-plan.js";
 
 const JOB_NAME = "scheduled-rss-ingestion";
 
@@ -126,7 +127,8 @@ async function claimRun(runId, trigger, workspaceId = null) {
 async function pausedWorkspaceIds(ids) {
     if (!ids.length) return new Set();
     const { data } = await baseSupabaseAdmin.from("workspaces").select("id, settings").in("id", ids);
-    return new Set((data || []).filter((w) => w.settings?.monitoringPaused === true).map((w) => w.id));
+    // Paused by the owner, or a trial that ran out (lib/workspace-plan.js).
+    return new Set((data || []).filter((w) => monitoringStopped(w.settings)).map((w) => w.id));
 }
 
 /**

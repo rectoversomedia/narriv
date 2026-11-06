@@ -18,6 +18,7 @@ import { DEMO_WORKSPACE_ID, getUserWorkspaceIds } from "../../lib/workspace-acce
 import { recordAuditLog } from "../../lib/audit.js";
 import { logStructured } from "../../lib/logger.js";
 import { DEFAULT_TIMEZONE, normalizeTimezone } from "../../lib/timezone.js";
+import { newTrialSettings } from "../../lib/workspace-plan.js";
 
 export const MAX_OWNED_WORKSPACES = 10;
 
@@ -81,7 +82,8 @@ router.post("/", validateRequest({ body: createBody }), async (req, res) => {
             .insert({
                 name,
                 slug: `ws-${crypto.randomUUID().slice(0, 8)}-${Date.now().toString(36)}`,
-                // Created deliberately by an admin, so no onboarding wizard.
+                // Created deliberately by an admin, so no onboarding wizard. Starts a 14-day trial like any new client.
+                settings: newTrialSettings(),
                 onboarding_completed: true,
                 onboarding_step: 100,
             })
