@@ -14,6 +14,7 @@ import { getPipelineStatus, timeAgo } from "@/lib/intelligence-api";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
 import { BOX } from "@/lib/surface";
+import { StatStrip } from "@/components/ui/stamp";
 import { monitoringHref, parseIssueLink } from "@/lib/evidence-links";
 import { useTranslations } from "next-intl";
 import { useUiStore } from "@/store/useUiStore";
@@ -347,11 +348,12 @@ function NarrativeInsight({ clusters, emergingCount, language, onOpen, onPlan, o
   ];
 
   return (
-    <Panel>
-      <CardContent className="p-5">
+    <Panel className="overflow-hidden !p-0">
+      <div className="h-2" style={{ backgroundColor: risk ? "#B42318" : topTone.color }} />
+      <CardContent className="p-5 sm:p-7">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{L("What is happening", "Yang sedang terjadi")}</h3>
-          <p className="text-[11px] font-bold text-[#5A6478]">{L(`From ${formatSignals(total)} mentions in ${live.length} issues`, `Dari ${formatSignals(total)} percakapan dalam ${live.length} isu`)}</p>
+          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{L("What Is Happening", "Yang Sedang Terjadi")}</p>
+          <p className="font-mono text-[11px] font-bold text-[#5A6478]">{L(`From ${formatSignals(total)} mentions in ${live.length} issues`, `Dari ${formatSignals(total)} percakapan dalam ${live.length} isu`)}</p>
         </div>
 
         <button
@@ -366,13 +368,13 @@ function NarrativeInsight({ clusters, emergingCount, language, onOpen, onPlan, o
           </div>
           <div className="min-w-0 self-center">
             <p className="text-[11px] font-black" style={{ color: readableTone(topTone.color) }}>{L("Main issue", "Isu utama")}</p>
-            <p className="mt-1 text-[18px] font-black leading-tight tracking-[-0.02em] text-[#101334]">{name(top)}</p>
+            <p className="mt-1 text-[24px] font-black leading-tight tracking-[-0.03em] text-[#101334] sm:text-[28px]">{name(top)}</p>
             <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] font-black">
               <span className="rounded-full bg-white px-2.5 py-1 text-[#101334]">{formatSignals(top.signals)} {L("mentions", "percakapan")}</span>
               <span className={cn("rounded-full px-2.5 py-1", topIsRisk ? "bg-[#C81E1E] text-white" : top.sentiment === "positive" ? "bg-[#047857] text-white" : "bg-white text-[#31406B]")}>{L(...SENTIMENT_LABEL[top.sentiment])}</span>
               {top.growth && top.growth !== "0%" ? <span className="rounded-full bg-white px-2.5 py-1 text-[#B45309]">{growthLabel(top.growth)}</span> : null}
             </div>
-            <p className="mt-2 line-clamp-2 text-[12px] font-semibold leading-snug text-[#3A4566]">{text(top.description, language)}</p>
+            <p className="mt-2 line-clamp-2 text-[14.5px] font-medium leading-relaxed text-[#31406B]">{text(top.description, language)}</p>
           </div>
         </button>
 
@@ -395,14 +397,15 @@ function NarrativeInsight({ clusters, emergingCount, language, onOpen, onPlan, o
           })}
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-3 rounded-[12px] bg-[#101334] px-4 py-3">
-          <p className="min-w-0 flex-1 text-[13px] font-bold text-white">
+        <div className="mt-5 flex flex-col gap-2.5 rounded-[18px] bg-[#101334] p-4 sm:flex-row sm:flex-wrap sm:items-center">
+          <p className="min-w-0 flex-1 px-1 text-[15px] font-bold leading-snug text-white">
+            <span className="mb-1 block font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-[#A5B4FF]">{L("Next Step", "Langkah Berikutnya")}</span>
             {topIsRisk || risk
-              ? L(`Next step: prepare a response for "${name(risk || top)}".`, `Langkah berikutnya: siapkan respons untuk "${name(risk || top)}".`)
-              : L(`Next step: amplify "${name(top)}" while it is positive.`, `Langkah berikutnya: perkuat "${name(top)}" selagi positif.`)}
+              ? L(`Prepare a response for "${name(risk || top)}".`, `Siapkan respons untuk "${name(risk || top)}".`)
+              : L(`Amplify "${name(top)}" while it is positive.`, `Perkuat "${name(top)}" selagi positif.`)}
           </p>
-          <button type="button" onClick={() => onPlan((risk || top).id)} className="h-9 rounded-[10px] bg-white px-4 text-[12px] font-black text-[#101334] transition hover:bg-[#EEF1FF]">{L("Create Action Plan", "Buat Rencana Aksi")}</button>
-          <button type="button" onClick={() => onReport((risk || top).id)} className="h-9 rounded-[10px] bg-white/10 px-4 text-[12px] font-black text-white transition hover:bg-white/20">{L("See the analysis", "Lihat analisis")}</button>
+          <button type="button" onClick={() => onPlan((risk || top).id)} className="inline-flex h-11 w-full items-center justify-center rounded-[12px] bg-[#465FFF] px-5 text-[14px] font-black text-white transition hover:bg-[#3B52F5] sm:w-auto">{L("Create Action Plan", "Buat Rencana Aksi")}</button>
+          <button type="button" onClick={() => onReport((risk || top).id)} className="inline-flex h-11 w-full items-center justify-center rounded-[12px] border-[1.5px] border-white/80 px-5 text-[14px] font-black text-white transition hover:bg-white/10 sm:w-auto">{L("See the Analysis", "Lihat Analisis")}</button>
         </div>
       </CardContent>
     </Panel>
@@ -750,24 +753,25 @@ export default function IntelligencePage() {
       </div>
       </header>
 
-      <section className="grid grid-cols-2 gap-3.5 xl:grid-cols-4">
-        {metrics.map((metric) => {
-          const tone = toneStyles[metric.tone];
-          return (
-            <div key={metric.label} className="flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
-              <p className="text-[11px] font-black" style={{ color: readableTone(tone.color) }}>{metric.label}</p>
-              <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-[#101334]">{metric.value}</p>
-              <p className="mt-2 text-[11px] font-bold text-[#5A6478]">{metric.helper}</p>
-            </div>
-          );
-        })}
-      </section>
+      <StatStrip stats={metrics.map((m) => ({ key: m.label, value: m.value, label: m.label, helper: m.helper, tone: m.value !== "0" && m.value !== "..." ? (m.tone === "red" ? "text-[#B42318]" : m.tone === "amber" ? "text-[#B45309]" : m.tone === "green" ? "text-[#047857]" : "text-[#6E44E8]") : "text-[#101334]" }))} />
 
       {narrativesQuery.isPending ? <PanelSkeleton /> : null}
       {isLiveUnavailable ? <DashboardErrorState title={ti("error.title")} description={ti("error.desc")} onRetry={() => void narrativesQuery.refetch()} minHeight="min-h-[150px]" /> : null}
       {!isLiveUnavailable && narrativesQuery.data && liveClusters.length === 0 ? <DashboardEmptyState title={ti("empty.title")} description={ti("empty.desc")} icon="search" minHeight="min-h-[180px]" action={<Link href="/workspace/settings#keywords" className="inline-flex h-10 items-center rounded-full bg-[#101334] px-5 text-[13px] font-black text-white hover:bg-[#2B2F9E]">{pickL("Manage Keywords", "Atur Kata Kunci")}</Link>} /> : null}
 
       {/* With no narratives yet, the map, clusters and lifecycle would all be empty: the message above stands alone. */}
+      {/* The decision first: the main issue, what is rising, the biggest risk, and the plan to start. */}
+      {liveClusters.length > 0 ? (
+        <NarrativeInsight
+              clusters={clusters}
+              emergingCount={lifecycle.counts.emerging}
+              language={language}
+              onOpen={(id) => setSelectedClusterId(id)}
+              onPlan={(id) => { setSelectedClusterId(id); setIsPlanResponseOpen(true); }}
+              onReport={(id) => { setSelectedClusterId(id); setIsAnalysisOpen(true); }}
+            />
+      ) : null}
+
       {liveClusters.length > 0 ? (
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_408px]">
         <div className="flex min-w-0 flex-col gap-4">
@@ -879,14 +883,7 @@ export default function IntelligencePage() {
 
           {/* Stacked: beside the summary the five lifecycle cards were crushed to ~28px. */}
           <div className="grid grid-cols-1 gap-4">
-            <NarrativeInsight
-              clusters={clusters}
-              emergingCount={lifecycle.counts.emerging}
-              language={language}
-              onOpen={(id) => setSelectedClusterId(id)}
-              onPlan={(id) => { setSelectedClusterId(id); setIsPlanResponseOpen(true); }}
-              onReport={(id) => { setSelectedClusterId(id); setIsAnalysisOpen(true); }}
-            />
+
 
             <Panel>
               <CardContent className="p-5">
@@ -915,29 +912,10 @@ export default function IntelligencePage() {
         </div>
 
         <aside className="grid min-w-0 grid-cols-1 content-start gap-4">
-          <Panel>
-            <CardContent className="p-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <h3 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{ti("growingClusters.title")}</h3>
-                <button type="button" onClick={() => setIsAllClustersModalOpen(true)} className="text-[11px] font-black text-[#3B52F5] transition hover:text-[#3B52F5]">
-                  {ti("growingClusters.viewAll")}
-                </button>
-              </div>
-              <div className="flex flex-col gap-2">
-                {clusters.slice(0, 5).map((cluster, index) => {
-                  const selected = selectedCluster.id === cluster.id;
-                  return (
-                    <ClusterRow key={cluster.id} cluster={cluster} rank={index + 1} max={maxClusterSignals} selected={selected} language={language} onClick={() => setSelectedClusterId(cluster.id)} />
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Panel>
-
-          <Panel className="border-[#E6EAF2]">
+          <Panel className="!border-[#465FFF] shadow-[0_4px_0_#465FFF]">
             <CardContent className="p-4">
               <div className="mb-3 flex items-center justify-between gap-3 relative" ref={actionsMenuRef}>
-                <p className="text-[11px] font-black text-[#53608C]">{ti("selectedNarrative.title")}</p>
+                <p className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#3B52F5]">{ti("selectedNarrative.title")}</p>
                 <button type="button" onClick={() => setIsSelectedActionsOpen((v) => !v)} disabled={!selectedNarrativeId} aria-label={ti("selectedNarrative.moreActions")} aria-expanded={isSelectedActionsOpen} className="rounded-full p-1 text-[#647099] transition hover:bg-[#F5F7FC] hover:text-[#53608C] disabled:cursor-not-allowed disabled:opacity-40">
                   <MoreHorizontal size={16} />
                 </button>
@@ -961,10 +939,10 @@ export default function IntelligencePage() {
                 <ClusterIcon tone={selectedCluster.tone} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-3">
-                    <h3 className="text-[16px] font-black leading-tight tracking-[-0.02em] text-[#101334]">{text(selectedCluster.topic, language)}</h3>
+                    <h3 className="text-[19px] font-black leading-tight tracking-[-0.02em] text-[#101334]">{text(selectedCluster.topic, language)}</h3>
                     <TrendBadge value={text(selectedCluster.priority, language)} tone={selectedCluster.priorityTone} className="shrink-0 px-2.5 py-1 text-[9px]" />
                   </div>
-                  <p className="mt-2 text-[12px] font-semibold leading-relaxed text-[#53608C]">{text(selectedCluster.description, language)}</p>
+                  <p className="mt-2 text-[13.5px] font-medium leading-relaxed text-[#31406B]">{text(selectedCluster.description, language)}</p>
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -993,12 +971,35 @@ export default function IntelligencePage() {
                   <p className="mt-1 line-clamp-3 text-[12px] font-bold leading-snug text-white">{text(selectedCluster.aiRec, language)}</p>
                 </div>
               ) : null}
-              <button type="button" onClick={() => setIsAnalysisOpen(true)} disabled={!selectedNarrativeId} className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-[9px] bg-[#465FFF] hover:bg-[#3B51E0] text-[12px] font-black text-white shadow-sm transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50">
-                {ti("selectedNarrative.btnAnalysis")}
-                <ChevronRight size={14} />
-              </button>
+              <div className="mt-3 grid gap-2">
+                <button type="button" onClick={() => setIsPlanResponseOpen(true)} disabled={!selectedNarrativeId} className="flex h-11 w-full items-center justify-center rounded-[12px] bg-[#465FFF] text-[14px] font-black text-white transition hover:bg-[#3B52F5] disabled:cursor-not-allowed disabled:opacity-50">
+                  {pickL("Create Action Plan", "Buat Rencana Aksi")}
+                </button>
+                <button type="button" onClick={() => setIsAnalysisOpen(true)} disabled={!selectedNarrativeId} className="flex h-11 w-full items-center justify-center gap-1.5 rounded-[12px] border-[1.5px] border-[#101334] bg-white text-[14px] font-black text-[#101334] shadow-[0_2px_0_#101334] transition hover:bg-[#F7F8FC] disabled:cursor-not-allowed disabled:opacity-50">
+                  {ti("selectedNarrative.btnAnalysis")} <ChevronRight size={14} />
+                </button>
+              </div>
             </CardContent>
           </Panel>
+          <Panel>
+            <CardContent className="p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h3 className="text-[16px] font-black tracking-[-0.02em] text-[#101334]">{ti("growingClusters.title")}</h3>
+                <button type="button" onClick={() => setIsAllClustersModalOpen(true)} className="text-[11px] font-black text-[#3B52F5] transition hover:text-[#3B52F5]">
+                  {ti("growingClusters.viewAll")}
+                </button>
+              </div>
+              <div className="flex flex-col gap-2">
+                {clusters.slice(0, 5).map((cluster, index) => {
+                  const selected = selectedCluster.id === cluster.id;
+                  return (
+                    <ClusterRow key={cluster.id} cluster={cluster} rank={index + 1} max={maxClusterSignals} selected={selected} language={language} onClick={() => setSelectedClusterId(cluster.id)} />
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Panel>
+
 
           <Panel>
             <CardContent className="p-4">
