@@ -10,6 +10,7 @@ import { getActivityLogs, getAlerts, type ActivityLogEntry, type Alert } from "@
 import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
 import { BOX } from "@/lib/surface";
+import { StatStrip } from "@/components/ui/stamp";
 import { intlLocale } from "@/store/useUiStore";
 
 // Kronologi: how issues unfolded, day by day — alerts raised, cases opened, plans made, reports sent.
@@ -87,34 +88,44 @@ function fromActivity(log: ActivityLogEntry, L: (en: string, id: string) => stri
   };
 }
 
-function Row({ entry }: { entry: Entry }) {
+/** One event on the rail: mono time, a dot on the line, what happened and the thing it happened to. */
+function Row({ entry, last }: { entry: Entry; last: boolean }) {
   const L = useL();
   const kind = KIND[entry.kind];
   const sev = entry.severity ? SEVERITY[entry.severity] : null;
+  const hot = entry.kind === "alert" && (entry.severity === "critical" || entry.severity === "high");
   const time = new Date(entry.at).toLocaleTimeString(intlLocale(), { hour: "2-digit", minute: "2-digit" });
   const inner = (
     <>
-      <span className="w-12 shrink-0 pt-0.5 text-[12px] font-semibold tabular-nums text-[#5F6B94]">{time}</span>
-      <span aria-hidden="true" className="mt-1.5 size-2.5 shrink-0 rounded-full" style={{ backgroundColor: kind.dot }} />
-      <div className="min-w-0 flex-1">
+      <span className="w-12 shrink-0 pt-1 font-mono text-[12px] font-bold tabular-nums text-[#5F6B94]">{time}</span>
+      <span className="relative flex w-4 shrink-0 justify-center self-stretch" aria-hidden="true">
+        {!last ? <span className="absolute bottom-[-14px] top-4 w-px bg-[#DDE2EE]" /> : null}
+        <span className="relative mt-1.5 size-3 rounded-full border-2 border-white shadow-[0_0_0_1.5px_#101334]" style={{ backgroundColor: kind.dot }} />
+      </span>
+      <div className="min-w-0 flex-1 pb-1">
         <div className="flex flex-wrap items-center gap-2">
-          <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-bold", kind.chip)}>{L(kind.en, kind.id)}</span>
-          <span className="text-[13px] font-semibold text-[#31406B]">{entry.label}</span>
-          {sev ? <span className={cn("text-[12px] font-bold", entry.kind === "alert" && (entry.severity === "critical" || entry.severity === "high") ? "text-[#B42318]" : "text-[#5F6B94]")}>· {L(sev[0], sev[1])}</span> : null}
+          <span className={cn("rounded-[6px] px-2 py-0.5 font-mono text-[10.5px] font-bold uppercase tracking-[0.06em]", kind.chip)}>{L(kind.en, kind.id)}</span>
+          <span className="text-[13px] font-bold text-[#31406B]">{entry.label}</span>
+          {sev ? <span className={cn("rounded-[6px] px-2 py-0.5 font-mono text-[10.5px] font-bold uppercase tracking-[0.06em]", hot ? "bg-[#B42318] text-white" : "bg-[#F1F3F8] text-[#5F6B94]")}>{L(sev[0], sev[1])}</span> : null}
         </div>
-        {entry.title ? <p className="mt-1 text-[15px] font-bold leading-snug text-[#101334]">{entry.title}</p> : null}
-        {entry.detail ? <p className="mt-0.5 line-clamp-2 text-[13px] text-[#5F6B94]">{entry.detail}</p> : null}
+        {entry.title ? <p className="mt-1.5 text-[16px] font-bold leading-snug text-[#101334] group-hover:text-[#3B52F5]">{entry.title}</p> : null}
+        {entry.detail ? <p className="mt-0.5 line-clamp-2 text-[13.5px] text-[#5F6B94]">{entry.detail}</p> : null}
       </div>
-      {entry.href ? <ArrowRight size={16} aria-hidden="true" className="mt-1 shrink-0 text-[#465FFF] opacity-0 transition group-hover:opacity-100" /> : null}
+      {entry.href ? (
+        <span className="mt-1 hidden shrink-0 items-center gap-1 text-[12px] font-bold text-[#3B52F5] opacity-0 transition group-hover:opacity-100 sm:inline-flex">
+          {L("Open", "Buka")} <ArrowRight size={14} aria-hidden="true" />
+        </span>
+      ) : null}
     </>
   );
-  const cls = "group flex items-start gap-3 rounded-xl px-3 py-3 transition hover:bg-[#F5F7FF]";
+  const cls = "group -mx-2 flex items-start gap-3 rounded-[12px] px-2 py-3 transition hover:bg-[#F7F8FC]";
   return entry.href ? <Link href={entry.href} className={cls}>{inner}</Link> : <div className={cls}>{inner}</div>;
 }
 
 export default function TimelinePage() {
   const L = useL();
   const [days, setDays] = useState<number>(30);
+  const [only, setOnly] = useState<Kind | null>(null);
   const activity = useQuery({ queryKey: ["timeline", "activity"], queryFn: () => getActivityLogs({ limit: 100 }) });
   const alerts = useQuery({ queryKey: ["timeline", "alerts"], queryFn: () => getAlerts({ limit: 100 }) });
 
@@ -129,7 +140,8 @@ export default function TimelinePage() {
   const cutoff = Date.now() - days * 24 * 3600 * 1000;
   const visible = entries.filter((e) => new Date(e.at).getTime() >= cutoff);
   const count = (k: Kind) => visible.filter((e) => e.kind === k).length;
-  const byDay = visible.reduce<Array<{ day: string; items: Entry[] }>>((acc, e) => {
+  const shown = only ? visible.filter((e) => e.kind === only) : visible;
+  const byDay = shown.reduce<Array<{ day: string; items: Entry[] }>>((acc, e) => {
     const day = new Date(e.at).toLocaleDateString(intlLocale(), { weekday: "long", day: "numeric", month: "long" });
     const last = acc[acc.length - 1];
     if (last && last.day === day) last.items.push(e);
@@ -140,20 +152,20 @@ export default function TimelinePage() {
   const failed = !loading && !activity.data && !alerts.data;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{L("Timeline", "Kronologi")}</h1>
           <p className="mt-1 text-[14px] text-[#5F6B94]">{L("When each issue appeared and what was done.", "Kapan isu muncul dan apa yang sudah dilakukan.")}</p>
         </div>
-        <div className="flex self-start rounded-[10px] bg-white p-1 shadow-sm sm:self-auto" role="group" aria-label={L("Period", "Periode")}>
+        <div className="flex self-start rounded-[12px] border-[1.5px] border-[#101334] bg-white p-1 shadow-[0_2px_0_#101334] sm:self-auto" role="group" aria-label={L("Period", "Periode")}>
           {RANGES.map((r) => (
             <button
               key={r.days}
               type="button"
               aria-pressed={days === r.days}
               onClick={() => setDays(r.days)}
-              className={cn("rounded-[7px] px-3 py-1.5 text-[12px] font-bold transition-colors", days === r.days ? "bg-[#465FFF] text-white" : "text-[#5F6B94] hover:bg-slate-50 hover:text-[#101334]")}
+              className={cn("rounded-[7px] px-3 py-1.5 text-[12px] font-bold transition-colors", days === r.days ? "bg-[#101334] text-white" : "text-[#5F6B94] hover:bg-slate-50 hover:text-[#101334]")}
             >
               {L(r.label[0], r.label[1])}
             </button>
@@ -161,23 +173,26 @@ export default function TimelinePage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-5 lg:grid-cols-5">
-        {(["alert", "opportunity", "case", "plan", "report"] as Kind[]).map((k) => (
-          <div key={k} className={cn("flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]", KIND[k].chip.replace(/\bbg-\S+/g, ""))}>
-            <p className="text-[36px] font-black leading-none tracking-[-0.03em]">{loading ? "…" : count(k)}</p>
-            <p className="mt-2 text-[13px] font-bold text-[#101334]">{L(KIND[k].en, KIND[k].id)}</p>
-          </div>
-        ))}
-      </div>
-
+      {/* The counts are the filters: click one to see only that kind, click it again for everything. */}
+      <StatStrip
+        stats={(["alert", "opportunity", "case", "plan", "report"] as Kind[]).map((k) => ({
+          key: k,
+          value: loading ? "…" : count(k),
+          label: L(KIND[k].en, KIND[k].id),
+          helper: only === k ? L("showing only these", "hanya ini yang tampil") : L("click to filter", "klik untuk menyaring"),
+          tone: KIND[k].chip.replace(/\bbg-\S+/g, "").trim(),
+          onClick: () => setOnly(only === k ? null : k),
+          active: only === k,
+        }))}
+      />
       <div className={BOX}>
         {loading ? (
           <div className="space-y-2 p-2">{[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>
         ) : byDay.length ? (
           byDay.map((group) => (
             <section key={group.day} className="mb-2 last:mb-0">
-              <h2 className="px-3 pb-1 pt-3 text-[12px] font-extrabold text-[#5F6B94]">{group.day}</h2>
-              <div className="divide-y divide-[#EEF1F6]">{group.items.map((e) => <Row key={e.id} entry={e} />)}</div>
+              <h2 className="sticky top-0 z-10 -mx-1 mb-1 mt-3 inline-flex rounded-[8px] border-[1.5px] border-[#101334] bg-white px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-[#101334] first:mt-0">{group.day}</h2>
+              <div>{group.items.map((e, i) => <Row key={e.id} entry={e} last={i === group.items.length - 1} />)}</div>
             </section>
           ))
         ) : (

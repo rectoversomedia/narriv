@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, ExternalLink } from "lucide-react";
+import { ArrowRight, ExternalLink, FileText, Sparkles } from "lucide-react";
+import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components/create-action-plan-modal";
+import { MonoLabel, StatStrip } from "@/components/ui/stamp";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-states";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { PlatformIcon } from "@/components/ui/platform-icon";
@@ -36,39 +39,60 @@ const shortDate = (value?: string | null) => {
   return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString(intlLocale(), { day: "numeric", month: "short" });
 };
 
-function Tile({ label, value, helper, tone }: { label: string; value: string; helper: string; tone: string }) {
-  return (
-    // The tone colours the number only; no tinted tile.
-    <div className={cn("flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]", tone.replace(/\bbg-\S+/g, ""))}>
-      <p className="text-[36px] font-black leading-none tracking-[-0.03em]">{value}</p>
-      <p className="mt-2 text-[13px] font-bold text-[#101334]">{label}</p>
-      <p className="mt-0.5 text-[12px] font-semibold text-[#5F6B94]">{helper}</p>
-    </div>
-  );
-}
-
-function OpportunityCard({ alert }: { alert: Alert }) {
+/** The opportunity to act on first: its story, what to do (in the dark decision box) and the buttons for it. */
+function FeaturedOpportunity({ alert, onPlan }: { alert: Alert; onPlan: () => void }) {
   const L = useL();
   const priority = PRIORITY[String(alert.severity || "").toLowerCase()] ?? PRIORITY.low;
   const status = STATUS[String(alert.status || "open").toLowerCase()] ?? STATUS.open;
+  const owner = alert.assignedTo || alert.assignedTeam;
   return (
-    <Link href={`/alerts/${alert.id}`} className="group flex flex-col border-b border-[#E6EAF2] py-4">
-      <div className="flex items-center justify-between gap-2">
-        <span className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-bold", priority.tone)}>{L(priority.en, priority.id)}</span>
-        <span className="text-[12px] font-semibold text-[#5F6B94]">{shortDate(alert.createdAt)}</span>
+    <section className={cn(BOX, "overflow-hidden !p-0")}>
+      <div className="h-2 bg-[#12A66A]" />
+      <div className="p-5 sm:p-7">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-[8px] bg-[#047857] px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-white">{L("Opportunity", "Peluang")}</span>
+          <span className={cn("rounded-[8px] px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.08em]", priority.tone)}>{L(priority.en, priority.id)}</span>
+          <span className="nv-stamp">{L(...status)}</span>
+          <span className="font-mono text-[11.5px] font-medium text-[#5F6B94]">{shortDate(alert.createdAt)}</span>
+        </div>
+        <h2 className="mt-4 max-w-4xl text-balance text-[26px] font-black leading-[1.15] tracking-[-0.03em] text-[#101334] sm:text-[32px]">{alert.title}</h2>
+        {alert.whatHappened ? <p className="mt-2 max-w-3xl text-[15.5px] font-medium leading-relaxed text-[#31406B]">{alert.whatHappened}</p> : null}
+        {!owner ? (
+          <p className="mt-4 inline-flex items-center gap-2 rounded-[10px] bg-[#FFF7E8] px-3 py-2 text-[13px] font-bold text-[#92400E]">{L("No owner yet: assign someone so it is not missed.", "Belum ada penanggung jawab: tunjuk seseorang supaya tidak terlewat.")}</p>
+        ) : null}
+        <div className="mt-5 rounded-[18px] bg-[#0B2E22] p-5 text-white sm:p-6">
+          <p className="flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-[#6EE7B7]"><Sparkles size={13} /> {L("What You Can Do", "Yang Bisa Dilakukan")}</p>
+          <p className="mt-2.5 max-w-3xl text-[18px] font-bold leading-[1.5] sm:text-[20px]">{alert.whatToDo || L("Turn this good news into a story your audience sees.", "Ubah kabar baik ini menjadi cerita yang dilihat audiens Anda.")}</p>
+          <div className="mt-5 flex flex-wrap gap-2.5">
+            <button type="button" onClick={onPlan} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[12px] bg-[#465FFF] px-5 text-[14px] font-black text-white transition hover:bg-[#3B52F5] sm:w-auto">
+              <FileText size={16} /> {L("Create Action Plan", "Buat Rencana Aksi")}
+            </button>
+            <Link href={`/alerts/${alert.id}`} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[12px] border-[1.5px] border-white/80 px-5 text-[14px] font-black text-white transition hover:bg-white/10 sm:w-auto">
+              {owner ? L("Open Details", "Buka Detail") : L("Assign an Owner", "Tunjuk Penanggung Jawab")} <ArrowRight size={16} />
+            </Link>
+          </div>
+        </div>
       </div>
-      <h3 className="mt-3 text-[16px] font-bold leading-snug text-[#101334]">{alert.title}</h3>
-      {alert.whatHappened ? <p className="mt-1.5 line-clamp-3 text-[13px] leading-relaxed text-[#5F6B94]">{alert.whatHappened}</p> : null}
-      {alert.whatToDo ? (
-        <p className="mt-3 line-clamp-3 text-[14px] font-semibold text-[#101334]">
-          <span className="mr-1.5 rounded-full bg-[#047857] px-2.5 py-0.5 text-[11px] font-black text-white">{L("What to Do", "Yang Bisa Dilakukan")}</span>
-          {alert.whatToDo}
-        </p>
-      ) : null}
-      <div className="mt-auto flex items-center justify-between gap-2 pt-4 text-[12px]">
-        <span className="font-semibold text-[#31406B]">{alert.assignedTo || alert.assignedTeam || L("No owner yet", "Belum ada penanggung jawab")} · <span className="text-[#5F6B94]">{L(...status)}</span></span>
-        <ArrowRight size={16} className="shrink-0 text-[#465FFF] transition group-hover:translate-x-0.5" aria-hidden="true" />
-      </div>
+    </section>
+  );
+}
+
+/** Every other open opportunity, one row each. */
+function OpportunityRow({ alert }: { alert: Alert }) {
+  const L = useL();
+  const priority = PRIORITY[String(alert.severity || "").toLowerCase()] ?? PRIORITY.low;
+  const owner = alert.assignedTo || alert.assignedTeam;
+  return (
+    <Link href={`/alerts/${alert.id}`} className="group -mx-2 flex items-start gap-3 rounded-[12px] px-2 py-3.5 transition hover:bg-[#F7F8FC]">
+      <span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-[#12A66A]" />
+      <span className="min-w-0 flex-1">
+        <span className="block text-[15px] font-bold leading-snug text-[#101334] group-hover:text-[#3B52F5]">{alert.title}</span>
+        {alert.whatToDo ? <span className="mt-1 block line-clamp-2 text-[13.5px] font-medium text-[#31406B]">{alert.whatToDo}</span> : null}
+        <span className="mt-1 block font-mono text-[11.5px] font-medium text-[#5F6B94]">
+          {L(priority.en, priority.id)} · {shortDate(alert.createdAt)} · {owner || <span className="text-[#B45309]">{L("No owner yet", "Belum ada penanggung jawab")}</span>}
+        </span>
+      </span>
+      <ArrowRight size={16} className="mt-1 shrink-0 text-[#9AA3BC] transition group-hover:translate-x-0.5 group-hover:text-[#3B52F5]" aria-hidden="true" />
     </Link>
   );
 }
@@ -80,8 +104,8 @@ function GoodNewsRow({ signal }: { signal: Signal }) {
     <>
       <PlatformIcon platform={signal.platform || "news"} className="mt-0.5 size-6" />
       <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 text-[14px] font-semibold leading-snug text-[#101334]">{text}</p>
-        <p className="mt-1 text-[12px] text-[#5F6B94]">
+        <p className="line-clamp-2 text-[15px] font-bold leading-snug text-[#101334]">{text}</p>
+        <p className="mt-1 font-mono text-[11.5px] font-medium text-[#5F6B94]">
           {[signal.author, shortDate(signal.publishedAt || signal.capturedAt)].filter(Boolean).join(" · ")}
           {signal.narratives?.length ? <> · <span className="font-semibold text-[#31406B]">{signal.narratives[0].title}</span></> : null}
         </p>
@@ -89,12 +113,13 @@ function GoodNewsRow({ signal }: { signal: Signal }) {
       {signal.url ? <ExternalLink size={15} className="mt-1 shrink-0 text-[#5F6B94]" aria-label={L("Open the source", "Buka sumber")} /> : null}
     </>
   );
-  const cls = "flex items-start gap-3 rounded-xl px-3 py-3 transition hover:bg-[#F5F7FF]";
+  const cls = "-mx-2 flex items-start gap-3 rounded-[12px] px-2 py-3.5 transition hover:bg-[#F7F8FC]";
   return signal.url ? <a href={signal.url} target="_blank" rel="noopener noreferrer" className={cls}>{body}</a> : <div className={cls}>{body}</div>;
 }
 
 export default function OpportunitiesPage() {
   const L = useL();
+  const [planFor, setPlanFor] = useState<Alert | null>(null);
   const since = new Date(Date.now() - DAYS * 24 * 3600 * 1000).toISOString();
   const opportunities = useQuery({ queryKey: ["opportunities", "alerts"], queryFn: () => getAlerts({ type: "opportunity", limit: 50 }) });
   const positive = useQuery({ queryKey: ["opportunities", "positive", DAYS], queryFn: () => getSignals({ sentiment: "positive", startDate: since, limit: 8 }) });
@@ -109,55 +134,83 @@ export default function OpportunitiesPage() {
   const total = all.data?.pagination?.total ?? 0;
   const share = total > 0 ? Math.round((positiveTotal / total) * 100) : null;
 
+  const [featured, ...rest] = open;
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <div>
         <h1 className="text-[26px] font-black leading-tight tracking-[-0.02em] text-navy sm:text-[28px]">{L("Opportunities", "Peluang")}</h1>
         <p className="mt-1 text-[14px] text-[#5F6B94]">{L("Good news worth using.", "Kabar baik yang bisa dimanfaatkan.")}</p>
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-[104px] rounded-2xl" />)}</div>
+        <Skeleton className="h-[104px] rounded-[18px]" />
       ) : (
-        <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
-          <Tile label={L("Open opportunities", "Peluang terbuka")} value={String(open.length)} helper={L(`of ${alerts.length} recorded`, `dari ${alerts.length} tercatat`)} tone="bg-[#E8F7F0] text-[#065F46]" />
-          <Tile label={L("Without an owner", "Belum ada pemilik")} value={String(unowned)} helper={unowned ? L("assign someone", "tunjuk penanggung jawab") : L("all assigned", "semua sudah ada pemilik")} tone={unowned ? "bg-[#FEF6E4] text-[#92400E]" : "bg-[#F1F3F8] text-[#31406B]"} />
-          <Tile label={L("Positive mentions", "Percakapan positif")} value={String(positiveTotal)} helper={L(`last ${DAYS} days`, `${DAYS} hari terakhir`)} tone="bg-[#EEF1FF] text-[#2B3FD6]" />
-          <Tile label={L("Positive share", "Porsi positif")} value={share === null ? "—" : `${share}%`} helper={L(`of ${total} mentions`, `dari ${total} percakapan`)} tone="bg-[#F3EEFF] text-[#5B33C9]" />
-        </div>
+        <StatStrip
+          stats={[
+            { key: "open", value: open.length, label: L("Open Opportunities", "Peluang Terbuka"), helper: L(`of ${alerts.length} recorded`, `dari ${alerts.length} tercatat`), tone: "text-[#047857]" },
+            { key: "unowned", value: unowned, label: L("Without an Owner", "Belum Ada Pemilik"), helper: unowned ? L("assign someone", "tunjuk penanggung jawab") : L("all assigned", "semua sudah ada pemilik"), tone: unowned ? "text-[#B45309]" : "text-[#101334]" },
+            { key: "positive", value: positiveTotal, label: L("Positive Mentions", "Percakapan Positif"), helper: L(`last ${DAYS} days`, `${DAYS} hari terakhir`), tone: "text-[#3B52F5]" },
+            { key: "share", value: share === null ? "—" : `${share}%`, label: L("Positive Share", "Porsi Positif"), helper: L(`of ${total} mentions`, `dari ${total} percakapan`), tone: "text-[#6E44E8]" },
+          ]}
+        />
       )}
 
-      <section className={BOX}>
-        <div className="mb-3 flex items-end justify-between gap-3">
-          <h2 className="text-[18px] font-bold text-[#101334]">{L("Flagged opportunities", "Peluang yang ditandai")}</h2>
-          <Link href="/alerts" className="text-[13px] font-bold text-[#3B52F5] hover:underline">{L("All alerts", "Semua peringatan")}</Link>
-        </div>
-        {loading ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-56 rounded-2xl" />)}</div>
-        ) : open.length ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{open.map((a) => <OpportunityCard key={a.id} alert={a} />)}</div>
-        ) : (
+      {loading ? (
+        <Skeleton className="h-72 rounded-[18px]" />
+      ) : featured ? (
+        <FeaturedOpportunity alert={featured} onPlan={() => setPlanFor(featured)} />
+      ) : (
+        <section className={BOX}>
           <DashboardEmptyState
             icon="search"
             title={L("No open opportunities", "Belum ada peluang terbuka")}
             description={L("When an alert is marked as an opportunity, it shows up here with its owner and next step.", "Kalau ada peringatan yang ditandai sebagai peluang, ia muncul di sini lengkap dengan pemilik dan langkah berikutnya.")}
           />
-        )}
-      </section>
+        </section>
+      )}
 
-      <section className={BOX}>
-        <div className="mb-2 flex items-end justify-between gap-3 px-1">
-          <h2 className="text-[18px] font-bold text-[#101334]">{L("Latest good news", "Kabar baik terbaru")}</h2>
-          <Link href="/signals" className="text-[13px] font-bold text-[#3B52F5] hover:underline">{L("All mentions", "Semua percakapan")}</Link>
-        </div>
-        {loading ? (
-          <div className="space-y-2">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>
-        ) : goodNews.length ? (
-          <div className="divide-y divide-[#EEF1F6]">{goodNews.map((s) => <GoodNewsRow key={s.id} signal={s} />)}</div>
-        ) : (
-          <p className="px-1 py-6 text-[14px] text-[#5F6B94]">{L(`No positive mentions in the last ${DAYS} days.`, `Belum ada percakapan positif dalam ${DAYS} hari terakhir.`)}</p>
-        )}
-      </section>
+      <div className={cn("grid items-start gap-5", rest.length ? "xl:grid-cols-2" : "")}>
+        {rest.length ? (
+          <section className={BOX}>
+            <div className="mb-1 flex items-end justify-between gap-3">
+              <div>
+                <MonoLabel>{L("Also Open", "Juga Terbuka")}</MonoLabel>
+                <h2 className="mt-1.5 text-[20px] font-black tracking-[-0.02em] text-[#101334]">{L(`${rest.length} More Opportunities`, `${rest.length} Peluang Lainnya`)}</h2>
+              </div>
+              <Link href="/alerts" className="text-[13px] font-bold text-[#3B52F5] hover:underline">{L("All Alerts", "Semua Peringatan")}</Link>
+            </div>
+            <div className="divide-y divide-[#EEF0F6]">{rest.map((a) => <OpportunityRow key={a.id} alert={a} />)}</div>
+          </section>
+        ) : null}
+
+        <section className={BOX}>
+          <div className="mb-1 flex items-end justify-between gap-3">
+            <div>
+              <MonoLabel>{L(`Last ${DAYS} Days`, `${DAYS} Hari Terakhir`)}</MonoLabel>
+              <h2 className="mt-1.5 text-[20px] font-black tracking-[-0.02em] text-[#101334]">{L("Latest Good News", "Kabar Baik Terbaru")}</h2>
+            </div>
+            <Link href="/signals" className="text-[13px] font-bold text-[#3B52F5] hover:underline">{L("All Mentions", "Semua Percakapan")}</Link>
+          </div>
+          {loading ? (
+            <div className="space-y-2">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>
+          ) : goodNews.length ? (
+            <div className="divide-y divide-[#EEF0F6]">{goodNews.map((s) => <GoodNewsRow key={s.id} signal={s} />)}</div>
+          ) : (
+            <p className="py-6 text-[14px] text-[#5F6B94]">{L(`No positive mentions in the last ${DAYS} days.`, `Belum ada percakapan positif dalam ${DAYS} hari terakhir.`)}</p>
+          )}
+        </section>
+      </div>
+
+      {planFor ? (
+        <CreateActionPlanModal
+          open
+          onOpenChange={(o) => { if (!o) setPlanFor(null); }}
+          initialAlertId={planFor.id}
+          initialAlertTitle={planFor.title}
+          initialStrategyType="pr_response"
+        />
+      ) : null}
     </div>
   );
 }

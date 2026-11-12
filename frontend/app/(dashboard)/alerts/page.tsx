@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ArrowRight, Bell, Check, ChevronDown, ChevronRight, CircleCheck, HelpCircle, Loader2, Mail, MoreVertical, Search, Shield, Users, X, CheckCircle2, type LucideIcon } from "lucide-react";
+import { AlertTriangle, ArrowRight, Bell, Check, ChevronDown, ChevronRight, CircleCheck, HelpCircle, Loader2, Mail, MoreVertical, Search, Shield, Users, X, CheckCircle2, Clock3, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Slack, WhatsApp } from "@ridemountainpig/svgl-react";
 import { useToast } from "@/components/ui/toast";
@@ -12,6 +13,7 @@ import { BOX } from "@/lib/surface";
 import { assigneeName, memberName } from "@/lib/member-name";
 import { teamOptions } from "@/lib/teams";
 import { ModalShell } from "@/components/ui/modal-shell";
+import { StatStrip } from "@/components/ui/stamp";
 import { createAlert, getAlerts, getAlertsSummary, getEscalationMatrix, getIntegrations, getNotificationSettings, getSources, getWorkspaceMembers, updateAlertStatus, updateAlertAssignment, updateEscalationMatrix, updateNotificationSettings, bulkUpdateAlerts, type Alert, type EscalationMatrixRecord, type IntegrationRecord, type NotificationRuleRecord, type NotificationRuleTrigger, type WorkspaceMemberRecord } from "@/lib/api-service";
 import { isDemoSession as isDemoUser, useAuthStore } from "@/store/useAuthStore";
 import { intlLocale } from "@/store/useUiStore";
@@ -139,37 +141,6 @@ function buildMetricCards(ta: ReturnType<typeof useTranslations<"Alerts">>, summ
     { label: ta("v2.metrics.avgResponseTime"), value: avgResponseMinutes !== null ? formatMinutes(avgResponseMinutes) : "-", helper: slow ? pickL(`${slowBy}× slower than the ${formatMinutes(slaTargetMinutes!)} target`, `${slowBy}× lebih lambat dari target ${formatMinutes(slaTargetMinutes!)}`) : ta("v2.metrics.target", { val: slaTargetMinutes !== null ? formatMinutes(slaTargetMinutes) : "-" }), helperTone: slow ? "red" : "green", icon: HelpCircle, tone: slow ? "red" : "blue", spark: [] },
   ];
 }
-
-function MetricCard({ metric }: { metric: Metric }) {
-  const style = toneStyles[metric.tone];
-  const helperStyle = toneStyles[metric.helperTone];
-
-  return (
-    <div className="min-h-[120px] flex flex-col items-center justify-center rounded-[18px] bg-white px-4 py-5 text-center border-[1.5px] border-[#101334] shadow-[0_4px_0_#101334]">
-      <p className="text-[11px] font-black" style={{ color: style.color }}>{metric.label}</p>
-      <p className="mt-2 text-[30px] font-black leading-none tracking-[-0.04em] text-navy">{metric.value}</p>
-      <p className={cn("mt-2 text-[11px] font-bold leading-tight", helperStyle.text)}>{metric.helper}</p>
-    </div>
-  );
-}
-
-function MetricCardSkeleton() {
-  return (
-    <Panel className="relative min-h-[96px] overflow-hidden p-3.5">
-      <div className="flex items-center gap-3">
-        <span className="size-10 shrink-0 animate-pulse rounded-full bg-[#EEF2FF]" />
-        <div className="min-w-0 flex-1">
-          <p className="h-3 w-24 animate-pulse rounded bg-[#EEF2FF]" />
-          <p className="mt-2 h-7 w-14 animate-pulse rounded bg-[#E6EAF8]" />
-          <p className="mt-2 h-3 w-28 animate-pulse rounded bg-[#EEF2FF]" />
-        </div>
-      </div>
-      <div className="absolute inset-x-3 bottom-3 h-5 animate-pulse rounded bg-[#F1F4FB]" />
-    </Panel>
-  );
-}
-
-
 
 function StatusBadge({ status }: { status: AlertStatus }) {
   const styles: Record<AlertStatus, string> = {
@@ -380,53 +351,61 @@ function CriticalIncident({
     : [];
 
   return (
-    <Panel className="min-h-0 h-auto border-transparent bg-[#FFF5F5] p-5">
-      {isLoading || !alert ? (
-        <div className="space-y-3">
-          <div className="h-6 w-2/3 animate-pulse rounded bg-[#F8DADA]" />
-          <div className="grid gap-2 sm:grid-cols-3">{Array.from({ length: 3 }, (_, i) => <div key={i} className="h-16 animate-pulse rounded-[12px] bg-white/80" />)}</div>
-        </div>
-      ) : (
-        <>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="inline-flex rounded-full bg-[#C81E1E] px-2.5 py-0.5 text-[11px] font-black text-white">
+    <Panel className="overflow-hidden !p-0">
+      <div className="h-2 bg-[#B42318]" />
+      <div className="p-5 sm:p-7">
+        {isLoading || !alert ? (
+          <div className="space-y-3">
+            <div className="h-6 w-2/3 animate-pulse rounded bg-[#F8DADA]" />
+            <div className="grid gap-2 sm:grid-cols-3">{Array.from({ length: 3 }, (_, i) => <div key={i} className="h-16 animate-pulse rounded-[12px] bg-[#F6F7FC]" />)}</div>
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-[8px] bg-[#B42318] px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-white">
                 {pickL("Critical Incident", "Insiden Kritis")}{totalCritical > 1 ? ` · ${pickL(`${totalCritical} open`, `${totalCritical} aktif`)}` : ""}
-              </p>
-              <h2 className="mt-2 line-clamp-2 text-[26px] font-black leading-tight tracking-[-0.03em] text-[#070B28]">{alert.title}</h2>
-              {alert.description ? <p className="mt-1 line-clamp-1 text-[12px] font-semibold text-[#31406B]" title={alert.description}>{alert.description}</p> : null}
+              </span>
+              {left ? (
+                <span className={cn("nv-stamp", alert.overdue && "!border-[#B42318] !bg-[#B42318] !text-white !shadow-[0_2px_0_#7A1610]")}><Clock3 size={12} /> {left}</span>
+              ) : null}
+              <span className="font-mono text-[11.5px] font-medium text-[#5F6B94]">{ta("v2.incident.since", { time: alert.time })}</span>
             </div>
-            <Link href={`/alerts/${alert.id}`} className="inline-flex h-9 items-center rounded-full bg-[#101334] px-4 text-[12.5px] font-bold text-white transition hover:bg-[#2B2F9E]">
-              {ta("v2.incident.viewDetails")}
+            <Link href={`/alerts/${alert.id}`} className="group mt-4 block">
+              <h2 className="line-clamp-2 max-w-4xl text-balance text-[26px] font-black leading-[1.15] tracking-[-0.03em] text-[#101334] group-hover:text-[#3B52F5] sm:text-[32px]">{alert.title}</h2>
+              {alert.description ? <p className="mt-2 line-clamp-2 max-w-3xl text-[15px] font-medium leading-relaxed text-[#31406B]">{alert.description}</p> : null}
             </Link>
-          </div>
-          <div className="mt-5 grid gap-x-10 gap-y-4 sm:grid-cols-3">
-            {facts.map((f) => (
-              <div key={f.label} className="min-w-0">
-                <p className="text-[12px] font-bold text-[#647099]">{f.label}</p>
-                <p className={cn("mt-1 truncate text-[22px] font-black leading-tight", f.bad ? "text-[#C81E1E]" : "text-[#101334]")} title={f.value}>{f.value}</p>
-                <p className={cn("mt-0.5 truncate text-[12px] font-bold", f.bad ? "text-[#C81E1E]" : "text-[#5F6B94]")}>{f.sub}</p>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            <label className="sr-only" htmlFor="incident-owner">{ta("v2.incident.owner")}</label>
-            <select
-              id="incident-owner"
-              value={alert.assigneeId ?? ""}
-              onChange={(e) => e.target.value && onAssign(alert.id, e.target.value)}
-              className={cn("h-10 w-full max-w-full rounded-full px-4 text-[13px] font-bold outline-none sm:w-auto", unassigned ? "bg-[#C81E1E] text-white" : "bg-white text-[#101334] border-[1.5px] border-[#101334] shadow-[0_2px_0_#101334]")}
-            >
-              <option value="">{pickL("Assign an Owner…", "Tunjuk Penanggung Jawab…")}</option>
-              {members.map((m) => <option key={m.userId} value={m.userId}>{memberName(m)}</option>)}
-            </select>
-            {alert.status === "New" ? (
-              <button type="button" onClick={() => onStatusChange(alert.id, "acknowledged")} className="h-10 rounded-full bg-white px-5 text-[13px] font-bold text-[#101334] border-[1.5px] border-[#101334] shadow-[0_2px_0_#101334] transition hover:bg-[#F8FAFF]">{pickL("Mark as Being Handled", "Tandai Sedang Ditangani")}</button>
-            ) : null}
-            <button type="button" onClick={() => onPlan(alert)} className="h-10 rounded-full bg-[#465FFF] px-5 text-[13px] font-bold text-white transition hover:bg-[#3B52F5]">{pickL("Create Action Plan", "Buat Rencana Aksi")}</button>
-          </div>
-        </>
-      )}
+            <dl className="mt-5 grid gap-3 sm:grid-cols-3">
+              {facts.map((f) => (
+                <div key={f.label} className={cn("min-w-0 rounded-[14px] px-4 py-3", f.bad ? "bg-[#FFF5F4] shadow-[inset_0_0_0_1.5px_#F5B5B0]" : "bg-[#F6F7FC]")}>
+                  <dt className="font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{f.label}</dt>
+                  <dd className={cn("mt-1 truncate text-[20px] font-black leading-tight", f.bad ? "text-[#B42318]" : "text-[#101334]")} title={f.value}>{f.value}</dd>
+                  <dd className={cn("mt-0.5 truncate text-[12px] font-bold", f.bad ? "text-[#B42318]" : "text-[#5F6B94]")}>{f.sub}</dd>
+                </div>
+              ))}
+            </dl>
+            {/* The decision bar: every button acts on this incident. */}
+            <div className="mt-5 flex flex-col gap-2.5 rounded-[18px] bg-[#101334] p-4 sm:flex-row sm:flex-wrap sm:items-center">
+              <label className="sr-only" htmlFor="incident-owner">{ta("v2.incident.owner")}</label>
+              <select
+                id="incident-owner"
+                value={alert.assigneeId ?? ""}
+                onChange={(e) => e.target.value && onAssign(alert.id, e.target.value)}
+                className={cn("h-11 w-full rounded-[12px] px-4 text-[14px] font-black outline-none sm:w-auto", unassigned ? "bg-[#B42318] text-white" : "bg-white text-[#101334]")}
+              >
+                <option value="">{pickL("Assign an Owner…", "Tunjuk Penanggung Jawab…")}</option>
+                {members.map((m) => <option key={m.userId} value={m.userId}>{memberName(m)}</option>)}
+              </select>
+              <button type="button" onClick={() => onPlan(alert)} className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-[#465FFF] px-5 text-[14px] font-black text-white transition hover:bg-[#3B52F5]">{pickL("Create Action Plan", "Buat Rencana Aksi")}</button>
+              {alert.status === "New" ? (
+                <button type="button" onClick={() => onStatusChange(alert.id, "acknowledged")} className="inline-flex h-11 items-center justify-center rounded-[12px] border-[1.5px] border-white/80 px-5 text-[14px] font-black text-white transition hover:bg-white/10">{pickL("I'm Handling This", "Saya Tangani")}</button>
+              ) : null}
+              <Link href={`/alerts/${alert.id}`} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-[12px] px-4 text-[14px] font-bold text-white/80 transition hover:bg-white/10 hover:text-white sm:ml-auto">
+                {ta("v2.incident.viewDetails")} <ArrowRight size={15} />
+              </Link>
+            </div>
+          </>
+        )}
+      </div>
     </Panel>
   );
 }
@@ -535,6 +514,7 @@ function AlertPagination({ page, totalPages, onPageChange, ta }: { page: number;
 }
 
 function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isError, onPageChange, onStatusChange, openMenuId, setOpenMenuId, menuRef, searchQuery, onSearchChange, severityFilter, statusFilter, onOpenFilterModal, selectedAlerts, onSelectionChange, onBulkStatusChange, isBulkUpdating }: { ta: ReturnType<typeof useTranslations<"Alerts">>; rows: AlertRow[]; page: number; totalPages: number; footerText: string; isLoading: boolean; isError: boolean; onPageChange: (page: number) => void; onStatusChange: (id: string | number, status: "open" | "acknowledged" | "resolved") => void; openMenuId: string | number | null; setOpenMenuId: (id: string | number | null) => void; menuRef: React.RefObject<HTMLDivElement | null>; searchQuery: string; onSearchChange: (value: string) => void; severityFilter: string; statusFilter: string; onOpenFilterModal: () => void; selectedAlerts: Set<string | number>; onSelectionChange: (ids: Set<string | number>) => void; onBulkStatusChange: (status: "open" | "acknowledged" | "resolved") => void; isBulkUpdating: boolean }) {
+  const router = useRouter();
   // Five columns that fit the panel; source, escalation and time live on the alert's own page.
   const headers = [ta("table.alert"), ta("table.severity"), ta("table.owner"), ta("table.deadline"), ta("table.status"), ""];
   const activeFilterCount = [searchQuery, severityFilter, statusFilter].filter(Boolean).length;
@@ -694,7 +674,12 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                 </td>
               </tr>
             ) : rows.map((alert) => (
-              <tr key={alert.id} className={cn("transition hover:bg-[#F8FAFF]", alert.tone === "red" && "bg-[#FDECEC]", alert.tone === "amber" && "bg-[#FFF6E0]", selectedAlerts.has(alert.id) && "bg-[#EEF2FF]")}>
+              <tr
+                key={alert.id}
+                // The whole row opens the alert; the checkbox, menu and links inside keep their own clicks.
+                onClick={(e) => { if (!(e.target as HTMLElement).closest("button,a,select,input")) router.push(`/alerts/${alert.id}`); }}
+                className={cn("cursor-pointer transition hover:bg-[#F7F8FC]", alert.tone === "red" && "bg-[#FFF8F7] shadow-[inset_4px_0_0_#B42318]", alert.tone === "amber" && "shadow-[inset_4px_0_0_#F59E0B]", selectedAlerts.has(alert.id) && "bg-[#EEF2FF]")}
+              >
                 <td className="px-3 py-3 align-middle">
                   <button
                     type="button"
@@ -712,12 +697,12 @@ function AlertsTable({ ta, rows, page, totalPages, footerText, isLoading, isErro
                 </td>
                 <td className="px-3 py-3">
                   <div className="min-w-0">
-                    <Link href={`/alerts/${alert.id}`} className="text-[13px] font-black leading-snug text-[#101334] hover:text-[#3B52F5]">{alert.title}</Link>
-                    {alert.description ? <p className="mt-1 line-clamp-2 text-[11px] font-semibold leading-snug text-[#3A4566]">{alert.description}</p> : null}
-                    {alert.time ? <p className="mt-1 text-[10px] font-bold text-[#8A93AD]">{alert.time}</p> : null}
+                    <Link href={`/alerts/${alert.id}`} className="text-[14.5px] font-black leading-snug text-[#101334] hover:text-[#3B52F5]">{alert.title}</Link>
+                    {alert.description ? <p className="mt-1 line-clamp-2 text-[12.5px] font-medium leading-snug text-[#3A4566]">{alert.description}</p> : null}
+                    {alert.time ? <p className="mt-1 font-mono text-[11px] font-medium text-[#8A93AD]">{alert.time}</p> : null}
                   </div>
                 </td>
-                <td className="px-3 py-3 align-middle"><span className={cn("rounded-[6px] px-2 py-1 text-[11px] font-black", alert.tone === "red" ? "bg-[#C81E1E] text-white" : alert.tone === "amber" ? "bg-[#F59E0B] text-white" : "bg-[#10B981]/12 text-[#047857]")}>{alert.tags[0]}</span></td>
+                <td className="px-3 py-3 align-middle"><span className={cn("rounded-[6px] px-2 py-1 font-mono text-[10.5px] font-bold uppercase tracking-[0.06em]", alert.tone === "red" ? "bg-[#B42318] text-white" : alert.tone === "amber" ? "bg-[#FFF4E5] text-[#A04606]" : "bg-[#E8F7EF] text-[#047857]")}>{alert.tags[0]}</span></td>
                 <td className="px-3 py-3 align-middle">{alert.sourceLabel === ta("table.unassigned") ? <span className="text-[12px] font-black text-[#C81E1E]">{alert.sourceLabel}</span> : <span className="line-clamp-2 text-[12px] font-black text-[#31406B]">{alert.sourceLabel}</span>}</td>
                 <td className="px-3 py-3 align-middle">{alert.overdue ? <span className="inline-block rounded-[6px] bg-[#C81E1E] px-2 py-1 text-[11px] font-black leading-tight text-white"><span className="block text-[10px] text-white/80">{pickL("Overdue", "Lewat tenggat")}</span>{alert.deadline}</span> : <span className="text-[12px] font-black text-[#31406B]">{alert.deadline}</span>}</td>
                 <td className="px-3 py-3 align-middle"><StatusBadge status={alert.status} /><p className="mt-1 text-[10px] font-bold text-[#5A6478]">{alert.ack}</p></td>
@@ -1170,13 +1155,11 @@ export default function AlertsPage() {
         </div>
       </header>
 
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5">
-        {summaryQuery.isLoading ? (
-          Array.from({ length: 5 }, (_, index) => <MetricCardSkeleton key={index} />)
-        ) : (
-          metrics.map((metric) => <MetricCard key={metric.label} metric={metric} />)
-        )}
-      </section>
+      {summaryQuery.isLoading ? (
+        <div className="h-[112px] animate-pulse rounded-[18px] bg-white/70" />
+      ) : (
+        <StatStrip stats={metrics.map((m) => ({ key: m.label, value: m.value, label: m.label, helper: m.helper, tone: m.value !== "0" && m.value !== "-" && (m.tone === "red" || m.tone === "amber") ? toneStyles[m.tone].text : m.tone === "green" ? toneStyles.green.text : "text-[#101334]" }))} />
+      )}
       {summaryQuery.isError || (!summaryQuery.isLoading && !summaryQuery.data) ? (
         <div className="px-5 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
