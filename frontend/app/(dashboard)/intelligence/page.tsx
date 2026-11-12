@@ -262,29 +262,6 @@ function Panel({ children, className, onClick }: { children: ReactNode; classNam
 }
 
 
-function Sparkline({ values, color }: { values: number[]; color: string }) {
-  const safeValues = values.length > 1 ? values : [0, 0];
-  const width = 100;
-  const height = 36;
-  const max = Math.max(...safeValues);
-  const min = Math.min(...safeValues);
-  const range = max - min || 1;
-  const path = safeValues
-    .map((value, index) => {
-      const x = (index / (safeValues.length - 1)) * 96 + 2;
-      const y = height - ((value - min) / range) * 28 - 4;
-      return `${index === 0 ? "M" : "L"} ${x} ${y}`;
-    })
-    .join(" ");
-
-  return (
-    <svg className="chart-line-draw h-10 w-full" viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
-      <path d={`${path} L 98 ${height} L 2 ${height} Z`} fill={color} opacity="0.08" />
-      <path d={path} fill="none" stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" />
-    </svg>
-  );
-}
-
 function ClusterIcon({ tone: _tone }: { tone: Tone }) {
 
   return null;
@@ -886,27 +863,50 @@ export default function IntelligencePage() {
           <div className="grid grid-cols-1 gap-4">
 
 
+            {/* Where each issue is in its life, left to right: appears, rises, peaks, then falls or goes quiet. Each stage
+                lists its issues; clicking one shows it in the Selected Narrative panel. */}
             <Panel>
-              <CardContent className="p-5">
-                <h3 className="flex items-center gap-2 text-[16px] font-black tracking-[-0.02em] text-[#101334]">
-                  {ti("lifecycle.title")}
-                  <Info size={13} className="text-[#647099]" />
-                </h3>
-                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                  {lifecycleCards.map((phase) => {
+              <CardContent className="p-5 sm:p-6">
+                <div className="flex flex-wrap items-end justify-between gap-2">
+                  <div>
+                    <p className="font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-[#5F6B94]">{pickL("Where Each Issue Is", "Posisi Tiap Isu")}</p>
+                    <h3 className="mt-1.5 text-[20px] font-black tracking-[-0.02em] text-[#101334]">{ti("lifecycle.title")}</h3>
+                  </div>
+                  <p className="text-[13px] font-semibold text-[#5F6B94]">{pickL("Issues move left to right: they appear, rise, peak, then fall or go quiet.", "Isu bergerak dari kiri ke kanan: muncul, naik, memuncak, lalu turun atau mereda.")}</p>
+                </div>
+                <ol className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                  {lifecycleCards.map((phase, i) => {
                     const toneStyle = toneStyles[phase.tone];
+                    const members = clusters.filter((c) => c.id !== "empty" && classifyLifecycle(c) === phase.key).sort((x, y) => y.signals - x.signals);
+                    const hot = phase.key === "accelerating" || phase.key === "peaking";
                     return (
-                      <div key={phase.key} className="flex min-h-[132px] min-w-0 flex-col justify-between rounded-[12px] p-3" style={{ background: `rgba(${toneStyle.rgb}, ${phase.count > 0 ? 0.09 : 0.04})` }}>
-                        <div>
-                          <p className="text-[10px] font-black" style={{ color: readableTone(toneStyle.color) }}>{ti(`lifecycle.phases.${phase.key}.title`)}</p>
-                          <p className="mt-2 text-[27px] font-black leading-none tracking-[-0.04em] text-[#101334]">{phase.count}</p>
-                          <p className="mt-2 text-[10px] font-bold leading-snug text-[#647099]">{ti(`lifecycle.phases.${phase.key}.desc`)}</p>
+                      <li key={phase.key} className="relative flex min-w-0 flex-col rounded-[16px] bg-[#F6F7FC] p-4" style={{ boxShadow: `inset 0 4px 0 ${toneStyle.color}` }}>
+                        {i < lifecycleCards.length - 1 ? (
+                          <span aria-hidden="true" className="absolute -right-[13px] top-1/2 z-10 hidden size-6 -translate-y-1/2 place-items-center rounded-full border-[1.5px] border-[#101334] bg-white text-[#101334] lg:grid"><ChevronRight size={13} /></span>
+                        ) : null}
+                        <div className="flex items-center justify-between gap-2 pt-1">
+                          <p className="font-mono text-[10.5px] font-bold uppercase tracking-[0.08em]" style={{ color: readableTone(toneStyle.color) }}>{String(i + 1).padStart(2, "0")} · {ti(`lifecycle.phases.${phase.key}.title`)}</p>
+                          {hot && phase.count > 0 ? <span className="rounded-[6px] bg-[#B42318] px-1.5 py-0.5 font-mono text-[9.5px] font-bold uppercase tracking-[0.06em] text-white">{pickL("Watch", "Pantau")}</span> : null}
                         </div>
-                        {phase.values.length > 1 ? <Sparkline values={phase.values} color={toneStyle.color} /> : null}
-                      </div>
+                        <p className={cn("mt-2 text-[40px] font-black leading-none tracking-[-0.04em]", phase.count > 0 ? "text-[#101334]" : "text-[#C9D0E3]")}>{phase.count}</p>
+                        <p className="mt-2 text-[13px] font-semibold leading-snug text-[#5F6B94]">{ti(`lifecycle.phases.${phase.key}.desc`)}</p>
+                        <ul className="mt-3 space-y-1.5 border-t border-[#E3E7F1] pt-3">
+                          {members.length === 0 ? (
+                            <li className="text-[12.5px] font-semibold text-[#9AA3BC]">{pickL("None right now", "Belum ada")}</li>
+                          ) : members.slice(0, 3).map((c) => (
+                            <li key={c.id}>
+                              <button type="button" onClick={() => setSelectedClusterId(c.id)} className={cn("group flex w-full items-start justify-between gap-2 rounded-[8px] px-1.5 py-1 text-left transition hover:bg-white", selectedCluster.id === c.id && "bg-white shadow-[inset_0_0_0_1.5px_#465FFF]")}>
+                                <span className="line-clamp-2 text-[13px] font-bold leading-snug text-[#101334] group-hover:text-[#3B52F5]">{text(c.topic, language)}</span>
+                                <span className="shrink-0 font-mono text-[11px] font-bold text-[#5F6B94]">{c.signals}</span>
+                              </button>
+                            </li>
+                          ))}
+                          {members.length > 3 ? <li className="px-1.5 font-mono text-[11px] font-bold text-[#5F6B94]">+{members.length - 3} {pickL("more", "lainnya")}</li> : null}
+                        </ul>
+                      </li>
                     );
                   })}
-                </div>
+                </ol>
               </CardContent>
             </Panel>
           </div>
