@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, ExternalLink, FileText, Sparkles } from "lucide-react";
+import { ArrowRight, ExternalLink, FileText, Megaphone, Sparkles } from "lucide-react";
 import { CreateActionPlanModal } from "@/app/(dashboard)/action-plans/components/create-action-plan-modal";
 import { MonoLabel, StatStrip } from "@/components/ui/stamp";
 import { DashboardEmptyState } from "@/components/dashboard/dashboard-states";
@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { PlatformIcon } from "@/components/ui/platform-icon";
 import { getAlerts, getSignals, type Alert, type Signal } from "@/lib/api-service";
 import { useL } from "@/lib/use-l";
+import { monitoringHref } from "@/lib/evidence-links";
 import { cn } from "@/lib/utils";
 import { BOX } from "@/lib/surface";
 import { intlLocale } from "@/store/useUiStore";
@@ -97,29 +98,43 @@ function OpportunityRow({ alert }: { alert: Alert }) {
   );
 }
 
-function GoodNewsRow({ signal }: { signal: Signal }) {
+/**
+ * One piece of good news. The row always opens something: the original post when its link is shown, otherwise the
+ * mentions of its issue (privacy mode hides post links). "Amplify" starts a plan from it.
+ */
+function GoodNewsRow({ signal, onAmplify }: { signal: Signal; onAmplify: (signal: Signal) => void }) {
   const L = useL();
   const text = signal.title || signal.content;
+  const narrative = signal.narratives?.[0];
   const body = (
     <>
       <PlatformIcon platform={signal.platform || "news"} className="mt-0.5 size-6" />
-      <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 text-[15px] font-bold leading-snug text-[#101334]">{text}</p>
-        <p className="mt-1 font-mono text-[11.5px] font-medium text-[#5F6B94]">
+      <span className="min-w-0 flex-1">
+        <span className="line-clamp-2 block text-[15px] font-bold leading-snug text-[#101334] group-hover:text-[#3B52F5]">{text}</span>
+        <span className="mt-1 block font-mono text-[11.5px] font-medium text-[#5F6B94]">
           {[signal.author, shortDate(signal.publishedAt || signal.capturedAt)].filter(Boolean).join(" · ")}
-          {signal.narratives?.length ? <> · <span className="font-semibold text-[#31406B]">{signal.narratives[0].title}</span></> : null}
-        </p>
-      </div>
-      {signal.url ? <ExternalLink size={15} className="mt-1 shrink-0 text-[#5F6B94]" aria-label={L("Open the source", "Buka sumber")} /> : null}
+          {narrative ? <> · <span className="font-semibold text-[#31406B]">{narrative.title}</span></> : null}
+        </span>
+      </span>
+      {signal.url ? <ExternalLink size={15} className="mt-1 shrink-0 text-[#9AA3BC] group-hover:text-[#3B52F5]" aria-label={L("Open the source", "Buka sumber")} /> : <ArrowRight size={15} className="mt-1 shrink-0 text-[#9AA3BC] group-hover:text-[#3B52F5]" aria-hidden="true" />}
     </>
   );
-  const cls = "-mx-2 flex items-start gap-3 rounded-[12px] px-2 py-3.5 transition hover:bg-[#F7F8FC]";
-  return signal.url ? <a href={signal.url} target="_blank" rel="noopener noreferrer" className={cls}>{body}</a> : <div className={cls}>{body}</div>;
+  const cls = "group flex min-w-0 flex-1 items-start gap-3 rounded-[12px] px-2 py-3.5 transition hover:bg-[#F7F8FC]";
+  const href = narrative ? monitoringHref({ narrative: narrative.id, sentiment: "positive" }) : monitoringHref({ sentiment: "positive", q: (signal.title || "").slice(0, 60) || undefined });
+  return (
+    <div className="-mx-2 flex items-center gap-2">
+      {signal.url ? <a href={signal.url} target="_blank" rel="noopener noreferrer" className={cls}>{body}</a> : <Link href={href} className={cls}>{body}</Link>}
+      <button type="button" onClick={() => onAmplify(signal)} className="hidden h-9 shrink-0 items-center gap-1.5 rounded-[10px] border-[1.5px] border-[#101334] bg-white px-3 text-[12.5px] font-black text-[#101334] shadow-[0_2px_0_#101334] transition hover:bg-[#E8F7EF] sm:inline-flex">
+        <Megaphone size={14} /> {L("Amplify", "Perkuat")}
+      </button>
+    </div>
+  );
 }
 
 export default function OpportunitiesPage() {
   const L = useL();
   const [planFor, setPlanFor] = useState<Alert | null>(null);
+  const [amplify, setAmplify] = useState<Signal | null>(null);
   const since = new Date(Date.now() - DAYS * 24 * 3600 * 1000).toISOString();
   const opportunities = useQuery({ queryKey: ["opportunities", "alerts"], queryFn: () => getAlerts({ type: "opportunity", limit: 50 }) });
   const positive = useQuery({ queryKey: ["opportunities", "positive", DAYS], queryFn: () => getSignals({ sentiment: "positive", startDate: since, limit: 8 }) });
@@ -195,13 +210,22 @@ export default function OpportunitiesPage() {
           {loading ? (
             <div className="space-y-2">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>
           ) : goodNews.length ? (
-            <div className="divide-y divide-[#EEF0F6]">{goodNews.map((s) => <GoodNewsRow key={s.id} signal={s} />)}</div>
+            <div className="divide-y divide-[#EEF0F6]">{goodNews.map((s) => <GoodNewsRow key={s.id} signal={s} onAmplify={setAmplify} />)}</div>
           ) : (
             <p className="py-6 text-[14px] text-[#5F6B94]">{L(`No positive mentions in the last ${DAYS} days.`, `Belum ada percakapan positif dalam ${DAYS} hari terakhir.`)}</p>
           )}
         </section>
       </div>
 
+      {amplify ? (
+        <CreateActionPlanModal
+          open
+          onOpenChange={(o) => { if (!o) setAmplify(null); }}
+          initialSignalId={amplify.id}
+          initialClusterId={amplify.narratives?.[0]?.id}
+          initialStrategyType="pr_response"
+        />
+      ) : null}
       {planFor ? (
         <CreateActionPlanModal
           open
