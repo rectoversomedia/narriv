@@ -440,7 +440,7 @@ export function Topbar() {
           aria-current={pathname?.startsWith("/ask") ? "page" : undefined}
           className="hidden h-10 shrink-0 items-center gap-2 rounded-[10px] bg-[#101334] pl-1.5 pr-3.5 text-[12.5px] font-black text-white transition hover:bg-[#2B2F9E] lg:inline-flex"
         >
-          <Image src="/brand/logo-bulat.webp" alt="" width={28} height={28} unoptimized className="size-7 rounded-full object-cover" />
+          <Image src="/brand/app-orb-round-192.png" alt="" width={28} height={28} unoptimized className="size-7 rounded-full" />
           <span>Ask Narriv</span>
         </Link>
         {/* Both languages visible; the active one is filled, a click switches. */}

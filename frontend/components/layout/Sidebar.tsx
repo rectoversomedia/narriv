@@ -197,7 +197,7 @@ export function Sidebar() {
           aria-current={pathname?.startsWith("/ask") ? "page" : undefined}
           className={`flex h-[52px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 transition ${pathname?.startsWith("/ask") ? "bg-[#465FFF] text-white" : "text-white/60 hover:text-white"}`}
         >
-          <Image src="/brand/logo-bulat.webp" alt="" width={20} height={20} unoptimized className="size-5 rounded-full object-cover" />
+          <Image src="/brand/app-orb-round-192.png" alt="" width={20} height={20} unoptimized className="size-5 rounded-full" />
           <span className="w-full truncate text-center text-[10px] font-bold leading-none">Ask</span>
         </Link>
       </nav>
