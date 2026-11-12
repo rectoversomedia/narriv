@@ -16,6 +16,8 @@ export function beginLaunch() {
     } catch {
       /* storage off: the overlay still plays for client-side navigation */
     }
+    // A fresh launch starts its animations from the beginning.
+    document.documentElement.style.setProperty("--launch-offset", "0ms");
     document.documentElement.classList.add(LAUNCH_CLASS);
   }
   window.dispatchEvent(new Event(LAUNCH_START));
@@ -56,5 +58,6 @@ export function signalDashboardReady() {
 }
 
 /** Runs in <head> before first paint: a reload that is part of a launch starts with the screen already covered. */
-// The OAuth callback starts covered too, so the sign-in never shows an interim "authenticating" page.
-export const LAUNCH_BOOT_SCRIPT = `try{var t=+sessionStorage.getItem("${LAUNCH_KEY}");if(location.pathname==="/oauth/callback"&&!(t&&Date.now()-t<15000)){t=Date.now();sessionStorage.setItem("${LAUNCH_KEY}",String(t))}if(t&&Date.now()-t<15000)document.documentElement.classList.add("${LAUNCH_CLASS}");else sessionStorage.removeItem("${LAUNCH_KEY}")}catch(e){}`;
+// A reload mid-launch continues the same welcome: --launch-offset (negative) skips the animations ahead by the time
+// already shown, set before first paint so nothing jumps. The OAuth callback starts covered too, so the sign-in never shows an interim "authenticating" page.
+export const LAUNCH_BOOT_SCRIPT = `try{var t=+sessionStorage.getItem("${LAUNCH_KEY}");if(location.pathname==="/oauth/callback"&&!(t&&Date.now()-t<15000)){t=Date.now();sessionStorage.setItem("${LAUNCH_KEY}",String(t))}if(t&&Date.now()-t<15000){var d=document.documentElement;d.style.setProperty("--launch-offset","-"+Math.min(3000,Date.now()-t)+"ms");d.classList.add("${LAUNCH_CLASS}")}else sessionStorage.removeItem("${LAUNCH_KEY}")}catch(e){}`;

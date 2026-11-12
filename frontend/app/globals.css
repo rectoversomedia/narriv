@@ -327,9 +327,11 @@ button {
   background: radial-gradient(ellipse 80% 60% at 50% 45%, #1b1f6b 0%, #0b0f2e 55%, #050820 100%);
   color: #fff;
 }
-html.narriv-launching .narriv-launch { display: flex; animation: narrivLaunchIn 0.45s ease-out both; }
+/* The page behind is dark while launching, so a reload mid-launch never flashes white. */
+html.narriv-launching { background: #0b0f2e; }
+html.narriv-launching .narriv-launch { display: flex; animation: narrivLaunchIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: min(0ms, var(--launch-offset, 0ms)); }
 html.narriv-launching body { overflow: hidden; }
-.narriv-launch.is-leaving { animation: narrivLaunchOut 0.65s cubic-bezier(0.4, 0, 0.2, 1) both; }
+.narriv-launch.is-leaving { animation: narrivLaunchOut 0.9s cubic-bezier(0.65, 0, 0.35, 1) both; animation-delay: 0ms; }
 /* Glow and ring sit on the orb's own box, so they stay centred on it whatever is below. */
 .narriv-launch__stage { position: relative; width: 168px; height: 168px; }
 .narriv-launch__glow {
@@ -415,16 +417,16 @@ html.narriv-launching body { overflow: hidden; }
   animation: narrivLaunchFill 3s cubic-bezier(0.45, 0.05, 0.25, 1) both;
 }
 /* The page beneath rises in as the screen lifts. */
-html.narriv-revealing main { animation: narrivLaunchPage 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+html.narriv-revealing main { animation: narrivLaunchPage 1s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
-@keyframes narrivLaunchIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes narrivLaunchOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1.06); } }
+@keyframes narrivLaunchIn { from { opacity: 0; backdrop-filter: blur(0); } to { opacity: 1; } }
+@keyframes narrivLaunchOut { 0% { opacity: 1; transform: scale(1); filter: blur(0); } 100% { opacity: 0; transform: scale(1.04); filter: blur(8px); } }
 @keyframes narrivLaunchOrb { 0% { opacity: 0; transform: scale(0.55); } 100% { opacity: 1; transform: scale(1); } }
 @keyframes narrivLaunchRing { 0% { opacity: 0.8; transform: scale(0.85); } 100% { opacity: 0; transform: scale(1.7); } }
 @keyframes narrivLaunchBreath { 0%, 100% { opacity: 0.75; transform: scale(0.96); } 50% { opacity: 1; transform: scale(1.04); } }
 @keyframes narrivLaunchRise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes narrivLaunchFill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-@keyframes narrivLaunchPage { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes narrivLaunchPage { from { opacity: 0; transform: translateY(14px) scale(0.99); } to { opacity: 1; transform: none; } }
 
 @media (prefers-reduced-motion: reduce) {
   .narriv-launch, .narriv-launch *, html.narriv-revealing main { animation: none !important; }

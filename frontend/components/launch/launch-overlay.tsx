@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DASHBOARD_READY, LAUNCH_CLASS, LAUNCH_KEY, LAUNCH_START, launchStartedAt } from "@/lib/launch";
 import { useL } from "@/lib/use-l";
 import { cn } from "@/lib/utils";
@@ -13,14 +13,12 @@ import { isDemoSession, useAuthStore } from "@/store/useAuthStore";
 
 const MIN_SHOW_MS = 3000;
 const MAX_WAIT_MS = 6500;
-const EXIT_MS = 650;
+const EXIT_MS = 900;
 
 export function LaunchOverlay() {
   const L = useL();
   const user = useAuthStore((s) => s.user);
   const [leaving, setLeaving] = useState(false);
-  // How far into the welcome this page starts: a full reload mid-launch continues the animation instead of replaying it.
-  const [elapsed, setElapsed] = useState(0);
   const shownAt = useRef(0);
 
   useEffect(() => {
@@ -47,7 +45,6 @@ export function LaunchOverlay() {
     };
     const start = () => {
       shownAt.current = launchStartedAt();
-      setElapsed(Math.min(MIN_SHOW_MS, Date.now() - shownAt.current));
       setLeaving(false);
       window.clearTimeout(fallback);
       // Never strand anyone behind the screen if the ready signal does not come (e.g. a redirect to onboarding).
@@ -73,7 +70,6 @@ export function LaunchOverlay() {
       id="narriv-launch"
       aria-hidden="true"
       className={cn("narriv-launch", leaving && "is-leaving")}
-      style={{ "--launch-offset": `-${elapsed}ms` } as CSSProperties}
     >
       <div className="narriv-launch__stage">
         <div className="narriv-launch__glow" />
