@@ -17,17 +17,6 @@ export type TopicMapNode = {
 
 const MAX_NODES = 8;
 
-// One vivid gradient per narrative (by rank), so neighbouring circles never share a colour.
-const PALETTE = [
-  ["#6366F1", "#8B5CF6"], // indigo → violet
-  ["#EC4899", "#F43F5E"], // pink → rose
-  ["#06B6D4", "#3B82F6"], // cyan → blue
-  ["#F59E0B", "#F97316"], // amber → orange
-  ["#10B981", "#14B8A6"], // emerald → teal
-  ["#A855F7", "#D946EF"], // purple → fuchsia
-  ["#0EA5E9", "#22D3EE"], // sky → cyan
-  ["#EF4444", "#F97316"], // red → orange
-];
 
 /**
  * Narrative map in one pixel coordinate space: nodes and connectors are laid
@@ -74,11 +63,17 @@ export function TopicMapCanvas({
 
   return (
     <div ref={ref} className={cn("absolute inset-0 overflow-hidden rounded-[14px]", className)}>
-      {/* Backdrop: a soft light gradient with three large blurred colour fields (no pattern). */}
-      <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(135deg,#F7F8FF_0%,#EEF1FF_45%,#FBF1F8_100%)]" />
-      <div aria-hidden="true" className="absolute -left-[10%] -top-[25%] h-[70%] w-[55%] rounded-full bg-[#A5B4FC] opacity-40 blur-[90px]" />
-      <div aria-hidden="true" className="absolute -bottom-[30%] right-[-5%] h-[75%] w-[50%] rounded-full bg-[#F9A8D4] opacity-35 blur-[90px]" />
-      <div aria-hidden="true" className="absolute left-[35%] top-[30%] h-[45%] w-[35%] rounded-full bg-[#99F6E4] opacity-30 blur-[100px]" />
+      {/* Backdrop: Narriv's dotted paper under a faint radar (rings and crosshair), so the map reads as a scan. */}
+      <div aria-hidden="true" className="nv-paper absolute inset-0" />
+      {size.width > 0 ? (
+        <svg aria-hidden="true" className="absolute inset-0" width={size.width} height={size.height}>
+          {[0.18, 0.34, 0.5].map((f) => (
+            <circle key={f} cx={size.width / 2} cy={size.height / 2} r={Math.min(size.width, size.height) * f} fill="none" stroke="rgba(70,95,255,0.14)" strokeWidth="1.25" strokeDasharray={f === 0.5 ? "3 6" : undefined} />
+          ))}
+          <line x1={size.width / 2} y1={0} x2={size.width / 2} y2={size.height} stroke="rgba(16,19,52,0.06)" />
+          <line x1={0} y1={size.height / 2} x2={size.width} y2={size.height / 2} stroke="rgba(16,19,52,0.06)" />
+        </svg>
+      ) : null}
       <div className="absolute inset-0 origin-center transition-transform duration-slow ease-standard" style={{ transform: `scale(${zoom})` }}>
         {size.width > 0 ? (
           <svg className="absolute inset-0" width={size.width} height={size.height} viewBox={`0 0 ${size.width} ${size.height}`} aria-hidden="true">
@@ -106,7 +101,7 @@ export function TopicMapCanvas({
         {visible.map((node, index) => {
           const p = byId.get(node.id);
           if (!p) return null;
-          return <MapNodeButton key={node.id} node={node} placed={p} colors={PALETTE[index % PALETTE.length]} selected={selectedId === node.id} onSelect={onSelect} signalLabel={signalLabel} />;
+          return <MapNodeButton key={node.id} node={node} placed={p} rank={index + 1} selected={selectedId === node.id} onSelect={onSelect} signalLabel={signalLabel} />;
         })}
       </div>
 
@@ -118,14 +113,16 @@ export function TopicMapCanvas({
   );
 }
 
-function MapNodeButton({ node, placed, colors, selected, onSelect, signalLabel }: { node: TopicMapNode; placed: PlacedNode; colors: string[]; selected: boolean; onSelect: (id: string) => void; signalLabel: (count: number) => string }) {
+/** A narrative as an ink-outlined bubble in its sentiment colour (red negative, green positive, grey neutral, …), sized by
+ * mentions, with its growth as a stamp on top. */
+function MapNodeButton({ node, placed, rank, selected, onSelect, signalLabel }: { node: TopicMapNode; placed: PlacedNode; rank: number; selected: boolean; onSelect: (id: string) => void; signalLabel: (count: number) => string }) {
   const r = placed.r;
   const d = r * 2;
-  const [from, to] = colors;
-  // The count is the hero; the name sits under it in at most two short lines (full name in the tooltip).
   const numberSize = Math.round(Math.min(40, Math.max(16, r * 0.44)));
-  const titleSize = Math.round(Math.min(13, Math.max(9.5, r * 0.15)));
+  const titleSize = Math.round(Math.min(13.5, Math.max(10, r * 0.16)));
   const showTitle = r >= 34;
+  const growth = node.growth === "new" ? pickL("New", "Baru") : node.growth && node.growth !== "0%" ? node.growth : null;
+  const rising = node.growth === "new" || /^\+/.test(node.growth);
   return (
     <button
       type="button"
@@ -133,32 +130,39 @@ function MapNodeButton({ node, placed, colors, selected, onSelect, signalLabel }
       aria-label={`${node.title}, ${signalLabel(node.signals)}`}
       title={`${node.title} · ${signalLabel(node.signals)}`}
       onClick={() => onSelect(node.id)}
-      className="group absolute cursor-pointer rounded-full transition-transform duration-200 hover:z-10 hover:scale-[1.07] focus:outline-none"
-      style={{ left: placed.x - r, top: placed.y - r, width: d, height: d, zIndex: selected ? 2 : 1 }}
+      className="group absolute cursor-pointer rounded-full transition-transform duration-200 hover:z-10 hover:-translate-y-1 focus:outline-none"
+      style={{ left: placed.x - r, top: placed.y - r, width: d, height: d, zIndex: selected ? 3 : 1 }}
     >
       <span
-        className="absolute inset-0 flex items-center justify-center rounded-full group-focus-visible:ring-2 group-focus-visible:ring-[#465FFF] group-focus-visible:ring-offset-2"
+        className="absolute inset-0 flex items-center justify-center rounded-full border-2 transition-shadow group-focus-visible:ring-2 group-focus-visible:ring-[#465FFF] group-focus-visible:ring-offset-2"
         style={{
-          background: `radial-gradient(circle at 30% 22%, rgba(255,255,255,0.4), transparent 50%), linear-gradient(140deg, ${from}, ${to})`,
-          // White separation ring, the sentiment ring outside it, and a soft shadow in the narrative's colour.
-          boxShadow: `0 0 0 3px #FFFFFF, 0 0 0 ${selected ? 7 : 5}px ${node.color}, 0 ${selected ? 18 : 12}px ${selected ? 36 : 26}px -8px ${from}AA`,
+          borderColor: "#101334",
+          background: `radial-gradient(circle at 32% 24%, rgba(255,255,255,0.38), transparent 52%), linear-gradient(150deg, color-mix(in srgb, ${node.color} 72%, white), ${node.color})`,
+          boxShadow: selected ? `0 6px 0 #465FFF, 0 0 0 5px rgba(70,95,255,0.25)` : "0 5px 0 #101334",
         }}
       >
-        <span className="flex flex-col items-center text-center text-white" style={{ width: r * 1.45 }}>
-          <span className="font-black tabular-nums leading-none [text-shadow:0_2px_6px_rgba(0,0,0,0.18)]" style={{ fontSize: numberSize }}>{node.signals}</span>
-          <span className="mt-0.5 font-bold text-white/85" style={{ fontSize: Math.max(8, titleSize - 2.5) }}>{signalLabel(node.signals).replace(/^\d+\s*/, "")}</span>
+        <span className="flex flex-col items-center text-center text-white" style={{ width: r * 1.55 }}>
+          <span className="font-black tabular-nums leading-none [text-shadow:0_2px_4px_rgba(16,19,52,0.25)]" style={{ fontSize: numberSize }}>{node.signals}</span>
+          <span className="mt-0.5 font-mono font-bold uppercase tracking-[0.06em] text-white/85" style={{ fontSize: Math.max(8, titleSize - 3.5) }}>{signalLabel(node.signals).replace(/^\d+\s*/, "")}</span>
           {showTitle ? (
             <span
-              className="mt-1.5 font-bold leading-[1.2] text-white"
-              style={{ fontSize: titleSize, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+              className="mt-1.5 font-bold leading-[1.18] text-white [text-shadow:0_1px_3px_rgba(16,19,52,0.3)]"
+              style={{ fontSize: titleSize, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}
             >
               {node.title}
             </span>
           ) : null}
         </span>
       </span>
+      {/* Rank and growth as stamps on the rim. */}
+      <span className="absolute -left-1 top-[8%] grid size-6 place-items-center rounded-full border-[1.5px] border-[#101334] bg-white font-mono text-[10.5px] font-bold text-[#101334]">{rank}</span>
+      {growth ? (
+        <span className={cn("absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-[6px] border-[1.5px] border-[#101334] px-1.5 py-0.5 font-mono text-[10px] font-bold", rising ? "bg-[#FFF4E5] text-[#A04606]" : "bg-white text-[#5F6B94]")}>
+          {growth}
+        </span>
+      ) : null}
       {/* Hover hint: a click opens the issue's full analysis. */}
-      <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#101334] px-2.5 py-1 text-[10px] font-black text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+      <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-3 -translate-x-1/2 whitespace-nowrap rounded-[8px] bg-[#101334] px-2.5 py-1 text-[11px] font-black text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
         {pickL("Click for details", "Klik untuk detail")}
       </span>
     </button>

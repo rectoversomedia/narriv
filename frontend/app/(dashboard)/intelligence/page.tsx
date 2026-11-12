@@ -868,7 +868,8 @@ export default function IntelligencePage() {
                 <div className="flex items-center gap-3">
                   <span className="text-[#647099]">{ti("topicMap.sentimentLabel")}</span>
                   <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#10B981]" />{ti("topicMap.pos")}</span>
-                  <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#CBD5E1]" />{ti("topicMap.neu")}</span>
+                  <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#8B5CFF]" />{ti("topicMap.neu")}</span>
+                  <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#F59E0B]" />{pickL("Mixed", "Campuran")}</span>
                   <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#EF4444]" />{ti("topicMap.neg")}</span>
                 </div>
                 <div className="flex items-center gap-3">
